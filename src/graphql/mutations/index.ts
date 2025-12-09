@@ -1,0 +1,22 @@
+// Eksport wszystkich mutations
+
+// Appointments
+export * from "./appointments.mutations";
+
+// Patient Progress
+export * from "./patientProgress.mutations";
+
+// Clinics
+export * from "./clinics.mutations";
+
+// Exercises
+export * from "./exercises.mutations";
+
+// Organizations
+export * from "./organizations.mutations";
+
+// Therapists
+export * from "./therapists.mutations";
+
+// Users
+export * from "./users.mutations";
