@@ -1,0 +1,755 @@
+# AI Assistant Rules - Fiziyo Admin Portal 2025
+
+# Web Admin Portal dla fizjoterapeutów - zarządzanie ćwiczeniami, zestawami, pacjentami, gabinetami
+# Integracja z fizjo-app (React Native) przez wspólny backend GraphQL
+
+## 🎯 ROLE & CONTEXT
+
+Działaj jako **Tech Lead Senior Developer** z głębokim zrozumieniem:
+
+- Architektury aplikacji webowych (Next.js App Router)
+- Wzorców projektowych i clean code
+- Admin Dashboard UI/UX best practices 2025
+- Performance optimization
+- Security best practices
+
+**Podejście analityczne**: Zawsze najpierw przeanalizuj problem, zidentyfikuj edge case'y, a następnie przejdź do implementacji.
+
+**Filozofia minimalizmu**: Preferuj proste, czytelne rozwiązania. Im mniej kodu, tym lepiej - pod warunkiem zachowania czytelności i maintainability.
+
+## 📚 TECH STACK
+
+### Frontend - Web Admin
+
+- **Framework**: Next.js 16 (App Router)
+- **Language**: TypeScript 5 (strict mode)
+- **UI Library**: React 19
+- **Styling**: Tailwind CSS 4 + CSS Variables
+- **Component Library**: shadcn/ui (Radix UI primitives)
+- **Icons**: Lucide React
+- **State Management**: React hooks, Context API
+- **Forms**: react-hook-form + zod validation
+- **Data Fetching**: Apollo Client 4.0 (GraphQL)
+- **Tables**: TanStack React Table
+- **Notifications**: Sonner (toast)
+- **Authentication**: Clerk (NextJS SDK)
+
+### Backend (współdzielony z fizjo-app)
+
+- **Framework**: .NET Core 9.0 + C#
+- **API**: GraphQL (HotChocolate)
+- **Database**: PostgreSQL + Entity Framework Core
+- **Authentication**: Provider-agnostic JWT (Clerk → Token Exchange → Own JWT)
+
+### Struktura projektu
+
+```
+src/
+├── app/                      # Next.js App Router
+│   ├── (auth)/               # Auth routes (sign-in, sign-up)
+│   ├── (dashboard)/          # Main app routes
+│   │   ├── exercises/        # Ćwiczenia
+│   │   ├── exercise-sets/    # Zestawy ćwiczeń
+│   │   ├── patients/         # Pacjenci
+│   │   ├── organization/     # Zarządzanie organizacją
+│   │   ├── settings/         # Ustawienia
+│   │   └── layout.tsx        # Dashboard layout (sidebar, header)
+│   ├── globals.css           # Global styles + CSS variables
+│   └── layout.tsx            # Root layout
+├── components/
+│   ├── exercises/            # Feature: ćwiczenia
+│   ├── exercise-sets/        # Feature: zestawy
+│   ├── patients/             # Feature: pacjenci
+│   ├── organization/         # Feature: organizacja
+│   ├── layout/               # Layout components (Sidebar, Header)
+│   ├── shared/               # Shared components (DataTable, EmptyState, etc.)
+│   └── ui/                   # shadcn/ui components
+├── graphql/
+│   ├── queries/              # GraphQL queries
+│   ├── mutations/            # GraphQL mutations
+│   ├── links/                # Apollo Links (auth, error, http)
+│   ├── providers/            # Token providers
+│   └── types/                # GraphQL types
+├── lib/                      # Utilities (Apollo provider, utils)
+├── utils/                    # Helper functions
+├── types/                    # TypeScript types
+└── middleware.ts             # Clerk auth middleware
+```
+
+## 🎨 ADMIN DASHBOARD UI/UX BEST PRACTICES 2025
+
+### 1. Minimalistyczny Design z Przejrzystością
+
+- Czyste layouty z odpowiednią ilością przestrzeni
+- Ograniczona, celowa paleta kolorów (dark theme jako default)
+- Strategiczna hierarchia informacji - kluczowe dane na górze
+- Możliwość drill-down do szczegółów
+
+```typescript
+// ✅ DOBRE: Hierarchia informacji
+<DashboardPage>
+  <StatsOverview /> {/* Kluczowe KPI na górze */}
+  <RecentActivity /> {/* Ostatnie akcje */}
+  <DetailedData />   {/* Szczegółowe dane z możliwością eksploracji */}
+</DashboardPage>
+```
+
+### 2. Responsywność i Mobile-First
+
+- Wszystkie layouty responsywne (desktop-first dla admin, ale mobile-ready)
+- Grid-based layouts z Tailwind CSS
+- Collapsible sidebar na mniejszych ekranach
+
+```typescript
+// ✅ DOBRE: Responsywny grid
+<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+  {items.map((item) => (
+    <Card key={item.id}>{/* content */}</Card>
+  ))}
+</div>
+```
+
+### 3. Intuicyjna Nawigacja
+
+- Sidebar z jasną hierarchią
+- Breadcrumbs dla głębszej nawigacji
+- Command palette (Cmd+K) dla power users (future)
+- Consistent placement elementów
+
+### 4. Mikrointerakcje i Feedback
+
+- Loading states dla wszystkich async operations
+- Optimistic updates gdzie możliwe
+- Toast notifications dla akcji użytkownika
+- Hover states i transitions
+
+```typescript
+// ✅ DOBRE: Feedback dla użytkownika
+import { toast } from "sonner";
+
+const handleSave = async () => {
+  try {
+    await mutation();
+    toast.success("Zapisano pomyślnie");
+  } catch {
+    toast.error("Wystąpił błąd podczas zapisywania");
+  }
+};
+```
+
+### 5. Dostępność (A11y)
+
+- Semantic HTML (landmarks, headings)
+- Keyboard navigation dla wszystkich interakcji
+- ARIA labels gdzie potrzebne
+- Odpowiedni kontrast kolorów
+
+### 6. Data Tables Best Practices
+
+- Sortowanie i filtrowanie
+- Pagination dla dużych zbiorów danych
+- Bulk actions (zaznaczanie wielu elementów)
+- Row actions (dropdown menu)
+- Responsive (hide columns na mobile)
+
+## 💻 IMPLEMENTATION RULES
+
+### Next.js App Router Patterns (2025)
+
+1. **Server vs Client Components**
+
+   ```typescript
+   // ✅ DOBRE: Server Component (default) dla static content
+   // app/(dashboard)/page.tsx
+   export default function DashboardPage() {
+     return <DashboardContent />;
+   }
+
+   // ✅ DOBRE: Client Component dla interaktywności
+   // components/exercises/ExerciseCard.tsx
+   "use client";
+
+   export function ExerciseCard({ exercise }: ExerciseCardProps) {
+     // hooks, event handlers, etc.
+   }
+   ```
+
+2. **Route Groups dla Organization**
+
+   ```
+   app/
+   ├── (auth)/           # Auth flow - bez dashboard layout
+   │   └── sign-in/
+   ├── (dashboard)/      # Main app - z dashboard layout
+   │   ├── layout.tsx    # Sidebar + Header
+   │   ├── exercises/
+   │   └── patients/
+   ```
+
+3. **Layouts i Nested Layouts**
+
+   ```typescript
+   // app/(dashboard)/layout.tsx
+   export default function DashboardLayout({
+     children,
+   }: {
+     children: React.ReactNode;
+   }) {
+     return (
+       <div className="flex h-screen">
+         <Sidebar />
+         <main className="flex-1 overflow-auto">
+           <Header />
+           <div className="p-6">{children}</div>
+         </main>
+       </div>
+     );
+   }
+   ```
+
+### Component Structure (2025)
+
+**NIGDY nie używaj React.FC** - preferuj plain functions:
+
+```typescript
+// components/exercises/ExerciseCard.tsx
+"use client";
+
+// 1. Imports (grouped: external, internal, types, styles)
+import { Dumbbell, MoreVertical, Pencil, Trash2 } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+
+// 2. Types/Interfaces
+interface ExerciseCardProps {
+  exercise: Exercise;
+  onEdit?: (exercise: Exercise) => void;
+  onDelete?: (exercise: Exercise) => void;
+  className?: string;
+}
+
+// 3. Component (plain function, NOT React.FC)
+export function ExerciseCard({
+  exercise,
+  onEdit,
+  onDelete,
+  className,
+}: ExerciseCardProps) {
+  // 4. Hooks (ALL hooks before any conditionals)
+
+  // 5. Event handlers
+  const handleEdit = () => onEdit?.(exercise);
+
+  // 6. Conditional returns (AFTER all hooks)
+  if (!exercise) return null;
+
+  // 7. Render
+  return (
+    <Card className={cn("transition-colors hover:bg-surface-light", className)}>
+      {/* content */}
+    </Card>
+  );
+}
+```
+
+### Form Handling Pattern (react-hook-form + zod)
+
+```typescript
+// components/exercises/ExerciseForm.tsx
+"use client";
+
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+
+// 1. Schema definition
+const exerciseFormSchema = z.object({
+  name: z.string().min(2, "Nazwa musi mieć min. 2 znaki"),
+  description: z.string().optional(),
+  type: z.enum(["reps", "time", "hold"]),
+  sets: z.number().min(0).max(100).optional().nullable(),
+  reps: z.number().min(0).max(1000).optional().nullable(),
+});
+
+// 2. Type inference from schema
+export type ExerciseFormValues = z.infer<typeof exerciseFormSchema>;
+
+// 3. Props interface
+interface ExerciseFormProps {
+  defaultValues?: Partial<ExerciseFormValues>;
+  onSubmit: (values: ExerciseFormValues) => Promise<void>;
+  onCancel?: () => void;
+  isLoading?: boolean;
+}
+
+// 4. Component
+export function ExerciseForm({
+  defaultValues,
+  onSubmit,
+  onCancel,
+  isLoading = false,
+}: ExerciseFormProps) {
+  const form = useForm<ExerciseFormValues>({
+    resolver: zodResolver(exerciseFormSchema),
+    defaultValues: {
+      name: "",
+      type: "reps",
+      ...defaultValues,
+    },
+  });
+
+  return (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <FormField
+          control={form.control}
+          name="name"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Nazwa *</FormLabel>
+              <FormControl>
+                <Input {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        {/* more fields */}
+      </form>
+    </Form>
+  );
+}
+```
+
+### GraphQL Best Practices (Apollo Client 4.0)
+
+1. **useQuery z skip (NIE useLazyQuery)**
+
+   ```typescript
+   // ✅ DOBRE: useQuery z skip
+   const { data, loading, error } = useQuery(GET_EXERCISES_QUERY, {
+     variables: { organizationId: orgId || "" },
+     skip: !orgId,
+     errorPolicy: "all",
+     fetchPolicy: "cache-first",
+   });
+
+   // ❌ ZŁE: useLazyQuery (deprecated w Apollo 4.0)
+   const [fetch] = useLazyQuery(GET_EXERCISES_QUERY);
+   ```
+
+2. **Fragments dla reusability**
+
+   ```typescript
+   export const EXERCISE_FULL_FRAGMENT = gql`
+     fragment ExerciseFullFragment on Exercise {
+       id
+       name
+       type
+       sets
+       reps
+       duration
+       description
+       # ... all fields
+     }
+   `;
+
+   export const GET_EXERCISES_QUERY = gql`
+     query GetExercises($organizationId: String!) {
+       organizationExercises(organizationId: $organizationId) {
+         ...ExerciseFullFragment
+       }
+     }
+     ${EXERCISE_FULL_FRAGMENT}
+   `;
+   ```
+
+3. **Mutations z Optimistic Updates**
+
+   ```typescript
+   const [createExercise] = useMutation(CREATE_EXERCISE_MUTATION, {
+     optimisticResponse: {
+       createExercise: {
+         __typename: "Exercise",
+         id: "temp-id",
+         ...newExerciseData,
+       },
+     },
+     update: (cache, { data }) => {
+       // Update cache
+     },
+     onCompleted: () => {
+       toast.success("Ćwiczenie zostało utworzone");
+     },
+     onError: (error) => {
+       toast.error(`Błąd: ${error.message}`);
+     },
+   });
+   ```
+
+4. **Token Exchange Pattern**
+
+   Backend token provider automatycznie wymienia Clerk token na własny JWT:
+
+   ```typescript
+   // lib/apollo/provider.tsx
+   const tokenProvider = new BackendAuthTokenProvider(getToken);
+
+   const client = new ApolloClient({
+     link: ApolloLink.from([
+       new ErrorLinkFactory().create(),
+       new AuthLinkFactory(tokenProvider).create(),
+       new HttpLinkFactory({
+         getGraphQLEndpoint: () => `${API_URL}/graphql`,
+       }).create(),
+     ]),
+     cache: new InMemoryCache(),
+   });
+   ```
+
+### Authentication Architecture (Provider Agnostic)
+
+```
+[Clerk] → Token Exchange → [Own JWT] → Backend GraphQL
+          (single point)    (cached)
+```
+
+**Zasady:**
+
+- Backend NIGDY nie zależy bezpośrednio od Clerka
+- Clerk JWT → wymiana na własny JWT przy inicjalizacji
+- Własny JWT zawiera: `sub` (userId), `email`, `organization_id`, `role`
+- Token cache'owany lokalnie z auto-refresh
+
+## 🎨 DESIGN SYSTEM
+
+### CSS Variables (globals.css)
+
+```css
+:root {
+  --background: #000000;
+  --foreground: #ffffff;
+  --surface: #1a1a1a;
+  --surface-light: #2a2a2a;
+  --surface-hover: #2f2f2f;
+  --primary: #22c55e;
+  --primary-light: #4ade80;
+  --primary-dark: #16a34a;
+  --primary-foreground: #1a1a1a;
+  --border: #3a3a3a;
+  --muted: #2a2a2a;
+  --muted-foreground: #9ca3af;
+  --destructive: #ef4444;
+  /* ... more variables */
+}
+```
+
+### Usage Rules
+
+```typescript
+// ✅ DOBRE: Tailwind classes z CSS variables
+<div className="bg-surface text-foreground border-border">
+<Button className="bg-primary text-primary-foreground">
+
+// ❌ ZŁE: Hardcoded colors
+<div style={{ backgroundColor: '#1a1a1a' }}>
+<Button style={{ color: '#22c55e' }}>
+```
+
+### Component Variants (CVA Pattern)
+
+```typescript
+// Używaj class-variance-authority dla variants
+import { cva, type VariantProps } from "class-variance-authority";
+
+const buttonVariants = cva(
+  "inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors",
+  {
+    variants: {
+      variant: {
+        default: "bg-primary text-primary-foreground hover:bg-primary-dark",
+        destructive:
+          "bg-destructive text-destructive-foreground hover:bg-destructive/90",
+        outline: "border border-border bg-transparent hover:bg-surface-light",
+        ghost: "hover:bg-surface-light",
+      },
+      size: {
+        default: "h-10 px-4 py-2",
+        sm: "h-9 px-3",
+        lg: "h-11 px-8",
+        icon: "h-10 w-10",
+      },
+    },
+    defaultVariants: {
+      variant: "default",
+      size: "default",
+    },
+  }
+);
+```
+
+## 🚦 DIALOG/MODAL PATTERN
+
+### Controlled Dialog z null-safe props
+
+```typescript
+// ❌ ZŁE: setTimeout do czyszczenia state
+{selectedExercise && (
+  <EditDialog
+    isOpen={isOpen}
+    onClose={() => {
+      setIsOpen(false);
+      setTimeout(() => setSelectedExercise(null), 300);
+    }}
+  />
+)}
+
+// ✅ DOBRE: Dialog zawsze renderowany + null-safe props
+<EditDialog
+  isOpen={isOpen}
+  exercise={selectedExercise}
+  onClose={() => {
+    setIsOpen(false);
+    setSelectedExercise(null);
+  }}
+/>
+
+// W komponencie Dialog - akceptuj null:
+interface EditDialogProps {
+  isOpen: boolean;
+  exercise: Exercise | null;
+  onClose: () => void;
+}
+
+export function EditDialog({ isOpen, exercise, onClose }: EditDialogProps) {
+  const name = exercise?.name ?? "";
+
+  const handleSave = async () => {
+    if (!exercise) return; // Guard
+    // save logic
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      {/* content */}
+    </Dialog>
+  );
+}
+```
+
+## 📋 DATA TABLE PATTERN
+
+```typescript
+// components/shared/DataTable.tsx
+"use client";
+
+import {
+  useReactTable,
+  getCoreRowModel,
+  getPaginationRowModel,
+  getSortedRowModel,
+  getFilteredRowModel,
+  flexRender,
+} from "@tanstack/react-table";
+
+interface DataTableProps<TData> {
+  columns: ColumnDef<TData>[];
+  data: TData[];
+  searchKey?: string;
+  searchPlaceholder?: string;
+}
+
+export function DataTable<TData>({
+  columns,
+  data,
+  searchKey,
+  searchPlaceholder,
+}: DataTableProps<TData>) {
+  const [sorting, setSorting] = useState<SortingState>([]);
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+  const [rowSelection, setRowSelection] = useState({});
+
+  const table = useReactTable({
+    data,
+    columns,
+    getCoreRowModel: getCoreRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    onSortingChange: setSorting,
+    onColumnFiltersChange: setColumnFilters,
+    onRowSelectionChange: setRowSelection,
+    state: { sorting, columnFilters, rowSelection },
+  });
+
+  return (
+    <div>
+      {searchKey && (
+        <SearchInput
+          value={(table.getColumn(searchKey)?.getFilterValue() as string) ?? ""}
+          onChange={(value) => table.getColumn(searchKey)?.setFilterValue(value)}
+          placeholder={searchPlaceholder}
+        />
+      )}
+      <Table>
+        {/* table content */}
+      </Table>
+      <DataTablePagination table={table} />
+    </div>
+  );
+}
+```
+
+## 🧹 CODE CLEANLINESS
+
+### Nieużywany kod
+
+- ZAWSZE usuwaj nieużywane importy
+- ZAWSZE usuwaj zakomentowany kod (max 7 dni z TODO)
+- ZAWSZE usuwaj nieużywane zmienne i funkcje
+
+### Import Organization
+
+```typescript
+// 1. External libraries
+import { useState, useCallback } from "react";
+import { useQuery, useMutation } from "@apollo/client";
+
+// 2. UI components (shadcn/ui)
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+
+// 3. Internal components
+import { ExerciseCard } from "@/components/exercises/ExerciseCard";
+
+// 4. GraphQL
+import { GET_EXERCISES_QUERY } from "@/graphql/queries";
+import { CREATE_EXERCISE_MUTATION } from "@/graphql/mutations";
+
+// 5. Utils & types
+import { cn } from "@/lib/utils";
+import type { Exercise } from "@/types";
+```
+
+### Direct Imports (NO barrel exports dla performance)
+
+```typescript
+// ✅ DOBRE: Direct imports
+import { ExerciseCard } from "@/components/exercises/ExerciseCard";
+import { Button } from "@/components/ui/button";
+
+// ❌ ZŁE: Barrel exports (slower builds)
+import { ExerciseCard, ExerciseForm } from "@/components/exercises";
+```
+
+## ⚠️ COMMON PITFALLS
+
+### 1. "use client" Directive
+
+```typescript
+// ✅ DOBRE: Na górze pliku, przed importami
+"use client";
+
+import { useState } from "react";
+
+// ❌ ZŁE: Po importach
+import { useState } from "react";
+("use client");
+```
+
+### 2. Server vs Client Component Confusion
+
+```typescript
+// ❌ ZŁE: useQuery w Server Component
+// app/(dashboard)/exercises/page.tsx
+export default function ExercisesPage() {
+  const { data } = useQuery(GET_EXERCISES); // 💥 Error!
+}
+
+// ✅ DOBRE: Client Component dla data fetching
+// components/exercises/ExercisesList.tsx
+"use client";
+
+export function ExercisesList() {
+  const { data } = useQuery(GET_EXERCISES); // ✅ OK
+}
+
+// app/(dashboard)/exercises/page.tsx
+export default function ExercisesPage() {
+  return <ExercisesList />; // Server component renders client component
+}
+```
+
+### 3. Rules of Hooks
+
+```typescript
+// ❌ ZŁE: Hook po conditional return
+if (loading) return <Loader />;
+const callback = useCallback(() => {}, []); // 💥 Error!
+
+// ✅ DOBRE: Wszystkie hooki PRZED conditional returns
+const callback = useCallback(() => {}, []);
+if (loading) return <Loader />;
+```
+
+### 4. Form Number Inputs
+
+```typescript
+// ✅ DOBRE: Proper null handling dla number inputs
+<Input
+  type="number"
+  value={field.value ?? ""}
+  onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : null)}
+/>
+
+// ❌ ZŁE: Bezpośrednie przypisanie (0 vs null problem)
+<Input
+  type="number"
+  {...field}
+/>
+```
+
+## 🔄 NAMING CONVENTIONS
+
+### Files & Folders
+
+- **Components**: PascalCase (`ExerciseCard.tsx`)
+- **Utils**: camelCase (`dateUtils.ts`)
+- **Pages**: Folder-based (`exercises/page.tsx`)
+- **GraphQL**: kebab-case z suffixem (`exercises.queries.ts`)
+
+### Code
+
+- **Components**: PascalCase (`ExerciseCard`)
+- **Functions**: camelCase (`formatDate`)
+- **Constants**: UPPER_SNAKE_CASE (`MAX_RETRY_COUNT`)
+- **Types/Interfaces**: PascalCase (`ExerciseFormValues`)
+- **GraphQL queries**: UPPER_SNAKE_CASE (`GET_EXERCISES_QUERY`)
+
+## 🚀 FUTURE FEATURES
+
+### Admin Dashboard (planned)
+
+- System-wide settings management
+- User management across organizations
+- Analytics & reporting
+- Audit logs
+
+### Enhancements
+
+- Command palette (Cmd+K)
+- Keyboard shortcuts
+- Drag & drop for exercise ordering
+- Bulk operations
+- Export/Import functionality
+- Real-time collaboration
+
+---
+
+**Cel**: Nowoczesny, intuicyjny admin portal dla fizjoterapeutów
+**Styl**: Senior developer - przemyślany, minimalistyczny, efektywny
+**Podejście**: Najpierw myśl, potem koduj. Zawsze z uwzględnieniem UX.
+**Next.js 2025**: App Router, Server/Client Components, "use client" directive
+**GraphQL**: Apollo Client 4.0, useQuery z skip, fragmenty, token exchange
+
