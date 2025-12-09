@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { ClerkProvider } from "@clerk/nextjs";
 import { ApolloWrapper } from "@/lib/apollo/provider";
+import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -18,6 +19,7 @@ export default function RootLayout({
       <html lang="pl">
         <body className="antialiased">
           <ApolloWrapper>{children}</ApolloWrapper>
+          <Toaster />
         </body>
       </html>
     </ClerkProvider>
