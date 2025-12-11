@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo, useEffect } from "react";
 import { useSignUp } from "@clerk/nextjs";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -11,7 +11,10 @@ import {
   Mail,
   Lock,
   User,
+  Phone,
+  Building2,
   Check,
+  Pencil,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,6 +27,9 @@ interface FormData {
   confirmPassword: string;
   firstName: string;
   lastName: string;
+  phone: string;
+  companyName: string;
+  companyNameEdited: boolean;
 }
 
 const STEPS = [
@@ -31,6 +37,38 @@ const STEPS = [
   { id: 2, name: "Hasło" },
   { id: 3, name: "Dane" },
 ];
+
+const organizationTypeConfig = {
+  individual: {
+    title: "Praktyka Indywidualna",
+    subtitle:
+      "Załóż darmowe konto. Zawsze możesz rozszerzyć na Starter lub Professional",
+    nameLabel: "Nazwa praktyki",
+    namePlaceholder: "np. Jan Kowalski - Fizjoterapia",
+    namePrefix: "",
+    nameSuffix: " - Fizjoterapia",
+  },
+  small: {
+    title: "Mały Gabinet",
+    subtitle:
+      "Zacznij bezpłatnie. Gdy zespół urośnie, przejdź na Professional lub Business",
+    nameLabel: "Nazwa gabinetu",
+    namePlaceholder: "np. Fizjo Zdrowie",
+    namePrefix: "Gabinet ",
+    nameSuffix: "",
+  },
+  large: {
+    title: "Duża Klinika",
+    subtitle:
+      "Rozpocznij bezpłatnie. W każdej chwili upgrade do Business lub Enterprise",
+    nameLabel: "Nazwa kliniki",
+    namePlaceholder: "np. Centrum Rehabilitacji Medycznej",
+    namePrefix: "Klinika ",
+    nameSuffix: "",
+  },
+};
+
+type OrganizationType = keyof typeof organizationTypeConfig;
 
 function StepIndicator({ currentStep }: { currentStep: number }) {
   return (
@@ -63,7 +101,57 @@ function StepIndicator({ currentStep }: { currentStep: number }) {
   );
 }
 
-export default function PatientRegistrationPage() {
+function generatePracticeName(
+  firstName: string,
+  lastName: string,
+  orgType: OrganizationType
+): string {
+  if (!firstName.trim() || !lastName.trim()) return "";
+  const fullName = `${firstName.trim()} ${lastName.trim()}`;
+  const config = organizationTypeConfig[orgType];
+  return `${config.namePrefix}${fullName}${config.nameSuffix}`;
+}
+
+interface PracticeNamePreviewProps {
+  name: string;
+  label: string;
+  onEdit: () => void;
+}
+
+function PracticeNamePreview({
+  name,
+  label,
+  onEdit,
+}: PracticeNamePreviewProps) {
+  if (!name) return null;
+
+  return (
+    <button
+      type="button"
+      onClick={onEdit}
+      className="mb-4 flex w-full items-center justify-between rounded-xl border border-border bg-surface p-4 text-left transition-colors hover:bg-surface-light"
+    >
+      <div className="flex flex-1 items-center gap-3">
+        <Building2 className="h-5 w-5 text-primary" />
+        <div>
+          <p className="text-xs text-muted-foreground">{label}</p>
+          <p className="font-medium text-foreground">{name}</p>
+        </div>
+      </div>
+      <div className="flex items-center gap-1 rounded-md bg-surface-light px-2 py-1">
+        <Pencil className="h-3 w-3 text-muted-foreground" />
+        <span className="text-xs text-muted-foreground">Edytuj</span>
+      </div>
+    </button>
+  );
+}
+
+export default function RegisterFormPage() {
+  const params = useParams();
+  const orgType = (params.type as OrganizationType) || "individual";
+  const config =
+    organizationTypeConfig[orgType] || organizationTypeConfig.individual;
+
   const { signUp, isLoaded } = useSignUp();
   const router = useRouter();
 
@@ -74,9 +162,24 @@ export default function PatientRegistrationPage() {
     confirmPassword: "",
     firstName: "",
     lastName: "",
+    phone: "",
+    companyName: "",
+    companyNameEdited: false,
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [showNameEditor, setShowNameEditor] = useState(false);
+
+  const generatedName = useMemo(
+    () => generatePracticeName(formData.firstName, formData.lastName, orgType),
+    [formData.firstName, formData.lastName, orgType]
+  );
+
+  useEffect(() => {
+    if (!formData.companyNameEdited && generatedName) {
+      setFormData((prev) => ({ ...prev, companyName: generatedName }));
+    }
+  }, [generatedName, formData.companyNameEdited]);
 
   const handleInputChange = useCallback(
     (field: keyof FormData, value: string) => {
@@ -85,6 +188,15 @@ export default function PatientRegistrationPage() {
     },
     []
   );
+
+  const handleCompanyNameChange = useCallback((value: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      companyName: value,
+      companyNameEdited: true,
+    }));
+    setError("");
+  }, []);
 
   const validateStep1 = useCallback((): boolean => {
     if (!formData.email.trim()) {
@@ -167,12 +279,14 @@ export default function PatientRegistrationPage() {
           unsafeMetadata: {
             firstName: formData.firstName.trim(),
             lastName: formData.lastName.trim(),
-            isCompanyAccount: false,
-            accountType: "patient",
+            phone: formData.phone.trim(),
+            companyName: formData.companyName.trim() || generatedName,
+            role: "therapist",
+            organizationType: orgType,
           },
         });
       } catch (updateError) {
-        console.error("Error setting patient metadata:", updateError);
+        console.error("Error setting metadata:", updateError);
       }
 
       await signUp.prepareEmailAddressVerification({ strategy: "email_code" });
@@ -195,6 +309,7 @@ export default function PatientRegistrationPage() {
     <div className="space-y-6">
       {/* Back link */}
       <button
+        type="button"
         onClick={currentStep > 1 ? handlePrevStep : undefined}
         className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors"
       >
@@ -206,21 +321,20 @@ export default function PatientRegistrationPage() {
         ) : (
           <Link href="/register" className="inline-flex items-center">
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Powrót
+            Zmień typ
           </Link>
         )}
       </button>
 
       {/* Header */}
       <div className="space-y-2">
+        <div className="mb-1 text-xs font-medium uppercase tracking-wider text-primary">
+          {config.title}
+        </div>
         <h1 className="text-2xl font-bold tracking-tight text-foreground">
-          Utwórz konto pacjenta
+          Utwórz konto
         </h1>
-        <p className="text-muted-foreground">
-          {currentStep === 1 && "Podaj adres email do logowania"}
-          {currentStep === 2 && "Utwórz bezpieczne hasło"}
-          {currentStep === 3 && "Uzupełnij dane osobowe"}
-        </p>
+        <p className="text-sm text-muted-foreground">{config.subtitle}</p>
       </div>
 
       {/* Step indicator */}
@@ -247,7 +361,7 @@ export default function PatientRegistrationPage() {
                 <Input
                   id="email"
                   type="email"
-                  placeholder="jan@example.com"
+                  placeholder="jan@fizjoterapia.pl"
                   value={formData.email}
                   onChange={(e) => handleInputChange("email", e.target.value)}
                   className="h-11 pl-10"
@@ -343,10 +457,58 @@ export default function PatientRegistrationPage() {
               </div>
             </div>
 
-            <p className="text-sm text-muted-foreground">
-              Po rejestracji możesz poprosić swojego fizjoterapeutę o dodanie
-              Cię do swojej listy pacjentów.
-            </p>
+            <div className="space-y-2">
+              <Label htmlFor="phone">
+                Telefon{" "}
+                <span className="text-muted-foreground">(opcjonalnie)</span>
+              </Label>
+              <div className="relative">
+                <Phone className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  id="phone"
+                  type="tel"
+                  placeholder="+48 123 456 789"
+                  value={formData.phone}
+                  onChange={(e) => handleInputChange("phone", e.target.value)}
+                  className="h-11 pl-10"
+                  autoComplete="tel"
+                />
+              </div>
+            </div>
+
+            {/* Practice name preview/editor */}
+            {showNameEditor ? (
+              <div className="space-y-2">
+                <Label htmlFor="companyName">{config.nameLabel}</Label>
+                <div className="relative">
+                  <Building2 className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    id="companyName"
+                    type="text"
+                    placeholder={config.namePlaceholder}
+                    value={formData.companyName}
+                    onChange={(e) => handleCompanyNameChange(e.target.value)}
+                    className="h-11 pl-10"
+                    autoFocus
+                    onBlur={() => setShowNameEditor(false)}
+                  />
+                </div>
+              </div>
+            ) : (
+              <PracticeNamePreview
+                name={formData.companyName || generatedName}
+                label={config.nameLabel}
+                onEdit={() => setShowNameEditor(true)}
+              />
+            )}
+
+            {/* Free plan info */}
+            <div className="flex items-start gap-3 rounded-xl border border-primary/20 bg-primary/5 p-3">
+              <Check className="mt-0.5 h-4 w-4 flex-shrink-0 text-primary" />
+              <p className="text-xs text-muted-foreground">
+                Bezpłatny start • Bez karty kredytowej • Upgrade w każdej chwili
+              </p>
+            </div>
           </div>
         )}
 
@@ -375,7 +537,7 @@ export default function PatientRegistrationPage() {
                 <ArrowRight className="ml-2 h-4 w-4" />
               </>
             ) : (
-              "Utwórz konto"
+              "Załóż darmowe konto"
             )}
           </Button>
         </div>

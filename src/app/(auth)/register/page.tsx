@@ -1,66 +1,63 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowLeft, Building2, User, ArrowRight } from "lucide-react";
+import {
+  ArrowLeft,
+  User,
+  Users,
+  Building2,
+  Check,
+  ArrowRight,
+} from "lucide-react";
 
-interface AccountTypeCardProps {
+type OrganizationType = {
+  id: string;
   icon: React.ReactNode;
   title: string;
   description: string;
   features: string[];
-  href: string;
-  recommended?: boolean;
-}
+};
 
-function AccountTypeCard({
-  icon,
-  title,
-  description,
-  features,
-  href,
-  recommended,
-}: AccountTypeCardProps) {
-  return (
-    <Link
-      href={href}
-      className={`group relative flex flex-col rounded-2xl border p-6 transition-all hover:border-primary hover:shadow-lg hover:shadow-primary/5 ${
-        recommended ? "border-primary bg-primary/5" : "border-border bg-surface"
-      }`}
-    >
-      {recommended && (
-        <span className="absolute -top-3 left-4 rounded-full bg-primary px-3 py-1 text-xs font-semibold text-primary-foreground">
-          Zalecane
-        </span>
-      )}
+const organizationTypes: OrganizationType[] = [
+  {
+    id: "individual",
+    icon: <User className="h-8 w-8 text-primary" />,
+    title: "Praktyka Indywidualna",
+    description: "Rozpocznij bezpłatnie",
+    features: [
+      "Do 5 aktywnych pacjentów",
+      "Podstawowe funkcje",
+      "Zestawy ćwiczeń",
+      "Upgrade w każdej chwili",
+    ],
+  },
+  {
+    id: "small",
+    icon: <Users className="h-8 w-8 text-primary" />,
+    title: "Mały Gabinet",
+    description: "Zespół 2-5 fizjoterapeutów",
+    features: [
+      "Bezpłatny start",
+      "Możliwość dodania zespołu",
+      "Współdzielone zestawy",
+      "Elastyczny rozwój",
+    ],
+  },
+  {
+    id: "large",
+    icon: <Building2 className="h-8 w-8 text-primary" />,
+    title: "Duża Klinika",
+    description: "Centrum rehabilitacji, 6+ osób",
+    features: [
+      "Bezpłatny start",
+      "Gotowe na skalowanie",
+      "Pełna kontrola",
+      "Zaawansowane funkcje",
+    ],
+  },
+];
 
-      <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-primary/15">
-        {icon}
-      </div>
-
-      <h3 className="mb-2 text-lg font-semibold text-foreground">{title}</h3>
-      <p className="mb-4 text-sm text-muted-foreground">{description}</p>
-
-      <ul className="mb-6 flex-1 space-y-2">
-        {features.map((feature, index) => (
-          <li
-            key={index}
-            className="flex items-start text-sm text-muted-foreground"
-          >
-            <span className="mr-2 mt-1 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-primary" />
-            {feature}
-          </li>
-        ))}
-      </ul>
-
-      <div className="flex items-center text-sm font-medium text-primary group-hover:text-primary-light">
-        Wybierz
-        <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
-      </div>
-    </Link>
-  );
-}
-
-export default function RegisterSelectPage() {
+export default function RegisterSelectPlanPage() {
   return (
     <div className="space-y-6">
       {/* Back link */}
@@ -75,40 +72,56 @@ export default function RegisterSelectPage() {
       {/* Header */}
       <div className="space-y-2">
         <h1 className="text-2xl font-bold tracking-tight text-foreground">
-          Wybierz typ konta
+          Jaki typ organizacji?
         </h1>
         <p className="text-muted-foreground">
-          Wybierz opcję, która najlepiej odpowiada Twoim potrzebom
+          Wybierz opcję najlepiej opisującą Twoją działalność
         </p>
       </div>
 
-      {/* Account type cards */}
-      <div className="grid gap-4 sm:grid-cols-2">
-        <AccountTypeCard
-          icon={<Building2 className="h-6 w-6 text-primary" />}
-          title="Konto firmowe"
-          description="Dla fizjoterapeutów, gabinetów i klinik rehabilitacyjnych"
-          features={[
-            "Zarządzanie pacjentami",
-            "Biblioteka ćwiczeń",
-            "Tworzenie zestawów",
-            "Statystyki i raporty",
-          ]}
-          href="/register/company"
-          recommended
-        />
-        <AccountTypeCard
-          icon={<User className="h-6 w-6 text-primary" />}
-          title="Konto pacjenta"
-          description="Dla pacjentów korzystających z usług fizjoterapeutycznych"
-          features={[
-            "Dostęp do ćwiczeń",
-            "Śledzenie postępów",
-            "Komunikacja z terapeutą",
-            "Historia sesji",
-          ]}
-          href="/register/patient"
-        />
+      {/* Organization types */}
+      <div className="space-y-4">
+        {organizationTypes.map((type) => (
+          <Link
+            key={type.id}
+            href={`/register/${type.id}`}
+            className="group block rounded-xl border border-border bg-surface p-5 transition-all hover:border-primary hover:bg-surface-light"
+          >
+            <div className="mb-4 flex items-start gap-4">
+              <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-full bg-primary/10">
+                {type.icon}
+              </div>
+              <div className="flex-1">
+                <h3 className="font-semibold text-foreground">{type.title}</h3>
+                <p className="text-sm text-muted-foreground">
+                  {type.description}
+                </p>
+              </div>
+              <ArrowRight className="h-5 w-5 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
+            </div>
+
+            <ul className="space-y-2">
+              {type.features.map((feature, index) => (
+                <li
+                  key={index}
+                  className="flex items-center gap-2 text-sm text-muted-foreground"
+                >
+                  <Check className="h-4 w-4 text-primary" />
+                  {feature}
+                </li>
+              ))}
+            </ul>
+          </Link>
+        ))}
+      </div>
+
+      {/* Info box */}
+      <div className="flex items-start gap-3 rounded-xl border border-primary/20 bg-primary/5 p-4">
+        <Check className="mt-0.5 h-5 w-5 flex-shrink-0 text-primary" />
+        <p className="text-sm text-muted-foreground">
+          Wszyscy zaczynają bezpłatnie — bez karty kredytowej. Rozszerz plan gdy
+          będziesz gotowy!
+        </p>
       </div>
 
       {/* Login link */}
