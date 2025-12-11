@@ -128,11 +128,11 @@ export default function DashboardPage() {
   return (
     <div className="space-y-6">
       {/* Welcome section with primary CTA */}
-      <div className="relative rounded-2xl border border-border bg-card p-8 lg:p-10 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/8 via-transparent to-secondary/5" />
+      <div className="relative rounded-2xl border border-border/60 bg-surface p-8 lg:p-10 overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/6 via-transparent to-secondary/4" />
         <div className="relative flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
           <div>
-            <h1 className="text-3xl lg:text-4xl font-bold mb-2">
+            <h1 className="text-3xl lg:text-4xl font-bold mb-2 text-foreground">
               {greeting}, {userName}!
             </h1>
             <p className="text-muted-foreground text-lg">
@@ -142,7 +142,7 @@ export default function DashboardPage() {
           <Link href="/patients" className="group">
             <Button
               size="lg"
-              className="gap-2.5 h-14 px-8 rounded-xl text-base font-semibold shadow-lg shadow-primary/25 transition-shadow hover:shadow-xl hover:shadow-primary/30"
+              className="gap-2.5 h-14 px-8 rounded-xl text-base font-semibold shadow-lg shadow-primary/20 transition-all hover:shadow-xl hover:shadow-primary/25"
             >
               <Send className="h-5 w-5 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
               Przypisz zestaw pacjentowi
@@ -180,35 +180,35 @@ export default function DashboardPage() {
                 <Link
                   key={assignment.id}
                   href={`/patients/${assignment.patient?.id}`}
-                  className="group flex items-center gap-4 p-3 rounded-xl bg-surface/50 hover:bg-surface-light transition-colors"
+                  className="group flex items-center gap-4 p-3 rounded-xl bg-surface-light/50 hover:bg-surface-light border border-transparent hover:border-border/40 transition-all"
                 >
                   {assignment.patient?.image ? (
                     <img
                       src={assignment.patient.image}
                       alt=""
-                      className="h-11 w-11 rounded-full object-cover"
+                      className="h-11 w-11 rounded-full object-cover ring-2 ring-border/30"
                     />
                   ) : (
-                    <div className="flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-info to-blue-600 text-white font-semibold text-base">
+                    <div className="flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-info/80 to-blue-600/80 text-white font-semibold text-base">
                       {assignment.patient?.fullname?.[0] || "?"}
                     </div>
                   )}
                   <div className="flex-1 min-w-0">
-                    <p className="text-base font-medium truncate">
+                    <p className="text-base font-medium truncate text-foreground">
                       {assignment.patient?.fullname || "Nieznany"}
                     </p>
                     <p className="text-sm text-muted-foreground truncate">
                       {assignment.contextLabel || "Pacjent"}
                     </p>
                   </div>
-                  <ChevronRight className="h-5 w-5 text-muted-foreground transition-transform duration-200 group-hover:translate-x-1" />
+                  <ChevronRight className="h-5 w-5 text-muted-foreground/70 transition-transform duration-200 group-hover:translate-x-1 group-hover:text-muted-foreground" />
                 </Link>
               ))}
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center py-6 text-center">
-              <div className="h-16 w-16 rounded-full bg-surface-light flex items-center justify-center mb-4">
-                <UserPlus className="h-8 w-8 text-muted-foreground" />
+              <div className="h-16 w-16 rounded-full bg-surface-light/80 flex items-center justify-center mb-4">
+                <UserPlus className="h-8 w-8 text-muted-foreground/80" />
               </div>
               <p className="text-base text-muted-foreground mb-4">
                 Dodaj pierwszego pacjenta
@@ -244,10 +244,10 @@ export default function DashboardPage() {
         />
 
         {/* Gotowe zestawy do przypisania */}
-        <Card className="lg:col-span-2">
+        <Card className="lg:col-span-2 border-border/60">
           <CardHeader className="pb-4">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-lg font-semibold">
+              <CardTitle className="text-lg font-semibold text-foreground">
                 Gotowe zestawy do przypisania
               </CardTitle>
               <Link href="/exercise-sets" className="group">
@@ -271,13 +271,13 @@ export default function DashboardPage() {
                   <Link
                     key={set.id}
                     href={`/exercise-sets/${set.id}`}
-                    className="group flex items-start gap-4 p-4 rounded-xl border border-border bg-surface/30 hover:bg-surface-light hover:border-border-light transition-all"
+                    className="group flex items-start gap-4 p-4 rounded-xl border border-border/50 bg-surface-light/30 hover:bg-surface-light hover:border-border/70 transition-all"
                   >
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-secondary to-teal-600">
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-secondary/90 to-teal-600/90">
                       <FolderKanban className="h-6 w-6 text-white" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium text-base truncate group-hover:text-secondary transition-colors">
+                      <p className="font-medium text-base truncate text-foreground group-hover:text-secondary transition-colors">
                         {set.name}
                       </p>
                       <p className="text-sm text-muted-foreground line-clamp-2 mt-1">
@@ -289,8 +289,8 @@ export default function DashboardPage() {
               </div>
             ) : (
               <div className="flex flex-col items-center justify-center py-10 text-center">
-                <div className="h-16 w-16 rounded-full bg-surface-light flex items-center justify-center mb-4">
-                  <Sparkles className="h-8 w-8 text-muted-foreground" />
+                <div className="h-16 w-16 rounded-full bg-surface-light/80 flex items-center justify-center mb-4">
+                  <Sparkles className="h-8 w-8 text-muted-foreground/80" />
                 </div>
                 <p className="text-base text-muted-foreground mb-4">
                   Stwórz swój pierwszy zestaw ćwiczeń
@@ -308,10 +308,10 @@ export default function DashboardPage() {
       </div>
 
       {/* Recent exercises */}
-      <Card>
+      <Card className="border-border/60">
         <CardHeader className="pb-4">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-lg font-semibold">
+            <CardTitle className="text-lg font-semibold text-foreground">
               Ostatnio dodane ćwiczenia
             </CardTitle>
             <Link href="/exercises" className="group">
@@ -337,7 +337,7 @@ export default function DashboardPage() {
                   <Link
                     key={exercise.id}
                     href={`/exercises/${exercise.id}`}
-                    className="group relative rounded-xl border border-border overflow-hidden hover:border-border-light transition-all"
+                    className="group relative rounded-xl border border-border/50 overflow-hidden hover:border-border/70 transition-all"
                   >
                     {/* Thumbnail */}
                     <div className="aspect-4/3 bg-surface-light">
@@ -348,14 +348,14 @@ export default function DashboardPage() {
                           className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300"
                         />
                       ) : (
-                        <div className="h-full w-full flex items-center justify-center">
-                          <Dumbbell className="h-10 w-10 text-muted-foreground/30" />
+                        <div className="h-full w-full flex items-center justify-center bg-surface-light/50">
+                          <Dumbbell className="h-10 w-10 text-muted-foreground/40" />
                         </div>
                       )}
                     </div>
                     {/* Info overlay */}
-                    <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 via-black/60 to-transparent p-4 pt-10">
-                      <p className="text-base font-medium text-white truncate">
+                    <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/50 to-transparent p-4 pt-10">
+                      <p className="text-base font-medium text-white/95 truncate">
                         {exercise.name}
                       </p>
                       <p className="text-sm text-white/70">
@@ -368,8 +368,8 @@ export default function DashboardPage() {
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center py-10 text-center">
-              <div className="h-16 w-16 rounded-full bg-surface-light flex items-center justify-center mb-4">
-                <Dumbbell className="h-8 w-8 text-muted-foreground" />
+              <div className="h-16 w-16 rounded-full bg-surface-light/80 flex items-center justify-center mb-4">
+                <Dumbbell className="h-8 w-8 text-muted-foreground/80" />
               </div>
               <p className="text-base text-muted-foreground mb-4">
                 Zacznij budować bibliotekę ćwiczeń

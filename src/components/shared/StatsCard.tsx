@@ -28,11 +28,11 @@ interface StatsCardProps {
 }
 
 const variantGradients: Record<StatsVariant, string> = {
-  primary: "from-primary/10 via-transparent to-transparent",
-  secondary: "from-secondary/10 via-transparent to-transparent",
-  info: "from-info/10 via-transparent to-transparent",
-  warning: "from-warning/10 via-transparent to-transparent",
-  success: "from-primary/10 via-transparent to-transparent",
+  primary: "from-primary/8 via-transparent to-transparent",
+  secondary: "from-secondary/8 via-transparent to-transparent",
+  info: "from-info/8 via-transparent to-transparent",
+  warning: "from-warning/8 via-transparent to-transparent",
+  success: "from-primary/8 via-transparent to-transparent",
 };
 
 export function StatsCard({
@@ -53,9 +53,9 @@ export function StatsCard({
   const content = (
     <Card
       className={cn(
-        "relative overflow-hidden transition-all duration-200",
+        "relative overflow-hidden transition-all duration-200 border-border/60",
         href &&
-          "cursor-pointer hover:border-border-light hover:bg-surface-light",
+          "cursor-pointer hover:border-border/80 hover:bg-surface-light/50",
         isHero && "h-full",
         className
       )}
@@ -64,7 +64,7 @@ export function StatsCard({
       {isHero && (
         <div
           className={cn(
-            "absolute inset-0 bg-gradient-to-br opacity-50",
+            "absolute inset-0 bg-gradient-to-br opacity-60",
             variantGradients[variant]
           )}
         />
@@ -90,7 +90,7 @@ export function StatsCard({
             ) : (
               <p
                 className={cn(
-                  "font-bold tracking-tight",
+                  "font-bold tracking-tight text-foreground",
                   isHero ? "text-5xl" : "text-3xl"
                 )}
               >
@@ -108,14 +108,15 @@ export function StatsCard({
               "flex items-center justify-center rounded-xl",
               isHero ? "h-16 w-16" : "h-12 w-12",
               variant === "primary" &&
-                "bg-gradient-to-br from-primary to-primary-dark",
+                "bg-gradient-to-br from-primary/90 to-primary-dark/90",
               variant === "secondary" &&
-                "bg-gradient-to-br from-secondary to-teal-600",
-              variant === "info" && "bg-gradient-to-br from-info to-blue-600",
+                "bg-gradient-to-br from-secondary/90 to-teal-600/90",
+              variant === "info" &&
+                "bg-gradient-to-br from-info/90 to-blue-600/90",
               variant === "warning" &&
-                "bg-gradient-to-br from-warning to-amber-600",
+                "bg-gradient-to-br from-warning/90 to-amber-600/90",
               variant === "success" &&
-                "bg-gradient-to-br from-primary to-primary-dark"
+                "bg-gradient-to-br from-primary/90 to-primary-dark/90"
             )}
           >
             <Icon

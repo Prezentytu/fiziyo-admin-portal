@@ -1,0 +1,401 @@
+"use client";
+
+import * as React from "react";
+import { useState, useEffect } from "react";
+import { useMutation } from "@apollo/client/react";
+import { Loader2, Plus, Minus } from "lucide-react";
+import { toast } from "sonner";
+
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { ImagePlaceholder } from "@/components/shared/ImagePlaceholder";
+
+import { UPDATE_EXERCISE_IN_SET_MUTATION } from "@/graphql/mutations/exercises.mutations";
+import { GET_EXERCISE_SET_WITH_ASSIGNMENTS_QUERY } from "@/graphql/queries/exerciseSets.queries";
+
+interface ExerciseMapping {
+  id: string;
+  exerciseId: string;
+  exerciseSetId?: string;
+  order?: number;
+  sets?: number;
+  reps?: number;
+  duration?: number;
+  restSets?: number;
+  restReps?: number;
+  notes?: string;
+  customName?: string;
+  customDescription?: string;
+  exercise?: {
+    id: string;
+    name: string;
+    description?: string;
+    type?: string;
+    imageUrl?: string;
+    images?: string[];
+    exerciseSide?: string;
+  };
+}
+
+interface EditExerciseInSetDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  exerciseMapping: ExerciseMapping | null;
+  exerciseSetId: string;
+  onSuccess?: () => void;
+}
+
+export function EditExerciseInSetDialog({
+  open,
+  onOpenChange,
+  exerciseMapping,
+  exerciseSetId,
+  onSuccess,
+}: EditExerciseInSetDialogProps) {
+  const [sets, setSets] = useState(0);
+  const [reps, setReps] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [restSets, setRestSets] = useState(0);
+  const [restReps, setRestReps] = useState(0);
+  const [notes, setNotes] = useState("");
+  const [customName, setCustomName] = useState("");
+  const [customDescription, setCustomDescription] = useState("");
+
+  // Reset state when dialog opens with new data
+  useEffect(() => {
+    if (open && exerciseMapping) {
+      setSets(exerciseMapping.sets || 0);
+      setReps(exerciseMapping.reps || 0);
+      setDuration(exerciseMapping.duration || 0);
+      setRestSets(exerciseMapping.restSets || 0);
+      setRestReps(exerciseMapping.restReps || 0);
+      setNotes(exerciseMapping.notes || "");
+      setCustomName(exerciseMapping.customName || "");
+      setCustomDescription(exerciseMapping.customDescription || "");
+    }
+  }, [open, exerciseMapping]);
+
+  const [updateExercise, { loading }] = useMutation(
+    UPDATE_EXERCISE_IN_SET_MUTATION
+  );
+
+  const handleSave = async () => {
+    if (!exerciseMapping) return;
+
+    try {
+      await updateExercise({
+        variables: {
+          exerciseId: exerciseMapping.exerciseId,
+          exerciseSetId,
+          sets: sets || null,
+          reps: reps || null,
+          duration: duration || null,
+          restSets: restSets || null,
+          restReps: restReps || null,
+          notes: notes || null,
+          customName: customName || null,
+          customDescription: customDescription || null,
+        },
+        refetchQueries: [
+          {
+            query: GET_EXERCISE_SET_WITH_ASSIGNMENTS_QUERY,
+            variables: { exerciseSetId },
+          },
+        ],
+      });
+
+      toast.success("Parametry ćwiczenia zostały zaktualizowane");
+      onOpenChange(false);
+      onSuccess?.();
+    } catch (error) {
+      console.error("Błąd podczas aktualizacji:", error);
+      toast.error("Nie udało się zaktualizować parametrów");
+    }
+  };
+
+  const exercise = exerciseMapping?.exercise;
+  const imageUrl = exercise?.imageUrl || exercise?.images?.[0];
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-lg max-h-[90vh] flex flex-col p-0">
+        <DialogHeader className="px-6 pt-6 pb-4">
+          <DialogTitle>Edytuj parametry</DialogTitle>
+          <DialogDescription>
+            Dostosuj parametry ćwiczenia w tym zestawie
+          </DialogDescription>
+        </DialogHeader>
+
+        {exerciseMapping && (
+          <>
+            <ScrollArea className="flex-1 px-6">
+              <div className="space-y-5 pb-4">
+                {/* Exercise preview */}
+                <div className="flex items-center gap-3 rounded-xl border border-border bg-surface p-3">
+                  <div className="h-12 w-12 rounded-lg overflow-hidden shrink-0">
+                    {imageUrl ? (
+                      <img
+                        src={imageUrl}
+                        alt={exercise?.name}
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <ImagePlaceholder
+                        type="exercise"
+                        iconClassName="h-5 w-5"
+                      />
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-sm truncate">
+                      {exercise?.name || "Nieznane ćwiczenie"}
+                    </p>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      {exercise?.type && (
+                        <Badge variant="secondary" className="text-[10px]">
+                          {exercise.type}
+                        </Badge>
+                      )}
+                      {exercise?.exerciseSide && (
+                        <Badge variant="outline" className="text-[10px]">
+                          {exercise.exerciseSide}
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Main parameters */}
+                <div className="space-y-4">
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                    Główne parametry
+                  </p>
+
+                  {/* Sets & Reps row */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Serie</Label>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          className="h-9 w-9 shrink-0"
+                          onClick={() => setSets(Math.max(0, sets - 1))}
+                        >
+                          <Minus className="h-3 w-3" />
+                        </Button>
+                        <Input
+                          type="number"
+                          value={sets}
+                          onChange={(e) =>
+                            setSets(
+                              Math.max(0, Number.parseInt(e.target.value) || 0)
+                            )
+                          }
+                          className="h-9 text-center font-semibold"
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          className="h-9 w-9 shrink-0"
+                          onClick={() => setSets(sets + 1)}
+                        >
+                          <Plus className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Powtórzenia</Label>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          className="h-9 w-9 shrink-0"
+                          onClick={() => setReps(Math.max(0, reps - 1))}
+                        >
+                          <Minus className="h-3 w-3" />
+                        </Button>
+                        <Input
+                          type="number"
+                          value={reps}
+                          onChange={(e) =>
+                            setReps(
+                              Math.max(0, Number.parseInt(e.target.value) || 0)
+                            )
+                          }
+                          className="h-9 text-center font-semibold"
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          className="h-9 w-9 shrink-0"
+                          onClick={() => setReps(reps + 1)}
+                        >
+                          <Plus className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Duration */}
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Czas trwania (s)</Label>
+                    <div className="flex items-center gap-1">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        className="h-9 w-9 shrink-0"
+                        onClick={() => setDuration(Math.max(0, duration - 5))}
+                      >
+                        <Minus className="h-3 w-3" />
+                      </Button>
+                      <Input
+                        type="number"
+                        value={duration}
+                        onChange={(e) =>
+                          setDuration(
+                            Math.max(0, Number.parseInt(e.target.value) || 0)
+                          )
+                        }
+                        className="h-9 text-center font-semibold"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        className="h-9 w-9 shrink-0"
+                        onClick={() => setDuration(duration + 5)}
+                      >
+                        <Plus className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Rest parameters */}
+                <div className="space-y-4">
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                    Przerwy
+                  </p>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <Label className="text-xs text-muted-foreground">
+                        Między seriami (s)
+                      </Label>
+                      <Input
+                        type="number"
+                        value={restSets}
+                        onChange={(e) =>
+                          setRestSets(
+                            Math.max(0, Number.parseInt(e.target.value) || 0)
+                          )
+                        }
+                        className="h-9"
+                      />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <Label className="text-xs text-muted-foreground">
+                        Między powt. (s)
+                      </Label>
+                      <Input
+                        type="number"
+                        value={restReps}
+                        onChange={(e) =>
+                          setRestReps(
+                            Math.max(0, Number.parseInt(e.target.value) || 0)
+                          )
+                        }
+                        className="h-9"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Customization */}
+                <div className="space-y-4">
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                    Personalizacja
+                  </p>
+
+                  <div className="space-y-1.5">
+                    <Label className="text-xs text-muted-foreground">
+                      Własna nazwa (opcjonalnie)
+                    </Label>
+                    <Input
+                      value={customName}
+                      onChange={(e) => setCustomName(e.target.value)}
+                      placeholder={exercise?.name || "Zostaw puste dla domyślnej"}
+                      className="h-9"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label className="text-xs text-muted-foreground">
+                      Własny opis (opcjonalnie)
+                    </Label>
+                    <Textarea
+                      value={customDescription}
+                      onChange={(e) => setCustomDescription(e.target.value)}
+                      placeholder="Dodatkowy opis dla tego zestawu..."
+                      className="min-h-[60px] resize-none text-sm"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label className="text-xs text-muted-foreground">
+                      Notatki / instrukcje
+                    </Label>
+                    <Textarea
+                      value={notes}
+                      onChange={(e) => setNotes(e.target.value)}
+                      placeholder="Wskazówki dla pacjenta..."
+                      className="min-h-[60px] resize-none text-sm"
+                    />
+                  </div>
+                </div>
+              </div>
+            </ScrollArea>
+
+            {/* Actions - fixed at bottom */}
+            <div className="flex justify-end gap-3 px-6 py-4 border-t border-border bg-background">
+              <Button
+                variant="outline"
+                onClick={() => onOpenChange(false)}
+                className="rounded-xl"
+              >
+                Anuluj
+              </Button>
+              <Button
+                onClick={handleSave}
+                disabled={loading}
+                className="rounded-xl font-semibold"
+              >
+                {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Zapisz
+              </Button>
+            </div>
+          </>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}

@@ -2,8 +2,10 @@
 
 import { usePathname } from "next/navigation";
 import { Sidebar } from "@/components/layout/Sidebar";
+import { MobileSidebar } from "@/components/layout/MobileSidebar";
 import { Header } from "@/components/layout/Header";
 import { OrganizationGuard } from "@/components/layout/OrganizationGuard";
+import { useSidebarState } from "@/hooks/useSidebarState";
 
 export default function DashboardLayout({
   children,
@@ -12,6 +14,14 @@ export default function DashboardLayout({
 }) {
   const pathname = usePathname();
   const isOnboarding = pathname === "/onboarding";
+  const {
+    isCollapsed,
+    isMobileOpen,
+    isHydrated,
+    toggleCollapsed,
+    toggleMobile,
+    closeMobile,
+  } = useSidebarState();
 
   // Onboarding page - bez sidebar i header
   if (isOnboarding) {
@@ -26,10 +36,19 @@ export default function DashboardLayout({
   return (
     <OrganizationGuard>
       <div className="flex h-screen bg-background">
-        <Sidebar />
+        {/* Desktop Sidebar */}
+        <Sidebar
+          isCollapsed={isHydrated ? isCollapsed : false}
+          onToggleCollapse={toggleCollapsed}
+        />
+
+        {/* Mobile Sidebar */}
+        <MobileSidebar isOpen={isMobileOpen} onClose={closeMobile} />
+
+        {/* Main content area */}
         <div className="flex flex-1 flex-col overflow-hidden">
-          <Header />
-          <main className="flex-1 overflow-y-auto p-6">{children}</main>
+          <Header onMobileMenuToggle={toggleMobile} />
+          <main className="flex-1 overflow-y-auto p-4 lg:p-6">{children}</main>
         </div>
       </div>
     </OrganizationGuard>

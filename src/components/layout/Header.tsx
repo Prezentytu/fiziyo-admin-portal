@@ -1,6 +1,6 @@
 "use client";
 
-import { Bell, Search, ChevronRight, Home } from "lucide-react";
+import { Bell, Search, ChevronRight, Home, Menu } from "lucide-react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { Input } from "@/components/ui/input";
@@ -44,7 +44,7 @@ function Breadcrumbs() {
       >
         <Home className="h-4 w-4" />
       </Link>
-      {breadcrumbs.map((crumb, index) => (
+      {breadcrumbs.map((crumb) => (
         <div key={crumb.href} className="flex items-center gap-1.5">
           <ChevronRight className="h-4 w-4 text-muted-foreground/50" />
           {crumb.isLast ? (
@@ -63,22 +63,42 @@ function Breadcrumbs() {
   );
 }
 
-export function Header() {
+interface HeaderProps {
+  onMobileMenuToggle?: () => void;
+}
+
+export function Header({ onMobileMenuToggle }: HeaderProps) {
   return (
-    <header className="flex h-16 items-center justify-between border-b border-border bg-surface px-6">
-      {/* Left side - Breadcrumbs */}
-      <div className="flex items-center gap-4">
-        <Breadcrumbs />
+    <header className="flex h-16 items-center justify-between border-b border-border bg-surface px-4 lg:px-6">
+      {/* Left side - Mobile menu + Breadcrumbs */}
+      <div className="flex items-center gap-3">
+        {/* Mobile menu button */}
+        {onMobileMenuToggle && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="lg:hidden"
+            onClick={onMobileMenuToggle}
+            aria-label="Otwórz menu"
+          >
+            <Menu className="h-5 w-5" />
+          </Button>
+        )}
+
+        {/* Breadcrumbs - hidden on mobile */}
+        <div className="hidden sm:block">
+          <Breadcrumbs />
+        </div>
       </div>
 
       {/* Right side - Search and actions */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2 sm:gap-3">
         {/* Search */}
         <div className="relative hidden md:block">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder="Szukaj... (Ctrl+K)"
-            className="w-64 pl-9 bg-surface-light border-border focus:border-primary"
+            className="w-48 lg:w-64 pl-9 bg-surface-light border-border focus:border-primary"
           />
         </div>
 

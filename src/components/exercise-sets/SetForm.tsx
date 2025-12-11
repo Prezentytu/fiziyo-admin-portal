@@ -4,7 +4,7 @@ import * as React from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { Loader2 } from "lucide-react";
+import { Loader2, FolderKanban, FileText } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,7 +19,10 @@ import {
 } from "@/components/ui/form";
 
 const setFormSchema = z.object({
-  name: z.string().min(2, "Nazwa musi mieć min. 2 znaki").max(100, "Nazwa może mieć max. 100 znaków"),
+  name: z
+    .string()
+    .min(2, "Nazwa musi mieć min. 2 znaki")
+    .max(100, "Nazwa może mieć max. 100 znaków"),
   description: z.string().optional(),
 });
 
@@ -67,7 +70,14 @@ export function SetForm({
             <FormItem>
               <FormLabel>Nazwa zestawu *</FormLabel>
               <FormControl>
-                <Input placeholder="np. Rehabilitacja kolana" {...field} />
+                <div className="relative">
+                  <FolderKanban className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    placeholder="np. Rehabilitacja kolana"
+                    className="h-11 pl-10"
+                    {...field}
+                  />
+                </div>
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -81,11 +91,14 @@ export function SetForm({
             <FormItem>
               <FormLabel>Opis</FormLabel>
               <FormControl>
-                <Textarea
-                  placeholder="Opisz cel zestawu ćwiczeń..."
-                  className="min-h-[80px]"
-                  {...field}
-                />
+                <div className="relative">
+                  <FileText className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Textarea
+                    placeholder="Opisz cel zestawu ćwiczeń..."
+                    className="min-h-[100px] pl-10 pt-2"
+                    {...field}
+                  />
+                </div>
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -94,11 +107,20 @@ export function SetForm({
 
         <div className="flex justify-end gap-3 pt-4">
           {onCancel && (
-            <Button type="button" variant="outline" onClick={onCancel}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onCancel}
+              className="rounded-xl"
+            >
               Anuluj
             </Button>
           )}
-          <Button type="submit" disabled={isLoading}>
+          <Button
+            type="submit"
+            disabled={isLoading}
+            className="rounded-xl font-semibold"
+          >
             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             {submitLabel}
           </Button>
@@ -107,7 +129,3 @@ export function SetForm({
     </Form>
   );
 }
-
-
-
-

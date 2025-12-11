@@ -11,20 +11,43 @@ import {
   Building2,
   Settings,
   LogOut,
-  ChevronRight,
+  PanelLeftClose,
+  PanelLeft,
 } from "lucide-react";
 import { useClerk } from "@clerk/nextjs";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+  TooltipProvider,
+} from "@/components/ui/tooltip";
 
-const navigation = [
-  { name: "Dashboard", href: "/", icon: LayoutDashboard },
-  { name: "Ćwiczenia", href: "/exercises", icon: Dumbbell },
-  { name: "Zestawy", href: "/exercise-sets", icon: FolderKanban },
-  { name: "Pacjenci", href: "/patients", icon: Users },
-  { name: "Organizacja", href: "/organization", icon: Building2 },
-  { name: "Ustawienia", href: "/settings", icon: Settings },
+// Navigation structure with grouping
+const navigationGroups = [
+  {
+    label: "Główne",
+    items: [
+      { name: "Dashboard", href: "/", icon: LayoutDashboard },
+      { name: "Pacjenci", href: "/patients", icon: Users },
+      { name: "Zestawy", href: "/exercise-sets", icon: FolderKanban },
+      { name: "Ćwiczenia", href: "/exercises", icon: Dumbbell },
+    ],
+  },
+  {
+    label: "Zarządzanie",
+    items: [
+      { name: "Organizacja", href: "/organization", icon: Building2 },
+      { name: "Ustawienia", href: "/settings", icon: Settings },
+    ],
+  },
 ];
 
-export function Sidebar() {
+interface SidebarProps {
+  isCollapsed: boolean;
+  onToggleCollapse: () => void;
+}
+
+export function Sidebar({ isCollapsed, onToggleCollapse }: SidebarProps) {
   const pathname = usePathname();
   const { signOut } = useClerk();
 
@@ -34,61 +57,163 @@ export function Sidebar() {
   };
 
   return (
-    <aside className="flex h-screen w-64 flex-col border-r border-border bg-surface">
-      {/* Logo */}
-      <div className="flex h-16 items-center gap-3 border-b border-border px-6">
-        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary-dark shadow-lg shadow-primary/20">
-          <span className="text-lg font-bold text-primary-foreground">F</span>
-        </div>
-        <div className="flex flex-col">
-          <span className="text-lg font-bold leading-none">Fiziyo</span>
-          <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Admin Panel</span>
-        </div>
-      </div>
-
-      {/* Navigation */}
-      <nav className="flex-1 space-y-1.5 px-3 py-6">
-        <p className="px-3 mb-3 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
-          Menu główne
-        </p>
-        {navigation.map((item) => {
-          const active = isActive(item.href);
-          return (
-            <Link
-              key={item.name}
-              href={item.href}
-              className={cn(
-                "group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200",
-                active
-                  ? "bg-primary text-primary-foreground shadow-md shadow-primary/20"
-                  : "text-muted-foreground hover:bg-surface-light hover:text-foreground"
-              )}
-            >
-              {/* Active indicator bar */}
-              {active && (
-                <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-primary-foreground rounded-full opacity-50" />
-              )}
-              <item.icon className={cn(
-                "h-5 w-5 transition-transform duration-200",
-                !active && "group-hover:scale-110"
-              )} />
-              <span className="flex-1">{item.name}</span>
-              {active && <ChevronRight className="h-4 w-4 opacity-50" />}
-            </Link>
-          );
-        })}
-      </nav>
-
-      {/* Sign out */}
-      <div className="border-t border-border p-3">
-        <button
-          onClick={() => signOut()}
-          className="group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-muted-foreground transition-all duration-200 hover:bg-error-muted hover:text-error"
+    <TooltipProvider delayDuration={0}>
+      <aside
+        className={cn(
+          "hidden lg:flex h-screen flex-col border-r border-border/60 bg-surface transition-all duration-300 ease-in-out",
+          isCollapsed ? "w-[72px]" : "w-64"
+        )}
+      >
+        {/* Header with logo and toggle */}
+        <div
+          className={cn(
+            "flex h-16 items-center border-b border-border/60 transition-all duration-300",
+            isCollapsed ? "justify-center px-3" : "justify-between px-4"
+          )}
         >
-          <LogOut className="h-5 w-5 transition-transform duration-200 group-hover:-translate-x-0.5" />
-          Wyloguj się
-        </button>
-      </div>
-    </aside>
+          <Link href="/" className="flex items-center gap-3">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary-dark shadow-lg shadow-primary/15">
+              <span className="text-lg font-bold text-primary-foreground">
+                F
+              </span>
+            </div>
+            {!isCollapsed && (
+              <div className="flex flex-col overflow-hidden">
+                <span className="text-lg font-bold leading-none text-foreground">
+                  Fiziyo
+                </span>
+                <span className="text-[10px] text-muted-foreground uppercase tracking-wider">
+                  Admin Panel
+                </span>
+              </div>
+            )}
+          </Link>
+
+          {!isCollapsed && (
+            <button
+              onClick={onToggleCollapse}
+              className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-surface-light hover:text-foreground transition-colors"
+              aria-label="Zwiń menu"
+            >
+              <PanelLeftClose className="h-4 w-4" />
+            </button>
+          )}
+        </div>
+
+        {/* Expand button when collapsed */}
+        {isCollapsed && (
+          <div className="flex justify-center py-3 border-b border-border">
+            <button
+              onClick={onToggleCollapse}
+              className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-surface-light hover:text-foreground transition-colors"
+              aria-label="Rozwiń menu"
+            >
+              <PanelLeft className="h-4 w-4" />
+            </button>
+          </div>
+        )}
+
+        {/* Navigation groups */}
+        <nav className="flex-1 overflow-y-auto py-4">
+          {navigationGroups.map((group, groupIndex) => (
+            <div key={group.label} className={cn(groupIndex > 0 && "mt-6")}>
+              {/* Group label */}
+              {!isCollapsed && (
+                <p className="px-4 mb-2 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+                  {group.label}
+                </p>
+              )}
+              {isCollapsed && groupIndex > 0 && (
+                <div className="mx-3 mb-2 border-t border-border" />
+              )}
+
+              {/* Navigation items */}
+              <div className={cn("space-y-1", isCollapsed ? "px-2" : "px-3")}>
+                {group.items.map((item) => {
+                  const active = isActive(item.href);
+                  const Icon = item.icon;
+
+                  const linkContent = (
+                    <Link
+                      href={item.href}
+                      className={cn(
+                        "group relative flex items-center rounded-xl text-sm font-medium transition-all duration-200",
+                        isCollapsed
+                          ? "h-10 w-10 justify-center"
+                          : "gap-3 px-3 py-2.5",
+                        active
+                          ? "bg-primary text-primary-foreground shadow-md shadow-primary/20"
+                          : "text-muted-foreground hover:bg-surface-light hover:text-foreground"
+                      )}
+                    >
+                      {/* Active indicator */}
+                      {active && !isCollapsed && (
+                        <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-primary-foreground/50 rounded-full" />
+                      )}
+
+                      <Icon
+                        className={cn(
+                          "shrink-0 transition-transform duration-200",
+                          isCollapsed ? "h-5 w-5" : "h-5 w-5",
+                          !active && "group-hover:scale-110"
+                        )}
+                      />
+
+                      {!isCollapsed && (
+                        <span className="flex-1 truncate">{item.name}</span>
+                      )}
+                    </Link>
+                  );
+
+                  // Wrap with tooltip when collapsed
+                  if (isCollapsed) {
+                    return (
+                      <Tooltip key={item.name}>
+                        <TooltipTrigger asChild>{linkContent}</TooltipTrigger>
+                        <TooltipContent side="right" className="font-medium">
+                          {item.name}
+                        </TooltipContent>
+                      </Tooltip>
+                    );
+                  }
+
+                  return <div key={item.name}>{linkContent}</div>;
+                })}
+              </div>
+            </div>
+          ))}
+        </nav>
+
+        {/* Sign out button */}
+        <div
+          className={cn("border-t border-border", isCollapsed ? "p-2" : "p-3")}
+        >
+          {isCollapsed ? (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={() => signOut()}
+                  className="group flex h-10 w-10 items-center justify-center rounded-xl text-muted-foreground transition-all duration-200 hover:bg-error-muted hover:text-error"
+                  aria-label="Wyloguj się"
+                >
+                  <LogOut className="h-5 w-5 transition-transform duration-200 group-hover:-translate-x-0.5" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="right" className="font-medium">
+                Wyloguj się
+              </TooltipContent>
+            </Tooltip>
+          ) : (
+            <button
+              onClick={() => signOut()}
+              className="group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-muted-foreground transition-all duration-200 hover:bg-error-muted hover:text-error"
+            >
+              <LogOut className="h-5 w-5 transition-transform duration-200 group-hover:-translate-x-0.5" />
+              <span>Wyloguj się</span>
+            </button>
+          )}
+        </div>
+      </aside>
+    </TooltipProvider>
   );
 }
