@@ -11,7 +11,11 @@ export class WebUrlConfig implements IUrlConfig {
   private baseUrl: string;
 
   constructor(baseUrl?: string) {
-    this.baseUrl = baseUrl || process.env.NEXT_PUBLIC_API_URL || "https://fizjo-app-api.azurewebsites.net";
+    const url = baseUrl || process.env.NEXT_PUBLIC_API_URL;
+    if (!url) {
+      throw new Error("NEXT_PUBLIC_API_URL environment variable is required");
+    }
+    this.baseUrl = url;
   }
 
   getGraphQLEndpoint(): string {

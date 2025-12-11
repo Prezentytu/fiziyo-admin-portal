@@ -6,6 +6,8 @@ import {
   clearBackendToken,
 } from "@/lib/tokenCache";
 
+const isDev = process.env.NODE_ENV === "development";
+
 /**
  * Provider tokenów dla backendu (wersja Web/Next.js)
  * Implementuje IAuthTokenProvider zgodnie z Dependency Inversion Principle
@@ -47,10 +49,12 @@ export class BackendAuthTokenProvider implements IAuthTokenProvider {
       }
       return JSON.parse(atob(parts[1]));
     } catch (error) {
-      console.error(
-        "[BackendAuthTokenProvider] Błąd dekodowania tokena:",
-        error
-      );
+      if (isDev) {
+        console.error(
+          "[BackendAuthTokenProvider] Błąd dekodowania tokena:",
+          error
+        );
+      }
       return null;
     }
   }
@@ -105,18 +109,18 @@ export class BackendAuthTokenProvider implements IAuthTokenProvider {
     const currentClerkId = this.getClerkIdFromToken(clerkToken);
 
     if (!cachedClerkId || !currentClerkId) {
-      console.warn(
-        "[BackendAuthTokenProvider] ⚠️ Nie można porównać ClerkId - wymuszam refresh"
-      );
+      if (isDev) {
+        console.warn(
+          "[BackendAuthTokenProvider] Nie można porównać ClerkId - wymuszam refresh"
+        );
+      }
       return false;
     }
 
     const isSameUser = cachedClerkId === currentClerkId;
 
-    if (!isSameUser) {
-      console.log(
-        `[BackendAuthTokenProvider] 🔄 Zmiana użytkownika wykryta: ${cachedClerkId} → ${currentClerkId}`
-      );
+    if (!isSameUser && isDev) {
+      console.log("[BackendAuthTokenProvider] Zmiana użytkownika wykryta");
     }
 
     return isSameUser;
@@ -132,9 +136,6 @@ export class BackendAuthTokenProvider implements IAuthTokenProvider {
       const clerkToken = await this.getClerkTokenFn();
 
       if (!clerkToken) {
-        console.warn(
-          "[BackendAuthTokenProvider] Brak Clerk token - użytkownik niezalogowany"
-        );
         // Wyczyść cache na wszelki wypadek
         clearBackendToken();
         return null;
@@ -150,9 +151,6 @@ export class BackendAuthTokenProvider implements IAuthTokenProvider {
         );
 
         if (!isForCurrentUser) {
-          console.log(
-            "[BackendAuthTokenProvider] 🔄 Token należy do innego użytkownika - wymuszam wymianę"
-          );
           clearBackendToken();
           // Kontynuuj do wymiany tokenu
         } else if (!this.isTokenExpired(cachedToken)) {
@@ -160,9 +158,6 @@ export class BackendAuthTokenProvider implements IAuthTokenProvider {
           return cachedToken;
         } else {
           // Token wygasł - wyczyść cache
-          console.log(
-            "[BackendAuthTokenProvider] ⏰ Token wygasł - wymuszam wymianę"
-          );
           clearBackendToken();
         }
       }
@@ -172,7 +167,9 @@ export class BackendAuthTokenProvider implements IAuthTokenProvider {
 
       return backendToken;
     } catch (error) {
-      console.error("[BackendAuthTokenProvider] ❌ Krytyczny błąd:", error);
+      if (isDev) {
+        console.error("[BackendAuthTokenProvider] Krytyczny błąd:", error);
+      }
       // NIE zwracaj Clerk token - backend go nie akceptuje!
       return null;
     }
@@ -212,9 +209,6 @@ export class BackendAuthTokenProvider implements IAuthTokenProvider {
       const clerkToken = await this.getClerkTokenFn();
 
       if (!clerkToken) {
-        console.warn(
-          "[BackendAuthTokenProvider] Brak Clerk token - użytkownik niezalogowany"
-        );
         return null;
       }
 
@@ -227,12 +221,11 @@ export class BackendAuthTokenProvider implements IAuthTokenProvider {
         return backendToken;
       }
 
-      console.warn(
-        "[BackendAuthTokenProvider] ⚠️ Nie udało się wymienić tokenu"
-      );
       return null;
     } catch (error) {
-      console.error("[BackendAuthTokenProvider] ❌ Błąd wymiany tokenu:", error);
+      if (isDev) {
+        console.error("[BackendAuthTokenProvider] Błąd wymiany tokenu:", error);
+      }
 
       // Wyczyść cache jeśli błąd (może być invalid token)
       clearBackendToken();
@@ -252,8 +245,9 @@ export class BackendAuthTokenProvider implements IAuthTokenProvider {
     const MAX_RETRIES = 1;
 
     try {
-      const response =
-        await tokenExchangeService.exchangeClerkToken(clerkToken);
+      const response = await tokenExchangeService.exchangeClerkToken(
+        clerkToken
+      );
       return response.access_token;
     } catch (error: unknown) {
       const errorMessage =
@@ -265,18 +259,12 @@ export class BackendAuthTokenProvider implements IAuthTokenProvider {
       const canRetry = retryCount < MAX_RETRIES && isNetworkError;
 
       if (canRetry) {
-        console.warn(
-          `[BackendAuthTokenProvider] Network error - retry ${retryCount + 1}/${MAX_RETRIES}`
-        );
         await this.sleep(1000); // 1 sekunda delay przed retry
         return this.exchangeWithRetry(clerkToken, retryCount + 1);
       }
 
       // 401 = token invalid/expired - wyczyść cache
       if (errorMessage.includes("401")) {
-        console.warn(
-          "[BackendAuthTokenProvider] 401 - token invalid, czyszczę cache"
-        );
         clearBackendToken();
       }
 
@@ -300,7 +288,3 @@ export class BackendAuthTokenProvider implements IAuthTokenProvider {
     clearBackendToken();
   }
 }
-
-
-
-

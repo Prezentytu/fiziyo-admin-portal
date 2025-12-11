@@ -2,6 +2,8 @@ import { ApolloLink, Observable, Operation, FetchResult } from "@apollo/client";
 
 type NextLink = (operation: Operation) => Observable<FetchResult>;
 
+const isDev = process.env.NODE_ENV === "development";
+
 // Interfejs zgodny z Dependency Inversion Principle
 export interface IAuthTokenProvider {
   getToken(): Promise<string | null>;
@@ -12,37 +14,41 @@ export class AuthLinkFactory {
   constructor(private tokenProvider: IAuthTokenProvider) {}
 
   create(): ApolloLink {
-    return new ApolloLink((operation: Operation, forward: NextLink): Observable<FetchResult> => {
-      return new Observable<FetchResult>((observer) => {
-        const handleRequest = async () => {
-          try {
-            const token = await this.tokenProvider.getToken();
+    return new ApolloLink(
+      (operation: Operation, forward: NextLink): Observable<FetchResult> => {
+        return new Observable<FetchResult>((observer) => {
+          const handleRequest = async () => {
+            try {
+              const token = await this.tokenProvider.getToken();
 
-            // Dodaj token do nagłówków jeśli istnieje
-            operation.setContext({
-              headers: {
-                ...operation.getContext().headers,
-                "Content-Type": "application/json",
-                ...(token ? { Authorization: `Bearer ${token}` } : {}),
-              },
+              // Dodaj token do nagłówków jeśli istnieje
+              operation.setContext({
+                headers: {
+                  ...operation.getContext().headers,
+                  "Content-Type": "application/json",
+                  ...(token ? { Authorization: `Bearer ${token}` } : {}),
+                },
+              });
+            } catch (error) {
+              if (isDev) {
+                console.error("[AuthLink] Token fetch failed:", error);
+              }
+              // Kontynuuj bez autoryzacji
+            }
+
+            // Przekaż operację dalej
+            const subscription = forward(operation).subscribe({
+              next: observer.next.bind(observer),
+              error: observer.error.bind(observer),
+              complete: observer.complete.bind(observer),
             });
-          } catch (error) {
-            console.error("[AuthLink] Token fetch failed:", error);
-            // Kontynuuj bez autoryzacji
-          }
 
-          // Przekaż operację dalej
-          const subscription = forward(operation).subscribe({
-            next: observer.next.bind(observer),
-            error: observer.error.bind(observer),
-            complete: observer.complete.bind(observer),
-          });
+            return () => subscription.unsubscribe();
+          };
 
-          return () => subscription.unsubscribe();
-        };
-
-        handleRequest();
-      });
-    });
+          handleRequest();
+        });
+      }
+    );
   }
 }

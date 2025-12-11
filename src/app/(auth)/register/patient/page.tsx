@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useMemo, useEffect } from "react";
+import { useState, useCallback } from "react";
 import { useSignUp } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -11,8 +11,6 @@ import {
   Mail,
   Lock,
   User,
-  Phone,
-  Building2,
   Check,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -26,9 +24,6 @@ interface FormData {
   confirmPassword: string;
   firstName: string;
   lastName: string;
-  phone: string;
-  companyName: string;
-  companyNameEdited: boolean;
 }
 
 const STEPS = [
@@ -68,12 +63,7 @@ function StepIndicator({ currentStep }: { currentStep: number }) {
   );
 }
 
-function generatePracticeName(firstName: string, lastName: string): string {
-  if (!firstName.trim() || !lastName.trim()) return "";
-  return `${firstName.trim()} ${lastName.trim()} - Fizjoterapia`;
-}
-
-export default function CompanyRegistrationPage() {
+export default function PatientRegistrationPage() {
   const { signUp, isLoaded } = useSignUp();
   const router = useRouter();
 
@@ -84,23 +74,9 @@ export default function CompanyRegistrationPage() {
     confirmPassword: "",
     firstName: "",
     lastName: "",
-    phone: "",
-    companyName: "",
-    companyNameEdited: false,
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-
-  const generatedName = useMemo(
-    () => generatePracticeName(formData.firstName, formData.lastName),
-    [formData.firstName, formData.lastName]
-  );
-
-  useEffect(() => {
-    if (!formData.companyNameEdited && generatedName) {
-      setFormData((prev) => ({ ...prev, companyName: generatedName }));
-    }
-  }, [generatedName, formData.companyNameEdited]);
 
   const handleInputChange = useCallback(
     (field: keyof FormData, value: string) => {
@@ -109,15 +85,6 @@ export default function CompanyRegistrationPage() {
     },
     []
   );
-
-  const handleCompanyNameChange = useCallback((value: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      companyName: value,
-      companyNameEdited: true,
-    }));
-    setError("");
-  }, []);
 
   const validateStep1 = useCallback((): boolean => {
     if (!formData.email.trim()) {
@@ -200,14 +167,12 @@ export default function CompanyRegistrationPage() {
           unsafeMetadata: {
             firstName: formData.firstName.trim(),
             lastName: formData.lastName.trim(),
-            phone: formData.phone.trim(),
-            companyName: formData.companyName.trim() || generatedName,
-            isCompanyAccount: true,
-            organizationType: "individual",
+            isCompanyAccount: false,
+            accountType: "patient",
           },
         });
       } catch (updateError) {
-        console.error("Error setting company metadata:", updateError);
+        console.error("Error setting patient metadata:", updateError);
       }
 
       await signUp.prepareEmailAddressVerification({ strategy: "email_code" });
@@ -249,12 +214,12 @@ export default function CompanyRegistrationPage() {
       {/* Header */}
       <div className="space-y-2">
         <h1 className="text-2xl font-bold tracking-tight text-foreground">
-          Utwórz konto firmowe
+          Utwórz konto pacjenta
         </h1>
         <p className="text-muted-foreground">
           {currentStep === 1 && "Podaj adres email do logowania"}
           {currentStep === 2 && "Utwórz bezpieczne hasło"}
-          {currentStep === 3 && "Uzupełnij dane osobowe i firmy"}
+          {currentStep === 3 && "Uzupełnij dane osobowe"}
         </p>
       </div>
 
@@ -282,7 +247,7 @@ export default function CompanyRegistrationPage() {
                 <Input
                   id="email"
                   type="email"
-                  placeholder="jan@firma.pl"
+                  placeholder="jan@example.com"
                   value={formData.email}
                   onChange={(e) => handleInputChange("email", e.target.value)}
                   className="h-11 pl-10"
@@ -378,42 +343,10 @@ export default function CompanyRegistrationPage() {
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="phone">
-                Telefon{" "}
-                <span className="text-muted-foreground">(opcjonalnie)</span>
-              </Label>
-              <div className="relative">
-                <Phone className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  id="phone"
-                  type="tel"
-                  placeholder="+48 123 456 789"
-                  value={formData.phone}
-                  onChange={(e) => handleInputChange("phone", e.target.value)}
-                  className="h-11 pl-10"
-                  autoComplete="tel"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="companyName">Nazwa praktyki / gabinetu</Label>
-              <div className="relative">
-                <Building2 className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  id="companyName"
-                  type="text"
-                  placeholder="np. Fizjoterapia Jan Kowalski"
-                  value={formData.companyName}
-                  onChange={(e) => handleCompanyNameChange(e.target.value)}
-                  className="h-11 pl-10"
-                />
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Możesz zmienić tę nazwę później w ustawieniach
-              </p>
-            </div>
+            <p className="text-sm text-muted-foreground">
+              Po rejestracji możesz poprosić swojego fizjoterapeutę o dodanie
+              Cię do swojej listy pacjentów.
+            </p>
           </div>
         )}
 

@@ -4,6 +4,8 @@ import {
   ExchangeClerkTokenRequest,
 } from "@/types/tokenExchange.types";
 
+const isDev = process.env.NODE_ENV === "development";
+
 /**
  * Serwis do wymiany tokenów z backendem
  * Komunikuje się z REST API backendu (/api/token-exchange/*)
@@ -47,7 +49,9 @@ export class TokenExchangeService {
 
       return data;
     } catch (error) {
-      console.error("[TokenExchange] ❌ Błąd wymiany tokenu:", error);
+      if (isDev) {
+        console.error("[TokenExchange] Błąd wymiany tokenu:", error);
+      }
       throw error;
     }
   }
@@ -84,7 +88,9 @@ export class TokenExchangeService {
 
       return data;
     } catch (error) {
-      console.error("[TokenExchange] ❌ Błąd zmiany organizacji:", error);
+      if (isDev) {
+        console.error("[TokenExchange] Błąd zmiany organizacji:", error);
+      }
       throw error;
     }
   }
@@ -92,7 +98,3 @@ export class TokenExchangeService {
 
 // Singleton instance
 export const tokenExchangeService = new TokenExchangeService();
-
-
-
-

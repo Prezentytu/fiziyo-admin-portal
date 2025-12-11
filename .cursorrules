@@ -1,6 +1,7 @@
 # AI Assistant Rules - Fiziyo Admin Portal 2025
 
 # Web Admin Portal dla fizjoterapeutów - zarządzanie ćwiczeniami, zestawami, pacjentami, gabinetami
+
 # Integracja z fizjo-app (React Native) przez wspólny backend GraphQL
 
 ## 🎯 ROLE & CONTEXT
@@ -90,7 +91,7 @@ src/
 <DashboardPage>
   <StatsOverview /> {/* Kluczowe KPI na górze */}
   <RecentActivity /> {/* Ostatnie akcje */}
-  <DetailedData />   {/* Szczegółowe dane z możliwością eksploracji */}
+  <DetailedData /> {/* Szczegółowe dane z możliwością eksploracji */}
 </DashboardPage>
 ```
 
@@ -167,7 +168,7 @@ const handleSave = async () => {
 
    // ✅ DOBRE: Client Component dla interaktywności
    // components/exercises/ExerciseCard.tsx
-   "use client";
+   ("use client");
 
    export function ExerciseCard({ exercise }: ExerciseCardProps) {
      // hooks, event handlers, etc.
@@ -495,15 +496,17 @@ const buttonVariants = cva(
 
 ```typescript
 // ❌ ZŁE: setTimeout do czyszczenia state
-{selectedExercise && (
-  <EditDialog
-    isOpen={isOpen}
-    onClose={() => {
-      setIsOpen(false);
-      setTimeout(() => setSelectedExercise(null), 300);
-    }}
-  />
-)}
+{
+  selectedExercise && (
+    <EditDialog
+      isOpen={isOpen}
+      onClose={() => {
+        setIsOpen(false);
+        setTimeout(() => setSelectedExercise(null), 300);
+      }}
+    />
+  );
+}
 
 // ✅ DOBRE: Dialog zawsze renderowany + null-safe props
 <EditDialog
@@ -513,7 +516,7 @@ const buttonVariants = cva(
     setIsOpen(false);
     setSelectedExercise(null);
   }}
-/>
+/>;
 
 // W komponencie Dialog - akceptuj null:
 interface EditDialogProps {
@@ -588,18 +591,54 @@ export function DataTable<TData>({
       {searchKey && (
         <SearchInput
           value={(table.getColumn(searchKey)?.getFilterValue() as string) ?? ""}
-          onChange={(value) => table.getColumn(searchKey)?.setFilterValue(value)}
+          onChange={(value) =>
+            table.getColumn(searchKey)?.setFilterValue(value)
+          }
           placeholder={searchPlaceholder}
         />
       )}
-      <Table>
-        {/* table content */}
-      </Table>
+      <Table>{/* table content */}</Table>
       <DataTablePagination table={table} />
     </div>
   );
 }
 ```
+
+## 🔒 TYPESCRIPT STRICT RULES
+
+### NIGDY nie używaj `any`
+
+- **ZAKAZANE** jest używanie typu `any` w jakimkolwiek miejscu kodu
+- Zamiast `any` używaj:
+  - `unknown` - gdy nie znasz typu, ale musisz go później sprawdzić
+  - Konkretne typy z bibliotek (np. `ErrorResponse` z Apollo)
+  - Generyki `<T>` gdy typ jest dynamiczny
+  - `Record<string, unknown>` zamiast `any` dla obiektów
+
+```typescript
+// ❌ ZŁE: any
+function handleError(error: any) {
+  console.log(error.message);
+}
+
+// ✅ DOBRE: unknown + type guard
+function handleError(error: unknown) {
+  if (error instanceof Error) {
+    console.log(error.message);
+  }
+}
+
+// ✅ DOBRE: konkretny typ z biblioteki
+import { ErrorResponse } from "@apollo/client/link/error";
+new ErrorLink((errorResponse: ErrorResponse) => { ... });
+```
+
+### Type Safety
+
+- Używaj `strict: true` w tsconfig.json
+- Preferuj `interface` dla obiektów, `type` dla unii i aliasów
+- Używaj `as const` dla immutable values
+- Unikaj type assertions (`as`) - preferuj type guards
 
 ## 🧹 CODE CLEANLINESS
 
@@ -669,7 +708,7 @@ export default function ExercisesPage() {
 
 // ✅ DOBRE: Client Component dla data fetching
 // components/exercises/ExercisesList.tsx
-"use client";
+("use client");
 
 export function ExercisesList() {
   const { data } = useQuery(GET_EXERCISES); // ✅ OK
@@ -752,7 +791,3 @@ if (loading) return <Loader />;
 **Podejście**: Najpierw myśl, potem koduj. Zawsze z uwzględnieniem UX.
 **Next.js 2025**: App Router, Server/Client Components, "use client" directive
 **GraphQL**: Apollo Client 4.0, useQuery z skip, fragmenty, token exchange
-
-
-
-

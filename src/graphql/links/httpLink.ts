@@ -1,29 +1,40 @@
 import { HttpLink } from "@apollo/client";
 import { IUrlConfig } from "../config/urlConfig";
 
+const isDev = process.env.NODE_ENV === "development";
+
 // Logger interface zgodny z Dependency Inversion Principle
 export interface IGraphQLLogger {
-  logRequest(uri: RequestInfo | URL | string, options: any): void;
-  logResponse(response: any): void;
-  logError(error: any): void;
+  logRequest(
+    uri: RequestInfo | URL | string,
+    options: RequestInit | undefined
+  ): void;
+  logResponse(response: Response): void;
+  logError(error: unknown): void;
 }
 
 // Domyślna implementacja loggera
 export class ConsoleGraphQLLogger implements IGraphQLLogger {
-  logRequest(uri: RequestInfo | URL | string, options: any): void {
+  logRequest(
+    _uri: RequestInfo | URL | string,
+    _options: RequestInit | undefined
+  ): void {
     // Logowanie wyłączone dla lepszej wydajności
   }
 
-  logResponse(response: any): void {
+  logResponse(_response: Response): void {
     // Logowanie wyłączone dla lepszej wydajności
   }
 
-  logError(error: any): void {
-    console.error("❌ GraphQL Fetch Error:", {
-      message: error.message,
-      name: error.name,
-      stack: error.stack?.split("\n")[0],
-    });
+  logError(error: unknown): void {
+    if (isDev) {
+      const err = error as Error;
+      console.error("GraphQL Fetch Error:", {
+        message: err.message,
+        name: err.name,
+        stack: err.stack?.split("\n")[0],
+      });
+    }
   }
 }
 
@@ -36,7 +47,7 @@ export class HttpLinkFactory {
 
   constructor(
     private urlConfig: IUrlConfig,
-    private logger: IGraphQLLogger = new ConsoleGraphQLLogger(),
+    private logger: IGraphQLLogger = new ConsoleGraphQLLogger()
   ) {}
 
   create(): HttpLink {
@@ -72,18 +83,24 @@ export class HttpLinkFactory {
     }
   }
 
-  private async createFetchWithLogging(uri: RequestInfo | URL, options?: RequestInit): Promise<Response> {
+  private async createFetchWithLogging(
+    uri: RequestInfo | URL,
+    options?: RequestInit
+  ): Promise<Response> {
     // Czekaj na slot (throttling)
     await this.waitForSlot();
 
     // Tworzenie timeout promise
     const timeoutPromise = new Promise<Response>((_, reject) =>
-      setTimeout(() => reject(new Error("Request timeout")), this.TIMEOUT_MS),
+      setTimeout(() => reject(new Error("Request timeout")), this.TIMEOUT_MS)
     );
 
     try {
       // Wyścig między fetch a timeout
-      const response = await Promise.race([fetch(uri, options), timeoutPromise]);
+      const response = await Promise.race([
+        fetch(uri, options),
+        timeoutPromise,
+      ]);
 
       // Podstawowe logowanie response (bez parsowania body)
       this.logger.logResponse(response);
@@ -91,14 +108,14 @@ export class HttpLinkFactory {
       // ✅ Sprawdź content-type PRZED przekazaniem do Apollo
       // Zapobiega błędom "JSON Parse error: Unexpected character: <" gdy serwer zwraca HTML
       const contentType = response.headers.get("content-type") || "";
-      const isJsonResponse = contentType.includes("application/json") || contentType.includes("application/graphql");
+      const isJsonResponse =
+        contentType.includes("application/json") ||
+        contentType.includes("application/graphql");
 
-      if (!isJsonResponse && response.ok) {
+      if (!isJsonResponse && response.ok && isDev) {
         // Serwer zwrócił 200, ale nie JSON - prawdopodobnie strona błędu lub redirect
         console.warn(
-          `⚠️ [GraphQL] Unexpected content-type: ${contentType}. Expected application/json.`,
-          `\nURL: ${uri}`,
-          `\nStatus: ${response.status}`,
+          `[GraphQL] Unexpected content-type: ${contentType}. Expected application/json.`
         );
       }
 
@@ -108,17 +125,17 @@ export class HttpLinkFactory {
 
         if (isHtmlError) {
           // Serwer zwrócił stronę HTML błędu - nie próbuj parsować jako JSON
-          console.error(
-            `🔴 [GraphQL] Server returned HTML error page instead of JSON`,
-            `\nURL: ${uri}`,
-            `\nStatus: ${response.status} ${response.statusText}`,
-            `\n💡 This usually means: backend is not running, wrong URL, or server error`,
-          );
+          if (isDev) {
+            console.error(
+              `[GraphQL] Server returned HTML error page instead of JSON`,
+              `\nStatus: ${response.status} ${response.statusText}`
+            );
+          }
 
           // Rzuć czytelny błąd zamiast pozwolić Apollo na próbę parsowania HTML
           throw new Error(
             `GraphQL server error: ${response.status} ${response.statusText}. ` +
-              `Server returned HTML instead of JSON. Check if backend is running.`,
+              `Server returned HTML instead of JSON. Check if backend is running.`
           );
         }
       }

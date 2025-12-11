@@ -4,6 +4,7 @@
  */
 
 const BACKEND_JWT_TOKEN_KEY = "BACKEND_JWT_TOKEN";
+const isDev = process.env.NODE_ENV === "development";
 
 /**
  * Pobiera token JWT backendu z sessionStorage
@@ -17,7 +18,9 @@ export const getBackendToken = (): string | null => {
   try {
     return sessionStorage.getItem(BACKEND_JWT_TOKEN_KEY);
   } catch (error) {
-    console.error("[TokenCache] Błąd pobierania backend tokenu:", error);
+    if (isDev) {
+      console.error("[TokenCache] Błąd pobierania backend tokenu:", error);
+    }
     return null;
   }
 };
@@ -34,7 +37,9 @@ export const saveBackendToken = (token: string): void => {
   try {
     sessionStorage.setItem(BACKEND_JWT_TOKEN_KEY, token);
   } catch (error) {
-    console.error("[TokenCache] Błąd zapisywania backend tokenu:", error);
+    if (isDev) {
+      console.error("[TokenCache] Błąd zapisywania backend tokenu:", error);
+    }
     throw error;
   }
 };
@@ -50,10 +55,8 @@ export const clearBackendToken = (): void => {
   try {
     sessionStorage.removeItem(BACKEND_JWT_TOKEN_KEY);
   } catch (error) {
-    console.error("[TokenCache] Błąd czyszczenia backend tokenu:", error);
+    if (isDev) {
+      console.error("[TokenCache] Błąd czyszczenia backend tokenu:", error);
+    }
   }
 };
-
-
-
-
