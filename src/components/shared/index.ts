@@ -4,4 +4,7 @@ export { EmptyState } from "./EmptyState";
 export { LoadingState } from "./LoadingState";
 export { SearchInput } from "./SearchInput";
 export { FileUpload } from "./FileUpload";
+export { ColorBadge, ColorBadgeSolid, getContrastColor, getTransparentColor } from "./ColorBadge";
+export { ImagePlaceholder } from "./ImagePlaceholder";
+export { StatsCard } from "./StatsCard";
 

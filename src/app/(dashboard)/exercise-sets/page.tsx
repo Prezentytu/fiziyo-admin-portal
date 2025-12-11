@@ -4,11 +4,12 @@ import { useState } from "react";
 import { useQuery, useMutation } from "@apollo/client/react";
 import { useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
-import { Plus, FolderKanban } from "lucide-react";
+import { Plus, FolderKanban, Filter } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { SearchInput } from "@/components/shared/SearchInput";
 import { LoadingState } from "@/components/shared/LoadingState";
 import { EmptyState } from "@/components/shared/EmptyState";
@@ -119,34 +120,48 @@ export default function ExerciseSetsPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {/* Page header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-3xl font-bold">Zestawy ćwiczeń</h1>
-          <p className="text-muted-foreground">
-            Zarządzaj zestawami ćwiczeń ({filteredSets.length} z {exerciseSets.length})
+          <p className="text-muted-foreground mt-1">
+            Zarządzaj zestawami ćwiczeń dla pacjentów
           </p>
         </div>
-        <Button onClick={() => setIsDialogOpen(true)} disabled={!organizationId}>
-          <Plus className="mr-2 h-4 w-4" />
+        <Button onClick={() => setIsDialogOpen(true)} disabled={!organizationId} size="lg">
+          <Plus className="mr-2 h-5 w-5" />
           Nowy zestaw
         </Button>
       </div>
 
-      {/* Search */}
-      <SearchInput
-        value={searchQuery}
-        onChange={setSearchQuery}
-        placeholder="Szukaj zestawów..."
-        className="max-w-sm"
-      />
+      {/* Filters bar - sticky */}
+      <div className="sticky top-0 z-10 -mx-6 px-6 py-4 bg-background/80 backdrop-blur-md border-b border-border">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-3 flex-1">
+            <SearchInput
+              value={searchQuery}
+              onChange={setSearchQuery}
+              placeholder="Szukaj zestawów..."
+              className="max-w-md"
+            />
+            <Badge variant="secondary" className="hidden sm:flex">
+              {filteredSets.length} z {exerciseSets.length}
+            </Badge>
+          </div>
+          
+          <Button variant="outline" size="sm" className="hidden sm:flex">
+            <Filter className="mr-2 h-4 w-4" />
+            Filtry
+          </Button>
+        </div>
+      </div>
 
       {/* Content */}
       {loading ? (
         <LoadingState type="card" count={6} />
       ) : filteredSets.length === 0 ? (
-        <Card>
-          <CardContent className="py-12">
+        <Card className="border-dashed">
+          <CardContent className="py-16">
             <EmptyState
               icon={FolderKanban}
               title={searchQuery ? "Nie znaleziono zestawów" : "Brak zestawów"}
@@ -161,7 +176,7 @@ export default function ExerciseSetsPage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 animate-stagger">
           {filteredSets.map((set) => (
             <SetCard
               key={set.id}

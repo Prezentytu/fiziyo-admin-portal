@@ -753,3 +753,6 @@ if (loading) return <Loader />;
 **Next.js 2025**: App Router, Server/Client Components, "use client" directive
 **GraphQL**: Apollo Client 4.0, useQuery z skip, fragmenty, token exchange
 
+
+
+

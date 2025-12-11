@@ -1,7 +1,6 @@
 "use client";
 
 import { MoreVertical, Pencil, Trash2, Eye, Mail, Phone, FolderKanban } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -13,6 +12,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
+import { ColorBadge } from "@/components/shared/ColorBadge";
 
 export interface Patient {
   id: string;
@@ -64,59 +64,62 @@ export function PatientCard({
     .slice(0, 2)
     .toUpperCase();
 
+  // Compact list view
   if (compact) {
     return (
       <div
         className={cn(
-          "flex items-center gap-3 rounded-lg border border-border bg-surface p-3 transition-colors hover:bg-surface-light cursor-pointer",
+          "group flex items-center gap-4 rounded-xl border border-border bg-card p-3",
+          "transition-all duration-200 hover:bg-surface-light hover:border-border-light cursor-pointer",
           className
         )}
         onClick={() => onView?.(patient)}
       >
-        <Avatar className="h-10 w-10">
+        {/* Avatar */}
+        <Avatar className="h-12 w-12 flex-shrink-0">
           <AvatarImage src={patient.image} alt={displayName} />
-          <AvatarFallback className="bg-primary text-primary-foreground">
+          <AvatarFallback className="bg-gradient-to-br from-primary to-primary-dark text-primary-foreground font-semibold">
             {initials}
           </AvatarFallback>
         </Avatar>
+
+        {/* Content */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <p className="font-medium truncate">{displayName}</p>
+            <p className="font-semibold truncate">{displayName}</p>
             {patient.isShadowUser && (
-              <Badge variant="secondary" className="text-xs">
+              <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
                 Tymczasowy
               </Badge>
             )}
           </div>
-          <div className="flex items-center gap-3 text-xs text-muted-foreground">
+          <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5">
             {patient.email && (
               <span className="flex items-center gap-1 truncate">
-                <Mail className="h-3 w-3" />
-                {patient.email}
+                <Mail className="h-3 w-3 flex-shrink-0" />
+                <span className="truncate">{patient.email}</span>
               </span>
             )}
             {patient.contactData?.phone && (
               <span className="flex items-center gap-1">
-                <Phone className="h-3 w-3" />
+                <Phone className="h-3 w-3 flex-shrink-0" />
                 {patient.contactData.phone}
               </span>
             )}
           </div>
         </div>
+
+        {/* Context label */}
         {patient.contextLabel && (
-          <Badge
-            variant="outline"
-            style={{
-              borderColor: patient.contextColor || undefined,
-              color: patient.contextColor || undefined,
-            }}
-          >
+          <ColorBadge color={patient.contextColor || "#888888"} size="sm">
             {patient.contextLabel}
-          </Badge>
+          </ColorBadge>
         )}
+
+        {/* Actions */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-            <Button variant="ghost" size="icon" className="h-8 w-8">
+            <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity">
               <MoreVertical className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
@@ -157,35 +160,44 @@ export function PatientCard({
     );
   }
 
+  // Grid card view
   return (
-    <Card
+    <div
       className={cn(
-        "cursor-pointer transition-colors hover:bg-surface-light",
+        "group relative flex flex-col rounded-xl border border-border bg-card overflow-hidden",
+        "card-interactive cursor-pointer",
         className
       )}
       onClick={() => onView?.(patient)}
     >
-      <CardHeader className="pb-2">
+      {/* Header with avatar */}
+      <div className="relative p-6 pb-4">
         <div className="flex items-start justify-between">
-          <div className="flex items-center gap-3">
-            <Avatar className="h-12 w-12">
+          <div className="flex items-center gap-4">
+            <Avatar className="h-14 w-14">
               <AvatarImage src={patient.image} alt={displayName} />
-              <AvatarFallback className="bg-primary text-primary-foreground text-lg">
+              <AvatarFallback className="bg-gradient-to-br from-primary to-primary-dark text-primary-foreground text-lg font-semibold">
                 {initials}
               </AvatarFallback>
             </Avatar>
             <div>
-              <CardTitle className="text-lg">{displayName}</CardTitle>
+              <h3 className="font-semibold text-base">{displayName}</h3>
               {patient.isShadowUser && (
-                <Badge variant="secondary" className="text-xs mt-1">
+                <Badge variant="secondary" className="text-[10px] px-1.5 py-0 mt-1">
                   Konto tymczasowe
                 </Badge>
               )}
             </div>
           </div>
+          
+          {/* Actions */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-              <Button variant="ghost" size="icon" className="h-8 w-8">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+              >
                 <MoreVertical className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
@@ -223,36 +235,32 @@ export function PatientCard({
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-2 text-sm text-muted-foreground">
-          {patient.email && (
-            <div className="flex items-center gap-2">
-              <Mail className="h-4 w-4" />
-              <span className="truncate">{patient.email}</span>
-            </div>
-          )}
-          {patient.contactData?.phone && (
-            <div className="flex items-center gap-2">
-              <Phone className="h-4 w-4" />
-              <span>{patient.contactData.phone}</span>
-            </div>
-          )}
-        </div>
-        {patient.contextLabel && (
-          <Badge
-            variant="outline"
-            className="mt-3"
-            style={{
-              borderColor: patient.contextColor || undefined,
-              color: patient.contextColor || undefined,
-            }}
-          >
-            {patient.contextLabel}
-          </Badge>
+      </div>
+
+      {/* Contact info */}
+      <div className="px-6 pb-4 space-y-2 flex-1">
+        {patient.email && (
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Mail className="h-4 w-4 flex-shrink-0" />
+            <span className="truncate">{patient.email}</span>
+          </div>
         )}
-      </CardContent>
-    </Card>
+        {patient.contactData?.phone && (
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Phone className="h-4 w-4 flex-shrink-0" />
+            <span>{patient.contactData.phone}</span>
+          </div>
+        )}
+      </div>
+
+      {/* Footer with context label */}
+      {patient.contextLabel && (
+        <div className="px-6 py-3 border-t border-border">
+          <ColorBadge color={patient.contextColor || "#888888"}>
+            {patient.contextLabel}
+          </ColorBadge>
+        </div>
+      )}
+    </div>
   );
 }
-

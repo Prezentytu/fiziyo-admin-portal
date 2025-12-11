@@ -4,12 +4,13 @@ import { useState } from "react";
 import { useQuery, useMutation } from "@apollo/client/react";
 import { useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
-import { Plus, Users, LayoutGrid, List } from "lucide-react";
+import { Plus, Users, LayoutGrid, List, Filter } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
 import { SearchInput } from "@/components/shared/SearchInput";
 import { LoadingState } from "@/components/shared/LoadingState";
 import { EmptyState } from "@/components/shared/EmptyState";
@@ -131,46 +132,60 @@ export default function PatientsPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {/* Page header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-3xl font-bold">Pacjenci</h1>
-          <p className="text-muted-foreground">
-            Zarządzaj listą pacjentów ({filteredPatients.length} z {patients.length})
+          <p className="text-muted-foreground mt-1">
+            Zarządzaj listą swoich pacjentów
           </p>
         </div>
-        <Button onClick={() => setIsDialogOpen(true)} disabled={!organizationId}>
-          <Plus className="mr-2 h-4 w-4" />
+        <Button onClick={() => setIsDialogOpen(true)} disabled={!organizationId} size="lg">
+          <Plus className="mr-2 h-5 w-5" />
           Dodaj pacjenta
         </Button>
       </div>
 
-      {/* Search and filters */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <SearchInput
-          value={searchQuery}
-          onChange={setSearchQuery}
-          placeholder="Szukaj pacjentów..."
-          className="max-w-sm"
-        />
-        <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as "grid" | "list")}>
-          <TabsList>
-            <TabsTrigger value="list">
-              <List className="h-4 w-4" />
-            </TabsTrigger>
-            <TabsTrigger value="grid">
-              <LayoutGrid className="h-4 w-4" />
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
+      {/* Filters bar - sticky */}
+      <div className="sticky top-0 z-10 -mx-6 px-6 py-4 bg-background/80 backdrop-blur-md border-b border-border">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-3 flex-1">
+            <SearchInput
+              value={searchQuery}
+              onChange={setSearchQuery}
+              placeholder="Szukaj pacjentów..."
+              className="max-w-md"
+            />
+            <Badge variant="secondary" className="hidden sm:flex">
+              {filteredPatients.length} z {patients.length}
+            </Badge>
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" className="hidden sm:flex">
+              <Filter className="mr-2 h-4 w-4" />
+              Filtry
+            </Button>
+            <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as "grid" | "list")}>
+              <TabsList className="bg-surface-light">
+                <TabsTrigger value="list" className="data-[state=active]:bg-surface">
+                  <List className="h-4 w-4" />
+                </TabsTrigger>
+                <TabsTrigger value="grid" className="data-[state=active]:bg-surface">
+                  <LayoutGrid className="h-4 w-4" />
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
+        </div>
       </div>
 
       {/* Content */}
       {loading ? (
         <LoadingState type={viewMode === "grid" ? "card" : "row"} count={6} />
       ) : filteredPatients.length === 0 ? (
-        <Card>
-          <CardContent className="py-12">
+        <Card className="border-dashed">
+          <CardContent className="py-16">
             <EmptyState
               icon={Users}
               title={searchQuery ? "Nie znaleziono pacjentów" : "Brak pacjentów"}
@@ -185,7 +200,7 @@ export default function PatientsPage() {
           </CardContent>
         </Card>
       ) : viewMode === "grid" ? (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 animate-stagger">
           {filteredPatients.map((patient) => (
             <PatientCard
               key={patient.id}
@@ -197,7 +212,7 @@ export default function PatientsPage() {
           ))}
         </div>
       ) : (
-        <div className="space-y-2">
+        <div className="space-y-2 animate-stagger">
           {filteredPatients.map((patient) => (
             <PatientCard
               key={patient.id}

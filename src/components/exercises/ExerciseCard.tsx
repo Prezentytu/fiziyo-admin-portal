@@ -1,7 +1,6 @@
 "use client";
 
 import { Dumbbell, Clock, Repeat, MoreVertical, Pencil, Trash2, FolderPlus, Eye } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -12,6 +11,14 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
+import { ColorBadge } from "@/components/shared/ColorBadge";
+import { ImagePlaceholder } from "@/components/shared/ImagePlaceholder";
+
+export interface ExerciseTag {
+  id: string;
+  name: string;
+  color: string;
+}
 
 export interface Exercise {
   id: string;
@@ -24,8 +31,8 @@ export interface Exercise {
   exerciseSide?: string;
   imageUrl?: string;
   images?: string[];
-  mainTags?: string[];
-  additionalTags?: string[];
+  mainTags?: string[] | ExerciseTag[];
+  additionalTags?: string[] | ExerciseTag[];
   isActive?: boolean;
 }
 
@@ -39,6 +46,54 @@ interface ExerciseCardProps {
   compact?: boolean;
 }
 
+function getTypeLabel(type?: string) {
+  switch (type) {
+    case "reps":
+      return "Powtórzenia";
+    case "time":
+      return "Czasowe";
+    case "hold":
+      return "Utrzymywanie";
+    default:
+      return type || "Inne";
+  }
+}
+
+function isTagObject(tag: string | ExerciseTag): tag is ExerciseTag {
+  return typeof tag === "object" && "name" in tag;
+}
+
+function renderTags(tags: (string | ExerciseTag)[] | undefined, limit: number = 3) {
+  if (!tags || tags.length === 0) return null;
+  
+  const visibleTags = tags.slice(0, limit);
+  const remainingCount = tags.length - limit;
+
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {visibleTags.map((tag, index) => {
+        if (isTagObject(tag)) {
+          return (
+            <ColorBadge key={tag.id} color={tag.color} size="sm">
+              {tag.name}
+            </ColorBadge>
+          );
+        }
+        return (
+          <Badge key={index} variant="secondary" className="text-[10px] px-2 py-0.5">
+            {tag}
+          </Badge>
+        );
+      })}
+      {remainingCount > 0 && (
+        <Badge variant="outline" className="text-[10px] px-2 py-0.5">
+          +{remainingCount}
+        </Badge>
+      )}
+    </div>
+  );
+}
+
 export function ExerciseCard({
   exercise,
   onView,
@@ -49,68 +104,51 @@ export function ExerciseCard({
   compact = false,
 }: ExerciseCardProps) {
   const imageUrl = exercise.imageUrl || exercise.images?.[0];
+  const hasParams = (exercise.sets && exercise.sets > 0) || 
+                    (exercise.reps && exercise.reps > 0) || 
+                    (exercise.duration && exercise.duration > 0);
 
-  const getTypeLabel = (type?: string) => {
-    switch (type) {
-      case "reps":
-        return "Powtórzenia";
-      case "time":
-        return "Czasowe";
-      case "hold":
-        return "Utrzymywanie";
-      default:
-        return type || "Inne";
-    }
-  };
-
-  const getSideLabel = (side?: string) => {
-    switch (side) {
-      case "left":
-        return "Lewa strona";
-      case "right":
-        return "Prawa strona";
-      case "both":
-        return "Obie strony";
-      default:
-        return null;
-    }
-  };
-
+  // Compact list view
   if (compact) {
     return (
       <div
         className={cn(
-          "flex items-center gap-3 rounded-lg border border-border bg-surface p-3 transition-colors hover:bg-surface-light cursor-pointer",
+          "group flex items-center gap-4 rounded-xl border border-border bg-card p-3",
+          "transition-all duration-200 hover:bg-surface-light hover:border-border-light cursor-pointer",
           className
         )}
         onClick={() => onView?.(exercise)}
       >
-        {imageUrl ? (
-          <img
-            src={imageUrl}
-            alt={exercise.name}
-            className="h-12 w-12 rounded object-cover"
-          />
-        ) : (
-          <div className="flex h-12 w-12 items-center justify-center rounded bg-surface-light">
-            <Dumbbell className="h-6 w-6 text-muted-foreground" />
-          </div>
-        )}
-        <div className="flex-1 min-w-0">
-          <p className="font-medium truncate">{exercise.name}</p>
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            {exercise.sets && (
+        {/* Thumbnail */}
+        <div className="relative h-14 w-14 flex-shrink-0 overflow-hidden rounded-lg">
+          {imageUrl ? (
+            <img
+              src={imageUrl}
+              alt={exercise.name}
+              className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-110"
+            />
+          ) : (
+            <ImagePlaceholder type="exercise" iconClassName="h-5 w-5" />
+          )}
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 min-w-0 space-y-1">
+          <p className="font-semibold truncate">{exercise.name}</p>
+          <div className="flex items-center gap-3 text-xs text-muted-foreground">
+            {exercise.type && (
+              <span className="text-primary font-medium">{getTypeLabel(exercise.type)}</span>
+            )}
+            {exercise.sets && exercise.sets > 0 && (
               <span className="flex items-center gap-1">
                 <Repeat className="h-3 w-3" />
                 {exercise.sets} serii
               </span>
             )}
-            {exercise.reps && (
-              <span className="flex items-center gap-1">
-                {exercise.reps} powt.
-              </span>
+            {exercise.reps && exercise.reps > 0 && (
+              <span>{exercise.reps} powt.</span>
             )}
-            {exercise.duration && (
+            {exercise.duration && exercise.duration > 0 && (
               <span className="flex items-center gap-1">
                 <Clock className="h-3 w-3" />
                 {exercise.duration}s
@@ -118,9 +156,16 @@ export function ExerciseCard({
             )}
           </div>
         </div>
+
+        {/* Tags */}
+        <div className="hidden sm:block">
+          {renderTags(exercise.mainTags, 2)}
+        </div>
+
+        {/* Actions */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-            <Button variant="ghost" size="icon" className="h-8 w-8">
+            <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity">
               <MoreVertical className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
@@ -161,33 +206,56 @@ export function ExerciseCard({
     );
   }
 
+  // Grid card view - new design with large image
   return (
-    <Card
+    <div
       className={cn(
-        "cursor-pointer transition-colors hover:bg-surface-light",
+        "group relative flex flex-col rounded-xl border border-border bg-card overflow-hidden",
+        "card-interactive cursor-pointer",
         className
       )}
       onClick={() => onView?.(exercise)}
     >
-      <CardHeader className="pb-2">
-        <div className="flex items-start justify-between">
-          <CardTitle className="flex items-center gap-2 text-lg">
-            {imageUrl ? (
-              <img
-                src={imageUrl}
-                alt={exercise.name}
-                className="h-10 w-10 rounded object-cover"
-              />
-            ) : (
-              <div className="flex h-10 w-10 items-center justify-center rounded bg-surface-light">
-                <Dumbbell className="h-5 w-5 text-primary" />
-              </div>
-            )}
-            <span className="truncate">{exercise.name}</span>
-          </CardTitle>
+      {/* Image section with overlay */}
+      <div className="relative aspect-[16/10] overflow-hidden">
+        {imageUrl ? (
+          <>
+            <img
+              src={imageUrl}
+              alt={exercise.name}
+              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+            />
+            <div className="gradient-overlay-subtle" />
+          </>
+        ) : (
+          <ImagePlaceholder type="exercise" className="aspect-[16/10]" iconClassName="h-12 w-12" />
+        )}
+        
+        {/* Tags overlay on image */}
+        {(exercise.mainTags?.length || 0) > 0 && (
+          <div className="absolute bottom-3 left-3 right-12">
+            {renderTags(exercise.mainTags, 3)}
+          </div>
+        )}
+
+        {/* Type badge */}
+        {exercise.type && (
+          <div className="absolute top-3 left-3">
+            <Badge className="bg-black/60 text-white border-0 backdrop-blur-sm">
+              {getTypeLabel(exercise.type)}
+            </Badge>
+          </div>
+        )}
+
+        {/* Actions button */}
+        <div className="absolute top-3 right-3">
           <DropdownMenu>
             <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-              <Button variant="ghost" size="icon" className="h-8 w-8">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-8 w-8 bg-black/40 hover:bg-black/60 text-white backdrop-blur-sm"
+              >
                 <MoreVertical className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
@@ -225,42 +293,44 @@ export function ExerciseCard({
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
-      </CardHeader>
-      <CardContent>
-        <p className="mb-4 line-clamp-2 text-sm text-muted-foreground">
+      </div>
+
+      {/* Content section */}
+      <div className="flex flex-col flex-1 p-4 space-y-3">
+        {/* Title */}
+        <h3 className="font-semibold text-base leading-tight line-clamp-1">
+          {exercise.name}
+        </h3>
+
+        {/* Description */}
+        <p className="text-sm text-muted-foreground line-clamp-2 flex-1">
           {exercise.description || "Brak opisu"}
         </p>
 
-        <div className="flex flex-wrap gap-2 mb-3">
-          {exercise.type && (
-            <Badge variant="secondary">{getTypeLabel(exercise.type)}</Badge>
-          )}
-          {getSideLabel(exercise.exerciseSide) && (
-            <Badge variant="outline">{getSideLabel(exercise.exerciseSide)}</Badge>
-          )}
-        </div>
-
-        <div className="flex items-center gap-4 text-xs text-muted-foreground">
-          {exercise.sets !== undefined && exercise.sets > 0 && (
-            <span className="flex items-center gap-1">
-              <Repeat className="h-3 w-3" />
-              {exercise.sets} serii
-            </span>
-          )}
-          {exercise.reps !== undefined && exercise.reps > 0 && (
-            <span className="flex items-center gap-1">
-              {exercise.reps} powt.
-            </span>
-          )}
-          {exercise.duration !== undefined && exercise.duration > 0 && (
-            <span className="flex items-center gap-1">
-              <Clock className="h-3 w-3" />
-              {exercise.duration}s
-            </span>
-          )}
-        </div>
-      </CardContent>
-    </Card>
+        {/* Parameters footer */}
+        {hasParams && (
+          <div className="flex items-center gap-4 pt-2 border-t border-border text-xs text-muted-foreground">
+            {exercise.sets !== undefined && exercise.sets > 0 && (
+              <span className="flex items-center gap-1.5">
+                <Repeat className="h-3.5 w-3.5 text-primary" />
+                <span className="font-medium text-foreground">{exercise.sets}</span> serii
+              </span>
+            )}
+            {exercise.reps !== undefined && exercise.reps > 0 && (
+              <span className="flex items-center gap-1.5">
+                <Dumbbell className="h-3.5 w-3.5 text-primary" />
+                <span className="font-medium text-foreground">{exercise.reps}</span> powt.
+              </span>
+            )}
+            {exercise.duration !== undefined && exercise.duration > 0 && (
+              <span className="flex items-center gap-1.5">
+                <Clock className="h-3.5 w-3.5 text-primary" />
+                <span className="font-medium text-foreground">{exercise.duration}</span>s
+              </span>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
-

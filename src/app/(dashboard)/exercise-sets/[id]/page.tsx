@@ -11,20 +11,22 @@ import {
   Users,
   Dumbbell,
   Plus,
-  GripVertical,
   X,
+  Calendar,
+  Clock,
+  FolderKanban,
 } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { LoadingState } from "@/components/shared/LoadingState";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { SetDialog } from "@/components/exercise-sets/SetDialog";
-import { ExerciseCard } from "@/components/exercises/ExerciseCard";
+import { ImagePlaceholder } from "@/components/shared/ImagePlaceholder";
 
 import {
   GET_EXERCISE_SET_WITH_ASSIGNMENTS_QUERY,
@@ -156,6 +158,9 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
   if (error || !exerciseSet) {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-4">
+        <div className="h-16 w-16 rounded-full bg-surface-light flex items-center justify-center mb-2">
+          <FolderKanban className="h-8 w-8 text-muted-foreground" />
+        </div>
         <p className="text-destructive">
           {error ? `Błąd: ${error.message}` : "Nie znaleziono zestawu"}
         </p>
@@ -170,63 +175,155 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
   const exercises = exerciseSet?.exerciseMappings || [];
   const assignments = exerciseSet?.patientAssignments || [];
 
+  // Get first 4 exercise images for hero grid
+  const exerciseImages = exercises
+    .slice(0, 4)
+    .map((m) => m.exercise?.imageUrl || m.exercise?.images?.[0])
+    .filter(Boolean) as string[];
+
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-4">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => router.push("/exercise-sets")}
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <div>
-            <h1 className="text-3xl font-bold">{exerciseSet.name}</h1>
-            <p className="text-muted-foreground">
-              {exercises.length} ćwiczeń • {assignments.length} przypisań
-            </p>
+    <div className="space-y-8">
+      {/* Hero section */}
+      <div className="relative rounded-2xl overflow-hidden bg-surface-light">
+        <div className="relative p-6 md:p-8">
+          {/* Navigation and actions */}
+          <div className="flex items-center justify-between mb-6">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => router.push("/exercise-sets")}
+              className="bg-black/20 hover:bg-black/40 backdrop-blur-sm"
+            >
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Powrót
+            </Button>
+            <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => setIsEditDialogOpen(true)}
+                className="bg-black/20 hover:bg-black/40 backdrop-blur-sm border-white/20"
+              >
+                <Pencil className="mr-2 h-4 w-4" />
+                Edytuj
+              </Button>
+              <Button 
+                variant="destructive" 
+                size="sm" 
+                onClick={() => setIsDeleteDialogOpen(true)}
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                Usuń
+              </Button>
+            </div>
           </div>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={() => setIsEditDialogOpen(true)}>
-            <Pencil className="mr-2 h-4 w-4" />
-            Edytuj
-          </Button>
-          <Button
-            variant="destructive"
-            onClick={() => setIsDeleteDialogOpen(true)}
-          >
-            <Trash2 className="mr-2 h-4 w-4" />
-            Usuń
-          </Button>
+
+          {/* Main hero content */}
+          <div className="grid gap-8 lg:grid-cols-2">
+            {/* Image grid preview */}
+            <div className="relative aspect-video rounded-xl overflow-hidden bg-surface">
+              {exerciseImages.length > 0 ? (
+                <div className="grid grid-cols-2 grid-rows-2 h-full gap-0.5">
+                  {[0, 1, 2, 3].map((index) => (
+                    <div key={index} className="relative overflow-hidden">
+                      {exerciseImages[index] ? (
+                        <img
+                          src={exerciseImages[index]}
+                          alt=""
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <div className="h-full w-full bg-surface-light flex items-center justify-center">
+                          <Dumbbell className="h-8 w-8 text-muted-foreground/30" />
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <ImagePlaceholder type="set" className="h-full" iconClassName="h-16 w-16" />
+              )}
+              
+              {/* Stats overlay */}
+              <div className="absolute bottom-4 left-4 right-4 flex gap-2">
+                <Badge className="bg-black/60 text-white border-0 backdrop-blur-sm gap-1.5">
+                  <Dumbbell className="h-3 w-3" />
+                  {exercises.length} ćwiczeń
+                </Badge>
+                <Badge className="bg-black/60 text-white border-0 backdrop-blur-sm gap-1.5">
+                  <Users className="h-3 w-3" />
+                  {assignments.length} pacjentów
+                </Badge>
+              </div>
+            </div>
+
+            {/* Set info */}
+            <div className="space-y-6">
+              <div>
+                <h1 className="text-3xl font-bold mb-2">{exerciseSet.name}</h1>
+                <p className="text-muted-foreground text-lg">
+                  {exerciseSet.description || "Brak opisu"}
+                </p>
+              </div>
+
+              {/* Quick stats */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex items-center gap-3 p-4 rounded-xl bg-black/20 backdrop-blur-sm">
+                  <div className="stats-icon">
+                    <Dumbbell className="h-5 w-5 text-white" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold">{exercises.length}</p>
+                    <p className="text-sm text-muted-foreground">ćwiczeń</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 p-4 rounded-xl bg-black/20 backdrop-blur-sm">
+                  <div className="stats-icon-info">
+                    <Users className="h-5 w-5 text-white" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold">{assignments.length}</p>
+                    <p className="text-sm text-muted-foreground">pacjentów</p>
+                  </div>
+                </div>
+                {exerciseSet?.frequency?.timesPerWeek && (
+                  <div className="flex items-center gap-3 p-4 rounded-xl bg-black/20 backdrop-blur-sm">
+                    <div className="stats-icon-secondary">
+                      <Calendar className="h-5 w-5 text-white" />
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold">{exerciseSet.frequency.timesPerWeek}x</p>
+                      <p className="text-sm text-muted-foreground">w tygodniu</p>
+                    </div>
+                  </div>
+                )}
+                {exerciseSet?.frequency?.timesPerDay && (
+                  <div className="flex items-center gap-3 p-4 rounded-xl bg-black/20 backdrop-blur-sm">
+                    <div className="stats-icon-warning">
+                      <Clock className="h-5 w-5 text-white" />
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold">{exerciseSet.frequency.timesPerDay}x</p>
+                      <p className="text-sm text-muted-foreground">dziennie</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
-        {/* Main content */}
-        <div className="space-y-6 lg:col-span-2">
-          {/* Description */}
-          {exerciseSet.description && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Opis</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">{exerciseSet.description}</p>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Exercises list */}
+        {/* Main content - Exercises list */}
+        <div className="lg:col-span-2">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle className="flex items-center gap-2">
-                <Dumbbell className="h-5 w-5" />
+                <Dumbbell className="h-5 w-5 text-primary" />
                 Ćwiczenia w zestawie
               </CardTitle>
-              <Button size="sm" variant="outline">
+              <Button size="sm">
                 <Plus className="mr-2 h-4 w-4" />
                 Dodaj ćwiczenie
               </Button>
@@ -241,86 +338,111 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
                   onAction={() => {}}
                 />
               ) : (
-                <div className="space-y-2">
+                <div className="space-y-3">
                   {[...exercises]
                     .sort((a, b) => (a.order || 0) - (b.order || 0))
-                    .map((mapping, index) => (
-                      <div
-                        key={mapping.id}
-                        className="flex items-center gap-2 rounded-lg border border-border bg-surface p-3"
-                      >
-                        <div className="flex h-8 w-8 items-center justify-center rounded bg-surface-light text-sm font-medium text-muted-foreground">
-                          {index + 1}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            {mapping.exercise?.imageUrl ? (
+                    .map((mapping, index) => {
+                      const imageUrl = mapping.exercise?.imageUrl || mapping.exercise?.images?.[0];
+                      return (
+                        <div
+                          key={mapping.id}
+                          className="group flex items-center gap-4 rounded-xl border border-border bg-surface p-4 transition-all hover:border-border-light hover:bg-surface-light"
+                        >
+                          {/* Order number */}
+                          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-surface-light text-lg font-semibold text-muted-foreground">
+                            {index + 1}
+                          </div>
+
+                          {/* Thumbnail */}
+                          <div className="h-14 w-14 rounded-lg overflow-hidden flex-shrink-0">
+                            {imageUrl ? (
                               <img
-                                src={mapping.exercise.imageUrl}
+                                src={imageUrl}
                                 alt={mapping.exercise?.name}
-                                className="h-10 w-10 rounded object-cover"
+                                className="h-full w-full object-cover"
                               />
                             ) : (
-                              <div className="flex h-10 w-10 items-center justify-center rounded bg-surface-light">
-                                <Dumbbell className="h-5 w-5 text-muted-foreground" />
-                              </div>
+                              <ImagePlaceholder type="exercise" iconClassName="h-5 w-5" />
                             )}
-                            <div>
-                              <p className="font-medium truncate">
-                                {mapping.exercise?.name || "Nieznane ćwiczenie"}
-                              </p>
-                              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                {mapping.sets && <span>{mapping.sets} serii</span>}
-                                {mapping.reps && <span>{mapping.reps} powt.</span>}
-                                {mapping.duration && <span>{mapping.duration}s</span>}
-                              </div>
+                          </div>
+
+                          {/* Info */}
+                          <div className="flex-1 min-w-0">
+                            <p className="font-semibold truncate">
+                              {mapping.exercise?.name || "Nieznane ćwiczenie"}
+                            </p>
+                            <div className="flex items-center gap-3 text-sm text-muted-foreground mt-1">
+                              {mapping.sets && (
+                                <span className="flex items-center gap-1">
+                                  <span className="font-medium text-foreground">{mapping.sets}</span> serii
+                                </span>
+                              )}
+                              {mapping.reps && (
+                                <span className="flex items-center gap-1">
+                                  <span className="font-medium text-foreground">{mapping.reps}</span> powt.
+                                </span>
+                              )}
+                              {mapping.duration && (
+                                <span className="flex items-center gap-1">
+                                  <span className="font-medium text-foreground">{mapping.duration}</span>s
+                                </span>
+                              )}
                             </div>
                           </div>
+
+                          {/* Remove button */}
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity text-muted-foreground hover:text-destructive"
+                            onClick={() => setRemovingExerciseId(mapping.exerciseId)}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
                         </div>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                          onClick={() => setRemovingExerciseId(mapping.exerciseId)}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    ))}
+                      );
+                    })}
                 </div>
               )}
             </CardContent>
           </Card>
         </div>
 
-        {/* Sidebar */}
-        <div className="space-y-6">
-          {/* Assigned patients */}
+        {/* Sidebar - Assigned patients */}
+        <div>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle className="flex items-center gap-2">
-                <Users className="h-5 w-5" />
+                <Users className="h-5 w-5 text-primary" />
                 Przypisani pacjenci
               </CardTitle>
               <Badge variant="secondary">{assignments.length}</Badge>
             </CardHeader>
             <CardContent>
               {assignments.length === 0 ? (
-                <p className="text-sm text-muted-foreground">
-                  Brak przypisanych pacjentów
-                </p>
+                <div className="text-center py-8">
+                  <div className="h-12 w-12 rounded-full bg-surface-light mx-auto flex items-center justify-center mb-3">
+                    <Users className="h-6 w-6 text-muted-foreground" />
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Brak przypisanych pacjentów
+                  </p>
+                </div>
               ) : (
-                <div className="space-y-2">
+                <div className="space-y-3">
                   {assignments.map((assignment) => (
                     <div
                       key={assignment.id}
-                      className="flex items-center gap-3 rounded-lg border border-border p-2"
+                      className="flex items-center gap-3 rounded-xl border border-border p-3 transition-colors hover:bg-surface-light"
                     >
-                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-sm font-medium text-primary-foreground">
-                        {assignment.user?.fullname?.[0] || "?"}
-                      </div>
+                      <Avatar className="h-10 w-10">
+                        <AvatarImage src={assignment.user?.image} />
+                        <AvatarFallback className="bg-gradient-to-br from-primary to-primary-dark text-primary-foreground">
+                          {assignment.user?.fullname?.[0] || "?"}
+                        </AvatarFallback>
+                      </Avatar>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate">
+                        <p className="font-medium truncate">
                           {assignment.user?.fullname || "Nieznany pacjent"}
                         </p>
                         <p className="text-xs text-muted-foreground truncate">
@@ -328,11 +450,10 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
                         </p>
                       </div>
                       <Badge
-                        variant={
-                          assignment.status === "active" ? "success" : "secondary"
-                        }
+                        variant={assignment.status === "active" ? "success" : "secondary"}
+                        className="text-[10px]"
                       >
-                        {assignment.status === "active" ? "Aktywne" : assignment.status}
+                        {assignment.status === "active" ? "Aktywne" : assignment.status || "—"}
                       </Badge>
                     </div>
                   ))}
@@ -340,29 +461,6 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
               )}
             </CardContent>
           </Card>
-
-          {/* Frequency */}
-          {exerciseSet?.frequency && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Częstotliwość</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                {exerciseSet.frequency.timesPerWeek && (
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Razy w tygodniu:</span>
-                    <span className="font-medium">{exerciseSet.frequency.timesPerWeek}</span>
-                  </div>
-                )}
-                {exerciseSet.frequency.timesPerDay && (
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Razy dziennie:</span>
-                    <span className="font-medium">{exerciseSet.frequency.timesPerDay}</span>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          )}
         </div>
       </div>
 
@@ -403,4 +501,3 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
     </div>
   );
 }
-
