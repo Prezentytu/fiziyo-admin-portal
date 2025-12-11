@@ -1,27 +1,38 @@
 "use client";
 
+import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ArrowRight } from "lucide-react";
 
 type StatsVariant = "primary" | "secondary" | "info" | "warning" | "success";
+type StatsSize = "default" | "hero";
 
 interface StatsCardProps {
   title: string;
   value: number | string;
   icon: React.ElementType;
   variant?: StatsVariant;
+  size?: StatsSize;
   loading?: boolean;
   description?: string;
   className?: string;
+  href?: string;
+  action?: {
+    label: string;
+    href: string;
+  };
+  children?: React.ReactNode;
 }
 
-const variantClasses: Record<StatsVariant, string> = {
-  primary: "stats-icon",
-  secondary: "stats-icon-secondary",
-  info: "stats-icon-info",
-  warning: "stats-icon-warning",
-  success: "stats-icon",
+const variantGradients: Record<StatsVariant, string> = {
+  primary: "from-primary/10 via-transparent to-transparent",
+  secondary: "from-secondary/10 via-transparent to-transparent",
+  info: "from-info/10 via-transparent to-transparent",
+  warning: "from-warning/10 via-transparent to-transparent",
+  success: "from-primary/10 via-transparent to-transparent",
 };
 
 export function StatsCard({
@@ -29,34 +40,119 @@ export function StatsCard({
   value,
   icon: Icon,
   variant = "primary",
+  size = "default",
   loading = false,
   description,
   className,
+  href,
+  action,
+  children,
 }: StatsCardProps) {
-  return (
-    <Card className={cn("card-interactive", className)}>
-      <CardContent className="p-6">
-        <div className="flex items-start justify-between">
+  const isHero = size === "hero";
+
+  const content = (
+    <Card
+      className={cn(
+        "relative overflow-hidden transition-all duration-200",
+        href &&
+          "cursor-pointer hover:border-border-light hover:bg-surface-light",
+        isHero && "h-full",
+        className
+      )}
+    >
+      {/* Subtle gradient background for hero */}
+      {isHero && (
+        <div
+          className={cn(
+            "absolute inset-0 bg-gradient-to-br opacity-50",
+            variantGradients[variant]
+          )}
+        />
+      )}
+
+      <CardContent
+        className={cn("relative", isHero ? "p-6 h-full flex flex-col" : "p-6")}
+      >
+        <div
+          className={cn("flex items-start justify-between", isHero && "mb-4")}
+        >
           <div className="space-y-2">
-            <p className="text-sm font-medium text-muted-foreground">{title}</p>
+            <p
+              className={cn(
+                "font-medium text-muted-foreground",
+                isHero ? "text-base" : "text-sm"
+              )}
+            >
+              {title}
+            </p>
             {loading ? (
-              <Skeleton className="h-9 w-20" />
+              <Skeleton className={cn(isHero ? "h-14 w-28" : "h-10 w-20")} />
             ) : (
-              <p className="text-3xl font-bold tracking-tight">{value}</p>
+              <p
+                className={cn(
+                  "font-bold tracking-tight",
+                  isHero ? "text-5xl" : "text-3xl"
+                )}
+              >
+                {value}
+              </p>
             )}
             {description && (
-              <p className="text-xs text-muted-foreground">{description}</p>
+              <p className="text-sm text-muted-foreground mt-1">
+                {description}
+              </p>
             )}
           </div>
-          <div className={cn(variantClasses[variant])}>
-            <Icon className="h-5 w-5 text-white" />
+          <div
+            className={cn(
+              "flex items-center justify-center rounded-xl",
+              isHero ? "h-16 w-16" : "h-12 w-12",
+              variant === "primary" &&
+                "bg-gradient-to-br from-primary to-primary-dark",
+              variant === "secondary" &&
+                "bg-gradient-to-br from-secondary to-teal-600",
+              variant === "info" && "bg-gradient-to-br from-info to-blue-600",
+              variant === "warning" &&
+                "bg-gradient-to-br from-warning to-amber-600",
+              variant === "success" &&
+                "bg-gradient-to-br from-primary to-primary-dark"
+            )}
+          >
+            <Icon
+              className={cn("text-white", isHero ? "h-8 w-8" : "h-6 w-6")}
+            />
           </div>
         </div>
+
+        {/* Hero card content (children) */}
+        {isHero && children && <div className="flex-1 mt-2">{children}</div>}
+
+        {/* Action button */}
+        {action && (
+          <div className={cn(isHero ? "mt-auto pt-4" : "mt-3")}>
+            <Link href={action.href} className="group inline-flex">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-9 px-0 text-sm text-primary hover:text-primary-light hover:bg-transparent"
+              >
+                {action.label}
+                <ArrowRight className="ml-1.5 h-4 w-4 transition-transform duration-200 group-hover:translate-x-1" />
+              </Button>
+            </Link>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
+
+  if (href && !action) {
+    return (
+      <Link href={href} className="block">
+        {content}
+      </Link>
+    );
+  }
+
+  return content;
 }
-
-
-
-
