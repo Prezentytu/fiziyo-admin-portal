@@ -1,22 +1,21 @@
 "use client";
 
-import { UserButton } from "@clerk/nextjs";
 import { Bell, Search, ChevronRight, Home } from "lucide-react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { UserMenu } from "@/components/layout/UserMenu";
 
 // Route name mappings
 const routeNames: Record<string, string> = {
   "": "Dashboard",
-  "exercises": "Ćwiczenia",
+  exercises: "Ćwiczenia",
   "exercise-sets": "Zestawy",
-  "patients": "Pacjenci",
-  "organization": "Organizacja",
-  "settings": "Ustawienia",
-  "tags": "Tagi",
+  patients: "Pacjenci",
+  organization: "Organizacja",
+  settings: "Ustawienia",
+  tags: "Tagi",
 };
 
 function Breadcrumbs() {
@@ -29,10 +28,10 @@ function Breadcrumbs() {
   const breadcrumbs = segments.map((segment, index) => {
     const href = "/" + segments.slice(0, index + 1).join("/");
     const isLast = index === segments.length - 1;
-    
+
     // Check if this is an ID (UUID or similar)
     const isId = segment.match(/^[0-9a-f-]{20,}$/i);
-    const label = isId ? "Szczegóły" : (routeNames[segment] || segment);
+    const label = isId ? "Szczegóły" : routeNames[segment] || segment;
 
     return { href, label, isLast };
   });
@@ -96,14 +95,7 @@ export function Header() {
         </Button>
 
         {/* User */}
-        <UserButton
-          appearance={{
-            elements: {
-              avatarBox: "h-9 w-9",
-              userButtonTrigger: "rounded-xl",
-            },
-          }}
-        />
+        <UserMenu />
       </div>
     </header>
   );
