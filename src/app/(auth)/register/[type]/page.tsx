@@ -11,13 +11,13 @@ import {
   Mail,
   Lock,
   User,
-  Phone,
   Building2,
   Check,
   Pencil,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PhoneInput } from "@/components/ui/phone-input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 
@@ -281,7 +281,7 @@ export default function RegisterFormPage() {
             lastName: formData.lastName.trim(),
             phone: formData.phone.trim(),
             companyName: formData.companyName.trim() || generatedName,
-            role: "therapist",
+            isCompanyAccount: true,
             organizationType: orgType,
           },
         });
@@ -458,22 +458,14 @@ export default function RegisterFormPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="phone">
-                Telefon{" "}
-                <span className="text-muted-foreground">(opcjonalnie)</span>
-              </Label>
-              <div className="relative">
-                <Phone className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  id="phone"
-                  type="tel"
-                  placeholder="+48 123 456 789"
-                  value={formData.phone}
-                  onChange={(e) => handleInputChange("phone", e.target.value)}
-                  className="h-11 pl-10"
-                  autoComplete="tel"
-                />
-              </div>
+              <Label htmlFor="phone">Telefon</Label>
+              <PhoneInput
+                id="phone"
+                placeholder="123 456 789"
+                value={formData.phone}
+                onChange={(value) => handleInputChange("phone", value)}
+                className="h-11"
+              />
             </div>
 
             {/* Practice name preview/editor */}
