@@ -6,6 +6,11 @@ export { PatientDialog } from "./PatientDialog";
 export { ActivityReport } from "./ActivityReport";
 export { ActivityChart, WeeklyActivityChart } from "./ActivityChart";
 export { ExerciseStats, StatsSummary } from "./ExerciseStats";
+export { PatientAssignmentCard } from "./PatientAssignmentCard";
+export type { PatientAssignment, ExerciseMapping, ExerciseOverride, Frequency } from "./PatientAssignmentCard";
+export { AssignSetToPatientDialog } from "./AssignSetToPatientDialog";
+export { EditAssignmentScheduleDialog } from "./EditAssignmentScheduleDialog";
+export { EditExerciseOverrideDialog } from "./EditExerciseOverrideDialog";
 
 
 

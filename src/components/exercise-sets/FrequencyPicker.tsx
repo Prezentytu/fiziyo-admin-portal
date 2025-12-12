@@ -3,6 +3,8 @@
 import { cn } from "@/lib/utils";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Plus, Minus } from "lucide-react";
 
 const DAYS = [
   { key: "monday", label: "Pn", fullLabel: "Poniedziałek" },
@@ -118,7 +120,7 @@ export function FrequencyPicker({
             </button>
           </div>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-1.5 sm:gap-2">
           {DAYS.map((day) => {
             const isSelected = value[day.key as keyof FrequencyValue] === true;
             return (
@@ -127,10 +129,10 @@ export function FrequencyPicker({
                 type="button"
                 onClick={() => toggleDay(day.key as keyof FrequencyValue)}
                 className={cn(
-                  "flex h-11 w-11 items-center justify-center rounded-xl text-sm font-medium transition-all",
+                  "flex h-12 w-12 items-center justify-center rounded-xl text-sm font-semibold transition-all duration-200",
                   isSelected
-                    ? "bg-primary text-primary-foreground shadow-md shadow-primary/30"
-                    : "bg-surface-light text-muted-foreground hover:bg-surface-light/80 hover:text-foreground"
+                    ? "bg-primary text-primary-foreground shadow-lg shadow-primary/30 scale-105"
+                    : "bg-surface-light text-muted-foreground hover:bg-surface hover:text-foreground border border-transparent hover:border-border/50"
                 )}
                 title={day.fullLabel}
               >
@@ -150,20 +152,52 @@ export function FrequencyPicker({
           <Label htmlFor="timesPerDay" className="text-sm font-medium">
             Ile razy dziennie
           </Label>
-          <Input
-            id="timesPerDay"
-            type="number"
-            min={1}
-            max={10}
-            value={value.timesPerDay}
-            onChange={(e) =>
-              onChange({
-                ...value,
-                timesPerDay: Math.max(1, parseInt(e.target.value) || 1),
-              })
-            }
-            className="h-11"
-          />
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              className="h-11 w-11 shrink-0"
+              onClick={() =>
+                onChange({
+                  ...value,
+                  timesPerDay: Math.max(1, value.timesPerDay - 1),
+                })
+              }
+              disabled={value.timesPerDay <= 1}
+            >
+              <Minus className="h-4 w-4" />
+            </Button>
+            <Input
+              id="timesPerDay"
+              type="number"
+              min={1}
+              max={10}
+              value={value.timesPerDay}
+              onChange={(e) =>
+                onChange({
+                  ...value,
+                  timesPerDay: Math.max(1, parseInt(e.target.value) || 1),
+                })
+              }
+              className="h-11 text-center text-lg font-semibold"
+            />
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              className="h-11 w-11 shrink-0"
+              onClick={() =>
+                onChange({
+                  ...value,
+                  timesPerDay: Math.min(10, value.timesPerDay + 1),
+                })
+              }
+              disabled={value.timesPerDay >= 10}
+            >
+              <Plus className="h-4 w-4" />
+            </Button>
+          </div>
           <p className="text-xs text-muted-foreground">
             Liczba wykonań zestawu dziennie
           </p>
@@ -173,21 +207,53 @@ export function FrequencyPicker({
           <Label htmlFor="breakBetweenSets" className="text-sm font-medium">
             Przerwa między wykonaniami (godz.)
           </Label>
-          <Input
-            id="breakBetweenSets"
-            type="number"
-            min={0}
-            max={24}
-            step={0.5}
-            value={value.breakBetweenSets}
-            onChange={(e) =>
-              onChange({
-                ...value,
-                breakBetweenSets: Math.max(0, parseFloat(e.target.value) || 0),
-              })
-            }
-            className="h-11"
-          />
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              className="h-11 w-11 shrink-0"
+              onClick={() =>
+                onChange({
+                  ...value,
+                  breakBetweenSets: Math.max(0, value.breakBetweenSets - 1),
+                })
+              }
+              disabled={value.breakBetweenSets <= 0}
+            >
+              <Minus className="h-4 w-4" />
+            </Button>
+            <Input
+              id="breakBetweenSets"
+              type="number"
+              min={0}
+              max={24}
+              step={0.5}
+              value={value.breakBetweenSets}
+              onChange={(e) =>
+                onChange({
+                  ...value,
+                  breakBetweenSets: Math.max(0, parseFloat(e.target.value) || 0),
+                })
+              }
+              className="h-11 text-center text-lg font-semibold"
+            />
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              className="h-11 w-11 shrink-0"
+              onClick={() =>
+                onChange({
+                  ...value,
+                  breakBetweenSets: Math.min(24, value.breakBetweenSets + 1),
+                })
+              }
+              disabled={value.breakBetweenSets >= 24}
+            >
+              <Plus className="h-4 w-4" />
+            </Button>
+          </div>
           <p className="text-xs text-muted-foreground">
             Minimalny odstęp między sesjami
           </p>

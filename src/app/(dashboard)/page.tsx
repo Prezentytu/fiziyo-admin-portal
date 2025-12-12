@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useQuery } from "@apollo/client/react";
 import { useUser } from "@clerk/nextjs";
 import Link from "next/link";
@@ -15,12 +16,16 @@ import {
   Rocket,
   ArrowRight,
   Zap,
+  Calendar,
+  TrendingUp,
+  Activity,
 } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { StatsCard } from "@/components/shared/StatsCard";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 import { GET_ORGANIZATION_EXERCISES_QUERY } from "@/graphql/queries/exercises.queries";
 import { GET_ORGANIZATION_EXERCISE_SETS_QUERY } from "@/graphql/queries/exerciseSets.queries";
@@ -33,18 +38,11 @@ import type {
   TherapistPatientsResponse,
 } from "@/types/apollo";
 
-interface ExerciseItem {
-  id: string;
-  name: string;
-  type?: string;
-  imageUrl?: string;
-  images?: string[];
-}
-
 interface ExerciseSetItem {
   id: string;
   name: string;
   description?: string;
+  exerciseMappings?: Array<{ id: string }>;
 }
 
 interface PatientAssignment {
@@ -56,10 +54,12 @@ interface PatientAssignment {
     image?: string;
   };
   contextLabel?: string;
+  status?: string;
 }
 
 export default function DashboardPage() {
   const { user } = useUser();
+  const [showAllPatients, setShowAllPatients] = useState(false);
 
   // Get user data
   const { data: userData, loading: userLoading } = useQuery(
@@ -128,57 +128,71 @@ export default function DashboardPage() {
       ? "Cześć"
       : "Dobry wieczór";
 
+  // Calculate active patients (for demo, showing all as active)
+  const activePatients = patients.filter((p: PatientAssignment) => p.status !== "inactive");
+  const displayedPatients = showAllPatients ? activePatients : activePatients.slice(0, 4);
+
   return (
     <div className="space-y-6">
-      {/* Welcome section with primary CTA */}
-      <div className="relative rounded-2xl border border-border/60 bg-surface p-8 lg:p-10 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/6 via-transparent to-secondary/4" />
-        <div className="relative flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-          <div>
-            <h1 className="text-3xl lg:text-4xl font-bold mb-2 text-foreground">
-              {greeting}, {userName}!
-            </h1>
-            <p className="text-muted-foreground text-lg">
-              Zarządzaj pacjentami i przypisuj im zestawy ćwiczeń
-            </p>
+      {/* Hero Welcome Section */}
+      <div className="relative rounded-2xl border border-border/60 bg-gradient-to-br from-surface via-surface to-surface-light p-8 lg:p-10 overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-secondary/5" />
+        <div className="absolute top-0 right-0 w-96 h-96 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+        
+        <div className="relative">
+          <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
+            <div className="space-y-2">
+              <h1 className="text-3xl lg:text-4xl font-bold text-foreground">
+                {greeting}, {userName}!
+              </h1>
+              <p className="text-lg text-muted-foreground max-w-xl">
+                Zarządzaj pacjentami i twórz spersonalizowane programy ćwiczeń. 
+                Masz <span className="text-primary font-semibold">{patientsCount}</span> pacjentów 
+                i <span className="text-secondary font-semibold">{setsCount}</span> zestawów.
+              </p>
+            </div>
+
+            {/* Quick Actions */}
+            <div className="flex flex-wrap gap-3">
+              <Link href="/patients">
+                <Button size="lg" className="gap-2 h-12 px-6 shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/25 transition-all">
+                  <Send className="h-5 w-5" />
+                  Przypisz zestaw
+                </Button>
+              </Link>
+              <Link href="/patients">
+                <Button size="lg" variant="outline" className="gap-2 h-12 px-6">
+                  <UserPlus className="h-5 w-5" />
+                  Dodaj pacjenta
+                </Button>
+              </Link>
+            </div>
           </div>
-          <Link href="/patients" className="group">
-            <Button
-              size="lg"
-              className="gap-2.5 h-14 px-8 rounded-xl text-base font-semibold shadow-lg shadow-primary/20 transition-all hover:shadow-xl hover:shadow-primary/25"
-            >
-              <Send className="h-5 w-5 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-              Przypisz zestaw pacjentowi
-            </Button>
-          </Link>
         </div>
       </div>
 
-      {/* Upgrade Banner - pokazywany dla planu free gdy zbliża się do limitów */}
+      {/* Upgrade Banner - shown when approaching limits */}
       {patientsCount >= 3 && (
-        <div className="relative rounded-2xl border border-primary/30 bg-gradient-to-r from-primary/10 via-primary/5 to-secondary/10 p-6 overflow-hidden">
+        <div className="relative rounded-2xl border border-primary/30 bg-gradient-to-r from-primary/10 via-primary/5 to-secondary/10 p-5 overflow-hidden">
           <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
           <div className="relative flex flex-col sm:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-4">
-              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-emerald-600 text-white shadow-lg shadow-primary/30">
-                <Rocket className="h-7 w-7" />
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-emerald-600 text-white shadow-lg shadow-primary/30">
+                <Rocket className="h-6 w-6" />
               </div>
               <div>
-                <h3 className="text-lg font-bold text-foreground flex items-center gap-2">
-                  Odblokuj pełny potencjał
+                <h3 className="text-base font-bold text-foreground flex items-center gap-2">
+                  Rozwijaj swoją praktykę
                   <Zap className="h-4 w-4 text-primary fill-primary" />
                 </h3>
-                <p className="text-muted-foreground">
-                  Wykorzystujesz {Math.round((patientsCount / 5) * 100)}% limitu pacjentów. 
-                  Przejdź na plan Professional i rozwijaj praktykę bez ograniczeń!
+                <p className="text-sm text-muted-foreground">
+                  Wykorzystujesz {Math.round((patientsCount / 5) * 100)}% limitu. 
+                  Przejdź na Professional dla nieograniczonej liczby pacjentów.
                 </p>
               </div>
             </div>
             <Link href="/subscription">
-              <Button 
-                size="lg" 
-                className="gap-2 rounded-xl shadow-lg shadow-primary/30 whitespace-nowrap"
-              >
+              <Button className="gap-2 whitespace-nowrap shadow-lg shadow-primary/30">
                 <Sparkles className="h-4 w-4" />
                 Ulepsz plan
                 <ArrowRight className="h-4 w-4" />
@@ -188,239 +202,302 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* Bento Grid */}
-      <div className="grid gap-5 lg:grid-cols-3 lg:grid-rows-[auto_1fr]">
-        {/* Hero Card - Pacjenci */}
-        <StatsCard
-          title="Twoi pacjenci"
-          value={patientsCount}
-          icon={Users}
-          variant="info"
-          size="hero"
-          loading={isLoading || patientsLoading}
-          className="lg:row-span-2"
-          action={{ label: "Zarządzaj pacjentami", href: "/patients" }}
-        >
-          {/* Recent patients list */}
-          {patientsLoading ? (
-            <div className="space-y-3">
-              {[1, 2, 3].map((i) => (
-                <Skeleton key={i} className="h-16 w-full rounded-xl" />
-              ))}
-            </div>
-          ) : patients.length > 0 ? (
-            <div className="space-y-3">
-              <p className="text-sm font-medium text-muted-foreground mb-4">
-                Ostatnio dodani
-              </p>
-              {patients.slice(0, 3).map((assignment: PatientAssignment) => (
-                <Link
-                  key={assignment.id}
-                  href={`/patients/${assignment.patient?.id}`}
-                  className="group flex items-center gap-4 p-3 rounded-xl bg-surface-light/50 hover:bg-surface-light border border-transparent hover:border-border/40 transition-all"
-                >
-                  {assignment.patient?.image ? (
-                    <img
-                      src={assignment.patient.image}
-                      alt=""
-                      className="h-11 w-11 rounded-full object-cover ring-2 ring-border/30"
-                    />
-                  ) : (
-                    <div className="flex h-11 w-11 items-center justify-center rounded-full bg-gradient-to-br from-info/80 to-blue-600/80 text-white font-semibold text-base">
-                      {assignment.patient?.fullname?.[0] || "?"}
-                    </div>
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <p className="text-base font-medium truncate text-foreground">
-                      {assignment.patient?.fullname || "Nieznany"}
-                    </p>
-                    <p className="text-sm text-muted-foreground truncate">
-                      {assignment.contextLabel || "Pacjent"}
-                    </p>
+      {/* Main Content Grid */}
+      <div className="grid gap-6 lg:grid-cols-3">
+        {/* Left Column - Patients */}
+        <div className="lg:col-span-2 space-y-6">
+          {/* Patients Section */}
+          <Card className="border-border/60">
+            <CardHeader className="pb-4">
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-info/10">
+                    <Users className="h-4 w-4 text-info" />
                   </div>
-                  <ChevronRight className="h-5 w-5 text-muted-foreground/70 transition-transform duration-200 group-hover:translate-x-1 group-hover:text-muted-foreground" />
-                </Link>
-              ))}
-            </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center py-6 text-center">
-              <div className="h-16 w-16 rounded-full bg-surface-light/80 flex items-center justify-center mb-4">
-                <UserPlus className="h-8 w-8 text-muted-foreground/80" />
-              </div>
-              <p className="text-base text-muted-foreground mb-4">
-                Dodaj pierwszego pacjenta
-              </p>
-              <Link href="/patients">
-                <Button variant="outline" className="rounded-xl h-10">
-                  <Plus className="mr-2 h-4 w-4" />
-                  Dodaj pacjenta
-                </Button>
-              </Link>
-            </div>
-          )}
-        </StatsCard>
-
-        {/* Zestawy ćwiczeń */}
-        <StatsCard
-          title="Zestawy ćwiczeń"
-          value={setsCount}
-          icon={FolderKanban}
-          variant="secondary"
-          loading={isLoading || setsLoading}
-          action={{ label: "Nowy zestaw", href: "/exercise-sets" }}
-        />
-
-        {/* Ćwiczenia */}
-        <StatsCard
-          title="Biblioteka ćwiczeń"
-          value={exercisesCount}
-          icon={Dumbbell}
-          variant="primary"
-          loading={isLoading || exercisesLoading}
-          action={{ label: "Przeglądaj", href: "/exercises" }}
-        />
-
-        {/* Gotowe zestawy do przypisania */}
-        <Card className="lg:col-span-2 border-border/60">
-          <CardHeader className="pb-4">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-lg font-semibold text-foreground">
-                Gotowe zestawy do przypisania
-              </CardTitle>
-              <Link href="/exercise-sets" className="group">
-                <Button variant="ghost" size="sm" className="h-9 text-sm">
-                  Wszystkie
-                  <ChevronRight className="ml-1 h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" />
-                </Button>
-              </Link>
-            </div>
-          </CardHeader>
-          <CardContent className="pt-0">
-            {setsLoading ? (
-              <div className="grid gap-4 sm:grid-cols-2">
-                {[1, 2, 3, 4].map((i) => (
-                  <Skeleton key={i} className="h-24 w-full rounded-xl" />
-                ))}
-              </div>
-            ) : exerciseSets.length > 0 ? (
-              <div className="grid gap-4 sm:grid-cols-2">
-                {exerciseSets.slice(0, 4).map((set: ExerciseSetItem) => (
-                  <Link
-                    key={set.id}
-                    href={`/exercise-sets/${set.id}`}
-                    className="group flex items-start gap-4 p-4 rounded-xl border border-border/50 bg-surface-light/30 hover:bg-surface-light hover:border-border/70 transition-all"
-                  >
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-secondary/90 to-teal-600/90">
-                      <FolderKanban className="h-6 w-6 text-white" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium text-base truncate text-foreground group-hover:text-secondary transition-colors">
-                        {set.name}
-                      </p>
-                      <p className="text-sm text-muted-foreground line-clamp-2 mt-1">
-                        {set.description || "Zestaw ćwiczeń"}
-                      </p>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center py-10 text-center">
-                <div className="h-16 w-16 rounded-full bg-surface-light/80 flex items-center justify-center mb-4">
-                  <Sparkles className="h-8 w-8 text-muted-foreground/80" />
-                </div>
-                <p className="text-base text-muted-foreground mb-4">
-                  Stwórz swój pierwszy zestaw ćwiczeń
-                </p>
-                <Link href="/exercise-sets">
-                  <Button className="rounded-xl h-10">
-                    <Plus className="mr-2 h-4 w-4" />
-                    Nowy zestaw
+                  Twoi pacjenci
+                  <Badge variant="secondary" className="ml-2">{patientsCount}</Badge>
+                </CardTitle>
+                <Link href="/patients" className="group">
+                  <Button variant="ghost" size="sm" className="h-8 text-sm gap-1">
+                    Wszyscy
+                    <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
                   </Button>
                 </Link>
               </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Recent exercises */}
-      <Card className="border-border/60">
-        <CardHeader className="pb-4">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-lg font-semibold text-foreground">
-              Ostatnio dodane ćwiczenia
-            </CardTitle>
-            <Link href="/exercises" className="group">
-              <Button variant="ghost" size="sm" className="h-9 text-sm">
-                Biblioteka
-                <ChevronRight className="ml-1 h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" />
-              </Button>
-            </Link>
-          </div>
-        </CardHeader>
-        <CardContent className="pt-0">
-          {exercisesLoading ? (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              {[1, 2, 3, 4].map((i) => (
-                <Skeleton key={i} className="aspect-[4/3] w-full rounded-xl" />
-              ))}
-            </div>
-          ) : exercises.length > 0 ? (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              {exercises.slice(0, 4).map((exercise: ExerciseItem) => {
-                const imageUrl = exercise.imageUrl || exercise.images?.[0];
-                return (
-                  <Link
-                    key={exercise.id}
-                    href={`/exercises/${exercise.id}`}
-                    className="group relative rounded-xl border border-border/50 overflow-hidden hover:border-border/70 transition-all"
-                  >
-                    {/* Thumbnail */}
-                    <div className="aspect-4/3 bg-surface-light">
-                      {imageUrl ? (
-                        <img
-                          src={imageUrl}
-                          alt={exercise.name}
-                          className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-300"
-                        />
-                      ) : (
-                        <div className="h-full w-full flex items-center justify-center bg-surface-light/50">
-                          <Dumbbell className="h-10 w-10 text-muted-foreground/40" />
+            </CardHeader>
+            <CardContent className="pt-0">
+              {patientsLoading ? (
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {[1, 2, 3, 4].map((i) => (
+                    <Skeleton key={i} className="h-20 w-full rounded-xl" />
+                  ))}
+                </div>
+              ) : patients.length > 0 ? (
+                <>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    {displayedPatients.map((assignment: PatientAssignment) => (
+                      <Link
+                        key={assignment.id}
+                        href={`/patients/${assignment.patient?.id}`}
+                        className="group flex items-center gap-3 p-3 rounded-xl border border-border/50 bg-surface hover:bg-surface-light hover:border-primary/20 transition-all"
+                      >
+                        <Avatar className="h-11 w-11 shrink-0 ring-2 ring-border/30 group-hover:ring-primary/20 transition-all">
+                          <AvatarImage src={assignment.patient?.image} />
+                          <AvatarFallback className="bg-gradient-to-br from-info to-blue-600 text-white font-semibold">
+                            {assignment.patient?.fullname?.[0] || "?"}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium truncate text-foreground group-hover:text-primary transition-colors">
+                            {assignment.patient?.fullname || "Nieznany"}
+                          </p>
+                          <p className="text-xs text-muted-foreground truncate">
+                            {assignment.contextLabel || assignment.patient?.email || "Pacjent"}
+                          </p>
                         </div>
+                        <ChevronRight className="h-4 w-4 text-muted-foreground/50 group-hover:text-primary transition-all group-hover:translate-x-0.5" />
+                      </Link>
+                    ))}
+                  </div>
+                  {activePatients.length > 4 && (
+                    <Button
+                      variant="ghost"
+                      className="w-full mt-3 text-muted-foreground"
+                      onClick={() => setShowAllPatients(!showAllPatients)}
+                    >
+                      {showAllPatients ? "Pokaż mniej" : `Pokaż wszystkich (${activePatients.length})`}
+                    </Button>
+                  )}
+                </>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-10 text-center">
+                  <div className="h-16 w-16 rounded-full bg-surface-light flex items-center justify-center mb-4">
+                    <UserPlus className="h-8 w-8 text-muted-foreground/60" />
+                  </div>
+                  <p className="text-base font-medium text-muted-foreground mb-2">
+                    Dodaj pierwszego pacjenta
+                  </p>
+                  <p className="text-sm text-muted-foreground/70 mb-4 max-w-xs">
+                    Zacznij budować swoją bazę pacjentów i przypisuj im zestawy ćwiczeń
+                  </p>
+                  <Link href="/patients">
+                    <Button className="shadow-lg shadow-primary/20">
+                      <Plus className="mr-2 h-4 w-4" />
+                      Dodaj pacjenta
+                    </Button>
+                  </Link>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Exercise Sets Section */}
+          <Card className="border-border/60">
+            <CardHeader className="pb-4">
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-secondary/10">
+                    <FolderKanban className="h-4 w-4 text-secondary" />
+                  </div>
+                  Zestawy ćwiczeń
+                  <Badge variant="secondary" className="ml-2">{setsCount}</Badge>
+                </CardTitle>
+                <Link href="/exercise-sets" className="group">
+                  <Button variant="ghost" size="sm" className="h-8 text-sm gap-1">
+                    Wszystkie
+                    <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+                  </Button>
+                </Link>
+              </div>
+            </CardHeader>
+            <CardContent className="pt-0">
+              {setsLoading ? (
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {[1, 2, 3, 4].map((i) => (
+                    <Skeleton key={i} className="h-24 w-full rounded-xl" />
+                  ))}
+                </div>
+              ) : exerciseSets.length > 0 ? (
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {exerciseSets.slice(0, 4).map((set: ExerciseSetItem) => (
+                    <Link
+                      key={set.id}
+                      href={`/exercise-sets/${set.id}`}
+                      className="group flex items-start gap-3 p-4 rounded-xl border border-border/50 bg-surface hover:bg-surface-light hover:border-secondary/20 transition-all"
+                    >
+                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-secondary/80 to-teal-600/80 shadow-sm">
+                        <FolderKanban className="h-5 w-5 text-white" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium truncate text-foreground group-hover:text-secondary transition-colors">
+                          {set.name}
+                        </p>
+                        <div className="flex items-center gap-2 mt-1">
+                          <Badge variant="outline" className="text-[10px]">
+                            {set.exerciseMappings?.length || 0} ćw.
+                          </Badge>
+                        </div>
+                        {set.description && (
+                          <p className="text-xs text-muted-foreground line-clamp-1 mt-1">
+                            {set.description}
+                          </p>
+                        )}
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-10 text-center">
+                  <div className="h-16 w-16 rounded-full bg-surface-light flex items-center justify-center mb-4">
+                    <Sparkles className="h-8 w-8 text-muted-foreground/60" />
+                  </div>
+                  <p className="text-base font-medium text-muted-foreground mb-2">
+                    Stwórz pierwszy zestaw
+                  </p>
+                  <p className="text-sm text-muted-foreground/70 mb-4 max-w-xs">
+                    Zestawy ćwiczeń to gotowe programy, które przypisujesz pacjentom
+                  </p>
+                  <Link href="/exercise-sets">
+                    <Button variant="secondary" className="shadow-lg shadow-secondary/20">
+                      <Plus className="mr-2 h-4 w-4" />
+                      Nowy zestaw
+                    </Button>
+                  </Link>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Right Column - Stats & Quick Info */}
+        <div className="space-y-6">
+          {/* Stats Cards */}
+          <div className="grid gap-4">
+            <Card className="border-border/60 bg-gradient-to-br from-surface to-surface-light">
+              <CardContent className="p-5">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Pacjenci</p>
+                    <div className="text-3xl font-bold text-foreground mt-1">
+                      {isLoading || patientsLoading ? (
+                        <Skeleton className="h-9 w-16" />
+                      ) : (
+                        patientsCount
                       )}
                     </div>
-                    {/* Info overlay */}
-                    <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/50 to-transparent p-4 pt-10">
-                      <p className="text-base font-medium text-white/95 truncate">
-                        {exercise.name}
-                      </p>
-                      <p className="text-sm text-white/70">
-                        {exercise.type || "Ćwiczenie"}
-                      </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {activePatients.length} aktywnych
+                    </p>
+                  </div>
+                  <div className="h-12 w-12 rounded-xl bg-info/10 flex items-center justify-center">
+                    <Users className="h-6 w-6 text-info" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-border/60 bg-gradient-to-br from-surface to-surface-light">
+              <CardContent className="p-5">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Zestawy</p>
+                    <div className="text-3xl font-bold text-foreground mt-1">
+                      {isLoading || setsLoading ? (
+                        <Skeleton className="h-9 w-16" />
+                      ) : (
+                        setsCount
+                      )}
                     </div>
-                  </Link>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="flex flex-col items-center justify-center py-10 text-center">
-              <div className="h-16 w-16 rounded-full bg-surface-light/80 flex items-center justify-center mb-4">
-                <Dumbbell className="h-8 w-8 text-muted-foreground/80" />
-              </div>
-              <p className="text-base text-muted-foreground mb-4">
-                Zacznij budować bibliotekę ćwiczeń
-              </p>
-              <Link href="/exercises">
-                <Button className="rounded-xl h-10">
-                  <Plus className="mr-2 h-4 w-4" />
-                  Dodaj ćwiczenie
+                    <p className="text-xs text-muted-foreground mt-1">
+                      gotowych programów
+                    </p>
+                  </div>
+                  <div className="h-12 w-12 rounded-xl bg-secondary/10 flex items-center justify-center">
+                    <FolderKanban className="h-6 w-6 text-secondary" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-border/60 bg-gradient-to-br from-surface to-surface-light">
+              <CardContent className="p-5">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Ćwiczenia</p>
+                    <div className="text-3xl font-bold text-foreground mt-1">
+                      {isLoading || exercisesLoading ? (
+                        <Skeleton className="h-9 w-16" />
+                      ) : (
+                        exercisesCount
+                      )}
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      w bibliotece
+                    </p>
+                  </div>
+                  <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center">
+                    <Dumbbell className="h-6 w-6 text-primary" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Quick Links */}
+          <Card className="border-border/60">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Szybkie akcje</CardTitle>
+            </CardHeader>
+            <CardContent className="pt-0 space-y-2">
+              <Link href="/exercises" className="block">
+                <Button variant="ghost" className="w-full justify-start h-11 hover:bg-surface-light">
+                  <Dumbbell className="mr-3 h-4 w-4 text-primary" />
+                  Przeglądaj ćwiczenia
+                  <ChevronRight className="ml-auto h-4 w-4 text-muted-foreground" />
                 </Button>
               </Link>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+              <Link href="/exercise-sets" className="block">
+                <Button variant="ghost" className="w-full justify-start h-11 hover:bg-surface-light">
+                  <Plus className="mr-3 h-4 w-4 text-secondary" />
+                  Utwórz zestaw
+                  <ChevronRight className="ml-auto h-4 w-4 text-muted-foreground" />
+                </Button>
+              </Link>
+              <Link href="/appointments" className="block">
+                <Button variant="ghost" className="w-full justify-start h-11 hover:bg-surface-light">
+                  <Calendar className="mr-3 h-4 w-4 text-info" />
+                  Harmonogram wizyt
+                  <ChevronRight className="ml-auto h-4 w-4 text-muted-foreground" />
+                </Button>
+              </Link>
+              <Link href="/organization" className="block">
+                <Button variant="ghost" className="w-full justify-start h-11 hover:bg-surface-light">
+                  <Activity className="mr-3 h-4 w-4 text-muted-foreground" />
+                  Zarządzaj organizacją
+                  <ChevronRight className="ml-auto h-4 w-4 text-muted-foreground" />
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
+
+          {/* Tips Card */}
+          <Card className="border-border/60 bg-gradient-to-br from-primary/5 via-transparent to-secondary/5">
+            <CardContent className="p-5">
+              <div className="flex items-start gap-3">
+                <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                  <TrendingUp className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <p className="font-medium text-foreground text-sm">Porada dnia</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Personalizuj zestawy dla każdego pacjenta - dostosuj liczbę serii i powtórzeń do ich możliwości.
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     </div>
   );
 }

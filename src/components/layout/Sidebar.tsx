@@ -84,7 +84,7 @@ export function Sidebar({ isCollapsed, onToggleCollapse }: SidebarProps) {
             {!isCollapsed && (
               <div className="flex flex-col overflow-hidden">
                 <span className="text-lg font-bold leading-none text-foreground">
-                  Fiziyo
+                  fiziYo
                 </span>
                 <span className="text-[10px] text-muted-foreground uppercase tracking-wider">
                   Admin Panel
