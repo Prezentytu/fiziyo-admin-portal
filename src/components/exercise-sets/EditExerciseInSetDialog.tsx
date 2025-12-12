@@ -127,9 +127,29 @@ export function EditExerciseInSetDialog({
   const exercise = exerciseMapping?.exercise;
   const imageUrl = exercise?.imageUrl || exercise?.images?.[0];
 
+  // Tłumaczenie typów na polski
+  const translateType = (type?: string) => {
+    const types: Record<string, string> = {
+      time: "czasowe",
+      reps: "powtórzenia",
+    };
+    return type ? types[type] || type : "";
+  };
+
+  const translateSide = (side?: string) => {
+    const sides: Record<string, string> = {
+      left: "lewa strona",
+      right: "prawa strona",
+      both: "obie strony",
+      alternating: "naprzemiennie",
+      none: "bez strony",
+    };
+    return side ? sides[side] || side : "";
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg max-h-[90vh] flex flex-col p-0">
+      <DialogContent className="max-w-xl max-h-[90vh] flex flex-col p-0">
         <DialogHeader className="px-6 pt-6 pb-4">
           <DialogTitle>Edytuj parametry</DialogTitle>
           <DialogDescription>
@@ -142,36 +162,39 @@ export function EditExerciseInSetDialog({
             <ScrollArea className="flex-1 px-6">
               <div className="space-y-5 pb-4">
                 {/* Exercise preview */}
-                <div className="flex items-center gap-3 rounded-xl border border-border bg-surface p-3">
-                  <div className="h-12 w-12 rounded-lg overflow-hidden shrink-0">
-                    {imageUrl ? (
-                      <img
-                        src={imageUrl}
-                        alt={exercise?.name}
-                        className="h-full w-full object-cover"
-                      />
-                    ) : (
-                      <ImagePlaceholder
-                        type="exercise"
-                        iconClassName="h-5 w-5"
-                      />
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-sm truncate">
-                      {exercise?.name || "Nieznane ćwiczenie"}
-                    </p>
-                    <div className="flex items-center gap-2 mt-0.5">
-                      {exercise?.type && (
-                        <Badge variant="secondary" className="text-[10px]">
-                          {exercise.type}
-                        </Badge>
+                <div className="rounded-xl border border-border bg-surface p-3">
+                  <div className="flex items-start gap-3">
+                    <div className="h-12 w-12 rounded-lg overflow-hidden shrink-0">
+                      {imageUrl ? (
+                        <img
+                          src={imageUrl}
+                          alt={exercise?.name}
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <ImagePlaceholder
+                          type="exercise"
+                          iconClassName="h-5 w-5"
+                        />
                       )}
-                      {exercise?.exerciseSide && (
-                        <Badge variant="outline" className="text-[10px]">
-                          {exercise.exerciseSide}
-                        </Badge>
-                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-sm leading-tight">
+                        {exercise?.name || "Nieznane ćwiczenie"}
+                      </p>
+                      <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                        {exercise?.type && (
+                          <Badge variant="secondary" className="text-[10px]">
+                            {translateType(exercise.type)}
+                          </Badge>
+                        )}
+                        {exercise?.exerciseSide &&
+                          exercise.exerciseSide !== "none" && (
+                            <Badge variant="outline" className="text-[10px]">
+                              {translateSide(exercise.exerciseSide)}
+                            </Badge>
+                          )}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -343,7 +366,9 @@ export function EditExerciseInSetDialog({
                     <Input
                       value={customName}
                       onChange={(e) => setCustomName(e.target.value)}
-                      placeholder={exercise?.name || "Zostaw puste dla domyślnej"}
+                      placeholder={
+                        exercise?.name || "Zostaw puste dla domyślnej"
+                      }
                       className="h-9"
                     />
                   </div>

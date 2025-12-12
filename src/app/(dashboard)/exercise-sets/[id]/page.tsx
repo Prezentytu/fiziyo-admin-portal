@@ -41,6 +41,16 @@ import {
 } from "@/graphql/mutations/exercises.mutations";
 import { GET_USER_BY_CLERK_ID_QUERY } from "@/graphql/queries/users.queries";
 
+// Tłumaczenie typów na polski
+const translateType = (type?: string) => {
+  const types: Record<string, string> = {
+    time: "czasowe",
+    reps: "powtórzenia",
+    hold: "utrzymanie",
+  };
+  return type ? types[type] || type : "";
+};
+
 interface SetDetailPageProps {
   params: Promise<{ id: string }>;
 }
@@ -428,7 +438,7 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
                                   variant="secondary"
                                   className="text-[10px] shrink-0"
                                 >
-                                  {mapping.exercise.type}
+                                  {translateType(mapping.exercise.type)}
                                 </Badge>
                               )}
                             </div>

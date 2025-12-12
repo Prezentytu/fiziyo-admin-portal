@@ -791,3 +791,30 @@ if (loading) return <Loader />;
 **Podejście**: Najpierw myśl, potem koduj. Zawsze z uwzględnieniem UX.
 **Next.js 2025**: App Router, Server/Client Components, "use client" directive
 **GraphQL**: Apollo Client 4.0, useQuery z skip, fragmenty, token exchange
+
+## 🗃️ BACKEND DATA SCHEMA (C# .NET Core)
+
+### Exercise (Ćwiczenie)
+
+Id, Name, Description, Type ("reps"|"time"), Sets, Reps, Duration
+RestSets, RestReps, PreparationTime, ExecutionTime
+ExerciseSide ("left"|"right"|"alternating"|"both"|"none")
+ImageUrl, Images[], GifUrl, VideoUrl, Notes, MainTags[], AdditionalTags[]
+Scope (Personal|Organization|Global), IsActive, IsPublicTemplate
+
+### ExerciseSet (Zestaw ćwiczeń)
+
+Id, Name, Description, OrganizationId, IsActive, IsTemplate
+Frequency { TimesPerDay, TimesPerWeek, BreakBetweenSets, Monday-Sunday }
+Relations: ExerciseMappings[], PatientAssignments[]
+
+### ExerciseSetMapping (Ćwiczenie w zestawie)
+
+Id, ExerciseSetId, ExerciseId, Order
+Sets, Reps, Duration, RestSets, RestReps (nadpisują Exercise)
+CustomName, CustomDescription, Notes (personalizacja dla zestawu)
+
+### PatientAssignment
+
+Id, ExerciseSetId, UserId, AssignedById, Status, StartDate, EndDate
+Frequency (może nadpisywać zestaw)
