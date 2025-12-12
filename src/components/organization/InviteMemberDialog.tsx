@@ -92,13 +92,16 @@ export function InviteMemberDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Zaproś członka</DialogTitle>
+          <DialogTitle>Zaproś</DialogTitle>
           <DialogDescription>
             Wyślij zaproszenie do dołączenia do organizacji
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+          <form
+            onSubmit={form.handleSubmit(handleSubmit)}
+            className="space-y-4"
+          >
             <FormField
               control={form.control}
               name="email"
@@ -122,7 +125,10 @@ export function InviteMemberDialog({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Rola *</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                  >
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Wybierz rolę" />
@@ -134,7 +140,7 @@ export function InviteMemberDialog({
                     </SelectContent>
                   </Select>
                   <FormDescription>
-                    Administratorzy mogą zarządzać członkami i ustawieniami
+                    Administratorzy mogą zarządzać użytkownikami i ustawieniami
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -177,4 +183,3 @@ export function InviteMemberDialog({
     </Dialog>
   );
 }
-
