@@ -4,33 +4,42 @@ import { useState } from "react";
 import { useQuery, useMutation } from "@apollo/client/react";
 import { useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
-import { Plus, Users, LayoutGrid, List, Filter } from "lucide-react";
+import { Plus, Users, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
-import { SearchInput } from "@/components/shared/SearchInput";
-import { LoadingState } from "@/components/shared/LoadingState";
+import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
-import { PatientCard, Patient } from "@/components/patients/PatientCard";
+import { PatientExpandableCard, Patient } from "@/components/patients/PatientExpandableCard";
 import { PatientDialog } from "@/components/patients/PatientDialog";
+import { PatientFilters } from "@/components/patients/PatientFilters";
+import { PatientQuickStats } from "@/components/patients/PatientQuickStats";
+import { AssignSetToPatientDialog } from "@/components/patients/AssignSetToPatientDialog";
 
-import { GET_THERAPIST_PATIENTS_QUERY } from "@/graphql/queries/therapists.queries";
-import { REMOVE_PATIENT_FROM_THERAPIST_MUTATION } from "@/graphql/mutations/therapists.mutations";
+import { GET_ALL_THERAPIST_PATIENTS_QUERY } from "@/graphql/queries/therapists.queries";
+import {
+  REMOVE_PATIENT_FROM_THERAPIST_MUTATION,
+  UPDATE_PATIENT_STATUS_MUTATION,
+} from "@/graphql/mutations/therapists.mutations";
 import { GET_USER_BY_CLERK_ID_QUERY } from "@/graphql/queries/users.queries";
+import { GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY } from "@/graphql/queries/patientAssignments.queries";
 import { matchesSearchQuery } from "@/utils/textUtils";
 import type { UserByClerkIdResponse, TherapistPatientsResponse } from "@/types/apollo";
+
+type FilterType = "all" | "active" | "inactive";
 
 export default function PatientsPage() {
   const { user } = useUser();
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
-  const [viewMode, setViewMode] = useState<"grid" | "list">("list");
+  const [filter, setFilter] = useState<FilterType>("all");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
+  const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
   const [deletingPatient, setDeletingPatient] = useState<Patient | null>(null);
+  const [togglingStatusPatient, setTogglingStatusPatient] = useState<Patient | null>(null);
 
   // Get user data
   const { data: userData } = useQuery(GET_USER_BY_CLERK_ID_QUERY, {
@@ -42,18 +51,27 @@ export default function PatientsPage() {
   const therapistId = userByClerkId?.id;
   const organizationId = userByClerkId?.organizationIds?.[0];
 
-  // Get patients
-  const { data, loading, error } = useQuery(GET_THERAPIST_PATIENTS_QUERY, {
+  // Get patients (all, including inactive for filtering)
+  const { data, loading, error } = useQuery(GET_ALL_THERAPIST_PATIENTS_QUERY, {
     variables: { therapistId, organizationId },
     skip: !therapistId || !organizationId,
   });
 
-  // Delete mutation
+  // Mutations
   const [removePatient, { loading: removing }] = useMutation(
     REMOVE_PATIENT_FROM_THERAPIST_MUTATION,
     {
       refetchQueries: [
-        { query: GET_THERAPIST_PATIENTS_QUERY, variables: { therapistId, organizationId } },
+        { query: GET_ALL_THERAPIST_PATIENTS_QUERY, variables: { therapistId, organizationId } },
+      ],
+    }
+  );
+
+  const [updateStatus, { loading: updatingStatus }] = useMutation(
+    UPDATE_PATIENT_STATUS_MUTATION,
+    {
+      refetchQueries: [
+        { query: GET_ALL_THERAPIST_PATIENTS_QUERY, variables: { therapistId, organizationId } },
       ],
     }
   );
@@ -63,6 +81,7 @@ export default function PatientsPage() {
   const patients: Patient[] = therapistPatients.map((assignment: {
     id: string;
     status?: string;
+    assignedAt?: string;
     contextLabel?: string;
     contextColor?: string;
     patient?: {
@@ -85,22 +104,80 @@ export default function PatientsPage() {
     assignmentStatus: assignment.status,
     contextLabel: assignment.contextLabel,
     contextColor: assignment.contextColor,
+    assignedAt: assignment.assignedAt,
   }));
 
-  // Filter
-  const filteredPatients = patients.filter((patient) => {
+  // Filter by status
+  const statusFilteredPatients = patients.filter((patient) => {
+    if (filter === "all") return true;
+    if (filter === "active") return patient.assignmentStatus !== "inactive";
+    if (filter === "inactive") return patient.assignmentStatus === "inactive";
+    return true;
+  });
+
+  // Filter by search query
+  const filteredPatients = statusFilteredPatients.filter((patient) => {
     const fullName =
       patient.fullname ||
       `${patient.personalData?.firstName || ""} ${patient.personalData?.lastName || ""}`.trim();
     return (
       matchesSearchQuery(fullName, searchQuery) ||
       matchesSearchQuery(patient.email, searchQuery) ||
-      matchesSearchQuery(patient.contactData?.phone, searchQuery)
+      matchesSearchQuery(patient.contactData?.phone, searchQuery) ||
+      matchesSearchQuery(patient.contactData?.address, searchQuery)
     );
   });
 
-  const handleView = (patient: Patient) => {
+  // Calculate stats
+  const activePatients = patients.filter((p) => p.assignmentStatus !== "inactive");
+  const recentPatients = [...patients]
+    .sort((a, b) => {
+      const dateA = a.assignedAt ? new Date(a.assignedAt).getTime() : 0;
+      const dateB = b.assignedAt ? new Date(b.assignedAt).getTime() : 0;
+      return dateB - dateA;
+    })
+    .slice(0, 3);
+
+  // Get total assignments count - we'll calculate from all patient assignments
+  // For now, we'll use a placeholder - in production this would come from a separate query
+  // that aggregates all exercise set assignments for all patients
+  const totalAssignments = 0; // TODO: Query total assignments count separately if needed
+
+  const handleViewReport = (patient: Patient) => {
     router.push(`/patients/${patient.id}`);
+  };
+
+  const handleAssignSet = (patient: Patient) => {
+    setSelectedPatient(patient);
+    setIsAssignDialogOpen(true);
+  };
+
+  const handleToggleStatus = (patient: Patient) => {
+    setTogglingStatusPatient(patient);
+  };
+
+  const handleConfirmToggleStatus = async () => {
+    if (!togglingStatusPatient || !therapistId || !organizationId) return;
+
+    const newStatus = togglingStatusPatient.assignmentStatus === "inactive" ? "active" : "inactive";
+
+    try {
+      await updateStatus({
+        variables: {
+          therapistId,
+          patientId: togglingStatusPatient.id,
+          organizationId,
+          status: newStatus,
+        },
+      });
+      toast.success(
+        `Pacjent został ${newStatus === "active" ? "aktywowany" : "dezaktywowany"}`
+      );
+      setTogglingStatusPatient(null);
+    } catch (error) {
+      console.error("Błąd podczas zmiany statusu:", error);
+      toast.error("Nie udało się zmienić statusu pacjenta");
+    }
   };
 
   const handleDelete = async () => {
@@ -122,6 +199,18 @@ export default function PatientsPage() {
     }
   };
 
+  // Get existing set IDs for selected patient (to filter out already assigned sets)
+  const { data: assignmentsData } = useQuery(GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY, {
+    variables: { userId: selectedPatient?.id },
+    skip: !selectedPatient?.id || !isAssignDialogOpen,
+  });
+
+  const existingSetIds =
+    ((assignmentsData as { patientAssignments?: Array<{ exerciseSetId?: string }> })
+      ?.patientAssignments || [])
+      .map((a) => a.exerciseSetId)
+      .filter((id): id is string => !!id) || [];
+
   if (error) {
     return (
       <div className="flex h-full items-center justify-center">
@@ -132,95 +221,115 @@ export default function PatientsPage() {
 
   return (
     <div className="space-y-6">
-      {/* Page header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Pacjenci</h1>
-          <p className="text-muted-foreground mt-1">
-            Zarządzaj listą swoich pacjentów
-          </p>
-        </div>
-        <Button onClick={() => setIsDialogOpen(true)} disabled={!organizationId} size="lg">
-          <Plus className="mr-2 h-5 w-5" />
-          Dodaj pacjenta
-        </Button>
-      </div>
+      {/* Hero Section */}
+      <div className="relative rounded-2xl border border-border/60 bg-gradient-to-br from-surface via-surface to-surface-light p-8 lg:p-10 overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-secondary/5" />
+        <div className="absolute top-0 right-0 w-96 h-96 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+        
+        <div className="relative">
+          <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
+            <div className="space-y-2">
+              <h1 className="text-3xl lg:text-4xl font-bold text-foreground">
+                Pacjenci
+              </h1>
+              <p className="text-lg text-muted-foreground max-w-xl">
+                Zarządzaj swoimi pacjentami i przypisuj im spersonalizowane programy ćwiczeń. 
+                Masz <span className="text-primary font-semibold">{patients.length}</span> pacjentów, 
+                z czego <span className="text-secondary font-semibold">{activePatients.length}</span> aktywnych.
+              </p>
+            </div>
 
-      {/* Filters bar - sticky */}
-      <div className="sticky top-0 z-10 -mx-6 px-6 py-4 bg-background/80 backdrop-blur-md border-b border-border">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-3 flex-1">
-            <SearchInput
-              value={searchQuery}
-              onChange={setSearchQuery}
-              placeholder="Szukaj pacjentów..."
-              className="max-w-md"
-            />
-            <Badge variant="secondary" className="hidden sm:flex">
-              {filteredPatients.length} z {patients.length}
-            </Badge>
-          </div>
-          
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" className="hidden sm:flex">
-              <Filter className="mr-2 h-4 w-4" />
-              Filtry
-            </Button>
-            <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as "grid" | "list")}>
-              <TabsList className="bg-surface-light">
-                <TabsTrigger value="list" className="data-[state=active]:bg-surface">
-                  <List className="h-4 w-4" />
-                </TabsTrigger>
-                <TabsTrigger value="grid" className="data-[state=active]:bg-surface">
-                  <LayoutGrid className="h-4 w-4" />
-                </TabsTrigger>
-              </TabsList>
-            </Tabs>
+            {/* Quick Actions */}
+            <div className="flex flex-wrap gap-3">
+              <Button
+                size="lg"
+                onClick={() => setIsDialogOpen(true)}
+                disabled={!organizationId}
+                className="gap-2 h-12 px-6 shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/25 transition-all"
+              >
+                <Plus className="h-5 w-5" />
+                Dodaj pacjenta
+              </Button>
+              <Button
+                size="lg"
+                variant="outline"
+                className="gap-2 h-12 px-6"
+                onClick={() => {
+                  // TODO: Implement assign existing patients dialog
+                  toast.info("Funkcjonalność w przygotowaniu");
+                }}
+              >
+                <UserPlus className="h-5 w-5" />
+                Przypisz istniejących
+              </Button>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Content */}
+      {/* Quick Stats Cards */}
+      <PatientQuickStats
+        totalPatients={patients.length}
+        activePatients={activePatients.length}
+        totalAssignments={totalAssignments}
+        recentPatients={recentPatients}
+        isLoading={loading}
+      />
+
+      {/* Filters */}
+      <PatientFilters
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        filter={filter}
+        onFilterChange={setFilter}
+        resultCount={filteredPatients.length}
+        totalCount={patients.length}
+      />
+
+      {/* Patients List - Expandable Cards */}
       {loading ? (
-        <LoadingState type={viewMode === "grid" ? "card" : "row"} count={6} />
+        <div className="space-y-3">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <Card key={i} className="border-border/60">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-4">
+                  <Skeleton className="h-12 w-12 rounded-full" />
+                  <div className="flex-1 space-y-2">
+                    <Skeleton className="h-4 w-48" />
+                    <Skeleton className="h-3 w-32" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       ) : filteredPatients.length === 0 ? (
-        <Card className="border-dashed">
+        <Card className="border-dashed border-border/60">
           <CardContent className="py-16">
             <EmptyState
               icon={Users}
-              title={searchQuery ? "Nie znaleziono pacjentów" : "Brak pacjentów"}
+              title={searchQuery || filter !== "all" ? "Nie znaleziono pacjentów" : "Brak pacjentów"}
               description={
-                searchQuery
-                  ? "Spróbuj zmienić kryteria wyszukiwania"
+                searchQuery || filter !== "all"
+                  ? "Spróbuj zmienić kryteria wyszukiwania lub filtry"
                   : "Dodaj pierwszego pacjenta do swojej listy"
               }
-              actionLabel={!searchQuery ? "Dodaj pacjenta" : undefined}
-              onAction={!searchQuery ? () => setIsDialogOpen(true) : undefined}
+              actionLabel={!searchQuery && filter === "all" ? "Dodaj pacjenta" : undefined}
+              onAction={!searchQuery && filter === "all" ? () => setIsDialogOpen(true) : undefined}
             />
           </CardContent>
         </Card>
-      ) : viewMode === "grid" ? (
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 animate-stagger">
-          {filteredPatients.map((patient) => (
-            <PatientCard
-              key={patient.id}
-              patient={patient}
-              onView={handleView}
-              onDelete={(p) => setDeletingPatient(p)}
-              onAssignSet={() => {}}
-            />
-          ))}
-        </div>
       ) : (
-        <div className="space-y-2 animate-stagger">
+        <div className="space-y-3">
           {filteredPatients.map((patient) => (
-            <PatientCard
+            <PatientExpandableCard
               key={patient.id}
               patient={patient}
-              compact
-              onView={handleView}
-              onDelete={(p) => setDeletingPatient(p)}
-              onAssignSet={() => {}}
+              onAssignSet={handleAssignSet}
+              onViewReport={handleViewReport}
+              onToggleStatus={handleToggleStatus}
+              onRemove={(p) => setDeletingPatient(p)}
+              organizationId={organizationId || ""}
             />
           ))}
         </div>
@@ -236,16 +345,55 @@ export default function PatientsPage() {
         />
       )}
 
+      {/* Assign Set Dialog */}
+      {selectedPatient && organizationId && (
+        <AssignSetToPatientDialog
+          open={isAssignDialogOpen}
+          onOpenChange={(open) => {
+            setIsAssignDialogOpen(open);
+            if (!open) {
+              setSelectedPatient(null);
+            }
+          }}
+          patientId={selectedPatient.id}
+          patientName={selectedPatient.fullname || "Nieznany pacjent"}
+          organizationId={organizationId}
+          existingSetIds={existingSetIds}
+          onSuccess={() => {
+            setIsAssignDialogOpen(false);
+            setSelectedPatient(null);
+          }}
+        />
+      )}
+
       {/* Delete Confirmation */}
       <ConfirmDialog
         open={!!deletingPatient}
         onOpenChange={(open) => !open && setDeletingPatient(null)}
-        title="Usuń pacjenta"
-        description={`Czy na pewno chcesz usunąć pacjenta "${deletingPatient?.fullname || "Nieznany"}" ze swojej listy?`}
-        confirmText="Usuń"
+        title="Odepnij pacjenta"
+        description={`Czy na pewno chcesz odepnąć pacjenta "${deletingPatient?.fullname || "Nieznany"}" ze swojej listy? Pacjent pozostanie w organizacji.`}
+        confirmText="Odepnij"
         variant="destructive"
         onConfirm={handleDelete}
         isLoading={removing}
+      />
+
+      {/* Toggle Status Confirmation */}
+      <ConfirmDialog
+        open={!!togglingStatusPatient}
+        onOpenChange={(open) => !open && setTogglingStatusPatient(null)}
+        title={
+          togglingStatusPatient?.assignmentStatus === "inactive"
+            ? "Aktywuj pacjenta"
+            : "Dezaktywuj pacjenta"
+        }
+        description={`Czy na pewno chcesz ${
+          togglingStatusPatient?.assignmentStatus === "inactive" ? "aktywować" : "dezaktywować"
+        } pacjenta "${togglingStatusPatient?.fullname || "Nieznany"}"?`}
+        confirmText={togglingStatusPatient?.assignmentStatus === "inactive" ? "Aktywuj" : "Dezaktywuj"}
+        variant="default"
+        onConfirm={handleConfirmToggleStatus}
+        isLoading={updatingStatus}
       />
     </div>
   );
