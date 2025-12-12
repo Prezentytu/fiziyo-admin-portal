@@ -12,6 +12,9 @@ import {
   Send,
   UserPlus,
   Sparkles,
+  Rocket,
+  ArrowRight,
+  Zap,
 } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -150,6 +153,40 @@ export default function DashboardPage() {
           </Link>
         </div>
       </div>
+
+      {/* Upgrade Banner - pokazywany dla planu free gdy zbliża się do limitów */}
+      {patientsCount >= 3 && (
+        <div className="relative rounded-2xl border border-primary/30 bg-gradient-to-r from-primary/10 via-primary/5 to-secondary/10 p-6 overflow-hidden">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+          <div className="relative flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-emerald-600 text-white shadow-lg shadow-primary/30">
+                <Rocket className="h-7 w-7" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-foreground flex items-center gap-2">
+                  Odblokuj pełny potencjał
+                  <Zap className="h-4 w-4 text-primary fill-primary" />
+                </h3>
+                <p className="text-muted-foreground">
+                  Wykorzystujesz {Math.round((patientsCount / 5) * 100)}% limitu pacjentów. 
+                  Przejdź na plan Professional i rozwijaj praktykę bez ograniczeń!
+                </p>
+              </div>
+            </div>
+            <Link href="/subscription">
+              <Button 
+                size="lg" 
+                className="gap-2 rounded-xl shadow-lg shadow-primary/30 whitespace-nowrap"
+              >
+                <Sparkles className="h-4 w-4" />
+                Ulepsz plan
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+            </Link>
+          </div>
+        </div>
+      )}
 
       {/* Bento Grid */}
       <div className="grid gap-5 lg:grid-cols-3 lg:grid-rows-[auto_1fr]">

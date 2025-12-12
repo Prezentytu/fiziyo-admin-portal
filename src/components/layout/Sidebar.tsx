@@ -10,6 +10,7 @@ import {
   Users,
   Calendar,
   Building2,
+  CreditCard,
   Settings,
   LogOut,
   PanelLeftClose,
@@ -39,6 +40,7 @@ const navigationGroups = [
     label: "Zarządzanie",
     items: [
       { name: "Organizacja", href: "/organization", icon: Building2 },
+      { name: "Subskrypcja", href: "/subscription", icon: CreditCard },
       { name: "Ustawienia", href: "/settings", icon: Settings },
     ],
   },
