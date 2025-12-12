@@ -8,6 +8,7 @@ import {
   Dumbbell,
   FolderKanban,
   Users,
+  Calendar,
   Building2,
   Settings,
   LogOut,
@@ -29,6 +30,7 @@ const navigationGroups = [
     items: [
       { name: "Dashboard", href: "/", icon: LayoutDashboard },
       { name: "Pacjenci", href: "/patients", icon: Users },
+      { name: "Kalendarz", href: "/appointments", icon: Calendar },
       { name: "Zestawy", href: "/exercise-sets", icon: FolderKanban },
       { name: "Ćwiczenia", href: "/exercises", icon: Dumbbell },
     ],

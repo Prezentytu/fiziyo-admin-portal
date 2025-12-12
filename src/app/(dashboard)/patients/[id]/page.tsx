@@ -21,6 +21,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LoadingState } from "@/components/shared/LoadingState";
 import { EmptyState } from "@/components/shared/EmptyState";
+import { ActivityReport } from "@/components/patients/ActivityReport";
 
 import { GET_USER_BY_ID_QUERY } from "@/graphql/queries/users.queries";
 import { GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY } from "@/graphql/queries/patientAssignments.queries";
@@ -293,15 +294,7 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
         </TabsContent>
 
         <TabsContent value="activity" className="mt-6">
-          <Card>
-            <CardContent className="py-12">
-              <EmptyState
-                icon={Activity}
-                title="Historia aktywności"
-                description="Szczegółowa historia wykonanych ćwiczeń będzie dostępna wkrótce"
-              />
-            </CardContent>
-          </Card>
+          <ActivityReport patientId={id} patientName={displayName} />
         </TabsContent>
       </Tabs>
     </div>

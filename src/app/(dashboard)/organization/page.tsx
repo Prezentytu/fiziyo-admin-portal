@@ -16,6 +16,8 @@ import { LoadingState } from "@/components/shared/LoadingState";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { MembersList, OrganizationMember } from "@/components/organization/MembersList";
 import { InviteMemberDialog } from "@/components/organization/InviteMemberDialog";
+import { ClinicDialog, Clinic } from "@/components/organization/ClinicDialog";
+import { ClinicCard } from "@/components/organization/ClinicCard";
 
 import { GET_ORGANIZATION_BY_ID_QUERY, GET_ORGANIZATION_MEMBERS_QUERY } from "@/graphql/queries/organizations.queries";
 import { GET_USER_BY_CLERK_ID_QUERY, GET_USER_ORGANIZATIONS_QUERY } from "@/graphql/queries/users.queries";
@@ -29,6 +31,8 @@ export default function OrganizationPage() {
   const { user } = useUser();
   const [activeTab, setActiveTab] = useState("overview");
   const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
+  const [isClinicDialogOpen, setIsClinicDialogOpen] = useState(false);
+  const [editingClinic, setEditingClinic] = useState<Clinic | null>(null);
   const [isEditingName, setIsEditingName] = useState(false);
   const [newName, setNewName] = useState("");
 
@@ -108,6 +112,16 @@ export default function OrganizationPage() {
   };
 
   const canEdit = currentUserRole === "owner" || currentUserRole === "admin";
+
+  const handleEditClinic = (clinic: Clinic) => {
+    setEditingClinic(clinic);
+    setIsClinicDialogOpen(true);
+  };
+
+  const handleCloseClinicDialog = () => {
+    setIsClinicDialogOpen(false);
+    setEditingClinic(null);
+  };
 
   if (orgLoading) {
     return (
@@ -294,7 +308,7 @@ export default function OrganizationPage() {
                 <CardDescription>Lokalizacje prowadzenia działalności</CardDescription>
               </div>
               {canEdit && (
-                <Button>
+                <Button onClick={() => setIsClinicDialogOpen(true)}>
                   <Plus className="mr-2 h-4 w-4" />
                   Dodaj gabinet
                 </Button>
@@ -309,36 +323,18 @@ export default function OrganizationPage() {
                   title="Brak gabinetów"
                   description="Dodaj pierwszy gabinet do organizacji"
                   actionLabel={canEdit ? "Dodaj gabinet" : undefined}
-                  onAction={canEdit ? () => {} : undefined}
+                  onAction={canEdit ? () => setIsClinicDialogOpen(true) : undefined}
                 />
               ) : (
-                <div className="space-y-2">
-                  {clinics.map((clinic: {
-                    id: string;
-                    name: string;
-                    address?: string;
-                    contactInfo?: string;
-                    isActive?: boolean;
-                  }) => (
-                    <div
+                <div className="space-y-3">
+                  {clinics.map((clinic: Clinic) => (
+                    <ClinicCard
                       key={clinic.id}
-                      className="flex items-center justify-between rounded-lg border border-border p-3"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-surface-light">
-                          <MapPin className="h-5 w-5 text-muted-foreground" />
-                        </div>
-                        <div>
-                          <p className="font-medium">{clinic.name}</p>
-                          {clinic.address && (
-                            <p className="text-sm text-muted-foreground">{clinic.address}</p>
-                          )}
-                        </div>
-                      </div>
-                      <Badge variant={clinic.isActive ? "success" : "secondary"}>
-                        {clinic.isActive ? "Aktywny" : "Nieaktywny"}
-                      </Badge>
-                    </div>
+                      clinic={clinic}
+                      organizationId={organizationId!}
+                      canEdit={canEdit}
+                      onEdit={handleEditClinic}
+                    />
                   ))}
                 </div>
               )}
@@ -372,6 +368,16 @@ export default function OrganizationPage() {
           onOpenChange={setIsInviteDialogOpen}
           organizationId={organizationId}
           onSuccess={() => refetchMembers()}
+        />
+      )}
+
+      {/* Clinic Dialog */}
+      {organizationId && (
+        <ClinicDialog
+          open={isClinicDialogOpen}
+          onOpenChange={handleCloseClinicDialog}
+          clinic={editingClinic}
+          organizationId={organizationId}
         />
       )}
     </div>
