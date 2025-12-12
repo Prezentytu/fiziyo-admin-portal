@@ -2,8 +2,10 @@
 
 import { cn } from "@/lib/utils";
 
+const DEFAULT_TAG_COLOR = "#22c55e"; // primary color
+
 interface ColorBadgeProps {
-  color?: string;
+  color?: string | null;
   children: React.ReactNode;
   className?: string;
   size?: "sm" | "md" | "lg";
@@ -12,30 +14,35 @@ interface ColorBadgeProps {
 /**
  * Returns a contrasting text color (black or white) based on the background color
  */
-function getContrastColor(hexColor: string): string {
+function getContrastColor(hexColor: string | null | undefined): string {
+  const safeColor = hexColor || DEFAULT_TAG_COLOR;
   // Remove # if present
-  const hex = hexColor.replace("#", "");
-  
+  const hex = safeColor.replace("#", "");
+
   // Parse RGB values
   const r = parseInt(hex.slice(0, 2), 16);
   const g = parseInt(hex.slice(2, 4), 16);
   const b = parseInt(hex.slice(4, 6), 16);
-  
+
   // Calculate luminance
   const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-  
+
   return luminance > 0.5 ? "#000000" : "#ffffff";
 }
 
 /**
  * Creates a semi-transparent version of a color for backgrounds
  */
-function getTransparentColor(hexColor: string, opacity: number = 0.2): string {
-  const hex = hexColor.replace("#", "");
+function getTransparentColor(
+  hexColor: string | null | undefined,
+  opacity: number = 0.2
+): string {
+  const safeColor = hexColor || DEFAULT_TAG_COLOR;
+  const hex = safeColor.replace("#", "");
   const r = parseInt(hex.slice(0, 2), 16);
   const g = parseInt(hex.slice(2, 4), 16);
   const b = parseInt(hex.slice(4, 6), 16);
-  
+
   return `rgba(${r}, ${g}, ${b}, ${opacity})`;
 }
 
@@ -45,34 +52,31 @@ const sizeClasses = {
   lg: "px-3 py-1.5 text-sm",
 };
 
-export function ColorBadge({ 
-  color = "#888888", 
-  children, 
+export function ColorBadge({
+  color,
+  children,
   className,
   size = "md",
 }: ColorBadgeProps) {
-  const backgroundColor = getTransparentColor(color, 0.2);
-  const textColor = color;
-  const borderColor = getTransparentColor(color, 0.3);
+  // Handle null/undefined - use default color (like mobile app does)
+  const safeColor = color || DEFAULT_TAG_COLOR;
+  // Use solid background with contrasting text for better visibility
+  const textColor = getContrastColor(safeColor);
 
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-full font-medium whitespace-nowrap",
-        "border transition-colors",
+        "inline-flex items-center gap-1.5 rounded-full font-semibold whitespace-nowrap",
+        "border transition-colors shadow-sm",
         sizeClasses[size],
         className
       )}
       style={{
-        backgroundColor,
+        backgroundColor: safeColor,
         color: textColor,
-        borderColor,
+        borderColor: safeColor,
       }}
     >
-      <span
-        className="h-1.5 w-1.5 rounded-full flex-shrink-0"
-        style={{ backgroundColor: color }}
-      />
       {children}
     </span>
   );
@@ -81,13 +85,15 @@ export function ColorBadge({
 /**
  * Solid variant - full color background with contrasting text
  */
-export function ColorBadgeSolid({ 
-  color = "#888888", 
-  children, 
+export function ColorBadgeSolid({
+  color,
+  children,
   className,
   size = "md",
 }: ColorBadgeProps) {
-  const textColor = getContrastColor(color);
+  // Handle null/undefined - use default color
+  const safeColor = color || DEFAULT_TAG_COLOR;
+  const textColor = getContrastColor(safeColor);
 
   return (
     <span
@@ -97,7 +103,7 @@ export function ColorBadgeSolid({
         className
       )}
       style={{
-        backgroundColor: color,
+        backgroundColor: safeColor,
         color: textColor,
       }}
     >
@@ -107,7 +113,5 @@ export function ColorBadgeSolid({
 }
 
 export { getContrastColor, getTransparentColor };
-
-
 
 

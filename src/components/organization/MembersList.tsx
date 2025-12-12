@@ -1,7 +1,14 @@
 "use client";
 
 import { useMutation } from "@apollo/client/react";
-import { MoreVertical, Pencil, Trash2, Shield, ShieldCheck, User } from "lucide-react";
+import {
+  MoreVertical,
+  Pencil,
+  Trash2,
+  Shield,
+  ShieldCheck,
+  User,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -64,13 +71,20 @@ export function MembersList({
   currentUserRole,
   onRefresh,
 }: MembersListProps) {
-  const [removingMember, setRemovingMember] = useState<OrganizationMember | null>(null);
+  const [removingMember, setRemovingMember] =
+    useState<OrganizationMember | null>(null);
 
-  const [removeMember, { loading: removing }] = useMutation(REMOVE_MEMBER_MUTATION, {
-    refetchQueries: [
-      { query: GET_ORGANIZATION_MEMBERS_QUERY, variables: { organizationId } },
-    ],
-  });
+  const [removeMember, { loading: removing }] = useMutation(
+    REMOVE_MEMBER_MUTATION,
+    {
+      refetchQueries: [
+        {
+          query: GET_ORGANIZATION_MEMBERS_QUERY,
+          variables: { organizationId },
+        },
+      ],
+    }
+  );
 
   const [updateRole] = useMutation(UPDATE_MEMBER_ROLE_MUTATION, {
     refetchQueries: [
@@ -90,7 +104,7 @@ export function MembersList({
       onRefresh?.();
     } catch (error) {
       console.error("Błąd podczas usuwania:", error);
-      toast.error("Nie udało się usunąć członka");
+      toast.error("Nie udało się usunąć użytkownika");
     }
   };
 
@@ -118,7 +132,8 @@ export function MembersList({
     <>
       <div className="space-y-2">
         {members.map((member) => {
-          const displayName = member.user?.fullname || member.user?.email || "Nieznany";
+          const displayName =
+            member.user?.fullname || member.user?.email || "Nieznany";
           const initials = displayName.slice(0, 2).toUpperCase();
           const canManage = canManageMember(member);
           const isCurrentUser = member.userId === currentUserId;
@@ -145,15 +160,23 @@ export function MembersList({
                     )}
                   </div>
                   {member.user?.email && (
-                    <p className="text-sm text-muted-foreground">{member.user.email}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {member.user.email}
+                    </p>
                   )}
                 </div>
               </div>
               <div className="flex items-center gap-2">
                 <Badge variant={roleColors[member.role] || "outline"}>
-                  {member.role === "owner" && <ShieldCheck className="mr-1 h-3 w-3" />}
-                  {member.role === "admin" && <Shield className="mr-1 h-3 w-3" />}
-                  {member.role === "member" && <User className="mr-1 h-3 w-3" />}
+                  {member.role === "owner" && (
+                    <ShieldCheck className="mr-1 h-3 w-3" />
+                  )}
+                  {member.role === "admin" && (
+                    <Shield className="mr-1 h-3 w-3" />
+                  )}
+                  {member.role === "member" && (
+                    <User className="mr-1 h-3 w-3" />
+                  )}
                   {roleLabels[member.role] || member.role}
                 </Badge>
                 {canManage && (
@@ -164,22 +187,26 @@ export function MembersList({
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      {member.role !== "admin" && currentUserRole === "owner" && (
-                        <DropdownMenuItem
-                          onClick={() => handleChangeRole(member.id, "admin")}
-                        >
-                          <Shield className="mr-2 h-4 w-4" />
-                          Ustaw jako admin
-                        </DropdownMenuItem>
-                      )}
-                      {member.role === "admin" && currentUserRole === "owner" && (
-                        <DropdownMenuItem
-                          onClick={() => handleChangeRole(member.id, "member")}
-                        >
-                          <User className="mr-2 h-4 w-4" />
-                          Ustaw jako członek
-                        </DropdownMenuItem>
-                      )}
+                      {member.role !== "admin" &&
+                        currentUserRole === "owner" && (
+                          <DropdownMenuItem
+                            onClick={() => handleChangeRole(member.id, "admin")}
+                          >
+                            <Shield className="mr-2 h-4 w-4" />
+                            Ustaw jako admin
+                          </DropdownMenuItem>
+                        )}
+                      {member.role === "admin" &&
+                        currentUserRole === "owner" && (
+                          <DropdownMenuItem
+                            onClick={() =>
+                              handleChangeRole(member.id, "member")
+                            }
+                          >
+                            <User className="mr-2 h-4 w-4" />
+                            Ustaw jako członek
+                          </DropdownMenuItem>
+                        )}
                       <DropdownMenuSeparator />
                       <DropdownMenuItem
                         onClick={() => setRemovingMember(member)}
@@ -200,8 +227,10 @@ export function MembersList({
       <ConfirmDialog
         open={!!removingMember}
         onOpenChange={(open) => !open && setRemovingMember(null)}
-        title="Usuń członka"
-        description={`Czy na pewno chcesz usunąć ${removingMember?.user?.fullname || "tego członka"} z organizacji?`}
+        title="Usuń użytkownika"
+        description={`Czy na pewno chcesz usunąć ${
+          removingMember?.user?.fullname || "tego użytkownika"
+        } z organizacji?`}
         confirmText="Usuń"
         variant="destructive"
         onConfirm={handleRemove}
@@ -210,4 +239,3 @@ export function MembersList({
     </>
   );
 }
-

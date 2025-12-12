@@ -8,7 +8,9 @@ import {
   Dumbbell,
   FolderKanban,
   Users,
+  Calendar,
   Building2,
+  CreditCard,
   Settings,
   LogOut,
   PanelLeftClose,
@@ -29,6 +31,7 @@ const navigationGroups = [
     items: [
       { name: "Dashboard", href: "/", icon: LayoutDashboard },
       { name: "Pacjenci", href: "/patients", icon: Users },
+      { name: "Kalendarz", href: "/appointments", icon: Calendar },
       { name: "Zestawy", href: "/exercise-sets", icon: FolderKanban },
       { name: "Ćwiczenia", href: "/exercises", icon: Dumbbell },
     ],
@@ -37,6 +40,7 @@ const navigationGroups = [
     label: "Zarządzanie",
     items: [
       { name: "Organizacja", href: "/organization", icon: Building2 },
+      { name: "Subskrypcja", href: "/subscription", icon: CreditCard },
       { name: "Ustawienia", href: "/settings", icon: Settings },
     ],
   },
@@ -80,7 +84,7 @@ export function Sidebar({ isCollapsed, onToggleCollapse }: SidebarProps) {
             {!isCollapsed && (
               <div className="flex flex-col overflow-hidden">
                 <span className="text-lg font-bold leading-none text-foreground">
-                  Fiziyo
+                  fiziYo
                 </span>
                 <span className="text-[10px] text-muted-foreground uppercase tracking-wider">
                   Admin Panel

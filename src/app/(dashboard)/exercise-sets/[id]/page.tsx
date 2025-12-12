@@ -15,6 +15,11 @@ import {
   Calendar,
   Clock,
   FolderKanban,
+  ExternalLink,
+  Settings2,
+  MoreHorizontal,
+  Pause,
+  Play,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -22,6 +27,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { LoadingState } from "@/components/shared/LoadingState";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
@@ -30,6 +42,7 @@ import { AddExerciseToSetDialog } from "@/components/exercise-sets/AddExerciseTo
 import { EditExerciseInSetDialog } from "@/components/exercise-sets/EditExerciseInSetDialog";
 import { AssignSetDialog } from "@/components/exercise-sets/AssignSetDialog";
 import { ImagePlaceholder } from "@/components/shared/ImagePlaceholder";
+import Link from "next/link";
 
 import {
   GET_EXERCISE_SET_WITH_ASSIGNMENTS_QUERY,
@@ -38,8 +51,20 @@ import {
 import {
   DELETE_EXERCISE_SET_MUTATION,
   REMOVE_EXERCISE_FROM_SET_MUTATION,
+  UPDATE_EXERCISE_SET_ASSIGNMENT_MUTATION,
+  REMOVE_EXERCISE_SET_ASSIGNMENT_MUTATION,
 } from "@/graphql/mutations/exercises.mutations";
 import { GET_USER_BY_CLERK_ID_QUERY } from "@/graphql/queries/users.queries";
+
+// Tłumaczenie typów na polski
+const translateType = (type?: string) => {
+  const types: Record<string, string> = {
+    time: "czasowe",
+    reps: "powtórzenia",
+    hold: "utrzymanie",
+  };
+  return type ? types[type] || type : "";
+};
 
 interface SetDetailPageProps {
   params: Promise<{ id: string }>;
@@ -66,23 +91,40 @@ interface ExerciseMapping {
   };
 }
 
+interface PatientAssignmentInSet {
+  id: string;
+  status?: string;
+  userId?: string;
+  startDate?: string;
+  endDate?: string;
+  completionCount?: number;
+  lastCompletedAt?: string;
+  frequency?: {
+    timesPerDay?: number;
+    timesPerWeek?: number;
+    monday?: boolean;
+    tuesday?: boolean;
+    wednesday?: boolean;
+    thursday?: boolean;
+    friday?: boolean;
+    saturday?: boolean;
+    sunday?: boolean;
+  };
+  user?: {
+    id: string;
+    fullname?: string;
+    email?: string;
+    image?: string;
+  };
+}
+
 interface ExerciseSetData {
   exerciseSetById: {
     id: string;
     name: string;
     description?: string;
     exerciseMappings?: ExerciseMapping[];
-    patientAssignments?: Array<{
-      id: string;
-      status?: string;
-      userId?: string;
-      user?: {
-        id: string;
-        fullname?: string;
-        email?: string;
-        image?: string;
-      };
-    }>;
+    patientAssignments?: PatientAssignmentInSet[];
     frequency?: {
       timesPerWeek?: number;
       timesPerDay?: number;
@@ -103,6 +145,7 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
   const [removingExerciseId, setRemovingExerciseId] = useState<string | null>(
     null
   );
+  const [removingAssignment, setRemovingAssignment] = useState<PatientAssignmentInSet | null>(null);
 
   // Get user data
   const { data: userData } = useQuery(GET_USER_BY_CLERK_ID_QUERY, {
@@ -143,6 +186,14 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
     REMOVE_EXERCISE_FROM_SET_MUTATION
   );
 
+  const [updateAssignment, { loading: updatingAssignment }] = useMutation(
+    UPDATE_EXERCISE_SET_ASSIGNMENT_MUTATION
+  );
+
+  const [removeAssignment, { loading: removingAssignmentLoading }] = useMutation(
+    REMOVE_EXERCISE_SET_ASSIGNMENT_MUTATION
+  );
+
   const exerciseSet = (data as ExerciseSetData | undefined)?.exerciseSetById;
 
   const handleDelete = async () => {
@@ -175,6 +226,74 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
       console.error("Błąd podczas usuwania ćwiczenia:", error);
       toast.error("Nie udało się usunąć ćwiczenia z zestawu");
     }
+  };
+
+  const handleToggleAssignmentStatus = async (assignment: PatientAssignmentInSet) => {
+    const newStatus = assignment.status === "active" ? "paused" : "active";
+    try {
+      await updateAssignment({
+        variables: {
+          assignmentId: assignment.id,
+          status: newStatus,
+        },
+      });
+      toast.success(newStatus === "active" ? "Przypisanie wznowione" : "Przypisanie wstrzymane");
+      refetch();
+    } catch (error) {
+      console.error("Błąd zmiany statusu:", error);
+      toast.error("Nie udało się zmienić statusu");
+    }
+  };
+
+  const handleRemoveAssignment = async () => {
+    if (!removingAssignment) return;
+
+    try {
+      await removeAssignment({
+        variables: {
+          exerciseSetId: id,
+          patientId: removingAssignment.userId || removingAssignment.user?.id,
+        },
+      });
+      toast.success("Przypisanie zostało usunięte");
+      setRemovingAssignment(null);
+      refetch();
+    } catch (error) {
+      console.error("Błąd usuwania przypisania:", error);
+      toast.error("Nie udało się usunąć przypisania");
+    }
+  };
+
+  // Helper function for status display
+  const getStatusInfo = (status?: string) => {
+    switch (status) {
+      case "active":
+        return { label: "Aktywny", variant: "success" as const };
+      case "paused":
+        return { label: "Wstrzymany", variant: "warning" as const };
+      case "completed":
+        return { label: "Ukończony", variant: "secondary" as const };
+      default:
+        return { label: status || "—", variant: "secondary" as const };
+    }
+  };
+
+  // Helper function for frequency display
+  const getFrequencyDisplay = (frequency?: PatientAssignmentInSet["frequency"]) => {
+    if (!frequency) return null;
+    const days = [
+      frequency.monday && "Pn",
+      frequency.tuesday && "Wt",
+      frequency.wednesday && "Śr",
+      frequency.thursday && "Cz",
+      frequency.friday && "Pt",
+      frequency.saturday && "So",
+      frequency.sunday && "Nd",
+    ].filter(Boolean);
+    
+    if (days.length === 7) return "Codziennie";
+    if (days.length === 5 && !frequency.saturday && !frequency.sunday) return "Pn-Pt";
+    return days.join(", ");
   };
 
   if (loading) {
@@ -428,7 +547,7 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
                                   variant="secondary"
                                   className="text-[10px] shrink-0"
                                 >
-                                  {mapping.exercise.type}
+                                  {translateType(mapping.exercise.type)}
                                 </Badge>
                               )}
                             </div>
@@ -507,65 +626,147 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
         {/* Sidebar - Assigned patients */}
         <div>
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle className="flex items-center gap-2">
+            <CardHeader className="flex flex-row items-center justify-between pb-4">
+              <CardTitle className="flex items-center gap-2 text-lg">
                 <Users className="h-5 w-5 text-primary" />
-                Przypisani pacjenci
+                Pacjenci ({assignments.length})
               </CardTitle>
               <Button
                 size="sm"
-                variant="outline"
                 onClick={() => setIsAssignDialogOpen(true)}
+                className="shadow-sm"
               >
                 <Plus className="mr-2 h-4 w-4" />
                 Przypisz
               </Button>
             </CardHeader>
-            <CardContent>
+            <CardContent className="pt-0">
               {assignments.length === 0 ? (
-                <div className="text-center py-8">
-                  <div className="h-12 w-12 rounded-full bg-surface-light mx-auto flex items-center justify-center mb-3">
-                    <Users className="h-6 w-6 text-muted-foreground" />
+                <div className="text-center py-10">
+                  <div className="h-14 w-14 rounded-full bg-surface-light mx-auto flex items-center justify-center mb-4">
+                    <Users className="h-7 w-7 text-muted-foreground/60" />
                   </div>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-sm font-medium text-muted-foreground mb-1">
                     Brak przypisanych pacjentów
                   </p>
+                  <p className="text-xs text-muted-foreground/70 mb-4">
+                    Przypisz ten zestaw do pacjentów
+                  </p>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setIsAssignDialogOpen(true)}
+                  >
+                    <Plus className="mr-2 h-4 w-4" />
+                    Przypisz pacjenta
+                  </Button>
                 </div>
               ) : (
-                <div className="space-y-3">
-                  {assignments.map((assignment) => (
-                    <div
-                      key={assignment.id}
-                      className="flex items-center gap-3 rounded-xl border border-border p-3 transition-colors hover:bg-surface-light"
-                    >
-                      <Avatar className="h-10 w-10">
-                        <AvatarImage src={assignment.user?.image} />
-                        <AvatarFallback className="bg-gradient-to-br from-primary to-primary-dark text-primary-foreground">
-                          {assignment.user?.fullname?.[0] || "?"}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium truncate">
-                          {assignment.user?.fullname || "Nieznany pacjent"}
-                        </p>
-                        <p className="text-xs text-muted-foreground truncate">
-                          {assignment.user?.email}
-                        </p>
-                      </div>
-                      <Badge
-                        variant={
-                          assignment.status === "active"
-                            ? "success"
-                            : "secondary"
-                        }
-                        className="text-[10px]"
+                <div className="space-y-2">
+                  {assignments.map((assignment) => {
+                    const statusInfo = getStatusInfo(assignment.status);
+                    const frequencyDisplay = getFrequencyDisplay(assignment.frequency);
+                    
+                    return (
+                      <div
+                        key={assignment.id}
+                        className="group rounded-xl border border-border bg-surface p-3 transition-all hover:border-border/80 hover:bg-surface-light"
                       >
-                        {assignment.status === "active"
-                          ? "Aktywne"
-                          : assignment.status || "—"}
-                      </Badge>
-                    </div>
-                  ))}
+                        <div className="flex items-start gap-3">
+                          <Avatar className="h-10 w-10 shrink-0">
+                            <AvatarImage src={assignment.user?.image} />
+                            <AvatarFallback className="bg-gradient-to-br from-info to-blue-600 text-white text-sm font-semibold">
+                              {assignment.user?.fullname?.[0] || "?"}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <p className="font-medium text-sm truncate">
+                                {assignment.user?.fullname || "Nieznany pacjent"}
+                              </p>
+                              <Badge
+                                variant={statusInfo.variant}
+                                className="text-[9px] shrink-0"
+                              >
+                                {statusInfo.label}
+                              </Badge>
+                            </div>
+                            {(frequencyDisplay || assignment.frequency?.timesPerDay) && (
+                              <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
+                                {frequencyDisplay && (
+                                  <span className="flex items-center gap-1">
+                                    <Calendar className="h-3 w-3" />
+                                    {frequencyDisplay}
+                                  </span>
+                                )}
+                                {assignment.frequency?.timesPerDay && (
+                                  <span className="flex items-center gap-1">
+                                    <Clock className="h-3 w-3" />
+                                    {assignment.frequency.timesPerDay}x/dzień
+                                  </span>
+                                )}
+                              </div>
+                            )}
+                            {assignment.completionCount !== undefined && assignment.completionCount > 0 && (
+                              <p className="text-xs text-muted-foreground mt-1">
+                                Wykonano: {assignment.completionCount}x
+                              </p>
+                            )}
+                          </div>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                              >
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-48">
+                              <DropdownMenuItem asChild>
+                                <Link href={`/patients/${assignment.user?.id}`}>
+                                  <ExternalLink className="mr-2 h-4 w-4" />
+                                  Przejdź do pacjenta
+                                </Link>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem asChild>
+                                <Link href={`/patients/${assignment.user?.id}?tab=exercises`}>
+                                  <Settings2 className="mr-2 h-4 w-4" />
+                                  Zarządzaj zestawem
+                                </Link>
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                onClick={() => handleToggleAssignmentStatus(assignment)}
+                                disabled={updatingAssignment}
+                              >
+                                {assignment.status === "active" ? (
+                                  <>
+                                    <Pause className="mr-2 h-4 w-4" />
+                                    Wstrzymaj
+                                  </>
+                                ) : (
+                                  <>
+                                    <Play className="mr-2 h-4 w-4" />
+                                    Wznów
+                                  </>
+                                )}
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                onClick={() => setRemovingAssignment(assignment)}
+                                className="text-destructive focus:text-destructive"
+                              >
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                Usuń przypisanie
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </CardContent>
@@ -643,6 +844,18 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
           onSuccess={() => refetch()}
         />
       )}
+
+      {/* Remove Assignment Confirmation */}
+      <ConfirmDialog
+        open={!!removingAssignment}
+        onOpenChange={(open) => !open && setRemovingAssignment(null)}
+        title="Usuń przypisanie"
+        description={`Czy na pewno chcesz usunąć przypisanie zestawu dla pacjenta "${removingAssignment?.user?.fullname || "Nieznany"}"? Ta operacja jest nieodwracalna.`}
+        confirmText="Usuń"
+        variant="destructive"
+        onConfirm={handleRemoveAssignment}
+        isLoading={removingAssignmentLoading}
+      />
     </div>
   );
 }

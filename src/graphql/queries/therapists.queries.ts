@@ -4,11 +4,59 @@ import { gql } from "@apollo/client";
  * Query do pobierania pacjentów przypisanych do fizjoterapeuty
  * NAPRAWIONE: therapistPatients zwraca TherapistPatientAssignment z relacjami patient/therapist
  * Backend NIE filtruje automatycznie - frontend używa where clause
+ * UWAGA: Filtruje tylko aktywnych - użyj GET_ALL_THERAPIST_PATIENTS_QUERY dla wszystkich
  */
 export const GET_THERAPIST_PATIENTS_QUERY = gql`
   query GetTherapistPatients($therapistId: String!, $organizationId: String!) {
     therapistPatients(
       where: { therapistId: { eq: $therapistId }, organizationId: { eq: $organizationId }, status: { eq: "active" } }
+    ) {
+      id
+      therapistId
+      patientId
+      organizationId
+      assignedAt
+      status
+      notes
+      contextType
+      contextLabel
+      contextColor
+      relationType
+      startDate
+      endDate
+      patient {
+        id
+        clerkId
+        fullname
+        email
+        image
+        isShadowUser
+        organizationIds
+        personalData {
+          firstName
+          lastName
+        }
+        contactData {
+          phone
+          address
+        }
+      }
+      therapist {
+        id
+        fullname
+      }
+    }
+  }
+`;
+
+/**
+ * Query do pobierania wszystkich pacjentów przypisanych do fizjoterapeuty (włącznie z nieaktywnymi)
+ * Używane do filtrowania po stronie klienta
+ */
+export const GET_ALL_THERAPIST_PATIENTS_QUERY = gql`
+  query GetAllTherapistPatients($therapistId: String!, $organizationId: String!) {
+    therapistPatients(
+      where: { therapistId: { eq: $therapistId }, organizationId: { eq: $organizationId } }
     ) {
       id
       therapistId

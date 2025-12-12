@@ -64,6 +64,27 @@ interface AddExerciseToSetDialogProps {
   onSuccess?: () => void;
 }
 
+// Tłumaczenie typów na polski
+const translateType = (type?: string) => {
+  const types: Record<string, string> = {
+    time: "czasowe",
+    reps: "powtórzenia",
+    hold: "utrzymanie",
+  };
+  return type ? types[type] || type : "";
+};
+
+const translateSide = (side?: string) => {
+  const sides: Record<string, string> = {
+    left: "lewa",
+    right: "prawa",
+    both: "obie",
+    alternating: "naprzemiennie",
+    none: "",
+  };
+  return side ? sides[side] || side : "";
+};
+
 export function AddExerciseToSetDialog({
   open,
   onOpenChange,
@@ -374,14 +395,15 @@ export function AddExerciseToSetDialog({
                           <div className="flex items-center gap-2 mt-1">
                             {exercise.type && (
                               <Badge variant="secondary" className="text-xs">
-                                {exercise.type}
+                                {translateType(exercise.type)}
                               </Badge>
                             )}
-                            {exercise.exerciseSide && (
-                              <Badge variant="outline" className="text-xs">
-                                {exercise.exerciseSide}
-                              </Badge>
-                            )}
+                            {exercise.exerciseSide &&
+                              exercise.exerciseSide !== "none" && (
+                                <Badge variant="outline" className="text-xs">
+                                  {translateSide(exercise.exerciseSide)}
+                                </Badge>
+                              )}
                           </div>
                         </div>
                       </div>
@@ -444,7 +466,7 @@ export function AddExerciseToSetDialog({
                           </p>
                           {exercise.type && (
                             <Badge variant="secondary" className="text-xs mt-1">
-                              {exercise.type}
+                              {translateType(exercise.type)}
                             </Badge>
                           )}
                         </div>
