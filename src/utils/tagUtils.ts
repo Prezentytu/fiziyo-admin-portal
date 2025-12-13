@@ -28,7 +28,6 @@ export interface ExerciseWithTags {
   name: string;
   mainTags?: (string | ExerciseTag)[];
   additionalTags?: (string | ExerciseTag)[];
-  [key: string]: unknown;
 }
 
 /**
@@ -129,5 +128,3 @@ export function mapExercisesWithTags<T extends ExerciseWithTags>(
     mapExerciseTagsToObjects(exercise, tagsMap)
   );
 }
-
-

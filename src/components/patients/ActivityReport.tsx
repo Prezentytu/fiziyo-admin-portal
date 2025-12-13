@@ -253,3 +253,4 @@ export function ActivityReport({ patientId, patientName }: ActivityReportProps) 
   );
 }
 
+
