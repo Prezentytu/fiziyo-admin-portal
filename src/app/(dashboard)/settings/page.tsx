@@ -1,38 +1,36 @@
-"use client";
+'use client';
 
-import { useQuery } from "@apollo/client/react";
-import { useUser } from "@clerk/nextjs";
-import { Settings, User, Building2, Calendar } from "lucide-react";
+import { useQuery } from '@apollo/client/react';
+import { useUser } from '@clerk/nextjs';
+import { Settings, User, Building2, Calendar } from 'lucide-react';
 
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { LoadingState } from "@/components/shared/LoadingState";
-import { EmptyState } from "@/components/shared/EmptyState";
-import { ProfileForm, UserProfile } from "@/components/settings/ProfileForm";
-import { OrganizationsList, UserOrganization } from "@/components/settings/OrganizationsList";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { LoadingState } from '@/components/shared/LoadingState';
+import { EmptyState } from '@/components/shared/EmptyState';
+import { ProfileForm, UserProfile } from '@/components/settings/ProfileForm';
+import { OrganizationsList, UserOrganization } from '@/components/settings/OrganizationsList';
 
-import { GET_USER_BY_CLERK_ID_QUERY, GET_USER_ORGANIZATIONS_QUERY } from "@/graphql/queries/users.queries";
-import type { UserByClerkIdResponse, UserOrganizationsResponse } from "@/types/apollo";
+import { GET_USER_BY_CLERK_ID_QUERY, GET_USER_ORGANIZATIONS_QUERY } from '@/graphql/queries/users.queries';
+import type { UserByClerkIdResponse, UserOrganizationsResponse } from '@/types/apollo';
 
 export default function SettingsPage() {
   const { user: clerkUser } = useUser();
 
   // Get user data
-  const { data: userData, loading: userLoading, refetch: refetchUser } = useQuery(
-    GET_USER_BY_CLERK_ID_QUERY,
-    {
-      variables: { clerkId: clerkUser?.id },
-      skip: !clerkUser?.id,
-    }
-  );
+  const {
+    data: userData,
+    loading: userLoading,
+    refetch: refetchUser,
+  } = useQuery(GET_USER_BY_CLERK_ID_QUERY, {
+    variables: { clerkId: clerkUser?.id },
+    skip: !clerkUser?.id,
+  });
 
   // Get user organizations
-  const { data: orgsData, loading: orgsLoading } = useQuery(
-    GET_USER_ORGANIZATIONS_QUERY,
-    {
-      skip: !clerkUser?.id,
-    }
-  );
+  const { data: orgsData, loading: orgsLoading } = useQuery(GET_USER_ORGANIZATIONS_QUERY, {
+    skip: !clerkUser?.id,
+  });
 
   const userByClerkId = (userData as UserByClerkIdResponse)?.userByClerkId;
   const organizations = (orgsData as UserOrganizationsResponse)?.userOrganizations || [];
@@ -43,10 +41,8 @@ export default function SettingsPage() {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold">Ustawienia</h1>
-          <p className="text-muted-foreground mt-1">
-            Zarządzaj swoim kontem i preferencjami
-          </p>
+          <h1 className="text-2xl font-semibold">Ustawienia</h1>
+          <p className="text-muted-foreground text-sm mt-1">Zarządzaj swoim kontem i preferencjami</p>
         </div>
         <LoadingState type="text" count={3} />
       </div>
@@ -57,10 +53,8 @@ export default function SettingsPage() {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold">Ustawienia</h1>
-          <p className="text-muted-foreground mt-1">
-            Zarządzaj swoim kontem i preferencjami
-          </p>
+          <h1 className="text-2xl font-semibold">Ustawienia</h1>
+          <p className="text-muted-foreground text-sm mt-1">Zarządzaj swoim kontem i preferencjami</p>
         </div>
         <Card>
           <CardContent className="py-12">
@@ -89,10 +83,8 @@ export default function SettingsPage() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold">Ustawienia</h1>
-        <p className="text-muted-foreground mt-1">
-          Zarządzaj swoim kontem i preferencjami
-        </p>
+        <h1 className="text-2xl font-semibold">Ustawienia</h1>
+        <p className="text-muted-foreground text-sm mt-1">Zarządzaj swoim kontem i preferencjami</p>
       </div>
 
       {/* Tabs */}
@@ -113,11 +105,7 @@ export default function SettingsPage() {
         </TabsList>
 
         <TabsContent value="profile">
-          <ProfileForm
-            user={userProfile}
-            clerkId={clerkUser?.id || ""}
-            onSuccess={() => refetchUser()}
-          />
+          <ProfileForm user={userProfile} clerkId={clerkUser?.id || ''} onSuccess={() => refetchUser()} />
         </TabsContent>
 
         <TabsContent value="organizations">
@@ -132,32 +120,20 @@ export default function SettingsPage() {
         </TabsContent>
 
         <TabsContent value="preferences">
-          <Card className="border-border/60">
+          <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Settings className="h-5 w-5 text-primary" />
+              <CardTitle className="flex items-center gap-2 text-base">
+                <Settings className="h-4 w-4 text-primary" />
                 Preferencje aplikacji
               </CardTitle>
-              <CardDescription>
-                Dostosuj aplikację do swoich potrzeb
-              </CardDescription>
+              <CardDescription>Dostosuj aplikację do swoich potrzeb</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-6">
-                {/* Future preferences sections */}
-                <div className="rounded-xl border border-dashed border-border p-8 text-center">
-                  <div className="mx-auto h-12 w-12 rounded-full bg-surface-light flex items-center justify-center mb-4">
-                    <Settings className="h-6 w-6 text-muted-foreground" />
-                  </div>
-                  <p className="text-muted-foreground">
-                    Dodatkowe preferencje będą dostępne wkrótce
-                  </p>
-                </div>
-
+              <div className="space-y-4">
                 {/* Placeholder for calendar settings */}
-                <Card className="border-border/40 bg-surface/50">
+                <Card>
                   <CardHeader className="pb-3">
-                    <CardTitle className="text-base flex items-center gap-2">
+                    <CardTitle className="text-sm flex items-center gap-2">
                       <Calendar className="h-4 w-4 text-muted-foreground" />
                       Kalendarz wizyt
                     </CardTitle>
@@ -168,6 +144,10 @@ export default function SettingsPage() {
                     </p>
                   </CardContent>
                 </Card>
+
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  Dodatkowe preferencje będą dostępne wkrótce
+                </p>
               </div>
             </CardContent>
           </Card>

@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import { use, useState } from "react";
-import { useQuery } from "@apollo/client/react";
-import { useRouter } from "next/navigation";
-import { useUser } from "@clerk/nextjs";
+import { use, useState } from 'react';
+import { useQuery } from '@apollo/client/react';
+import { useRouter } from 'next/navigation';
+import { useUser } from '@clerk/nextjs';
 import {
   ArrowLeft,
   Mail,
@@ -18,36 +18,36 @@ import {
   MoreHorizontal,
   Trash2,
   UserX,
-} from "lucide-react";
+} from 'lucide-react';
 
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { LoadingState } from "@/components/shared/LoadingState";
-import { EmptyState } from "@/components/shared/EmptyState";
-import { ActivityReport } from "@/components/patients/ActivityReport";
-import { PatientAssignmentCard } from "@/components/patients/PatientAssignmentCard";
-import type { PatientAssignment, ExerciseMapping, ExerciseOverride } from "@/components/patients/PatientAssignmentCard";
+} from '@/components/ui/dropdown-menu';
+import { LoadingState } from '@/components/shared/LoadingState';
+import { EmptyState } from '@/components/shared/EmptyState';
+import { ActivityReport } from '@/components/patients/ActivityReport';
+import { PatientAssignmentCard } from '@/components/patients/PatientAssignmentCard';
+import type { PatientAssignment, ExerciseMapping, ExerciseOverride } from '@/components/patients/PatientAssignmentCard';
 
-import { GET_USER_BY_ID_QUERY, GET_USER_BY_CLERK_ID_QUERY } from "@/graphql/queries/users.queries";
-import { GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY } from "@/graphql/queries/patientAssignments.queries";
-import { format } from "date-fns";
-import { pl } from "date-fns/locale";
-import type { UserByIdResponse } from "@/types/apollo";
+import { GET_USER_BY_ID_QUERY, GET_USER_BY_CLERK_ID_QUERY } from '@/graphql/queries/users.queries';
+import { GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY } from '@/graphql/queries/patientAssignments.queries';
+import { format } from 'date-fns';
+import { pl } from 'date-fns/locale';
+import type { UserByIdResponse } from '@/types/apollo';
 
 // Lazy imports for dialogs (will be created)
-import { AssignSetToPatientDialog } from "@/components/patients/AssignSetToPatientDialog";
-import { EditAssignmentScheduleDialog } from "@/components/patients/EditAssignmentScheduleDialog";
-import { EditExerciseOverrideDialog } from "@/components/patients/EditExerciseOverrideDialog";
+import { AssignSetToPatientDialog } from '@/components/patients/AssignSetToPatientDialog';
+import { EditAssignmentScheduleDialog } from '@/components/patients/EditAssignmentScheduleDialog';
+import { EditExerciseOverrideDialog } from '@/components/patients/EditExerciseOverrideDialog';
 
 interface PatientDetailPageProps {
   params: Promise<{ id: string }>;
@@ -61,7 +61,7 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
   const { id } = use(params);
   const router = useRouter();
   const { user } = useUser();
-  const [activeTab, setActiveTab] = useState("exercises");
+  const [activeTab, setActiveTab] = useState('exercises');
 
   // Dialog states
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
@@ -78,23 +78,26 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
     skip: !user?.id,
   });
 
-  const organizationId = (currentUserData as { userByClerkId?: { organizationIds?: string[] } })?.userByClerkId?.organizationIds?.[0];
+  const organizationId = (currentUserData as { userByClerkId?: { organizationIds?: string[] } })?.userByClerkId
+    ?.organizationIds?.[0];
 
   // Get patient data
-  const { data: userData, loading: userLoading, error: userError } = useQuery(
-    GET_USER_BY_ID_QUERY,
-    {
-      variables: { id },
-    }
-  );
+  const {
+    data: userData,
+    loading: userLoading,
+    error: userError,
+  } = useQuery(GET_USER_BY_ID_QUERY, {
+    variables: { id },
+  });
 
   // Get patient assignments
-  const { data: assignmentsData, loading: assignmentsLoading, refetch: refetchAssignments } = useQuery(
-    GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY,
-    {
-      variables: { userId: id },
-    }
-  );
+  const {
+    data: assignmentsData,
+    loading: assignmentsLoading,
+    refetch: refetchAssignments,
+  } = useQuery(GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY, {
+    variables: { userId: id },
+  });
 
   const patient = (userData as UserByIdResponse)?.userById;
   const assignments = (assignmentsData as PatientAssignmentsData)?.patientAssignments || [];
@@ -116,10 +119,8 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
         <div className="h-16 w-16 rounded-full bg-surface-light flex items-center justify-center">
           <User className="h-8 w-8 text-muted-foreground" />
         </div>
-        <p className="text-destructive">
-          {userError ? `Błąd: ${userError.message}` : "Nie znaleziono pacjenta"}
-        </p>
-        <Button variant="outline" onClick={() => router.push("/patients")}>
+        <p className="text-destructive">{userError ? `Błąd: ${userError.message}` : 'Nie znaleziono pacjenta'}</p>
+        <Button variant="outline" onClick={() => router.push('/patients')}>
           <ArrowLeft className="mr-2 h-4 w-4" />
           Wróć do listy
         </Button>
@@ -129,19 +130,17 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
 
   const displayName =
     patient.fullname ||
-    `${patient.personalData?.firstName || ""} ${patient.personalData?.lastName || ""}`.trim() ||
-    "Nieznany pacjent";
+    `${patient.personalData?.firstName || ''} ${patient.personalData?.lastName || ''}`.trim() ||
+    'Nieznany pacjent';
 
   const initials = displayName
-    .split(" ")
+    .split(' ')
     .map((n: string) => n[0])
-    .join("")
+    .join('')
     .slice(0, 2)
     .toUpperCase();
 
-  const activeAssignments = setAssignments.filter(
-    (a) => a.status === "active"
-  );
+  const activeAssignments = setAssignments.filter((a) => a.status === 'active');
 
   const handleEditSchedule = (assignment: PatientAssignment) => {
     setEditingScheduleAssignment(assignment);
@@ -153,111 +152,103 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
 
   const handleAddExerciseToAssignment = (assignment: PatientAssignment) => {
     // TODO: Implement add exercise to specific assignment
-    console.log("Add exercise to assignment", assignment.id);
+    console.log('Add exercise to assignment', assignment.id);
   };
 
   return (
     <div className="space-y-6">
-      {/* Hero Header */}
-      <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-surface via-surface to-surface-light border border-border/60">
-        <div className="absolute inset-0 bg-gradient-to-br from-info/5 via-transparent to-primary/5" />
-        <div className="relative p-6 md:p-8">
-          {/* Navigation */}
-          <div className="flex items-center justify-between mb-6">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => router.push("/patients")}
-              className="hover:bg-surface-light"
-            >
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Pacjenci
+      {/* Header */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <Button variant="ghost" onClick={() => router.push('/patients')} className="w-fit">
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Powrót do pacjentów
+        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm">
+              <MoreHorizontal className="mr-2 h-4 w-4" />
+              Opcje
             </Button>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="icon" className="h-9 w-9">
-                  <MoreHorizontal className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem>
-                  <Settings className="mr-2 h-4 w-4" />
-                  Ustawienia pacjenta
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem className="text-destructive focus:text-destructive">
-                  <UserX className="mr-2 h-4 w-4" />
-                  Usuń z mojej listy
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem>
+              <Settings className="mr-2 h-4 w-4" />
+              Ustawienia pacjenta
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem className="text-destructive focus:text-destructive">
+              <UserX className="mr-2 h-4 w-4" />
+              Usuń z mojej listy
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
 
-          {/* Patient info */}
-          <div className="flex flex-col md:flex-row md:items-center gap-6">
-            <Avatar className="h-20 w-20 ring-4 ring-background shadow-xl">
-              <AvatarImage src={patient.image} alt={displayName} />
-              <AvatarFallback className="bg-gradient-to-br from-info to-blue-600 text-white text-2xl font-bold">
-                {initials}
-              </AvatarFallback>
-            </Avatar>
-            <div className="flex-1">
-              <div className="flex items-center gap-3 flex-wrap">
-                <h1 className="text-3xl font-bold">{displayName}</h1>
-                {patient.isShadowUser && (
-                  <Badge variant="secondary">Konto tymczasowe</Badge>
-                )}
-              </div>
-              <div className="flex items-center gap-4 mt-2 text-muted-foreground flex-wrap">
-                {patient.email && (
-                  <a href={`mailto:${patient.email}`} className="flex items-center gap-1.5 hover:text-foreground transition-colors">
-                    <Mail className="h-4 w-4" />
-                    <span className="text-sm">{patient.email}</span>
-                  </a>
-                )}
-                {patient.contactData?.phone && (
-                  <a href={`tel:${patient.contactData.phone}`} className="flex items-center gap-1.5 hover:text-foreground transition-colors">
-                    <Phone className="h-4 w-4" />
-                    <span className="text-sm">{patient.contactData.phone}</span>
-                  </a>
-                )}
-              </div>
-            </div>
-
-            {/* Quick stats */}
-            <div className="flex gap-4">
-              <div className="text-center px-4 py-2 rounded-xl bg-surface-light/80">
-                <p className="text-2xl font-bold text-primary">{activeAssignments.length}</p>
-                <p className="text-xs text-muted-foreground">Aktywne zestawy</p>
-              </div>
-              <div className="text-center px-4 py-2 rounded-xl bg-surface-light/80">
-                <p className="text-2xl font-bold">{setAssignments.length}</p>
-                <p className="text-xs text-muted-foreground">Wszystkie</p>
-              </div>
-            </div>
+      {/* Patient info */}
+      <div className="flex items-center gap-4">
+        <Avatar className="h-14 w-14">
+          <AvatarImage src={patient.image} alt={displayName} />
+          <AvatarFallback className="bg-primary text-primary-foreground text-lg font-semibold">
+            {initials}
+          </AvatarFallback>
+        </Avatar>
+        <div className="flex-1">
+          <div className="flex items-center gap-2 flex-wrap">
+            <h1 className="text-2xl font-semibold">{displayName}</h1>
+            {patient.isShadowUser && (
+              <Badge variant="secondary" className="text-xs">
+                Konto tymczasowe
+              </Badge>
+            )}
           </div>
+          <div className="flex items-center gap-4 mt-1 text-muted-foreground text-sm flex-wrap">
+            {patient.email && (
+              <a
+                href={`mailto:${patient.email}`}
+                className="flex items-center gap-1.5 hover:text-foreground transition-colors"
+              >
+                <Mail className="h-3.5 w-3.5" />
+                {patient.email}
+              </a>
+            )}
+            {patient.contactData?.phone && (
+              <a
+                href={`tel:${patient.contactData.phone}`}
+                className="flex items-center gap-1.5 hover:text-foreground transition-colors"
+              >
+                <Phone className="h-3.5 w-3.5" />
+                {patient.contactData.phone}
+              </a>
+            )}
+          </div>
+        </div>
+        <div className="flex gap-2">
+          <Badge variant="secondary" className="gap-1">
+            <FolderKanban className="h-3 w-3" />
+            {activeAssignments.length} aktywnych
+          </Badge>
         </div>
       </div>
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <div className="flex items-center justify-between gap-4">
-          <TabsList className="bg-surface-light">
-            <TabsTrigger value="exercises" className="flex items-center gap-2 data-[state=active]:bg-surface">
+          <TabsList>
+            <TabsTrigger value="exercises" className="flex items-center gap-2">
               <FolderKanban className="h-4 w-4" />
               Zestawy ({setAssignments.length})
             </TabsTrigger>
-            <TabsTrigger value="overview" className="flex items-center gap-2 data-[state=active]:bg-surface">
+            <TabsTrigger value="overview" className="flex items-center gap-2">
               <User className="h-4 w-4" />
               Profil
             </TabsTrigger>
-            <TabsTrigger value="activity" className="flex items-center gap-2 data-[state=active]:bg-surface">
+            <TabsTrigger value="activity" className="flex items-center gap-2">
               <Activity className="h-4 w-4" />
               Aktywność
             </TabsTrigger>
           </TabsList>
 
-          {activeTab === "exercises" && (
+          {activeTab === 'exercises' && (
             <Button onClick={() => setIsAssignDialogOpen(true)} className="shadow-lg shadow-primary/20">
               <Plus className="mr-2 h-4 w-4" />
               Przypisz zestaw
@@ -354,7 +345,7 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
                     <div>
                       <p className="text-sm text-muted-foreground">Dodano</p>
                       <p className="font-medium">
-                        {format(new Date(patient.creationTime), "d MMMM yyyy", {
+                        {format(new Date(patient.creationTime), 'd MMMM yyyy', {
                           locale: pl,
                         })}
                       </p>
@@ -362,9 +353,7 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
                   </div>
                 )}
                 {!patient.email && !patient.contactData?.phone && !patient.contactData?.address && (
-                  <p className="text-sm text-muted-foreground text-center py-4">
-                    Brak danych kontaktowych
-                  </p>
+                  <p className="text-sm text-muted-foreground text-center py-4">Brak danych kontaktowych</p>
                 )}
               </CardContent>
             </Card>
@@ -377,9 +366,7 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
               <CardContent>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="rounded-xl border border-border p-4 text-center">
-                    <p className="text-3xl font-bold text-primary">
-                      {activeAssignments.length}
-                    </p>
+                    <p className="text-3xl font-bold text-primary">{activeAssignments.length}</p>
                     <p className="text-sm text-muted-foreground">Aktywne zestawy</p>
                   </div>
                   <div className="rounded-xl border border-border p-4 text-center">
