@@ -5,7 +5,13 @@ import { Activity, Calendar, TrendingUp, BarChart3 } from "lucide-react";
 import { format } from "date-fns";
 import { pl } from "date-fns/locale";
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LoadingState } from "@/components/shared/LoadingState";
 import { EmptyState } from "@/components/shared/EmptyState";
@@ -30,7 +36,10 @@ interface ActivityReportProps {
   patientName?: string;
 }
 
-export function ActivityReport({ patientId, patientName }: ActivityReportProps) {
+export function ActivityReport({
+  patientId,
+  patientName,
+}: ActivityReportProps) {
   // Get exercise progress
   const { data: progressData, loading: progressLoading } = useQuery(
     GET_EXERCISE_PROGRESS_BY_USER_QUERY,
@@ -50,8 +59,8 @@ export function ActivityReport({ patientId, patientName }: ActivityReportProps) 
   const isLoading = progressLoading || assignmentsLoading;
 
   const exerciseProgress: ExerciseProgress[] =
-    progressData?.exerciseProgress || [];
-  const assignments = assignmentsData?.patientAssignments || [];
+    (progressData as any)?.exerciseProgress || [];
+  const assignments = (assignmentsData as any)?.patientAssignments || [];
 
   // Calculate stats
   const completedSessions = exerciseProgress.filter(
@@ -125,7 +134,9 @@ export function ActivityReport({ patientId, patientName }: ActivityReportProps) 
   // Average completion
   const avgCompletion =
     assignments.length > 0
-      ? Math.round((completedSessions / Math.max(assignments.length * 7, 1)) * 100)
+      ? Math.round(
+          (completedSessions / Math.max(assignments.length * 7, 1)) * 100
+        )
       : 0;
 
   // Last activity
@@ -217,11 +228,18 @@ export function ActivityReport({ patientId, patientName }: ActivityReportProps) 
               <CardContent>
                 {assignments.length > 0 ? (
                   <ActivityChart
-                    data={assignments.slice(0, 5).map((a: { exerciseSet?: { name?: string }; completionCount?: number }) => ({
-                      label: a.exerciseSet?.name || "Zestaw",
-                      value: a.completionCount || 0,
-                      maxValue: 10, // Target sessions
-                    }))}
+                    data={assignments
+                      .slice(0, 5)
+                      .map(
+                        (a: {
+                          exerciseSet?: { name?: string };
+                          completionCount?: number;
+                        }) => ({
+                          label: a.exerciseSet?.name || "Zestaw",
+                          value: a.completionCount || 0,
+                          maxValue: 10, // Target sessions
+                        })
+                      )}
                     variant="progress"
                     color="secondary"
                   />
@@ -252,5 +270,4 @@ export function ActivityReport({ patientId, patientName }: ActivityReportProps) 
     </div>
   );
 }
-
 

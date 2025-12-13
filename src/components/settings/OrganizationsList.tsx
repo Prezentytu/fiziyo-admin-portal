@@ -7,9 +7,9 @@ import { pl } from "date-fns/locale";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
-interface UserOrganization {
+export interface UserOrganization {
   organizationId: string;
-  organizationName: string;
+  organizationName?: string;
   role: string;
   joinedAt?: string;
 }
@@ -83,7 +83,7 @@ export function OrganizationsList({
                   <div>
                     <div className="flex items-center gap-2">
                       <span className="font-semibold text-foreground">
-                        {org.organizationName}
+                        {org.organizationName || "Nieznana organizacja"}
                       </span>
                       {isDefault && (
                         <Badge variant="outline" className="gap-1 text-xs">
@@ -114,5 +114,7 @@ export function OrganizationsList({
     </Card>
   );
 }
+
+
 
 

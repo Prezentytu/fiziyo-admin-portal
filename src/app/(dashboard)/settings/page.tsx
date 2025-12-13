@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { LoadingState } from "@/components/shared/LoadingState";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { ProfileForm, UserProfile } from "@/components/settings/ProfileForm";
-import { OrganizationsList } from "@/components/settings/OrganizationsList";
+import { OrganizationsList, UserOrganization } from "@/components/settings/OrganizationsList";
 
 import { GET_USER_BY_CLERK_ID_QUERY, GET_USER_ORGANIZATIONS_QUERY } from "@/graphql/queries/users.queries";
 import type { UserByClerkIdResponse, UserOrganizationsResponse } from "@/types/apollo";
@@ -125,8 +125,8 @@ export default function SettingsPage() {
             <LoadingState type="row" count={3} />
           ) : (
             <OrganizationsList
-              organizations={organizations}
-              defaultOrganizationId={userByClerkId.defaultOrganizationId}
+              organizations={organizations as UserOrganization[]}
+              defaultOrganizationId={userByClerkId.organizationIds?.[0]}
             />
           )}
         </TabsContent>
