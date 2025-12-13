@@ -1,16 +1,15 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { useQuery } from "@apollo/client/react";
-import { useUser } from "@clerk/nextjs";
-import { Building2, Users, MapPin, Settings } from "lucide-react";
+import { useState } from 'react';
+import { useQuery } from '@apollo/client/react';
+import { useUser } from '@clerk/nextjs';
+import { Building2, Users, MapPin, Settings } from 'lucide-react';
 
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LoadingState } from "@/components/shared/LoadingState";
-import { EmptyState } from "@/components/shared/EmptyState";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { LoadingState } from '@/components/shared/LoadingState';
+import { EmptyState } from '@/components/shared/EmptyState';
 import {
   OrganizationHeader,
-  OrganizationQuickStats,
   MembersTab,
   ClinicsTab,
   SettingsTab,
@@ -19,22 +18,22 @@ import {
   AssignToClinicDialog,
   Clinic,
   OrganizationMember,
-} from "@/components/organization";
+} from '@/components/organization';
 
 import {
   GET_ORGANIZATION_BY_ID_QUERY,
   GET_ORGANIZATION_MEMBERS_QUERY,
   GET_CURRENT_ORGANIZATION_PLAN,
-} from "@/graphql/queries/organizations.queries";
-import { GET_USER_BY_CLERK_ID_QUERY, GET_USER_ORGANIZATIONS_QUERY } from "@/graphql/queries/users.queries";
-import { GET_ORGANIZATION_CLINICS_QUERY } from "@/graphql/queries/clinics.queries";
+} from '@/graphql/queries/organizations.queries';
+import { GET_USER_BY_CLERK_ID_QUERY, GET_USER_ORGANIZATIONS_QUERY } from '@/graphql/queries/users.queries';
+import { GET_ORGANIZATION_CLINICS_QUERY } from '@/graphql/queries/clinics.queries';
 import type {
   UserByClerkIdResponse,
   OrganizationByIdResponse,
   OrganizationMembersResponse,
   OrganizationClinicsResponse,
   UserOrganizationsResponse,
-} from "@/types/apollo";
+} from '@/types/apollo';
 
 interface ClinicFromQuery {
   id: string;
@@ -69,7 +68,7 @@ interface PlanResponse {
 
 export default function OrganizationPage() {
   const { user } = useUser();
-  const [activeTab, setActiveTab] = useState("overview");
+  const [activeTab, setActiveTab] = useState('overview');
   const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
   const [isClinicDialogOpen, setIsClinicDialogOpen] = useState(false);
   const [isAssignToClinicDialogOpen, setIsAssignToClinicDialogOpen] = useState(false);
@@ -91,9 +90,9 @@ export default function OrganizationPage() {
     skip: !currentUserId,
   });
 
-  const currentUserRole = (userOrgsData as UserOrganizationsResponse)?.userOrganizations?.find(
-    (o: { organizationId: string; role: string }) => o.organizationId === organizationId
-  )?.role?.toLowerCase();
+  const currentUserRole = (userOrgsData as UserOrganizationsResponse)?.userOrganizations
+    ?.find((o: { organizationId: string; role: string }) => o.organizationId === organizationId)
+    ?.role?.toLowerCase();
 
   // Get organization details
   const {
@@ -132,17 +131,15 @@ export default function OrganizationPage() {
   });
 
   const organization = (orgData as OrganizationByIdResponse)?.organizationById;
-  const members: OrganizationMember[] =
-    (membersData as OrganizationMembersResponse)?.organizationMembers || [];
-  const clinics: ClinicFromQuery[] =
-    (clinicsData as OrganizationClinicsResponse)?.organizationClinics || [];
+  const members: OrganizationMember[] = (membersData as OrganizationMembersResponse)?.organizationMembers || [];
+  const clinics: ClinicFromQuery[] = (clinicsData as OrganizationClinicsResponse)?.organizationClinics || [];
   const planInfo = (planData as PlanResponse)?.currentOrganizationPlan;
 
-  const canEdit = currentUserRole === "owner" || currentUserRole === "admin";
+  const canEdit = currentUserRole === 'owner' || currentUserRole === 'admin';
 
   // Get therapists and patients from members for clinic assignment
   const therapists = members
-    .filter((m) => ["owner", "admin", "therapist"].includes(m.role.toLowerCase()))
+    .filter((m) => ['owner', 'admin', 'therapist'].includes(m.role.toLowerCase()))
     .map((m) => ({
       id: m.userId,
       fullname: m.user?.fullname,
@@ -151,7 +148,7 @@ export default function OrganizationPage() {
     }));
 
   const patients = members
-    .filter((m) => m.role.toLowerCase() === "patient")
+    .filter((m) => m.role.toLowerCase() === 'patient')
     .map((m) => ({
       id: m.userId,
       fullname: m.user?.fullname,
@@ -180,7 +177,7 @@ export default function OrganizationPage() {
   };
 
   const handleSettingsClick = () => {
-    setActiveTab("settings");
+    setActiveTab('settings');
   };
 
   const handleRefreshAll = () => {
@@ -200,18 +197,14 @@ export default function OrganizationPage() {
   if (!organization) {
     return (
       <div className="flex h-full items-center justify-center">
-        <EmptyState
-          icon={Building2}
-          title="Brak organizacji"
-          description="Nie jesteś członkiem żadnej organizacji"
-        />
+        <EmptyState icon={Building2} title="Brak organizacji" description="Nie jesteś członkiem żadnej organizacji" />
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      {/* Hero Header */}
+      {/* Header */}
       <OrganizationHeader
         organization={organization}
         currentUserRole={currentUserRole}
@@ -221,19 +214,9 @@ export default function OrganizationPage() {
         onSettingsClick={handleSettingsClick}
       />
 
-      {/* Quick Stats */}
-      <OrganizationQuickStats
-        membersCount={members.length}
-        clinicsCount={clinics.length}
-        limits={planInfo?.limits}
-        currentUsage={planInfo?.currentUsage}
-        subscriptionPlan={organization.subscriptionPlan}
-        isLoading={planLoading}
-      />
-
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="bg-surface border border-border/60">
+        <TabsList>
           <TabsTrigger value="overview" className="flex items-center gap-2">
             <Building2 className="h-4 w-4" />
             Przegląd

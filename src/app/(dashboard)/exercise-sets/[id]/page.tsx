@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import { use, useState } from "react";
-import { useQuery, useMutation } from "@apollo/client/react";
-import { useRouter } from "next/navigation";
-import { useUser } from "@clerk/nextjs";
+import { use, useState } from 'react';
+import { useQuery, useMutation } from '@apollo/client/react';
+import { useRouter } from 'next/navigation';
+import { useUser } from '@clerk/nextjs';
 import {
   ArrowLeft,
   Pencil,
@@ -20,50 +20,52 @@ import {
   MoreHorizontal,
   Pause,
   Play,
-} from "lucide-react";
-import { toast } from "sonner";
+} from 'lucide-react';
+import { toast } from 'sonner';
 
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { LoadingState } from "@/components/shared/LoadingState";
-import { EmptyState } from "@/components/shared/EmptyState";
-import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
-import { SetDialog } from "@/components/exercise-sets/SetDialog";
-import { AddExerciseToSetDialog } from "@/components/exercise-sets/AddExerciseToSetDialog";
-import { EditExerciseInSetDialog } from "@/components/exercise-sets/EditExerciseInSetDialog";
-import { AssignSetDialog } from "@/components/exercise-sets/AssignSetDialog";
-import { ImagePlaceholder } from "@/components/shared/ImagePlaceholder";
-import Link from "next/link";
+} from '@/components/ui/dropdown-menu';
+import { LoadingState } from '@/components/shared/LoadingState';
+import { EmptyState } from '@/components/shared/EmptyState';
+import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
+import { SetDialog } from '@/components/exercise-sets/SetDialog';
+import { AddExerciseToSetDialog } from '@/components/exercise-sets/AddExerciseToSetDialog';
+import { EditExerciseInSetDialog } from '@/components/exercise-sets/EditExerciseInSetDialog';
+import { AssignSetDialog } from '@/components/exercise-sets/AssignSetDialog';
+import { ImagePlaceholder } from '@/components/shared/ImagePlaceholder';
+import Link from 'next/link';
+
+// Note: ImagePlaceholder still used in exercise list items
 
 import {
   GET_EXERCISE_SET_WITH_ASSIGNMENTS_QUERY,
   GET_ORGANIZATION_EXERCISE_SETS_QUERY,
-} from "@/graphql/queries/exerciseSets.queries";
+} from '@/graphql/queries/exerciseSets.queries';
 import {
   DELETE_EXERCISE_SET_MUTATION,
   REMOVE_EXERCISE_FROM_SET_MUTATION,
   UPDATE_EXERCISE_SET_ASSIGNMENT_MUTATION,
   REMOVE_EXERCISE_SET_ASSIGNMENT_MUTATION,
-} from "@/graphql/mutations/exercises.mutations";
-import { GET_USER_BY_CLERK_ID_QUERY } from "@/graphql/queries/users.queries";
+} from '@/graphql/mutations/exercises.mutations';
+import { GET_USER_BY_CLERK_ID_QUERY } from '@/graphql/queries/users.queries';
 
 // Tłumaczenie typów na polski
 const translateType = (type?: string) => {
   const types: Record<string, string> = {
-    time: "czasowe",
-    reps: "powtórzenia",
-    hold: "utrzymanie",
+    time: 'czasowe',
+    reps: 'powtórzenia',
+    hold: 'utrzymanie',
   };
-  return type ? types[type] || type : "";
+  return type ? types[type] || type : '';
 };
 
 interface SetDetailPageProps {
@@ -140,11 +142,8 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isAddExerciseDialogOpen, setIsAddExerciseDialogOpen] = useState(false);
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
-  const [editingExercise, setEditingExercise] =
-    useState<ExerciseMapping | null>(null);
-  const [removingExerciseId, setRemovingExerciseId] = useState<string | null>(
-    null
-  );
+  const [editingExercise, setEditingExercise] = useState<ExerciseMapping | null>(null);
+  const [removingExerciseId, setRemovingExerciseId] = useState<string | null>(null);
   const [removingAssignment, setRemovingAssignment] = useState<PatientAssignmentInSet | null>(null);
 
   // Get user data
@@ -153,42 +152,30 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
     skip: !user?.id,
   });
 
-  const userByClerkId = (
-    userData as { userByClerkId?: { id?: string; organizationIds?: string[] } }
-  )?.userByClerkId;
+  const userByClerkId = (userData as { userByClerkId?: { id?: string; organizationIds?: string[] } })?.userByClerkId;
   const organizationId = userByClerkId?.organizationIds?.[0];
   const therapistId = userByClerkId?.id;
 
   // Get set details
-  const { data, loading, error, refetch } = useQuery(
-    GET_EXERCISE_SET_WITH_ASSIGNMENTS_QUERY,
-    {
-      variables: { exerciseSetId: id },
-    }
-  );
+  const { data, loading, error, refetch } = useQuery(GET_EXERCISE_SET_WITH_ASSIGNMENTS_QUERY, {
+    variables: { exerciseSetId: id },
+  });
 
   // Mutations
-  const [deleteSet, { loading: deleting }] = useMutation(
-    DELETE_EXERCISE_SET_MUTATION,
-    {
-      refetchQueries: organizationId
-        ? [
-            {
-              query: GET_ORGANIZATION_EXERCISE_SETS_QUERY,
-              variables: { organizationId },
-            },
-          ]
-        : [],
-    }
-  );
+  const [deleteSet, { loading: deleting }] = useMutation(DELETE_EXERCISE_SET_MUTATION, {
+    refetchQueries: organizationId
+      ? [
+          {
+            query: GET_ORGANIZATION_EXERCISE_SETS_QUERY,
+            variables: { organizationId },
+          },
+        ]
+      : [],
+  });
 
-  const [removeExercise, { loading: removingExercise }] = useMutation(
-    REMOVE_EXERCISE_FROM_SET_MUTATION
-  );
+  const [removeExercise, { loading: removingExercise }] = useMutation(REMOVE_EXERCISE_FROM_SET_MUTATION);
 
-  const [updateAssignment, { loading: updatingAssignment }] = useMutation(
-    UPDATE_EXERCISE_SET_ASSIGNMENT_MUTATION
-  );
+  const [updateAssignment, { loading: updatingAssignment }] = useMutation(UPDATE_EXERCISE_SET_ASSIGNMENT_MUTATION);
 
   const [removeAssignment, { loading: removingAssignmentLoading }] = useMutation(
     REMOVE_EXERCISE_SET_ASSIGNMENT_MUTATION
@@ -201,11 +188,11 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
       await deleteSet({
         variables: { exerciseSetId: id },
       });
-      toast.success("Zestaw został usunięty");
-      router.push("/exercise-sets");
+      toast.success('Zestaw został usunięty');
+      router.push('/exercise-sets');
     } catch (error) {
-      console.error("Błąd podczas usuwania:", error);
-      toast.error("Nie udało się usunąć zestawu");
+      console.error('Błąd podczas usuwania:', error);
+      toast.error('Nie udało się usunąć zestawu');
     }
   };
 
@@ -219,17 +206,17 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
           exerciseSetId: id,
         },
       });
-      toast.success("Ćwiczenie zostało usunięte z zestawu");
+      toast.success('Ćwiczenie zostało usunięte z zestawu');
       setRemovingExerciseId(null);
       refetch();
     } catch (error) {
-      console.error("Błąd podczas usuwania ćwiczenia:", error);
-      toast.error("Nie udało się usunąć ćwiczenia z zestawu");
+      console.error('Błąd podczas usuwania ćwiczenia:', error);
+      toast.error('Nie udało się usunąć ćwiczenia z zestawu');
     }
   };
 
   const handleToggleAssignmentStatus = async (assignment: PatientAssignmentInSet) => {
-    const newStatus = assignment.status === "active" ? "paused" : "active";
+    const newStatus = assignment.status === 'active' ? 'paused' : 'active';
     try {
       await updateAssignment({
         variables: {
@@ -237,11 +224,11 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
           status: newStatus,
         },
       });
-      toast.success(newStatus === "active" ? "Przypisanie wznowione" : "Przypisanie wstrzymane");
+      toast.success(newStatus === 'active' ? 'Przypisanie wznowione' : 'Przypisanie wstrzymane');
       refetch();
     } catch (error) {
-      console.error("Błąd zmiany statusu:", error);
-      toast.error("Nie udało się zmienić statusu");
+      console.error('Błąd zmiany statusu:', error);
+      toast.error('Nie udało się zmienić statusu');
     }
   };
 
@@ -255,45 +242,45 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
           patientId: removingAssignment.userId || removingAssignment.user?.id,
         },
       });
-      toast.success("Przypisanie zostało usunięte");
+      toast.success('Przypisanie zostało usunięte');
       setRemovingAssignment(null);
       refetch();
     } catch (error) {
-      console.error("Błąd usuwania przypisania:", error);
-      toast.error("Nie udało się usunąć przypisania");
+      console.error('Błąd usuwania przypisania:', error);
+      toast.error('Nie udało się usunąć przypisania');
     }
   };
 
   // Helper function for status display
   const getStatusInfo = (status?: string) => {
     switch (status) {
-      case "active":
-        return { label: "Aktywny", variant: "success" as const };
-      case "paused":
-        return { label: "Wstrzymany", variant: "warning" as const };
-      case "completed":
-        return { label: "Ukończony", variant: "secondary" as const };
+      case 'active':
+        return { label: 'Aktywny', variant: 'success' as const };
+      case 'paused':
+        return { label: 'Wstrzymany', variant: 'warning' as const };
+      case 'completed':
+        return { label: 'Ukończony', variant: 'secondary' as const };
       default:
-        return { label: status || "—", variant: "secondary" as const };
+        return { label: status || '—', variant: 'secondary' as const };
     }
   };
 
   // Helper function for frequency display
-  const getFrequencyDisplay = (frequency?: PatientAssignmentInSet["frequency"]) => {
+  const getFrequencyDisplay = (frequency?: PatientAssignmentInSet['frequency']) => {
     if (!frequency) return null;
     const days = [
-      frequency.monday && "Pn",
-      frequency.tuesday && "Wt",
-      frequency.wednesday && "Śr",
-      frequency.thursday && "Cz",
-      frequency.friday && "Pt",
-      frequency.saturday && "So",
-      frequency.sunday && "Nd",
+      frequency.monday && 'Pn',
+      frequency.tuesday && 'Wt',
+      frequency.wednesday && 'Śr',
+      frequency.thursday && 'Cz',
+      frequency.friday && 'Pt',
+      frequency.saturday && 'So',
+      frequency.sunday && 'Nd',
     ].filter(Boolean);
-    
-    if (days.length === 7) return "Codziennie";
-    if (days.length === 5 && !frequency.saturday && !frequency.sunday) return "Pn-Pt";
-    return days.join(", ");
+
+    if (days.length === 7) return 'Codziennie';
+    if (days.length === 5 && !frequency.saturday && !frequency.sunday) return 'Pn-Pt';
+    return days.join(', ');
   };
 
   if (loading) {
@@ -310,10 +297,8 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
         <div className="h-16 w-16 rounded-full bg-surface-light flex items-center justify-center mb-2">
           <FolderKanban className="h-8 w-8 text-muted-foreground" />
         </div>
-        <p className="text-destructive">
-          {error ? `Błąd: ${error.message}` : "Nie znaleziono zestawu"}
-        </p>
-        <Button variant="outline" onClick={() => router.push("/exercise-sets")}>
+        <p className="text-destructive">{error ? `Błąd: ${error.message}` : 'Nie znaleziono zestawu'}</p>
+        <Button variant="outline" onClick={() => router.push('/exercise-sets')}>
           <ArrowLeft className="mr-2 h-4 w-4" />
           Wróć do listy
         </Button>
@@ -324,152 +309,56 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
   const exercises = exerciseSet?.exerciseMappings || [];
   const assignments = exerciseSet?.patientAssignments || [];
 
-  // Get first 4 exercise images for hero grid
-  const exerciseImages = exercises
-    .slice(0, 4)
-    .map((m) => m.exercise?.imageUrl || m.exercise?.images?.[0])
-    .filter(Boolean) as string[];
-
   return (
-    <div className="space-y-8">
-      {/* Hero section */}
-      <div className="relative rounded-2xl overflow-hidden bg-surface-light">
-        <div className="relative p-6 md:p-8">
-          {/* Navigation and actions */}
-          <div className="flex items-center justify-between mb-6">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => router.push("/exercise-sets")}
-              className="bg-black/20 hover:bg-black/40 backdrop-blur-sm"
-            >
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Powrót
-            </Button>
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setIsEditDialogOpen(true)}
-                className="bg-black/20 hover:bg-black/40 backdrop-blur-sm border-white/20"
-              >
-                <Pencil className="mr-2 h-4 w-4" />
-                Edytuj
-              </Button>
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={() => setIsDeleteDialogOpen(true)}
-              >
-                <Trash2 className="mr-2 h-4 w-4" />
-                Usuń
-              </Button>
-            </div>
-          </div>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <Button variant="ghost" onClick={() => router.push('/exercise-sets')} className="w-fit">
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Powrót do zestawów
+        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={() => setIsEditDialogOpen(true)}>
+            <Pencil className="mr-2 h-4 w-4" />
+            Edytuj
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setIsDeleteDialogOpen(true)}
+            className="text-destructive hover:text-destructive hover:bg-destructive/10"
+          >
+            <Trash2 className="mr-2 h-4 w-4" />
+            Usuń
+          </Button>
+        </div>
+      </div>
 
-          {/* Main hero content */}
-          <div className="grid gap-8 lg:grid-cols-2">
-            {/* Image grid preview */}
-            <div className="relative aspect-video rounded-xl overflow-hidden bg-surface">
-              {exerciseImages.length > 0 ? (
-                <div className="grid grid-cols-2 grid-rows-2 h-full gap-0.5">
-                  {[0, 1, 2, 3].map((index) => (
-                    <div key={index} className="relative overflow-hidden">
-                      {exerciseImages[index] ? (
-                        <img
-                          src={exerciseImages[index]}
-                          alt=""
-                          className="h-full w-full object-cover"
-                        />
-                      ) : (
-                        <div className="h-full w-full bg-surface-light flex items-center justify-center">
-                          <Dumbbell className="h-8 w-8 text-muted-foreground/30" />
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <ImagePlaceholder
-                  type="set"
-                  className="h-full"
-                  iconClassName="h-16 w-16"
-                />
-              )}
-
-              {/* Stats overlay */}
-              <div className="absolute bottom-4 left-4 right-4 flex gap-2">
-                <Badge className="bg-black/60 text-white border-0 backdrop-blur-sm gap-1.5">
-                  <Dumbbell className="h-3 w-3" />
-                  {exercises.length} ćwiczeń
-                </Badge>
-                <Badge className="bg-black/60 text-white border-0 backdrop-blur-sm gap-1.5">
-                  <Users className="h-3 w-3" />
-                  {assignments.length} pacjentów
-                </Badge>
-              </div>
-            </div>
-
-            {/* Set info */}
-            <div className="space-y-6">
-              <div>
-                <h1 className="text-3xl font-bold mb-2">{exerciseSet.name}</h1>
-                <p className="text-muted-foreground text-lg">
-                  {exerciseSet.description || "Brak opisu"}
-                </p>
-              </div>
-
-              {/* Quick stats */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="flex items-center gap-3 p-4 rounded-xl bg-black/20 backdrop-blur-sm">
-                  <div className="stats-icon">
-                    <Dumbbell className="h-5 w-5 text-white" />
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold">{exercises.length}</p>
-                    <p className="text-sm text-muted-foreground">ćwiczeń</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3 p-4 rounded-xl bg-black/20 backdrop-blur-sm">
-                  <div className="stats-icon-info">
-                    <Users className="h-5 w-5 text-white" />
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold">{assignments.length}</p>
-                    <p className="text-sm text-muted-foreground">pacjentów</p>
-                  </div>
-                </div>
-                {exerciseSet?.frequency?.timesPerWeek && (
-                  <div className="flex items-center gap-3 p-4 rounded-xl bg-black/20 backdrop-blur-sm">
-                    <div className="stats-icon-secondary">
-                      <Calendar className="h-5 w-5 text-white" />
-                    </div>
-                    <div>
-                      <p className="text-2xl font-bold">
-                        {exerciseSet.frequency.timesPerWeek}x
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        w tygodniu
-                      </p>
-                    </div>
-                  </div>
-                )}
-                {exerciseSet?.frequency?.timesPerDay && (
-                  <div className="flex items-center gap-3 p-4 rounded-xl bg-black/20 backdrop-blur-sm">
-                    <div className="stats-icon-warning">
-                      <Clock className="h-5 w-5 text-white" />
-                    </div>
-                    <div>
-                      <p className="text-2xl font-bold">
-                        {exerciseSet.frequency.timesPerDay}x
-                      </p>
-                      <p className="text-sm text-muted-foreground">dziennie</p>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
+      {/* Set info */}
+      <div>
+        <h1 className="text-2xl font-semibold">{exerciseSet.name}</h1>
+        <p className="text-muted-foreground mt-1">{exerciseSet.description || 'Brak opisu'}</p>
+        <div className="flex flex-wrap gap-2 mt-3">
+          <Badge variant="secondary" className="gap-1.5">
+            <Dumbbell className="h-3 w-3" />
+            {exercises.length} ćwiczeń
+          </Badge>
+          <Badge variant="secondary" className="gap-1.5">
+            <Users className="h-3 w-3" />
+            {assignments.length} pacjentów
+          </Badge>
+          {exerciseSet?.frequency?.timesPerWeek && (
+            <Badge variant="outline" className="gap-1.5">
+              <Calendar className="h-3 w-3" />
+              {exerciseSet.frequency.timesPerWeek}x w tygodniu
+            </Badge>
+          )}
+          {exerciseSet?.frequency?.timesPerDay && (
+            <Badge variant="outline" className="gap-1.5">
+              <Clock className="h-3 w-3" />
+              {exerciseSet.frequency.timesPerDay}x dziennie
+            </Badge>
+          )}
         </div>
       </div>
 
@@ -482,10 +371,7 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
                 <Dumbbell className="h-5 w-5 text-primary" />
                 Ćwiczenia w zestawie
               </CardTitle>
-              <Button
-                size="sm"
-                onClick={() => setIsAddExerciseDialogOpen(true)}
-              >
+              <Button size="sm" onClick={() => setIsAddExerciseDialogOpen(true)}>
                 <Plus className="mr-2 h-4 w-4" />
                 Dodaj ćwiczenie
               </Button>
@@ -504,11 +390,8 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
                   {[...exercises]
                     .sort((a, b) => (a.order || 0) - (b.order || 0))
                     .map((mapping, index) => {
-                      const imageUrl =
-                        mapping.exercise?.imageUrl ||
-                        mapping.exercise?.images?.[0];
-                      const hasParams =
-                        mapping.sets || mapping.reps || mapping.duration;
+                      const imageUrl = mapping.exercise?.imageUrl || mapping.exercise?.images?.[0];
+                      const hasParams = mapping.sets || mapping.reps || mapping.duration;
                       return (
                         <div
                           key={mapping.id}
@@ -529,24 +412,16 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
                                 className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                               />
                             ) : (
-                              <ImagePlaceholder
-                                type="exercise"
-                                iconClassName="h-5 w-5"
-                              />
+                              <ImagePlaceholder type="exercise" iconClassName="h-5 w-5" />
                             )}
                           </div>
 
                           {/* Info */}
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2">
-                              <p className="font-semibold truncate">
-                                {mapping.exercise?.name || "Nieznane ćwiczenie"}
-                              </p>
+                              <p className="font-semibold truncate">{mapping.exercise?.name || 'Nieznane ćwiczenie'}</p>
                               {mapping.exercise?.type && (
-                                <Badge
-                                  variant="secondary"
-                                  className="text-[10px] shrink-0"
-                                >
+                                <Badge variant="secondary" className="text-[10px] shrink-0">
                                   {translateType(mapping.exercise.type)}
                                 </Badge>
                               )}
@@ -555,37 +430,25 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
                               <div className="flex items-center gap-4 text-sm mt-1.5">
                                 {mapping.sets && (
                                   <div className="flex items-center gap-1.5 rounded-md bg-surface-light px-2 py-0.5">
-                                    <span className="text-xs text-muted-foreground">
-                                      Serie
-                                    </span>
-                                    <span className="font-semibold text-foreground">
-                                      {mapping.sets}
-                                    </span>
+                                    <span className="text-xs text-muted-foreground">Serie</span>
+                                    <span className="font-semibold text-foreground">{mapping.sets}</span>
                                   </div>
                                 )}
                                 {mapping.reps && (
                                   <div className="flex items-center gap-1.5 rounded-md bg-surface-light px-2 py-0.5">
-                                    <span className="text-xs text-muted-foreground">
-                                      Powt.
-                                    </span>
-                                    <span className="font-semibold text-foreground">
-                                      {mapping.reps}
-                                    </span>
+                                    <span className="text-xs text-muted-foreground">Powt.</span>
+                                    <span className="font-semibold text-foreground">{mapping.reps}</span>
                                   </div>
                                 )}
                                 {mapping.duration && (
                                   <div className="flex items-center gap-1.5 rounded-md bg-surface-light px-2 py-0.5">
                                     <Clock className="h-3 w-3 text-muted-foreground" />
-                                    <span className="font-semibold text-foreground">
-                                      {mapping.duration}s
-                                    </span>
+                                    <span className="font-semibold text-foreground">{mapping.duration}s</span>
                                   </div>
                                 )}
                               </div>
                             ) : (
-                              <p className="text-xs text-muted-foreground mt-1">
-                                Kliknij aby ustawić parametry
-                              </p>
+                              <p className="text-xs text-muted-foreground mt-1">Kliknij aby ustawić parametry</p>
                             )}
                           </div>
 
@@ -631,11 +494,7 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
                 <Users className="h-5 w-5 text-primary" />
                 Pacjenci ({assignments.length})
               </CardTitle>
-              <Button
-                size="sm"
-                onClick={() => setIsAssignDialogOpen(true)}
-                className="shadow-sm"
-              >
+              <Button size="sm" onClick={() => setIsAssignDialogOpen(true)} className="shadow-sm">
                 <Plus className="mr-2 h-4 w-4" />
                 Przypisz
               </Button>
@@ -646,17 +505,9 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
                   <div className="h-14 w-14 rounded-full bg-surface-light mx-auto flex items-center justify-center mb-4">
                     <Users className="h-7 w-7 text-muted-foreground/60" />
                   </div>
-                  <p className="text-sm font-medium text-muted-foreground mb-1">
-                    Brak przypisanych pacjentów
-                  </p>
-                  <p className="text-xs text-muted-foreground/70 mb-4">
-                    Przypisz ten zestaw do pacjentów
-                  </p>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => setIsAssignDialogOpen(true)}
-                  >
+                  <p className="text-sm font-medium text-muted-foreground mb-1">Brak przypisanych pacjentów</p>
+                  <p className="text-xs text-muted-foreground/70 mb-4">Przypisz ten zestaw do pacjentów</p>
+                  <Button size="sm" variant="outline" onClick={() => setIsAssignDialogOpen(true)}>
                     <Plus className="mr-2 h-4 w-4" />
                     Przypisz pacjenta
                   </Button>
@@ -666,7 +517,7 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
                   {assignments.map((assignment) => {
                     const statusInfo = getStatusInfo(assignment.status);
                     const frequencyDisplay = getFrequencyDisplay(assignment.frequency);
-                    
+
                     return (
                       <div
                         key={assignment.id}
@@ -676,18 +527,15 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
                           <Avatar className="h-10 w-10 shrink-0">
                             <AvatarImage src={assignment.user?.image} />
                             <AvatarFallback className="bg-gradient-to-br from-info to-blue-600 text-white text-sm font-semibold">
-                              {assignment.user?.fullname?.[0] || "?"}
+                              {assignment.user?.fullname?.[0] || '?'}
                             </AvatarFallback>
                           </Avatar>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2">
                               <p className="font-medium text-sm truncate">
-                                {assignment.user?.fullname || "Nieznany pacjent"}
+                                {assignment.user?.fullname || 'Nieznany pacjent'}
                               </p>
-                              <Badge
-                                variant={statusInfo.variant}
-                                className="text-[9px] shrink-0"
-                              >
+                              <Badge variant={statusInfo.variant} className="text-[9px] shrink-0">
                                 {statusInfo.label}
                               </Badge>
                             </div>
@@ -741,7 +589,7 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
                                 onClick={() => handleToggleAssignmentStatus(assignment)}
                                 disabled={updatingAssignment}
                               >
-                                {assignment.status === "active" ? (
+                                {assignment.status === 'active' ? (
                                   <>
                                     <Pause className="mr-2 h-4 w-4" />
                                     Wstrzymaj
@@ -836,9 +684,7 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
           open={isAssignDialogOpen}
           onOpenChange={setIsAssignDialogOpen}
           exerciseSetId={id}
-          assignedPatientIds={assignments.map(
-            (a) => a.userId || a.user?.id || ""
-          )}
+          assignedPatientIds={assignments.map((a) => a.userId || a.user?.id || '')}
           therapistId={therapistId}
           organizationId={organizationId}
           onSuccess={() => refetch()}
@@ -850,7 +696,9 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
         open={!!removingAssignment}
         onOpenChange={(open) => !open && setRemovingAssignment(null)}
         title="Usuń przypisanie"
-        description={`Czy na pewno chcesz usunąć przypisanie zestawu dla pacjenta "${removingAssignment?.user?.fullname || "Nieznany"}"? Ta operacja jest nieodwracalna.`}
+        description={`Czy na pewno chcesz usunąć przypisanie zestawu dla pacjenta "${
+          removingAssignment?.user?.fullname || 'Nieznany'
+        }"? Ta operacja jest nieodwracalna.`}
         confirmText="Usuń"
         variant="destructive"
         onConfirm={handleRemoveAssignment}
