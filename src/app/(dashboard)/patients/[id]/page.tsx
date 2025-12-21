@@ -18,8 +18,10 @@ import {
   MoreHorizontal,
   Trash2,
   UserX,
+  Wrench,
 } from 'lucide-react';
 
+import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -186,12 +188,29 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
 
       {/* Patient info */}
       <div className="flex items-center gap-4">
-        <Avatar className="h-14 w-14">
-          <AvatarImage src={patient.image} alt={displayName} />
-          <AvatarFallback className="bg-primary text-primary-foreground text-lg font-semibold">
-            {initials}
-          </AvatarFallback>
-        </Avatar>
+        <div className="relative">
+          <Avatar
+            className={cn(
+              'h-14 w-14 ring-2 transition-all',
+              patient.isShadowUser ? 'ring-muted-foreground/20' : 'ring-border/30'
+            )}
+          >
+            <AvatarImage src={patient.image} alt={displayName} />
+            <AvatarFallback
+              className={cn(
+                'text-lg font-semibold',
+                patient.isShadowUser ? 'bg-muted-foreground/60 text-white' : 'bg-primary text-primary-foreground'
+              )}
+            >
+              {initials}
+            </AvatarFallback>
+          </Avatar>
+          {patient.isShadowUser && (
+            <div className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-muted-foreground/80 flex items-center justify-center ring-2 ring-background">
+              <Wrench className="h-3 w-3 text-white" />
+            </div>
+          )}
+        </div>
         <div className="flex-1">
           <div className="flex items-center gap-2 flex-wrap">
             <h1 className="text-2xl font-semibold">{displayName}</h1>

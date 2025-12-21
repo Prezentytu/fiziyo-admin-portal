@@ -15,6 +15,7 @@ import {
   ArrowRight,
   Zap,
   TrendingUp,
+  Wrench,
 } from 'lucide-react';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -54,6 +55,7 @@ interface PatientAssignment {
     fullname?: string;
     email?: string;
     image?: string;
+    isShadowUser?: boolean;
   };
   contextLabel?: string;
   status?: string;
@@ -241,29 +243,67 @@ export default function DashboardPage() {
               </div>
             ) : patients.length > 0 ? (
               <div className="grid gap-3 sm:grid-cols-2">
-                {displayedPatients.map((assignment: PatientAssignment) => (
-                  <Link
-                    key={assignment.id}
-                    href={`/patients/${assignment.patient?.id}`}
-                    className="group flex items-center gap-3 p-3 rounded-xl border border-border/50 bg-surface hover:bg-surface-light hover:border-primary/20 transition-all"
-                  >
-                    <Avatar className="h-11 w-11 shrink-0 ring-2 ring-border/30 group-hover:ring-primary/20 transition-all">
-                      <AvatarImage src={assignment.patient?.image} />
-                      <AvatarFallback className="bg-gradient-to-br from-info to-blue-600 text-white font-semibold">
-                        {assignment.patient?.fullname?.[0] || '?'}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium truncate text-foreground group-hover:text-primary transition-colors">
-                        {assignment.patient?.fullname || 'Nieznany'}
-                      </p>
-                      <p className="text-xs text-muted-foreground truncate">
-                        {assignment.contextLabel || assignment.patient?.email || 'Pacjent'}
-                      </p>
-                    </div>
-                    <ChevronRight className="h-4 w-4 text-muted-foreground/50 group-hover:text-primary transition-all group-hover:translate-x-0.5" />
-                  </Link>
-                ))}
+                {displayedPatients.map((assignment: PatientAssignment) => {
+                  const isShadow = assignment.patient?.isShadowUser;
+                  return (
+                    <Link
+                      key={assignment.id}
+                      href={`/patients/${assignment.patient?.id}`}
+                      className={`group flex items-center gap-3 p-3 rounded-xl border transition-all ${
+                        isShadow
+                          ? 'border-border/30 bg-surface/80 hover:bg-surface hover:border-muted-foreground/20'
+                          : 'border-border/50 bg-surface hover:bg-surface-light hover:border-primary/20'
+                      }`}
+                    >
+                      <div className="relative shrink-0">
+                        <Avatar
+                          className={`h-11 w-11 ring-2 transition-all ${
+                            isShadow
+                              ? 'ring-muted-foreground/20 group-hover:ring-muted-foreground/30'
+                              : 'ring-border/30 group-hover:ring-primary/20'
+                          }`}
+                        >
+                          <AvatarImage src={assignment.patient?.image} />
+                          <AvatarFallback
+                            className={`font-semibold ${
+                              isShadow
+                                ? 'bg-muted-foreground/60 text-white'
+                                : 'bg-gradient-to-br from-info to-blue-600 text-white'
+                            }`}
+                          >
+                            {assignment.patient?.fullname?.[0] || '?'}
+                          </AvatarFallback>
+                        </Avatar>
+                        {isShadow && (
+                          <div className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-muted-foreground/80 flex items-center justify-center ring-2 ring-surface">
+                            <Wrench className="h-3 w-3 text-white" />
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p
+                          className={`font-medium truncate transition-colors ${
+                            isShadow
+                              ? 'text-muted-foreground group-hover:text-foreground'
+                              : 'text-foreground group-hover:text-primary'
+                          }`}
+                        >
+                          {assignment.patient?.fullname || 'Nieznany'}
+                        </p>
+                        <p className="text-xs text-muted-foreground truncate">
+                          {assignment.contextLabel || assignment.patient?.email || 'Pacjent'}
+                        </p>
+                      </div>
+                      <ChevronRight
+                        className={`h-4 w-4 transition-all group-hover:translate-x-0.5 ${
+                          isShadow
+                            ? 'text-muted-foreground/30 group-hover:text-muted-foreground'
+                            : 'text-muted-foreground/50 group-hover:text-primary'
+                        }`}
+                      />
+                    </Link>
+                  );
+                })}
               </div>
             ) : (
               <div className="flex flex-col items-center justify-center py-10 text-center">

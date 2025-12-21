@@ -20,9 +20,11 @@ import {
   MoreHorizontal,
   Pause,
   Play,
+  Wrench,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
+import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -524,12 +526,31 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
                         className="group rounded-xl border border-border bg-surface p-3 transition-all hover:border-border/80 hover:bg-surface-light"
                       >
                         <div className="flex items-start gap-3">
-                          <Avatar className="h-10 w-10 shrink-0">
-                            <AvatarImage src={assignment.user?.image} />
-                            <AvatarFallback className="bg-gradient-to-br from-info to-blue-600 text-white text-sm font-semibold">
-                              {assignment.user?.fullname?.[0] || '?'}
-                            </AvatarFallback>
-                          </Avatar>
+                          <div className="relative shrink-0">
+                            <Avatar
+                              className={cn(
+                                'h-10 w-10 ring-2 transition-all',
+                                assignment.user?.isShadowUser ? 'ring-muted-foreground/20' : 'ring-border/30'
+                              )}
+                            >
+                              <AvatarImage src={assignment.user?.image} />
+                              <AvatarFallback
+                                className={cn(
+                                  'text-sm font-semibold',
+                                  assignment.user?.isShadowUser
+                                    ? 'bg-muted-foreground/60 text-white'
+                                    : 'bg-gradient-to-br from-info to-blue-600 text-white'
+                                )}
+                              >
+                                {assignment.user?.fullname?.[0] || '?'}
+                              </AvatarFallback>
+                            </Avatar>
+                            {assignment.user?.isShadowUser && (
+                              <div className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-muted-foreground/80 flex items-center justify-center ring-2 ring-surface">
+                                <Wrench className="h-2.5 w-2.5 text-white" />
+                              </div>
+                            )}
+                          </div>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2">
                               <p className="font-medium text-sm truncate">

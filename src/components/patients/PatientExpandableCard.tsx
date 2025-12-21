@@ -1,13 +1,13 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { ChevronDown, ChevronRight, Mail, Phone, FolderKanban, Activity } from "lucide-react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { ColorBadge } from "@/components/shared/ColorBadge";
-import { PatientExpandedContent } from "./PatientExpandedContent";
-import { cn } from "@/lib/utils";
+import { useState } from 'react';
+import { ChevronDown, ChevronRight, Mail, Phone, FolderKanban, Activity, Wrench } from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { ColorBadge } from '@/components/shared/ColorBadge';
+import { PatientExpandedContent } from './PatientExpandedContent';
+import { cn } from '@/lib/utils';
 
 export interface Patient {
   id: string;
@@ -50,17 +50,17 @@ export function PatientExpandableCard({
 
   const displayName =
     patient.fullname ||
-    `${patient.personalData?.firstName || ""} ${patient.personalData?.lastName || ""}`.trim() ||
-    "Nieznany pacjent";
+    `${patient.personalData?.firstName || ''} ${patient.personalData?.lastName || ''}`.trim() ||
+    'Nieznany pacjent';
 
   const initials = displayName
-    .split(" ")
+    .split(' ')
     .map((n) => n[0])
-    .join("")
+    .join('')
     .slice(0, 2)
     .toUpperCase();
 
-  const isActive = patient.assignmentStatus !== "inactive";
+  const isActive = patient.assignmentStatus !== 'inactive';
 
   const handleToggle = () => {
     setIsExpanded(!isExpanded);
@@ -74,23 +74,41 @@ export function PatientExpandableCard({
   return (
     <div
       className={cn(
-        "group rounded-xl border border-border/60 bg-surface transition-all",
-        "hover:bg-surface-light hover:border-border",
-        isExpanded && "bg-surface-light border-border"
+        'group rounded-xl border border-border/60 bg-surface transition-all',
+        'hover:bg-surface-light hover:border-border',
+        isExpanded && 'bg-surface-light border-border'
       )}
     >
       {/* Collapsed State */}
-      <div
-        className="flex items-center gap-4 p-4 cursor-pointer"
-        onClick={handleToggle}
-      >
+      <div className="flex items-center gap-4 p-4 cursor-pointer" onClick={handleToggle}>
         {/* Avatar */}
-        <Avatar className="h-12 w-12 shrink-0 ring-2 ring-border/30 group-hover:ring-primary/20 transition-all">
-          <AvatarImage src={patient.image} alt={displayName} />
-          <AvatarFallback className="bg-gradient-to-br from-info to-blue-600 text-white font-semibold">
-            {initials}
-          </AvatarFallback>
-        </Avatar>
+        <div className="relative shrink-0">
+          <Avatar
+            className={cn(
+              'h-12 w-12 ring-2 transition-all',
+              patient.isShadowUser
+                ? 'ring-muted-foreground/20 group-hover:ring-muted-foreground/30'
+                : 'ring-border/30 group-hover:ring-primary/20'
+            )}
+          >
+            <AvatarImage src={patient.image} alt={displayName} />
+            <AvatarFallback
+              className={cn(
+                'font-semibold',
+                patient.isShadowUser
+                  ? 'bg-muted-foreground/60 text-white'
+                  : 'bg-gradient-to-br from-info to-blue-600 text-white'
+              )}
+            >
+              {initials}
+            </AvatarFallback>
+          </Avatar>
+          {patient.isShadowUser && (
+            <div className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-muted-foreground/80 flex items-center justify-center ring-2 ring-surface">
+              <Wrench className="h-3 w-3 text-white" />
+            </div>
+          )}
+        </div>
 
         {/* Main Content */}
         <div className="flex-1 min-w-0">
@@ -101,14 +119,11 @@ export function PatientExpandableCard({
                 Tymczasowy
               </Badge>
             )}
-            <Badge
-              variant={isActive ? "default" : "secondary"}
-              className="text-[10px] px-1.5 py-0"
-            >
-              {isActive ? "Aktywny" : "Nieaktywny"}
+            <Badge variant={isActive ? 'default' : 'secondary'} className="text-[10px] px-1.5 py-0">
+              {isActive ? 'Aktywny' : 'Nieaktywny'}
             </Badge>
             {patient.contextLabel && (
-              <ColorBadge color={patient.contextColor || "#888888"} size="sm">
+              <ColorBadge color={patient.contextColor || '#888888'} size="sm">
                 {patient.contextLabel}
               </ColorBadge>
             )}
@@ -183,4 +198,3 @@ export function PatientExpandableCard({
     </div>
   );
 }
-
