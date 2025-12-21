@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useMutation } from "@apollo/client/react";
 import { Loader2, Calendar, Clock } from "lucide-react";
 import { toast } from "sonner";
@@ -20,6 +20,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import {
   FrequencyPicker,
   FrequencyValue,
@@ -64,6 +65,22 @@ export function EditAssignmentScheduleDialog({
   const [startDate, setStartDate] = useState<Date>(new Date());
   const [endDate, setEndDate] = useState<Date>(new Date());
   const [frequency, setFrequency] = useState<FrequencyValue>(defaultFrequency);
+  const [showCloseConfirm, setShowCloseConfirm] = useState(false);
+  const [hasChanges, setHasChanges] = useState(false);
+
+  const handleCloseAttempt = useCallback(() => {
+    if (hasChanges) {
+      setShowCloseConfirm(true);
+    } else {
+      onOpenChange(false);
+    }
+  }, [hasChanges, onOpenChange]);
+
+  const handleConfirmClose = useCallback(() => {
+    setShowCloseConfirm(false);
+    setHasChanges(false);
+    onOpenChange(false);
+  }, [onOpenChange]);
 
   // Initialize state when assignment changes
   useEffect(() => {
@@ -71,8 +88,25 @@ export function EditAssignmentScheduleDialog({
       setStartDate(assignment.startDate ? new Date(assignment.startDate) : new Date());
       setEndDate(assignment.endDate ? new Date(assignment.endDate) : new Date());
       setFrequency(frequencyToValue(assignment.frequency));
+      setHasChanges(false);
     }
   }, [assignment, open]);
+
+  // Track changes
+  useEffect(() => {
+    if (open && assignment) {
+      const origStartDate = assignment.startDate ? new Date(assignment.startDate) : new Date();
+      const origEndDate = assignment.endDate ? new Date(assignment.endDate) : new Date();
+      const origFreq = frequencyToValue(assignment.frequency);
+      
+      const changed = 
+        startDate.getTime() !== origStartDate.getTime() ||
+        endDate.getTime() !== origEndDate.getTime() ||
+        JSON.stringify(frequency) !== JSON.stringify(origFreq);
+      
+      setHasChanges(changed);
+    }
+  }, [open, assignment, startDate, endDate, frequency]);
 
   // Mutation
   const [updateAssignment, { loading }] = useMutation(
@@ -121,8 +155,15 @@ export function EditAssignmentScheduleDialog({
   const setName = assignment?.exerciseSet?.name || "Nieznany zestaw";
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
+    <Dialog open={open} onOpenChange={() => handleCloseAttempt()}>
+      <DialogContent
+        className="max-w-lg"
+        onInteractOutside={(e) => e.preventDefault()}
+        onEscapeKeyDown={(e) => {
+          e.preventDefault();
+          handleCloseAttempt();
+        }}
+      >
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Calendar className="h-5 w-5 text-primary" />
@@ -191,7 +232,7 @@ export function EditAssignmentScheduleDialog({
         </div>
 
         <DialogFooter className="gap-2 sm:gap-0">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button variant="outline" onClick={handleCloseAttempt}>
             Anuluj
           </Button>
           <Button
@@ -204,6 +245,17 @@ export function EditAssignmentScheduleDialog({
           </Button>
         </DialogFooter>
       </DialogContent>
+
+      <ConfirmDialog
+        open={showCloseConfirm}
+        onOpenChange={setShowCloseConfirm}
+        title="Porzucić zmiany?"
+        description="Masz niezapisane zmiany. Czy na pewno chcesz zamknąć bez zapisywania?"
+        confirmText="Tak, zamknij"
+        cancelText="Kontynuuj edycję"
+        variant="destructive"
+        onConfirm={handleConfirmClose}
+      />
     </Dialog>
   );
 }

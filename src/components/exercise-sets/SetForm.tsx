@@ -34,6 +34,7 @@ interface SetFormProps {
   onCancel?: () => void;
   isLoading?: boolean;
   submitLabel?: string;
+  onDirtyChange?: (isDirty: boolean) => void;
 }
 
 export function SetForm({
@@ -42,6 +43,7 @@ export function SetForm({
   onCancel,
   isLoading = false,
   submitLabel = "Zapisz",
+  onDirtyChange,
 }: SetFormProps) {
   const form = useForm<SetFormValues>({
     resolver: zodResolver(setFormSchema),
@@ -51,6 +53,13 @@ export function SetForm({
       ...defaultValues,
     },
   });
+
+  const isDirty = form.formState.isDirty;
+
+  // Notify parent about dirty state
+  React.useEffect(() => {
+    onDirtyChange?.(isDirty);
+  }, [isDirty, onDirtyChange]);
 
   const handleSubmit = async (values: SetFormValues) => {
     try {

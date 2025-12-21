@@ -1,14 +1,14 @@
-"use client";
+'use client';
 
-import { useState, useMemo } from "react";
-import { useMutation } from "@apollo/client/react";
-import { Check, Loader2, Search, UserCheck, Users } from "lucide-react";
-import { toast } from "sonner";
+import { useState, useMemo, useCallback } from 'react';
+import { useMutation } from '@apollo/client/react';
+import { Check, Loader2, Search, UserCheck, Users } from 'lucide-react';
+import { toast } from 'sonner';
 
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Dialog,
   DialogContent,
@@ -16,18 +16,19 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+} from '@/components/ui/dialog';
+import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
+import { Input } from '@/components/ui/input';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   ASSIGN_PATIENTS_TO_CLINIC_MUTATION,
   ASSIGN_THERAPISTS_TO_CLINIC_MUTATION,
-} from "@/graphql/mutations/clinics.mutations";
-import { GET_ORGANIZATION_CLINICS_QUERY } from "@/graphql/queries/clinics.queries";
-import { matchesSearchQuery } from "@/utils/textUtils";
-import { cn } from "@/lib/utils";
-import type { Clinic } from "./ClinicExpandableCard";
+} from '@/graphql/mutations/clinics.mutations';
+import { GET_ORGANIZATION_CLINICS_QUERY } from '@/graphql/queries/clinics.queries';
+import { matchesSearchQuery } from '@/utils/textUtils';
+import { cn } from '@/lib/utils';
+import type { Clinic } from './ClinicExpandableCard';
 
 interface Person {
   id: string;
@@ -59,39 +60,52 @@ export function AssignToClinicDialog({
   assignedPatientIds = [],
   onSuccess,
 }: AssignToClinicDialogProps) {
-  const [activeTab, setActiveTab] = useState<"therapists" | "patients">("therapists");
-  const [searchQuery, setSearchQuery] = useState("");
+  const [activeTab, setActiveTab] = useState<'therapists' | 'patients'>('therapists');
+  const [searchQuery, setSearchQuery] = useState('');
   const [selectedTherapistIds, setSelectedTherapistIds] = useState<string[]>([]);
   const [selectedPatientIds, setSelectedPatientIds] = useState<string[]>([]);
+  const [showCloseConfirm, setShowCloseConfirm] = useState(false);
+
+  const hasChanges = selectedTherapistIds.length > 0 || selectedPatientIds.length > 0;
+
+  const handleCloseAttempt = useCallback(() => {
+    if (hasChanges) {
+      setShowCloseConfirm(true);
+    } else {
+      onOpenChange(false);
+    }
+  }, [hasChanges, onOpenChange]);
+
+  const handleConfirmClose = useCallback(() => {
+    setShowCloseConfirm(false);
+    setSelectedTherapistIds([]);
+    setSelectedPatientIds([]);
+    setSearchQuery('');
+    setActiveTab('therapists');
+    onOpenChange(false);
+  }, [onOpenChange]);
 
   // Reset state when dialog opens
   const handleOpenChange = (newOpen: boolean) => {
     if (newOpen) {
       setSelectedTherapistIds([]);
       setSelectedPatientIds([]);
-      setSearchQuery("");
-      setActiveTab("therapists");
+      setSearchQuery('');
+      setActiveTab('therapists');
+      setShowCloseConfirm(false);
+      onOpenChange(newOpen);
+    } else {
+      handleCloseAttempt();
     }
-    onOpenChange(newOpen);
   };
 
-  const [assignTherapists, { loading: assigningTherapists }] = useMutation(
-    ASSIGN_THERAPISTS_TO_CLINIC_MUTATION,
-    {
-      refetchQueries: [
-        { query: GET_ORGANIZATION_CLINICS_QUERY, variables: { organizationId } },
-      ],
-    }
-  );
+  const [assignTherapists, { loading: assigningTherapists }] = useMutation(ASSIGN_THERAPISTS_TO_CLINIC_MUTATION, {
+    refetchQueries: [{ query: GET_ORGANIZATION_CLINICS_QUERY, variables: { organizationId } }],
+  });
 
-  const [assignPatients, { loading: assigningPatients }] = useMutation(
-    ASSIGN_PATIENTS_TO_CLINIC_MUTATION,
-    {
-      refetchQueries: [
-        { query: GET_ORGANIZATION_CLINICS_QUERY, variables: { organizationId } },
-      ],
-    }
-  );
+  const [assignPatients, { loading: assigningPatients }] = useMutation(ASSIGN_PATIENTS_TO_CLINIC_MUTATION, {
+    refetchQueries: [{ query: GET_ORGANIZATION_CLINICS_QUERY, variables: { organizationId } }],
+  });
 
   const isLoading = assigningTherapists || assigningPatients;
 
@@ -99,9 +113,7 @@ export function AssignToClinicDialog({
   const filteredTherapists = useMemo(() => {
     if (!searchQuery) return therapists;
     return therapists.filter(
-      (t) =>
-        matchesSearchQuery(t.fullname, searchQuery) ||
-        matchesSearchQuery(t.email, searchQuery)
+      (t) => matchesSearchQuery(t.fullname, searchQuery) || matchesSearchQuery(t.email, searchQuery)
     );
   }, [therapists, searchQuery]);
 
@@ -109,22 +121,16 @@ export function AssignToClinicDialog({
   const filteredPatients = useMemo(() => {
     if (!searchQuery) return patients;
     return patients.filter(
-      (p) =>
-        matchesSearchQuery(p.fullname, searchQuery) ||
-        matchesSearchQuery(p.email, searchQuery)
+      (p) => matchesSearchQuery(p.fullname, searchQuery) || matchesSearchQuery(p.email, searchQuery)
     );
   }, [patients, searchQuery]);
 
   const toggleTherapist = (id: string) => {
-    setSelectedTherapistIds((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
-    );
+    setSelectedTherapistIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
   };
 
   const togglePatient = (id: string) => {
-    setSelectedPatientIds((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
-    );
+    setSelectedPatientIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
   };
 
   const handleAssign = async () => {
@@ -156,8 +162,8 @@ export function AssignToClinicDialog({
       handleOpenChange(false);
       onSuccess?.();
     } catch (error) {
-      console.error("Błąd podczas przypisywania:", error);
-      toast.error("Nie udało się przypisać osób do gabinetu");
+      console.error('Błąd podczas przypisywania:', error);
+      toast.error('Nie udało się przypisać osób do gabinetu');
     }
   };
 
@@ -183,19 +189,19 @@ export function AssignToClinicDialog({
         {people.map((person) => {
           const isSelected = selectedIds.includes(person.id);
           const isAlreadyAssigned = assignedIds.includes(person.id);
-          const displayName = person.fullname || person.email || "Nieznany";
+          const displayName = person.fullname || person.email || 'Nieznany';
           const initials = displayName.slice(0, 2).toUpperCase();
 
           return (
             <div
               key={person.id}
               className={cn(
-                "flex items-center gap-3 p-3 rounded-lg border border-transparent transition-all cursor-pointer",
+                'flex items-center gap-3 p-3 rounded-lg border border-transparent transition-all cursor-pointer',
                 isAlreadyAssigned
-                  ? "bg-surface opacity-60 cursor-not-allowed"
+                  ? 'bg-surface opacity-60 cursor-not-allowed'
                   : isSelected
-                  ? "bg-primary/10 border-primary/30"
-                  : "bg-surface hover:bg-surface-light"
+                  ? 'bg-primary/10 border-primary/30'
+                  : 'bg-surface hover:bg-surface-light'
               )}
               onClick={() => !isAlreadyAssigned && onToggle(person.id)}
             >
@@ -212,9 +218,7 @@ export function AssignToClinicDialog({
               <div className="flex-1 min-w-0">
                 <p className="font-medium truncate">{displayName}</p>
                 {person.email && person.fullname && (
-                  <p className="text-sm text-muted-foreground truncate">
-                    {person.email}
-                  </p>
+                  <p className="text-sm text-muted-foreground truncate">{person.email}</p>
                 )}
               </div>
               {isAlreadyAssigned && (
@@ -232,13 +236,20 @@ export function AssignToClinicDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent
+        className="sm:max-w-lg"
+        onInteractOutside={(e) => e.preventDefault()}
+        onEscapeKeyDown={(e) => {
+          e.preventDefault();
+          handleCloseAttempt();
+        }}
+      >
         <DialogHeader>
           <DialogTitle>Przypisz osoby do gabinetu</DialogTitle>
           <DialogDescription>
             {clinic?.name
               ? `Wybierz terapeutów i pacjentów do przypisania do gabinetu "${clinic.name}"`
-              : "Wybierz osoby do przypisania"}
+              : 'Wybierz osoby do przypisania'}
           </DialogDescription>
         </DialogHeader>
 
@@ -255,10 +266,7 @@ export function AssignToClinicDialog({
           </div>
 
           {/* Tabs */}
-          <Tabs
-            value={activeTab}
-            onValueChange={(v) => setActiveTab(v as typeof activeTab)}
-          >
+          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as typeof activeTab)}>
             <TabsList className="w-full">
               <TabsTrigger value="therapists" className="flex-1 gap-2">
                 <Users className="h-4 w-4" />
@@ -282,50 +290,39 @@ export function AssignToClinicDialog({
 
             <TabsContent value="therapists" className="mt-4">
               <ScrollArea className="h-[300px] pr-4">
-                {renderPersonList(
-                  filteredTherapists,
-                  selectedTherapistIds,
-                  assignedTherapistIds,
-                  toggleTherapist
-                )}
+                {renderPersonList(filteredTherapists, selectedTherapistIds, assignedTherapistIds, toggleTherapist)}
               </ScrollArea>
             </TabsContent>
 
             <TabsContent value="patients" className="mt-4">
               <ScrollArea className="h-[300px] pr-4">
-                {renderPersonList(
-                  filteredPatients,
-                  selectedPatientIds,
-                  assignedPatientIds,
-                  togglePatient
-                )}
+                {renderPersonList(filteredPatients, selectedPatientIds, assignedPatientIds, togglePatient)}
               </ScrollArea>
             </TabsContent>
           </Tabs>
         </div>
 
         <DialogFooter className="gap-2">
-          <Button variant="outline" onClick={() => handleOpenChange(false)}>
+          <Button variant="outline" onClick={handleCloseAttempt}>
             Anuluj
           </Button>
-          <Button
-            onClick={handleAssign}
-            disabled={isLoading || totalSelected === 0}
-            className="gap-2"
-          >
-            {isLoading ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Check className="h-4 w-4" />
-            )}
-            Przypisz {totalSelected > 0 ? `(${totalSelected})` : ""}
+          <Button onClick={handleAssign} disabled={isLoading || totalSelected === 0} className="gap-2">
+            {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+            Przypisz {totalSelected > 0 ? `(${totalSelected})` : ''}
           </Button>
         </DialogFooter>
       </DialogContent>
+
+      <ConfirmDialog
+        open={showCloseConfirm}
+        onOpenChange={setShowCloseConfirm}
+        title="Porzucić zmiany?"
+        description="Masz niezapisane zmiany. Czy na pewno chcesz zamknąć bez zapisywania?"
+        confirmText="Tak, zamknij"
+        cancelText="Kontynuuj edycję"
+        variant="destructive"
+        onConfirm={handleConfirmClose}
+      />
     </Dialog>
   );
 }
-
-
-
-

@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useState, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -18,6 +19,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import {
   Form,
   FormControl,
@@ -57,6 +59,8 @@ export function InviteMemberDialog({
   organizationId,
   onSuccess,
 }: InviteMemberDialogProps) {
+  const [showCloseConfirm, setShowCloseConfirm] = useState(false);
+
   const form = useForm<InviteFormValues>({
     resolver: zodResolver(inviteFormSchema),
     defaultValues: {
@@ -65,6 +69,29 @@ export function InviteMemberDialog({
       message: "",
     },
   });
+
+  const isDirty = form.formState.isDirty;
+
+  const handleCloseAttempt = useCallback(() => {
+    if (isDirty) {
+      setShowCloseConfirm(true);
+    } else {
+      onOpenChange(false);
+    }
+  }, [isDirty, onOpenChange]);
+
+  const handleConfirmClose = useCallback(() => {
+    setShowCloseConfirm(false);
+    form.reset();
+    onOpenChange(false);
+  }, [form, onOpenChange]);
+
+  // Reset form when dialog closes
+  React.useEffect(() => {
+    if (!open) {
+      form.reset();
+    }
+  }, [open, form]);
 
   const [sendInvitation, { loading }] = useMutation(SEND_INVITATION_MUTATION);
 
@@ -89,8 +116,14 @@ export function InviteMemberDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+    <Dialog open={open} onOpenChange={() => handleCloseAttempt()}>
+      <DialogContent
+        onInteractOutside={(e) => e.preventDefault()}
+        onEscapeKeyDown={(e) => {
+          e.preventDefault();
+          handleCloseAttempt();
+        }}
+      >
         <DialogHeader>
           <DialogTitle>Zaproś</DialogTitle>
           <DialogDescription>
@@ -168,7 +201,7 @@ export function InviteMemberDialog({
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => onOpenChange(false)}
+                onClick={handleCloseAttempt}
               >
                 Anuluj
               </Button>
@@ -180,6 +213,17 @@ export function InviteMemberDialog({
           </form>
         </Form>
       </DialogContent>
+
+      <ConfirmDialog
+        open={showCloseConfirm}
+        onOpenChange={setShowCloseConfirm}
+        title="Porzucić zmiany?"
+        description="Masz niezapisane zmiany. Czy na pewno chcesz zamknąć bez zapisywania?"
+        confirmText="Tak, zamknij"
+        cancelText="Kontynuuj edycję"
+        variant="destructive"
+        onConfirm={handleConfirmClose}
+      />
     </Dialog>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect } from "react";
+import * as React from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@apollo/client/react";
@@ -19,6 +20,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import {
   Form,
   FormControl,
@@ -66,6 +68,7 @@ export function ClinicDialog({
   onSuccess,
 }: ClinicDialogProps) {
   const isEditing = !!clinic;
+  const [showCloseConfirm, setShowCloseConfirm] = useState(false);
 
   const form = useForm<ClinicFormValues>({
     resolver: zodResolver(clinicFormSchema),
@@ -75,6 +78,22 @@ export function ClinicDialog({
       contactInfo: "",
     },
   });
+
+  const isDirty = form.formState.isDirty;
+
+  const handleCloseAttempt = useCallback(() => {
+    if (isDirty) {
+      setShowCloseConfirm(true);
+    } else {
+      onOpenChange(false);
+    }
+  }, [isDirty, onOpenChange]);
+
+  const handleConfirmClose = useCallback(() => {
+    setShowCloseConfirm(false);
+    form.reset();
+    onOpenChange(false);
+  }, [form, onOpenChange]);
 
   // Reset form when dialog opens/closes or clinic changes
   useEffect(() => {
@@ -143,8 +162,15 @@ export function ClinicDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+    <Dialog open={open} onOpenChange={() => handleCloseAttempt()}>
+      <DialogContent
+        className="sm:max-w-md"
+        onInteractOutside={(e) => e.preventDefault()}
+        onEscapeKeyDown={(e) => {
+          e.preventDefault();
+          handleCloseAttempt();
+        }}
+      >
         <DialogHeader>
           <div className="flex items-center gap-3">
             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/10">
@@ -223,7 +249,7 @@ export function ClinicDialog({
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => onOpenChange(false)}
+                onClick={handleCloseAttempt}
                 className="rounded-xl"
               >
                 Anuluj
@@ -240,6 +266,17 @@ export function ClinicDialog({
           </form>
         </Form>
       </DialogContent>
+
+      <ConfirmDialog
+        open={showCloseConfirm}
+        onOpenChange={setShowCloseConfirm}
+        title="Porzucić zmiany?"
+        description="Masz niezapisane zmiany. Czy na pewno chcesz zamknąć bez zapisywania?"
+        confirmText="Tak, zamknij"
+        cancelText="Kontynuuj edycję"
+        variant="destructive"
+        onConfirm={handleConfirmClose}
+      />
     </Dialog>
   );
 }

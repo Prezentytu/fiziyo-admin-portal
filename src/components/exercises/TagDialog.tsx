@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useState, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -19,6 +20,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import {
   Form,
   FormControl,
@@ -72,6 +74,7 @@ export function TagDialog({
   onSuccess,
 }: TagDialogProps) {
   const isEditing = !!tag;
+  const [showCloseConfirm, setShowCloseConfirm] = useState(false);
 
   const form = useForm<TagFormValues>({
     resolver: zodResolver(tagFormSchema),
@@ -83,6 +86,22 @@ export function TagDialog({
       isMain: tag?.isMain || false,
     },
   });
+
+  const isDirty = form.formState.isDirty;
+
+  const handleCloseAttempt = useCallback(() => {
+    if (isDirty) {
+      setShowCloseConfirm(true);
+    } else {
+      onOpenChange(false);
+    }
+  }, [isDirty, onOpenChange]);
+
+  const handleConfirmClose = useCallback(() => {
+    setShowCloseConfirm(false);
+    form.reset();
+    onOpenChange(false);
+  }, [form, onOpenChange]);
 
   React.useEffect(() => {
     if (tag) {
@@ -153,8 +172,14 @@ export function TagDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+    <Dialog open={open} onOpenChange={() => handleCloseAttempt()}>
+      <DialogContent
+        onInteractOutside={(e) => e.preventDefault()}
+        onEscapeKeyDown={(e) => {
+          e.preventDefault();
+          handleCloseAttempt();
+        }}
+      >
         <DialogHeader>
           <DialogTitle>{isEditing ? "Edytuj tag" : "Nowy tag"}</DialogTitle>
           <DialogDescription>
@@ -253,7 +278,7 @@ export function TagDialog({
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => onOpenChange(false)}
+                onClick={handleCloseAttempt}
               >
                 Anuluj
               </Button>
@@ -267,6 +292,17 @@ export function TagDialog({
           </form>
         </Form>
       </DialogContent>
+
+      <ConfirmDialog
+        open={showCloseConfirm}
+        onOpenChange={setShowCloseConfirm}
+        title="Porzucić zmiany?"
+        description="Masz niezapisane zmiany. Czy na pewno chcesz zamknąć bez zapisywania?"
+        confirmText="Tak, zamknij"
+        cancelText="Kontynuuj edycję"
+        variant="destructive"
+        onConfirm={handleConfirmClose}
+      />
     </Dialog>
   );
 }

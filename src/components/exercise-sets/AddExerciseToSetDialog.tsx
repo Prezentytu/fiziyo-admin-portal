@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { useQuery, useMutation } from "@apollo/client/react";
 import {
   Search,
@@ -29,6 +29,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { ImagePlaceholder } from "@/components/shared/ImagePlaceholder";
+import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { cn } from "@/lib/utils";
 
 import { GET_ORGANIZATION_EXERCISES_QUERY } from "@/graphql/queries/exercises.queries";
@@ -101,6 +102,23 @@ export function AddExerciseToSetDialog({
   const [exerciseParams, setExerciseParams] = useState<
     Map<string, ExerciseParams>
   >(new Map());
+  const [showCloseConfirm, setShowCloseConfirm] = useState(false);
+
+  // Check if there are unsaved changes
+  const hasChanges = selectedExercises.size > 0;
+
+  const handleCloseAttempt = useCallback(() => {
+    if (hasChanges) {
+      setShowCloseConfirm(true);
+    } else {
+      onOpenChange(false);
+    }
+  }, [hasChanges, onOpenChange]);
+
+  const handleConfirmClose = useCallback(() => {
+    setShowCloseConfirm(false);
+    onOpenChange(false);
+  }, [onOpenChange]);
 
   // Reset state when dialog opens/closes
   React.useEffect(() => {
@@ -109,6 +127,7 @@ export function AddExerciseToSetDialog({
       setSearchQuery("");
       setSelectedExercises(new Set());
       setExerciseParams(new Map());
+      setShowCloseConfirm(false);
     }
   }, [open]);
 
@@ -233,8 +252,15 @@ export function AddExerciseToSetDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[85vh] flex flex-col">
+    <Dialog open={open} onOpenChange={() => handleCloseAttempt()}>
+      <DialogContent
+        className="max-w-2xl max-h-[85vh] flex flex-col"
+        onInteractOutside={(e) => e.preventDefault()}
+        onEscapeKeyDown={(e) => {
+          e.preventDefault();
+          handleCloseAttempt();
+        }}
+      >
         <DialogHeader>
           <div className="flex items-center gap-3">
             {step === 2 && (
@@ -415,7 +441,7 @@ export function AddExerciseToSetDialog({
 
             {/* Actions */}
             <div className="flex justify-end gap-3 pt-4 border-t border-border">
-              <Button variant="outline" onClick={() => onOpenChange(false)}>
+              <Button variant="outline" onClick={handleCloseAttempt}>
                 Anuluj
               </Button>
               <Button
@@ -662,6 +688,17 @@ export function AddExerciseToSetDialog({
           </div>
         )}
       </DialogContent>
+
+      <ConfirmDialog
+        open={showCloseConfirm}
+        onOpenChange={setShowCloseConfirm}
+        title="Porzucić zmiany?"
+        description="Masz niezapisane zmiany. Czy na pewno chcesz zamknąć bez zapisywania?"
+        confirmText="Tak, zamknij"
+        cancelText="Kontynuuj edycję"
+        variant="destructive"
+        onConfirm={handleConfirmClose}
+      />
     </Dialog>
   );
 }

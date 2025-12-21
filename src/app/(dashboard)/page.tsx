@@ -6,6 +6,7 @@ import { useUser } from '@clerk/nextjs';
 import Link from 'next/link';
 import {
   FolderKanban,
+  FolderPlus,
   Users,
   Plus,
   ChevronRight,
@@ -25,6 +26,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { SetThumbnail } from '@/components/exercise-sets/SetThumbnail';
+import { CreateSetWizard } from '@/components/exercise-sets/CreateSetWizard';
 import { AssignmentWizard } from '@/components/assignment/AssignmentWizard';
 
 import { GET_ORGANIZATION_EXERCISE_SETS_QUERY } from '@/graphql/queries/exerciseSets.queries';
@@ -66,6 +68,7 @@ interface PatientAssignment {
 export default function DashboardPage() {
   const { user } = useUser();
   const [isAssignWizardOpen, setIsAssignWizardOpen] = useState(false);
+  const [isCreateSetWizardOpen, setIsCreateSetWizardOpen] = useState(false);
 
   // Get user data
   const { data: userData } = useQuery(GET_USER_BY_CLERK_ID_QUERY, {
@@ -113,37 +116,83 @@ export default function DashboardPage() {
   return (
     <div className="space-y-6">
       {/* Hero Welcome Section */}
-      <div className="relative rounded-2xl border border-border/60 bg-gradient-to-br from-surface via-surface to-surface-light p-8 lg:p-10 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-secondary/5" />
-        <div className="absolute top-0 right-0 w-96 h-96 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
-
-        <div className="relative">
-          <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
-            <div className="space-y-2">
-              <h1 className="text-3xl lg:text-4xl font-bold text-foreground">
-                {greeting}, {userName}!
-              </h1>
-            </div>
-
-            {/* Quick Actions */}
-            <div className="flex flex-wrap gap-3">
-              <Button
-                size="lg"
-                onClick={() => setIsAssignWizardOpen(true)}
-                disabled={!organizationId || !therapistId}
-                className="gap-2 h-12 px-6 shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/25 transition-all"
-              >
-                <Send className="h-5 w-5" />
-                Przypisz zestaw
-              </Button>
-              <Link href="/patients">
-                <Button size="lg" variant="outline" className="gap-2 h-12 px-6">
-                  <UserPlus className="h-5 w-5" />
-                  Dodaj pacjenta
-                </Button>
-              </Link>
-            </div>
+      <div className="space-y-6">
+        {/* Greeting */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl lg:text-3xl font-bold text-foreground">
+              {greeting}, {userName}!
+            </h1>
+            <p className="text-muted-foreground mt-1">
+              Co chcesz dziś zrobić?
+            </p>
           </div>
+        </div>
+
+        {/* Quick Actions - Compact Card Grid */}
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {/* Primary Action - Assign Set */}
+          <button
+            onClick={() => setIsAssignWizardOpen(true)}
+            disabled={!organizationId || !therapistId}
+            className="group relative overflow-hidden rounded-xl bg-gradient-to-br from-primary to-primary-dark p-4 text-left transition-all duration-200 hover:shadow-lg hover:shadow-primary/25 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+            <div className="relative flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/20 shrink-0">
+                <Send className="h-5 w-5 text-white" />
+              </div>
+              <div className="min-w-0">
+                <h3 className="text-sm font-semibold text-white">
+                  Przypisz zestaw
+                </h3>
+                <p className="text-xs text-white/70 truncate">
+                  Wyślij ćwiczenia do pacjenta
+                </p>
+              </div>
+            </div>
+          </button>
+
+          {/* Secondary Action - Create Set */}
+          <button
+            onClick={() => setIsCreateSetWizardOpen(true)}
+            disabled={!organizationId}
+            className="group relative overflow-hidden rounded-xl border border-border bg-surface p-4 text-left transition-all duration-200 hover:border-primary/50 hover:bg-surface-light cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <div className="relative flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 shrink-0 group-hover:bg-primary/20 transition-colors">
+                <FolderPlus className="h-5 w-5 text-primary" />
+              </div>
+              <div className="min-w-0">
+                <h3 className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors">
+                  Utwórz zestaw
+                </h3>
+                <p className="text-xs text-muted-foreground truncate">
+                  Stwórz nowy program ćwiczeń
+                </p>
+              </div>
+            </div>
+          </button>
+
+          {/* Tertiary Action - Add Patient */}
+          <Link
+            href="/patients"
+            className="group relative overflow-hidden rounded-xl border border-border bg-surface p-4 text-left transition-all duration-200 hover:border-info/50 hover:bg-surface-light cursor-pointer"
+          >
+            <div className="relative flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-info/10 shrink-0 group-hover:bg-info/20 transition-colors">
+                <UserPlus className="h-5 w-5 text-info" />
+              </div>
+              <div className="min-w-0">
+                <h3 className="text-sm font-semibold text-foreground group-hover:text-info transition-colors">
+                  Dodaj pacjenta
+                </h3>
+                <p className="text-xs text-muted-foreground truncate">
+                  Zarejestruj nowego pacjenta
+                </p>
+              </div>
+            </div>
+          </Link>
         </div>
       </div>
 
@@ -435,6 +484,16 @@ export default function DashboardPage() {
           organizationId={organizationId}
           therapistId={therapistId}
           onSuccess={() => setIsAssignWizardOpen(false)}
+        />
+      )}
+
+      {/* Create Set Wizard */}
+      {organizationId && (
+        <CreateSetWizard
+          open={isCreateSetWizardOpen}
+          onOpenChange={setIsCreateSetWizardOpen}
+          organizationId={organizationId}
+          onSuccess={() => setIsCreateSetWizardOpen(false)}
         />
       )}
     </div>
