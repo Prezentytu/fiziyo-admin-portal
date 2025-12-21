@@ -119,7 +119,7 @@ export function Sidebar({ isCollapsed, onToggleCollapse }: SidebarProps) {
               {isCollapsed && groupIndex > 0 && <div className="mx-3 mb-2 border-t border-border" />}
 
               {/* Navigation items */}
-              <div className={cn('space-y-1', isCollapsed ? 'px-2' : 'px-3')}>
+              <div className={cn('space-y-1', isCollapsed ? 'flex flex-col items-center' : 'px-3')}>
                 {group.items.map((item) => {
                   const active = isActive(item.href);
                   const Icon = item.icon;
@@ -135,11 +135,6 @@ export function Sidebar({ isCollapsed, onToggleCollapse }: SidebarProps) {
                           : 'text-muted-foreground hover:bg-surface-light hover:text-foreground'
                       )}
                     >
-                      {/* Active indicator */}
-                      {active && !isCollapsed && (
-                        <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-primary-foreground/50 rounded-full" />
-                      )}
-
                       <Icon
                         className={cn(
                           'shrink-0 transition-transform duration-200',
@@ -172,7 +167,7 @@ export function Sidebar({ isCollapsed, onToggleCollapse }: SidebarProps) {
         </nav>
 
         {/* Sign out button */}
-        <div className={cn('border-t border-border', isCollapsed ? 'p-2' : 'p-3')}>
+        <div className={cn('border-t border-border', isCollapsed ? 'p-2 flex justify-center' : 'p-3')}>
           {isCollapsed ? (
             <Tooltip>
               <TooltipTrigger asChild>
