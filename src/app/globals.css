@@ -568,3 +568,15 @@ body {
   color: var(--primary);
   font-size: 0.875rem;
 }
+
+/* Date picker icons visibility in dark mode */
+input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+  cursor: pointer;
+  opacity: 0.7;
+  transition: opacity 150ms ease;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+}

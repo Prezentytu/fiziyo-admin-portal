@@ -15,7 +15,8 @@ import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { PatientExpandableCard, Patient } from '@/components/patients/PatientExpandableCard';
 import { PatientDialog } from '@/components/patients/PatientDialog';
 import { PatientFilters } from '@/components/patients/PatientFilters';
-import { AssignSetToPatientDialog } from '@/components/patients/AssignSetToPatientDialog';
+import { AssignmentWizard } from '@/components/assignment/AssignmentWizard';
+import type { Patient as AssignmentPatient } from '@/components/assignment/types';
 
 import { GET_ALL_THERAPIST_PATIENTS_QUERY } from '@/graphql/queries/therapists.queries';
 import {
@@ -23,7 +24,6 @@ import {
   UPDATE_PATIENT_STATUS_MUTATION,
 } from '@/graphql/mutations/therapists.mutations';
 import { GET_USER_BY_CLERK_ID_QUERY } from '@/graphql/queries/users.queries';
-import { GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY } from '@/graphql/queries/patientAssignments.queries';
 import { matchesSearchQuery } from '@/utils/textUtils';
 import type { UserByClerkIdResponse, TherapistPatientsResponse } from '@/types/apollo';
 
@@ -172,16 +172,16 @@ export default function PatientsPage() {
     }
   };
 
-  // Get existing set IDs for selected patient (to filter out already assigned sets)
-  const { data: assignmentsData } = useQuery(GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY, {
-    variables: { userId: selectedPatient?.id },
-    skip: !selectedPatient?.id || !isAssignDialogOpen,
-  });
-
-  const existingSetIds =
-    ((assignmentsData as { patientAssignments?: Array<{ exerciseSetId?: string }> })?.patientAssignments || [])
-      .map((a) => a.exerciseSetId)
-      .filter((id): id is string => !!id) || [];
+  // Convert selected patient to AssignmentWizard format
+  const wizardPatient: AssignmentPatient | undefined = selectedPatient
+    ? {
+        id: selectedPatient.id,
+        name: selectedPatient.fullname || 'Nieznany pacjent',
+        email: selectedPatient.email,
+        image: selectedPatient.image,
+        isShadowUser: selectedPatient.isShadowUser,
+      }
+    : undefined;
 
   if (error) {
     return (
@@ -274,9 +274,9 @@ export default function PatientsPage() {
         />
       )}
 
-      {/* Assign Set Dialog */}
-      {selectedPatient && organizationId && (
-        <AssignSetToPatientDialog
+      {/* Assignment Wizard */}
+      {wizardPatient && organizationId && therapistId && (
+        <AssignmentWizard
           open={isAssignDialogOpen}
           onOpenChange={(open) => {
             setIsAssignDialogOpen(open);
@@ -284,10 +284,10 @@ export default function PatientsPage() {
               setSelectedPatient(null);
             }
           }}
-          patientId={selectedPatient.id}
-          patientName={selectedPatient.fullname || 'Nieznany pacjent'}
+          mode="from-patient"
+          preselectedPatient={wizardPatient}
           organizationId={organizationId}
-          existingSetIds={existingSetIds}
+          therapistId={therapistId}
           onSuccess={() => {
             setIsAssignDialogOpen(false);
             setSelectedPatient(null);

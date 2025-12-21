@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { useQuery } from '@apollo/client/react';
 import { useUser } from '@clerk/nextjs';
 import Link from 'next/link';
@@ -24,6 +25,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { SetThumbnail } from '@/components/exercise-sets/SetThumbnail';
+import { AssignmentWizard } from '@/components/assignment/AssignmentWizard';
 
 import { GET_ORGANIZATION_EXERCISE_SETS_QUERY } from '@/graphql/queries/exerciseSets.queries';
 import { GET_THERAPIST_PATIENTS_QUERY } from '@/graphql/queries/therapists.queries';
@@ -63,6 +65,7 @@ interface PatientAssignment {
 
 export default function DashboardPage() {
   const { user } = useUser();
+  const [isAssignWizardOpen, setIsAssignWizardOpen] = useState(false);
 
   // Get user data
   const { data: userData } = useQuery(GET_USER_BY_CLERK_ID_QUERY, {
@@ -124,15 +127,15 @@ export default function DashboardPage() {
 
             {/* Quick Actions */}
             <div className="flex flex-wrap gap-3">
-              <Link href="/exercise-sets">
-                <Button
-                  size="lg"
-                  className="gap-2 h-12 px-6 shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/25 transition-all"
-                >
-                  <Send className="h-5 w-5" />
-                  Przypisz zestaw
-                </Button>
-              </Link>
+              <Button
+                size="lg"
+                onClick={() => setIsAssignWizardOpen(true)}
+                disabled={!organizationId || !therapistId}
+                className="gap-2 h-12 px-6 shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/25 transition-all"
+              >
+                <Send className="h-5 w-5" />
+                Przypisz zestaw
+              </Button>
               <Link href="/patients">
                 <Button size="lg" variant="outline" className="gap-2 h-12 px-6">
                   <UserPlus className="h-5 w-5" />
@@ -422,6 +425,18 @@ export default function DashboardPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Assignment Wizard - from dashboard, user picks set first, then patients */}
+      {organizationId && therapistId && (
+        <AssignmentWizard
+          open={isAssignWizardOpen}
+          onOpenChange={setIsAssignWizardOpen}
+          mode="from-patient"
+          organizationId={organizationId}
+          therapistId={therapistId}
+          onSuccess={() => setIsAssignWizardOpen(false)}
+        />
+      )}
     </div>
   );
 }

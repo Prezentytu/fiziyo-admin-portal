@@ -46,8 +46,9 @@ import { format } from 'date-fns';
 import { pl } from 'date-fns/locale';
 import type { UserByIdResponse } from '@/types/apollo';
 
-// Lazy imports for dialogs (will be created)
-import { AssignSetToPatientDialog } from '@/components/patients/AssignSetToPatientDialog';
+// Dialogs
+import { AssignmentWizard } from '@/components/assignment/AssignmentWizard';
+import type { Patient as AssignmentPatient } from '@/components/assignment/types';
 import { EditAssignmentScheduleDialog } from '@/components/patients/EditAssignmentScheduleDialog';
 import { EditExerciseOverrideDialog } from '@/components/patients/EditExerciseOverrideDialog';
 
@@ -80,8 +81,9 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
     skip: !user?.id,
   });
 
-  const organizationId = (currentUserData as { userByClerkId?: { organizationIds?: string[] } })?.userByClerkId
-    ?.organizationIds?.[0];
+  const currentUser = (currentUserData as { userByClerkId?: { id?: string; organizationIds?: string[] } })?.userByClerkId;
+  const organizationId = currentUser?.organizationIds?.[0];
+  const therapistId = currentUser?.id;
 
   // Get patient data
   const {
@@ -410,15 +412,21 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
         </TabsContent>
       </Tabs>
 
-      {/* Dialogs */}
-      {organizationId && (
-        <AssignSetToPatientDialog
+      {/* Assignment Wizard */}
+      {organizationId && therapistId && patient && (
+        <AssignmentWizard
           open={isAssignDialogOpen}
           onOpenChange={setIsAssignDialogOpen}
-          patientId={id}
-          patientName={displayName}
+          mode="from-patient"
+          preselectedPatient={{
+            id: patient.id,
+            name: displayName,
+            email: patient.email,
+            image: patient.image,
+            isShadowUser: patient.isShadowUser,
+          } as AssignmentPatient}
           organizationId={organizationId}
-          existingSetIds={setAssignments.map((a) => a.exerciseSetId).filter(Boolean) as string[]}
+          therapistId={therapistId}
           onSuccess={() => refetchAssignments()}
         />
       )}

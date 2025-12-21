@@ -52,3 +52,4 @@ export function SetThumbnail({ exerciseMappings, size = 'sm', className = '' }: 
     </div>
   );
 }
+

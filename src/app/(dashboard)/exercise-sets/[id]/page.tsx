@@ -42,7 +42,8 @@ import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { SetDialog } from '@/components/exercise-sets/SetDialog';
 import { AddExerciseToSetDialog } from '@/components/exercise-sets/AddExerciseToSetDialog';
 import { EditExerciseInSetDialog } from '@/components/exercise-sets/EditExerciseInSetDialog';
-import { AssignSetDialog } from '@/components/exercise-sets/AssignSetDialog';
+import { AssignmentWizard } from '@/components/assignment/AssignmentWizard';
+import type { ExerciseSet as AssignmentExerciseSet } from '@/components/assignment/types';
 import { ImagePlaceholder } from '@/components/shared/ImagePlaceholder';
 import Link from 'next/link';
 
@@ -699,15 +700,39 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
         onSuccess={() => refetch()}
       />
 
-      {/* Assign Patients Dialog */}
-      {organizationId && therapistId && (
-        <AssignSetDialog
+      {/* Assignment Wizard */}
+      {organizationId && therapistId && exerciseSet && (
+        <AssignmentWizard
           open={isAssignDialogOpen}
           onOpenChange={setIsAssignDialogOpen}
-          exerciseSetId={id}
-          assignedPatientIds={assignments.map((a) => a.userId || a.user?.id || '')}
-          therapistId={therapistId}
+          mode="from-set"
+          preselectedSet={{
+            id: exerciseSet.id,
+            name: exerciseSet.name,
+            description: exerciseSet.description,
+            exerciseMappings: exerciseSet.exerciseMappings?.map((m) => ({
+              id: m.id,
+              exerciseId: m.exerciseId,
+              order: m.order,
+              sets: m.sets,
+              reps: m.reps,
+              duration: m.duration,
+              restSets: m.restSets,
+              restReps: m.restReps,
+              notes: m.notes,
+              exercise: m.exercise ? {
+                id: m.exercise.id,
+                name: m.exercise.name,
+                description: m.exercise.description,
+                type: m.exercise.type,
+                imageUrl: m.exercise.imageUrl,
+                images: m.exercise.images,
+                exerciseSide: m.exercise.exerciseSide,
+              } : undefined,
+            })),
+          } as AssignmentExerciseSet}
           organizationId={organizationId}
+          therapistId={therapistId}
           onSuccess={() => refetch()}
         />
       )}

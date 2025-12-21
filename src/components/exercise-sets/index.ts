@@ -3,7 +3,6 @@ export type { ExerciseSet } from "./SetCard";
 export { SetForm } from "./SetForm";
 export type { SetFormValues } from "./SetForm";
 export { SetDialog } from "./SetDialog";
-export { AssignSetDialog } from "./AssignSetDialog";
 export { AddExerciseToSetDialog } from "./AddExerciseToSetDialog";
 export { EditExerciseInSetDialog } from "./EditExerciseInSetDialog";
 export { FrequencyPicker, defaultFrequency } from "./FrequencyPicker";
