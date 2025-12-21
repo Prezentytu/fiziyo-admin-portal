@@ -156,13 +156,16 @@ export default function DashboardPage() {
           <div
             className={`relative rounded-2xl border p-5 overflow-hidden transition-all ${
               isAtLimit
-                ? 'border-primary/30 bg-gradient-to-r from-primary/10 via-primary/5 to-secondary/10'
+                ? 'border-orange-500/40 bg-gradient-to-r from-orange-500/15 via-red-500/10 to-amber-500/15'
                 : isNearLimit
                 ? 'border-primary/20 bg-gradient-to-r from-primary/5 via-transparent to-secondary/5'
                 : 'border-border/60 bg-surface'
             }`}
           >
-            {(isAtLimit || isNearLimit) && (
+            {isAtLimit && (
+              <div className="absolute top-0 right-0 w-64 h-64 bg-orange-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+            )}
+            {isNearLimit && !isAtLimit && (
               <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
             )}
             <div className="relative flex flex-col sm:flex-row items-center justify-between gap-4">
@@ -170,7 +173,7 @@ export default function DashboardPage() {
                 <div
                   className={`flex h-12 w-12 items-center justify-center rounded-2xl ${
                     isAtLimit
-                      ? 'bg-gradient-to-br from-primary to-emerald-600 text-white shadow-lg shadow-primary/30'
+                      ? 'bg-gradient-to-br from-orange-500 to-red-500 text-white shadow-lg shadow-orange-500/30'
                       : 'bg-primary/10 text-primary'
                   }`}
                 >
@@ -181,7 +184,7 @@ export default function DashboardPage() {
                     {isAtLimit ? (
                       <>
                         Czas na rozwój!
-                        <Zap className="h-4 w-4 text-primary fill-primary" />
+                        <Zap className="h-4 w-4 text-orange-500 fill-orange-500" />
                       </>
                     ) : (
                       'Rozwijaj swoją praktykę'
@@ -197,7 +200,11 @@ export default function DashboardPage() {
               <div className="flex items-center gap-4">
                 <Link href="/subscription">
                   <Button
-                    className={`gap-2 whitespace-nowrap ${isAtLimit ? 'shadow-lg shadow-primary/30' : ''}`}
+                    className={`gap-2 whitespace-nowrap ${
+                      isAtLimit
+                        ? 'bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 shadow-lg shadow-orange-500/30 border-0'
+                        : ''
+                    }`}
                     variant={isAtLimit ? 'default' : 'outline'}
                   >
                     <Sparkles className="h-4 w-4" />
