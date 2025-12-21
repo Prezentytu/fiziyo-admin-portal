@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { useQuery } from "@apollo/client/react";
-import { useUser } from "@clerk/nextjs";
-import Link from "next/link";
+import { useState } from 'react';
+import { useQuery } from '@apollo/client/react';
+import { useUser } from '@clerk/nextjs';
+import Link from 'next/link';
 import {
   Dumbbell,
   FolderKanban,
@@ -19,24 +19,24 @@ import {
   Calendar,
   TrendingUp,
   Activity,
-} from "lucide-react";
+} from 'lucide-react';
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
-import { GET_ORGANIZATION_EXERCISES_QUERY } from "@/graphql/queries/exercises.queries";
-import { GET_ORGANIZATION_EXERCISE_SETS_QUERY } from "@/graphql/queries/exerciseSets.queries";
-import { GET_THERAPIST_PATIENTS_QUERY } from "@/graphql/queries/therapists.queries";
-import { GET_USER_BY_CLERK_ID_QUERY } from "@/graphql/queries/users.queries";
+import { GET_ORGANIZATION_EXERCISES_QUERY } from '@/graphql/queries/exercises.queries';
+import { GET_ORGANIZATION_EXERCISE_SETS_QUERY } from '@/graphql/queries/exerciseSets.queries';
+import { GET_THERAPIST_PATIENTS_QUERY } from '@/graphql/queries/therapists.queries';
+import { GET_USER_BY_CLERK_ID_QUERY } from '@/graphql/queries/users.queries';
 import type {
   UserByClerkIdResponse,
   OrganizationExercisesResponse,
   OrganizationExerciseSetsResponse,
   TherapistPatientsResponse,
-} from "@/types/apollo";
+} from '@/types/apollo';
 
 interface ExerciseSetItem {
   id: string;
@@ -62,74 +62,49 @@ export default function DashboardPage() {
   const [showAllPatients, setShowAllPatients] = useState(false);
 
   // Get user data
-  const { data: userData, loading: userLoading } = useQuery(
-    GET_USER_BY_CLERK_ID_QUERY,
-    {
-      variables: { clerkId: user?.id },
-      skip: !user?.id,
-    }
-  );
+  const { data: userData, loading: userLoading } = useQuery(GET_USER_BY_CLERK_ID_QUERY, {
+    variables: { clerkId: user?.id },
+    skip: !user?.id,
+  });
 
   const userByClerkId = (userData as UserByClerkIdResponse)?.userByClerkId;
   const therapistId = userByClerkId?.id;
   const organizationId = userByClerkId?.organizationIds?.[0];
-  const userName =
-    userByClerkId?.fullname ||
-    userByClerkId?.personalData?.firstName ||
-    user?.firstName ||
-    "Użytkownik";
+  const userName = userByClerkId?.fullname || userByClerkId?.personalData?.firstName || user?.firstName || 'Użytkownik';
 
   // Get exercises count
-  const { data: exercisesData, loading: exercisesLoading } = useQuery(
-    GET_ORGANIZATION_EXERCISES_QUERY,
-    {
-      variables: { organizationId },
-      skip: !organizationId,
-    }
-  );
+  const { data: exercisesData, loading: exercisesLoading } = useQuery(GET_ORGANIZATION_EXERCISES_QUERY, {
+    variables: { organizationId },
+    skip: !organizationId,
+  });
 
   // Get exercise sets count
-  const { data: setsData, loading: setsLoading } = useQuery(
-    GET_ORGANIZATION_EXERCISE_SETS_QUERY,
-    {
-      variables: { organizationId },
-      skip: !organizationId,
-    }
-  );
+  const { data: setsData, loading: setsLoading } = useQuery(GET_ORGANIZATION_EXERCISE_SETS_QUERY, {
+    variables: { organizationId },
+    skip: !organizationId,
+  });
 
   // Get patients count
-  const { data: patientsData, loading: patientsLoading } = useQuery(
-    GET_THERAPIST_PATIENTS_QUERY,
-    {
-      variables: { therapistId, organizationId },
-      skip: !therapistId || !organizationId,
-    }
-  );
+  const { data: patientsData, loading: patientsLoading } = useQuery(GET_THERAPIST_PATIENTS_QUERY, {
+    variables: { therapistId, organizationId },
+    skip: !therapistId || !organizationId,
+  });
 
-  const exercises =
-    (exercisesData as OrganizationExercisesResponse)?.organizationExercises ||
-    [];
+  const exercises = (exercisesData as OrganizationExercisesResponse)?.organizationExercises || [];
   const exercisesCount = exercises.length;
-  const exerciseSets =
-    (setsData as OrganizationExerciseSetsResponse)?.exerciseSets || [];
+  const exerciseSets = (setsData as OrganizationExerciseSetsResponse)?.exerciseSets || [];
   const setsCount = exerciseSets.length;
-  const patients =
-    (patientsData as TherapistPatientsResponse)?.therapistPatients || [];
+  const patients = (patientsData as TherapistPatientsResponse)?.therapistPatients || [];
   const patientsCount = patients.length;
 
   const isLoading = userLoading || !organizationId;
 
   // Get current hour for greeting
   const currentHour = new Date().getHours();
-  const greeting =
-    currentHour < 12
-      ? "Dzień dobry"
-      : currentHour < 18
-      ? "Cześć"
-      : "Dobry wieczór";
+  const greeting = currentHour < 12 ? 'Dzień dobry' : currentHour < 18 ? 'Cześć' : 'Dobry wieczór';
 
   // Calculate active patients (for demo, showing all as active)
-  const activePatients = patients.filter((p: PatientAssignment) => p.status !== "inactive");
+  const activePatients = patients.filter((p: PatientAssignment) => p.status !== 'inactive');
   const displayedPatients = showAllPatients ? activePatients : activePatients.slice(0, 4);
 
   return (
@@ -138,24 +113,22 @@ export default function DashboardPage() {
       <div className="relative rounded-2xl border border-border/60 bg-gradient-to-br from-surface via-surface to-surface-light p-8 lg:p-10 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-secondary/5" />
         <div className="absolute top-0 right-0 w-96 h-96 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
-        
+
         <div className="relative">
           <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
             <div className="space-y-2">
               <h1 className="text-3xl lg:text-4xl font-bold text-foreground">
                 {greeting}, {userName}!
               </h1>
-              <p className="text-lg text-muted-foreground max-w-xl">
-                Zarządzaj pacjentami i twórz spersonalizowane programy ćwiczeń. 
-                Masz <span className="text-primary font-semibold">{patientsCount}</span> pacjentów 
-                i <span className="text-secondary font-semibold">{setsCount}</span> zestawów.
-              </p>
             </div>
 
             {/* Quick Actions */}
             <div className="flex flex-wrap gap-3">
               <Link href="/patients">
-                <Button size="lg" className="gap-2 h-12 px-6 shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/25 transition-all">
+                <Button
+                  size="lg"
+                  className="gap-2 h-12 px-6 shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/25 transition-all"
+                >
                   <Send className="h-5 w-5" />
                   Przypisz zestaw
                 </Button>
@@ -186,8 +159,8 @@ export default function DashboardPage() {
                   <Zap className="h-4 w-4 text-primary fill-primary" />
                 </h3>
                 <p className="text-sm text-muted-foreground">
-                  Wykorzystujesz {Math.round((patientsCount / 5) * 100)}% limitu. 
-                  Przejdź na Professional dla nieograniczonej liczby pacjentów.
+                  Wykorzystujesz {Math.round((patientsCount / 5) * 100)}% limitu. Przejdź na Professional dla
+                  nieograniczonej liczby pacjentów.
                 </p>
               </div>
             </div>
@@ -215,7 +188,9 @@ export default function DashboardPage() {
                     <Users className="h-4 w-4 text-info" />
                   </div>
                   Twoi pacjenci
-                  <Badge variant="secondary" className="ml-2">{patientsCount}</Badge>
+                  <Badge variant="secondary" className="ml-2">
+                    {patientsCount}
+                  </Badge>
                 </CardTitle>
                 <Link href="/patients" className="group">
                   <Button variant="ghost" size="sm" className="h-8 text-sm gap-1">
@@ -244,15 +219,15 @@ export default function DashboardPage() {
                         <Avatar className="h-11 w-11 shrink-0 ring-2 ring-border/30 group-hover:ring-primary/20 transition-all">
                           <AvatarImage src={assignment.patient?.image} />
                           <AvatarFallback className="bg-gradient-to-br from-info to-blue-600 text-white font-semibold">
-                            {assignment.patient?.fullname?.[0] || "?"}
+                            {assignment.patient?.fullname?.[0] || '?'}
                           </AvatarFallback>
                         </Avatar>
                         <div className="flex-1 min-w-0">
                           <p className="font-medium truncate text-foreground group-hover:text-primary transition-colors">
-                            {assignment.patient?.fullname || "Nieznany"}
+                            {assignment.patient?.fullname || 'Nieznany'}
                           </p>
                           <p className="text-xs text-muted-foreground truncate">
-                            {assignment.contextLabel || assignment.patient?.email || "Pacjent"}
+                            {assignment.contextLabel || assignment.patient?.email || 'Pacjent'}
                           </p>
                         </div>
                         <ChevronRight className="h-4 w-4 text-muted-foreground/50 group-hover:text-primary transition-all group-hover:translate-x-0.5" />
@@ -265,7 +240,7 @@ export default function DashboardPage() {
                       className="w-full mt-3 text-muted-foreground"
                       onClick={() => setShowAllPatients(!showAllPatients)}
                     >
-                      {showAllPatients ? "Pokaż mniej" : `Pokaż wszystkich (${activePatients.length})`}
+                      {showAllPatients ? 'Pokaż mniej' : `Pokaż wszystkich (${activePatients.length})`}
                     </Button>
                   )}
                 </>
@@ -274,9 +249,7 @@ export default function DashboardPage() {
                   <div className="h-16 w-16 rounded-full bg-surface-light flex items-center justify-center mb-4">
                     <UserPlus className="h-8 w-8 text-muted-foreground/60" />
                   </div>
-                  <p className="text-base font-medium text-muted-foreground mb-2">
-                    Dodaj pierwszego pacjenta
-                  </p>
+                  <p className="text-base font-medium text-muted-foreground mb-2">Dodaj pierwszego pacjenta</p>
                   <p className="text-sm text-muted-foreground/70 mb-4 max-w-xs">
                     Zacznij budować swoją bazę pacjentów i przypisuj im zestawy ćwiczeń
                   </p>
@@ -300,7 +273,9 @@ export default function DashboardPage() {
                     <FolderKanban className="h-4 w-4 text-secondary" />
                   </div>
                   Zestawy ćwiczeń
-                  <Badge variant="secondary" className="ml-2">{setsCount}</Badge>
+                  <Badge variant="secondary" className="ml-2">
+                    {setsCount}
+                  </Badge>
                 </CardTitle>
                 <Link href="/exercise-sets" className="group">
                   <Button variant="ghost" size="sm" className="h-8 text-sm gap-1">
@@ -338,9 +313,7 @@ export default function DashboardPage() {
                           </Badge>
                         </div>
                         {set.description && (
-                          <p className="text-xs text-muted-foreground line-clamp-1 mt-1">
-                            {set.description}
-                          </p>
+                          <p className="text-xs text-muted-foreground line-clamp-1 mt-1">{set.description}</p>
                         )}
                       </div>
                     </Link>
@@ -351,9 +324,7 @@ export default function DashboardPage() {
                   <div className="h-16 w-16 rounded-full bg-surface-light flex items-center justify-center mb-4">
                     <Sparkles className="h-8 w-8 text-muted-foreground/60" />
                   </div>
-                  <p className="text-base font-medium text-muted-foreground mb-2">
-                    Stwórz pierwszy zestaw
-                  </p>
+                  <p className="text-base font-medium text-muted-foreground mb-2">Stwórz pierwszy zestaw</p>
                   <p className="text-sm text-muted-foreground/70 mb-4 max-w-xs">
                     Zestawy ćwiczeń to gotowe programy, które przypisujesz pacjentom
                   </p>
@@ -379,15 +350,9 @@ export default function DashboardPage() {
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">Pacjenci</p>
                     <div className="text-3xl font-bold text-foreground mt-1">
-                      {isLoading || patientsLoading ? (
-                        <Skeleton className="h-9 w-16" />
-                      ) : (
-                        patientsCount
-                      )}
+                      {isLoading || patientsLoading ? <Skeleton className="h-9 w-16" /> : patientsCount}
                     </div>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {activePatients.length} aktywnych
-                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">{activePatients.length} aktywnych</p>
                   </div>
                   <div className="h-12 w-12 rounded-xl bg-info/10 flex items-center justify-center">
                     <Users className="h-6 w-6 text-info" />
@@ -402,15 +367,9 @@ export default function DashboardPage() {
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">Zestawy</p>
                     <div className="text-3xl font-bold text-foreground mt-1">
-                      {isLoading || setsLoading ? (
-                        <Skeleton className="h-9 w-16" />
-                      ) : (
-                        setsCount
-                      )}
+                      {isLoading || setsLoading ? <Skeleton className="h-9 w-16" /> : setsCount}
                     </div>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      gotowych programów
-                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">gotowych programów</p>
                   </div>
                   <div className="h-12 w-12 rounded-xl bg-secondary/10 flex items-center justify-center">
                     <FolderKanban className="h-6 w-6 text-secondary" />
@@ -425,15 +384,9 @@ export default function DashboardPage() {
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">Ćwiczenia</p>
                     <div className="text-3xl font-bold text-foreground mt-1">
-                      {isLoading || exercisesLoading ? (
-                        <Skeleton className="h-9 w-16" />
-                      ) : (
-                        exercisesCount
-                      )}
+                      {isLoading || exercisesLoading ? <Skeleton className="h-9 w-16" /> : exercisesCount}
                     </div>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      w bibliotece
-                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">w bibliotece</p>
                   </div>
                   <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center">
                     <Dumbbell className="h-6 w-6 text-primary" />

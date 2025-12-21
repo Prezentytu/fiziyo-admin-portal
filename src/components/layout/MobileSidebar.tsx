@@ -1,41 +1,28 @@
-"use client";
+'use client';
 
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { cn } from "@/lib/utils";
-import {
-  LayoutDashboard,
-  Dumbbell,
-  FolderKanban,
-  Users,
-  Building2,
-  Settings,
-  LogOut,
-} from "lucide-react";
-import { useClerk } from "@clerk/nextjs";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { cn } from '@/lib/utils';
+import { LayoutDashboard, Dumbbell, FolderKanban, Users, Building2, Settings, LogOut } from 'lucide-react';
+import { useClerk } from '@clerk/nextjs';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 
 // Navigation structure with grouping
 const navigationGroups = [
   {
-    label: "Główne",
+    label: 'Główne',
     items: [
-      { name: "Dashboard", href: "/", icon: LayoutDashboard },
-      { name: "Pacjenci", href: "/patients", icon: Users },
-      { name: "Zestawy", href: "/exercise-sets", icon: FolderKanban },
-      { name: "Ćwiczenia", href: "/exercises", icon: Dumbbell },
+      { name: 'Panel', href: '/', icon: LayoutDashboard },
+      { name: 'Pacjenci', href: '/patients', icon: Users },
+      { name: 'Zestawy', href: '/exercise-sets', icon: FolderKanban },
+      { name: 'Ćwiczenia', href: '/exercises', icon: Dumbbell },
     ],
   },
   {
-    label: "Zarządzanie",
+    label: 'Zarządzanie',
     items: [
-      { name: "Organizacja", href: "/organization", icon: Building2 },
-      { name: "Ustawienia", href: "/settings", icon: Settings },
+      { name: 'Organizacja', href: '/organization', icon: Building2 },
+      { name: 'Ustawienia', href: '/settings', icon: Settings },
     ],
   },
 ];
@@ -50,7 +37,7 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
   const { signOut } = useClerk();
 
   const isActive = (href: string) => {
-    if (href === "/") return pathname === "/";
+    if (href === '/') return pathname === '/';
     return pathname.startsWith(href);
   };
 
@@ -70,9 +57,7 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
         <SheetHeader className="border-b border-border p-4">
           <SheetTitle className="flex items-center gap-3">
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary-dark shadow-lg shadow-primary/20">
-              <span className="text-lg font-bold text-primary-foreground">
-                F
-              </span>
+              <span className="text-lg font-bold text-primary-foreground">F</span>
             </div>
             <div className="flex flex-col text-left">
               <span className="text-lg font-bold leading-none">Fiziyo</span>
@@ -86,7 +71,7 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
         {/* Navigation */}
         <nav className="flex-1 overflow-y-auto py-4">
           {navigationGroups.map((group, groupIndex) => (
-            <div key={group.label} className={cn(groupIndex > 0 && "mt-6")}>
+            <div key={group.label} className={cn(groupIndex > 0 && 'mt-6')}>
               {/* Group label */}
               <p className="px-4 mb-2 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
                 {group.label}
@@ -104,10 +89,10 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
                       href={item.href}
                       onClick={handleLinkClick}
                       className={cn(
-                        "group relative flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium transition-all duration-200",
+                        'group relative flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium transition-all duration-200',
                         active
-                          ? "bg-primary text-primary-foreground shadow-md shadow-primary/20"
-                          : "text-muted-foreground hover:bg-surface-light hover:text-foreground"
+                          ? 'bg-primary text-primary-foreground shadow-md shadow-primary/20'
+                          : 'text-muted-foreground hover:bg-surface-light hover:text-foreground'
                       )}
                     >
                       {/* Active indicator */}
@@ -117,8 +102,8 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
 
                       <Icon
                         className={cn(
-                          "h-5 w-5 shrink-0 transition-transform duration-200",
-                          !active && "group-hover:scale-110"
+                          'h-5 w-5 shrink-0 transition-transform duration-200',
+                          !active && 'group-hover:scale-110'
                         )}
                       />
 
@@ -145,8 +130,3 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
     </Sheet>
   );
 }
-
-
-
-
-
