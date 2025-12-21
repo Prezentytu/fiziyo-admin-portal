@@ -37,10 +37,7 @@ import { GET_THERAPIST_PATIENTS_QUERY } from "@/graphql/queries/therapists.queri
 import { ASSIGN_EXERCISE_SET_TO_PATIENT_MUTATION } from "@/graphql/mutations/exercises.mutations";
 import { GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY } from "@/graphql/queries/patientAssignments.queries";
 import { GET_EXERCISE_SET_WITH_ASSIGNMENTS_QUERY } from "@/graphql/queries/exerciseSets.queries";
-import type {
-  OrganizationExerciseSetsResponse,
-  TherapistPatientsResponse,
-} from "@/types/apollo";
+import type { TherapistPatientsResponse } from "@/types/apollo";
 
 export function AssignmentWizard({
   open,
@@ -126,25 +123,52 @@ export function AssignmentWizard({
     ASSIGN_EXERCISE_SET_TO_PATIENT_MUTATION
   );
 
-  // Process data
+  // Process data - map all fields including sets, reps, duration from both mapping and exercise
   const exerciseSets: ExerciseSet[] = useMemo(() => {
-    const data = setsData as OrganizationExerciseSetsResponse | undefined;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const data = setsData as { exerciseSets?: any[] } | undefined;
     return (data?.exerciseSets || []).map((set) => ({
       id: set.id,
       name: set.name,
       description: set.description,
       isActive: set.isActive,
       isTemplate: set.isTemplate,
-      exerciseMappings: set.exerciseMappings?.map((m) => ({
+      frequency: set.frequency,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      exerciseMappings: set.exerciseMappings?.map((m: any) => ({
         id: m.id,
         exerciseId: m.exerciseId,
+        exerciseSetId: m.exerciseSetId,
         order: m.order,
+        // Mapping-level overrides
+        sets: m.sets,
+        reps: m.reps,
+        duration: m.duration,
+        restSets: m.restSets,
+        restReps: m.restReps,
+        notes: m.notes,
+        customName: m.customName,
+        customDescription: m.customDescription,
+        // Exercise data with all fields
         exercise: m.exercise
           ? {
               id: m.exercise.id,
               name: m.exercise.name,
+              type: m.exercise.type,
+              description: m.exercise.description,
+              exerciseSide: m.exercise.exerciseSide,
               imageUrl: m.exercise.imageUrl,
               images: m.exercise.images,
+              videoUrl: m.exercise.videoUrl,
+              notes: m.exercise.notes,
+              // Exercise default values
+              sets: m.exercise.sets,
+              reps: m.exercise.reps,
+              duration: m.exercise.duration,
+              restSets: m.exercise.restSets,
+              restReps: m.exercise.restReps,
+              preparationTime: m.exercise.preparationTime,
+              executionTime: m.exercise.executionTime,
             }
           : undefined,
       })),

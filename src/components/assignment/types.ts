@@ -15,14 +15,25 @@ export interface ExerciseMapping {
   exerciseId: string;
   exerciseSetId?: string;
   order?: number;
+  // Main parameters
   sets?: number;
   reps?: number;
   duration?: number;
+  // Rest parameters
   restSets?: number;
   restReps?: number;
+  // Time parameters
+  preparationTime?: number;
+  executionTime?: number;
+  // Custom content
   notes?: string;
   customName?: string;
   customDescription?: string;
+  // Media
+  videoUrl?: string;
+  imageUrl?: string;
+  images?: string[];
+  // Exercise reference
   exercise?: Exercise;
 }
 
@@ -69,12 +80,24 @@ export interface Frequency {
 // Customization overrides for exercises during assignment
 export interface ExerciseOverride {
   exerciseMappingId: string;
+  // Main parameters
   sets?: number;
   reps?: number;
   duration?: number;
+  // Rest parameters
   restSets?: number;
   restReps?: number;
+  // Time parameters
+  preparationTime?: number;
+  executionTime?: number;
+  // Custom content
+  customName?: string;
+  customDescription?: string;
   notes?: string;
+  // Media overrides
+  videoUrl?: string;
+  imageUrl?: string;
+  images?: string[];
 }
 
 // Wizard state

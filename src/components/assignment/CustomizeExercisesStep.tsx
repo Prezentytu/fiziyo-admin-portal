@@ -1,13 +1,24 @@
 "use client";
 
-import { useState } from "react";
-import { Dumbbell, Plus, Minus, RotateCcw, StickyNote } from "lucide-react";
+import { useState, useCallback } from "react";
+import {
+  Dumbbell,
+  Plus,
+  Minus,
+  RotateCcw,
+  StickyNote,
+  Clock,
+  Video,
+  FileText,
+  Settings2,
+} from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
 import { ImagePlaceholder } from "@/components/shared/ImagePlaceholder";
 import { cn } from "@/lib/utils";
 import type { ExerciseSet, ExerciseMapping, ExerciseOverride } from "./types";
@@ -17,6 +28,26 @@ interface CustomizeExercisesStepProps {
   overrides: Map<string, ExerciseOverride>;
   onOverridesChange: (overrides: Map<string, ExerciseOverride>) => void;
 }
+
+// Helper functions outside component
+const getTypeLabel = (type?: string) => {
+  const types: Record<string, string> = {
+    reps: "Powtórzenia",
+    time: "Czasowe",
+  };
+  return type ? types[type] || type : "";
+};
+
+const getSideLabel = (side?: string) => {
+  const sides: Record<string, string> = {
+    left: "Lewa strona",
+    right: "Prawa strona",
+    both: "Obie strony",
+    alternating: "Naprzemiennie",
+    none: "Bez strony",
+  };
+  return side ? sides[side] || side : "";
+};
 
 export function CustomizeExercisesStep({
   exerciseSet,
@@ -29,77 +60,194 @@ export function CustomizeExercisesStep({
 
   const mappings = exerciseSet.exerciseMappings || [];
   const selectedMapping = mappings.find((m) => m.id === selectedMappingId);
-  const selectedOverride = selectedMappingId
-    ? overrides.get(selectedMappingId)
-    : undefined;
 
-  // Get effective value (override or original)
-  const getEffectiveValue = (
+  // Get effective value (override → mapping → exercise)
+  const getEffectiveValue = useCallback(
+    <T extends string | number | string[] | undefined>(
+      mapping: ExerciseMapping,
+      field: keyof ExerciseOverride
+    ): T => {
+      const override = overrides.get(mapping.id);
+      if (override && override[field] !== undefined) {
+        return override[field] as T;
+      }
+      const mappingValue = mapping[field as keyof ExerciseMapping];
+      if (mappingValue !== undefined && mappingValue !== null) {
+        return mappingValue as T;
+      }
+      return mapping.exercise?.[field as keyof typeof mapping.exercise] as T;
+    },
+    [overrides]
+  );
+
+  // Get default value for display (from mapping or exercise)
+  const getDefaultValue = useCallback(
+    <T extends string | number | string[] | undefined>(
+      mapping: ExerciseMapping,
+      field: keyof ExerciseOverride
+    ): T => {
+      const mappingValue = mapping[field as keyof ExerciseMapping];
+      if (mappingValue !== undefined && mappingValue !== null) {
+        return mappingValue as T;
+      }
+      return mapping.exercise?.[field as keyof typeof mapping.exercise] as T;
+    },
+    []
+  );
+
+  const updateOverride = useCallback(
+    (
+      mappingId: string,
+      field: keyof ExerciseOverride,
+      value: number | string | string[] | undefined
+    ) => {
+      const newOverrides = new Map(overrides);
+      const existing = newOverrides.get(mappingId) || {
+        exerciseMappingId: mappingId,
+      };
+      newOverrides.set(mappingId, { ...existing, [field]: value });
+      onOverridesChange(newOverrides);
+    },
+    [overrides, onOverridesChange]
+  );
+
+  const resetOverride = useCallback(
+    (mappingId: string) => {
+      const newOverrides = new Map(overrides);
+      newOverrides.delete(mappingId);
+      onOverridesChange(newOverrides);
+    },
+    [overrides, onOverridesChange]
+  );
+
+  const hasOverride = useCallback(
+    (mappingId: string): boolean => {
+      const override = overrides.get(mappingId);
+      if (!override) return false;
+      return Object.keys(override).some(
+        (key) =>
+          key !== "exerciseMappingId" &&
+          override[key as keyof ExerciseOverride] !== undefined
+      );
+    },
+    [overrides]
+  );
+
+  // Render numeric input inline
+  const renderNumericInput = (
     mapping: ExerciseMapping,
-    field: keyof ExerciseOverride
-  ): number | string | undefined => {
-    const override = overrides.get(mapping.id);
-    if (override && override[field] !== undefined) {
-      return override[field];
-    }
-    // Fallback to mapping value, then exercise value
-    const mappingValue = mapping[field as keyof ExerciseMapping];
-    if (mappingValue !== undefined) return mappingValue as number | string;
-    return mapping.exercise?.[field as keyof typeof mapping.exercise] as
-      | number
-      | string
-      | undefined;
-  };
-
-  const updateOverride = (
-    mappingId: string,
+    label: string,
     field: keyof ExerciseOverride,
-    value: number | string | undefined
+    step = 1,
+    min = 0,
+    suffix?: string
   ) => {
-    const newOverrides = new Map(overrides);
-    const existing = newOverrides.get(mappingId) || {
-      exerciseMappingId: mappingId,
-    };
-    newOverrides.set(mappingId, { ...existing, [field]: value });
-    onOverridesChange(newOverrides);
-  };
+    const value = getEffectiveValue<number | undefined>(mapping, field);
+    const defaultValue = getDefaultValue<number | undefined>(mapping, field);
+    const override = overrides.get(mapping.id);
+    const hasFieldOverride = override && override[field] !== undefined;
 
-  const resetOverride = (mappingId: string) => {
-    const newOverrides = new Map(overrides);
-    newOverrides.delete(mappingId);
-    onOverridesChange(newOverrides);
-  };
+    // Display value: show effective value or default or empty
+    const displayValue = value ?? defaultValue ?? "";
 
-  const hasOverride = (mappingId: string): boolean => {
-    const override = overrides.get(mappingId);
-    if (!override) return false;
-    return Object.keys(override).some(
-      (key) => key !== "exerciseMappingId" && override[key as keyof ExerciseOverride] !== undefined
+    return (
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <Label className="text-sm">{label}</Label>
+          {hasFieldOverride && defaultValue !== undefined && (
+            <span className="text-[10px] text-muted-foreground">
+              Oryginał: {defaultValue}
+              {suffix}
+            </span>
+          )}
+        </div>
+        <div className="flex items-center gap-1">
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            className="h-10 w-10 shrink-0"
+            onClick={() => {
+              const current = (typeof displayValue === "number" ? displayValue : 0);
+              updateOverride(mapping.id, field, Math.max(min, current - step));
+            }}
+          >
+            <Minus className="h-4 w-4" />
+          </Button>
+          <Input
+            type="number"
+            value={displayValue}
+            onChange={(e) =>
+              updateOverride(
+                mapping.id,
+                field,
+                e.target.value ? Math.max(min, Number(e.target.value)) : undefined
+              )
+            }
+            placeholder="—"
+            className="h-10 text-center font-semibold"
+          />
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            className="h-10 w-10 shrink-0"
+            onClick={() => {
+              const current = (typeof displayValue === "number" ? displayValue : 0);
+              updateOverride(mapping.id, field, current + step);
+            }}
+          >
+            <Plus className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
     );
   };
 
-  // Helper for type labels
-  const getTypeLabel = (type?: string) => {
-    const types: Record<string, string> = {
-      reps: "Powtórzenia",
-      time: "Czasowe",
-    };
-    return type ? types[type] || type : "";
-  };
+  // Render text input inline
+  const renderTextInput = (
+    mapping: ExerciseMapping,
+    label: string,
+    field: keyof ExerciseOverride,
+    placeholder?: string
+  ) => {
+    const value = getEffectiveValue<string | undefined>(mapping, field);
+    const defaultValue = getDefaultValue<string | undefined>(mapping, field);
+    const override = overrides.get(mapping.id);
+    const hasFieldOverride = override && override[field] !== undefined;
 
-  const getSideLabel = (side?: string) => {
-    const sides: Record<string, string> = {
-      left: "Lewa strona",
-      right: "Prawa strona",
-      both: "Obie strony",
-      alternating: "Naprzemiennie",
-      none: "Bez strony",
-    };
-    return side ? sides[side] || side : "";
+    // Display value: show effective value or default or empty
+    const displayValue = value ?? defaultValue ?? "";
+
+    return (
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <Label className="text-sm">{label}</Label>
+          {hasFieldOverride && defaultValue && (
+            <span className="text-[10px] text-muted-foreground truncate max-w-[150px]">
+              Oryginał: {defaultValue.slice(0, 20)}
+              {defaultValue.length > 20 ? "..." : ""}
+            </span>
+          )}
+        </div>
+        <Input
+          value={displayValue}
+          onChange={(e) =>
+            updateOverride(mapping.id, field, e.target.value || undefined)
+          }
+          placeholder={placeholder || "—"}
+          className="h-10"
+          autoComplete="off"
+          data-1p-ignore
+          data-lpignore="true"
+          data-form-type="other"
+        />
+      </div>
+    );
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full overflow-hidden">
       {/* Left column - Exercise list */}
       <div className="flex flex-col min-h-0">
         <div className="mb-4">
@@ -157,19 +305,19 @@ export function CustomizeExercisesStep({
                       )}
                     </div>
                     <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
-                      {getEffectiveValue(mapping, "sets") && (
+                      {getEffectiveValue<number | undefined>(mapping, "sets") && (
                         <span>
-                          {getEffectiveValue(mapping, "sets")} serie
+                          {getEffectiveValue<number>(mapping, "sets")} serie
                         </span>
                       )}
-                      {getEffectiveValue(mapping, "reps") && (
+                      {getEffectiveValue<number | undefined>(mapping, "reps") && (
                         <span>
-                          • {getEffectiveValue(mapping, "reps")} powt.
+                          • {getEffectiveValue<number>(mapping, "reps")} powt.
                         </span>
                       )}
-                      {getEffectiveValue(mapping, "duration") && (
+                      {getEffectiveValue<number | undefined>(mapping, "duration") && (
                         <span>
-                          • {getEffectiveValue(mapping, "duration")}s
+                          • {getEffectiveValue<number>(mapping, "duration")}s
                         </span>
                       )}
                     </div>
@@ -191,11 +339,11 @@ export function CustomizeExercisesStep({
       </div>
 
       {/* Right column - Exercise editor */}
-      <div className="flex flex-col min-h-0 rounded-xl border border-border bg-surface/50">
+      <div className="flex flex-col min-h-0 rounded-xl border border-border bg-surface/50 overflow-hidden">
         {selectedMapping ? (
           <>
             {/* Header */}
-            <div className="p-4 border-b border-border">
+            <div className="p-4 border-b border-border shrink-0">
               <div className="flex items-start gap-3">
                 <div className="h-14 w-14 rounded-lg overflow-hidden shrink-0">
                   {selectedMapping.exercise?.imageUrl ||
@@ -247,247 +395,208 @@ export function CustomizeExercisesStep({
             </div>
 
             {/* Editor */}
-            <ScrollArea className="flex-1 p-4">
-              <div className="space-y-6">
-                {/* Main parameters */}
+            <ScrollArea className="flex-1">
+              <div className="p-4 space-y-6">
+                {/* Custom name and description */}
                 <div className="space-y-4">
-                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                    Główne parametry
-                  </p>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    {/* Sets */}
-                    <div className="space-y-2">
-                      <Label className="text-sm">Serie</Label>
-                      <div className="flex items-center gap-1">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="icon"
-                          className="h-10 w-10 shrink-0"
-                          onClick={() => {
-                            const current =
-                              (getEffectiveValue(selectedMapping, "sets") as number) ||
-                              0;
-                            updateOverride(
-                              selectedMapping.id,
-                              "sets",
-                              Math.max(0, current - 1)
-                            );
-                          }}
-                        >
-                          <Minus className="h-4 w-4" />
-                        </Button>
-                        <Input
-                          type="number"
-                          value={getEffectiveValue(selectedMapping, "sets") ?? ""}
-                          onChange={(e) =>
-                            updateOverride(
-                              selectedMapping.id,
-                              "sets",
-                              e.target.value
-                                ? Math.max(0, parseInt(e.target.value))
-                                : undefined
-                            )
-                          }
-                          className="h-10 text-center font-semibold"
-                        />
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="icon"
-                          className="h-10 w-10 shrink-0"
-                          onClick={() => {
-                            const current =
-                              (getEffectiveValue(selectedMapping, "sets") as number) ||
-                              0;
-                            updateOverride(selectedMapping.id, "sets", current + 1);
-                          }}
-                        >
-                          <Plus className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-
-                    {/* Reps */}
-                    <div className="space-y-2">
-                      <Label className="text-sm">Powtórzenia</Label>
-                      <div className="flex items-center gap-1">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="icon"
-                          className="h-10 w-10 shrink-0"
-                          onClick={() => {
-                            const current =
-                              (getEffectiveValue(selectedMapping, "reps") as number) ||
-                              0;
-                            updateOverride(
-                              selectedMapping.id,
-                              "reps",
-                              Math.max(0, current - 1)
-                            );
-                          }}
-                        >
-                          <Minus className="h-4 w-4" />
-                        </Button>
-                        <Input
-                          type="number"
-                          value={getEffectiveValue(selectedMapping, "reps") ?? ""}
-                          onChange={(e) =>
-                            updateOverride(
-                              selectedMapping.id,
-                              "reps",
-                              e.target.value
-                                ? Math.max(0, parseInt(e.target.value))
-                                : undefined
-                            )
-                          }
-                          className="h-10 text-center font-semibold"
-                        />
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="icon"
-                          className="h-10 w-10 shrink-0"
-                          onClick={() => {
-                            const current =
-                              (getEffectiveValue(selectedMapping, "reps") as number) ||
-                              0;
-                            updateOverride(selectedMapping.id, "reps", current + 1);
-                          }}
-                        >
-                          <Plus className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
+                  <div className="flex items-center gap-2">
+                    <FileText className="h-4 w-4 text-primary" />
+                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                      Personalizacja nazwy
+                    </p>
                   </div>
 
-                  {/* Duration */}
+                  {renderTextInput(
+                    selectedMapping,
+                    "Nazwa dla pacjenta",
+                    "customName",
+                    "Własna nazwa ćwiczenia..."
+                  )}
+
                   <div className="space-y-2">
-                    <Label className="text-sm">Czas trwania (sekundy)</Label>
-                    <div className="flex items-center gap-1">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="icon"
-                        className="h-10 w-10 shrink-0"
-                        onClick={() => {
-                          const current =
-                            (getEffectiveValue(
-                              selectedMapping,
-                              "duration"
-                            ) as number) || 0;
-                          updateOverride(
-                            selectedMapping.id,
-                            "duration",
-                            Math.max(0, current - 5)
-                          );
-                        }}
-                      >
-                        <Minus className="h-4 w-4" />
-                      </Button>
-                      <Input
-                        type="number"
-                        value={
-                          getEffectiveValue(selectedMapping, "duration") ?? ""
-                        }
-                        onChange={(e) =>
-                          updateOverride(
-                            selectedMapping.id,
-                            "duration",
-                            e.target.value
-                              ? Math.max(0, parseInt(e.target.value))
-                              : undefined
-                          )
-                        }
-                        className="h-10 text-center font-semibold"
-                      />
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="icon"
-                        className="h-10 w-10 shrink-0"
-                        onClick={() => {
-                          const current =
-                            (getEffectiveValue(
-                              selectedMapping,
-                              "duration"
-                            ) as number) || 0;
-                          updateOverride(
-                            selectedMapping.id,
-                            "duration",
-                            current + 5
-                          );
-                        }}
-                      >
-                        <Plus className="h-4 w-4" />
-                      </Button>
-                    </div>
+                    <Label className="text-sm">Opis dla pacjenta</Label>
+                    <Textarea
+                      value={
+                        getEffectiveValue<string | undefined>(
+                          selectedMapping,
+                          "customDescription"
+                        ) ??
+                        getDefaultValue<string | undefined>(
+                          selectedMapping,
+                          "customDescription"
+                        ) ??
+                        selectedMapping.exercise?.description ??
+                        ""
+                      }
+                      onChange={(e) =>
+                        updateOverride(
+                          selectedMapping.id,
+                          "customDescription",
+                          e.target.value || undefined
+                        )
+                      }
+                      placeholder="Opis ćwiczenia..."
+                      className="min-h-[60px] resize-none"
+                      autoComplete="off"
+                      data-1p-ignore
+                      data-lpignore="true"
+                      data-form-type="other"
+                    />
                   </div>
                 </div>
+
+                <Separator />
+
+                {/* Main parameters */}
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2">
+                    <Settings2 className="h-4 w-4 text-primary" />
+                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                      Główne parametry
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    {renderNumericInput(selectedMapping, "Serie", "sets")}
+                    {renderNumericInput(selectedMapping, "Powtórzenia", "reps")}
+                  </div>
+
+                  {renderNumericInput(
+                    selectedMapping,
+                    "Czas trwania",
+                    "duration",
+                    5,
+                    0,
+                    "s"
+                  )}
+                </div>
+
+                <Separator />
 
                 {/* Rest parameters */}
                 <div className="space-y-4">
-                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                    Przerwy
-                  </p>
+                  <div className="flex items-center gap-2">
+                    <Clock className="h-4 w-4 text-primary" />
+                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                      Przerwy i czasy
+                    </p>
+                  </div>
 
                   <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label className="text-sm text-muted-foreground">
-                        Między seriami (s)
-                      </Label>
-                      <Input
-                        type="number"
-                        value={
-                          getEffectiveValue(selectedMapping, "restSets") ?? ""
-                        }
-                        onChange={(e) =>
-                          updateOverride(
-                            selectedMapping.id,
-                            "restSets",
-                            e.target.value
-                              ? Math.max(0, parseInt(e.target.value))
-                              : undefined
-                          )
-                        }
-                        className="h-10"
-                      />
-                    </div>
+                    {renderNumericInput(
+                      selectedMapping,
+                      "Przerwa między seriami",
+                      "restSets",
+                      5,
+                      0,
+                      "s"
+                    )}
+                    {renderNumericInput(
+                      selectedMapping,
+                      "Przerwa między powt.",
+                      "restReps",
+                      1,
+                      0,
+                      "s"
+                    )}
+                  </div>
 
-                    <div className="space-y-2">
-                      <Label className="text-sm text-muted-foreground">
-                        Między powtórzeniami (s)
-                      </Label>
-                      <Input
-                        type="number"
-                        value={
-                          getEffectiveValue(selectedMapping, "restReps") ?? ""
-                        }
-                        onChange={(e) =>
-                          updateOverride(
-                            selectedMapping.id,
-                            "restReps",
-                            e.target.value
-                              ? Math.max(0, parseInt(e.target.value))
-                              : undefined
-                          )
-                        }
-                        className="h-10"
-                      />
-                    </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    {renderNumericInput(
+                      selectedMapping,
+                      "Czas przygotowania",
+                      "preparationTime",
+                      5,
+                      0,
+                      "s"
+                    )}
+                    {renderNumericInput(
+                      selectedMapping,
+                      "Czas wykonania",
+                      "executionTime",
+                      5,
+                      0,
+                      "s"
+                    )}
                   </div>
                 </div>
 
+                <Separator />
+
+                {/* Media */}
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2">
+                    <Video className="h-4 w-4 text-primary" />
+                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                      Media
+                    </p>
+                  </div>
+
+                  {renderTextInput(
+                    selectedMapping,
+                    "URL wideo",
+                    "videoUrl",
+                    "https://youtube.com/..."
+                  )}
+
+                  {renderTextInput(
+                    selectedMapping,
+                    "URL obrazu",
+                    "imageUrl",
+                    "https://..."
+                  )}
+
+                  {/* Preview current media */}
+                  {(getEffectiveValue<string | undefined>(
+                    selectedMapping,
+                    "videoUrl"
+                  ) ||
+                    selectedMapping.exercise?.videoUrl) && (
+                    <div className="p-3 bg-surface-light rounded-lg">
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground mb-2">
+                        <Video className="h-3 w-3" />
+                        <span>Podgląd wideo</span>
+                      </div>
+                      <a
+                        href={
+                          getEffectiveValue<string>(selectedMapping, "videoUrl") ||
+                          selectedMapping.exercise?.videoUrl
+                        }
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-primary hover:underline break-all"
+                      >
+                        {getEffectiveValue<string>(selectedMapping, "videoUrl") ||
+                          selectedMapping.exercise?.videoUrl}
+                      </a>
+                    </div>
+                  )}
+                </div>
+
+                <Separator />
+
                 {/* Notes */}
-                <div className="space-y-2">
-                  <Label className="flex items-center gap-2 text-sm">
-                    <StickyNote className="h-4 w-4" />
-                    Notatki dla pacjenta
-                  </Label>
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2">
+                    <StickyNote className="h-4 w-4 text-primary" />
+                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                      Notatki dla pacjenta
+                    </p>
+                  </div>
+
                   <Textarea
-                    value={(selectedOverride?.notes as string) || ""}
+                    value={
+                      getEffectiveValue<string | undefined>(
+                        selectedMapping,
+                        "notes"
+                      ) ??
+                      getDefaultValue<string | undefined>(
+                        selectedMapping,
+                        "notes"
+                      ) ??
+                      selectedMapping.exercise?.notes ??
+                      ""
+                    }
                     onChange={(e) =>
                       updateOverride(
                         selectedMapping.id,
@@ -497,6 +606,10 @@ export function CustomizeExercisesStep({
                     }
                     placeholder="Dodaj wskazówki lub instrukcje dla tego pacjenta..."
                     className="min-h-[80px] resize-none"
+                    autoComplete="off"
+                    data-1p-ignore
+                    data-lpignore="true"
+                    data-form-type="other"
                   />
                 </div>
               </div>
@@ -517,4 +630,3 @@ export function CustomizeExercisesStep({
     </div>
   );
 }
-
