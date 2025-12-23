@@ -15,6 +15,7 @@ import {
   LogOut,
   PanelLeftClose,
   PanelLeft,
+  HeartPulse,
 } from 'lucide-react';
 import { useClerk } from '@clerk/nextjs';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
@@ -72,12 +73,12 @@ export function Sidebar({ isCollapsed, onToggleCollapse }: SidebarProps) {
         >
           <Link href="/" className="flex items-center gap-3">
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary-dark shadow-lg shadow-primary/15">
-              <span className="text-lg font-bold text-primary-foreground">F</span>
+              <HeartPulse className="h-5 w-5 text-primary-foreground" />
             </div>
             {!isCollapsed && (
-              <div className="flex flex-col overflow-hidden">
-                <span className="text-lg font-bold leading-none text-foreground">fiziYo</span>
-                <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Admin Panel</span>
+              <div className="flex flex-col justify-center overflow-hidden">
+                <span className="text-lg font-bold leading-tight text-foreground">fiziYo</span>
+                <span className="text-[10px] text-muted-foreground uppercase tracking-wider leading-tight">Admin Panel</span>
               </div>
             )}
           </Link>

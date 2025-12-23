@@ -8,7 +8,6 @@ import {
   FolderKanban,
   FolderPlus,
   Users,
-  Plus,
   ChevronRight,
   Send,
   UserPlus,
@@ -16,7 +15,6 @@ import {
   Rocket,
   ArrowRight,
   Zap,
-  TrendingUp,
   Wrench,
 } from 'lucide-react';
 
@@ -65,6 +63,13 @@ interface PatientAssignment {
   status?: string;
 }
 
+// Format date in Polish
+function formatPolishDate(date: Date): string {
+  const days = ['Niedziela', 'Poniedziałek', 'Wtorek', 'Środa', 'Czwartek', 'Piątek', 'Sobota'];
+  const months = ['sty', 'lut', 'mar', 'kwi', 'maj', 'cze', 'lip', 'sie', 'wrz', 'paź', 'lis', 'gru'];
+  return `${days[date.getDay()]}, ${date.getDate()} ${months[date.getMonth()]}`;
+}
+
 export default function DashboardPage() {
   const { user } = useUser();
   const [isAssignWizardOpen, setIsAssignWizardOpen] = useState(false);
@@ -108,223 +113,158 @@ export default function DashboardPage() {
   // Get current hour for greeting
   const currentHour = new Date().getHours();
   const greeting = currentHour < 12 ? 'Dzień dobry' : currentHour < 18 ? 'Cześć' : 'Dobry wieczór';
+  const todayDate = formatPolishDate(new Date());
 
-  // Calculate active patients (for demo, showing all as active)
+  // Calculate active patients
   const activePatients = patients.filter((p: PatientAssignment) => p.status !== 'inactive');
   const displayedPatients = activePatients.slice(0, 4);
 
+  // Subscription limit info
+  const limit = 5;
+  const isAtLimit = patientsCount >= limit;
+
   return (
-    <div className="space-y-6">
-      {/* Hero Welcome Section */}
-      <div className="space-y-6">
-        {/* Greeting */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl lg:text-3xl font-bold text-foreground">
-              {greeting}, {userName}!
-            </h1>
-            <p className="text-muted-foreground mt-1">
-              Co chcesz dziś zrobić?
-            </p>
-          </div>
+    <div className="space-y-8">
+      {/* Header Section - Greeting with date */}
+      <div className="flex items-end justify-between">
+        <div>
+          <h1 className="text-2xl lg:text-3xl font-bold text-foreground tracking-tight">
+            {greeting}, {userName}!
+          </h1>
+          <p className="text-muted-foreground mt-1">
+            Co chcesz dziś zrobić?
+          </p>
         </div>
-
-        {/* Quick Actions - Compact Card Grid */}
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {/* Primary Action - Assign Set */}
-          <button
-            onClick={() => setIsAssignWizardOpen(true)}
-            disabled={!organizationId || !therapistId}
-            className="group relative overflow-hidden rounded-xl bg-gradient-to-br from-primary to-primary-dark p-4 text-left transition-all duration-200 hover:shadow-lg hover:shadow-primary/25 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-            <div className="relative flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/20 shrink-0">
-                <Send className="h-5 w-5 text-white" />
-              </div>
-              <div className="min-w-0">
-                <h3 className="text-sm font-semibold text-white">
-                  Przypisz zestaw
-                </h3>
-                <p className="text-xs text-white/70 truncate">
-                  Wyślij ćwiczenia do pacjenta
-                </p>
-              </div>
-            </div>
-          </button>
-
-          {/* Secondary Action - Create Set */}
-          <button
-            onClick={() => setIsCreateSetWizardOpen(true)}
-            disabled={!organizationId}
-            className="group relative overflow-hidden rounded-xl border border-border bg-surface p-4 text-left transition-all duration-200 hover:border-primary/50 hover:bg-surface-light cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <div className="relative flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 shrink-0 group-hover:bg-primary/20 transition-colors">
-                <FolderPlus className="h-5 w-5 text-primary" />
-              </div>
-              <div className="min-w-0">
-                <h3 className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors">
-                  Utwórz zestaw
-                </h3>
-                <p className="text-xs text-muted-foreground truncate">
-                  Stwórz nowy program ćwiczeń
-                </p>
-              </div>
-            </div>
-          </button>
-
-          {/* Tertiary Action - Add Patient */}
-          <Link
-            href="/patients"
-            className="group relative overflow-hidden rounded-xl border border-border bg-surface p-4 text-left transition-all duration-200 hover:border-info/50 hover:bg-surface-light cursor-pointer"
-          >
-            <div className="relative flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-info/10 shrink-0 group-hover:bg-info/20 transition-colors">
-                <UserPlus className="h-5 w-5 text-info" />
-              </div>
-              <div className="min-w-0">
-                <h3 className="text-sm font-semibold text-foreground group-hover:text-info transition-colors">
-                  Dodaj pacjenta
-                </h3>
-                <p className="text-xs text-muted-foreground truncate">
-                  Zarejestruj nowego pacjenta
-                </p>
-              </div>
-            </div>
-          </Link>
-        </div>
+        <p className="text-sm text-muted-foreground hidden sm:block">
+          {todayDate}
+        </p>
       </div>
 
-      {/* Subscription Progress Banner - always visible, changes style based on usage */}
-      {(() => {
-        const limit = 5;
-        const usage = Math.min(patientsCount, limit);
-        const percentage = Math.round((usage / limit) * 100);
-        const isAtLimit = patientsCount >= limit;
-        const isNearLimit = patientsCount >= 3 && patientsCount < limit;
+      {/* Quick Actions - Hero + Companions Layout */}
+      <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-12">
+        {/* Hero Action - Przypisz zestaw (larger) */}
+        <button
+          onClick={() => setIsAssignWizardOpen(true)}
+          disabled={!organizationId || !therapistId}
+          className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary via-primary to-primary-dark p-5 sm:p-6 text-left transition-all duration-300 hover:shadow-xl hover:shadow-primary/20 hover:scale-[1.02] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 lg:col-span-6"
+        >
+          {/* Animated background glow */}
+          <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+          <div className="absolute -top-24 -right-24 w-48 h-48 bg-white/10 rounded-full blur-3xl group-hover:bg-white/20 transition-all duration-500" />
+          
+          <div className="relative flex items-center gap-4">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm shrink-0 group-hover:scale-110 transition-transform duration-300">
+              <Send className="h-6 w-6 text-white" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <h3 className="text-lg font-bold text-white mb-1">
+                Przypisz zestaw
+              </h3>
+              <p className="text-sm text-white/80">
+                Wyślij program ćwiczeń do pacjenta
+              </p>
+            </div>
+            <ArrowRight className="h-5 w-5 text-white/60 group-hover:text-white group-hover:translate-x-1 transition-all duration-300 shrink-0" />
+          </div>
+        </button>
 
-        return (
-          <div
-            className={`relative rounded-2xl border p-5 overflow-hidden transition-all ${
-              isAtLimit
-                ? 'border-orange-500/40 bg-gradient-to-r from-orange-500/15 via-red-500/10 to-amber-500/15'
-                : isNearLimit
-                ? 'border-primary/20 bg-gradient-to-r from-primary/5 via-transparent to-secondary/5'
-                : 'border-border/60 bg-surface'
-            }`}
-          >
-            {isAtLimit && (
-              <div className="absolute top-0 right-0 w-64 h-64 bg-orange-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
-            )}
-            {isNearLimit && !isAtLimit && (
-              <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
-            )}
-            <div className="relative flex flex-col sm:flex-row items-center justify-between gap-4">
-              <div className="flex items-center gap-4">
-                <div
-                  className={`flex h-12 w-12 items-center justify-center rounded-2xl ${
-                    isAtLimit
-                      ? 'bg-gradient-to-br from-orange-500 to-red-500 text-white shadow-lg shadow-orange-500/30'
-                      : 'bg-primary/10 text-primary'
-                  }`}
-                >
-                  <Rocket className="h-6 w-6" />
-                </div>
-                <div>
-                  <h3 className="text-base font-bold text-foreground flex items-center gap-2">
-                    {isAtLimit ? (
-                      <>
-                        Czas na rozwój!
-                        <Zap className="h-4 w-4 text-orange-500 fill-orange-500" />
-                      </>
-                    ) : (
-                      'Rozwijaj swoją praktykę'
-                    )}
-                  </h3>
-                  <p className="text-sm text-muted-foreground">
-                    {isAtLimit
-                      ? 'Osiągnąłeś limit pacjentów. Ulepsz plan i rozwijaj praktykę bez ograniczeń!'
-                      : `Wykorzystujesz ${percentage}% limitu. Przejdź na Professional dla nieograniczonej liczby pacjentów.`}
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-4">
-                <Link href="/subscription">
-                  <Button
-                    className={`gap-2 whitespace-nowrap ${
-                      isAtLimit
-                        ? 'bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 shadow-lg shadow-orange-500/30 border-0'
-                        : ''
-                    }`}
-                    variant={isAtLimit ? 'default' : 'outline'}
-                  >
-                    <Sparkles className="h-4 w-4" />
-                    Ulepsz plan
-                    {isAtLimit && <ArrowRight className="h-4 w-4" />}
-                  </Button>
-                </Link>
-              </div>
+        {/* Secondary Action - Utwórz zestaw */}
+        <button
+          onClick={() => setIsCreateSetWizardOpen(true)}
+          disabled={!organizationId}
+          className="group relative overflow-hidden rounded-2xl border border-border/60 bg-surface p-5 text-left transition-all duration-300 hover:border-primary/40 hover:bg-surface-light hover:shadow-lg cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed lg:col-span-3 flex items-center"
+        >
+          <div className="relative flex items-center gap-3 w-full">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 shrink-0 group-hover:bg-primary/20 group-hover:scale-110 transition-all duration-300">
+              <FolderPlus className="h-5 w-5 text-primary" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <h3 className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors">
+                Utwórz zestaw
+              </h3>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Nowy program
+              </p>
             </div>
           </div>
-        );
-      })()}
+        </button>
 
-      {/* Main Content Grid */}
-      <div className="grid gap-6 lg:grid-cols-2">
+        {/* Tertiary Action - Dodaj pacjenta */}
+        <Link
+          href="/patients"
+          className="group relative overflow-hidden rounded-2xl border border-border/60 bg-surface p-5 text-left transition-all duration-300 hover:border-info/40 hover:bg-surface-light hover:shadow-lg cursor-pointer lg:col-span-3 flex items-center"
+        >
+          <div className="relative flex items-center gap-3 w-full">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-info/10 shrink-0 group-hover:bg-info/20 group-hover:scale-110 transition-all duration-300">
+              <UserPlus className="h-5 w-5 text-info" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <h3 className="text-sm font-semibold text-foreground group-hover:text-info transition-colors">
+                Dodaj pacjenta
+              </h3>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Nowy pacjent
+              </p>
+            </div>
+          </div>
+        </Link>
+      </div>
+
+      {/* Main Content - Bento Grid */}
+      <div className="grid gap-4 lg:grid-cols-2">
         {/* Patients Section */}
-        <Card className="border-border/60">
-          <CardHeader className="pb-4">
+        <Card className="border-border/40 bg-surface/50 backdrop-blur-sm overflow-hidden">
+          <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-info/10">
-                  <Users className="h-4 w-4 text-info" />
+              <CardTitle className="flex items-center gap-3 text-base font-semibold">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-info/10">
+                  <Users className="h-4.5 w-4.5 text-info" />
                 </div>
-                Twoi pacjenci
-                <Badge variant="secondary" className="ml-2">
+                <span>Twoi pacjenci</span>
+                <Badge variant="secondary" className="ml-1 bg-surface-light text-muted-foreground font-medium">
                   {patientsCount}
                 </Badge>
               </CardTitle>
               <Link href="/patients" className="group">
-                <Button variant="ghost" size="sm" className="h-8 text-sm gap-1">
+                <Button variant="ghost" size="sm" className="h-8 text-xs gap-1 text-muted-foreground hover:text-foreground">
                   Wszyscy
-                  <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+                  <ChevronRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
                 </Button>
               </Link>
             </div>
           </CardHeader>
           <CardContent className="pt-0">
             {patientsLoading ? (
-              <div className="grid gap-3 sm:grid-cols-2">
+              <div className="space-y-2 animate-stagger">
                 {[1, 2, 3, 4].map((i) => (
-                  <Skeleton key={i} className="h-20 w-full rounded-xl" />
+                  <Skeleton key={i} className="h-14 w-full rounded-xl" />
                 ))}
               </div>
             ) : patients.length > 0 ? (
-              <div className="grid gap-3 sm:grid-cols-2">
+              <div className="space-y-2 animate-stagger">
                 {displayedPatients.map((assignment: PatientAssignment) => {
                   const isShadow = assignment.patient?.isShadowUser;
                   return (
                     <Link
                       key={assignment.id}
                       href={`/patients/${assignment.patient?.id}`}
-                      className={`group flex items-center gap-3 p-3 rounded-xl border transition-all ${
+                      className={`group flex items-center gap-3 p-3 rounded-xl transition-all duration-200 ${
                         isShadow
-                          ? 'border-border/30 bg-surface/80 hover:bg-surface hover:border-muted-foreground/20'
-                          : 'border-border/50 bg-surface hover:bg-surface-light hover:border-primary/20'
+                          ? 'hover:bg-surface opacity-70 hover:opacity-100'
+                          : 'hover:bg-surface-light'
                       }`}
                     >
                       <div className="relative shrink-0">
                         <Avatar
-                          className={`h-11 w-11 ring-2 transition-all ${
+                          className={`h-10 w-10 ring-2 transition-all ${
                             isShadow
-                              ? 'ring-muted-foreground/20 group-hover:ring-muted-foreground/30'
-                              : 'ring-border/30 group-hover:ring-primary/20'
+                              ? 'ring-muted-foreground/20 group-hover:ring-muted-foreground/40'
+                              : 'ring-border/20 group-hover:ring-primary/30'
                           }`}
                         >
                           <AvatarImage src={assignment.patient?.image} />
                           <AvatarFallback
-                            className={`font-semibold ${
+                            className={`text-sm font-medium ${
                               isShadow
                                 ? 'bg-muted-foreground/60 text-white'
                                 : 'bg-gradient-to-br from-info to-blue-600 text-white'
@@ -334,14 +274,14 @@ export default function DashboardPage() {
                           </AvatarFallback>
                         </Avatar>
                         {isShadow && (
-                          <div className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-muted-foreground/80 flex items-center justify-center ring-2 ring-surface">
-                            <Wrench className="h-3 w-3 text-white" />
+                          <div className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-muted-foreground/80 flex items-center justify-center ring-2 ring-surface">
+                            <Wrench className="h-2.5 w-2.5 text-white" />
                           </div>
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
                         <p
-                          className={`font-medium truncate transition-colors ${
+                          className={`font-medium text-sm truncate transition-colors ${
                             isShadow
                               ? 'text-muted-foreground group-hover:text-foreground'
                               : 'text-foreground group-hover:text-primary'
@@ -356,8 +296,8 @@ export default function DashboardPage() {
                       <ChevronRight
                         className={`h-4 w-4 transition-all group-hover:translate-x-0.5 ${
                           isShadow
-                            ? 'text-muted-foreground/30 group-hover:text-muted-foreground'
-                            : 'text-muted-foreground/50 group-hover:text-primary'
+                            ? 'text-muted-foreground/20 group-hover:text-muted-foreground'
+                            : 'text-muted-foreground/30 group-hover:text-primary'
                         }`}
                       />
                     </Link>
@@ -365,17 +305,16 @@ export default function DashboardPage() {
                 })}
               </div>
             ) : (
-              <div className="flex flex-col items-center justify-center py-10 text-center">
-                <div className="h-16 w-16 rounded-full bg-surface-light flex items-center justify-center mb-4">
-                  <UserPlus className="h-8 w-8 text-muted-foreground/60" />
+              <div className="flex flex-col items-center justify-center py-8 text-center">
+                <div className="h-14 w-14 rounded-2xl bg-surface-light flex items-center justify-center mb-3">
+                  <UserPlus className="h-7 w-7 text-muted-foreground/50" />
                 </div>
-                <p className="text-base font-medium text-muted-foreground mb-2">Dodaj pierwszego pacjenta</p>
-                <p className="text-sm text-muted-foreground/70 mb-4 max-w-xs">
-                  Zacznij budować swoją bazę pacjentów i przypisuj im zestawy ćwiczeń
+                <p className="text-sm font-medium text-muted-foreground mb-1">Brak pacjentów</p>
+                <p className="text-xs text-muted-foreground/70 mb-4">
+                  Dodaj pierwszego pacjenta
                 </p>
                 <Link href="/patients">
-                  <Button className="shadow-lg shadow-primary/20">
-                    <Plus className="mr-2 h-4 w-4" />
+                  <Button size="sm" className="h-8 text-xs">
                     Dodaj pacjenta
                   </Button>
                 </Link>
@@ -385,97 +324,114 @@ export default function DashboardPage() {
         </Card>
 
         {/* Exercise Sets Section */}
-        <Card className="border-border/60">
-          <CardHeader className="pb-4">
+        <Card className="border-border/40 bg-surface/50 backdrop-blur-sm overflow-hidden">
+          <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-secondary/10">
-                  <FolderKanban className="h-4 w-4 text-secondary" />
+              <CardTitle className="flex items-center gap-3 text-base font-semibold">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-secondary/10">
+                  <FolderKanban className="h-4.5 w-4.5 text-secondary" />
                 </div>
-                Zestawy ćwiczeń
-                <Badge variant="secondary" className="ml-2">
+                <span>Zestawy ćwiczeń</span>
+                <Badge variant="secondary" className="ml-1 bg-surface-light text-muted-foreground font-medium">
                   {setsCount}
                 </Badge>
               </CardTitle>
               <Link href="/exercise-sets" className="group">
-                <Button variant="ghost" size="sm" className="h-8 text-sm gap-1">
+                <Button variant="ghost" size="sm" className="h-8 text-xs gap-1 text-muted-foreground hover:text-foreground">
                   Wszystkie
-                  <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+                  <ChevronRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
                 </Button>
               </Link>
             </div>
           </CardHeader>
           <CardContent className="pt-0">
             {setsLoading ? (
-              <div className="grid gap-3 sm:grid-cols-2">
+              <div className="space-y-2 animate-stagger">
                 {[1, 2, 3, 4].map((i) => (
-                  <Skeleton key={i} className="h-24 w-full rounded-xl" />
+                  <Skeleton key={i} className="h-14 w-full rounded-xl" />
                 ))}
               </div>
             ) : sortedExerciseSets.length > 0 ? (
-              <div className="grid gap-3 sm:grid-cols-2">
+              <div className="space-y-2 animate-stagger">
                 {sortedExerciseSets.slice(0, 4).map((set: ExerciseSetItem) => (
                   <Link
                     key={set.id}
                     href={`/exercise-sets/${set.id}`}
-                    className="group flex items-start gap-3 p-4 rounded-xl border border-border/50 bg-surface hover:bg-surface-light hover:border-secondary/20 transition-all"
+                    className="group flex items-center gap-3 p-3 rounded-xl transition-all duration-200 hover:bg-surface-light"
                   >
                     <SetThumbnail exerciseMappings={set.exerciseMappings} size="sm" />
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium truncate text-foreground group-hover:text-secondary transition-colors">
+                      <p className="font-medium text-sm text-foreground group-hover:text-secondary transition-colors truncate">
                         {set.name}
                       </p>
-                      <div className="flex items-center gap-2 mt-1">
-                        <Badge variant="outline" className="text-[10px]">
-                          {set.exerciseMappings?.length || 0} ćw.
-                        </Badge>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <span className="text-xs text-muted-foreground">
+                          {set.exerciseMappings?.length || 0} ćwiczeń
+                        </span>
                       </div>
-                      {set.description && (
-                        <p className="text-xs text-muted-foreground line-clamp-1 mt-1">{set.description}</p>
-                      )}
                     </div>
+                    <ChevronRight className="h-4 w-4 text-muted-foreground/30 group-hover:text-secondary group-hover:translate-x-0.5 transition-all" />
                   </Link>
                 ))}
               </div>
             ) : (
-              <div className="flex flex-col items-center justify-center py-10 text-center">
-                <div className="h-16 w-16 rounded-full bg-surface-light flex items-center justify-center mb-4">
-                  <Sparkles className="h-8 w-8 text-muted-foreground/60" />
+              <div className="flex flex-col items-center justify-center py-8 text-center">
+                <div className="h-14 w-14 rounded-2xl bg-surface-light flex items-center justify-center mb-3">
+                  <Sparkles className="h-7 w-7 text-muted-foreground/50" />
                 </div>
-                <p className="text-base font-medium text-muted-foreground mb-2">Stwórz pierwszy zestaw</p>
-                <p className="text-sm text-muted-foreground/70 mb-4 max-w-xs">
-                  Zestawy ćwiczeń to gotowe programy, które przypisujesz pacjentom
+                <p className="text-sm font-medium text-muted-foreground mb-1">Brak zestawów</p>
+                <p className="text-xs text-muted-foreground/70 mb-4">
+                  Stwórz pierwszy zestaw ćwiczeń
                 </p>
-                <Link href="/exercise-sets">
-                  <Button variant="secondary" className="shadow-lg shadow-secondary/20">
-                    <Plus className="mr-2 h-4 w-4" />
-                    Nowy zestaw
-                  </Button>
-                </Link>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  className="h-8 text-xs"
+                  onClick={() => setIsCreateSetWizardOpen(true)}
+                  disabled={!organizationId}
+                >
+                  Utwórz zestaw
+                </Button>
               </div>
             )}
           </CardContent>
         </Card>
       </div>
 
-      {/* Tips Card */}
-      <Card className="border-border/60 bg-gradient-to-br from-primary/5 via-transparent to-secondary/5">
-        <CardContent className="p-5">
-          <div className="flex items-start gap-3">
-            <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-              <TrendingUp className="h-5 w-5 text-primary" />
+      {/* Subscription Banner - Compact, at bottom */}
+      {isAtLimit && (
+        <div className="relative rounded-xl border border-orange-500/30 bg-gradient-to-r from-orange-500/10 via-red-500/5 to-orange-500/10 p-4 overflow-hidden">
+          <div className="absolute -top-12 -right-12 w-32 h-32 bg-orange-500/10 rounded-full blur-2xl" />
+          <div className="relative flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-orange-500 to-red-500 text-white shadow-lg shadow-orange-500/20">
+                <Rocket className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-foreground flex items-center gap-1.5">
+                  Osiągnąłeś limit pacjentów
+                  <Zap className="h-3.5 w-3.5 text-orange-500 fill-orange-500" />
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Ulepsz plan i rozwijaj praktykę bez ograniczeń
+                </p>
+              </div>
             </div>
-            <div>
-              <p className="font-medium text-foreground text-sm">Porada dnia</p>
-              <p className="text-xs text-muted-foreground mt-1">
-                Personalizuj zestawy dla każdego pacjenta - dostosuj liczbę serii i powtórzeń do ich możliwości.
-              </p>
-            </div>
+            <Link href="/subscription">
+              <Button
+                size="sm"
+                className="gap-1.5 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 border-0 shadow-lg shadow-orange-500/20 text-white"
+              >
+                <Sparkles className="h-3.5 w-3.5" />
+                Ulepsz plan
+                <ArrowRight className="h-3.5 w-3.5" />
+              </Button>
+            </Link>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      )}
 
-      {/* Assignment Wizard - from dashboard, user picks set first, then patients */}
+      {/* Assignment Wizard */}
       {organizationId && therapistId && (
         <AssignmentWizard
           open={isAssignWizardOpen}
