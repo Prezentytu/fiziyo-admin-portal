@@ -4,19 +4,19 @@ import { useState } from 'react';
 import { useQuery, useMutation } from '@apollo/client/react';
 import { useUser } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
-import { Plus, Dumbbell, LayoutGrid, List } from 'lucide-react';
+import { Plus, Dumbbell, LayoutGrid, List, Search } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { SearchInput } from '@/components/shared/SearchInput';
+import { Input } from '@/components/ui/input';
 import { LoadingState } from '@/components/shared/LoadingState';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { ExerciseCard, Exercise } from '@/components/exercises/ExerciseCard';
 import { ExerciseDialog } from '@/components/exercises/ExerciseDialog';
+import { cn } from '@/lib/utils';
 
 import { GET_ORGANIZATION_EXERCISES_QUERY } from '@/graphql/queries/exercises.queries';
 import { GET_EXERCISE_TAGS_BY_ORGANIZATION_QUERY } from '@/graphql/queries/exerciseTags.queries';
@@ -85,6 +85,9 @@ export default function ExercisesPage() {
   const tagsMap = createTagsMap(tags, categories);
   const exercises = mapExercisesWithTags(rawExercises, tagsMap);
 
+  // Stats
+  const totalCount = exercises.length;
+
   // Filter exercises
   const filteredExercises = exercises.filter(
     (exercise) =>
@@ -109,8 +112,8 @@ export default function ExercisesPage() {
       });
       toast.success('Ćwiczenie zostało usunięte');
       setDeletingExercise(null);
-    } catch (error) {
-      console.error('Błąd podczas usuwania:', error);
+    } catch (err) {
+      console.error('Błąd podczas usuwania:', err);
       toast.error('Nie udało się usunąć ćwiczenia');
     }
   };
@@ -130,49 +133,120 @@ export default function ExercisesPage() {
 
   return (
     <div className="space-y-6">
-      {/* Page header */}
+      {/* Compact Header with Search */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold">Ćwiczenia</h1>
-          <p className="text-muted-foreground text-sm mt-1">Zarządzaj biblioteką ćwiczeń</p>
-        </div>
-        <Button onClick={() => setIsDialogOpen(true)} disabled={!organizationId}>
-          <Plus className="mr-2 h-4 w-4" />
-          Dodaj ćwiczenie
-        </Button>
-      </div>
-
-      {/* Filters bar */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-3 flex-1">
-          <SearchInput
+        <h1 className="text-2xl font-bold text-foreground">Ćwiczenia</h1>
+        <div className="relative w-full sm:w-72">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
             value={searchQuery}
-            onChange={setSearchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Szukaj ćwiczeń..."
-            className="max-w-sm"
+            className="pl-9 bg-surface border-border/60"
           />
-          <Badge variant="secondary" className="hidden sm:flex text-xs">
-            {filteredExercises.length} z {exercises.length}
-          </Badge>
+        </div>
+      </div>
+
+      {/* Hero Action + Stats + View Toggle */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-stretch">
+        {/* Hero Action - Dodaj ćwiczenie */}
+        <button
+          onClick={() => setIsDialogOpen(true)}
+          disabled={!organizationId}
+          className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary via-primary to-primary-dark p-5 text-left transition-all duration-300 hover:shadow-xl hover:shadow-primary/20 hover:scale-[1.02] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex-1 sm:max-w-sm"
+        >
+          <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+          <div className="absolute -top-24 -right-24 w-48 h-48 bg-white/10 rounded-full blur-3xl group-hover:bg-white/20 transition-all duration-500" />
+          
+          <div className="relative flex items-center gap-4">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm shrink-0 group-hover:scale-110 transition-transform duration-300">
+              <Dumbbell className="h-5 w-5 text-white" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <h3 className="text-base font-bold text-white">
+                Dodaj ćwiczenie
+              </h3>
+              <p className="text-sm text-white/70">
+                Nowe ćwiczenie w bibliotece
+              </p>
+            </div>
+            <Plus className="h-5 w-5 text-white/60 group-hover:text-white transition-colors shrink-0" />
+          </div>
+        </button>
+
+        {/* Stats Card */}
+        <div className="rounded-2xl border border-border/40 bg-surface/50 p-5 flex items-center gap-4 flex-1 sm:max-w-xs">
+          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-secondary/10 shrink-0">
+            <Dumbbell className="h-5 w-5 text-secondary" />
+          </div>
+          <div>
+            <p className="text-2xl font-bold text-foreground">{totalCount}</p>
+            <p className="text-xs text-muted-foreground">Ćwiczeń w bibliotece</p>
+          </div>
         </div>
 
-        <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as 'grid' | 'list')}>
-          <TabsList>
-            <TabsTrigger value="grid">
+        {/* View Toggle */}
+        <div className="rounded-2xl border border-border/40 bg-surface/50 p-3 flex items-center gap-2 sm:flex-col sm:justify-center">
+          <span className="text-xs text-muted-foreground sm:hidden">Widok:</span>
+          <div className="flex gap-1">
+            <button
+              onClick={() => setViewMode('grid')}
+              className={cn(
+                'p-2 rounded-lg transition-all',
+                viewMode === 'grid'
+                  ? 'bg-primary text-primary-foreground'
+                  : 'text-muted-foreground hover:bg-surface-light hover:text-foreground'
+              )}
+              title="Widok siatki"
+            >
               <LayoutGrid className="h-4 w-4" />
-            </TabsTrigger>
-            <TabsTrigger value="list">
+            </button>
+            <button
+              onClick={() => setViewMode('list')}
+              className={cn(
+                'p-2 rounded-lg transition-all',
+                viewMode === 'list'
+                  ? 'bg-primary text-primary-foreground'
+                  : 'text-muted-foreground hover:bg-surface-light hover:text-foreground'
+              )}
+              title="Widok listy"
+            >
               <List className="h-4 w-4" />
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
+            </button>
+          </div>
+        </div>
       </div>
+
+      {/* Results info */}
+      {searchQuery && (
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <span>Wyniki:</span>
+          <Badge variant="secondary" className="text-xs">
+            {filteredExercises.length} z {totalCount}
+          </Badge>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-6 px-2 text-xs"
+            onClick={() => setSearchQuery('')}
+          >
+            Wyczyść wyszukiwanie
+          </Button>
+        </div>
+      )}
 
       {/* Content */}
       {loading ? (
-        <LoadingState type="card" count={6} />
+        <div className={cn(
+          viewMode === 'grid' 
+            ? 'grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' 
+            : 'space-y-2',
+          'animate-stagger'
+        )}>
+          <LoadingState type={viewMode === 'grid' ? 'card' : 'row'} count={6} />
+        </div>
       ) : filteredExercises.length === 0 ? (
-        <Card className="border-dashed">
+        <Card className="border-dashed border-border/60">
           <CardContent className="py-16">
             <EmptyState
               icon={Dumbbell}
@@ -186,7 +260,7 @@ export default function ExercisesPage() {
           </CardContent>
         </Card>
       ) : viewMode === 'grid' ? (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 animate-stagger">
           {filteredExercises.map((exercise) => (
             <ExerciseCard
               key={exercise.id}
@@ -199,7 +273,7 @@ export default function ExercisesPage() {
           ))}
         </div>
       ) : (
-        <div className="space-y-2">
+        <div className="space-y-2 animate-stagger">
           {filteredExercises.map((exercise) => (
             <ExerciseCard
               key={exercise.id}

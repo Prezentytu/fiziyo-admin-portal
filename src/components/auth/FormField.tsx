@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import { forwardRef, InputHTMLAttributes } from "react";
-import { cn } from "@/lib/utils";
+import { forwardRef, InputHTMLAttributes } from 'react';
+import { cn } from '@/lib/utils';
 
 interface FormFieldProps extends InputHTMLAttributes<HTMLInputElement> {
   label: string;
@@ -14,23 +14,16 @@ export const FormField = forwardRef<HTMLInputElement, FormFieldProps>(
     return (
       <div className="mb-5">
         <div className="mb-2 flex items-center">
-          <label className="text-sm font-semibold text-foreground">
-            {label}
-          </label>
-          {optional && (
-            <span className="ml-2 text-xs text-muted-foreground">
-              (opcjonalne)
-            </span>
-          )}
+          <label className="text-sm font-semibold text-foreground">{label}</label>
         </div>
         <input
           ref={ref}
           className={cn(
-            "h-12 w-full rounded-xl bg-surface-light px-4 text-base text-foreground",
-            "placeholder:text-muted-foreground",
-            "focus:outline-none focus:ring-2 focus:ring-primary/50",
-            "transition-all duration-200",
-            error && "ring-2 ring-error",
+            'h-12 w-full rounded-xl bg-surface-light px-4 text-base text-foreground',
+            'placeholder:text-muted-foreground',
+            'focus:outline-none focus:ring-2 focus:ring-primary/50',
+            'transition-all duration-200',
+            error && 'ring-2 ring-error',
             className
           )}
           {...props}
@@ -41,9 +34,4 @@ export const FormField = forwardRef<HTMLInputElement, FormFieldProps>(
   }
 );
 
-FormField.displayName = "FormField";
-
-
-
-
-
+FormField.displayName = 'FormField';

@@ -48,6 +48,7 @@ interface PatientFormProps {
   onCancel?: () => void;
   isLoading?: boolean;
   submitLabel?: string;
+  onDirtyChange?: (isDirty: boolean) => void;
 }
 
 export function PatientForm({
@@ -56,6 +57,7 @@ export function PatientForm({
   onCancel,
   isLoading = false,
   submitLabel = "Zapisz",
+  onDirtyChange,
 }: PatientFormProps) {
   const form = useForm<PatientFormValues>({
     resolver: zodResolver(patientFormSchema),
@@ -69,6 +71,13 @@ export function PatientForm({
       ...defaultValues,
     },
   });
+
+  const isDirty = form.formState.isDirty;
+
+  // Notify parent about dirty state
+  React.useEffect(() => {
+    onDirtyChange?.(isDirty);
+  }, [isDirty, onDirtyChange]);
 
   const handleSubmit = async (values: PatientFormValues) => {
     try {

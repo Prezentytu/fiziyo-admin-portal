@@ -1,18 +1,19 @@
-"use client";
+'use client';
 
-import { Card, CardContent } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Badge } from "@/components/ui/badge";
-import { Users, FolderKanban, TrendingUp, Clock } from "lucide-react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import Link from "next/link";
-import { cn } from "@/lib/utils";
+import { Card, CardContent } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Badge } from '@/components/ui/badge';
+import { Users, FolderKanban, TrendingUp, Clock, Wrench } from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import Link from 'next/link';
+import { cn } from '@/lib/utils';
 
 interface Patient {
   id: string;
   fullname?: string;
   image?: string;
   assignmentStatus?: string;
+  isShadowUser?: boolean;
 }
 
 interface PatientQuickStatsProps {
@@ -31,11 +32,11 @@ export function PatientQuickStats({
   isLoading = false,
 }: PatientQuickStatsProps) {
   const getInitials = (name?: string) => {
-    if (!name) return "?";
+    if (!name) return '?';
     return name
-      .split(" ")
+      .split(' ')
       .map((n) => n[0])
-      .join("")
+      .join('')
       .slice(0, 2)
       .toUpperCase();
   };
@@ -72,12 +73,8 @@ export function PatientQuickStats({
           <div className="flex items-center justify-between mb-4">
             <div>
               <p className="text-sm font-medium text-muted-foreground">Aktywni pacjenci</p>
-              <div className="text-3xl font-bold text-foreground mt-1">
-                {activePatients}
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                z {totalPatients} wszystkich
-              </p>
+              <div className="text-3xl font-bold text-foreground mt-1">{activePatients}</div>
+              <p className="text-xs text-muted-foreground mt-1">z {totalPatients} wszystkich</p>
             </div>
             <div className="h-14 w-14 rounded-xl bg-info/10 flex items-center justify-center">
               <Users className="h-7 w-7 text-info" />
@@ -108,15 +105,32 @@ export function PatientQuickStats({
                   href={`/patients/${patient.id}`}
                   className="flex items-center gap-2 group hover:opacity-80 transition-opacity"
                 >
-                  <Avatar className="h-8 w-8">
-                    <AvatarImage src={patient.image} />
-                    <AvatarFallback className="bg-gradient-to-br from-info to-blue-600 text-white text-xs font-semibold">
-                      {getInitials(patient.fullname)}
-                    </AvatarFallback>
-                  </Avatar>
-                  <span className="text-sm text-foreground truncate flex-1">
-                    {patient.fullname || "Nieznany"}
-                  </span>
+                  <div className="relative">
+                    <Avatar
+                      className={cn(
+                        'h-8 w-8 ring-2 transition-all',
+                        patient.isShadowUser ? 'ring-muted-foreground/20' : 'ring-border/30'
+                      )}
+                    >
+                      <AvatarImage src={patient.image} />
+                      <AvatarFallback
+                        className={cn(
+                          'text-xs font-semibold',
+                          patient.isShadowUser
+                            ? 'bg-muted-foreground/60 text-white'
+                            : 'bg-gradient-to-br from-info to-blue-600 text-white'
+                        )}
+                      >
+                        {getInitials(patient.fullname)}
+                      </AvatarFallback>
+                    </Avatar>
+                    {patient.isShadowUser && (
+                      <div className="absolute -top-0.5 -right-0.5 h-3.5 w-3.5 rounded-full bg-muted-foreground/80 flex items-center justify-center ring-1 ring-card">
+                        <Wrench className="h-2 w-2 text-white" />
+                      </div>
+                    )}
+                  </div>
+                  <span className="text-sm text-foreground truncate flex-1">{patient.fullname || 'Nieznany'}</span>
                 </Link>
               ))
             ) : (
@@ -132,12 +146,8 @@ export function PatientQuickStats({
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-muted-foreground">Przypisania</p>
-              <div className="text-2xl font-bold text-foreground mt-1">
-                {totalAssignments}
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                zestawów ćwiczeń
-              </p>
+              <div className="text-2xl font-bold text-foreground mt-1">{totalAssignments}</div>
+              <p className="text-xs text-muted-foreground mt-1">zestawów ćwiczeń</p>
             </div>
             <div className="h-12 w-12 rounded-xl bg-secondary/10 flex items-center justify-center">
               <FolderKanban className="h-6 w-6 text-secondary" />
@@ -148,7 +158,3 @@ export function PatientQuickStats({
     </div>
   );
 }
-
-
-
-

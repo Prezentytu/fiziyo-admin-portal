@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useState, useCallback } from "react";
 import { useMutation } from "@apollo/client/react";
 import { toast } from "sonner";
 
@@ -11,6 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { ExerciseForm, ExerciseFormValues } from "./ExerciseForm";
 import { CREATE_EXERCISE_MUTATION, UPDATE_EXERCISE_MUTATION } from "@/graphql/mutations/exercises.mutations";
 import { GET_ORGANIZATION_EXERCISES_QUERY } from "@/graphql/queries/exercises.queries";
@@ -32,6 +34,29 @@ export function ExerciseDialog({
   onSuccess,
 }: ExerciseDialogProps) {
   const isEditing = !!exercise;
+  const [showCloseConfirm, setShowCloseConfirm] = useState(false);
+  const [formIsDirty, setFormIsDirty] = useState(false);
+
+  const handleCloseAttempt = useCallback(() => {
+    if (formIsDirty) {
+      setShowCloseConfirm(true);
+    } else {
+      onOpenChange(false);
+    }
+  }, [formIsDirty, onOpenChange]);
+
+  const handleConfirmClose = useCallback(() => {
+    setShowCloseConfirm(false);
+    setFormIsDirty(false);
+    onOpenChange(false);
+  }, [onOpenChange]);
+
+  // Reset dirty state when dialog closes
+  React.useEffect(() => {
+    if (!open) {
+      setFormIsDirty(false);
+    }
+  }, [open]);
 
   const [createExercise, { loading: creating }] = useMutation(CREATE_EXERCISE_MUTATION, {
     refetchQueries: [
@@ -114,8 +139,15 @@ export function ExerciseDialog({
     : undefined;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+    <Dialog open={open} onOpenChange={() => handleCloseAttempt()}>
+      <DialogContent
+        className="max-w-2xl max-h-[90vh] overflow-y-auto"
+        onInteractOutside={(e) => e.preventDefault()}
+        onEscapeKeyDown={(e) => {
+          e.preventDefault();
+          handleCloseAttempt();
+        }}
+      >
         <DialogHeader>
           <DialogTitle>
             {isEditing ? "Edytuj ćwiczenie" : "Nowe ćwiczenie"}
@@ -129,11 +161,23 @@ export function ExerciseDialog({
         <ExerciseForm
           defaultValues={defaultValues}
           onSubmit={handleSubmit}
-          onCancel={() => onOpenChange(false)}
+          onCancel={handleCloseAttempt}
           isLoading={creating || updating}
           submitLabel={isEditing ? "Zapisz zmiany" : "Dodaj ćwiczenie"}
+          onDirtyChange={setFormIsDirty}
         />
       </DialogContent>
+
+      <ConfirmDialog
+        open={showCloseConfirm}
+        onOpenChange={setShowCloseConfirm}
+        title="Porzucić zmiany?"
+        description="Masz niezapisane zmiany. Czy na pewno chcesz zamknąć bez zapisywania?"
+        confirmText="Tak, zamknij"
+        cancelText="Kontynuuj edycję"
+        variant="destructive"
+        onConfirm={handleConfirmClose}
+      />
     </Dialog>
   );
 }

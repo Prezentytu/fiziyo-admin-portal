@@ -1,24 +1,14 @@
-"use client";
+'use client';
 
-import { useState, useCallback, useMemo, useEffect } from "react";
-import { useSignUp } from "@clerk/nextjs";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
-import {
-  ArrowLeft,
-  ArrowRight,
-  Loader2,
-  Mail,
-  Lock,
-  User,
-  Phone,
-  Building2,
-  Check,
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { cn } from "@/lib/utils";
+import { useState, useCallback, useMemo, useEffect } from 'react';
+import { useSignUp } from '@clerk/nextjs';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { ArrowLeft, ArrowRight, Loader2, Mail, Lock, User, Phone, Building2, Check } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { cn } from '@/lib/utils';
 
 interface FormData {
   email: string;
@@ -32,9 +22,9 @@ interface FormData {
 }
 
 const STEPS = [
-  { id: 1, name: "Email" },
-  { id: 2, name: "Hasło" },
-  { id: 3, name: "Dane" },
+  { id: 1, name: 'Email' },
+  { id: 2, name: 'Hasło' },
+  { id: 3, name: 'Dane' },
 ];
 
 function StepIndicator({ currentStep }: { currentStep: number }) {
@@ -44,22 +34,19 @@ function StepIndicator({ currentStep }: { currentStep: number }) {
         <div key={step.id} className="flex items-center">
           <div
             className={cn(
-              "flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium transition-all",
+              'flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium transition-all',
               currentStep > step.id
-                ? "bg-primary text-primary-foreground"
+                ? 'bg-primary text-primary-foreground'
                 : currentStep === step.id
-                ? "bg-primary text-primary-foreground"
-                : "bg-surface-light text-muted-foreground"
+                ? 'bg-primary text-primary-foreground'
+                : 'bg-surface-light text-muted-foreground'
             )}
           >
             {currentStep > step.id ? <Check className="h-4 w-4" /> : step.id}
           </div>
           {index < STEPS.length - 1 && (
             <div
-              className={cn(
-                "mx-2 h-0.5 w-8 transition-colors",
-                currentStep > step.id ? "bg-primary" : "bg-border"
-              )}
+              className={cn('mx-2 h-0.5 w-8 transition-colors', currentStep > step.id ? 'bg-primary' : 'bg-border')}
             />
           )}
         </div>
@@ -69,7 +56,7 @@ function StepIndicator({ currentStep }: { currentStep: number }) {
 }
 
 function generatePracticeName(firstName: string, lastName: string): string {
-  if (!firstName.trim() || !lastName.trim()) return "";
+  if (!firstName.trim() || !lastName.trim()) return '';
   return `${firstName.trim()} ${lastName.trim()} - Fizjoterapia`;
 }
 
@@ -79,17 +66,17 @@ export default function CompanyRegistrationPage() {
 
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState<FormData>({
-    email: "",
-    password: "",
-    confirmPassword: "",
-    firstName: "",
-    lastName: "",
-    phone: "",
-    companyName: "",
+    email: '',
+    password: '',
+    confirmPassword: '',
+    firstName: '',
+    lastName: '',
+    phone: '',
+    companyName: '',
     companyNameEdited: false,
   });
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState('');
 
   const generatedName = useMemo(
     () => generatePracticeName(formData.firstName, formData.lastName),
@@ -102,13 +89,10 @@ export default function CompanyRegistrationPage() {
     }
   }, [generatedName, formData.companyNameEdited]);
 
-  const handleInputChange = useCallback(
-    (field: keyof FormData, value: string) => {
-      setFormData((prev) => ({ ...prev, [field]: value }));
-      setError("");
-    },
-    []
-  );
+  const handleInputChange = useCallback((field: keyof FormData, value: string) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+    setError('');
+  }, []);
 
   const handleCompanyNameChange = useCallback((value: string) => {
     setFormData((prev) => ({
@@ -116,17 +100,17 @@ export default function CompanyRegistrationPage() {
       companyName: value,
       companyNameEdited: true,
     }));
-    setError("");
+    setError('');
   }, []);
 
   const validateStep1 = useCallback((): boolean => {
     if (!formData.email.trim()) {
-      setError("Podaj adres email");
+      setError('Podaj adres email');
       return false;
     }
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(formData.email)) {
-      setError("Podaj poprawny adres email");
+      setError('Podaj poprawny adres email');
       return false;
     }
     return true;
@@ -134,15 +118,15 @@ export default function CompanyRegistrationPage() {
 
   const validateStep2 = useCallback((): boolean => {
     if (!formData.password) {
-      setError("Podaj hasło");
+      setError('Podaj hasło');
       return false;
     }
     if (formData.password.length < 8) {
-      setError("Hasło musi mieć minimum 8 znaków");
+      setError('Hasło musi mieć minimum 8 znaków');
       return false;
     }
     if (formData.password !== formData.confirmPassword) {
-      setError("Hasła nie są identyczne");
+      setError('Hasła nie są identyczne');
       return false;
     }
     return true;
@@ -150,11 +134,11 @@ export default function CompanyRegistrationPage() {
 
   const validateStep3 = useCallback((): boolean => {
     if (!formData.firstName.trim()) {
-      setError("Podaj swoje imię");
+      setError('Podaj swoje imię');
       return false;
     }
     if (!formData.lastName.trim()) {
-      setError("Podaj swoje nazwisko");
+      setError('Podaj swoje nazwisko');
       return false;
     }
     return true;
@@ -163,17 +147,17 @@ export default function CompanyRegistrationPage() {
   const handleNextStep = useCallback(() => {
     if (currentStep === 1 && validateStep1()) {
       setCurrentStep(2);
-      setError("");
+      setError('');
     } else if (currentStep === 2 && validateStep2()) {
       setCurrentStep(3);
-      setError("");
+      setError('');
     }
   }, [currentStep, validateStep1, validateStep2]);
 
   const handlePrevStep = useCallback(() => {
     if (currentStep > 1) {
       setCurrentStep((prev) => prev - 1);
-      setError("");
+      setError('');
     }
   }, [currentStep]);
 
@@ -182,13 +166,13 @@ export default function CompanyRegistrationPage() {
     if (!validateStep3()) return;
 
     if (!isLoaded || !signUp) {
-      setError("System rejestracji niedostępny. Spróbuj ponownie później.");
+      setError('System rejestracji niedostępny. Spróbuj ponownie później.');
       return;
     }
 
     try {
       setLoading(true);
-      setError("");
+      setError('');
 
       await signUp.create({
         emailAddress: formData.email,
@@ -203,23 +187,22 @@ export default function CompanyRegistrationPage() {
             phone: formData.phone.trim(),
             companyName: formData.companyName.trim() || generatedName,
             isCompanyAccount: true,
-            organizationType: "individual",
+            organizationType: 'individual',
           },
         });
       } catch (updateError) {
-        console.error("Error setting company metadata:", updateError);
+        console.error('Error setting company metadata:', updateError);
       }
 
-      await signUp.prepareEmailAddressVerification({ strategy: "email_code" });
-      router.push("/verify");
+      await signUp.prepareEmailAddressVerification({ strategy: 'email_code' });
+      router.push('/verify');
     } catch (err) {
-      console.error("Registration error:", err);
+      console.error('Registration error:', err);
       const error = err as {
         errors?: Array<{ message?: string }>;
         message?: string;
       };
-      const errorMessage =
-        error?.errors?.[0]?.message || error?.message || "Nieznany błąd";
+      const errorMessage = error?.errors?.[0]?.message || error?.message || 'Nieznany błąd';
       setError(`Błąd rejestracji: ${errorMessage}`);
     } finally {
       setLoading(false);
@@ -248,13 +231,11 @@ export default function CompanyRegistrationPage() {
 
       {/* Header */}
       <div className="space-y-2">
-        <h1 className="text-2xl font-bold tracking-tight text-foreground">
-          Utwórz konto firmowe
-        </h1>
+        <h1 className="text-2xl font-bold tracking-tight text-foreground">Utwórz konto firmowe</h1>
         <p className="text-muted-foreground">
-          {currentStep === 1 && "Podaj adres email do logowania"}
-          {currentStep === 2 && "Utwórz bezpieczne hasło"}
-          {currentStep === 3 && "Uzupełnij dane osobowe i firmy"}
+          {currentStep === 1 && 'Podaj adres email do logowania'}
+          {currentStep === 2 && 'Utwórz bezpieczne hasło'}
+          {currentStep === 3 && 'Uzupełnij dane osobowe i firmy'}
         </p>
       </div>
 
@@ -284,7 +265,7 @@ export default function CompanyRegistrationPage() {
                   type="email"
                   placeholder="jan@firma.pl"
                   value={formData.email}
-                  onChange={(e) => handleInputChange("email", e.target.value)}
+                  onChange={(e) => handleInputChange('email', e.target.value)}
                   className="h-11 pl-10"
                   autoComplete="email"
                   autoFocus
@@ -306,9 +287,7 @@ export default function CompanyRegistrationPage() {
                   type="password"
                   placeholder="Minimum 8 znaków"
                   value={formData.password}
-                  onChange={(e) =>
-                    handleInputChange("password", e.target.value)
-                  }
+                  onChange={(e) => handleInputChange('password', e.target.value)}
                   className="h-11 pl-10"
                   autoComplete="new-password"
                   autoFocus
@@ -325,9 +304,7 @@ export default function CompanyRegistrationPage() {
                   type="password"
                   placeholder="Powtórz hasło"
                   value={formData.confirmPassword}
-                  onChange={(e) =>
-                    handleInputChange("confirmPassword", e.target.value)
-                  }
+                  onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
                   className="h-11 pl-10"
                   autoComplete="new-password"
                 />
@@ -349,9 +326,7 @@ export default function CompanyRegistrationPage() {
                     type="text"
                     placeholder="Jan"
                     value={formData.firstName}
-                    onChange={(e) =>
-                      handleInputChange("firstName", e.target.value)
-                    }
+                    onChange={(e) => handleInputChange('firstName', e.target.value)}
                     className="h-11 pl-10"
                     autoComplete="given-name"
                     autoFocus
@@ -368,9 +343,7 @@ export default function CompanyRegistrationPage() {
                     type="text"
                     placeholder="Kowalski"
                     value={formData.lastName}
-                    onChange={(e) =>
-                      handleInputChange("lastName", e.target.value)
-                    }
+                    onChange={(e) => handleInputChange('lastName', e.target.value)}
                     className="h-11 pl-10"
                     autoComplete="family-name"
                   />
@@ -379,10 +352,7 @@ export default function CompanyRegistrationPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="phone">
-                Telefon{" "}
-                <span className="text-muted-foreground">(opcjonalnie)</span>
-              </Label>
+              <Label htmlFor="phone">Telefon </Label>
               <div className="relative">
                 <Phone className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
@@ -390,7 +360,7 @@ export default function CompanyRegistrationPage() {
                   type="tel"
                   placeholder="+48 123 456 789"
                   value={formData.phone}
-                  onChange={(e) => handleInputChange("phone", e.target.value)}
+                  onChange={(e) => handleInputChange('phone', e.target.value)}
                   className="h-11 pl-10"
                   autoComplete="tel"
                 />
@@ -410,9 +380,7 @@ export default function CompanyRegistrationPage() {
                   className="h-11 pl-10"
                 />
               </div>
-              <p className="text-xs text-muted-foreground">
-                Możesz zmienić tę nazwę później w ustawieniach
-              </p>
+              <p className="text-xs text-muted-foreground">Możesz zmienić tę nazwę później w ustawieniach</p>
             </div>
           </div>
         )}
@@ -421,19 +389,11 @@ export default function CompanyRegistrationPage() {
         <div id="clerk-captcha" className="mt-4" />
 
         {/* Error message */}
-        {error && (
-          <div className="mt-4 rounded-lg bg-error/10 p-3 text-sm text-error">
-            {error}
-          </div>
-        )}
+        {error && <div className="mt-4 rounded-lg bg-error/10 p-3 text-sm text-error">{error}</div>}
 
         {/* Actions */}
         <div className="mt-6">
-          <Button
-            type="submit"
-            disabled={loading}
-            className="h-11 w-full rounded-xl text-base font-semibold"
-          >
+          <Button type="submit" disabled={loading} className="h-11 w-full rounded-xl text-base font-semibold">
             {loading ? (
               <Loader2 className="h-5 w-5 animate-spin" />
             ) : currentStep < 3 ? (
@@ -442,7 +402,7 @@ export default function CompanyRegistrationPage() {
                 <ArrowRight className="ml-2 h-4 w-4" />
               </>
             ) : (
-              "Utwórz konto"
+              'Utwórz konto'
             )}
           </Button>
         </div>
@@ -450,19 +410,11 @@ export default function CompanyRegistrationPage() {
 
       {/* Login link */}
       <p className="text-center text-sm text-muted-foreground">
-        Masz już konto?{" "}
-        <Link
-          href="/sign-in"
-          className="font-semibold text-primary hover:text-primary-light"
-        >
+        Masz już konto?{' '}
+        <Link href="/sign-in" className="font-semibold text-primary hover:text-primary-light">
           Zaloguj się
         </Link>
       </p>
     </div>
   );
 }
-
-
-
-
-

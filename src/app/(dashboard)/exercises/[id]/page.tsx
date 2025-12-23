@@ -16,17 +16,32 @@ import {
   FolderPlus,
   ArrowLeftRight,
   FileText,
+  MoreHorizontal,
+  ChevronDown,
+  Timer,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { LoadingState } from '@/components/shared/LoadingState';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { ExerciseDialog } from '@/components/exercises/ExerciseDialog';
 import { ColorBadge } from '@/components/shared/ColorBadge';
 import { ImagePlaceholder } from '@/components/shared/ImagePlaceholder';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible';
+import { cn } from '@/lib/utils';
 
 import { GET_EXERCISE_BY_ID_QUERY, GET_ORGANIZATION_EXERCISES_QUERY } from '@/graphql/queries/exercises.queries';
 import { GET_EXERCISE_TAGS_BY_ORGANIZATION_QUERY } from '@/graphql/queries/exerciseTags.queries';
@@ -62,6 +77,8 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  const [isTimesOpen, setIsTimesOpen] = useState(false);
+  const [isNotesOpen, setIsNotesOpen] = useState(false);
 
   // Get user data for organizationId
   const { data: userData } = useQuery(GET_USER_BY_CLERK_ID_QUERY, {
@@ -115,8 +132,8 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
       });
       toast.success('Ćwiczenie zostało usunięte');
       router.push('/exercises');
-    } catch (error) {
-      console.error('Błąd podczas usuwania:', error);
+    } catch (err) {
+      console.error('Błąd podczas usuwania:', err);
       toast.error('Nie udało się usunąć ćwiczenia');
     }
   };
@@ -185,202 +202,283 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
     (exercise.restReps && exercise.restReps > 0) ||
     (exercise.preparationTime && exercise.preparationTime > 0);
 
+  const hasTags = (exercise.mainTags?.length ?? 0) > 0 || (exercise.additionalTags?.length ?? 0) > 0;
+
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <Button variant="ghost" onClick={() => router.push('/exercises')} className="w-fit">
-          <ArrowLeft className="mr-2 h-4 w-4" />
+      {/* Compact Header */}
+      <div className="flex items-center justify-between">
+        <Button variant="ghost" onClick={() => router.push('/exercises')} className="gap-2">
+          <ArrowLeft className="h-4 w-4" />
           Powrót do ćwiczeń
         </Button>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={handleAddToSet}>
-            <FolderPlus className="mr-2 h-4 w-4" />
-            Dodaj do zestawu
-          </Button>
-          <Button variant="outline" size="sm" onClick={() => setIsEditDialogOpen(true)}>
-            <Pencil className="mr-2 h-4 w-4" />
-            Edytuj
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setIsDeleteDialogOpen(true)}
-            className="text-destructive hover:text-destructive hover:bg-destructive/10"
-          >
-            <Trash2 className="mr-2 h-4 w-4" />
-            Usuń
-          </Button>
-        </div>
+        
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm" className="gap-2">
+              Opcje
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => setIsEditDialogOpen(true)}>
+              <Pencil className="mr-2 h-4 w-4" />
+              Edytuj
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onClick={() => setIsDeleteDialogOpen(true)}
+              className="text-destructive focus:text-destructive"
+            >
+              <Trash2 className="mr-2 h-4 w-4" />
+              Usuń
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
-      {/* Main content */}
-      <div className="grid gap-6 lg:grid-cols-3">
-        {/* Left column - Image */}
-        <div className="space-y-4">
-          <Card>
-            <CardContent className="p-4">
-              <div className="relative aspect-square rounded-lg overflow-hidden bg-surface-light">
-                {currentImage ? (
-                  <img src={currentImage} alt={exercise.name} className="w-full h-full object-contain" />
-                ) : (
-                  <ImagePlaceholder type="exercise" className="h-full" iconClassName="h-16 w-16" />
+      {/* Hero Section: Image + Action + Stats */}
+      <div className="grid gap-4 lg:grid-cols-12">
+        {/* Hero Image */}
+        <div className="lg:col-span-7 space-y-3">
+          <div className="relative aspect-video rounded-2xl overflow-hidden bg-surface-light">
+            {currentImage ? (
+              <>
+                <img 
+                  src={currentImage} 
+                  alt={exercise.name} 
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+              </>
+            ) : (
+              <ImagePlaceholder type="exercise" className="h-full" iconClassName="h-16 w-16" />
+            )}
+            
+            {/* Title overlay */}
+            <div className="absolute bottom-0 left-0 right-0 p-5">
+              <div className="flex items-center gap-2 mb-2">
+                {exercise.type && (
+                  <Badge className="bg-primary/90 text-primary-foreground border-0">
+                    {getTypeLabel(exercise.type)}
+                  </Badge>
                 )}
-                {exercise.type && <Badge className="absolute top-3 left-3">{getTypeLabel(exercise.type)}</Badge>}
+                <Badge variant="outline" className="bg-black/40 text-white border-white/20 backdrop-blur-sm">
+                  <ArrowLeftRight className="mr-1 h-3 w-3" />
+                  {getSideLabel(exercise.exerciseSide)}
+                </Badge>
               </div>
+              <h1 className="text-2xl font-bold text-white">{exercise.name}</h1>
+            </div>
+          </div>
 
-              {/* Thumbnails */}
-              {allImages.length > 1 && (
-                <div className="flex gap-2 mt-4 overflow-x-auto">
-                  {allImages.map((img, index) => (
-                    <button
-                      key={index}
-                      onClick={() => setSelectedImageIndex(index)}
-                      className={`shrink-0 w-12 h-12 rounded-md overflow-hidden border-2 transition-all ${
-                        selectedImageIndex === index
-                          ? 'border-primary'
-                          : 'border-transparent opacity-60 hover:opacity-100'
-                      }`}
-                    >
-                      <img src={img} alt={`${exercise.name} ${index + 1}`} className="w-full h-full object-cover" />
-                    </button>
-                  ))}
-                </div>
-              )}
-
-              {/* Video link */}
+          {/* Thumbnails + Video */}
+          {(allImages.length > 1 || exercise.videoUrl) && (
+            <div className="flex gap-2 overflow-x-auto pb-1">
+              {allImages.map((img, index) => (
+                <button
+                  key={index}
+                  onClick={() => setSelectedImageIndex(index)}
+                  className={cn(
+                    'shrink-0 w-14 h-14 rounded-lg overflow-hidden border-2 transition-all',
+                    selectedImageIndex === index
+                      ? 'border-primary ring-2 ring-primary/20'
+                      : 'border-border/40 opacity-60 hover:opacity-100 hover:border-border'
+                  )}
+                >
+                  <img src={img} alt={`${exercise.name} ${index + 1}`} className="w-full h-full object-cover" />
+                </button>
+              ))}
               {exercise.videoUrl && (
                 <a
                   href={exercise.videoUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-2 mt-4 p-3 rounded-lg border border-border hover:bg-surface-light transition-colors"
+                  className="shrink-0 w-14 h-14 rounded-lg overflow-hidden border-2 border-border/40 bg-surface flex items-center justify-center hover:border-primary hover:bg-primary/10 transition-all group"
                 >
-                  <Play className="h-4 w-4 text-primary" />
-                  <span className="text-sm font-medium">Obejrzyj wideo</span>
-                  <ExternalLink className="h-3 w-3 ml-auto text-muted-foreground" />
+                  <Play className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
                 </a>
               )}
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Middle column - Info */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Title and description */}
-          <div>
-            <h1 className="text-2xl font-semibold">{exercise.name}</h1>
-            <p className="text-muted-foreground mt-2">{exercise.description || 'Brak opisu'}</p>
-          </div>
-
-          {/* Stats */}
-          <div className="flex flex-wrap gap-3">
-            {exercise.sets !== undefined && exercise.sets > 0 && (
-              <Badge variant="secondary" className="gap-1.5 py-1.5 px-3">
-                <Repeat className="h-3.5 w-3.5" />
-                {exercise.sets} serii
-              </Badge>
-            )}
-            {exercise.reps !== undefined && exercise.reps > 0 && (
-              <Badge variant="secondary" className="gap-1.5 py-1.5 px-3">
-                <Dumbbell className="h-3.5 w-3.5" />
-                {exercise.reps} powtórzeń
-              </Badge>
-            )}
-            {exercise.duration !== undefined && exercise.duration > 0 && (
-              <Badge variant="secondary" className="gap-1.5 py-1.5 px-3">
-                <Clock className="h-3.5 w-3.5" />
-                {exercise.duration}s
-              </Badge>
-            )}
-            <Badge variant="outline" className="gap-1.5 py-1.5 px-3">
-              <ArrowLeftRight className="h-3.5 w-3.5" />
-              {getSideLabel(exercise.exerciseSide)}
-            </Badge>
-          </div>
-
-          {/* Tags */}
-          {((exercise.mainTags?.length ?? 0) > 0 || (exercise.additionalTags?.length ?? 0) > 0) && (
-            <div className="flex flex-wrap gap-2">
-              {exercise.mainTags?.map((tag: string | ExerciseTag, index: number) => {
-                if (isTagObject(tag)) {
-                  return (
-                    <ColorBadge key={tag.id} color={tag.color}>
-                      {tag.name}
-                    </ColorBadge>
-                  );
-                }
-                return (
-                  <Badge key={index} variant="secondary">
-                    {tag}
-                  </Badge>
-                );
-              })}
-              {exercise.additionalTags?.map((tag: string | ExerciseTag, index: number) => {
-                if (isTagObject(tag)) {
-                  return (
-                    <ColorBadge key={tag.id} color={tag.color}>
-                      {tag.name}
-                    </ColorBadge>
-                  );
-                }
-                return (
-                  <Badge key={index} variant="outline">
-                    {tag}
-                  </Badge>
-                );
-              })}
             </div>
           )}
+        </div>
 
-          {/* Rest times */}
-          {hasRestTimes && (
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <Clock className="h-4 w-4 text-primary" />
-                  Czasy i przerwy
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="grid gap-2 sm:grid-cols-3">
-                {exercise.restSets !== undefined && exercise.restSets > 0 && (
-                  <div className="p-3 rounded-lg bg-surface-light">
-                    <p className="text-xs text-muted-foreground">Przerwa między seriami</p>
-                    <p className="font-semibold">{exercise.restSets}s</p>
-                  </div>
-                )}
-                {exercise.restReps !== undefined && exercise.restReps > 0 && (
-                  <div className="p-3 rounded-lg bg-surface-light">
-                    <p className="text-xs text-muted-foreground">Przerwa między powtórzeniami</p>
-                    <p className="font-semibold">{exercise.restReps}s</p>
-                  </div>
-                )}
-                {exercise.preparationTime !== undefined && exercise.preparationTime > 0 && (
-                  <div className="p-3 rounded-lg bg-surface-light">
-                    <p className="text-xs text-muted-foreground">Czas przygotowania</p>
-                    <p className="font-semibold">{exercise.preparationTime}s</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          )}
+        {/* Hero Action + Quick Stats */}
+        <div className="lg:col-span-5 flex flex-col gap-3">
+          {/* Hero Action - Dodaj do zestawu */}
+          <button
+            onClick={handleAddToSet}
+            className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary via-primary to-primary-dark p-5 text-left transition-all duration-300 hover:shadow-xl hover:shadow-primary/20 hover:scale-[1.02] cursor-pointer"
+          >
+            <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+            <div className="absolute -top-24 -right-24 w-48 h-48 bg-white/10 rounded-full blur-3xl group-hover:bg-white/20 transition-all duration-500" />
+            
+            <div className="relative flex items-center gap-4">
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm shrink-0 group-hover:scale-110 transition-transform duration-300">
+                <FolderPlus className="h-6 w-6 text-white" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <h3 className="text-lg font-bold text-white">
+                  Dodaj do zestawu
+                </h3>
+                <p className="text-sm text-white/70">
+                  Przypisz ćwiczenie do programu
+                </p>
+              </div>
+            </div>
+          </button>
 
-          {/* Notes */}
-          {exercise.notes && (
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <FileText className="h-4 w-4 text-primary" />
-                  Notatki
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground whitespace-pre-wrap text-sm">{exercise.notes}</p>
-              </CardContent>
-            </Card>
+          {/* Quick Stats */}
+          <div className="grid grid-cols-3 gap-2">
+            <div className="rounded-xl border border-border/40 bg-surface/50 p-4 text-center">
+              <Repeat className="h-5 w-5 text-primary mx-auto mb-1" />
+              <p className="text-xl font-bold text-foreground">
+                {exercise.sets !== undefined && exercise.sets > 0 ? exercise.sets : '—'}
+              </p>
+              <p className="text-xs text-muted-foreground">Serii</p>
+            </div>
+            <div className="rounded-xl border border-border/40 bg-surface/50 p-4 text-center">
+              <Dumbbell className="h-5 w-5 text-secondary mx-auto mb-1" />
+              <p className="text-xl font-bold text-foreground">
+                {exercise.reps !== undefined && exercise.reps > 0 ? exercise.reps : '—'}
+              </p>
+              <p className="text-xs text-muted-foreground">Powtórzeń</p>
+            </div>
+            <div className="rounded-xl border border-border/40 bg-surface/50 p-4 text-center">
+              <Clock className="h-5 w-5 text-info mx-auto mb-1" />
+              <p className="text-xl font-bold text-foreground">
+                {exercise.duration !== undefined && exercise.duration > 0 ? `${exercise.duration}s` : '—'}
+              </p>
+              <p className="text-xs text-muted-foreground">Czas</p>
+            </div>
+          </div>
+
+          {/* Video link (if no thumbnails shown) */}
+          {exercise.videoUrl && allImages.length <= 1 && (
+            <a
+              href={exercise.videoUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-3 p-4 rounded-xl border border-border/40 bg-surface/50 hover:bg-surface-light hover:border-primary/30 transition-all group"
+            >
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors">
+                <Play className="h-5 w-5 text-primary" />
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-medium text-foreground">Obejrzyj wideo</p>
+                <p className="text-xs text-muted-foreground">Instrukcja wykonania</p>
+              </div>
+              <ExternalLink className="h-4 w-4 text-muted-foreground" />
+            </a>
           )}
         </div>
       </div>
+
+      {/* Description */}
+      {exercise.description && (
+        <div className="rounded-xl border border-border/40 bg-surface/50 p-5">
+          <p className="text-muted-foreground leading-relaxed">{exercise.description}</p>
+        </div>
+      )}
+
+      {/* Tags */}
+      {hasTags && (
+        <div className="flex flex-wrap gap-2">
+          {exercise.mainTags?.map((tag: string | ExerciseTag, index: number) => {
+            if (isTagObject(tag)) {
+              return (
+                <ColorBadge key={tag.id} color={tag.color}>
+                  {tag.name}
+                </ColorBadge>
+              );
+            }
+            return (
+              <Badge key={index} variant="secondary">
+                {tag}
+              </Badge>
+            );
+          })}
+          {exercise.additionalTags?.map((tag: string | ExerciseTag, index: number) => {
+            if (isTagObject(tag)) {
+              return (
+                <ColorBadge key={tag.id} color={tag.color}>
+                  {tag.name}
+                </ColorBadge>
+              );
+            }
+            return (
+              <Badge key={index} variant="outline">
+                {tag}
+              </Badge>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Collapsible: Times & Rests */}
+      {hasRestTimes && (
+        <Collapsible open={isTimesOpen} onOpenChange={setIsTimesOpen}>
+          <CollapsibleTrigger className="flex items-center justify-between w-full p-4 rounded-xl border border-border/40 bg-surface/50 hover:bg-surface-light transition-colors group">
+            <div className="flex items-center gap-3">
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-info/10">
+                <Timer className="h-4 w-4 text-info" />
+              </div>
+              <span className="font-medium text-foreground">Czasy i przerwy</span>
+            </div>
+            <ChevronDown className={cn(
+              'h-5 w-5 text-muted-foreground transition-transform duration-200',
+              isTimesOpen && 'rotate-180'
+            )} />
+          </CollapsibleTrigger>
+          <CollapsibleContent className="mt-2">
+            <div className="grid gap-2 sm:grid-cols-3 p-4 rounded-xl border border-border/40 bg-surface/30">
+              {exercise.restSets !== undefined && exercise.restSets > 0 && (
+                <div className="p-3 rounded-lg bg-surface-light">
+                  <p className="text-xs text-muted-foreground">Przerwa między seriami</p>
+                  <p className="font-semibold text-foreground">{exercise.restSets}s</p>
+                </div>
+              )}
+              {exercise.restReps !== undefined && exercise.restReps > 0 && (
+                <div className="p-3 rounded-lg bg-surface-light">
+                  <p className="text-xs text-muted-foreground">Przerwa między powtórzeniami</p>
+                  <p className="font-semibold text-foreground">{exercise.restReps}s</p>
+                </div>
+              )}
+              {exercise.preparationTime !== undefined && exercise.preparationTime > 0 && (
+                <div className="p-3 rounded-lg bg-surface-light">
+                  <p className="text-xs text-muted-foreground">Czas przygotowania</p>
+                  <p className="font-semibold text-foreground">{exercise.preparationTime}s</p>
+                </div>
+              )}
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
+      )}
+
+      {/* Collapsible: Notes */}
+      {exercise.notes && (
+        <Collapsible open={isNotesOpen} onOpenChange={setIsNotesOpen}>
+          <CollapsibleTrigger className="flex items-center justify-between w-full p-4 rounded-xl border border-border/40 bg-surface/50 hover:bg-surface-light transition-colors group">
+            <div className="flex items-center gap-3">
+              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-secondary/10">
+                <FileText className="h-4 w-4 text-secondary" />
+              </div>
+              <span className="font-medium text-foreground">Notatki</span>
+            </div>
+            <ChevronDown className={cn(
+              'h-5 w-5 text-muted-foreground transition-transform duration-200',
+              isNotesOpen && 'rotate-180'
+            )} />
+          </CollapsibleTrigger>
+          <CollapsibleContent className="mt-2">
+            <div className="p-4 rounded-xl border border-border/40 bg-surface/30">
+              <p className="text-muted-foreground whitespace-pre-wrap text-sm leading-relaxed">
+                {exercise.notes}
+              </p>
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
+      )}
 
       {/* Edit Dialog */}
       {organizationId && (

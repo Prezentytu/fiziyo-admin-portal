@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useState, useCallback } from "react";
 import { useMutation } from "@apollo/client/react";
 import { toast } from "sonner";
 
@@ -11,6 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { PatientForm, PatientFormValues } from "./PatientForm";
 import { CREATE_SHADOW_PATIENT_MUTATION } from "@/graphql/mutations/users.mutations";
 import { GET_THERAPIST_PATIENTS_QUERY } from "@/graphql/queries/therapists.queries";
@@ -32,6 +34,30 @@ export function PatientDialog({
   clinicId,
   onSuccess,
 }: PatientDialogProps) {
+  const [showCloseConfirm, setShowCloseConfirm] = useState(false);
+  const [formIsDirty, setFormIsDirty] = useState(false);
+
+  const handleCloseAttempt = useCallback(() => {
+    if (formIsDirty) {
+      setShowCloseConfirm(true);
+    } else {
+      onOpenChange(false);
+    }
+  }, [formIsDirty, onOpenChange]);
+
+  const handleConfirmClose = useCallback(() => {
+    setShowCloseConfirm(false);
+    setFormIsDirty(false);
+    onOpenChange(false);
+  }, [onOpenChange]);
+
+  // Reset dirty state when dialog closes
+  React.useEffect(() => {
+    if (!open) {
+      setFormIsDirty(false);
+    }
+  }, [open]);
+
   const [createPatient, { loading }] = useMutation(CREATE_SHADOW_PATIENT_MUTATION, {
     refetchQueries: [
       { query: GET_THERAPIST_PATIENTS_QUERY, variables: { therapistId, organizationId } },
@@ -63,8 +89,15 @@ export function PatientDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+    <Dialog open={open} onOpenChange={() => handleCloseAttempt()}>
+      <DialogContent
+        className="max-w-md"
+        onInteractOutside={(e) => e.preventDefault()}
+        onEscapeKeyDown={(e) => {
+          e.preventDefault();
+          handleCloseAttempt();
+        }}
+      >
         <DialogHeader>
           <DialogTitle>Nowy pacjent</DialogTitle>
           <DialogDescription>
@@ -73,11 +106,23 @@ export function PatientDialog({
         </DialogHeader>
         <PatientForm
           onSubmit={handleSubmit}
-          onCancel={() => onOpenChange(false)}
+          onCancel={handleCloseAttempt}
           isLoading={loading}
           submitLabel="Dodaj pacjenta"
+          onDirtyChange={setFormIsDirty}
         />
       </DialogContent>
+
+      <ConfirmDialog
+        open={showCloseConfirm}
+        onOpenChange={setShowCloseConfirm}
+        title="Porzucić zmiany?"
+        description="Masz niezapisane zmiany. Czy na pewno chcesz zamknąć bez zapisywania?"
+        confirmText="Tak, zamknij"
+        cancelText="Kontynuuj edycję"
+        variant="destructive"
+        onConfirm={handleConfirmClose}
+      />
     </Dialog>
   );
 }

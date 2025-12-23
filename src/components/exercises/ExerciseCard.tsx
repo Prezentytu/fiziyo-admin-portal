@@ -113,19 +113,21 @@ export function ExerciseCard({
     return (
       <div
         className={cn(
-          "group flex items-center gap-4 rounded-xl border border-border bg-card p-3",
-          "transition-all duration-200 hover:bg-surface-light hover:border-border-light cursor-pointer",
+          "group flex items-center gap-4 rounded-xl border border-border/60 bg-surface p-3",
+          "transition-all duration-200 ease-out cursor-pointer",
+          "hover:bg-surface-light hover:border-primary/30 hover:shadow-md hover:shadow-primary/5",
           className
         )}
         onClick={() => onView?.(exercise)}
       >
         {/* Thumbnail */}
-        <div className="relative h-14 w-14 flex-shrink-0 overflow-hidden rounded-lg">
+        <div className="relative h-14 w-14 flex-shrink-0 overflow-hidden rounded-lg bg-surface-light">
           {imageUrl ? (
             <img
               src={imageUrl}
               alt={exercise.name}
-              className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-110"
+              loading="lazy"
+              className="h-full w-full object-cover"
             />
           ) : (
             <ImagePlaceholder type="exercise" iconClassName="h-5 w-5" />
@@ -210,22 +212,24 @@ export function ExerciseCard({
   return (
     <div
       className={cn(
-        "group relative flex flex-col rounded-xl border border-border bg-card overflow-hidden",
-        "card-interactive cursor-pointer",
+        "group relative flex flex-col rounded-xl border border-border/60 bg-surface overflow-hidden",
+        "transition-all duration-300 ease-out cursor-pointer",
+        "hover:-translate-y-1 hover:border-primary/40 hover:shadow-xl hover:shadow-primary/10",
         className
       )}
       onClick={() => onView?.(exercise)}
     >
       {/* Image section with overlay */}
-      <div className="relative aspect-[16/10] overflow-hidden">
+      <div className="relative aspect-[16/10] overflow-hidden bg-surface-light">
         {imageUrl ? (
           <>
             <img
               src={imageUrl}
               alt={exercise.name}
-              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+              loading="lazy"
+              className="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03]"
             />
-            <div className="gradient-overlay-subtle" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-transparent opacity-60 group-hover:opacity-40 transition-opacity duration-300" />
           </>
         ) : (
           <ImagePlaceholder type="exercise" className="aspect-[16/10]" iconClassName="h-12 w-12" />

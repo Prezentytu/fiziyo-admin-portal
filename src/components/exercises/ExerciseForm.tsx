@@ -50,6 +50,7 @@ interface ExerciseFormProps {
   onCancel?: () => void;
   isLoading?: boolean;
   submitLabel?: string;
+  onDirtyChange?: (isDirty: boolean) => void;
 }
 
 export function ExerciseForm({
@@ -58,6 +59,7 @@ export function ExerciseForm({
   onCancel,
   isLoading = false,
   submitLabel = "Zapisz",
+  onDirtyChange,
 }: ExerciseFormProps) {
   const form = useForm<ExerciseFormValues>({
     resolver: zodResolver(exerciseFormSchema),
@@ -80,6 +82,12 @@ export function ExerciseForm({
   });
 
   const watchType = form.watch("type");
+  const isDirty = form.formState.isDirty;
+
+  // Notify parent about dirty state
+  React.useEffect(() => {
+    onDirtyChange?.(isDirty);
+  }, [isDirty, onDirtyChange]);
 
   const handleSubmit = async (values: ExerciseFormValues) => {
     try {
