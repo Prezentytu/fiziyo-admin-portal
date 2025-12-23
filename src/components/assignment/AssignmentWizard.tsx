@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useQuery, useMutation } from '@apollo/client/react';
-import { Loader2, ArrowLeft, ArrowRight, Zap } from 'lucide-react';
+import { Loader2, ArrowLeft, ArrowRight } from 'lucide-react';
 import { toast } from 'sonner';
 import { addDays } from 'date-fns';
 
@@ -285,65 +285,6 @@ function AssignmentWizardContent({
     }
   };
 
-  const handleQuickAssign = async () => {
-    if (!selectedSet || selectedPatients.length === 0) return;
-
-    try {
-      for (const patient of selectedPatients) {
-        await assignSet({
-          variables: {
-            exerciseSetId: selectedSet.id,
-            patientId: patient.id,
-            startDate: startDate.toISOString(),
-            endDate: endDate.toISOString(),
-            frequency: {
-              timesPerDay: String(frequency.timesPerDay),
-              timesPerWeek: String(Object.values(frequency).filter((v) => v === true).length),
-              breakBetweenSets: String(frequency.breakBetweenSets),
-              monday: frequency.monday,
-              tuesday: frequency.tuesday,
-              wednesday: frequency.wednesday,
-              thursday: frequency.thursday,
-              friday: frequency.friday,
-              saturday: frequency.saturday,
-              sunday: frequency.sunday,
-            },
-          },
-          refetchQueries: [
-            ...(mode === 'from-patient' && preselectedPatient
-              ? [
-                  {
-                    query: GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY,
-                    variables: { userId: preselectedPatient.id },
-                  },
-                ]
-              : []),
-            ...(mode === 'from-set' && preselectedSet
-              ? [
-                  {
-                    query: GET_EXERCISE_SET_WITH_ASSIGNMENTS_QUERY,
-                    variables: { exerciseSetId: preselectedSet.id },
-                  },
-                ]
-              : []),
-          ],
-        });
-      }
-
-      const patientCount = selectedPatients.length;
-      toast.success(
-        `Zestaw "${selectedSet.name}" przypisany do ${patientCount} pacjent${
-          patientCount === 1 ? 'a' : patientCount < 5 ? 'ów' : 'ów'
-        }`
-      );
-      onOpenChange(false);
-      onSuccess?.();
-    } catch (error) {
-      console.error('Błąd przypisywania:', error);
-      toast.error('Nie udało się przypisać zestawu');
-    }
-  };
-
   const handleSubmit = async () => {
     if (!selectedSet || selectedPatients.length === 0) return;
 
@@ -505,16 +446,6 @@ function AssignmentWizardContent({
         <Button variant="outline" onClick={onCloseAttempt}>
           Anuluj
         </Button>
-
-        {/* Center - Quick assign (optional) */}
-        <div className="flex-1 flex justify-center">
-          {isFirstStep && canProceed() && (
-            <Button variant="outline" onClick={handleQuickAssign} disabled={isLoading} className="gap-2">
-              <Zap className="h-4 w-4" />
-              Szybkie przypisanie
-            </Button>
-          )}
-        </div>
 
         {/* Right side - Navigation */}
         <div className="flex items-center gap-3">

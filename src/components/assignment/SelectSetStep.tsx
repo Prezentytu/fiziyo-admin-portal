@@ -12,7 +12,7 @@ import type { ExerciseSet } from "./types";
 interface SelectSetStepProps {
   exerciseSets: ExerciseSet[];
   selectedSet: ExerciseSet | null;
-  onSelectSet: (set: ExerciseSet) => void;
+  onSelectSet: (set: ExerciseSet | null) => void;
   existingSetIds?: string[];
   loading?: boolean;
 }
@@ -56,7 +56,7 @@ export function SelectSetStep({
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full">
       {/* Left column - Set list */}
       <div className="flex flex-col min-h-0">
-        <div className="mb-4">
+        <div className="mb-4 space-y-3">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
@@ -65,6 +65,23 @@ export function SelectSetStep({
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-9 h-11"
             />
+          </div>
+          <div className="flex items-center justify-between">
+            <p className="text-xs text-muted-foreground">
+              {availableSets.length} dostępnych zestawów
+            </p>
+            {selectedSet && (
+              <button
+                type="button"
+                onClick={() => {
+                  setPreviewSet(null);
+                  onSelectSet(null);
+                }}
+                className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Wyczyść wybór
+              </button>
+            )}
           </div>
         </div>
 
@@ -90,7 +107,7 @@ export function SelectSetStep({
               </p>
             </div>
           ) : (
-            <div className="p-2 space-y-1">
+            <div className="p-3 pr-4 space-y-2">
               {filteredSets.map((set) => {
                 const isSelected = selectedSet?.id === set.id;
                 const isPreview = previewSet?.id === set.id;
@@ -102,7 +119,7 @@ export function SelectSetStep({
                   <div
                     key={set.id}
                     className={cn(
-                      "flex items-start gap-4 rounded-xl p-4 cursor-pointer transition-all",
+                      "flex items-center gap-4 rounded-xl p-4 cursor-pointer transition-all",
                       isSelected
                         ? "bg-primary/10 border-2 border-primary/40"
                         : isPreview
@@ -112,17 +129,15 @@ export function SelectSetStep({
                     onClick={() => handleSetClick(set)}
                   >
                     {/* Preview image */}
-                    <div className="relative h-14 w-14 shrink-0">
+                    <div className="h-14 w-14 shrink-0 rounded-lg overflow-hidden">
                       {firstImage ? (
-                        <div className="h-full w-full rounded-lg overflow-hidden">
-                          <img
-                            src={firstImage}
-                            alt=""
-                            className="h-full w-full object-cover"
-                          />
-                        </div>
+                        <img
+                          src={firstImage}
+                          alt=""
+                          className="h-full w-full object-cover"
+                        />
                       ) : (
-                        <div className="h-full w-full rounded-lg bg-surface-light flex items-center justify-center">
+                        <div className="h-full w-full bg-surface-light flex items-center justify-center">
                           <FolderKanban className="h-6 w-6 text-muted-foreground/50" />
                         </div>
                       )}
@@ -130,37 +145,35 @@ export function SelectSetStep({
 
                     {/* Info */}
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-start gap-2">
+                      <div className="flex items-center gap-2">
                         <p className="font-semibold line-clamp-2 flex-1">{set.name}</p>
-                        <Badge variant="secondary" className="text-[10px] shrink-0 mt-0.5">
+                        <Badge variant="secondary" className="text-[10px] shrink-0">
                           {exerciseCount} ćw.
                         </Badge>
                       </div>
                       {set.description && (
-                        <p className="text-sm text-muted-foreground line-clamp-2 mt-1">
+                        <p className="text-sm text-muted-foreground line-clamp-1 mt-1">
                           {set.description}
                         </p>
                       )}
                     </div>
 
                     {/* Selection indicator */}
-                    {isSelected ? (
-                      <div className="h-6 w-6 rounded-full bg-primary flex items-center justify-center shrink-0">
-                        <Check className="h-4 w-4 text-primary-foreground" />
-                      </div>
-                    ) : (
-                      <ChevronRight className="h-5 w-5 text-muted-foreground shrink-0" />
-                    )}
+                    <div className="shrink-0">
+                      {isSelected ? (
+                        <div className="h-6 w-6 rounded-full bg-primary flex items-center justify-center">
+                          <Check className="h-4 w-4 text-primary-foreground" />
+                        </div>
+                      ) : (
+                        <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                      )}
+                    </div>
                   </div>
                 );
               })}
             </div>
           )}
         </ScrollArea>
-
-        <p className="text-xs text-muted-foreground mt-3">
-          {availableSets.length} dostępnych zestawów
-        </p>
       </div>
 
       {/* Right column - Exercise preview */}
@@ -186,7 +199,7 @@ export function SelectSetStep({
             </p>
 
             <ScrollArea className="flex-1">
-              <div className="space-y-2">
+              <div className="pr-4 space-y-2">
                 {previewSet.exerciseMappings?.map((mapping, index) => {
                   const exercise = mapping.exercise;
                   const imageUrl = exercise?.imageUrl || exercise?.images?.[0];
@@ -194,9 +207,9 @@ export function SelectSetStep({
                   return (
                     <div
                       key={mapping.id}
-                      className="flex items-center gap-3 rounded-lg p-2 bg-surface-light/50"
+                      className="flex items-center gap-3 rounded-lg p-3 bg-surface-light/50"
                     >
-                      <div className="flex h-8 w-8 items-center justify-center rounded-lg text-xs font-semibold bg-surface text-muted-foreground">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-lg text-xs font-semibold bg-surface text-muted-foreground shrink-0">
                         {index + 1}
                       </div>
                       <div className="h-10 w-10 rounded-lg overflow-hidden shrink-0">
@@ -214,10 +227,10 @@ export function SelectSetStep({
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate">
+                        <p className="text-sm font-medium line-clamp-2">
                           {mapping.customName || exercise?.name || "Nieznane ćwiczenie"}
                         </p>
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5 flex-wrap">
                           {(mapping.sets || exercise?.sets) && (
                             <span>{mapping.sets || exercise?.sets} serie</span>
                           )}

@@ -132,7 +132,7 @@ export function getWizardSteps(
     steps.push({
       id: "select-set",
       label: "Zestaw",
-      description: "Wybierz zestaw ćwiczeń",
+      description: "Wybierz zestaw ćw.",
     });
   }
 
@@ -154,7 +154,7 @@ export function getWizardSteps(
   steps.push({
     id: "customize",
     label: "Personalizacja",
-    description: "Dostosuj ćwiczenia",
+    description: "Dostosuj ćw.",
   });
 
   // Schedule step
@@ -168,7 +168,7 @@ export function getWizardSteps(
   steps.push({
     id: "summary",
     label: "Podsumowanie",
-    description: "Potwierdź przypisanie",
+    description: "Potwierdź",
   });
 
   return steps;

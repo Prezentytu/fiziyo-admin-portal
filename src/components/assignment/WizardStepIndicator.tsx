@@ -24,7 +24,7 @@ export function WizardStepIndicator({
   return (
     <div className="w-full">
       {/* Desktop view */}
-      <div className="hidden sm:flex items-center justify-between">
+      <div className="hidden sm:flex items-center justify-between w-full">
         {steps.map((step, index) => {
           const isCompleted = completedSteps.has(step.id);
           const isCurrent = step.id === currentStep;
@@ -32,23 +32,29 @@ export function WizardStepIndicator({
           const canClick = allowNavigation && (isCompleted || isPast);
 
           return (
-            <div key={step.id} className="flex items-center flex-1">
+            <div 
+              key={step.id} 
+              className={cn(
+                "flex items-center",
+                index < steps.length - 1 && "flex-1"
+              )}
+            >
               {/* Step circle and content */}
               <button
                 type="button"
                 onClick={() => canClick && onStepClick?.(step.id)}
                 disabled={!canClick}
                 className={cn(
-                  "flex items-center gap-3 group",
+                  "flex items-center gap-3 group min-w-0",
                   canClick && "cursor-pointer"
                 )}
               >
                 {/* Circle */}
                 <div
                   className={cn(
-                    "flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-sm font-semibold transition-all duration-300",
+                    "flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-semibold transition-all duration-200",
                     isCurrent &&
-                      "bg-primary text-primary-foreground shadow-lg shadow-primary/30 scale-110",
+                      "bg-primary text-primary-foreground shadow-lg shadow-primary/30",
                     isCompleted &&
                       !isCurrent &&
                       "bg-primary/20 text-primary border-2 border-primary",
@@ -59,14 +65,14 @@ export function WizardStepIndicator({
                   )}
                 >
                   {isCompleted && !isCurrent ? (
-                    <Check className="h-5 w-5" />
+                    <Check className="h-4 w-4" />
                   ) : (
                     index + 1
                   )}
                 </div>
 
                 {/* Label */}
-                <div className="text-left">
+                <div className="text-left min-w-0">
                   <p
                     className={cn(
                       "text-sm font-medium transition-colors",
@@ -85,10 +91,10 @@ export function WizardStepIndicator({
 
               {/* Connector line */}
               {index < steps.length - 1 && (
-                <div className="flex-1 mx-4">
+                <div className="flex-1 mx-3 min-w-[20px]">
                   <div
                     className={cn(
-                      "h-0.5 rounded-full transition-colors duration-300",
+                      "h-0.5 w-full rounded-full transition-colors duration-200",
                       isPast || isCompleted
                         ? "bg-primary/40"
                         : "bg-border"

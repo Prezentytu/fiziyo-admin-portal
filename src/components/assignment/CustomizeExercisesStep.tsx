@@ -258,7 +258,7 @@ export function CustomizeExercisesStep({
         </div>
 
         <ScrollArea className="flex-1 rounded-xl border border-border">
-          <div className="p-2 space-y-1">
+          <div className="p-3 pr-4 space-y-2">
             {mappings.map((mapping, index) => {
               const exercise = mapping.exercise;
               const imageUrl = exercise?.imageUrl || exercise?.images?.[0];
@@ -269,14 +269,14 @@ export function CustomizeExercisesStep({
                 <div
                   key={mapping.id}
                   className={cn(
-                    "flex items-start gap-3 rounded-xl p-4 cursor-pointer transition-all",
+                    "flex items-center gap-4 rounded-xl p-4 cursor-pointer transition-all",
                     isSelected
                       ? "bg-primary/10 border-2 border-primary/40"
                       : "hover:bg-surface-light border-2 border-transparent"
                   )}
                   onClick={() => setSelectedMappingId(mapping.id)}
                 >
-                  <div className="flex h-8 w-8 items-center justify-center rounded-lg text-sm font-semibold bg-surface text-muted-foreground shrink-0 mt-0.5">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg text-sm font-semibold bg-surface text-muted-foreground shrink-0">
                     {index + 1}
                   </div>
                   <div className="h-12 w-12 rounded-lg overflow-hidden shrink-0">
@@ -291,20 +291,20 @@ export function CustomizeExercisesStep({
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-start gap-2">
+                    <div className="flex items-center gap-2">
                       <p className="font-medium line-clamp-2 flex-1">
                         {mapping.customName || exercise?.name || "Nieznane"}
                       </p>
                       {hasCustomization && (
                         <Badge
                           variant="outline"
-                          className="text-[10px] border-primary text-primary shrink-0 mt-0.5"
+                          className="text-[10px] border-primary text-primary shrink-0"
                         >
                           Zmienione
                         </Badge>
                       )}
                     </div>
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1.5 flex-wrap">
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1 flex-wrap">
                       {getEffectiveValue<number | undefined>(mapping, "sets") && (
                         <span>
                           {getEffectiveValue<number>(mapping, "sets")} serie
