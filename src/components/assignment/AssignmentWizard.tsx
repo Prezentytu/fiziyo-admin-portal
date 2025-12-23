@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useQuery, useMutation } from '@apollo/client/react';
 import { Loader2, ArrowLeft, ArrowRight, Zap } from 'lucide-react';
 import { toast } from 'sonner';
@@ -125,7 +125,7 @@ function AssignmentWizardContent({
   const hasChanges = !preselectedSet ? selectedSet !== null : selectedPatients.length > (preselectedPatient ? 1 : 0);
   
   // Notify parent about changes
-  useMemo(() => {
+  useEffect(() => {
     onHasChanges(hasChanges);
   }, [hasChanges, onHasChanges]);
 
@@ -501,7 +501,13 @@ function AssignmentWizardContent({
 
       {/* Footer */}
       <div className="px-6 py-4 border-t border-border shrink-0 flex items-center justify-between gap-4">
-        <div>
+        {/* Left side - Cancel button */}
+        <Button variant="outline" onClick={onCloseAttempt}>
+          Anuluj
+        </Button>
+
+        {/* Center - Quick assign (optional) */}
+        <div className="flex-1 flex justify-center">
           {isFirstStep && canProceed() && (
             <Button variant="outline" onClick={handleQuickAssign} disabled={isLoading} className="gap-2">
               <Zap className="h-4 w-4" />
@@ -510,12 +516,9 @@ function AssignmentWizardContent({
           )}
         </div>
 
+        {/* Right side - Navigation */}
         <div className="flex items-center gap-3">
-          {isFirstStep ? (
-            <Button variant="outline" onClick={() => onOpenChange(false)}>
-              Anuluj
-            </Button>
-          ) : (
+          {!isFirstStep && (
             <Button variant="outline" onClick={goBack}>
               <ArrowLeft className="h-4 w-4 mr-2" />
               Wstecz

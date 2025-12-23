@@ -102,7 +102,7 @@ export function SelectSetStep({
                   <div
                     key={set.id}
                     className={cn(
-                      "flex items-center gap-4 rounded-xl p-3 cursor-pointer transition-all",
+                      "flex items-start gap-4 rounded-xl p-4 cursor-pointer transition-all",
                       isSelected
                         ? "bg-primary/10 border-2 border-primary/40"
                         : isPreview
@@ -130,14 +130,14 @@ export function SelectSetStep({
 
                     {/* Info */}
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <p className="font-semibold truncate">{set.name}</p>
-                        <Badge variant="secondary" className="text-[10px] shrink-0">
+                      <div className="flex items-start gap-2">
+                        <p className="font-semibold line-clamp-2 flex-1">{set.name}</p>
+                        <Badge variant="secondary" className="text-[10px] shrink-0 mt-0.5">
                           {exerciseCount} ćw.
                         </Badge>
                       </div>
                       {set.description && (
-                        <p className="text-sm text-muted-foreground line-clamp-1 mt-0.5">
+                        <p className="text-sm text-muted-foreground line-clamp-2 mt-1">
                           {set.description}
                         </p>
                       )}
@@ -255,4 +255,5 @@ export function SelectSetStep({
     </div>
   );
 }
+
 

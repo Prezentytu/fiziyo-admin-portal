@@ -10,6 +10,7 @@ import {
   FrequencyPicker,
   type FrequencyValue,
 } from "@/components/exercise-sets/FrequencyPicker";
+import { cn } from "@/lib/utils";
 import type { ExerciseSet, Patient, Frequency } from "./types";
 
 interface ScheduleStepProps {
@@ -93,41 +94,30 @@ export function ScheduleStep({
 
           {/* Quick duration buttons */}
           <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={() => onEndDateChange(addDays(startDate, 7))}
-              className="px-3 py-1.5 text-xs font-medium rounded-lg bg-surface-light hover:bg-surface-hover transition-colors"
-            >
-              1 tydzień
-            </button>
-            <button
-              type="button"
-              onClick={() => onEndDateChange(addDays(startDate, 14))}
-              className="px-3 py-1.5 text-xs font-medium rounded-lg bg-surface-light hover:bg-surface-hover transition-colors"
-            >
-              2 tygodnie
-            </button>
-            <button
-              type="button"
-              onClick={() => onEndDateChange(addDays(startDate, 30))}
-              className="px-3 py-1.5 text-xs font-medium rounded-lg bg-surface-light hover:bg-surface-hover transition-colors"
-            >
-              1 miesiąc
-            </button>
-            <button
-              type="button"
-              onClick={() => onEndDateChange(addDays(startDate, 60))}
-              className="px-3 py-1.5 text-xs font-medium rounded-lg bg-surface-light hover:bg-surface-hover transition-colors"
-            >
-              2 miesiące
-            </button>
-            <button
-              type="button"
-              onClick={() => onEndDateChange(addDays(startDate, 90))}
-              className="px-3 py-1.5 text-xs font-medium rounded-lg bg-surface-light hover:bg-surface-hover transition-colors"
-            >
-              3 miesiące
-            </button>
+            {[
+              { days: 7, label: "1 tydzień" },
+              { days: 14, label: "2 tygodnie" },
+              { days: 30, label: "1 miesiąc" },
+              { days: 60, label: "2 miesiące" },
+              { days: 90, label: "3 miesiące" },
+            ].map(({ days, label }) => {
+              const isSelected = durationDays === days;
+              return (
+                <button
+                  key={days}
+                  type="button"
+                  onClick={() => onEndDateChange(addDays(startDate, days))}
+                  className={cn(
+                    "px-3 py-1.5 text-xs font-medium rounded-lg transition-colors",
+                    isSelected
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-surface-light hover:bg-surface-hover"
+                  )}
+                >
+                  {label}
+                </button>
+              );
+            })}
           </div>
         </div>
 
