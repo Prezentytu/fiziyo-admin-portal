@@ -21,12 +21,13 @@ import {
   Pause,
   Play,
   Wrench,
+  UserPlus,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import Link from 'next/link';
 
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
@@ -45,9 +46,6 @@ import { EditExerciseInSetDialog } from '@/components/exercise-sets/EditExercise
 import { AssignmentWizard } from '@/components/assignment/AssignmentWizard';
 import type { ExerciseSet as AssignmentExerciseSet } from '@/components/assignment/types';
 import { ImagePlaceholder } from '@/components/shared/ImagePlaceholder';
-import Link from 'next/link';
-
-// Note: ImagePlaceholder still used in exercise list items
 
 import {
   GET_EXERCISE_SET_WITH_ASSIGNMENTS_QUERY,
@@ -120,6 +118,7 @@ interface PatientAssignmentInSet {
     fullname?: string;
     email?: string;
     image?: string;
+    isShadowUser?: boolean;
   };
 }
 
@@ -193,8 +192,8 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
       });
       toast.success('Zestaw został usunięty');
       router.push('/exercise-sets');
-    } catch (error) {
-      console.error('Błąd podczas usuwania:', error);
+    } catch (err) {
+      console.error('Błąd podczas usuwania:', err);
       toast.error('Nie udało się usunąć zestawu');
     }
   };
@@ -212,8 +211,8 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
       toast.success('Ćwiczenie zostało usunięte z zestawu');
       setRemovingExerciseId(null);
       refetch();
-    } catch (error) {
-      console.error('Błąd podczas usuwania ćwiczenia:', error);
+    } catch (err) {
+      console.error('Błąd podczas usuwania ćwiczenia:', err);
       toast.error('Nie udało się usunąć ćwiczenia z zestawu');
     }
   };
@@ -229,8 +228,8 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
       });
       toast.success(newStatus === 'active' ? 'Przypisanie wznowione' : 'Przypisanie wstrzymane');
       refetch();
-    } catch (error) {
-      console.error('Błąd zmiany statusu:', error);
+    } catch (err) {
+      console.error('Błąd zmiany statusu:', err);
       toast.error('Nie udało się zmienić statusu');
     }
   };
@@ -248,8 +247,8 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
       toast.success('Przypisanie zostało usunięte');
       setRemovingAssignment(null);
       refetch();
-    } catch (error) {
-      console.error('Błąd usuwania przypisania:', error);
+    } catch (err) {
+      console.error('Błąd usuwania przypisania:', err);
       toast.error('Nie udało się usunąć przypisania');
     }
   };
@@ -314,334 +313,376 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <Button variant="ghost" onClick={() => router.push('/exercise-sets')} className="w-fit">
-          <ArrowLeft className="mr-2 h-4 w-4" />
+      {/* Compact Header */}
+      <div className="flex items-center justify-between">
+        <Button variant="ghost" onClick={() => router.push('/exercise-sets')} className="gap-2">
+          <ArrowLeft className="h-4 w-4" />
           Powrót do zestawów
         </Button>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={() => setIsEditDialogOpen(true)}>
-            <Pencil className="mr-2 h-4 w-4" />
-            Edytuj
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setIsDeleteDialogOpen(true)}
-            className="text-destructive hover:text-destructive hover:bg-destructive/10"
-          >
-            <Trash2 className="mr-2 h-4 w-4" />
-            Usuń
-          </Button>
+        
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm" className="gap-2">
+              Opcje
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => setIsEditDialogOpen(true)}>
+              <Pencil className="mr-2 h-4 w-4" />
+              Edytuj zestaw
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onClick={() => setIsDeleteDialogOpen(true)}
+              className="text-destructive focus:text-destructive"
+            >
+              <Trash2 className="mr-2 h-4 w-4" />
+              Usuń zestaw
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+
+      {/* Hero Section: Title + Description */}
+      <div className="space-y-2">
+        <h1 className="text-2xl font-bold text-foreground">{exerciseSet.name}</h1>
+        {exerciseSet.description && (
+          <p className="text-muted-foreground">{exerciseSet.description}</p>
+        )}
+      </div>
+
+      {/* Hero Action + Quick Stats */}
+      <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-12">
+        {/* Hero Action - Przypisz pacjenta */}
+        <button
+          onClick={() => setIsAssignDialogOpen(true)}
+          className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary via-primary to-primary-dark p-5 text-left transition-all duration-300 hover:shadow-xl hover:shadow-primary/20 hover:scale-[1.02] cursor-pointer sm:col-span-1 lg:col-span-4"
+        >
+          <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+          <div className="absolute -top-24 -right-24 w-48 h-48 bg-white/10 rounded-full blur-3xl group-hover:bg-white/20 transition-all duration-500" />
+          
+          <div className="relative flex items-center gap-4">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm shrink-0 group-hover:scale-110 transition-transform duration-300">
+              <UserPlus className="h-5 w-5 text-white" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <h3 className="text-base font-bold text-white">
+                Przypisz pacjenta
+              </h3>
+              <p className="text-sm text-white/70">
+                Dodaj do programu
+              </p>
+            </div>
+            <Plus className="h-5 w-5 text-white/60 group-hover:text-white transition-colors shrink-0" />
+          </div>
+        </button>
+
+        {/* Quick Stats */}
+        <div className="grid grid-cols-3 gap-3 sm:col-span-1 lg:col-span-8">
+          {/* Exercises count */}
+          <div className="rounded-2xl border border-border/40 bg-surface/50 p-4 flex flex-col items-center justify-center text-center">
+            <div className="flex items-center gap-2">
+              <Dumbbell className="h-4 w-4 text-primary" />
+              <span className="text-2xl font-bold text-foreground">{exercises.length}</span>
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">Ćwiczeń</p>
+          </div>
+
+          {/* Patients count */}
+          <div className="rounded-2xl border border-border/40 bg-surface/50 p-4 flex flex-col items-center justify-center text-center">
+            <div className="flex items-center gap-2">
+              <Users className="h-4 w-4 text-secondary" />
+              <span className="text-2xl font-bold text-foreground">{assignments.length}</span>
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">Pacjentów</p>
+          </div>
+
+          {/* Frequency */}
+          <div className="rounded-2xl border border-border/40 bg-surface/50 p-4 flex flex-col items-center justify-center text-center">
+            <div className="flex items-center gap-2">
+              <Calendar className="h-4 w-4 text-info" />
+              <span className="text-lg font-bold text-foreground">
+                {exerciseSet?.frequency?.timesPerWeek ? `${exerciseSet.frequency.timesPerWeek}x` : '—'}
+              </span>
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              {exerciseSet?.frequency?.timesPerDay 
+                ? `${exerciseSet.frequency.timesPerDay}x/dzień` 
+                : 'tygodniowo'}
+            </p>
+          </div>
         </div>
       </div>
 
-      {/* Set info */}
-      <div>
-        <h1 className="text-2xl font-semibold">{exerciseSet.name}</h1>
-        <p className="text-muted-foreground mt-1">{exerciseSet.description || 'Brak opisu'}</p>
-        <div className="flex flex-wrap gap-2 mt-3">
-          <Badge variant="secondary" className="gap-1.5">
-            <Dumbbell className="h-3 w-3" />
-            {exercises.length} ćwiczeń
-          </Badge>
-          <Badge variant="secondary" className="gap-1.5">
-            <Users className="h-3 w-3" />
-            {assignments.length} pacjentów
-          </Badge>
-          {exerciseSet?.frequency?.timesPerWeek && (
-            <Badge variant="outline" className="gap-1.5">
-              <Calendar className="h-3 w-3" />
-              {exerciseSet.frequency.timesPerWeek}x w tygodniu
-            </Badge>
-          )}
-          {exerciseSet?.frequency?.timesPerDay && (
-            <Badge variant="outline" className="gap-1.5">
-              <Clock className="h-3 w-3" />
-              {exerciseSet.frequency.timesPerDay}x dziennie
-            </Badge>
-          )}
-        </div>
-      </div>
-
-      <div className="grid gap-6 lg:grid-cols-3">
-        {/* Main content - Exercises list */}
-        <div className="lg:col-span-2">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle className="flex items-center gap-2">
-                <Dumbbell className="h-5 w-5 text-primary" />
-                Ćwiczenia w zestawie
-              </CardTitle>
-              <Button size="sm" onClick={() => setIsAddExerciseDialogOpen(true)}>
-                <Plus className="mr-2 h-4 w-4" />
-                Dodaj ćwiczenie
-              </Button>
-            </CardHeader>
-            <CardContent>
-              {exercises.length === 0 ? (
-                <EmptyState
-                  icon={Dumbbell}
-                  title="Brak ćwiczeń"
-                  description="Dodaj ćwiczenia do tego zestawu"
-                  actionLabel="Dodaj ćwiczenie"
-                  onAction={() => setIsAddExerciseDialogOpen(true)}
-                />
-              ) : (
-                <div className="space-y-3">
-                  {[...exercises]
-                    .sort((a, b) => (a.order || 0) - (b.order || 0))
-                    .map((mapping, index) => {
-                      const imageUrl = mapping.exercise?.imageUrl || mapping.exercise?.images?.[0];
-                      const hasParams = mapping.sets || mapping.reps || mapping.duration;
-                      return (
-                        <div
-                          key={mapping.id}
-                          className="group flex items-center gap-4 rounded-xl border border-border bg-surface p-4 transition-all duration-200 hover:border-primary/30 hover:bg-surface-light hover:shadow-sm cursor-pointer"
-                          onClick={() => setEditingExercise(mapping)}
-                        >
-                          {/* Order number */}
-                          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-surface-light text-lg font-semibold text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary transition-colors">
-                            {index + 1}
-                          </div>
-
-                          {/* Thumbnail */}
-                          <div className="h-14 w-14 rounded-lg overflow-hidden shrink-0 ring-2 ring-transparent group-hover:ring-primary/20 transition-all">
-                            {imageUrl ? (
-                              <img
-                                src={imageUrl}
-                                alt={mapping.exercise?.name}
-                                className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                              />
-                            ) : (
-                              <ImagePlaceholder type="exercise" iconClassName="h-5 w-5" />
-                            )}
-                          </div>
-
-                          {/* Info */}
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2">
-                              <p className="font-semibold truncate">{mapping.exercise?.name || 'Nieznane ćwiczenie'}</p>
-                              {mapping.exercise?.type && (
-                                <Badge variant="secondary" className="text-[10px] shrink-0">
-                                  {translateType(mapping.exercise.type)}
-                                </Badge>
-                              )}
-                            </div>
-                            {hasParams ? (
-                              <div className="flex items-center gap-4 text-sm mt-1.5">
-                                {mapping.sets && (
-                                  <div className="flex items-center gap-1.5 rounded-md bg-surface-light px-2 py-0.5">
-                                    <span className="text-xs text-muted-foreground">Serie</span>
-                                    <span className="font-semibold text-foreground">{mapping.sets}</span>
-                                  </div>
-                                )}
-                                {mapping.reps && (
-                                  <div className="flex items-center gap-1.5 rounded-md bg-surface-light px-2 py-0.5">
-                                    <span className="text-xs text-muted-foreground">Powt.</span>
-                                    <span className="font-semibold text-foreground">{mapping.reps}</span>
-                                  </div>
-                                )}
-                                {mapping.duration && (
-                                  <div className="flex items-center gap-1.5 rounded-md bg-surface-light px-2 py-0.5">
-                                    <Clock className="h-3 w-3 text-muted-foreground" />
-                                    <span className="font-semibold text-foreground">{mapping.duration}s</span>
-                                  </div>
-                                )}
-                              </div>
-                            ) : (
-                              <p className="text-xs text-muted-foreground mt-1">Kliknij aby ustawić parametry</p>
-                            )}
-                          </div>
-
-                          {/* Actions */}
-                          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/10"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setEditingExercise(mapping);
-                              }}
-                            >
-                              <Pencil className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setRemovingExerciseId(mapping.exerciseId);
-                              }}
-                            >
-                              <X className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </div>
-                      );
-                    })}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+      {/* Exercises Section */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
+            <Dumbbell className="h-5 w-5 text-primary" />
+            Ćwiczenia ({exercises.length})
+          </h2>
+          <Button size="sm" onClick={() => setIsAddExerciseDialogOpen(true)}>
+            <Plus className="mr-2 h-4 w-4" />
+            Dodaj
+          </Button>
         </div>
 
-        {/* Sidebar - Assigned patients */}
-        <div>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-4">
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <Users className="h-5 w-5 text-primary" />
-                Pacjenci ({assignments.length})
-              </CardTitle>
-              <Button size="sm" onClick={() => setIsAssignDialogOpen(true)} className="shadow-sm">
-                <Plus className="mr-2 h-4 w-4" />
-                Przypisz
-              </Button>
-            </CardHeader>
-            <CardContent className="pt-0">
-              {assignments.length === 0 ? (
-                <div className="text-center py-10">
-                  <div className="h-14 w-14 rounded-full bg-surface-light mx-auto flex items-center justify-center mb-4">
-                    <Users className="h-7 w-7 text-muted-foreground/60" />
-                  </div>
-                  <p className="text-sm font-medium text-muted-foreground mb-1">Brak przypisanych pacjentów</p>
-                  <p className="text-xs text-muted-foreground/70 mb-4">Przypisz ten zestaw do pacjentów</p>
-                  <Button size="sm" variant="outline" onClick={() => setIsAssignDialogOpen(true)}>
-                    <Plus className="mr-2 h-4 w-4" />
-                    Przypisz pacjenta
-                  </Button>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {assignments.map((assignment) => {
-                    const statusInfo = getStatusInfo(assignment.status);
-                    const frequencyDisplay = getFrequencyDisplay(assignment.frequency);
+        {exercises.length === 0 ? (
+          <div className="rounded-xl border border-dashed border-border/60 bg-surface/30 p-12">
+            <EmptyState
+              icon={Dumbbell}
+              title="Brak ćwiczeń"
+              description="Dodaj ćwiczenia do tego zestawu"
+              actionLabel="Dodaj ćwiczenie"
+              onAction={() => setIsAddExerciseDialogOpen(true)}
+            />
+          </div>
+        ) : (
+          <div className="space-y-2 animate-stagger">
+            {[...exercises]
+              .sort((a, b) => (a.order || 0) - (b.order || 0))
+              .map((mapping, index) => {
+                const imageUrl = mapping.exercise?.imageUrl || mapping.exercise?.images?.[0];
+                const hasParams = mapping.sets || mapping.reps || mapping.duration;
+                return (
+                  <div
+                    key={mapping.id}
+                    className="group flex items-center gap-4 rounded-xl border border-border/60 bg-surface p-4 transition-all duration-200 hover:border-primary/30 hover:bg-surface-light cursor-pointer"
+                    onClick={() => setEditingExercise(mapping)}
+                  >
+                    {/* Order number */}
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-surface-light text-lg font-semibold text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary transition-colors shrink-0">
+                      {index + 1}
+                    </div>
 
-                    return (
-                      <div
-                        key={assignment.id}
-                        className="group rounded-xl border border-border bg-surface p-3 transition-all hover:border-border/80 hover:bg-surface-light"
-                      >
-                        <div className="flex items-start gap-3">
-                          <div className="relative shrink-0">
-                            <Avatar
-                              className={cn(
-                                'h-10 w-10 ring-2 transition-all',
-                                assignment.user?.isShadowUser ? 'ring-muted-foreground/20' : 'ring-border/30'
-                              )}
-                            >
-                              <AvatarImage src={assignment.user?.image} />
-                              <AvatarFallback
-                                className={cn(
-                                  'text-sm font-semibold',
-                                  assignment.user?.isShadowUser
-                                    ? 'bg-muted-foreground/60 text-white'
-                                    : 'bg-gradient-to-br from-info to-blue-600 text-white'
-                                )}
-                              >
-                                {assignment.user?.fullname?.[0] || '?'}
-                              </AvatarFallback>
-                            </Avatar>
-                            {assignment.user?.isShadowUser && (
-                              <div className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-muted-foreground/80 flex items-center justify-center ring-2 ring-surface">
-                                <Wrench className="h-2.5 w-2.5 text-white" />
-                              </div>
-                            )}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2">
-                              <p className="font-medium text-sm truncate">
-                                {assignment.user?.fullname || 'Nieznany pacjent'}
-                              </p>
-                              <Badge variant={statusInfo.variant} className="text-[9px] shrink-0">
-                                {statusInfo.label}
-                              </Badge>
-                            </div>
-                            {(frequencyDisplay || assignment.frequency?.timesPerDay) && (
-                              <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
-                                {frequencyDisplay && (
-                                  <span className="flex items-center gap-1">
-                                    <Calendar className="h-3 w-3" />
-                                    {frequencyDisplay}
-                                  </span>
-                                )}
-                                {assignment.frequency?.timesPerDay && (
-                                  <span className="flex items-center gap-1">
-                                    <Clock className="h-3 w-3" />
-                                    {assignment.frequency.timesPerDay}x/dzień
-                                  </span>
-                                )}
-                              </div>
-                            )}
-                            {assignment.completionCount !== undefined && assignment.completionCount > 0 && (
-                              <p className="text-xs text-muted-foreground mt-1">
-                                Wykonano: {assignment.completionCount}x
-                              </p>
-                            )}
-                          </div>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                              >
-                                <MoreHorizontal className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-48">
-                              <DropdownMenuItem asChild>
-                                <Link href={`/patients/${assignment.user?.id}`}>
-                                  <ExternalLink className="mr-2 h-4 w-4" />
-                                  Przejdź do pacjenta
-                                </Link>
-                              </DropdownMenuItem>
-                              <DropdownMenuItem asChild>
-                                <Link href={`/patients/${assignment.user?.id}?tab=exercises`}>
-                                  <Settings2 className="mr-2 h-4 w-4" />
-                                  Zarządzaj zestawem
-                                </Link>
-                              </DropdownMenuItem>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem
-                                onClick={() => handleToggleAssignmentStatus(assignment)}
-                                disabled={updatingAssignment}
-                              >
-                                {assignment.status === 'active' ? (
-                                  <>
-                                    <Pause className="mr-2 h-4 w-4" />
-                                    Wstrzymaj
-                                  </>
-                                ) : (
-                                  <>
-                                    <Play className="mr-2 h-4 w-4" />
-                                    Wznów
-                                  </>
-                                )}
-                              </DropdownMenuItem>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem
-                                onClick={() => setRemovingAssignment(assignment)}
-                                className="text-destructive focus:text-destructive"
-                              >
-                                <Trash2 className="mr-2 h-4 w-4" />
-                                Usuń przypisanie
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </div>
+                    {/* Thumbnail */}
+                    <div className="h-14 w-14 rounded-lg overflow-hidden shrink-0 bg-surface-light">
+                      {imageUrl ? (
+                        <img
+                          src={imageUrl}
+                          alt={mapping.exercise?.name}
+                          loading="lazy"
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <ImagePlaceholder type="exercise" iconClassName="h-5 w-5" />
+                      )}
+                    </div>
+
+                    {/* Info */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <p className="font-semibold truncate">{mapping.exercise?.name || 'Nieznane ćwiczenie'}</p>
+                        {mapping.exercise?.type && (
+                          <Badge variant="secondary" className="text-[10px] shrink-0">
+                            {translateType(mapping.exercise.type)}
+                          </Badge>
+                        )}
                       </div>
-                    );
-                  })}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                      {hasParams ? (
+                        <div className="flex items-center gap-3 text-sm mt-1.5">
+                          {mapping.sets && (
+                            <span className="text-xs text-muted-foreground">
+                              <span className="font-semibold text-foreground">{mapping.sets}</span> serii
+                            </span>
+                          )}
+                          {mapping.reps && (
+                            <span className="text-xs text-muted-foreground">
+                              <span className="font-semibold text-foreground">{mapping.reps}</span> powt.
+                            </span>
+                          )}
+                          {mapping.duration && (
+                            <span className="text-xs text-muted-foreground flex items-center gap-1">
+                              <Clock className="h-3 w-3" />
+                              <span className="font-semibold text-foreground">{mapping.duration}s</span>
+                            </span>
+                          )}
+                        </div>
+                      ) : (
+                        <p className="text-xs text-muted-foreground mt-1">Kliknij aby ustawić parametry</p>
+                      )}
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 hover:bg-primary/10 hover:text-primary"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setEditingExercise(mapping);
+                        }}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 hover:bg-destructive/10 hover:text-destructive"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setRemovingExerciseId(mapping.exerciseId);
+                        }}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })}
+          </div>
+        )}
+      </div>
+
+      {/* Patients Section */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
+            <Users className="h-5 w-5 text-secondary" />
+            Przypisani pacjenci ({assignments.length})
+          </h2>
+          <Button size="sm" variant="outline" onClick={() => setIsAssignDialogOpen(true)}>
+            <Plus className="mr-2 h-4 w-4" />
+            Przypisz
+          </Button>
         </div>
+
+        {assignments.length === 0 ? (
+          <div className="rounded-xl border border-dashed border-border/60 bg-surface/30 p-12">
+            <EmptyState
+              icon={Users}
+              title="Brak przypisanych pacjentów"
+              description="Przypisz ten zestaw do pacjentów"
+              actionLabel="Przypisz pacjenta"
+              onAction={() => setIsAssignDialogOpen(true)}
+            />
+          </div>
+        ) : (
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 animate-stagger">
+            {assignments.map((assignment) => {
+              const statusInfo = getStatusInfo(assignment.status);
+              const frequencyDisplay = getFrequencyDisplay(assignment.frequency);
+
+              return (
+                <div
+                  key={assignment.id}
+                  className="group rounded-xl border border-border/60 bg-surface p-4 transition-all duration-200 hover:border-primary/30 hover:bg-surface-light"
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="relative shrink-0">
+                      <Avatar
+                        className={cn(
+                          'h-11 w-11 ring-2 transition-all',
+                          assignment.user?.isShadowUser ? 'ring-muted-foreground/20' : 'ring-border/30'
+                        )}
+                      >
+                        <AvatarImage src={assignment.user?.image} />
+                        <AvatarFallback
+                          className={cn(
+                            'text-sm font-semibold',
+                            assignment.user?.isShadowUser
+                              ? 'bg-muted-foreground/60 text-white'
+                              : 'bg-gradient-to-br from-info to-blue-600 text-white'
+                          )}
+                        >
+                          {assignment.user?.fullname?.[0] || '?'}
+                        </AvatarFallback>
+                      </Avatar>
+                      {assignment.user?.isShadowUser && (
+                        <div className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-muted-foreground/80 flex items-center justify-center ring-2 ring-surface">
+                          <Wrench className="h-2.5 w-2.5 text-white" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <p className="font-medium text-sm truncate">
+                          {assignment.user?.fullname || 'Nieznany pacjent'}
+                        </p>
+                        <Badge variant={statusInfo.variant} className="text-[9px] shrink-0">
+                          {statusInfo.label}
+                        </Badge>
+                      </div>
+                      {(frequencyDisplay || assignment.frequency?.timesPerDay) && (
+                        <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
+                          {frequencyDisplay && (
+                            <span className="flex items-center gap-1">
+                              <Calendar className="h-3 w-3" />
+                              {frequencyDisplay}
+                            </span>
+                          )}
+                          {assignment.frequency?.timesPerDay && (
+                            <span className="flex items-center gap-1">
+                              <Clock className="h-3 w-3" />
+                              {assignment.frequency.timesPerDay}x/dzień
+                            </span>
+                          )}
+                        </div>
+                      )}
+                      {assignment.completionCount !== undefined && assignment.completionCount > 0 && (
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Wykonano: {assignment.completionCount}x
+                        </p>
+                      )}
+                    </div>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-48">
+                        <DropdownMenuItem asChild>
+                          <Link href={`/patients/${assignment.user?.id}`}>
+                            <ExternalLink className="mr-2 h-4 w-4" />
+                            Przejdź do pacjenta
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem asChild>
+                          <Link href={`/patients/${assignment.user?.id}?tab=exercises`}>
+                            <Settings2 className="mr-2 h-4 w-4" />
+                            Zarządzaj zestawem
+                          </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                          onClick={() => handleToggleAssignmentStatus(assignment)}
+                          disabled={updatingAssignment}
+                        >
+                          {assignment.status === 'active' ? (
+                            <>
+                              <Pause className="mr-2 h-4 w-4" />
+                              Wstrzymaj
+                            </>
+                          ) : (
+                            <>
+                              <Play className="mr-2 h-4 w-4" />
+                              Wznów
+                            </>
+                          )}
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                          onClick={() => setRemovingAssignment(assignment)}
+                          className="text-destructive focus:text-destructive"
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Usuń przypisanie
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* Edit Dialog */}
