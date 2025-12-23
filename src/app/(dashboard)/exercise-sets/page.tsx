@@ -4,17 +4,19 @@ import { useState } from 'react';
 import { useQuery, useMutation } from '@apollo/client/react';
 import { useUser } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
-import { Plus, FolderKanban } from 'lucide-react';
+import { Plus, FolderKanban, FolderPlus, Search, Sparkles, FolderX } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { SetCard, ExerciseSet } from '@/components/exercise-sets/SetCard';
 import { SetDialog } from '@/components/exercise-sets/SetDialog';
-import { SetFilters } from '@/components/exercise-sets/SetFilters';
+import { cn } from '@/lib/utils';
 
 import { GET_ORGANIZATION_EXERCISE_SETS_QUERY } from '@/graphql/queries/exerciseSets.queries';
 import { DELETE_EXERCISE_SET_MUTATION, DUPLICATE_EXERCISE_SET_MUTATION } from '@/graphql/mutations/exercises.mutations';
@@ -22,7 +24,7 @@ import { GET_USER_BY_CLERK_ID_QUERY } from '@/graphql/queries/users.queries';
 import { matchesSearchQuery } from '@/utils/textUtils';
 import type { UserByClerkIdResponse, OrganizationExerciseSetsResponse } from '@/types/apollo';
 
-type FilterType = 'all' | 'active' | 'inactive' | 'templates';
+type FilterType = 'all' | 'active' | 'templates' | 'inactive';
 
 export default function ExerciseSetsPage() {
   const { user } = useUser();
@@ -58,6 +60,12 @@ export default function ExerciseSetsPage() {
 
   const exerciseSets: ExerciseSet[] = (data as OrganizationExerciseSetsResponse)?.exerciseSets || [];
 
+  // Calculate stats
+  const totalCount = exerciseSets.length;
+  const activeCount = exerciseSets.filter((s) => s.isActive !== false).length;
+  const templatesCount = exerciseSets.filter((s) => s.isTemplate === true).length;
+  const inactiveCount = exerciseSets.filter((s) => s.isActive === false).length;
+
   // Filter by status/template
   const statusFilteredSets = exerciseSets.filter((set) => {
     if (filter === 'all') return true;
@@ -68,14 +76,20 @@ export default function ExerciseSetsPage() {
   });
 
   // Filter by search query
-  const filteredSets = statusFilteredSets.filter(
+  const searchFilteredSets = statusFilteredSets.filter(
     (set) => matchesSearchQuery(set.name, searchQuery) || matchesSearchQuery(set.description, searchQuery)
   );
 
-  // Sort by most assigned for better UX
-  const sortedSets = [...filteredSets].sort(
-    (a, b) => (b.patientAssignments?.length || 0) - (a.patientAssignments?.length || 0)
-  );
+  // Sort by most assigned for better UX, inactive at the bottom
+  const filteredSets = [...searchFilteredSets].sort((a, b) => {
+    // Inactive at bottom
+    const aInactive = a.isActive === false;
+    const bInactive = b.isActive === false;
+    if (aInactive && !bInactive) return 1;
+    if (!aInactive && bInactive) return -1;
+    // Then by assignment count
+    return (b.patientAssignments?.length || 0) - (a.patientAssignments?.length || 0);
+  });
 
   const handleView = (set: ExerciseSet) => {
     router.push(`/exercise-sets/${set.id}`);
@@ -92,8 +106,8 @@ export default function ExerciseSetsPage() {
         variables: { exerciseSetId: set.id },
       });
       toast.success('Zestaw został zduplikowany');
-    } catch (error) {
-      console.error('Błąd podczas duplikowania:', error);
+    } catch (err) {
+      console.error('Błąd podczas duplikowania:', err);
       toast.error('Nie udało się zduplikować zestawu');
     }
   };
@@ -107,8 +121,8 @@ export default function ExerciseSetsPage() {
       });
       toast.success('Zestaw został usunięty');
       setDeletingSet(null);
-    } catch (error) {
-      console.error('Błąd podczas usuwania:', error);
+    } catch (err) {
+      console.error('Błąd podczas usuwania:', err);
       toast.error('Nie udało się usunąć zestawu');
     }
   };
@@ -128,34 +142,144 @@ export default function ExerciseSetsPage() {
 
   return (
     <div className="space-y-6">
-      {/* Page header */}
+      {/* Compact Header with Search */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold">Zestawy ćwiczeń</h1>
-          <p className="text-muted-foreground text-sm mt-1">Twórz i zarządzaj programami ćwiczeń dla pacjentów</p>
+        <h1 className="text-2xl font-bold text-foreground">Zestawy ćwiczeń</h1>
+        <div className="relative w-full sm:w-72">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Szukaj zestawów..."
+            className="pl-9 bg-surface border-border/60"
+          />
         </div>
-        <Button onClick={() => setIsDialogOpen(true)} disabled={!organizationId}>
-          <Plus className="mr-2 h-4 w-4" />
-          Nowy zestaw
-        </Button>
       </div>
 
-      {/* Filters */}
-      <SetFilters
-        searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
-        filter={filter}
-        onFilterChange={setFilter}
-        resultCount={filteredSets.length}
-        totalCount={exerciseSets.length}
-      />
+      {/* Hero Action + Quick Stats */}
+      <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-12">
+        {/* Hero Action - Nowy zestaw */}
+        <button
+          onClick={() => setIsDialogOpen(true)}
+          disabled={!organizationId}
+          className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary via-primary to-primary-dark p-5 text-left transition-all duration-300 hover:shadow-xl hover:shadow-primary/20 hover:scale-[1.02] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 sm:col-span-1 lg:col-span-4"
+        >
+          <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+          <div className="absolute -top-24 -right-24 w-48 h-48 bg-white/10 rounded-full blur-3xl group-hover:bg-white/20 transition-all duration-500" />
+          
+          <div className="relative flex items-center gap-4">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm shrink-0 group-hover:scale-110 transition-transform duration-300">
+              <FolderPlus className="h-5 w-5 text-white" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <h3 className="text-base font-bold text-white">
+                Nowy zestaw
+              </h3>
+              <p className="text-sm text-white/70">
+                Utwórz program ćwiczeń
+              </p>
+            </div>
+            <Plus className="h-5 w-5 text-white/60 group-hover:text-white transition-colors shrink-0" />
+          </div>
+        </button>
+
+        {/* Quick Stats - Clickable filters */}
+        <div className="grid grid-cols-3 gap-3 sm:col-span-1 lg:col-span-8">
+          {/* All sets */}
+          <button
+            onClick={() => setFilter('all')}
+            className={cn(
+              'rounded-2xl border p-4 flex flex-col items-center justify-center text-center transition-all duration-200',
+              filter === 'all'
+                ? 'border-primary/40 bg-primary/10 ring-1 ring-primary/20'
+                : 'border-border/40 bg-surface/50 hover:bg-surface-light hover:border-border'
+            )}
+          >
+            <div className="flex items-center gap-2">
+              <FolderKanban className={cn('h-4 w-4', filter === 'all' ? 'text-primary' : 'text-muted-foreground')} />
+              <span className={cn('text-2xl font-bold', filter === 'all' ? 'text-primary' : 'text-foreground')}>
+                {totalCount}
+              </span>
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">Wszystkie</p>
+          </button>
+
+          {/* Active sets */}
+          <button
+            onClick={() => setFilter('active')}
+            className={cn(
+              'rounded-2xl border p-4 flex flex-col items-center justify-center text-center transition-all duration-200',
+              filter === 'active'
+                ? 'border-secondary/40 bg-secondary/10 ring-1 ring-secondary/20'
+                : 'border-border/40 bg-surface/50 hover:bg-surface-light hover:border-border'
+            )}
+          >
+            <div className="flex items-center gap-2">
+              <FolderKanban className={cn('h-4 w-4', filter === 'active' ? 'text-secondary' : 'text-muted-foreground')} />
+              <span className={cn('text-2xl font-bold', filter === 'active' ? 'text-secondary' : 'text-foreground')}>
+                {activeCount}
+              </span>
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">Aktywne</p>
+          </button>
+
+          {/* Templates */}
+          <button
+            onClick={() => setFilter('templates')}
+            className={cn(
+              'rounded-2xl border p-4 flex flex-col items-center justify-center text-center transition-all duration-200',
+              filter === 'templates'
+                ? 'border-info/40 bg-info/10 ring-1 ring-info/20'
+                : 'border-border/40 bg-surface/50 hover:bg-surface-light hover:border-border'
+            )}
+          >
+            <div className="flex items-center gap-2">
+              <Sparkles className={cn('h-4 w-4', filter === 'templates' ? 'text-info' : 'text-muted-foreground')} />
+              <span className={cn('text-2xl font-bold', filter === 'templates' ? 'text-info' : 'text-foreground')}>
+                {templatesCount}
+              </span>
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">Szablony</p>
+          </button>
+        </div>
+      </div>
+
+      {/* Results info */}
+      {(searchQuery || filter !== 'all') && (
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <span>Wyniki:</span>
+          <Badge variant="secondary" className="text-xs">
+            {filteredSets.length} z {totalCount}
+          </Badge>
+          {searchQuery && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 px-2 text-xs"
+              onClick={() => setSearchQuery('')}
+            >
+              Wyczyść wyszukiwanie
+            </Button>
+          )}
+          {filter !== 'all' && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 px-2 text-xs"
+              onClick={() => setFilter('all')}
+            >
+              Pokaż wszystkie
+            </Button>
+          )}
+        </div>
+      )}
 
       {/* Content */}
       {loading ? (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 animate-stagger">
           {[1, 2, 3, 4, 5, 6].map((i) => (
-            <Card key={i}>
-              <Skeleton className="aspect-[16/10] w-full" />
+            <Card key={i} className="border-border/40">
+              <Skeleton className="aspect-[4/3] w-full" />
               <CardContent className="p-4">
                 <Skeleton className="h-5 w-3/4 mb-2" />
                 <Skeleton className="h-4 w-full mb-2" />
@@ -165,7 +289,7 @@ export default function ExerciseSetsPage() {
           ))}
         </div>
       ) : filteredSets.length === 0 ? (
-        <Card className="border-dashed">
+        <Card className="border-dashed border-border/60">
           <CardContent className="py-16">
             <EmptyState
               icon={FolderKanban}
@@ -181,8 +305,8 @@ export default function ExerciseSetsPage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {sortedSets.map((set) => (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 animate-stagger">
+          {filteredSets.map((set) => (
             <SetCard
               key={set.id}
               set={set}
