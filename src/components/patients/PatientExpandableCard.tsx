@@ -1,12 +1,18 @@
 'use client';
 
-import { useState } from 'react';
-import { ChevronDown, ChevronRight, Mail, Phone, FolderKanban, Activity, Wrench } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { Mail, Phone, FolderKanban, Wrench, MoreHorizontal, Power, UserX } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ColorBadge } from '@/components/shared/ColorBadge';
-import { PatientExpandedContent } from './PatientExpandedContent';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 
 export interface Patient {
@@ -41,12 +47,10 @@ interface PatientExpandableCardProps {
 export function PatientExpandableCard({
   patient,
   onAssignSet,
-  onViewReport,
   onToggleStatus,
   onRemove,
-  organizationId,
 }: PatientExpandableCardProps) {
-  const [isExpanded, setIsExpanded] = useState(false);
+  const router = useRouter();
 
   const displayName =
     patient.fullname ||
@@ -62,8 +66,8 @@ export function PatientExpandableCard({
 
   const isActive = patient.assignmentStatus !== 'inactive';
 
-  const handleToggle = () => {
-    setIsExpanded(!isExpanded);
+  const handleCardClick = () => {
+    router.push(`/patients/${patient.id}`);
   };
 
   const handleAction = (e: React.MouseEvent, action: () => void) => {
@@ -73,28 +77,28 @@ export function PatientExpandableCard({
 
   return (
     <div
+      onClick={handleCardClick}
       className={cn(
-        'group rounded-xl border border-border/60 bg-surface transition-all',
-        'hover:bg-surface-light hover:border-border',
-        isExpanded && 'bg-surface-light border-border'
+        'group rounded-xl border border-border/60 bg-surface transition-all cursor-pointer',
+        'hover:bg-surface-light hover:border-primary/30 hover:shadow-md',
+        !isActive && 'opacity-60 hover:opacity-100'
       )}
     >
-      {/* Collapsed State */}
-      <div className="flex items-center gap-4 p-4 cursor-pointer" onClick={handleToggle}>
+      <div className="flex items-center gap-4 p-4">
         {/* Avatar */}
         <div className="relative shrink-0">
           <Avatar
             className={cn(
-              'h-12 w-12 ring-2 transition-all',
+              'h-11 w-11 ring-2 transition-all',
               patient.isShadowUser
                 ? 'ring-muted-foreground/20 group-hover:ring-muted-foreground/30'
-                : 'ring-border/30 group-hover:ring-primary/20'
+                : 'ring-border/30 group-hover:ring-primary/30'
             )}
           >
             <AvatarImage src={patient.image} alt={displayName} />
             <AvatarFallback
               className={cn(
-                'font-semibold',
+                'font-semibold text-sm',
                 patient.isShadowUser
                   ? 'bg-muted-foreground/60 text-white'
                   : 'bg-gradient-to-br from-info to-blue-600 text-white'
@@ -104,39 +108,33 @@ export function PatientExpandableCard({
             </AvatarFallback>
           </Avatar>
           {patient.isShadowUser && (
-            <div className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-muted-foreground/80 flex items-center justify-center ring-2 ring-surface">
-              <Wrench className="h-3 w-3 text-white" />
+            <div className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-muted-foreground/80 flex items-center justify-center ring-2 ring-surface">
+              <Wrench className="h-2.5 w-2.5 text-white" />
             </div>
           )}
         </div>
 
         {/* Main Content */}
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1">
-            <h3 className="font-semibold text-foreground truncate">{displayName}</h3>
+          <div className="flex items-center gap-2 mb-0.5">
+            <h3 className="font-semibold text-sm text-foreground truncate group-hover:text-primary transition-colors">
+              {displayName}
+            </h3>
             {patient.isShadowUser && (
-              <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
+              <Badge variant="secondary" className="text-[10px] px-1.5 py-0 shrink-0">
                 Tymczasowy
               </Badge>
             )}
-            <Badge variant={isActive ? 'default' : 'secondary'} className="text-[10px] px-1.5 py-0">
-              {isActive ? 'Aktywny' : 'Nieaktywny'}
-            </Badge>
-            {patient.contextLabel && (
-              <ColorBadge color={patient.contextColor || '#888888'} size="sm">
-                {patient.contextLabel}
-              </ColorBadge>
-            )}
           </div>
-          <div className="flex items-center gap-4 text-xs text-muted-foreground">
+          <div className="flex items-center gap-3 text-xs text-muted-foreground">
             {patient.email && (
-              <span className="flex items-center gap-1 truncate">
+              <span className="flex items-center gap-1 truncate max-w-[180px]">
                 <Mail className="h-3 w-3 flex-shrink-0" />
                 <span className="truncate">{patient.email}</span>
               </span>
             )}
             {patient.contactData?.phone && (
-              <span className="flex items-center gap-1">
+              <span className="flex items-center gap-1 shrink-0">
                 <Phone className="h-3 w-3 flex-shrink-0" />
                 {patient.contactData.phone}
               </span>
@@ -144,57 +142,67 @@ export function PatientExpandableCard({
           </div>
         </div>
 
+        {/* Context Label */}
+        {patient.contextLabel && (
+          <ColorBadge color={patient.contextColor || '#888888'} size="sm" className="shrink-0">
+            {patient.contextLabel}
+          </ColorBadge>
+        )}
+
+        {/* Status Badge */}
+        <Badge
+          variant={isActive ? 'default' : 'secondary'}
+          className="text-[10px] px-2 py-0.5 shrink-0"
+        >
+          {isActive ? 'Aktywny' : 'Nieaktywny'}
+        </Badge>
+
         {/* Hover Actions */}
-        <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+          {/* Quick Assign */}
           <Button
             variant="ghost"
             size="icon"
-            className="h-8 w-8"
+            className="h-8 w-8 hover:bg-primary/10 hover:text-primary"
             onClick={(e) => handleAction(e, () => onAssignSet(patient))}
             title="Przypisz zestaw"
           >
             <FolderKanban className="h-4 w-4" />
           </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8"
-            onClick={(e) => handleAction(e, () => onViewReport(patient))}
-            title="Raport aktywności"
-          >
-            <Activity className="h-4 w-4" />
-          </Button>
-        </div>
 
-        {/* Expand Icon */}
-        <button
-          className="shrink-0 p-1 rounded-lg hover:bg-surface transition-colors"
-          onClick={(e) => {
-            e.stopPropagation();
-            handleToggle();
-          }}
-        >
-          {isExpanded ? (
-            <ChevronDown className="h-5 w-5 text-muted-foreground" />
-          ) : (
-            <ChevronRight className="h-5 w-5 text-muted-foreground" />
-          )}
-        </button>
+          {/* More Options Menu */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+              <DropdownMenuItem onClick={() => onAssignSet(patient)}>
+                <FolderKanban className="mr-2 h-4 w-4" />
+                Przypisz zestaw
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => onToggleStatus(patient)}>
+                <Power className="mr-2 h-4 w-4" />
+                {isActive ? 'Dezaktywuj' : 'Aktywuj'}
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => onRemove(patient)}
+                className="text-destructive focus:text-destructive"
+              >
+                <UserX className="mr-2 h-4 w-4" />
+                Odepnij pacjenta
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
-
-      {/* Expanded State */}
-      {isExpanded && (
-        <div className="px-4 pb-4">
-          <PatientExpandedContent
-            patient={patient}
-            onAssignSet={() => onAssignSet(patient)}
-            onViewReport={() => onViewReport(patient)}
-            onToggleStatus={() => onToggleStatus(patient)}
-            onRemove={() => onRemove(patient)}
-            organizationId={organizationId}
-          />
-        </div>
-      )}
     </div>
   );
 }
