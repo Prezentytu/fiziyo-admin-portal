@@ -251,18 +251,21 @@ export const SET_DEFAULT_ORGANIZATION_MUTATION = gql`
  * Mutacja do tworzenia shadow patient (rozszerzona wersja shadow user)
  * Używana podczas dodawania pacjenta przed jego rejestracją w systemie
  * Tworzy usera + dodaje do organizacji + przypisuje do terapeuty w jednym kroku
+ * 
+ * UWAGA: Backend wymaga phone jako wymagane, ale email jest opcjonalny.
+ * Fizjoterapeuta musi podać przynajmniej jedno z nich.
  */
 export const CREATE_SHADOW_PATIENT_MUTATION = gql`
   mutation CreateShadowPatient(
     $firstName: String!
     $lastName: String!
-    $phone: String!
+    $phone: String
     $email: String
     $organizationId: String!
     $clinicId: String
     $contextLabel: String
-    $contextType: AssignmentContextType
-    $sendActivationSms: Boolean
+    $contextType: AssignmentContextType = PRIMARY
+    $sendActivationSms: Boolean = false
   ) {
     createShadowPatient(
       firstName: $firstName

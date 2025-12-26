@@ -22,6 +22,7 @@ import {
   ChevronRight,
   CheckCircle2,
   Send,
+  FileDown,
 } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
@@ -45,6 +46,7 @@ import { LoadingState } from '@/components/shared/LoadingState';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { ActivityReport } from '@/components/patients/ActivityReport';
 import { PatientAssignmentCard } from '@/components/patients/PatientAssignmentCard';
+import { PatientNotes } from '@/components/patients/PatientNotes';
 import type { PatientAssignment, ExerciseMapping, ExerciseOverride } from '@/components/patients/PatientAssignmentCard';
 
 import { GET_USER_BY_ID_QUERY, GET_USER_BY_CLERK_ID_QUERY } from '@/graphql/queries/users.queries';
@@ -58,6 +60,7 @@ import { AssignmentWizard } from '@/components/assignment/AssignmentWizard';
 import type { Patient as AssignmentPatient } from '@/components/assignment/types';
 import { EditAssignmentScheduleDialog } from '@/components/patients/EditAssignmentScheduleDialog';
 import { EditExerciseOverrideDialog } from '@/components/patients/EditExerciseOverrideDialog';
+import { GeneratePDFDialog } from '@/components/exercise-sets/GeneratePDFDialog';
 
 interface PatientDetailPageProps {
   params: Promise<{ id: string }>;
@@ -84,6 +87,7 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
     mapping: ExerciseMapping;
     override?: ExerciseOverride;
   } | null>(null);
+  const [pdfAssignment, setPdfAssignment] = useState<PatientAssignment | null>(null);
 
   // Get current user data for organizationId
   const { data: currentUserData } = useQuery(GET_USER_BY_CLERK_ID_QUERY, {
@@ -167,6 +171,10 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
 
   const handleAddExerciseToAssignment = (assignment: PatientAssignment) => {
     console.log('Add exercise to assignment', assignment.id);
+  };
+
+  const handleGeneratePDF = (assignment: PatientAssignment) => {
+    setPdfAssignment(assignment);
   };
 
   return (
@@ -343,12 +351,23 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
                 onEditSchedule={handleEditSchedule}
                 onEditExercise={handleEditExercise}
                 onAddExercise={handleAddExerciseToAssignment}
+                onGeneratePDF={handleGeneratePDF}
                 onRefresh={() => refetchAssignments()}
               />
             ))}
           </div>
         )}
       </div>
+
+      {/* Clinical Notes Section */}
+      {therapistId && organizationId && (
+        <PatientNotes
+          therapistId={therapistId}
+          patientId={id}
+          organizationId={organizationId}
+          onUpdate={() => {}}
+        />
+      )}
 
       {/* Collapsible Sections - Profile & Activity */}
       <div className="space-y-3 pt-4 border-t border-border/40">
@@ -497,6 +516,23 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
           setEditingExerciseData(null);
         }}
       />
+
+      {/* Generate PDF Dialog */}
+      {organizationId && pdfAssignment?.exerciseSet && (
+        <GeneratePDFDialog
+          open={!!pdfAssignment}
+          onOpenChange={(open) => !open && setPdfAssignment(null)}
+          exerciseSet={{
+            id: pdfAssignment.exerciseSet.id,
+            name: pdfAssignment.exerciseSet.name,
+            description: pdfAssignment.exerciseSet.description,
+            exerciseMappings: pdfAssignment.exerciseSet.exerciseMappings,
+            frequency: pdfAssignment.frequency,
+          }}
+          patient={{ name: displayName, email: patient.email }}
+          organizationId={organizationId}
+        />
+      )}
     </div>
   );
 }

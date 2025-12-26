@@ -11,18 +11,28 @@ import { Input } from '@/components/ui/input';
 import { PhoneInput } from '@/components/ui/phone-input';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 
+// Schema z walidacją: wymagany phone LUB email
 const patientFormSchema = z.object({
   firstName: z.string().min(2, 'Imię musi mieć min. 2 znaki'),
   lastName: z.string().min(2, 'Nazwisko musi mieć min. 2 znaki'),
-  phone: z.string().length(9, 'Numer telefonu musi mieć 9 cyfr'),
+  phone: z.string().optional().refine(
+    (val) => !val || val.length === 0 || val.length === 9,
+    'Numer telefonu musi mieć 9 cyfr'
+  ),
   email: z.string().email('Podaj prawidłowy email').optional().or(z.literal('')),
   contextLabel: z.string().optional(),
-});
+}).refine(
+  (data) => (data.phone && data.phone.length === 9) || (data.email && data.email.length > 0),
+  {
+    message: 'Podaj numer telefonu lub email',
+    path: ['phone'], // Pokazuje błąd przy polu phone
+  }
+);
 
 export type PatientFormValues = {
   firstName: string;
   lastName: string;
-  phone: string;
+  phone?: string;
   email?: string;
   contextLabel?: string;
 };
@@ -106,13 +116,14 @@ export function PatientForm({
         </div>
 
         {/* Contact fields - side by side */}
+        <p className="text-sm text-muted-foreground mb-1">Podaj numer telefonu lub email (wymagane jedno z nich)</p>
         <div className="grid gap-4 sm:grid-cols-2">
           <FormField
             control={form.control}
             name="phone"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Telefon *</FormLabel>
+                <FormLabel>Telefon</FormLabel>
                 <FormControl>
                   <PhoneInput placeholder="123 456 789" value={field.value ?? ''} onChange={field.onChange} />
                 </FormControl>

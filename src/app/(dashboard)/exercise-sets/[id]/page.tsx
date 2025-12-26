@@ -22,6 +22,7 @@ import {
   Play,
   Wrench,
   UserPlus,
+  FileDown,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import Link from 'next/link';
@@ -44,6 +45,7 @@ import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { SetDialog } from '@/components/exercise-sets/SetDialog';
 import { AddExerciseToSetDialog } from '@/components/exercise-sets/AddExerciseToSetDialog';
 import { EditExerciseInSetDialog } from '@/components/exercise-sets/EditExerciseInSetDialog';
+import { GeneratePDFDialog } from '@/components/exercise-sets/GeneratePDFDialog';
 import { AssignmentWizard } from '@/components/assignment/AssignmentWizard';
 import type { ExerciseSet as AssignmentExerciseSet } from '@/components/assignment/types';
 import { ImagePlaceholder } from '@/components/shared/ImagePlaceholder';
@@ -145,6 +147,7 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isAddExerciseDialogOpen, setIsAddExerciseDialogOpen] = useState(false);
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
+  const [isPDFDialogOpen, setIsPDFDialogOpen] = useState(false);
   const [editingExercise, setEditingExercise] = useState<ExerciseMapping | null>(null);
   const [removingExerciseId, setRemovingExerciseId] = useState<string | null>(null);
   const [removingAssignment, setRemovingAssignment] = useState<PatientAssignmentInSet | null>(null);
@@ -336,6 +339,11 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => setIsPDFDialogOpen(true)}>
+              <FileDown className="mr-2 h-4 w-4" />
+              Pobierz PDF
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => setIsEditDialogOpen(true)}>
               <Pencil className="mr-2 h-4 w-4" />
               Edytuj zestaw
@@ -799,6 +807,16 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
         onConfirm={handleRemoveAssignment}
         isLoading={removingAssignmentLoading}
       />
+
+      {/* Generate PDF Dialog */}
+      {organizationId && exerciseSet && (
+        <GeneratePDFDialog
+          open={isPDFDialogOpen}
+          onOpenChange={setIsPDFDialogOpen}
+          exerciseSet={exerciseSet}
+          organizationId={organizationId}
+        />
+      )}
     </div>
   );
 }

@@ -234,3 +234,30 @@ export const UPDATE_TREATMENT_CONTEXT_MUTATION = gql`
     }
   }
 `;
+
+/**
+ * Mutacja do aktualizacji notatek przy pacjencie
+ * Pozwala na dodawanie/edycję notatek klinicznych
+ */
+export const UPDATE_PATIENT_NOTES_MUTATION = gql`
+  mutation UpdatePatientNotes(
+    $therapistId: String!
+    $patientId: String!
+    $organizationId: String!
+    $notes: String!
+  ) {
+    updatePatientNotes(
+      therapistId: $therapistId
+      patientId: $patientId
+      organizationId: $organizationId
+      notes: $notes
+    ) {
+      id
+      therapistId
+      patientId
+      organizationId
+      notes
+      status
+    }
+  }
+`;

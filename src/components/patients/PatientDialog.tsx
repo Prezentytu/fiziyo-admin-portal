@@ -93,8 +93,11 @@ export function PatientDialog({
 
   const handleSubmit = async (values: PatientFormValues) => {
     try {
-      // Format phone with +48 prefix (backend expects full number)
-      const formattedPhone = values.phone.startsWith('+') ? values.phone : `+48${values.phone}`;
+      // Format phone with +48 prefix if provided (backend expects full number)
+      // Phone może być puste jeśli podano email - wysyłamy null zamiast ''
+      const formattedPhone = values.phone 
+        ? (values.phone.startsWith('+') ? values.phone : `+48${values.phone}`)
+        : null;
       
       const result = await createPatient({
         variables: {
@@ -105,8 +108,8 @@ export function PatientDialog({
           organizationId,
           clinicId: clinicId || null,
           contextLabel: values.contextLabel || null,
-          contextType: 'Primary',
-          sendActivationSms: false,
+          // contextType używa wartości domyślnej PRIMARY z mutacji GraphQL
+          // sendActivationSms używa wartości domyślnej false z mutacji GraphQL
         },
       });
 
@@ -144,7 +147,7 @@ export function PatientDialog({
     <>
       <Dialog open={open} onOpenChange={() => handleCloseAttempt()}>
         <DialogContent
-          className="sm:max-w-lg p-0 gap-0"
+          className="sm:max-w-xl p-0 gap-0"
           onInteractOutside={(e) => e.preventDefault()}
           onEscapeKeyDown={(e) => {
             e.preventDefault();
@@ -185,12 +188,12 @@ export function PatientDialog({
             <>
               <DialogHeader className="px-6 py-4 border-b border-border shrink-0">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary-dark shadow-lg shadow-primary/20">
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary-dark shadow-lg shadow-primary/20">
                     <UserPlus className="h-5 w-5 text-white" />
                   </div>
-                  <div>
-                    <DialogTitle className="text-xl font-bold">Nowy pacjent</DialogTitle>
-                    <DialogDescription>Uzupełnij podstawowe dane pacjenta</DialogDescription>
+                  <div className="min-w-0 flex-1">
+                    <DialogTitle className="text-xl font-bold truncate">Nowy pacjent</DialogTitle>
+                    <DialogDescription className="truncate">Uzupełnij podstawowe dane pacjenta</DialogDescription>
                   </div>
                 </div>
               </DialogHeader>

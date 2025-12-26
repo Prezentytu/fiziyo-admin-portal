@@ -18,6 +18,7 @@ import {
   EyeOff,
   Plus,
   Settings2,
+  FileDown,
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -128,6 +129,7 @@ interface PatientAssignmentCardProps {
   onEditSchedule?: (assignment: PatientAssignment) => void;
   onEditExercise?: (assignment: PatientAssignment, mapping: ExerciseMapping, override?: ExerciseOverride) => void;
   onAddExercise?: (assignment: PatientAssignment) => void;
+  onGeneratePDF?: (assignment: PatientAssignment) => void;
   onRefresh?: () => void;
 }
 
@@ -180,6 +182,7 @@ export function PatientAssignmentCard({
   onEditSchedule,
   onEditExercise,
   onAddExercise,
+  onGeneratePDF,
   onRefresh,
 }: PatientAssignmentCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -366,6 +369,11 @@ export function PatientAssignmentCard({
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => onGeneratePDF?.(assignment)}>
+                      <FileDown className="mr-2 h-4 w-4" />
+                      Pobierz PDF
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={() => onEditSchedule?.(assignment)}>
                       <Calendar className="mr-2 h-4 w-4" />
                       Edytuj harmonogram
