@@ -786,11 +786,337 @@ if (loading) return <Loader />;
 
 ---
 
+## 🎯 SUPER DESIGN SYSTEM - Action-First UI/UX (Linear/Vercel Style)
+
+### Filozofia
+
+Inspiracja: **Linear**, **Vercel**, **Stripe Dashboard** - aplikacje które są samowyjaśniające się i sprzedają same siebie.
+
+**Kluczowe zasady:**
+1. **Action-First** - główna akcja zawsze widoczna i dominująca
+2. **Zero Cognitive Load** - użytkownik od razu wie co może zrobić
+3. **Visual Hierarchy** - hierarchia informacji przez wielkość, kolor, pozycję
+4. **Konsystencja** - te same wzorce na każdej stronie
+5. **Elegancja** - subtelne animacje, płynne przejścia
+
+### Struktura każdej strony (obowiązkowa)
+
+```
+┌──────────────────────────────────────────────────────────┐
+│ 1. KOMPAKTOWY HEADER                                     │
+│    [Tytuł strony]                    [Opcje/Filtry]      │
+├──────────────────────────────────────────────────────────┤
+│ 2. HERO SECTION (opcjonalne - dla stron szczegółów)      │
+│    [Duży obraz/ikona] [Nazwa] [Badge statusu]            │
+├──────────────────────────────────────────────────────────┤
+│ 3. HERO ACTION + QUICK STATS (grid 12 kolumn)            │
+│    ┌─────────────────┐ ┌──────┐ ┌──────┐ ┌──────┐        │
+│    │ GŁÓWNA AKCJA    │ │Stat 1│ │Stat 2│ │Stat 3│        │
+│    │ (6 col, gradient)│ │2 col │ │2 col │ │2 col │        │
+│    └─────────────────┘ └──────┘ └──────┘ └──────┘        │
+├──────────────────────────────────────────────────────────┤
+│ 4. GŁÓWNA TREŚĆ                                          │
+│    [Lista/Grid z danymi]                                 │
+├──────────────────────────────────────────────────────────┤
+│ 5. SEKCJE DODATKOWE (Collapsible opcjonalnie)            │
+│    [Szczegóły, Notatki, Historia...]                     │
+└──────────────────────────────────────────────────────────┘
+```
+
+### Hero Action Button Pattern
+
+Główny przycisk akcji - zawsze gradient primary, duży, z animacją hover:
+
+```typescript
+// ✅ WZORZEC: Hero Action Button
+<button
+  onClick={handleMainAction}
+  className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary via-primary to-primary-dark p-5 sm:p-6 text-left transition-all duration-300 hover:shadow-xl hover:shadow-primary/20 hover:scale-[1.02] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed lg:col-span-6"
+>
+  {/* Animated background glow */}
+  <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+  <div className="absolute -top-24 -right-24 w-48 h-48 bg-white/10 rounded-full blur-3xl group-hover:bg-white/20 transition-all duration-500" />
+  
+  <div className="relative flex items-center gap-4">
+    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm shrink-0 group-hover:scale-110 transition-transform duration-300">
+      <Icon className="h-6 w-6 text-white" />
+    </div>
+    <div className="min-w-0 flex-1">
+      <h3 className="text-lg font-bold text-white mb-1">Nazwa Akcji</h3>
+      <p className="text-sm text-white/80">Krótki opis</p>
+    </div>
+    <ArrowRight className="h-5 w-5 text-white/60 group-hover:text-white group-hover:translate-x-1 transition-all duration-300 shrink-0" />
+  </div>
+</button>
+```
+
+### Quick Stats Cards Pattern
+
+Klikalne karty statystyk z filtrami:
+
+```typescript
+// ✅ WZORZEC: Clickable Quick Stat Card
+<Card
+  className={cn(
+    "relative overflow-hidden transition-all duration-300 cursor-pointer lg:col-span-2",
+    isActive
+      ? "border-primary shadow-xl shadow-primary/10"
+      : "border-border/60 hover:border-border hover:shadow-lg"
+  )}
+  onClick={() => setFilter("value")}
+>
+  <CardContent className="p-4">
+    <div className="flex items-center gap-2 mb-2">
+      <Icon className="h-4 w-4 text-primary" />
+      <span className="text-xs text-muted-foreground">Etykieta</span>
+    </div>
+    <p className="text-2xl font-bold text-foreground">{count}</p>
+  </CardContent>
+</Card>
+```
+
+### Kompaktowy Header Pattern
+
+Tytuł po lewej, akcje/filtry po prawej:
+
+```typescript
+// ✅ WZORZEC: Compact Header
+<div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+  <h1 className="text-2xl font-bold text-foreground">Tytuł Strony</h1>
+  
+  <div className="flex items-center gap-3">
+    {/* Search Input */}
+    <div className="relative w-full sm:w-64">
+      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+      <Input
+        placeholder="Szukaj..."
+        className="pl-9 bg-surface border-border/60"
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+      />
+    </div>
+    
+    {/* Options Dropdown */}
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="outline" size="sm">
+          <Settings className="h-4 w-4 mr-2" />
+          Opcje
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        {/* ... */}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  </div>
+</div>
+```
+
+### Card Hover Animations
+
+Subtelne, eleganckie animacje na kartach:
+
+```typescript
+// ✅ WZORZEC: Elegant Card Hover
+<div
+  className={cn(
+    "group relative rounded-xl border border-border/60 bg-surface overflow-hidden cursor-pointer",
+    "transition-all duration-300 ease-out will-change-transform",
+    "hover:-translate-y-1 hover:border-primary/40 hover:shadow-xl hover:shadow-primary/10"
+  )}
+>
+  {/* Image with subtle zoom */}
+  <div className="relative overflow-hidden">
+    <img
+      src={imageUrl}
+      alt={title}
+      loading="lazy"
+      className="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03]"
+    />
+    <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-transparent opacity-60 group-hover:opacity-40 transition-opacity duration-300" />
+  </div>
+</div>
+```
+
+### Staggered Animations
+
+Animacje pojawiania się elementów z opóźnieniem:
+
+```css
+/* globals.css */
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-stagger > * {
+  animation: fade-in 0.4s ease-out backwards;
+}
+.animate-stagger > *:nth-child(1) { animation-delay: 0ms; }
+.animate-stagger > *:nth-child(2) { animation-delay: 50ms; }
+.animate-stagger > *:nth-child(3) { animation-delay: 100ms; }
+.animate-stagger > *:nth-child(4) { animation-delay: 150ms; }
+/* ... do 10+ elementów */
+```
+
+```typescript
+// Użycie w komponencie
+<div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 animate-stagger">
+  {items.map((item) => (
+    <ItemCard key={item.id} item={item} />
+  ))}
+</div>
+```
+
+### Lists vs Expandable Cards
+
+**ZAWSZE preferuj click-to-navigate zamiast expandable cards:**
+
+```typescript
+// ❌ ZŁE: Expandable card w liście
+<Card onClick={() => setExpanded(!expanded)}>
+  {expanded && <ExpandedContent />}
+</Card>
+
+// ✅ DOBRE: Click-to-navigate
+<Link href={`/items/${item.id}`} className="group ...">
+  <div className="flex items-center gap-4">
+    {/* Basic info */}
+  </div>
+  {/* Hover actions */}
+  <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+    <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); quickAction(); }}>
+      <QuickActionIcon />
+    </Button>
+    <DropdownMenu>
+      <DropdownMenuTrigger onClick={(e) => e.stopPropagation()}>
+        <MoreHorizontal />
+      </DropdownMenuTrigger>
+      {/* ... */}
+    </DropdownMenu>
+  </div>
+</Link>
+```
+
+### Hover Actions Pattern
+
+Akcje widoczne tylko na hover:
+
+```typescript
+// ✅ WZORZEC: Hover Actions
+<div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+  <Button
+    variant="ghost"
+    size="icon"
+    className="h-8 w-8"
+    onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleQuickAction(); }}
+    title="Tooltip"
+  >
+    <ActionIcon className="h-4 w-4" />
+  </Button>
+  <DropdownMenu>
+    <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+      <Button variant="ghost" size="icon" className="h-8 w-8">
+        <MoreHorizontal className="h-4 w-4" />
+      </Button>
+    </DropdownMenuTrigger>
+    <DropdownMenuContent align="end">
+      {/* Menu items */}
+    </DropdownMenuContent>
+  </DropdownMenu>
+</div>
+```
+
+### Grid Layout (12 kolumn)
+
+Responsywny grid z 12 kolumnami:
+
+```typescript
+// ✅ WZORZEC: 12-column grid
+<div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-12">
+  {/* Hero Action - 6 kolumn */}
+  <div className="lg:col-span-6">...</div>
+  
+  {/* Stats - po 2 kolumny każda */}
+  <div className="lg:col-span-2">...</div>
+  <div className="lg:col-span-2">...</div>
+  <div className="lg:col-span-2">...</div>
+</div>
+```
+
+### Collapsible Sections
+
+Dla dodatkowych informacji:
+
+```typescript
+// ✅ WZORZЕЦ: Collapsible Section
+<Collapsible defaultOpen={false}>
+  <CollapsibleTrigger className="flex w-full items-center justify-between p-4 hover:bg-surface-light transition-colors rounded-lg">
+    <div className="flex items-center gap-3">
+      <Icon className="h-5 w-5 text-muted-foreground" />
+      <span className="font-medium">Tytuł Sekcji</span>
+    </div>
+    <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform duration-200 group-data-[state=open]:rotate-180" />
+  </CollapsibleTrigger>
+  <CollapsibleContent>
+    {/* Content */}
+  </CollapsibleContent>
+</Collapsible>
+```
+
+### Sortowanie list
+
+Nieaktywne/mniej ważne elementy zawsze na dole:
+
+```typescript
+// ✅ WZORZEC: Sorting inactive to bottom
+const sortedItems = [...items].sort((a, b) => {
+  // Inactive at bottom
+  if (a.isActive !== b.isActive) return a.isActive ? -1 : 1;
+  // Then by relevance (e.g., count, date)
+  return b.count - a.count;
+});
+```
+
+### Image Loading
+
+Zawsze lazy loading dla obrazów:
+
+```typescript
+// ✅ WZORZЕЦ: Lazy Loading Images
+<img
+  src={imageUrl}
+  alt={title}
+  loading="lazy"
+  className="..."
+/>
+```
+
+### Kolory gradientów wg kontekstu
+
+- **Primary action**: `bg-gradient-to-br from-primary via-primary to-primary-dark`
+- **Secondary/Info**: `bg-gradient-to-br from-info to-cyan-600`
+- **Warning**: `bg-gradient-to-br from-warning to-orange-600`
+- **Premium/Special**: `bg-gradient-to-br from-violet-500 to-purple-600`
+- **Subtle card accent**: `h-1 bg-gradient-to-r from-primary to-emerald-600` (top border)
+
+### Badge warianty
+
+```typescript
+<Badge variant="success">Aktywny</Badge>
+<Badge variant="secondary">Darmowy</Badge>
+<Badge variant="destructive">Nieaktywny</Badge>
+<Badge className="bg-primary/20 text-primary border-0">Custom</Badge>
+```
+
+---
+
 **Cel**: Nowoczesny, intuicyjny admin portal dla fizjoterapeutów
 **Styl**: Senior developer - przemyślany, minimalistyczny, efektywny
 **Podejście**: Najpierw myśl, potem koduj. Zawsze z uwzględnieniem UX.
 **Next.js 2025**: App Router, Server/Client Components, "use client" directive
 **GraphQL**: Apollo Client 4.0, useQuery z skip, fragmenty, token exchange
+**Design**: Action-First, Linear/Vercel style, konsystentne wzorce
 
 ## 🗃️ BACKEND DATA SCHEMA (C# .NET Core)
 
