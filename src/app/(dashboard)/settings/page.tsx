@@ -2,10 +2,10 @@
 
 import { useQuery } from '@apollo/client/react';
 import { useUser } from '@clerk/nextjs';
-import { Settings, User, Building2, Calendar } from 'lucide-react';
+import { Settings, User, Building2, Calendar, Bell, Palette } from 'lucide-react';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { LoadingState } from '@/components/shared/LoadingState';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { ProfileForm, UserProfile } from '@/components/settings/ProfileForm';
@@ -39,10 +39,9 @@ export default function SettingsPage() {
 
   if (isLoading) {
     return (
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-semibold">Ustawienia</h1>
-          <p className="text-muted-foreground text-sm mt-1">Zarządzaj swoim kontem i preferencjami</p>
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-bold text-foreground">Ustawienia</h1>
         </div>
         <LoadingState type="text" count={3} />
       </div>
@@ -51,12 +50,11 @@ export default function SettingsPage() {
 
   if (!userByClerkId) {
     return (
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-semibold">Ustawienia</h1>
-          <p className="text-muted-foreground text-sm mt-1">Zarządzaj swoim kontem i preferencjami</p>
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-bold text-foreground">Ustawienia</h1>
         </div>
-        <Card>
+        <Card className="border-border/60">
           <CardContent className="py-12">
             <EmptyState
               icon={User}
@@ -80,35 +78,33 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-semibold">Ustawienia</h1>
-        <p className="text-muted-foreground text-sm mt-1">Zarządzaj swoim kontem i preferencjami</p>
-      </div>
+    <div className="space-y-4">
+      {/* Tabs with inline header */}
+      <Tabs defaultValue="profile" className="space-y-4">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <h1 className="text-2xl font-bold text-foreground">Ustawienia</h1>
+          <TabsList className="h-9">
+            <TabsTrigger value="profile" className="flex items-center gap-2 text-xs sm:text-sm">
+              <User className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Profil</span>
+            </TabsTrigger>
+            <TabsTrigger value="organizations" className="flex items-center gap-2 text-xs sm:text-sm">
+              <Building2 className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Organizacje</span>
+              <span className="text-muted-foreground">({organizations.length})</span>
+            </TabsTrigger>
+            <TabsTrigger value="preferences" className="flex items-center gap-2 text-xs sm:text-sm">
+              <Settings className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Preferencje</span>
+            </TabsTrigger>
+          </TabsList>
+        </div>
 
-      {/* Tabs */}
-      <Tabs defaultValue="profile" className="space-y-6">
-        <TabsList>
-          <TabsTrigger value="profile" className="flex items-center gap-2">
-            <User className="h-4 w-4" />
-            Profil
-          </TabsTrigger>
-          <TabsTrigger value="organizations" className="flex items-center gap-2">
-            <Building2 className="h-4 w-4" />
-            Organizacje ({organizations.length})
-          </TabsTrigger>
-          <TabsTrigger value="preferences" className="flex items-center gap-2">
-            <Settings className="h-4 w-4" />
-            Preferencje
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="profile">
+        <TabsContent value="profile" className="mt-4">
           <ProfileForm user={userProfile} clerkId={clerkUser?.id || ''} onSuccess={() => refetchUser()} />
         </TabsContent>
 
-        <TabsContent value="organizations">
+        <TabsContent value="organizations" className="mt-4">
           {orgsLoading ? (
             <LoadingState type="row" count={3} />
           ) : (
@@ -119,35 +115,48 @@ export default function SettingsPage() {
           )}
         </TabsContent>
 
-        <TabsContent value="preferences">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base">
-                <Settings className="h-4 w-4 text-primary" />
-                Preferencje aplikacji
-              </CardTitle>
-              <CardDescription>Dostosuj aplikację do swoich potrzeb</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {/* Placeholder for calendar settings */}
-                <Card>
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-sm flex items-center gap-2">
-                      <Calendar className="h-4 w-4 text-muted-foreground" />
-                      Kalendarz wizyt
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-muted-foreground">
-                      Funkcjonalność kalendarza wizyt będzie dostępna w przyszłej wersji aplikacji.
+        <TabsContent value="preferences" className="mt-4">
+          <Card className="border-border/60">
+            <CardContent className="p-5">
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {/* Calendar preference */}
+                <div className="flex items-start gap-4 rounded-xl border border-border/60 bg-surface p-4 transition-colors hover:bg-surface-light">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+                    <Calendar className="h-5 w-5 text-primary" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <h3 className="font-medium text-foreground text-sm">Kalendarz wizyt</h3>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Wkrótce dostępne
                     </p>
-                  </CardContent>
-                </Card>
+                  </div>
+                </div>
 
-                <p className="text-sm text-muted-foreground text-center py-4">
-                  Dodatkowe preferencje będą dostępne wkrótce
-                </p>
+                {/* Notifications preference */}
+                <div className="flex items-start gap-4 rounded-xl border border-border/60 bg-surface p-4 transition-colors hover:bg-surface-light">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-info/10">
+                    <Bell className="h-5 w-5 text-info" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <h3 className="font-medium text-foreground text-sm">Powiadomienia</h3>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Wkrótce dostępne
+                    </p>
+                  </div>
+                </div>
+
+                {/* Theme preference */}
+                <div className="flex items-start gap-4 rounded-xl border border-border/60 bg-surface p-4 transition-colors hover:bg-surface-light">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-secondary/10">
+                    <Palette className="h-5 w-5 text-secondary" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <h3 className="font-medium text-foreground text-sm">Motyw</h3>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Ciemny (domyślny)
+                    </p>
+                  </div>
+                </div>
               </div>
             </CardContent>
           </Card>

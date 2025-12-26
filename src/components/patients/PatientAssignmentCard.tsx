@@ -41,6 +41,7 @@ import {
 import { ImagePlaceholder } from "@/components/shared/ImagePlaceholder";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { cn } from "@/lib/utils";
+import { translateAssignmentStatus, getStatusColorClass } from "@/utils/statusUtils";
 
 import {
   UPDATE_EXERCISE_SET_ASSIGNMENT_MUTATION,
@@ -170,21 +171,6 @@ const getStatusVariant = (status?: string): "success" | "secondary" | "warning" 
       return "destructive";
     default:
       return "secondary";
-  }
-};
-
-const getStatusLabel = (status?: string): string => {
-  switch (status) {
-    case "active":
-      return "Aktywny";
-    case "paused":
-      return "Wstrzymany";
-    case "completed":
-      return "Ukończony";
-    case "cancelled":
-      return "Anulowany";
-    default:
-      return status || "—";
   }
 };
 
@@ -350,7 +336,7 @@ export function PatientAssignmentCard({
                     {exerciseSet?.name || "Nieznany zestaw"}
                   </p>
                   <Badge variant={getStatusVariant(assignment.status)} className="text-[10px] shrink-0">
-                    {getStatusLabel(assignment.status)}
+                    {translateAssignmentStatus(assignment.status as any)}
                   </Badge>
                 </div>
                 <div className="flex items-center gap-3 mt-1 text-sm text-muted-foreground">

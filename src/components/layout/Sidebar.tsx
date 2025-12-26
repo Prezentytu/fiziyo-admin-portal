@@ -27,7 +27,7 @@ const navigationGroups = [
     items: [
       { name: 'Panel', href: '/', icon: LayoutDashboard },
       { name: 'Pacjenci', href: '/patients', icon: Users },
-      { name: 'Kalendarz', href: '/appointments', icon: Calendar },
+      // { name: 'Kalendarz', href: '/appointments', icon: Calendar }, // Ukryty na ten moment
       { name: 'Zestawy', href: '/exercise-sets', icon: FolderKanban },
       { name: 'Ćwiczenia', href: '/exercises', icon: Dumbbell },
     ],

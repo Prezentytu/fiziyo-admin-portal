@@ -27,6 +27,7 @@ import { toast } from 'sonner';
 import Link from 'next/link';
 
 import { cn } from '@/lib/utils';
+import { translateAssignmentStatus } from '@/utils/statusUtils';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -255,16 +256,23 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
 
   // Helper function for status display
   const getStatusInfo = (status?: string) => {
+    const statusValue = status as any;
+    const label = translateAssignmentStatus(statusValue);
+    let variant: 'success' | 'warning' | 'secondary' = 'secondary';
+
     switch (status) {
       case 'active':
-        return { label: 'Aktywny', variant: 'success' as const };
+        variant = 'success';
+        break;
       case 'paused':
-        return { label: 'Wstrzymany', variant: 'warning' as const };
+        variant = 'warning';
+        break;
       case 'completed':
-        return { label: 'Ukończony', variant: 'secondary' as const };
-      default:
-        return { label: status || '—', variant: 'secondary' as const };
+        variant = 'secondary';
+        break;
     }
+
+    return { label, variant };
   };
 
   // Helper function for frequency display

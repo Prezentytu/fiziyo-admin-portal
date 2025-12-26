@@ -26,6 +26,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { SetThumbnail } from '@/components/exercise-sets/SetThumbnail';
 import { CreateSetWizard } from '@/components/exercise-sets/CreateSetWizard';
 import { AssignmentWizard } from '@/components/assignment/AssignmentWizard';
+import { PatientDialog } from '@/components/patients/PatientDialog';
 
 import { GET_ORGANIZATION_EXERCISE_SETS_QUERY } from '@/graphql/queries/exerciseSets.queries';
 import { GET_THERAPIST_PATIENTS_QUERY } from '@/graphql/queries/therapists.queries';
@@ -74,6 +75,7 @@ export default function DashboardPage() {
   const { user } = useUser();
   const [isAssignWizardOpen, setIsAssignWizardOpen] = useState(false);
   const [isCreateSetWizardOpen, setIsCreateSetWizardOpen] = useState(false);
+  const [isPatientDialogOpen, setIsPatientDialogOpen] = useState(false);
 
   // Get user data
   const { data: userData } = useQuery(GET_USER_BY_CLERK_ID_QUERY, {
@@ -190,9 +192,10 @@ export default function DashboardPage() {
         </button>
 
         {/* Tertiary Action - Dodaj pacjenta */}
-        <Link
-          href="/patients"
-          className="group relative overflow-hidden rounded-2xl border border-border/60 bg-surface p-5 text-left transition-all duration-300 hover:border-info/40 hover:bg-surface-light hover:shadow-lg cursor-pointer lg:col-span-3 flex items-center"
+        <button
+          onClick={() => setIsPatientDialogOpen(true)}
+          disabled={!organizationId || !therapistId}
+          className="group relative overflow-hidden rounded-2xl border border-border/60 bg-surface p-5 text-left transition-all duration-300 hover:border-info/40 hover:bg-surface-light hover:shadow-lg cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed lg:col-span-3 flex items-center"
         >
           <div className="relative flex items-center gap-3 w-full">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-info/10 shrink-0 group-hover:bg-info/20 group-hover:scale-110 transition-all duration-300">
@@ -207,7 +210,7 @@ export default function DashboardPage() {
               </p>
             </div>
           </div>
-        </Link>
+        </button>
       </div>
 
       {/* Main Content - Bento Grid */}
@@ -290,7 +293,7 @@ export default function DashboardPage() {
                           {assignment.patient?.fullname || 'Nieznany'}
                         </p>
                         <p className="text-xs text-muted-foreground truncate">
-                          {assignment.contextLabel || assignment.patient?.email || 'Pacjent'}
+                          {assignment.contextLabel || assignment.patient?.email || ''}
                         </p>
                       </div>
                       <ChevronRight
@@ -313,11 +316,14 @@ export default function DashboardPage() {
                 <p className="text-xs text-muted-foreground/70 mb-4">
                   Dodaj pierwszego pacjenta
                 </p>
-                <Link href="/patients">
-                  <Button size="sm" className="h-8 text-xs">
-                    Dodaj pacjenta
-                  </Button>
-                </Link>
+                <Button 
+                  size="sm" 
+                  className="h-8 text-xs"
+                  onClick={() => setIsPatientDialogOpen(true)}
+                  disabled={!organizationId || !therapistId}
+                >
+                  Dodaj pacjenta
+                </Button>
               </div>
             )}
           </CardContent>
@@ -450,6 +456,16 @@ export default function DashboardPage() {
           onOpenChange={setIsCreateSetWizardOpen}
           organizationId={organizationId}
           onSuccess={() => setIsCreateSetWizardOpen(false)}
+        />
+      )}
+
+      {/* Patient Dialog */}
+      {organizationId && therapistId && (
+        <PatientDialog
+          open={isPatientDialogOpen}
+          onOpenChange={setIsPatientDialogOpen}
+          organizationId={organizationId}
+          therapistId={therapistId}
         />
       )}
     </div>
