@@ -18,12 +18,16 @@ import {
   Calendar,
   BarChart3,
   MapPin,
+  Construction,
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+
+// Flag to enable/disable coming soon overlay
+const COMING_SOON = true;
 
 interface Plan {
   id: string;
@@ -112,10 +116,36 @@ export default function SubscriptionPage() {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header: Title + Billing Toggle */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-2xl font-bold text-foreground">Subskrypcja</h1>
+    <div className="relative">
+      {/* Coming Soon Overlay */}
+      {COMING_SOON && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center">
+          {/* Blur backdrop */}
+          <div className="absolute inset-0 backdrop-blur-md bg-background/30" />
+          
+          {/* Content */}
+          <div className="relative z-10 flex flex-col items-center gap-6 p-8 rounded-3xl bg-surface/90 border border-border/60 shadow-2xl max-w-md mx-4">
+            <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-primary via-primary to-primary-dark shadow-lg shadow-primary/30">
+              <Construction className="h-10 w-10 text-white" />
+            </div>
+            <div className="text-center space-y-2">
+              <h2 className="text-2xl font-bold text-foreground">Panel w przygotowaniu</h2>
+              <p className="text-muted-foreground">
+                Pracujemy nad systemem subskrypcji. Wkrótce będzie dostępny!
+              </p>
+            </div>
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Clock className="h-4 w-4 text-primary" />
+              <span>Planowane uruchomienie: Q1 2025</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className={cn("space-y-6", COMING_SOON && "select-none pointer-events-none")}>
+        {/* Header: Title + Billing Toggle */}
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <h1 className="text-2xl font-bold text-foreground">Subskrypcja</h1>
         <div className="flex items-center gap-1 p-1 rounded-xl bg-surface border border-border/60">
           <button
             onClick={() => setBillingPeriod('monthly')}
@@ -385,6 +415,7 @@ export default function SubscriptionPage() {
           Enterprise? Skontaktuj się
           <ArrowRight className="ml-2 h-4 w-4" />
         </Button>
+      </div>
       </div>
     </div>
   );
