@@ -161,8 +161,10 @@ const getActiveDays = (frequency?: Frequency): string => {
   return days.join(", ");
 };
 
-const getStatusVariant = (status?: string): "success" | "secondary" | "warning" | "destructive" => {
+const getStatusVariant = (status?: string): "success" | "secondary" | "warning" | "destructive" | "default" => {
   switch (status) {
+    case "assigned":
+      return "default";
     case "active":
       return "success";
     case "paused":

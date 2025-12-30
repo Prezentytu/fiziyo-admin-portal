@@ -2,7 +2,7 @@
  * Utility functions for status translations and mappings
  */
 
-export type AssignmentStatus = 'active' | 'paused' | 'completed' | 'cancelled';
+export type AssignmentStatus = 'assigned' | 'active' | 'paused' | 'completed' | 'cancelled';
 export type ActivityStatus = 'active' | 'inactive';
 export type ExerciseSetStatus = 'active' | 'inactive' | 'templates';
 
@@ -11,6 +11,8 @@ export type ExerciseSetStatus = 'active' | 'inactive' | 'templates';
  */
 export function translateAssignmentStatus(status: AssignmentStatus): string {
   switch (status) {
+    case 'assigned':
+      return 'Przypisany';
     case 'active':
       return 'Aktywny';
     case 'paused':
@@ -77,12 +79,14 @@ export function translateFilterStatus(status: string): string {
  */
 export function getStatusColorClass(status: string): string {
   switch (status) {
+    case 'assigned':
+      return 'bg-blue-500/20 text-blue-700 border-blue-500/30';
     case 'active':
       return 'bg-green-500/20 text-green-700 border-green-500/30';
     case 'paused':
       return 'bg-yellow-500/20 text-yellow-700 border-yellow-500/30';
     case 'completed':
-      return 'bg-blue-500/20 text-blue-700 border-blue-500/30';
+      return 'bg-purple-500/20 text-purple-700 border-purple-500/30';
     case 'cancelled':
       return 'bg-red-500/20 text-red-700 border-red-500/30';
     case 'inactive':
