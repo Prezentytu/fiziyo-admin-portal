@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { UserMenu } from '@/components/layout/UserMenu';
+import { FeedbackButton } from '@/components/shared/FeedbackButton';
 
 // Route name mappings
 const routeNames: Record<string, string> = {
@@ -101,12 +102,8 @@ export function Header({ onMobileMenuToggle }: HeaderProps) {
           <Search className="h-5 w-5" />
         </Button> */}
 
-        {/* Notifications 
-        <Button variant="ghost" size="icon" className="relative">
-          <Bell className="h-5 w-5" />
-          {/* Notification dot
-          <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-primary" />
-        </Button>*/}
+        {/* Feedback */}
+        <FeedbackButton variant="icon" />
 
         {/* User */}
         <UserMenu />

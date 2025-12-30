@@ -7,4 +7,6 @@ export { FileUpload } from "./FileUpload";
 export { ColorBadge, ColorBadgeSolid, getContrastColor, getTransparentColor } from "./ColorBadge";
 export { ImagePlaceholder } from "./ImagePlaceholder";
 export { StatsCard } from "./StatsCard";
+export { FeedbackButton } from "./FeedbackButton";
+export { FeedbackDialog } from "./FeedbackDialog";
 

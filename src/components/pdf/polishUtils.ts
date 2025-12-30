@@ -140,3 +140,4 @@ export function translateExerciseSidePolish(side?: string): string {
   return side ? sides[side] || '' : '';
 }
 
+
