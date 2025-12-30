@@ -46,7 +46,7 @@ import { LoadingState } from '@/components/shared/LoadingState';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { ActivityReport } from '@/components/patients/ActivityReport';
 import { PatientAssignmentCard } from '@/components/patients/PatientAssignmentCard';
-import { PatientNotes } from '@/components/patients/PatientNotes';
+import { ClinicalNotesList } from '@/components/clinical/ClinicalNotesList';
 import type { PatientAssignment, ExerciseMapping, ExerciseOverride } from '@/components/patients/PatientAssignmentCard';
 
 import { GET_USER_BY_ID_QUERY, GET_USER_BY_CLERK_ID_QUERY } from '@/graphql/queries/users.queries';
@@ -359,13 +359,13 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
         )}
       </div>
 
-      {/* Clinical Notes Section */}
+      {/* Clinical Documentation Section */}
       {therapistId && organizationId && (
-        <PatientNotes
-          therapistId={therapistId}
+        <ClinicalNotesList
           patientId={id}
+          therapistId={therapistId}
           organizationId={organizationId}
-          onUpdate={() => {}}
+          patientName={patient?.fullname}
         />
       )}
 
