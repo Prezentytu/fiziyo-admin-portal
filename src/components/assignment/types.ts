@@ -174,6 +174,22 @@ export function getWizardSteps(
   return steps;
 }
 
+// Info about already assigned sets (for from-patient mode)
+export interface AssignedSetInfo {
+  exerciseSetId: string;
+  assignmentId: string;
+  assignedAt: string;
+  status: string;
+}
+
+// Info about already assigned patients (for from-set mode)
+export interface AssignedPatientInfo {
+  patientId: string;
+  assignmentId: string;
+  assignedAt: string;
+  status: string;
+}
+
 // Props for wizard
 export interface AssignmentWizardProps {
   open: boolean;

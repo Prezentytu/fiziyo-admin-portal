@@ -1,19 +1,21 @@
 "use client";
 
 import { useState } from "react";
-import { Search, FolderKanban, Check, Dumbbell, ChevronRight } from "lucide-react";
+import { Search, FolderKanban, Check, Dumbbell, ChevronRight, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { ImagePlaceholder } from "@/components/shared/ImagePlaceholder";
 import { cn } from "@/lib/utils";
-import type { ExerciseSet } from "./types";
+import type { ExerciseSet, AssignedSetInfo } from "./types";
 
 interface SelectSetStepProps {
   exerciseSets: ExerciseSet[];
   selectedSet: ExerciseSet | null;
   onSelectSet: (set: ExerciseSet | null) => void;
-  existingSetIds?: string[];
+  assignedSets?: AssignedSetInfo[];
+  onUnassign?: (assignmentId: string, setName: string) => void;
   loading?: boolean;
 }
 
@@ -21,26 +23,69 @@ export function SelectSetStep({
   exerciseSets,
   selectedSet,
   onSelectSet,
-  existingSetIds = [],
+  assignedSets = [],
+  onUnassign,
   loading = false,
 }: SelectSetStepProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [previewSet, setPreviewSet] = useState<ExerciseSet | null>(selectedSet);
+  const [selectedToUnassign, setSelectedToUnassign] = useState<string | null>(null);
 
-  // Filter out already assigned sets and apply search
-  const availableSets = exerciseSets.filter(
-    (set) => !existingSetIds.includes(set.id)
+  // Create a map for quick lookup of assigned sets
+  const assignedSetsMap = new Map(
+    assignedSets.map((a) => [a.exerciseSetId, a])
   );
 
-  const filteredSets = availableSets.filter(
+  // Filter sets by search query (show all, including assigned)
+  const filteredSets = exerciseSets.filter(
     (set) =>
       set.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       set.description?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  // Sort: available first, then assigned
+  const sortedSets = [...filteredSets].sort((a, b) => {
+    const aAssigned = assignedSetsMap.has(a.id);
+    const bAssigned = assignedSetsMap.has(b.id);
+    if (aAssigned !== bAssigned) return aAssigned ? 1 : -1;
+    return 0;
+  });
+
+  const availableCount = exerciseSets.filter(
+    (set) => !assignedSetsMap.has(set.id)
+  ).length;
+
   const handleSetClick = (set: ExerciseSet) => {
-    setPreviewSet(set);
-    onSelectSet(set);
+    const isAssigned = assignedSetsMap.has(set.id);
+    
+    if (isAssigned) {
+      // Toggle unassign selection for assigned sets
+      if (selectedToUnassign === set.id) {
+        setSelectedToUnassign(null);
+        setPreviewSet(null);
+      } else {
+        setSelectedToUnassign(set.id);
+        setPreviewSet(set);
+        // Clear normal selection when selecting for unassign
+        onSelectSet(null);
+      }
+    } else {
+      // Normal selection for available sets
+      setSelectedToUnassign(null);
+      setPreviewSet(set);
+      onSelectSet(set);
+    }
+  };
+
+  const handleUnassign = () => {
+    if (!selectedToUnassign) return;
+    const assignmentInfo = assignedSetsMap.get(selectedToUnassign);
+    const set = exerciseSets.find((s) => s.id === selectedToUnassign);
+    if (assignmentInfo && set && onUnassign) {
+      onUnassign(assignmentInfo.assignmentId, set.name);
+    }
+    setSelectedToUnassign(null);
+    setPreviewSet(null);
   };
 
   // Helper to get exercise type label
@@ -68,14 +113,18 @@ export function SelectSetStep({
           </div>
           <div className="flex items-center justify-between">
             <p className="text-xs text-muted-foreground">
-              {availableSets.length} dostępnych zestawów
+              {availableCount} dostępnych
+              {assignedSets.length > 0 && (
+                <span className="text-muted-foreground/60"> • {assignedSets.length} przypisanych</span>
+              )}
             </p>
-            {selectedSet && (
+            {(selectedSet || selectedToUnassign) && (
               <button
                 type="button"
                 onClick={() => {
                   setPreviewSet(null);
                   onSelectSet(null);
+                  setSelectedToUnassign(null);
                 }}
                 className="text-xs text-muted-foreground hover:text-foreground transition-colors"
               >
@@ -90,14 +139,12 @@ export function SelectSetStep({
             <div className="flex items-center justify-center py-12">
               <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
             </div>
-          ) : filteredSets.length === 0 ? (
+          ) : sortedSets.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center px-4">
               <FolderKanban className="h-12 w-12 text-muted-foreground/50 mb-3" />
               <p className="text-sm font-medium text-foreground mb-1">
                 {searchQuery
                   ? "Nie znaleziono zestawów"
-                  : availableSets.length === 0
-                  ? "Wszystkie zestawy są już przypisane"
                   : "Brak zestawów"}
               </p>
               <p className="text-xs text-muted-foreground">
@@ -108,8 +155,10 @@ export function SelectSetStep({
             </div>
           ) : (
             <div className="p-3 pr-4 space-y-2">
-              {filteredSets.map((set) => {
-                const isSelected = selectedSet?.id === set.id;
+              {sortedSets.map((set) => {
+                const isAssigned = assignedSetsMap.has(set.id);
+                const isSelectedForAssign = selectedSet?.id === set.id;
+                const isSelectedForUnassign = selectedToUnassign === set.id;
                 const isPreview = previewSet?.id === set.id;
                 const exerciseCount = set.exerciseMappings?.length || 0;
                 const firstImage = set.exerciseMappings?.[0]?.exercise?.imageUrl ||
@@ -120,10 +169,14 @@ export function SelectSetStep({
                     key={set.id}
                     className={cn(
                       "flex items-center gap-4 rounded-xl p-4 cursor-pointer transition-all",
-                      isSelected
+                      isSelectedForUnassign
+                        ? "bg-destructive/10 border-2 border-destructive/50"
+                        : isSelectedForAssign
                         ? "bg-primary/10 border-2 border-primary/40"
                         : isPreview
                         ? "bg-surface-light border-2 border-border"
+                        : isAssigned
+                        ? "opacity-70 hover:opacity-100 hover:bg-surface-light border-2 border-transparent"
                         : "hover:bg-surface-light border-2 border-transparent"
                     )}
                     onClick={() => handleSetClick(set)}
@@ -134,7 +187,7 @@ export function SelectSetStep({
                         <img
                           src={firstImage}
                           alt=""
-                          className="h-full w-full object-cover"
+                          className={cn("h-full w-full object-cover", isAssigned && !isSelectedForUnassign && "grayscale")}
                         />
                       ) : (
                         <div className="h-full w-full bg-surface-light flex items-center justify-center">
@@ -145,8 +198,21 @@ export function SelectSetStep({
 
                     {/* Info */}
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <p className="font-semibold line-clamp-2 flex-1">{set.name}</p>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className={cn(
+                          "font-semibold line-clamp-2 flex-1",
+                          isAssigned && !isSelectedForUnassign && "text-muted-foreground"
+                        )}>
+                          {set.name}
+                        </p>
+                        {isAssigned && (
+                          <Badge 
+                            variant={isSelectedForUnassign ? "destructive" : "secondary"} 
+                            className="text-[10px] shrink-0"
+                          >
+                            Przypisany
+                          </Badge>
+                        )}
                         <Badge variant="secondary" className="text-[10px] shrink-0">
                           {exerciseCount} ćw.
                         </Badge>
@@ -160,7 +226,11 @@ export function SelectSetStep({
 
                     {/* Selection indicator */}
                     <div className="shrink-0">
-                      {isSelected ? (
+                      {isSelectedForUnassign ? (
+                        <div className="h-6 w-6 rounded-full bg-destructive flex items-center justify-center">
+                          <X className="h-4 w-4 text-destructive-foreground" />
+                        </div>
+                      ) : isSelectedForAssign ? (
                         <div className="h-6 w-6 rounded-full bg-primary flex items-center justify-center">
                           <Check className="h-4 w-4 text-primary-foreground" />
                         </div>
@@ -191,7 +261,23 @@ export function SelectSetStep({
                 <Badge variant="outline">
                   {previewSet.exerciseMappings?.length || 0} ćwiczeń
                 </Badge>
+                {selectedToUnassign === previewSet.id && (
+                  <Badge variant="destructive">
+                    Wybrany do odpisania
+                  </Badge>
+                )}
               </div>
+              {selectedToUnassign === previewSet.id && onUnassign && (
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  className="mt-3 w-full"
+                  onClick={handleUnassign}
+                >
+                  <X className="h-4 w-4 mr-2" />
+                  Odpisz ten zestaw od pacjenta
+                </Button>
+              )}
             </div>
 
             <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">
