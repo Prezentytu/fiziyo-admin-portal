@@ -63,7 +63,7 @@ export interface InterviewSection {
 
 export interface ExaminationSection {
   posture?: string;
-  rangeOfMotion?: Record<string, number>;
+  rangeOfMotion?: RangeOfMotionEntry[];
   specialTests?: SpecialTest[];
   muscleStrength?: string;
   palpation?: string;
@@ -76,6 +76,12 @@ export interface SpecialTest {
   name?: string;
   result?: 'positive' | 'negative' | 'inconclusive';
   notes?: string;
+}
+
+export interface RangeOfMotionEntry {
+  movement?: string;
+  value?: number;
+  side?: 'left' | 'right' | 'bilateral';
 }
 
 export interface DiagnosisSection {

@@ -46,6 +46,7 @@ import {
 import {
   GET_PATIENT_CLINICAL_NOTES_QUERY,
   GET_LAST_CLINICAL_NOTE_QUERY,
+  GET_CLINICAL_NOTE_BY_ID_QUERY,
 } from '@/graphql/queries/clinicalNotes.queries';
 
 import type {
@@ -68,6 +69,25 @@ interface ClinicalNoteEditorProps {
   existingNote?: ClinicalNote | null;
   onSave?: (note: ClinicalNote) => void;
   onCancel?: () => void;
+  onDirtyChange?: (isDirty: boolean) => void;
+}
+
+// Helper to remove __typename from objects before sending to mutation
+function omitTypename<T>(obj: T): T {
+  if (obj === null || obj === undefined) return obj;
+  if (Array.isArray(obj)) {
+    return obj.map(omitTypename) as T;
+  }
+  if (typeof obj === 'object') {
+    const result: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(obj)) {
+      if (key !== '__typename') {
+        result[key] = omitTypename(value);
+      }
+    }
+    return result as T;
+  }
+  return obj;
 }
 
 const VISIT_TYPES: { value: VisitType; label: string }[] = [
@@ -84,9 +104,36 @@ export function ClinicalNoteEditor({
   existingNote,
   onSave,
   onCancel,
+  onDirtyChange,
 }: ClinicalNoteEditorProps) {
   const isEditing = !!existingNote;
-  const isSigned = existingNote?.status === 'SIGNED';
+
+  // Mutations
+  const [createNote, { loading: creating }] = useMutation(CREATE_CLINICAL_NOTE_MUTATION);
+  const [updateNote, { loading: updating }] = useMutation(UPDATE_CLINICAL_NOTE_MUTATION);
+  const [signNote, { loading: signing }] = useMutation(SIGN_CLINICAL_NOTE_MUTATION);
+
+  // Query for full note data (existingNote from list has only basic fields)
+  const { data: fullNoteData, loading: loadingFullNote } = useQuery(GET_CLINICAL_NOTE_BY_ID_QUERY, {
+    variables: { id: existingNote?.id || '' },
+    skip: !existingNote?.id,
+  });
+
+  const fullNote = (fullNoteData as { clinicalNoteById?: ClinicalNote })?.clinicalNoteById;
+
+  // Query for last note (for copy feature)
+  const { data: lastNoteData } = useQuery(GET_LAST_CLINICAL_NOTE_QUERY, {
+    variables: { patientId, therapistId, organizationId },
+    skip: isEditing,
+  });
+
+  const lastNote = (lastNoteData as { lastClinicalNote?: ClinicalNote })?.lastClinicalNote;
+
+  // Use fullNote when available (has sections), otherwise existingNote (basic data)
+  const noteData = fullNote || existingNote;
+  const isSigned = noteData?.status === 'SIGNED';
+  const isLoading = creating || updating || signing;
+  const isLoadingData = loadingFullNote && !!existingNote?.id;
 
   // Form state
   const [visitType, setVisitType] = useState<VisitType>(existingNote?.visitType || 'INITIAL');
@@ -107,20 +154,35 @@ export function ClinicalNoteEditor({
     visitProgress: visitType === 'FOLLOWUP',
   });
 
-  // Mutations
-  const [createNote, { loading: creating }] = useMutation(CREATE_CLINICAL_NOTE_MUTATION);
-  const [updateNote, { loading: updating }] = useMutation(UPDATE_CLINICAL_NOTE_MUTATION);
-  const [signNote, { loading: signing }] = useMutation(SIGN_CLINICAL_NOTE_MUTATION);
+  // Dirty state - track if form has unsaved changes
+  const [isDirty, setIsDirty] = useState(false);
 
-  // Query for last note (for copy feature)
-  const { data: lastNoteData } = useQuery(GET_LAST_CLINICAL_NOTE_QUERY, {
-    variables: { patientId, therapistId, organizationId },
-    skip: isEditing,
-  });
+  // Sync state when note data changes
+  useEffect(() => {
+    if (loadingFullNote && existingNote?.id) return; // Wait for full data to load
+    
+    setVisitType(noteData?.visitType || 'INITIAL');
+    setVisitDate(
+      noteData?.visitDate 
+        ? format(new Date(noteData.visitDate), 'yyyy-MM-dd') 
+        : format(new Date(), 'yyyy-MM-dd')
+    );
+    setTitle(noteData?.title || '');
+    setSections(noteData?.sections || {});
+    setOpenSections({
+      interview: !noteData || !!noteData?.sections?.interview,
+      examination: !!noteData?.sections?.examination,
+      diagnosis: !!noteData?.sections?.diagnosis,
+      treatmentPlan: !!noteData?.sections?.treatmentPlan,
+      visitProgress: noteData?.visitType === 'FOLLOWUP' || noteData?.visitType === 'DISCHARGE',
+    });
+    setIsDirty(false); // Reset dirty state when data loads
+  }, [noteData, loadingFullNote, existingNote?.id]);
 
-  const lastNote = (lastNoteData as { lastClinicalNote?: ClinicalNote })?.lastClinicalNote;
-
-  const isLoading = creating || updating || signing;
+  // Notify parent when dirty state changes
+  useEffect(() => {
+    onDirtyChange?.(isDirty);
+  }, [isDirty, onDirtyChange]);
 
   // Section update handlers
   const updateSection = useCallback(<K extends keyof ClinicalNoteSections>(
@@ -128,7 +190,29 @@ export function ClinicalNoteEditor({
     value: ClinicalNoteSections[K]
   ) => {
     setSections((prev) => ({ ...prev, [sectionKey]: value }));
+    setIsDirty(true);
   }, []);
+
+  // Handle form field changes with dirty tracking
+  const handleVisitTypeChange = (value: VisitType) => {
+    setVisitType(value);
+    setIsDirty(true);
+  };
+
+  const handleVisitDateChange = (value: string) => {
+    setVisitDate(value);
+    setIsDirty(true);
+  };
+
+  const handleTitleChange = (value: string) => {
+    setTitle(value);
+    setIsDirty(true);
+  };
+
+  // Handle close - parent will handle confirmation if dirty
+  const handleClose = () => {
+    onCancel?.();
+  };
 
   // Calculate completion percentage
   const calculateCompletion = useCallback(() => {
@@ -162,13 +246,14 @@ export function ClinicalNoteEditor({
     try {
       let result: ClinicalNote;
 
-      const sectionInput = {
+      // Remove __typename from all nested objects before sending to mutation
+      const sectionInput = omitTypename({
         interview: sections.interview,
         examination: sections.examination,
         diagnosis: sections.diagnosis,
         treatmentPlan: sections.treatmentPlan,
         visitProgress: sections.visitProgress,
-      };
+      });
 
       if (isEditing && existingNote) {
         const { data } = await updateNote({
@@ -213,6 +298,7 @@ export function ClinicalNoteEditor({
         toast.success('Notatka została podpisana');
       }
 
+      setIsDirty(false); // Reset dirty state after successful save
       onSave?.(result);
     } catch (error) {
       console.error('Błąd zapisu notatki:', error);
@@ -233,13 +319,23 @@ export function ClinicalNoteEditor({
     toast.success('Skopiowano dane z poprzedniej wizyty');
   };
 
+  // Show loading state while fetching full note data
+  if (isLoadingData) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <span className="ml-3 text-muted-foreground">Ładowanie dokumentacji...</span>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           {onCancel && (
-            <Button variant="ghost" size="icon" onClick={onCancel}>
+            <Button variant="ghost" size="icon" onClick={handleClose}>
               <ArrowLeft className="h-4 w-4" />
             </Button>
           )}
@@ -287,7 +383,7 @@ export function ClinicalNoteEditor({
               <Label>Typ wizyty</Label>
               <Select
                 value={visitType}
-                onValueChange={(v) => setVisitType(v as VisitType)}
+                onValueChange={(v) => handleVisitTypeChange(v as VisitType)}
                 disabled={isSigned}
               >
                 <SelectTrigger>
@@ -307,7 +403,7 @@ export function ClinicalNoteEditor({
               <Input
                 type="date"
                 value={visitDate}
-                onChange={(e) => setVisitDate(e.target.value)}
+                onChange={(e) => handleVisitDateChange(e.target.value)}
                 disabled={isSigned}
               />
             </div>
@@ -315,7 +411,7 @@ export function ClinicalNoteEditor({
               <Label>Tytuł (opcjonalnie)</Label>
               <Input
                 value={title}
-                onChange={(e) => setTitle(e.target.value)}
+                onChange={(e) => handleTitleChange(e.target.value)}
                 placeholder="np. Wizyta kontrolna - kolano"
                 disabled={isSigned}
               />
@@ -425,7 +521,7 @@ export function ClinicalNoteEditor({
           </div>
           <div className="flex items-center gap-3">
             {onCancel && (
-              <Button variant="ghost" onClick={onCancel} disabled={isLoading}>
+              <Button variant="ghost" onClick={handleClose} disabled={isLoading}>
                 Anuluj
               </Button>
             )}
@@ -455,6 +551,7 @@ export function ClinicalNoteEditor({
           </div>
         </div>
       )}
+
     </div>
   );
 }

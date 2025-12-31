@@ -16,6 +16,7 @@ import {
   Trash2,
   Eye,
   ChevronRight,
+  X,
 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -32,6 +33,8 @@ import {
 import {
   Dialog,
   DialogContent,
+  DialogHeader,
+  DialogTitle,
 } from '@/components/ui/dialog';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { EmptyState } from '@/components/shared/EmptyState';
@@ -71,6 +74,8 @@ export function ClinicalNotesList({
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [selectedNote, setSelectedNote] = useState<ClinicalNote | null>(null);
   const [deletingNote, setDeletingNote] = useState<ClinicalNote | null>(null);
+  const [editorIsDirty, setEditorIsDirty] = useState(false);
+  const [showExitConfirm, setShowExitConfirm] = useState(false);
 
   // Fetch notes
   const { data, loading, error } = useQuery(GET_PATIENT_CLINICAL_NOTES_QUERY, {
@@ -115,8 +120,35 @@ export function ClinicalNotesList({
   };
 
   const handleSaveComplete = () => {
+    setEditorIsDirty(false);
     setIsEditorOpen(false);
     setSelectedNote(null);
+  };
+
+  // Handle editor close with dirty check
+  const handleEditorClose = () => {
+    if (editorIsDirty) {
+      setShowExitConfirm(true);
+    } else {
+      setIsEditorOpen(false);
+      setSelectedNote(null);
+    }
+  };
+
+  const handleConfirmExit = () => {
+    setShowExitConfirm(false);
+    setEditorIsDirty(false);
+    setIsEditorOpen(false);
+    setSelectedNote(null);
+  };
+
+  // Controlled dialog open change - block if dirty
+  const handleDialogOpenChange = (open: boolean) => {
+    if (!open) {
+      handleEditorClose();
+    } else {
+      setIsEditorOpen(true);
+    }
   };
 
   if (error) {
@@ -270,15 +302,43 @@ export function ClinicalNotesList({
       </Card>
 
       {/* Editor Dialog */}
-      <Dialog open={isEditorOpen} onOpenChange={setIsEditorOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-6">
+      <Dialog open={isEditorOpen} onOpenChange={handleDialogOpenChange}>
+        <DialogContent 
+          className="max-w-4xl max-h-[90vh] overflow-y-auto p-6"
+          hideCloseButton
+          onInteractOutside={(e) => {
+            if (editorIsDirty) {
+              e.preventDefault();
+              setShowExitConfirm(true);
+            }
+          }}
+          onEscapeKeyDown={(e) => {
+            e.preventDefault();
+            handleEditorClose();
+          }}
+        >
+          {/* Custom close button - always visible */}
+          <button
+            onClick={handleEditorClose}
+            className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+          >
+            <X className="h-4 w-4" />
+            <span className="sr-only">Zamknij</span>
+          </button>
+          
+          <DialogHeader className="sr-only">
+            <DialogTitle>
+              {selectedNote ? 'Edycja notatki klinicznej' : 'Nowa notatka kliniczna'}
+            </DialogTitle>
+          </DialogHeader>
           <ClinicalNoteEditor
             patientId={patientId}
             therapistId={therapistId}
             organizationId={organizationId}
             existingNote={selectedNote}
             onSave={handleSaveComplete}
-            onCancel={() => setIsEditorOpen(false)}
+            onCancel={handleEditorClose}
+            onDirtyChange={setEditorIsDirty}
           />
         </DialogContent>
       </Dialog>
@@ -293,6 +353,18 @@ export function ClinicalNotesList({
         variant="destructive"
         onConfirm={handleDeleteNote}
         isLoading={deleting}
+      />
+
+      {/* Exit Confirmation - unsaved changes */}
+      <ConfirmDialog
+        open={showExitConfirm}
+        onOpenChange={setShowExitConfirm}
+        title="Niezapisane zmiany"
+        description="Masz niezapisane zmiany w dokumentacji. Czy na pewno chcesz wyjść bez zapisywania?"
+        confirmText="Wyjdź bez zapisywania"
+        cancelText="Zostań"
+        variant="destructive"
+        onConfirm={handleConfirmExit}
       />
     </>
   );

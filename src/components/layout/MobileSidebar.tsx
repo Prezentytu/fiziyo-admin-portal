@@ -130,3 +130,4 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
     </Sheet>
   );
 }
+

@@ -51,7 +51,11 @@ export const CLINICAL_NOTE_FULL_FRAGMENT = gql`
       }
       examination {
         posture
-        rangeOfMotion
+        rangeOfMotion {
+          movement
+          value
+          side
+        }
         specialTests {
           name
           result

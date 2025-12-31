@@ -187,3 +187,4 @@ export function WeeklyActivityChart({ dayStatuses, className }: WeeklyChartProps
 
 
 
+

@@ -240,3 +240,4 @@ export function ProfileForm({ user, clerkId, onSuccess }: ProfileFormProps) {
     </Card>
   );
 }
+

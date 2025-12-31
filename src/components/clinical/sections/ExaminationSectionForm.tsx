@@ -7,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import type { ExaminationSection, SpecialTest } from '@/types/clinical.types';
+import type { ExaminationSection, SpecialTest, RangeOfMotionEntry } from '@/types/clinical.types';
 
 // Predefiniowane testy specjalne
 const COMMON_TESTS = [
@@ -86,22 +86,29 @@ export function ExaminationSectionForm({
   };
 
   // ROM handlers
-  const addRom = (name: string, value: number) => {
-    const currentRom = data.rangeOfMotion || {};
-    updateField('rangeOfMotion', { ...currentRom, [name]: value });
+  const addRom = (movement: string, value: number) => {
+    const currentRom = data.rangeOfMotion || [];
+    const newEntry: RangeOfMotionEntry = { movement, value };
+    updateField('rangeOfMotion', [...currentRom, newEntry]);
     setNewRomName('');
     setNewRomValue('');
   };
 
-  const updateRom = (name: string, value: number) => {
-    const currentRom = data.rangeOfMotion || {};
-    updateField('rangeOfMotion', { ...currentRom, [name]: value });
+  const updateRom = (index: number, value: number) => {
+    const currentRom = data.rangeOfMotion || [];
+    updateField(
+      'rangeOfMotion',
+      currentRom.map((entry, i) => (i === index ? { ...entry, value } : entry))
+    );
   };
 
-  const removeRom = (name: string) => {
-    const currentRom = { ...data.rangeOfMotion };
-    delete currentRom[name];
-    updateField('rangeOfMotion', currentRom);
+  const removeRom = (index: number) => {
+    const currentRom = data.rangeOfMotion || [];
+    updateField('rangeOfMotion', currentRom.filter((_, i) => i !== index));
+  };
+
+  const isRomAdded = (movement: string): boolean => {
+    return (data.rangeOfMotion || []).some((entry) => entry.movement === movement);
   };
 
   return (
@@ -124,15 +131,15 @@ export function ExaminationSectionForm({
         <Label>Zakres ruchu (ROM)</Label>
         
         {/* Istniejące ROM */}
-        {Object.entries(data.rangeOfMotion || {}).length > 0 && (
+        {(data.rangeOfMotion?.length ?? 0) > 0 && (
           <div className="space-y-2">
-            {Object.entries(data.rangeOfMotion || {}).map(([name, value]) => (
-              <div key={name} className="flex items-center gap-3 p-3 rounded-lg bg-surface border border-border/40">
-                <span className="flex-1 text-sm font-medium">{name}</span>
+            {data.rangeOfMotion?.map((entry, index) => (
+              <div key={`${entry.movement}-${index}`} className="flex items-center gap-3 p-3 rounded-lg bg-surface border border-border/40">
+                <span className="flex-1 text-sm font-medium">{entry.movement}</span>
                 <Input
                   type="number"
-                  value={value}
-                  onChange={(e) => updateRom(name, Number(e.target.value))}
+                  value={entry.value ?? ''}
+                  onChange={(e) => updateRom(index, Number(e.target.value))}
                   className="w-20"
                   disabled={disabled}
                 />
@@ -143,7 +150,7 @@ export function ExaminationSectionForm({
                     variant="ghost"
                     size="icon"
                     className="h-8 w-8"
-                    onClick={() => removeRom(name)}
+                    onClick={() => removeRom(index)}
                   >
                     <X className="h-4 w-4" />
                   </Button>
@@ -156,22 +163,22 @@ export function ExaminationSectionForm({
         {/* Quick add ROM */}
         <div className="flex flex-wrap gap-1.5">
           {COMMON_ROM.map((rom) => {
-            const isAdded = data.rangeOfMotion?.[rom.name] !== undefined;
+            const added = isRomAdded(rom.name);
             return (
               <button
                 key={rom.name}
                 type="button"
-                onClick={() => !isAdded && addRom(rom.name, 0)}
-                disabled={disabled || isAdded}
+                onClick={() => !added && addRom(rom.name, 0)}
+                disabled={disabled || added}
                 className={cn(
                   'px-2 py-1 text-xs rounded-lg border transition-all',
-                  isAdded
+                  added
                     ? 'border-primary/30 bg-primary/10 text-primary opacity-50'
                     : 'border-border/60 bg-surface hover:border-primary/50 hover:bg-primary/5'
                 )}
               >
                 {rom.name}
-                {!isAdded && <Plus className="inline-block h-3 w-3 ml-1" />}
+                {!added && <Plus className="inline-block h-3 w-3 ml-1" />}
               </button>
             );
           })}
