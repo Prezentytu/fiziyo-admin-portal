@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
+import { FormHint } from '@/components/ui/form-hint';
 import { cn } from '@/lib/utils';
 import type { ExaminationSection, SpecialTest, RangeOfMotionEntry } from '@/types/clinical.types';
 
@@ -115,15 +116,20 @@ export function ExaminationSectionForm({
     <div className="space-y-6">
       {/* Ocena postawy */}
       <div className="space-y-2">
-        <Label htmlFor="posture">Ocena postawy ciała</Label>
+        <Label htmlFor="posture" className="text-sm font-medium">
+          Ocena postawy ciała
+        </Label>
         <Textarea
           id="posture"
           value={data.posture || ''}
           onChange={(e) => updateField('posture', e.target.value)}
-          placeholder="Opisz postawę pacjenta (przodopochylenie miednicy, kifoza, skolioza...)"
-          className="min-h-[80px]"
+          placeholder="np. Przodopochylenie miednicy, zwiększona kifoza piersiowa, asymetria barków"
+          className="min-h-[100px] text-base"
           disabled={disabled}
         />
+        <FormHint>
+          Opisz postawę statyczną i dynamiczną pacjenta
+        </FormHint>
       </div>
 
       {/* Zakres ruchu (ROM) */}

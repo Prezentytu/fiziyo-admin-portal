@@ -3,6 +3,7 @@
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { FormHint } from '@/components/ui/form-hint';
 import { QuickPhrases } from '../QuickPhrases';
 import { QUICK_PHRASES } from '@/types/clinical.types';
 import type { InterviewSection } from '@/types/clinical.types';
@@ -37,15 +38,20 @@ export function InterviewSectionForm({
     <div className="space-y-6">
       {/* Główna dolegliwość */}
       <div className="space-y-2">
-        <Label htmlFor="mainComplaint">Główna dolegliwość / powód wizyty</Label>
+        <Label htmlFor="mainComplaint" className="text-sm font-medium">
+          Główna dolegliwość / powód wizyty *
+        </Label>
         <Textarea
           id="mainComplaint"
           value={data.mainComplaint || ''}
           onChange={(e) => updateField('mainComplaint', e.target.value)}
-          placeholder="Opisz główną dolegliwość pacjenta..."
-          className="min-h-[80px]"
+          placeholder="np. Ból dolnego odcinka kręgosłupa promieniujący do lewej nogi od 2 tygodni"
+          className="min-h-[100px] text-base"
           disabled={disabled}
         />
+        <FormHint>
+          Opisz główny powód wizyty pacjenta - to najważniejsze pole dokumentacji
+        </FormHint>
         <QuickPhrases
           phrases={QUICK_PHRASES.mainComplaint}
           onSelect={(phrase) => updateField('mainComplaint', phrase)}
@@ -65,14 +71,18 @@ export function InterviewSectionForm({
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="painDuration">Czas trwania objawów</Label>
+          <Label htmlFor="painDuration" className="text-sm font-medium">
+            Czas trwania objawów
+          </Label>
           <Input
             id="painDuration"
             value={data.painDuration || ''}
             onChange={(e) => updateField('painDuration', e.target.value)}
             placeholder="np. 2 tygodnie, 3 miesiące"
             disabled={disabled}
+            className="h-11"
           />
+          <FormHint>Od kiedy pacjent odczuwa dolegliwości</FormHint>
         </div>
       </div>
 
@@ -88,7 +98,9 @@ export function InterviewSectionForm({
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="painIntensity">Intensywność bólu (0-10)</Label>
+          <Label htmlFor="painIntensity" className="text-sm font-medium">
+            Intensywność bólu (0-10)
+          </Label>
           <div className="flex items-center gap-3">
             <Input
               id="painIntensity"
@@ -97,11 +109,12 @@ export function InterviewSectionForm({
               max={10}
               value={data.painIntensity ?? ''}
               onChange={(e) => updateField('painIntensity', e.target.value ? Number(e.target.value) : undefined)}
-              className="w-20"
+              className="w-24 h-11 text-center text-lg font-semibold"
               disabled={disabled}
             />
-            <div className="flex-1 h-2 rounded-full bg-gradient-to-r from-green-500 via-yellow-500 to-red-500 opacity-50" />
+            <div className="flex-1 h-3 rounded-full bg-gradient-to-r from-green-500 via-yellow-500 to-red-500 opacity-60" />
           </div>
+          <FormHint>Skala VAS: 0 = brak bólu, 10 = najgorszy możliwy ból</FormHint>
         </div>
       </div>
 

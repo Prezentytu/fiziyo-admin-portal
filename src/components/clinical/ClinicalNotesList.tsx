@@ -304,13 +304,11 @@ export function ClinicalNotesList({
       {/* Editor Dialog */}
       <Dialog open={isEditorOpen} onOpenChange={handleDialogOpenChange}>
         <DialogContent 
-          className="max-w-4xl max-h-[90vh] overflow-y-auto p-6"
+          className="max-w-4xl h-[90vh] flex flex-col p-0"
           hideCloseButton
           onInteractOutside={(e) => {
-            if (editorIsDirty) {
-              e.preventDefault();
-              setShowExitConfirm(true);
-            }
+            // Zawsze blokuj zamknięcie przez kliknięcie poza dialog
+            e.preventDefault();
           }}
           onEscapeKeyDown={(e) => {
             e.preventDefault();
@@ -320,7 +318,7 @@ export function ClinicalNotesList({
           {/* Custom close button - always visible */}
           <button
             onClick={handleEditorClose}
-            className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+            className="absolute right-4 top-4 z-20 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
           >
             <X className="h-4 w-4" />
             <span className="sr-only">Zamknij</span>

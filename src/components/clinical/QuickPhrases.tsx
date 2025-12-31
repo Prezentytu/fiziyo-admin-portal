@@ -22,7 +22,7 @@ export function QuickPhrases({
   };
 
   return (
-    <div className={cn('flex flex-wrap gap-1.5', className)}>
+    <div className={cn('flex flex-wrap gap-2', className)}>
       {phrases.map((phrase) => {
         const isSelected = selectedPhrases.includes(phrase);
         return (
@@ -31,14 +31,14 @@ export function QuickPhrases({
             type="button"
             onClick={() => handleClick(phrase)}
             className={cn(
-              'px-2.5 py-1 text-xs rounded-lg border transition-all duration-200',
-              'hover:border-primary/50 hover:bg-primary/5',
+              'min-h-[44px] px-4 py-2.5 text-sm rounded-xl border transition-all duration-200',
+              'hover:border-primary/50 hover:bg-primary/5 active:scale-95',
               isSelected
-                ? 'border-primary bg-primary/10 text-primary font-medium'
+                ? 'border-primary bg-primary/10 text-primary font-medium shadow-sm'
                 : 'border-border/60 bg-surface text-muted-foreground hover:text-foreground'
             )}
           >
-            {multiSelect && isSelected && <span className="mr-1">✓</span>}
+            {multiSelect && isSelected && <span className="mr-1.5">✓</span>}
             {phrase}
           </button>
         );
