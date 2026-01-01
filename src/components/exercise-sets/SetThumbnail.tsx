@@ -1,6 +1,7 @@
 'use client';
 
 import { Dumbbell } from 'lucide-react';
+import { getMediaUrl } from '@/utils/mediaUrl';
 
 interface ExerciseMapping {
   exercise?: {
@@ -18,7 +19,7 @@ interface SetThumbnailProps {
 export function SetThumbnail({ exerciseMappings, size = 'sm', className = '' }: SetThumbnailProps) {
   const images = exerciseMappings
     ?.slice(0, 4)
-    .map((m) => m.exercise?.imageUrl || m.exercise?.images?.[0])
+    .map((m) => getMediaUrl(m.exercise?.imageUrl || m.exercise?.images?.[0]))
     .filter(Boolean) as string[];
 
   const gridSize = size === 'sm' ? 'h-11 w-11' : 'h-16 w-16';

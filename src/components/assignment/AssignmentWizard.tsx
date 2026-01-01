@@ -35,6 +35,7 @@ import { ASSIGN_EXERCISE_SET_TO_PATIENT_MUTATION, REMOVE_EXERCISE_SET_ASSIGNMENT
 import { GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY } from '@/graphql/queries/patientAssignments.queries';
 import { GET_EXERCISE_SET_WITH_ASSIGNMENTS_QUERY } from '@/graphql/queries/exerciseSets.queries';
 import type { TherapistPatientsResponse } from '@/types/apollo';
+import { getMediaUrl } from '@/utils/mediaUrl';
 
 // Wrapper component that handles dialog state - content remounts on each open
 export function AssignmentWizard(props: AssignmentWizardProps) {
@@ -205,8 +206,8 @@ function AssignmentWizardContent({
               type: m.exercise.type,
               description: m.exercise.description,
               exerciseSide: m.exercise.exerciseSide,
-              imageUrl: m.exercise.imageUrl,
-              images: m.exercise.images,
+              imageUrl: getMediaUrl(m.exercise.imageUrl) ?? undefined,
+              images: m.exercise.images?.map(img => getMediaUrl(img)).filter(Boolean) as string[],
               videoUrl: m.exercise.videoUrl,
               notes: m.exercise.notes,
               // Exercise default values

@@ -65,6 +65,7 @@ import { ImagePlaceholder } from '@/components/shared/ImagePlaceholder';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { ColorBadge } from '@/components/shared/ColorBadge';
 import { cn } from '@/lib/utils';
+import { getMediaUrl } from '@/utils/mediaUrl';
 
 import { GET_ORGANIZATION_EXERCISES_QUERY } from '@/graphql/queries/exercises.queries';
 import {
@@ -190,7 +191,8 @@ function SortableExerciseCard({
     transition,
   };
 
-  const imageUrl = exercise.imageUrl || exercise.images?.[0];
+  const rawImageUrl = exercise.imageUrl || exercise.images?.[0];
+  const imageUrl = getMediaUrl(rawImageUrl);
   const isTimeType = exercise.type === 'time' || exercise.type === 'hold';
 
   return (
@@ -871,7 +873,8 @@ export function CreateSetWizard({ open, onOpenChange, organizationId, onSuccess 
                       <div className="grid gap-2">
                         {filteredExercises.map((exercise) => {
                           const isSelected = selectedExerciseIds.includes(exercise.id);
-                          const imageUrl = exercise.imageUrl || exercise.images?.[0];
+                          const rawImgUrl = exercise.imageUrl || exercise.images?.[0];
+                          const imageUrl = getMediaUrl(rawImgUrl);
 
                           return (
                             <button
@@ -1069,15 +1072,18 @@ export function CreateSetWizard({ open, onOpenChange, organizationId, onSuccess 
           </DialogHeader>
           {previewExercise && (
             <div className="space-y-4">
-              {(previewExercise.imageUrl || previewExercise.images?.[0]) && (
-                <div className="rounded-xl overflow-hidden aspect-video bg-surface-light">
-                  <img
-                    src={previewExercise.imageUrl || previewExercise.images?.[0]}
-                    alt={previewExercise.name}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-              )}
+              {(() => {
+                const previewUrl = getMediaUrl(previewExercise.imageUrl || previewExercise.images?.[0]);
+                return previewUrl && (
+                  <div className="rounded-xl overflow-hidden aspect-video bg-surface-light">
+                    <img
+                      src={previewUrl}
+                      alt={previewExercise.name}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                );
+              })()}
               {previewExercise.description && (
                 <p className="text-sm text-muted-foreground">{previewExercise.description}</p>
               )}

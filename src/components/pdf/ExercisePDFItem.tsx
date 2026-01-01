@@ -9,6 +9,7 @@ import {
   translateExerciseSidePolish 
 } from './polishUtils';
 import type { PDFExercise } from './types';
+import { getMediaUrl } from '@/utils/mediaUrl';
 
 interface ExercisePDFItemProps {
   exercise: PDFExercise;
@@ -20,7 +21,8 @@ interface ExercisePDFItemProps {
 export function ExercisePDFItem({ exercise, index, showImage, compact }: ExercisePDFItemProps) {
   const displayName = exercise.customName || exercise.name;
   const displayDescription = exercise.customDescription || exercise.description;
-  const imageUrl = exercise.imageUrl || exercise.images?.[0];
+  const rawImageUrl = exercise.imageUrl || exercise.images?.[0];
+  const imageUrl = getMediaUrl(rawImageUrl);
   const typeLabel = translateExerciseTypePolish(exercise.type);
   const sideLabel = translateExerciseSidePolish(exercise.exerciseSide);
 

@@ -43,6 +43,7 @@ import { ImagePlaceholder } from "@/components/shared/ImagePlaceholder";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { cn } from "@/lib/utils";
 import { translateAssignmentStatus, getStatusColorClass } from "@/utils/statusUtils";
+import { getMediaUrl } from "@/utils/mediaUrl";
 
 import {
   UPDATE_EXERCISE_SET_ASSIGNMENT_MUTATION,
@@ -323,15 +324,19 @@ export function PatientAssignmentCard({
 
               {/* Set thumbnail */}
               <div className="h-12 w-12 rounded-lg overflow-hidden shrink-0 bg-surface-light">
-                {exercises[0]?.exercise?.imageUrl || exercises[0]?.exercise?.images?.[0] ? (
-                  <img
-                    src={exercises[0].exercise.imageUrl || exercises[0].exercise.images?.[0]}
-                    alt=""
-                    className="h-full w-full object-cover"
-                  />
-                ) : (
-                  <ImagePlaceholder type="set" iconClassName="h-5 w-5" />
-                )}
+                {(() => {
+                  const rawUrl = exercises[0]?.exercise?.imageUrl || exercises[0]?.exercise?.images?.[0];
+                  const fullUrl = getMediaUrl(rawUrl);
+                  return fullUrl ? (
+                    <img
+                      src={fullUrl}
+                      alt=""
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <ImagePlaceholder type="set" iconClassName="h-5 w-5" />
+                  );
+                })()}
               </div>
 
               {/* Info */}
@@ -471,7 +476,8 @@ export function PatientAssignmentCard({
                     .sort((a, b) => (a.order || 0) - (b.order || 0))
                     .map((mapping) => {
                       const params = getEffectiveParams(mapping);
-                      const imageUrl = mapping.exercise?.imageUrl || mapping.exercise?.images?.[0];
+                      const rawImageUrl = mapping.exercise?.imageUrl || mapping.exercise?.images?.[0];
+                      const imageUrl = getMediaUrl(rawImageUrl);
                       const hasOverride = exerciseOverrides[mapping.id] && (
                         exerciseOverrides[mapping.id].sets !== undefined ||
                         exerciseOverrides[mapping.id].reps !== undefined ||
@@ -603,6 +609,7 @@ export function PatientAssignmentCard({
     </>
   );
 }
+
 
 
 

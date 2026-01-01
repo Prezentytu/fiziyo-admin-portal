@@ -13,6 +13,7 @@ import {
 import { cn } from "@/lib/utils";
 import { ColorBadge } from "@/components/shared/ColorBadge";
 import { ImagePlaceholder } from "@/components/shared/ImagePlaceholder";
+import { getMediaUrl } from "@/utils/mediaUrl";
 
 export interface ExerciseTag {
   id: string;
@@ -103,7 +104,8 @@ export function ExerciseCard({
   className,
   compact = false,
 }: ExerciseCardProps) {
-  const imageUrl = exercise.imageUrl || exercise.images?.[0];
+  const rawImageUrl = exercise.imageUrl || exercise.images?.[0];
+  const imageUrl = getMediaUrl(rawImageUrl);
   const hasParams = (exercise.sets && exercise.sets > 0) || 
                     (exercise.reps && exercise.reps > 0) || 
                     (exercise.duration && exercise.duration > 0);

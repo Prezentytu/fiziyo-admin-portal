@@ -31,6 +31,7 @@ import {
 import { ImagePlaceholder } from "@/components/shared/ImagePlaceholder";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { cn } from "@/lib/utils";
+import { getMediaUrl } from "@/utils/mediaUrl";
 
 import { GET_ORGANIZATION_EXERCISES_QUERY } from "@/graphql/queries/exercises.queries";
 import { ADD_EXERCISE_TO_EXERCISE_SET_MUTATION } from "@/graphql/mutations/exercises.mutations";
@@ -248,7 +249,8 @@ export function AddExerciseToSetDialog({
   };
 
   const getExerciseImage = (exercise: Exercise) => {
-    return exercise.imageUrl || exercise.images?.[0];
+    const rawUrl = exercise.imageUrl || exercise.images?.[0];
+    return getMediaUrl(rawUrl);
   };
 
   return (

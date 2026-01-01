@@ -21,6 +21,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { ImagePlaceholder } from "@/components/shared/ImagePlaceholder";
 import { cn } from "@/lib/utils";
+import { getMediaUrl } from "@/utils/mediaUrl";
 import type { ExerciseSet, ExerciseMapping, ExerciseOverride } from "./types";
 
 interface CustomizeExercisesStepProps {
@@ -261,7 +262,8 @@ export function CustomizeExercisesStep({
           <div className="p-3 pr-4 space-y-2">
             {mappings.map((mapping, index) => {
               const exercise = mapping.exercise;
-              const imageUrl = exercise?.imageUrl || exercise?.images?.[0];
+              const rawImgUrl = exercise?.imageUrl || exercise?.images?.[0];
+              const imageUrl = getMediaUrl(rawImgUrl);
               const isSelected = selectedMappingId === mapping.id;
               const hasCustomization = hasOverride(mapping.id);
 
@@ -346,19 +348,21 @@ export function CustomizeExercisesStep({
             <div className="p-4 border-b border-border shrink-0">
               <div className="flex items-start gap-3">
                 <div className="h-14 w-14 rounded-lg overflow-hidden shrink-0">
-                  {selectedMapping.exercise?.imageUrl ||
-                  selectedMapping.exercise?.images?.[0] ? (
-                    <img
-                      src={
-                        selectedMapping.exercise.imageUrl ||
-                        selectedMapping.exercise.images?.[0]
-                      }
-                      alt=""
-                      className="h-full w-full object-cover"
-                    />
-                  ) : (
-                    <ImagePlaceholder type="exercise" iconClassName="h-6 w-6" />
-                  )}
+                  {(() => {
+                    const selectedImgUrl = getMediaUrl(
+                      selectedMapping.exercise?.imageUrl ||
+                      selectedMapping.exercise?.images?.[0]
+                    );
+                    return selectedImgUrl ? (
+                      <img
+                        src={selectedImgUrl}
+                        alt=""
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <ImagePlaceholder type="exercise" iconClassName="h-6 w-6" />
+                    );
+                  })()}
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold">

@@ -31,6 +31,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
+import { getMediaUrl } from '@/utils/mediaUrl';
 
 import { ExerciseSetPDF, formatExercises } from '@/components/pdf';
 import type {
@@ -169,8 +170,8 @@ export function GeneratePDFDialog({
         description: mapping.exercise?.description,
         type: mapping.exercise?.type as PDFExercise['type'],
         exerciseSide: mapping.exercise?.exerciseSide as PDFExercise['exerciseSide'],
-        imageUrl: mapping.exercise?.imageUrl,
-        images: mapping.exercise?.images,
+        imageUrl: getMediaUrl(mapping.exercise?.imageUrl) ?? undefined,
+        images: mapping.exercise?.images?.map(img => getMediaUrl(img)).filter(Boolean) as string[],
         notes: mapping.notes || mapping.exercise?.notes,
         sets: mapping.sets,
         reps: mapping.reps,
