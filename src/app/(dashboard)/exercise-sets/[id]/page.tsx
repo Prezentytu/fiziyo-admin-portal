@@ -29,7 +29,6 @@ import Link from 'next/link';
 
 import { cn } from '@/lib/utils';
 import { translateAssignmentStatus } from '@/utils/statusUtils';
-import { getMediaUrl } from '@/utils/mediaUrl';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -460,8 +459,7 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
             {[...exercises]
               .sort((a, b) => (a.order || 0) - (b.order || 0))
               .map((mapping, index) => {
-                const rawImageUrl = mapping.exercise?.imageUrl || mapping.exercise?.images?.[0];
-                const imageUrl = getMediaUrl(rawImageUrl);
+                const imageUrl = mapping.exercise?.imageUrl || mapping.exercise?.images?.[0];
                 const hasParams = mapping.sets || mapping.reps || mapping.duration;
                 return (
                   <div

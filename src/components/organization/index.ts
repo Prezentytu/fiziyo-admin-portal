@@ -19,6 +19,7 @@ export { AssignToClinicDialog } from "./AssignToClinicDialog";
 export { SettingsTab } from "./SettingsTab";
 export { ExerciseVisibilitySettings } from "./ExerciseVisibilitySettings";
 export { SubscriptionCard } from "./SubscriptionCard";
+export { AutoSyncSettings } from "./AutoSyncSettings";
 
 // Dialogs (existing)
 export { InviteMemberDialog } from "./InviteMemberDialog";

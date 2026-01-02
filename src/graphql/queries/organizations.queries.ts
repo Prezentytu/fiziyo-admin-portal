@@ -24,6 +24,7 @@ export const ORGANIZATION_FULL_FRAGMENT = gql`
     subscriptionExpiresAt
     allowPersonalExercises
     sharedExercisesByDefault
+    autoSyncExampleExercises
   }
 `;
 

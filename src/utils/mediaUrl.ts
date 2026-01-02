@@ -1,23 +1,20 @@
+import { urlConfig } from "@/graphql/config/urlConfig";
+
 /**
- * Konwertuje relative URL obrazu na pełny URL z base URL backendu
- *
- * Przykład:
- * - Input: "/api/exercises/media/tulow-szyja/.../image.jpg"
- * - Output: "https://fizjo-app-api.azurewebsites.net/api/exercises/media/tulow-szyja/.../image.jpg"
- *
- * Jeśli URL jest już pełny (http/https), zwraca bez zmian.
+ * Konwertuje względny URL mediów na pełny URL
+ * Dla URL-ów proxy (/api/exercises/media/...) dodaje base URL backendu
  */
 export function getMediaUrl(relativeOrFullUrl: string | null | undefined): string | null {
   if (!relativeOrFullUrl) return null;
 
-  // Jeśli już jest pełny URL - zwróć bez zmian
+  // Jeśli to już pełny URL, zwróć bez zmian
   if (relativeOrFullUrl.startsWith("http://") || relativeOrFullUrl.startsWith("https://")) {
     return relativeOrFullUrl;
   }
 
-  // Jeśli zaczyna się od /api/ - to jest nasz proxy endpoint
+  // Jeśli to URL proxy, dodaj base URL backendu
   if (relativeOrFullUrl.startsWith("/api/")) {
-    const baseUrl = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/$/, "");
+    const baseUrl = urlConfig.getBaseUrl().replace(/\/$/, "");
     return `${baseUrl}${relativeOrFullUrl}`;
   }
 
@@ -26,7 +23,7 @@ export function getMediaUrl(relativeOrFullUrl: string | null | undefined): strin
 }
 
 /**
- * Konwertuje tablicę URL-ów obrazów
+ * Konwertuje tablicę URL-ów mediów
  */
 export function getMediaUrls(urls: (string | null | undefined)[]): string[] {
   return urls.map((url) => getMediaUrl(url)).filter((url): url is string => url !== null);

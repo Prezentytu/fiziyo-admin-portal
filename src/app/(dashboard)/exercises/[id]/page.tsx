@@ -42,7 +42,6 @@ import {
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
 import { cn } from '@/lib/utils';
-import { getMediaUrl, getMediaUrls } from '@/utils/mediaUrl';
 
 import { GET_EXERCISE_BY_ID_QUERY, GET_ORGANIZATION_EXERCISES_QUERY } from '@/graphql/queries/exercises.queries';
 import { GET_EXERCISE_TAGS_BY_ORGANIZATION_QUERY } from '@/graphql/queries/exerciseTags.queries';
@@ -195,8 +194,7 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
     );
   }
 
-  const rawImages = [exercise.imageUrl, ...(exercise.images || [])].filter(Boolean) as string[];
-  const allImages = getMediaUrls(rawImages);
+  const allImages = [exercise.imageUrl, ...(exercise.images || [])].filter(Boolean) as string[];
   const currentImage = allImages[selectedImageIndex] || null;
 
   const hasRestTimes =

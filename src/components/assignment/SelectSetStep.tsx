@@ -8,7 +8,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ImagePlaceholder } from "@/components/shared/ImagePlaceholder";
 import { cn } from "@/lib/utils";
-import { getMediaUrl } from "@/utils/mediaUrl";
 import type { ExerciseSet, AssignedSetInfo } from "./types";
 
 interface SelectSetStepProps {
@@ -162,9 +161,8 @@ export function SelectSetStep({
                 const isSelectedForUnassign = selectedToUnassign === set.id;
                 const isPreview = previewSet?.id === set.id;
                 const exerciseCount = set.exerciseMappings?.length || 0;
-                const rawFirstImage = set.exerciseMappings?.[0]?.exercise?.imageUrl ||
+                const firstImage = set.exerciseMappings?.[0]?.exercise?.imageUrl ||
                   set.exerciseMappings?.[0]?.exercise?.images?.[0];
-                const firstImage = getMediaUrl(rawFirstImage);
 
                 return (
                   <div
@@ -290,8 +288,7 @@ export function SelectSetStep({
               <div className="pr-4 space-y-2">
                 {previewSet.exerciseMappings?.map((mapping, index) => {
                   const exercise = mapping.exercise;
-                  const rawImgUrl = exercise?.imageUrl || exercise?.images?.[0];
-                  const imageUrl = getMediaUrl(rawImgUrl);
+                  const imageUrl = exercise?.imageUrl || exercise?.images?.[0];
 
                   return (
                     <div

@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { ImagePlaceholder } from "@/components/shared/ImagePlaceholder";
-import { getMediaUrl } from "@/utils/mediaUrl";
 
 interface ExerciseMapping {
   id: string;
@@ -52,7 +51,7 @@ export function SetCard({
   // Get first 4 exercise images for grid
   const exerciseImages = set.exerciseMappings
     ?.slice(0, 4)
-    .map((m) => getMediaUrl(m.exercise?.imageUrl || m.exercise?.images?.[0]))
+    .map((m) => m.exercise?.imageUrl || m.exercise?.images?.[0])
     .filter(Boolean) as string[];
 
   const remainingCount = exerciseCount > 4 ? exerciseCount - 4 : 0;

@@ -15,7 +15,6 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { ImagePlaceholder } from "@/components/shared/ImagePlaceholder";
-import { getMediaUrl } from "@/utils/mediaUrl";
 import type {
   ExerciseSet,
   Patient,
@@ -157,8 +156,7 @@ export function SummaryStep({
             <div className="space-y-2">
               {exerciseSet.exerciseMappings?.map((mapping, index) => {
                 const exercise = mapping.exercise;
-                const rawImageUrl = exercise?.imageUrl || exercise?.images?.[0];
-                const imageUrl = getMediaUrl(rawImageUrl);
+                const imageUrl = exercise?.imageUrl || exercise?.images?.[0];
                 const override = overrides.get(mapping.id);
                 const hasOverride =
                   override &&

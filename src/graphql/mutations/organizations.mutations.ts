@@ -383,3 +383,17 @@ export const VALIDATE_INVITATION_MUTATION = gql`
     }
   }
 `;
+
+/**
+ * Mutacja do włączania/wyłączania automatycznej synchronizacji ćwiczeń z GitHub
+ * Gdy włączone, nowe ćwiczenia z repozytorium fiziyo-exercises będą automatycznie importowane
+ */
+export const SET_AUTO_SYNC_EXERCISES_MUTATION = gql`
+  mutation SetAutoSyncExampleExercises($organizationId: String!, $enabled: Boolean!) {
+    setAutoSyncExampleExercises(organizationId: $organizationId, enabled: $enabled) {
+      id
+      name
+      autoSyncExampleExercises
+    }
+  }
+`;

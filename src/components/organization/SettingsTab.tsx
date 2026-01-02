@@ -14,6 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ExerciseVisibilitySettings } from "./ExerciseVisibilitySettings";
 import { SubscriptionCard } from "./SubscriptionCard";
+import { AutoSyncSettings } from "./AutoSyncSettings";
 import {
   UPDATE_ORGANIZATION_NAME_MUTATION,
   UPDATE_ORGANIZATION_LOGO_MUTATION,
@@ -31,6 +32,7 @@ interface Organization {
   subscriptionExpiresAt?: string;
   allowPersonalExercises?: boolean;
   sharedExercisesByDefault?: boolean;
+  autoSyncExampleExercises?: boolean;
 }
 
 interface SubscriptionLimits {
@@ -354,6 +356,14 @@ export function SettingsTab({
         onSuccess={onRefresh}
       />
 
+      {/* Auto-sync settings */}
+      <AutoSyncSettings
+        organizationId={organization.id}
+        autoSyncEnabled={organization.autoSyncExampleExercises}
+        canEdit={canEdit}
+        onSuccess={onRefresh}
+      />
+
       {/* Subscription info */}
       <SubscriptionCard
         subscriptionPlan={organization.subscriptionPlan}
@@ -364,6 +374,7 @@ export function SettingsTab({
     </div>
   );
 }
+
 
 
 
