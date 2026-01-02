@@ -157,8 +157,8 @@ export function GeneratePDFDialog({
         name: organization.name || 'Gabinet Fizjoterapii',
         logoUrl: organization.logoUrl,
         address: organization.address,
-        phone: organization.contactInfo,
-        email: organization.email,
+        phone: organization.contactPhone,
+        email: organization.contactEmail,
         website: organization.website,
       };
 

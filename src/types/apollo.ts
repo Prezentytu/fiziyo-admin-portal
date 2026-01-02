@@ -139,7 +139,17 @@ export interface OrganizationByIdResponse {
     logoUrl?: string;
     isActive?: boolean;
     creationTime?: string;
+    updatedAt?: string;
     subscriptionPlan?: string;
+    subscriptionExpiresAt?: string;
+    allowPersonalExercises?: boolean;
+    sharedExercisesByDefault?: boolean;
+    autoSyncExampleExercises?: boolean;
+    // Contact info for PDF/branding
+    address?: string;
+    contactPhone?: string;
+    contactEmail?: string;
+    website?: string;
   };
 }
 
