@@ -69,11 +69,27 @@ export interface OrganizationExerciseSetsResponse {
       id: string;
       exerciseId: string;
       order?: number;
+      sets?: number;
+      reps?: number;
+      duration?: number;
+      restSets?: number;
+      restReps?: number;
+      notes?: string;
+      customName?: string;
+      customDescription?: string;
       exercise?: {
         id: string;
         name: string;
+        type?: string;
+        exerciseSide?: string;
         imageUrl?: string;
         images?: string[];
+        description?: string;
+        sets?: number;
+        reps?: number;
+        duration?: number;
+        restSets?: number;
+        restReps?: number;
       };
     }>;
     patientAssignments?: Array<{ id: string }>;

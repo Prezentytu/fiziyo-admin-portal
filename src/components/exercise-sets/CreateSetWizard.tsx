@@ -20,11 +20,19 @@ import {
   ChevronUp,
   Eye,
   Zap,
-  Activity,
-  Target,
-  Footprints,
-  CircleDot,
   Sliders,
+  Tag,
+  TrendingUp,
+  History,
+  Sparkles,
+  Filter,
+  Copy,
+  Users,
+  AlignLeft,
+  Timer,
+  MessageSquare,
+  ArrowLeftRight,
+  Pencil,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
@@ -66,13 +74,20 @@ import { getMediaUrl } from '@/utils/mediaUrl';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { ColorBadge } from '@/components/shared/ColorBadge';
 import { cn } from '@/lib/utils';
+import { AISetGenerator } from './AISetGenerator';
 
 import { GET_ORGANIZATION_EXERCISES_QUERY } from '@/graphql/queries/exercises.queries';
 import {
   CREATE_EXERCISE_SET_MUTATION,
   ADD_EXERCISE_TO_EXERCISE_SET_MUTATION,
+  ASSIGN_EXERCISE_SET_TO_PATIENT_MUTATION,
 } from '@/graphql/mutations/exercises.mutations';
 import { GET_ORGANIZATION_EXERCISE_SETS_QUERY } from '@/graphql/queries/exerciseSets.queries';
+import { GET_EXERCISE_TAGS_BY_ORGANIZATION_QUERY } from '@/graphql/queries/exerciseTags.queries';
+import { GET_TAG_CATEGORIES_BY_ORGANIZATION_QUERY } from '@/graphql/queries/tagCategories.queries';
+import { GET_PATIENT_CLINICAL_NOTES_QUERY } from '@/graphql/queries/clinicalNotes.queries';
+import { createTagsMap, mapExercisesWithTags } from '@/utils/tagUtils';
+import type { ExerciseTagsResponse, TagCategoriesResponse, OrganizationExerciseSetsResponse } from '@/types/apollo';
 
 interface ExerciseTag {
   id: string;
@@ -103,6 +118,12 @@ interface ExerciseParams {
   duration: number;
   restSets: number;
   restReps: number;
+  preparationTime: number;
+  executionTime: number;
+  notes: string;
+  exerciseSide: string;
+  customName: string;
+  customDescription: string;
 }
 
 interface CreateSetWizardProps {
@@ -110,25 +131,29 @@ interface CreateSetWizardProps {
   onOpenChange: (open: boolean) => void;
   organizationId: string;
   onSuccess?: (setId: string) => void;
+  // Patient context - when creating a set for a specific patient
+  patientId?: string;
+  patientName?: string;
+  autoAssign?: boolean;
 }
 
-type WizardStep = 'basics' | 'exercises';
+interface PatientContext {
+  patientId: string;
+  patientName?: string;
+  diagnosis?: string[];
+  painLocation?: string;
+}
 
-// Quick start categories with icons
-const QUICK_START_CATEGORIES = [
-  { id: 'kolano', label: 'Kolano', icon: Target, color: 'from-blue-500 to-cyan-500' },
-  { id: 'kręgosłup', label: 'Kręgosłup', icon: Activity, color: 'from-purple-500 to-violet-500' },
-  { id: 'bark', label: 'Barki', icon: Zap, color: 'from-amber-500 to-orange-500' },
-  { id: 'biodro', label: 'Biodro', icon: CircleDot, color: 'from-pink-500 to-rose-500' },
-  { id: 'core', label: 'Core', icon: Target, color: 'from-emerald-500 to-green-500' },
-  { id: 'stopa', label: 'Stopa', icon: Footprints, color: 'from-indigo-500 to-blue-500' },
-];
+type WizardStep = 'basics' | 'exercises' | 'ai';
+type CreationMode = 'manual' | 'ai';
 
-// Category filters for exercise list
-const CATEGORY_FILTERS = [
-  { id: 'all', label: 'Wszystkie' },
-  ...QUICK_START_CATEGORIES.map((c) => ({ id: c.id, label: c.label })),
-];
+// Dynamic quick start category derived from tags
+interface QuickStartCategory {
+  id: string;
+  label: string;
+  color: string;
+  exerciseCount: number;
+}
 
 const translateType = (type?: string) => {
   const types: Record<string, string> = {
@@ -165,7 +190,154 @@ function estimateWorkoutTime(
   return Math.round(totalSeconds / 60);
 }
 
-// Sortable exercise card component
+// Exercise picker item component (reusable for smart/all views)
+function ExercisePickerItem({
+  exercise,
+  isSelected,
+  onToggle,
+  onPreview,
+  getExerciseTags,
+  badge,
+}: {
+  exercise: Exercise;
+  isSelected: boolean;
+  onToggle: () => void;
+  onPreview: () => void;
+  getExerciseTags: (ex: Exercise) => ExerciseTag[];
+  badge?: string;
+}) {
+  const imageUrl = getMediaUrl(exercise.imageUrl || exercise.images?.[0]);
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      onToggle();
+    }
+  };
+
+  return (
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={onToggle}
+      onKeyDown={handleKeyDown}
+      className={cn(
+        'w-full flex items-center gap-3 p-3 rounded-xl text-left transition-all duration-200 cursor-pointer',
+        isSelected ? 'bg-primary/10 ring-2 ring-primary/30' : 'bg-surface hover:bg-surface-light'
+      )}
+    >
+      <div
+        className={cn(
+          'flex h-5 w-5 shrink-0 items-center justify-center rounded border-2 transition-all',
+          isSelected ? 'bg-primary border-primary text-primary-foreground' : 'border-border'
+        )}
+      >
+        {isSelected && <Check className="h-3 w-3" />}
+      </div>
+
+      <div className="h-10 w-10 rounded-lg overflow-hidden shrink-0 relative group">
+        {imageUrl ? (
+          <img src={imageUrl} alt="" className="h-full w-full object-cover" loading="lazy" />
+        ) : (
+          <ImagePlaceholder type="exercise" iconClassName="h-4 w-4" />
+        )}
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onPreview();
+          }}
+          className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
+        >
+          <Eye className="h-3 w-3 text-white" />
+        </button>
+      </div>
+
+      <div className="flex-1 min-w-0">
+        <p className="font-medium text-sm truncate">{exercise.name}</p>
+        <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+          <span className="text-xs text-muted-foreground">{translateType(exercise.type)}</span>
+          {getExerciseTags(exercise)
+            .slice(0, 2)
+            .map((tag) => (
+              <ColorBadge key={tag.id} color={tag.color} size="sm">
+                {tag.name}
+              </ColorBadge>
+            ))}
+        </div>
+      </div>
+
+      {badge && (
+        <Badge variant="secondary" className="text-[10px] shrink-0">
+          {badge}
+        </Badge>
+      )}
+    </div>
+  );
+}
+
+// Param control component for expanded view
+function ParamControl({
+  label,
+  value,
+  onChange,
+  step = 1,
+  min = 0,
+  icon,
+}: {
+  label: string;
+  value: number;
+  onChange: (value: number) => void;
+  step?: number;
+  min?: number;
+  icon?: React.ReactNode;
+}) {
+  return (
+    <div>
+      <label className="text-xs text-muted-foreground block mb-1.5 font-medium flex items-center gap-1">
+        {icon}
+        {label}
+      </label>
+      <div className="flex items-center">
+        <Button
+          type="button"
+          variant="outline"
+          size="icon"
+          className="h-8 w-8 rounded-r-none shrink-0"
+          onClick={() => onChange(Math.max(min, value - step))}
+        >
+          <Minus className="h-3.5 w-3.5" />
+        </Button>
+        <Input
+          type="number"
+          value={value}
+          onChange={(e) => onChange(Number.parseInt(e.target.value) || 0)}
+          className="h-8 flex-1 text-center text-sm font-semibold rounded-none border-x-0 px-0 min-w-0"
+        />
+        <Button
+          type="button"
+          variant="outline"
+          size="icon"
+          className="h-8 w-8 rounded-l-none shrink-0"
+          onClick={() => onChange(value + step)}
+        >
+          <Plus className="h-3.5 w-3.5" />
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+// Exercise side options
+const EXERCISE_SIDE_OPTIONS = [
+  { value: 'both', label: 'Obie strony' },
+  { value: 'left', label: 'Lewa' },
+  { value: 'right', label: 'Prawa' },
+  { value: 'alternating', label: 'Naprzemiennie' },
+  { value: 'none', label: 'Nie dotyczy' },
+];
+
+// Sortable exercise card component with expandable params
 function SortableExerciseCard({
   exercise,
   index,
@@ -177,10 +349,11 @@ function SortableExerciseCard({
   exercise: Exercise;
   index: number;
   params: ExerciseParams;
-  onUpdateParams: (field: keyof ExerciseParams, value: number) => void;
+  onUpdateParams: (field: keyof ExerciseParams, value: number | string) => void;
   onRemove: () => void;
   onPreview: () => void;
 }) {
+  const [isExpanded, setIsExpanded] = useState(false);
   const [showMoreOptions, setShowMoreOptions] = useState(false);
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: exercise.id,
@@ -194,17 +367,21 @@ function SortableExerciseCard({
   const imageUrl = getMediaUrl(exercise.imageUrl || exercise.images?.[0]);
   const isTimeType = exercise.type === 'time' || exercise.type === 'hold';
 
+  // Format params summary for chips
+  const paramsSummary = isTimeType ? `${params.sets}×${params.duration}s` : `${params.sets}×${params.reps}`;
+  const sideLabel = EXERCISE_SIDE_OPTIONS.find((o) => o.value === params.exerciseSide)?.label;
+
   return (
     <div
       ref={setNodeRef}
       style={style}
       className={cn(
-        'rounded-xl border border-border bg-background p-3 transition-all',
+        'rounded-xl border border-border bg-background overflow-hidden transition-all',
         isDragging && 'shadow-xl shadow-primary/20 opacity-90 scale-[1.02] z-50'
       )}
     >
-      {/* Header */}
-      <div className="flex items-center gap-2 mb-3">
+      {/* Header - always visible */}
+      <div className="p-3 flex items-center gap-2">
         <button
           {...attributes}
           {...listeners}
@@ -242,167 +419,257 @@ function SortableExerciseCard({
         </Button>
       </div>
 
-      {/* Main params - compact grid */}
-      <div className="grid grid-cols-3 gap-2">
-        {/* Sets */}
-        <div>
-          <label className="text-[10px] text-muted-foreground block mb-1">Serie</label>
-          <div className="flex items-center">
-            <Button
+      {/* Compact view - param chips */}
+      {!isExpanded && (
+        <div className="px-3 pb-3">
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* Combined sets x reps/duration chip */}
+            <button
               type="button"
-              variant="outline"
-              size="icon"
-              className="h-7 w-7 rounded-r-none"
-              onClick={() => onUpdateParams('sets', params.sets - 1)}
+              onClick={() => setIsExpanded(true)}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-primary/10 text-primary text-xs font-medium hover:bg-primary/20 transition-colors"
             >
-              <Minus className="h-3 w-3" />
-            </Button>
-            <Input
-              type="number"
-              value={params.sets}
-              onChange={(e) => onUpdateParams('sets', parseInt(e.target.value) || 0)}
-              className="h-7 w-10 text-center text-xs font-semibold rounded-none border-x-0 px-0"
-            />
-            <Button
-              type="button"
-              variant="outline"
-              size="icon"
-              className="h-7 w-7 rounded-l-none"
-              onClick={() => onUpdateParams('sets', params.sets + 1)}
-            >
-              <Plus className="h-3 w-3" />
-            </Button>
-          </div>
-        </div>
+              <Dumbbell className="h-3 w-3" />
+              {paramsSummary}
+            </button>
 
-        {/* Reps or Duration */}
-        <div>
-          <label className="text-[10px] text-muted-foreground block mb-1 flex items-center gap-0.5">
-            {isTimeType ? (
-              <>
-                <Clock className="h-2.5 w-2.5" /> Czas (s)
-              </>
-            ) : (
-              'Powt.'
+            {/* Rest chip */}
+            <button
+              type="button"
+              onClick={() => setIsExpanded(true)}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-surface-light text-muted-foreground text-xs font-medium hover:bg-surface hover:text-foreground transition-colors"
+            >
+              <Clock className="h-3 w-3" />
+              {params.restSets}s
+            </button>
+
+            {/* Side chip - only if not 'both' */}
+            {params.exerciseSide && params.exerciseSide !== 'both' && (
+              <button
+                type="button"
+                onClick={() => setIsExpanded(true)}
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-surface-light text-muted-foreground text-xs font-medium hover:bg-surface hover:text-foreground transition-colors"
+              >
+                <ArrowLeftRight className="h-3 w-3" />
+                {sideLabel}
+              </button>
             )}
-          </label>
-          <div className="flex items-center">
-            <Button
+
+            {/* Custom name indicator */}
+            {params.customName && (
+              <span
+                className="inline-flex items-center gap-1 px-2 py-1 text-xs text-muted-foreground"
+                title={params.customName}
+              >
+                <Pencil className="h-3 w-3" />
+              </span>
+            )}
+
+            {/* Notes indicator */}
+            {params.notes && (
+              <span
+                className="inline-flex items-center gap-1 px-2 py-1 text-xs text-muted-foreground"
+                title="Notatki dodane"
+              >
+                <MessageSquare className="h-3 w-3" />
+              </span>
+            )}
+
+            {/* Edit button */}
+            <button
               type="button"
-              variant="outline"
-              size="icon"
-              className="h-7 w-7 rounded-r-none"
-              onClick={() =>
-                onUpdateParams(isTimeType ? 'duration' : 'reps', isTimeType ? params.duration - 5 : params.reps - 1)
-              }
+              onClick={() => setIsExpanded(true)}
+              className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs text-muted-foreground hover:text-foreground hover:bg-surface-light transition-colors ml-auto"
             >
-              <Minus className="h-3 w-3" />
-            </Button>
-            <Input
-              type="number"
-              value={isTimeType ? params.duration : params.reps}
-              onChange={(e) => onUpdateParams(isTimeType ? 'duration' : 'reps', parseInt(e.target.value) || 0)}
-              className="h-7 w-10 text-center text-xs font-semibold rounded-none border-x-0 px-0"
-            />
-            <Button
-              type="button"
-              variant="outline"
-              size="icon"
-              className="h-7 w-7 rounded-l-none"
-              onClick={() =>
-                onUpdateParams(isTimeType ? 'duration' : 'reps', isTimeType ? params.duration + 5 : params.reps + 1)
-              }
-            >
-              <Plus className="h-3 w-3" />
-            </Button>
+              <Sliders className="h-3 w-3" />
+              Edytuj
+            </button>
           </div>
         </div>
+      )}
 
-        {/* Rest between sets */}
-        <div>
-          <label className="text-[10px] text-muted-foreground block mb-1">Przerwa (s)</label>
-          <div className="flex items-center">
-            <Button
-              type="button"
-              variant="outline"
-              size="icon"
-              className="h-7 w-7 rounded-r-none"
-              onClick={() => onUpdateParams('restSets', params.restSets - 10)}
-            >
-              <Minus className="h-3 w-3" />
-            </Button>
-            <Input
-              type="number"
-              value={params.restSets}
-              onChange={(e) => onUpdateParams('restSets', parseInt(e.target.value) || 0)}
-              className="h-7 w-10 text-center text-xs font-semibold rounded-none border-x-0 px-0"
-            />
-            <Button
-              type="button"
-              variant="outline"
-              size="icon"
-              className="h-7 w-7 rounded-l-none"
-              onClick={() => onUpdateParams('restSets', params.restSets + 10)}
-            >
-              <Plus className="h-3 w-3" />
-            </Button>
-          </div>
-        </div>
-      </div>
-
-      {/* More options collapsible */}
-      <Collapsible open={showMoreOptions} onOpenChange={setShowMoreOptions}>
-        <CollapsibleTrigger asChild>
-          <button
-            type="button"
-            className="w-full flex items-center justify-center gap-1 mt-2 py-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
-          >
-            {showMoreOptions ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
-            {showMoreOptions ? 'Mniej opcji' : 'Więcej opcji'}
-          </button>
-        </CollapsibleTrigger>
-        <CollapsibleContent>
-          <div className="pt-2 border-t border-border/50 mt-2">
-            <div className="grid grid-cols-2 gap-2">
-              {/* Rest between reps */}
-              <div>
-                <label className="text-[10px] text-muted-foreground block mb-1">Przerwa między powt. (s)</label>
-                <div className="flex items-center">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon"
-                    className="h-7 w-7 rounded-r-none"
-                    onClick={() => onUpdateParams('restReps', params.restReps - 1)}
-                  >
-                    <Minus className="h-3 w-3" />
-                  </Button>
-                  <Input
-                    type="number"
-                    value={params.restReps}
-                    onChange={(e) => onUpdateParams('restReps', parseInt(e.target.value) || 0)}
-                    className="h-7 flex-1 text-center text-xs font-semibold rounded-none border-x-0 px-0"
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon"
-                    className="h-7 w-7 rounded-l-none"
-                    onClick={() => onUpdateParams('restReps', params.restReps + 1)}
-                  >
-                    <Plus className="h-3 w-3" />
-                  </Button>
+      {/* Expanded view - full param controls */}
+      {isExpanded && (
+        <div className="px-3 pb-3 border-t border-border/50">
+          <div className="pt-3 space-y-4">
+            {/* Custom name and description - Personalization */}
+            <Collapsible>
+              <CollapsibleTrigger asChild>
+                <button
+                  type="button"
+                  className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors w-full justify-between py-1"
+                >
+                  <span className="flex items-center gap-1">
+                    <Pencil className="h-3 w-3" />
+                    Personalizacja nazwy i opisu
+                    {(params.customName || params.customDescription) && <span className="ml-1 text-primary">•</span>}
+                  </span>
+                  <ChevronDown className="h-3 w-3" />
+                </button>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <div className="pt-2 space-y-3">
+                  <div>
+                    <label
+                      htmlFor={`customName-${exercise.id}`}
+                      className="text-xs text-muted-foreground block mb-1.5 font-medium"
+                    >
+                      Własna nazwa (opcjonalne)
+                    </label>
+                    <Input
+                      id={`customName-${exercise.id}`}
+                      value={params.customName}
+                      onChange={(e) => onUpdateParams('customName', e.target.value)}
+                      placeholder={exercise.name}
+                      className="h-8 text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label
+                      htmlFor={`customDesc-${exercise.id}`}
+                      className="text-xs text-muted-foreground block mb-1.5 font-medium"
+                    >
+                      Własny opis (opcjonalne)
+                    </label>
+                    <Textarea
+                      id={`customDesc-${exercise.id}`}
+                      value={params.customDescription}
+                      onChange={(e) => onUpdateParams('customDescription', e.target.value)}
+                      placeholder="Nadpisz opis ćwiczenia dla tego zestawu..."
+                      className="min-h-[50px] text-sm resize-none"
+                    />
+                  </div>
                 </div>
+              </CollapsibleContent>
+            </Collapsible>
+
+            {/* Main params - 2 column grid */}
+            <div className="grid grid-cols-2 gap-3">
+              <ParamControl
+                label="Serie"
+                value={params.sets}
+                onChange={(v) => onUpdateParams('sets', v)}
+                step={1}
+                min={1}
+              />
+              <ParamControl
+                label={isTimeType ? 'Czas (s)' : 'Powtórzenia'}
+                value={isTimeType ? params.duration : params.reps}
+                onChange={(v) => onUpdateParams(isTimeType ? 'duration' : 'reps', v)}
+                step={isTimeType ? 5 : 1}
+                min={1}
+                icon={isTimeType ? <Clock className="h-3 w-3" /> : undefined}
+              />
+            </div>
+
+            {/* Rest and side - 2 column grid */}
+            <div className="grid grid-cols-2 gap-3">
+              <ParamControl
+                label="Przerwa (s)"
+                value={params.restSets}
+                onChange={(v) => onUpdateParams('restSets', v)}
+                step={10}
+                min={0}
+                icon={<Timer className="h-3 w-3" />}
+              />
+              <div>
+                <label className="text-xs text-muted-foreground block mb-1.5 font-medium flex items-center gap-1">
+                  <ArrowLeftRight className="h-3 w-3" />
+                  Strona
+                </label>
+                <select
+                  value={params.exerciseSide}
+                  onChange={(e) => onUpdateParams('exerciseSide', e.target.value)}
+                  className="h-8 w-full rounded-md border border-border bg-background px-2 text-sm"
+                >
+                  {EXERCISE_SIDE_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
+
+            {/* Notes */}
+            <div>
+              <label className="text-xs text-muted-foreground block mb-1.5 font-medium flex items-center gap-1">
+                <MessageSquare className="h-3 w-3" />
+                Notatki
+              </label>
+              <Textarea
+                value={params.notes}
+                onChange={(e) => onUpdateParams('notes', e.target.value)}
+                placeholder="Uwagi do ćwiczenia..."
+                className="min-h-[60px] text-sm resize-none"
+              />
+            </div>
+
+            {/* More options collapsible */}
+            <Collapsible open={showMoreOptions} onOpenChange={setShowMoreOptions}>
+              <CollapsibleTrigger asChild>
+                <button
+                  type="button"
+                  className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  {showMoreOptions ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                  {showMoreOptions ? 'Mniej opcji' : 'Więcej opcji (czasy, przerwa między powt.)'}
+                </button>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <div className="pt-3 mt-2 border-t border-border/30 space-y-3">
+                  <div className="grid grid-cols-2 gap-3">
+                    <ParamControl
+                      label="Czas przygotowania (s)"
+                      value={params.preparationTime}
+                      onChange={(v) => onUpdateParams('preparationTime', v)}
+                      step={5}
+                      min={0}
+                    />
+                    <ParamControl
+                      label="Czas wykonania (s)"
+                      value={params.executionTime}
+                      onChange={(v) => onUpdateParams('executionTime', v)}
+                      step={5}
+                      min={0}
+                    />
+                  </div>
+                  <ParamControl
+                    label="Przerwa między powtórzeniami (s)"
+                    value={params.restReps}
+                    onChange={(v) => onUpdateParams('restReps', v)}
+                    step={1}
+                    min={0}
+                  />
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+
+            {/* Collapse button */}
+            <button
+              type="button"
+              onClick={() => setIsExpanded(false)}
+              className="w-full flex items-center justify-center gap-1 py-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors rounded-lg hover:bg-surface-light"
+            >
+              <ChevronUp className="h-3 w-3" />
+              Zwiń
+            </button>
           </div>
-        </CollapsibleContent>
-      </Collapsible>
+        </div>
+      )}
     </div>
   );
 }
 
-export function CreateSetWizard({ open, onOpenChange, organizationId, onSuccess }: CreateSetWizardProps) {
+export function CreateSetWizard({
+  open,
+  onOpenChange,
+  organizationId,
+  onSuccess,
+  patientId,
+  patientName,
+  autoAssign = false,
+}: CreateSetWizardProps) {
   const router = useRouter();
 
   const [currentStep, setCurrentStep] = useState<WizardStep>('basics');
@@ -414,6 +681,8 @@ export function CreateSetWizard({ open, onOpenChange, organizationId, onSuccess 
   const [exerciseParams, setExerciseParams] = useState<Map<string, ExerciseParams>>(new Map());
   const [showCloseConfirm, setShowCloseConfirm] = useState(false);
   const [previewExercise, setPreviewExercise] = useState<Exercise | null>(null);
+  const [pickerView, setPickerView] = useState<'smart' | 'all'>('smart');
+  const [_creationMode, setCreationMode] = useState<CreationMode>('manual');
 
   // DnD sensors
   const sensors = useSensors(
@@ -439,7 +708,8 @@ export function CreateSetWizard({ open, onOpenChange, organizationId, onSuccess 
   useEffect(() => {
     if (open) {
       setCurrentStep('basics');
-      setName('');
+      // Set default name with patient context
+      setName(patientName ? `Zestaw dla ${patientName}` : '');
       setDescription('');
       setSearchQuery('');
       setCategoryFilter('all');
@@ -447,13 +717,70 @@ export function CreateSetWizard({ open, onOpenChange, organizationId, onSuccess 
       setExerciseParams(new Map());
       setShowCloseConfirm(false);
       setPreviewExercise(null);
+      setPickerView('smart');
+      setCreationMode('manual');
     }
-  }, [open]);
+  }, [open, patientName]);
 
+  // Fetch exercises
   const { data: exercisesData, loading: loadingExercises } = useQuery(GET_ORGANIZATION_EXERCISES_QUERY, {
     variables: { organizationId },
     skip: !organizationId || !open,
   });
+
+  // Fetch tags for dynamic categories
+  const { data: tagsData } = useQuery(GET_EXERCISE_TAGS_BY_ORGANIZATION_QUERY, {
+    variables: { organizationId },
+    skip: !organizationId || !open,
+  });
+
+  // Fetch tag categories for colors and grouping
+  const { data: categoriesData } = useQuery(GET_TAG_CATEGORIES_BY_ORGANIZATION_QUERY, {
+    variables: { organizationId },
+    skip: !organizationId || !open,
+  });
+
+  // Fetch existing exercise sets for popularity analysis
+  const { data: exerciseSetsData } = useQuery(GET_ORGANIZATION_EXERCISE_SETS_QUERY, {
+    variables: { organizationId },
+    skip: !organizationId || !open,
+  });
+
+  // Fetch patient clinical notes if patient context is provided
+  const { data: clinicalNotesData } = useQuery(GET_PATIENT_CLINICAL_NOTES_QUERY, {
+    variables: { patientId: patientId || '', organizationId },
+    skip: !patientId || !organizationId || !open,
+  });
+
+  // Build patient context from clinical notes
+  const patientContext: PatientContext | undefined = useMemo(() => {
+    if (!patientId) return undefined;
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const notes = (clinicalNotesData as any)?.patientClinicalNotes || [];
+    const latestNote = notes[0]; // Assuming sorted by date desc
+
+    let diagnosis: string[] = [];
+    let painLocation: string | undefined;
+
+    if (latestNote?.sections?.diagnosis?.icd10Codes) {
+      diagnosis = latestNote.sections.diagnosis.icd10Codes.map(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (code: any) => `${code.code}: ${code.description}`
+      );
+    }
+
+    if (latestNote?.sections?.interview?.painLocation) {
+      painLocation = latestNote.sections.interview.painLocation;
+    }
+
+    return {
+      patientId,
+      patientName,
+      diagnosis: diagnosis.length > 0 ? diagnosis : undefined,
+      painLocation,
+    };
+  }, [patientId, patientName, clinicalNotesData]);
 
   const [createSet, { loading: creatingSet }] = useMutation(CREATE_EXERCISE_SET_MUTATION, {
     refetchQueries: [{ query: GET_ORGANIZATION_EXERCISE_SETS_QUERY, variables: { organizationId } }],
@@ -461,34 +788,150 @@ export function CreateSetWizard({ open, onOpenChange, organizationId, onSuccess 
 
   const [addExercise, { loading: addingExercises }] = useMutation(ADD_EXERCISE_TO_EXERCISE_SET_MUTATION);
 
+  const [assignSetToPatient, { loading: assigning }] = useMutation(ASSIGN_EXERCISE_SET_TO_PATIENT_MUTATION);
+
+  // Process tags and categories
+  const tags = (tagsData as ExerciseTagsResponse)?.exerciseTags || [];
+  const categories = (categoriesData as TagCategoriesResponse)?.tagsByOrganizationId || [];
+  const tagsMap = useMemo(() => createTagsMap(tags, categories), [tags, categories]);
+
+  // Get exercise sets for popularity analysis
+  const exerciseSets = (exerciseSetsData as OrganizationExerciseSetsResponse)?.exerciseSets || [];
+
+  // Map exercises with full tag objects
   const exercises: Exercise[] = useMemo(() => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return (exercisesData as { organizationExercises?: any[] })?.organizationExercises || [];
-  }, [exercisesData]);
+    const rawExercises = (exercisesData as { organizationExercises?: any[] })?.organizationExercises || [];
+    return mapExercisesWithTags(rawExercises, tagsMap);
+  }, [exercisesData, tagsMap]);
 
   const getExerciseTags = useCallback((ex: Exercise) => {
     return [...(ex.mainTags || []), ...(ex.additionalTags || [])].filter((tag) => tag && tag.name);
   }, []);
 
-  // Count exercises per category
-  const categoryExerciseCounts = useMemo(() => {
-    const counts: Record<string, number> = {};
-    for (const cat of QUICK_START_CATEGORIES) {
-      counts[cat.id] = exercises.filter((ex) => {
-        const allTags = getExerciseTags(ex);
-        return allTags.some((tag) => tag.name?.toLowerCase().includes(cat.id.toLowerCase()));
-      }).length;
+  // Calculate exercise popularity (how many sets use each exercise)
+  const exercisePopularity = useMemo(() => {
+    const popularity: Record<string, number> = {};
+    for (const set of exerciseSets) {
+      for (const mapping of set.exerciseMappings || []) {
+        if (mapping.exerciseId) {
+          popularity[mapping.exerciseId] = (popularity[mapping.exerciseId] || 0) + 1;
+        }
+      }
     }
-    return counts;
-  }, [exercises, getExerciseTags]);
+    return popularity;
+  }, [exerciseSets]);
+
+  // Get popular exercises (top 10 most used)
+  const popularExercises = useMemo(() => {
+    return [...exercises]
+      .filter((ex) => exercisePopularity[ex.id] > 0)
+      .sort((a, b) => (exercisePopularity[b.id] || 0) - (exercisePopularity[a.id] || 0))
+      .slice(0, 10);
+  }, [exercises, exercisePopularity]);
+
+  // Get template sets (most used as templates)
+  const templateSets = useMemo(() => {
+    return exerciseSets
+      .filter((set) => (set.exerciseMappings?.length || 0) > 0)
+      .sort((a, b) => (b.patientAssignments?.length || 0) - (a.patientAssignments?.length || 0))
+      .slice(0, 4);
+  }, [exerciseSets]);
+
+  // Get recently used exercises (from last 5 sets)
+  const recentExercises = useMemo(() => {
+    const recentSets = exerciseSets.slice(0, 5);
+    const recentExerciseIds = new Set<string>();
+
+    for (const set of recentSets) {
+      for (const mapping of set.exerciseMappings || []) {
+        if (mapping.exerciseId) {
+          recentExerciseIds.add(mapping.exerciseId);
+        }
+      }
+    }
+
+    return exercises.filter((ex) => recentExerciseIds.has(ex.id)).slice(0, 8);
+  }, [exercises, exerciseSets]);
+
+  // Get suggested exercises based on selected ones (similar tags)
+  const suggestedExercises = useMemo(() => {
+    if (selectedExerciseIds.length === 0) return [];
+
+    // Get all tags from selected exercises
+    const selectedTags = new Set<string>();
+    for (const id of selectedExerciseIds) {
+      const exercise = exercises.find((ex) => ex.id === id);
+      if (exercise) {
+        const tags = getExerciseTags(exercise);
+        tags.forEach((tag) => selectedTags.add(tag.id));
+      }
+    }
+
+    // Find exercises with similar tags that aren't already selected
+    return exercises
+      .filter((ex) => !selectedExerciseIds.includes(ex.id))
+      .map((ex) => {
+        const tags = getExerciseTags(ex);
+        const matchingTags = tags.filter((tag) => selectedTags.has(tag.id)).length;
+        return { exercise: ex, score: matchingTags };
+      })
+      .filter((item) => item.score > 0)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 6)
+      .map((item) => item.exercise);
+  }, [exercises, selectedExerciseIds, getExerciseTags]);
+
+  // Build dynamic quick start categories from actual tags
+  const quickStartCategories: QuickStartCategory[] = useMemo(() => {
+    // Count exercises per tag
+    const tagExerciseCounts: Record<string, number> = {};
+
+    for (const exercise of exercises) {
+      const exerciseTags = getExerciseTags(exercise);
+      for (const tag of exerciseTags) {
+        if (tag.id) {
+          tagExerciseCounts[tag.id] = (tagExerciseCounts[tag.id] || 0) + 1;
+        }
+      }
+    }
+
+    // Get main tags (isMain=true) or tags with most exercises
+    const mainTags = tags.filter((tag) => tag.isMain);
+    const tagsToShow =
+      mainTags.length > 0
+        ? mainTags
+        : tags.sort((a, b) => (tagExerciseCounts[b.id] || 0) - (tagExerciseCounts[a.id] || 0)).slice(0, 8);
+
+    // Create quick start categories
+    return tagsToShow
+      .map((tag) => ({
+        id: tag.id,
+        label: tag.name,
+        color: tag.color || '#22c55e',
+        exerciseCount: tagExerciseCounts[tag.id] || 0,
+      }))
+      .filter((cat) => cat.exerciseCount > 0)
+      .sort((a, b) => b.exerciseCount - a.exerciseCount)
+      .slice(0, 8);
+  }, [exercises, tags, getExerciseTags]);
+
+  // Dynamic category filters for exercise list
+  const categoryFilters = useMemo(() => {
+    return [
+      { id: 'all', label: 'Wszystkie' },
+      ...quickStartCategories.map((cat) => ({ id: cat.id, label: cat.label })),
+    ];
+  }, [quickStartCategories]);
 
   const filteredExercises = useMemo(() => {
     let result = exercises;
 
+    // Filter by tag ID (not name matching)
     if (categoryFilter !== 'all') {
       result = result.filter((ex) => {
         const allTags = getExerciseTags(ex);
-        return allTags.some((tag) => tag.name?.toLowerCase().includes(categoryFilter.toLowerCase()));
+        return allTags.some((tag) => tag.id === categoryFilter);
       });
     }
 
@@ -505,29 +948,61 @@ export function CreateSetWizard({ open, onOpenChange, organizationId, onSuccess 
     return result;
   }, [exercises, searchQuery, categoryFilter, getExerciseTags]);
 
+  const getDefaultParams = useCallback(
+    (exercise: Exercise): ExerciseParams => ({
+      sets: exercise.sets || 3,
+      reps: exercise.reps || 10,
+      duration: exercise.duration || 30,
+      restSets: exercise.restSets || 60,
+      restReps: exercise.restReps || 0,
+      preparationTime: 0,
+      executionTime: 0,
+      notes: '',
+      exerciseSide: exercise.exerciseSide || 'both',
+      customName: '',
+      customDescription: '',
+    }),
+    []
+  );
+
   const getExerciseParams = useCallback(
     (exercise: Exercise): ExerciseParams => {
       const saved = exerciseParams.get(exercise.id);
       if (saved) return saved;
-      return {
-        sets: exercise.sets || 3,
-        reps: exercise.reps || 10,
-        duration: exercise.duration || 30,
-        restSets: exercise.restSets || 60,
-        restReps: exercise.restReps || 0,
-      };
+      return getDefaultParams(exercise);
     },
-    [exerciseParams]
+    [exerciseParams, getDefaultParams]
   );
 
-  const updateExerciseParams = useCallback((exerciseId: string, field: keyof ExerciseParams, value: number) => {
-    setExerciseParams((prev) => {
-      const next = new Map(prev);
-      const current = next.get(exerciseId) || { sets: 3, reps: 10, duration: 30, restSets: 60, restReps: 0 };
-      next.set(exerciseId, { ...current, [field]: Math.max(0, value) });
-      return next;
-    });
-  }, []);
+  const updateExerciseParams = useCallback(
+    (exerciseId: string, field: keyof ExerciseParams, value: number | string) => {
+      setExerciseParams((prev) => {
+        const next = new Map(prev);
+        const exercise = exercises.find((e) => e.id === exerciseId);
+        const current =
+          next.get(exerciseId) ||
+          (exercise
+            ? getDefaultParams(exercise)
+            : {
+                sets: 3,
+                reps: 10,
+                duration: 30,
+                restSets: 60,
+                restReps: 0,
+                preparationTime: 0,
+                executionTime: 0,
+                notes: '',
+                exerciseSide: 'both',
+                customName: '',
+                customDescription: '',
+              });
+        const newValue = typeof value === 'number' ? Math.max(0, value) : value;
+        next.set(exerciseId, { ...current, [field]: newValue });
+        return next;
+      });
+    },
+    [exercises, getDefaultParams]
+  );
 
   const applyParamsToAll = useCallback(
     (field: keyof ExerciseParams, value: number) => {
@@ -556,13 +1031,7 @@ export function CreateSetWizard({ open, onOpenChange, organizationId, onSuccess 
           if (!exerciseParams.has(exercise.id)) {
             setExerciseParams((p) => {
               const np = new Map(p);
-              np.set(exercise.id, {
-                sets: exercise.sets || 3,
-                reps: exercise.reps || 10,
-                duration: exercise.duration || 30,
-                restSets: exercise.restSets || 60,
-                restReps: exercise.restReps || 0,
-              });
+              np.set(exercise.id, getDefaultParams(exercise));
               return np;
             });
           }
@@ -570,7 +1039,7 @@ export function CreateSetWizard({ open, onOpenChange, organizationId, onSuccess 
         }
       });
     },
-    [exerciseParams]
+    [exerciseParams, getDefaultParams]
   );
 
   const handleDragEnd = useCallback((event: DragEndEvent) => {
@@ -585,17 +1054,106 @@ export function CreateSetWizard({ open, onOpenChange, organizationId, onSuccess 
   }, []);
 
   // Quick start - select category and go to exercises
-  const handleQuickStart = (categoryId: string) => {
+  const handleQuickStart = useCallback(
+    (categoryId: string) => {
+      if (!name.trim()) {
+        const cat = quickStartCategories.find((c) => c.id === categoryId);
+        setName(cat ? `Zestaw - ${cat.label}` : '');
+      }
+      setCategoryFilter(categoryId);
+      setCurrentStep('exercises');
+    },
+    [name, quickStartCategories]
+  );
+
+  // Handle AI generator selecting exercises
+  const handleAISelectExercises = useCallback(
+    (exerciseIds: string[]) => {
+      // Add exercises from AI to selection
+      setSelectedExerciseIds((prev) => {
+        const combined = new Set([...prev, ...exerciseIds]);
+        return Array.from(combined);
+      });
+
+      // Initialize params for new exercises
+      setExerciseParams((prev) => {
+        const next = new Map(prev);
+        for (const id of exerciseIds) {
+          if (!next.has(id)) {
+            const exercise = exercises.find((e) => e.id === id);
+            if (exercise) {
+              next.set(id, getDefaultParams(exercise));
+            }
+          }
+        }
+        return next;
+      });
+
+      // Switch to exercises step
+      setCurrentStep('exercises');
+      setCreationMode('manual');
+      toast.success(`Dodano ${exerciseIds.length} ćwiczeń z AI`);
+    },
+    [exercises, getDefaultParams]
+  );
+
+  // Start AI mode
+  const handleStartAIMode = useCallback(() => {
     if (!name.trim()) {
-      const cat = QUICK_START_CATEGORIES.find((c) => c.id === categoryId);
-      setName(cat ? `Zestaw - ${cat.label}` : '');
+      setName('Zestaw AI');
     }
-    setCategoryFilter(categoryId);
-    setCurrentStep('exercises');
-  };
+    setCreationMode('ai');
+    setCurrentStep('ai');
+  }, [name]);
+
+  // Use template - copy exercises from existing set
+  const handleUseTemplate = useCallback(
+    (templateSet: (typeof exerciseSets)[0]) => {
+      const exerciseIds = templateSet.exerciseMappings?.map((m) => m.exerciseId) || [];
+      if (exerciseIds.length === 0) {
+        toast.error('Ten zestaw nie zawiera ćwiczeń');
+        return;
+      }
+
+      // Set name based on template
+      if (!name.trim()) {
+        setName(`${templateSet.name} (kopia)`);
+      }
+
+      // Add exercises
+      setSelectedExerciseIds(exerciseIds);
+
+      // Copy params from template
+      setExerciseParams((prev) => {
+        const next = new Map(prev);
+        for (const mapping of templateSet.exerciseMappings || []) {
+          if (mapping.exerciseId && mapping.exercise) {
+            next.set(mapping.exerciseId, {
+              sets: mapping.sets ?? mapping.exercise.sets ?? 3,
+              reps: mapping.reps ?? mapping.exercise.reps ?? 10,
+              duration: mapping.duration ?? mapping.exercise.duration ?? 30,
+              restSets: mapping.restSets ?? mapping.exercise.restSets ?? 60,
+              restReps: mapping.restReps ?? mapping.exercise.restReps ?? 0,
+              preparationTime: 0,
+              executionTime: 0,
+              notes: mapping.notes ?? '',
+              exerciseSide: mapping.exercise.exerciseSide || 'both',
+              customName: mapping.customName ?? '',
+              customDescription: mapping.customDescription ?? '',
+            });
+          }
+        }
+        return next;
+      });
+
+      toast.success(`Skopiowano ${exerciseIds.length} ćwiczeń z "${templateSet.name}"`);
+      setCurrentStep('exercises');
+    },
+    [name, exerciseSets]
+  );
 
   const canProceedFromBasics = name.trim().length >= 2;
-  const isLoading = creatingSet || addingExercises;
+  const isLoading = creatingSet || addingExercises || assigning;
 
   const selectedExercisesList = useMemo(() => {
     return selectedExerciseIds
@@ -644,7 +1202,18 @@ export function CreateSetWizard({ open, onOpenChange, organizationId, onSuccess 
         }
       }
 
-      toast.success(`Zestaw "${name}" utworzony`);
+      // Auto-assign to patient if enabled
+      if (autoAssign && patientId) {
+        await assignSetToPatient({
+          variables: {
+            exerciseSetId: newSetId,
+            patientId,
+          },
+        });
+        toast.success(`Zestaw "${name}" utworzony i przypisany do pacjenta`);
+      } else {
+        toast.success(`Zestaw "${name}" utworzony`);
+      }
       onOpenChange(false);
       onSuccess?.(newSetId);
       router.push(`/exercise-sets/${newSetId}`);
@@ -689,7 +1258,10 @@ export function CreateSetWizard({ open, onOpenChange, organizationId, onSuccess 
               <div className="flex items-center gap-2">
                 <button
                   type="button"
-                  onClick={() => setCurrentStep('basics')}
+                  onClick={() => {
+                    setCurrentStep('basics');
+                    setCreationMode('manual');
+                  }}
                   className={cn(
                     'flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all',
                     currentStep === 'basics'
@@ -704,30 +1276,47 @@ export function CreateSetWizard({ open, onOpenChange, organizationId, onSuccess 
                 <div
                   className={cn(
                     'w-10 h-1 rounded-full transition-all',
-                    currentStep === 'exercises' ? 'bg-primary' : 'bg-border'
+                    currentStep === 'exercises' || currentStep === 'ai' ? 'bg-primary' : 'bg-border'
                   )}
                 />
-                <button
-                  type="button"
-                  onClick={goToExercises}
-                  disabled={!canProceedFromBasics}
-                  className={cn(
-                    'flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all',
-                    currentStep === 'exercises'
-                      ? 'bg-gradient-to-br from-primary to-primary-dark text-white shadow-lg shadow-primary/20'
-                      : canProceedFromBasics
-                      ? 'bg-surface-light text-muted-foreground hover:bg-surface hover:text-foreground'
-                      : 'bg-surface-light text-muted-foreground/50 cursor-not-allowed'
-                  )}
-                >
-                  <Dumbbell className="h-4 w-4" />
-                  <span>Ćwiczenia</span>
-                  {selectedExerciseIds.length > 0 && (
-                    <Badge className="bg-primary/20 text-primary text-xs h-5 px-1.5">
-                      {selectedExerciseIds.length}
-                    </Badge>
-                  )}
-                </button>
+                {currentStep === 'ai' ? (
+                  <button
+                    type="button"
+                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium bg-gradient-to-br from-violet-500 to-purple-600 text-white shadow-lg shadow-violet-500/20"
+                  >
+                    <Sparkles className="h-4 w-4" />
+                    <span>AI Generator</span>
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={goToExercises}
+                    disabled={!canProceedFromBasics}
+                    className={cn(
+                      'flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all',
+                      currentStep === 'exercises'
+                        ? 'bg-gradient-to-br from-primary to-primary-dark text-white shadow-lg shadow-primary/20'
+                        : canProceedFromBasics
+                        ? 'bg-surface-light text-muted-foreground hover:bg-surface hover:text-foreground'
+                        : 'bg-surface-light text-muted-foreground/50 cursor-not-allowed'
+                    )}
+                  >
+                    <Dumbbell className="h-4 w-4" />
+                    <span>Ćwiczenia</span>
+                    {selectedExerciseIds.length > 0 && (
+                      <Badge
+                        className={cn(
+                          'text-xs h-5 px-1.5 font-semibold',
+                          currentStep === 'exercises'
+                            ? 'bg-white/25 text-white border-0'
+                            : 'bg-primary/20 text-primary border-0'
+                        )}
+                      >
+                        {selectedExerciseIds.length}
+                      </Badge>
+                    )}
+                  </button>
+                )}
               </div>
             </div>
 
@@ -740,119 +1329,280 @@ export function CreateSetWizard({ open, onOpenChange, organizationId, onSuccess 
           {currentStep === 'basics' ? (
             <div className="h-full p-6 flex gap-6">
               {/* Left: Form */}
-              <div className="flex-1 flex flex-col max-w-xl">
-                <div className="rounded-2xl border border-border/60 bg-surface overflow-hidden">
-                  <div className="h-1.5 bg-gradient-to-r from-primary to-emerald-500" />
-                  <div className="p-6 space-y-5">
-                    <div className="space-y-2">
-                      <Label htmlFor="name" className="text-sm font-medium">
-                        Nazwa zestawu *
-                      </Label>
-                      <Input
-                        id="name"
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        placeholder="np. Rehabilitacja kolana - faza 1"
-                        className="h-12 text-base bg-background"
-                        autoFocus
-                        autoComplete="off"
-                      />
-                      <p className="text-xs text-muted-foreground">Minimum 2 znaki</p>
+              <div className="flex-1 flex flex-col gap-5">
+                {/* Patient context banner */}
+                {patientContext && (
+                  <div className="rounded-xl bg-gradient-to-r from-primary/10 to-emerald-500/10 border border-primary/20 p-4">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/20 text-primary shrink-0">
+                        <span className="text-sm font-bold">
+                          {patientContext.patientName?.charAt(0)?.toUpperCase() || 'P'}
+                        </span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm">
+                          Tworzysz zestaw dla: {patientContext.patientName || 'Pacjenta'}
+                        </p>
+                        {patientContext.diagnosis && patientContext.diagnosis.length > 0 && (
+                          <p className="text-xs text-muted-foreground truncate">
+                            {patientContext.diagnosis.slice(0, 2).join(' • ')}
+                          </p>
+                        )}
+                        {patientContext.painLocation && (
+                          <p className="text-xs text-muted-foreground">Lokalizacja: {patientContext.painLocation}</p>
+                        )}
+                      </div>
+                      {autoAssign && (
+                        <Badge variant="secondary" className="text-[10px] shrink-0">
+                          Auto-przypisanie
+                        </Badge>
+                      )}
                     </div>
+                  </div>
+                )}
 
-                    <div className="space-y-2">
-                      <Label htmlFor="description" className="text-sm font-medium">
-                        Opis <span className="text-muted-foreground font-normal">(opcjonalnie)</span>
-                      </Label>
-                      <Textarea
-                        id="description"
-                        value={description}
-                        onChange={(e) => setDescription(e.target.value)}
-                        placeholder="Ćwiczenia wzmacniające po rekonstrukcji ACL..."
-                        className="min-h-[100px] resize-none text-base bg-background"
-                      />
-                    </div>
+                {/* Name field */}
+                <div className="space-y-2">
+                  <Label htmlFor="name" className="flex items-center gap-2 text-sm font-medium">
+                    <FileText className="h-4 w-4 text-primary" />
+                    Nazwa zestawu
+                    <span className="text-destructive">*</span>
+                  </Label>
+                  <Input
+                    id="name"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="np. Rehabilitacja kolana - faza 1"
+                    className="h-12 text-base bg-surface border-border focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+                    autoFocus
+                    autoComplete="off"
+                  />
+                  <p className="text-xs text-muted-foreground">Minimum 2 znaki</p>
+                </div>
+
+                {/* Description field */}
+                <div className="space-y-2 flex-1 flex flex-col">
+                  <Label htmlFor="description" className="flex items-center gap-2 text-sm font-medium">
+                    <AlignLeft className="h-4 w-4 text-muted-foreground" />
+                    Opis
+                    <span className="text-muted-foreground text-xs font-normal">(opcjonalnie)</span>
+                  </Label>
+                  <Textarea
+                    id="description"
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    placeholder="Opisz cel zestawu, dla kogo jest przeznaczony..."
+                    className="flex-1 min-h-[120px] resize-none text-base bg-surface border-border focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+                  />
+                </div>
+
+                {/* Quick description chips */}
+                <div>
+                  <p className="text-xs text-muted-foreground mb-2">Szybkie dodawanie do opisu:</p>
+                  <div className="flex flex-wrap gap-2">
+                    {[
+                      'Wzmocnienie mięśni',
+                      'Rozciąganie',
+                      'Stabilizacja',
+                      'Mobilność stawów',
+                      'Rehabilitacja pourazowa',
+                    ].map((chip) => (
+                      <button
+                        key={chip}
+                        type="button"
+                        onClick={() => {
+                          const prefix = description.trim() ? `${description.trim()}, ` : '';
+                          setDescription(`${prefix}${chip.toLowerCase()}`);
+                        }}
+                        className="px-3 py-1.5 rounded-full text-xs bg-surface-light hover:bg-surface hover:text-foreground border border-border/40 text-muted-foreground transition-colors"
+                      >
+                        + {chip}
+                      </button>
+                    ))}
                   </div>
                 </div>
               </div>
 
               {/* Right: Quick Start */}
-              <div className="flex-1">
-                <div className="rounded-2xl border border-border/60 bg-surface-light/30 p-5 h-full">
-                  <div className="flex items-center gap-2 mb-4">
+              <div className="flex-1 flex flex-col gap-4">
+                {/* AI Generator Card */}
+                <button
+                  type="button"
+                  onClick={handleStartAIMode}
+                  className={cn(
+                    'group relative overflow-hidden rounded-2xl p-5 text-left transition-all duration-300',
+                    'bg-gradient-to-br from-violet-500 to-purple-600',
+                    'hover:shadow-xl hover:shadow-violet-500/20 hover:scale-[1.02]'
+                  )}
+                >
+                  <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                  <div className="absolute -top-20 -right-20 w-40 h-40 bg-white/10 rounded-full blur-3xl group-hover:bg-white/20 transition-all duration-500" />
+
+                  <div className="relative flex items-center gap-4">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm shrink-0 group-hover:scale-110 transition-transform duration-300">
+                      <Sparkles className="h-6 w-6 text-white" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-lg font-bold text-white mb-0.5">AI Generator</h3>
+                      <p className="text-sm text-white/80">Opisz potrzeby - AI zaproponuje ćwiczenia</p>
+                    </div>
+                    <ArrowRight className="h-5 w-5 text-white/60 group-hover:text-white group-hover:translate-x-1 transition-all duration-300 shrink-0" />
+                  </div>
+                </button>
+
+                {/* Quick Start Categories */}
+                <div className="rounded-2xl border border-border/60 bg-surface-light/30 p-4 flex-1">
+                  <div className="flex items-center gap-2 mb-3">
                     <Zap className="h-4 w-4 text-primary" />
                     <h3 className="font-semibold text-sm">Szybki start</h3>
                   </div>
-                  <p className="text-xs text-muted-foreground mb-4">Kliknij kategorię aby szybko przejść do ćwiczeń</p>
 
-                  <div className="grid grid-cols-2 gap-3">
-                    {QUICK_START_CATEGORIES.map((cat) => {
-                      const IconComponent = cat.icon;
-                      const count = categoryExerciseCounts[cat.id] || 0;
-                      return (
+                  {quickStartCategories.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-4 text-center">
+                      <Tag className="h-8 w-8 text-muted-foreground/30 mb-2" />
+                      <p className="text-xs text-muted-foreground">Brak tagów z ćwiczeniami</p>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-3 gap-1.5">
+                      {quickStartCategories.slice(0, 6).map((cat) => (
                         <button
                           key={cat.id}
                           type="button"
                           onClick={() => handleQuickStart(cat.id)}
-                          disabled={count === 0}
                           className={cn(
-                            'group relative rounded-xl p-4 text-left transition-all duration-200',
+                            'group relative rounded-lg p-2.5 text-left transition-all duration-200',
                             'border border-border/60 bg-background',
-                            'hover:border-primary/40 hover:shadow-lg hover:-translate-y-0.5',
-                            'disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-none'
+                            'hover:border-primary/40 hover:shadow-md hover:-translate-y-0.5'
                           )}
                         >
                           <div
-                            className={cn(
-                              'flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br text-white mb-2',
-                              cat.color
-                            )}
+                            className="flex h-7 w-7 items-center justify-center rounded-md text-white mb-1"
+                            style={{ backgroundColor: cat.color }}
                           >
-                            <IconComponent className="h-5 w-5" />
+                            <Tag className="h-3.5 w-3.5" />
                           </div>
-                          <p className="font-semibold text-sm">{cat.label}</p>
-                          <p className="text-xs text-muted-foreground">{count} ćwiczeń</p>
+                          <p className="font-medium text-xs truncate">{cat.label}</p>
+                          <p className="text-[10px] text-muted-foreground">{cat.exerciseCount}</p>
                         </button>
-                      );
-                    })}
-                  </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
+
+                {/* Templates section */}
+                {templateSets.length > 0 && (
+                  <div className="rounded-2xl border border-border/60 bg-surface-light/30 p-4">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Copy className="h-4 w-4 text-muted-foreground" />
+                      <h3 className="font-semibold text-sm">Z szablonu</h3>
+                    </div>
+                    <div className="space-y-1.5">
+                      {templateSets.map((set) => (
+                        <button
+                          key={set.id}
+                          type="button"
+                          onClick={() => handleUseTemplate(set)}
+                          className={cn(
+                            'w-full flex items-center gap-3 p-2.5 rounded-lg text-left transition-all',
+                            'border border-border/60 bg-background',
+                            'hover:border-primary/40 hover:bg-surface-light'
+                          )}
+                        >
+                          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-surface-light shrink-0">
+                            <Dumbbell className="h-4 w-4 text-muted-foreground" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-xs truncate">{set.name}</p>
+                            <p className="text-[10px] text-muted-foreground">
+                              {set.exerciseMappings?.length || 0} ćwiczeń
+                              {set.patientAssignments && set.patientAssignments.length > 0 && (
+                                <span className="ml-1">
+                                  • <Users className="inline h-3 w-3" /> {set.patientAssignments.length}
+                                </span>
+                              )}
+                            </p>
+                          </div>
+                          <ArrowRight className="h-4 w-4 text-muted-foreground shrink-0" />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
-          ) : (
+          ) : currentStep === 'exercises' ? (
             <div className="h-full flex">
               {/* Left: Exercise picker */}
               <div className="flex-1 flex flex-col border-r border-border min-w-0">
                 <div className="p-4 border-b border-border space-y-3">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                    <Input
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      placeholder="Szukaj ćwiczeń..."
-                      className="h-11 pl-10"
-                    />
-                  </div>
-
-                  <div className="flex flex-wrap gap-1.5">
-                    {CATEGORY_FILTERS.map((cat) => (
+                  {/* Search and view toggle */}
+                  <div className="flex items-center gap-2">
+                    <div className="relative flex-1">
+                      <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                      <Input
+                        value={searchQuery}
+                        onChange={(e) => {
+                          setSearchQuery(e.target.value);
+                          if (e.target.value.trim()) setPickerView('all');
+                        }}
+                        placeholder="Szukaj ćwiczeń..."
+                        className="h-11 pl-10"
+                      />
+                    </div>
+                    <div className="flex rounded-lg border border-border overflow-hidden">
                       <button
-                        key={cat.id}
                         type="button"
-                        onClick={() => setCategoryFilter(cat.id)}
+                        onClick={() => setPickerView('smart')}
                         className={cn(
-                          'px-3 py-1.5 rounded-lg text-xs font-medium transition-all',
-                          categoryFilter === cat.id
+                          'px-3 py-2 text-xs font-medium flex items-center gap-1.5 transition-colors',
+                          pickerView === 'smart'
                             ? 'bg-primary text-primary-foreground'
-                            : 'bg-surface-light text-muted-foreground hover:bg-surface hover:text-foreground'
+                            : 'bg-surface-light text-muted-foreground hover:text-foreground'
                         )}
                       >
-                        {cat.label}
+                        <Sparkles className="h-3.5 w-3.5" />
+                        Smart
                       </button>
-                    ))}
+                      <button
+                        type="button"
+                        onClick={() => setPickerView('all')}
+                        className={cn(
+                          'px-3 py-2 text-xs font-medium flex items-center gap-1.5 transition-colors',
+                          pickerView === 'all'
+                            ? 'bg-primary text-primary-foreground'
+                            : 'bg-surface-light text-muted-foreground hover:text-foreground'
+                        )}
+                      >
+                        <Filter className="h-3.5 w-3.5" />
+                        Wszystkie
+                      </button>
+                    </div>
                   </div>
 
-                  <p className="text-sm text-muted-foreground">{filteredExercises.length} ćwiczeń</p>
+                  {/* Category filters - only in "all" view */}
+                  {pickerView === 'all' && (
+                    <div className="flex flex-wrap gap-1.5">
+                      {categoryFilters.map((cat) => (
+                        <button
+                          key={cat.id}
+                          type="button"
+                          onClick={() => setCategoryFilter(cat.id)}
+                          className={cn(
+                            'px-3 py-1.5 rounded-lg text-xs font-medium transition-all',
+                            categoryFilter === cat.id
+                              ? 'bg-primary text-primary-foreground'
+                              : 'bg-surface-light text-muted-foreground hover:bg-surface hover:text-foreground'
+                          )}
+                        >
+                          {cat.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  {pickerView === 'all' && (
+                    <p className="text-sm text-muted-foreground">{filteredExercises.length} ćwiczeń</p>
+                  )}
                 </div>
 
                 <ScrollArea className="flex-1">
@@ -860,6 +1610,92 @@ export function CreateSetWizard({ open, onOpenChange, organizationId, onSuccess 
                     {loadingExercises ? (
                       <div className="flex items-center justify-center py-16">
                         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                      </div>
+                    ) : pickerView === 'smart' ? (
+                      /* Smart View - sections */
+                      <div className="space-y-6">
+                        {/* Suggested section - only if there are selected exercises */}
+                        {suggestedExercises.length > 0 && (
+                          <div>
+                            <div className="flex items-center gap-2 mb-3">
+                              <Sparkles className="h-4 w-4 text-amber-500" />
+                              <h4 className="text-sm font-semibold">Sugerowane</h4>
+                              <span className="text-xs text-muted-foreground">na podstawie wybranych</span>
+                            </div>
+                            <div className="grid gap-2">
+                              {suggestedExercises.map((exercise) => (
+                                <ExercisePickerItem
+                                  key={exercise.id}
+                                  exercise={exercise}
+                                  isSelected={selectedExerciseIds.includes(exercise.id)}
+                                  onToggle={() => toggleExercise(exercise)}
+                                  onPreview={() => setPreviewExercise(exercise)}
+                                  getExerciseTags={getExerciseTags}
+                                />
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Popular section */}
+                        {popularExercises.length > 0 && (
+                          <div>
+                            <div className="flex items-center gap-2 mb-3">
+                              <TrendingUp className="h-4 w-4 text-primary" />
+                              <h4 className="text-sm font-semibold">Popularne</h4>
+                              <span className="text-xs text-muted-foreground">najczęściej używane</span>
+                            </div>
+                            <div className="grid gap-2">
+                              {popularExercises.map((exercise) => (
+                                <ExercisePickerItem
+                                  key={exercise.id}
+                                  exercise={exercise}
+                                  isSelected={selectedExerciseIds.includes(exercise.id)}
+                                  onToggle={() => toggleExercise(exercise)}
+                                  onPreview={() => setPreviewExercise(exercise)}
+                                  getExerciseTags={getExerciseTags}
+                                  badge={`${exercisePopularity[exercise.id]}x`}
+                                />
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Recent section */}
+                        {recentExercises.length > 0 && (
+                          <div>
+                            <div className="flex items-center gap-2 mb-3">
+                              <History className="h-4 w-4 text-muted-foreground" />
+                              <h4 className="text-sm font-semibold">Ostatnio używane</h4>
+                            </div>
+                            <div className="grid gap-2">
+                              {recentExercises.map((exercise) => (
+                                <ExercisePickerItem
+                                  key={exercise.id}
+                                  exercise={exercise}
+                                  isSelected={selectedExerciseIds.includes(exercise.id)}
+                                  onToggle={() => toggleExercise(exercise)}
+                                  onPreview={() => setPreviewExercise(exercise)}
+                                  getExerciseTags={getExerciseTags}
+                                />
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Empty state for smart view */}
+                        {popularExercises.length === 0 && recentExercises.length === 0 && (
+                          <div className="flex flex-col items-center justify-center py-12 text-center">
+                            <Sparkles className="h-10 w-10 text-muted-foreground/30 mb-3" />
+                            <p className="text-sm font-medium text-muted-foreground">Brak danych do sugestii</p>
+                            <p className="text-xs text-muted-foreground/70 mt-1">
+                              Przełącz na &quot;Wszystkie&quot; aby zobaczyć pełną listę
+                            </p>
+                            <Button variant="outline" size="sm" className="mt-4" onClick={() => setPickerView('all')}>
+                              Zobacz wszystkie ćwiczenia
+                            </Button>
+                          </div>
+                        )}
                       </div>
                     ) : filteredExercises.length === 0 ? (
                       <div className="flex flex-col items-center justify-center py-16 text-center">
@@ -869,66 +1705,18 @@ export function CreateSetWizard({ open, onOpenChange, organizationId, onSuccess 
                         </p>
                       </div>
                     ) : (
+                      /* All View - flat list */
                       <div className="grid gap-2">
-                        {filteredExercises.map((exercise) => {
-                          const isSelected = selectedExerciseIds.includes(exercise.id);
-                          const imageUrl = getMediaUrl(exercise.imageUrl || exercise.images?.[0]);
-
-                          return (
-                            <button
-                              key={exercise.id}
-                              type="button"
-                              onClick={() => toggleExercise(exercise)}
-                              className={cn(
-                                'w-full flex items-center gap-3 p-3 rounded-xl text-left transition-all duration-200',
-                                isSelected
-                                  ? 'bg-primary/10 ring-2 ring-primary/30'
-                                  : 'bg-surface hover:bg-surface-light'
-                              )}
-                            >
-                              <div
-                                className={cn(
-                                  'flex h-5 w-5 shrink-0 items-center justify-center rounded border-2 transition-all',
-                                  isSelected ? 'bg-primary border-primary text-primary-foreground' : 'border-border'
-                                )}
-                              >
-                                {isSelected && <Check className="h-3 w-3" />}
-                              </div>
-
-                              <div className="h-10 w-10 rounded-lg overflow-hidden shrink-0 relative group">
-                                {imageUrl ? (
-                                  <img src={imageUrl} alt="" className="h-full w-full object-cover" loading="lazy" />
-                                ) : (
-                                  <ImagePlaceholder type="exercise" iconClassName="h-4 w-4" />
-                                )}
-                                <button
-                                  type="button"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setPreviewExercise(exercise);
-                                  }}
-                                  className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
-                                >
-                                  <Eye className="h-3 w-3 text-white" />
-                                </button>
-                              </div>
-
-                              <div className="flex-1 min-w-0">
-                                <p className="font-medium text-sm truncate">{exercise.name}</p>
-                                <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
-                                  <span className="text-xs text-muted-foreground">{translateType(exercise.type)}</span>
-                                  {getExerciseTags(exercise)
-                                    .slice(0, 2)
-                                    .map((tag) => (
-                                      <ColorBadge key={tag.id} color={tag.color} size="sm">
-                                        {tag.name}
-                                      </ColorBadge>
-                                    ))}
-                                </div>
-                              </div>
-                            </button>
-                          );
-                        })}
+                        {filteredExercises.map((exercise) => (
+                          <ExercisePickerItem
+                            key={exercise.id}
+                            exercise={exercise}
+                            isSelected={selectedExerciseIds.includes(exercise.id)}
+                            onToggle={() => toggleExercise(exercise)}
+                            onPreview={() => setPreviewExercise(exercise)}
+                            getExerciseTags={getExerciseTags}
+                          />
+                        ))}
                       </div>
                     )}
                   </div>
@@ -998,55 +1786,77 @@ export function CreateSetWizard({ open, onOpenChange, organizationId, onSuccess 
                 </ScrollArea>
               </div>
             </div>
-          )}
+          ) : currentStep === 'ai' ? (
+            /* AI Generator Step */
+            <AISetGenerator
+              exercises={exercises}
+              onSelectExercises={handleAISelectExercises}
+              onCancel={() => {
+                setCurrentStep('basics');
+                setCreationMode('manual');
+              }}
+              patientContext={
+                patientContext
+                  ? {
+                      patientName: patientContext.patientName,
+                      diagnosis: patientContext.diagnosis,
+                      painLocation: patientContext.painLocation,
+                    }
+                  : undefined
+              }
+              className="h-full"
+            />
+          ) : null}
         </div>
 
-        {/* Footer */}
-        <div className="px-6 py-4 border-t border-border shrink-0">
-          {currentStep === 'basics' ? (
-            <div className="flex items-center justify-between gap-4">
-              <Button variant="outline" onClick={handleCloseAttempt} disabled={isLoading}>
-                Anuluj
-              </Button>
+        {/* Footer - hidden for AI step (has its own footer) */}
+        {currentStep !== 'ai' && (
+          <div className="px-6 py-4 border-t border-border shrink-0">
+            {currentStep === 'basics' ? (
+              <div className="flex items-center justify-between gap-4">
+                <Button variant="outline" onClick={handleCloseAttempt} disabled={isLoading}>
+                  Anuluj
+                </Button>
 
-              <div className="flex items-center gap-3">
-                <Button
-                  variant="ghost"
-                  onClick={() => handleCreateSet(false)}
-                  disabled={!canProceedFromBasics || isLoading}
-                  className="text-muted-foreground"
-                >
-                  {creatingSet && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Utwórz pusty zestaw
+                <div className="flex items-center gap-3">
+                  <Button
+                    variant="ghost"
+                    onClick={() => handleCreateSet(false)}
+                    disabled={!canProceedFromBasics || isLoading}
+                    className="text-muted-foreground"
+                  >
+                    {creatingSet && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Utwórz pusty zestaw
+                  </Button>
+
+                  <Button
+                    onClick={goToExercises}
+                    disabled={!canProceedFromBasics}
+                    className="gap-2 bg-gradient-to-br from-primary to-primary-dark shadow-lg shadow-primary/20"
+                  >
+                    Dalej: Dodaj ćwiczenia
+                    <ArrowRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center justify-between gap-4">
+                <Button variant="outline" onClick={() => setCurrentStep('basics')} disabled={isLoading}>
+                  Wstecz
                 </Button>
 
                 <Button
-                  onClick={goToExercises}
-                  disabled={!canProceedFromBasics}
+                  onClick={() => handleCreateSet(true)}
+                  disabled={isLoading}
                   className="gap-2 bg-gradient-to-br from-primary to-primary-dark shadow-lg shadow-primary/20"
                 >
-                  Dalej: Dodaj ćwiczenia
-                  <ArrowRight className="h-4 w-4" />
+                  {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Utwórz zestaw
                 </Button>
               </div>
-            </div>
-          ) : (
-            <div className="flex items-center justify-between gap-4">
-              <Button variant="outline" onClick={() => setCurrentStep('basics')} disabled={isLoading}>
-                Wstecz
-              </Button>
-
-              <Button
-                onClick={() => handleCreateSet(true)}
-                disabled={isLoading}
-                className="gap-2 bg-gradient-to-br from-primary to-primary-dark shadow-lg shadow-primary/20"
-              >
-                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Utwórz zestaw
-              </Button>
-            </div>
-          )}
-        </div>
+            )}
+          </div>
+        )}
       </DialogContent>
 
       {/* Confirm close dialog */}
@@ -1073,7 +1883,7 @@ export function CreateSetWizard({ open, onOpenChange, organizationId, onSuccess 
               {getMediaUrl(previewExercise.imageUrl || previewExercise.images?.[0]) && (
                 <div className="rounded-xl overflow-hidden aspect-video bg-surface-light">
                   <img
-                    src={getMediaUrl(previewExercise.imageUrl || previewExercise.images?.[0]) || ""}
+                    src={getMediaUrl(previewExercise.imageUrl || previewExercise.images?.[0]) || ''}
                     alt={previewExercise.name}
                     className="w-full h-full object-cover"
                   />
