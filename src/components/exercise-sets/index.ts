@@ -9,3 +9,4 @@ export { EditExerciseInSetDialog } from "./EditExerciseInSetDialog";
 export { FrequencyPicker, defaultFrequency } from "./FrequencyPicker";
 export type { FrequencyValue } from "./FrequencyPicker";
 export { GeneratePDFDialog } from "./GeneratePDFDialog";
+export { AISetGenerator } from "./AISetGenerator";
