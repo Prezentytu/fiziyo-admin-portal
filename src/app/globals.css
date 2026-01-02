@@ -605,3 +605,18 @@ input[type="number"] {
 .animate-typing-dot {
   animation: typing-dot 1.4s ease-in-out infinite;
 }
+
+/* Chat panel - no focus outline */
+.chat-panel,
+.chat-panel *,
+.chat-panel [data-radix-scroll-area-viewport],
+.chat-panel textarea,
+.chat-panel button {
+  outline: none !important;
+}
+
+.chat-panel *:focus,
+.chat-panel *:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}

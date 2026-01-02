@@ -4,17 +4,22 @@ import { Sparkles, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { parseExercisesFromHtml, stripExerciseBlocks } from "@/hooks/useChat";
 import { ExerciseCard } from "./ExerciseCard";
-import type { ChatMessageType } from "@/types/chat.types";
+import type { ChatMessageType, ParsedExercise } from "@/types/chat.types";
 
 interface ChatMessageProps {
   message: ChatMessageType;
+  onAddExerciseToSet?: (exercise: ParsedExercise) => void;
   className?: string;
 }
 
 /**
  * Pojedyncza wiadomość w czacie (user lub AI)
  */
-export function ChatMessage({ message, className }: ChatMessageProps) {
+export function ChatMessage({
+  message,
+  onAddExerciseToSet,
+  className,
+}: ChatMessageProps) {
   const isUser = message.role === "user";
 
   // Dla wiadomości AI - parsuj ćwiczenia
@@ -72,7 +77,11 @@ export function ChatMessage({ message, className }: ChatMessageProps) {
         {exercises.length > 0 && (
           <div className="w-full max-w-[95%] space-y-2">
             {exercises.map((exercise, index) => (
-              <ExerciseCard key={index} exercise={exercise} />
+              <ExerciseCard
+                key={index}
+                exercise={exercise}
+                onAddToSet={onAddExerciseToSet}
+              />
             ))}
           </div>
         )}
@@ -88,4 +97,3 @@ export function ChatMessage({ message, className }: ChatMessageProps) {
     </div>
   );
 }
-

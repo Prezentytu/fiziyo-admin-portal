@@ -59,3 +59,29 @@ export interface QuickActionPreset {
   icon?: string;
 }
 
+// Sesja czatu (dla historii)
+export interface ChatSession {
+  id: string;
+  title: string; // Pierwsze pytanie użytkownika
+  createdAt: string; // ISO string dla JSON serialization
+  updatedAt: string;
+  messages: ChatMessageType[];
+}
+
+// Serializowalna wiadomość (timestamp jako string)
+export interface SerializableChatMessage {
+  id: string;
+  role: ChatMessageRole;
+  content: string;
+  timestamp: string; // ISO string
+}
+
+// Serializowalna sesja
+export interface SerializableChatSession {
+  id: string;
+  title: string;
+  createdAt: string;
+  updatedAt: string;
+  messages: SerializableChatMessage[];
+}
+

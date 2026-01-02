@@ -1,19 +1,31 @@
 "use client";
 
-import { Clock, Repeat, Dumbbell, Timer } from "lucide-react";
+import { Clock, Repeat, Dumbbell, Timer, Plus } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+  TooltipProvider,
+} from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import type { ParsedExercise } from "@/types/chat.types";
 
 interface ExerciseCardProps {
   exercise: ParsedExercise;
+  onAddToSet?: (exercise: ParsedExercise) => void;
   className?: string;
 }
 
 /**
  * Karta ćwiczenia wyświetlana w odpowiedzi AI
  */
-export function ExerciseCard({ exercise, className }: ExerciseCardProps) {
+export function ExerciseCard({
+  exercise,
+  onAddToSet,
+  className,
+}: ExerciseCardProps) {
   const hasParams =
     exercise.sets ||
     exercise.reps ||
@@ -23,7 +35,7 @@ export function ExerciseCard({ exercise, className }: ExerciseCardProps) {
   return (
     <div
       className={cn(
-        "rounded-xl border border-border/60 bg-surface overflow-hidden",
+        "group relative rounded-xl border border-border/60 bg-surface overflow-hidden",
         "transition-all duration-200",
         "hover:border-primary/40 hover:shadow-md hover:shadow-primary/5",
         className
@@ -32,9 +44,35 @@ export function ExerciseCard({ exercise, className }: ExerciseCardProps) {
       {/* Gradient header */}
       <div className="h-1 bg-gradient-to-r from-primary to-emerald-600" />
 
+      {/* Add to set button - visible on hover */}
+      {onAddToSet && (
+        <TooltipProvider delayDuration={300}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => onAddToSet(exercise)}
+                className={cn(
+                  "absolute right-2 top-3 h-7 w-7 rounded-lg",
+                  "opacity-0 group-hover:opacity-100",
+                  "bg-primary/10 hover:bg-primary/20 text-primary",
+                  "transition-all duration-200"
+                )}
+              >
+                <Plus className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="left" className="text-xs">
+              Dodaj do zestawu
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      )}
+
       <div className="p-4 space-y-3">
         {/* Nazwa ćwiczenia */}
-        <h4 className="font-semibold text-foreground leading-tight">
+        <h4 className="font-semibold text-foreground leading-tight pr-8">
           {exercise.name}
         </h4>
 
@@ -105,4 +143,3 @@ export function ExerciseCard({ exercise, className }: ExerciseCardProps) {
     </div>
   );
 }
-
