@@ -40,6 +40,27 @@
   }
 }
 
+/* AI Chat Animations */
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(50, 150, 93, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 0 12px rgba(50, 150, 93, 0);
+  }
+}
+
+@keyframes typing-dot {
+  0%, 60%, 100% {
+    transform: translateY(0);
+    opacity: 0.6;
+  }
+  30% {
+    transform: translateY(-4px);
+    opacity: 1;
+  }
+}
+
 :root {
   /* Base colors - Fizjo App Dark Theme */
   --background: #121212;
@@ -178,6 +199,8 @@
   /* Animations */
   --animate-fade-in: fade-in 0.3s ease-out;
   --animate-fade-in-scale: fade-in-scale 0.2s ease-out;
+  --animate-pulse-glow: pulse-glow 2s ease-in-out infinite;
+  --animate-typing-dot: typing-dot 1.4s ease-in-out infinite;
 }
 
 * {
@@ -567,4 +590,18 @@ input[type="number"]::-webkit-inner-spin-button {
 input[type="number"] {
   -moz-appearance: textfield;
   appearance: textfield;
+}
+
+/* ============================================
+   AI Chat Styles
+   ============================================ */
+
+/* Floating button pulse glow animation */
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+/* Typing indicator dot animation */
+.animate-typing-dot {
+  animation: typing-dot 1.4s ease-in-out infinite;
 }
