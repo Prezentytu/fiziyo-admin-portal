@@ -1,5 +1,6 @@
 import { View, Text, Image } from '@react-pdf/renderer';
 import { pdfStyles } from './styles';
+import { getMediaUrl } from '@/utils/mediaUrl';
 import { 
   formatSets, 
   formatReps, 
@@ -20,7 +21,7 @@ interface ExercisePDFItemProps {
 export function ExercisePDFItem({ exercise, index, showImage, compact }: ExercisePDFItemProps) {
   const displayName = exercise.customName || exercise.name;
   const displayDescription = exercise.customDescription || exercise.description;
-  const imageUrl = exercise.imageUrl || exercise.images?.[0];
+  const imageUrl = getMediaUrl(exercise.imageUrl || exercise.images?.[0]);
   const typeLabel = translateExerciseTypePolish(exercise.type);
   const sideLabel = translateExerciseSidePolish(exercise.exerciseSide);
 

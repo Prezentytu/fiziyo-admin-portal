@@ -21,6 +21,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { ImagePlaceholder } from "@/components/shared/ImagePlaceholder";
 import { cn } from "@/lib/utils";
+import { getMediaUrl } from "@/utils/mediaUrl";
 import type { ExerciseSet, ExerciseMapping, ExerciseOverride } from "./types";
 
 interface CustomizeExercisesStepProps {
@@ -261,7 +262,7 @@ export function CustomizeExercisesStep({
           <div className="p-3 pr-4 space-y-2">
             {mappings.map((mapping, index) => {
               const exercise = mapping.exercise;
-              const imageUrl = exercise?.imageUrl || exercise?.images?.[0];
+              const imageUrl = getMediaUrl(exercise?.imageUrl || exercise?.images?.[0]);
               const isSelected = selectedMappingId === mapping.id;
               const hasCustomization = hasOverride(mapping.id);
 
@@ -346,12 +347,12 @@ export function CustomizeExercisesStep({
             <div className="p-4 border-b border-border shrink-0">
               <div className="flex items-start gap-3">
                 <div className="h-14 w-14 rounded-lg overflow-hidden shrink-0">
-                  {selectedMapping.exercise?.imageUrl ||
-                  selectedMapping.exercise?.images?.[0] ? (
+                  {getMediaUrl(selectedMapping.exercise?.imageUrl ||
+                  selectedMapping.exercise?.images?.[0]) ? (
                     <img
                       src={
-                        selectedMapping.exercise.imageUrl ||
-                        selectedMapping.exercise.images?.[0]
+                        getMediaUrl(selectedMapping.exercise?.imageUrl ||
+                        selectedMapping.exercise?.images?.[0]) || ""
                       }
                       alt=""
                       className="h-full w-full object-cover"

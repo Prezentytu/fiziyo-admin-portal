@@ -29,6 +29,7 @@ import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { ExerciseDialog } from '@/components/exercises/ExerciseDialog';
 import { ColorBadge } from '@/components/shared/ColorBadge';
 import { ImagePlaceholder } from '@/components/shared/ImagePlaceholder';
+import { getMediaUrl, getMediaUrls } from '@/utils/mediaUrl';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -194,7 +195,7 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
     );
   }
 
-  const allImages = [exercise.imageUrl, ...(exercise.images || [])].filter(Boolean) as string[];
+  const allImages = getMediaUrls([exercise.imageUrl, ...(exercise.images || [])]);
   const currentImage = allImages[selectedImageIndex] || null;
 
   const hasRestTimes =

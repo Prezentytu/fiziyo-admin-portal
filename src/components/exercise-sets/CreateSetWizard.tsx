@@ -62,6 +62,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { ImagePlaceholder } from '@/components/shared/ImagePlaceholder';
+import { getMediaUrl } from '@/utils/mediaUrl';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { ColorBadge } from '@/components/shared/ColorBadge';
 import { cn } from '@/lib/utils';
@@ -190,7 +191,7 @@ function SortableExerciseCard({
     transition,
   };
 
-  const imageUrl = exercise.imageUrl || exercise.images?.[0];
+  const imageUrl = getMediaUrl(exercise.imageUrl || exercise.images?.[0]);
   const isTimeType = exercise.type === 'time' || exercise.type === 'hold';
 
   return (
@@ -871,7 +872,7 @@ export function CreateSetWizard({ open, onOpenChange, organizationId, onSuccess 
                       <div className="grid gap-2">
                         {filteredExercises.map((exercise) => {
                           const isSelected = selectedExerciseIds.includes(exercise.id);
-                          const imageUrl = exercise.imageUrl || exercise.images?.[0];
+                          const imageUrl = getMediaUrl(exercise.imageUrl || exercise.images?.[0]);
 
                           return (
                             <button
@@ -1069,10 +1070,10 @@ export function CreateSetWizard({ open, onOpenChange, organizationId, onSuccess 
           </DialogHeader>
           {previewExercise && (
             <div className="space-y-4">
-              {(previewExercise.imageUrl || previewExercise.images?.[0]) && (
+              {getMediaUrl(previewExercise.imageUrl || previewExercise.images?.[0]) && (
                 <div className="rounded-xl overflow-hidden aspect-video bg-surface-light">
                   <img
-                    src={previewExercise.imageUrl || previewExercise.images?.[0]}
+                    src={getMediaUrl(previewExercise.imageUrl || previewExercise.images?.[0]) || ""}
                     alt={previewExercise.name}
                     className="w-full h-full object-cover"
                   />

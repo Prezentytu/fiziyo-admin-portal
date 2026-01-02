@@ -49,6 +49,7 @@ import { GeneratePDFDialog } from '@/components/exercise-sets/GeneratePDFDialog'
 import { AssignmentWizard } from '@/components/assignment/AssignmentWizard';
 import type { ExerciseSet as AssignmentExerciseSet } from '@/components/assignment/types';
 import { ImagePlaceholder } from '@/components/shared/ImagePlaceholder';
+import { getMediaUrl } from '@/utils/mediaUrl';
 
 import {
   GET_EXERCISE_SET_WITH_ASSIGNMENTS_QUERY,
@@ -459,7 +460,7 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
             {[...exercises]
               .sort((a, b) => (a.order || 0) - (b.order || 0))
               .map((mapping, index) => {
-                const imageUrl = mapping.exercise?.imageUrl || mapping.exercise?.images?.[0];
+                const imageUrl = getMediaUrl(mapping.exercise?.imageUrl || mapping.exercise?.images?.[0]);
                 const hasParams = mapping.sets || mapping.reps || mapping.duration;
                 return (
                   <div
