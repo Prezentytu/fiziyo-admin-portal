@@ -56,6 +56,15 @@ import type {
   VisitType,
 } from '@/types/clinical.types';
 
+// Mutation response types
+interface CreateClinicalNoteResponse {
+  createClinicalNote: ClinicalNote;
+}
+
+interface UpdateClinicalNoteResponse {
+  updateClinicalNote: ClinicalNote;
+}
+
 interface ClinicalNoteEditorProps {
   patientId: string;
   therapistId: string;
@@ -262,7 +271,8 @@ export function ClinicalNoteEditor({
             sections: sectionInput,
           },
         });
-        noteIdRef.current = data.createClinicalNote.id;
+        const response = data as CreateClinicalNoteResponse;
+        noteIdRef.current = response.createClinicalNote.id;
       }
 
       setSaveStatus('saved');
@@ -370,7 +380,8 @@ export function ClinicalNoteEditor({
             { query: GET_PATIENT_CLINICAL_NOTES_QUERY, variables: { patientId, organizationId } },
           ],
         });
-        result = data.updateClinicalNote;
+        const response = data as UpdateClinicalNoteResponse;
+        result = response.updateClinicalNote;
         toast.success('Notatka została zaktualizowana');
       } else {
         const { data } = await createNote({
@@ -386,7 +397,8 @@ export function ClinicalNoteEditor({
             { query: GET_PATIENT_CLINICAL_NOTES_QUERY, variables: { patientId, organizationId } },
           ],
         });
-        result = data.createClinicalNote;
+        const response = data as CreateClinicalNoteResponse;
+        result = response.createClinicalNote;
         noteIdRef.current = result.id;
         toast.success('Notatka została utworzona');
       }
