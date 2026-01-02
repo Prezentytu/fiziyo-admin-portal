@@ -15,6 +15,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ExerciseVisibilitySettings } from "./ExerciseVisibilitySettings";
 import { SubscriptionCard } from "./SubscriptionCard";
 import { AutoSyncSettings } from "./AutoSyncSettings";
+import { DataManagementCard } from "./DataManagementCard";
 import {
   UPDATE_ORGANIZATION_NAME_MUTATION,
   UPDATE_ORGANIZATION_LOGO_MUTATION,
@@ -370,6 +371,13 @@ export function SettingsTab({
         expiresAt={organization.subscriptionExpiresAt}
         limits={limits}
         currentUsage={currentUsage}
+      />
+
+      {/* Data management */}
+      <DataManagementCard
+        organizationId={organization.id}
+        canEdit={canEdit}
+        onRefresh={onRefresh}
       />
     </div>
   );

@@ -25,6 +25,7 @@ import { DELETE_EXERCISE_MUTATION } from '@/graphql/mutations/exercises.mutation
 import { GET_USER_BY_CLERK_ID_QUERY } from '@/graphql/queries/users.queries';
 import { matchesSearchQuery } from '@/utils/textUtils';
 import { createTagsMap, mapExercisesWithTags } from '@/utils/tagUtils';
+import { useDataManagement } from '@/hooks/useDataManagement';
 import type {
   UserByClerkIdResponse,
   OrganizationExercisesResponse,
@@ -48,6 +49,11 @@ export default function ExercisesPage() {
   });
 
   const organizationId = (userData as UserByClerkIdResponse)?.userByClerkId?.organizationIds?.[0];
+
+  // Data management hook for importing examples
+  const { importExampleSets, isImporting, hasImportedExamples } = useDataManagement({
+    organizationId,
+  });
 
   // Get exercises
   const { data, loading, error } = useQuery(GET_ORGANIZATION_EXERCISES_QUERY, {
@@ -252,10 +258,15 @@ export default function ExercisesPage() {
               icon={Dumbbell}
               title={searchQuery ? 'Nie znaleziono ćwiczeń' : 'Brak ćwiczeń'}
               description={
-                searchQuery ? 'Spróbuj zmienić kryteria wyszukiwania' : 'Dodaj pierwsze ćwiczenie do biblioteki'
+                searchQuery
+                  ? 'Spróbuj zmienić kryteria wyszukiwania'
+                  : 'Dodaj pierwsze ćwiczenie lub załaduj przykładowe zestawy'
               }
               actionLabel={!searchQuery ? 'Dodaj ćwiczenie' : undefined}
               onAction={!searchQuery ? () => setIsDialogOpen(true) : undefined}
+              secondaryActionLabel={!searchQuery && !hasImportedExamples ? 'Załaduj przykłady' : undefined}
+              onSecondaryAction={!searchQuery && !hasImportedExamples ? importExampleSets : undefined}
+              secondaryActionLoading={isImporting}
             />
           </CardContent>
         </Card>

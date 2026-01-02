@@ -20,6 +20,7 @@ export { SettingsTab } from "./SettingsTab";
 export { ExerciseVisibilitySettings } from "./ExerciseVisibilitySettings";
 export { SubscriptionCard } from "./SubscriptionCard";
 export { AutoSyncSettings } from "./AutoSyncSettings";
+export { DataManagementCard } from "./DataManagementCard";
 
 // Dialogs (existing)
 export { InviteMemberDialog } from "./InviteMemberDialog";

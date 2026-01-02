@@ -1,4 +1,4 @@
-import { LucideIcon } from "lucide-react";
+import { Loader2, LucideIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -8,6 +8,10 @@ interface EmptyStateProps {
   description?: string;
   actionLabel?: string;
   onAction?: () => void;
+  actionLoading?: boolean;
+  secondaryActionLabel?: string;
+  onSecondaryAction?: () => void;
+  secondaryActionLoading?: boolean;
   className?: string;
 }
 
@@ -17,6 +21,10 @@ export function EmptyState({
   description,
   actionLabel,
   onAction,
+  actionLoading = false,
+  secondaryActionLabel,
+  onSecondaryAction,
+  secondaryActionLoading = false,
   className,
 }: EmptyStateProps) {
   return (
@@ -35,8 +43,25 @@ export function EmptyState({
           {description}
         </p>
       )}
-      {actionLabel && onAction && (
-        <Button onClick={onAction}>{actionLabel}</Button>
+      {(actionLabel || secondaryActionLabel) && (
+        <div className="flex flex-col sm:flex-row items-center gap-2">
+          {actionLabel && onAction && (
+            <Button onClick={onAction} disabled={actionLoading}>
+              {actionLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {actionLabel}
+            </Button>
+          )}
+          {secondaryActionLabel && onSecondaryAction && (
+            <Button
+              variant="outline"
+              onClick={onSecondaryAction}
+              disabled={secondaryActionLoading}
+            >
+              {secondaryActionLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {secondaryActionLabel}
+            </Button>
+          )}
+        </div>
       )}
     </div>
   );

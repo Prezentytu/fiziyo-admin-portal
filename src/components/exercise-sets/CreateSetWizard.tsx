@@ -1230,7 +1230,7 @@ export function CreateSetWizard({
   return (
     <Dialog open={open} onOpenChange={() => handleCloseAttempt()}>
       <DialogContent
-        className="max-w-6xl w-[95vw] max-h-[90vh] h-[85vh] flex flex-col p-0 gap-0"
+        className="max-w-6xl w-[95vw] max-h-[95vh] h-[90vh] md:h-[85vh] flex flex-col p-0 gap-0 overflow-hidden"
         onInteractOutside={(e) => e.preventDefault()}
         onEscapeKeyDown={(e) => {
           e.preventDefault();
@@ -1238,15 +1238,15 @@ export function CreateSetWizard({
         }}
       >
         {/* Header */}
-        <DialogHeader className="px-6 py-4 border-b border-border shrink-0">
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-3">
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary-dark shadow-lg shadow-primary/20">
-                <FolderPlus className="h-5 w-5 text-white" />
+        <DialogHeader className="px-4 sm:px-6 py-3 sm:py-4 border-b border-border shrink-0">
+          <div className="flex items-center gap-2 sm:gap-4">
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+              <div className="flex h-9 w-9 sm:h-11 sm:w-11 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary-dark shadow-lg shadow-primary/20 shrink-0">
+                <FolderPlus className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
               </div>
-              <div>
-                <DialogTitle className="text-xl font-bold">Nowy zestaw ćwiczeń</DialogTitle>
-                <DialogDescription className="text-sm text-muted-foreground">
+              <div className="min-w-0">
+                <DialogTitle className="text-base sm:text-xl font-bold truncate">Nowy zestaw ćwiczeń</DialogTitle>
+                <DialogDescription className="text-xs sm:text-sm text-muted-foreground truncate">
                   {currentStep === 'basics'
                     ? 'Podaj nazwę lub wybierz szybki start'
                     : `${selectedExerciseIds.length} ćwiczeń • ~${estimatedTime} min`}
@@ -1254,8 +1254,8 @@ export function CreateSetWizard({
               </div>
             </div>
 
-            <div className="flex-1 flex items-center justify-center">
-              <div className="flex items-center gap-2">
+            <div className="flex-1 flex items-center justify-end sm:justify-center">
+              <div className="flex items-center gap-1 sm:gap-2">
                 <button
                   type="button"
                   onClick={() => {
@@ -1263,29 +1263,29 @@ export function CreateSetWizard({
                     setCreationMode('manual');
                   }}
                   className={cn(
-                    'flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all',
+                    'flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-medium transition-all',
                     currentStep === 'basics'
                       ? 'bg-gradient-to-br from-primary to-primary-dark text-white shadow-lg shadow-primary/20'
                       : 'bg-primary/20 text-primary hover:bg-primary/30'
                   )}
                 >
-                  {currentStep !== 'basics' && <Check className="h-4 w-4" />}
-                  <FileText className="h-4 w-4" />
-                  <span>Podstawy</span>
+                  {currentStep !== 'basics' && <Check className="h-3.5 w-3.5 sm:h-4 sm:w-4" />}
+                  <FileText className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                  <span className="hidden sm:inline">Podstawy</span>
                 </button>
                 <div
                   className={cn(
-                    'w-10 h-1 rounded-full transition-all',
+                    'w-6 sm:w-10 h-1 rounded-full transition-all',
                     currentStep === 'exercises' || currentStep === 'ai' ? 'bg-primary' : 'bg-border'
                   )}
                 />
                 {currentStep === 'ai' ? (
                   <button
                     type="button"
-                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium bg-gradient-to-br from-violet-500 to-purple-600 text-white shadow-lg shadow-violet-500/20"
+                    className="flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-medium bg-gradient-to-br from-violet-500 to-purple-600 text-white shadow-lg shadow-violet-500/20"
                   >
-                    <Sparkles className="h-4 w-4" />
-                    <span>AI Generator</span>
+                    <Sparkles className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                    <span className="hidden sm:inline">AI Generator</span>
                   </button>
                 ) : (
                   <button
@@ -1293,7 +1293,7 @@ export function CreateSetWizard({
                     onClick={goToExercises}
                     disabled={!canProceedFromBasics}
                     className={cn(
-                      'flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium transition-all',
+                      'flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-medium transition-all',
                       currentStep === 'exercises'
                         ? 'bg-gradient-to-br from-primary to-primary-dark text-white shadow-lg shadow-primary/20'
                         : canProceedFromBasics
@@ -1301,8 +1301,8 @@ export function CreateSetWizard({
                         : 'bg-surface-light text-muted-foreground/50 cursor-not-allowed'
                     )}
                   >
-                    <Dumbbell className="h-4 w-4" />
-                    <span>Ćwiczenia</span>
+                    <Dumbbell className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                    <span className="hidden sm:inline">Ćwiczenia</span>
                     {selectedExerciseIds.length > 0 && (
                       <Badge
                         className={cn(
@@ -1327,9 +1327,9 @@ export function CreateSetWizard({
         {/* Content */}
         <div className="flex-1 overflow-hidden">
           {currentStep === 'basics' ? (
-            <div className="h-full p-6 flex gap-6">
+            <div className="h-full p-4 sm:p-6 flex flex-col lg:flex-row gap-4 lg:gap-6 overflow-auto">
               {/* Left: Form */}
-              <div className="flex-1 flex flex-col gap-5">
+              <div className="w-full lg:flex-1 flex flex-col gap-4 sm:gap-5">
                 {/* Patient context banner */}
                 {patientContext && (
                   <div className="rounded-xl bg-gradient-to-r from-primary/10 to-emerald-500/10 border border-primary/20 p-4">
@@ -1424,7 +1424,7 @@ export function CreateSetWizard({
               </div>
 
               {/* Right: Quick Start */}
-              <div className="flex-1 flex flex-col gap-4">
+              <div className="w-full lg:flex-1 lg:max-w-md flex flex-col gap-4">
                 {/* AI Generator Card */}
                 <button
                   type="button"
@@ -1463,7 +1463,7 @@ export function CreateSetWizard({
                       <p className="text-xs text-muted-foreground">Brak tagów z ćwiczeniami</p>
                     </div>
                   ) : (
-                    <div className="grid grid-cols-3 gap-1.5">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
                       {quickStartCategories.slice(0, 6).map((cat) => (
                         <button
                           key={cat.id}
@@ -1531,9 +1531,9 @@ export function CreateSetWizard({
               </div>
             </div>
           ) : currentStep === 'exercises' ? (
-            <div className="h-full flex">
+            <div className="h-full flex flex-col lg:flex-row">
               {/* Left: Exercise picker */}
-              <div className="flex-1 flex flex-col border-r border-border min-w-0">
+              <div className="flex-1 flex flex-col lg:border-r border-border min-w-0">
                 <div className="p-4 border-b border-border space-y-3">
                   {/* Search and view toggle */}
                   <div className="flex items-center gap-2">
@@ -1724,16 +1724,16 @@ export function CreateSetWizard({
               </div>
 
               {/* Right: Selected exercises */}
-              <div className="w-[400px] flex flex-col bg-surface-light/30 shrink-0">
-                <div className="px-4 py-3 border-b border-border">
-                  <div className="flex items-center justify-between">
-                    <h3 className="font-semibold text-sm">Wybrane ({selectedExerciseIds.length})</h3>
+              <div className="hidden lg:flex lg:w-[340px] xl:w-[400px] flex-col bg-surface-light/30 shrink-0 border-t lg:border-t-0">
+                <div className="px-3 xl:px-4 py-3 border-b border-border">
+                  <div className="flex items-center justify-between gap-2">
+                    <h3 className="font-semibold text-sm shrink-0">Wybrane ({selectedExerciseIds.length})</h3>
                     {selectedExerciseIds.length > 1 && (
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button variant="outline" size="sm" className="h-7 text-xs gap-1">
                             <Sliders className="h-3 w-3" />
-                            Ustaw dla wszystkich
+                            <span className="hidden xl:inline">Ustaw dla wszystkich</span>
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
@@ -1811,19 +1811,19 @@ export function CreateSetWizard({
 
         {/* Footer - hidden for AI step (has its own footer) */}
         {currentStep !== 'ai' && (
-          <div className="px-6 py-4 border-t border-border shrink-0">
+          <div className="px-4 sm:px-6 py-3 sm:py-4 border-t border-border shrink-0">
             {currentStep === 'basics' ? (
-              <div className="flex items-center justify-between gap-4">
-                <Button variant="outline" onClick={handleCloseAttempt} disabled={isLoading}>
+              <div className="flex items-center justify-between gap-2 sm:gap-4">
+                <Button variant="outline" onClick={handleCloseAttempt} disabled={isLoading} className="shrink-0">
                   Anuluj
                 </Button>
 
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 sm:gap-3 min-w-0">
                   <Button
                     variant="ghost"
                     onClick={() => handleCreateSet(false)}
                     disabled={!canProceedFromBasics || isLoading}
-                    className="text-muted-foreground"
+                    className="text-muted-foreground hidden sm:flex"
                   >
                     {creatingSet && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     Utwórz pusty zestaw
@@ -1834,16 +1834,28 @@ export function CreateSetWizard({
                     disabled={!canProceedFromBasics}
                     className="gap-2 bg-gradient-to-br from-primary to-primary-dark shadow-lg shadow-primary/20"
                   >
-                    Dalej: Dodaj ćwiczenia
+                    <span className="hidden sm:inline">Dalej: Dodaj ćwiczenia</span>
+                    <span className="sm:hidden">Dalej</span>
                     <ArrowRight className="h-4 w-4" />
                   </Button>
                 </div>
               </div>
             ) : (
-              <div className="flex items-center justify-between gap-4">
-                <Button variant="outline" onClick={() => setCurrentStep('basics')} disabled={isLoading}>
+              <div className="flex items-center justify-between gap-2 sm:gap-4">
+                <Button
+                  variant="outline"
+                  onClick={() => setCurrentStep('basics')}
+                  disabled={isLoading}
+                  className="shrink-0"
+                >
                   Wstecz
                 </Button>
+
+                {/* Mobile: show selected count */}
+                <div className="flex lg:hidden items-center gap-2 text-sm text-muted-foreground">
+                  <span className="font-medium text-foreground">{selectedExerciseIds.length}</span>
+                  <span className="hidden xs:inline">wybrano</span>
+                </div>
 
                 <Button
                   onClick={() => handleCreateSet(true)}
