@@ -22,6 +22,7 @@ import { GET_ORGANIZATION_EXERCISE_SETS_QUERY } from '@/graphql/queries/exercise
 import { DELETE_EXERCISE_SET_MUTATION, DUPLICATE_EXERCISE_SET_MUTATION } from '@/graphql/mutations/exercises.mutations';
 import { GET_USER_BY_CLERK_ID_QUERY } from '@/graphql/queries/users.queries';
 import { matchesSearchQuery } from '@/utils/textUtils';
+import { useDataManagement } from '@/hooks/useDataManagement';
 import type { UserByClerkIdResponse, OrganizationExerciseSetsResponse } from '@/types/apollo';
 
 type FilterType = 'all' | 'active' | 'templates' | 'inactive';
@@ -42,6 +43,11 @@ export default function ExerciseSetsPage() {
   });
 
   const organizationId = (userData as UserByClerkIdResponse)?.userByClerkId?.organizationIds?.[0];
+
+  // Data management hook for importing examples
+  const { importExampleSets, isImporting, hasImportedExamples } = useDataManagement({
+    organizationId,
+  });
 
   // Get exercise sets
   const { data, loading, error } = useQuery(GET_ORGANIZATION_EXERCISE_SETS_QUERY, {
@@ -297,10 +303,13 @@ export default function ExerciseSetsPage() {
               description={
                 searchQuery || filter !== 'all'
                   ? 'Spróbuj zmienić kryteria wyszukiwania lub filtry'
-                  : 'Utwórz pierwszy zestaw ćwiczeń dla pacjentów'
+                  : 'Utwórz pierwszy zestaw lub załaduj przykładowe zestawy ćwiczeń'
               }
               actionLabel={!searchQuery && filter === 'all' ? 'Nowy zestaw' : undefined}
               onAction={!searchQuery && filter === 'all' ? () => setIsDialogOpen(true) : undefined}
+              secondaryActionLabel={!searchQuery && filter === 'all' && !hasImportedExamples ? 'Załaduj przykłady' : undefined}
+              onSecondaryAction={!searchQuery && filter === 'all' && !hasImportedExamples ? importExampleSets : undefined}
+              secondaryActionLoading={isImporting}
             />
           </CardContent>
         </Card>
