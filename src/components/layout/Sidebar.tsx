@@ -27,7 +27,7 @@ const navigationGroups = [
     items: [
       { name: 'Panel', href: '/', icon: LayoutDashboard },
       { name: 'Pacjenci', href: '/patients', icon: Users },
-      { name: 'Kalendarz', href: '/appointments', icon: Calendar },
+      // { name: 'Kalendarz', href: '/appointments', icon: Calendar }, // Ukryty na ten moment
       { name: 'Zestawy', href: '/exercise-sets', icon: FolderKanban },
       { name: 'Ćwiczenia', href: '/exercises', icon: Dumbbell },
     ],
@@ -167,32 +167,34 @@ export function Sidebar({ isCollapsed, onToggleCollapse }: SidebarProps) {
           ))}
         </nav>
 
-        {/* Sign out button */}
-        <div className={cn('border-t border-border', isCollapsed ? 'p-2 flex justify-center' : 'p-3')}>
-          {isCollapsed ? (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  onClick={() => signOut()}
-                  className="group flex h-10 w-10 items-center justify-center rounded-xl text-muted-foreground transition-all duration-200 hover:bg-error-muted hover:text-error"
-                  aria-label="Wyloguj się"
-                >
-                  <LogOut className="h-5 w-5 transition-transform duration-200 group-hover:-translate-x-0.5" />
-                </button>
-              </TooltipTrigger>
-              <TooltipContent side="right" className="font-medium">
-                Wyloguj się
-              </TooltipContent>
-            </Tooltip>
-          ) : (
-            <button
-              onClick={() => signOut()}
-              className="group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-muted-foreground transition-all duration-200 hover:bg-error-muted hover:text-error"
-            >
-              <LogOut className="h-5 w-5 transition-transform duration-200 group-hover:-translate-x-0.5" />
-              <span>Wyloguj się</span>
-            </button>
-          )}
+        {/* Sign out */}
+        <div className={cn('border-t border-border', isCollapsed ? 'p-2' : 'p-3')}>
+          <div className={isCollapsed ? 'flex justify-center' : ''}>
+            {isCollapsed ? (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    onClick={() => signOut()}
+                    className="group flex h-10 w-10 items-center justify-center rounded-xl text-muted-foreground transition-all duration-200 hover:bg-error-muted hover:text-error"
+                    aria-label="Wyloguj się"
+                  >
+                    <LogOut className="h-5 w-5 transition-transform duration-200 group-hover:-translate-x-0.5" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="right" className="font-medium">
+                  Wyloguj się
+                </TooltipContent>
+              </Tooltip>
+            ) : (
+              <button
+                onClick={() => signOut()}
+                className="group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-muted-foreground transition-all duration-200 hover:bg-error-muted hover:text-error"
+              >
+                <LogOut className="h-5 w-5 transition-transform duration-200 group-hover:-translate-x-0.5" />
+                <span>Wyloguj się</span>
+              </button>
+            )}
+          </div>
         </div>
       </aside>
     </TooltipProvider>

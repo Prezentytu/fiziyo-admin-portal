@@ -4,14 +4,13 @@ import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@apollo/client/react";
-import { Loader2, User, Mail, Phone, MapPin } from "lucide-react";
+import { Loader2, Mail, Phone, MapPin } from "lucide-react";
 import { toast } from "sonner";
 import * as z from "zod";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Form,
@@ -20,7 +19,6 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-  FormDescription,
 } from "@/components/ui/form";
 import { UPDATE_USER_PROFILE_MUTATION } from "@/graphql/mutations/users.mutations";
 import { GET_USER_BY_CLERK_ID_QUERY } from "@/graphql/queries/users.queries";
@@ -119,143 +117,129 @@ export function ProfileForm({ user, clerkId, onSuccess }: ProfileFormProps) {
     .toUpperCase();
 
   return (
-    <div className="space-y-6">
-      {/* Profile Header */}
-      <Card className="border-border/60">
-        <CardContent className="pt-6">
-          <div className="flex flex-col sm:flex-row items-center gap-6">
-            <Avatar className="h-24 w-24 ring-4 ring-surface-light">
+    <Card className="border-border/60">
+      <CardContent className="p-5">
+        <div className="grid gap-6 lg:grid-cols-12">
+          {/* Avatar Section - Left */}
+          <div className="flex flex-col items-center gap-4 lg:col-span-3 lg:border-r lg:border-border/60 lg:pr-6">
+            <Avatar className="h-20 w-20 ring-4 ring-surface-light">
               <AvatarImage src={user.image} alt={displayName} />
-              <AvatarFallback className="bg-gradient-to-br from-primary to-primary-dark text-primary-foreground text-2xl font-semibold">
+              <AvatarFallback className="bg-gradient-to-br from-primary to-primary-dark text-primary-foreground text-xl font-semibold">
                 {initials}
               </AvatarFallback>
             </Avatar>
-            <div className="text-center sm:text-left">
-              <h2 className="text-2xl font-bold text-foreground">{displayName}</h2>
-              <p className="text-muted-foreground flex items-center justify-center sm:justify-start gap-2 mt-1">
-                <Mail className="h-4 w-4" />
+            <div className="text-center">
+              <h2 className="text-lg font-bold text-foreground">{displayName}</h2>
+              <p className="text-muted-foreground flex items-center justify-center gap-1.5 text-sm mt-1">
+                <Mail className="h-3.5 w-3.5" />
                 {user.email}
               </p>
             </div>
           </div>
-        </CardContent>
-      </Card>
 
-      {/* Profile Form */}
-      <Card className="border-border/60">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <User className="h-5 w-5 text-primary" />
-            Dane osobowe
-          </CardTitle>
-          <CardDescription>
-            Zaktualizuj swoje dane osobowe i kontaktowe
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              <div className="grid gap-6 sm:grid-cols-2">
-                <FormField
-                  control={form.control}
-                  name="firstName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Imię *</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="Jan"
-                          className="h-11"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+          {/* Form Section - Right */}
+          <div className="lg:col-span-9">
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <FormField
+                    control={form.control}
+                    name="firstName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-xs">Imię *</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="Jan"
+                            className="h-9"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                <FormField
-                  control={form.control}
-                  name="lastName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Nazwisko *</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder="Kowalski"
-                          className="h-11"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
+                  <FormField
+                    control={form.control}
+                    name="lastName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-xs">Nazwisko *</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="Kowalski"
+                            className="h-9"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-              <FormField
-                control={form.control}
-                name="phone"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="flex items-center gap-2">
-                      <Phone className="h-4 w-4 text-muted-foreground" />
-                      Telefon
-                    </FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="+48 123 456 789"
-                        className="h-11"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormDescription>
-                      Używany do kontaktu z pacjentami
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                  <FormField
+                    control={form.control}
+                    name="phone"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="flex items-center gap-1.5 text-xs">
+                          <Phone className="h-3 w-3 text-muted-foreground" />
+                          Telefon
+                        </FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="+48 123 456 789"
+                            className="h-9"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-              <FormField
-                control={form.control}
-                name="address"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="flex items-center gap-2">
-                      <MapPin className="h-4 w-4 text-muted-foreground" />
-                      Adres
-                    </FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder="ul. Przykładowa 123, 00-000 Miasto"
-                        className="min-h-[80px] resize-none"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                  <FormField
+                    control={form.control}
+                    name="address"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="flex items-center gap-1.5 text-xs">
+                          <MapPin className="h-3 w-3 text-muted-foreground" />
+                          Adres
+                        </FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="ul. Przykładowa 123, 00-000 Miasto"
+                            className="h-9"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
 
-              <div className="flex justify-end pt-2">
-                <Button
-                  type="submit"
-                  disabled={loading || !form.formState.isDirty}
-                  className="rounded-xl shadow-lg shadow-primary/20"
-                >
-                  {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Zapisz zmiany
-                </Button>
-              </div>
-            </form>
-          </Form>
-        </CardContent>
-      </Card>
-    </div>
+                <div className="flex justify-end pt-2">
+                  <Button
+                    type="submit"
+                    size="sm"
+                    disabled={loading || !form.formState.isDirty}
+                    className="rounded-lg shadow-lg shadow-primary/20"
+                  >
+                    {loading && <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />}
+                    Zapisz zmiany
+                  </Button>
+                </div>
+              </form>
+            </Form>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
-
 
 
 

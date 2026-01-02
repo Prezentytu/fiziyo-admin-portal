@@ -1,45 +1,40 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
-import { Loader2, User, Mail, Tag } from "lucide-react";
+import * as React from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import { Loader2 } from 'lucide-react';
 
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { PhoneInput } from "@/components/ui/phone-input";
-import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { PhoneInput } from '@/components/ui/phone-input';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 
+// Schema z walidacją: wymagany phone LUB email
 const patientFormSchema = z.object({
-  firstName: z.string().min(2, "Imię musi mieć min. 2 znaki"),
-  lastName: z.string().min(2, "Nazwisko musi mieć min. 2 znaki"),
-  phone: z.string().length(9, "Numer telefonu musi mieć 9 cyfr"),
-  email: z
-    .string()
-    .email("Podaj prawidłowy email")
-    .optional()
-    .or(z.literal("")),
+  firstName: z.string().min(2, 'Imię musi mieć min. 2 znaki'),
+  lastName: z.string().min(2, 'Nazwisko musi mieć min. 2 znaki'),
+  phone: z.string().optional().refine(
+    (val) => !val || val.length === 0 || val.length === 9,
+    'Numer telefonu musi mieć 9 cyfr'
+  ),
+  email: z.string().email('Podaj prawidłowy email').optional().or(z.literal('')),
   contextLabel: z.string().optional(),
-  sendActivationSms: z.boolean(),
-});
+}).refine(
+  (data) => (data.phone && data.phone.length === 9) || (data.email && data.email.length > 0),
+  {
+    message: 'Podaj numer telefonu lub email',
+    path: ['phone'], // Pokazuje błąd przy polu phone
+  }
+);
 
 export type PatientFormValues = {
   firstName: string;
   lastName: string;
-  phone: string;
+  phone?: string;
   email?: string;
   contextLabel?: string;
-  sendActivationSms: boolean;
 };
 
 interface PatientFormProps {
@@ -56,18 +51,17 @@ export function PatientForm({
   onSubmit,
   onCancel,
   isLoading = false,
-  submitLabel = "Zapisz",
+  submitLabel = 'Zapisz',
   onDirtyChange,
 }: PatientFormProps) {
   const form = useForm<PatientFormValues>({
     resolver: zodResolver(patientFormSchema),
     defaultValues: {
-      firstName: "",
-      lastName: "",
-      phone: "",
-      email: "",
-      contextLabel: "",
-      sendActivationSms: false,
+      firstName: '',
+      lastName: '',
+      phone: '',
+      email: '',
+      contextLabel: '',
       ...defaultValues,
     },
   });
@@ -83,13 +77,14 @@ export function PatientForm({
     try {
       await onSubmit(values);
     } catch (error) {
-      console.error("Błąd podczas zapisywania:", error);
+      console.error('Błąd podczas zapisywania:', error);
     }
   };
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-5">
+        {/* Name fields - side by side */}
         <div className="grid gap-4 sm:grid-cols-2">
           <FormField
             control={form.control}
@@ -98,14 +93,7 @@ export function PatientForm({
               <FormItem>
                 <FormLabel>Imię *</FormLabel>
                 <FormControl>
-                  <div className="relative">
-                    <User className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                    <Input
-                      placeholder="Jan"
-                      className="h-11 pl-10"
-                      {...field}
-                    />
-                  </div>
+                  <Input placeholder="Jan" autoFocus {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -119,14 +107,7 @@ export function PatientForm({
               <FormItem>
                 <FormLabel>Nazwisko *</FormLabel>
                 <FormControl>
-                  <div className="relative">
-                    <User className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                    <Input
-                      placeholder="Kowalski"
-                      className="h-11 pl-10"
-                      {...field}
-                    />
-                  </div>
+                  <Input placeholder="Kowalski" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -134,108 +115,78 @@ export function PatientForm({
           />
         </div>
 
-        <FormField
-          control={form.control}
-          name="phone"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Numer telefonu *</FormLabel>
-              <FormControl>
-                <PhoneInput
-                  placeholder="123 456 789"
-                  className="h-11"
-                  value={field.value}
-                  onChange={field.onChange}
-                />
-              </FormControl>
-              <FormDescription>
-                Na ten numer zostanie wysłany link do aktywacji konta
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        {/* Contact fields - side by side */}
+        <p className="text-sm text-muted-foreground mb-1">Podaj numer telefonu lub email (wymagane jedno z nich)</p>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <FormField
+            control={form.control}
+            name="phone"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Telefon</FormLabel>
+                <FormControl>
+                  <PhoneInput placeholder="123 456 789" value={field.value ?? ''} onChange={field.onChange} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-        <FormField
-          control={form.control}
-          name="email"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Email</FormLabel>
-              <FormControl>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    placeholder="jan.kowalski@email.com"
-                    className="h-11 pl-10"
-                    {...field}
-                  />
-                </div>
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+          <FormField
+            control={form.control}
+            name="email"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Email</FormLabel>
+                <FormControl>
+                  <Input type="email" placeholder="jan@przykład.pl" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
 
+        {/* Context label - optional with quick tags */}
         <FormField
           control={form.control}
           name="contextLabel"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Etykieta / powód wizyty</FormLabel>
+              <FormLabel>Notatka</FormLabel>
               <FormControl>
-                <div className="relative">
-                  <Tag className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    placeholder="np. Rehabilitacja kolana"
-                    className="h-11 pl-10"
-                    {...field}
-                  />
-                </div>
+                <Input placeholder="np. Ból pleców, Rehabilitacja kolana..." {...field} />
               </FormControl>
-              <FormDescription>Krótki opis kontekstu leczenia</FormDescription>
+              {/* Quick tags */}
+              <div className="flex flex-wrap gap-1.5 pt-1">
+                {['Kolano', 'Kręgosłup', 'Bark', 'Biodro', 'Rehabilitacja', 'Ból pleców'].map((tag) => (
+                  <button
+                    key={tag}
+                    type="button"
+                    onClick={() => {
+                      const currentValue = field.value || '';
+                      const newValue = currentValue ? `${currentValue}, ${tag}` : tag;
+                      field.onChange(newValue);
+                    }}
+                    className="text-xs px-2 py-1 rounded-md bg-surface-light text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors"
+                  >
+                    {tag}
+                  </button>
+                ))}
+              </div>
               <FormMessage />
             </FormItem>
           )}
         />
 
-        <FormField
-          control={form.control}
-          name="sendActivationSms"
-          render={({ field }) => (
-            <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-xl border border-border p-4">
-              <FormControl>
-                <Checkbox
-                  checked={field.value}
-                  onCheckedChange={field.onChange}
-                />
-              </FormControl>
-              <div className="space-y-1 leading-none">
-                <FormLabel>Wyślij SMS z linkiem aktywacyjnym</FormLabel>
-                <FormDescription>
-                  Pacjent otrzyma SMS z linkiem do aktywacji konta w aplikacji
-                </FormDescription>
-              </div>
-            </FormItem>
-          )}
-        />
-
-        <div className="flex justify-end gap-3 pt-4">
+        {/* Actions */}
+        <div className="flex justify-end gap-3 pt-2 border-t border-border">
           {onCancel && (
-            <Button
-              type="button"
-              variant="outline"
-              onClick={onCancel}
-              className="rounded-xl"
-            >
+            <Button type="button" variant="outline" onClick={onCancel}>
               Anuluj
             </Button>
           )}
-          <Button
-            type="submit"
-            disabled={isLoading}
-            className="rounded-xl font-semibold"
-          >
+          <Button type="submit" disabled={isLoading}>
             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             {submitLabel}
           </Button>

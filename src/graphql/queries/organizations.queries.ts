@@ -24,6 +24,12 @@ export const ORGANIZATION_FULL_FRAGMENT = gql`
     subscriptionExpiresAt
     allowPersonalExercises
     sharedExercisesByDefault
+    autoSyncExampleExercises
+    # Contact info for PDF/branding
+    address
+    contactPhone
+    contactEmail
+    website
   }
 `;
 

@@ -1,10 +1,10 @@
 "use client";
 
-import { Building2, Shield, ShieldCheck, User, Star } from "lucide-react";
+import { Building2, Shield, ShieldCheck, User, Star, UserPlus, ArrowRight } from "lucide-react";
 import { format } from "date-fns";
 import { pl } from "date-fns/locale";
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
 export interface UserOrganization {
@@ -28,11 +28,11 @@ const roleLabels: Record<string, string> = {
 };
 
 const roleIcons: Record<string, React.ReactNode> = {
-  OWNER: <ShieldCheck className="h-3.5 w-3.5" />,
-  ADMIN: <Shield className="h-3.5 w-3.5" />,
-  THERAPIST: <User className="h-3.5 w-3.5" />,
-  MEMBER: <User className="h-3.5 w-3.5" />,
-  STAFF: <User className="h-3.5 w-3.5" />,
+  OWNER: <ShieldCheck className="h-3 w-3" />,
+  ADMIN: <Shield className="h-3 w-3" />,
+  THERAPIST: <User className="h-3 w-3" />,
+  MEMBER: <User className="h-3 w-3" />,
+  STAFF: <User className="h-3 w-3" />,
 };
 
 export function OrganizationsList({
@@ -41,80 +41,130 @@ export function OrganizationsList({
 }: OrganizationsListProps) {
   if (organizations.length === 0) {
     return (
-      <Card className="border-border/60">
-        <CardContent className="py-12 text-center">
-          <div className="mx-auto h-12 w-12 rounded-full bg-surface-light flex items-center justify-center mb-4">
-            <Building2 className="h-6 w-6 text-muted-foreground" />
+      <div className="space-y-4">
+        {/* Hero Action - Join Organization */}
+        <button
+          className="group relative w-full overflow-hidden rounded-2xl bg-gradient-to-br from-primary via-primary to-primary-dark p-5 text-left transition-all duration-300 hover:shadow-xl hover:shadow-primary/20 hover:scale-[1.01] cursor-pointer"
+        >
+          <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+          <div className="absolute -top-24 -right-24 w-48 h-48 bg-white/10 rounded-full blur-3xl group-hover:bg-white/20 transition-all duration-500" />
+          
+          <div className="relative flex items-center gap-4">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm shrink-0 group-hover:scale-110 transition-transform duration-300">
+              <UserPlus className="h-5 w-5 text-white" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <h3 className="text-base font-bold text-white">Dołącz do organizacji</h3>
+              <p className="text-sm text-white/80">Poproś o zaproszenie od właściciela gabinetu</p>
+            </div>
+            <ArrowRight className="h-5 w-5 text-white/60 group-hover:text-white group-hover:translate-x-1 transition-all duration-300 shrink-0" />
           </div>
-          <p className="text-muted-foreground">
-            Nie należysz do żadnej organizacji
-          </p>
-        </CardContent>
-      </Card>
+        </button>
+
+        <Card className="border-border/60">
+          <CardContent className="py-8 text-center">
+            <div className="mx-auto h-10 w-10 rounded-full bg-surface-light flex items-center justify-center mb-3">
+              <Building2 className="h-5 w-5 text-muted-foreground" />
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Nie należysz jeszcze do żadnej organizacji
+            </p>
+          </CardContent>
+        </Card>
+      </div>
     );
   }
 
   return (
-    <Card className="border-border/60">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Building2 className="h-5 w-5 text-primary" />
-          Twoje organizacje
-        </CardTitle>
-        <CardDescription>
-          Organizacje, do których należysz
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-3">
-          {organizations.map((org) => {
-            const isDefault = org.organizationId === defaultOrganizationId;
-            const roleKey = org.role?.toUpperCase() || "MEMBER";
+    <div className="space-y-4">
+      {/* Hero Action + Stats Grid */}
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-12">
+        {/* Hero Action - Join Organization */}
+        <button
+          className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary via-primary to-primary-dark p-5 text-left transition-all duration-300 hover:shadow-xl hover:shadow-primary/20 hover:scale-[1.01] cursor-pointer lg:col-span-8"
+        >
+          <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+          <div className="absolute -top-24 -right-24 w-48 h-48 bg-white/10 rounded-full blur-3xl group-hover:bg-white/20 transition-all duration-500" />
+          
+          <div className="relative flex items-center gap-4">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm shrink-0 group-hover:scale-110 transition-transform duration-300">
+              <UserPlus className="h-5 w-5 text-white" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <h3 className="text-base font-bold text-white">Dołącz do organizacji</h3>
+              <p className="text-sm text-white/80">Poproś o zaproszenie od właściciela gabinetu</p>
+            </div>
+            <ArrowRight className="h-5 w-5 text-white/60 group-hover:text-white group-hover:translate-x-1 transition-all duration-300 shrink-0" />
+          </div>
+        </button>
 
-            return (
-              <div
-                key={org.organizationId}
-                className="flex items-center justify-between rounded-xl border border-border bg-surface p-4 transition-colors hover:bg-surface-light"
-              >
-                <div className="flex items-center gap-4">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-surface-light">
-                    <Building2 className="h-6 w-6 text-muted-foreground" />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-semibold text-foreground">
-                        {org.organizationName || "Nieznana organizacja"}
-                      </span>
-                      {isDefault && (
-                        <Badge variant="outline" className="gap-1 text-xs">
-                          <Star className="h-3 w-3 fill-current" />
-                          Domyślna
-                        </Badge>
+        {/* Stat Card */}
+        <Card className="border-border/60 lg:col-span-4">
+          <CardContent className="p-4 flex items-center gap-4">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+              <Building2 className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-foreground">{organizations.length}</p>
+              <p className="text-xs text-muted-foreground">
+                {organizations.length === 1 ? "Organizacja" : "Organizacje"}
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Organizations List - Compact */}
+      <Card className="border-border/60">
+        <CardContent className="p-3">
+          <div className="space-y-2">
+            {organizations.map((org) => {
+              const isDefault = org.organizationId === defaultOrganizationId;
+              const roleKey = org.role?.toUpperCase() || "MEMBER";
+
+              return (
+                <div
+                  key={org.organizationId}
+                  className="flex items-center justify-between rounded-lg border border-border/60 bg-surface p-3 transition-colors hover:bg-surface-light"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-surface-light shrink-0">
+                      <Building2 className="h-4 w-4 text-muted-foreground" />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-sm text-foreground truncate">
+                          {org.organizationName || "Nieznana organizacja"}
+                        </span>
+                        {isDefault && (
+                          <Badge variant="outline" className="gap-1 text-[10px] px-1.5 py-0">
+                            <Star className="h-2.5 w-2.5 fill-current" />
+                            Domyślna
+                          </Badge>
+                        )}
+                      </div>
+                      {org.joinedAt && (
+                        <p className="text-xs text-muted-foreground">
+                          {format(new Date(org.joinedAt), "d MMM yyyy", {
+                            locale: pl,
+                          })}
+                        </p>
                       )}
                     </div>
-                    {org.joinedAt && (
-                      <p className="text-sm text-muted-foreground">
-                        Dołączono:{" "}
-                        {format(new Date(org.joinedAt), "d MMMM yyyy", {
-                          locale: pl,
-                        })}
-                      </p>
-                    )}
                   </div>
+                  <Badge variant="secondary" className="gap-1 text-xs shrink-0">
+                    {roleIcons[roleKey]}
+                    {roleLabels[roleKey] || org.role}
+                  </Badge>
                 </div>
-                <Badge variant="secondary" className="gap-1.5">
-                  {roleIcons[roleKey]}
-                  {roleLabels[roleKey] || org.role}
-                </Badge>
-              </div>
-            );
-          })}
-        </div>
-      </CardContent>
-    </Card>
+              );
+            })}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
 }
-
 
 
 

@@ -25,11 +25,13 @@ import {
   type Patient,
   type Frequency,
   type ExerciseOverride,
+  type AssignedSetInfo,
+  type AssignedPatientInfo,
 } from './types';
 
 import { GET_ORGANIZATION_EXERCISE_SETS_QUERY } from '@/graphql/queries/exerciseSets.queries';
 import { GET_THERAPIST_PATIENTS_QUERY } from '@/graphql/queries/therapists.queries';
-import { ASSIGN_EXERCISE_SET_TO_PATIENT_MUTATION } from '@/graphql/mutations/exercises.mutations';
+import { ASSIGN_EXERCISE_SET_TO_PATIENT_MUTATION, REMOVE_EXERCISE_SET_ASSIGNMENT_MUTATION } from '@/graphql/mutations/exercises.mutations';
 import { GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY } from '@/graphql/queries/patientAssignments.queries';
 import { GET_EXERCISE_SET_WITH_ASSIGNMENTS_QUERY } from '@/graphql/queries/exerciseSets.queries';
 import type { TherapistPatientsResponse } from '@/types/apollo';
@@ -143,8 +145,31 @@ function AssignmentWizardContent({
     skip: !therapistId || !organizationId || !open || !needsPatients,
   });
 
-  // Mutation
+  // Load patient's existing assignments (for from-patient mode - to show which sets are already assigned)
+  const { data: patientAssignmentsData, refetch: refetchPatientAssignments } = useQuery(GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY, {
+    variables: { userId: preselectedPatient?.id || '' },
+    skip: !preselectedPatient?.id || !open || mode !== 'from-patient',
+  });
+
+  // Load exercise set's existing assignments (for from-set mode OR when a set is selected in from-patient mode)
+  // This allows showing which patients already have the selected set
+  const effectiveSetId = preselectedSet?.id || selectedSet?.id;
+  const { data: setAssignmentsData, refetch: refetchSetAssignments } = useQuery(GET_EXERCISE_SET_WITH_ASSIGNMENTS_QUERY, {
+    variables: { exerciseSetId: effectiveSetId || '' },
+    skip: !effectiveSetId || !open,
+  });
+
+  // Mutations
   const [assignSet, { loading: assigning }] = useMutation(ASSIGN_EXERCISE_SET_TO_PATIENT_MUTATION);
+  const [removeAssignment, { loading: removing }] = useMutation(REMOVE_EXERCISE_SET_ASSIGNMENT_MUTATION);
+
+  // State for unassign confirmation dialog
+  const [unassignConfirm, setUnassignConfirm] = useState<{
+    open: boolean;
+    assignmentId: string;
+    name: string;
+    type: 'set' | 'patient';
+  } | null>(null);
 
   // Process data - map all fields including sets, reps, duration from both mapping and exercise
   const exerciseSets: ExerciseSet[] = useMemo(() => {
@@ -208,6 +233,125 @@ function AssignmentWizardContent({
       isShadowUser: assignment.patient?.isShadowUser,
     }));
   }, [patientsData]);
+
+  // Process patient's assigned sets (for from-patient mode)
+  const assignedSets: AssignedSetInfo[] = useMemo(() => {
+    if (mode !== 'from-patient' || !patientAssignmentsData) return [];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const assignments = (patientAssignmentsData as any)?.patientAssignments || [];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return assignments
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .filter((a: any) => a.exerciseSetId) // Only exercise set assignments
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .map((a: any) => ({
+        exerciseSetId: a.exerciseSetId,
+        assignmentId: a.id,
+        assignedAt: a.assignedAt,
+        status: a.status,
+      }));
+  }, [mode, patientAssignmentsData]);
+
+  // Process exercise set's assigned patients (for from-set mode OR when a set is selected)
+  // This works for:
+  // 1. from-set mode with preselectedSet
+  // 2. from-patient mode without preselectedPatient (dashboard) - when user selects a set
+  const assignedPatients: AssignedPatientInfo[] = useMemo(() => {
+    if (!setAssignmentsData) return [];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const setData = (setAssignmentsData as any)?.exerciseSetById;
+    const assignments = setData?.patientAssignments || [];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return assignments.map((a: any) => ({
+      patientId: a.userId,
+      assignmentId: a.id,
+      assignedAt: a.assignedAt,
+      status: a.status,
+    }));
+  }, [setAssignmentsData]);
+
+  // Handle unassign action
+  const handleUnassignRequest = useCallback((assignmentId: string, name: string, type: 'set' | 'patient') => {
+    setUnassignConfirm({ open: true, assignmentId, name, type });
+  }, []);
+
+  const handleUnassignConfirm = useCallback(async () => {
+    if (!unassignConfirm) return;
+
+    try {
+      // Find the exercise set ID and patient ID for the mutation
+      let exerciseSetId: string | undefined;
+      let patientId: string | undefined;
+
+      if (unassignConfirm.type === 'set') {
+        // Unassigning a set from a patient (from-patient mode with preselectedPatient)
+        const assignment = assignedSets.find((a) => a.assignmentId === unassignConfirm.assignmentId);
+        if (assignment) {
+          exerciseSetId = assignment.exerciseSetId;
+          patientId = preselectedPatient?.id;
+        }
+      } else {
+        // Unassigning a patient from a set (from-set mode OR dashboard mode with selected set)
+        const assignment = assignedPatients.find((a) => a.assignmentId === unassignConfirm.assignmentId);
+        if (assignment) {
+          exerciseSetId = preselectedSet?.id || selectedSet?.id;
+          patientId = assignment.patientId;
+        }
+      }
+
+      if (!exerciseSetId || !patientId) {
+        toast.error('Nie udało się znaleźć danych przypisania');
+        return;
+      }
+
+      await removeAssignment({
+        variables: { exerciseSetId, patientId },
+        refetchQueries: [
+          // Refetch patient's assignments (for patient detail page)
+          {
+            query: GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY,
+            variables: { userId: patientId },
+          },
+          // Refetch exercise set with assignments (for set detail page)
+          {
+            query: GET_EXERCISE_SET_WITH_ASSIGNMENTS_QUERY,
+            variables: { exerciseSetId },
+          },
+        ],
+      });
+
+      toast.success(
+        unassignConfirm.type === 'set'
+          ? `Zestaw "${unassignConfirm.name}" został odpisany`
+          : `Pacjent "${unassignConfirm.name}" został odpisany`
+      );
+
+      // Refetch the wizard's local data as well
+      if (mode === 'from-patient' && preselectedPatient) {
+        refetchPatientAssignments();
+      }
+      if (effectiveSetId) {
+        refetchSetAssignments();
+      }
+    } catch (error) {
+      console.error('Błąd odpisywania:', error);
+      toast.error('Nie udało się odpisać');
+    } finally {
+      setUnassignConfirm(null);
+    }
+  }, [
+    unassignConfirm,
+    assignedSets,
+    assignedPatients,
+    preselectedPatient,
+    preselectedSet?.id,
+    selectedSet?.id,
+    effectiveSetId,
+    removeAssignment,
+    mode,
+    refetchPatientAssignments,
+    refetchSetAssignments,
+  ]);
 
   // Determine step title and description
   const getStepInfo = () => {
@@ -345,7 +489,7 @@ function AssignmentWizardContent({
     }
   };
 
-  const isLoading = loadingSets || loadingPatients || assigning;
+  const isLoading = loadingSets || loadingPatients || assigning || removing;
   const isFirstStep = steps.length > 0 && currentStep === steps[0].id;
   const isLastStep = currentStep === 'summary';
 
@@ -358,6 +502,8 @@ function AssignmentWizardContent({
             exerciseSets={exerciseSets}
             selectedSet={selectedSet}
             onSelectSet={setSelectedSet}
+            assignedSets={assignedSets}
+            onUnassign={(assignmentId, setName) => handleUnassignRequest(assignmentId, setName, 'set')}
             loading={loadingSets}
           />
         );
@@ -368,6 +514,8 @@ function AssignmentWizardContent({
             patients={patients}
             selectedPatients={selectedPatients}
             onSelectPatients={setSelectedPatients}
+            assignedPatients={assignedPatients}
+            onUnassign={(assignmentId, patientName) => handleUnassignRequest(assignmentId, patientName, 'patient')}
             loading={loadingPatients}
           />
         );
@@ -473,6 +621,23 @@ function AssignmentWizardContent({
           )}
         </div>
       </div>
+
+      {/* Unassign confirmation dialog */}
+      <ConfirmDialog
+        open={unassignConfirm?.open ?? false}
+        onOpenChange={(open) => !open && setUnassignConfirm(null)}
+        title={unassignConfirm?.type === 'set' ? 'Odpisać zestaw?' : 'Odpisać pacjenta?'}
+        description={
+          unassignConfirm?.type === 'set'
+            ? `Czy na pewno chcesz odpisać zestaw "${unassignConfirm?.name}" od tego pacjenta?`
+            : `Czy na pewno chcesz odpisać pacjenta "${unassignConfirm?.name}" od tego zestawu?`
+        }
+        confirmText="Tak, odpisz"
+        cancelText="Anuluj"
+        variant="destructive"
+        onConfirm={handleUnassignConfirm}
+        isLoading={removing}
+      />
     </DialogContent>
   );
 }

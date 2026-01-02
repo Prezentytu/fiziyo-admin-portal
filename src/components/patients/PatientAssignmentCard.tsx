@@ -18,6 +18,7 @@ import {
   EyeOff,
   Plus,
   Settings2,
+  FileDown,
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -41,6 +42,8 @@ import {
 import { ImagePlaceholder } from "@/components/shared/ImagePlaceholder";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { cn } from "@/lib/utils";
+import { translateAssignmentStatus, getStatusColorClass } from "@/utils/statusUtils";
+import { getMediaUrl } from "@/utils/mediaUrl";
 
 import {
   UPDATE_EXERCISE_SET_ASSIGNMENT_MUTATION,
@@ -127,6 +130,7 @@ interface PatientAssignmentCardProps {
   onEditSchedule?: (assignment: PatientAssignment) => void;
   onEditExercise?: (assignment: PatientAssignment, mapping: ExerciseMapping, override?: ExerciseOverride) => void;
   onAddExercise?: (assignment: PatientAssignment) => void;
+  onGeneratePDF?: (assignment: PatientAssignment) => void;
   onRefresh?: () => void;
 }
 
@@ -158,8 +162,10 @@ const getActiveDays = (frequency?: Frequency): string => {
   return days.join(", ");
 };
 
-const getStatusVariant = (status?: string): "success" | "secondary" | "warning" | "destructive" => {
+const getStatusVariant = (status?: string): "success" | "secondary" | "warning" | "destructive" | "default" => {
   switch (status) {
+    case "assigned":
+      return "default";
     case "active":
       return "success";
     case "paused":
@@ -173,27 +179,13 @@ const getStatusVariant = (status?: string): "success" | "secondary" | "warning" 
   }
 };
 
-const getStatusLabel = (status?: string): string => {
-  switch (status) {
-    case "active":
-      return "Aktywny";
-    case "paused":
-      return "Wstrzymany";
-    case "completed":
-      return "Ukończony";
-    case "cancelled":
-      return "Anulowany";
-    default:
-      return status || "—";
-  }
-};
-
 export function PatientAssignmentCard({
   assignment,
   patientId,
   onEditSchedule,
   onEditExercise,
   onAddExercise,
+  onGeneratePDF,
   onRefresh,
 }: PatientAssignmentCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -332,9 +324,9 @@ export function PatientAssignmentCard({
 
               {/* Set thumbnail */}
               <div className="h-12 w-12 rounded-lg overflow-hidden shrink-0 bg-surface-light">
-                {exercises[0]?.exercise?.imageUrl || exercises[0]?.exercise?.images?.[0] ? (
+                {getMediaUrl(exercises[0]?.exercise?.imageUrl || exercises[0]?.exercise?.images?.[0]) ? (
                   <img
-                    src={exercises[0].exercise.imageUrl || exercises[0].exercise.images?.[0]}
+                    src={getMediaUrl(exercises[0]?.exercise?.imageUrl || exercises[0]?.exercise?.images?.[0]) || ""}
                     alt=""
                     className="h-full w-full object-cover"
                   />
@@ -350,7 +342,7 @@ export function PatientAssignmentCard({
                     {exerciseSet?.name || "Nieznany zestaw"}
                   </p>
                   <Badge variant={getStatusVariant(assignment.status)} className="text-[10px] shrink-0">
-                    {getStatusLabel(assignment.status)}
+                    {translateAssignmentStatus(assignment.status as any)}
                   </Badge>
                 </div>
                 <div className="flex items-center gap-3 mt-1 text-sm text-muted-foreground">
@@ -380,6 +372,11 @@ export function PatientAssignmentCard({
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => onGeneratePDF?.(assignment)}>
+                      <FileDown className="mr-2 h-4 w-4" />
+                      Pobierz PDF
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
                     <DropdownMenuItem onClick={() => onEditSchedule?.(assignment)}>
                       <Calendar className="mr-2 h-4 w-4" />
                       Edytuj harmonogram
@@ -475,7 +472,7 @@ export function PatientAssignmentCard({
                     .sort((a, b) => (a.order || 0) - (b.order || 0))
                     .map((mapping) => {
                       const params = getEffectiveParams(mapping);
-                      const imageUrl = mapping.exercise?.imageUrl || mapping.exercise?.images?.[0];
+                      const imageUrl = getMediaUrl(mapping.exercise?.imageUrl || mapping.exercise?.images?.[0]);
                       const hasOverride = exerciseOverrides[mapping.id] && (
                         exerciseOverrides[mapping.id].sets !== undefined ||
                         exerciseOverrides[mapping.id].reps !== undefined ||
@@ -607,6 +604,9 @@ export function PatientAssignmentCard({
     </>
   );
 }
+
+
+
 
 
 

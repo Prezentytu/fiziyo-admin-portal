@@ -10,6 +10,7 @@ export { PatientAssignmentCard } from "./PatientAssignmentCard";
 export type { PatientAssignment, ExerciseMapping, ExerciseOverride, Frequency } from "./PatientAssignmentCard";
 export { EditAssignmentScheduleDialog } from "./EditAssignmentScheduleDialog";
 export { EditExerciseOverrideDialog } from "./EditExerciseOverrideDialog";
+export { PatientNotes } from "./PatientNotes";
 
 
 

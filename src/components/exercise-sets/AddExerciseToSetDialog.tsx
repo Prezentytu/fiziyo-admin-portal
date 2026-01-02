@@ -29,6 +29,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { ImagePlaceholder } from "@/components/shared/ImagePlaceholder";
+import { getMediaUrl } from "@/utils/mediaUrl";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { cn } from "@/lib/utils";
 
@@ -248,7 +249,7 @@ export function AddExerciseToSetDialog({
   };
 
   const getExerciseImage = (exercise: Exercise) => {
-    return exercise.imageUrl || exercise.images?.[0];
+    return getMediaUrl(exercise.imageUrl || exercise.images?.[0]);
   };
 
   return (

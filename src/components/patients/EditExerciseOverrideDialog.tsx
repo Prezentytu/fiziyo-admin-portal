@@ -16,6 +16,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ImagePlaceholder } from '@/components/shared/ImagePlaceholder';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
+import { getMediaUrl } from '@/utils/mediaUrl';
 
 import { UPDATE_PATIENT_EXERCISE_OVERRIDES_MUTATION } from '@/graphql/mutations/exercises.mutations';
 import { GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY } from '@/graphql/queries/patientAssignments.queries';
@@ -251,7 +252,7 @@ function EditExerciseOverrideDialogContent({
     setNotes(mapping.notes ?? '');
   };
 
-  const imageUrl = exercise?.imageUrl || exercise?.images?.[0];
+  const imageUrl = getMediaUrl(exercise?.imageUrl || exercise?.images?.[0]);
   const setName = assignment.exerciseSet?.name || 'Nieznany zestaw';
 
   return (
@@ -478,3 +479,6 @@ function EditExerciseOverrideDialogContent({
     </DialogContent>
   );
 }
+
+
+

@@ -122,7 +122,7 @@ const PhoneInput = React.forwardRef<HTMLInputElement, PhoneInputProps>(
         {/* Prefiks kraju */}
         <div
           className={cn(
-            "flex items-center justify-center rounded-l-xl border border-r-0 border-border bg-surface px-3 text-sm font-medium text-muted-foreground select-none",
+            "flex h-9 items-center justify-center rounded-l-md border border-r-0 border-border bg-surface px-3 text-sm font-medium text-muted-foreground select-none",
             props.disabled && "cursor-not-allowed opacity-50"
           )}
         >
@@ -136,7 +136,7 @@ const PhoneInput = React.forwardRef<HTMLInputElement, PhoneInputProps>(
           inputMode="numeric"
           autoComplete="tel-national"
           className={cn(
-            "flex w-full rounded-r-xl border border-border bg-input px-3 py-1 text-sm shadow-sm transition-colors",
+            "flex h-9 w-full rounded-r-md border border-border bg-input px-3 py-1 text-sm shadow-sm transition-colors",
             "placeholder:text-muted-foreground",
             "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
             "disabled:cursor-not-allowed disabled:opacity-50",
@@ -157,6 +157,9 @@ const PhoneInput = React.forwardRef<HTMLInputElement, PhoneInputProps>(
 PhoneInput.displayName = "PhoneInput";
 
 export { PhoneInput };
+
+
+
 
 
 

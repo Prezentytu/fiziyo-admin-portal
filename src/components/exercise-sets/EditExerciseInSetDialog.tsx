@@ -15,6 +15,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ImagePlaceholder } from '@/components/shared/ImagePlaceholder';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
+import { getMediaUrl } from '@/utils/mediaUrl';
 
 import { UPDATE_EXERCISE_IN_SET_MUTATION } from '@/graphql/mutations/exercises.mutations';
 import { GET_EXERCISE_SET_WITH_ASSIGNMENTS_QUERY } from '@/graphql/queries/exerciseSets.queries';
@@ -189,7 +190,7 @@ function EditExerciseInSetDialogContent({
   };
 
   const exercise = exerciseMapping.exercise;
-  const imageUrl = exercise?.imageUrl || exercise?.images?.[0];
+  const imageUrl = getMediaUrl(exercise?.imageUrl || exercise?.images?.[0]);
 
   // Tłumaczenie typów na polski
   const translateType = (type?: string) => {

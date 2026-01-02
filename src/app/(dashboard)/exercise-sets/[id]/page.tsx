@@ -22,11 +22,13 @@ import {
   Play,
   Wrench,
   UserPlus,
+  FileDown,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import Link from 'next/link';
 
 import { cn } from '@/lib/utils';
+import { translateAssignmentStatus } from '@/utils/statusUtils';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -43,9 +45,11 @@ import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { SetDialog } from '@/components/exercise-sets/SetDialog';
 import { AddExerciseToSetDialog } from '@/components/exercise-sets/AddExerciseToSetDialog';
 import { EditExerciseInSetDialog } from '@/components/exercise-sets/EditExerciseInSetDialog';
+import { GeneratePDFDialog } from '@/components/exercise-sets/GeneratePDFDialog';
 import { AssignmentWizard } from '@/components/assignment/AssignmentWizard';
 import type { ExerciseSet as AssignmentExerciseSet } from '@/components/assignment/types';
 import { ImagePlaceholder } from '@/components/shared/ImagePlaceholder';
+import { getMediaUrl } from '@/utils/mediaUrl';
 
 import {
   GET_EXERCISE_SET_WITH_ASSIGNMENTS_QUERY,
@@ -144,6 +148,7 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isAddExerciseDialogOpen, setIsAddExerciseDialogOpen] = useState(false);
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
+  const [isPDFDialogOpen, setIsPDFDialogOpen] = useState(false);
   const [editingExercise, setEditingExercise] = useState<ExerciseMapping | null>(null);
   const [removingExerciseId, setRemovingExerciseId] = useState<string | null>(null);
   const [removingAssignment, setRemovingAssignment] = useState<PatientAssignmentInSet | null>(null);
@@ -255,16 +260,23 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
 
   // Helper function for status display
   const getStatusInfo = (status?: string) => {
+    const statusValue = status as any;
+    const label = translateAssignmentStatus(statusValue);
+    let variant: 'success' | 'warning' | 'secondary' = 'secondary';
+
     switch (status) {
       case 'active':
-        return { label: 'Aktywny', variant: 'success' as const };
+        variant = 'success';
+        break;
       case 'paused':
-        return { label: 'Wstrzymany', variant: 'warning' as const };
+        variant = 'warning';
+        break;
       case 'completed':
-        return { label: 'Ukończony', variant: 'secondary' as const };
-      default:
-        return { label: status || '—', variant: 'secondary' as const };
+        variant = 'secondary';
+        break;
     }
+
+    return { label, variant };
   };
 
   // Helper function for frequency display
@@ -328,6 +340,11 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => setIsPDFDialogOpen(true)}>
+              <FileDown className="mr-2 h-4 w-4" />
+              Pobierz PDF
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
             <DropdownMenuItem onClick={() => setIsEditDialogOpen(true)}>
               <Pencil className="mr-2 h-4 w-4" />
               Edytuj zestaw
@@ -443,7 +460,7 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
             {[...exercises]
               .sort((a, b) => (a.order || 0) - (b.order || 0))
               .map((mapping, index) => {
-                const imageUrl = mapping.exercise?.imageUrl || mapping.exercise?.images?.[0];
+                const imageUrl = getMediaUrl(mapping.exercise?.imageUrl || mapping.exercise?.images?.[0]);
                 const hasParams = mapping.sets || mapping.reps || mapping.duration;
                 return (
                   <div
@@ -791,6 +808,16 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
         onConfirm={handleRemoveAssignment}
         isLoading={removingAssignmentLoading}
       />
+
+      {/* Generate PDF Dialog */}
+      {organizationId && exerciseSet && (
+        <GeneratePDFDialog
+          open={isPDFDialogOpen}
+          onOpenChange={setIsPDFDialogOpen}
+          exerciseSet={exerciseSet}
+          organizationId={organizationId}
+        />
+      )}
     </div>
   );
 }
