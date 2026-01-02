@@ -1432,16 +1432,16 @@ export function CreateSetWizard({
                   type="button"
                   onClick={handleStartAIMode}
                   className={cn(
-                    'group relative overflow-hidden rounded-xl sm:rounded-2xl p-2.5 sm:p-4 md:p-5 text-left transition-all duration-300 shrink-0',
+                    'group relative overflow-hidden rounded-xl sm:rounded-2xl p-2.5 sm:p-4 md:p-5 text-left transition-all duration-300 shrink-0 cursor-pointer',
                     'bg-gradient-to-br from-violet-500 to-purple-600',
-                    'hover:shadow-xl hover:shadow-violet-500/20 hover:scale-[1.02]'
+                    'hover:shadow-lg hover:shadow-violet-500/15'
                   )}
                 >
-                  <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                  <div className="absolute -top-20 -right-20 w-40 h-40 bg-white/10 rounded-full blur-3xl group-hover:bg-white/20 transition-all duration-500" />
+                  <div className="absolute inset-0 bg-gradient-to-br from-white/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                  <div className="absolute -top-20 -right-20 w-40 h-40 bg-white/5 rounded-full blur-3xl group-hover:bg-white/15 transition-all duration-500" />
 
                   <div className="relative flex items-center gap-2.5 sm:gap-3 md:gap-4">
-                    <div className="flex h-8 w-8 sm:h-10 sm:w-10 md:h-12 md:w-12 items-center justify-center rounded-lg sm:rounded-xl bg-white/20 backdrop-blur-sm shrink-0 group-hover:scale-110 transition-transform duration-300">
+                    <div className="flex h-8 w-8 sm:h-10 sm:w-10 md:h-12 md:w-12 items-center justify-center rounded-lg sm:rounded-xl bg-white/20 backdrop-blur-sm shrink-0 group-hover:bg-white/30 transition-all duration-300">
                       <Sparkles className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 text-white" />
                     </div>
                     <div className="flex-1 min-w-0">
