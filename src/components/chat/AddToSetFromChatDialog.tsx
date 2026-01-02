@@ -226,7 +226,8 @@ export function AddToSetFromChatDialog({
         },
       });
 
-      const newSetId = result.data?.createExerciseSet?.id;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const newSetId = (result.data as any)?.createExerciseSet?.id;
       if (!newSetId) throw new Error("Failed to create set");
 
       await addExerciseToSet({
