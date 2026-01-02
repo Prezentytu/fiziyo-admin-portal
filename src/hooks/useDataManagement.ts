@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useReducer, useCallback, useSyncExternalStore } from "react";
 import { useMutation } from "@apollo/client/react";
 import { toast } from "sonner";
 import {
@@ -28,6 +28,14 @@ interface ClearResult {
   errorMessage?: string;
 }
 
+interface CreateExampleSetsResponse {
+  createExampleExerciseSets: ImportResult;
+}
+
+interface ClearAllDataResponse {
+  clearAllData: ClearResult;
+}
+
 interface UseDataManagementOptions {
   organizationId: string | undefined;
   onImportSuccess?: () => void;
@@ -38,27 +46,50 @@ interface UseDataManagementOptions {
  * Hook do zarządzania danymi organizacji - import przykładowych zestawów i usuwanie danych.
  * Odpowiednik logiki z mobile app resources-manager.
  */
-export function useDataManagement({
-  organizationId,
-  onImportSuccess,
-  onClearSuccess,
-}: UseDataManagementOptions) {
-  const [hasImportedExamples, setHasImportedExamples] = useState(false);
+// Custom subscribe function for localStorage changes
+function subscribeToStorage(callback: () => void) {
+  globalThis.addEventListener("storage", callback);
+  return () => globalThis.removeEventListener("storage", callback);
+}
 
+export function useDataManagement({ organizationId, onImportSuccess, onClearSuccess }: UseDataManagementOptions) {
   // Klucz localStorage dla danej organizacji
   const EXAMPLE_SETS_IMPORTED_KEY = `exampleSetsImported_${organizationId}`;
 
-  // Sprawdź przy montowaniu czy przykłady zostały już zaimportowane
-  useEffect(() => {
-    if (!organizationId) return;
+  // Force re-render trigger for local updates (since storage event only fires for other tabs)
+  const [, forceUpdate] = useReducer((x: number) => x + 1, 0);
 
-    try {
-      const imported = localStorage.getItem(EXAMPLE_SETS_IMPORTED_KEY);
-      setHasImportedExamples(imported === "true");
-    } catch {
-      console.error("Błąd podczas sprawdzania flagi importu");
-    }
-  }, [organizationId, EXAMPLE_SETS_IMPORTED_KEY]);
+  // Read from localStorage using useSyncExternalStore
+  const hasImportedExamples = useSyncExternalStore(
+    subscribeToStorage,
+    () => {
+      if (!organizationId || globalThis.window === undefined) return false;
+      try {
+        return localStorage.getItem(EXAMPLE_SETS_IMPORTED_KEY) === "true";
+      } catch {
+        return false;
+      }
+    },
+    () => false // Server snapshot
+  );
+
+  // Helper to update localStorage and trigger re-render
+  const setHasImportedExamples = useCallback(
+    (value: boolean) => {
+      if (!organizationId) return;
+      try {
+        if (value) {
+          localStorage.setItem(EXAMPLE_SETS_IMPORTED_KEY, "true");
+        } else {
+          localStorage.removeItem(EXAMPLE_SETS_IMPORTED_KEY);
+        }
+        forceUpdate();
+      } catch {
+        console.error("Błąd podczas zapisu flagi importu");
+      }
+    },
+    [organizationId, EXAMPLE_SETS_IMPORTED_KEY]
+  );
 
   // Funkcja pomocnicza do tworzenia listy queries do odświeżenia
   const getRefetchQueries = useCallback(() => {
@@ -72,14 +103,12 @@ export function useDataManagement({
   }, [organizationId]);
 
   // Mutacja importu przykładowych zestawów
-  const [createExampleSetsMutation, { loading: isImporting }] = useMutation(
+  const [createExampleSetsMutation, { loading: isImporting }] = useMutation<CreateExampleSetsResponse>(
     CREATE_EXAMPLE_EXERCISE_SETS_MUTATION
   );
 
   // Mutacja usuwania wszystkich danych
-  const [clearAllDataMutation, { loading: isClearing }] = useMutation(
-    CLEAR_ALL_DATA_MUTATION
-  );
+  const [clearAllDataMutation, { loading: isClearing }] = useMutation<ClearAllDataResponse>(CLEAR_ALL_DATA_MUTATION);
 
   /**
    * Importuje przykładowe zestawy ćwiczeń z backendu
@@ -102,11 +131,10 @@ export function useDataManagement({
         awaitRefetchQueries: true,
       });
 
-      const result = data?.createExampleExerciseSets as ImportResult | undefined;
+      const result = data?.createExampleExerciseSets;
 
       if (result?.success) {
         // Zapisz flagę że zestawy zostały zaimportowane
-        localStorage.setItem(EXAMPLE_SETS_IMPORTED_KEY, "true");
         setHasImportedExamples(true);
 
         toast.success(
@@ -129,7 +157,7 @@ export function useDataManagement({
     hasImportedExamples,
     createExampleSetsMutation,
     getRefetchQueries,
-    EXAMPLE_SETS_IMPORTED_KEY,
+    setHasImportedExamples,
     onImportSuccess,
   ]);
 
@@ -159,20 +187,19 @@ export function useDataManagement({
           awaitRefetchQueries: true,
         });
 
-        const result = data?.clearAllData as ClearResult | undefined;
+        const result = data?.clearAllData;
 
         if (result?.success) {
           // Reset flagi importu - pozwól na ponowny import
-          localStorage.removeItem(EXAMPLE_SETS_IMPORTED_KEY);
           setHasImportedExamples(false);
 
           // Parsuj usunięte liczniki
-          const counts = Object.fromEntries(
-            result.deletedCounts.map((pair) => [pair.key, pair.value])
-          );
+          const counts = Object.fromEntries(result.deletedCounts.map((pair) => [pair.key, pair.value]));
 
           toast.success(
-            `Usunięto: ${counts.Exercises || 0} ćwiczeń, ${counts.ExerciseSets || 0} zestawów, ${counts.ExerciseTags || 0} tagów, ${counts.TagCategories || 0} kategorii`
+            `Usunięto: ${counts.Exercises || 0} ćwiczeń, ${counts.ExerciseSets || 0} zestawów, ${
+              counts.ExerciseTags || 0
+            } tagów, ${counts.TagCategories || 0} kategorii`
           );
 
           onClearSuccess?.();
@@ -188,16 +215,15 @@ export function useDataManagement({
         return false;
       }
     },
-    [organizationId, clearAllDataMutation, getRefetchQueries, EXAMPLE_SETS_IMPORTED_KEY, onClearSuccess]
+    [organizationId, clearAllDataMutation, getRefetchQueries, setHasImportedExamples, onClearSuccess]
   );
 
   /**
    * Resetuje flagę importu (do testów / debugowania)
    */
   const resetImportFlag = useCallback(() => {
-    localStorage.removeItem(EXAMPLE_SETS_IMPORTED_KEY);
     setHasImportedExamples(false);
-  }, [EXAMPLE_SETS_IMPORTED_KEY]);
+  }, [setHasImportedExamples]);
 
   return {
     // Stan
@@ -211,4 +237,3 @@ export function useDataManagement({
     resetImportFlag,
   };
 }
-
