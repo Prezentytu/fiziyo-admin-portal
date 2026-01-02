@@ -29,6 +29,10 @@ import {
   Copy,
   Users,
   AlignLeft,
+  Timer,
+  MessageSquare,
+  ArrowLeftRight,
+  Pencil,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
@@ -114,6 +118,12 @@ interface ExerciseParams {
   duration: number;
   restSets: number;
   restReps: number;
+  preparationTime: number;
+  executionTime: number;
+  notes: string;
+  exerciseSide: string;
+  customName: string;
+  customDescription: string;
 }
 
 interface CreateSetWizardProps {
@@ -266,7 +276,68 @@ function ExercisePickerItem({
   );
 }
 
-// Sortable exercise card component
+// Param control component for expanded view
+function ParamControl({
+  label,
+  value,
+  onChange,
+  step = 1,
+  min = 0,
+  icon,
+}: {
+  label: string;
+  value: number;
+  onChange: (value: number) => void;
+  step?: number;
+  min?: number;
+  icon?: React.ReactNode;
+}) {
+  return (
+    <div>
+      <label className="text-xs text-muted-foreground block mb-1.5 font-medium flex items-center gap-1">
+        {icon}
+        {label}
+      </label>
+      <div className="flex items-center">
+        <Button
+          type="button"
+          variant="outline"
+          size="icon"
+          className="h-8 w-8 rounded-r-none shrink-0"
+          onClick={() => onChange(Math.max(min, value - step))}
+        >
+          <Minus className="h-3.5 w-3.5" />
+        </Button>
+        <Input
+          type="number"
+          value={value}
+          onChange={(e) => onChange(Number.parseInt(e.target.value) || 0)}
+          className="h-8 flex-1 text-center text-sm font-semibold rounded-none border-x-0 px-0 min-w-0"
+        />
+        <Button
+          type="button"
+          variant="outline"
+          size="icon"
+          className="h-8 w-8 rounded-l-none shrink-0"
+          onClick={() => onChange(value + step)}
+        >
+          <Plus className="h-3.5 w-3.5" />
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+// Exercise side options
+const EXERCISE_SIDE_OPTIONS = [
+  { value: 'both', label: 'Obie strony' },
+  { value: 'left', label: 'Lewa' },
+  { value: 'right', label: 'Prawa' },
+  { value: 'alternating', label: 'Naprzemiennie' },
+  { value: 'none', label: 'Nie dotyczy' },
+];
+
+// Sortable exercise card component with expandable params
 function SortableExerciseCard({
   exercise,
   index,
@@ -278,10 +349,11 @@ function SortableExerciseCard({
   exercise: Exercise;
   index: number;
   params: ExerciseParams;
-  onUpdateParams: (field: keyof ExerciseParams, value: number) => void;
+  onUpdateParams: (field: keyof ExerciseParams, value: number | string) => void;
   onRemove: () => void;
   onPreview: () => void;
 }) {
+  const [isExpanded, setIsExpanded] = useState(false);
   const [showMoreOptions, setShowMoreOptions] = useState(false);
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: exercise.id,
@@ -295,17 +367,21 @@ function SortableExerciseCard({
   const imageUrl = getMediaUrl(exercise.imageUrl || exercise.images?.[0]);
   const isTimeType = exercise.type === 'time' || exercise.type === 'hold';
 
+  // Format params summary for chips
+  const paramsSummary = isTimeType ? `${params.sets}×${params.duration}s` : `${params.sets}×${params.reps}`;
+  const sideLabel = EXERCISE_SIDE_OPTIONS.find((o) => o.value === params.exerciseSide)?.label;
+
   return (
     <div
       ref={setNodeRef}
       style={style}
       className={cn(
-        'rounded-xl border border-border bg-background p-3 transition-all',
+        'rounded-xl border border-border bg-background overflow-hidden transition-all',
         isDragging && 'shadow-xl shadow-primary/20 opacity-90 scale-[1.02] z-50'
       )}
     >
-      {/* Header */}
-      <div className="flex items-center gap-2 mb-3">
+      {/* Header - always visible */}
+      <div className="p-3 flex items-center gap-2">
         <button
           {...attributes}
           {...listeners}
@@ -343,167 +419,244 @@ function SortableExerciseCard({
         </Button>
       </div>
 
-      {/* Main params - compact grid */}
-      <div className="grid grid-cols-3 gap-3">
-        {/* Sets */}
-        <div>
-          <label className="text-xs text-muted-foreground block mb-1.5 font-medium">Serie</label>
-          <div className="flex items-center">
-            <Button
+      {/* Compact view - param chips */}
+      {!isExpanded && (
+        <div className="px-3 pb-3">
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* Combined sets x reps/duration chip */}
+            <button
               type="button"
-              variant="outline"
-              size="icon"
-              className="h-8 w-8 rounded-r-none shrink-0"
-              onClick={() => onUpdateParams('sets', Math.max(0, params.sets - 1))}
+              onClick={() => setIsExpanded(true)}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-primary/10 text-primary text-xs font-medium hover:bg-primary/20 transition-colors"
             >
-              <Minus className="h-3.5 w-3.5" />
-            </Button>
-            <Input
-              type="number"
-              value={params.sets}
-              onChange={(e) => onUpdateParams('sets', parseInt(e.target.value) || 0)}
-              className="h-8 w-12 text-center text-sm font-semibold rounded-none border-x-0 px-0"
-            />
-            <Button
-              type="button"
-              variant="outline"
-              size="icon"
-              className="h-8 w-8 rounded-l-none shrink-0"
-              onClick={() => onUpdateParams('sets', params.sets + 1)}
-            >
-              <Plus className="h-3.5 w-3.5" />
-            </Button>
-          </div>
-        </div>
+              <Dumbbell className="h-3 w-3" />
+              {paramsSummary}
+            </button>
 
-        {/* Reps or Duration */}
-        <div>
-          <label className="text-xs text-muted-foreground block mb-1.5 font-medium flex items-center gap-1">
-            {isTimeType ? (
-              <>
-                <Clock className="h-3 w-3" /> Czas (s)
-              </>
-            ) : (
-              'Powtórzenia'
+            {/* Rest chip */}
+            <button
+              type="button"
+              onClick={() => setIsExpanded(true)}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-surface-light text-muted-foreground text-xs font-medium hover:bg-surface hover:text-foreground transition-colors"
+            >
+              <Clock className="h-3 w-3" />
+              {params.restSets}s
+            </button>
+
+            {/* Side chip - only if not 'both' */}
+            {params.exerciseSide && params.exerciseSide !== 'both' && (
+              <button
+                type="button"
+                onClick={() => setIsExpanded(true)}
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-surface-light text-muted-foreground text-xs font-medium hover:bg-surface hover:text-foreground transition-colors"
+              >
+                <ArrowLeftRight className="h-3 w-3" />
+                {sideLabel}
+              </button>
             )}
-          </label>
-          <div className="flex items-center">
-            <Button
+
+            {/* Custom name indicator */}
+            {params.customName && (
+              <span
+                className="inline-flex items-center gap-1 px-2 py-1 text-xs text-muted-foreground"
+                title={params.customName}
+              >
+                <Pencil className="h-3 w-3" />
+              </span>
+            )}
+
+            {/* Notes indicator */}
+            {params.notes && (
+              <span
+                className="inline-flex items-center gap-1 px-2 py-1 text-xs text-muted-foreground"
+                title="Notatki dodane"
+              >
+                <MessageSquare className="h-3 w-3" />
+              </span>
+            )}
+
+            {/* Edit button */}
+            <button
               type="button"
-              variant="outline"
-              size="icon"
-              className="h-8 w-8 rounded-r-none shrink-0"
-              onClick={() =>
-                onUpdateParams(
-                  isTimeType ? 'duration' : 'reps',
-                  Math.max(0, isTimeType ? params.duration - 5 : params.reps - 1)
-                )
-              }
+              onClick={() => setIsExpanded(true)}
+              className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs text-muted-foreground hover:text-foreground hover:bg-surface-light transition-colors ml-auto"
             >
-              <Minus className="h-3.5 w-3.5" />
-            </Button>
-            <Input
-              type="number"
-              value={isTimeType ? params.duration : params.reps}
-              onChange={(e) => onUpdateParams(isTimeType ? 'duration' : 'reps', parseInt(e.target.value) || 0)}
-              className="h-8 w-12 text-center text-sm font-semibold rounded-none border-x-0 px-0"
-            />
-            <Button
-              type="button"
-              variant="outline"
-              size="icon"
-              className="h-8 w-8 rounded-l-none shrink-0"
-              onClick={() =>
-                onUpdateParams(isTimeType ? 'duration' : 'reps', isTimeType ? params.duration + 5 : params.reps + 1)
-              }
-            >
-              <Plus className="h-3.5 w-3.5" />
-            </Button>
+              <Sliders className="h-3 w-3" />
+              Edytuj
+            </button>
           </div>
         </div>
+      )}
 
-        {/* Rest between sets */}
-        <div>
-          <label className="text-xs text-muted-foreground block mb-1.5 font-medium">Przerwa (s)</label>
-          <div className="flex items-center">
-            <Button
-              type="button"
-              variant="outline"
-              size="icon"
-              className="h-8 w-8 rounded-r-none shrink-0"
-              onClick={() => onUpdateParams('restSets', Math.max(0, params.restSets - 10))}
-            >
-              <Minus className="h-3.5 w-3.5" />
-            </Button>
-            <Input
-              type="number"
-              value={params.restSets}
-              onChange={(e) => onUpdateParams('restSets', parseInt(e.target.value) || 0)}
-              className="h-8 w-12 text-center text-sm font-semibold rounded-none border-x-0 px-0"
-            />
-            <Button
-              type="button"
-              variant="outline"
-              size="icon"
-              className="h-8 w-8 rounded-l-none shrink-0"
-              onClick={() => onUpdateParams('restSets', params.restSets + 10)}
-            >
-              <Plus className="h-3.5 w-3.5" />
-            </Button>
-          </div>
-        </div>
-      </div>
-
-      {/* More options collapsible */}
-      <Collapsible open={showMoreOptions} onOpenChange={setShowMoreOptions}>
-        <CollapsibleTrigger asChild>
-          <button
-            type="button"
-            className="w-full flex items-center justify-center gap-1 mt-2 py-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
-          >
-            {showMoreOptions ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
-            {showMoreOptions ? 'Mniej opcji' : 'Więcej opcji'}
-          </button>
-        </CollapsibleTrigger>
-        <CollapsibleContent>
-          <div className="pt-3 border-t border-border/50 mt-2">
-            <div className="grid grid-cols-2 gap-3">
-              {/* Rest between reps */}
-              <div>
-                <label className="text-xs text-muted-foreground block mb-1.5 font-medium">
-                  Przerwa między powt. (s)
-                </label>
-                <div className="flex items-center">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon"
-                    className="h-8 w-8 rounded-r-none shrink-0"
-                    onClick={() => onUpdateParams('restReps', Math.max(0, params.restReps - 1))}
-                  >
-                    <Minus className="h-3.5 w-3.5" />
-                  </Button>
-                  <Input
-                    type="number"
-                    value={params.restReps}
-                    onChange={(e) => onUpdateParams('restReps', parseInt(e.target.value) || 0)}
-                    className="h-8 flex-1 text-center text-sm font-semibold rounded-none border-x-0 px-0"
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon"
-                    className="h-8 w-8 rounded-l-none shrink-0"
-                    onClick={() => onUpdateParams('restReps', params.restReps + 1)}
-                  >
-                    <Plus className="h-3 w-3" />
-                  </Button>
+      {/* Expanded view - full param controls */}
+      {isExpanded && (
+        <div className="px-3 pb-3 border-t border-border/50">
+          <div className="pt-3 space-y-4">
+            {/* Custom name and description - Personalization */}
+            <Collapsible>
+              <CollapsibleTrigger asChild>
+                <button
+                  type="button"
+                  className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors w-full justify-between py-1"
+                >
+                  <span className="flex items-center gap-1">
+                    <Pencil className="h-3 w-3" />
+                    Personalizacja nazwy i opisu
+                    {(params.customName || params.customDescription) && <span className="ml-1 text-primary">•</span>}
+                  </span>
+                  <ChevronDown className="h-3 w-3" />
+                </button>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <div className="pt-2 space-y-3">
+                  <div>
+                    <label
+                      htmlFor={`customName-${exercise.id}`}
+                      className="text-xs text-muted-foreground block mb-1.5 font-medium"
+                    >
+                      Własna nazwa (opcjonalne)
+                    </label>
+                    <Input
+                      id={`customName-${exercise.id}`}
+                      value={params.customName}
+                      onChange={(e) => onUpdateParams('customName', e.target.value)}
+                      placeholder={exercise.name}
+                      className="h-8 text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label
+                      htmlFor={`customDesc-${exercise.id}`}
+                      className="text-xs text-muted-foreground block mb-1.5 font-medium"
+                    >
+                      Własny opis (opcjonalne)
+                    </label>
+                    <Textarea
+                      id={`customDesc-${exercise.id}`}
+                      value={params.customDescription}
+                      onChange={(e) => onUpdateParams('customDescription', e.target.value)}
+                      placeholder="Nadpisz opis ćwiczenia dla tego zestawu..."
+                      className="min-h-[50px] text-sm resize-none"
+                    />
+                  </div>
                 </div>
+              </CollapsibleContent>
+            </Collapsible>
+
+            {/* Main params - 2 column grid */}
+            <div className="grid grid-cols-2 gap-3">
+              <ParamControl
+                label="Serie"
+                value={params.sets}
+                onChange={(v) => onUpdateParams('sets', v)}
+                step={1}
+                min={1}
+              />
+              <ParamControl
+                label={isTimeType ? 'Czas (s)' : 'Powtórzenia'}
+                value={isTimeType ? params.duration : params.reps}
+                onChange={(v) => onUpdateParams(isTimeType ? 'duration' : 'reps', v)}
+                step={isTimeType ? 5 : 1}
+                min={1}
+                icon={isTimeType ? <Clock className="h-3 w-3" /> : undefined}
+              />
+            </div>
+
+            {/* Rest and side - 2 column grid */}
+            <div className="grid grid-cols-2 gap-3">
+              <ParamControl
+                label="Przerwa (s)"
+                value={params.restSets}
+                onChange={(v) => onUpdateParams('restSets', v)}
+                step={10}
+                min={0}
+                icon={<Timer className="h-3 w-3" />}
+              />
+              <div>
+                <label className="text-xs text-muted-foreground block mb-1.5 font-medium flex items-center gap-1">
+                  <ArrowLeftRight className="h-3 w-3" />
+                  Strona
+                </label>
+                <select
+                  value={params.exerciseSide}
+                  onChange={(e) => onUpdateParams('exerciseSide', e.target.value)}
+                  className="h-8 w-full rounded-md border border-border bg-background px-2 text-sm"
+                >
+                  {EXERCISE_SIDE_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
+
+            {/* Notes */}
+            <div>
+              <label className="text-xs text-muted-foreground block mb-1.5 font-medium flex items-center gap-1">
+                <MessageSquare className="h-3 w-3" />
+                Notatki
+              </label>
+              <Textarea
+                value={params.notes}
+                onChange={(e) => onUpdateParams('notes', e.target.value)}
+                placeholder="Uwagi do ćwiczenia..."
+                className="min-h-[60px] text-sm resize-none"
+              />
+            </div>
+
+            {/* More options collapsible */}
+            <Collapsible open={showMoreOptions} onOpenChange={setShowMoreOptions}>
+              <CollapsibleTrigger asChild>
+                <button
+                  type="button"
+                  className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  {showMoreOptions ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                  {showMoreOptions ? 'Mniej opcji' : 'Więcej opcji (czasy, przerwa między powt.)'}
+                </button>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <div className="pt-3 mt-2 border-t border-border/30 space-y-3">
+                  <div className="grid grid-cols-2 gap-3">
+                    <ParamControl
+                      label="Czas przygotowania (s)"
+                      value={params.preparationTime}
+                      onChange={(v) => onUpdateParams('preparationTime', v)}
+                      step={5}
+                      min={0}
+                    />
+                    <ParamControl
+                      label="Czas wykonania (s)"
+                      value={params.executionTime}
+                      onChange={(v) => onUpdateParams('executionTime', v)}
+                      step={5}
+                      min={0}
+                    />
+                  </div>
+                  <ParamControl
+                    label="Przerwa między powtórzeniami (s)"
+                    value={params.restReps}
+                    onChange={(v) => onUpdateParams('restReps', v)}
+                    step={1}
+                    min={0}
+                  />
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+
+            {/* Collapse button */}
+            <button
+              type="button"
+              onClick={() => setIsExpanded(false)}
+              className="w-full flex items-center justify-center gap-1 py-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors rounded-lg hover:bg-surface-light"
+            >
+              <ChevronUp className="h-3 w-3" />
+              Zwiń
+            </button>
           </div>
-        </CollapsibleContent>
-      </Collapsible>
+        </div>
+      )}
     </div>
   );
 }
@@ -795,29 +948,61 @@ export function CreateSetWizard({
     return result;
   }, [exercises, searchQuery, categoryFilter, getExerciseTags]);
 
+  const getDefaultParams = useCallback(
+    (exercise: Exercise): ExerciseParams => ({
+      sets: exercise.sets || 3,
+      reps: exercise.reps || 10,
+      duration: exercise.duration || 30,
+      restSets: exercise.restSets || 60,
+      restReps: exercise.restReps || 0,
+      preparationTime: 0,
+      executionTime: 0,
+      notes: '',
+      exerciseSide: exercise.exerciseSide || 'both',
+      customName: '',
+      customDescription: '',
+    }),
+    []
+  );
+
   const getExerciseParams = useCallback(
     (exercise: Exercise): ExerciseParams => {
       const saved = exerciseParams.get(exercise.id);
       if (saved) return saved;
-      return {
-        sets: exercise.sets || 3,
-        reps: exercise.reps || 10,
-        duration: exercise.duration || 30,
-        restSets: exercise.restSets || 60,
-        restReps: exercise.restReps || 0,
-      };
+      return getDefaultParams(exercise);
     },
-    [exerciseParams]
+    [exerciseParams, getDefaultParams]
   );
 
-  const updateExerciseParams = useCallback((exerciseId: string, field: keyof ExerciseParams, value: number) => {
-    setExerciseParams((prev) => {
-      const next = new Map(prev);
-      const current = next.get(exerciseId) || { sets: 3, reps: 10, duration: 30, restSets: 60, restReps: 0 };
-      next.set(exerciseId, { ...current, [field]: Math.max(0, value) });
-      return next;
-    });
-  }, []);
+  const updateExerciseParams = useCallback(
+    (exerciseId: string, field: keyof ExerciseParams, value: number | string) => {
+      setExerciseParams((prev) => {
+        const next = new Map(prev);
+        const exercise = exercises.find((e) => e.id === exerciseId);
+        const current =
+          next.get(exerciseId) ||
+          (exercise
+            ? getDefaultParams(exercise)
+            : {
+                sets: 3,
+                reps: 10,
+                duration: 30,
+                restSets: 60,
+                restReps: 0,
+                preparationTime: 0,
+                executionTime: 0,
+                notes: '',
+                exerciseSide: 'both',
+                customName: '',
+                customDescription: '',
+              });
+        const newValue = typeof value === 'number' ? Math.max(0, value) : value;
+        next.set(exerciseId, { ...current, [field]: newValue });
+        return next;
+      });
+    },
+    [exercises, getDefaultParams]
+  );
 
   const applyParamsToAll = useCallback(
     (field: keyof ExerciseParams, value: number) => {
@@ -846,13 +1031,7 @@ export function CreateSetWizard({
           if (!exerciseParams.has(exercise.id)) {
             setExerciseParams((p) => {
               const np = new Map(p);
-              np.set(exercise.id, {
-                sets: exercise.sets || 3,
-                reps: exercise.reps || 10,
-                duration: exercise.duration || 30,
-                restSets: exercise.restSets || 60,
-                restReps: exercise.restReps || 0,
-              });
+              np.set(exercise.id, getDefaultParams(exercise));
               return np;
             });
           }
@@ -860,7 +1039,7 @@ export function CreateSetWizard({
         }
       });
     },
-    [exerciseParams]
+    [exerciseParams, getDefaultParams]
   );
 
   const handleDragEnd = useCallback((event: DragEndEvent) => {
@@ -903,13 +1082,7 @@ export function CreateSetWizard({
           if (!next.has(id)) {
             const exercise = exercises.find((e) => e.id === id);
             if (exercise) {
-              next.set(id, {
-                sets: exercise.sets || 3,
-                reps: exercise.reps || 10,
-                duration: exercise.duration || 30,
-                restSets: exercise.restSets || 60,
-                restReps: exercise.restReps || 0,
-              });
+              next.set(id, getDefaultParams(exercise));
             }
           }
         }
@@ -921,7 +1094,7 @@ export function CreateSetWizard({
       setCreationMode('manual');
       toast.success(`Dodano ${exerciseIds.length} ćwiczeń z AI`);
     },
-    [exercises]
+    [exercises, getDefaultParams]
   );
 
   // Start AI mode
@@ -961,6 +1134,12 @@ export function CreateSetWizard({
               duration: mapping.duration ?? mapping.exercise.duration ?? 30,
               restSets: mapping.restSets ?? mapping.exercise.restSets ?? 60,
               restReps: mapping.restReps ?? mapping.exercise.restReps ?? 0,
+              preparationTime: 0,
+              executionTime: 0,
+              notes: mapping.notes ?? '',
+              exerciseSide: mapping.exercise.exerciseSide || 'both',
+              customName: mapping.customName ?? '',
+              customDescription: mapping.customDescription ?? '',
             });
           }
         }
