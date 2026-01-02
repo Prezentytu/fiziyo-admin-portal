@@ -1,12 +1,16 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { useMutation, useApolloClient } from "@apollo/client/react";
+import { useMutation } from "@apollo/client/react";
 import { toast } from "sonner";
 import {
   CREATE_EXAMPLE_EXERCISE_SETS_MUTATION,
   CLEAR_ALL_DATA_MUTATION,
 } from "@/graphql/mutations/exercises.mutations";
+import { GET_ORGANIZATION_EXERCISES_QUERY } from "@/graphql/queries/exercises.queries";
+import { GET_ORGANIZATION_EXERCISE_SETS_QUERY } from "@/graphql/queries/exerciseSets.queries";
+import { GET_EXERCISE_TAGS_BY_ORGANIZATION_QUERY } from "@/graphql/queries/exerciseTags.queries";
+import { GET_TAG_CATEGORIES_BY_ORGANIZATION_QUERY } from "@/graphql/queries/tagCategories.queries";
 
 interface ImportResult {
   success: boolean;
@@ -39,7 +43,6 @@ export function useDataManagement({
   onImportSuccess,
   onClearSuccess,
 }: UseDataManagementOptions) {
-  const client = useApolloClient();
   const [hasImportedExamples, setHasImportedExamples] = useState(false);
 
   // Klucz localStorage dla danej organizacji
@@ -57,30 +60,25 @@ export function useDataManagement({
     }
   }, [organizationId, EXAMPLE_SETS_IMPORTED_KEY]);
 
+  // Funkcja pomocnicza do tworzenia listy queries do odświeżenia
+  const getRefetchQueries = useCallback(() => {
+    if (!organizationId) return [];
+    return [
+      { query: GET_ORGANIZATION_EXERCISE_SETS_QUERY, variables: { organizationId } },
+      { query: GET_ORGANIZATION_EXERCISES_QUERY, variables: { organizationId } },
+      { query: GET_EXERCISE_TAGS_BY_ORGANIZATION_QUERY, variables: { organizationId } },
+      { query: GET_TAG_CATEGORIES_BY_ORGANIZATION_QUERY, variables: { organizationId } },
+    ];
+  }, [organizationId]);
+
   // Mutacja importu przykładowych zestawów
   const [createExampleSetsMutation, { loading: isImporting }] = useMutation(
-    CREATE_EXAMPLE_EXERCISE_SETS_MUTATION,
-    {
-      refetchQueries: [
-        "GetOrganizationExerciseSets",
-        "GetOrganizationExercises",
-        "GetExerciseTagsByOrganization",
-        "GetTagCategoriesByOrganization",
-      ],
-    }
+    CREATE_EXAMPLE_EXERCISE_SETS_MUTATION
   );
 
   // Mutacja usuwania wszystkich danych
   const [clearAllDataMutation, { loading: isClearing }] = useMutation(
-    CLEAR_ALL_DATA_MUTATION,
-    {
-      refetchQueries: [
-        "GetOrganizationExerciseSets",
-        "GetOrganizationExercises",
-        "GetExerciseTagsByOrganization",
-        "GetTagCategoriesByOrganization",
-      ],
-    }
+    CLEAR_ALL_DATA_MUTATION
   );
 
   /**
@@ -100,6 +98,8 @@ export function useDataManagement({
     try {
       const { data } = await createExampleSetsMutation({
         variables: { organizationId },
+        refetchQueries: getRefetchQueries(),
+        awaitRefetchQueries: true,
       });
 
       const result = data?.createExampleExerciseSets as ImportResult | undefined;
@@ -108,16 +108,6 @@ export function useDataManagement({
         // Zapisz flagę że zestawy zostały zaimportowane
         localStorage.setItem(EXAMPLE_SETS_IMPORTED_KEY, "true");
         setHasImportedExamples(true);
-
-        // Odśwież cache Apollo
-        await client.refetchQueries({
-          include: [
-            "GetOrganizationExerciseSets",
-            "GetOrganizationExercises",
-            "GetExerciseTagsByOrganization",
-            "GetTagCategoriesByOrganization",
-          ],
-        });
 
         toast.success(
           `Zaimportowano: ${result.setsCount} zestawów, ${result.exercisesCount} ćwiczeń, ${result.categoriesCount} kategorii, ${result.tagsCount} tagów`
@@ -138,7 +128,7 @@ export function useDataManagement({
     organizationId,
     hasImportedExamples,
     createExampleSetsMutation,
-    client,
+    getRefetchQueries,
     EXAMPLE_SETS_IMPORTED_KEY,
     onImportSuccess,
   ]);
@@ -165,6 +155,8 @@ export function useDataManagement({
             organizationId,
             password,
           },
+          refetchQueries: getRefetchQueries(),
+          awaitRefetchQueries: true,
         });
 
         const result = data?.clearAllData as ClearResult | undefined;
@@ -173,16 +165,6 @@ export function useDataManagement({
           // Reset flagi importu - pozwól na ponowny import
           localStorage.removeItem(EXAMPLE_SETS_IMPORTED_KEY);
           setHasImportedExamples(false);
-
-          // Odśwież cache Apollo
-          await client.refetchQueries({
-            include: [
-              "GetOrganizationExerciseSets",
-              "GetOrganizationExercises",
-              "GetExerciseTagsByOrganization",
-              "GetTagCategoriesByOrganization",
-            ],
-          });
 
           // Parsuj usunięte liczniki
           const counts = Object.fromEntries(
@@ -206,7 +188,7 @@ export function useDataManagement({
         return false;
       }
     },
-    [organizationId, clearAllDataMutation, client, EXAMPLE_SETS_IMPORTED_KEY, onClearSuccess]
+    [organizationId, clearAllDataMutation, getRefetchQueries, EXAMPLE_SETS_IMPORTED_KEY, onClearSuccess]
   );
 
   /**
