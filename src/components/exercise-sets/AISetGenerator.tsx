@@ -1,18 +1,7 @@
 'use client';
 
 import { useState, useCallback, useMemo } from 'react';
-import {
-  Sparkles,
-  Loader2,
-  Check,
-  X,
-  RefreshCw,
-  Wand2,
-  AlertCircle,
-  Plus,
-  ChevronDown,
-  ChevronUp,
-} from 'lucide-react';
+import { Sparkles, Loader2, Check, X, RefreshCw, Wand2, AlertCircle, Plus, ChevronDown, ChevronUp } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
@@ -69,9 +58,21 @@ interface AISetGeneratorProps {
 
 // Prompt templates for exercise set generation
 const QUICK_PROMPTS = [
-  { id: 'acl', label: 'Rehabilitacja ACL', prompt: 'Zaproponuj zestaw ćwiczeń do rehabilitacji po rekonstrukcji ACL, faza 2' },
-  { id: 'lbp', label: 'Ból dolnego odcinka', prompt: 'Zestaw ćwiczeń na ból dolnego odcinka kręgosłupa dla osoby pracującej siedząco' },
-  { id: 'shoulder', label: 'Bark - mobilność', prompt: 'Ćwiczenia na poprawę mobilności barku i wzmocnienie rotatorów' },
+  {
+    id: 'acl',
+    label: 'Rehabilitacja ACL',
+    prompt: 'Zaproponuj zestaw ćwiczeń do rehabilitacji po rekonstrukcji ACL, faza 2',
+  },
+  {
+    id: 'lbp',
+    label: 'Ból dolnego odcinka',
+    prompt: 'Zestaw ćwiczeń na ból dolnego odcinka kręgosłupa dla osoby pracującej siedząco',
+  },
+  {
+    id: 'shoulder',
+    label: 'Bark - mobilność',
+    prompt: 'Ćwiczenia na poprawę mobilności barku i wzmocnienie rotatorów',
+  },
   { id: 'knee', label: 'Kolano - wzmocnienie', prompt: 'Ćwiczenia wzmacniające mięśnie stabilizujące kolano' },
   { id: 'core', label: 'Core - stabilizacja', prompt: 'Zestaw ćwiczeń stabilizacyjnych na core dla początkujących' },
   { id: 'posture', label: 'Korekta postawy', prompt: 'Ćwiczenia korygujące postawę przy pracy biurowej' },
@@ -80,7 +81,7 @@ const QUICK_PROMPTS = [
 // Parse AI response to extract exercises
 function parseExercisesFromResponse(response: string): ParsedExercise[] {
   const exercises: ParsedExercise[] = [];
-  
+
   // Try to parse JSON blocks if present
   const jsonMatch = response.match(/```json\s*([\s\S]*?)\s*```/);
   if (jsonMatch) {
@@ -100,7 +101,7 @@ function parseExercisesFromResponse(response: string): ParsedExercise[] {
 
   for (const line of lines) {
     const trimmed = line.trim();
-    
+
     // Match numbered exercise (e.g., "1. Unoszenie prostych nóg")
     const numberedMatch = trimmed.match(/^\d+\.\s*\*?\*?(.+?)\*?\*?\s*$/);
     if (numberedMatch) {
@@ -157,20 +158,17 @@ function parseExercisesFromResponse(response: string): ParsedExercise[] {
 }
 
 // Match AI exercises to database exercises
-function matchExercises(
-  aiExercises: ParsedExercise[],
-  dbExercises: Exercise[]
-): GeneratedExerciseMatch[] {
+function matchExercises(aiExercises: ParsedExercise[], dbExercises: Exercise[]): GeneratedExerciseMatch[] {
   return aiExercises.map((aiEx) => {
     const aiName = aiEx.name.toLowerCase().trim();
-    
+
     // Try exact match first
     let bestMatch: Exercise | null = null;
     let bestScore = 0;
 
     for (const dbEx of dbExercises) {
       const dbName = dbEx.name.toLowerCase().trim();
-      
+
       // Exact match
       if (dbName === aiName) {
         bestMatch = dbEx;
@@ -188,11 +186,11 @@ function matchExercises(
       }
 
       // Word-based matching
-      const aiWords = aiName.split(/\s+/).filter(w => w.length > 2);
-      const dbWords = dbName.split(/\s+/).filter(w => w.length > 2);
-      const matchingWords = aiWords.filter(w => dbWords.some(dw => dw.includes(w) || w.includes(dw)));
+      const aiWords = aiName.split(/\s+/).filter((w) => w.length > 2);
+      const dbWords = dbName.split(/\s+/).filter((w) => w.length > 2);
+      const matchingWords = aiWords.filter((w) => dbWords.some((dw) => dw.includes(w) || w.includes(dw)));
       const wordScore = matchingWords.length / Math.max(aiWords.length, 1);
-      
+
       if (wordScore > bestScore && wordScore > 0.3) {
         bestScore = wordScore;
         bestMatch = dbEx;
@@ -222,85 +220,94 @@ export function AISetGenerator({
   const [error, setError] = useState<string | null>(null);
 
   // Build prompt with patient context
-  const buildPrompt = useCallback((basePrompt: string) => {
-    let fullPrompt = basePrompt;
-    
-    if (patientContext) {
-      const contextParts: string[] = [];
-      if (patientContext.patientName) {
-        contextParts.push(`Pacjent: ${patientContext.patientName}`);
-      }
-      if (patientContext.diagnosis && patientContext.diagnosis.length > 0) {
-        contextParts.push(`Diagnoza: ${patientContext.diagnosis.join(', ')}`);
-      }
-      if (patientContext.painLocation) {
-        contextParts.push(`Lokalizacja bólu: ${patientContext.painLocation}`);
-      }
-      
-      if (contextParts.length > 0) {
-        fullPrompt = `${contextParts.join('. ')}.\n\n${basePrompt}`;
-      }
-    }
+  const buildPrompt = useCallback(
+    (basePrompt: string) => {
+      let fullPrompt = basePrompt;
 
-    return `Jako fizjoterapeuta, zaproponuj zestaw 5-8 ćwiczeń. Dla każdego podaj nazwę i krótki opis. Format: numerowana lista z nazwami ćwiczeń.\n\n${fullPrompt}`;
-  }, [patientContext]);
-
-  const handleGenerate = useCallback(async (customPrompt?: string) => {
-    const promptToUse = customPrompt || prompt;
-    if (!promptToUse.trim()) {
-      toast.error('Wpisz opis potrzeb pacjenta');
-      return;
-    }
-
-    setIsGenerating(true);
-    setError(null);
-    setGeneratedMatches([]);
-    setSelectedMatchIds(new Set());
-
-    try {
-      const fullPrompt = buildPrompt(promptToUse);
-      const response = await chatService.sendMessage(fullPrompt);
-      
-      const responseText = response.response?.response || '';
-      if (!responseText) {
-        throw new Error('Brak odpowiedzi od AI');
-      }
-
-      const parsedExercises = parseExercisesFromResponse(responseText);
-      if (parsedExercises.length === 0) {
-        throw new Error('Nie udało się rozpoznać ćwiczeń w odpowiedzi');
-      }
-
-      const matches = matchExercises(parsedExercises, exercises);
-      setGeneratedMatches(matches);
-
-      // Auto-select matched exercises
-      const matchedIds = new Set<string>();
-      matches.forEach((match, index) => {
-        if (match.matchedExercise) {
-          matchedIds.add(`${index}`);
+      if (patientContext) {
+        const contextParts: string[] = [];
+        if (patientContext.patientName) {
+          contextParts.push(`Pacjent: ${patientContext.patientName}`);
         }
-      });
-      setSelectedMatchIds(matchedIds);
+        if (patientContext.diagnosis && patientContext.diagnosis.length > 0) {
+          contextParts.push(`Diagnoza: ${patientContext.diagnosis.join(', ')}`);
+        }
+        if (patientContext.painLocation) {
+          contextParts.push(`Lokalizacja bólu: ${patientContext.painLocation}`);
+        }
 
-      const matchedCount = matches.filter(m => m.matchedExercise).length;
-      toast.success(`Wygenerowano ${parsedExercises.length} ćwiczeń, dopasowano ${matchedCount}`);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Wystąpił błąd podczas generowania';
-      setError(message);
-      toast.error(message);
-    } finally {
-      setIsGenerating(false);
-    }
-  }, [prompt, exercises, buildPrompt]);
+        if (contextParts.length > 0) {
+          fullPrompt = `${contextParts.join('. ')}.\n\n${basePrompt}`;
+        }
+      }
 
-  const handleQuickPrompt = useCallback((quickPrompt: string) => {
-    setPrompt(quickPrompt);
-    handleGenerate(quickPrompt);
-  }, [handleGenerate]);
+      return `Jako fizjoterapeuta, zaproponuj zestaw 5-8 ćwiczeń. Dla każdego podaj nazwę i krótki opis. Format: numerowana lista z nazwami ćwiczeń.\n\n${fullPrompt}`;
+    },
+    [patientContext]
+  );
+
+  const handleGenerate = useCallback(
+    async (customPrompt?: string) => {
+      const promptToUse = customPrompt || prompt;
+      if (!promptToUse.trim()) {
+        toast.error('Wpisz opis potrzeb pacjenta');
+        return;
+      }
+
+      setIsGenerating(true);
+      setError(null);
+      setGeneratedMatches([]);
+      setSelectedMatchIds(new Set());
+
+      try {
+        const fullPrompt = buildPrompt(promptToUse);
+        const response = await chatService.sendMessage(fullPrompt);
+
+        const responseText = response.response?.response || '';
+        if (!responseText) {
+          throw new Error('Brak odpowiedzi od AI');
+        }
+
+        const parsedExercises = parseExercisesFromResponse(responseText);
+        if (parsedExercises.length === 0) {
+          throw new Error('Nie udało się rozpoznać ćwiczeń w odpowiedzi');
+        }
+
+        const matches = matchExercises(parsedExercises, exercises);
+        setGeneratedMatches(matches);
+
+        // Auto-select matched exercises
+        const matchedIds = new Set<string>();
+        matches.forEach((match, index) => {
+          if (match.matchedExercise) {
+            matchedIds.add(`${index}`);
+          }
+        });
+        setSelectedMatchIds(matchedIds);
+
+        const matchedCount = matches.filter((m) => m.matchedExercise).length;
+        toast.success(`Wygenerowano ${parsedExercises.length} ćwiczeń, dopasowano ${matchedCount}`);
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Wystąpił błąd podczas generowania';
+        setError(message);
+        toast.error(message);
+      } finally {
+        setIsGenerating(false);
+      }
+    },
+    [prompt, exercises, buildPrompt]
+  );
+
+  const handleQuickPrompt = useCallback(
+    (quickPrompt: string) => {
+      setPrompt(quickPrompt);
+      handleGenerate(quickPrompt);
+    },
+    [handleGenerate]
+  );
 
   const toggleMatch = useCallback((index: number) => {
-    setSelectedMatchIds(prev => {
+    setSelectedMatchIds((prev) => {
       const next = new Set(prev);
       const key = `${index}`;
       if (next.has(key)) {
@@ -314,7 +321,7 @@ export function AISetGenerator({
 
   const handleConfirm = useCallback(() => {
     const selectedExerciseIds: string[] = [];
-    
+
     generatedMatches.forEach((match, index) => {
       if (selectedMatchIds.has(`${index}`) && match.matchedExercise) {
         selectedExerciseIds.push(match.matchedExercise.id);
@@ -330,9 +337,9 @@ export function AISetGenerator({
   }, [generatedMatches, selectedMatchIds, onSelectExercises]);
 
   // Stats
-  const matchedCount = generatedMatches.filter(m => m.matchedExercise).length;
+  const matchedCount = generatedMatches.filter((m) => m.matchedExercise).length;
   const unmatchedCount = generatedMatches.length - matchedCount;
-  const selectedCount = Array.from(selectedMatchIds).filter(id => {
+  const selectedCount = Array.from(selectedMatchIds).filter((id) => {
     const match = generatedMatches[parseInt(id)];
     return match?.matchedExercise;
   }).length;
@@ -347,9 +354,7 @@ export function AISetGenerator({
           </div>
           <div>
             <h3 className="font-semibold">AI Generator zestawów</h3>
-            <p className="text-xs text-muted-foreground">
-              Opisz potrzeby pacjenta, AI zaproponuje ćwiczenia
-            </p>
+            <p className="text-xs text-muted-foreground">Opisz potrzeby pacjenta, AI zaproponuje ćwiczenia</p>
           </div>
         </div>
 
@@ -373,7 +378,7 @@ export function AISetGenerator({
             className="min-h-[80px] resize-none"
             disabled={isGenerating}
           />
-          
+
           <div className="flex items-center gap-2">
             <Button
               onClick={() => handleGenerate()}
@@ -392,7 +397,7 @@ export function AISetGenerator({
                 </>
               )}
             </Button>
-            
+
             {generatedMatches.length > 0 && (
               <Button
                 variant="outline"
@@ -478,9 +483,7 @@ export function AISetGenerator({
                       onClick={() => toggleMatch(index)}
                       className={cn(
                         'w-full flex items-center gap-3 p-3 rounded-xl text-left transition-all',
-                        isSelected
-                          ? 'bg-primary/10 ring-2 ring-primary/30'
-                          : 'bg-surface hover:bg-surface-light'
+                        isSelected ? 'bg-primary/10 ring-2 ring-primary/30' : 'bg-surface hover:bg-surface-light'
                       )}
                     >
                       <div
@@ -502,9 +505,7 @@ export function AISetGenerator({
 
                       <div className="flex-1 min-w-0">
                         <p className="font-medium text-sm truncate">{match.matchedExercise.name}</p>
-                        <p className="text-xs text-muted-foreground truncate">
-                          AI: {match.aiExercise.name}
-                        </p>
+                        <p className="text-xs text-muted-foreground truncate">AI: {match.aiExercise.name}</p>
                       </div>
 
                       <Badge variant="secondary" className="text-[10px] shrink-0">
@@ -572,4 +573,3 @@ export function AISetGenerator({
     </div>
   );
 }
-
