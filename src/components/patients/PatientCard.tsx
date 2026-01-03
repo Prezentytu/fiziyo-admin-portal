@@ -128,8 +128,8 @@ export function PatientCard({
           </div>
         </div>
 
-        {/* Context label */}
-        {patient.contextLabel && (
+        {/* Context label - hide default "Leczenie podstawowe" */}
+        {patient.contextLabel && patient.contextLabel !== 'Leczenie podstawowe' && (
           <ColorBadge color={patient.contextColor || '#888888'} size="sm">
             {patient.contextLabel}
           </ColorBadge>
@@ -292,8 +292,8 @@ export function PatientCard({
         )}
       </div>
 
-      {/* Footer with context label */}
-      {patient.contextLabel && (
+      {/* Footer with context label - hide default "Leczenie podstawowe" */}
+      {patient.contextLabel && patient.contextLabel !== 'Leczenie podstawowe' && (
         <div className="px-6 py-3 border-t border-border">
           <ColorBadge color={patient.contextColor || '#888888'}>{patient.contextLabel}</ColorBadge>
         </div>

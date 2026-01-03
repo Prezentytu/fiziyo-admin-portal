@@ -47,3 +47,6 @@ export * from "./healthPoints.queries";
 
 // Weekly Progress (progres tygodniowy)
 export * from "./weeklyProgress.queries";
+
+// Onboarding Stats
+export * from "./onboardingStats.queries";

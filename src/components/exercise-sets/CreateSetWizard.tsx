@@ -376,16 +376,16 @@ function SortableExerciseCard({
       ref={setNodeRef}
       style={style}
       className={cn(
-        'rounded-xl border border-border bg-background overflow-hidden transition-all',
-        isDragging && 'shadow-xl shadow-primary/20 opacity-90 scale-[1.02] z-50'
+        'w-full rounded-xl border border-border bg-background overflow-hidden transition-all',
+        isDragging && 'shadow-xl shadow-primary/20 opacity-90 z-50'
       )}
     >
       {/* Header - always visible */}
-      <div className="p-3 flex items-center gap-2">
+      <div className="p-3 flex items-center gap-2 overflow-hidden">
         <button
           {...attributes}
           {...listeners}
-          className="p-1 rounded hover:bg-surface-light cursor-grab active:cursor-grabbing touch-none"
+          className="p-1 rounded hover:bg-surface-light cursor-grab active:cursor-grabbing touch-none shrink-0"
         >
           <GripVertical className="h-4 w-4 text-muted-foreground" />
         </button>
@@ -404,9 +404,9 @@ function SortableExerciseCard({
             <Eye className="h-4 w-4 text-white" />
           </button>
         </div>
-        <div className="flex-1 min-w-0">
-          <p className="font-medium text-sm truncate">{exercise.name}</p>
-          <p className="text-xs text-muted-foreground">{translateType(exercise.type)}</p>
+        <div className="flex-1 min-w-0 overflow-hidden">
+          <p className="font-medium text-sm truncate" title={exercise.name}>{exercise.name}</p>
+          <p className="text-xs text-muted-foreground truncate">{translateType(exercise.type)}</p>
         </div>
         <Button
           type="button"
@@ -421,13 +421,13 @@ function SortableExerciseCard({
 
       {/* Compact view - param chips */}
       {!isExpanded && (
-        <div className="px-3 pb-3">
-          <div className="flex items-center gap-2 flex-wrap">
+        <div className="px-3 pb-3 overflow-hidden">
+          <div className="flex items-center gap-1.5 flex-wrap">
             {/* Combined sets x reps/duration chip */}
             <button
               type="button"
               onClick={() => setIsExpanded(true)}
-              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-primary/10 text-primary text-xs font-medium hover:bg-primary/20 transition-colors"
+              className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-primary/10 text-primary text-xs font-medium hover:bg-primary/20 transition-colors shrink-0"
             >
               <Dumbbell className="h-3 w-3" />
               {paramsSummary}
@@ -437,7 +437,8 @@ function SortableExerciseCard({
             <button
               type="button"
               onClick={() => setIsExpanded(true)}
-              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-surface-light text-muted-foreground text-xs font-medium hover:bg-surface hover:text-foreground transition-colors"
+              className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-surface-light text-muted-foreground text-xs font-medium hover:bg-surface hover:text-foreground transition-colors shrink-0"
+              title="Przerwa między seriami"
             >
               <Clock className="h-3 w-3" />
               {params.restSets}s
@@ -448,17 +449,17 @@ function SortableExerciseCard({
               <button
                 type="button"
                 onClick={() => setIsExpanded(true)}
-                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-surface-light text-muted-foreground text-xs font-medium hover:bg-surface hover:text-foreground transition-colors"
+                className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-surface-light text-muted-foreground text-xs font-medium hover:bg-surface hover:text-foreground transition-colors shrink-0 max-w-[100px] truncate"
               >
-                <ArrowLeftRight className="h-3 w-3" />
-                {sideLabel}
+                <ArrowLeftRight className="h-3 w-3 shrink-0" />
+                <span className="truncate">{sideLabel}</span>
               </button>
             )}
 
             {/* Custom name indicator */}
             {params.customName && (
               <span
-                className="inline-flex items-center gap-1 px-2 py-1 text-xs text-muted-foreground"
+                className="inline-flex items-center gap-1 px-1.5 py-1 text-xs text-muted-foreground shrink-0"
                 title={params.customName}
               >
                 <Pencil className="h-3 w-3" />
@@ -468,7 +469,7 @@ function SortableExerciseCard({
             {/* Notes indicator */}
             {params.notes && (
               <span
-                className="inline-flex items-center gap-1 px-2 py-1 text-xs text-muted-foreground"
+                className="inline-flex items-center gap-1 px-1.5 py-1 text-xs text-muted-foreground shrink-0"
                 title="Notatki dodane"
               >
                 <MessageSquare className="h-3 w-3" />
@@ -479,10 +480,9 @@ function SortableExerciseCard({
             <button
               type="button"
               onClick={() => setIsExpanded(true)}
-              className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs text-muted-foreground hover:text-foreground hover:bg-surface-light transition-colors ml-auto"
+              className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs text-muted-foreground hover:text-foreground hover:bg-surface-light transition-colors shrink-0"
             >
               <Sliders className="h-3 w-3" />
-              Edytuj
             </button>
           </div>
         </div>
@@ -553,7 +553,7 @@ function SortableExerciseCard({
                 min={1}
               />
               <ParamControl
-                label={isTimeType ? 'Czas (s)' : 'Powtórzenia'}
+                label={isTimeType ? 'Czas serii (s)' : 'Powtórzenia'}
                 value={isTimeType ? params.duration : params.reps}
                 onChange={(v) => onUpdateParams(isTimeType ? 'duration' : 'reps', v)}
                 step={isTimeType ? 5 : 1}
@@ -565,7 +565,7 @@ function SortableExerciseCard({
             {/* Rest and side - 2 column grid */}
             <div className="grid grid-cols-2 gap-3">
               <ParamControl
-                label="Przerwa (s)"
+                label="Przerwa między seriami (s)"
                 value={params.restSets}
                 onChange={(v) => onUpdateParams('restSets', v)}
                 step={10}
@@ -613,21 +613,21 @@ function SortableExerciseCard({
                   className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
                 >
                   {showMoreOptions ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
-                  {showMoreOptions ? 'Mniej opcji' : 'Więcej opcji (czasy, przerwa między powt.)'}
+                  {showMoreOptions ? 'Mniej opcji' : 'Więcej opcji'}
                 </button>
               </CollapsibleTrigger>
               <CollapsibleContent>
                 <div className="pt-3 mt-2 border-t border-border/30 space-y-3">
                   <div className="grid grid-cols-2 gap-3">
                     <ParamControl
-                      label="Czas przygotowania (s)"
+                      label="Przygotowanie (s)"
                       value={params.preparationTime}
                       onChange={(v) => onUpdateParams('preparationTime', v)}
                       step={5}
                       min={0}
                     />
                     <ParamControl
-                      label="Czas wykonania (s)"
+                      label="Czas powtórzenia (s)"
                       value={params.executionTime}
                       onChange={(v) => onUpdateParams('executionTime', v)}
                       step={5}
@@ -1230,7 +1230,7 @@ export function CreateSetWizard({
   return (
     <Dialog open={open} onOpenChange={() => handleCloseAttempt()}>
       <DialogContent
-        className="max-w-6xl w-[95vw] max-h-[95vh] h-[90vh] md:h-[85vh] flex flex-col p-0 gap-0 overflow-hidden"
+        className="max-w-7xl w-[98vw] max-h-[95vh] h-[90vh] md:h-[85vh] flex flex-col p-0 gap-0 overflow-hidden"
         onInteractOutside={(e) => e.preventDefault()}
         onEscapeKeyDown={(e) => {
           e.preventDefault();
@@ -1271,6 +1271,7 @@ export function CreateSetWizard({
                 >
                   {currentStep !== 'basics' && <Check className="h-3.5 w-3.5 sm:h-4 sm:w-4" />}
                   <FileText className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                  <span className="sm:hidden">Info</span>
                   <span className="hidden sm:inline">Podstawy</span>
                 </button>
                 <div
@@ -1285,6 +1286,7 @@ export function CreateSetWizard({
                     className="flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-medium bg-gradient-to-br from-violet-500 to-purple-600 text-white shadow-lg shadow-violet-500/20"
                   >
                     <Sparkles className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                    <span className="sm:hidden">AI</span>
                     <span className="hidden sm:inline">AI Generator</span>
                   </button>
                 ) : (
@@ -1302,6 +1304,7 @@ export function CreateSetWizard({
                     )}
                   >
                     <Dumbbell className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                    <span className="sm:hidden">Lista</span>
                     <span className="hidden sm:inline">Ćwiczenia</span>
                     {selectedExerciseIds.length > 0 && (
                       <Badge
@@ -1424,29 +1427,31 @@ export function CreateSetWizard({
               </div>
 
               {/* Right: Quick Start */}
-              <div className="w-full lg:flex-1 lg:max-w-md flex flex-col gap-4">
+              <div className="w-full lg:flex-1 flex flex-col gap-4 lg:overflow-y-auto px-1 min-w-0">
                 {/* AI Generator Card */}
                 <button
                   type="button"
                   onClick={handleStartAIMode}
                   className={cn(
-                    'group relative overflow-hidden rounded-2xl p-5 text-left transition-all duration-300',
+                    'group relative overflow-hidden rounded-xl sm:rounded-2xl p-2.5 sm:p-4 md:p-5 text-left transition-all duration-300 shrink-0 cursor-pointer',
                     'bg-gradient-to-br from-violet-500 to-purple-600',
-                    'hover:shadow-xl hover:shadow-violet-500/20 hover:scale-[1.02]'
+                    'hover:shadow-lg hover:shadow-violet-500/15'
                   )}
                 >
-                  <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                  <div className="absolute -top-20 -right-20 w-40 h-40 bg-white/10 rounded-full blur-3xl group-hover:bg-white/20 transition-all duration-500" />
+                  <div className="absolute inset-0 bg-gradient-to-br from-white/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                  <div className="absolute -top-20 -right-20 w-40 h-40 bg-white/5 rounded-full blur-3xl group-hover:bg-white/15 transition-all duration-500" />
 
-                  <div className="relative flex items-center gap-4">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm shrink-0 group-hover:scale-110 transition-transform duration-300">
-                      <Sparkles className="h-6 w-6 text-white" />
+                  <div className="relative flex items-center gap-2.5 sm:gap-3 md:gap-4">
+                    <div className="flex h-8 w-8 sm:h-10 sm:w-10 md:h-12 md:w-12 items-center justify-center rounded-lg sm:rounded-xl bg-white/20 backdrop-blur-sm shrink-0 group-hover:bg-white/30 transition-all duration-300">
+                      <Sparkles className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 text-white" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h3 className="text-lg font-bold text-white mb-0.5">AI Generator</h3>
-                      <p className="text-sm text-white/80">Opisz potrzeby - AI zaproponuje ćwiczenia</p>
+                      <h3 className="text-sm sm:text-base md:text-lg font-bold text-white">AI Generator</h3>
+                      <p className="hidden sm:block text-xs md:text-sm text-white/80 line-clamp-1 md:line-clamp-none">
+                        Opisz potrzeby - AI zaproponuje ćwiczenia
+                      </p>
                     </div>
-                    <ArrowRight className="h-5 w-5 text-white/60 group-hover:text-white group-hover:translate-x-1 transition-all duration-300 shrink-0" />
+                    <ArrowRight className="h-4 w-4 sm:h-5 sm:w-5 text-white/60 group-hover:text-white group-hover:translate-x-1 transition-all duration-300 shrink-0" />
                   </div>
                 </button>
 
@@ -1724,8 +1729,8 @@ export function CreateSetWizard({
               </div>
 
               {/* Right: Selected exercises */}
-              <div className="hidden lg:flex lg:w-[340px] xl:w-[400px] flex-col bg-surface-light/30 shrink-0 border-t lg:border-t-0">
-                <div className="px-3 xl:px-4 py-3 border-b border-border">
+              <div className="hidden lg:flex lg:flex-1 flex-col bg-surface-light/30 border-t lg:border-t-0 overflow-hidden min-w-0">
+                <div className="px-4 py-3 border-b border-border">
                   <div className="flex items-center justify-between gap-2">
                     <h3 className="font-semibold text-sm shrink-0">Wybrane ({selectedExerciseIds.length})</h3>
                     {selectedExerciseIds.length > 1 && (
@@ -1745,7 +1750,7 @@ export function CreateSetWizard({
                           <DropdownMenuItem onClick={() => applyParamsToAll('reps', 10)}>10 powt.</DropdownMenuItem>
                           <DropdownMenuItem onClick={() => applyParamsToAll('reps', 15)}>15 powt.</DropdownMenuItem>
                           <DropdownMenuSeparator />
-                          <DropdownMenuLabel className="text-xs">Przerwa</DropdownMenuLabel>
+                          <DropdownMenuLabel className="text-xs">Przerwa między seriami</DropdownMenuLabel>
                           <DropdownMenuItem onClick={() => applyParamsToAll('restSets', 30)}>30s</DropdownMenuItem>
                           <DropdownMenuItem onClick={() => applyParamsToAll('restSets', 60)}>60s</DropdownMenuItem>
                           <DropdownMenuItem onClick={() => applyParamsToAll('restSets', 90)}>90s</DropdownMenuItem>
@@ -1755,7 +1760,7 @@ export function CreateSetWizard({
                   </div>
                 </div>
 
-                <ScrollArea className="flex-1">
+                <div className="flex-1 overflow-y-auto overflow-x-hidden">
                   {selectedExercisesList.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-16 text-center px-6">
                       <div className="h-14 w-14 rounded-full bg-surface-light flex items-center justify-center mb-3">
@@ -1783,7 +1788,7 @@ export function CreateSetWizard({
                       </SortableContext>
                     </DndContext>
                   )}
-                </ScrollArea>
+                </div>
               </div>
             </div>
           ) : currentStep === 'ai' ? (
@@ -1920,7 +1925,7 @@ export function CreateSetWizard({
                 {previewExercise.duration && (
                   <div className="rounded-lg bg-surface p-3 text-center">
                     <p className="text-lg font-bold">{previewExercise.duration}s</p>
-                    <p className="text-xs text-muted-foreground">Czas</p>
+                    <p className="text-xs text-muted-foreground">Czas serii</p>
                   </div>
                 )}
               </div>

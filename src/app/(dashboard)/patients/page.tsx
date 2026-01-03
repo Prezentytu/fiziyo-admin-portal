@@ -21,6 +21,7 @@ import type { Patient as AssignmentPatient } from '@/components/assignment/types
 import { cn } from '@/lib/utils';
 
 import { GET_ALL_THERAPIST_PATIENTS_QUERY } from '@/graphql/queries/therapists.queries';
+import { GET_CURRENT_ORGANIZATION_PLAN } from '@/graphql/queries/organizations.queries';
 import {
   REMOVE_PATIENT_FROM_THERAPIST_MUTATION,
   UPDATE_PATIENT_STATUS_MUTATION,
@@ -60,7 +61,10 @@ export default function PatientsPage() {
 
   // Mutations
   const [removePatient, { loading: removing }] = useMutation(REMOVE_PATIENT_FROM_THERAPIST_MUTATION, {
-    refetchQueries: [{ query: GET_ALL_THERAPIST_PATIENTS_QUERY, variables: { therapistId, organizationId } }],
+    refetchQueries: [
+      { query: GET_ALL_THERAPIST_PATIENTS_QUERY, variables: { therapistId, organizationId } },
+      { query: GET_CURRENT_ORGANIZATION_PLAN, variables: { organizationId } },
+    ],
   });
 
   const [updateStatus, { loading: updatingStatus }] = useMutation(UPDATE_PATIENT_STATUS_MUTATION, {
@@ -87,6 +91,7 @@ export default function PatientsPage() {
       };
     }) => ({
       id: assignment.patient?.id || assignment.id,
+      assignmentId: assignment.id, // ID of therapist-patient assignment
       fullname: assignment.patient?.fullname,
       email: assignment.patient?.email,
       image: assignment.patient?.image,
@@ -233,7 +238,7 @@ export default function PatientsPage() {
         >
           <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
           <div className="absolute -top-24 -right-24 w-48 h-48 bg-white/10 rounded-full blur-3xl group-hover:bg-white/20 transition-all duration-500" />
-          
+
           <div className="relative flex items-center gap-4">
             <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm shrink-0 group-hover:scale-110 transition-transform duration-300">
               <UserPlus className="h-5 w-5 text-white" />
@@ -385,6 +390,7 @@ export default function PatientsPage() {
               onToggleStatus={handleToggleStatus}
               onRemove={(p) => setDeletingPatient(p)}
               organizationId={organizationId || ''}
+              therapistId={therapistId || ''}
             />
           ))}
         </div>

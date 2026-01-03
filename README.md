@@ -1,6 +1,6 @@
-# Fiziyo Admin
+# FiziYo Admin
 
-Panel administracyjny dla platformy Fiziyo - aplikacji dla fizjoterapeutów.
+Panel administracyjny dla platformy FiziYo - aplikacji dla fizjoterapeutów.
 
 ## Tech Stack
 

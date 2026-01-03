@@ -367,10 +367,12 @@ export function SettingsTab({
 
       {/* Subscription info */}
       <SubscriptionCard
+        organizationId={organization.id}
         subscriptionPlan={organization.subscriptionPlan}
         expiresAt={organization.subscriptionExpiresAt}
         limits={limits}
         currentUsage={currentUsage}
+        onUpgradeSuccess={onRefresh}
       />
 
       {/* Data management */}
@@ -382,10 +384,3 @@ export function SettingsTab({
     </div>
   );
 }
-
-
-
-
-
-
-

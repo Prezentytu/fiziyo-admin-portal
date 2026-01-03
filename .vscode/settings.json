@@ -1,0 +1,51 @@
+{
+  // ============================================
+  // FILE HANDLING - Prevent unwanted changes
+  // ============================================
+
+  // Disable auto-inserting final newline (matches .editorconfig)
+  "files.insertFinalNewline": false,
+
+  // Trim trailing whitespace on save (matches .editorconfig)
+  "files.trimTrailingWhitespace": true,
+
+  // Remove extra final newlines
+  "files.trimFinalNewlines": true,
+
+  // ============================================
+  // EDITOR CONFIG - Use project settings
+  // ============================================
+
+  // Ensure EditorConfig extension is respected
+  "editor.detectIndentation": false,
+  "editor.tabSize": 2,
+  "editor.insertSpaces": true,
+
+  // ============================================
+  // FORMAT ON SAVE - Consistent formatting
+  // ============================================
+
+  // Format on save with ESLint only (no Prettier conflicts)
+  "editor.formatOnSave": false,
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit"
+  },
+
+  // ============================================
+  // TYPESCRIPT / JAVASCRIPT
+  // ============================================
+
+  "typescript.preferences.quoteStyle": "single",
+  "javascript.preferences.quoteStyle": "single",
+
+  // ============================================
+  // SEARCH - Exclude build artifacts
+  // ============================================
+
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/.next": true,
+    "**/out": true,
+    "**/build": true
+  }
+}

@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useMutation } from '@apollo/client/react';
-import { StickyNote, Pencil, Save, X, Loader2, Plus } from 'lucide-react';
+import { StickyNote, Pencil, Save, X, Loader2, Plus, Sparkles, Maximize2, FileText, Lightbulb } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { pl } from 'date-fns/locale';
@@ -10,9 +10,13 @@ import { pl } from 'date-fns/locale';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
 
 import { UPDATE_PATIENT_NOTES_MUTATION } from '@/graphql/mutations/therapists.mutations';
 import { GET_ALL_THERAPIST_PATIENTS_QUERY } from '@/graphql/queries/therapists.queries';
+import { aiService } from '@/services/aiService';
+import type { ClinicalNoteAction } from '@/types/ai.types';
 
 interface PatientNotesProps {
   notes?: string;
@@ -21,7 +25,18 @@ interface PatientNotesProps {
   organizationId: string;
   lastUpdated?: string;
   onUpdate?: () => void;
+  /** Kontekst pacjenta dla AI (diagnoza, historia) */
+  patientContext?: string;
+  /** Kontekst zestawu ćwiczeń dla AI */
+  exerciseSetContext?: string;
 }
+
+// AI action configurations
+const AI_ACTIONS: { id: ClinicalNoteAction; label: string; icon: typeof Sparkles; description: string }[] = [
+  { id: 'expand', label: 'Rozwiń', icon: Maximize2, description: 'Dodaj szczegóły medyczne' },
+  { id: 'summarize', label: 'Podsumuj', icon: FileText, description: 'Streść notatkę' },
+  { id: 'suggest', label: 'Sugestie', icon: Lightbulb, description: 'Co dopisać?' },
+];
 
 export function PatientNotes({
   notes: initialNotes,
@@ -30,16 +45,57 @@ export function PatientNotes({
   organizationId,
   lastUpdated,
   onUpdate,
+  patientContext,
+  exerciseSetContext,
 }: PatientNotesProps) {
   const [isEditing, setIsEditing] = useState(false);
   // Track edits separately - only used when editing
   const [editedNotes, setEditedNotes] = useState('');
+  // AI state
+  const [isAILoading, setIsAILoading] = useState(false);
+  const [aiKeyPoints, setAiKeyPoints] = useState<string[]>([]);
 
   // Start editing with current notes
   const startEditing = () => {
     setEditedNotes(initialNotes || '');
     setIsEditing(true);
+    setAiKeyPoints([]);
   };
+
+  // Handle AI action
+  const handleAIAction = useCallback(async (action: ClinicalNoteAction) => {
+    if (isAILoading) return;
+
+    setIsAILoading(true);
+    setAiKeyPoints([]);
+
+    try {
+      const result = await aiService.assistClinicalNote(
+        editedNotes,
+        action,
+        patientContext,
+        exerciseSetContext
+      );
+
+      if (result) {
+        setEditedNotes(result.suggestedNote);
+        if (result.keyPoints.length > 0) {
+          setAiKeyPoints(result.keyPoints);
+        }
+        toast.success(
+          action === 'expand' ? 'Notatka rozwinięta' :
+          action === 'summarize' ? 'Notatka podsumowana' :
+          'Sugestie dodane'
+        );
+      } else {
+        toast.error('Nie udało się uzyskać sugestii AI');
+      }
+    } catch {
+      toast.error('Błąd AI - spróbuj ponownie');
+    } finally {
+      setIsAILoading(false);
+    }
+  }, [editedNotes, patientContext, exerciseSetContext, isAILoading]);
 
   const [updateNotes, { loading }] = useMutation(UPDATE_PATIENT_NOTES_MUTATION, {
     refetchQueries: [{ query: GET_ALL_THERAPIST_PATIENTS_QUERY, variables: { therapistId, organizationId } }],
@@ -104,15 +160,66 @@ export function PatientNotes({
               placeholder="Dodaj notatki o pacjencie, historię leczenia, obserwacje..."
               className="min-h-[120px] resize-none"
               autoFocus
+              disabled={isAILoading}
             />
+
+            {/* AI Actions */}
+            <div className="flex items-center gap-2 flex-wrap">
+              <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                <Sparkles className="h-3 w-3 text-primary" />
+                <span>AI:</span>
+              </div>
+              {AI_ACTIONS.map((action) => {
+                const Icon = action.icon;
+                return (
+                  <Button
+                    key={action.id}
+                    variant="outline"
+                    size="sm"
+                    className={cn(
+                      "h-7 text-xs gap-1",
+                      isAILoading && "opacity-50"
+                    )}
+                    onClick={() => handleAIAction(action.id)}
+                    disabled={isAILoading || editedNotes.trim().length < 5}
+                    title={action.description}
+                  >
+                    {isAILoading ? (
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                    ) : (
+                      <Icon className="h-3 w-3" />
+                    )}
+                    {action.label}
+                  </Button>
+                );
+              })}
+            </div>
+
+            {/* AI Key Points */}
+            {aiKeyPoints.length > 0 && (
+              <div className="rounded-lg bg-primary/5 border border-primary/20 p-3">
+                <p className="text-xs font-medium text-primary mb-2 flex items-center gap-1">
+                  <Lightbulb className="h-3 w-3" />
+                  Kluczowe punkty:
+                </p>
+                <div className="flex flex-wrap gap-1">
+                  {aiKeyPoints.map((point, idx) => (
+                    <Badge key={idx} variant="secondary" className="text-[10px]">
+                      {point}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div className="flex items-center justify-between">
               <p className="text-xs text-muted-foreground">{editedNotes.length} znaków</p>
               <div className="flex items-center gap-2">
-                <Button variant="ghost" size="sm" onClick={handleCancel} disabled={loading}>
+                <Button variant="ghost" size="sm" onClick={handleCancel} disabled={loading || isAILoading}>
                   <X className="mr-1 h-3.5 w-3.5" />
                   Anuluj
                 </Button>
-                <Button size="sm" onClick={handleSave} disabled={loading}>
+                <Button size="sm" onClick={handleSave} disabled={loading || isAILoading}>
                   {loading ? (
                     <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />
                   ) : (

@@ -12,7 +12,7 @@ export function PDFFooter({ generatedAt }: PDFFooterProps) {
         Dokument wygenerowano: {generatedAt}
       </Text>
       <Text style={pdfStyles.footerBrand}>
-        fiziYo - Twój asystent rehabilitacji
+        FiziYo - Twój asystent rehabilitacji
       </Text>
     </View>
   );

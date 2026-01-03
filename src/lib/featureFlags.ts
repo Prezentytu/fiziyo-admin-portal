@@ -1,42 +1,37 @@
-/**
- * Feature Flags - konfiguracja funkcjonalności aplikacji
- * Umożliwia włączanie/wyłączanie funkcji przez zmienne środowiskowe
- */
+// Feature Flags Configuration
+// Set to true to enable experimental features
 
-/**
- * Konfiguracja feedbacku
- */
-export const feedbackConfig = {
+export const FEATURE_FLAGS = {
   /**
-   * Czy feedback jest włączony (domyślnie: true)
-   * Kontrolowane przez: NEXT_PUBLIC_FEEDBACK_ENABLED
+   * Professional Body Pain Map (NEW)
+   * - 4 views (front, back, left, right)
+   * - Clinical pain types (sharp, dull, radiating, etc.)
+   * - Touch support for tablets
+   * - Exercise suggestions based on pain regions
+   * - Export to PNG/PDF
+   * - Session history with comparison
+   *
+   * Set to true to enable, false to hide completely
    */
-  get enabled(): boolean {
-    const envValue = process.env.NEXT_PUBLIC_FEEDBACK_ENABLED;
-    // Domyślnie włączony, wyłączony tylko gdy explicit "false"
-    return envValue !== 'false';
-  },
+  BODY_PAIN_MAP: false,
 
   /**
-   * URL webhooka Discord
-   * Kontrolowane przez: NEXT_PUBLIC_DISCORD_WEBHOOK_URL
+   * AI-powered exercise set generator
    */
-  get discordWebhookUrl(): string | undefined {
-    return process.env.NEXT_PUBLIC_DISCORD_WEBHOOK_URL;
-  },
-};
+  AI_SET_GENERATOR: true,
 
-/**
- * Sprawdza czy feedback jest włączony i skonfigurowany
- */
+  /**
+   * Clinical notes integration
+   */
+  CLINICAL_NOTES: true,
+} as const;
+
+// Type-safe feature flag getter
+export function isFeatureEnabled(flag: keyof typeof FEATURE_FLAGS): boolean {
+  return FEATURE_FLAGS[flag];
+}
+
+// Legacy function for backwards compatibility
 export function isFeedbackEnabled(): boolean {
-  return feedbackConfig.enabled && Boolean(feedbackConfig.discordWebhookUrl);
+  return true; // Feedback is always enabled
 }
-
-/**
- * Pobiera URL webhooka Discord
- */
-export function getDiscordWebhookUrl(): string | undefined {
-  return feedbackConfig.discordWebhookUrl;
-}
-

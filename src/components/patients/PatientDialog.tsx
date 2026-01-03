@@ -4,7 +4,7 @@ import * as React from 'react';
 import { useState, useCallback } from 'react';
 import { useMutation } from '@apollo/client/react';
 import { toast } from 'sonner';
-import { UserPlus, CheckCircle2, Send, UserPlus2, X } from 'lucide-react';
+import { UserPlus, CheckCircle2, Send, UserPlus2, X, Sparkles } from 'lucide-react';
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -13,12 +13,17 @@ import { PatientForm, PatientFormValues } from './PatientForm';
 import { AssignmentWizard } from '@/components/assignment/AssignmentWizard';
 import { CREATE_SHADOW_PATIENT_MUTATION } from '@/graphql/mutations/users.mutations';
 import { GET_THERAPIST_PATIENTS_QUERY, GET_ALL_THERAPIST_PATIENTS_QUERY } from '@/graphql/queries/therapists.queries';
+import { GET_CURRENT_ORGANIZATION_PLAN } from '@/graphql/queries/organizations.queries';
+import { cn } from '@/lib/utils';
+import { getAvatarGradient, getInitials } from '@/utils/textUtils';
 import type { Patient } from '@/components/assignment/types';
 
 interface CreatedPatient {
   id: string;
   fullname: string;
   email?: string;
+  firstName?: string;
+  lastName?: string;
 }
 
 interface PatientDialogProps {
@@ -42,12 +47,14 @@ export function PatientDialog({
   const [formIsDirty, setFormIsDirty] = useState(false);
   const [createdPatient, setCreatedPatient] = useState<CreatedPatient | null>(null);
   const [showAssignWizard, setShowAssignWizard] = useState(false);
+  const [showSuccessAnimation, setShowSuccessAnimation] = useState(false);
 
   const handleCloseAttempt = useCallback(() => {
     if (formIsDirty && !createdPatient) {
       setShowCloseConfirm(true);
     } else {
       setCreatedPatient(null);
+      setShowSuccessAnimation(false);
       onOpenChange(false);
     }
   }, [formIsDirty, createdPatient, onOpenChange]);
@@ -56,12 +63,14 @@ export function PatientDialog({
     setShowCloseConfirm(false);
     setFormIsDirty(false);
     setCreatedPatient(null);
+    setShowSuccessAnimation(false);
     onOpenChange(false);
   }, [onOpenChange]);
 
   const handleClose = useCallback(() => {
     setCreatedPatient(null);
     setFormIsDirty(false);
+    setShowSuccessAnimation(false);
     onOpenChange(false);
     onSuccess?.();
   }, [onOpenChange, onSuccess]);
@@ -69,6 +78,7 @@ export function PatientDialog({
   const handleAddAnother = useCallback(() => {
     setCreatedPatient(null);
     setFormIsDirty(false);
+    setShowSuccessAnimation(false);
   }, []);
 
   const handleAssignSet = useCallback(() => {
@@ -80,6 +90,7 @@ export function PatientDialog({
     if (!open) {
       setFormIsDirty(false);
       setCreatedPatient(null);
+      setShowSuccessAnimation(false);
     }
   }, [open]);
 
@@ -88,6 +99,7 @@ export function PatientDialog({
     refetchQueries: [
       { query: GET_THERAPIST_PATIENTS_QUERY, variables: { therapistId, organizationId } },
       { query: GET_ALL_THERAPIST_PATIENTS_QUERY, variables: { therapistId, organizationId } },
+      { query: GET_CURRENT_ORGANIZATION_PLAN, variables: { organizationId } },
     ],
   });
 
@@ -95,10 +107,10 @@ export function PatientDialog({
     try {
       // Format phone with +48 prefix if provided (backend expects full number)
       // Phone może być puste jeśli podano email - wysyłamy null zamiast ''
-      const formattedPhone = values.phone 
+      const formattedPhone = values.phone
         ? (values.phone.startsWith('+') ? values.phone : `+48${values.phone}`)
         : null;
-      
+
       const result = await createPatient({
         variables: {
           firstName: values.firstName,
@@ -120,10 +132,15 @@ export function PatientDialog({
         throw new Error('Nie udało się utworzyć pacjenta');
       }
 
+      // Trigger success animation
+      setShowSuccessAnimation(true);
+
       setCreatedPatient({
         id: patient.id,
         fullname: patient.fullname || `${values.firstName} ${values.lastName}`,
         email: patient.email,
+        firstName: values.firstName,
+        lastName: values.lastName,
       });
       setFormIsDirty(false);
       toast.success('Pacjent został dodany');
@@ -143,11 +160,22 @@ export function PatientDialog({
       }
     : undefined;
 
+  // Get initials and gradient for success state
+  const successInitials = createdPatient
+    ? getInitials(createdPatient.firstName, createdPatient.lastName)
+    : '?';
+  const successGradient = createdPatient
+    ? getAvatarGradient(createdPatient.firstName, createdPatient.lastName)
+    : 'linear-gradient(135deg, #22c55e, #10b981)';
+
   return (
     <>
       <Dialog open={open} onOpenChange={() => handleCloseAttempt()}>
         <DialogContent
-          className="sm:max-w-xl p-0 gap-0"
+          className={cn(
+            "p-0 gap-0 overflow-hidden",
+            createdPatient ? "sm:max-w-md" : "sm:max-w-2xl"
+          )}
           onInteractOutside={(e) => e.preventDefault()}
           onEscapeKeyDown={(e) => {
             e.preventDefault();
@@ -155,29 +183,98 @@ export function PatientDialog({
           }}
         >
           {createdPatient ? (
-            // Success State
-            <div className="p-6 text-center">
-              <div className="flex justify-center mb-4">
-                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
-                  <CheckCircle2 className="h-8 w-8 text-primary" />
+            // Success State - Animated
+            <div className={cn(
+              "p-8 text-center",
+              showSuccessAnimation && "animate-in fade-in zoom-in-95 duration-300"
+            )}>
+              {/* Success Avatar - Larger with animation */}
+              <div className="flex justify-center mb-6">
+                <div className="relative">
+                  {/* Glow effect */}
+                  <div
+                    className={cn(
+                      "absolute inset-0 rounded-full blur-xl opacity-50 transition-opacity duration-500",
+                      showSuccessAnimation && "animate-pulse"
+                    )}
+                    style={{ background: successGradient }}
+                  />
+                  {/* Avatar */}
+                  <div
+                    className={cn(
+                      "relative flex items-center justify-center rounded-full text-white font-bold text-3xl",
+                      "w-24 h-24 shadow-2xl ring-4 ring-primary/20",
+                      "transition-all duration-500",
+                      showSuccessAnimation && "animate-in zoom-in-50 duration-500"
+                    )}
+                    style={{ background: successGradient }}
+                  >
+                    {successInitials}
+                  </div>
+                  {/* Checkmark badge */}
+                  <div
+                    className={cn(
+                      "absolute -bottom-1 -right-1 flex h-8 w-8 items-center justify-center rounded-full",
+                      "bg-primary text-primary-foreground shadow-lg ring-4 ring-background",
+                      "transition-all duration-300 delay-200",
+                      showSuccessAnimation && "animate-in zoom-in-50 duration-300"
+                    )}
+                  >
+                    <CheckCircle2 className="h-5 w-5" />
+                  </div>
                 </div>
               </div>
 
-              <h2 className="text-xl font-bold text-foreground mb-1">Pacjent dodany!</h2>
-              <p className="text-muted-foreground mb-6">{createdPatient.fullname}</p>
+              {/* Success Text */}
+              <div className={cn(
+                "space-y-1 mb-6",
+                showSuccessAnimation && "animate-in fade-in slide-in-from-bottom-2 duration-300 delay-150"
+              )}>
+                <h2 className="text-xl font-bold text-foreground flex items-center justify-center gap-2">
+                  <Sparkles className="h-5 w-5 text-primary" />
+                  Pacjent dodany!
+                </h2>
+                <p className="text-lg text-muted-foreground">{createdPatient.fullname}</p>
+              </div>
 
-              <p className="text-sm text-muted-foreground mb-4">Co chcesz zrobić dalej?</p>
+              {/* Next Steps */}
+              <p className={cn(
+                "text-sm text-muted-foreground mb-6",
+                showSuccessAnimation && "animate-in fade-in duration-300 delay-200"
+              )}>
+                Co chcesz zrobić dalej?
+              </p>
 
-              <div className="flex flex-col gap-3">
-                <Button onClick={handleAssignSet} className="w-full gap-2">
-                  <Send className="h-4 w-4" />
+              {/* Action Buttons */}
+              <div className={cn(
+                "flex flex-col gap-3",
+                showSuccessAnimation && "animate-in fade-in slide-in-from-bottom-3 duration-300 delay-300"
+              )}>
+                {/* Primary Action - Assign Set */}
+                <Button
+                  onClick={handleAssignSet}
+                  className="w-full h-12 text-base gap-2 bg-gradient-to-r from-primary to-primary-dark shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 transition-all duration-200"
+                >
+                  <Send className="h-5 w-5" />
                   Przypisz zestaw ćwiczeń
                 </Button>
-                <Button variant="outline" onClick={handleAddAnother} className="w-full gap-2">
+
+                {/* Secondary Action - Add Another */}
+                <Button
+                  variant="outline"
+                  onClick={handleAddAnother}
+                  className="w-full h-11 gap-2 hover:bg-surface-light transition-all duration-200"
+                >
                   <UserPlus2 className="h-4 w-4" />
                   Dodaj kolejnego pacjenta
                 </Button>
-                <Button variant="ghost" onClick={handleClose} className="w-full gap-2 text-muted-foreground">
+
+                {/* Tertiary Action - Close */}
+                <Button
+                  variant="ghost"
+                  onClick={handleClose}
+                  className="w-full gap-2 text-muted-foreground hover:text-foreground transition-all duration-200"
+                >
                   <X className="h-4 w-4" />
                   Zamknij
                 </Button>
@@ -186,14 +283,16 @@ export function PatientDialog({
           ) : (
             // Form State
             <>
-              <DialogHeader className="px-6 py-4 border-b border-border shrink-0">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary-dark shadow-lg shadow-primary/20">
-                    <UserPlus className="h-5 w-5 text-white" />
+              <DialogHeader className="px-6 py-5 border-b border-border shrink-0 bg-gradient-to-r from-surface to-surface-light/50">
+                <div className="flex items-center gap-4">
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary-dark shadow-lg shadow-primary/25">
+                    <UserPlus className="h-6 w-6 text-white" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <DialogTitle className="text-xl font-bold truncate">Nowy pacjent</DialogTitle>
-                    <DialogDescription className="truncate">Uzupełnij podstawowe dane pacjenta</DialogDescription>
+                    <DialogTitle className="text-xl font-bold">Nowy pacjent</DialogTitle>
+                    <DialogDescription className="text-sm">
+                      Uzupełnij dane pacjenta i zacznij współpracę
+                    </DialogDescription>
                   </div>
                 </div>
               </DialogHeader>

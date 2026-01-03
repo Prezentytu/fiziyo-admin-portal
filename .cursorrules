@@ -1,4 +1,4 @@
-# AI Assistant Rules - Fiziyo Admin Portal 2025
+# AI Assistant Rules - FiziYo Admin Portal 2025
 
 # Web Admin Portal dla fizjoterapeutów - zarządzanie ćwiczeniami, zestawami, pacjentami, gabinetami
 
@@ -836,7 +836,7 @@ Główny przycisk akcji - zawsze gradient primary, duży, z animacją hover:
   {/* Animated background glow */}
   <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
   <div className="absolute -top-24 -right-24 w-48 h-48 bg-white/10 rounded-full blur-3xl group-hover:bg-white/20 transition-all duration-500" />
-  
+
   <div className="relative flex items-center gap-4">
     <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm shrink-0 group-hover:scale-110 transition-transform duration-300">
       <Icon className="h-6 w-6 text-white" />
@@ -883,7 +883,7 @@ Tytuł po lewej, akcje/filtry po prawej:
 // ✅ WZORZEC: Compact Header
 <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
   <h1 className="text-2xl font-bold text-foreground">Tytuł Strony</h1>
-  
+
   <div className="flex items-center gap-3">
     {/* Search Input */}
     <div className="relative w-full sm:w-64">
@@ -895,7 +895,7 @@ Tytuł po lewej, akcje/filtry po prawej:
         onChange={(e) => setSearch(e.target.value)}
       />
     </div>
-    
+
     {/* Options Dropdown */}
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -1036,7 +1036,7 @@ Responsywny grid z 12 kolumnami:
 <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-12">
   {/* Hero Action - 6 kolumn */}
   <div className="lg:col-span-6">...</div>
-  
+
   {/* Stats - po 2 kolumny każda */}
   <div className="lg:col-span-2">...</div>
   <div className="lg:col-span-2">...</div>

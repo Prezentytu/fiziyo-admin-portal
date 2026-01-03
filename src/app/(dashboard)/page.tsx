@@ -5,6 +5,7 @@ import { useQuery } from '@apollo/client/react';
 import { useUser } from '@clerk/nextjs';
 import Link from 'next/link';
 import {
+  ArrowRight,
   FolderKanban,
   FolderPlus,
   Users,
@@ -12,9 +13,6 @@ import {
   Send,
   UserPlus,
   Sparkles,
-  Rocket,
-  ArrowRight,
-  Zap,
   Wrench,
 } from 'lucide-react';
 
@@ -27,14 +25,20 @@ import { SetThumbnail } from '@/components/exercise-sets/SetThumbnail';
 import { CreateSetWizard } from '@/components/exercise-sets/CreateSetWizard';
 import { AssignmentWizard } from '@/components/assignment/AssignmentWizard';
 import { PatientDialog } from '@/components/patients/PatientDialog';
+import { DashboardSkeleton } from '@/components/shared/DashboardSkeleton';
+import { SubscriptionBanner } from '@/components/subscription/SubscriptionBanner';
+import { GettingStartedCard } from '@/components/onboarding/GettingStartedCard';
 
 import { GET_ORGANIZATION_EXERCISE_SETS_QUERY } from '@/graphql/queries/exerciseSets.queries';
+import { GET_CURRENT_ORGANIZATION_PLAN } from '@/graphql/queries/organizations.queries';
 import { GET_THERAPIST_PATIENTS_QUERY } from '@/graphql/queries/therapists.queries';
 import { GET_USER_BY_CLERK_ID_QUERY } from '@/graphql/queries/users.queries';
+import { GET_ALL_PATIENT_ASSIGNMENTS_QUERY } from '@/graphql/queries/patientAssignments.queries';
 import type {
   UserByClerkIdResponse,
   OrganizationExerciseSetsResponse,
   TherapistPatientsResponse,
+  CurrentOrganizationPlanResponse,
 } from '@/types/apollo';
 
 interface ExerciseSetItem {
@@ -78,7 +82,7 @@ export default function DashboardPage() {
   const [isPatientDialogOpen, setIsPatientDialogOpen] = useState(false);
 
   // Get user data
-  const { data: userData } = useQuery(GET_USER_BY_CLERK_ID_QUERY, {
+  const { data: userData, loading: userLoading } = useQuery(GET_USER_BY_CLERK_ID_QUERY, {
     variables: { clerkId: user?.id },
     skip: !user?.id,
   });
@@ -100,6 +104,18 @@ export default function DashboardPage() {
     skip: !therapistId || !organizationId,
   });
 
+  // Get assignments count for onboarding (z refetch przy zmianie danych)
+  const { data: assignmentsData } = useQuery(GET_ALL_PATIENT_ASSIGNMENTS_QUERY, {
+    skip: !therapistId,
+    fetchPolicy: 'cache-and-network', // Zawsze odświeżaj z serwera
+  });
+
+  // Get subscription plan and limits
+  const { data: planData } = useQuery(GET_CURRENT_ORGANIZATION_PLAN, {
+    variables: { organizationId },
+    skip: !organizationId,
+  });
+
   const exerciseSets = (setsData as OrganizationExerciseSetsResponse)?.exerciseSets || [];
   const setsCount = exerciseSets.length;
 
@@ -112,6 +128,11 @@ export default function DashboardPage() {
   const patients = (patientsData as TherapistPatientsResponse)?.therapistPatients || [];
   const patientsCount = patients.length;
 
+  // Przypisania wykonane przez aktualnego terapeutę (sprawdzamy exerciseSetId bo to oznacza przypisany zestaw)
+  const allAssignments = (assignmentsData as { patientAssignments?: Array<{ id: string; assignedById?: string; exerciseSetId?: string }> })?.patientAssignments || [];
+  // Zlicz przypisania z zestawem (exerciseSetId), które zostały wykonane przez tego terapeutę
+  const therapistAssignmentsCount = allAssignments.filter(a => a.exerciseSetId && a.assignedById === therapistId).length;
+
   // Get current hour for greeting
   const currentHour = new Date().getHours();
   const greeting = currentHour < 12 ? 'Dzień dobry' : currentHour < 18 ? 'Cześć' : 'Dobry wieczór';
@@ -121,9 +142,32 @@ export default function DashboardPage() {
   const activePatients = patients.filter((p: PatientAssignment) => p.status !== 'inactive');
   const displayedPatients = activePatients.slice(0, 4);
 
-  // Subscription limit info
-  const limit = 5;
-  const isAtLimit = patientsCount >= limit;
+  // Subscription plan info
+  const currentPlan = (planData as CurrentOrganizationPlanResponse)?.currentOrganizationPlan;
+  const limits = currentPlan?.limits;
+  const usage = currentPlan?.currentUsage;
+  const planName = currentPlan?.currentPlan || 'FREE';
+
+  // Check if any limit is reached
+  type LimitType = 'patients' | 'exercises' | 'therapists';
+  let reachedLimit: LimitType | null = null;
+
+  if (limits && usage) {
+    if (limits.maxPatients && usage.patients >= limits.maxPatients) {
+      reachedLimit = 'patients';
+    } else if (limits.maxExercises && usage.exercises >= limits.maxExercises) {
+      reachedLimit = 'exercises';
+    } else if (limits.maxTherapists && usage.therapists >= limits.maxTherapists) {
+      reachedLimit = 'therapists';
+    }
+  }
+
+  // Show skeleton while initial data is loading
+  const isInitialLoading = !user || userLoading || (!organizationId && !userData);
+
+  if (isInitialLoading) {
+    return <DashboardSkeleton />;
+  }
 
   return (
     <div className="space-y-8">
@@ -142,6 +186,13 @@ export default function DashboardPage() {
         </p>
       </div>
 
+      {/* Getting Started Card - Onboarding for new users */}
+      <GettingStartedCard
+        patientsCount={patientsCount}
+        exerciseSetsCount={setsCount}
+        assignmentsCount={therapistAssignmentsCount}
+      />
+
       {/* Quick Actions - Hero + Companions Layout */}
       <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-12">
         {/* Hero Action - Przypisz zestaw (larger) */}
@@ -153,7 +204,7 @@ export default function DashboardPage() {
           {/* Animated background glow */}
           <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
           <div className="absolute -top-24 -right-24 w-48 h-48 bg-white/10 rounded-full blur-3xl group-hover:bg-white/20 transition-all duration-500" />
-          
+
           <div className="relative flex items-center gap-4">
             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm shrink-0 group-hover:scale-110 transition-transform duration-300">
               <Send className="h-6 w-6 text-white" />
@@ -238,9 +289,20 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent className="pt-0">
             {patientsLoading ? (
-              <div className="space-y-2 animate-stagger">
+              <div className="space-y-2">
                 {[1, 2, 3, 4].map((i) => (
-                  <Skeleton key={i} className="h-14 w-full rounded-xl" />
+                  <div
+                    key={i}
+                    className="flex items-center gap-3 p-3 rounded-xl"
+                    style={{ animationDelay: `${i * 50}ms` }}
+                  >
+                    <Skeleton className="h-10 w-10 rounded-full shrink-0" />
+                    <div className="flex-1 space-y-1.5">
+                      <Skeleton className="h-4 w-32 rounded-lg" />
+                      <Skeleton className="h-3 w-24 rounded-lg" />
+                    </div>
+                    <Skeleton className="h-4 w-4 rounded shrink-0" />
+                  </div>
                 ))}
               </div>
             ) : patients.length > 0 ? (
@@ -316,8 +378,8 @@ export default function DashboardPage() {
                 <p className="text-xs text-muted-foreground/70 mb-4">
                   Dodaj pierwszego pacjenta
                 </p>
-                <Button 
-                  size="sm" 
+                <Button
+                  size="sm"
                   className="h-8 text-xs"
                   onClick={() => setIsPatientDialogOpen(true)}
                   disabled={!organizationId || !therapistId}
@@ -352,9 +414,26 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent className="pt-0">
             {setsLoading ? (
-              <div className="space-y-2 animate-stagger">
+              <div className="space-y-2">
                 {[1, 2, 3, 4].map((i) => (
-                  <Skeleton key={i} className="h-14 w-full rounded-xl" />
+                  <div
+                    key={i}
+                    className="flex items-center gap-3 p-3 rounded-xl"
+                    style={{ animationDelay: `${(i + 4) * 50}ms` }}
+                  >
+                    {/* Set Thumbnail Skeleton - 2x2 grid */}
+                    <div className="h-10 w-10 rounded-lg overflow-hidden grid grid-cols-2 gap-0.5 shrink-0">
+                      <Skeleton className="rounded-none" />
+                      <Skeleton className="rounded-none" />
+                      <Skeleton className="rounded-none" />
+                      <Skeleton className="rounded-none" />
+                    </div>
+                    <div className="flex-1 space-y-1.5">
+                      <Skeleton className="h-4 w-36 rounded-lg" />
+                      <Skeleton className="h-3 w-20 rounded-lg" />
+                    </div>
+                    <Skeleton className="h-4 w-4 rounded shrink-0" />
+                  </div>
                 ))}
               </div>
             ) : sortedExerciseSets.length > 0 ? (
@@ -404,37 +483,18 @@ export default function DashboardPage() {
         </Card>
       </div>
 
-      {/* Subscription Banner - Compact, at bottom */}
-      {isAtLimit && (
-        <div className="relative rounded-xl border border-orange-500/30 bg-gradient-to-r from-orange-500/10 via-red-500/5 to-orange-500/10 p-4 overflow-hidden">
-          <div className="absolute -top-12 -right-12 w-32 h-32 bg-orange-500/10 rounded-full blur-2xl" />
-          <div className="relative flex items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-orange-500 to-red-500 text-white shadow-lg shadow-orange-500/20">
-                <Rocket className="h-5 w-5" />
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-foreground flex items-center gap-1.5">
-                  Osiągnąłeś limit pacjentów
-                  <Zap className="h-3.5 w-3.5 text-orange-500 fill-orange-500" />
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  Ulepsz plan i rozwijaj praktykę bez ograniczeń
-                </p>
-              </div>
-            </div>
-            <Link href="/subscription">
-              <Button
-                size="sm"
-                className="gap-1.5 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 border-0 shadow-lg shadow-orange-500/20 text-white"
-              >
-                <Sparkles className="h-3.5 w-3.5" />
-                Ulepsz plan
-                <ArrowRight className="h-3.5 w-3.5" />
-              </Button>
-            </Link>
-          </div>
-        </div>
+      {/* Subscription Banner - Urgent when limit reached, Promo otherwise */}
+      {reachedLimit ? (
+        <SubscriptionBanner
+          variant="urgent"
+          limitType={reachedLimit}
+          planName={planName}
+        />
+      ) : (
+        <SubscriptionBanner
+          variant="promo"
+          planName={planName}
+        />
       )}
 
       {/* Assignment Wizard */}

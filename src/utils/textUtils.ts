@@ -217,3 +217,104 @@ export const getContrastTextColor = (
   // Próg 0.179 zapewnia contrast ratio >= 4.5:1 (WCAG AA)
   return luminance > 0.179 ? darkColor : lightColor;
 };
+
+/**
+ * Paleta gradientów dla avatarów pacjentów
+ * Każdy gradient ma przyjemne kolory pasujące do dark theme
+ */
+const AVATAR_GRADIENTS = [
+  { from: '#22c55e', to: '#10b981' }, // green
+  { from: '#3b82f6', to: '#6366f1' }, // blue-indigo
+  { from: '#8b5cf6', to: '#a855f7' }, // violet-purple
+  { from: '#ec4899', to: '#f43f5e' }, // pink-rose
+  { from: '#f97316', to: '#eab308' }, // orange-yellow
+  { from: '#14b8a6', to: '#06b6d4' }, // teal-cyan
+  { from: '#6366f1', to: '#8b5cf6' }, // indigo-violet
+  { from: '#ef4444', to: '#f97316' }, // red-orange
+  { from: '#10b981', to: '#14b8a6' }, // emerald-teal
+  { from: '#a855f7', to: '#ec4899' }, // purple-pink
+] as const;
+
+/**
+ * Generuje prosty hash z tekstu (djb2 algorithm)
+ */
+const simpleHash = (str: string): number => {
+  let hash = 5381;
+  for (let i = 0; i < str.length; i++) {
+    hash = (hash * 33) ^ str.charCodeAt(i);
+  }
+  return Math.abs(hash);
+};
+
+/**
+ * Generuje gradient CSS dla avatara na podstawie inicjałów (pierwszych liter)
+ * Stabilny - zmienia się tylko gdy zmieniają się pierwsze litery imienia/nazwiska
+ *
+ * @param firstName - imię
+ * @param lastName - nazwisko (opcjonalne)
+ * @returns string z CSS gradient (np. "linear-gradient(135deg, #22c55e, #10b981)")
+ *
+ * @example
+ * getAvatarGradient('Jan', 'Kowalski') // => "linear-gradient(135deg, #3b82f6, #6366f1)"
+ * getAvatarGradient('', '') // => domyślny gradient
+ */
+export const getAvatarGradient = (
+  firstName: string | null | undefined,
+  lastName?: string | null | undefined
+): string => {
+  // Use only first letters for stable gradient (no "disco" effect)
+  const firstInitial = (firstName || '').trim()[0]?.toLowerCase() || '';
+  const lastInitial = (lastName || '').trim()[0]?.toLowerCase() || '';
+  const key = `${firstInitial}${lastInitial}`;
+
+  const index = key ? simpleHash(key) % AVATAR_GRADIENTS.length : 0;
+  const gradient = AVATAR_GRADIENTS[index];
+  return `linear-gradient(135deg, ${gradient.from}, ${gradient.to})`;
+};
+
+/**
+ * Pobiera kolor "from" gradientu na podstawie inicjałów
+ * Używane gdy potrzebujemy pojedynczego koloru zamiast gradientu
+ *
+ * @param firstName - imię
+ * @param lastName - nazwisko (opcjonalne)
+ * @returns kolor hex
+ */
+export const getAvatarColor = (
+  firstName: string | null | undefined,
+  lastName?: string | null | undefined
+): string => {
+  const firstInitial = (firstName || '').trim()[0]?.toLowerCase() || '';
+  const lastInitial = (lastName || '').trim()[0]?.toLowerCase() || '';
+  const key = `${firstInitial}${lastInitial}`;
+
+  const index = key ? simpleHash(key) % AVATAR_GRADIENTS.length : 0;
+  return AVATAR_GRADIENTS[index].from;
+};
+
+/**
+ * Generuje inicjały z imienia i nazwiska
+ *
+ * @param firstName - imię
+ * @param lastName - nazwisko
+ * @returns 1-2 znakowe inicjały (wielkie litery)
+ *
+ * @example
+ * getInitials('Jan', 'Kowalski') // => "JK"
+ * getInitials('Anna', '') // => "A"
+ * getInitials('', '') // => "?"
+ */
+export const getInitials = (
+  firstName: string | null | undefined,
+  lastName: string | null | undefined
+): string => {
+  const first = (firstName || '').trim();
+  const last = (lastName || '').trim();
+
+  if (!first && !last) return '?';
+
+  const firstInitial = first[0]?.toUpperCase() || '';
+  const lastInitial = last[0]?.toUpperCase() || '';
+
+  return `${firstInitial}${lastInitial}` || '?';
+};

@@ -1,7 +1,8 @@
 'use client';
 
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Mail, Phone, FolderKanban, Wrench, MoreHorizontal, Power, UserX } from 'lucide-react';
+import { Mail, Phone, FolderKanban, Wrench, MoreHorizontal, Power, UserX, Tag } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -14,9 +15,11 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
+import { EditContextLabelDialog } from './EditContextLabelDialog';
 
 export interface Patient {
   id: string;
+  assignmentId?: string; // ID of therapist-patient assignment (for context updates)
   fullname?: string;
   email?: string;
   image?: string;
@@ -42,6 +45,7 @@ interface PatientExpandableCardProps {
   onToggleStatus: (patient: Patient) => void;
   onRemove: (patient: Patient) => void;
   organizationId: string;
+  therapistId: string;
 }
 
 export function PatientExpandableCard({
@@ -49,8 +53,11 @@ export function PatientExpandableCard({
   onAssignSet,
   onToggleStatus,
   onRemove,
+  organizationId,
+  therapistId,
 }: PatientExpandableCardProps) {
   const router = useRouter();
+  const [isEditLabelOpen, setIsEditLabelOpen] = useState(false);
 
   const displayName =
     patient.fullname ||
@@ -76,15 +83,24 @@ export function PatientExpandableCard({
   };
 
   return (
-    <div
-      onClick={handleCardClick}
-      className={cn(
-        'group rounded-xl border border-border/60 bg-surface transition-all cursor-pointer',
-        'hover:bg-surface-light hover:border-primary/30 hover:shadow-md',
-        !isActive && 'opacity-60 hover:opacity-100'
-      )}
-    >
-      <div className="flex items-center gap-4 p-4">
+    <>
+      <div
+        onClick={handleCardClick}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            handleCardClick();
+          }
+        }}
+        role="button"
+        tabIndex={0}
+        className={cn(
+          'group rounded-xl border border-border/60 bg-surface transition-all cursor-pointer',
+          'hover:bg-surface-light hover:border-primary/30 hover:shadow-md',
+          !isActive && 'opacity-60 hover:opacity-100'
+        )}
+      >
+        <div className="flex items-center gap-4 p-4">
         {/* Avatar */}
         <div className="relative shrink-0">
           <Avatar
@@ -142,11 +158,47 @@ export function PatientExpandableCard({
           </div>
         </div>
 
-        {/* Context Label */}
-        {patient.contextLabel && (
-          <ColorBadge color={patient.contextColor || '#888888'} size="sm" className="shrink-0">
-            {patient.contextLabel}
-          </ColorBadge>
+        {/* Context Label - clickable to edit, hide default "Leczenie podstawowe" */}
+        {patient.contextLabel && patient.contextLabel !== 'Leczenie podstawowe' ? (
+          <button
+            type="button"
+            onMouseDown={(e) => {
+              e.stopPropagation();
+              e.preventDefault();
+            }}
+            onClick={(e) => {
+              e.stopPropagation();
+              e.preventDefault();
+              setIsEditLabelOpen(true);
+            }}
+            className="shrink-0 hover:scale-105 transition-transform"
+            title="Kliknij aby edytować"
+          >
+            <ColorBadge color={patient.contextColor || '#888888'} size="sm">
+              {patient.contextLabel}
+            </ColorBadge>
+          </button>
+        ) : (
+          /* Add note button when no label */
+          <button
+            type="button"
+            onMouseDown={(e) => {
+              e.stopPropagation();
+              e.preventDefault();
+            }}
+            onClick={(e) => {
+              e.stopPropagation();
+              e.preventDefault();
+              setIsEditLabelOpen(true);
+            }}
+            className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
+            title="Dodaj notatkę"
+          >
+            <Badge variant="outline" className="text-[10px] px-2 py-0.5 gap-1 hover:bg-surface-light">
+              <Tag className="h-3 w-3" />
+              Notatka
+            </Badge>
+          </button>
         )}
 
         {/* Status Badge */}
@@ -187,6 +239,10 @@ export function PatientExpandableCard({
                 <FolderKanban className="mr-2 h-4 w-4" />
                 Przypisz zestaw
               </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setIsEditLabelOpen(true)}>
+                <Tag className="mr-2 h-4 w-4" />
+                Edytuj notatkę
+              </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => onToggleStatus(patient)}>
                 <Power className="mr-2 h-4 w-4" />
@@ -204,5 +260,17 @@ export function PatientExpandableCard({
         </div>
       </div>
     </div>
+
+    {/* Edit Context Label Dialog - OUTSIDE the clickable card to prevent event issues */}
+    <EditContextLabelDialog
+      open={isEditLabelOpen}
+      onOpenChange={setIsEditLabelOpen}
+      assignmentId={patient.assignmentId || ''}
+      patientName={displayName}
+      currentLabel={patient.contextLabel}
+      therapistId={therapistId}
+      organizationId={organizationId}
+    />
+  </>
   );
 }
