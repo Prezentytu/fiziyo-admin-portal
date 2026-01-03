@@ -1447,7 +1447,7 @@ export function CreateSetWizard({
                     <div className="flex-1 min-w-0">
                       <h3 className="text-sm sm:text-base md:text-lg font-bold text-white">AI Generator</h3>
                       <p className="hidden sm:block text-xs md:text-sm text-white/80 line-clamp-1 md:line-clamp-none">
-                        Opisz potrzeby - AI zaproponuje
+                        Opisz potrzeby - AI zaproponuje ćwiczenia
                       </p>
                     </div>
                     <ArrowRight className="h-4 w-4 sm:h-5 sm:w-5 text-white/60 group-hover:text-white group-hover:translate-x-1 transition-all duration-300 shrink-0" />
