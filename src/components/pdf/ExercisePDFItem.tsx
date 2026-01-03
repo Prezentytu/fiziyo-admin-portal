@@ -1,13 +1,13 @@
 import { View, Text, Image } from '@react-pdf/renderer';
 import { pdfStyles } from './styles';
 import { getMediaUrl } from '@/utils/mediaUrl';
-import { 
-  formatSets, 
-  formatReps, 
-  formatDurationPolish, 
+import {
+  formatSets,
+  formatReps,
+  formatDurationPolish,
   formatSeconds,
-  translateExerciseTypePolish, 
-  translateExerciseSidePolish 
+  translateExerciseTypePolish,
+  translateExerciseSidePolish
 } from './polishUtils';
 import type { PDFExercise } from './types';
 
@@ -102,13 +102,13 @@ export function ExercisePDFItem({ exercise, index, showImage, compact }: Exercis
             )}
             {durationText && (
               <View style={pdfStyles.paramBox}>
-                <Text style={pdfStyles.paramLabel}>Czas</Text>
+                <Text style={pdfStyles.paramLabel}>Czas serii</Text>
                 <Text style={pdfStyles.paramValue}>{durationText}</Text>
               </View>
             )}
             {restText && (
               <View style={pdfStyles.paramBox}>
-                <Text style={pdfStyles.paramLabel}>Przerwa</Text>
+                <Text style={pdfStyles.paramLabel}>Przerwa między seriami</Text>
                 <Text style={pdfStyles.paramValue}>{restText}</Text>
               </View>
             )}

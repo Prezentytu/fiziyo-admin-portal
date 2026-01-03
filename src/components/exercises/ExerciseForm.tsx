@@ -189,11 +189,11 @@ export function ExerciseForm({
               <FormItem>
                 <FormLabel>Liczba serii</FormLabel>
                 <FormControl>
-                  <Input 
-                    type="number" 
-                    min="0" 
-                    max="100" 
-                    value={field.value ?? ""} 
+                  <Input
+                    type="number"
+                    min="0"
+                    max="100"
+                    value={field.value ?? ""}
                     onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : null)}
                   />
                 </FormControl>
@@ -210,11 +210,11 @@ export function ExerciseForm({
                 <FormItem>
                   <FormLabel>Liczba powtórzeń</FormLabel>
                   <FormControl>
-                    <Input 
-                      type="number" 
-                      min="0" 
-                      max="1000" 
-                      value={field.value ?? ""} 
+                    <Input
+                      type="number"
+                      min="0"
+                      max="1000"
+                      value={field.value ?? ""}
                       onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : null)}
                     />
                   </FormControl>
@@ -230,13 +230,13 @@ export function ExerciseForm({
               name="duration"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Czas (sekundy)</FormLabel>
+                  <FormLabel>Czas serii (sekundy)</FormLabel>
                   <FormControl>
-                    <Input 
-                      type="number" 
-                      min="0" 
-                      max="3600" 
-                      value={field.value ?? ""} 
+                    <Input
+                      type="number"
+                      min="0"
+                      max="3600"
+                      value={field.value ?? ""}
                       onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : null)}
                     />
                   </FormControl>
@@ -255,11 +255,11 @@ export function ExerciseForm({
               <FormItem>
                 <FormLabel>Przerwa między seriami (s)</FormLabel>
                 <FormControl>
-                  <Input 
-                    type="number" 
-                    min="0" 
-                    max="300" 
-                    value={field.value ?? ""} 
+                  <Input
+                    type="number"
+                    min="0"
+                    max="300"
+                    value={field.value ?? ""}
                     onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : null)}
                   />
                 </FormControl>
@@ -276,11 +276,11 @@ export function ExerciseForm({
               <FormItem>
                 <FormLabel>Przerwa między powtórzeniami (s)</FormLabel>
                 <FormControl>
-                  <Input 
-                    type="number" 
-                    min="0" 
-                    max="300" 
-                    value={field.value ?? ""} 
+                  <Input
+                    type="number"
+                    min="0"
+                    max="300"
+                    value={field.value ?? ""}
                     onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : null)}
                   />
                 </FormControl>
@@ -297,13 +297,13 @@ export function ExerciseForm({
             name="preparationTime"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Czas przygotowania (s)</FormLabel>
+                <FormLabel>Przygotowanie (s)</FormLabel>
                 <FormControl>
-                  <Input 
-                    type="number" 
-                    min="0" 
-                    max="300" 
-                    value={field.value ?? ""} 
+                  <Input
+                    type="number"
+                    min="0"
+                    max="300"
+                    value={field.value ?? ""}
                     onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : null)}
                   />
                 </FormControl>
@@ -317,13 +317,13 @@ export function ExerciseForm({
             name="executionTime"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Czas wykonania (s)</FormLabel>
+                <FormLabel>Czas powtórzenia (s)</FormLabel>
                 <FormControl>
-                  <Input 
-                    type="number" 
-                    min="0" 
-                    max="300" 
-                    value={field.value ?? ""} 
+                  <Input
+                    type="number"
+                    min="0"
+                    max="300"
+                    value={field.value ?? ""}
                     onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : null)}
                   />
                 </FormControl>
@@ -381,4 +381,3 @@ export function ExerciseForm({
     </Form>
   );
 }
-

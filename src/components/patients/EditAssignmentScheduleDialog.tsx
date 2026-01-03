@@ -98,12 +98,12 @@ export function EditAssignmentScheduleDialog({
       const origStartDate = assignment.startDate ? new Date(assignment.startDate) : new Date();
       const origEndDate = assignment.endDate ? new Date(assignment.endDate) : new Date();
       const origFreq = frequencyToValue(assignment.frequency);
-      
-      const changed = 
+
+      const changed =
         startDate.getTime() !== origStartDate.getTime() ||
         endDate.getTime() !== origEndDate.getTime() ||
         JSON.stringify(frequency) !== JSON.stringify(origFreq);
-      
+
       setHasChanges(changed);
     }
   }, [open, assignment, startDate, endDate, frequency]);
@@ -221,9 +221,9 @@ export function EditAssignmentScheduleDialog({
               </p>
               {frequency.breakBetweenSets > 0 && (
                 <p>
-                  • Przerwa:{" "}
+                  • Przerwa między sesjami:{" "}
                   <span className="text-foreground font-medium">
-                    {frequency.breakBetweenSets}h między wykonaniami
+                    {frequency.breakBetweenSets}h
                   </span>
                 </p>
               )}
@@ -259,12 +259,3 @@ export function EditAssignmentScheduleDialog({
     </Dialog>
   );
 }
-
-
-
-
-
-
-
-
-

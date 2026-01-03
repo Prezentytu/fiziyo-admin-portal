@@ -438,6 +438,7 @@ function SortableExerciseCard({
               type="button"
               onClick={() => setIsExpanded(true)}
               className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-surface-light text-muted-foreground text-xs font-medium hover:bg-surface hover:text-foreground transition-colors shrink-0"
+              title="Przerwa między seriami"
             >
               <Clock className="h-3 w-3" />
               {params.restSets}s
@@ -552,7 +553,7 @@ function SortableExerciseCard({
                 min={1}
               />
               <ParamControl
-                label={isTimeType ? 'Czas (s)' : 'Powtórzenia'}
+                label={isTimeType ? 'Czas serii (s)' : 'Powtórzenia'}
                 value={isTimeType ? params.duration : params.reps}
                 onChange={(v) => onUpdateParams(isTimeType ? 'duration' : 'reps', v)}
                 step={isTimeType ? 5 : 1}
@@ -564,7 +565,7 @@ function SortableExerciseCard({
             {/* Rest and side - 2 column grid */}
             <div className="grid grid-cols-2 gap-3">
               <ParamControl
-                label="Przerwa (s)"
+                label="Przerwa między seriami (s)"
                 value={params.restSets}
                 onChange={(v) => onUpdateParams('restSets', v)}
                 step={10}
@@ -612,21 +613,21 @@ function SortableExerciseCard({
                   className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
                 >
                   {showMoreOptions ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
-                  {showMoreOptions ? 'Mniej opcji' : 'Więcej opcji (czasy, przerwa między powt.)'}
+                  {showMoreOptions ? 'Mniej opcji' : 'Więcej opcji'}
                 </button>
               </CollapsibleTrigger>
               <CollapsibleContent>
                 <div className="pt-3 mt-2 border-t border-border/30 space-y-3">
                   <div className="grid grid-cols-2 gap-3">
                     <ParamControl
-                      label="Czas przygotowania (s)"
+                      label="Przygotowanie (s)"
                       value={params.preparationTime}
                       onChange={(v) => onUpdateParams('preparationTime', v)}
                       step={5}
                       min={0}
                     />
                     <ParamControl
-                      label="Czas wykonania (s)"
+                      label="Czas powtórzenia (s)"
                       value={params.executionTime}
                       onChange={(v) => onUpdateParams('executionTime', v)}
                       step={5}
@@ -1749,7 +1750,7 @@ export function CreateSetWizard({
                           <DropdownMenuItem onClick={() => applyParamsToAll('reps', 10)}>10 powt.</DropdownMenuItem>
                           <DropdownMenuItem onClick={() => applyParamsToAll('reps', 15)}>15 powt.</DropdownMenuItem>
                           <DropdownMenuSeparator />
-                          <DropdownMenuLabel className="text-xs">Przerwa</DropdownMenuLabel>
+                          <DropdownMenuLabel className="text-xs">Przerwa między seriami</DropdownMenuLabel>
                           <DropdownMenuItem onClick={() => applyParamsToAll('restSets', 30)}>30s</DropdownMenuItem>
                           <DropdownMenuItem onClick={() => applyParamsToAll('restSets', 60)}>60s</DropdownMenuItem>
                           <DropdownMenuItem onClick={() => applyParamsToAll('restSets', 90)}>90s</DropdownMenuItem>
@@ -1924,7 +1925,7 @@ export function CreateSetWizard({
                 {previewExercise.duration && (
                   <div className="rounded-lg bg-surface p-3 text-center">
                     <p className="text-lg font-bold">{previewExercise.duration}s</p>
-                    <p className="text-xs text-muted-foreground">Czas</p>
+                    <p className="text-xs text-muted-foreground">Czas serii</p>
                   </div>
                 )}
               </div>
