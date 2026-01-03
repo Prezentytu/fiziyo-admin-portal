@@ -49,7 +49,7 @@ import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { MediaUploadSection } from './MediaUploadSection';
 import { TagPicker } from './TagPicker';
 import { AIExerciseSuggestions } from './AIExerciseSuggestions';
-import { QuickTemplates } from './QuickTemplates';
+import { QuickTemplates, QUICK_TEMPLATES } from './QuickTemplates';
 import { cn } from '@/lib/utils';
 
 import { CREATE_EXERCISE_MUTATION, UPLOAD_EXERCISE_IMAGE_MUTATION } from '@/graphql/mutations/exercises.mutations';
@@ -57,14 +57,11 @@ import { GET_ORGANIZATION_EXERCISES_QUERY } from '@/graphql/queries/exercises.qu
 import { GET_EXERCISE_TAGS_BY_ORGANIZATION_QUERY } from '@/graphql/queries/exerciseTags.queries';
 import { GET_TAG_CATEGORIES_BY_ORGANIZATION_QUERY } from '@/graphql/queries/tagCategories.queries';
 import type { ExerciseTagsResponse, TagCategoriesResponse } from '@/types/apollo';
+import type { CreateExerciseMutationResult, CreateExerciseVariables } from '@/graphql/types/exercise.types';
 
 import { useVoiceInput } from '@/hooks/useVoiceInput';
-import {
-  exerciseAIService,
-  type ExerciseSuggestion,
-  type ParsedExerciseFromAI
-} from '@/services/exerciseAIService';
-import { QUICK_TEMPLATES } from './QuickTemplates';
+import { aiService } from '@/services/aiService';
+import type { ExerciseSuggestionResponse, VoiceParseResponse } from '@/types/ai.types';
 
 // Types
 type ExerciseType = 'reps' | 'time' | 'hold';
@@ -279,7 +276,7 @@ export function CreateExerciseWizard({
   const [saveAndAddAnother, setSaveAndAddAnother] = useState(false);
 
   // AI state
-  const [aiSuggestion, setAiSuggestion] = useState<ExerciseSuggestion | null>(null);
+  const [aiSuggestion, setAiSuggestion] = useState<ExerciseSuggestionResponse | null>(null);
   const [isLoadingAI, setIsLoadingAI] = useState(false);
   const [showAISuggestions, setShowAISuggestions] = useState(true);
 
@@ -324,46 +321,15 @@ export function CreateExerciseWizard({
 
   const tagNames = useMemo(() => tags.map(t => t.name), [tags]);
 
-  // Voice input hook
-  const handleVoiceResult = useCallback(async (text: string) => {
-    setIsLoadingAI(true);
-    try {
-      const parsed = await exerciseAIService.parseVoiceInput(text);
-      if (parsed) {
-        applyParsedExercise(parsed);
-        toast.success('Ćwiczenie rozpoznane przez AI');
-      } else {
-        // If parsing fails, just set the name
-        updateField('name', text);
-        toast.info('Nie udało się sparsować szczegółów - uzupełnij ręcznie');
-      }
-    } catch {
-      updateField('name', text);
-      toast.error('Błąd AI - wprowadzono tylko nazwę');
-    } finally {
-      setIsLoadingAI(false);
-    }
-  }, []);
-
-  const {
-    state: voiceState,
-    isSupported: voiceSupported,
-    interimTranscript,
-    toggleListening,
-    error: voiceError,
-  } = useVoiceInput({
-    language: 'pl-PL',
-    autoSend: true,
-    onSend: handleVoiceResult,
-    silenceTimeout: 2000,
-  });
-
   // Mutations
-  const [createExercise] = useMutation(CREATE_EXERCISE_MUTATION, {
-    refetchQueries: [
-      { query: GET_ORGANIZATION_EXERCISES_QUERY, variables: { organizationId } },
-    ],
-  });
+  const [createExercise] = useMutation<CreateExerciseMutationResult, CreateExerciseVariables>(
+    CREATE_EXERCISE_MUTATION,
+    {
+      refetchQueries: [
+        { query: GET_ORGANIZATION_EXERCISES_QUERY, variables: { organizationId } },
+      ],
+    }
+  );
 
   const [uploadImage] = useMutation(UPLOAD_EXERCISE_IMAGE_MUTATION);
 
@@ -421,8 +387,8 @@ export function CreateExerciseWizard({
     setData((prev) => ({ ...prev, [field]: value }));
   }, []);
 
-  // Apply parsed exercise from AI
-  const applyParsedExercise = useCallback((parsed: ParsedExerciseFromAI) => {
+  // Apply parsed exercise from voice input
+  const applyVoiceParsed = useCallback((parsed: VoiceParseResponse) => {
     setData((prev) => ({
       ...prev,
       name: parsed.name,
@@ -449,6 +415,39 @@ export function CreateExerciseWizard({
       }
     }
   }, [tags, updateField]);
+
+  // Voice input hook
+  const handleVoiceResult = useCallback(async (text: string) => {
+    setIsLoadingAI(true);
+    try {
+      const parsed = await aiService.parseVoiceInput(text);
+      if (parsed) {
+        applyVoiceParsed(parsed);
+        toast.success('Ćwiczenie rozpoznane przez AI');
+      } else {
+        updateField('name', text);
+        toast.info('Nie udało się sparsować szczegółów - uzupełnij ręcznie');
+      }
+    } catch {
+      updateField('name', text);
+      toast.error('Błąd AI - wprowadzono tylko nazwę');
+    } finally {
+      setIsLoadingAI(false);
+    }
+  }, [applyVoiceParsed, updateField]);
+
+  const {
+    state: voiceState,
+    isSupported: voiceSupported,
+    interimTranscript,
+    toggleListening,
+    error: voiceError,
+  } = useVoiceInput({
+    language: 'pl-PL',
+    autoSend: true,
+    onSend: handleVoiceResult,
+    silenceTimeout: 2000,
+  });
 
   // Apply AI suggestion
   const applyAISuggestion = useCallback(() => {
@@ -493,7 +492,7 @@ export function CreateExerciseWizard({
       debounceRef.current = setTimeout(async () => {
         setIsLoadingAI(true);
         try {
-          const suggestion = await exerciseAIService.getSuggestions(data.name, tagNames);
+          const suggestion = await aiService.getExerciseSuggestion(data.name, tagNames);
           setAiSuggestion(suggestion);
         } catch {
           console.error('Failed to get AI suggestions');
@@ -512,24 +511,54 @@ export function CreateExerciseWizard({
     };
   }, [data.name, tagNames, showAISuggestions]);
 
-  // Handle template selection
+  // Handle template selection - use AI to suggest based on template category
   const handleTemplateClick = useCallback(async (template: typeof QUICK_TEMPLATES[0]) => {
     setIsLoadingAI(true);
 
     try {
-      const generated = await exerciseAIService.generateFromTemplate(template.category);
-      if (generated) {
-        applyParsedExercise(generated);
-        toast.success(`Wygenerowano ćwiczenie: ${generated.name}`);
+      // Use getExerciseSuggestion with template category as exercise name
+      const suggestion = await aiService.getExerciseSuggestion(template.category, tagNames);
+      if (suggestion) {
+        // Apply suggestion and set a generated name based on template
+        setData((prev) => ({
+          ...prev,
+          name: template.label,
+          description: suggestion.description,
+          type: suggestion.type,
+          sets: suggestion.sets,
+          reps: suggestion.type === 'reps' ? suggestion.reps : null,
+          duration: suggestion.type !== 'reps' ? suggestion.duration : null,
+          restSets: suggestion.restSets,
+          exerciseSide: suggestion.exerciseSide,
+        }));
+
+        // Auto-select matching tags
+        if (suggestion.suggestedTags.length > 0) {
+          const matchingTags = tags.filter(t =>
+            suggestion.suggestedTags.some(st =>
+              t.name.toLowerCase().includes(st.toLowerCase()) ||
+              st.toLowerCase().includes(t.name.toLowerCase())
+            )
+          );
+          if (matchingTags.length > 0) {
+            updateField('mainTags', matchingTags.slice(0, 3).map(t => t.id));
+            setOpenSections(prev => ({ ...prev, tags: true }));
+          }
+        }
+
+        toast.success(`Wygenerowano sugestie dla: ${template.label}`);
       } else {
-        toast.error('Nie udało się wygenerować ćwiczenia');
+        // Fallback - just set the name
+        updateField('name', template.label);
+        toast.info('Uzupełnij szczegóły ćwiczenia');
       }
     } catch {
-      toast.error('Błąd generowania ćwiczenia');
+      updateField('name', template.label);
+      toast.error('Błąd AI - wprowadzono tylko nazwę');
     } finally {
       setIsLoadingAI(false);
     }
-  }, [applyParsedExercise]);
+  }, [tags, tagNames, updateField]);
 
   // Validation
   const isBasicsValid = data.name.trim().length >= 2;
@@ -716,7 +745,6 @@ export function CreateExerciseWizard({
             {/* AI Suggestions */}
             {showAISuggestions && data.name.length >= 3 && (
               <AIExerciseSuggestions
-                exerciseName={data.name}
                 suggestion={aiSuggestion}
                 isLoading={isLoadingAI}
                 onApply={applyAISuggestion}

@@ -10,10 +10,10 @@ import {
 } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { useVoiceInput, type VoiceInputState } from '@/hooks/useVoiceInput';
-import type { ParsedExerciseFromAI } from '@/services/exerciseAIService';
+import type { VoiceParseResponse } from '@/types/ai.types';
 
 interface ExerciseVoiceInputProps {
-  onResult: (parsed: ParsedExerciseFromAI | null, rawText: string) => void;
+  onResult: (parsed: VoiceParseResponse | null, rawText: string) => void;
   disabled?: boolean;
   className?: string;
 }
@@ -123,5 +123,3 @@ export function ExerciseVoiceInput({
 
 // Export types and state
 export type { VoiceInputState };
-
-

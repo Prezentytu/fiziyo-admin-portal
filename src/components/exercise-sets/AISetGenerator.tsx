@@ -12,8 +12,8 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { ImagePlaceholder } from '@/components/shared/ImagePlaceholder';
 import { getMediaUrl } from '@/utils/mediaUrl';
 import { cn } from '@/lib/utils';
-import { chatService } from '@/services/chatService';
-import type { ParsedExercise } from '@/types/chat.types';
+import { aiService } from '@/services/aiService';
+import type { GeneratedExercise as AIGeneratedExercise } from '@/types/ai.types';
 
 interface ExerciseTag {
   id: string;
@@ -39,9 +39,8 @@ interface Exercise {
 }
 
 interface GeneratedExerciseMatch {
-  aiExercise: ParsedExercise;
+  aiExercise: AIGeneratedExercise;
   matchedExercise: Exercise | null;
-  matchScore: number; // 0-1
 }
 
 interface AISetGeneratorProps {
@@ -78,131 +77,23 @@ const QUICK_PROMPTS = [
   { id: 'posture', label: 'Korekta postawy', prompt: 'Ćwiczenia korygujące postawę przy pracy biurowej' },
 ];
 
-// Parse AI response to extract exercises
-function parseExercisesFromResponse(response: string): ParsedExercise[] {
-  const exercises: ParsedExercise[] = [];
+// Find exercise by matched name from AI response
+function findExerciseByName(matchedName: string | null, dbExercises: Exercise[]): Exercise | null {
+  if (!matchedName) return null;
 
-  // Try to parse JSON blocks if present
-  const jsonMatch = response.match(/```json\s*([\s\S]*?)\s*```/);
-  if (jsonMatch) {
-    try {
-      const parsed = JSON.parse(jsonMatch[1]);
-      if (Array.isArray(parsed)) {
-        return parsed;
-      }
-    } catch {
-      // Continue with text parsing
-    }
-  }
+  const lowerName = matchedName.toLowerCase().trim();
 
-  // Parse numbered list format
-  const lines = response.split('\n');
-  let currentExercise: Partial<ParsedExercise> | null = null;
+  // Try exact match first
+  const exactMatch = dbExercises.find(e => e.name.toLowerCase().trim() === lowerName);
+  if (exactMatch) return exactMatch;
 
-  for (const line of lines) {
-    const trimmed = line.trim();
+  // Try partial match
+  const partialMatch = dbExercises.find(e =>
+    e.name.toLowerCase().includes(lowerName) ||
+    lowerName.includes(e.name.toLowerCase())
+  );
 
-    // Match numbered exercise (e.g., "1. Unoszenie prostych nóg")
-    const numberedMatch = trimmed.match(/^\d+\.\s*\*?\*?(.+?)\*?\*?\s*$/);
-    if (numberedMatch) {
-      if (currentExercise && currentExercise.name) {
-        exercises.push({
-          name: currentExercise.name,
-          tags: currentExercise.tags || [],
-          description: currentExercise.description || '',
-          sets: currentExercise.sets,
-          reps: currentExercise.reps,
-        });
-      }
-      currentExercise = { name: numberedMatch[1].replace(/\*\*/g, '').trim(), tags: [], description: '' };
-      continue;
-    }
-
-    // Match exercise name in bold (e.g., "**Przysiady**")
-    const boldMatch = trimmed.match(/^\*\*(.+?)\*\*\s*[-:]?\s*(.*)$/);
-    if (boldMatch && !currentExercise) {
-      currentExercise = { name: boldMatch[1].trim(), tags: [], description: boldMatch[2] || '' };
-      continue;
-    }
-
-    // Add description to current exercise
-    if (currentExercise && trimmed && !trimmed.startsWith('-') && !trimmed.startsWith('•')) {
-      if (!currentExercise.description) {
-        currentExercise.description = trimmed;
-      }
-    }
-
-    // Parse sets/reps
-    const setsMatch = trimmed.match(/(\d+)\s*seri[ie]/i);
-    const repsMatch = trimmed.match(/(\d+)\s*powt[oó]rze[nń]/i);
-    if (setsMatch && currentExercise) {
-      currentExercise.sets = setsMatch[1];
-    }
-    if (repsMatch && currentExercise) {
-      currentExercise.reps = repsMatch[1];
-    }
-  }
-
-  // Add last exercise
-  if (currentExercise && currentExercise.name) {
-    exercises.push({
-      name: currentExercise.name,
-      tags: currentExercise.tags || [],
-      description: currentExercise.description || '',
-      sets: currentExercise.sets,
-      reps: currentExercise.reps,
-    });
-  }
-
-  return exercises;
-}
-
-// Match AI exercises to database exercises
-function matchExercises(aiExercises: ParsedExercise[], dbExercises: Exercise[]): GeneratedExerciseMatch[] {
-  return aiExercises.map((aiEx) => {
-    const aiName = aiEx.name.toLowerCase().trim();
-
-    // Try exact match first
-    let bestMatch: Exercise | null = null;
-    let bestScore = 0;
-
-    for (const dbEx of dbExercises) {
-      const dbName = dbEx.name.toLowerCase().trim();
-
-      // Exact match
-      if (dbName === aiName) {
-        bestMatch = dbEx;
-        bestScore = 1;
-        break;
-      }
-
-      // Partial match - check if names contain each other
-      if (dbName.includes(aiName) || aiName.includes(dbName)) {
-        const score = Math.min(aiName.length, dbName.length) / Math.max(aiName.length, dbName.length);
-        if (score > bestScore) {
-          bestScore = score;
-          bestMatch = dbEx;
-        }
-      }
-
-      // Word-based matching
-      const aiWords = aiName.split(/\s+/).filter((w) => w.length > 2);
-      const dbWords = dbName.split(/\s+/).filter((w) => w.length > 2);
-      const matchingWords = aiWords.filter((w) => dbWords.some((dw) => dw.includes(w) || w.includes(dw)));
-      const wordScore = matchingWords.length / Math.max(aiWords.length, 1);
-
-      if (wordScore > bestScore && wordScore > 0.3) {
-        bestScore = wordScore;
-        bestMatch = dbEx;
-      }
-    }
-
-    return {
-      aiExercise: aiEx,
-      matchedExercise: bestScore > 0.3 ? bestMatch : null,
-      matchScore: bestScore,
-    };
-  });
+  return partialMatch || null;
 }
 
 export function AISetGenerator({
@@ -219,32 +110,8 @@ export function AISetGenerator({
   const [showUnmatched, setShowUnmatched] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Build prompt with patient context
-  const buildPrompt = useCallback(
-    (basePrompt: string) => {
-      let fullPrompt = basePrompt;
-
-      if (patientContext) {
-        const contextParts: string[] = [];
-        if (patientContext.patientName) {
-          contextParts.push(`Pacjent: ${patientContext.patientName}`);
-        }
-        if (patientContext.diagnosis && patientContext.diagnosis.length > 0) {
-          contextParts.push(`Diagnoza: ${patientContext.diagnosis.join(', ')}`);
-        }
-        if (patientContext.painLocation) {
-          contextParts.push(`Lokalizacja bólu: ${patientContext.painLocation}`);
-        }
-
-        if (contextParts.length > 0) {
-          fullPrompt = `${contextParts.join('. ')}.\n\n${basePrompt}`;
-        }
-      }
-
-      return `Jako fizjoterapeuta, zaproponuj zestaw 5-8 ćwiczeń. Dla każdego podaj nazwę i krótki opis. Format: numerowana lista z nazwami ćwiczeń.\n\n${fullPrompt}`;
-    },
-    [patientContext]
-  );
+  // Get exercise names for AI matching
+  const exerciseNames = useMemo(() => exercises.map(e => e.name), [exercises]);
 
   const handleGenerate = useCallback(
     async (customPrompt?: string) => {
@@ -260,20 +127,23 @@ export function AISetGenerator({
       setSelectedMatchIds(new Set());
 
       try {
-        const fullPrompt = buildPrompt(promptToUse);
-        const response = await chatService.sendMessage(fullPrompt);
+        // Use new AI service with structured JSON response
+        const response = await aiService.generateExerciseSet(
+          promptToUse,
+          patientContext,
+          exerciseNames
+        );
 
-        const responseText = response.response?.response || '';
-        if (!responseText) {
-          throw new Error('Brak odpowiedzi od AI');
+        if (!response || response.exercises.length === 0) {
+          throw new Error('Nie udało się wygenerować ćwiczeń');
         }
 
-        const parsedExercises = parseExercisesFromResponse(responseText);
-        if (parsedExercises.length === 0) {
-          throw new Error('Nie udało się rozpoznać ćwiczeń w odpowiedzi');
-        }
+        // Map AI exercises to matches with database exercises
+        const matches: GeneratedExerciseMatch[] = response.exercises.map(aiEx => ({
+          aiExercise: aiEx,
+          matchedExercise: findExerciseByName(aiEx.matchedExerciseName, exercises),
+        }));
 
-        const matches = matchExercises(parsedExercises, exercises);
         setGeneratedMatches(matches);
 
         // Auto-select matched exercises
@@ -286,7 +156,7 @@ export function AISetGenerator({
         setSelectedMatchIds(matchedIds);
 
         const matchedCount = matches.filter((m) => m.matchedExercise).length;
-        toast.success(`Wygenerowano ${parsedExercises.length} ćwiczeń, dopasowano ${matchedCount}`);
+        toast.success(`Wygenerowano ${response.exercises.length} ćwiczeń, dopasowano ${matchedCount}`);
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Wystąpił błąd podczas generowania';
         setError(message);
@@ -295,7 +165,7 @@ export function AISetGenerator({
         setIsGenerating(false);
       }
     },
-    [prompt, exercises, buildPrompt]
+    [prompt, exercises, exerciseNames, patientContext]
   );
 
   const handleQuickPrompt = useCallback(
@@ -505,11 +375,13 @@ export function AISetGenerator({
 
                       <div className="flex-1 min-w-0">
                         <p className="font-medium text-sm truncate">{match.matchedExercise.name}</p>
-                        <p className="text-xs text-muted-foreground truncate">AI: {match.aiExercise.name}</p>
+                        {match.aiExercise.reasoning && (
+                          <p className="text-xs text-muted-foreground truncate">{match.aiExercise.reasoning}</p>
+                        )}
                       </div>
 
                       <Badge variant="secondary" className="text-[10px] shrink-0">
-                        {Math.round(match.matchScore * 100)}% match
+                        Dopasowane
                       </Badge>
                     </button>
                   );
@@ -573,7 +445,3 @@ export function AISetGenerator({
     </div>
   );
 }
-
-
-
-

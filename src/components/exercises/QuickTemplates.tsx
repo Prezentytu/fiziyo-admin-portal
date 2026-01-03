@@ -5,7 +5,8 @@ import { Zap, Loader2, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
-import { QUICK_TEMPLATES, type ParsedExerciseFromAI } from '@/services/exerciseAIService';
+import { QUICK_TEMPLATES } from '@/services/aiService';
+import type { VoiceParseResponse } from '@/types/ai.types';
 
 interface QuickTemplatesProps {
   onSelect: (template: typeof QUICK_TEMPLATES[0]) => Promise<void>;
@@ -86,6 +87,4 @@ export function QuickTemplates({
 }
 
 export { QUICK_TEMPLATES };
-export type { ParsedExerciseFromAI };
-
-
+export type { VoiceParseResponse as ParsedExerciseFromAI };
