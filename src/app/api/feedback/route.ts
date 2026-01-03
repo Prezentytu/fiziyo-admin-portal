@@ -92,20 +92,17 @@ export async function POST(request: NextRequest) {
 
 function buildDiscordEmbed(feedback: FeedbackRequest) {
   const typeConfig: Record<string, { emoji: string; label: string; color: number }> = {
-    bug: { emoji: "🐛", label: "BUG", color: 15158332 },
-    feature: { emoji: "💡", label: "FEATURE", color: 3447003 },
-    improvement: { emoji: "✨", label: "IMPROVEMENT", color: 16776960 },
-    other: { emoji: "📝", label: "OTHER", color: 9807270 },
+    bug: { emoji: "🐛", label: "BŁĄD", color: 15158332 },        // czerwony
+    suggestion: { emoji: "💡", label: "SUGESTIA", color: 3447003 }, // niebieski
+    question: { emoji: "❓", label: "PYTANIE", color: 5814783 },    // fioletowy
   };
 
-  const config = typeConfig[feedback.type] || typeConfig.other;
+  const config = typeConfig[feedback.type?.toLowerCase()] || typeConfig.bug;
 
-  const envBadge =
-    feedback.environment?.toLowerCase() === "production"
-      ? "🟢 PROD"
-      : feedback.environment?.toLowerCase() === "staging"
-      ? "🟡 STAGING"
-      : "🔵 DEV";
+  const env = feedback.environment?.toLowerCase();
+  let envBadge = "🔵 DEV";
+  if (env === "production") envBadge = "🟢 PROD";
+  else if (env === "staging") envBadge = "🟡 STAGING";
 
   const roleDisplay: Record<string, string> = {
     patient: "🩺 Pacjent",
@@ -154,10 +151,10 @@ function buildDiscordEmbed(feedback: FeedbackRequest) {
 function sanitizeText(text: string): string {
   if (!text) return "Brak opisu";
   return text
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/@everyone/gi, "@\u200beveryone")
-    .replace(/@here/gi, "@\u200bhere")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll("@everyone", "@\u200beveryone")
+    .replaceAll("@here", "@\u200bhere")
     .substring(0, 4000);
 }
 
@@ -172,7 +169,9 @@ async function sendImagesToDiscord(webhookUrl: string, userEmail: string, images
       const base64Data = parts[1];
       const imageBuffer = Buffer.from(base64Data, "base64");
 
-      const extension = mimeType === "image/png" ? "png" : mimeType === "image/gif" ? "gif" : "jpg";
+      let extension = "jpg";
+      if (mimeType === "image/png") extension = "png";
+      else if (mimeType === "image/gif") extension = "gif";
       const fileName = `feedback_${i + 1}.${extension}`;
 
       const formData = new FormData();

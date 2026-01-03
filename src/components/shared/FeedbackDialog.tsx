@@ -195,9 +195,9 @@ export function FeedbackDialog({
                         type="button"
                         onClick={() => setFeedbackType(type)}
                         className={cn(
-                          'flex flex-col items-center justify-center gap-1 rounded-lg border p-2.5 transition-all duration-200',
+                          'flex flex-col items-center justify-center gap-1 rounded-lg border-2 p-2.5 transition-colors duration-200',
                           isSelected
-                            ? 'border-2 shadow-sm'
+                            ? 'shadow-sm'
                             : 'border-border hover:border-muted-foreground/50'
                         )}
                         style={{
@@ -355,4 +355,3 @@ function getScreenNameFromPath(pathname: string): string {
 
   return pathname;
 }
-

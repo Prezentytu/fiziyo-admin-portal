@@ -27,6 +27,7 @@ import { SetThumbnail } from '@/components/exercise-sets/SetThumbnail';
 import { CreateSetWizard } from '@/components/exercise-sets/CreateSetWizard';
 import { AssignmentWizard } from '@/components/assignment/AssignmentWizard';
 import { PatientDialog } from '@/components/patients/PatientDialog';
+import { DashboardSkeleton } from '@/components/shared/DashboardSkeleton';
 
 import { GET_ORGANIZATION_EXERCISE_SETS_QUERY } from '@/graphql/queries/exerciseSets.queries';
 import { GET_THERAPIST_PATIENTS_QUERY } from '@/graphql/queries/therapists.queries';
@@ -78,7 +79,7 @@ export default function DashboardPage() {
   const [isPatientDialogOpen, setIsPatientDialogOpen] = useState(false);
 
   // Get user data
-  const { data: userData } = useQuery(GET_USER_BY_CLERK_ID_QUERY, {
+  const { data: userData, loading: userLoading } = useQuery(GET_USER_BY_CLERK_ID_QUERY, {
     variables: { clerkId: user?.id },
     skip: !user?.id,
   });
@@ -125,6 +126,13 @@ export default function DashboardPage() {
   const limit = 5;
   const isAtLimit = patientsCount >= limit;
 
+  // Show skeleton while initial data is loading
+  const isInitialLoading = !user || userLoading || (!organizationId && !userData);
+
+  if (isInitialLoading) {
+    return <DashboardSkeleton />;
+  }
+
   return (
     <div className="space-y-8">
       {/* Header Section - Greeting with date */}
@@ -153,7 +161,7 @@ export default function DashboardPage() {
           {/* Animated background glow */}
           <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
           <div className="absolute -top-24 -right-24 w-48 h-48 bg-white/10 rounded-full blur-3xl group-hover:bg-white/20 transition-all duration-500" />
-          
+
           <div className="relative flex items-center gap-4">
             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm shrink-0 group-hover:scale-110 transition-transform duration-300">
               <Send className="h-6 w-6 text-white" />
@@ -238,9 +246,20 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent className="pt-0">
             {patientsLoading ? (
-              <div className="space-y-2 animate-stagger">
+              <div className="space-y-2">
                 {[1, 2, 3, 4].map((i) => (
-                  <Skeleton key={i} className="h-14 w-full rounded-xl" />
+                  <div
+                    key={i}
+                    className="flex items-center gap-3 p-3 rounded-xl"
+                    style={{ animationDelay: `${i * 50}ms` }}
+                  >
+                    <Skeleton className="h-10 w-10 rounded-full shrink-0" />
+                    <div className="flex-1 space-y-1.5">
+                      <Skeleton className="h-4 w-32 rounded-lg" />
+                      <Skeleton className="h-3 w-24 rounded-lg" />
+                    </div>
+                    <Skeleton className="h-4 w-4 rounded shrink-0" />
+                  </div>
                 ))}
               </div>
             ) : patients.length > 0 ? (
@@ -316,8 +335,8 @@ export default function DashboardPage() {
                 <p className="text-xs text-muted-foreground/70 mb-4">
                   Dodaj pierwszego pacjenta
                 </p>
-                <Button 
-                  size="sm" 
+                <Button
+                  size="sm"
                   className="h-8 text-xs"
                   onClick={() => setIsPatientDialogOpen(true)}
                   disabled={!organizationId || !therapistId}
@@ -352,9 +371,26 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent className="pt-0">
             {setsLoading ? (
-              <div className="space-y-2 animate-stagger">
+              <div className="space-y-2">
                 {[1, 2, 3, 4].map((i) => (
-                  <Skeleton key={i} className="h-14 w-full rounded-xl" />
+                  <div
+                    key={i}
+                    className="flex items-center gap-3 p-3 rounded-xl"
+                    style={{ animationDelay: `${(i + 4) * 50}ms` }}
+                  >
+                    {/* Set Thumbnail Skeleton - 2x2 grid */}
+                    <div className="h-10 w-10 rounded-lg overflow-hidden grid grid-cols-2 gap-0.5 shrink-0">
+                      <Skeleton className="rounded-none" />
+                      <Skeleton className="rounded-none" />
+                      <Skeleton className="rounded-none" />
+                      <Skeleton className="rounded-none" />
+                    </div>
+                    <div className="flex-1 space-y-1.5">
+                      <Skeleton className="h-4 w-36 rounded-lg" />
+                      <Skeleton className="h-3 w-20 rounded-lg" />
+                    </div>
+                    <Skeleton className="h-4 w-4 rounded shrink-0" />
+                  </div>
                 ))}
               </div>
             ) : sortedExerciseSets.length > 0 ? (

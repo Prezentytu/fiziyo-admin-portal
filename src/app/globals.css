@@ -61,6 +61,16 @@
   }
 }
 
+/* Skeleton Shimmer Animation */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
 :root {
   /* Base colors - Fizjo App Dark Theme */
   --background: #121212;
@@ -604,6 +614,18 @@ input[type="number"] {
 /* Typing indicator dot animation */
 .animate-typing-dot {
   animation: typing-dot 1.4s ease-in-out infinite;
+}
+
+/* Skeleton shimmer effect */
+.animate-shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--surface-light) 25%,
+    var(--surface-hover) 50%,
+    var(--surface-light) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
 }
 
 /* Chat panel - no focus outline */

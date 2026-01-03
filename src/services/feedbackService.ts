@@ -14,7 +14,8 @@ import type { FeedbackData, FeedbackSendResult, FeedbackMetadata } from "@/types
 // CONFIG
 // ============================================================================
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+// Używamy lokalnego Next.js API route - omija CORS i daje fallback na Discord
+const API_FEEDBACK_ENDPOINT = "/api/feedback";
 
 // ============================================================================
 // RATE LIMITING
@@ -168,13 +169,12 @@ export async function sendFeedbackToDiscord(feedback: FeedbackData): Promise<Fee
       images: imagesBase64,
     };
 
-    // Wyślij do backendu
-    const response = await fetch(`${API_BASE_URL}/api/feedback`, {
+    // Wyślij przez lokalne API route (proxy do backendu z fallback na Discord)
+    const response = await fetch(API_FEEDBACK_ENDPOINT, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      credentials: "include",
       body: JSON.stringify(payload),
     });
 
