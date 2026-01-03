@@ -51,6 +51,7 @@ export interface FeedbackMetadata {
   timestamp: string;
   screenName?: string;
   url?: string;
+  environment?: string;
 }
 
 /**

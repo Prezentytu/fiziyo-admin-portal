@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useMutation, useQuery } from "@apollo/client";
+import { useMutation, useQuery } from "@apollo/client/react";
 import { toast } from "sonner";
 import {
   Check,
@@ -22,14 +22,17 @@ import {
   QrCode,
 } from "lucide-react";
 
+import { useUser } from "@clerk/nextjs";
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { UPDATE_SUBSCRIPTION_MUTATION } from "@/graphql/mutations/organizations.mutations";
-import { GET_ORGANIZATION_QUERY } from "@/graphql/queries/organizations.queries";
-import { useOrganization } from "@/hooks/useOrganization";
+import { GET_ORGANIZATION_BY_ID_QUERY } from "@/graphql/queries/organizations.queries";
+import { GET_USER_BY_CLERK_ID_QUERY } from "@/graphql/queries/users.queries";
+import type { UserByClerkIdResponse } from "@/types/apollo";
 
 interface Plan {
   id: string;
@@ -132,15 +135,22 @@ const plans: Plan[] = [
 ];
 
 export default function SubscriptionPage() {
+  const { user } = useUser();
   const [billingPeriod, setBillingPeriod] = useState<"monthly" | "yearly">(
     "yearly"
   );
   const [upgradingTo, setUpgradingTo] = useState<string | null>(null);
 
-  const { organizationId } = useOrganization();
+  // Get user data to get organizationId
+  const { data: userData } = useQuery(GET_USER_BY_CLERK_ID_QUERY, {
+    variables: { clerkId: user?.id },
+    skip: !user?.id,
+  });
 
-  const { data, loading, refetch } = useQuery(GET_ORGANIZATION_QUERY, {
-    variables: { organizationId: organizationId || "" },
+  const organizationId = (userData as UserByClerkIdResponse)?.userByClerkId?.organizationIds?.[0];
+
+  const { data, loading, refetch } = useQuery(GET_ORGANIZATION_BY_ID_QUERY, {
+    variables: { id: organizationId || "" },
     skip: !organizationId,
   });
 
@@ -156,7 +166,12 @@ export default function SubscriptionPage() {
     },
   });
 
-  const organization = data?.organization;
+  interface OrganizationData {
+    organizationById?: {
+      subscriptionPlan?: string;
+    };
+  }
+  const organization = (data as OrganizationData)?.organizationById;
   const currentPlanId = organization?.subscriptionPlan?.toUpperCase() || "FREE";
   const currentPlanData = plans.find((p) => p.id === currentPlanId) || plans[0];
 
@@ -389,8 +404,8 @@ export default function SubscriptionPage() {
 
                 {/* Features */}
                 <div className="space-y-3 mb-6">
-                  {plan.features.map((feature, index) => (
-                    <div key={index} className="flex items-center gap-3">
+                  {plan.features.map((feature) => (
+                    <div key={feature} className="flex items-center gap-3">
                       <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/20 text-primary">
                         <Check className="h-3 w-3" />
                       </div>
@@ -402,9 +417,9 @@ export default function SubscriptionPage() {
                 {/* Feature Badges */}
                 {plan.badges.length > 0 && (
                   <div className="flex flex-wrap gap-2 mb-6">
-                    {plan.badges.map((badge, idx) => (
+                    {plan.badges.map((badge) => (
                       <Badge
-                        key={idx}
+                        key={badge.label}
                         variant="outline"
                         className="text-xs gap-1 px-2 py-1"
                       >

@@ -27,7 +27,6 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { FileUpload } from '@/components/shared/FileUpload';
 import { cn } from '@/lib/utils';
-import { isFeedbackEnabled } from '@/lib/featureFlags';
 import { sendFeedbackToDiscord, createFeedbackMetadata } from '@/services/feedbackService';
 import type {
   FeedbackType,
@@ -81,7 +80,6 @@ export function FeedbackDialog({
     );
   }, [description, isSending]);
 
-  const feedbackEnabled = useMemo(() => isFeedbackEnabled(), []);
 
   const images: FeedbackImage[] = useMemo(() => {
     return files.map((file) => ({
@@ -164,11 +162,6 @@ export function FeedbackDialog({
   ]);
 
   // === RENDER ===
-
-  // Jeśli feedback wyłączony, nie renderuj dialogu
-  if (!feedbackEnabled) {
-    return null;
-  }
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useMutation } from "@apollo/client";
+import { useMutation } from "@apollo/client/react";
 import { format } from "date-fns";
 import { pl } from "date-fns/locale";
 import { toast } from "sonner";
