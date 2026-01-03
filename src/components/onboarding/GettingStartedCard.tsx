@@ -48,7 +48,8 @@ export function GettingStartedCard({
   const [isLoading, setIsLoading] = useState(true);
   const [showCelebration, setShowCelebration] = useState(false);
   const [celebrationShown, setCelebrationShown] = useState(false);
-  const prevCompletedRef = useRef<number>(0);
+  const prevCompletedRef = useRef<number | null>(null);
+  const isInitializedRef = useRef(false);
 
   // Sprawdź czy onboarding został ukryty (z Clerk metadata)
   useEffect(() => {
@@ -102,11 +103,28 @@ export function GettingStartedCard({
 
   // Wykryj ukończenie kroku - subtelne powiadomienie
   useEffect(() => {
-    if (completedCount > prevCompletedRef.current && completedCount < steps.length) {
+    // Pomiń gdy dane się jeszcze ładują lub onboarding jest ukryty/ukończony
+    if (isLoading || isDismissed || celebrationShown) {
+      return;
+    }
+
+    // Pomiń pierwszy render - tylko inicjalizuj wartość bez pokazywania toasta
+    if (!isInitializedRef.current) {
+      prevCompletedRef.current = completedCount;
+      isInitializedRef.current = true;
+      return;
+    }
+
+    // Pokaż toast tylko gdy użytkownik właśnie ukończył krok (w tej sesji)
+    if (
+      prevCompletedRef.current !== null &&
+      completedCount > prevCompletedRef.current &&
+      completedCount < steps.length
+    ) {
       toast.success('Krok ukończony');
     }
     prevCompletedRef.current = completedCount;
-  }, [completedCount, steps.length]);
+  }, [completedCount, steps.length, isLoading, isDismissed, celebrationShown]);
 
   // Pokaż ekran sukcesu gdy wszystko ukończone
   useEffect(() => {
