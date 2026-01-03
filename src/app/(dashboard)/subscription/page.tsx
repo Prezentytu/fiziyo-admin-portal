@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { useMutation, useQuery } from "@apollo/client/react";
-import { toast } from "sonner";
+import { useState } from 'react';
+import { useMutation, useQuery } from '@apollo/client/react';
+import { toast } from 'sonner';
 import {
   Check,
   Users,
@@ -20,19 +20,19 @@ import {
   MapPin,
   FileText,
   QrCode,
-} from "lucide-react";
+} from 'lucide-react';
 
-import { useUser } from "@clerk/nextjs";
+import { useUser } from '@clerk/nextjs';
 
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
-import { cn } from "@/lib/utils";
-import { UPDATE_SUBSCRIPTION_MUTATION } from "@/graphql/mutations/organizations.mutations";
-import { GET_ORGANIZATION_BY_ID_QUERY } from "@/graphql/queries/organizations.queries";
-import { GET_USER_BY_CLERK_ID_QUERY } from "@/graphql/queries/users.queries";
-import type { UserByClerkIdResponse } from "@/types/apollo";
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
+import { cn } from '@/lib/utils';
+import { UPDATE_SUBSCRIPTION_MUTATION } from '@/graphql/mutations/organizations.mutations';
+import { GET_ORGANIZATION_BY_ID_QUERY } from '@/graphql/queries/organizations.queries';
+import { GET_USER_BY_CLERK_ID_QUERY } from '@/graphql/queries/users.queries';
+import type { UserByClerkIdResponse } from '@/types/apollo';
 
 interface Plan {
   id: string;
@@ -56,13 +56,13 @@ interface Plan {
 
 const plans: Plan[] = [
   {
-    id: "FREE",
-    name: "Darmowy",
-    description: "Dla nowych użytkowników",
+    id: 'FREE',
+    name: 'Darmowy',
+    description: 'Dla nowych użytkowników',
     price: 0,
     priceYearly: 0,
     icon: <Sparkles className="h-6 w-6" />,
-    color: "from-slate-500 to-slate-600",
+    color: 'from-slate-500 to-slate-600',
     limits: {
       patients: 10,
       therapists: 1,
@@ -70,22 +70,17 @@ const plans: Plan[] = [
       exercises: 30,
       sets: 15,
     },
-    features: [
-      "10 pacjentów",
-      "30 własnych ćwiczeń",
-      "15 zestawów ćwiczeń",
-      "Wsparcie przez email",
-    ],
+    features: ['10 pacjentów', '30 własnych ćwiczeń', '15 zestawów ćwiczeń', 'Wsparcie przez email'],
     badges: [],
   },
   {
-    id: "PRO",
-    name: "Pro",
-    description: "Dla aktywnych praktyk",
+    id: 'PRO',
+    name: 'Pro',
+    description: 'Dla aktywnych praktyk',
     price: 99,
     priceYearly: 990,
     icon: <Zap className="h-6 w-6" />,
-    color: "from-primary to-emerald-600",
+    color: 'from-primary to-emerald-600',
     popular: true,
     limits: {
       patients: 100,
@@ -94,25 +89,20 @@ const plans: Plan[] = [
       exercises: null,
       sets: null,
     },
-    features: [
-      "100 pacjentów",
-      "5 fizjoterapeutów",
-      "Bez limitu ćwiczeń",
-      "QR kody i raporty PDF",
-    ],
+    features: ['100 pacjentów', '5 fizjoterapeutów', 'Bez limitu ćwiczeń', 'QR kody i raporty PDF'],
     badges: [
-      { icon: <QrCode className="h-3 w-3" />, label: "QR kody" },
-      { icon: <FileText className="h-3 w-3" />, label: "Raporty PDF" },
+      { icon: <QrCode className="h-3 w-3" />, label: 'QR kody' },
+      { icon: <FileText className="h-3 w-3" />, label: 'Raporty PDF' },
     ],
   },
   {
-    id: "BUSINESS",
-    name: "Business",
-    description: "Dla gabinetów i klinik",
+    id: 'BUSINESS',
+    name: 'Business',
+    description: 'Dla gabinetów i klinik',
     price: 249,
     priceYearly: 2490,
     icon: <Crown className="h-6 w-6" />,
-    color: "from-amber-500 to-orange-600",
+    color: 'from-amber-500 to-orange-600',
     limits: {
       patients: null,
       therapists: 20,
@@ -120,25 +110,18 @@ const plans: Plan[] = [
       exercises: null,
       sets: null,
     },
-    features: [
-      "Bez limitu pacjentów",
-      "20 fizjoterapeutów",
-      "Własny branding (logo)",
-      "Priorytetowe wsparcie",
-    ],
+    features: ['Bez limitu pacjentów', '20 fizjoterapeutów', 'Własny branding (logo)', 'Priorytetowe wsparcie'],
     badges: [
-      { icon: <Building2 className="h-3 w-3" />, label: "Branding" },
-      { icon: <MapPin className="h-3 w-3" />, label: "10 gabinetów" },
-      { icon: <Crown className="h-3 w-3" />, label: "Priorytet" },
+      { icon: <Building2 className="h-3 w-3" />, label: 'Branding' },
+      { icon: <MapPin className="h-3 w-3" />, label: '10 gabinetów' },
+      { icon: <Crown className="h-3 w-3" />, label: 'Priorytet' },
     ],
   },
 ];
 
 export default function SubscriptionPage() {
   const { user } = useUser();
-  const [billingPeriod, setBillingPeriod] = useState<"monthly" | "yearly">(
-    "yearly"
-  );
+  const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'yearly'>('yearly');
   const [upgradingTo, setUpgradingTo] = useState<string | null>(null);
 
   // Get user data to get organizationId
@@ -150,13 +133,13 @@ export default function SubscriptionPage() {
   const organizationId = (userData as UserByClerkIdResponse)?.userByClerkId?.organizationIds?.[0];
 
   const { data, loading, refetch } = useQuery(GET_ORGANIZATION_BY_ID_QUERY, {
-    variables: { id: organizationId || "" },
+    variables: { id: organizationId || '' },
     skip: !organizationId,
   });
 
   const [updateSubscription] = useMutation(UPDATE_SUBSCRIPTION_MUTATION, {
     onCompleted: () => {
-      toast.success("Plan został zmieniony pomyślnie!");
+      toast.success('Plan został zmieniony pomyślnie!');
       setUpgradingTo(null);
       refetch();
     },
@@ -172,7 +155,7 @@ export default function SubscriptionPage() {
     };
   }
   const organization = (data as OrganizationData)?.organizationById;
-  const currentPlanId = organization?.subscriptionPlan?.toUpperCase() || "FREE";
+  const currentPlanId = organization?.subscriptionPlan?.toUpperCase() || 'FREE';
   const currentPlanData = plans.find((p) => p.id === currentPlanId) || plans[0];
 
   const handleUpgrade = async (planId: string) => {
@@ -208,38 +191,32 @@ export default function SubscriptionPage() {
         <div>
           <h1 className="text-2xl font-bold text-foreground">Subskrypcja</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Obecny plan:{" "}
-            <span className="font-medium text-foreground">
-              {currentPlanData.name}
-            </span>
+            Obecny plan: <span className="font-medium text-foreground">{currentPlanData.name}</span>
           </p>
         </div>
         <div className="flex items-center gap-1 p-1 rounded-xl bg-surface border border-border/60">
           <button
-            onClick={() => setBillingPeriod("monthly")}
+            onClick={() => setBillingPeriod('monthly')}
             className={cn(
-              "px-4 py-2 rounded-lg text-sm font-medium transition-all",
-              billingPeriod === "monthly"
-                ? "bg-primary text-primary-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground"
+              'px-4 py-2 rounded-lg text-sm font-medium transition-all',
+              billingPeriod === 'monthly'
+                ? 'bg-primary text-primary-foreground shadow-sm'
+                : 'text-muted-foreground hover:text-foreground'
             )}
           >
             Miesięcznie
           </button>
           <button
-            onClick={() => setBillingPeriod("yearly")}
+            onClick={() => setBillingPeriod('yearly')}
             className={cn(
-              "px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2",
-              billingPeriod === "yearly"
-                ? "bg-primary text-primary-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground"
+              'px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2',
+              billingPeriod === 'yearly'
+                ? 'bg-primary text-primary-foreground shadow-sm'
+                : 'text-muted-foreground hover:text-foreground'
             )}
           >
             Rocznie
-            <Badge
-              variant="secondary"
-              className="bg-secondary/20 text-secondary text-[10px]"
-            >
+            <Badge variant="secondary" className="bg-secondary/20 text-secondary text-[10px]">
               -17%
             </Badge>
           </button>
@@ -248,12 +225,12 @@ export default function SubscriptionPage() {
 
       {/* Current Plan Summary */}
       <Card className="border-border/60 overflow-hidden">
-        <div className={cn("h-1 bg-gradient-to-r", currentPlanData.color)} />
+        <div className={cn('h-1 bg-gradient-to-r', currentPlanData.color)} />
         <CardContent className="p-5">
           <div className="flex flex-col sm:flex-row sm:items-center gap-4">
             <div
               className={cn(
-                "flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br text-white shrink-0",
+                'flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br text-white shrink-0',
                 currentPlanData.color
               )}
             >
@@ -261,17 +238,13 @@ export default function SubscriptionPage() {
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="font-semibold text-foreground">
-                  Plan: {currentPlanData.name}
-                </span>
+                <span className="font-semibold text-foreground">Plan: {currentPlanData.name}</span>
                 <Badge variant="success">Aktywny</Badge>
               </div>
               <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground mt-1">
                 <span className="flex items-center gap-1">
                   <Users className="h-3.5 w-3.5" />
-                  {currentPlanData.limits.patients
-                    ? `${currentPlanData.limits.patients} pacjentów`
-                    : "∞ pacjentów"}
+                  {currentPlanData.limits.patients ? `${currentPlanData.limits.patients} pacjentów` : '∞ pacjentów'}
                 </span>
                 <span className="flex items-center gap-1">
                   <Users className="h-3.5 w-3.5" />
@@ -279,25 +252,17 @@ export default function SubscriptionPage() {
                 </span>
                 <span className="flex items-center gap-1">
                   <Dumbbell className="h-3.5 w-3.5" />
-                  {currentPlanData.limits.exercises
-                    ? `${currentPlanData.limits.exercises} ćwiczeń`
-                    : "∞ ćwiczeń"}
+                  {currentPlanData.limits.exercises ? `${currentPlanData.limits.exercises} ćwiczeń` : '∞ ćwiczeń'}
                 </span>
               </div>
             </div>
-            {currentPlanId !== "BUSINESS" && (
+            {currentPlanId !== 'BUSINESS' && (
               <Button
-                onClick={() =>
-                  handleUpgrade(currentPlanId === "FREE" ? "PRO" : "BUSINESS")
-                }
+                onClick={() => handleUpgrade(currentPlanId === 'FREE' ? 'PRO' : 'BUSINESS')}
                 disabled={upgradingTo !== null}
                 className="gap-2"
               >
-                {upgradingTo ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Rocket className="h-4 w-4" />
-                )}
+                {upgradingTo ? <Loader2 className="h-4 w-4 animate-spin" /> : <Rocket className="h-4 w-4" />}
                 Ulepsz plan
               </Button>
             )}
@@ -310,10 +275,7 @@ export default function SubscriptionPage() {
         {plans.map((plan) => {
           const isCurrent = plan.id === currentPlanId;
           const isUpgrading = upgradingTo === plan.id;
-          const monthlyEquivalent =
-            billingPeriod === "yearly"
-              ? Math.round(plan.priceYearly / 12)
-              : plan.price;
+          const monthlyEquivalent = billingPeriod === 'yearly' ? Math.round(plan.priceYearly / 12) : plan.price;
           const yearlyTotal = plan.priceYearly;
           const savings = plan.price * 12 - plan.priceYearly;
 
@@ -321,11 +283,11 @@ export default function SubscriptionPage() {
             <Card
               key={plan.id}
               className={cn(
-                "relative overflow-hidden transition-all duration-300",
+                'relative overflow-hidden transition-all duration-300',
                 plan.popular
-                  ? "border-primary shadow-xl shadow-primary/10"
-                  : "border-border/60 hover:border-border hover:shadow-lg",
-                isCurrent && "ring-2 ring-primary/50"
+                  ? 'border-primary shadow-xl shadow-primary/10'
+                  : 'border-border/60 hover:border-border hover:shadow-lg',
+                isCurrent && 'ring-2 ring-primary/50'
               )}
             >
               {plan.popular && (
@@ -337,68 +299,48 @@ export default function SubscriptionPage() {
                 </div>
               )}
 
-              <div className={cn("h-1 bg-gradient-to-r", plan.color)} />
+              <div className={cn('h-1 bg-gradient-to-r', plan.color)} />
 
               <CardContent className="p-6">
                 {/* Header */}
                 <div className="flex items-center gap-3 mb-5">
                   <div
                     className={cn(
-                      "flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br text-white shadow-lg",
+                      'flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br text-white shadow-lg',
                       plan.color
                     )}
                   >
                     {plan.icon}
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold text-foreground">
-                      {plan.name}
-                    </h3>
-                    <p className="text-sm text-muted-foreground">
-                      {plan.description}
-                    </p>
+                    <h3 className="text-xl font-bold text-foreground">{plan.name}</h3>
+                    <p className="text-sm text-muted-foreground">{plan.description}</p>
                   </div>
                 </div>
 
                 {/* Price */}
                 <div className="mb-6">
                   <div className="flex items-baseline gap-1">
-                    <span className="text-4xl font-bold text-foreground">
-                      {monthlyEquivalent}
-                    </span>
-                    <span className="text-lg text-muted-foreground">
-                      PLN/mies.
-                    </span>
+                    <span className="text-4xl font-bold text-foreground">{monthlyEquivalent}</span>
+                    <span className="text-lg text-muted-foreground">PLN/mies.</span>
                   </div>
-                  {billingPeriod === "yearly" && plan.price > 0 && (
+                  {billingPeriod === 'yearly' && plan.price > 0 && (
                     <p className="text-sm text-muted-foreground mt-1">
                       {yearlyTotal} PLN/rok · oszczędzasz {savings} PLN
                     </p>
                   )}
-                  {plan.price === 0 && (
-                    <p className="text-sm text-primary mt-1 font-medium">
-                      Bezpłatnie na zawsze
-                    </p>
-                  )}
+                  {plan.price === 0 && <p className="text-sm text-primary mt-1 font-medium">Bezpłatnie na zawsze</p>}
                 </div>
 
                 {/* Key Limits */}
                 <div className="grid grid-cols-2 gap-3 mb-6">
                   <div className="rounded-xl bg-surface-light p-4 text-center">
-                    <p className="text-2xl font-bold text-foreground">
-                      {plan.limits.patients ?? "∞"}
-                    </p>
-                    <p className="text-xs text-muted-foreground uppercase mt-1">
-                      pacjentów
-                    </p>
+                    <p className="text-2xl font-bold text-foreground">{plan.limits.patients ?? '∞'}</p>
+                    <p className="text-xs text-muted-foreground uppercase mt-1">pacjentów</p>
                   </div>
                   <div className="rounded-xl bg-surface-light p-4 text-center">
-                    <p className="text-2xl font-bold text-foreground">
-                      {plan.limits.therapists}
-                    </p>
-                    <p className="text-xs text-muted-foreground uppercase mt-1">
-                      terapeutów
-                    </p>
+                    <p className="text-2xl font-bold text-foreground">{plan.limits.therapists}</p>
+                    <p className="text-xs text-muted-foreground uppercase mt-1">terapeutów</p>
                   </div>
                 </div>
 
@@ -418,11 +360,7 @@ export default function SubscriptionPage() {
                 {plan.badges.length > 0 && (
                   <div className="flex flex-wrap gap-2 mb-6">
                     {plan.badges.map((badge) => (
-                      <Badge
-                        key={badge.label}
-                        variant="outline"
-                        className="text-xs gap-1 px-2 py-1"
-                      >
+                      <Badge key={badge.label} variant="outline" className="text-xs gap-1 px-2 py-1">
                         {badge.icon} {badge.label}
                       </Badge>
                     ))}
@@ -431,20 +369,16 @@ export default function SubscriptionPage() {
 
                 {/* CTA Button */}
                 {isCurrent ? (
-                  <Button
-                    variant="outline"
-                    className="w-full rounded-xl h-12"
-                    disabled
-                  >
+                  <Button variant="outline" className="w-full rounded-xl h-12" disabled>
                     <Shield className="mr-2 h-4 w-4" />
                     Obecny plan
                   </Button>
                 ) : (
                   <Button
                     className={cn(
-                      "w-full rounded-xl h-12 font-semibold shadow-lg",
+                      'w-full rounded-xl h-12 font-semibold shadow-lg',
                       plan.popular
-                        ? "bg-primary hover:bg-primary-dark shadow-primary/20"
+                        ? 'bg-primary hover:bg-primary-dark shadow-primary/20'
                         : `bg-gradient-to-r ${plan.color} hover:opacity-90`
                     )}
                     onClick={() => handleUpgrade(plan.id)}
@@ -455,7 +389,7 @@ export default function SubscriptionPage() {
                     ) : (
                       <Rocket className="mr-2 h-4 w-4" />
                     )}
-                    {isUpgrading ? "Zmieniam..." : `Wybierz ${plan.name}`}
+                    {isUpgrading ? 'Zmieniam...' : `Wybierz ${plan.name}`}
                   </Button>
                 )}
               </CardContent>
@@ -484,9 +418,7 @@ export default function SubscriptionPage() {
           variant="ghost"
           size="sm"
           className="text-muted-foreground hover:text-foreground"
-          onClick={() =>
-            window.open("mailto:kontakt@fiziyo.pl?subject=Enterprise", "_blank")
-          }
+          onClick={() => window.open('mailto:kontakt@fiziyo.pl?subject=Enterprise', '_blank')}
         >
           <Building2 className="mr-2 h-4 w-4" />
           Większy zespół? Skontaktuj się
