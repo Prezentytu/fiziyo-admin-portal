@@ -323,3 +323,5 @@ export const QUICK_TEMPLATES = [
   { id: "ankle", label: "Kostka & stopa", icon: "👣", category: "Rehabilitacja i wzmocnienie stawu skokowego" },
   { id: "stretching", label: "Rozciąganie", icon: "🤸", category: "Ćwiczenia rozciągające całe ciało" },
 ];
+
+

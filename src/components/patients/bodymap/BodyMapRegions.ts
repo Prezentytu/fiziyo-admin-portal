@@ -454,3 +454,5 @@ export const PAIN_INTENSITY_COLORS: Record<number, { bg: string; border: string;
   9: { bg: '#dc2626', border: '#b91c1c', label: 'Bardzo silny' },
   10: { bg: '#991b1b', border: '#7f1d1d', label: 'Ekstremalny' },
 };
+
+

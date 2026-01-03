@@ -266,3 +266,5 @@ export function AIExerciseSuggestions({
     </div>
   );
 }
+
+
