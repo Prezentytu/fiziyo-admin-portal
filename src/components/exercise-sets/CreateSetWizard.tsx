@@ -376,16 +376,16 @@ function SortableExerciseCard({
       ref={setNodeRef}
       style={style}
       className={cn(
-        'rounded-xl border border-border bg-background overflow-hidden transition-all',
+        'w-full rounded-xl border border-border bg-background overflow-hidden transition-all',
         isDragging && 'shadow-xl shadow-primary/20 opacity-90 z-50'
       )}
     >
       {/* Header - always visible */}
-      <div className="p-3 flex items-center gap-2">
+      <div className="p-3 flex items-center gap-2 overflow-hidden">
         <button
           {...attributes}
           {...listeners}
-          className="p-1 rounded hover:bg-surface-light cursor-grab active:cursor-grabbing touch-none"
+          className="p-1 rounded hover:bg-surface-light cursor-grab active:cursor-grabbing touch-none shrink-0"
         >
           <GripVertical className="h-4 w-4 text-muted-foreground" />
         </button>
@@ -404,9 +404,9 @@ function SortableExerciseCard({
             <Eye className="h-4 w-4 text-white" />
           </button>
         </div>
-        <div className="flex-1 min-w-0">
-          <p className="font-medium text-sm truncate">{exercise.name}</p>
-          <p className="text-xs text-muted-foreground">{translateType(exercise.type)}</p>
+        <div className="flex-1 min-w-0 overflow-hidden">
+          <p className="font-medium text-sm truncate" title={exercise.name}>{exercise.name}</p>
+          <p className="text-xs text-muted-foreground truncate">{translateType(exercise.type)}</p>
         </div>
         <Button
           type="button"
@@ -1760,7 +1760,7 @@ export function CreateSetWizard({
                   </div>
                 </div>
 
-                <ScrollArea className="flex-1 w-full">
+                <div className="flex-1 overflow-y-auto overflow-x-hidden">
                   {selectedExercisesList.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-16 text-center px-6">
                       <div className="h-14 w-14 rounded-full bg-surface-light flex items-center justify-center mb-3">
@@ -1772,7 +1772,7 @@ export function CreateSetWizard({
                   ) : (
                     <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
                       <SortableContext items={selectedExerciseIds} strategy={verticalListSortingStrategy}>
-                        <div className="p-3 space-y-2 overflow-hidden">
+                        <div className="p-3 space-y-2">
                           {selectedExercisesList.map((exercise, index) => (
                             <SortableExerciseCard
                               key={exercise.id}
@@ -1788,7 +1788,7 @@ export function CreateSetWizard({
                       </SortableContext>
                     </DndContext>
                   )}
-                </ScrollArea>
+                </div>
               </div>
             </div>
           ) : currentStep === 'ai' ? (
