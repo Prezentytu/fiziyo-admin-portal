@@ -41,7 +41,7 @@ export default function AuthLayout({ children }: AuthLayoutProps) {
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/15">
             <Dumbbell className="h-5 w-5 text-primary" />
           </div>
-          <span className="text-2xl font-bold text-primary">fiziYo</span>
+          <span className="text-2xl font-bold text-primary">FiziYo</span>
         </div>
 
         {/* Illustration */}
@@ -78,7 +78,7 @@ export default function AuthLayout({ children }: AuthLayoutProps) {
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/15">
             <Dumbbell className="h-5 w-5 text-primary" />
           </div>
-          <span className="text-2xl font-bold text-primary">fiziYo</span>
+          <span className="text-2xl font-bold text-primary">FiziYo</span>
         </div>
 
         {/* Form content */}

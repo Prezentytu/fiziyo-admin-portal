@@ -34,7 +34,7 @@ export function ExerciseSetPDF({
       title={`Program ćwiczeń - ${exerciseSet.name}`}
       author={organization.name}
       subject={`Zestaw ćwiczeń dla ${patient?.name || 'pacjenta'}`}
-      creator="fiziYo - Aplikacja dla fizjoterapeutów"
+      creator="FiziYo - Aplikacja dla fizjoterapeutów"
     >
       <Page size="A4" style={pdfStyles.page}>
         {/* Nagłówek z logo gabinetu */}
@@ -43,21 +43,21 @@ export function ExerciseSetPDF({
         {/* Sekcja tytułowa - informacje o programie */}
         <View style={pdfStyles.titleSection}>
           <Text style={pdfStyles.title}>{exerciseSet.name}</Text>
-          
+
           {patient && (
             <View style={pdfStyles.patientInfoRow}>
               <Text style={pdfStyles.patientLabel}>Pacjent:</Text>
               <Text style={pdfStyles.patientValue}>{patient.name}</Text>
             </View>
           )}
-          
+
           {therapist && (
             <View style={pdfStyles.patientInfoRow}>
               <Text style={pdfStyles.patientLabel}>Terapeuta:</Text>
               <Text style={pdfStyles.patientValue}>{therapist.name}</Text>
             </View>
           )}
-          
+
           <View style={pdfStyles.patientInfoRow}>
             <Text style={pdfStyles.patientLabel}>Data:</Text>
             <Text style={pdfStyles.patientValue}>{formattedDate}</Text>
@@ -79,7 +79,7 @@ export function ExerciseSetPDF({
             <Text style={pdfStyles.exercisesSectionTitle}>TWOJE ĆWICZENIA</Text>
             <Text style={pdfStyles.exercisesSectionCount}>{exerciseCountText}</Text>
           </View>
-          
+
           {sortedExercises.map((exercise, index) => (
             <ExercisePDFItem
               key={exercise.id}
@@ -106,8 +106,8 @@ export function ExerciseSetPDF({
             <View style={pdfStyles.qrText}>
               <Text style={pdfStyles.qrTitle}>Otwórz w aplikacji mobilnej</Text>
               <Text style={pdfStyles.qrDescription}>
-                Zeskanuj kod QR aparatem telefonu, aby otworzyć ten program 
-                ćwiczeń w aplikacji fiziYo. Będziesz mógł śledzić swoje postępy 
+                Zeskanuj kod QR aparatem telefonu, aby otworzyć ten program
+                ćwiczeń w aplikacji FiziYo. Będziesz mógł śledzić swoje postępy
                 i otrzymywać przypomnienia o ćwiczeniach.
               </Text>
             </View>
@@ -118,7 +118,7 @@ export function ExerciseSetPDF({
         {(organization.phone || organization.email) && (
           <View style={pdfStyles.contactSection}>
             <Text style={pdfStyles.contactText}>
-              Masz pytania? Skontaktuj się z nami: 
+              Masz pytania? Skontaktuj się z nami:
               {organization.phone && (
                 <Text style={pdfStyles.contactBold}> tel. {organization.phone}</Text>
               )}
@@ -136,7 +136,7 @@ export function ExerciseSetPDF({
         {/* Numer strony */}
         <Text
           style={pdfStyles.pageNumber}
-          render={({ pageNumber, totalPages }) => 
+          render={({ pageNumber, totalPages }) =>
             `Strona ${pageNumber} z ${totalPages}`
           }
           fixed

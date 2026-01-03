@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
 
     const embed = buildDiscordEmbed(body);
     const discordPayload = {
-      username: "Fiziyo Feedback Bot",
+      username: "FiziYo Feedback Bot",
       avatar_url: "https://i.imgur.com/4M34hi2.png",
       embeds: [embed],
     };
@@ -143,7 +143,7 @@ function buildDiscordEmbed(feedback: FeedbackRequest) {
     description: `Zgłoszenie od **${feedback.userName || "użytkownika"}**`,
     color: config.color,
     fields,
-    footer: { text: "Fiziyo Admin Portal" },
+    footer: { text: "FiziYo Admin Portal" },
     timestamp: new Date().toISOString(),
   };
 }

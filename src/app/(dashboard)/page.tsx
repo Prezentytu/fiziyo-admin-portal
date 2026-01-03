@@ -27,11 +27,13 @@ import { AssignmentWizard } from '@/components/assignment/AssignmentWizard';
 import { PatientDialog } from '@/components/patients/PatientDialog';
 import { DashboardSkeleton } from '@/components/shared/DashboardSkeleton';
 import { SubscriptionBanner } from '@/components/subscription/SubscriptionBanner';
+import { GettingStartedCard } from '@/components/onboarding/GettingStartedCard';
 
 import { GET_ORGANIZATION_EXERCISE_SETS_QUERY } from '@/graphql/queries/exerciseSets.queries';
 import { GET_CURRENT_ORGANIZATION_PLAN } from '@/graphql/queries/organizations.queries';
 import { GET_THERAPIST_PATIENTS_QUERY } from '@/graphql/queries/therapists.queries';
 import { GET_USER_BY_CLERK_ID_QUERY } from '@/graphql/queries/users.queries';
+import { GET_ALL_PATIENT_ASSIGNMENTS_QUERY } from '@/graphql/queries/patientAssignments.queries';
 import type {
   UserByClerkIdResponse,
   OrganizationExerciseSetsResponse,
@@ -101,6 +103,12 @@ export default function DashboardPage() {
     skip: !therapistId || !organizationId,
   });
 
+  // Get assignments count for onboarding (z refetch przy zmianie danych)
+  const { data: assignmentsData } = useQuery(GET_ALL_PATIENT_ASSIGNMENTS_QUERY, {
+    skip: !therapistId,
+    fetchPolicy: 'cache-and-network', // Zawsze odświeżaj z serwera
+  });
+
   // Get subscription plan and limits
   const { data: planData } = useQuery(GET_CURRENT_ORGANIZATION_PLAN, {
     variables: { organizationId },
@@ -118,6 +126,11 @@ export default function DashboardPage() {
   });
   const patients = (patientsData as TherapistPatientsResponse)?.therapistPatients || [];
   const patientsCount = patients.length;
+
+  // Przypisania wykonane przez aktualnego terapeutę (sprawdzamy exerciseSetId bo to oznacza przypisany zestaw)
+  const allAssignments = (assignmentsData as { patientAssignments?: Array<{ id: string; assignedById?: string; exerciseSetId?: string }> })?.patientAssignments || [];
+  // Zlicz przypisania z zestawem (exerciseSetId), które zostały wykonane przez tego terapeutę
+  const therapistAssignmentsCount = allAssignments.filter(a => a.exerciseSetId && a.assignedById === therapistId).length;
 
   // Get current hour for greeting
   const currentHour = new Date().getHours();
@@ -171,6 +184,13 @@ export default function DashboardPage() {
           {todayDate}
         </p>
       </div>
+
+      {/* Getting Started Card - Onboarding for new users */}
+      <GettingStartedCard
+        patientsCount={patientsCount}
+        exerciseSetsCount={setsCount}
+        assignmentsCount={therapistAssignmentsCount}
+      />
 
       {/* Quick Actions - Hero + Companions Layout */}
       <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-12">

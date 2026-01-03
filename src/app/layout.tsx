@@ -5,7 +5,7 @@ import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Fiziyo Admin",
+  title: "FiziYo Admin",
   description: "Panel administracyjny dla fizjoterapeutów",
 };
 

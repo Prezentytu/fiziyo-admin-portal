@@ -1,0 +1,364 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import {
+  Sun,
+  Moon,
+  Monitor,
+  Type,
+  Eye,
+  Contrast,
+  Check,
+  RotateCcw,
+} from 'lucide-react';
+
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { Slider } from '@/components/ui/slider';
+import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
+
+// Typy ustawień
+type Theme = 'dark' | 'light' | 'system';
+type FontSize = 'small' | 'normal' | 'large' | 'xlarge';
+
+interface AccessibilityPreferences {
+  theme: Theme;
+  fontSize: FontSize;
+  highContrast: boolean;
+  reducedMotion: boolean;
+}
+
+const DEFAULT_PREFERENCES: AccessibilityPreferences = {
+  theme: 'dark',
+  fontSize: 'normal',
+  highContrast: false,
+  reducedMotion: false,
+};
+
+const FONT_SIZE_VALUES: Record<FontSize, { label: string; scale: number; css: string }> = {
+  small: { label: 'Mały', scale: 0.875, css: '14px' },
+  normal: { label: 'Normalny', scale: 1, css: '16px' },
+  large: { label: 'Duży', scale: 1.125, css: '18px' },
+  xlarge: { label: 'Bardzo duży', scale: 1.25, css: '20px' },
+};
+
+const STORAGE_KEY = 'fiziyo-accessibility';
+
+export function AccessibilitySettings() {
+  const [preferences, setPreferences] = useState<AccessibilityPreferences>(DEFAULT_PREFERENCES);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Wczytanie preferencji z localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved) as AccessibilityPreferences;
+        setPreferences(parsed);
+        applyPreferences(parsed);
+      } catch {
+        // Ignore invalid JSON
+      }
+    }
+    setIsLoading(false);
+  }, []);
+
+  // Zastosowanie preferencji do dokumentu
+  const applyPreferences = (prefs: AccessibilityPreferences) => {
+    const root = document.documentElement;
+
+    // Rozmiar czcionki
+    const fontSize = FONT_SIZE_VALUES[prefs.fontSize];
+    root.style.setProperty('--base-font-size', fontSize.css);
+    root.style.fontSize = fontSize.css;
+
+    // Wysoki kontrast
+    if (prefs.highContrast) {
+      root.classList.add('high-contrast');
+    } else {
+      root.classList.remove('high-contrast');
+    }
+
+    // Reduced motion
+    if (prefs.reducedMotion) {
+      root.classList.add('reduced-motion');
+    } else {
+      root.classList.remove('reduced-motion');
+    }
+
+    // Motyw (dark/light/system)
+    if (prefs.theme === 'light') {
+      root.classList.add('light-theme');
+      root.classList.remove('dark-theme');
+    } else if (prefs.theme === 'dark') {
+      root.classList.remove('light-theme');
+      root.classList.add('dark-theme');
+    } else {
+      // System preference
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      if (prefersDark) {
+        root.classList.add('dark-theme');
+        root.classList.remove('light-theme');
+      } else {
+        root.classList.add('light-theme');
+        root.classList.remove('dark-theme');
+      }
+    }
+  };
+
+  // Zapisanie preferencji
+  const savePreferences = (newPrefs: AccessibilityPreferences) => {
+    setPreferences(newPrefs);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(newPrefs));
+    applyPreferences(newPrefs);
+  };
+
+  // Aktualizacja pojedynczej preferencji
+  const updatePreference = <K extends keyof AccessibilityPreferences>(
+    key: K,
+    value: AccessibilityPreferences[K]
+  ) => {
+    const newPrefs = { ...preferences, [key]: value };
+    savePreferences(newPrefs);
+  };
+
+  // Reset do domyślnych
+  const resetToDefaults = () => {
+    savePreferences(DEFAULT_PREFERENCES);
+    toast.success('Przywrócono domyślne ustawienia');
+  };
+
+  if (isLoading) {
+    return (
+      <Card className="border-border/60">
+        <CardContent className="p-6">
+          <div className="animate-pulse space-y-4">
+            <div className="h-4 w-1/3 rounded bg-surface-light" />
+            <div className="h-20 rounded bg-surface-light" />
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Motyw */}
+      <Card className="border-border/60">
+        <CardHeader className="pb-4">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-info/10">
+              <Monitor className="h-4 w-4 text-info" />
+            </div>
+            Motyw
+          </CardTitle>
+          <CardDescription>
+            Wybierz preferowany motyw kolorystyczny
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-3 gap-3">
+            {/* Dark */}
+            <button
+              onClick={() => updatePreference('theme', 'dark')}
+              className={cn(
+                'relative flex flex-col items-center gap-2 rounded-xl border p-4 transition-all',
+                preferences.theme === 'dark'
+                  ? 'border-primary bg-primary/5 ring-2 ring-primary/20'
+                  : 'border-border/60 bg-surface hover:bg-surface-light'
+              )}
+            >
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#1a1a1a] border border-border">
+                <Moon className="h-6 w-6 text-white" />
+              </div>
+              <span className="text-sm font-medium">Ciemny</span>
+              {preferences.theme === 'dark' && (
+                <div className="absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-primary">
+                  <Check className="h-3 w-3 text-white" />
+                </div>
+              )}
+            </button>
+
+            {/* Light */}
+            <button
+              onClick={() => updatePreference('theme', 'light')}
+              className={cn(
+                'relative flex flex-col items-center gap-2 rounded-xl border p-4 transition-all',
+                preferences.theme === 'light'
+                  ? 'border-primary bg-primary/5 ring-2 ring-primary/20'
+                  : 'border-border/60 bg-surface hover:bg-surface-light'
+              )}
+            >
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white border border-gray-200">
+                <Sun className="h-6 w-6 text-amber-500" />
+              </div>
+              <span className="text-sm font-medium">Jasny</span>
+              {preferences.theme === 'light' && (
+                <div className="absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-primary">
+                  <Check className="h-3 w-3 text-white" />
+                </div>
+              )}
+            </button>
+
+            {/* System */}
+            <button
+              onClick={() => updatePreference('theme', 'system')}
+              className={cn(
+                'relative flex flex-col items-center gap-2 rounded-xl border p-4 transition-all',
+                preferences.theme === 'system'
+                  ? 'border-primary bg-primary/5 ring-2 ring-primary/20'
+                  : 'border-border/60 bg-surface hover:bg-surface-light'
+              )}
+            >
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-white to-[#1a1a1a] border border-border">
+                <Monitor className="h-6 w-6 text-gray-500" />
+              </div>
+              <span className="text-sm font-medium">Systemowy</span>
+              {preferences.theme === 'system' && (
+                <div className="absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-primary">
+                  <Check className="h-3 w-3 text-white" />
+                </div>
+              )}
+            </button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Rozmiar czcionki */}
+      <Card className="border-border/60">
+        <CardHeader className="pb-4">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-secondary/10">
+              <Type className="h-4 w-4 text-secondary" />
+            </div>
+            Rozmiar czcionki
+          </CardTitle>
+          <CardDescription>
+            Dostosuj wielkość tekstu w aplikacji
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-4 gap-2">
+            {(Object.keys(FONT_SIZE_VALUES) as FontSize[]).map((size) => {
+              const { label, scale } = FONT_SIZE_VALUES[size];
+              const isSelected = preferences.fontSize === size;
+
+              return (
+                <button
+                  key={size}
+                  onClick={() => updatePreference('fontSize', size)}
+                  className={cn(
+                    'relative flex flex-col items-center gap-2 rounded-xl border p-3 transition-all',
+                    isSelected
+                      ? 'border-primary bg-primary/5 ring-2 ring-primary/20'
+                      : 'border-border/60 bg-surface hover:bg-surface-light'
+                  )}
+                >
+                  <span
+                    className="font-bold text-foreground transition-transform"
+                    style={{ fontSize: `${14 * scale}px` }}
+                  >
+                    Aa
+                  </span>
+                  <span className="text-xs text-muted-foreground">{label}</span>
+                  {isSelected && (
+                    <div className="absolute -top-1.5 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-primary">
+                      <Check className="h-2.5 w-2.5 text-white" />
+                    </div>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Podgląd */}
+          <div className="mt-4 rounded-xl border border-border/60 bg-surface-light p-4">
+            <p className="text-xs text-muted-foreground mb-2">Podgląd:</p>
+            <p
+              className="text-foreground leading-relaxed"
+              style={{ fontSize: FONT_SIZE_VALUES[preferences.fontSize].css }}
+            >
+              Ten tekst pokazuje jak będzie wyglądać treść przy wybranym rozmiarze czcionki.
+              Fizjoterapia pomaga w rehabilitacji.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Opcje dostępności */}
+      <Card className="border-border/60">
+        <CardHeader className="pb-4">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
+              <Eye className="h-4 w-4 text-primary" />
+            </div>
+            Opcje dostępności
+          </CardTitle>
+          <CardDescription>
+            Dodatkowe ustawienia dla lepszej widoczności
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* Wysoki kontrast */}
+          <div className="flex items-center justify-between rounded-xl border border-border/60 bg-surface p-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-warning/10">
+                <Contrast className="h-5 w-5 text-warning" />
+              </div>
+              <div>
+                <Label htmlFor="high-contrast" className="text-sm font-medium">
+                  Wysoki kontrast
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  Zwiększa kontrast kolorów dla lepszej czytelności
+                </p>
+              </div>
+            </div>
+            <Switch
+              id="high-contrast"
+              checked={preferences.highContrast}
+              onCheckedChange={(checked) => updatePreference('highContrast', checked)}
+            />
+          </div>
+
+          {/* Ograniczone animacje */}
+          <div className="flex items-center justify-between rounded-xl border border-border/60 bg-surface p-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-info/10">
+                <RotateCcw className="h-5 w-5 text-info" />
+              </div>
+              <div>
+                <Label htmlFor="reduced-motion" className="text-sm font-medium">
+                  Ograniczone animacje
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  Wyłącza większość animacji i przejść
+                </p>
+              </div>
+            </div>
+            <Switch
+              id="reduced-motion"
+              checked={preferences.reducedMotion}
+              onCheckedChange={(checked) => updatePreference('reducedMotion', checked)}
+            />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Przycisk resetowania */}
+      <div className="flex justify-end">
+        <Button
+          variant="outline"
+          onClick={resetToDefaults}
+          className="gap-2"
+        >
+          <RotateCcw className="h-4 w-4" />
+          Przywróć domyślne
+        </Button>
+      </div>
+    </div>
+  );
+}

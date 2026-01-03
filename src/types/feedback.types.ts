@@ -156,4 +156,3 @@ export const DISCORD_COLORS: Record<FeedbackType, number> = {
   suggestion: 0xfbbf24, // Yellow
   question: 0x60a5fa, // Blue
 };
-

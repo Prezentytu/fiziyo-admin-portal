@@ -23,6 +23,8 @@ import {
   CheckCircle2,
   Send,
   FileDown,
+  QrCode,
+  Target,
 } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
@@ -61,6 +63,8 @@ import type { Patient as AssignmentPatient } from '@/components/assignment/types
 import { EditAssignmentScheduleDialog } from '@/components/patients/EditAssignmentScheduleDialog';
 import { EditExerciseOverrideDialog } from '@/components/patients/EditExerciseOverrideDialog';
 import { GeneratePDFDialog } from '@/components/exercise-sets/GeneratePDFDialog';
+import { PatientQRCodeDialog } from '@/components/patients/PatientQRCodeDialog';
+import { BodyMap } from '@/components/patients/BodyMap';
 
 interface PatientDetailPageProps {
   params: Promise<{ id: string }>;
@@ -78,9 +82,11 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
   // Collapsible sections state
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isActivityOpen, setIsActivityOpen] = useState(false);
+  const [isBodyMapOpen, setIsBodyMapOpen] = useState(false);
 
   // Dialog states
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
+  const [isQRCodeDialogOpen, setIsQRCodeDialogOpen] = useState(false);
   const [editingScheduleAssignment, setEditingScheduleAssignment] = useState<PatientAssignment | null>(null);
   const [editingExerciseData, setEditingExerciseData] = useState<{
     assignment: PatientAssignment;
@@ -197,6 +203,10 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => setIsQRCodeDialogOpen(true)}>
+              <QrCode className="mr-2 h-4 w-4" />
+              Pokaż QR kod
+            </DropdownMenuItem>
             <DropdownMenuItem>
               <Settings className="mr-2 h-4 w-4" />
               Ustawienia pacjenta
@@ -267,17 +277,17 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
         </div>
       </div>
 
-      {/* Hero Action + Quick Stats */}
+      {/* Hero Actions + Quick Stats */}
       <div className="grid gap-3 grid-cols-1 sm:grid-cols-12">
         {/* Hero Action - Przypisz zestaw */}
         <button
           onClick={() => setIsAssignDialogOpen(true)}
           disabled={!organizationId || !therapistId}
-          className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary via-primary to-primary-dark p-5 text-left transition-all duration-300 hover:shadow-xl hover:shadow-primary/20 hover:scale-[1.02] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 sm:col-span-6"
+          className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary via-primary to-primary-dark p-5 text-left transition-all duration-300 hover:shadow-xl hover:shadow-primary/20 hover:scale-[1.02] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 sm:col-span-4"
         >
           <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
           <div className="absolute -top-24 -right-24 w-48 h-48 bg-white/10 rounded-full blur-3xl group-hover:bg-white/20 transition-all duration-500" />
-          
+
           <div className="relative flex items-center gap-4">
             <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm shrink-0 group-hover:scale-110 transition-transform duration-300">
               <Send className="h-5 w-5 text-white" />
@@ -287,15 +297,39 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
                 Przypisz zestaw
               </h3>
               <p className="text-sm text-white/70">
-                Dodaj nowy program ćwiczeń
+                Program ćwiczeń
               </p>
             </div>
             <Plus className="h-5 w-5 text-white/60 group-hover:text-white transition-colors shrink-0" />
           </div>
         </button>
 
+        {/* Hero Action - QR Code */}
+        <button
+          onClick={() => setIsQRCodeDialogOpen(true)}
+          disabled={!organizationId || !therapistId}
+          className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-info via-info to-cyan-600 p-5 text-left transition-all duration-300 hover:shadow-xl hover:shadow-info/20 hover:scale-[1.02] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 sm:col-span-4"
+        >
+          <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+          <div className="absolute -top-24 -right-24 w-48 h-48 bg-white/10 rounded-full blur-3xl group-hover:bg-white/20 transition-all duration-500" />
+
+          <div className="relative flex items-center gap-4">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm shrink-0 group-hover:scale-110 transition-transform duration-300">
+              <QrCode className="h-5 w-5 text-white" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <h3 className="text-base font-bold text-white">
+                QR kod
+              </h3>
+              <p className="text-sm text-white/70">
+                Połącz z aplikacją
+              </p>
+            </div>
+          </div>
+        </button>
+
         {/* Quick Stats */}
-        <div className="grid grid-cols-2 gap-3 sm:col-span-6">
+        <div className="grid grid-cols-2 gap-3 sm:col-span-4">
           <div className="rounded-2xl border border-border/40 bg-surface/50 p-4 flex flex-col items-center justify-center text-center">
             <div className="flex items-center gap-2">
               <FolderKanban className="h-4 w-4 text-primary" />
@@ -472,6 +506,40 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
             <ActivityReport patientId={id} patientName={displayName} />
           </CollapsibleContent>
         </Collapsible>
+
+        {/* Body Map Section */}
+        <Collapsible open={isBodyMapOpen} onOpenChange={setIsBodyMapOpen}>
+          <CollapsibleTrigger asChild>
+            <button className="w-full flex items-center justify-between p-4 rounded-xl bg-surface/50 border border-border/40 hover:bg-surface-light transition-colors">
+              <div className="flex items-center gap-3">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-warning/10">
+                  <Target className="h-4 w-4 text-warning" />
+                </div>
+                <div className="text-left">
+                  <span className="font-medium text-sm block">Mapa bólu</span>
+                  <span className="text-xs text-muted-foreground">Zaznacz lokalizacje dolegliwości</span>
+                </div>
+              </div>
+              {isBodyMapOpen ? (
+                <ChevronDown className="h-4 w-4 text-muted-foreground" />
+              ) : (
+                <ChevronRight className="h-4 w-4 text-muted-foreground" />
+              )}
+            </button>
+          </CollapsibleTrigger>
+          <CollapsibleContent className="pt-3">
+            <Card className="border-border/40">
+              <CardContent className="p-4">
+                <BodyMap
+                  patientId={id}
+                  onSave={(session) => {
+                    console.log('Zapisano sesję mapy bólu:', session);
+                  }}
+                />
+              </CardContent>
+            </Card>
+          </CollapsibleContent>
+        </Collapsible>
       </div>
 
       {/* Assignment Wizard */}
@@ -530,6 +598,21 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
             frequency: pdfAssignment.frequency,
           }}
           patient={{ name: displayName, email: patient.email }}
+          organizationId={organizationId}
+        />
+      )}
+
+      {/* QR Code Dialog */}
+      {organizationId && therapistId && (
+        <PatientQRCodeDialog
+          open={isQRCodeDialogOpen}
+          onOpenChange={setIsQRCodeDialogOpen}
+          patient={{
+            id: patient.id,
+            name: displayName,
+            email: patient.email,
+          }}
+          therapistId={therapistId}
           organizationId={organizationId}
         />
       )}

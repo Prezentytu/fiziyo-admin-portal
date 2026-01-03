@@ -10,7 +10,7 @@ export default function AuthLandingPage() {
       {/* Header */}
       <div className="space-y-2 text-center lg:text-left">
         <h1 className="text-3xl font-bold tracking-tight text-foreground">
-          Witaj w fiziYo
+          Witaj w FiziYo
         </h1>
         <p className="text-muted-foreground">
           Panel administracyjny dla fizjoterapeutów i właścicieli gabinetów
@@ -65,13 +65,3 @@ export default function AuthLandingPage() {
     </div>
   );
 }
-
-
-
-
-
-
-
-
-
-
