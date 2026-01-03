@@ -5,6 +5,7 @@ import { useQuery } from '@apollo/client/react';
 import { useUser } from '@clerk/nextjs';
 import Link from 'next/link';
 import {
+  ArrowRight,
   FolderKanban,
   FolderPlus,
   Users,
@@ -12,9 +13,6 @@ import {
   Send,
   UserPlus,
   Sparkles,
-  Rocket,
-  ArrowRight,
-  Zap,
   Wrench,
 } from 'lucide-react';
 
@@ -28,8 +26,10 @@ import { CreateSetWizard } from '@/components/exercise-sets/CreateSetWizard';
 import { AssignmentWizard } from '@/components/assignment/AssignmentWizard';
 import { PatientDialog } from '@/components/patients/PatientDialog';
 import { DashboardSkeleton } from '@/components/shared/DashboardSkeleton';
+import { SubscriptionBanner } from '@/components/subscription/SubscriptionBanner';
 
 import { GET_ORGANIZATION_EXERCISE_SETS_QUERY } from '@/graphql/queries/exerciseSets.queries';
+import { GET_CURRENT_ORGANIZATION_PLAN } from '@/graphql/queries/organizations.queries';
 import { GET_THERAPIST_PATIENTS_QUERY } from '@/graphql/queries/therapists.queries';
 import { GET_USER_BY_CLERK_ID_QUERY } from '@/graphql/queries/users.queries';
 import type {
@@ -101,6 +101,12 @@ export default function DashboardPage() {
     skip: !therapistId || !organizationId,
   });
 
+  // Get subscription plan and limits
+  const { data: planData } = useQuery(GET_CURRENT_ORGANIZATION_PLAN, {
+    variables: { organizationId },
+    skip: !organizationId,
+  });
+
   const exerciseSets = (setsData as OrganizationExerciseSetsResponse)?.exerciseSets || [];
   const setsCount = exerciseSets.length;
 
@@ -122,9 +128,25 @@ export default function DashboardPage() {
   const activePatients = patients.filter((p: PatientAssignment) => p.status !== 'inactive');
   const displayedPatients = activePatients.slice(0, 4);
 
-  // Subscription limit info
-  const limit = 5;
-  const isAtLimit = patientsCount >= limit;
+  // Subscription plan info
+  const currentPlan = planData?.currentOrganizationPlan;
+  const limits = currentPlan?.limits;
+  const usage = currentPlan?.currentUsage;
+  const planName = currentPlan?.currentPlan || 'FREE';
+
+  // Check if any limit is reached
+  type LimitType = 'patients' | 'exercises' | 'therapists';
+  let reachedLimit: LimitType | null = null;
+
+  if (limits && usage) {
+    if (limits.maxPatients && usage.patients >= limits.maxPatients) {
+      reachedLimit = 'patients';
+    } else if (limits.maxExercises && usage.exercises >= limits.maxExercises) {
+      reachedLimit = 'exercises';
+    } else if (limits.maxTherapists && usage.therapists >= limits.maxTherapists) {
+      reachedLimit = 'therapists';
+    }
+  }
 
   // Show skeleton while initial data is loading
   const isInitialLoading = !user || userLoading || (!organizationId && !userData);
@@ -440,37 +462,18 @@ export default function DashboardPage() {
         </Card>
       </div>
 
-      {/* Subscription Banner - Compact, at bottom */}
-      {isAtLimit && (
-        <div className="relative rounded-xl border border-orange-500/30 bg-gradient-to-r from-orange-500/10 via-red-500/5 to-orange-500/10 p-4 overflow-hidden">
-          <div className="absolute -top-12 -right-12 w-32 h-32 bg-orange-500/10 rounded-full blur-2xl" />
-          <div className="relative flex items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-orange-500 to-red-500 text-white shadow-lg shadow-orange-500/20">
-                <Rocket className="h-5 w-5" />
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-foreground flex items-center gap-1.5">
-                  Osiągnąłeś limit pacjentów
-                  <Zap className="h-3.5 w-3.5 text-orange-500 fill-orange-500" />
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  Ulepsz plan i rozwijaj praktykę bez ograniczeń
-                </p>
-              </div>
-            </div>
-            <Link href="/subscription">
-              <Button
-                size="sm"
-                className="gap-1.5 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 border-0 shadow-lg shadow-orange-500/20 text-white"
-              >
-                <Sparkles className="h-3.5 w-3.5" />
-                Ulepsz plan
-                <ArrowRight className="h-3.5 w-3.5" />
-              </Button>
-            </Link>
-          </div>
-        </div>
+      {/* Subscription Banner - Urgent when limit reached, Promo otherwise */}
+      {reachedLimit ? (
+        <SubscriptionBanner
+          variant="urgent"
+          limitType={reachedLimit}
+          planName={planName}
+        />
+      ) : (
+        <SubscriptionBanner
+          variant="promo"
+          planName={planName}
+        />
       )}
 
       {/* Assignment Wizard */}
