@@ -38,6 +38,7 @@ import type {
   UserByClerkIdResponse,
   OrganizationExerciseSetsResponse,
   TherapistPatientsResponse,
+  CurrentOrganizationPlanResponse,
 } from '@/types/apollo';
 
 interface ExerciseSetItem {
@@ -142,7 +143,7 @@ export default function DashboardPage() {
   const displayedPatients = activePatients.slice(0, 4);
 
   // Subscription plan info
-  const currentPlan = planData?.currentOrganizationPlan;
+  const currentPlan = (planData as CurrentOrganizationPlanResponse)?.currentOrganizationPlan;
   const limits = currentPlan?.limits;
   const usage = currentPlan?.currentUsage;
   const planName = currentPlan?.currentPlan || 'FREE';

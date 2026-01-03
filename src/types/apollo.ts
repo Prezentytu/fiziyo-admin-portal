@@ -249,3 +249,29 @@ export interface PatientAssignmentsResponse {
   }>;
 }
 
+export interface CurrentOrganizationPlanResponse {
+  currentOrganizationPlan?: {
+    currentPlan: string;
+    expiresAt?: string;
+    limits?: {
+      maxExercises?: number;
+      maxPatients?: number;
+      maxTherapists?: number;
+      maxClinics?: number;
+      allowQRCodes?: boolean;
+      allowReports?: boolean;
+      allowCustomBranding?: boolean;
+      allowSMSReminders?: boolean;
+    };
+    pricing?: {
+      monthlyPrice?: number;
+      annualPrice?: number;
+    };
+    currentUsage?: {
+      exercises?: number;
+      patients?: number;
+      therapists?: number;
+    };
+  };
+}
+
