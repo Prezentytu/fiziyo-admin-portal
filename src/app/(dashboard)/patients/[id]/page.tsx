@@ -64,7 +64,8 @@ import { EditAssignmentScheduleDialog } from '@/components/patients/EditAssignme
 import { EditExerciseOverrideDialog } from '@/components/patients/EditExerciseOverrideDialog';
 import { GeneratePDFDialog } from '@/components/exercise-sets/GeneratePDFDialog';
 import { PatientQRCodeDialog } from '@/components/patients/PatientQRCodeDialog';
-import { BodyMap } from '@/components/patients/BodyMap';
+import { BodyMap } from '@/components/patients/bodymap/index';
+import { FEATURE_FLAGS } from '@/lib/featureFlags';
 
 interface PatientDetailPageProps {
   params: Promise<{ id: string }>;
@@ -82,7 +83,6 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
   // Collapsible sections state
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isActivityOpen, setIsActivityOpen] = useState(false);
-  const [isBodyMapOpen, setIsBodyMapOpen] = useState(false);
 
   // Dialog states
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
@@ -393,6 +393,32 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
         )}
       </div>
 
+      {/* Pain Body Map Section - Hidden behind feature flag */}
+      {FEATURE_FLAGS.BODY_PAIN_MAP && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-base font-semibold text-foreground flex items-center gap-2">
+              <Target className="h-4 w-4 text-warning" />
+              Mapa bólu
+              <Badge variant="outline" className="ml-1 text-xs border-warning/40 text-warning">
+                Profesjonalna
+              </Badge>
+            </h2>
+          </div>
+          <Card className="border-border/40 overflow-hidden">
+            <div className="h-1 bg-gradient-to-r from-warning via-orange-500 to-red-500" />
+            <CardContent className="p-4 sm:p-6">
+              <BodyMap
+                patientId={id}
+                onSave={(session) => {
+                  console.log('Zapisano sesję mapy bólu:', session);
+                }}
+              />
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
       {/* Clinical Documentation Section */}
       {therapistId && organizationId && (
         <ClinicalNotesList
@@ -504,40 +530,6 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
           </CollapsibleTrigger>
           <CollapsibleContent className="pt-3">
             <ActivityReport patientId={id} patientName={displayName} />
-          </CollapsibleContent>
-        </Collapsible>
-
-        {/* Body Map Section */}
-        <Collapsible open={isBodyMapOpen} onOpenChange={setIsBodyMapOpen}>
-          <CollapsibleTrigger asChild>
-            <button className="w-full flex items-center justify-between p-4 rounded-xl bg-surface/50 border border-border/40 hover:bg-surface-light transition-colors">
-              <div className="flex items-center gap-3">
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-warning/10">
-                  <Target className="h-4 w-4 text-warning" />
-                </div>
-                <div className="text-left">
-                  <span className="font-medium text-sm block">Mapa bólu</span>
-                  <span className="text-xs text-muted-foreground">Zaznacz lokalizacje dolegliwości</span>
-                </div>
-              </div>
-              {isBodyMapOpen ? (
-                <ChevronDown className="h-4 w-4 text-muted-foreground" />
-              ) : (
-                <ChevronRight className="h-4 w-4 text-muted-foreground" />
-              )}
-            </button>
-          </CollapsibleTrigger>
-          <CollapsibleContent className="pt-3">
-            <Card className="border-border/40">
-              <CardContent className="p-4">
-                <BodyMap
-                  patientId={id}
-                  onSave={(session) => {
-                    console.log('Zapisano sesję mapy bólu:', session);
-                  }}
-                />
-              </CardContent>
-            </Card>
           </CollapsibleContent>
         </Collapsible>
       </div>
