@@ -14,7 +14,8 @@ import {
 } from "@/components/ui/dialog";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { ExerciseForm, ExerciseFormValues } from "./ExerciseForm";
-import { CREATE_EXERCISE_MUTATION, UPDATE_EXERCISE_MUTATION } from "@/graphql/mutations/exercises.mutations";
+import { CreateExerciseWizard } from "./CreateExerciseWizard";
+import { UPDATE_EXERCISE_MUTATION } from "@/graphql/mutations/exercises.mutations";
 import { GET_ORGANIZATION_EXERCISES_QUERY } from "@/graphql/queries/exercises.queries";
 import type { Exercise } from "./ExerciseCard";
 
@@ -58,12 +59,6 @@ export function ExerciseDialog({
     }
   }, [open]);
 
-  const [createExercise, { loading: creating }] = useMutation(CREATE_EXERCISE_MUTATION, {
-    refetchQueries: [
-      { query: GET_ORGANIZATION_EXERCISES_QUERY, variables: { organizationId } },
-    ],
-  });
-
   const [updateExercise, { loading: updating }] = useMutation(UPDATE_EXERCISE_MUTATION, {
     refetchQueries: [
       { query: GET_ORGANIZATION_EXERCISES_QUERY, variables: { organizationId } },
@@ -91,41 +86,28 @@ export function ExerciseDialog({
           },
         });
         toast.success("Ćwiczenie zostało zaktualizowane");
-      } else {
-        await createExercise({
-          variables: {
-            organizationId,
-            scope: "ORGANIZATION",
-            name: values.name,
-            description: values.description || "",
-            type: values.type,
-            sets: values.sets,
-            reps: values.reps,
-            duration: values.duration,
-            restSets: values.restSets,
-            restReps: values.restReps,
-            preparationTime: values.preparationTime,
-            executionTime: values.executionTime,
-            videoUrl: values.videoUrl || null,
-            notes: values.notes || null,
-            exerciseSide: values.exerciseSide === "none" ? null : values.exerciseSide,
-            isActive: true,
-          },
-        });
-        toast.success("Ćwiczenie zostało utworzone");
+        onOpenChange(false);
+        onSuccess?.();
       }
-      onOpenChange(false);
-      onSuccess?.();
     } catch (error: unknown) {
       console.error("Błąd podczas zapisywania ćwiczenia:", error);
-      toast.error(
-        isEditing
-          ? "Nie udało się zaktualizować ćwiczenia"
-          : "Nie udało się utworzyć ćwiczenia"
-      );
+      toast.error("Nie udało się zaktualizować ćwiczenia");
     }
   };
 
+  // For creating new exercises, use the wizard
+  if (!isEditing) {
+    return (
+      <CreateExerciseWizard
+        open={open}
+        onOpenChange={onOpenChange}
+        organizationId={organizationId}
+        onSuccess={onSuccess}
+      />
+    );
+  }
+
+  // For editing, use the simple form
   const defaultValues = exercise
     ? {
         name: exercise.name,
@@ -134,7 +116,13 @@ export function ExerciseDialog({
         sets: exercise.sets,
         reps: exercise.reps,
         duration: exercise.duration,
+        restSets: undefined,
+        restReps: undefined,
+        preparationTime: undefined,
+        executionTime: undefined,
         exerciseSide: (exercise.exerciseSide as "none" | "left" | "right" | "both") || "none",
+        videoUrl: "",
+        notes: "",
       }
     : undefined;
 
@@ -149,21 +137,17 @@ export function ExerciseDialog({
         }}
       >
         <DialogHeader>
-          <DialogTitle>
-            {isEditing ? "Edytuj ćwiczenie" : "Nowe ćwiczenie"}
-          </DialogTitle>
+          <DialogTitle>Edytuj ćwiczenie</DialogTitle>
           <DialogDescription>
-            {isEditing
-              ? "Zmień parametry ćwiczenia"
-              : "Wypełnij formularz, aby dodać nowe ćwiczenie do biblioteki"}
+            Zmień parametry ćwiczenia "{exercise?.name}"
           </DialogDescription>
         </DialogHeader>
         <ExerciseForm
           defaultValues={defaultValues}
           onSubmit={handleSubmit}
           onCancel={handleCloseAttempt}
-          isLoading={creating || updating}
-          submitLabel={isEditing ? "Zapisz zmiany" : "Dodaj ćwiczenie"}
+          isLoading={updating}
+          submitLabel="Zapisz zmiany"
           onDirtyChange={setFormIsDirty}
         />
       </DialogContent>
@@ -181,4 +165,3 @@ export function ExerciseDialog({
     </Dialog>
   );
 }
-

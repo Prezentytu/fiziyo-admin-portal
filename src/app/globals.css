@@ -61,6 +61,47 @@
   }
 }
 
+/* AI Suggestion animations */
+@keyframes ai-glow {
+  0%, 100% {
+    box-shadow: 0 0 10px rgba(50, 150, 93, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(50, 150, 93, 0.4);
+  }
+}
+
+@keyframes ai-thinking {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes slide-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes mic-pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.5;
+  }
+  50% {
+    transform: scale(1.5);
+    opacity: 0;
+  }
+}
+
 /* Skeleton Shimmer Animation */
 @keyframes shimmer {
   0% {
@@ -614,6 +655,26 @@ input[type="number"] {
 /* Typing indicator dot animation */
 .animate-typing-dot {
   animation: typing-dot 1.4s ease-in-out infinite;
+}
+
+/* AI suggestion glow animation */
+.animate-ai-glow {
+  animation: ai-glow 2s ease-in-out infinite;
+}
+
+/* AI thinking spinner */
+.animate-ai-thinking {
+  animation: ai-thinking 1s linear infinite;
+}
+
+/* Slide in from right */
+.animate-slide-in-right {
+  animation: slide-in-right 0.3s ease-out;
+}
+
+/* Mic pulse animation */
+.animate-mic-pulse {
+  animation: mic-pulse 1.5s ease-in-out infinite;
 }
 
 /* Skeleton shimmer effect */
