@@ -89,13 +89,3 @@ export default function AuthLayout({ children }: AuthLayoutProps) {
     </div>
   );
 }
-
-
-
-
-
-
-
-
-
-
