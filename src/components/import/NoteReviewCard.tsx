@@ -1,17 +1,25 @@
 'use client';
 
 import { useState } from 'react';
-import { FileText, Check, X, ChevronDown, ChevronUp } from 'lucide-react';
+import { FileText, Check, X, ChevronDown, ChevronUp, AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import type { ExtractedClinicalNote, ClinicalNoteDecision } from '@/types/import.types';
 
 interface NoteReviewCardProps {
   note: ExtractedClinicalNote;
   decision: ClinicalNoteDecision;
   onDecisionChange: (decision: Partial<ClinicalNoteDecision>) => void;
+  /** Gdy true - notatka nie może być importowana (brak pacjenta) */
+  disabled?: boolean;
   className?: string;
 }
 
@@ -22,6 +30,7 @@ export function NoteReviewCard({
   note,
   decision,
   onDecisionChange,
+  disabled = false,
   className,
 }: NoteReviewCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -62,22 +71,34 @@ export function NoteReviewCard({
       ? note.content.substring(0, 150) + '...'
       : note.content;
 
+  // Gdy disabled, traktuj jako "skip"
+  const effectiveAction = disabled ? 'skip' : decision.action;
+
   return (
     <Card
       className={cn(
         'overflow-hidden transition-all duration-200',
-        decision.action === 'skip' && 'opacity-50',
-        decision.action === 'create' && 'border-primary/30 bg-primary/5',
+        effectiveAction === 'skip' && 'opacity-50',
+        effectiveAction === 'create' && 'border-primary/30 bg-primary/5',
+        disabled && 'border-warning/30 bg-warning/5',
         className
       )}
     >
       <CardContent className="p-4">
+        {/* Disabled warning */}
+        {disabled && (
+          <div className="mb-3 flex items-center gap-2 rounded-lg bg-warning/10 px-3 py-2 text-sm text-warning">
+            <AlertTriangle className="h-4 w-4 shrink-0" />
+            <span>Wybierz pacjenta powyżej, aby zaimportować tę notatkę</span>
+          </div>
+        )}
+
         {/* Header */}
         <div className="flex items-start gap-3">
           <div
             className={cn(
               'flex h-10 w-10 shrink-0 items-center justify-center rounded-lg',
-              getNoteTypeColor(note.noteType)
+              disabled ? 'bg-warning/20 text-warning' : getNoteTypeColor(note.noteType)
             )}
           >
             <FileText className="h-5 w-5" />
@@ -109,31 +130,51 @@ export function NoteReviewCard({
 
           {/* Actions */}
           <div className="flex shrink-0 gap-1">
-            <Button
-              variant={decision.action === 'create' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => onDecisionChange({ action: 'create' })}
-              className={cn(
-                'h-8',
-                decision.action === 'create' && 'bg-primary hover:bg-primary-dark'
-              )}
-              title="Utwórz notatkę"
-            >
-              <Check className="h-4 w-4" />
-            </Button>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span>
+                    <Button
+                      variant={effectiveAction === 'create' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => onDecisionChange({ action: 'create' })}
+                      disabled={disabled}
+                      className={cn(
+                        'h-8',
+                        effectiveAction === 'create' && 'bg-primary hover:bg-primary-dark'
+                      )}
+                    >
+                      <Check className="h-4 w-4" />
+                    </Button>
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent>
+                  {disabled ? 'Wybierz pacjenta aby utworzyć notatkę' : 'Utwórz notatkę'}
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
 
-            <Button
-              variant={decision.action === 'skip' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => onDecisionChange({ action: 'skip' })}
-              className={cn(
-                'h-8',
-                decision.action === 'skip' && 'bg-muted hover:bg-muted'
-              )}
-              title="Pomiń"
-            >
-              <X className="h-4 w-4" />
-            </Button>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant={effectiveAction === 'skip' ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => onDecisionChange({ action: 'skip' })}
+                    disabled={disabled}
+                    className={cn(
+                      'h-8',
+                      effectiveAction === 'skip' && !disabled && 'bg-muted hover:bg-muted'
+                    )}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  Pomiń
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
 
             <Button
               variant="ghost"

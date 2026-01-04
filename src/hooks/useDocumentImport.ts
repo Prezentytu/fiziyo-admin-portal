@@ -5,18 +5,23 @@ import { documentImportService } from "@/services/documentImportService";
 import type {
   ImportState,
   ImportWizardStep,
-  DocumentAnalysisResult,
   ExerciseDecision,
   ExerciseSetDecision,
   ClinicalNoteDecision,
   DocumentImportRequest,
-  DocumentImportResult,
   ExerciseImportItem,
   ExerciseSetImportItem,
   ClinicalNoteImportItem,
 } from "@/types/import.types";
 
-const initialState: ImportState = {
+type ExerciseFilterType = 'all' | 'create' | 'reuse' | 'skip' | 'matched';
+
+interface ExtendedImportState extends ImportState {
+  assignSetsToPatient: boolean;
+  exerciseFilter: ExerciseFilterType;
+}
+
+const initialState: ExtendedImportState = {
   step: "upload",
   file: null,
   isAnalyzing: false,
@@ -28,13 +33,15 @@ const initialState: ImportState = {
   selectedPatientId: undefined,
   error: null,
   importResult: null,
+  assignSetsToPatient: false,
+  exerciseFilter: 'all',
 };
 
 /**
  * Hook do zarządzania procesem importu dokumentów
  */
 export function useDocumentImport() {
-  const [state, setState] = useState<ImportState>(initialState);
+  const [state, setState] = useState<ExtendedImportState>(initialState);
 
   // ============================================
   // File Upload
@@ -57,6 +64,20 @@ export function useDocumentImport() {
     setState((prev) => ({
       ...prev,
       selectedPatientId: patientId,
+    }));
+  }, []);
+
+  const setAssignSetsToPatient = useCallback((assign: boolean) => {
+    setState((prev) => ({
+      ...prev,
+      assignSetsToPatient: assign,
+    }));
+  }, []);
+
+  const setExerciseFilter = useCallback((filter: ExerciseFilterType) => {
+    setState((prev) => ({
+      ...prev,
+      exerciseFilter: filter,
     }));
   }, []);
 
@@ -163,7 +184,7 @@ export function useDocumentImport() {
   );
 
   // ============================================
-  // Decisions
+  // Individual Decisions
   // ============================================
 
   const updateExerciseDecision = useCallback(
@@ -218,6 +239,84 @@ export function useDocumentImport() {
   );
 
   // ============================================
+  // Bulk Actions
+  // ============================================
+
+  /**
+   * Ustaw wszystkie ćwiczenia na "utwórz nowe"
+   */
+  const setAllExercisesCreate = useCallback(() => {
+    setState((prev) => {
+      if (!prev.analysisResult) return prev;
+
+      const newDecisions: Record<string, ExerciseDecision> = {};
+      for (const exercise of prev.analysisResult.exercises) {
+        newDecisions[exercise.tempId] = {
+          tempId: exercise.tempId,
+          action: "create",
+          reuseExerciseId: undefined,
+        };
+      }
+
+      return {
+        ...prev,
+        exerciseDecisions: newDecisions,
+      };
+    });
+  }, []);
+
+  /**
+   * Ustaw wszystkie ćwiczenia na "pomiń"
+   */
+  const setAllExercisesSkip = useCallback(() => {
+    setState((prev) => {
+      if (!prev.analysisResult) return prev;
+
+      const newDecisions: Record<string, ExerciseDecision> = {};
+      for (const exercise of prev.analysisResult.exercises) {
+        newDecisions[exercise.tempId] = {
+          tempId: exercise.tempId,
+          action: "skip",
+          reuseExerciseId: undefined,
+        };
+      }
+
+      return {
+        ...prev,
+        exerciseDecisions: newDecisions,
+      };
+    });
+  }, []);
+
+  /**
+   * Użyj dopasowań AI dla ćwiczeń z sugestiami
+   */
+  const useAllMatchedExercises = useCallback(() => {
+    setState((prev) => {
+      if (!prev.analysisResult) return prev;
+
+      const newDecisions: Record<string, ExerciseDecision> = { ...prev.exerciseDecisions };
+
+      for (const exercise of prev.analysisResult.exercises) {
+        const suggestions = prev.analysisResult.matchSuggestions[exercise.tempId];
+        if (suggestions && suggestions.length > 0) {
+          const bestMatch = suggestions[0];
+          newDecisions[exercise.tempId] = {
+            tempId: exercise.tempId,
+            action: "reuse",
+            reuseExerciseId: bestMatch.existingExerciseId,
+          };
+        }
+      }
+
+      return {
+        ...prev,
+        exerciseDecisions: newDecisions,
+      };
+    });
+  }, []);
+
+  // ============================================
   // Navigation
   // ============================================
 
@@ -260,7 +359,7 @@ export function useDocumentImport() {
   // ============================================
 
   const buildImportRequest = useCallback((): DocumentImportRequest => {
-    const { analysisResult, exerciseDecisions, setDecisions, noteDecisions } =
+    const { analysisResult, exerciseDecisions, setDecisions, noteDecisions, selectedPatientId, assignSetsToPatient } =
       state;
 
     if (!analysisResult) {
@@ -328,28 +427,30 @@ export function useDocumentImport() {
       });
     }
 
-    // Notatki do utworzenia
+    // Notatki do utworzenia - tylko jeśli jest pacjent
     const clinicalNotesToCreate: ClinicalNoteImportItem[] = [];
 
-    for (const note of analysisResult.clinicalNotes) {
-      const decision = noteDecisions[note.tempId];
-      if (!decision || decision.action === "skip") continue;
+    if (selectedPatientId) {
+      for (const note of analysisResult.clinicalNotes) {
+        const decision = noteDecisions[note.tempId];
+        if (!decision || decision.action === "skip") continue;
 
-      clinicalNotesToCreate.push({
-        tempId: note.tempId,
-        noteType: note.noteType,
-        title: note.title,
-        content: decision.editedContent || note.content,
-      });
+        clinicalNotesToCreate.push({
+          tempId: note.tempId,
+          noteType: note.noteType,
+          title: note.title,
+          content: decision.editedContent || note.content,
+        });
+      }
     }
 
     return {
-      patientId: state.selectedPatientId,
+      patientId: selectedPatientId,
       exercisesToCreate,
       exercisesToReuse,
       exerciseSetsToCreate,
       clinicalNotesToCreate,
-      assignToPatient: !!state.selectedPatientId,
+      assignToPatient: assignSetsToPatient && !!selectedPatientId,
     };
   }, [state]);
 
@@ -401,6 +502,7 @@ export function useDocumentImport() {
         exercisesToCreate: 0,
         exercisesToReuse: 0,
         exercisesToSkip: 0,
+        exercisesWithMatches: 0,
         totalSets: 0,
         setsToCreate: 0,
         setsToSkip: 0,
@@ -419,6 +521,14 @@ export function useDocumentImport() {
       },
       { create: 0, reuse: 0, skip: 0 }
     );
+
+    // Zlicz ćwiczenia z dopasowaniami
+    let exercisesWithMatches = 0;
+    for (const exercise of analysisResult.exercises) {
+      if (analysisResult.matchSuggestions[exercise.tempId]?.length > 0) {
+        exercisesWithMatches++;
+      }
+    }
 
     const setStats = Object.values(setDecisions).reduce(
       (acc, d) => {
@@ -443,6 +553,7 @@ export function useDocumentImport() {
       exercisesToCreate: exerciseStats.create,
       exercisesToReuse: exerciseStats.reuse,
       exercisesToSkip: exerciseStats.skip,
+      exercisesWithMatches,
       totalSets: analysisResult.exerciseSets.length,
       setsToCreate: setStats.create,
       setsToSkip: setStats.skip,
@@ -450,6 +561,35 @@ export function useDocumentImport() {
       notesToCreate: noteStats.create,
       notesToSkip: noteStats.skip,
     };
+  }, [state]);
+
+  /**
+   * Filtrowane ćwiczenia według aktywnego filtra
+   */
+  const filteredExercises = useMemo(() => {
+    if (!state.analysisResult) return [];
+
+    const { exerciseFilter, exerciseDecisions, analysisResult } = state;
+
+    return analysisResult.exercises.filter((exercise) => {
+      const decision = exerciseDecisions[exercise.tempId];
+      const hasSuggestions = (analysisResult.matchSuggestions[exercise.tempId]?.length || 0) > 0;
+
+      switch (exerciseFilter) {
+        case 'all':
+          return true;
+        case 'create':
+          return decision?.action === 'create';
+        case 'reuse':
+          return decision?.action === 'reuse';
+        case 'skip':
+          return decision?.action === 'skip';
+        case 'matched':
+          return hasSuggestions;
+        default:
+          return true;
+      }
+    });
   }, [state]);
 
   const canProceed = useMemo(() => {
@@ -474,14 +614,24 @@ export function useDocumentImport() {
     ...state,
     stats,
     canProceed,
+    filteredExercises,
 
     // Actions
     setFile,
     setPatientId,
+    setAssignSetsToPatient,
+    setExerciseFilter,
     analyzeDocument,
     updateExerciseDecision,
     updateSetDecision,
     updateNoteDecision,
+
+    // Bulk Actions
+    setAllExercisesCreate,
+    setAllExercisesSkip,
+    useAllMatchedExercises,
+
+    // Navigation
     goToStep,
     goNext,
     goBack,

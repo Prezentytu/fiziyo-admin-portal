@@ -12,11 +12,13 @@ import {
   Repeat,
   Timer,
   Sparkles,
+  Zap,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
 import type {
   ExtractedExercise,
   MatchSuggestion,
@@ -45,9 +47,13 @@ export function ExerciseReviewCard({
   const [showMatches, setShowMatches] = useState(false);
 
   const hasMatches = matchSuggestions.length > 0;
+  const bestMatch = matchSuggestions[0];
   const selectedMatch = matchSuggestions.find(
     (m) => m.existingExerciseId === decision.reuseExerciseId
   );
+
+  // Czy AI sugeruje użycie istniejącego (wysoka pewność dopasowania)
+  const aiSuggestsReuse = bestMatch && bestMatch.confidence >= 0.7;
 
   const getTypeLabel = (type: string) => {
     switch (type) {
@@ -68,6 +74,20 @@ export function ExerciseReviewCard({
     return 'text-orange-500';
   };
 
+  const getConfidenceBgColor = (confidence: number) => {
+    if (confidence >= 0.8) return 'bg-green-500';
+    if (confidence >= 0.5) return 'bg-yellow-500';
+    return 'bg-orange-500';
+  };
+
+  const getConfidenceLabel = (confidence: number) => {
+    if (confidence >= 0.9) return 'Bardzo wysoka';
+    if (confidence >= 0.8) return 'Wysoka';
+    if (confidence >= 0.6) return 'Średnia';
+    if (confidence >= 0.4) return 'Niska';
+    return 'Bardzo niska';
+  };
+
   return (
     <Card
       className={cn(
@@ -79,6 +99,32 @@ export function ExerciseReviewCard({
       )}
     >
       <CardContent className="p-4">
+        {/* AI Suggestion banner */}
+        {aiSuggestsReuse && decision.action === 'create' && (
+          <div className="mb-3 flex items-center gap-2 rounded-lg bg-blue-500/10 px-3 py-2 text-sm">
+            <Zap className="h-4 w-4 text-blue-500 shrink-0" />
+            <span className="text-blue-600">
+              AI sugeruje użycie: <strong>{bestMatch.existingExerciseName}</strong>
+            </span>
+            <Badge variant="secondary" className="ml-auto shrink-0 text-xs bg-blue-500/20 text-blue-600 border-0">
+              {Math.round(bestMatch.confidence * 100)}% podobne
+            </Badge>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                onDecisionChange({
+                  action: 'reuse',
+                  reuseExerciseId: bestMatch.existingExerciseId,
+                });
+              }}
+              className="shrink-0 h-7 text-xs"
+            >
+              Użyj
+            </Button>
+          </div>
+        )}
+
         {/* Header */}
         <div className="flex items-start gap-3">
           <div
@@ -111,6 +157,15 @@ export function ExerciseReviewCard({
               <Badge variant="secondary" className="shrink-0 text-xs">
                 {getTypeLabel(exercise.type)}
               </Badge>
+              {hasMatches && (
+                <Badge
+                  variant="secondary"
+                  className="shrink-0 text-xs bg-blue-500/10 text-blue-600 border-0"
+                >
+                  <Link2 className="h-3 w-3 mr-1" />
+                  {matchSuggestions.length} dopas.
+                </Badge>
+              )}
             </div>
 
             {/* Parametry */}
@@ -141,7 +196,7 @@ export function ExerciseReviewCard({
               )}
             </div>
 
-            {/* Match info */}
+            {/* Match info when reuse selected */}
             {decision.action === 'reuse' && selectedMatch && (
               <div className="mt-2 flex items-center gap-2 text-sm">
                 <Link2 className="h-4 w-4 text-blue-500" />
@@ -154,11 +209,18 @@ export function ExerciseReviewCard({
               </div>
             )}
 
-            {/* Confidence */}
+            {/* Confidence indicator */}
             <div className="mt-2 flex items-center gap-2">
-              <Sparkles className={cn('h-3.5 w-3.5', getConfidenceColor(exercise.confidence))} />
+              <Sparkles className={cn('h-3.5 w-3.5 shrink-0', getConfidenceColor(exercise.confidence))} />
+              <div className="flex-1 max-w-32">
+                <Progress
+                  value={exercise.confidence * 100}
+                  className="h-1.5"
+                  indicatorClassName={getConfidenceBgColor(exercise.confidence)}
+                />
+              </div>
               <span className={cn('text-xs', getConfidenceColor(exercise.confidence))}>
-                Pewność ekstrakcji: {Math.round(exercise.confidence * 100)}%
+                {getConfidenceLabel(exercise.confidence)}
               </span>
             </div>
           </div>
@@ -227,7 +289,7 @@ export function ExerciseReviewCard({
             <p className="text-xs font-medium text-muted-foreground">
               Znalezione podobne ćwiczenia:
             </p>
-            {matchSuggestions.map((match) => (
+            {matchSuggestions.map((match, index) => (
               <button
                 key={match.existingExerciseId}
                 onClick={() => {
@@ -256,19 +318,33 @@ export function ExerciseReviewCard({
                   </div>
                 )}
                 <div className="min-w-0 flex-1">
-                  <p className="font-medium text-foreground truncate">
-                    {match.existingExerciseName}
-                  </p>
+                  <div className="flex items-center gap-2">
+                    <p className="font-medium text-foreground truncate">
+                      {match.existingExerciseName}
+                    </p>
+                    {index === 0 && match.confidence >= 0.7 && (
+                      <Badge variant="secondary" className="shrink-0 text-[10px] bg-blue-500/20 text-blue-600 border-0">
+                        Najlepsze
+                      </Badge>
+                    )}
+                  </div>
                   <p className="text-xs text-muted-foreground">
                     {match.matchReason}
                   </p>
                 </div>
-                <Badge
-                  variant="secondary"
-                  className={cn('shrink-0', getConfidenceColor(match.confidence))}
-                >
-                  {Math.round(match.confidence * 100)}%
-                </Badge>
+                <div className="shrink-0 flex flex-col items-end gap-1">
+                  <Badge
+                    variant="secondary"
+                    className={cn('text-xs', getConfidenceColor(match.confidence))}
+                  >
+                    {Math.round(match.confidence * 100)}%
+                  </Badge>
+                  <Progress
+                    value={match.confidence * 100}
+                    className="h-1 w-12"
+                    indicatorClassName={getConfidenceBgColor(match.confidence)}
+                  />
+                </div>
               </button>
             ))}
           </div>

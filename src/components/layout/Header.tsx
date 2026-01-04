@@ -18,6 +18,7 @@ const routeNames: Record<string, string> = {
   organization: 'Organizacja',
   settings: 'Ustawienia',
   tags: 'Tagi',
+  import: 'Import AI',
 };
 
 function Breadcrumbs() {

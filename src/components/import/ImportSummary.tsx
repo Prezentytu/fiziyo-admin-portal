@@ -10,23 +10,36 @@ import {
   Plus,
   ArrowRight,
   RotateCcw,
+  AlertTriangle,
+  Info,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import type { DocumentImportResult } from '@/types/import.types';
 import Link from 'next/link';
 
 interface ImportSummaryProps {
   result: DocumentImportResult | null;
   onReset: () => void;
+  /** Czy notatki zostały pominięte z powodu braku pacjenta */
+  notesSkippedDueToNoPatient?: boolean;
+  /** Liczba pominiętych notatek */
+  skippedNotesCount?: number;
   className?: string;
 }
 
 /**
  * Podsumowanie importu z wynikami
  */
-export function ImportSummary({ result, onReset, className }: ImportSummaryProps) {
+export function ImportSummary({
+  result,
+  onReset,
+  notesSkippedDueToNoPatient = false,
+  skippedNotesCount = 0,
+  className
+}: ImportSummaryProps) {
   if (!result) {
     return null;
   }
@@ -36,6 +49,11 @@ export function ImportSummary({ result, onReset, className }: ImportSummaryProps
     result.exercisesCreated +
     result.exerciseSetsCreated +
     result.clinicalNotesCreated;
+
+  // Sprawdź czy cokolwiek zostało zaimportowane
+  const hasImportedExercises = result.exercisesCreated > 0 || result.exercisesReused > 0;
+  const hasImportedSets = result.exerciseSetsCreated > 0;
+  const hasImportedNotes = result.clinicalNotesCreated > 0;
 
   return (
     <div className={cn('space-y-6', className)}>
@@ -112,10 +130,23 @@ export function ImportSummary({ result, onReset, className }: ImportSummaryProps
           </Card>
 
           {/* Notatki */}
-          <Card className="border-orange-500/30 bg-orange-500/5">
+          <Card className={cn(
+            "border-orange-500/30 bg-orange-500/5",
+            notesSkippedDueToNoPatient && result.clinicalNotesCreated === 0 && "border-warning/30 bg-warning/5"
+          )}>
             <CardContent className="flex items-center gap-3 p-4">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-orange-500/20">
-                <FileText className="h-6 w-6 text-orange-500" />
+              <div className={cn(
+                "flex h-12 w-12 items-center justify-center rounded-xl",
+                notesSkippedDueToNoPatient && result.clinicalNotesCreated === 0
+                  ? "bg-warning/20"
+                  : "bg-orange-500/20"
+              )}>
+                <FileText className={cn(
+                  "h-6 w-6",
+                  notesSkippedDueToNoPatient && result.clinicalNotesCreated === 0
+                    ? "text-warning"
+                    : "text-orange-500"
+                )} />
               </div>
               <div>
                 <p className="text-2xl font-bold text-foreground">
@@ -126,6 +157,86 @@ export function ImportSummary({ result, onReset, className }: ImportSummaryProps
             </CardContent>
           </Card>
         </div>
+      )}
+
+      {/* Skipped notes warning */}
+      {notesSkippedDueToNoPatient && skippedNotesCount > 0 && (
+        <Card className="border-warning/50 bg-warning/5">
+          <CardContent className="flex items-start gap-3 p-4">
+            <AlertTriangle className="h-5 w-5 text-warning shrink-0 mt-0.5" />
+            <div>
+              <p className="font-medium text-foreground">
+                {skippedNotesCount} {skippedNotesCount === 1 ? 'notatka pominięta' : 'notatki pominięte'}
+              </p>
+              <p className="text-sm text-muted-foreground mt-1">
+                Notatki kliniczne nie zostały zaimportowane, ponieważ nie wybrano pacjenta.
+                Następnym razem wybierz pacjenta w kroku "Zestawy", aby zaimportować również notatki.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Details section */}
+      {isSuccess && totalCreated > 0 && (
+        <Card className="bg-surface-light">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <Info className="h-4 w-4 text-muted-foreground" />
+              <h3 className="font-medium text-foreground">Szczegóły importu</h3>
+            </div>
+
+            <div className="space-y-3 text-sm">
+              {result.exercisesCreated > 0 && (
+                <div className="flex items-center gap-2">
+                  <Badge variant="secondary" className="bg-primary/20 text-primary border-0">
+                    <Plus className="h-3 w-3 mr-1" />
+                    {result.exercisesCreated}
+                  </Badge>
+                  <span className="text-muted-foreground">
+                    nowych ćwiczeń dodanych do Twojej biblioteki
+                  </span>
+                </div>
+              )}
+
+              {result.exercisesReused > 0 && (
+                <div className="flex items-center gap-2">
+                  <Badge variant="secondary" className="bg-blue-500/20 text-blue-600 border-0">
+                    <Link2 className="h-3 w-3 mr-1" />
+                    {result.exercisesReused}
+                  </Badge>
+                  <span className="text-muted-foreground">
+                    istniejących ćwiczeń połączonych z zestawami
+                  </span>
+                </div>
+              )}
+
+              {result.exerciseSetsCreated > 0 && (
+                <div className="flex items-center gap-2">
+                  <Badge variant="secondary" className="bg-purple-500/20 text-purple-600 border-0">
+                    <Layers className="h-3 w-3 mr-1" />
+                    {result.exerciseSetsCreated}
+                  </Badge>
+                  <span className="text-muted-foreground">
+                    zestawów ćwiczeń gotowych do przypisania pacjentom
+                  </span>
+                </div>
+              )}
+
+              {result.clinicalNotesCreated > 0 && (
+                <div className="flex items-center gap-2">
+                  <Badge variant="secondary" className="bg-orange-500/20 text-orange-600 border-0">
+                    <FileText className="h-3 w-3 mr-1" />
+                    {result.clinicalNotesCreated}
+                  </Badge>
+                  <span className="text-muted-foreground">
+                    notatek klinicznych zapisanych w profilu pacjenta
+                  </span>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
       )}
 
       {/* Errors */}
@@ -151,7 +262,7 @@ export function ImportSummary({ result, onReset, className }: ImportSummaryProps
           Importuj kolejny dokument
         </Button>
 
-        {isSuccess && result.exercisesCreated > 0 && (
+        {isSuccess && (result.exercisesCreated > 0 || result.exercisesReused > 0) && (
           <Link href="/exercises">
             <Button className="gap-2 w-full sm:w-auto bg-primary hover:bg-primary-dark">
               <Dumbbell className="h-4 w-4" />

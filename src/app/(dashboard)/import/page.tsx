@@ -13,6 +13,7 @@ import {
   CheckCircle,
   Link2,
   X,
+  AlertTriangle,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -26,6 +27,8 @@ import {
   SetReviewCard,
   NoteReviewCard,
   ImportSummary,
+  PatientContextPanel,
+  BulkActionsToolbar,
 } from '@/components/import';
 
 const stepConfig = [
@@ -49,15 +52,25 @@ export default function ImportPage() {
     exerciseDecisions,
     setDecisions,
     noteDecisions,
+    selectedPatientId,
+    assignSetsToPatient,
+    exerciseFilter,
     error,
     importResult,
     stats,
     canProceed,
+    filteredExercises,
     setFile,
+    setPatientId,
+    setAssignSetsToPatient,
+    setExerciseFilter,
     analyzeDocument,
     updateExerciseDecision,
     updateSetDecision,
     updateNoteDecision,
+    setAllExercisesCreate,
+    setAllExercisesSkip,
+    useAllMatchedExercises,
     goNext,
     goBack,
     executeImport,
@@ -68,6 +81,9 @@ export default function ImportPage() {
   const currentStepIndex = useMemo(() => {
     return stepConfig.findIndex((s) => s.id === step);
   }, [step]);
+
+  // Czy pokazać warning o notatkach bez pacjenta
+  const showNotesWarning = stats.notesToCreate > 0 && !selectedPatientId;
 
   return (
     <div className="min-h-screen">
@@ -93,7 +109,6 @@ export default function ImportPage() {
             const Icon = s.icon;
             const isActive = index === currentStepIndex;
             const isCompleted = index < currentStepIndex;
-            const isClickable = isCompleted && step !== 'processing';
 
             return (
               <div
@@ -255,13 +270,31 @@ export default function ImportPage() {
               </Card>
             )}
 
+            {/* Bulk Actions Toolbar */}
+            <BulkActionsToolbar
+              totalCount={stats.totalExercises}
+              matchedCount={stats.exercisesWithMatches}
+              createCount={stats.exercisesToCreate}
+              reuseCount={stats.exercisesToReuse}
+              skipCount={stats.exercisesToSkip}
+              activeFilter={exerciseFilter}
+              onFilterChange={setExerciseFilter}
+              onSetAllCreate={setAllExercisesCreate}
+              onSetAllSkip={setAllExercisesSkip}
+              onUseAllMatched={useAllMatchedExercises}
+              disabled={isAnalyzing}
+            />
+
             {/* Exercises list */}
             <div className="space-y-3">
               <h3 className="font-medium text-foreground">
-                Znalezione ćwiczenia ({analysisResult.exercises.length})
+                {exerciseFilter === 'all'
+                  ? `Znalezione ćwiczenia (${filteredExercises.length})`
+                  : `Filtrowane ćwiczenia (${filteredExercises.length} z ${stats.totalExercises})`
+                }
               </h3>
 
-              {analysisResult.exercises.map((exercise) => (
+              {filteredExercises.map((exercise) => (
                 <ExerciseReviewCard
                   key={exercise.tempId}
                   exercise={exercise}
@@ -271,12 +304,15 @@ export default function ImportPage() {
                 />
               ))}
 
-              {analysisResult.exercises.length === 0 && (
+              {filteredExercises.length === 0 && (
                 <Card>
                   <CardContent className="py-12 text-center">
                     <Dumbbell className="mx-auto mb-4 h-12 w-12 text-muted-foreground/50" />
                     <p className="text-muted-foreground">
-                      Nie znaleziono ćwiczeń w dokumencie
+                      {exerciseFilter !== 'all'
+                        ? 'Brak ćwiczeń pasujących do filtra'
+                        : 'Nie znaleziono ćwiczeń w dokumencie'
+                      }
                     </p>
                   </CardContent>
                 </Card>
@@ -288,6 +324,37 @@ export default function ImportPage() {
         {/* Step 4: Review Sets & Notes */}
         {step === 'review-sets' && analysisResult && (
           <div className="space-y-8">
+            {/* Patient Context Panel - pokazuj gdy są notatki */}
+            {analysisResult.clinicalNotes.length > 0 && (
+              <PatientContextPanel
+                detectedPatientName={analysisResult.documentInfo.patientName}
+                selectedPatientId={selectedPatientId}
+                onPatientChange={setPatientId}
+                assignSetsToPatient={assignSetsToPatient}
+                onAssignSetsChange={setAssignSetsToPatient}
+                notesToCreateCount={stats.notesToCreate}
+                disabled={isImporting}
+              />
+            )}
+
+            {/* Warning banner gdy notatki bez pacjenta */}
+            {showNotesWarning && (
+              <Card className="border-warning/50 bg-warning/5">
+                <CardContent className="flex items-start gap-3 p-4">
+                  <AlertTriangle className="h-5 w-5 text-warning shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-medium text-foreground">
+                      Notatki kliniczne nie zostaną zaimportowane
+                    </p>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Aby zaimportować {stats.notesToCreate} {stats.notesToCreate === 1 ? 'notatkę' : 'notatki'},
+                      wybierz pacjenta powyżej. Ćwiczenia i zestawy zostaną zaimportowane normalnie.
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
             {/* Exercise Sets */}
             {analysisResult.exerciseSets.length > 0 && (
               <div className="space-y-3">
@@ -315,6 +382,11 @@ export default function ImportPage() {
                 <h3 className="font-medium text-foreground flex items-center gap-2">
                   <FileText className="h-5 w-5 text-orange-500" />
                   Notatki kliniczne ({analysisResult.clinicalNotes.length})
+                  {!selectedPatientId && (
+                    <Badge variant="secondary" className="ml-2 bg-warning/20 text-warning border-0">
+                      Wymaga pacjenta
+                    </Badge>
+                  )}
                 </h3>
 
                 {analysisResult.clinicalNotes.map((note) => (
@@ -323,6 +395,7 @@ export default function ImportPage() {
                     note={note}
                     decision={noteDecisions[note.tempId]}
                     onDecisionChange={(d) => updateNoteDecision(note.tempId, d)}
+                    disabled={!selectedPatientId}
                   />
                 ))}
               </div>
@@ -348,7 +421,12 @@ export default function ImportPage() {
 
         {/* Step 5: Summary */}
         {step === 'summary' && (
-          <ImportSummary result={importResult} onReset={reset} />
+          <ImportSummary
+            result={importResult}
+            onReset={reset}
+            notesSkippedDueToNoPatient={!selectedPatientId && stats.notesToCreate > 0}
+            skippedNotesCount={!selectedPatientId ? stats.notesToCreate : 0}
+          />
         )}
       </div>
 
