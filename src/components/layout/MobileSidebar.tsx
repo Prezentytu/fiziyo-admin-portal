@@ -60,7 +60,7 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
               <span className="text-lg font-bold text-primary-foreground">F</span>
             </div>
             <div className="flex flex-col text-left">
-              <span className="text-lg font-bold leading-none">Fiziyo</span>
+              <span className="text-lg font-bold leading-none">FiziYo</span>
               <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-normal">
                 Admin Panel
               </span>

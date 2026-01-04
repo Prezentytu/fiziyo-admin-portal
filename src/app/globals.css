@@ -61,6 +61,57 @@
   }
 }
 
+/* AI Suggestion animations */
+@keyframes ai-glow {
+  0%, 100% {
+    box-shadow: 0 0 10px rgba(50, 150, 93, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(50, 150, 93, 0.4);
+  }
+}
+
+@keyframes ai-thinking {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes slide-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes mic-pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.5;
+  }
+  50% {
+    transform: scale(1.5);
+    opacity: 0;
+  }
+}
+
+/* Skeleton Shimmer Animation */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
 :root {
   /* Base colors - Fizjo App Dark Theme */
   --background: #121212;
@@ -606,6 +657,38 @@ input[type="number"] {
   animation: typing-dot 1.4s ease-in-out infinite;
 }
 
+/* AI suggestion glow animation */
+.animate-ai-glow {
+  animation: ai-glow 2s ease-in-out infinite;
+}
+
+/* AI thinking spinner */
+.animate-ai-thinking {
+  animation: ai-thinking 1s linear infinite;
+}
+
+/* Slide in from right */
+.animate-slide-in-right {
+  animation: slide-in-right 0.3s ease-out;
+}
+
+/* Mic pulse animation */
+.animate-mic-pulse {
+  animation: mic-pulse 1.5s ease-in-out infinite;
+}
+
+/* Skeleton shimmer effect */
+.animate-shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--surface-light) 25%,
+    var(--surface-hover) 50%,
+    var(--surface-light) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
 /* Chat panel - no focus outline */
 .chat-panel,
 .chat-panel *,
@@ -619,4 +702,77 @@ input[type="number"] {
 .chat-panel *:focus-visible {
   outline: none !important;
   box-shadow: none !important;
+}
+
+/* ============================================
+   Accessibility Styles
+   ============================================ */
+
+/* Light theme */
+.light-theme {
+  --background: #ffffff;
+  --foreground: #1a1a1a;
+  --surface: #f5f5f5;
+  --surface-light: #e5e5e5;
+  --surface-hover: #d5d5d5;
+  --surface-elevated: #ffffff;
+  --border: #d1d5db;
+  --border-light: #e5e7eb;
+  --muted: #f3f4f6;
+  --muted-foreground: #6b7280;
+  --card: #ffffff;
+  --card-foreground: #1a1a1a;
+  --popover: #ffffff;
+  --popover-foreground: #1a1a1a;
+  --accent: #f3f4f6;
+  --accent-foreground: #1a1a1a;
+  --text-primary: #1a1a1a;
+  --text-secondary: #4b5563;
+  --text-tertiary: #9ca3af;
+}
+
+/* High contrast mode */
+.high-contrast {
+  --background: #000000;
+  --foreground: #ffffff;
+  --surface: #0a0a0a;
+  --surface-light: #1a1a1a;
+  --surface-hover: #2a2a2a;
+  --primary: #00ff7f;
+  --primary-light: #7fff00;
+  --border: #ffffff;
+  --border-light: #cccccc;
+  --muted-foreground: #ffffff;
+  --text-primary: #ffffff;
+  --text-secondary: #ffffff;
+  --text-tertiary: #cccccc;
+}
+
+.high-contrast button,
+.high-contrast a {
+  border: 2px solid currentColor !important;
+}
+
+.high-contrast:focus-visible {
+  outline: 3px solid #00ff7f !important;
+  outline-offset: 2px;
+}
+
+/* Reduced motion */
+.reduced-motion *,
+.reduced-motion *::before,
+.reduced-motion *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
+
+/* Base font size variable support */
+:root {
+  --base-font-size: 16px;
+}
+
+html {
+  font-size: var(--base-font-size);
 }

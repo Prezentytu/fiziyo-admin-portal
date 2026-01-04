@@ -2,7 +2,7 @@
 
 import { useQuery } from '@apollo/client/react';
 import { useUser } from '@clerk/nextjs';
-import { Settings, User, Building2, Calendar, Bell, Palette } from 'lucide-react';
+import { Settings, User, Building2, Eye } from 'lucide-react';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
@@ -10,6 +10,7 @@ import { LoadingState } from '@/components/shared/LoadingState';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { ProfileForm, UserProfile } from '@/components/settings/ProfileForm';
 import { OrganizationsList, UserOrganization } from '@/components/settings/OrganizationsList';
+import { AccessibilitySettings } from '@/components/settings/AccessibilitySettings';
 
 import { GET_USER_BY_CLERK_ID_QUERY, GET_USER_ORGANIZATIONS_QUERY } from '@/graphql/queries/users.queries';
 import type { UserByClerkIdResponse, UserOrganizationsResponse } from '@/types/apollo';
@@ -93,9 +94,9 @@ export default function SettingsPage() {
               <span className="hidden sm:inline">Organizacje</span>
               <span className="text-muted-foreground">({organizations.length})</span>
             </TabsTrigger>
-            <TabsTrigger value="preferences" className="flex items-center gap-2 text-xs sm:text-sm">
-              <Settings className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Preferencje</span>
+            <TabsTrigger value="accessibility" className="flex items-center gap-2 text-xs sm:text-sm">
+              <Eye className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Dostępność</span>
             </TabsTrigger>
           </TabsList>
         </div>
@@ -115,51 +116,8 @@ export default function SettingsPage() {
           )}
         </TabsContent>
 
-        <TabsContent value="preferences" className="mt-4">
-          <Card className="border-border/60">
-            <CardContent className="p-5">
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {/* Calendar preference */}
-                <div className="flex items-start gap-4 rounded-xl border border-border/60 bg-surface p-4 transition-colors hover:bg-surface-light">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10">
-                    <Calendar className="h-5 w-5 text-primary" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <h3 className="font-medium text-foreground text-sm">Kalendarz wizyt</h3>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      Wkrótce dostępne
-                    </p>
-                  </div>
-                </div>
-
-                {/* Notifications preference */}
-                <div className="flex items-start gap-4 rounded-xl border border-border/60 bg-surface p-4 transition-colors hover:bg-surface-light">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-info/10">
-                    <Bell className="h-5 w-5 text-info" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <h3 className="font-medium text-foreground text-sm">Powiadomienia</h3>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      Wkrótce dostępne
-                    </p>
-                  </div>
-                </div>
-
-                {/* Theme preference */}
-                <div className="flex items-start gap-4 rounded-xl border border-border/60 bg-surface p-4 transition-colors hover:bg-surface-light">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-secondary/10">
-                    <Palette className="h-5 w-5 text-secondary" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <h3 className="font-medium text-foreground text-sm">Motyw</h3>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      Ciemny (domyślny)
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+        <TabsContent value="accessibility" className="mt-4">
+          <AccessibilitySettings />
         </TabsContent>
       </Tabs>
     </div>

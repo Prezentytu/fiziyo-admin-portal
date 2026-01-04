@@ -5,17 +5,7 @@ import { useQuery } from '@apollo/client/react';
 import { useUser } from '@clerk/nextjs';
 import { pdf } from '@react-pdf/renderer';
 import { QRCodeCanvas } from 'qrcode.react';
-import {
-  FileDown,
-  FileText,
-  Image,
-  Calendar,
-  QrCode,
-  Loader2,
-  Download,
-  Eye,
-  List,
-} from 'lucide-react';
+import { FileDown, FileText, Image, Calendar, QrCode, Loader2, Download, Eye, List } from 'lucide-react';
 
 import {
   Dialog,
@@ -190,9 +180,7 @@ export function GeneratePDFDialog({
         frequency: exerciseSet.frequency,
       };
 
-      const pdfPatient: PDFPatient | undefined = patient
-        ? { name: patient.name, email: patient.email }
-        : undefined;
+      const pdfPatient: PDFPatient | undefined = patient ? { name: patient.name, email: patient.email } : undefined;
 
       const pdfTherapist: PDFTherapist | undefined = therapistUser?.fullname
         ? { name: therapistUser.fullname }
@@ -228,11 +216,9 @@ export function GeneratePDFDialog({
         .replace(/[^a-zA-Z0-9ąćęłńóśźżĄĆĘŁŃÓŚŹŻ\s-]/g, '')
         .replace(/\s+/g, '_')
         .substring(0, 50);
-      
-      const patientSuffix = patient 
-        ? `_${patient.name.split(' ')[0]}` 
-        : '';
-      
+
+      const patientSuffix = patient ? `_${patient.name.split(' ')[0]}` : '';
+
       const fileName = `${safeName}${patientSuffix}_program.pdf`;
 
       // Pobierz plik
@@ -276,9 +262,7 @@ export function GeneratePDFDialog({
             <FileDown className="h-5 w-5 text-primary" />
             Generuj PDF dla pacjenta
           </DialogTitle>
-          <DialogDescription>
-            Stwórz profesjonalny dokument z programem ćwiczeń do wydruku
-          </DialogDescription>
+          <DialogDescription>Stwórz profesjonalny dokument z programem ćwiczeń do wydruku</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-5 py-4">
@@ -287,9 +271,7 @@ export function GeneratePDFDialog({
             <p className="font-semibold text-foreground">{exerciseSet.name}</p>
             <p className="text-sm text-muted-foreground mt-1">
               {exerciseCountText}
-              {patient && (
-                <span className="text-primary font-medium"> • {patient.name}</span>
-              )}
+              {patient && <span className="text-primary font-medium"> • {patient.name}</span>}
             </p>
           </div>
 
@@ -308,22 +290,22 @@ export function GeneratePDFDialog({
               >
                 <CardContent className="p-4">
                   <div className="flex items-center gap-3">
-                    <div className={cn(
-                      "h-10 w-10 rounded-lg flex items-center justify-center",
-                      viewMode === 'full' ? 'bg-primary text-white' : 'bg-surface-light'
-                    )}>
+                    <div
+                      className={cn(
+                        'h-10 w-10 rounded-lg flex items-center justify-center',
+                        viewMode === 'full' ? 'bg-primary text-white' : 'bg-surface-light'
+                      )}
+                    >
                       <Eye className="h-5 w-5" />
                     </div>
                     <div>
                       <p className="font-semibold text-sm">Szczegółowy</p>
-                      <p className="text-xs text-muted-foreground">
-                        Ze zdjęciami i opisami
-                      </p>
+                      <p className="text-xs text-muted-foreground">Ze zdjęciami i opisami</p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
-              
+
               <Card
                 className={cn(
                   'cursor-pointer transition-all hover:shadow-md',
@@ -335,17 +317,17 @@ export function GeneratePDFDialog({
               >
                 <CardContent className="p-4">
                   <div className="flex items-center gap-3">
-                    <div className={cn(
-                      "h-10 w-10 rounded-lg flex items-center justify-center",
-                      viewMode === 'compact' ? 'bg-primary text-white' : 'bg-surface-light'
-                    )}>
+                    <div
+                      className={cn(
+                        'h-10 w-10 rounded-lg flex items-center justify-center',
+                        viewMode === 'compact' ? 'bg-primary text-white' : 'bg-surface-light'
+                      )}
+                    >
                       <List className="h-5 w-5" />
                     </div>
                     <div>
                       <p className="font-semibold text-sm">Kompaktowy</p>
-                      <p className="text-xs text-muted-foreground">
-                        Lista na 1-2 strony
-                      </p>
+                      <p className="text-xs text-muted-foreground">Lista na 1-2 strony</p>
                     </div>
                   </div>
                 </CardContent>
@@ -359,10 +341,7 @@ export function GeneratePDFDialog({
             <div className="space-y-3 pl-1">
               {viewMode === 'full' && (
                 <label className="flex items-center gap-3 cursor-pointer group">
-                  <Checkbox
-                    checked={showImages}
-                    onCheckedChange={(checked) => setShowImages(checked === true)}
-                  />
+                  <Checkbox checked={showImages} onCheckedChange={(checked) => setShowImages(checked === true)} />
                   <div className="flex items-center gap-2 text-sm group-hover:text-foreground transition-colors">
                     <Image className="h-4 w-4 text-muted-foreground" />
                     <span>Zdjęcia ćwiczeń</span>
@@ -371,10 +350,7 @@ export function GeneratePDFDialog({
               )}
 
               <label className="flex items-center gap-3 cursor-pointer group">
-                <Checkbox
-                  checked={showFrequency}
-                  onCheckedChange={(checked) => setShowFrequency(checked === true)}
-                />
+                <Checkbox checked={showFrequency} onCheckedChange={(checked) => setShowFrequency(checked === true)} />
                 <div className="flex items-center gap-2 text-sm group-hover:text-foreground transition-colors">
                   <Calendar className="h-4 w-4 text-muted-foreground" />
                   <span>Harmonogram (kiedy ćwiczyć)</span>
@@ -382,10 +358,7 @@ export function GeneratePDFDialog({
               </label>
 
               <label className="flex items-center gap-3 cursor-pointer group">
-                <Checkbox
-                  checked={showQRCode}
-                  onCheckedChange={(checked) => setShowQRCode(checked === true)}
-                />
+                <Checkbox checked={showQRCode} onCheckedChange={(checked) => setShowQRCode(checked === true)} />
                 <div className="flex items-center gap-2 text-sm group-hover:text-foreground transition-colors">
                   <QrCode className="h-4 w-4 text-muted-foreground" />
                   <span>Kod QR do aplikacji mobilnej</span>
@@ -420,11 +393,7 @@ export function GeneratePDFDialog({
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Anuluj
           </Button>
-          <Button
-            onClick={handleGeneratePDF}
-            disabled={isGenerating || !organization}
-            className="gap-2"
-          >
+          <Button onClick={handleGeneratePDF} disabled={isGenerating || !organization} className="gap-2">
             {isGenerating ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" />

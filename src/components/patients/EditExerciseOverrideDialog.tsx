@@ -378,7 +378,7 @@ function EditExerciseOverrideDialogContent({
             <div className="space-y-2">
               <Label className="text-sm flex items-center gap-2">
                 <Clock className="h-4 w-4 text-muted-foreground" />
-                Czas trwania (sekundy)
+                Czas serii (sekundy)
               </Label>
               <div className="flex items-center gap-2">
                 <Button
@@ -479,6 +479,3 @@ function EditExerciseOverrideDialogContent({
     </DialogContent>
   );
 }
-
-
-

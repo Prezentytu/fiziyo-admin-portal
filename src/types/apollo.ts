@@ -1,251 +1,302 @@
-// Common Apollo response types
+// Apollo GraphQL Response Types
+// Types for GraphQL query responses based on actual schema
+
+// ========================================
+// User Types
+// ========================================
+
+export interface PersonalData {
+  firstName?: string;
+  lastName?: string;
+}
+
+export interface ContactData {
+  phone?: string;
+  address?: string;
+}
+
+export interface User {
+  id: string;
+  clerkId?: string;
+  email: string;
+  fullname?: string;
+  username?: string;
+  image?: string;
+  isActive: boolean;
+  isShadowUser?: boolean;
+  hasPassword?: boolean;
+  organizationIds?: string[];
+  systemRole?: string;
+  defaultOrganizationId?: string;
+  creationTime?: string;
+  personalData?: PersonalData;
+  contactData?: ContactData;
+}
 
 export interface UserByClerkIdResponse {
-  userByClerkId?: {
-    id: string;
-    clerkId?: string;
-    fullname?: string;
-    email?: string;
-    image?: string;
-    organizationIds?: string[];
-    personalData?: {
-      firstName?: string;
-      lastName?: string;
-    };
-    contactData?: {
-      phone?: string;
-      address?: string;
-    };
-  };
+  userByClerkId: User | null;
 }
 
 export interface UserByIdResponse {
-  userById?: {
-    id: string;
-    clerkId?: string;
-    fullname?: string;
-    email?: string;
-    image?: string;
-    creationTime?: string;
-    isShadowUser?: boolean;
-    organizationIds?: string[];
-    personalData?: {
-      firstName?: string;
-      lastName?: string;
-    };
-    contactData?: {
-      phone?: string;
-      address?: string;
-    };
-  };
+  userById: User | null;
 }
 
-export interface OrganizationExercisesResponse {
-  organizationExercises?: Array<{
-    id: string;
-    name: string;
-    description?: string;
-    type?: string;
-    sets?: number;
-    reps?: number;
-    duration?: number;
-    exerciseSide?: string;
-    imageUrl?: string;
-    images?: string[];
-    isActive?: boolean;
-    mainTags?: string[];
-    additionalTags?: string[];
-  }>;
-}
+// ========================================
+// Organization Types
+// ========================================
 
-export interface OrganizationExerciseSetsResponse {
-  exerciseSets?: Array<{
-    id: string;
-    name: string;
-    description?: string;
-    isActive?: boolean;
-    isTemplate?: boolean;
-    exerciseMappings?: Array<{
-      id: string;
-      exerciseId: string;
-      order?: number;
-      sets?: number;
-      reps?: number;
-      duration?: number;
-      restSets?: number;
-      restReps?: number;
-      notes?: string;
-      customName?: string;
-      customDescription?: string;
-      exercise?: {
-        id: string;
-        name: string;
-        type?: string;
-        exerciseSide?: string;
-        imageUrl?: string;
-        images?: string[];
-        description?: string;
-        sets?: number;
-        reps?: number;
-        duration?: number;
-        restSets?: number;
-        restReps?: number;
-      };
-    }>;
-    patientAssignments?: Array<{ id: string }>;
-  }>;
-}
-
-export interface TherapistPatientsResponse {
-  therapistPatients?: Array<{
-    id: string;
-    therapistId: string;
-    patientId: string;
-    status?: string;
-    contextLabel?: string;
-    contextColor?: string;
-    patient?: {
-      id: string;
-      fullname?: string;
-      email?: string;
-      image?: string;
-      isShadowUser?: boolean;
-      personalData?: {
-        firstName?: string;
-        lastName?: string;
-      };
-      contactData?: {
-        phone?: string;
-        address?: string;
-      };
-    };
-  }>;
-}
-
-export interface ExerciseTagsResponse {
-  exerciseTags?: Array<{
-    id: string;
-    name: string;
-    color: string;
-    description?: string;
-    icon?: string;
-    isMain?: boolean;
-    isGlobal?: boolean;
-    categoryId?: string;
-    categoryIds?: string[];
-    popularity?: number;
-  }>;
-}
-
-export interface TagCategoriesResponse {
-  tagsByOrganizationId?: Array<{
-    id: string;
-    name: string;
-    color: string;
-    description?: string;
-    icon?: string;
-  }>;
+export interface Organization {
+  id: string;
+  name: string;
+  description?: string;
+  isActive: boolean;
+  logoUrl?: string;
+  subscriptionPlan?: string;
+  subscriptionExpiresAt?: string;
+  allowPersonalExercises?: boolean;
+  sharedExercisesByDefault?: boolean;
+  autoSyncExampleExercises?: boolean;
+  address?: string;
+  contactPhone?: string;
+  contactEmail?: string;
+  website?: string;
+  creationTime?: string;
+  updatedAt?: string;
 }
 
 export interface OrganizationByIdResponse {
-  organizationById?: {
+  organizationById: Organization | null;
+}
+
+export interface UserOrganizationWithRole {
+  organizationId: string;
+  organizationName: string;
+  role: string;
+  joinedAt?: string;
+}
+
+export interface UserOrganizationsResponse {
+  userOrganizations: UserOrganizationWithRole[];
+}
+
+// ========================================
+// Organization Members Types
+// ========================================
+
+export interface OrganizationMember {
+  id: string;
+  userId: string;
+  organizationId: string;
+  role: string;
+  status?: string;
+  joinedAt?: string;
+  clinicIds?: string[];
+  user?: {
     id: string;
-    name: string;
-    description?: string;
-    logoUrl?: string;
-    isActive?: boolean;
-    creationTime?: string;
-    updatedAt?: string;
-    subscriptionPlan?: string;
-    subscriptionExpiresAt?: string;
-    allowPersonalExercises?: boolean;
-    sharedExercisesByDefault?: boolean;
-    autoSyncExampleExercises?: boolean;
-    // Contact info for PDF/branding
-    address?: string;
-    contactPhone?: string;
-    contactEmail?: string;
-    website?: string;
+    fullname?: string;
+    email: string;
+    image?: string;
   };
 }
 
 export interface OrganizationMembersResponse {
-  organizationMembers?: Array<{
-    id: string;
-    userId: string;
-    organizationId: string;
-    role: string;
-    status?: string;
-    joinedAt?: string;
-    user?: {
-      id: string;
-      fullname?: string;
-      email?: string;
-      image?: string;
-    };
-  }>;
+  organizationMembers: OrganizationMember[];
+}
+
+// ========================================
+// Clinic Types
+// ========================================
+
+export interface Clinic {
+  id: string;
+  name: string;
+  address?: string;
+  contactInfo?: string;
+  isActive: boolean;
+  organizationId: string;
 }
 
 export interface OrganizationClinicsResponse {
-  organizationClinics?: Array<{
-    id: string;
-    name: string;
-    address?: string;
-    contactInfo?: string;
-    isActive?: boolean;
-  }>;
+  organizationClinics: Clinic[];
 }
 
-export interface UserOrganizationsResponse {
-  userOrganizations?: Array<{
-    organizationId: string;
-    organizationName?: string;
-    role: string;
-    joinedAt?: string;
-  }>;
+// ========================================
+// Exercise Types
+// ========================================
+
+export interface Exercise {
+  id: string;
+  name: string;
+  description?: string;
+  type: string;
+  sets?: number;
+  reps?: number;
+  duration?: number;
+  restSets?: number;
+  restReps?: number;
+  preparationTime?: number;
+  executionTime?: number;
+  exerciseSide?: string;
+  imageUrl?: string;
+  images?: string[];
+  gifUrl?: string;
+  videoUrl?: string;
+  notes?: string;
+  mainTags?: string[];
+  additionalTags?: string[];
+  scope?: string;
+  isActive: boolean;
+  isGlobal?: boolean;
+  isPublicTemplate?: boolean;
+  createdById?: string;
+  organizationId?: string;
+  ownerId?: string;
+  creationTime?: string;
+}
+
+export interface OrganizationExercisesResponse {
+  organizationExercises: Exercise[];
 }
 
 export interface ExerciseByIdResponse {
-  exerciseById?: {
+  exerciseById: Exercise | null;
+}
+
+// ========================================
+// Exercise Set Types
+// ========================================
+
+export interface Frequency {
+  timesPerDay?: number;
+  timesPerWeek?: number;
+  breakBetweenSets?: number;
+  monday?: boolean;
+  tuesday?: boolean;
+  wednesday?: boolean;
+  thursday?: boolean;
+  friday?: boolean;
+  saturday?: boolean;
+  sunday?: boolean;
+}
+
+export interface ExerciseSetMapping {
+  id: string;
+  exerciseId: string;
+  exerciseSetId?: string;
+  order?: number;
+  sets?: number;
+  reps?: number;
+  duration?: number;
+  restSets?: number;
+  restReps?: number;
+  notes?: string;
+  customName?: string;
+  customDescription?: string;
+  exercise?: {
     id: string;
     name: string;
-    description?: string;
+    imageUrl?: string;
+    images?: string[];
     type?: string;
+    exerciseSide?: string;
+    description?: string;
+    notes?: string;
+    videoUrl?: string;
+    preparationTime?: number;
+    executionTime?: number;
     sets?: number;
     reps?: number;
     duration?: number;
     restSets?: number;
     restReps?: number;
-    preparationTime?: number;
-    executionTime?: number;
-    exerciseSide?: string;
-    imageUrl?: string;
-    images?: string[];
-    videoUrl?: string;
-    notes?: string;
-    mainTags?: string[];
-    additionalTags?: string[];
-    isActive?: boolean;
   };
 }
 
-export interface PatientAssignmentsResponse {
-  patientAssignments?: Array<{
-    id: string;
-    userId: string;
-    exerciseSetId?: string;
-    exerciseId?: string;
-    status?: string;
-    assignedAt?: string;
-    startDate?: string;
-    endDate?: string;
-    completionCount?: number;
-    exerciseSet?: {
-      id: string;
-      name: string;
-      description?: string;
-      exerciseMappings?: Array<{ id: string }>;
-    };
-  }>;
+export interface ExerciseSet {
+  id: string;
+  name: string;
+  description?: string;
+  isActive?: boolean;
+  isTemplate?: boolean;
+  createdById?: string;
+  organizationId?: string;
+  creationTime?: string;
+  frequency?: Frequency;
+  exerciseMappings?: ExerciseSetMapping[];
+  patientAssignments?: Array<{ id: string }>;
 }
 
+export interface OrganizationExerciseSetsResponse {
+  exerciseSets: ExerciseSet[];
+}
+
+// ========================================
+// Tag Types
+// ========================================
+
+export interface ExerciseTag {
+  id: string;
+  name: string;
+  description?: string;
+  color?: string;
+  icon?: string;
+  isActive: boolean;
+  isGlobal?: boolean;
+  isMain?: boolean;
+  categoryId?: string;
+  categoryIds?: string[];
+  organizationId?: string;
+  createdById?: string;
+  creationTime?: string;
+  popularity?: number;
+}
+
+export interface ExerciseTagsResponse {
+  exerciseTags: ExerciseTag[];
+}
+
+export interface TagCategory {
+  id: string;
+  name: string;
+  description?: string;
+  color?: string;
+  icon?: string;
+  isActive: boolean;
+  organizationId?: string;
+  createdById?: string;
+  creationTime?: string;
+}
+
+export interface TagCategoriesResponse {
+  tagsByOrganizationId: TagCategory[];
+}
+
+// ========================================
+// Patient/Therapist Assignment Types
+// ========================================
+
+export interface TherapistPatientAssignment {
+  id: string;
+  therapistId: string;
+  patientId: string;
+  organizationId: string;
+  assignedAt?: string;
+  assignedById?: string;
+  status?: string;
+  notes?: string;
+  contextType?: string;
+  contextLabel?: string;
+  contextColor?: string;
+  relationType?: string;
+  startDate?: string;
+  endDate?: string;
+  patient?: User;
+  therapist?: {
+    id: string;
+    fullname?: string;
+  };
+}
+
+export interface TherapistPatientsResponse {
+  therapistPatients: TherapistPatientAssignment[];
+}

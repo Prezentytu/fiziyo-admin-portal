@@ -145,7 +145,7 @@ const translateType = (type?: string) => {
 
 const getActiveDays = (frequency?: Frequency): string => {
   if (!frequency) return "Brak harmonogramu";
-  
+
   const days: string[] = [];
   if (frequency.monday) days.push("Pn");
   if (frequency.tuesday) days.push("Wt");
@@ -154,11 +154,11 @@ const getActiveDays = (frequency?: Frequency): string => {
   if (frequency.friday) days.push("Pt");
   if (frequency.saturday) days.push("So");
   if (frequency.sunday) days.push("Nd");
-  
+
   if (days.length === 7) return "Codziennie";
   if (days.length === 5 && !frequency.saturday && !frequency.sunday) return "Pn-Pt";
   if (days.length === 0) return "Brak dni";
-  
+
   return days.join(", ");
 };
 
@@ -434,7 +434,7 @@ export function PatientAssignmentCard({
                         <>, {assignment.frequency.timesPerDay}x dziennie</>
                       )}
                       {assignment.frequency?.breakBetweenSets && (
-                        <>, przerwa {assignment.frequency.breakBetweenSets}h</>
+                        <>, min. {assignment.frequency.breakBetweenSets}h między sesjami</>
                       )}
                     </p>
                   </div>
@@ -604,10 +604,3 @@ export function PatientAssignmentCard({
     </>
   );
 }
-
-
-
-
-
-
-

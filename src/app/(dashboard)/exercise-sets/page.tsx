@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useQuery, useMutation } from '@apollo/client/react';
 import { useUser } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
-import { Plus, FolderKanban, FolderPlus, Search, Sparkles, FolderX } from 'lucide-react';
+import { Plus, FolderKanban, FolderPlus, Search, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
@@ -16,6 +16,7 @@ import { EmptyState } from '@/components/shared/EmptyState';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { SetCard, ExerciseSet } from '@/components/exercise-sets/SetCard';
 import { SetDialog } from '@/components/exercise-sets/SetDialog';
+import { CreateSetWizard } from '@/components/exercise-sets/CreateSetWizard';
 import { cn } from '@/lib/utils';
 
 import { GET_ORGANIZATION_EXERCISE_SETS_QUERY } from '@/graphql/queries/exerciseSets.queries';
@@ -32,7 +33,8 @@ export default function ExerciseSetsPage() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
   const [filter, setFilter] = useState<FilterType>('all');
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isCreateWizardOpen, setIsCreateWizardOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingSet, setEditingSet] = useState<ExerciseSet | null>(null);
   const [deletingSet, setDeletingSet] = useState<ExerciseSet | null>(null);
 
@@ -103,7 +105,7 @@ export default function ExerciseSetsPage() {
 
   const handleEdit = (set: ExerciseSet) => {
     setEditingSet(set);
-    setIsDialogOpen(true);
+    setIsEditDialogOpen(true);
   };
 
   const handleDuplicate = async (set: ExerciseSet) => {
@@ -133,8 +135,8 @@ export default function ExerciseSetsPage() {
     }
   };
 
-  const handleCloseDialog = () => {
-    setIsDialogOpen(false);
+  const handleCloseEditDialog = () => {
+    setIsEditDialogOpen(false);
     setEditingSet(null);
   };
 
@@ -166,13 +168,13 @@ export default function ExerciseSetsPage() {
       <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-12">
         {/* Hero Action - Nowy zestaw */}
         <button
-          onClick={() => setIsDialogOpen(true)}
+          onClick={() => setIsCreateWizardOpen(true)}
           disabled={!organizationId}
           className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary via-primary to-primary-dark p-5 text-left transition-all duration-300 hover:shadow-xl hover:shadow-primary/20 hover:scale-[1.02] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 sm:col-span-1 lg:col-span-4"
         >
           <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
           <div className="absolute -top-24 -right-24 w-48 h-48 bg-white/10 rounded-full blur-3xl group-hover:bg-white/20 transition-all duration-500" />
-          
+
           <div className="relative flex items-center gap-4">
             <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm shrink-0 group-hover:scale-110 transition-transform duration-300">
               <FolderPlus className="h-5 w-5 text-white" />
@@ -306,7 +308,7 @@ export default function ExerciseSetsPage() {
                   : 'Utwórz pierwszy zestaw lub załaduj przykładowe zestawy ćwiczeń'
               }
               actionLabel={!searchQuery && filter === 'all' ? 'Nowy zestaw' : undefined}
-              onAction={!searchQuery && filter === 'all' ? () => setIsDialogOpen(true) : undefined}
+              onAction={!searchQuery && filter === 'all' ? () => setIsCreateWizardOpen(true) : undefined}
               secondaryActionLabel={!searchQuery && filter === 'all' && !hasImportedExamples ? 'Załaduj przykłady' : undefined}
               onSecondaryAction={!searchQuery && filter === 'all' && !hasImportedExamples ? importExampleSets : undefined}
               secondaryActionLoading={isImporting}
@@ -328,11 +330,21 @@ export default function ExerciseSetsPage() {
         </div>
       )}
 
-      {/* Set Dialog */}
+      {/* Create Set Wizard */}
+      {organizationId && (
+        <CreateSetWizard
+          open={isCreateWizardOpen}
+          onOpenChange={setIsCreateWizardOpen}
+          organizationId={organizationId}
+          onSuccess={() => setIsCreateWizardOpen(false)}
+        />
+      )}
+
+      {/* Edit Set Dialog */}
       {organizationId && (
         <SetDialog
-          open={isDialogOpen}
-          onOpenChange={handleCloseDialog}
+          open={isEditDialogOpen}
+          onOpenChange={handleCloseEditDialog}
           set={editingSet}
           organizationId={organizationId}
         />

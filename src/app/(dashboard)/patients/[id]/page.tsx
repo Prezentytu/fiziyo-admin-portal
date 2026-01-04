@@ -23,6 +23,8 @@ import {
   CheckCircle2,
   Send,
   FileDown,
+  QrCode,
+  Target,
 } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
@@ -61,6 +63,9 @@ import type { Patient as AssignmentPatient } from '@/components/assignment/types
 import { EditAssignmentScheduleDialog } from '@/components/patients/EditAssignmentScheduleDialog';
 import { EditExerciseOverrideDialog } from '@/components/patients/EditExerciseOverrideDialog';
 import { GeneratePDFDialog } from '@/components/exercise-sets/GeneratePDFDialog';
+import { PatientQRCodeDialog } from '@/components/patients/PatientQRCodeDialog';
+import { BodyMap } from '@/components/patients/bodymap/index';
+import { FEATURE_FLAGS } from '@/lib/featureFlags';
 
 interface PatientDetailPageProps {
   params: Promise<{ id: string }>;
@@ -81,6 +86,7 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
 
   // Dialog states
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
+  const [isQRCodeDialogOpen, setIsQRCodeDialogOpen] = useState(false);
   const [editingScheduleAssignment, setEditingScheduleAssignment] = useState<PatientAssignment | null>(null);
   const [editingExerciseData, setEditingExerciseData] = useState<{
     assignment: PatientAssignment;
@@ -197,6 +203,10 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => setIsQRCodeDialogOpen(true)}>
+              <QrCode className="mr-2 h-4 w-4" />
+              Pokaż QR kod
+            </DropdownMenuItem>
             <DropdownMenuItem>
               <Settings className="mr-2 h-4 w-4" />
               Ustawienia pacjenta
@@ -267,17 +277,17 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
         </div>
       </div>
 
-      {/* Hero Action + Quick Stats */}
+      {/* Hero Actions + Quick Stats */}
       <div className="grid gap-3 grid-cols-1 sm:grid-cols-12">
         {/* Hero Action - Przypisz zestaw */}
         <button
           onClick={() => setIsAssignDialogOpen(true)}
           disabled={!organizationId || !therapistId}
-          className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary via-primary to-primary-dark p-5 text-left transition-all duration-300 hover:shadow-xl hover:shadow-primary/20 hover:scale-[1.02] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 sm:col-span-6"
+          className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary via-primary to-primary-dark p-5 text-left transition-all duration-300 hover:shadow-xl hover:shadow-primary/20 hover:scale-[1.02] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 sm:col-span-4"
         >
           <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
           <div className="absolute -top-24 -right-24 w-48 h-48 bg-white/10 rounded-full blur-3xl group-hover:bg-white/20 transition-all duration-500" />
-          
+
           <div className="relative flex items-center gap-4">
             <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm shrink-0 group-hover:scale-110 transition-transform duration-300">
               <Send className="h-5 w-5 text-white" />
@@ -287,15 +297,39 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
                 Przypisz zestaw
               </h3>
               <p className="text-sm text-white/70">
-                Dodaj nowy program ćwiczeń
+                Program ćwiczeń
               </p>
             </div>
             <Plus className="h-5 w-5 text-white/60 group-hover:text-white transition-colors shrink-0" />
           </div>
         </button>
 
+        {/* Hero Action - QR Code */}
+        <button
+          onClick={() => setIsQRCodeDialogOpen(true)}
+          disabled={!organizationId || !therapistId}
+          className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-info via-info to-cyan-600 p-5 text-left transition-all duration-300 hover:shadow-xl hover:shadow-info/20 hover:scale-[1.02] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 sm:col-span-4"
+        >
+          <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+          <div className="absolute -top-24 -right-24 w-48 h-48 bg-white/10 rounded-full blur-3xl group-hover:bg-white/20 transition-all duration-500" />
+
+          <div className="relative flex items-center gap-4">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm shrink-0 group-hover:scale-110 transition-transform duration-300">
+              <QrCode className="h-5 w-5 text-white" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <h3 className="text-base font-bold text-white">
+                QR kod
+              </h3>
+              <p className="text-sm text-white/70">
+                Połącz z aplikacją
+              </p>
+            </div>
+          </div>
+        </button>
+
         {/* Quick Stats */}
-        <div className="grid grid-cols-2 gap-3 sm:col-span-6">
+        <div className="grid grid-cols-2 gap-3 sm:col-span-4">
           <div className="rounded-2xl border border-border/40 bg-surface/50 p-4 flex flex-col items-center justify-center text-center">
             <div className="flex items-center gap-2">
               <FolderKanban className="h-4 w-4 text-primary" />
@@ -358,6 +392,32 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
           </div>
         )}
       </div>
+
+      {/* Pain Body Map Section - Hidden behind feature flag */}
+      {FEATURE_FLAGS.BODY_PAIN_MAP && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-base font-semibold text-foreground flex items-center gap-2">
+              <Target className="h-4 w-4 text-warning" />
+              Mapa bólu
+              <Badge variant="outline" className="ml-1 text-xs border-warning/40 text-warning">
+                Profesjonalna
+              </Badge>
+            </h2>
+          </div>
+          <Card className="border-border/40 overflow-hidden">
+            <div className="h-1 bg-gradient-to-r from-warning via-orange-500 to-red-500" />
+            <CardContent className="p-4 sm:p-6">
+              <BodyMap
+                patientId={id}
+                onSave={(session) => {
+                  console.log('Zapisano sesję mapy bólu:', session);
+                }}
+              />
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* Clinical Documentation Section */}
       {therapistId && organizationId && (
@@ -530,6 +590,21 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
             frequency: pdfAssignment.frequency,
           }}
           patient={{ name: displayName, email: patient.email }}
+          organizationId={organizationId}
+        />
+      )}
+
+      {/* QR Code Dialog */}
+      {organizationId && therapistId && (
+        <PatientQRCodeDialog
+          open={isQRCodeDialogOpen}
+          onOpenChange={setIsQRCodeDialogOpen}
+          patient={{
+            id: patient.id,
+            name: displayName,
+            email: patient.email,
+          }}
+          therapistId={therapistId}
           organizationId={organizationId}
         />
       )}

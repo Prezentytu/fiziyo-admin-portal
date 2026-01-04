@@ -19,14 +19,14 @@ const DAYS = [
 
 export function PDFFrequency({ frequency }: PDFFrequencyProps) {
   const daysText = formatDaysPolish(frequency);
-  const timesPerDayText = frequency.timesPerDay 
-    ? `${formatTimes(frequency.timesPerDay)} dziennie` 
+  const timesPerDayText = frequency.timesPerDay
+    ? `${formatTimes(frequency.timesPerDay)} dziennie`
     : null;
 
   return (
     <View style={pdfStyles.frequencySection}>
       <Text style={pdfStyles.frequencyTitle}>KIEDY ĆWICZYĆ?</Text>
-      
+
       <View style={pdfStyles.frequencyContent}>
         {/* Dni tygodnia */}
         <View style={pdfStyles.frequencyRow}>
@@ -45,9 +45,9 @@ export function PDFFrequency({ frequency }: PDFFrequencyProps) {
         {/* Przerwa między sesjami */}
         {frequency.breakBetweenSets && (
           <View style={pdfStyles.frequencyRow}>
-            <Text style={pdfStyles.frequencyLabel}>Przerwa:</Text>
+            <Text style={pdfStyles.frequencyLabel}>Przerwa między sesjami:</Text>
             <Text style={pdfStyles.frequencyValue}>
-              Minimum {frequency.breakBetweenSets} godzin między sesjami
+              Minimum {frequency.breakBetweenSets} godzin
             </Text>
           </View>
         )}
