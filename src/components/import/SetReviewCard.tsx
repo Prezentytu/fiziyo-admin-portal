@@ -23,7 +23,8 @@ interface SetReviewCardProps {
 }
 
 /**
- * Karta zestawu ćwiczeń do review
+ * Karta zestawu ćwiczeń do review - uproszczona
+ * Przyciski z tekstem dla lepszej czytelności
  */
 export function SetReviewCard({
   exerciseSet,
@@ -51,118 +52,123 @@ export function SetReviewCard({
   return (
     <Card
       className={cn(
-        'overflow-hidden transition-all duration-200',
-        decision.action === 'skip' && 'opacity-50',
-        decision.action === 'create' && hasActiveExercises && 'border-primary/30 bg-primary/5',
-        !hasActiveExercises && 'border-orange-500/30 bg-orange-500/5',
+        'overflow-hidden transition-colors duration-200',
+        decision.action === 'skip' && 'opacity-60',
+        decision.action === 'create' && hasActiveExercises && 'border-primary/40 bg-primary/5',
+        !hasActiveExercises && 'border-warning/40 bg-warning/5',
         className
       )}
     >
-      <CardContent className="p-4">
+      <CardContent className="p-5">
         {/* Header */}
-        <div className="flex items-start gap-3">
+        <div className="flex items-start gap-4">
           <div
             className={cn(
-              'flex h-10 w-10 shrink-0 items-center justify-center rounded-lg',
+              'flex h-12 w-12 shrink-0 items-center justify-center rounded-xl',
               decision.action === 'create' && hasActiveExercises
                 ? 'bg-primary/20'
                 : !hasActiveExercises
-                ? 'bg-orange-500/20'
+                ? 'bg-warning/20'
                 : 'bg-surface-light'
             )}
           >
             <Layers
               className={cn(
-                'h-5 w-5',
+                'h-6 w-6',
                 decision.action === 'create' && hasActiveExercises
                   ? 'text-primary'
                   : !hasActiveExercises
-                  ? 'text-orange-500'
+                  ? 'text-warning'
                   : 'text-muted-foreground'
               )}
             />
           </div>
 
           <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2">
-              <h3 className="font-medium text-foreground truncate">
+            {/* Nazwa zestawu - większa */}
+            <div className="flex items-center gap-2 flex-wrap">
+              <h3 className="text-base font-semibold text-foreground">
                 {decision.editedName || exerciseSet.name}
               </h3>
-              <Badge variant="secondary" className="shrink-0 text-xs">
-                {activeExercises.length}/{setExercises.length} ćwiczeń
+              <Badge variant="secondary" className="text-xs">
+                {activeExercises.length} z {setExercises.length} ćwiczeń
               </Badge>
             </div>
 
+            {/* Opis */}
             {(decision.editedDescription || exerciseSet.description) && (
-              <p className="mt-1 text-sm text-muted-foreground line-clamp-2">
+              <p className="mt-2 text-sm text-muted-foreground line-clamp-2">
                 {decision.editedDescription || exerciseSet.description}
               </p>
             )}
 
+            {/* Ostrzeżenie gdy brak aktywnych ćwiczeń */}
             {!hasActiveExercises && (
-              <p className="mt-2 text-sm text-orange-500">
-                ⚠️ Wszystkie ćwiczenia w tym zestawie zostały pominięte
+              <p className="mt-2 text-sm text-warning font-medium">
+                Wszystkie ćwiczenia w tym zestawie zostały pominięte
               </p>
             )}
 
-            {exerciseSet.suggestedFrequency && (
-              <p className="mt-1 text-xs text-muted-foreground">
+            {/* Sugerowana częstotliwość */}
+            {exerciseSet.suggestedFrequency && hasActiveExercises && (
+              <p className="mt-2 text-sm text-muted-foreground">
                 Sugerowana częstotliwość: {exerciseSet.suggestedFrequency}
               </p>
             )}
           </div>
 
-          {/* Actions */}
-          <div className="flex shrink-0 gap-1">
-            <Button
-              variant={decision.action === 'create' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => onDecisionChange({ action: 'create' })}
-              disabled={!hasActiveExercises}
-              className={cn(
-                'h-8',
-                decision.action === 'create' && hasActiveExercises && 'bg-primary hover:bg-primary-dark'
-              )}
-              title="Utwórz zestaw"
-            >
-              <Check className="h-4 w-4" />
-            </Button>
+          {/* Przycisk rozwijania */}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setIsExpanded(!isExpanded)}
+            className="shrink-0 h-10 w-10"
+          >
+            {isExpanded ? (
+              <ChevronUp className="h-5 w-5" />
+            ) : (
+              <ChevronDown className="h-5 w-5" />
+            )}
+          </Button>
+        </div>
 
-            <Button
-              variant={decision.action === 'skip' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => onDecisionChange({ action: 'skip' })}
-              className={cn(
-                'h-8',
-                decision.action === 'skip' && 'bg-muted hover:bg-muted'
-              )}
-              title="Pomiń"
-            >
-              <X className="h-4 w-4" />
-            </Button>
+        {/* Przyciski akcji - z tekstem */}
+        <div className="mt-4 flex flex-wrap gap-2">
+          <Button
+            variant={decision.action === 'create' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => onDecisionChange({ action: 'create' })}
+            disabled={!hasActiveExercises}
+            className={cn(
+              'gap-2 h-9 px-4',
+              decision.action === 'create' && hasActiveExercises && 'bg-primary hover:bg-primary-dark'
+            )}
+          >
+            <Check className="h-4 w-4" />
+            Utwórz zestaw
+          </Button>
 
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setIsExpanded(!isExpanded)}
-              className="h-8"
-            >
-              {isExpanded ? (
-                <ChevronUp className="h-4 w-4" />
-              ) : (
-                <ChevronDown className="h-4 w-4" />
-              )}
-            </Button>
-          </div>
+          <Button
+            variant={decision.action === 'skip' ? 'secondary' : 'outline'}
+            size="sm"
+            onClick={() => onDecisionChange({ action: 'skip' })}
+            className={cn(
+              'gap-2 h-9 px-4',
+              decision.action === 'skip' && 'bg-muted text-muted-foreground'
+            )}
+          >
+            <X className="h-4 w-4" />
+            Pomiń
+          </Button>
         </div>
 
         {/* Expanded: lista ćwiczeń */}
         {isExpanded && (
-          <div className="mt-4 space-y-2 border-t border-border/60 pt-4">
-            <p className="text-xs font-medium text-muted-foreground">
+          <div className="mt-4 space-y-3 border-t border-border/60 pt-4">
+            <p className="text-sm font-medium text-foreground">
               Ćwiczenia w zestawie:
             </p>
-            <div className="space-y-1">
+            <div className="space-y-2">
               {setExercises.map((exercise, index) => {
                 const exDecision = exerciseDecisions[exercise.tempId];
                 const isActive = exDecision && exDecision.action !== 'skip';
@@ -171,14 +177,14 @@ export function SetReviewCard({
                   <div
                     key={exercise.tempId}
                     className={cn(
-                      'flex items-center gap-2 rounded-lg px-3 py-2',
-                      isActive ? 'bg-surface-light' : 'bg-surface-light/50 opacity-50'
+                      'flex items-center gap-3 rounded-lg px-4 py-3',
+                      isActive ? 'bg-surface-light' : 'bg-surface-light/50 opacity-60'
                     )}
                   >
-                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-surface text-xs font-medium">
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-surface text-sm font-medium">
                       {index + 1}
                     </span>
-                    <Dumbbell className="h-4 w-4 shrink-0 text-muted-foreground" />
+                    <Dumbbell className="h-5 w-5 shrink-0 text-muted-foreground" />
                     <span
                       className={cn(
                         'min-w-0 flex-1 truncate text-sm',
@@ -188,7 +194,7 @@ export function SetReviewCard({
                       {exercise.name}
                     </span>
                     {exDecision?.action === 'reuse' && (
-                      <Badge variant="secondary" className="shrink-0 text-xs">
+                      <Badge variant="secondary" className="shrink-0 text-xs bg-blue-500/20 text-blue-600 border-0">
                         Istniejące
                       </Badge>
                     )}
@@ -198,7 +204,7 @@ export function SetReviewCard({
                       </Badge>
                     )}
                     {exDecision?.action === 'skip' && (
-                      <Badge variant="outline" className="shrink-0 text-xs text-muted-foreground">
+                      <Badge variant="secondary" className="shrink-0 text-xs">
                         Pominięte
                       </Badge>
                     )}

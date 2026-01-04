@@ -1,19 +1,16 @@
 'use client';
 
-import { Check, X, Link2, Filter } from 'lucide-react';
+import { Check, X, Link2, Filter, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
   DropdownMenuSeparator,
-  DropdownMenuLabel,
 } from '@/components/ui/dropdown-menu';
 
-type ExerciseAction = 'create' | 'reuse' | 'skip';
 type FilterType = 'all' | 'create' | 'reuse' | 'skip' | 'matched';
 
 interface BulkActionsToolbarProps {
@@ -43,7 +40,8 @@ interface BulkActionsToolbarProps {
 }
 
 /**
- * Pasek narzędzi bulk actions dla review ćwiczeń
+ * Pasek narzędzi bulk actions - uproszczony dla użytkowników 45+
+ * 3 jasne przyciski z tekstem, prosty filtr
  */
 export function BulkActionsToolbar({
   totalCount,
@@ -77,22 +75,24 @@ export function BulkActionsToolbar({
   return (
     <div
       className={cn(
-        'flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border/60 bg-surface-light p-3',
+        'sticky top-0 z-10 flex flex-wrap items-center justify-between gap-4 rounded-xl border border-border/60 bg-surface p-4',
         className
       )}
     >
-      {/* Left side - bulk actions */}
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="text-sm text-muted-foreground mr-1">Wszystkie:</span>
+      {/* Przyciski akcji zbiorczych - jasne etykiety */}
+      <div className="flex flex-wrap items-center gap-3">
+        <span className="text-sm font-medium text-muted-foreground">
+          Dla wszystkich:
+        </span>
 
         <Button
           variant="outline"
           size="sm"
           onClick={onSetAllCreate}
           disabled={disabled}
-          className="gap-1.5 h-8"
+          className="gap-2 h-9"
         >
-          <Check className="h-3.5 w-3.5 text-primary" />
+          <Check className="h-4 w-4 text-primary" />
           Utwórz nowe
         </Button>
 
@@ -102,9 +102,9 @@ export function BulkActionsToolbar({
             size="sm"
             onClick={onUseAllMatched}
             disabled={disabled}
-            className="gap-1.5 h-8"
+            className="gap-2 h-9"
           >
-            <Link2 className="h-3.5 w-3.5 text-blue-500" />
+            <Link2 className="h-4 w-4 text-blue-500" />
             Użyj dopasowanych ({matchedCount})
           </Button>
         )}
@@ -114,86 +114,69 @@ export function BulkActionsToolbar({
           size="sm"
           onClick={onSetAllSkip}
           disabled={disabled}
-          className="gap-1.5 h-8"
+          className="gap-2 h-9"
         >
-          <X className="h-3.5 w-3.5 text-muted-foreground" />
-          Pomiń
+          <X className="h-4 w-4 text-muted-foreground" />
+          Pomiń wszystkie
         </Button>
       </div>
 
-      {/* Right side - filter */}
-      <div className="flex items-center gap-2">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm" className="gap-2 h-8">
-              <Filter className="h-3.5 w-3.5" />
-              {getFilterLabel(activeFilter)}
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-48">
-            <DropdownMenuLabel>Filtruj według</DropdownMenuLabel>
-            <DropdownMenuSeparator />
+      {/* Filtr - prosty dropdown */}
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="outline" size="sm" className="gap-2 h-9">
+            <Filter className="h-4 w-4" />
+            {getFilterLabel(activeFilter)}
+            <ChevronDown className="h-4 w-4 ml-1" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-52">
+          <DropdownMenuItem
+            onClick={() => onFilterChange('all')}
+            className={cn('cursor-pointer', activeFilter === 'all' && 'bg-primary/10')}
+          >
+            Wszystkie ({totalCount})
+          </DropdownMenuItem>
 
-            <DropdownMenuItem
-              onClick={() => onFilterChange('all')}
-              className={cn(activeFilter === 'all' && 'bg-primary/10')}
-            >
-              <span className="flex-1">Wszystkie</span>
-              <Badge variant="secondary" className="ml-2 text-xs">
-                {totalCount}
-              </Badge>
-            </DropdownMenuItem>
+          <DropdownMenuSeparator />
 
-            <DropdownMenuItem
-              onClick={() => onFilterChange('create')}
-              className={cn(activeFilter === 'create' && 'bg-primary/10')}
-            >
-              <Check className="mr-2 h-4 w-4 text-primary" />
-              <span className="flex-1">Do utworzenia</span>
-              <Badge variant="secondary" className="ml-2 text-xs">
-                {createCount}
-              </Badge>
-            </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={() => onFilterChange('create')}
+            className={cn('cursor-pointer', activeFilter === 'create' && 'bg-primary/10')}
+          >
+            <Check className="mr-2 h-4 w-4 text-primary" />
+            Do utworzenia ({createCount})
+          </DropdownMenuItem>
 
-            <DropdownMenuItem
-              onClick={() => onFilterChange('reuse')}
-              className={cn(activeFilter === 'reuse' && 'bg-primary/10')}
-            >
-              <Link2 className="mr-2 h-4 w-4 text-blue-500" />
-              <span className="flex-1">Istniejące</span>
-              <Badge variant="secondary" className="ml-2 text-xs">
-                {reuseCount}
-              </Badge>
-            </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={() => onFilterChange('reuse')}
+            className={cn('cursor-pointer', activeFilter === 'reuse' && 'bg-primary/10')}
+          >
+            <Link2 className="mr-2 h-4 w-4 text-blue-500" />
+            Istniejące ({reuseCount})
+          </DropdownMenuItem>
 
-            <DropdownMenuItem
-              onClick={() => onFilterChange('skip')}
-              className={cn(activeFilter === 'skip' && 'bg-primary/10')}
-            >
-              <X className="mr-2 h-4 w-4 text-muted-foreground" />
-              <span className="flex-1">Pominięte</span>
-              <Badge variant="secondary" className="ml-2 text-xs">
-                {skipCount}
-              </Badge>
-            </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={() => onFilterChange('skip')}
+            className={cn('cursor-pointer', activeFilter === 'skip' && 'bg-primary/10')}
+          >
+            <X className="mr-2 h-4 w-4 text-muted-foreground" />
+            Pominięte ({skipCount})
+          </DropdownMenuItem>
 
-            {matchedCount > 0 && (
-              <>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={() => onFilterChange('matched')}
-                  className={cn(activeFilter === 'matched' && 'bg-primary/10')}
-                >
-                  <span className="flex-1">Z dopasowaniem AI</span>
-                  <Badge variant="secondary" className="ml-2 text-xs">
-                    {matchedCount}
-                  </Badge>
-                </DropdownMenuItem>
-              </>
-            )}
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
+          {matchedCount > 0 && (
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={() => onFilterChange('matched')}
+                className={cn('cursor-pointer', activeFilter === 'matched' && 'bg-primary/10')}
+              >
+                Z dopasowaniem AI ({matchedCount})
+              </DropdownMenuItem>
+            </>
+          )}
+        </DropdownMenuContent>
+      </DropdownMenu>
     </div>
   );
 }

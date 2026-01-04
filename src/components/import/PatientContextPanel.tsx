@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react';
 import { useQuery } from '@apollo/client/react';
 import { useUser } from '@clerk/nextjs';
-import { User, Search, AlertTriangle, Check, X } from 'lucide-react';
+import { User, Search, AlertTriangle, Check, X, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -83,7 +83,7 @@ function fuzzyMatch(query: string, target: string): number {
 
 /**
  * Panel wyboru pacjenta dla importu dokumentów
- * Pokazuje się gdy są notatki do zaimportowania
+ * Uproszczony dla użytkowników 45+
  */
 export function PatientContextPanel({
   detectedPatientName,
@@ -194,31 +194,31 @@ export function PatientContextPanel({
   return (
     <Card
       className={cn(
-        'overflow-hidden transition-all',
+        'overflow-hidden transition-colors duration-200',
         showWarning && 'border-warning/50 bg-warning/5',
-        selectedPatientId && 'border-primary/30 bg-primary/5',
+        selectedPatientId && 'border-primary/40 bg-primary/5',
         className
       )}
     >
-      <CardContent className="p-4">
-        {/* Header z ikoną */}
-        <div className="flex items-start gap-3">
+      <CardContent className="p-5">
+        {/* Header */}
+        <div className="flex items-start gap-4">
           <div
             className={cn(
-              'flex h-10 w-10 shrink-0 items-center justify-center rounded-lg',
-              showWarning ? 'bg-warning/20 text-warning' : 'bg-primary/20 text-primary'
+              'flex h-12 w-12 shrink-0 items-center justify-center rounded-xl',
+              showWarning ? 'bg-warning/20' : selectedPatientId ? 'bg-primary/20' : 'bg-surface-light'
             )}
           >
             {showWarning ? (
-              <AlertTriangle className="h-5 w-5" />
+              <AlertTriangle className="h-6 w-6 text-warning" />
             ) : (
-              <User className="h-5 w-5" />
+              <User className="h-6 w-6 text-primary" />
             )}
           </div>
 
           <div className="min-w-0 flex-1">
-            <h3 className="font-medium text-foreground">
-              {showWarning ? 'Wybierz pacjenta dla notatek' : 'Pacjent (opcjonalnie)'}
+            <h3 className="text-base font-semibold text-foreground">
+              {showWarning ? 'Wybierz pacjenta dla notatek' : 'Przypisz do pacjenta (opcjonalne)'}
             </h3>
 
             {showWarning ? (
@@ -227,7 +227,7 @@ export function PatientContextPanel({
               </p>
             ) : (
               <p className="mt-1 text-sm text-muted-foreground">
-                Powiąż import z pacjentem
+                Możesz powiązać import z konkretnym pacjentem
               </p>
             )}
           </div>
@@ -235,11 +235,11 @@ export function PatientContextPanel({
 
         {/* AI suggestion */}
         {detectedPatientName && !selectedPatientId && (
-          <div className="mt-4 flex items-center gap-2 rounded-lg bg-surface-light p-3">
-            <Badge variant="secondary" className="shrink-0">
+          <div className="mt-4 flex items-center gap-3 rounded-xl bg-surface-light p-4">
+            <Badge variant="secondary" className="shrink-0 bg-blue-500/20 text-blue-600 border-0">
               AI wykryło
             </Badge>
-            <span className="text-sm text-foreground truncate">
+            <span className="text-sm text-foreground truncate flex-1">
               &quot;{detectedPatientName}&quot;
             </span>
             {suggestedPatient && (
@@ -248,9 +248,9 @@ export function PatientContextPanel({
                 size="sm"
                 onClick={handleUseSuggested}
                 disabled={disabled}
-                className="ml-auto shrink-0 gap-1"
+                className="shrink-0 gap-2"
               >
-                <Check className="h-3 w-3" />
+                <Check className="h-4 w-4" />
                 Użyj: {suggestedPatient.fullname}
               </Button>
             )}
@@ -260,31 +260,32 @@ export function PatientContextPanel({
         {/* Patient selector */}
         <div className="mt-4">
           {selectedPatient ? (
-            <div className="flex items-center gap-3 rounded-lg border border-primary/30 bg-primary/5 p-3">
-              <Avatar className="h-10 w-10">
+            <div className="flex items-center gap-4 rounded-xl border-2 border-primary/40 bg-primary/5 p-4">
+              <Avatar className="h-12 w-12">
                 <AvatarImage src={selectedPatient.image} />
-                <AvatarFallback className="bg-primary/20 text-primary text-sm">
+                <AvatarFallback className="bg-primary/20 text-primary text-base font-medium">
                   {selectedPatient.fullname.slice(0, 2).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
               <div className="min-w-0 flex-1">
-                <p className="font-medium text-foreground truncate">
+                <p className="text-base font-medium text-foreground truncate">
                   {selectedPatient.fullname}
                 </p>
                 {selectedPatient.email && (
-                  <p className="text-xs text-muted-foreground truncate">
+                  <p className="text-sm text-muted-foreground truncate">
                     {selectedPatient.email}
                   </p>
                 )}
               </div>
               <Button
-                variant="ghost"
-                size="icon"
+                variant="outline"
+                size="sm"
                 onClick={handleClear}
                 disabled={disabled}
-                className="shrink-0 h-8 w-8 text-muted-foreground hover:text-destructive"
+                className="shrink-0 gap-2"
               >
                 <X className="h-4 w-4" />
+                Usuń
               </Button>
             </div>
           ) : (
@@ -295,43 +296,46 @@ export function PatientContextPanel({
                   role="combobox"
                   aria-expanded={open}
                   disabled={disabled || patientsLoading}
-                  className="w-full justify-start gap-2 text-muted-foreground"
+                  className="w-full justify-between h-12 text-base"
                 >
-                  <Search className="h-4 w-4" />
-                  {patientsLoading ? 'Ładowanie...' : 'Wybierz pacjenta...'}
+                  <div className="flex items-center gap-3">
+                    <Search className="h-5 w-5 text-muted-foreground" />
+                    {patientsLoading ? 'Ładowanie pacjentów...' : 'Wybierz pacjenta...'}
+                  </div>
+                  <ChevronDown className="h-5 w-5 text-muted-foreground" />
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-[400px] p-0" align="start">
-                <div className="p-2 border-b border-border">
+                <div className="p-3 border-b border-border">
                   <Input
                     placeholder="Szukaj pacjenta..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="h-9"
+                    className="h-10"
                   />
                 </div>
-                <ScrollArea className="h-[250px]">
+                <ScrollArea className="h-[280px]">
                   {filteredPatients.length === 0 ? (
-                    <div className="py-6 text-center">
-                      <User className="mx-auto mb-2 h-8 w-8 text-muted-foreground/50" />
+                    <div className="py-8 text-center">
+                      <User className="mx-auto mb-3 h-10 w-10 text-muted-foreground/50" />
                       <p className="text-sm text-muted-foreground">
                         Nie znaleziono pacjentów
                       </p>
                     </div>
                   ) : (
-                    <div className="p-1">
+                    <div className="p-2">
                       {filteredPatients.map((patient) => (
                         <button
                           key={patient.id}
                           onClick={() => handleSelectPatient(patient.id)}
                           className={cn(
-                            'flex w-full items-center gap-3 rounded-md p-2 text-left transition-colors',
+                            'flex w-full items-center gap-3 rounded-lg p-3 text-left transition-colors',
                             'hover:bg-surface-light focus:bg-surface-light focus:outline-none'
                           )}
                         >
-                          <Avatar className="h-8 w-8">
+                          <Avatar className="h-10 w-10">
                             <AvatarImage src={patient.image} />
-                            <AvatarFallback className="bg-surface-light text-xs">
+                            <AvatarFallback className="bg-surface-light text-sm">
                               {patient.fullname.slice(0, 2).toUpperCase()}
                             </AvatarFallback>
                           </Avatar>
@@ -346,7 +350,7 @@ export function PatientContextPanel({
                             )}
                           </div>
                           {suggestedPatient?.id === patient.id && (
-                            <Badge variant="secondary" className="shrink-0 text-xs">
+                            <Badge variant="secondary" className="shrink-0 text-xs bg-blue-500/20 text-blue-600 border-0">
                               Sugerowany
                             </Badge>
                           )}
@@ -362,16 +366,17 @@ export function PatientContextPanel({
 
         {/* Checkbox - przypisz zestawy */}
         {selectedPatientId && (
-          <div className="mt-4 flex items-center gap-2">
+          <div className="mt-4 flex items-center gap-3 p-3 rounded-lg bg-surface-light">
             <Checkbox
               id="assign-sets"
               checked={assignSetsToPatient}
               onCheckedChange={(checked) => onAssignSetsChange(checked === true)}
               disabled={disabled}
+              className="h-5 w-5"
             />
             <Label
               htmlFor="assign-sets"
-              className="text-sm text-muted-foreground cursor-pointer"
+              className="text-sm text-foreground cursor-pointer"
             >
               Przypisz również zestawy ćwiczeń do tego pacjenta
             </Label>

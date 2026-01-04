@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useCallback } from 'react';
 import {
   FileUp,
   Sparkles,
@@ -14,6 +14,7 @@ import {
   Link2,
   X,
   AlertTriangle,
+  Check,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -31,16 +32,19 @@ import {
   BulkActionsToolbar,
 } from '@/components/import';
 
-const stepConfig = [
-  { id: 'upload', label: 'Upload', icon: FileUp },
-  { id: 'processing', label: 'Analiza', icon: Sparkles },
+type StepId = 'upload' | 'processing' | 'review-exercises' | 'review-sets' | 'summary';
+
+const stepConfig: { id: StepId; label: string; icon: React.ElementType }[] = [
+  { id: 'upload', label: 'Wybierz plik', icon: FileUp },
+  { id: 'processing', label: 'Analiza AI', icon: Sparkles },
   { id: 'review-exercises', label: 'Ćwiczenia', icon: Dumbbell },
   { id: 'review-sets', label: 'Zestawy', icon: Layers },
-  { id: 'summary', label: 'Podsumowanie', icon: CheckCircle },
-] as const;
+  { id: 'summary', label: 'Gotowe', icon: CheckCircle },
+];
 
 /**
  * Strona importu dokumentów fizjoterapeutycznych
+ * Uproszczony UI dla użytkowników 45+
  */
 export default function ImportPage() {
   const {
@@ -75,6 +79,7 @@ export default function ImportPage() {
     goBack,
     executeImport,
     reset,
+    goToStep,
   } = useDocumentImport();
 
   // Current step index
@@ -85,13 +90,21 @@ export default function ImportPage() {
   // Czy pokazać warning o notatkach bez pacjenta
   const showNotesWarning = stats.notesToCreate > 0 && !selectedPatientId;
 
+  // Handler kliknięcia w krok (nawigacja wstecz)
+  const handleStepClick = useCallback((stepId: StepId, index: number) => {
+    // Można klikać tylko w ukończone kroki
+    if (index < currentStepIndex && goToStep) {
+      goToStep(stepId);
+    }
+  }, [currentStepIndex, goToStep]);
+
   return (
     <div className="min-h-screen">
       {/* Header */}
       <div className="mb-8">
         <div className="flex items-center gap-4 mb-2">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-primary via-primary to-primary-dark shadow-lg shadow-primary/20">
-            <Sparkles className="h-6 w-6 text-white" />
+          <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-primary/20">
+            <Sparkles className="h-7 w-7 text-primary" />
           </div>
           <div>
             <h1 className="text-2xl font-bold text-foreground">Import dokumentów</h1>
@@ -102,54 +115,67 @@ export default function ImportPage() {
         </div>
       </div>
 
-      {/* Progress steps */}
-      <div className="mb-8">
-        <div className="flex items-center justify-between">
+      {/* Stepper - większy, czytelniejszy */}
+      <div className="mb-10">
+        <div className="flex items-center">
           {stepConfig.map((s, index) => {
             const Icon = s.icon;
             const isActive = index === currentStepIndex;
             const isCompleted = index < currentStepIndex;
+            const isClickable = isCompleted && !isAnalyzing && !isImporting;
 
             return (
               <div
                 key={s.id}
                 className={cn(
                   'flex flex-1 items-center',
-                  index < stepConfig.length - 1 && 'after:mx-2 after:h-0.5 after:flex-1 after:bg-border'
+                  index < stepConfig.length - 1 && 'after:mx-3 after:h-0.5 after:flex-1 after:transition-colors after:duration-200',
+                  index < stepConfig.length - 1 && (isCompleted ? 'after:bg-primary' : 'after:bg-border')
                 )}
               >
-                <div
+                <button
+                  type="button"
+                  onClick={() => handleStepClick(s.id, index)}
+                  disabled={!isClickable}
                   className={cn(
-                    'flex items-center gap-2 rounded-full px-3 py-1.5 transition-all',
+                    'flex items-center gap-3 rounded-xl px-4 py-3 transition-all duration-200',
                     isActive && 'bg-primary/10',
-                    isCompleted && 'opacity-60'
+                    isClickable && 'cursor-pointer hover:bg-surface-light',
+                    !isClickable && !isActive && 'cursor-default'
                   )}
                 >
+                  {/* Ikona kroku - większa */}
                   <div
                     className={cn(
-                      'flex h-8 w-8 items-center justify-center rounded-full transition-colors',
+                      'flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-colors duration-200',
                       isActive
                         ? 'bg-primary text-white'
                         : isCompleted
-                        ? 'bg-primary/20 text-primary'
+                        ? 'bg-primary text-white'
                         : 'bg-surface-light text-muted-foreground'
                     )}
                   >
                     {isCompleted ? (
-                      <CheckCircle className="h-4 w-4" />
+                      <Check className="h-5 w-5" />
                     ) : (
-                      <Icon className="h-4 w-4" />
+                      <Icon className="h-5 w-5" />
                     )}
                   </div>
+
+                  {/* Etykieta - zawsze widoczna */}
                   <span
                     className={cn(
-                      'hidden text-sm font-medium sm:inline',
-                      isActive ? 'text-foreground' : 'text-muted-foreground'
+                      'text-sm font-medium transition-colors duration-200 hidden sm:block',
+                      isActive
+                        ? 'text-foreground'
+                        : isCompleted
+                        ? 'text-foreground'
+                        : 'text-muted-foreground'
                     )}
                   >
                     {s.label}
                   </span>
-                </div>
+                </button>
               </div>
             );
           })}
@@ -158,10 +184,10 @@ export default function ImportPage() {
 
       {/* Error message */}
       {error && (
-        <Card className="mb-6 border-destructive/30 bg-destructive/5">
-          <CardContent className="flex items-center gap-3 p-4">
-            <X className="h-5 w-5 text-destructive" />
-            <p className="text-sm text-destructive">{error}</p>
+        <Card className="mb-6 border-destructive/40 bg-destructive/5">
+          <CardContent className="flex items-center gap-4 p-5">
+            <X className="h-6 w-6 text-destructive shrink-0" />
+            <p className="text-base text-destructive">{error}</p>
           </CardContent>
         </Card>
       )}
@@ -173,12 +199,12 @@ export default function ImportPage() {
           <div className="max-w-2xl mx-auto">
             <Card>
               <CardContent className="p-8">
-                <div className="text-center mb-6">
+                <div className="text-center mb-8">
                   <h2 className="text-xl font-bold text-foreground mb-2">
                     Wybierz dokument do analizy
                   </h2>
                   <p className="text-muted-foreground">
-                    AI wyekstrahuje ćwiczenia, zestawy i notatki kliniczne
+                    AI przeanalizuje plik i znajdzie ćwiczenia, zestawy oraz notatki
                   </p>
                 </div>
 
@@ -198,44 +224,52 @@ export default function ImportPage() {
         {/* Step 3: Review Exercises */}
         {step === 'review-exercises' && analysisResult && (
           <div className="space-y-6">
-            {/* Stats */}
-            <div className="grid gap-3 grid-cols-2 sm:grid-cols-4">
+            {/* Stats - prostsze */}
+            <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
               <Card className="border-primary/30 bg-primary/5">
-                <CardContent className="flex items-center gap-3 p-4">
-                  <Dumbbell className="h-5 w-5 text-primary" />
+                <CardContent className="flex items-center gap-4 p-5">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/20">
+                    <Dumbbell className="h-6 w-6 text-primary" />
+                  </div>
                   <div>
-                    <p className="text-lg font-bold">{stats.totalExercises}</p>
-                    <p className="text-xs text-muted-foreground">Znalezionych</p>
+                    <p className="text-2xl font-bold text-foreground">{stats.totalExercises}</p>
+                    <p className="text-sm text-muted-foreground">Znaleziono</p>
                   </div>
                 </CardContent>
               </Card>
 
               <Card>
-                <CardContent className="flex items-center gap-3 p-4">
-                  <CheckCircle className="h-5 w-5 text-primary" />
+                <CardContent className="flex items-center gap-4 p-5">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/20">
+                    <CheckCircle className="h-6 w-6 text-primary" />
+                  </div>
                   <div>
-                    <p className="text-lg font-bold">{stats.exercisesToCreate}</p>
-                    <p className="text-xs text-muted-foreground">Do utworzenia</p>
+                    <p className="text-2xl font-bold text-foreground">{stats.exercisesToCreate}</p>
+                    <p className="text-sm text-muted-foreground">Do utworzenia</p>
                   </div>
                 </CardContent>
               </Card>
 
               <Card>
-                <CardContent className="flex items-center gap-3 p-4">
-                  <Link2 className="h-5 w-5 text-blue-500" />
+                <CardContent className="flex items-center gap-4 p-5">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-500/20">
+                    <Link2 className="h-6 w-6 text-blue-500" />
+                  </div>
                   <div>
-                    <p className="text-lg font-bold">{stats.exercisesToReuse}</p>
-                    <p className="text-xs text-muted-foreground">Istniejące</p>
+                    <p className="text-2xl font-bold text-foreground">{stats.exercisesToReuse}</p>
+                    <p className="text-sm text-muted-foreground">Istniejących</p>
                   </div>
                 </CardContent>
               </Card>
 
               <Card>
-                <CardContent className="flex items-center gap-3 p-4">
-                  <X className="h-5 w-5 text-muted-foreground" />
+                <CardContent className="flex items-center gap-4 p-5">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-surface-light">
+                    <X className="h-6 w-6 text-muted-foreground" />
+                  </div>
                   <div>
-                    <p className="text-lg font-bold">{stats.exercisesToSkip}</p>
-                    <p className="text-xs text-muted-foreground">Pominięte</p>
+                    <p className="text-2xl font-bold text-foreground">{stats.exercisesToSkip}</p>
+                    <p className="text-sm text-muted-foreground">Pominiętych</p>
                   </div>
                 </CardContent>
               </Card>
@@ -244,26 +278,24 @@ export default function ImportPage() {
             {/* Document info */}
             {analysisResult.documentInfo.patientName && (
               <Card className="bg-surface-light">
-                <CardContent className="flex flex-wrap items-center gap-4 p-4">
-                  <FileText className="h-5 w-5 text-muted-foreground" />
+                <CardContent className="flex flex-wrap items-center gap-4 p-5">
+                  <FileText className="h-6 w-6 text-muted-foreground" />
+                  <span className="text-sm font-medium text-foreground">
+                    Informacje z dokumentu:
+                  </span>
                   {analysisResult.documentInfo.patientName && (
-                    <Badge variant="secondary">
+                    <Badge variant="secondary" className="text-sm">
                       Pacjent: {analysisResult.documentInfo.patientName}
                     </Badge>
                   )}
                   {analysisResult.documentInfo.date && (
-                    <Badge variant="secondary">
+                    <Badge variant="secondary" className="text-sm">
                       Data: {analysisResult.documentInfo.date}
                     </Badge>
                   )}
                   {analysisResult.documentInfo.therapistName && (
-                    <Badge variant="secondary">
+                    <Badge variant="secondary" className="text-sm">
                       Terapeuta: {analysisResult.documentInfo.therapistName}
-                    </Badge>
-                  )}
-                  {analysisResult.documentInfo.clinicName && (
-                    <Badge variant="secondary">
-                      {analysisResult.documentInfo.clinicName}
                     </Badge>
                   )}
                 </CardContent>
@@ -286,29 +318,31 @@ export default function ImportPage() {
             />
 
             {/* Exercises list */}
-            <div className="space-y-3">
-              <h3 className="font-medium text-foreground">
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold text-foreground">
                 {exerciseFilter === 'all'
                   ? `Znalezione ćwiczenia (${filteredExercises.length})`
                   : `Filtrowane ćwiczenia (${filteredExercises.length} z ${stats.totalExercises})`
                 }
               </h3>
 
-              {filteredExercises.map((exercise) => (
-                <ExerciseReviewCard
-                  key={exercise.tempId}
-                  exercise={exercise}
-                  matchSuggestions={analysisResult.matchSuggestions[exercise.tempId] || []}
-                  decision={exerciseDecisions[exercise.tempId]}
-                  onDecisionChange={(d) => updateExerciseDecision(exercise.tempId, d)}
-                />
-              ))}
+              <div className="space-y-3">
+                {filteredExercises.map((exercise) => (
+                  <ExerciseReviewCard
+                    key={exercise.tempId}
+                    exercise={exercise}
+                    matchSuggestions={analysisResult.matchSuggestions[exercise.tempId] || []}
+                    decision={exerciseDecisions[exercise.tempId]}
+                    onDecisionChange={(d) => updateExerciseDecision(exercise.tempId, d)}
+                  />
+                ))}
+              </div>
 
               {filteredExercises.length === 0 && (
                 <Card>
-                  <CardContent className="py-12 text-center">
-                    <Dumbbell className="mx-auto mb-4 h-12 w-12 text-muted-foreground/50" />
-                    <p className="text-muted-foreground">
+                  <CardContent className="py-16 text-center">
+                    <Dumbbell className="mx-auto mb-4 h-16 w-16 text-muted-foreground/30" />
+                    <p className="text-lg text-muted-foreground">
                       {exerciseFilter !== 'all'
                         ? 'Brak ćwiczeń pasujących do filtra'
                         : 'Nie znaleziono ćwiczeń w dokumencie'
@@ -324,7 +358,7 @@ export default function ImportPage() {
         {/* Step 4: Review Sets & Notes */}
         {step === 'review-sets' && analysisResult && (
           <div className="space-y-8">
-            {/* Patient Context Panel - pokazuj gdy są notatki */}
+            {/* Patient Context Panel */}
             {analysisResult.clinicalNotes.length > 0 && (
               <PatientContextPanel
                 detectedPatientName={analysisResult.documentInfo.patientName}
@@ -337,18 +371,18 @@ export default function ImportPage() {
               />
             )}
 
-            {/* Warning banner gdy notatki bez pacjenta */}
+            {/* Warning gdy notatki bez pacjenta */}
             {showNotesWarning && (
               <Card className="border-warning/50 bg-warning/5">
-                <CardContent className="flex items-start gap-3 p-4">
-                  <AlertTriangle className="h-5 w-5 text-warning shrink-0 mt-0.5" />
+                <CardContent className="flex items-start gap-4 p-5">
+                  <AlertTriangle className="h-6 w-6 text-warning shrink-0 mt-0.5" />
                   <div>
-                    <p className="font-medium text-foreground">
+                    <p className="font-semibold text-foreground">
                       Notatki kliniczne nie zostaną zaimportowane
                     </p>
                     <p className="text-sm text-muted-foreground mt-1">
-                      Aby zaimportować {stats.notesToCreate} {stats.notesToCreate === 1 ? 'notatkę' : 'notatki'},
-                      wybierz pacjenta powyżej. Ćwiczenia i zestawy zostaną zaimportowane normalnie.
+                      Wybierz pacjenta powyżej, aby zaimportować {stats.notesToCreate} {stats.notesToCreate === 1 ? 'notatkę' : 'notatki'}.
+                      Ćwiczenia i zestawy zostaną zaimportowane normalnie.
                     </p>
                   </div>
                 </CardContent>
@@ -357,30 +391,36 @@ export default function ImportPage() {
 
             {/* Exercise Sets */}
             {analysisResult.exerciseSets.length > 0 && (
-              <div className="space-y-3">
-                <h3 className="font-medium text-foreground flex items-center gap-2">
-                  <Layers className="h-5 w-5 text-primary" />
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-foreground flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-500/20">
+                    <Layers className="h-5 w-5 text-purple-500" />
+                  </div>
                   Zestawy ćwiczeń ({analysisResult.exerciseSets.length})
                 </h3>
 
-                {analysisResult.exerciseSets.map((set) => (
-                  <SetReviewCard
-                    key={set.tempId}
-                    exerciseSet={set}
-                    exercises={analysisResult.exercises}
-                    exerciseDecisions={exerciseDecisions}
-                    decision={setDecisions[set.tempId]}
-                    onDecisionChange={(d) => updateSetDecision(set.tempId, d)}
-                  />
-                ))}
+                <div className="space-y-3">
+                  {analysisResult.exerciseSets.map((set) => (
+                    <SetReviewCard
+                      key={set.tempId}
+                      exerciseSet={set}
+                      exercises={analysisResult.exercises}
+                      exerciseDecisions={exerciseDecisions}
+                      decision={setDecisions[set.tempId]}
+                      onDecisionChange={(d) => updateSetDecision(set.tempId, d)}
+                    />
+                  ))}
+                </div>
               </div>
             )}
 
             {/* Clinical Notes */}
             {analysisResult.clinicalNotes.length > 0 && (
-              <div className="space-y-3">
-                <h3 className="font-medium text-foreground flex items-center gap-2">
-                  <FileText className="h-5 w-5 text-orange-500" />
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-foreground flex items-center gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-orange-500/20">
+                    <FileText className="h-5 w-5 text-orange-500" />
+                  </div>
                   Notatki kliniczne ({analysisResult.clinicalNotes.length})
                   {!selectedPatientId && (
                     <Badge variant="secondary" className="ml-2 bg-warning/20 text-warning border-0">
@@ -389,15 +429,17 @@ export default function ImportPage() {
                   )}
                 </h3>
 
-                {analysisResult.clinicalNotes.map((note) => (
-                  <NoteReviewCard
-                    key={note.tempId}
-                    note={note}
-                    decision={noteDecisions[note.tempId]}
-                    onDecisionChange={(d) => updateNoteDecision(note.tempId, d)}
-                    disabled={!selectedPatientId}
-                  />
-                ))}
+                <div className="space-y-3">
+                  {analysisResult.clinicalNotes.map((note) => (
+                    <NoteReviewCard
+                      key={note.tempId}
+                      note={note}
+                      decision={noteDecisions[note.tempId]}
+                      onDecisionChange={(d) => updateNoteDecision(note.tempId, d)}
+                      disabled={!selectedPatientId}
+                    />
+                  ))}
+                </div>
               </div>
             )}
 
@@ -405,12 +447,12 @@ export default function ImportPage() {
             {analysisResult.exerciseSets.length === 0 &&
               analysisResult.clinicalNotes.length === 0 && (
                 <Card>
-                  <CardContent className="py-12 text-center">
-                    <Layers className="mx-auto mb-4 h-12 w-12 text-muted-foreground/50" />
-                    <p className="text-muted-foreground">
+                  <CardContent className="py-16 text-center">
+                    <Layers className="mx-auto mb-4 h-16 w-16 text-muted-foreground/30" />
+                    <p className="text-lg text-muted-foreground">
                       Nie znaleziono zestawów ani notatek klinicznych
                     </p>
-                    <p className="text-sm text-muted-foreground mt-1">
+                    <p className="text-sm text-muted-foreground mt-2">
                       Możesz kontynuować z samymi ćwiczeniami
                     </p>
                   </CardContent>
@@ -430,36 +472,38 @@ export default function ImportPage() {
         )}
       </div>
 
-      {/* Navigation buttons */}
+      {/* Navigation buttons - większe, czytelniejsze */}
       {step !== 'processing' && step !== 'summary' && (
-        <div className="mt-8 flex items-center justify-between border-t border-border/60 pt-6">
+        <div className="mt-10 flex items-center justify-between border-t border-border/60 pt-6">
           <Button
             variant="outline"
+            size="lg"
             onClick={step === 'upload' ? undefined : goBack}
             disabled={step === 'upload' || isAnalyzing || isImporting}
-            className="gap-2"
+            className="gap-2 h-12 px-6"
           >
-            <ArrowLeft className="h-4 w-4" />
+            <ArrowLeft className="h-5 w-5" />
             Wstecz
           </Button>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-4">
             {step === 'review-exercises' && (
-              <p className="text-sm text-muted-foreground mr-4">
+              <p className="text-sm text-muted-foreground">
                 {stats.exercisesToCreate + stats.exercisesToReuse} ćwiczeń do importu
               </p>
             )}
 
             {step === 'upload' && (
               <Button
+                size="lg"
                 onClick={() => analyzeDocument()}
                 disabled={!file || isAnalyzing}
-                className="gap-2 bg-primary hover:bg-primary-dark"
+                className="gap-2 h-12 px-8 bg-primary hover:bg-primary-dark"
               >
                 {isAnalyzing ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <Loader2 className="h-5 w-5 animate-spin" />
                 ) : (
-                  <Sparkles className="h-4 w-4" />
+                  <Sparkles className="h-5 w-5" />
                 )}
                 Analizuj dokument
               </Button>
@@ -467,25 +511,27 @@ export default function ImportPage() {
 
             {step === 'review-exercises' && (
               <Button
+                size="lg"
                 onClick={goNext}
                 disabled={!canProceed}
-                className="gap-2 bg-primary hover:bg-primary-dark"
+                className="gap-2 h-12 px-8 bg-primary hover:bg-primary-dark"
               >
                 Dalej
-                <ArrowRight className="h-4 w-4" />
+                <ArrowRight className="h-5 w-5" />
               </Button>
             )}
 
             {step === 'review-sets' && (
               <Button
+                size="lg"
                 onClick={executeImport}
                 disabled={isImporting}
-                className="gap-2 bg-primary hover:bg-primary-dark"
+                className="gap-2 h-12 px-8 bg-primary hover:bg-primary-dark"
               >
                 {isImporting ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <Loader2 className="h-5 w-5 animate-spin" />
                 ) : (
-                  <CheckCircle className="h-4 w-4" />
+                  <CheckCircle className="h-5 w-5" />
                 )}
                 Importuj dane
               </Button>

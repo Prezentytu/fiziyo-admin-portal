@@ -6,12 +6,6 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
 import type { ExtractedClinicalNote, ClinicalNoteDecision } from '@/types/import.types';
 
 interface NoteReviewCardProps {
@@ -24,7 +18,8 @@ interface NoteReviewCardProps {
 }
 
 /**
- * Karta notatki klinicznej do review
+ * Karta notatki klinicznej do review - uproszczona
+ * Przyciski z tekstem dla lepszej czytelności
  */
 export function NoteReviewCard({
   note,
@@ -53,13 +48,13 @@ export function NoteReviewCard({
   const getNoteTypeColor = (type: string) => {
     switch (type) {
       case 'interview':
-        return 'bg-blue-500/20 text-blue-500';
+        return 'bg-blue-500/20 text-blue-600';
       case 'examination':
-        return 'bg-purple-500/20 text-purple-500';
+        return 'bg-purple-500/20 text-purple-600';
       case 'diagnosis':
-        return 'bg-orange-500/20 text-orange-500';
+        return 'bg-orange-500/20 text-orange-600';
       case 'procedure':
-        return 'bg-green-500/20 text-green-500';
+        return 'bg-green-500/20 text-green-600';
       default:
         return 'bg-surface-light text-muted-foreground';
     }
@@ -67,8 +62,8 @@ export function NoteReviewCard({
 
   // Pokaż preview treści
   const contentPreview =
-    note.content.length > 150
-      ? note.content.substring(0, 150) + '...'
+    note.content.length > 200
+      ? note.content.substring(0, 200) + '...'
       : note.content;
 
   // Gdy disabled, traktuj jako "skip"
@@ -77,128 +72,116 @@ export function NoteReviewCard({
   return (
     <Card
       className={cn(
-        'overflow-hidden transition-all duration-200',
-        effectiveAction === 'skip' && 'opacity-50',
-        effectiveAction === 'create' && 'border-primary/30 bg-primary/5',
-        disabled && 'border-warning/30 bg-warning/5',
+        'overflow-hidden transition-colors duration-200',
+        effectiveAction === 'skip' && 'opacity-60',
+        effectiveAction === 'create' && 'border-primary/40 bg-primary/5',
+        disabled && 'border-warning/40 bg-warning/5',
         className
       )}
     >
-      <CardContent className="p-4">
+      <CardContent className="p-5">
         {/* Disabled warning */}
         {disabled && (
-          <div className="mb-3 flex items-center gap-2 rounded-lg bg-warning/10 px-3 py-2 text-sm text-warning">
-            <AlertTriangle className="h-4 w-4 shrink-0" />
-            <span>Wybierz pacjenta powyżej, aby zaimportować tę notatkę</span>
+          <div className="mb-4 flex items-center gap-3 rounded-lg bg-warning/10 px-4 py-3">
+            <AlertTriangle className="h-5 w-5 text-warning shrink-0" />
+            <span className="text-sm text-warning font-medium">
+              Wybierz pacjenta powyżej, aby móc zaimportować tę notatkę
+            </span>
           </div>
         )}
 
         {/* Header */}
-        <div className="flex items-start gap-3">
+        <div className="flex items-start gap-4">
           <div
             className={cn(
-              'flex h-10 w-10 shrink-0 items-center justify-center rounded-lg',
-              disabled ? 'bg-warning/20 text-warning' : getNoteTypeColor(note.noteType)
+              'flex h-12 w-12 shrink-0 items-center justify-center rounded-xl',
+              disabled ? 'bg-warning/20' : getNoteTypeColor(note.noteType)
             )}
           >
-            <FileText className="h-5 w-5" />
+            <FileText className={cn('h-6 w-6', disabled ? 'text-warning' : '')} />
           </div>
 
           <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2">
-              <h3 className="font-medium text-foreground truncate">
+            {/* Tytuł i typ */}
+            <div className="flex items-center gap-2 flex-wrap">
+              <h3 className="text-base font-semibold text-foreground">
                 {note.title || getNoteTypeLabel(note.noteType)}
               </h3>
               <Badge
                 variant="secondary"
-                className={cn('shrink-0 text-xs border-0', getNoteTypeColor(note.noteType))}
+                className={cn('text-xs border-0', getNoteTypeColor(note.noteType))}
               >
                 {getNoteTypeLabel(note.noteType)}
               </Badge>
             </div>
 
-            <p className="mt-1 text-sm text-muted-foreground line-clamp-2">
+            {/* Preview treści */}
+            <p className="mt-2 text-sm text-muted-foreground line-clamp-3">
               {contentPreview}
             </p>
 
+            {/* Info o punktach */}
             {note.points && note.points.length > 0 && !isExpanded && (
-              <p className="mt-1 text-xs text-muted-foreground">
-                {note.points.length} punktów
+              <p className="mt-2 text-sm text-muted-foreground">
+                Zawiera {note.points.length} punktów
               </p>
             )}
           </div>
 
-          {/* Actions */}
-          <div className="flex shrink-0 gap-1">
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <span>
-                    <Button
-                      variant={effectiveAction === 'create' ? 'default' : 'outline'}
-                      size="sm"
-                      onClick={() => onDecisionChange({ action: 'create' })}
-                      disabled={disabled}
-                      className={cn(
-                        'h-8',
-                        effectiveAction === 'create' && 'bg-primary hover:bg-primary-dark'
-                      )}
-                    >
-                      <Check className="h-4 w-4" />
-                    </Button>
-                  </span>
-                </TooltipTrigger>
-                <TooltipContent>
-                  {disabled ? 'Wybierz pacjenta aby utworzyć notatkę' : 'Utwórz notatkę'}
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+          {/* Przycisk rozwijania */}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setIsExpanded(!isExpanded)}
+            className="shrink-0 h-10 w-10"
+          >
+            {isExpanded ? (
+              <ChevronUp className="h-5 w-5" />
+            ) : (
+              <ChevronDown className="h-5 w-5" />
+            )}
+          </Button>
+        </div>
 
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant={effectiveAction === 'skip' ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => onDecisionChange({ action: 'skip' })}
-                    disabled={disabled}
-                    className={cn(
-                      'h-8',
-                      effectiveAction === 'skip' && !disabled && 'bg-muted hover:bg-muted'
-                    )}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  Pomiń
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+        {/* Przyciski akcji - z tekstem */}
+        <div className="mt-4 flex flex-wrap gap-2">
+          <Button
+            variant={effectiveAction === 'create' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => onDecisionChange({ action: 'create' })}
+            disabled={disabled}
+            className={cn(
+              'gap-2 h-9 px-4',
+              effectiveAction === 'create' && 'bg-primary hover:bg-primary-dark'
+            )}
+          >
+            <Check className="h-4 w-4" />
+            Importuj notatkę
+          </Button>
 
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setIsExpanded(!isExpanded)}
-              className="h-8"
-            >
-              {isExpanded ? (
-                <ChevronUp className="h-4 w-4" />
-              ) : (
-                <ChevronDown className="h-4 w-4" />
-              )}
-            </Button>
-          </div>
+          <Button
+            variant={effectiveAction === 'skip' ? 'secondary' : 'outline'}
+            size="sm"
+            onClick={() => onDecisionChange({ action: 'skip' })}
+            disabled={disabled}
+            className={cn(
+              'gap-2 h-9 px-4',
+              effectiveAction === 'skip' && !disabled && 'bg-muted text-muted-foreground'
+            )}
+          >
+            <X className="h-4 w-4" />
+            Pomiń
+          </Button>
         </div>
 
         {/* Expanded content */}
         {isExpanded && (
-          <div className="mt-4 space-y-3 border-t border-border/60 pt-4">
+          <div className="mt-4 space-y-4 border-t border-border/60 pt-4">
             <div>
-              <p className="mb-2 text-xs font-medium text-muted-foreground">
+              <p className="text-sm font-medium text-foreground mb-2">
                 Pełna treść:
               </p>
-              <div className="rounded-lg bg-surface-light p-3">
+              <div className="rounded-lg bg-surface-light p-4">
                 <p className="whitespace-pre-wrap text-sm text-foreground">
                   {decision.editedContent || note.content}
                 </p>
@@ -207,16 +190,16 @@ export function NoteReviewCard({
 
             {note.points && note.points.length > 0 && (
               <div>
-                <p className="mb-2 text-xs font-medium text-muted-foreground">
+                <p className="text-sm font-medium text-foreground mb-2">
                   Punkty:
                 </p>
-                <ul className="space-y-1">
+                <ul className="space-y-2">
                   {note.points.map((point, index) => (
                     <li
                       key={index}
-                      className="flex items-start gap-2 text-sm text-foreground"
+                      className="flex items-start gap-3 text-sm text-foreground"
                     >
-                      <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
+                      <span className="mt-2 h-2 w-2 shrink-0 rounded-full bg-primary" />
                       {point}
                     </li>
                   ))}

@@ -1,94 +1,145 @@
 'use client';
 
-import { Loader2, Sparkles, FileSearch, Brain, CheckCircle } from 'lucide-react';
+import { Check, FileSearch, Brain, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useEffect, useState } from 'react';
+import { Progress } from '@/components/ui/progress';
 
 interface ImportProgressProps {
   className?: string;
 }
 
 const steps = [
-  { icon: FileSearch, label: 'Odczytywanie dokumentu...' },
-  { icon: Brain, label: 'Analiza przez AI...' },
-  { icon: Sparkles, label: 'Ekstrakcja danych...' },
+  { id: 'read', icon: FileSearch, label: 'Odczytywanie dokumentu' },
+  { id: 'analyze', icon: Brain, label: 'Analiza przez AI' },
+  { id: 'prepare', icon: Sparkles, label: 'Przygotowanie wyników' },
 ];
 
 /**
- * Animowany progress podczas analizy dokumentu
+ * Prosty, czytelny progress podczas analizy dokumentu
+ * Zaprojektowany dla użytkowników 45+ - bez rozpraszających animacji
  */
 export function ImportProgress({ className }: ImportProgressProps) {
-  const [currentStep, setCurrentStep] = useState(0);
+  const [progress, setProgress] = useState(0);
+  const [currentStepIndex, setCurrentStepIndex] = useState(0);
 
-  // Symulacja postępu
+  // Symulacja postępu - płynna, przewidywalna
   useEffect(() => {
+    const totalDuration = 8000; // 8 sekund
+    const intervalTime = 100;
+    const increment = 100 / (totalDuration / intervalTime);
+
     const interval = setInterval(() => {
-      setCurrentStep((prev) => (prev + 1) % steps.length);
-    }, 2500);
+      setProgress((prev) => {
+        const next = prev + increment;
+        
+        // Aktualizuj aktywny krok na podstawie progresu
+        if (next < 33) {
+          setCurrentStepIndex(0);
+        } else if (next < 66) {
+          setCurrentStepIndex(1);
+        } else {
+          setCurrentStepIndex(2);
+        }
+        
+        // Zatrzymaj przed 100% (czekamy na rzeczywiste zakończenie)
+        if (next >= 95) {
+          return 95;
+        }
+        return next;
+      });
+    }, intervalTime);
 
     return () => clearInterval(interval);
   }, []);
 
   return (
-    <div className={cn('flex flex-col items-center justify-center py-16', className)}>
-      {/* Animated loader */}
-      <div className="relative mb-8">
-        <div className="absolute inset-0 animate-ping rounded-full bg-primary/20" />
-        <div className="relative flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br from-primary via-primary to-primary-dark shadow-xl shadow-primary/30">
-          <Loader2 className="h-12 w-12 animate-spin text-white" />
-        </div>
-      </div>
-
-      {/* Current step */}
+    <div className={cn('flex flex-col items-center justify-center py-12', className)}>
+      {/* Główny komunikat */}
       <div className="mb-8 text-center">
-        <h2 className="mb-2 text-xl font-bold text-foreground">
-          Analizuję dokument...
+        <h2 className="mb-2 text-2xl font-bold text-foreground">
+          Analizuję Twój dokument...
         </h2>
         <p className="text-muted-foreground">
-          To może potrwać kilka sekund
+          To może potrwać do 30 sekund
         </p>
       </div>
 
-      {/* Steps indicator */}
-      <div className="flex flex-col gap-3">
+      {/* Progress bar - prosty, czytelny */}
+      <div className="w-full max-w-md mb-8">
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-sm text-muted-foreground">Postęp</span>
+          <span className="text-sm font-medium text-foreground">
+            {Math.round(progress)}%
+          </span>
+        </div>
+        <Progress value={progress} className="h-3" />
+      </div>
+
+      {/* 3 kroki - jasne, czytelne */}
+      <div className="w-full max-w-md space-y-3">
         {steps.map((step, index) => {
           const Icon = step.icon;
-          const isActive = index === currentStep;
-          const isComplete = index < currentStep;
+          const isActive = index === currentStepIndex;
+          const isComplete = index < currentStepIndex;
 
           return (
             <div
-              key={index}
+              key={step.id}
               className={cn(
-                'flex items-center gap-3 rounded-lg px-4 py-2 transition-all duration-300',
-                isActive && 'bg-primary/10 scale-105',
-                isComplete && 'opacity-50'
+                'flex items-center gap-4 rounded-xl px-4 py-3 transition-colors duration-200',
+                isActive && 'bg-primary/10',
+                isComplete && 'bg-surface-light'
               )}
             >
+              {/* Ikona statusu */}
               <div
                 className={cn(
-                  'flex h-8 w-8 items-center justify-center rounded-full transition-colors',
-                  isActive
+                  'flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-colors duration-200',
+                  isComplete
                     ? 'bg-primary text-white'
-                    : isComplete
+                    : isActive
                     ? 'bg-primary/20 text-primary'
                     : 'bg-surface-light text-muted-foreground'
                 )}
               >
                 {isComplete ? (
-                  <CheckCircle className="h-4 w-4" />
+                  <Check className="h-5 w-5" />
                 ) : (
-                  <Icon className={cn('h-4 w-4', isActive && 'animate-pulse')} />
+                  <Icon className="h-5 w-5" />
                 )}
               </div>
-              <span
-                className={cn(
-                  'text-sm transition-colors',
-                  isActive ? 'font-medium text-foreground' : 'text-muted-foreground'
+
+              {/* Tekst */}
+              <div className="flex-1">
+                <span
+                  className={cn(
+                    'text-base transition-colors duration-200',
+                    isActive
+                      ? 'font-semibold text-foreground'
+                      : isComplete
+                      ? 'font-medium text-foreground'
+                      : 'text-muted-foreground'
+                  )}
+                >
+                  {step.label}
+                </span>
+                {isActive && (
+                  <p className="text-sm text-muted-foreground mt-0.5">
+                    Trwa przetwarzanie...
+                  </p>
                 )}
-              >
-                {step.label}
-              </span>
+              </div>
+
+              {/* Status indicator */}
+              {isActive && (
+                <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
+              )}
+              {isComplete && (
+                <span className="text-sm text-primary font-medium">
+                  Ukończono
+                </span>
+              )}
             </div>
           );
         })}
