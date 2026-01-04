@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { useQuery, useMutation } from '@apollo/client/react';
-import { useUser } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
 import { Plus, Dumbbell, LayoutGrid, List, Search } from 'lucide-react';
 import { toast } from 'sonner';
@@ -22,8 +21,8 @@ import { GET_ORGANIZATION_EXERCISES_QUERY } from '@/graphql/queries/exercises.qu
 import { GET_EXERCISE_TAGS_BY_ORGANIZATION_QUERY } from '@/graphql/queries/exerciseTags.queries';
 import { GET_TAG_CATEGORIES_BY_ORGANIZATION_QUERY } from '@/graphql/queries/tagCategories.queries';
 import { DELETE_EXERCISE_MUTATION } from '@/graphql/mutations/exercises.mutations';
-import { GET_USER_BY_CLERK_ID_QUERY } from '@/graphql/queries/users.queries';
 import { matchesSearchQuery } from '@/utils/textUtils';
+import { useOrganization } from '@/contexts/OrganizationContext';
 import { createTagsMap, mapExercisesWithTags } from '@/utils/tagUtils';
 import { useDataManagement } from '@/hooks/useDataManagement';
 import type {
@@ -34,21 +33,16 @@ import type {
 } from '@/types/apollo';
 
 export default function ExercisesPage() {
-  const { user } = useUser();
   const router = useRouter();
+  const { currentOrganization } = useOrganization();
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingExercise, setEditingExercise] = useState<Exercise | null>(null);
   const [deletingExercise, setDeletingExercise] = useState<Exercise | null>(null);
 
-  // Get user data to get organizationId
-  const { data: userData } = useQuery(GET_USER_BY_CLERK_ID_QUERY, {
-    variables: { clerkId: user?.id },
-    skip: !user?.id,
-  });
-
-  const organizationId = (userData as UserByClerkIdResponse)?.userByClerkId?.organizationIds?.[0];
+  // Get organization ID from context (changes when user switches organization)
+  const organizationId = currentOrganization?.organizationId;
 
   // Data management hook for importing examples
   const { importExampleSets, isImporting, hasImportedExamples } = useDataManagement({
@@ -163,7 +157,7 @@ export default function ExercisesPage() {
         >
           <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
           <div className="absolute -top-24 -right-24 w-48 h-48 bg-white/10 rounded-full blur-3xl group-hover:bg-white/20 transition-all duration-500" />
-          
+
           <div className="relative flex items-center gap-4">
             <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm shrink-0 group-hover:scale-110 transition-transform duration-300">
               <Dumbbell className="h-5 w-5 text-white" />
@@ -244,8 +238,8 @@ export default function ExercisesPage() {
       {/* Content */}
       {loading ? (
         <div className={cn(
-          viewMode === 'grid' 
-            ? 'grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' 
+          viewMode === 'grid'
+            ? 'grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'
             : 'space-y-2',
           'animate-stagger'
         )}>

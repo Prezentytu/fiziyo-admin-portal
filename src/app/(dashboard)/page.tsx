@@ -28,6 +28,7 @@ import { PatientDialog } from '@/components/patients/PatientDialog';
 import { DashboardSkeleton } from '@/components/shared/DashboardSkeleton';
 import { SubscriptionBanner } from '@/components/subscription/SubscriptionBanner';
 import { GettingStartedCard } from '@/components/onboarding/GettingStartedCard';
+import { useOrganization } from '@/contexts/OrganizationContext';
 
 import { GET_ORGANIZATION_EXERCISE_SETS_QUERY } from '@/graphql/queries/exerciseSets.queries';
 import { GET_CURRENT_ORGANIZATION_PLAN } from '@/graphql/queries/organizations.queries';
@@ -77,11 +78,15 @@ function formatPolishDate(date: Date): string {
 
 export default function DashboardPage() {
   const { user } = useUser();
+  const { currentOrganization, isLoading: orgLoading } = useOrganization();
   const [isAssignWizardOpen, setIsAssignWizardOpen] = useState(false);
   const [isCreateSetWizardOpen, setIsCreateSetWizardOpen] = useState(false);
   const [isPatientDialogOpen, setIsPatientDialogOpen] = useState(false);
 
-  // Get user data
+  // Get organization ID from context (changes when user switches organization)
+  const organizationId = currentOrganization?.organizationId;
+
+  // Get user data for therapistId and user name
   const { data: userData, loading: userLoading } = useQuery(GET_USER_BY_CLERK_ID_QUERY, {
     variables: { clerkId: user?.id },
     skip: !user?.id,
@@ -89,7 +94,6 @@ export default function DashboardPage() {
 
   const userByClerkId = (userData as UserByClerkIdResponse)?.userByClerkId;
   const therapistId = userByClerkId?.id;
-  const organizationId = userByClerkId?.organizationIds?.[0];
   const userName = userByClerkId?.fullname || userByClerkId?.personalData?.firstName || user?.firstName || 'Użytkownik';
 
   // Get exercise sets

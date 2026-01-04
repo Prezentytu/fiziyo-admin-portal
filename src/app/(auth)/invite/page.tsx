@@ -77,9 +77,21 @@ function InvitePageContent() {
     skip: !token,
   });
 
-  // Accept mutation
+  // Accept mutation with refetch to update organization lists
   const [acceptInvitation] = useMutation<AcceptInvitationResponse>(
-    ACCEPT_INVITATION_MUTATION
+    ACCEPT_INVITATION_MUTATION,
+    {
+      // Refetch queries by operation name to update:
+      // - User's organization list (in Settings > Organizations)
+      // - Organization invitations list (for the inviter)
+      // - Organization invitation stats
+      refetchQueries: [
+        "GetUserOrganizations",
+        "GetOrganizationInvitations",
+        "GetOrganizationInvitationStats",
+      ],
+      awaitRefetchQueries: false, // Don't wait - user sees welcome modal immediately
+    }
   );
 
   const invitation = inviteData?.invitationByToken;

@@ -62,6 +62,7 @@ import {
   REMOVE_EXERCISE_SET_ASSIGNMENT_MUTATION,
 } from '@/graphql/mutations/exercises.mutations';
 import { GET_USER_BY_CLERK_ID_QUERY } from '@/graphql/queries/users.queries';
+import { useOrganization } from '@/contexts/OrganizationContext';
 
 // Tłumaczenie typów na polski
 const translateType = (type?: string) => {
@@ -144,6 +145,7 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
   const { id } = use(params);
   const router = useRouter();
   const { user } = useUser();
+  const { currentOrganization } = useOrganization();
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isAddExerciseDialogOpen, setIsAddExerciseDialogOpen] = useState(false);
@@ -153,14 +155,16 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
   const [removingExerciseId, setRemovingExerciseId] = useState<string | null>(null);
   const [removingAssignment, setRemovingAssignment] = useState<PatientAssignmentInSet | null>(null);
 
-  // Get user data
+  // Get organization ID from context (changes when user switches organization)
+  const organizationId = currentOrganization?.organizationId;
+
+  // Get user data for therapistId
   const { data: userData } = useQuery(GET_USER_BY_CLERK_ID_QUERY, {
     variables: { clerkId: user?.id },
     skip: !user?.id,
   });
 
-  const userByClerkId = (userData as { userByClerkId?: { id?: string; organizationIds?: string[] } })?.userByClerkId;
-  const organizationId = userByClerkId?.organizationIds?.[0];
+  const userByClerkId = (userData as { userByClerkId?: { id?: string } })?.userByClerkId;
   const therapistId = userByClerkId?.id;
 
   // Get set details
@@ -331,7 +335,7 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
           <ArrowLeft className="h-4 w-4" />
           Powrót do zestawów
         </Button>
-        
+
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" size="sm" className="gap-2">
@@ -378,7 +382,7 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
         >
           <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
           <div className="absolute -top-24 -right-24 w-48 h-48 bg-white/10 rounded-full blur-3xl group-hover:bg-white/20 transition-all duration-500" />
-          
+
           <div className="relative flex items-center gap-4">
             <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm shrink-0 group-hover:scale-110 transition-transform duration-300">
               <UserPlus className="h-5 w-5 text-white" />
@@ -424,8 +428,8 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
               </span>
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              {exerciseSet?.frequency?.timesPerDay 
-                ? `${exerciseSet.frequency.timesPerDay}x/dzień` 
+              {exerciseSet?.frequency?.timesPerDay
+                ? `${exerciseSet.frequency.timesPerDay}x/dzień`
                 : 'tygodniowo'}
             </p>
           </div>

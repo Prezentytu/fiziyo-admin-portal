@@ -22,8 +22,6 @@ import {
   QrCode,
 } from 'lucide-react';
 
-import { useUser } from '@clerk/nextjs';
-
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -31,8 +29,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { UPDATE_SUBSCRIPTION_MUTATION } from '@/graphql/mutations/organizations.mutations';
 import { GET_ORGANIZATION_BY_ID_QUERY } from '@/graphql/queries/organizations.queries';
-import { GET_USER_BY_CLERK_ID_QUERY } from '@/graphql/queries/users.queries';
-import type { UserByClerkIdResponse } from '@/types/apollo';
+import { useOrganization } from '@/contexts/OrganizationContext';
 
 interface Plan {
   id: string;
@@ -120,17 +117,12 @@ const plans: Plan[] = [
 ];
 
 export default function SubscriptionPage() {
-  const { user } = useUser();
+  const { currentOrganization } = useOrganization();
   const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'yearly'>('yearly');
   const [upgradingTo, setUpgradingTo] = useState<string | null>(null);
 
-  // Get user data to get organizationId
-  const { data: userData } = useQuery(GET_USER_BY_CLERK_ID_QUERY, {
-    variables: { clerkId: user?.id },
-    skip: !user?.id,
-  });
-
-  const organizationId = (userData as UserByClerkIdResponse)?.userByClerkId?.organizationIds?.[0];
+  // Get organization ID from context (changes when user switches organization)
+  const organizationId = currentOrganization?.organizationId;
 
   const { data, loading, refetch } = useQuery(GET_ORGANIZATION_BY_ID_QUERY, {
     variables: { id: organizationId || '' },
