@@ -93,3 +93,4 @@ export interface VoiceParseResponse {
   exerciseSide: 'none' | 'left' | 'right' | 'both' | 'alternating';
   suggestedTags: string[];
 }
+

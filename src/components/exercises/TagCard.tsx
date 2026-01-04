@@ -15,7 +15,7 @@ import { cn } from "@/lib/utils";
 export interface ExerciseTag {
   id: string;
   name: string;
-  color: string;
+  color?: string;
   description?: string;
   icon?: string;
   isMain?: boolean;
@@ -92,7 +92,7 @@ export function TagCard({ tag, onEdit, onDelete, className }: TagCardProps) {
 export interface TagCategory {
   id: string;
   name: string;
-  color: string;
+  color?: string;
   description?: string;
   icon?: string;
 }
@@ -151,19 +151,3 @@ export function CategoryCard({ category, onEdit, onDelete, className }: Category
     </div>
   );
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

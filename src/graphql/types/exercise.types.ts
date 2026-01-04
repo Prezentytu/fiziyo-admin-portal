@@ -128,3 +128,4 @@ export interface UploadExerciseImageVariables {
 export interface UploadExerciseImageMutationResult {
   uploadExerciseImage: string;
 }
+
