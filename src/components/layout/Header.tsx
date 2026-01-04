@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { UserMenu } from '@/components/layout/UserMenu';
+import { MobileOrgIndicator } from '@/components/layout/MobileOrgIndicator';
 import { FeedbackButton } from '@/components/shared/FeedbackButton';
 
 // Route name mappings
@@ -65,7 +66,7 @@ interface HeaderProps {
 export function Header({ onMobileMenuToggle }: HeaderProps) {
   return (
     <header className="flex h-16 items-center justify-between border-b border-border bg-surface px-4 lg:px-6">
-      {/* Left side - Mobile menu + Breadcrumbs */}
+      {/* Left side - Mobile menu + Org indicator + Breadcrumbs */}
       <div className="flex items-center gap-3">
         {/* Mobile menu button */}
         {onMobileMenuToggle && (
@@ -79,6 +80,11 @@ export function Header({ onMobileMenuToggle }: HeaderProps) {
             <Menu className="h-5 w-5" />
           </Button>
         )}
+
+        {/* Mobile organization indicator - visible only on mobile */}
+        <div className="lg:hidden">
+          <MobileOrgIndicator />
+        </div>
 
         {/* Breadcrumbs - hidden on mobile */}
         <div className="hidden sm:block">

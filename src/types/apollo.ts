@@ -109,6 +109,7 @@ export interface CurrentOrganizationPlanResponse {
 export interface UserOrganizationWithRole {
   organizationId: string;
   organizationName: string;
+  logoUrl?: string;
   role: string;
   joinedAt?: string;
 }
@@ -337,4 +338,59 @@ export interface TherapistPatientAssignment {
 
 export interface TherapistPatientsResponse {
   therapistPatients: TherapistPatientAssignment[];
+}
+
+// ========================================
+// Invitation Types
+// ========================================
+
+export interface InviterInfo {
+  id: string;
+  fullname?: string;
+  email: string;
+  image?: string;
+}
+
+export interface OrganizationInvitation {
+  id: string;
+  organizationId: string;
+  email: string;
+  role: string;
+  status: string;
+  message?: string;
+  invitationToken?: string;
+  createdAt: string;
+  expiresAt: string;
+  acceptedAt?: string;
+  invitedBy?: InviterInfo;
+  acceptedBy?: InviterInfo;
+  organization?: {
+    id: string;
+    name: string;
+    logoUrl?: string;
+  };
+}
+
+export interface OrganizationInvitationsResponse {
+  organizationInvitations: OrganizationInvitation[];
+}
+
+export interface InvitationStats {
+  pending: number;
+  accepted: number;
+  expired: number;
+  revoked: number;
+  total: number;
+}
+
+export interface OrganizationInvitationStatsResponse {
+  organizationInvitationStats: InvitationStats;
+}
+
+export interface GenerateInviteLinkResponse {
+  generateInviteLink: OrganizationInvitation;
+}
+
+export interface ResendInvitationResponse {
+  resendInvitation: OrganizationInvitation;
 }

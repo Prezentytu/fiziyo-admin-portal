@@ -1,7 +1,7 @@
 "use client";
 
 import { useAuth } from "@clerk/nextjs";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { useEffect } from "react";
 import { Dumbbell } from "lucide-react";
 import Image from "next/image";
@@ -13,12 +13,16 @@ interface AuthLayoutProps {
 export default function AuthLayout({ children }: AuthLayoutProps) {
   const { isSignedIn, isLoaded } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
+
+  // Don't redirect if user is on invite page - they need to accept the invitation
+  const isInvitePage = pathname?.startsWith("/invite");
 
   useEffect(() => {
-    if (isLoaded && isSignedIn) {
+    if (isLoaded && isSignedIn && !isInvitePage) {
       router.replace("/");
     }
-  }, [isLoaded, isSignedIn, router]);
+  }, [isLoaded, isSignedIn, router, isInvitePage]);
 
   if (!isLoaded) {
     return (
@@ -28,8 +32,14 @@ export default function AuthLayout({ children }: AuthLayoutProps) {
     );
   }
 
-  if (isSignedIn) {
+  // For invite page, allow signed-in users to see the content
+  if (isSignedIn && !isInvitePage) {
     return null;
+  }
+
+  // For invite page with signed-in user, render just the children without the auth layout
+  if (isSignedIn && isInvitePage) {
+    return <>{children}</>;
   }
 
   return (
@@ -89,6 +99,3 @@ export default function AuthLayout({ children }: AuthLayoutProps) {
     </div>
   );
 }
-
-
-

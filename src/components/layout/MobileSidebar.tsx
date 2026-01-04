@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 import { LayoutDashboard, Dumbbell, FolderKanban, Users, Building2, Settings, LogOut } from 'lucide-react';
 import { useClerk } from '@clerk/nextjs';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { OrganizationSwitcher } from './OrganizationSwitcher';
 
 // Navigation structure with grouping
 const navigationGroups = [
@@ -67,6 +68,9 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
             </div>
           </SheetTitle>
         </SheetHeader>
+
+        {/* Organization Switcher */}
+        <OrganizationSwitcher isCollapsed={false} />
 
         {/* Navigation */}
         <nav className="flex-1 overflow-y-auto py-4">
@@ -130,6 +134,7 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
     </Sheet>
   );
 }
+
 
 
 

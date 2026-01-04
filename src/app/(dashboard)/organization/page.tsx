@@ -20,6 +20,7 @@ import {
   Loader2,
   Plus,
   CreditCard,
+  Mail,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -41,6 +42,7 @@ import {
   MembersTab,
   ClinicsTab,
   SettingsTab,
+  InvitationsTab,
   InviteMemberDialog,
   ClinicDialog,
   AssignToClinicDialog,
@@ -536,6 +538,12 @@ export default function OrganizationPage() {
             <Users className="h-4 w-4" />
             Personel
           </TabsTrigger>
+          {canEdit && (
+            <TabsTrigger value="invitations" className="flex items-center gap-2">
+              <Mail className="h-4 w-4" />
+              Zaproszenia
+            </TabsTrigger>
+          )}
           <TabsTrigger value="clinics" className="flex items-center gap-2">
             <MapPin className="h-4 w-4" />
             Gabinety
@@ -559,6 +567,16 @@ export default function OrganizationPage() {
             onRefresh={() => refetchMembers()}
           />
         </TabsContent>
+
+        {/* Invitations Tab */}
+        {canEdit && organizationId && (
+          <TabsContent value="invitations" className="mt-6">
+            <InvitationsTab
+              organizationId={organizationId}
+              onInviteClick={() => setIsInviteDialogOpen(true)}
+            />
+          </TabsContent>
+        )}
 
         {/* Clinics Tab */}
         <TabsContent value="clinics" className="mt-6">
@@ -593,6 +611,7 @@ export default function OrganizationPage() {
           open={isInviteDialogOpen}
           onOpenChange={setIsInviteDialogOpen}
           organizationId={organizationId}
+          organizationName={organization?.name}
           onSuccess={() => refetchMembers()}
         />
       )}

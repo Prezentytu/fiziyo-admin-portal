@@ -129,3 +129,4 @@ export interface UploadExerciseImageMutationResult {
   uploadExerciseImage: string;
 }
 
+

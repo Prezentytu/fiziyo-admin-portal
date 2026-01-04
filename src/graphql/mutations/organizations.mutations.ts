@@ -397,3 +397,49 @@ export const SET_AUTO_SYNC_EXERCISES_MUTATION = gql`
     }
   }
 `;
+
+/**
+ * Mutacja do generowania linku zaproszenia (bez wysyłki email)
+ * Link można ręcznie skopiować i udostępnić
+ */
+export const GENERATE_INVITE_LINK_MUTATION = gql`
+  mutation GenerateInviteLink(
+    $organizationId: String!
+    $role: OrganizationRole!
+    $expirationDays: Int = 7
+  ) {
+    generateInviteLink(
+      organizationId: $organizationId
+      role: $role
+      expirationDays: $expirationDays
+    ) {
+      id
+      organizationId
+      email
+      role
+      invitationToken
+      createdAt
+      expiresAt
+      status
+    }
+  }
+`;
+
+/**
+ * Mutacja do ponownego wysłania zaproszenia
+ * Generuje nowy token i aktualizuje datę wygaśnięcia
+ */
+export const RESEND_INVITATION_MUTATION = gql`
+  mutation ResendInvitation($invitationId: String!) {
+    resendInvitation(invitationId: $invitationId) {
+      id
+      organizationId
+      email
+      role
+      invitationToken
+      createdAt
+      expiresAt
+      status
+    }
+  }
+`;
