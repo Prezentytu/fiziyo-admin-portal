@@ -2,7 +2,6 @@
 
 import { useState, useMemo, useCallback } from "react";
 import { useQuery, useMutation } from "@apollo/client/react";
-import { useUser } from "@clerk/nextjs";
 import {
   Search,
   Loader2,
@@ -26,8 +25,8 @@ import {
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 
-import { GET_USER_BY_CLERK_ID_QUERY } from "@/graphql/queries/users.queries";
 import { GET_ORGANIZATION_EXERCISES_QUERY } from "@/graphql/queries/exercises.queries";
+import { useOrganization } from "@/contexts/OrganizationContext";
 import { GET_ORGANIZATION_EXERCISE_SETS_QUERY } from "@/graphql/queries/exerciseSets.queries";
 import {
   CREATE_EXERCISE_SET_MUTATION,
@@ -71,20 +70,14 @@ export function AddToSetFromChatDialog({
   onOpenChange,
   exercise,
 }: AddToSetFromChatDialogProps) {
-  const { user } = useUser();
+  const { currentOrganization } = useOrganization();
   const [step, setStep] = useState<Step>("select-set");
   const [searchQuery, setSearchQuery] = useState("");
   const [newSetName, setNewSetName] = useState("");
   const [selectedSetId, setSelectedSetId] = useState<string | null>(null);
 
-  // Get user data for organizationId
-  const { data: userData } = useQuery(GET_USER_BY_CLERK_ID_QUERY, {
-    variables: { clerkId: user?.id },
-    skip: !user?.id || !open,
-  });
-
-  const userByClerkId = (userData as { userByClerkId?: { organizationIds?: string[] } })?.userByClerkId;
-  const organizationId = userByClerkId?.organizationIds?.[0];
+  // Get organization ID from context (changes when user switches organization)
+  const organizationId = currentOrganization?.organizationId;
 
   // Get exercises from DB to find matching one
   const { data: exercisesData, loading: exercisesLoading } = useQuery(
@@ -467,4 +460,3 @@ export function AddToSetFromChatDialog({
     </Dialog>
   );
 }
-

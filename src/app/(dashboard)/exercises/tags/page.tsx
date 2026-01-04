@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useQuery, useMutation } from "@apollo/client/react";
-import { useUser } from "@clerk/nextjs";
 import { Plus, Tag, FolderOpen } from "lucide-react";
 import { toast } from "sonner";
 
@@ -19,12 +18,12 @@ import { TagDialog } from "@/components/exercises/TagDialog";
 import { GET_EXERCISE_TAGS_BY_ORGANIZATION_QUERY } from "@/graphql/queries/exerciseTags.queries";
 import { GET_TAG_CATEGORIES_BY_ORGANIZATION_QUERY } from "@/graphql/queries/tagCategories.queries";
 import { DELETE_TAG_MUTATION, DELETE_TAG_CATEGORY_MUTATION } from "@/graphql/mutations/exercises.mutations";
-import { GET_USER_BY_CLERK_ID_QUERY } from "@/graphql/queries/users.queries";
 import { matchesSearchQuery } from "@/utils/textUtils";
-import type { UserByClerkIdResponse, ExerciseTagsResponse, TagCategoriesResponse } from "@/types/apollo";
+import { useOrganization } from "@/contexts/OrganizationContext";
+import type { ExerciseTagsResponse, TagCategoriesResponse } from "@/types/apollo";
 
 export default function TagsPage() {
-  const { user } = useUser();
+  const { currentOrganization } = useOrganization();
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState<"tags" | "categories">("tags");
   const [isTagDialogOpen, setIsTagDialogOpen] = useState(false);
@@ -32,13 +31,8 @@ export default function TagsPage() {
   const [deletingTag, setDeletingTag] = useState<ExerciseTag | null>(null);
   const [deletingCategory, setDeletingCategory] = useState<TagCategory | null>(null);
 
-  // Get user data
-  const { data: userData } = useQuery(GET_USER_BY_CLERK_ID_QUERY, {
-    variables: { clerkId: user?.id },
-    skip: !user?.id,
-  });
-
-  const organizationId = (userData as UserByClerkIdResponse)?.userByClerkId?.organizationIds?.[0];
+  // Get organization ID from context (changes when user switches organization)
+  const organizationId = currentOrganization?.organizationId;
 
   // Get tags
   const { data: tagsData, loading: tagsLoading } = useQuery(
@@ -261,4 +255,3 @@ export default function TagsPage() {
     </div>
   );
 }
-

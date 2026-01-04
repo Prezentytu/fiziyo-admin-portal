@@ -1,15 +1,19 @@
 "use client";
 
-import { Building2, Shield, ShieldCheck, User, Star, UserPlus, ArrowRight } from "lucide-react";
+import { Building2, Shield, ShieldCheck, User, Star, UserPlus, ArrowRight, Check, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { pl } from "date-fns/locale";
 
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { useOrganization } from "@/contexts/OrganizationContext";
+import { cn } from "@/lib/utils";
 
 export interface UserOrganization {
   organizationId: string;
   organizationName?: string;
+  logoUrl?: string;
   role: string;
   joinedAt?: string;
 }
@@ -39,6 +43,8 @@ export function OrganizationsList({
   organizations,
   defaultOrganizationId,
 }: OrganizationsListProps) {
+  const { currentOrganization, switchOrganization, isSwitching } = useOrganization();
+
   if (organizations.length === 0) {
     return (
       <div className="space-y-4">
@@ -114,29 +120,50 @@ export function OrganizationsList({
         </Card>
       </div>
 
-      {/* Organizations List - Compact */}
+      {/* Organizations List - Compact with Switch Action */}
       <Card className="border-border/60">
         <CardContent className="p-3">
           <div className="space-y-2">
             {organizations.map((org) => {
               const isDefault = org.organizationId === defaultOrganizationId;
+              const isActive = org.organizationId === currentOrganization?.organizationId;
               const roleKey = org.role?.toUpperCase() || "MEMBER";
 
               return (
                 <div
                   key={org.organizationId}
-                  className="flex items-center justify-between rounded-lg border border-border/60 bg-surface p-3 transition-colors hover:bg-surface-light"
+                  className={cn(
+                    "flex items-center justify-between rounded-lg border bg-surface p-3 transition-all duration-200",
+                    isActive 
+                      ? "border-primary/50 bg-primary/5" 
+                      : "border-border/60 hover:bg-surface-light hover:border-border"
+                  )}
                 >
                   <div className="flex items-center gap-3">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-surface-light shrink-0">
-                      <Building2 className="h-4 w-4 text-muted-foreground" />
-                    </div>
+                    {/* Logo/Avatar */}
+                    {org.logoUrl ? (
+                      <img
+                        src={org.logoUrl}
+                        alt={org.organizationName || "Organizacja"}
+                        className="h-9 w-9 rounded-lg object-cover shrink-0"
+                      />
+                    ) : (
+                      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-surface-light shrink-0">
+                        <Building2 className="h-4 w-4 text-muted-foreground" />
+                      </div>
+                    )}
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
                         <span className="font-medium text-sm text-foreground truncate">
                           {org.organizationName || "Nieznana organizacja"}
                         </span>
-                        {isDefault && (
+                        {isActive && (
+                          <Badge variant="default" className="gap-1 text-[10px] px-1.5 py-0 bg-primary/20 text-primary border-0">
+                            <Check className="h-2.5 w-2.5" />
+                            Aktywna
+                          </Badge>
+                        )}
+                        {isDefault && !isActive && (
                           <Badge variant="outline" className="gap-1 text-[10px] px-1.5 py-0">
                             <Star className="h-2.5 w-2.5 fill-current" />
                             Domyślna
@@ -152,10 +179,27 @@ export function OrganizationsList({
                       )}
                     </div>
                   </div>
-                  <Badge variant="secondary" className="gap-1 text-xs shrink-0">
-                    {roleIcons[roleKey]}
-                    {roleLabels[roleKey] || org.role}
-                  </Badge>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="secondary" className="gap-1 text-xs shrink-0">
+                      {roleIcons[roleKey]}
+                      {roleLabels[roleKey] || org.role}
+                    </Badge>
+                    {!isActive && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => switchOrganization(org.organizationId)}
+                        disabled={isSwitching}
+                        className="text-xs h-7"
+                      >
+                        {isSwitching ? (
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                        ) : (
+                          "Przełącz"
+                        )}
+                      </Button>
+                    )}
+                  </div>
                 </div>
               );
             })}

@@ -6,7 +6,12 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useMutation } from "@apollo/client/react";
-import { Loader2 } from "lucide-react";
+import {
+  Loader2,
+  Mail,
+  Link2,
+  RefreshCw,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -36,11 +41,21 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { SEND_INVITATION_MUTATION } from "@/graphql/mutations/organizations.mutations";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ShareSheet } from "@/components/organization/ShareSheet";
+import {
+  SEND_INVITATION_MUTATION,
+  GENERATE_INVITE_LINK_MUTATION,
+} from "@/graphql/mutations/organizations.mutations";
+import type { GenerateInviteLinkResponse } from "@/types/apollo";
+
+// ========================================
+// Schema & Types
+// ========================================
 
 const inviteFormSchema = z.object({
   email: z.string().email("Podaj prawidłowy adres email"),
-  role: z.enum(["admin", "member"]),
+  role: z.enum(["admin", "member", "therapist"]),
   message: z.string().optional(),
 });
 
@@ -50,22 +65,40 @@ interface InviteMemberDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   organizationId: string;
+  organizationName?: string;
   onSuccess?: () => void;
 }
+
+interface GeneratedLink {
+  token: string;
+  url: string;
+  expiresAt: string;
+  role: string;
+}
+
+// ========================================
+// Component
+// ========================================
 
 export function InviteMemberDialog({
   open,
   onOpenChange,
   organizationId,
+  organizationName = "organizacji",
   onSuccess,
 }: InviteMemberDialogProps) {
   const [showCloseConfirm, setShowCloseConfirm] = useState(false);
+  const [activeTab, setActiveTab] = useState("email");
+  const [generatedLink, setGeneratedLink] = useState<GeneratedLink | null>(
+    null
+  );
+  const [linkRole, setLinkRole] = useState<string>("therapist");
 
   const form = useForm<InviteFormValues>({
     resolver: zodResolver(inviteFormSchema),
     defaultValues: {
       email: "",
-      role: "member",
+      role: "therapist",
       message: "",
     },
   });
@@ -83,6 +116,7 @@ export function InviteMemberDialog({
   const handleConfirmClose = useCallback(() => {
     setShowCloseConfirm(false);
     form.reset();
+    setGeneratedLink(null);
     onOpenChange(false);
   }, [form, onOpenChange]);
 
@@ -90,11 +124,20 @@ export function InviteMemberDialog({
   React.useEffect(() => {
     if (!open) {
       form.reset();
+      setGeneratedLink(null);
     }
   }, [open, form]);
 
-  const [sendInvitation, { loading }] = useMutation(SEND_INVITATION_MUTATION);
+  // Mutations
+  const [sendInvitation, { loading: sendingEmail }] = useMutation(
+    SEND_INVITATION_MUTATION
+  );
 
+  const [generateLink, { loading: generatingLink }] = useMutation<GenerateInviteLinkResponse>(
+    GENERATE_INVITE_LINK_MUTATION
+  );
+
+  // Email submission
   const handleSubmit = async (values: InviteFormValues) => {
     try {
       await sendInvitation({
@@ -109,15 +152,66 @@ export function InviteMemberDialog({
       form.reset();
       onOpenChange(false);
       onSuccess?.();
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Nieznany błąd";
       console.error("Błąd podczas wysyłania zaproszenia:", error);
-      toast.error(error?.message || "Nie udało się wysłać zaproszenia");
+      toast.error(errorMessage || "Nie udało się wysłać zaproszenia");
     }
+  };
+
+  // Generate link
+  const handleGenerateLink = async () => {
+    try {
+      const { data } = await generateLink({
+        variables: {
+          organizationId,
+          role: linkRole.toUpperCase(),
+          expirationDays: 7,
+        },
+      });
+
+      if (data?.generateInviteLink) {
+        const invitation = data.generateInviteLink;
+        const token = invitation.invitationToken;
+        if (!token) {
+          toast.error("Brak tokenu w odpowiedzi");
+          return;
+        }
+        const baseUrl =
+          typeof window !== "undefined"
+            ? window.location.origin
+            : "https://app.fizjo.pl";
+        const url = `${baseUrl}/invite?token=${token}`;
+
+        setGeneratedLink({
+          token,
+          url,
+          expiresAt: invitation.expiresAt,
+          role: invitation.role,
+        });
+
+        toast.success("Link został wygenerowany");
+      }
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Nieznany błąd";
+      console.error("Błąd podczas generowania linku:", error);
+      toast.error(errorMessage || "Nie udało się wygenerować linku");
+    }
+  };
+
+  const roleLabels: Record<string, string> = {
+    OWNER: "Właściciel",
+    ADMIN: "Administrator",
+    THERAPIST: "Fizjoterapeuta",
+    MEMBER: "Członek",
   };
 
   return (
     <Dialog open={open} onOpenChange={() => handleCloseAttempt()}>
       <DialogContent
+        className="max-w-[95vw] sm:max-w-xl md:max-w-2xl"
         onInteractOutside={(e) => e.preventDefault()}
         onEscapeKeyDown={(e) => {
           e.preventDefault();
@@ -125,93 +219,188 @@ export function InviteMemberDialog({
         }}
       >
         <DialogHeader>
-          <DialogTitle>Zaproś</DialogTitle>
+          <DialogTitle>Zaproś osobę</DialogTitle>
           <DialogDescription>
-            Wyślij zaproszenie do dołączenia do organizacji
+            Wyślij zaproszenie emailem lub wygeneruj link do udostępnienia
           </DialogDescription>
         </DialogHeader>
-        <Form {...form}>
-          <form
-            onSubmit={form.handleSubmit(handleSubmit)}
-            className="space-y-4"
-          >
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email *</FormLabel>
-                  <FormControl>
-                    <Input placeholder="jan.kowalski@email.com" {...field} />
-                  </FormControl>
-                  <FormDescription>
-                    Na ten adres zostanie wysłane zaproszenie
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
 
-            <FormField
-              control={form.control}
-              name="role"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Rola *</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="email" className="gap-2">
+              <Mail className="h-4 w-4" />
+              Email
+            </TabsTrigger>
+            <TabsTrigger value="link" className="gap-2">
+              <Link2 className="h-4 w-4" />
+              Link
+            </TabsTrigger>
+          </TabsList>
+
+          {/* Email Tab */}
+          <TabsContent value="email" className="mt-4">
+            <Form {...form}>
+              <form
+                onSubmit={form.handleSubmit(handleSubmit)}
+                className="space-y-4"
+              >
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email *</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="jan.kowalski@email.com"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        Na ten adres zostanie wysłane zaproszenie
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="role"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Rola *</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Wybierz rolę" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="therapist">
+                            Fizjoterapeuta
+                          </SelectItem>
+                          <SelectItem value="admin">Administrator</SelectItem>
+                          <SelectItem value="member">Członek</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormDescription>
+                        Fizjoterapeuci mogą tworzyć ćwiczenia i zarządzać
+                        pacjentami
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="message"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Wiadomość</FormLabel>
+                      <FormControl>
+                        <Textarea
+                          placeholder="Opcjonalna wiadomość dla zapraszanej osoby..."
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <div className="flex justify-end gap-3 pt-4">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleCloseAttempt}
                   >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Wybierz rolę" />
-                      </SelectTrigger>
-                    </FormControl>
+                    Anuluj
+                  </Button>
+                  <Button type="submit" disabled={sendingEmail}>
+                    {sendingEmail && (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    )}
+                    Wyślij zaproszenie
+                  </Button>
+                </div>
+              </form>
+            </Form>
+          </TabsContent>
+
+          {/* Link Tab */}
+          <TabsContent value="link" className="mt-4 space-y-4">
+            <div className="space-y-4">
+              {/* Role selection - only show when no link generated yet */}
+              {!generatedLink && (
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Rola</label>
+                  <Select value={linkRole} onValueChange={setLinkRole}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Wybierz rolę" />
+                    </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="member">Członek</SelectItem>
+                      <SelectItem value="therapist">Fizjoterapeuta</SelectItem>
                       <SelectItem value="admin">Administrator</SelectItem>
+                      <SelectItem value="member">Członek</SelectItem>
                     </SelectContent>
                   </Select>
-                  <FormDescription>
-                    Administratorzy mogą zarządzać użytkownikami i ustawieniami
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
+                  <p className="text-xs text-muted-foreground">
+                    Każda osoba z tym linkiem dołączy jako{" "}
+                    {roleLabels[linkRole.toUpperCase()] || linkRole}
+                  </p>
+                </div>
               )}
-            />
 
-            <FormField
-              control={form.control}
-              name="message"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Wiadomość</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder="Opcjonalna wiadomość dla zapraszanej osoby..."
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
+              {/* Generate button or ShareSheet */}
+              {!generatedLink ? (
+                <Button
+                  onClick={handleGenerateLink}
+                  disabled={generatingLink}
+                  className="w-full"
+                >
+                  {generatingLink ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Link2 className="mr-2 h-4 w-4" />
+                  )}
+                  Wygeneruj link zaproszenia
+                </Button>
+              ) : (
+                <div className="space-y-3">
+                  <ShareSheet
+                    url={generatedLink.url}
+                    organizationName={organizationName}
+                    role={generatedLink.role}
+                    expiresAt={generatedLink.expiresAt}
+                  />
+
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setGeneratedLink(null);
+                    }}
+                    className="w-full"
+                  >
+                    <RefreshCw className="mr-2 h-4 w-4" />
+                    Wygeneruj nowy link
+                  </Button>
+                </div>
               )}
-            />
+            </div>
 
-            <div className="flex justify-end gap-3 pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleCloseAttempt}
-              >
-                Anuluj
-              </Button>
-              <Button type="submit" disabled={loading}>
-                {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Wyślij zaproszenie
+            <div className="flex justify-end pt-2">
+              <Button variant="outline" onClick={handleCloseAttempt}>
+                Zamknij
               </Button>
             </div>
-          </form>
-        </Form>
+          </TabsContent>
+        </Tabs>
       </DialogContent>
 
       <ConfirmDialog

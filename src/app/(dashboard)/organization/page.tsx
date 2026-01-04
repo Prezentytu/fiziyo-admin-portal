@@ -20,6 +20,7 @@ import {
   Loader2,
   Plus,
   CreditCard,
+  Mail,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -41,6 +42,7 @@ import {
   MembersTab,
   ClinicsTab,
   SettingsTab,
+  InvitationsTab,
   InviteMemberDialog,
   ClinicDialog,
   AssignToClinicDialog,
@@ -60,6 +62,7 @@ import {
   UPDATE_ORGANIZATION_LOGO_MUTATION,
   REMOVE_ORGANIZATION_LOGO_MUTATION,
 } from '@/graphql/mutations/organizations.mutations';
+import { useOrganization } from '@/contexts/OrganizationContext';
 import type {
   UserByClerkIdResponse,
   OrganizationByIdResponse,
@@ -115,6 +118,7 @@ const roleIcons: Record<string, React.ElementType> = {
 
 export default function OrganizationPage() {
   const { user } = useUser();
+  const { currentOrganization } = useOrganization();
   const [activeTab, setActiveTab] = useState('members');
   const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
   const [isClinicDialogOpen, setIsClinicDialogOpen] = useState(false);
@@ -125,7 +129,10 @@ export default function OrganizationPage() {
   const [newName, setNewName] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Get user data
+  // Get organization ID from context (changes when user switches organization)
+  const organizationId = currentOrganization?.organizationId;
+
+  // Get user data for currentUserId
   const { data: userData } = useQuery(GET_USER_BY_CLERK_ID_QUERY, {
     variables: { clerkId: user?.id },
     skip: !user?.id,
@@ -133,7 +140,6 @@ export default function OrganizationPage() {
 
   const userByClerkId = (userData as UserByClerkIdResponse)?.userByClerkId;
   const currentUserId = userByClerkId?.id;
-  const organizationId = userByClerkId?.organizationIds?.[0];
 
   // Get user's role in organization
   const { data: userOrgsData } = useQuery(GET_USER_ORGANIZATIONS_QUERY, {
@@ -342,7 +348,7 @@ export default function OrganizationPage() {
       {/* Compact Header */}
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-foreground">Organizacja</h1>
-        
+
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" size="sm" className="gap-2">
@@ -469,7 +475,7 @@ export default function OrganizationPage() {
           >
             <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
             <div className="absolute -top-24 -right-24 w-48 h-48 bg-white/10 rounded-full blur-3xl group-hover:bg-white/20 transition-all duration-500" />
-            
+
             <div className="relative flex items-center gap-4">
               <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm shrink-0 group-hover:scale-110 transition-transform duration-300">
                 <UserPlus className="h-5 w-5 text-white" />
@@ -536,6 +542,12 @@ export default function OrganizationPage() {
             <Users className="h-4 w-4" />
             Personel
           </TabsTrigger>
+          {canEdit && (
+            <TabsTrigger value="invitations" className="flex items-center gap-2">
+              <Mail className="h-4 w-4" />
+              Zaproszenia
+            </TabsTrigger>
+          )}
           <TabsTrigger value="clinics" className="flex items-center gap-2">
             <MapPin className="h-4 w-4" />
             Gabinety
@@ -559,6 +571,16 @@ export default function OrganizationPage() {
             onRefresh={() => refetchMembers()}
           />
         </TabsContent>
+
+        {/* Invitations Tab */}
+        {canEdit && organizationId && (
+          <TabsContent value="invitations" className="mt-6">
+            <InvitationsTab
+              organizationId={organizationId}
+              onInviteClick={() => setIsInviteDialogOpen(true)}
+            />
+          </TabsContent>
+        )}
 
         {/* Clinics Tab */}
         <TabsContent value="clinics" className="mt-6">
@@ -593,6 +615,7 @@ export default function OrganizationPage() {
           open={isInviteDialogOpen}
           onOpenChange={setIsInviteDialogOpen}
           organizationId={organizationId}
+          organizationName={organization?.name}
           onSuccess={() => refetchMembers()}
         />
       )}

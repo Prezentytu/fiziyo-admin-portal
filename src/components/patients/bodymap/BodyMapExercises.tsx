@@ -2,7 +2,6 @@
 
 import { useMemo } from 'react';
 import { useQuery } from '@apollo/client/react';
-import { useUser } from '@clerk/nextjs';
 import { Sparkles, Dumbbell, ArrowRight, Plus } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -14,7 +13,7 @@ import { cn } from '@/lib/utils';
 import type { AnatomicalRegionId, PainPoint, PainArea } from '@/types/painMap';
 import { ANATOMICAL_REGIONS, getExerciseTagsForRegions } from './BodyMapRegions';
 import { GET_ORGANIZATION_EXERCISES_QUERY } from '@/graphql/queries/exercises.queries';
-import { GET_USER_BY_CLERK_ID_QUERY } from '@/graphql/queries/users.queries';
+import { useOrganization } from '@/contexts/OrganizationContext';
 
 interface Exercise {
   id: string;
@@ -45,16 +44,10 @@ export function BodyMapExercises({
   onCreateSetFromExercises,
   className,
 }: BodyMapExercisesProps) {
-  const { user } = useUser();
+  const { currentOrganization } = useOrganization();
 
-  // Get organization ID
-  const { data: userData } = useQuery(GET_USER_BY_CLERK_ID_QUERY, {
-    variables: { clerkId: user?.id },
-    skip: !user?.id,
-  });
-
-  const organizationId = (userData as { userByClerkId?: { organizationIds?: string[] } })
-    ?.userByClerkId?.organizationIds?.[0];
+  // Get organization ID from context (changes when user switches organization)
+  const organizationId = currentOrganization?.organizationId;
 
   // Get all exercises
   const { data: exercisesData, loading } = useQuery<{

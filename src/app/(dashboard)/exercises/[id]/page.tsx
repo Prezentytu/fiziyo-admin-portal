@@ -3,7 +3,6 @@
 import { use, useState } from 'react';
 import { useQuery, useMutation } from '@apollo/client/react';
 import { useRouter } from 'next/navigation';
-import { useUser } from '@clerk/nextjs';
 import {
   ArrowLeft,
   Pencil,
@@ -48,10 +47,9 @@ import { GET_EXERCISE_BY_ID_QUERY, GET_ORGANIZATION_EXERCISES_QUERY } from '@/gr
 import { GET_EXERCISE_TAGS_BY_ORGANIZATION_QUERY } from '@/graphql/queries/exerciseTags.queries';
 import { GET_TAG_CATEGORIES_BY_ORGANIZATION_QUERY } from '@/graphql/queries/tagCategories.queries';
 import { DELETE_EXERCISE_MUTATION } from '@/graphql/mutations/exercises.mutations';
-import { GET_USER_BY_CLERK_ID_QUERY } from '@/graphql/queries/users.queries';
 import { createTagsMap, mapExerciseTagsToObjects } from '@/utils/tagUtils';
+import { useOrganization } from '@/contexts/OrganizationContext';
 import type {
-  UserByClerkIdResponse,
   ExerciseByIdResponse,
   ExerciseTagsResponse,
   TagCategoriesResponse,
@@ -74,20 +72,15 @@ function isTagObject(tag: string | ExerciseTag): tag is ExerciseTag {
 export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) {
   const { id } = use(params);
   const router = useRouter();
-  const { user } = useUser();
+  const { currentOrganization } = useOrganization();
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [isTimesOpen, setIsTimesOpen] = useState(false);
   const [isNotesOpen, setIsNotesOpen] = useState(false);
 
-  // Get user data for organizationId
-  const { data: userData } = useQuery(GET_USER_BY_CLERK_ID_QUERY, {
-    variables: { clerkId: user?.id },
-    skip: !user?.id,
-  });
-
-  const organizationId = (userData as UserByClerkIdResponse)?.userByClerkId?.organizationIds?.[0];
+  // Get organization ID from context (changes when user switches organization)
+  const organizationId = currentOrganization?.organizationId;
 
   // Get exercise details
   const { data, loading, error } = useQuery(GET_EXERCISE_BY_ID_QUERY, {
@@ -213,7 +206,7 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
           <ArrowLeft className="h-4 w-4" />
           Powrót do ćwiczeń
         </Button>
-        
+
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" size="sm" className="gap-2">
@@ -245,9 +238,9 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
           <div className="relative aspect-video rounded-2xl overflow-hidden bg-surface-light">
             {currentImage ? (
               <>
-                <img 
-                  src={currentImage} 
-                  alt={exercise.name} 
+                <img
+                  src={currentImage}
+                  alt={exercise.name}
                   className="w-full h-full object-cover"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
@@ -255,7 +248,7 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
             ) : (
               <ImagePlaceholder type="exercise" className="h-full" iconClassName="h-16 w-16" />
             )}
-            
+
             {/* Title overlay */}
             <div className="absolute bottom-0 left-0 right-0 p-5">
               <div className="flex items-center gap-2 mb-2">
@@ -313,7 +306,7 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
           >
             <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
             <div className="absolute -top-24 -right-24 w-48 h-48 bg-white/10 rounded-full blur-3xl group-hover:bg-white/20 transition-all duration-500" />
-            
+
             <div className="relative flex items-center gap-4">
               <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm shrink-0 group-hover:scale-110 transition-transform duration-300">
                 <FolderPlus className="h-6 w-6 text-white" />

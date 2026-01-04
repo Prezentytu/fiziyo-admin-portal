@@ -197,3 +197,75 @@ export const GET_ALL_PLANS_INFO = gql`
     }
   }
 `;
+
+// Query do pobierania zaproszeń organizacji
+export const GET_ORGANIZATION_INVITATIONS_QUERY = gql`
+  query GetOrganizationInvitations($organizationId: String!) {
+    organizationInvitations(organizationId: $organizationId) {
+      id
+      organizationId
+      email
+      role
+      status
+      message
+      invitationToken
+      createdAt
+      expiresAt
+      acceptedAt
+      invitedBy {
+        id
+        fullname
+        email
+        image
+      }
+      acceptedBy {
+        id
+        fullname
+        email
+        image
+      }
+    }
+  }
+`;
+
+// Query do pobierania statystyk zaproszeń
+export const GET_ORGANIZATION_INVITATION_STATS_QUERY = gql`
+  query GetOrganizationInvitationStats($organizationId: String!) {
+    organizationInvitationStats(organizationId: $organizationId) {
+      pending
+      accepted
+      expired
+      revoked
+      total
+    }
+  }
+`;
+
+// Query do pobierania zaproszenia po tokenie (publiczne API)
+export const GET_INVITATION_BY_TOKEN_QUERY = gql`
+  query GetInvitationByToken($token: String!) {
+    invitationByToken(token: $token) {
+      id
+      organizationId
+      email
+      role
+      status
+      message
+      invitationToken
+      createdAt
+      expiresAt
+      acceptedAt
+      invitedBy {
+        id
+        fullname
+        email
+        image
+      }
+      organization {
+        id
+        name
+        logoUrl
+      }
+    }
+  }
+`;

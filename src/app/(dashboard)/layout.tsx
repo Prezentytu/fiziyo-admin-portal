@@ -5,6 +5,7 @@ import { Sidebar } from "@/components/layout/Sidebar";
 import { MobileSidebar } from "@/components/layout/MobileSidebar";
 import { Header } from "@/components/layout/Header";
 import { OrganizationGuard } from "@/components/layout/OrganizationGuard";
+import { OrganizationProvider } from "@/contexts/OrganizationContext";
 import { AIChatButton } from "@/components/chat/AIChatButton";
 import { useSidebarState } from "@/hooks/useSidebarState";
 
@@ -36,25 +37,27 @@ export default function DashboardLayout({
   // Normalne strony dashboardu
   return (
     <OrganizationGuard>
-      <div className="flex h-screen bg-background">
-        {/* Desktop Sidebar */}
-        <Sidebar
-          isCollapsed={isHydrated ? isCollapsed : false}
-          onToggleCollapse={toggleCollapsed}
-        />
+      <OrganizationProvider>
+        <div className="flex h-screen bg-background">
+          {/* Desktop Sidebar */}
+          <Sidebar
+            isCollapsed={isHydrated ? isCollapsed : false}
+            onToggleCollapse={toggleCollapsed}
+          />
 
-        {/* Mobile Sidebar */}
-        <MobileSidebar isOpen={isMobileOpen} onClose={closeMobile} />
+          {/* Mobile Sidebar */}
+          <MobileSidebar isOpen={isMobileOpen} onClose={closeMobile} />
 
-        {/* Main content area */}
-        <div className="flex flex-1 flex-col overflow-hidden">
-          <Header onMobileMenuToggle={toggleMobile} />
-          <main className="flex-1 overflow-y-auto p-4 lg:p-6">{children}</main>
+          {/* Main content area */}
+          <div className="flex flex-1 flex-col overflow-hidden">
+            <Header onMobileMenuToggle={toggleMobile} />
+            <main className="flex-1 overflow-y-auto p-4 lg:p-6">{children}</main>
+          </div>
+
+          {/* AI Chat Floating Button */}
+          <AIChatButton />
         </div>
-
-        {/* AI Chat Floating Button */}
-        <AIChatButton />
-      </div>
+      </OrganizationProvider>
     </OrganizationGuard>
   );
 }

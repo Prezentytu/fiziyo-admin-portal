@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { useQuery, useMutation } from '@apollo/client/react';
-import { useUser } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
 import { Plus, FolderKanban, FolderPlus, Search, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
@@ -21,16 +20,16 @@ import { cn } from '@/lib/utils';
 
 import { GET_ORGANIZATION_EXERCISE_SETS_QUERY } from '@/graphql/queries/exerciseSets.queries';
 import { DELETE_EXERCISE_SET_MUTATION, DUPLICATE_EXERCISE_SET_MUTATION } from '@/graphql/mutations/exercises.mutations';
-import { GET_USER_BY_CLERK_ID_QUERY } from '@/graphql/queries/users.queries';
 import { matchesSearchQuery } from '@/utils/textUtils';
 import { useDataManagement } from '@/hooks/useDataManagement';
-import type { UserByClerkIdResponse, OrganizationExerciseSetsResponse } from '@/types/apollo';
+import { useOrganization } from '@/contexts/OrganizationContext';
+import type { OrganizationExerciseSetsResponse } from '@/types/apollo';
 
 type FilterType = 'all' | 'active' | 'templates' | 'inactive';
 
 export default function ExerciseSetsPage() {
-  const { user } = useUser();
   const router = useRouter();
+  const { currentOrganization } = useOrganization();
   const [searchQuery, setSearchQuery] = useState('');
   const [filter, setFilter] = useState<FilterType>('all');
   const [isCreateWizardOpen, setIsCreateWizardOpen] = useState(false);
@@ -38,13 +37,8 @@ export default function ExerciseSetsPage() {
   const [editingSet, setEditingSet] = useState<ExerciseSet | null>(null);
   const [deletingSet, setDeletingSet] = useState<ExerciseSet | null>(null);
 
-  // Get user data
-  const { data: userData } = useQuery(GET_USER_BY_CLERK_ID_QUERY, {
-    variables: { clerkId: user?.id },
-    skip: !user?.id,
-  });
-
-  const organizationId = (userData as UserByClerkIdResponse)?.userByClerkId?.organizationIds?.[0];
+  // Get organization ID from context (changes when user switches organization)
+  const organizationId = currentOrganization?.organizationId;
 
   // Data management hook for importing examples
   const { importExampleSets, isImporting, hasImportedExamples } = useDataManagement({

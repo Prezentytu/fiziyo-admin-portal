@@ -28,6 +28,7 @@ import {
 } from '@/graphql/mutations/therapists.mutations';
 import { GET_USER_BY_CLERK_ID_QUERY } from '@/graphql/queries/users.queries';
 import { matchesSearchQuery } from '@/utils/textUtils';
+import { useOrganization } from '@/contexts/OrganizationContext';
 import type { UserByClerkIdResponse, TherapistPatientsResponse } from '@/types/apollo';
 
 type FilterType = 'all' | 'active' | 'inactive';
@@ -35,6 +36,7 @@ type FilterType = 'all' | 'active' | 'inactive';
 export default function PatientsPage() {
   const { user } = useUser();
   const router = useRouter();
+  const { currentOrganization } = useOrganization();
   const [searchQuery, setSearchQuery] = useState('');
   const [filter, setFilter] = useState<FilterType>('all');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -43,7 +45,10 @@ export default function PatientsPage() {
   const [deletingPatient, setDeletingPatient] = useState<Patient | null>(null);
   const [togglingStatusPatient, setTogglingStatusPatient] = useState<Patient | null>(null);
 
-  // Get user data
+  // Get organization ID from context (changes when user switches organization)
+  const organizationId = currentOrganization?.organizationId;
+
+  // Get user data for therapistId
   const { data: userData } = useQuery(GET_USER_BY_CLERK_ID_QUERY, {
     variables: { clerkId: user?.id },
     skip: !user?.id,
@@ -51,7 +56,6 @@ export default function PatientsPage() {
 
   const userByClerkId = (userData as UserByClerkIdResponse)?.userByClerkId;
   const therapistId = userByClerkId?.id;
-  const organizationId = userByClerkId?.organizationIds?.[0];
 
   // Get patients (all, including inactive for filtering)
   const { data, loading, error } = useQuery(GET_ALL_THERAPIST_PATIENTS_QUERY, {

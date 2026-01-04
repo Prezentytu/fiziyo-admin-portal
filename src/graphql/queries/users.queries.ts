@@ -147,6 +147,7 @@ export const GET_USER_ORGANIZATIONS_QUERY = gql`
     userOrganizations {
       organizationId
       organizationName
+      logoUrl
       role
       joinedAt
     }

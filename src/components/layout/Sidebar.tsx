@@ -16,9 +16,11 @@ import {
   PanelLeftClose,
   PanelLeft,
   HeartPulse,
+  FileUp,
 } from 'lucide-react';
 import { useClerk } from '@clerk/nextjs';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
+import { OrganizationSwitcher } from './OrganizationSwitcher';
 
 // Navigation structure with grouping
 const navigationGroups = [
@@ -30,6 +32,7 @@ const navigationGroups = [
       // { name: 'Kalendarz', href: '/appointments', icon: Calendar }, // Ukryty na ten moment
       { name: 'Zestawy', href: '/exercise-sets', icon: FolderKanban },
       { name: 'Ćwiczenia', href: '/exercises', icon: Dumbbell },
+      { name: 'Import AI', href: '/import', icon: FileUp },
     ],
   },
   {
@@ -106,6 +109,9 @@ export function Sidebar({ isCollapsed, onToggleCollapse }: SidebarProps) {
             </button>
           </div>
         )}
+
+        {/* Organization Switcher */}
+        <OrganizationSwitcher isCollapsed={isCollapsed} />
 
         {/* Navigation groups */}
         <nav className="flex-1 overflow-y-auto py-4">

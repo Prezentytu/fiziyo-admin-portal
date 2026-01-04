@@ -402,10 +402,78 @@ body {
   background: var(--gradient-hero);
 }
 
-/* Focus styles */
+/* Focus styles - wyrazne dla dostepnosci */
 :focus-visible {
   outline: 2px solid var(--primary);
   outline-offset: 2px;
+}
+
+/* ============================================
+   Import Page - Subtle Animations
+   ============================================ */
+
+/* Subtelne wejscie elementow - max 300ms */
+@keyframes subtle-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-subtle-in {
+  animation: subtle-fade-in 0.25s ease-out;
+}
+
+/* Stagger dla list importu - szybszy, subtelniejszy */
+.animate-import-stagger > * {
+  animation: subtle-fade-in 0.25s ease-out backwards;
+}
+
+.animate-import-stagger > *:nth-child(1) { animation-delay: 0ms; }
+.animate-import-stagger > *:nth-child(2) { animation-delay: 40ms; }
+.animate-import-stagger > *:nth-child(3) { animation-delay: 80ms; }
+.animate-import-stagger > *:nth-child(4) { animation-delay: 120ms; }
+.animate-import-stagger > *:nth-child(5) { animation-delay: 160ms; }
+.animate-import-stagger > *:nth-child(n+6) { animation-delay: 200ms; }
+
+/* Progress step completion */
+@keyframes step-complete {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+
+.animate-step-complete {
+  animation: step-complete 0.3s ease-out;
+}
+
+/* Subtelny pulse dla aktywnego kroku */
+@keyframes subtle-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+.animate-subtle-pulse {
+  animation: subtle-pulse 2s ease-in-out infinite;
+}
+
+/* Card hover - minimalna transformacja */
+.import-card-hover {
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+
+.import-card-hover:hover {
+  border-color: var(--primary);
+}
+
+/* Button press feedback */
+.btn-press:active {
+  transform: scale(0.98);
+  transition: transform 0.1s ease;
 }
 
 /* Image placeholder */

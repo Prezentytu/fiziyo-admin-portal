@@ -52,6 +52,7 @@ import { ClinicalNotesList } from '@/components/clinical/ClinicalNotesList';
 import type { PatientAssignment, ExerciseMapping, ExerciseOverride } from '@/components/patients/PatientAssignmentCard';
 
 import { GET_USER_BY_ID_QUERY, GET_USER_BY_CLERK_ID_QUERY } from '@/graphql/queries/users.queries';
+import { useOrganization } from '@/contexts/OrganizationContext';
 import { GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY } from '@/graphql/queries/patientAssignments.queries';
 import { format } from 'date-fns';
 import { pl } from 'date-fns/locale';
@@ -79,6 +80,7 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
   const { id } = use(params);
   const router = useRouter();
   const { user } = useUser();
+  const { currentOrganization } = useOrganization();
 
   // Collapsible sections state
   const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -95,14 +97,16 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
   } | null>(null);
   const [pdfAssignment, setPdfAssignment] = useState<PatientAssignment | null>(null);
 
-  // Get current user data for organizationId
+  // Get organization ID from context (changes when user switches organization)
+  const organizationId = currentOrganization?.organizationId;
+
+  // Get current user data for therapistId
   const { data: currentUserData } = useQuery(GET_USER_BY_CLERK_ID_QUERY, {
     variables: { clerkId: user?.id },
     skip: !user?.id,
   });
 
-  const currentUser = (currentUserData as { userByClerkId?: { id?: string; organizationIds?: string[] } })?.userByClerkId;
-  const organizationId = currentUser?.organizationIds?.[0];
+  const currentUser = (currentUserData as { userByClerkId?: { id?: string } })?.userByClerkId;
   const therapistId = currentUser?.id;
 
   // Get patient data

@@ -9,6 +9,9 @@ export type { OrganizationMember } from "./MemberCard";
 export { MemberFilters } from "./MemberFilters";
 export type { RoleFilter } from "./MemberFilters";
 
+// Invitations
+export { InvitationsTab } from "./InvitationsTab";
+
 // Clinics
 export { ClinicsTab } from "./ClinicsTab";
 export { ClinicExpandableCard } from "./ClinicExpandableCard";
@@ -25,6 +28,10 @@ export { DataManagementCard } from "./DataManagementCard";
 // Dialogs (existing)
 export { InviteMemberDialog } from "./InviteMemberDialog";
 export { ClinicDialog } from "./ClinicDialog";
+
+// Sharing & Welcome
+export { ShareSheet } from "./ShareSheet";
+export { WelcomeModal } from "./WelcomeModal";
 
 // Legacy (for backwards compatibility)
 export { MembersList } from "./MembersList";
