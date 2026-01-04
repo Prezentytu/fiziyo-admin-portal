@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback, KeyboardEvent } from 'react';
-import { Send, Trash2, Sparkles, History } from 'lucide-react';
+import { Send, Trash2, Sparkles, History, FileUp, Loader2, ArrowRight } from 'lucide-react';
+import Link from 'next/link';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -14,7 +15,9 @@ import { TypingIndicator } from './TypingIndicator';
 import { ChatSessionsList } from './ChatSessionsList';
 import { VoiceMicButton } from './VoiceMicButton';
 import { AddToSetFromChatDialog } from './AddToSetFromChatDialog';
+import { documentImportService } from '@/services/documentImportService';
 import type { ParsedExercise } from '@/types/chat.types';
+import type { DocumentAnalysisResult } from '@/types/import.types';
 
 interface AIChatPanelProps {
   onClose?: () => void;
@@ -40,8 +43,11 @@ export function AIChatPanel({ className }: AIChatPanelProps) {
   const [showHistory, setShowHistory] = useState(false);
   const [isAddToSetDialogOpen, setIsAddToSetDialogOpen] = useState(false);
   const [selectedExerciseForSet, setSelectedExerciseForSet] = useState<ParsedExercise | null>(null);
+  const [isAnalyzingFile, setIsAnalyzingFile] = useState(false);
+  const [analysisResult, setAnalysisResult] = useState<DocumentAnalysisResult | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Voice input
   const handleVoiceTranscript = useCallback((text: string) => {
@@ -148,6 +154,51 @@ export function AIChatPanel({ className }: AIChatPanelProps) {
     setSelectedExerciseForSet(exercise);
     setIsAddToSetDialogOpen(true);
   }, []);
+
+  // Obsługa uploadu pliku
+  const handleFileUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Reset input
+    e.target.value = '';
+
+    // Walidacja
+    if (!documentImportService.isFormatSupported(file)) {
+      toast.error('Nieobsługiwany format pliku. Obsługiwane: PDF, Excel, CSV, TXT');
+      return;
+    }
+
+    if (!documentImportService.isFileSizeValid(file)) {
+      toast.error(`Plik za duży. Max: ${documentImportService.getMaxFileSizeMB()}MB`);
+      return;
+    }
+
+    setIsAnalyzingFile(true);
+    setAnalysisResult(null);
+
+    try {
+      const result = await documentImportService.analyzeDocument(file);
+      setAnalysisResult(result);
+
+      // Wyślij informację do czatu
+      const exerciseCount = result.exercises.length;
+      const setCount = result.exerciseSets.length;
+      const noteCount = result.clinicalNotes.length;
+
+      sendMessage(
+        `Przeanalizowałem plik "${file.name}". Znalazłem: ${exerciseCount} ćwiczeń, ${setCount} zestawów, ${noteCount} notatek. ` +
+        `Czy chcesz przejść do strony importu, aby przejrzeć i zaimportować dane?`
+      );
+
+      toast.success(`Znaleziono ${exerciseCount} ćwiczeń w dokumencie`);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Błąd analizy dokumentu';
+      toast.error(message);
+    } finally {
+      setIsAnalyzingFile(false);
+    }
+  }, [sendMessage]);
 
   const hasMessages = messages.length > 0;
   const isVoiceListening = voiceState === 'listening';
@@ -274,6 +325,26 @@ export function AIChatPanel({ className }: AIChatPanelProps) {
           </div>
         )}
 
+        {/* Analysis result banner */}
+        {analysisResult && analysisResult.exercises.length > 0 && (
+          <div className="border-t border-primary/30 bg-primary/5 px-4 py-3">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2 text-sm">
+                <FileUp className="h-4 w-4 text-primary" />
+                <span className="text-foreground">
+                  <strong>{analysisResult.exercises.length}</strong> ćwiczeń gotowych do importu
+                </span>
+              </div>
+              <Link href="/import">
+                <Button size="sm" className="gap-1 bg-primary hover:bg-primary-dark">
+                  Importuj
+                  <ArrowRight className="h-3.5 w-3.5" />
+                </Button>
+              </Link>
+            </div>
+          </div>
+        )}
+
         {/* Input area */}
         <div className="border-t border-border/60 p-4">
           <div
@@ -298,6 +369,29 @@ export function AIChatPanel({ className }: AIChatPanelProps) {
                 isVoiceListening && 'placeholder:text-destructive/60'
               )}
             />
+
+            {/* File upload button */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".pdf,.xlsx,.xls,.csv,.txt,.md"
+              onChange={handleFileUpload}
+              className="hidden"
+            />
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isLoading || isAnalyzingFile}
+              className="h-8 w-8 shrink-0 rounded-lg text-muted-foreground hover:text-primary"
+              title="Zaimportuj dokument"
+            >
+              {isAnalyzingFile ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <FileUp className="h-4 w-4" />
+              )}
+            </Button>
 
             {/* Voice button */}
             <VoiceMicButton

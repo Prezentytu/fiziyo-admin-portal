@@ -16,6 +16,7 @@ import {
   PanelLeftClose,
   PanelLeft,
   HeartPulse,
+  FileUp,
 } from 'lucide-react';
 import { useClerk } from '@clerk/nextjs';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
@@ -31,6 +32,7 @@ const navigationGroups = [
       // { name: 'Kalendarz', href: '/appointments', icon: Calendar }, // Ukryty na ten moment
       { name: 'Zestawy', href: '/exercise-sets', icon: FolderKanban },
       { name: 'Ćwiczenia', href: '/exercises', icon: Dumbbell },
+      { name: 'Import AI', href: '/import', icon: FileUp },
     ],
   },
   {
