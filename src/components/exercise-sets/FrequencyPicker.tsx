@@ -147,9 +147,9 @@ export function FrequencyPicker({
       </div>
 
       {/* Times per day and break */}
-      <div className="grid gap-4 sm:grid-cols-2 items-start">
+      <div className="grid gap-6 sm:grid-cols-2">
         <div className="space-y-2">
-          <Label htmlFor="timesPerDay" className="text-sm font-medium block min-h-[40px]">
+          <Label htmlFor="timesPerDay" className="text-sm font-medium">
             Ile razy dziennie
           </Label>
           <div className="flex items-center gap-2">
@@ -204,8 +204,8 @@ export function FrequencyPicker({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="breakBetweenSets" className="text-sm font-medium block min-h-[40px]">
-            Przerwa między wykonaniami<br />(godz.)
+          <Label htmlFor="breakBetweenSets" className="text-sm font-medium">
+            Przerwa między wykonaniami (godz.)
           </Label>
           <div className="flex items-center gap-2">
             <Button
@@ -274,4 +274,3 @@ export const defaultFrequency: FrequencyValue = {
   saturday: false,
   sunday: false,
 };
-

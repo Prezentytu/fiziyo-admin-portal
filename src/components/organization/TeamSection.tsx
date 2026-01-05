@@ -174,8 +174,8 @@ export function TeamSection({
 
       {/* Limit reached banner */}
       {canInvite && isAtTherapistLimit && (
-        <SubscriptionBanner 
-          variant="urgent" 
+        <SubscriptionBanner
+          variant="urgent"
           limitType="therapists"
           currentUsage={currentTherapists}
           maxLimit={maxTherapists}
@@ -303,4 +303,3 @@ export function TeamSection({
     </section>
   );
 }
-

@@ -95,7 +95,7 @@ export function InviteMemberDialog({
     null
   );
   const [linkRole, setLinkRole] = useState<string>("therapist");
-  
+
   // Limit error handling
   const { limitError, handleError: handleLimitError, clearError: clearLimitError } = useLimitError();
 
@@ -162,7 +162,7 @@ export function InviteMemberDialog({
       if (handleLimitError(error)) {
         return; // Dialog will show
       }
-      
+
       const errorMessage =
         error instanceof Error ? error.message : "Nieznany błąd";
       console.error("Błąd podczas wysyłania zaproszenia:", error);
@@ -208,7 +208,7 @@ export function InviteMemberDialog({
       if (handleLimitError(error)) {
         return; // Dialog will show
       }
-      
+
       const errorMessage =
         error instanceof Error ? error.message : "Nieznany błąd";
       console.error("Błąd podczas generowania linku:", error);
@@ -425,7 +425,7 @@ export function InviteMemberDialog({
         variant="destructive"
         onConfirm={handleConfirmClose}
       />
-      
+
       <LimitReachedDialog
         open={!!limitError}
         onClose={clearLimitError}

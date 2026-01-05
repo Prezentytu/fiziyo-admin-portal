@@ -43,32 +43,32 @@ interface LimitReachedDialogProps {
 // Config
 // ========================================
 
-const limitConfig: Record<LimitType, { 
-  label: string; 
+const limitConfig: Record<LimitType, {
+  label: string;
   labelGenitive: string;
   icon: typeof Users;
   description: string;
 }> = {
-  patients: { 
-    label: 'pacjentów', 
+  patients: {
+    label: 'pacjentów',
     labelGenitive: 'pacjentów',
     icon: Users,
     description: 'Ulepsz plan aby dodać więcej pacjentów i rozwijać swoją praktykę.'
   },
-  exercises: { 
-    label: 'ćwiczeń', 
+  exercises: {
+    label: 'ćwiczeń',
     labelGenitive: 'ćwiczeń',
     icon: Dumbbell,
     description: 'Ulepsz plan aby tworzyć więcej własnych ćwiczeń.'
   },
-  therapists: { 
-    label: 'fizjoterapeutów', 
+  therapists: {
+    label: 'fizjoterapeutów',
     labelGenitive: 'fizjoterapeutów',
     icon: Users,
     description: 'Ulepsz plan aby zaprosić więcej fizjoterapeutów do zespołu.'
   },
-  clinics: { 
-    label: 'gabinetów', 
+  clinics: {
+    label: 'gabinetów',
     labelGenitive: 'gabinetów',
     icon: MapPin,
     description: 'Ulepsz plan aby dodać więcej gabinetów.'
@@ -165,4 +165,3 @@ export function LimitReachedDialog({
     </Dialog>
   );
 }
-

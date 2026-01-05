@@ -125,7 +125,7 @@ function AssignmentWizardContent({
 
   // Track changes for close confirmation
   const hasChanges = !preselectedSet ? selectedSet !== null : selectedPatients.length > (preselectedPatient ? 1 : 0);
-  
+
   // Notify parent about changes
   useEffect(() => {
     onHasChanges(hasChanges);
@@ -530,8 +530,6 @@ function AssignmentWizardContent({
         if (!selectedSet) return null;
         return (
           <ScheduleStep
-            exerciseSet={selectedSet}
-            selectedPatients={selectedPatients}
             startDate={startDate}
             endDate={endDate}
             frequency={frequency}
