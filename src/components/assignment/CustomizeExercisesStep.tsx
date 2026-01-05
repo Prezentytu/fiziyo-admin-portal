@@ -8,9 +8,11 @@ import {
   RotateCcw,
   StickyNote,
   Clock,
-  Video,
-  FileText,
-  Settings2,
+  ChevronDown,
+  EyeOff,
+  Eye,
+  Pencil,
+  Settings,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,8 +20,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import { ImagePlaceholder } from "@/components/shared/ImagePlaceholder";
+import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { cn } from "@/lib/utils";
 import { getMediaUrl } from "@/utils/mediaUrl";
 import type { ExerciseSet, ExerciseMapping, ExerciseOverride } from "./types";
@@ -28,6 +35,8 @@ interface CustomizeExercisesStepProps {
   exerciseSet: ExerciseSet;
   overrides: Map<string, ExerciseOverride>;
   onOverridesChange: (overrides: Map<string, ExerciseOverride>) => void;
+  excludedExercises: Set<string>;
+  onExcludedExercisesChange: (excluded: Set<string>) => void;
 }
 
 // Helper functions outside component
@@ -54,10 +63,16 @@ export function CustomizeExercisesStep({
   exerciseSet,
   overrides,
   onOverridesChange,
+  excludedExercises,
+  onExcludedExercisesChange,
 }: CustomizeExercisesStepProps) {
   const [selectedMappingId, setSelectedMappingId] = useState<string | null>(
     exerciseSet.exerciseMappings?.[0]?.id || null
   );
+  const [excludeConfirm, setExcludeConfirm] = useState<{
+    mappingId: string;
+    name: string;
+  } | null>(null);
 
   const mappings = exerciseSet.exerciseMappings || [];
   const selectedMapping = mappings.find((m) => m.id === selectedMappingId);
@@ -134,47 +149,108 @@ export function CustomizeExercisesStep({
     [overrides]
   );
 
-  // Render numeric input inline
-  const renderNumericInput = (
+  // Toggle exercise exclusion
+  const toggleExclude = useCallback(
+    (mappingId: string, exerciseName: string) => {
+      const isCurrentlyExcluded = excludedExercises.has(mappingId);
+      if (isCurrentlyExcluded) {
+        // Re-include immediately
+        const newExcluded = new Set(excludedExercises);
+        newExcluded.delete(mappingId);
+        onExcludedExercisesChange(newExcluded);
+      } else {
+        // Show confirmation before excluding
+        setExcludeConfirm({ mappingId, name: exerciseName });
+      }
+    },
+    [excludedExercises, onExcludedExercisesChange]
+  );
+
+  const confirmExclude = useCallback(() => {
+    if (!excludeConfirm) return;
+    const newExcluded = new Set(excludedExercises);
+    newExcluded.add(excludeConfirm.mappingId);
+    onExcludedExercisesChange(newExcluded);
+    setExcludeConfirm(null);
+    // If excluded mapping was selected, select another
+    if (selectedMappingId === excludeConfirm.mappingId) {
+      const remaining = mappings.filter(m => !newExcluded.has(m.id));
+      setSelectedMappingId(remaining[0]?.id || null);
+    }
+  }, [excludeConfirm, excludedExercises, onExcludedExercisesChange, selectedMappingId, mappings]);
+
+  // Full-width stepper with clear label
+  const renderFullWidthStepper = (
     mapping: ExerciseMapping,
     label: string,
     field: keyof ExerciseOverride,
+    unit?: string,
     step = 1,
-    min = 0,
-    suffix?: string
+    min = 0
   ) => {
     const value = getEffectiveValue<number | undefined>(mapping, field);
     const defaultValue = getDefaultValue<number | undefined>(mapping, field);
     const override = overrides.get(mapping.id);
     const hasFieldOverride = override && override[field] !== undefined;
-
-    // Display value: show effective value or default or empty
-    const displayValue = value ?? defaultValue ?? "";
+    const displayValue = value ?? defaultValue ?? 0;
 
     return (
-      <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <Label className="text-sm">{label}</Label>
-          {hasFieldOverride && defaultValue !== undefined && (
-            <span className="text-[10px] text-muted-foreground">
-              Oryginał: {defaultValue}
-              {suffix}
-            </span>
-          )}
-        </div>
-        <div className="flex items-center gap-1">
+      <div className="flex items-center justify-between py-3 px-4 rounded-xl bg-surface-light/30 border border-border/40">
+        <span className="text-sm text-foreground font-medium">{label}</span>
+        <div className="flex items-center gap-2">
           <Button
             type="button"
             variant="outline"
             size="icon"
-            className="h-10 w-10 shrink-0"
+            className="h-9 w-9"
             onClick={() => {
-              const current = (typeof displayValue === "number" ? displayValue : 0);
+              const current = typeof displayValue === "number" ? displayValue : 0;
               updateOverride(mapping.id, field, Math.max(min, current - step));
             }}
           >
             <Minus className="h-4 w-4" />
           </Button>
+          <div className={cn(
+            "min-w-[60px] text-center font-bold text-xl tabular-nums",
+            hasFieldOverride && "text-primary"
+          )}>
+            {displayValue}
+            {unit && <span className="text-sm font-normal text-muted-foreground ml-1">{unit}</span>}
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            className="h-9 w-9"
+            onClick={() => {
+              const current = typeof displayValue === "number" ? displayValue : 0;
+              updateOverride(mapping.id, field, current + step);
+            }}
+          >
+            <Plus className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+    );
+  };
+
+  // Small inline input for advanced section
+  const renderSmallInput = (
+    mapping: ExerciseMapping,
+    label: string,
+    field: keyof ExerciseOverride,
+    unit?: string,
+    step = 1,
+    min = 0
+  ) => {
+    const value = getEffectiveValue<number | undefined>(mapping, field);
+    const defaultValue = getDefaultValue<number | undefined>(mapping, field);
+    const displayValue = value ?? defaultValue ?? "";
+
+    return (
+      <div className="flex items-center justify-between gap-2">
+        <Label className="text-xs text-muted-foreground">{label}</Label>
+        <div className="flex items-center gap-1">
           <Input
             type="number"
             value={displayValue}
@@ -186,69 +262,18 @@ export function CustomizeExercisesStep({
               )
             }
             placeholder="—"
-            className="h-10 text-center font-semibold"
+            className="h-7 w-16 text-center text-sm"
+            step={step}
+            min={min}
           />
-          <Button
-            type="button"
-            variant="outline"
-            size="icon"
-            className="h-10 w-10 shrink-0"
-            onClick={() => {
-              const current = (typeof displayValue === "number" ? displayValue : 0);
-              updateOverride(mapping.id, field, current + step);
-            }}
-          >
-            <Plus className="h-4 w-4" />
-          </Button>
+          {unit && <span className="text-xs text-muted-foreground">{unit}</span>}
         </div>
-      </div>
-    );
-  };
-
-  // Render text input inline
-  const renderTextInput = (
-    mapping: ExerciseMapping,
-    label: string,
-    field: keyof ExerciseOverride,
-    placeholder?: string
-  ) => {
-    const value = getEffectiveValue<string | undefined>(mapping, field);
-    const defaultValue = getDefaultValue<string | undefined>(mapping, field);
-    const override = overrides.get(mapping.id);
-    const hasFieldOverride = override && override[field] !== undefined;
-
-    // Display value: show effective value or default or empty
-    const displayValue = value ?? defaultValue ?? "";
-
-    return (
-      <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <Label className="text-sm">{label}</Label>
-          {hasFieldOverride && defaultValue && (
-            <span className="text-[10px] text-muted-foreground truncate max-w-[150px]">
-              Oryginał: {defaultValue.slice(0, 20)}
-              {defaultValue.length > 20 ? "..." : ""}
-            </span>
-          )}
-        </div>
-        <Input
-          value={displayValue}
-          onChange={(e) =>
-            updateOverride(mapping.id, field, e.target.value || undefined)
-          }
-          placeholder={placeholder || "—"}
-          className="h-10"
-          autoComplete="off"
-          data-1p-ignore
-          data-lpignore="true"
-          data-form-type="other"
-        />
       </div>
     );
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full overflow-hidden">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full min-h-0 p-6">
       {/* Left column - Exercise list */}
       <div className="flex flex-col min-h-0">
         <div className="mb-4">
@@ -265,22 +290,33 @@ export function CustomizeExercisesStep({
               const imageUrl = getMediaUrl(exercise?.imageUrl || exercise?.images?.[0]);
               const isSelected = selectedMappingId === mapping.id;
               const hasCustomization = hasOverride(mapping.id);
+              const isExcluded = excludedExercises.has(mapping.id);
+              const exerciseName = mapping.customName || exercise?.name || "Nieznane";
 
               return (
                 <div
                   key={mapping.id}
                   className={cn(
-                    "flex items-center gap-4 rounded-xl p-4 cursor-pointer transition-all",
-                    isSelected
+                    "flex items-center gap-4 rounded-xl p-4 cursor-pointer transition-all group",
+                    isExcluded && "opacity-50",
+                    isSelected && !isExcluded
                       ? "bg-primary/10 border-2 border-primary/40"
+                      : isExcluded
+                      ? "bg-destructive/5 border-2 border-destructive/20"
                       : "hover:bg-surface-light border-2 border-transparent"
                   )}
-                  onClick={() => setSelectedMappingId(mapping.id)}
+                  onClick={() => !isExcluded && setSelectedMappingId(mapping.id)}
                 >
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg text-sm font-semibold bg-surface text-muted-foreground shrink-0">
-                    {index + 1}
+                  <div className={cn(
+                    "flex h-10 w-10 items-center justify-center rounded-lg text-sm font-semibold shrink-0",
+                    isExcluded ? "bg-destructive/10 text-destructive" : "bg-surface text-muted-foreground"
+                  )}>
+                    {isExcluded ? <EyeOff className="h-4 w-4" /> : index + 1}
                   </div>
-                  <div className="h-12 w-12 rounded-lg overflow-hidden shrink-0">
+                  <div className={cn(
+                    "h-12 w-12 rounded-lg overflow-hidden shrink-0",
+                    isExcluded && "grayscale"
+                  )}>
                     {imageUrl ? (
                       <img
                         src={imageUrl}
@@ -293,19 +329,32 @@ export function CustomizeExercisesStep({
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <p className="font-medium line-clamp-2 flex-1">
-                        {mapping.customName || exercise?.name || "Nieznane"}
+                      <p className={cn(
+                        "font-medium line-clamp-2 flex-1",
+                        isExcluded && "line-through text-muted-foreground"
+                      )}>
+                        {exerciseName}
                       </p>
-                      {hasCustomization && (
+                      {isExcluded ? (
+                        <Badge
+                          variant="destructive"
+                          className="text-[10px] shrink-0"
+                        >
+                          Wykluczone
+                        </Badge>
+                      ) : hasCustomization ? (
                         <Badge
                           variant="outline"
                           className="text-[10px] border-primary text-primary shrink-0"
                         >
                           Zmienione
                         </Badge>
-                      )}
+                      ) : null}
                     </div>
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1 flex-wrap">
+                    <div className={cn(
+                      "flex items-center gap-2 text-xs text-muted-foreground mt-1 flex-wrap",
+                      isExcluded && "hidden"
+                    )}>
                       {getEffectiveValue<number | undefined>(mapping, "sets") && (
                         <span>
                           {getEffectiveValue<number>(mapping, "sets")} serie
@@ -323,16 +372,39 @@ export function CustomizeExercisesStep({
                       )}
                     </div>
                   </div>
+                  {/* Exclude/include button */}
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className={cn(
+                      "h-8 w-8 shrink-0 transition-opacity",
+                      isExcluded
+                        ? "text-primary hover:text-primary"
+                        : "opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive"
+                    )}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleExclude(mapping.id, exerciseName);
+                    }}
+                    title={isExcluded ? "Przywróć ćwiczenie" : "Wyklucz z przypisania"}
+                  >
+                    {isExcluded ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+                  </Button>
                 </div>
               );
             })}
           </div>
         </ScrollArea>
 
-        <div className="mt-3 flex items-center gap-2">
+        <div className="mt-3 flex items-center gap-2 flex-wrap">
           <Badge variant="secondary">
             {mappings.filter((m) => hasOverride(m.id)).length} zmienione
           </Badge>
+          {excludedExercises.size > 0 && (
+            <Badge variant="destructive">
+              {excludedExercises.size} wykluczone
+            </Badge>
+          )}
           <span className="text-xs text-muted-foreground">
             z {mappings.length} ćwiczeń
           </span>
@@ -343,10 +415,10 @@ export function CustomizeExercisesStep({
       <div className="flex flex-col min-h-0 rounded-xl border border-border bg-surface/50 overflow-hidden">
         {selectedMapping ? (
           <>
-            {/* Header */}
+            {/* Compact Header with image */}
             <div className="p-4 border-b border-border shrink-0">
-              <div className="flex items-start gap-3">
-                <div className="h-14 w-14 rounded-lg overflow-hidden shrink-0">
+              <div className="flex items-center gap-3">
+                <div className="h-12 w-12 rounded-lg overflow-hidden shrink-0">
                   {getMediaUrl(selectedMapping.exercise?.imageUrl ||
                   selectedMapping.exercise?.images?.[0]) ? (
                     <img
@@ -358,24 +430,24 @@ export function CustomizeExercisesStep({
                       className="h-full w-full object-cover"
                     />
                   ) : (
-                    <ImagePlaceholder type="exercise" iconClassName="h-6 w-6" />
+                    <ImagePlaceholder type="exercise" iconClassName="h-5 w-5" />
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-semibold">
+                  <p className="font-semibold text-sm leading-tight">
                     {selectedMapping.customName ||
                       selectedMapping.exercise?.name ||
                       "Nieznane ćwiczenie"}
                   </p>
-                  <div className="flex items-center gap-2 mt-1 flex-wrap">
+                  <div className="flex items-center gap-1.5 mt-1">
                     {selectedMapping.exercise?.type && (
-                      <Badge variant="secondary" className="text-[10px]">
+                      <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
                         {getTypeLabel(selectedMapping.exercise.type)}
                       </Badge>
                     )}
                     {selectedMapping.exercise?.exerciseSide &&
                       selectedMapping.exercise.exerciseSide !== "none" && (
-                        <Badge variant="outline" className="text-[10px]">
+                        <Badge variant="outline" className="text-[10px] px-1.5 py-0">
                           {getSideLabel(selectedMapping.exercise.exerciseSide)}
                         </Badge>
                       )}
@@ -384,207 +456,32 @@ export function CustomizeExercisesStep({
                 {hasOverride(selectedMapping.id) && (
                   <Button
                     variant="ghost"
-                    size="sm"
-                    className="shrink-0"
+                    size="icon"
+                    className="h-8 w-8 shrink-0 text-muted-foreground hover:text-foreground"
                     onClick={() => resetOverride(selectedMapping.id)}
+                    title="Resetuj zmiany"
                   >
-                    <RotateCcw className="h-4 w-4 mr-1" />
-                    Resetuj
+                    <RotateCcw className="h-4 w-4" />
                   </Button>
                 )}
               </div>
             </div>
 
-            {/* Editor */}
+            {/* Editor - physio-friendly layout */}
             <ScrollArea className="flex-1">
-              <div className="p-4 space-y-6">
-                {/* Custom name and description */}
-                <div className="space-y-4">
-                  <div className="flex items-center gap-2">
-                    <FileText className="h-4 w-4 text-primary" />
-                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      Personalizacja nazwy
-                    </p>
-                  </div>
+              <div className="p-4 space-y-3">
+                {/* Main parameters - vertical, full width, clear labels */}
+                {renderFullWidthStepper(selectedMapping, "Serie", "sets")}
+                {renderFullWidthStepper(selectedMapping, "Powtórzenia", "reps")}
+                {renderFullWidthStepper(selectedMapping, "Czas trwania ćwiczenia", "duration", "s", 5)}
+                {renderFullWidthStepper(selectedMapping, "Przerwa między seriami", "restSets", "s", 5)}
 
-                  {renderTextInput(
-                    selectedMapping,
-                    "Nazwa dla pacjenta",
-                    "customName",
-                    "Własna nazwa ćwiczenia..."
-                  )}
-
-                  <div className="space-y-2">
-                    <Label className="text-sm">Opis dla pacjenta</Label>
-                    <Textarea
-                      value={
-                        getEffectiveValue<string | undefined>(
-                          selectedMapping,
-                          "customDescription"
-                        ) ??
-                        getDefaultValue<string | undefined>(
-                          selectedMapping,
-                          "customDescription"
-                        ) ??
-                        selectedMapping.exercise?.description ??
-                        ""
-                      }
-                      onChange={(e) =>
-                        updateOverride(
-                          selectedMapping.id,
-                          "customDescription",
-                          e.target.value || undefined
-                        )
-                      }
-                      placeholder="Opis ćwiczenia..."
-                      className="min-h-[60px] resize-none"
-                      autoComplete="off"
-                      data-1p-ignore
-                      data-lpignore="true"
-                      data-form-type="other"
-                    />
-                  </div>
-                </div>
-
-                <Separator />
-
-                {/* Main parameters */}
-                <div className="space-y-4">
-                  <div className="flex items-center gap-2">
-                    <Settings2 className="h-4 w-4 text-primary" />
-                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      Główne parametry
-                    </p>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    {renderNumericInput(selectedMapping, "Serie", "sets")}
-                    {renderNumericInput(selectedMapping, "Powtórzenia", "reps")}
-                  </div>
-
-                  {renderNumericInput(
-                    selectedMapping,
-                    "Czas trwania",
-                    "duration",
-                    5,
-                    0,
-                    "s"
-                  )}
-                </div>
-
-                <Separator />
-
-                {/* Rest parameters */}
-                <div className="space-y-4">
-                  <div className="flex items-center gap-2">
-                    <Clock className="h-4 w-4 text-primary" />
-                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      Przerwy i czasy
-                    </p>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    {renderNumericInput(
-                      selectedMapping,
-                      "Przerwa między seriami",
-                      "restSets",
-                      5,
-                      0,
-                      "s"
-                    )}
-                    {renderNumericInput(
-                      selectedMapping,
-                      "Przerwa między powt.",
-                      "restReps",
-                      1,
-                      0,
-                      "s"
-                    )}
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    {renderNumericInput(
-                      selectedMapping,
-                      "Czas przygotowania",
-                      "preparationTime",
-                      5,
-                      0,
-                      "s"
-                    )}
-                    {renderNumericInput(
-                      selectedMapping,
-                      "Czas wykonania",
-                      "executionTime",
-                      5,
-                      0,
-                      "s"
-                    )}
-                  </div>
-                </div>
-
-                <Separator />
-
-                {/* Media */}
-                <div className="space-y-4">
-                  <div className="flex items-center gap-2">
-                    <Video className="h-4 w-4 text-primary" />
-                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      Media
-                    </p>
-                  </div>
-
-                  {renderTextInput(
-                    selectedMapping,
-                    "URL wideo",
-                    "videoUrl",
-                    "https://youtube.com/..."
-                  )}
-
-                  {renderTextInput(
-                    selectedMapping,
-                    "URL obrazu",
-                    "imageUrl",
-                    "https://..."
-                  )}
-
-                  {/* Preview current media */}
-                  {(getEffectiveValue<string | undefined>(
-                    selectedMapping,
-                    "videoUrl"
-                  ) ||
-                    selectedMapping.exercise?.videoUrl) && (
-                    <div className="p-3 bg-surface-light rounded-lg">
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground mb-2">
-                        <Video className="h-3 w-3" />
-                        <span>Podgląd wideo</span>
-                      </div>
-                      <a
-                        href={
-                          getEffectiveValue<string>(selectedMapping, "videoUrl") ||
-                          selectedMapping.exercise?.videoUrl
-                        }
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-xs text-primary hover:underline break-all"
-                      >
-                        {getEffectiveValue<string>(selectedMapping, "videoUrl") ||
-                          selectedMapping.exercise?.videoUrl}
-                      </a>
-                    </div>
-                  )}
-                </div>
-
-                <Separator />
-
-                {/* Notes */}
-                <div className="space-y-4">
+                {/* Notes - always visible, bigger */}
+                <div className="space-y-2 pt-2">
                   <div className="flex items-center gap-2">
                     <StickyNote className="h-4 w-4 text-primary" />
-                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      Notatki dla pacjenta
-                    </p>
+                    <Label className="text-sm font-medium">Notatka dla pacjenta</Label>
                   </div>
-
                   <Textarea
                     value={
                       getEffectiveValue<string | undefined>(
@@ -595,7 +492,6 @@ export function CustomizeExercisesStep({
                         selectedMapping,
                         "notes"
                       ) ??
-                      selectedMapping.exercise?.notes ??
                       ""
                     }
                     onChange={(e) =>
@@ -605,14 +501,104 @@ export function CustomizeExercisesStep({
                         e.target.value || undefined
                       )
                     }
-                    placeholder="Dodaj wskazówki lub instrukcje dla tego pacjenta..."
-                    className="min-h-[80px] resize-none"
+                    placeholder="Wskazówki dla pacjenta, np. Na co uważać, jak wykonywać..."
+                    className="min-h-[120px] resize-none"
                     autoComplete="off"
                     data-1p-ignore
                     data-lpignore="true"
                     data-form-type="other"
                   />
                 </div>
+
+                {/* More options - collapsible */}
+                <Collapsible>
+                  <CollapsibleTrigger className="flex w-full items-center justify-between py-3 px-4 rounded-xl hover:bg-surface-light/50 transition-colors group border border-border/40">
+                    <div className="flex items-center gap-2">
+                      <Settings className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm font-medium text-muted-foreground">Więcej opcji</span>
+                    </div>
+                    <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform duration-200 group-data-[state=open]:rotate-180" />
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="pt-4 space-y-4">
+                    {/* Custom name */}
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
+                        <Label className="text-sm text-muted-foreground">Własna nazwa ćwiczenia</Label>
+                      </div>
+                      <Input
+                        value={
+                          getEffectiveValue<string | undefined>(
+                            selectedMapping,
+                            "customName"
+                          ) ??
+                          getDefaultValue<string | undefined>(
+                            selectedMapping,
+                            "customName"
+                          ) ??
+                          ""
+                        }
+                        onChange={(e) =>
+                          updateOverride(
+                            selectedMapping.id,
+                            "customName",
+                            e.target.value || undefined
+                          )
+                        }
+                        placeholder={selectedMapping.exercise?.name || "Nazwa dla pacjenta..."}
+                        className="h-10"
+                        autoComplete="off"
+                        data-1p-ignore
+                        data-lpignore="true"
+                        data-form-type="other"
+                      />
+                    </div>
+
+                    {/* Custom description */}
+                    <div className="space-y-2">
+                      <Label className="text-sm text-muted-foreground">Własny opis</Label>
+                      <Textarea
+                        value={
+                          getEffectiveValue<string | undefined>(
+                            selectedMapping,
+                            "customDescription"
+                          ) ??
+                          getDefaultValue<string | undefined>(
+                            selectedMapping,
+                            "customDescription"
+                          ) ??
+                          ""
+                        }
+                        onChange={(e) =>
+                          updateOverride(
+                            selectedMapping.id,
+                            "customDescription",
+                            e.target.value || undefined
+                          )
+                        }
+                        placeholder={selectedMapping.exercise?.description || "Opis dla pacjenta..."}
+                        className="min-h-[80px] resize-none"
+                        autoComplete="off"
+                        data-1p-ignore
+                        data-lpignore="true"
+                        data-form-type="other"
+                      />
+                    </div>
+
+                    {/* Advanced times */}
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2">
+                        <Clock className="h-3.5 w-3.5 text-muted-foreground" />
+                        <Label className="text-sm text-muted-foreground">Zaawansowane czasy</Label>
+                      </div>
+                      <div className="space-y-2 p-3 rounded-xl bg-surface-light/30 border border-border/30">
+                        {renderSmallInput(selectedMapping, "Przerwa między powtórzeniami", "restReps", "s", 1)}
+                        {renderSmallInput(selectedMapping, "Czas przygotowania", "preparationTime", "s", 5)}
+                        {renderSmallInput(selectedMapping, "Czas wykonania powtórzenia", "executionTime", "s", 5)}
+                      </div>
+                    </div>
+                  </CollapsibleContent>
+                </Collapsible>
               </div>
             </ScrollArea>
           </>
@@ -628,6 +614,18 @@ export function CustomizeExercisesStep({
           </div>
         )}
       </div>
+
+      {/* Exclude confirmation dialog */}
+      <ConfirmDialog
+        open={!!excludeConfirm}
+        onOpenChange={(open) => !open && setExcludeConfirm(null)}
+        title="Wyklucz ćwiczenie z przypisania?"
+        description={`Ćwiczenie "${excludeConfirm?.name}" zostanie wykluczone tylko z tego przypisania. Oryginalny zestaw nie zostanie zmieniony.`}
+        confirmText="Tak, wyklucz"
+        cancelText="Anuluj"
+        variant="destructive"
+        onConfirm={confirmExclude}
+      />
     </div>
   );
 }

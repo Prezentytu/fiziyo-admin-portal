@@ -49,7 +49,7 @@ export function ScheduleStep({
   };
 
   return (
-    <div className="flex flex-col space-y-6 h-full overflow-y-auto pr-2">
+    <div className="flex flex-col space-y-6 p-6 overflow-y-auto">
       {/* Date range */}
       <div className="space-y-4">
         <div className="flex items-center gap-2">

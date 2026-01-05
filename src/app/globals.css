@@ -112,6 +112,98 @@
   }
 }
 
+/* Wizard Step Transitions */
+@keyframes wizard-slide-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes wizard-slide-in-left {
+  from {
+    opacity: 0;
+    transform: translateX(-24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes wizard-slide-out-left {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(-24px);
+  }
+}
+
+@keyframes wizard-slide-out-right {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(24px);
+  }
+}
+
+@keyframes success-check {
+  0% {
+    transform: scale(0.5);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes success-glow {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(50, 150, 93, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 20px 10px rgba(50, 150, 93, 0.2);
+  }
+}
+
+.animate-wizard-slide-in-right {
+  animation: wizard-slide-in-right 0.3s ease-out forwards;
+}
+
+.animate-wizard-slide-in-left {
+  animation: wizard-slide-in-left 0.3s ease-out forwards;
+}
+
+.animate-wizard-slide-out-left {
+  animation: wizard-slide-out-left 0.3s ease-out forwards;
+}
+
+.animate-wizard-slide-out-right {
+  animation: wizard-slide-out-right 0.3s ease-out forwards;
+}
+
+.animate-success-check {
+  animation: success-check 0.5s ease-out forwards;
+}
+
+.animate-success-glow {
+  animation: success-glow 1.5s ease-in-out;
+}
+
 :root {
   /* Base colors - Fizjo App Dark Theme */
   --background: #121212;

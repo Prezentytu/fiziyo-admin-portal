@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Search, FolderKanban, Check, Dumbbell, ChevronRight, X } from "lucide-react";
+import { Search, FolderKanban, Check, Dumbbell, ChevronRight, X, Eye, EyeOff } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
@@ -18,6 +18,8 @@ interface SelectSetStepProps {
   assignedSets?: AssignedSetInfo[];
   onUnassign?: (assignmentId: string, setName: string) => void;
   loading?: boolean;
+  excludedExercises: Set<string>;
+  onExcludedExercisesChange: (excluded: Set<string>) => void;
 }
 
 export function SelectSetStep({
@@ -27,6 +29,8 @@ export function SelectSetStep({
   assignedSets = [],
   onUnassign,
   loading = false,
+  excludedExercises,
+  onExcludedExercisesChange,
 }: SelectSetStepProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [previewSet, setPreviewSet] = useState<ExerciseSet | null>(selectedSet);
@@ -58,7 +62,7 @@ export function SelectSetStep({
 
   const handleSetClick = (set: ExerciseSet) => {
     const isAssigned = assignedSetsMap.has(set.id);
-    
+
     if (isAssigned) {
       // Toggle unassign selection for assigned sets
       if (selectedToUnassign === set.id) {
@@ -98,8 +102,24 @@ export function SelectSetStep({
     return type ? types[type] || type : "";
   };
 
+  // Toggle exercise exclusion
+  const toggleExclude = (mappingId: string) => {
+    const newExcluded = new Set(excludedExercises);
+    if (newExcluded.has(mappingId)) {
+      newExcluded.delete(mappingId);
+    } else {
+      newExcluded.add(mappingId);
+    }
+    onExcludedExercisesChange(newExcluded);
+  };
+
+  // Count excluded exercises in preview set
+  const excludedInPreviewCount = previewSet?.exerciseMappings?.filter(
+    (m) => excludedExercises.has(m.id)
+  ).length || 0;
+
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full min-h-0 p-6">
       {/* Left column - Set list */}
       <div className="flex flex-col min-h-0">
         <div className="mb-4 space-y-3">
@@ -135,7 +155,7 @@ export function SelectSetStep({
           </div>
         </div>
 
-        <ScrollArea className="flex-1 rounded-xl border border-border">
+        <ScrollArea className="flex-1 min-h-0 rounded-xl border border-border">
           {loading ? (
             <div className="flex items-center justify-center py-12">
               <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
@@ -207,8 +227,8 @@ export function SelectSetStep({
                           {set.name}
                         </p>
                         {isAssigned && (
-                          <Badge 
-                            variant={isSelectedForUnassign ? "destructive" : "secondary"} 
+                          <Badge
+                            variant={isSelectedForUnassign ? "destructive" : "secondary"}
                             className="text-[10px] shrink-0"
                           >
                             Przypisany
@@ -248,20 +268,25 @@ export function SelectSetStep({
       </div>
 
       {/* Right column - Exercise preview */}
-      <div className="flex flex-col min-h-0 rounded-xl border border-border bg-surface/50 p-4">
+      <div className="flex flex-col min-h-0 h-full rounded-xl border border-border bg-surface/50">
         {previewSet ? (
           <>
-            <div className="mb-4">
+            <div className="p-4 border-b border-border">
               <h3 className="font-semibold text-lg">{previewSet.name}</h3>
               {previewSet.description && (
                 <p className="text-sm text-muted-foreground mt-1">
                   {previewSet.description}
                 </p>
               )}
-              <div className="flex items-center gap-2 mt-2">
+              <div className="flex items-center gap-2 mt-2 flex-wrap">
                 <Badge variant="outline">
-                  {previewSet.exerciseMappings?.length || 0} ćwiczeń
+                  {(previewSet.exerciseMappings?.length || 0) - excludedInPreviewCount} ćwiczeń
                 </Badge>
+                {excludedInPreviewCount > 0 && (
+                  <Badge variant="outline" className="text-muted-foreground">
+                    -{excludedInPreviewCount} wykluczone
+                  </Badge>
+                )}
                 {selectedToUnassign === previewSet.id && (
                   <Badge variant="destructive">
                     Wybrany do odpisania
@@ -281,25 +306,42 @@ export function SelectSetStep({
               )}
             </div>
 
-            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-3">
-              Ćwiczenia w zestawie
-            </p>
+            <div className="px-4 pt-3 pb-2">
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                Ćwiczenia w zestawie
+              </p>
+            </div>
 
-            <ScrollArea className="flex-1">
-              <div className="pr-4 space-y-2">
+            <ScrollArea className="flex-1 px-4 pb-4">
+              <div className="space-y-2">
                 {previewSet.exerciseMappings?.map((mapping, index) => {
                   const exercise = mapping.exercise;
                   const imageUrl = getMediaUrl(exercise?.imageUrl || exercise?.images?.[0]);
+                  const isExcluded = excludedExercises.has(mapping.id);
+                  const isSelectedSet = selectedSet?.id === previewSet.id;
 
                   return (
                     <div
                       key={mapping.id}
-                      className="flex items-center gap-3 rounded-lg p-3 bg-surface-light/50"
+                      className={cn(
+                        "flex items-center gap-3 rounded-lg p-3 group transition-all",
+                        isExcluded
+                          ? "bg-destructive/5 opacity-60"
+                          : "bg-surface-light/50"
+                      )}
                     >
-                      <div className="flex h-8 w-8 items-center justify-center rounded-lg text-xs font-semibold bg-surface text-muted-foreground shrink-0">
-                        {index + 1}
+                      <div className={cn(
+                        "flex h-8 w-8 items-center justify-center rounded-lg text-xs font-semibold shrink-0",
+                        isExcluded
+                          ? "bg-destructive/10 text-destructive"
+                          : "bg-surface text-muted-foreground"
+                      )}>
+                        {isExcluded ? <EyeOff className="h-4 w-4" /> : index + 1}
                       </div>
-                      <div className="h-10 w-10 rounded-lg overflow-hidden shrink-0">
+                      <div className={cn(
+                        "h-10 w-10 rounded-lg overflow-hidden shrink-0",
+                        isExcluded && "grayscale"
+                      )}>
                         {imageUrl ? (
                           <img
                             src={imageUrl}
@@ -314,25 +356,52 @@ export function SelectSetStep({
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium line-clamp-2">
+                        <p className={cn(
+                          "text-sm font-medium line-clamp-2",
+                          isExcluded && "line-through text-muted-foreground"
+                        )}>
                           {mapping.customName || exercise?.name || "Nieznane ćwiczenie"}
                         </p>
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5 flex-wrap">
-                          {(mapping.sets || exercise?.sets) && (
-                            <span>{mapping.sets || exercise?.sets} serie</span>
-                          )}
-                          {(mapping.reps || exercise?.reps) && (
-                            <span>• {mapping.reps || exercise?.reps} powt.</span>
-                          )}
-                          {(mapping.duration || exercise?.duration) && (
-                            <span>• {mapping.duration || exercise?.duration}s</span>
-                          )}
-                        </div>
+                        {!isExcluded && (
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5 flex-wrap">
+                            {(mapping.sets || exercise?.sets) && (
+                              <span>{mapping.sets || exercise?.sets} serie</span>
+                            )}
+                            {(mapping.reps || exercise?.reps) && (
+                              <span>• {mapping.reps || exercise?.reps} powt.</span>
+                            )}
+                            {(mapping.duration || exercise?.duration) && (
+                              <span>• {mapping.duration || exercise?.duration}s</span>
+                            )}
+                          </div>
+                        )}
+                        {isExcluded && (
+                          <Badge variant="destructive" className="text-[10px] mt-1">
+                            Wykluczone
+                          </Badge>
+                        )}
                       </div>
-                      {exercise?.type && (
+                      {!isExcluded && exercise?.type && (
                         <Badge variant="secondary" className="text-[10px] shrink-0">
                           {getTypeLabel(exercise.type)}
                         </Badge>
+                      )}
+                      {/* Exclude/include toggle - only show when set is selected */}
+                      {isSelectedSet && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className={cn(
+                            "h-8 w-8 shrink-0 transition-opacity",
+                            isExcluded
+                              ? "text-primary hover:text-primary"
+                              : "opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive"
+                          )}
+                          onClick={() => toggleExclude(mapping.id)}
+                          title={isExcluded ? "Przywróć ćwiczenie" : "Wyklucz z przypisania"}
+                        >
+                          {isExcluded ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+                        </Button>
                       )}
                     </div>
                   );
@@ -341,7 +410,7 @@ export function SelectSetStep({
             </ScrollArea>
           </>
         ) : (
-          <div className="flex-1 flex flex-col items-center justify-center text-center">
+          <div className="flex-1 flex flex-col items-center justify-center text-center p-4">
             <Dumbbell className="h-12 w-12 text-muted-foreground/30 mb-3" />
             <p className="text-sm font-medium text-muted-foreground">
               Wybierz zestaw
@@ -355,5 +424,3 @@ export function SelectSetStep({
     </div>
   );
 }
-
-
