@@ -124,7 +124,7 @@ export function ShareSheet({
 }: ShareSheetProps) {
   const [copied, setCopied] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
-  
+
   // Check for native share support (computed once on mount)
   const supportsNativeShare = typeof globalThis.window !== "undefined" && !!navigator?.share;
 

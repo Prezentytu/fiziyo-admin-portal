@@ -26,6 +26,7 @@ import { Badge } from '@/components/ui/badge';
 import { LoadingState } from '@/components/shared/LoadingState';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { ExerciseDialog } from '@/components/exercises/ExerciseDialog';
+import { AddExerciseToSetsDialog } from '@/components/exercises/AddExerciseToSetsDialog';
 import { ColorBadge } from '@/components/shared/ColorBadge';
 import { ImagePlaceholder } from '@/components/shared/ImagePlaceholder';
 import { getMediaUrl, getMediaUrls } from '@/utils/mediaUrl';
@@ -75,6 +76,7 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
   const { currentOrganization } = useOrganization();
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isAddToSetDialogOpen, setIsAddToSetDialogOpen] = useState(false);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [isTimesOpen, setIsTimesOpen] = useState(false);
   const [isNotesOpen, setIsNotesOpen] = useState(false);
@@ -133,8 +135,7 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
   };
 
   const handleAddToSet = () => {
-    // TODO: Implement add to set dialog
-    toast.info('Funkcja dodawania do zestawu - wkrótce dostępna');
+    setIsAddToSetDialogOpen(true);
   };
 
   const getTypeLabel = (type?: string) => {
@@ -494,6 +495,13 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
         variant="destructive"
         onConfirm={handleDelete}
         isLoading={deleting}
+      />
+
+      {/* Add to Set Dialog with AI */}
+      <AddExerciseToSetsDialog
+        open={isAddToSetDialogOpen}
+        onOpenChange={setIsAddToSetDialogOpen}
+        exercise={exercise}
       />
     </div>
   );

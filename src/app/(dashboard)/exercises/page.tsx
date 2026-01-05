@@ -133,17 +133,47 @@ export default function ExercisesPage() {
 
   return (
     <div className="space-y-6">
-      {/* Compact Header with Search */}
+      {/* Compact Header with Search + View Toggle */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-2xl font-bold text-foreground">Ćwiczenia</h1>
-        <div className="relative w-full sm:w-72">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Szukaj ćwiczeń..."
-            className="pl-9 bg-surface border-border/60"
-          />
+        <div className="flex items-center gap-2">
+          {/* Search Input */}
+          <div className="relative w-full sm:w-64">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Szukaj ćwiczeń..."
+              className="pl-9 bg-surface border-border/60"
+            />
+          </div>
+          {/* View Toggle - Linear/Figma style */}
+          <div className="flex items-center rounded-lg border border-border/60 bg-surface p-1">
+            <button
+              onClick={() => setViewMode('grid')}
+              className={cn(
+                'p-1.5 rounded-md transition-all duration-200',
+                viewMode === 'grid'
+                  ? 'bg-primary text-primary-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-surface-light'
+              )}
+              title="Widok siatki"
+            >
+              <LayoutGrid className="h-4 w-4" />
+            </button>
+            <button
+              onClick={() => setViewMode('list')}
+              className={cn(
+                'p-1.5 rounded-md transition-all duration-200',
+                viewMode === 'list'
+                  ? 'bg-primary text-primary-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-surface-light'
+              )}
+              title="Widok listy"
+            >
+              <List className="h-4 w-4" />
+            </button>
+          </div>
         </div>
       </div>
 
@@ -182,37 +212,6 @@ export default function ExercisesPage() {
           <div>
             <p className="text-2xl font-bold text-foreground">{totalCount}</p>
             <p className="text-xs text-muted-foreground">Ćwiczeń w bibliotece</p>
-          </div>
-        </div>
-
-        {/* View Toggle */}
-        <div className="rounded-2xl border border-border/40 bg-surface/50 p-3 flex items-center gap-2 sm:flex-col sm:justify-center">
-          <span className="text-xs text-muted-foreground sm:hidden">Widok:</span>
-          <div className="flex gap-1">
-            <button
-              onClick={() => setViewMode('grid')}
-              className={cn(
-                'p-2 rounded-lg transition-all',
-                viewMode === 'grid'
-                  ? 'bg-primary text-primary-foreground'
-                  : 'text-muted-foreground hover:bg-surface-light hover:text-foreground'
-              )}
-              title="Widok siatki"
-            >
-              <LayoutGrid className="h-4 w-4" />
-            </button>
-            <button
-              onClick={() => setViewMode('list')}
-              className={cn(
-                'p-2 rounded-lg transition-all',
-                viewMode === 'list'
-                  ? 'bg-primary text-primary-foreground'
-                  : 'text-muted-foreground hover:bg-surface-light hover:text-foreground'
-              )}
-              title="Widok listy"
-            >
-              <List className="h-4 w-4" />
-            </button>
           </div>
         </div>
       </div>

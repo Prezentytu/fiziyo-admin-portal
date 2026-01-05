@@ -32,7 +32,7 @@ export function ImportProgress({ className }: ImportProgressProps) {
     const interval = setInterval(() => {
       setProgress((prev) => {
         const next = prev + increment;
-        
+
         // Aktualizuj aktywny krok na podstawie progresu
         if (next < 33) {
           setCurrentStepIndex(0);
@@ -41,7 +41,7 @@ export function ImportProgress({ className }: ImportProgressProps) {
         } else {
           setCurrentStepIndex(2);
         }
-        
+
         // Zatrzymaj przed 100% (czekamy na rzeczywiste zakończenie)
         if (next >= 95) {
           return 95;

@@ -25,6 +25,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
+import { LimitReachedDialog } from "@/components/shared/LimitReachedDialog";
+import { useLimitError } from "@/hooks/useLimitError";
 import {
   Form,
   FormControl,
@@ -55,7 +57,7 @@ import type { GenerateInviteLinkResponse } from "@/types/apollo";
 
 const inviteFormSchema = z.object({
   email: z.string().email("Podaj prawidłowy adres email"),
-  role: z.enum(["admin", "member", "therapist"]),
+  role: z.enum(["admin", "therapist"]),
   message: z.string().optional(),
 });
 
@@ -93,6 +95,9 @@ export function InviteMemberDialog({
     null
   );
   const [linkRole, setLinkRole] = useState<string>("therapist");
+  
+  // Limit error handling
+  const { limitError, handleError: handleLimitError, clearError: clearLimitError } = useLimitError();
 
   const form = useForm<InviteFormValues>({
     resolver: zodResolver(inviteFormSchema),
@@ -153,6 +158,11 @@ export function InviteMemberDialog({
       onOpenChange(false);
       onSuccess?.();
     } catch (error: unknown) {
+      // Check if it's a limit error
+      if (handleLimitError(error)) {
+        return; // Dialog will show
+      }
+      
       const errorMessage =
         error instanceof Error ? error.message : "Nieznany błąd";
       console.error("Błąd podczas wysyłania zaproszenia:", error);
@@ -194,6 +204,11 @@ export function InviteMemberDialog({
         toast.success("Link został wygenerowany");
       }
     } catch (error: unknown) {
+      // Check if it's a limit error
+      if (handleLimitError(error)) {
+        return; // Dialog will show
+      }
+      
       const errorMessage =
         error instanceof Error ? error.message : "Nieznany błąd";
       console.error("Błąd podczas generowania linku:", error);
@@ -205,7 +220,6 @@ export function InviteMemberDialog({
     OWNER: "Właściciel",
     ADMIN: "Administrator",
     THERAPIST: "Fizjoterapeuta",
-    MEMBER: "Członek",
   };
 
   return (
@@ -284,7 +298,6 @@ export function InviteMemberDialog({
                             Fizjoterapeuta
                           </SelectItem>
                           <SelectItem value="admin">Administrator</SelectItem>
-                          <SelectItem value="member">Członek</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormDescription>
@@ -346,7 +359,6 @@ export function InviteMemberDialog({
                     <SelectContent>
                       <SelectItem value="therapist">Fizjoterapeuta</SelectItem>
                       <SelectItem value="admin">Administrator</SelectItem>
-                      <SelectItem value="member">Członek</SelectItem>
                     </SelectContent>
                   </Select>
                   <p className="text-xs text-muted-foreground">
@@ -412,6 +424,12 @@ export function InviteMemberDialog({
         cancelText="Kontynuuj edycję"
         variant="destructive"
         onConfirm={handleConfirmClose}
+      />
+      
+      <LimitReachedDialog
+        open={!!limitError}
+        onClose={clearLimitError}
+        limitInfo={limitError}
       />
     </Dialog>
   );

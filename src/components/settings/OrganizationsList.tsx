@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { Building2, Shield, ShieldCheck, User, Star, UserPlus, ArrowRight, Check, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { pl } from "date-fns/locale";
@@ -7,6 +8,7 @@ import { pl } from "date-fns/locale";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { JoinOrganizationDialog } from "@/components/settings/JoinOrganizationDialog";
 import { useOrganization } from "@/contexts/OrganizationContext";
 import { cn } from "@/lib/utils";
 
@@ -21,6 +23,7 @@ export interface UserOrganization {
 interface OrganizationsListProps {
   organizations: UserOrganization[];
   defaultOrganizationId?: string;
+  onOrganizationsChange?: () => void;
 }
 
 const roleLabels: Record<string, string> = {
@@ -42,19 +45,26 @@ const roleIcons: Record<string, React.ReactNode> = {
 export function OrganizationsList({
   organizations,
   defaultOrganizationId,
+  onOrganizationsChange,
 }: OrganizationsListProps) {
   const { currentOrganization, switchOrganization, isSwitching } = useOrganization();
+  const [showJoinDialog, setShowJoinDialog] = useState(false);
+
+  const handleJoinSuccess = () => {
+    onOrganizationsChange?.();
+  };
 
   if (organizations.length === 0) {
     return (
       <div className="space-y-4">
         {/* Hero Action - Join Organization */}
         <button
+          onClick={() => setShowJoinDialog(true)}
           className="group relative w-full overflow-hidden rounded-2xl bg-gradient-to-br from-primary via-primary to-primary-dark p-5 text-left transition-all duration-300 hover:shadow-xl hover:shadow-primary/20 hover:scale-[1.01] cursor-pointer"
         >
           <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
           <div className="absolute -top-24 -right-24 w-48 h-48 bg-white/10 rounded-full blur-3xl group-hover:bg-white/20 transition-all duration-500" />
-          
+
           <div className="relative flex items-center gap-4">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm shrink-0 group-hover:scale-110 transition-transform duration-300">
               <UserPlus className="h-5 w-5 text-white" />
@@ -77,6 +87,12 @@ export function OrganizationsList({
             </p>
           </CardContent>
         </Card>
+
+        <JoinOrganizationDialog
+          open={showJoinDialog}
+          onOpenChange={setShowJoinDialog}
+          onSuccess={handleJoinSuccess}
+        />
       </div>
     );
   }
@@ -87,11 +103,12 @@ export function OrganizationsList({
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-12">
         {/* Hero Action - Join Organization */}
         <button
+          onClick={() => setShowJoinDialog(true)}
           className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary via-primary to-primary-dark p-5 text-left transition-all duration-300 hover:shadow-xl hover:shadow-primary/20 hover:scale-[1.01] cursor-pointer lg:col-span-8"
         >
           <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
           <div className="absolute -top-24 -right-24 w-48 h-48 bg-white/10 rounded-full blur-3xl group-hover:bg-white/20 transition-all duration-500" />
-          
+
           <div className="relative flex items-center gap-4">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm shrink-0 group-hover:scale-110 transition-transform duration-300">
               <UserPlus className="h-5 w-5 text-white" />
@@ -134,8 +151,8 @@ export function OrganizationsList({
                   key={org.organizationId}
                   className={cn(
                     "flex items-center justify-between rounded-lg border bg-surface p-3 transition-all duration-200",
-                    isActive 
-                      ? "border-primary/50 bg-primary/5" 
+                    isActive
+                      ? "border-primary/50 bg-primary/5"
                       : "border-border/60 hover:bg-surface-light hover:border-border"
                   )}
                 >
@@ -206,14 +223,12 @@ export function OrganizationsList({
           </div>
         </CardContent>
       </Card>
+
+      <JoinOrganizationDialog
+        open={showJoinDialog}
+        onOpenChange={setShowJoinDialog}
+        onSuccess={handleJoinSuccess}
+      />
     </div>
   );
 }
-
-
-
-
-
-
-
-
