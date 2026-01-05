@@ -10,12 +10,10 @@ import {
   Settings,
   UserPlus,
   Plus,
-  Search,
   CreditCard,
   Mail,
 } from 'lucide-react';
 
-import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { LoadingState } from '@/components/shared/LoadingState';
 import { EmptyState } from '@/components/shared/EmptyState';
@@ -85,7 +83,6 @@ export default function OrganizationPage() {
   const { user } = useUser();
   const { currentOrganization } = useOrganization();
   const [activeTab, setActiveTab] = useState('team');
-  const [searchQuery, setSearchQuery] = useState('');
   const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
   const [isClinicDialogOpen, setIsClinicDialogOpen] = useState(false);
   const [isAssignToClinicDialogOpen, setIsAssignToClinicDialogOpen] = useState(false);
@@ -226,130 +223,121 @@ export default function OrganizationPage() {
 
   return (
     <div className="space-y-6">
-      {/* Compact Header with Search */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-2xl font-bold text-foreground">Organizacja</h1>
-        <div className="relative w-full sm:w-72">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Szukaj w organizacji..."
-            className="pl-9 bg-surface border-border/60"
-          />
-        </div>
-      </div>
-
-      {/* Hero Action + Quick Stats */}
-      <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-12">
-        {/* Hero Action - Zaproś do zespołu */}
-        {canEdit && (
-          <button
-            onClick={() => setIsInviteDialogOpen(true)}
-            className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary via-primary to-primary-dark p-5 text-left transition-all duration-300 hover:shadow-xl hover:shadow-primary/20 hover:scale-[1.02] cursor-pointer sm:col-span-1 lg:col-span-5"
-          >
-            <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-            <div className="absolute -top-24 -right-24 w-48 h-48 bg-white/10 rounded-full blur-3xl group-hover:bg-white/20 transition-all duration-500" />
-
-            <div className="relative flex items-center gap-4">
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm shrink-0 group-hover:scale-110 transition-transform duration-300">
-                <UserPlus className="h-5 w-5 text-white" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <h3 className="text-base font-bold text-white">Zaproś do zespołu</h3>
-                <p className="text-sm text-white/70">Dodaj fizjoterapeutę lub administratora</p>
-              </div>
-              <Plus className="h-5 w-5 text-white/60 group-hover:text-white transition-colors shrink-0" />
-            </div>
-          </button>
-        )}
-
-        {/* Quick Stats - klikalne, przełączają Tabs */}
-        <div className={cn(
-          "grid grid-cols-3 gap-3",
-          canEdit ? "sm:col-span-1 lg:col-span-7" : "sm:col-span-2 lg:col-span-12"
-        )}>
-          {/* Team count */}
-          <button
-            onClick={() => setActiveTab('team')}
-            className={cn(
-              'rounded-2xl border p-4 flex flex-col items-center justify-center text-center transition-all duration-200',
-              activeTab === 'team'
-                ? 'border-primary/40 bg-primary/10 ring-1 ring-primary/20'
-                : 'border-border/40 bg-surface/50 hover:bg-surface-light hover:border-border'
-            )}
-          >
-            <div className="flex items-center gap-2">
-              <Users className={cn('h-4 w-4', activeTab === 'team' ? 'text-primary' : 'text-muted-foreground')} />
-              <span className={cn('text-2xl font-bold', activeTab === 'team' ? 'text-primary' : 'text-foreground')}>
-                {teamCount}
-              </span>
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">Zespół</p>
-          </button>
-
-          {/* Clinics count */}
-          <button
-            onClick={() => setActiveTab('clinics')}
-            className={cn(
-              'rounded-2xl border p-4 flex flex-col items-center justify-center text-center transition-all duration-200',
-              activeTab === 'clinics'
-                ? 'border-secondary/40 bg-secondary/10 ring-1 ring-secondary/20'
-                : 'border-border/40 bg-surface/50 hover:bg-surface-light hover:border-border'
-            )}
-          >
-            <div className="flex items-center gap-2">
-              <MapPin className={cn('h-4 w-4', activeTab === 'clinics' ? 'text-secondary' : 'text-muted-foreground')} />
-              <span className={cn('text-2xl font-bold', activeTab === 'clinics' ? 'text-secondary' : 'text-foreground')}>
-                {clinicsCount}
-              </span>
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">Gabinety</p>
-          </button>
-
-          {/* Plan */}
-          <button
-            onClick={() => setActiveTab('settings')}
-            className={cn(
-              'rounded-2xl border p-4 flex flex-col items-center justify-center text-center transition-all duration-200',
-              activeTab === 'settings'
-                ? 'border-info/40 bg-info/10 ring-1 ring-info/20'
-                : 'border-border/40 bg-surface/50 hover:bg-surface-light hover:border-border'
-            )}
-          >
-            <div className="flex items-center gap-2">
-              <CreditCard className={cn('h-4 w-4', activeTab === 'settings' ? 'text-info' : 'text-muted-foreground')} />
-              <span className={cn('text-lg font-bold', activeTab === 'settings' ? 'text-info' : 'text-foreground')}>
-                {planName}
-              </span>
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">Plan</p>
-          </button>
-        </div>
-      </div>
-
-      {/* Tabs */}
+      {/* Tabs with inline header - jak w Ustawieniach */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList>
-          <TabsTrigger value="team" className="flex items-center gap-2">
-            <Users className="h-4 w-4" />
-            Zespół
-          </TabsTrigger>
-          {canEdit && (
-            <TabsTrigger value="invitations" className="flex items-center gap-2">
-              <Mail className="h-4 w-4" />
-              Zaproszenia
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <h1 className="text-2xl font-bold text-foreground">Organizacja</h1>
+          <TabsList className="h-9">
+            <TabsTrigger value="team" className="flex items-center gap-2 text-xs sm:text-sm">
+              <Users className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Zespół</span>
+              <span className="text-muted-foreground">({teamCount})</span>
             </TabsTrigger>
+            {canEdit && (
+              <TabsTrigger value="invitations" className="flex items-center gap-2 text-xs sm:text-sm">
+                <Mail className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Zaproszenia</span>
+              </TabsTrigger>
+            )}
+            <TabsTrigger value="clinics" className="flex items-center gap-2 text-xs sm:text-sm">
+              <MapPin className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Gabinety</span>
+              <span className="text-muted-foreground">({clinicsCount})</span>
+            </TabsTrigger>
+            <TabsTrigger value="settings" className="flex items-center gap-2 text-xs sm:text-sm">
+              <Settings className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Ustawienia</span>
+            </TabsTrigger>
+          </TabsList>
+        </div>
+
+        {/* Hero Action + Quick Stats */}
+        <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 mt-4">
+          {/* Hero Action - Zaproś do zespołu */}
+          {canEdit && (
+            <button
+              onClick={() => setIsInviteDialogOpen(true)}
+              className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary via-primary to-primary-dark p-5 text-left transition-all duration-300 hover:shadow-xl hover:shadow-primary/20 hover:scale-[1.02] cursor-pointer sm:col-span-1 lg:col-span-5"
+            >
+              <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              <div className="absolute -top-24 -right-24 w-48 h-48 bg-white/10 rounded-full blur-3xl group-hover:bg-white/20 transition-all duration-500" />
+
+              <div className="relative flex items-center gap-4">
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm shrink-0 group-hover:scale-110 transition-transform duration-300">
+                  <UserPlus className="h-5 w-5 text-white" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <h3 className="text-base font-bold text-white">Zaproś do zespołu</h3>
+                  <p className="text-sm text-white/70">Dodaj fizjoterapeutę lub administratora</p>
+                </div>
+                <Plus className="h-5 w-5 text-white/60 group-hover:text-white transition-colors shrink-0" />
+              </div>
+            </button>
           )}
-          <TabsTrigger value="clinics" className="flex items-center gap-2">
-            <MapPin className="h-4 w-4" />
-            Gabinety
-          </TabsTrigger>
-          <TabsTrigger value="settings" className="flex items-center gap-2">
-            <Settings className="h-4 w-4" />
-            Ustawienia
-          </TabsTrigger>
-        </TabsList>
+
+          {/* Quick Stats - klikalne, przełączają Tabs */}
+          <div className={cn(
+            "grid grid-cols-3 gap-3",
+            canEdit ? "sm:col-span-1 lg:col-span-7" : "sm:col-span-2 lg:col-span-12"
+          )}>
+            {/* Team count */}
+            <button
+              onClick={() => setActiveTab('team')}
+              className={cn(
+                'rounded-2xl border p-4 flex flex-col items-center justify-center text-center transition-all duration-200',
+                activeTab === 'team'
+                  ? 'border-primary/40 bg-primary/10 ring-1 ring-primary/20'
+                  : 'border-border/40 bg-surface/50 hover:bg-surface-light hover:border-border'
+              )}
+            >
+              <div className="flex items-center gap-2">
+                <Users className={cn('h-4 w-4', activeTab === 'team' ? 'text-primary' : 'text-muted-foreground')} />
+                <span className={cn('text-2xl font-bold', activeTab === 'team' ? 'text-primary' : 'text-foreground')}>
+                  {teamCount}
+                </span>
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">Zespół</p>
+            </button>
+
+            {/* Clinics count */}
+            <button
+              onClick={() => setActiveTab('clinics')}
+              className={cn(
+                'rounded-2xl border p-4 flex flex-col items-center justify-center text-center transition-all duration-200',
+                activeTab === 'clinics'
+                  ? 'border-secondary/40 bg-secondary/10 ring-1 ring-secondary/20'
+                  : 'border-border/40 bg-surface/50 hover:bg-surface-light hover:border-border'
+              )}
+            >
+              <div className="flex items-center gap-2">
+                <MapPin className={cn('h-4 w-4', activeTab === 'clinics' ? 'text-secondary' : 'text-muted-foreground')} />
+                <span className={cn('text-2xl font-bold', activeTab === 'clinics' ? 'text-secondary' : 'text-foreground')}>
+                  {clinicsCount}
+                </span>
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">Gabinety</p>
+            </button>
+
+            {/* Plan */}
+            <button
+              onClick={() => setActiveTab('settings')}
+              className={cn(
+                'rounded-2xl border p-4 flex flex-col items-center justify-center text-center transition-all duration-200',
+                activeTab === 'settings'
+                  ? 'border-info/40 bg-info/10 ring-1 ring-info/20'
+                  : 'border-border/40 bg-surface/50 hover:bg-surface-light hover:border-border'
+              )}
+            >
+              <div className="flex items-center gap-2">
+                <CreditCard className={cn('h-4 w-4', activeTab === 'settings' ? 'text-info' : 'text-muted-foreground')} />
+                <span className={cn('text-lg font-bold', activeTab === 'settings' ? 'text-info' : 'text-foreground')}>
+                  {planName}
+                </span>
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">Plan</p>
+            </button>
+          </div>
+        </div>
 
         {/* Team Tab */}
         <TabsContent value="team" className="mt-6">
