@@ -208,8 +208,8 @@ export default function SubscriptionPage() {
             )}
           >
             Rocznie
-            <Badge variant="secondary" className="bg-secondary/20 text-secondary text-[10px]">
-              -17%
+            <Badge className="bg-background text-primary border-0 text-[10px] font-bold px-1.5">
+              -15%
             </Badge>
           </button>
         </div>
@@ -311,17 +311,25 @@ export default function SubscriptionPage() {
                 </div>
 
                 {/* Price */}
-                <div className="mb-6">
+                <div className="mb-6 min-h-[72px]">
                   <div className="flex items-baseline gap-1">
                     <span className="text-4xl font-bold text-foreground">{monthlyEquivalent}</span>
                     <span className="text-lg text-muted-foreground">PLN/mies.</span>
                   </div>
-                  {billingPeriod === 'yearly' && plan.price > 0 && (
-                    <p className="text-sm text-muted-foreground mt-1">
-                      {yearlyTotal} PLN/rok · oszczędzasz {savings} PLN
+                  {plan.price === 0 ? (
+                    <p className="text-sm text-primary mt-1 font-medium">Bezpłatnie na zawsze</p>
+                  ) : billingPeriod === 'yearly' ? (
+                    <div className="mt-1 space-y-0.5">
+                      <p className="text-sm text-muted-foreground">{yearlyTotal} PLN/rok</p>
+                      <p className="text-sm font-medium text-primary">
+                        Oszczędzasz {savings} PLN rocznie
+                      </p>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground/70 mt-1">
+                      lub <span className="font-medium text-primary">{Math.round(plan.priceYearly / 12)} PLN/mies.</span> rocznie
                     </p>
                   )}
-                  {plan.price === 0 && <p className="text-sm text-primary mt-1 font-medium">Bezpłatnie na zawsze</p>}
                 </div>
 
                 {/* Key Limits */}

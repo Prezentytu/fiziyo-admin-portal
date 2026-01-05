@@ -171,7 +171,7 @@ export function WelcomeModal({
           {/* Decorative circles */}
           <div className="absolute -top-10 -right-10 w-40 h-40 bg-white/10 rounded-full blur-2xl" />
           <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-white/10 rounded-full blur-2xl" />
-          
+
           {/* Sparkles */}
           <Sparkles className="absolute top-4 left-6 h-6 w-6 text-white/40 animate-pulse" />
           <Sparkles className="absolute bottom-6 right-12 h-4 w-4 text-white/30 animate-pulse" style={{ animationDelay: "0.5s" }} />
@@ -215,7 +215,7 @@ export function WelcomeModal({
             <h1 className="text-2xl font-bold text-foreground mb-1">
               Witaj w {organizationName}!
             </h1>
-            
+
             <div className="flex items-center justify-center gap-2 mb-4">
               <span className="text-muted-foreground">Dołączyłeś jako</span>
               <Badge variant="outline" className="text-primary border-primary/30">
@@ -298,4 +298,3 @@ export function WelcomeModal({
     </div>
   );
 }
-
