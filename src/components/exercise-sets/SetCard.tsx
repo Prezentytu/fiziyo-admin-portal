@@ -25,6 +25,7 @@ export interface ExerciseSet {
   description?: string;
   isActive?: boolean;
   isTemplate?: boolean;
+  creationTime?: string;
   exerciseMappings?: ExerciseMapping[];
   patientAssignments?: { id: string }[];
 }

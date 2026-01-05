@@ -35,6 +35,7 @@ export interface Exercise {
   mainTags?: string[] | ExerciseTag[];
   additionalTags?: string[] | ExerciseTag[];
   isActive?: boolean;
+  creationTime?: string;
 }
 
 interface ExerciseCardProps {
@@ -66,7 +67,7 @@ function isTagObject(tag: string | ExerciseTag): tag is ExerciseTag {
 
 function renderTags(tags: (string | ExerciseTag)[] | undefined, limit: number = 3) {
   if (!tags || tags.length === 0) return null;
-  
+
   const visibleTags = tags.slice(0, limit);
   const remainingCount = tags.length - limit;
 
@@ -106,8 +107,8 @@ export function ExerciseCard({
 }: ExerciseCardProps) {
   const rawImageUrl = exercise.imageUrl || exercise.images?.[0];
   const imageUrl = getMediaUrl(rawImageUrl);
-  const hasParams = (exercise.sets && exercise.sets > 0) || 
-                    (exercise.reps && exercise.reps > 0) || 
+  const hasParams = (exercise.sets && exercise.sets > 0) ||
+                    (exercise.reps && exercise.reps > 0) ||
                     (exercise.duration && exercise.duration > 0);
 
   // Compact list view
@@ -236,7 +237,7 @@ export function ExerciseCard({
         ) : (
           <ImagePlaceholder type="exercise" className="aspect-[16/10]" iconClassName="h-12 w-12" />
         )}
-        
+
         {/* Tags overlay on image */}
         {(exercise.mainTags?.length || 0) > 0 && (
           <div className="absolute bottom-3 left-3 right-12">
@@ -257,9 +258,9 @@ export function ExerciseCard({
         <div className="absolute top-3 right-3">
           <DropdownMenu>
             <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-              <Button 
-                variant="ghost" 
-                size="icon" 
+              <Button
+                variant="ghost"
+                size="icon"
                 className="h-8 w-8 bg-black/40 hover:bg-black/60 text-white backdrop-blur-sm"
               >
                 <MoreVertical className="h-4 w-4" />

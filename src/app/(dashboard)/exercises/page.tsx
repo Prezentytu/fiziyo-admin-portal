@@ -89,10 +89,17 @@ export default function ExercisesPage() {
   const totalCount = exercises.length;
 
   // Filter exercises
-  const filteredExercises = exercises.filter(
+  const searchFilteredExercises = exercises.filter(
     (exercise) =>
       matchesSearchQuery(exercise.name, searchQuery) || matchesSearchQuery(exercise.description, searchQuery)
   );
+
+  // Sort by creation date (newest first)
+  const filteredExercises = [...searchFilteredExercises].sort((a, b) => {
+    const aTime = a.creationTime ? new Date(a.creationTime).getTime() : 0;
+    const bTime = b.creationTime ? new Date(b.creationTime).getTime() : 0;
+    return bTime - aTime;
+  });
 
   const handleView = (exercise: Exercise) => {
     router.push(`/exercises/${exercise.id}`);
