@@ -11,3 +11,4 @@ export { TagDialog } from "./TagDialog";
 export { AIExerciseSuggestions } from "./AIExerciseSuggestions";
 export { QuickTemplates, QUICK_TEMPLATES } from "./QuickTemplates";
 export { ExerciseVoiceInput } from "./ExerciseVoiceInput";
+export { AddExerciseToSetsDialog } from "./AddExerciseToSetsDialog";
