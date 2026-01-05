@@ -1,4 +1,12 @@
-// Header & Stats
+// New dashboard sections (2025 redesign)
+export { OrganizationHero } from "./OrganizationHero";
+export { QuickLinksSection } from "./QuickLinksSection";
+export { TeamSection } from "./TeamSection";
+export { ClinicsSection } from "./ClinicsSection";
+export type { Clinic } from "./ClinicsSection";
+export { SettingsSection } from "./SettingsSection";
+
+// Header & Stats (legacy)
 export { OrganizationHeader } from "./OrganizationHeader";
 export { OrganizationQuickStats } from "./OrganizationQuickStats";
 
@@ -12,10 +20,9 @@ export type { RoleFilter } from "./MemberFilters";
 // Invitations
 export { InvitationsTab } from "./InvitationsTab";
 
-// Clinics
+// Clinics (legacy)
 export { ClinicsTab } from "./ClinicsTab";
 export { ClinicExpandableCard } from "./ClinicExpandableCard";
-export type { Clinic } from "./ClinicExpandableCard";
 export { AssignToClinicDialog } from "./AssignToClinicDialog";
 
 // Settings

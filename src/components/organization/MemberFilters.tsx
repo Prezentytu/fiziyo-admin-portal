@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
-export type RoleFilter = "all" | "owner" | "admin" | "member" | "therapist";
+// Note: "patient" role is excluded - patients have their own page at /patients
+export type RoleFilter = "all" | "admin" | "therapist";
 
 interface MemberFiltersProps {
   searchQuery: string;
@@ -19,10 +20,8 @@ interface MemberFiltersProps {
 
 const roleFilterOptions: { value: RoleFilter; label: string }[] = [
   { value: "all", label: "Wszyscy" },
-  { value: "owner", label: "Właściciele" },
   { value: "admin", label: "Administratorzy" },
   { value: "therapist", label: "Fizjoterapeuci" },
-  { value: "member", label: "Członkowie" },
 ];
 
 export function MemberFilters({

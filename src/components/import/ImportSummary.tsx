@@ -125,9 +125,9 @@ export function ImportSummary({
               )}
 
               {/* Gdy nic nie zaimportowano */}
-              {result.exercisesCreated === 0 && 
-               result.exercisesReused === 0 && 
-               result.exerciseSetsCreated === 0 && 
+              {result.exercisesCreated === 0 &&
+               result.exercisesReused === 0 &&
+               result.exerciseSetsCreated === 0 &&
                result.clinicalNotesCreated === 0 && (
                 <li className="text-muted-foreground text-center py-4">
                   Nie zaimportowano żadnych danych
@@ -195,9 +195,9 @@ export function ImportSummary({
           </Link>
         )}
 
-        <Button 
-          variant="ghost" 
-          onClick={onReset} 
+        <Button
+          variant="ghost"
+          onClick={onReset}
           className="gap-2 text-muted-foreground hover:text-foreground"
         >
           <RotateCcw className="h-4 w-4" />
