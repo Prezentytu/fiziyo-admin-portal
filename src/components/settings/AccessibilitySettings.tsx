@@ -1,6 +1,5 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import {
   Sun,
   Moon,
@@ -16,122 +15,24 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { Slider } from '@/components/ui/slider';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
-
-// Typy ustawień
-type Theme = 'dark' | 'light' | 'system';
-type FontSize = 'small' | 'normal' | 'large' | 'xlarge';
-
-interface AccessibilityPreferences {
-  theme: Theme;
-  fontSize: FontSize;
-  highContrast: boolean;
-  reducedMotion: boolean;
-}
-
-const DEFAULT_PREFERENCES: AccessibilityPreferences = {
-  theme: 'dark',
-  fontSize: 'normal',
-  highContrast: false,
-  reducedMotion: false,
-};
-
-const FONT_SIZE_VALUES: Record<FontSize, { label: string; scale: number; css: string }> = {
-  small: { label: 'Mały', scale: 0.875, css: '14px' },
-  normal: { label: 'Normalny', scale: 1, css: '16px' },
-  large: { label: 'Duży', scale: 1.125, css: '18px' },
-  xlarge: { label: 'Bardzo duży', scale: 1.25, css: '20px' },
-};
-
-const STORAGE_KEY = 'fiziyo-accessibility';
+import {
+  useAccessibility,
+  FONT_SIZE_VALUES,
+  type FontSize,
+} from '@/contexts/AccessibilityContext';
 
 export function AccessibilitySettings() {
-  const [preferences, setPreferences] = useState<AccessibilityPreferences>(DEFAULT_PREFERENCES);
-  const [isLoading, setIsLoading] = useState(true);
+  const { preferences, updatePreference, resetToDefaults, isHydrated } = useAccessibility();
 
-  // Wczytanie preferencji z localStorage
-  useEffect(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved) as AccessibilityPreferences;
-        setPreferences(parsed);
-        applyPreferences(parsed);
-      } catch {
-        // Ignore invalid JSON
-      }
-    }
-    setIsLoading(false);
-  }, []);
-
-  // Zastosowanie preferencji do dokumentu
-  const applyPreferences = (prefs: AccessibilityPreferences) => {
-    const root = document.documentElement;
-
-    // Rozmiar czcionki
-    const fontSize = FONT_SIZE_VALUES[prefs.fontSize];
-    root.style.setProperty('--base-font-size', fontSize.css);
-    root.style.fontSize = fontSize.css;
-
-    // Wysoki kontrast
-    if (prefs.highContrast) {
-      root.classList.add('high-contrast');
-    } else {
-      root.classList.remove('high-contrast');
-    }
-
-    // Reduced motion
-    if (prefs.reducedMotion) {
-      root.classList.add('reduced-motion');
-    } else {
-      root.classList.remove('reduced-motion');
-    }
-
-    // Motyw (dark/light/system)
-    if (prefs.theme === 'light') {
-      root.classList.add('light-theme');
-      root.classList.remove('dark-theme');
-    } else if (prefs.theme === 'dark') {
-      root.classList.remove('light-theme');
-      root.classList.add('dark-theme');
-    } else {
-      // System preference
-      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      if (prefersDark) {
-        root.classList.add('dark-theme');
-        root.classList.remove('light-theme');
-      } else {
-        root.classList.add('light-theme');
-        root.classList.remove('dark-theme');
-      }
-    }
-  };
-
-  // Zapisanie preferencji
-  const savePreferences = (newPrefs: AccessibilityPreferences) => {
-    setPreferences(newPrefs);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(newPrefs));
-    applyPreferences(newPrefs);
-  };
-
-  // Aktualizacja pojedynczej preferencji
-  const updatePreference = <K extends keyof AccessibilityPreferences>(
-    key: K,
-    value: AccessibilityPreferences[K]
-  ) => {
-    const newPrefs = { ...preferences, [key]: value };
-    savePreferences(newPrefs);
-  };
-
-  // Reset do domyślnych
-  const resetToDefaults = () => {
-    savePreferences(DEFAULT_PREFERENCES);
+  // Reset z toastem
+  const handleResetToDefaults = () => {
+    resetToDefaults();
     toast.success('Przywrócono domyślne ustawienia');
   };
 
-  if (isLoading) {
+  if (!isHydrated) {
     return (
       <Card className="border-border/60">
         <CardContent className="p-6">
@@ -352,7 +253,7 @@ export function AccessibilitySettings() {
       <div className="flex justify-end">
         <Button
           variant="outline"
-          onClick={resetToDefaults}
+          onClick={handleResetToDefaults}
           className="gap-2"
         >
           <RotateCcw className="h-4 w-4" />
@@ -362,7 +263,3 @@ export function AccessibilitySettings() {
     </div>
   );
 }
-
-
-
-
