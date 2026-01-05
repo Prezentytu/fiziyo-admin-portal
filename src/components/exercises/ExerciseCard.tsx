@@ -1,6 +1,7 @@
 "use client";
 
-import { Dumbbell, Clock, Repeat, MoreVertical, Pencil, Trash2, FolderPlus, Eye } from "lucide-react";
+import { useState } from "react";
+import { Dumbbell, Clock, Repeat, MoreVertical, Pencil, Trash2, FolderPlus, Eye, ZoomIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -13,6 +14,7 @@ import {
 import { cn } from "@/lib/utils";
 import { ColorBadge } from "@/components/shared/ColorBadge";
 import { ImagePlaceholder } from "@/components/shared/ImagePlaceholder";
+import { ImageLightbox } from "@/components/shared/ImageLightbox";
 import { getMediaUrl } from "@/utils/mediaUrl";
 
 export interface ExerciseTag {
@@ -105,8 +107,20 @@ export function ExerciseCard({
   className,
   compact = false,
 }: ExerciseCardProps) {
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+
   const rawImageUrl = exercise.imageUrl || exercise.images?.[0];
   const imageUrl = getMediaUrl(rawImageUrl);
+
+  // Collect all images for gallery
+  const allImages = [
+    exercise.imageUrl,
+    ...(exercise.images || []),
+  ]
+    .filter((img): img is string => !!img)
+    .map((img) => getMediaUrl(img))
+    .filter((img): img is string => !!img);
+
   const hasParams = (exercise.sets && exercise.sets > 0) ||
                     (exercise.reps && exercise.reps > 0) ||
                     (exercise.duration && exercise.duration > 0);
@@ -213,6 +227,7 @@ export function ExerciseCard({
 
   // Grid card view - new design with large image
   return (
+    <>
     <div
       className={cn(
         "group relative flex flex-col rounded-xl border border-border/60 bg-surface overflow-hidden",
@@ -230,9 +245,31 @@ export function ExerciseCard({
               src={imageUrl}
               alt={exercise.name}
               loading="lazy"
-              className="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03]"
+              className="h-full w-full object-contain transition-transform duration-500 ease-out group-hover:scale-[1.03]"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-transparent opacity-60 group-hover:opacity-40 transition-opacity duration-300" />
+
+            {/* Zoom button */}
+            <button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setLightboxOpen(true);
+              }}
+              onMouseDown={(e) => e.stopPropagation()}
+              onPointerDown={(e) => e.stopPropagation()}
+              className={cn(
+                "absolute bottom-3 right-3 z-10",
+                "flex h-8 w-8 items-center justify-center rounded-full",
+                "bg-black/50 text-white/80 backdrop-blur-sm",
+                "opacity-0 group-hover:opacity-100 transition-all duration-200",
+                "hover:bg-black/70 hover:text-white hover:scale-110"
+              )}
+              aria-label="Powiększ zdjęcie"
+            >
+              <ZoomIn className="h-4 w-4" />
+            </button>
           </>
         ) : (
           <ImagePlaceholder type="exercise" className="aspect-[16/10]" iconClassName="h-12 w-12" />
@@ -339,5 +376,17 @@ export function ExerciseCard({
         )}
       </div>
     </div>
+
+    {/* Image Lightbox - outside card to prevent click propagation */}
+    {imageUrl && (
+      <ImageLightbox
+        src={imageUrl}
+        alt={exercise.name}
+        open={lightboxOpen}
+        onOpenChange={setLightboxOpen}
+        images={allImages.length > 1 ? allImages : undefined}
+      />
+    )}
+  </>
   );
 }

@@ -2023,7 +2023,7 @@ export function CreateSetWizard({
                   <img
                     src={getMediaUrl(previewExercise.imageUrl || previewExercise.images?.[0]) || ''}
                     alt={previewExercise.name}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-contain"
                   />
                 </div>
               )}
