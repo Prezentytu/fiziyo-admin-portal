@@ -249,7 +249,7 @@ export default function ExercisesPage() {
             : 'space-y-2',
           'animate-stagger'
         )}>
-          <LoadingState type={viewMode === 'grid' ? 'card' : 'row'} count={6} />
+          <LoadingState type={viewMode === 'grid' ? 'exercise' : 'exercise-row'} count={8} />
         </div>
       ) : filteredExercises.length === 0 ? (
         <Card className="border-dashed border-border/60">
