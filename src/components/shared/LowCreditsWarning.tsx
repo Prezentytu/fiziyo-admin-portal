@@ -29,7 +29,7 @@ export function LowCreditsWarning({ threshold = 10, className }: LowCreditsWarni
   const organizationId = currentOrganization?.organizationId;
   const [dismissed, setDismissed] = useState(false);
 
-  const { data, error } = useQuery<{ aICreditsStatus: AICreditsStatus }>(GET_AI_CREDITS_STATUS, {
+  const { data, error } = useQuery<{ aiCreditsStatus: AICreditsStatus }>(GET_AI_CREDITS_STATUS, {
     variables: { organizationId: organizationId || "" },
     skip: !organizationId,
     pollInterval: 60000,
@@ -38,7 +38,7 @@ export function LowCreditsWarning({ threshold = 10, className }: LowCreditsWarni
 
   if (dismissed || error) return null;
 
-  const credits = data?.aICreditsStatus;
+  const credits = data?.aiCreditsStatus;
   if (!credits || credits.totalRemaining >= threshold) return null;
 
   const isZero = credits.totalRemaining === 0;
@@ -77,7 +77,7 @@ export function LowCreditsWarning({ threshold = 10, className }: LowCreditsWarni
 
       <div className="flex items-center gap-2 shrink-0">
         <Button asChild size="sm" variant={isZero ? "destructive" : "default"}>
-          <Link href="/settings?tab=credits">
+          <Link href="/billing">
             <Zap className="h-4 w-4 mr-1" />
             Doładuj
           </Link>

@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useQuery, useMutation } from "@apollo/client/react";
 import {
   Users,
@@ -7,11 +8,11 @@ import {
   Building2,
   Plus,
   Minus,
-  AlertCircle,
   TrendingUp,
+  Loader2,
+  ChevronRight,
 } from "lucide-react";
 import { useOrganization } from "@/contexts/OrganizationContext";
-import { useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -56,52 +57,52 @@ interface AddonPricing {
 
 interface AddonConfig {
   type: "patients" | "therapists" | "clinics";
-  icon: React.ReactNode;
+  icon: React.ElementType;
   label: string;
   unit: string;
-  unitAmount: number;
   priceKey: keyof AddonPricing;
   currentKey: keyof ResourceAddonsStatus;
   effectiveKey: keyof ResourceAddonsStatus;
 }
 
+interface ResourceAddonsPanelProps {
+  compact?: boolean;
+}
+
 const addonConfigs: AddonConfig[] = [
   {
     type: "patients",
-    icon: <Users className="h-5 w-5" />,
+    icon: Users,
     label: "Pacjenci",
-    unit: "+10 pacjentów",
-    unitAmount: 10,
+    unit: "+10",
     priceKey: "patients10",
     currentKey: "additionalPatients",
     effectiveKey: "effectiveMaxPatients",
   },
   {
     type: "therapists",
-    icon: <UserPlus className="h-5 w-5" />,
+    icon: UserPlus,
     label: "Terapeuci",
-    unit: "+1 terapeuta",
-    unitAmount: 1,
+    unit: "+1",
     priceKey: "therapist1",
     currentKey: "additionalTherapists",
     effectiveKey: "effectiveMaxTherapists",
   },
   {
     type: "clinics",
-    icon: <Building2 className="h-5 w-5" />,
+    icon: Building2,
     label: "Gabinety",
-    unit: "+1 gabinet",
-    unitAmount: 1,
+    unit: "+1",
     priceKey: "clinic1",
     currentKey: "additionalClinics",
     effectiveKey: "effectiveMaxClinics",
   },
 ];
 
-export function ResourceAddonsPanel() {
+export function ResourceAddonsPanel({ compact = false }: ResourceAddonsPanelProps) {
   const { currentOrganization } = useOrganization();
   const organizationId = currentOrganization?.organizationId;
-  const [cancelDialog, setCancelDialog] = useState<{ open: boolean; type: string } | null>(null);
+  const [cancelDialog, setCancelDialog] = useState<{ open: boolean; type: string; label: string } | null>(null);
 
   const { data: statusData, loading: statusLoading, refetch, error: statusError } = useQuery<{
     resourceAddonsStatus: ResourceAddonsStatus;
@@ -111,13 +112,25 @@ export function ResourceAddonsPanel() {
     errorPolicy: "ignore",
   });
 
-  const { data: pricingData, error: pricingError } = useQuery<{
-    addonPricing: AddonPricing;
-  }>(GET_ADDON_PRICING, {
+  const { data: pricingData } = useQuery<{ addonPricing: AddonPricing }>(GET_ADDON_PRICING, {
     errorPolicy: "ignore",
   });
 
-  const [purchaseAddon, { loading: purchasing }] = useMutation(PURCHASE_RESOURCE_ADDON, {
+  interface PurchaseAddonResponse {
+    purchaseResourceAddon: {
+      success: boolean;
+      message: string;
+    };
+  }
+
+  interface CancelAddonResponse {
+    cancelResourceAddon: {
+      success: boolean;
+      message: string;
+    };
+  }
+
+  const [purchaseAddon, { loading: purchasing }] = useMutation<PurchaseAddonResponse>(PURCHASE_RESOURCE_ADDON, {
     onCompleted: (data) => {
       if (data.purchaseResourceAddon.success) {
         toast.success(data.purchaseResourceAddon.message);
@@ -126,12 +139,10 @@ export function ResourceAddonsPanel() {
         toast.error(data.purchaseResourceAddon.message);
       }
     },
-    onError: (error) => {
-      toast.error(`Błąd: ${error.message}`);
-    },
+    onError: (error) => toast.error(`Błąd: ${error.message}`),
   });
 
-  const [cancelAddon, { loading: cancelling }] = useMutation(CANCEL_RESOURCE_ADDON, {
+  const [cancelAddon, { loading: cancelling }] = useMutation<CancelAddonResponse>(CANCEL_RESOURCE_ADDON, {
     onCompleted: (data) => {
       if (data.cancelResourceAddon.success) {
         toast.success(data.cancelResourceAddon.message);
@@ -149,215 +160,291 @@ export function ResourceAddonsPanel() {
 
   const handlePurchase = (addonType: string) => {
     if (!organizationId) return;
-    purchaseAddon({
-      variables: {
-        organizationId,
-        addonType,
-        quantity: 1,
-      },
-    });
+    purchaseAddon({ variables: { organizationId, addonType, quantity: 1 } });
   };
 
   const handleCancel = (addonType: string) => {
     if (!organizationId) return;
-    cancelAddon({
-      variables: {
-        organizationId,
-        addonType,
-      },
-    });
+    cancelAddon({ variables: { organizationId, addonType } });
   };
 
-  // Jeśli backend nie ma jeszcze tych endpointów
-  if (statusError || pricingError) {
+  const fallbackPricing: AddonPricing = { patients10: 25, therapist1: 35, clinic1: 29 };
+  const pricing = pricingData?.addonPricing || fallbackPricing;
+
+  // Error/Loading states
+  if (statusError) {
     return (
-      <div className="space-y-6">
-        <Card className="border-border/60">
-          <CardContent className="p-6 text-center">
-            <TrendingUp className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
-            <p className="text-muted-foreground">
-              System dodatkowych zasobów będzie dostępny wkrótce.
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+      <Card className="border-border/40 bg-surface/50 backdrop-blur-sm overflow-hidden">
+        <CardContent className="p-4 text-center text-sm text-muted-foreground">
+          Rozszerzenia wkrótce dostępne
+        </CardContent>
+      </Card>
     );
   }
 
   if (statusLoading) {
     return (
-      <div className="space-y-4">
-        <Skeleton className="h-48 w-full" />
-      </div>
+      <Card className="border-border/40 bg-surface/50 backdrop-blur-sm overflow-hidden">
+        <CardContent className="p-4">
+          <Skeleton className="h-20 w-full" />
+        </CardContent>
+      </Card>
     );
   }
 
   const status = statusData?.resourceAddonsStatus;
-  const pricing = pricingData?.addonPricing;
+  if (!status) return null;
 
-  if (!status || !pricing) return null;
+  const hasAnyAddons = status.additionalPatients > 0 || status.additionalTherapists > 0 || status.additionalClinics > 0;
 
-  const hasAnyAddons =
-    status.additionalPatients > 0 ||
-    status.additionalTherapists > 0 ||
-    status.additionalClinics > 0;
-
-  return (
-    <div className="space-y-6">
-      {/* Summary Card */}
-      {hasAnyAddons && (
-        <Card className="border-primary/30 bg-primary/5">
-          <CardContent className="py-4">
+  // Compact mode - Dashboard style list with readable fonts
+  if (compact) {
+    return (
+      <>
+        <Card className="border-border/40 bg-surface/50 backdrop-blur-sm overflow-hidden">
+          <CardHeader className="pb-4">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-                  <TrendingUp className="h-5 w-5 text-primary" />
+              <CardTitle className="flex items-center gap-4 text-lg font-semibold">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 shadow-lg">
+                  <TrendingUp className="h-6 w-6 text-white" />
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-foreground">Aktywne rozszerzenia</p>
-                  <p className="text-xs text-muted-foreground">
-                    Dodatkowy koszt: {status.monthlyAddonsCost.toFixed(0)} zł/mies.
-                  </p>
+                  <span>Rozszerzenia zasobów</span>
+                  {hasAnyAddons && (
+                    <p className="text-sm text-cyan-500 font-normal">
+                      +{status.monthlyAddonsCost.toFixed(0)} zł/miesiąc
+                    </p>
+                  )}
                 </div>
-              </div>
-              <div className="flex gap-2">
-                {status.additionalPatients > 0 && (
-                  <Badge variant="secondary">+{status.additionalPatients} pacjentów</Badge>
-                )}
-                {status.additionalTherapists > 0 && (
-                  <Badge variant="secondary">+{status.additionalTherapists} terapeutów</Badge>
-                )}
-                {status.additionalClinics > 0 && (
-                  <Badge variant="secondary">+{status.additionalClinics} gabinetów</Badge>
-                )}
-              </div>
+              </CardTitle>
             </div>
-          </CardContent>
-        </Card>
-      )}
+          </CardHeader>
 
-      {/* Addons Grid */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-base">
-            <Plus className="h-5 w-5 text-primary" />
-            Rozszerz limity
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-4 sm:grid-cols-3">
+          <CardContent className="pt-0 space-y-2">
             {addonConfigs.map((config) => {
               const currentAmount = status[config.currentKey] as number;
               const effectiveLimit = status[config.effectiveKey] as number;
               const price = pricing[config.priceKey];
               const hasAddon = currentAmount > 0;
+              const Icon = config.icon;
 
               return (
-                <div
+                <button
                   key={config.type}
+                  type="button"
+                  onClick={() => handlePurchase(config.type)}
+                  disabled={purchasing}
                   className={cn(
-                    "rounded-xl border p-4 transition-all",
-                    hasAddon ? "border-primary/50 bg-primary/5" : "border-border/60"
+                    "group flex items-center gap-4 py-4 px-5 rounded-xl w-full text-left",
+                    "transition-all duration-300 cursor-pointer",
+                    "hover:bg-surface-light hover:shadow-lg hover:-translate-y-0.5",
+                    "disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0",
+                    hasAddon && "bg-cyan-500/5 border border-cyan-500/30"
                   )}
                 >
-                  <div className="flex items-center gap-3 mb-3">
-                    <div
-                      className={cn(
-                        "flex h-10 w-10 items-center justify-center rounded-lg",
-                        hasAddon ? "bg-primary/20 text-primary" : "bg-surface-light text-muted-foreground"
-                      )}
-                    >
-                      {config.icon}
-                    </div>
-                    <div>
-                      <p className="font-medium text-foreground">{config.label}</p>
-                      <p className="text-xs text-muted-foreground">
-                        Limit: {effectiveLimit}
-                      </p>
-                    </div>
+                  {/* Icon with animation */}
+                  <div className={cn(
+                    "flex h-11 w-11 items-center justify-center rounded-xl shrink-0",
+                    "transition-transform duration-300 group-hover:scale-110",
+                    hasAddon ? "bg-gradient-to-br from-cyan-500 to-blue-600 shadow-lg shadow-cyan-500/25" : "bg-surface-light"
+                  )}>
+                    <Icon className={cn("h-5 w-5", hasAddon ? "text-white" : "text-muted-foreground")} />
                   </div>
 
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">{config.unit}</span>
-                      <span className="font-semibold text-primary">{price} zł/mies.</span>
-                    </div>
-
-                    {hasAddon ? (
-                      <div className="flex items-center gap-2">
-                        <Badge className="flex-1 justify-center">
-                          +{currentAmount} aktywne
+                  {/* Content */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-3">
+                      <span className="text-base font-medium text-foreground">{config.label}</span>
+                      {hasAddon && (
+                        <Badge className="bg-cyan-500/20 text-cyan-500 border-0">
+                          +{currentAmount}
                         </Badge>
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          className="h-8 w-8"
-                          onClick={() => handlePurchase(config.type)}
-                          disabled={purchasing}
-                        >
-                          <Plus className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          className="h-8 w-8 text-destructive hover:text-destructive"
-                          onClick={() => setCancelDialog({ open: true, type: config.type })}
-                        >
-                          <Minus className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    ) : (
+                      )}
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      Limit: {effectiveLimit} • {config.unit} za {price} zł/mies.
+                    </p>
+                  </div>
+
+                  {/* Actions - visible on hover or when addon exists */}
+                  <div className={cn(
+                    "flex items-center gap-2 transition-opacity duration-300",
+                    hasAddon ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+                  )}>
+                    {hasAddon && (
                       <Button
-                        variant="outline"
-                        size="sm"
-                        className="w-full"
-                        onClick={() => handlePurchase(config.type)}
-                        disabled={purchasing}
+                        variant="ghost"
+                        size="icon"
+                        className="h-9 w-9 text-destructive hover:bg-destructive/10"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setCancelDialog({ open: true, type: config.type, label: config.label });
+                        }}
                       >
-                        <Plus className="h-4 w-4 mr-1" />
-                        Dodaj
+                        <Minus className="h-4 w-4" />
                       </Button>
                     )}
+                    <div className={cn(
+                      "flex h-9 w-9 items-center justify-center rounded-lg",
+                      "bg-cyan-500/20 text-cyan-500"
+                    )}>
+                      {purchasing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+                    </div>
                   </div>
-                </div>
+
+                  {/* Chevron with animation */}
+                  <ChevronRight className="h-4 w-4 text-muted-foreground/30 group-hover:text-cyan-500 group-hover:translate-x-1 transition-all duration-300 shrink-0" />
+                </button>
               );
             })}
-          </div>
+          </CardContent>
+        </Card>
 
-          {/* Info */}
-          <div className="mt-4 flex items-start gap-2 rounded-lg bg-surface-light p-3 text-xs text-muted-foreground">
-            <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
-            <div>
-              <p>
-                Rozszerzenia są doliczane do miesięcznej subskrypcji. Przy upgrade planu -
-                addony są automatycznie dostosowane.
-              </p>
+        {/* Cancel Dialog */}
+        <AlertDialog open={cancelDialog?.open} onOpenChange={(open) => !open && setCancelDialog(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle className="text-xl">Anulować rozszerzenie?</AlertDialogTitle>
+              <AlertDialogDescription className="text-base">
+                Rozszerzenie <strong>{cancelDialog?.label}</strong> zostanie anulowane na koniec okresu rozliczeniowego.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Nie</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => cancelDialog && handleCancel(cancelDialog.type)}
+                disabled={cancelling}
+                className="bg-destructive hover:bg-destructive/90"
+              >
+                {cancelling && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                Potwierdź anulowanie
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </>
+    );
+  }
+
+  // Full mode - for settings page
+  return (
+    <div className="space-y-4">
+      {hasAnyAddons && (
+        <div className="rounded-xl border border-cyan-500/30 bg-cyan-500/5 p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <TrendingUp className="h-5 w-5 text-cyan-500" />
+              <div>
+                <p className="font-medium">Aktywne rozszerzenia</p>
+                <div className="flex gap-2 mt-1">
+                  {status.additionalPatients > 0 && (
+                    <Badge className="bg-cyan-500/20 text-cyan-500 border-0 text-xs">
+                      +{status.additionalPatients} pacjentów
+                    </Badge>
+                  )}
+                  {status.additionalTherapists > 0 && (
+                    <Badge className="bg-cyan-500/20 text-cyan-500 border-0 text-xs">
+                      +{status.additionalTherapists} terapeutów
+                    </Badge>
+                  )}
+                  {status.additionalClinics > 0 && (
+                    <Badge className="bg-cyan-500/20 text-cyan-500 border-0 text-xs">
+                      +{status.additionalClinics} gabinetów
+                    </Badge>
+                  )}
+                </div>
+              </div>
             </div>
+            <p className="text-xl font-bold text-cyan-500">+{status.monthlyAddonsCost.toFixed(0)} zł/m</p>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      )}
 
-      {/* Cancel Dialog */}
-      <AlertDialog
-        open={cancelDialog?.open}
-        onOpenChange={(open) => !open && setCancelDialog(null)}
-      >
+      <div className="grid gap-3 sm:grid-cols-3">
+        {addonConfigs.map((config) => {
+          const currentAmount = status[config.currentKey] as number;
+          const effectiveLimit = status[config.effectiveKey] as number;
+          const price = pricing[config.priceKey];
+          const hasAddon = currentAmount > 0;
+          const Icon = config.icon;
+
+          return (
+            <div
+              key={config.type}
+              className={cn(
+                "rounded-xl border p-4 transition-all",
+                hasAddon ? "border-cyan-500/50 bg-cyan-500/5" : "border-border/60 hover:border-cyan-500/30"
+              )}
+            >
+              <div className="flex items-center gap-3 mb-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600">
+                  <Icon className="h-5 w-5 text-white" />
+                </div>
+                <div>
+                  <p className="font-medium">{config.label}</p>
+                  <p className="text-xs text-muted-foreground">Limit: {effectiveLimit}</p>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-sm text-muted-foreground">{config.unit}</span>
+                <span className="font-bold">{price} zł/m</span>
+              </div>
+
+              {hasAddon ? (
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1"
+                    onClick={() => handlePurchase(config.type)}
+                    disabled={purchasing}
+                  >
+                    <Plus className="h-3 w-3 mr-1" />
+                    Więcej
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-8 w-8 text-destructive"
+                    onClick={() => setCancelDialog({ open: true, type: config.type, label: config.label })}
+                  >
+                    <Minus className="h-3 w-3" />
+                  </Button>
+                </div>
+              ) : (
+                <Button
+                  className="w-full bg-gradient-to-r from-cyan-500 to-blue-600"
+                  size="sm"
+                  onClick={() => handlePurchase(config.type)}
+                  disabled={purchasing}
+                >
+                  {purchasing ? <Loader2 className="h-3 w-3 animate-spin" /> : <Plus className="h-3 w-3 mr-1" />}
+                  Dodaj
+                </Button>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      <AlertDialog open={cancelDialog?.open} onOpenChange={(open) => !open && setCancelDialog(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Anulować rozszerzenie?</AlertDialogTitle>
             <AlertDialogDescription>
-              Rozszerzenie zostanie anulowane na koniec bieżącego okresu rozliczeniowego.
-              Twój limit zasobów zostanie zmniejszony.
+              Rozszerzenie <strong>{cancelDialog?.label}</strong> zostanie anulowane.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Anuluj</AlertDialogCancel>
+            <AlertDialogCancel>Nie</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => cancelDialog && handleCancel(cancelDialog.type)}
               disabled={cancelling}
               className="bg-destructive hover:bg-destructive/90"
             >
-              Potwierdź anulowanie
+              {cancelling && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+              Potwierdź
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

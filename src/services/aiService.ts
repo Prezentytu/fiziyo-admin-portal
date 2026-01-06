@@ -4,6 +4,7 @@
  */
 
 import { getBackendToken } from "@/lib/tokenCache";
+import { triggerCreditsRefresh } from "@/components/settings/AICreditsPanel";
 import type {
   ExerciseSuggestionRequest,
   ExerciseSuggestionResponse,
@@ -67,6 +68,9 @@ class AIService {
     if (isDev) {
       console.log(`[AIService] Response from ${endpoint}:`, data);
     }
+
+    // Odśwież kredyty po udanej akcji AI
+    triggerCreditsRefresh();
 
     return data as T;
   }

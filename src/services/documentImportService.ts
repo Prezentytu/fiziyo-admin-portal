@@ -1,4 +1,5 @@
 import { getBackendToken } from "@/lib/tokenCache";
+import { triggerCreditsRefresh } from "@/components/settings/AICreditsPanel";
 import type {
   DocumentAnalysisResult,
   DocumentImportRequest,
@@ -87,6 +88,9 @@ class DocumentImportService {
         });
       }
 
+      // Odśwież kredyty po udanej analizie
+      triggerCreditsRefresh();
+
       return data;
     } catch (error) {
       if (isDev) {
@@ -147,6 +151,9 @@ class DocumentImportService {
           notes: data.clinicalNotes.length,
         });
       }
+
+      // Odśwież kredyty po udanej analizie tekstu
+      triggerCreditsRefresh();
 
       return data;
     } catch (error) {

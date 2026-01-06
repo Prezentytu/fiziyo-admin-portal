@@ -277,6 +277,32 @@ export const UPDATE_SUBSCRIPTION_MUTATION = gql`
 `;
 
 /**
+ * Mutacja do aktywacji planu kodem aktywacyjnym (Early Access)
+ * Prosty mechanizm do zmiany planu bez Stripe
+ */
+export const ACTIVATE_PLAN_WITH_CODE_MUTATION = gql`
+  mutation ActivatePlanWithCode(
+    $organizationId: String!
+    $newPlan: SubscriptionPlan!
+    $activationCode: String!
+  ) {
+    activatePlanWithCode(
+      organizationId: $organizationId
+      newPlan: $newPlan
+      activationCode: $activationCode
+    ) {
+      id
+      name
+      subscriptionPlan
+      subscriptionExpiresAt
+      maxTherapists
+      maxPatients
+      maxClinics
+    }
+  }
+`;
+
+/**
  * Mutacja do aktualizacji ustawień widoczności ćwiczeń w organizacji
  * Kontroluje czy członkowie mogą tworzyć osobiste ćwiczenia
  */

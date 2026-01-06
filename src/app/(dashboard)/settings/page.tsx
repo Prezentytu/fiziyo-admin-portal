@@ -1,22 +1,27 @@
-'use client';
+"use client";
 
-import { useQuery } from '@apollo/client/react';
-import { useUser } from '@clerk/nextjs';
-import { Settings, User, Building2, Eye } from 'lucide-react';
+import { useQuery } from "@apollo/client/react";
+import { useUser } from "@clerk/nextjs";
+import { User, Building2, Eye, Settings } from "lucide-react";
 
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent } from '@/components/ui/card';
-import { LoadingState } from '@/components/shared/LoadingState';
-import { EmptyState } from '@/components/shared/EmptyState';
-import { ProfileForm, UserProfile } from '@/components/settings/ProfileForm';
-import { OrganizationsList, UserOrganization } from '@/components/settings/OrganizationsList';
-import { AccessibilitySettings } from '@/components/settings/AccessibilitySettings';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent } from "@/components/ui/card";
+import { LoadingState } from "@/components/shared/LoadingState";
+import { EmptyState } from "@/components/shared/EmptyState";
+import { ProfileForm, UserProfile } from "@/components/settings/ProfileForm";
+import { OrganizationsList, UserOrganization } from "@/components/settings/OrganizationsList";
+import { AccessibilitySettings } from "@/components/settings/AccessibilitySettings";
+import { SettingsTab } from "@/components/organization/SettingsTab";
 
-import { GET_USER_BY_CLERK_ID_QUERY, GET_USER_ORGANIZATIONS_QUERY } from '@/graphql/queries/users.queries';
-import type { UserByClerkIdResponse, UserOrganizationsResponse } from '@/types/apollo';
+import { GET_USER_BY_CLERK_ID_QUERY, GET_USER_ORGANIZATIONS_QUERY } from "@/graphql/queries/users.queries";
+import { GET_ORGANIZATION_BY_ID_QUERY } from "@/graphql/queries/organizations.queries";
+import { useOrganization } from "@/contexts/OrganizationContext";
+import type { UserByClerkIdResponse, UserOrganizationsResponse, OrganizationByIdResponse } from "@/types/apollo";
 
 export default function SettingsPage() {
   const { user: clerkUser } = useUser();
+  const { currentOrganization } = useOrganization();
+  const organizationId = currentOrganization?.organizationId;
 
   // Get user data
   const {
@@ -33,8 +38,24 @@ export default function SettingsPage() {
     skip: !clerkUser?.id,
   });
 
+  // Get current organization details
+  const {
+    data: orgData,
+    loading: orgLoading,
+    refetch: refetchOrg,
+  } = useQuery(GET_ORGANIZATION_BY_ID_QUERY, {
+    variables: { id: organizationId },
+    skip: !organizationId,
+  });
+
   const userByClerkId = (userData as UserByClerkIdResponse)?.userByClerkId;
   const organizations = (orgsData as UserOrganizationsResponse)?.userOrganizations || [];
+  const organization = (orgData as OrganizationByIdResponse)?.organizationById;
+
+  // Get current user's role in organization
+  const currentUserRole = organizations
+    .find((o: { organizationId: string; role: string }) => o.organizationId === organizationId)
+    ?.role?.toLowerCase();
 
   const isLoading = userLoading || !clerkUser?.id;
 
@@ -89,9 +110,13 @@ export default function SettingsPage() {
               <User className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">Profil</span>
             </TabsTrigger>
+            <TabsTrigger value="organization" className="flex items-center gap-2 text-xs sm:text-sm">
+              <Settings className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Organizacja</span>
+            </TabsTrigger>
             <TabsTrigger value="organizations" className="flex items-center gap-2 text-xs sm:text-sm">
               <Building2 className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Organizacje</span>
+              <span className="hidden sm:inline">Moje organizacje</span>
               <span className="text-muted-foreground">({organizations.length})</span>
             </TabsTrigger>
             <TabsTrigger value="accessibility" className="flex items-center gap-2 text-xs sm:text-sm">
@@ -102,7 +127,30 @@ export default function SettingsPage() {
         </div>
 
         <TabsContent value="profile" className="mt-4">
-          <ProfileForm user={userProfile} clerkId={clerkUser?.id || ''} onSuccess={() => refetchUser()} />
+          <ProfileForm user={userProfile} clerkId={clerkUser?.id || ""} onSuccess={() => refetchUser()} />
+        </TabsContent>
+
+        <TabsContent value="organization" className="mt-4">
+          {orgLoading ? (
+            <LoadingState type="text" count={2} />
+          ) : organization ? (
+            <SettingsTab
+              organization={organization}
+              currentUserRole={currentUserRole}
+              isLoading={orgLoading}
+              onRefresh={() => refetchOrg()}
+            />
+          ) : (
+            <Card className="border-border/60">
+              <CardContent className="py-12">
+                <EmptyState
+                  icon={Building2}
+                  title="Brak aktywnej organizacji"
+                  description="Wybierz organizację, aby zarządzać jej ustawieniami"
+                />
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
 
         <TabsContent value="organizations" className="mt-4">

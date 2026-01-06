@@ -1,14 +1,12 @@
 'use client';
 
-import { Bell, Search, ChevronRight, Home, Menu } from 'lucide-react';
+import { ChevronRight, Home, Menu } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { UserMenu } from '@/components/layout/UserMenu';
 import { MobileOrgIndicator } from '@/components/layout/MobileOrgIndicator';
 import { FeedbackButton } from '@/components/shared/FeedbackButton';
-import { AICreditsIndicator } from '@/components/layout/AICreditsIndicator';
 
 // Route name mappings
 const routeNames: Record<string, string> = {
@@ -104,14 +102,6 @@ export function Header({ onMobileMenuToggle }: HeaderProps) {
             className="w-48 lg:w-64 pl-9 bg-surface-light border-border focus:border-primary"
           />
         </div> */}
-
-        {/* Mobile search button */}
-        {/* <Button variant="ghost" size="icon" className="md:hidden">
-          <Search className="h-5 w-5" />
-        </Button> */}
-
-        {/* AI Credits */}
-        <AICreditsIndicator />
 
         {/* Feedback */}
         <FeedbackButton variant="icon" />

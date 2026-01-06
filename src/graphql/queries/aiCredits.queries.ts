@@ -5,7 +5,7 @@ import { gql } from "@apollo/client";
  */
 export const GET_AI_CREDITS_STATUS = gql`
   query GetAICreditsStatus($organizationId: String!) {
-    aICreditsStatus(organizationId: $organizationId) {
+    aiCreditsStatus(organizationId: $organizationId) {
       monthlyLimit
       monthlyUsed
       monthlyRemaining
@@ -21,7 +21,7 @@ export const GET_AI_CREDITS_STATUS = gql`
  */
 export const GET_AI_CREDITS_HISTORY = gql`
   query GetAICreditsHistory($organizationId: String!, $days: Int) {
-    aICreditsHistory(organizationId: $organizationId, days: $days) {
+    aiCreditsHistory(organizationId: $organizationId, days: $days) {
       id
       creditsUsed
       actionType
@@ -37,7 +37,7 @@ export const GET_AI_CREDITS_HISTORY = gql`
  */
 export const GET_AI_CREDITS_PACKAGE_PRICING = gql`
   query GetAICreditsPackagePricing {
-    aICreditsPackagePricing {
+    aiCreditsPackagePricing {
       smallPackage {
         credits
         pricePLN
