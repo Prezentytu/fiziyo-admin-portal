@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { UserMenu } from '@/components/layout/UserMenu';
 import { MobileOrgIndicator } from '@/components/layout/MobileOrgIndicator';
 import { FeedbackButton } from '@/components/shared/FeedbackButton';
+import { AICreditsIndicator } from '@/components/layout/AICreditsIndicator';
 
 // Route name mappings
 const routeNames: Record<string, string> = {
@@ -108,6 +109,9 @@ export function Header({ onMobileMenuToggle }: HeaderProps) {
         {/* <Button variant="ghost" size="icon" className="md:hidden">
           <Search className="h-5 w-5" />
         </Button> */}
+
+        {/* AI Credits */}
+        <AICreditsIndicator />
 
         {/* Feedback */}
         <FeedbackButton variant="icon" />
