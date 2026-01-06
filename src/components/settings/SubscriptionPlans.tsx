@@ -10,13 +10,10 @@ import {
   Star,
   Shield,
   Clock,
-  HardDrive,
-  Mail,
-  Headphones,
+  Sparkles,
   Crown,
-  Calendar,
-  BarChart3,
-  Palette,
+  Check,
+  Briefcase,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -34,54 +31,93 @@ interface Plan {
   color: string;
   popular?: boolean;
   limits: {
+    patients: number | null;
     therapists: number;
-    storage: number;
+    clinics: number;
+    exercises: number | null;
+    aiCredits: number;
   };
   features: string[];
 }
 
 const plans: Plan[] = [
   {
+    id: "starter",
+    name: "Starter",
+    description: "Darmowy plan na start",
+    price: 0,
+    priceYearly: 0,
+    icon: <User className="h-5 w-5" />,
+    color: "from-slate-500 to-slate-600",
+    limits: {
+      patients: 5,
+      therapists: 1,
+      clinics: 1,
+      exercises: 30,
+      aiCredits: 50,
+    },
+    features: ["Podstawowe funkcje", "Wsparcie email 48h"],
+  },
+  {
     id: "solo",
     name: "Solo",
     description: "Dla pojedynczego fizjoterapeuty",
     price: 99,
-    priceYearly: 948,
-    icon: <User className="h-5 w-5" />,
-    color: "from-slate-500 to-slate-600",
-    limits: { therapists: 1, storage: 5 },
-    features: ["Nieograniczeni pacjenci", "Wsparcie email"],
+    priceYearly: 990,
+    icon: <Briefcase className="h-5 w-5" />,
+    color: "from-blue-500 to-blue-600",
+    limits: {
+      patients: 50,
+      therapists: 1,
+      clinics: 1,
+      exercises: null,
+      aiCredits: 200,
+    },
+    features: ["Bez limitu ćwiczeń", "QR kody", "Raporty PDF", "Wsparcie 24h"],
   },
   {
-    id: "team",
-    name: "Team",
+    id: "pro",
+    name: "Pro",
     description: "Dla małego gabinetu",
-    price: 249,
-    priceYearly: 2388,
+    price: 219,
+    priceYearly: 2190,
     icon: <Users className="h-5 w-5" />,
     color: "from-primary to-emerald-600",
     popular: true,
-    limits: { therapists: 5, storage: 25 },
-    features: ["Kalendarz wizyt", "Raportowanie", "Priorytetowe wsparcie"],
+    limits: {
+      patients: 200,
+      therapists: 5,
+      clinics: 3,
+      exercises: null,
+      aiCredits: 500,
+    },
+    features: ["Wszystko z Solo", "Wieloosobowy zespół", "Wiele gabinetów", "Priorytetowe wsparcie"],
   },
   {
-    id: "clinic",
-    name: "Clinic",
-    description: "Dla dużego gabinetu",
-    price: 499,
-    priceYearly: 4788,
+    id: "business",
+    name: "Business",
+    description: "Dla dużych klinik",
+    price: 399,
+    priceYearly: 3990,
     icon: <Building2 className="h-5 w-5" />,
     color: "from-amber-500 to-orange-600",
-    limits: { therapists: 15, storage: 100 },
-    features: ["Wiele lokalizacji", "Analityka", "White-label", "Dedykowany opiekun"],
+    limits: {
+      patients: 500,
+      therapists: 20,
+      clinics: 10,
+      exercises: null,
+      aiCredits: 2000,
+    },
+    features: ["Wszystko z Pro", "Własny branding", "API access", "Dedykowany opiekun"],
   },
 ];
 
 interface CurrentPlan {
   id: string;
   name: string;
-  usedStorage: number;
+  usedPatients: number;
   usedTherapists: number;
+  usedClinics: number;
   renewalDate?: string;
 }
 
@@ -92,10 +128,11 @@ interface SubscriptionPlansProps {
 
 export function SubscriptionPlans({
   currentPlan = {
-    id: "solo",
-    name: "Solo",
-    usedStorage: 2.4,
+    id: "starter",
+    name: "Starter",
+    usedPatients: 2,
     usedTherapists: 1,
+    usedClinics: 1,
   },
   onUpgrade,
 }: SubscriptionPlansProps) {
@@ -129,12 +166,16 @@ export function SubscriptionPlans({
             </div>
             <div className="flex items-center gap-3 text-xs text-muted-foreground">
               <span className="flex items-center gap-1">
-                <HardDrive className="h-3 w-3" />
-                {currentPlan.usedStorage}/{currentPlanData.limits.storage} GB
+                <User className="h-3 w-3" />
+                {currentPlan.usedPatients}/{currentPlanData.limits.patients ?? "∞"} pacjentów
               </span>
               <span className="flex items-center gap-1">
                 <Users className="h-3 w-3" />
                 {currentPlan.usedTherapists}/{currentPlanData.limits.therapists} terapeutów
+              </span>
+              <span className="flex items-center gap-1">
+                <Building2 className="h-3 w-3" />
+                {currentPlan.usedClinics}/{currentPlanData.limits.clinics} gabinetów
               </span>
             </div>
           </div>
@@ -164,19 +205,20 @@ export function SubscriptionPlans({
           >
             Rocznie
             <Badge variant="secondary" className="text-[9px] px-1 py-0 h-4">
-              -20%
+              -17%
             </Badge>
           </button>
         </div>
       </div>
 
-      {/* Plans Grid - Compact */}
-      <div className="grid gap-3 lg:grid-cols-3">
+      {/* Plans Grid */}
+      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
         {plans.map((plan) => {
           const isCurrent = plan.id === currentPlan.id;
-          const monthlyEquivalent = billingPeriod === "yearly" 
-            ? Math.round(plan.priceYearly / 12) 
-            : plan.price;
+          const monthlyEquivalent =
+            billingPeriod === "yearly" && plan.priceYearly > 0
+              ? Math.round(plan.priceYearly / 12)
+              : plan.price;
           const yearlyTotal = plan.priceYearly;
           const savings = plan.price * 12 - plan.priceYearly;
 
@@ -221,76 +263,62 @@ export function SubscriptionPlans({
                 {/* Price */}
                 <div className="mb-4">
                   <div className="flex items-baseline gap-1">
-                    <span className="text-2xl font-bold text-foreground">{monthlyEquivalent}</span>
-                    <span className="text-sm text-muted-foreground">zł/mies.</span>
+                    {plan.price === 0 ? (
+                      <span className="text-2xl font-bold text-foreground">Darmowy</span>
+                    ) : (
+                      <>
+                        <span className="text-2xl font-bold text-foreground">
+                          {monthlyEquivalent}
+                        </span>
+                        <span className="text-sm text-muted-foreground">zł/mies.</span>
+                      </>
+                    )}
                   </div>
-                  {billingPeriod === "yearly" && (
+                  {billingPeriod === "yearly" && plan.price > 0 && (
                     <p className="text-[11px] text-muted-foreground">
                       {yearlyTotal} zł/rok · oszczędzasz {savings} zł
                     </p>
                   )}
                 </div>
 
-                {/* Key Limits - Compact Grid */}
-                <div className="grid grid-cols-2 gap-2 mb-4">
-                  <div className="rounded-md bg-surface-light p-2 text-center">
-                    <p className="text-lg font-bold text-foreground">{plan.limits.therapists}</p>
-                    <p className="text-[10px] text-muted-foreground">terapeutów</p>
+                {/* Key Limits */}
+                <div className="space-y-2 mb-4 text-sm">
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">Pacjenci</span>
+                    <span className="font-medium text-foreground">
+                      {plan.limits.patients ?? "∞"}
+                    </span>
                   </div>
-                  <div className="rounded-md bg-surface-light p-2 text-center">
-                    <p className="text-lg font-bold text-foreground">{plan.limits.storage}</p>
-                    <p className="text-[10px] text-muted-foreground">GB storage</p>
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">Terapeuci</span>
+                    <span className="font-medium text-foreground">{plan.limits.therapists}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">Gabinety</span>
+                    <span className="font-medium text-foreground">{plan.limits.clinics}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground flex items-center gap-1">
+                      <Sparkles className="h-3 w-3 text-primary" />
+                      Kredyty AI/mies.
+                    </span>
+                    <span className="font-medium text-primary">{plan.limits.aiCredits}</span>
                   </div>
                 </div>
 
-                {/* Features - Compact Icons */}
-                <div className="flex flex-wrap gap-1.5 mb-4">
-                  {plan.id === "solo" && (
-                    <>
-                      <Badge variant="outline" className="text-[10px] gap-1 px-1.5 py-0.5">
-                        <Mail className="h-2.5 w-2.5" /> Email
-                      </Badge>
-                    </>
-                  )}
-                  {plan.id === "team" && (
-                    <>
-                      <Badge variant="outline" className="text-[10px] gap-1 px-1.5 py-0.5">
-                        <Calendar className="h-2.5 w-2.5" /> Kalendarz
-                      </Badge>
-                      <Badge variant="outline" className="text-[10px] gap-1 px-1.5 py-0.5">
-                        <BarChart3 className="h-2.5 w-2.5" /> Raporty
-                      </Badge>
-                      <Badge variant="outline" className="text-[10px] gap-1 px-1.5 py-0.5">
-                        <Headphones className="h-2.5 w-2.5" /> Priority
-                      </Badge>
-                    </>
-                  )}
-                  {plan.id === "clinic" && (
-                    <>
-                      <Badge variant="outline" className="text-[10px] gap-1 px-1.5 py-0.5">
-                        <Building2 className="h-2.5 w-2.5" /> Multi-lokalizacje
-                      </Badge>
-                      <Badge variant="outline" className="text-[10px] gap-1 px-1.5 py-0.5">
-                        <BarChart3 className="h-2.5 w-2.5" /> Analityka
-                      </Badge>
-                      <Badge variant="outline" className="text-[10px] gap-1 px-1.5 py-0.5">
-                        <Palette className="h-2.5 w-2.5" /> White-label
-                      </Badge>
-                      <Badge variant="outline" className="text-[10px] gap-1 px-1.5 py-0.5">
-                        <Crown className="h-2.5 w-2.5" /> Dedyk. opiekun
-                      </Badge>
-                    </>
-                  )}
+                {/* Features */}
+                <div className="space-y-1.5 mb-4">
+                  {plan.features.map((feature, i) => (
+                    <div key={i} className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <Check className="h-3 w-3 text-primary shrink-0" />
+                      <span>{feature}</span>
+                    </div>
+                  ))}
                 </div>
 
                 {/* CTA Button */}
                 {isCurrent ? (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="w-full rounded-lg"
-                    disabled
-                  >
+                  <Button variant="outline" size="sm" className="w-full rounded-lg" disabled>
                     <Shield className="mr-1.5 h-3.5 w-3.5" />
                     Obecny plan
                   </Button>
@@ -306,7 +334,7 @@ export function SubscriptionPlans({
                     onClick={() => onUpgrade?.(plan.id)}
                   >
                     <Rocket className="mr-1.5 h-3.5 w-3.5" />
-                    Wybierz
+                    {plan.price === 0 ? "Aktywuj" : "Wybierz"}
                     <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
                   </Button>
                 )}
@@ -341,7 +369,7 @@ export function SubscriptionPlans({
           className="text-xs text-muted-foreground hover:text-foreground"
           onClick={() => window.open("mailto:kontakt@fiziyo.pl?subject=Enterprise", "_blank")}
         >
-          <Building2 className="mr-1.5 h-3.5 w-3.5" />
+          <Crown className="mr-1.5 h-3.5 w-3.5" />
           Enterprise? Skontaktuj się
           <ArrowRight className="ml-1 h-3 w-3" />
         </Button>
@@ -349,12 +377,3 @@ export function SubscriptionPlans({
     </div>
   );
 }
-
-
-
-
-
-
-
-
-

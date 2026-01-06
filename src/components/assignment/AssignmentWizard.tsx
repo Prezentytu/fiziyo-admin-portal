@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { useQuery, useMutation } from '@apollo/client/react';
-import { Loader2, ArrowLeft, ArrowRight } from 'lucide-react';
+import { Loader2, ArrowLeft, ArrowRight, FolderKanban, Users, Calendar, Dumbbell } from 'lucide-react';
 import { toast } from 'sonner';
-import { addDays } from 'date-fns';
+import { addDays, differenceInDays } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
@@ -31,7 +32,7 @@ import {
 
 import { GET_ORGANIZATION_EXERCISE_SETS_QUERY } from '@/graphql/queries/exerciseSets.queries';
 import { GET_THERAPIST_PATIENTS_QUERY } from '@/graphql/queries/therapists.queries';
-import { ASSIGN_EXERCISE_SET_TO_PATIENT_MUTATION, REMOVE_EXERCISE_SET_ASSIGNMENT_MUTATION } from '@/graphql/mutations/exercises.mutations';
+import { ASSIGN_EXERCISE_SET_TO_PATIENT_MUTATION, REMOVE_EXERCISE_SET_ASSIGNMENT_MUTATION, UPDATE_PATIENT_EXERCISE_OVERRIDES_MUTATION } from '@/graphql/mutations/exercises.mutations';
 import { GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY } from '@/graphql/queries/patientAssignments.queries';
 import { GET_EXERCISE_SET_WITH_ASSIGNMENTS_QUERY } from '@/graphql/queries/exerciseSets.queries';
 import type { TherapistPatientsResponse } from '@/types/apollo';
@@ -122,14 +123,23 @@ function AssignmentWizardContent({
   const [startDate, setStartDate] = useState<Date>(() => new Date());
   const [endDate, setEndDate] = useState<Date>(() => addDays(new Date(), 30));
   const [frequency, setFrequency] = useState<Frequency>(defaultFrequency as Frequency);
+  const [excludedExercises, setExcludedExercises] = useState<Set<string>>(new Set());
 
   // Track changes for close confirmation
   const hasChanges = !preselectedSet ? selectedSet !== null : selectedPatients.length > (preselectedPatient ? 1 : 0);
-  
+
   // Notify parent about changes
   useEffect(() => {
     onHasChanges(hasChanges);
   }, [hasChanges, onHasChanges]);
+
+  // Handle set change - reset overrides and excluded exercises
+  const handleSetChange = useCallback((set: ExerciseSet | null) => {
+    setSelectedSet(set);
+    // Reset customizations when changing set
+    setExcludedExercises(new Set());
+    setOverrides(new Map());
+  }, []);
 
   // Queries - load sets if needed (from-patient mode or no preselected set)
   const needsSets = mode === 'from-patient' || !preselectedSet;
@@ -162,6 +172,7 @@ function AssignmentWizardContent({
   // Mutations
   const [assignSet, { loading: assigning }] = useMutation(ASSIGN_EXERCISE_SET_TO_PATIENT_MUTATION);
   const [removeAssignment, { loading: removing }] = useMutation(REMOVE_EXERCISE_SET_ASSIGNMENT_MUTATION);
+  const [updatePatientOverrides, { loading: updatingOverrides }] = useMutation(UPDATE_PATIENT_EXERCISE_OVERRIDES_MUTATION);
 
   // State for unassign confirmation dialog
   const [unassignConfirm, setUnassignConfirm] = useState<{
@@ -410,13 +421,24 @@ function AssignmentWizardContent({
     }
   };
 
+  // Track animation direction
+  const [slideDirection, setSlideDirection] = useState<'left' | 'right'>('right');
+  const [isAnimating, setIsAnimating] = useState(false);
+  const animationKey = useRef(0);
+
   const goToStep = (step: WizardStep) => {
+    const targetIndex = steps.findIndex((s) => s.id === step);
+    const currentIdx = steps.findIndex((s) => s.id === currentStep);
+    setSlideDirection(targetIndex > currentIdx ? 'right' : 'left');
+    animationKey.current += 1;
     setCurrentStep(step);
   };
 
   const goNext = () => {
     const currentIndex = steps.findIndex((s) => s.id === currentStep);
     if (currentIndex < steps.length - 1) {
+      setSlideDirection('right');
+      animationKey.current += 1;
       setCompletedSteps((prev) => new Set([...prev, currentStep]));
       setCurrentStep(steps[currentIndex + 1].id);
     }
@@ -425,16 +447,47 @@ function AssignmentWizardContent({
   const goBack = () => {
     const currentIndex = steps.findIndex((s) => s.id === currentStep);
     if (currentIndex > 0) {
+      setSlideDirection('left');
+      animationKey.current += 1;
       setCurrentStep(steps[currentIndex - 1].id);
     }
   };
+
+  // Calculate duration for context summary
+  const durationDays = differenceInDays(endDate, startDate);
+
+  // Build exercise overrides JSON for backend
+  const buildExerciseOverridesJson = useCallback((): string | null => {
+    const hasOverrides = overrides.size > 0;
+    const hasExcluded = excludedExercises.size > 0;
+
+    if (!hasOverrides && !hasExcluded) return null;
+
+    const result: Record<string, Record<string, unknown>> = {};
+
+    // Add overrides (without exerciseMappingId field)
+    overrides.forEach((override, mappingId) => {
+      const { exerciseMappingId, ...rest } = override;
+      result[mappingId] = { ...rest };
+    });
+
+    // Add hidden: true for excluded exercises
+    excludedExercises.forEach((mappingId) => {
+      result[mappingId] = { ...result[mappingId], hidden: true };
+    });
+
+    return JSON.stringify(result);
+  }, [overrides, excludedExercises]);
 
   const handleSubmit = async () => {
     if (!selectedSet || selectedPatients.length === 0) return;
 
     try {
+      const overridesJson = buildExerciseOverridesJson();
+
       for (const patient of selectedPatients) {
-        await assignSet({
+        // Step 1: Assign the exercise set
+        const assignResult = await assignSet({
           variables: {
             exerciseSetId: selectedSet.id,
             patientId: patient.id,
@@ -452,7 +505,6 @@ function AssignmentWizardContent({
               saturday: frequency.saturday,
               sunday: frequency.sunday,
             },
-            // TODO: Add overrides when backend supports it
           },
           refetchQueries: [
             ...(mode === 'from-patient' && preselectedPatient
@@ -473,13 +525,29 @@ function AssignmentWizardContent({
               : []),
           ],
         });
+
+        // Step 2: If we have overrides or excluded exercises, update the assignment
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const assignmentId = (assignResult.data as any)?.assignExerciseSetToPatient?.id;
+        if (assignmentId && overridesJson) {
+          await updatePatientOverrides({
+            variables: {
+              assignmentId,
+              exerciseOverrides: overridesJson,
+            },
+          });
+        }
       }
 
       const patientCount = selectedPatients.length;
       toast.success(
         `Zestaw "${selectedSet.name}" przypisany do ${patientCount} pacjent${
           patientCount === 1 ? 'a' : patientCount < 5 ? 'ów' : 'ów'
-        }`
+        }`,
+        {
+          description: 'Pacjenci zobaczą ćwiczenia w aplikacji mobilnej',
+          duration: 5000,
+        }
       );
       onOpenChange(false);
       onSuccess?.();
@@ -489,9 +557,53 @@ function AssignmentWizardContent({
     }
   };
 
-  const isLoading = loadingSets || loadingPatients || assigning || removing;
+  const isLoading = loadingSets || loadingPatients || assigning || removing || updatingOverrides;
   const isFirstStep = steps.length > 0 && currentStep === steps[0].id;
   const isLastStep = currentStep === 'summary';
+
+  // Get contextual next button text
+  const getNextButtonText = () => {
+    const currentIndex = steps.findIndex((s) => s.id === currentStep);
+    const nextStep = steps[currentIndex + 1];
+
+    if (isLastStep) {
+      const count = selectedPatients.length;
+      return `Przypisz do ${count} pacjent${count === 1 ? 'a' : count < 5 ? 'ów' : 'ów'}`;
+    }
+
+    if (nextStep) {
+      return `Dalej: ${nextStep.label}`;
+    }
+
+    return 'Dalej';
+  };
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ignore if user is typing in an input
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+        return;
+      }
+
+      if (e.key === 'Enter' && !e.shiftKey && canProceed()) {
+        e.preventDefault();
+        if (isLastStep) {
+          handleSubmit();
+        } else {
+          goNext();
+        }
+      }
+
+      if (e.key === 'Backspace' && !isFirstStep) {
+        e.preventDefault();
+        goBack();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [currentStep, isFirstStep, isLastStep, canProceed, goNext, goBack, handleSubmit]);
 
   // Render step content
   const renderStepContent = () => {
@@ -501,10 +613,12 @@ function AssignmentWizardContent({
           <SelectSetStep
             exerciseSets={exerciseSets}
             selectedSet={selectedSet}
-            onSelectSet={setSelectedSet}
+            onSelectSet={handleSetChange}
             assignedSets={assignedSets}
             onUnassign={(assignmentId, setName) => handleUnassignRequest(assignmentId, setName, 'set')}
             loading={loadingSets}
+            excludedExercises={excludedExercises}
+            onExcludedExercisesChange={setExcludedExercises}
           />
         );
 
@@ -523,15 +637,19 @@ function AssignmentWizardContent({
       case 'customize':
         if (!selectedSet) return null;
         return (
-          <CustomizeExercisesStep exerciseSet={selectedSet} overrides={overrides} onOverridesChange={setOverrides} />
+          <CustomizeExercisesStep
+            exerciseSet={selectedSet}
+            overrides={overrides}
+            onOverridesChange={setOverrides}
+            excludedExercises={excludedExercises}
+            onExcludedExercisesChange={setExcludedExercises}
+          />
         );
 
       case 'schedule':
         if (!selectedSet) return null;
         return (
           <ScheduleStep
-            exerciseSet={selectedSet}
-            selectedPatients={selectedPatients}
             startDate={startDate}
             endDate={endDate}
             frequency={frequency}
@@ -551,6 +669,7 @@ function AssignmentWizardContent({
             endDate={endDate}
             frequency={frequency}
             overrides={overrides}
+            excludedExercises={excludedExercises}
           />
         );
 
@@ -561,7 +680,7 @@ function AssignmentWizardContent({
 
   return (
     <DialogContent
-      className="max-w-5xl w-[95vw] max-h-[90vh] h-[85vh] flex flex-col p-0 gap-0"
+      className="max-w-7xl w-[98vw] max-h-[95vh] h-[90vh] md:h-[85vh] flex flex-col p-0 gap-0 overflow-hidden"
       onInteractOutside={(e) => e.preventDefault()}
       onEscapeKeyDown={(e) => {
         e.preventDefault();
@@ -571,9 +690,43 @@ function AssignmentWizardContent({
       {/* Header */}
       <DialogHeader className="px-6 pt-6 pb-4 border-b border-border shrink-0">
         <div className="flex flex-col gap-4">
-          <div>
-            <DialogTitle className="text-xl">{stepInfo.title}</DialogTitle>
-            <DialogDescription className="mt-1">{stepInfo.description}</DialogDescription>
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <DialogTitle className="text-xl">{stepInfo.title}</DialogTitle>
+              <DialogDescription className="mt-1">{stepInfo.description}</DialogDescription>
+            </div>
+
+            {/* Floating Context Summary - mr-8 to avoid X button */}
+            {selectedSet && currentStep !== 'select-set' && (
+              <div className="hidden sm:flex items-center gap-3 px-3 py-2 rounded-lg bg-surface-light/50 border border-border/50 text-xs shrink-0 mr-8">
+                <div className="flex items-center gap-1.5 text-muted-foreground">
+                  <FolderKanban className="h-3.5 w-3.5" />
+                  <span className="font-medium text-foreground max-w-[120px] truncate">{selectedSet.name}</span>
+                  <span className="text-muted-foreground">
+                    ({(selectedSet.exerciseMappings?.length || 0) - excludedExercises.size}
+                    {excludedExercises.size > 0 && <span className="text-destructive/70">/{selectedSet.exerciseMappings?.length || 0}</span>})
+                  </span>
+                </div>
+                {selectedPatients.length > 0 && currentStep !== 'select-patients' && (
+                  <>
+                    <span className="text-border">•</span>
+                    <div className="flex items-center gap-1.5 text-muted-foreground">
+                      <Users className="h-3.5 w-3.5" />
+                      <span>{selectedPatients.length}</span>
+                    </div>
+                  </>
+                )}
+                {currentStep === 'summary' && (
+                  <>
+                    <span className="text-border">•</span>
+                    <div className="flex items-center gap-1.5 text-muted-foreground">
+                      <Calendar className="h-3.5 w-3.5" />
+                      <span>{durationDays} dni</span>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
           </div>
           <WizardStepIndicator
             steps={steps}
@@ -585,40 +738,49 @@ function AssignmentWizardContent({
         </div>
       </DialogHeader>
 
-      {/* Content */}
-      <div className="flex-1 overflow-y-auto p-6">{renderStepContent()}</div>
+      {/* Content - bez scroll, pełna wysokość */}
+      <div className="flex-1 overflow-hidden min-h-0">
+        <div
+          key={animationKey.current}
+          className={cn(
+            "h-full",
+            slideDirection === 'right'
+              ? 'animate-wizard-slide-in-right'
+              : 'animate-wizard-slide-in-left'
+          )}
+        >
+          {renderStepContent()}
+        </div>
+      </div>
 
       {/* Footer */}
       <div className="px-6 py-4 border-t border-border shrink-0 flex items-center justify-between gap-4">
         {/* Left side - Cancel button */}
-        <Button variant="outline" onClick={onCloseAttempt}>
+        <Button variant="ghost" onClick={onCloseAttempt} className="text-muted-foreground hover:text-foreground">
           Anuluj
         </Button>
 
         {/* Right side - Navigation */}
         <div className="flex items-center gap-3">
           {!isFirstStep && (
-            <Button variant="outline" onClick={goBack}>
+            <Button variant="ghost" onClick={goBack} className="text-muted-foreground hover:text-foreground">
               <ArrowLeft className="h-4 w-4 mr-2" />
               Wstecz
             </Button>
           )}
 
-          {isLastStep ? (
-            <Button
-              onClick={handleSubmit}
-              disabled={isLoading || !canProceed()}
-              className="shadow-lg shadow-primary/20 min-w-[140px]"
-            >
-              {assigning && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Przypisz zestaw
-            </Button>
-          ) : (
-            <Button onClick={goNext} disabled={!canProceed()} className="shadow-lg shadow-primary/20">
-              Dalej
-              <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
-          )}
+          <Button
+            onClick={isLastStep ? handleSubmit : goNext}
+            disabled={isLoading || !canProceed()}
+            className={cn(
+              "shadow-lg shadow-primary/20 min-w-[160px] transition-all duration-300",
+              isLastStep && "bg-gradient-to-r from-primary to-emerald-500 hover:from-primary-dark hover:to-emerald-600"
+            )}
+          >
+            {assigning && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {getNextButtonText()}
+            {!isLastStep && <ArrowRight className="ml-2 h-4 w-4" />}
+          </Button>
         </div>
       </div>
 

@@ -1,14 +1,13 @@
-'use client';
+"use client";
 
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { cn } from '@/lib/utils';
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { cn } from "@/lib/utils";
 import {
   LayoutDashboard,
   Dumbbell,
   FolderKanban,
   Users,
-  Calendar,
   Building2,
   CreditCard,
   Settings,
@@ -17,30 +16,30 @@ import {
   PanelLeft,
   HeartPulse,
   FileUp,
-} from 'lucide-react';
-import { useClerk } from '@clerk/nextjs';
-import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
-import { OrganizationSwitcher } from './OrganizationSwitcher';
+} from "lucide-react";
+import { useClerk } from "@clerk/nextjs";
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
+import { OrganizationSwitcher } from "./OrganizationSwitcher";
+import { AICreditsWidget } from "./AICreditsWidget";
 
-// Navigation structure with grouping
+// Navigation structure with grouping - reorganized per plan
 const navigationGroups = [
   {
-    label: 'Główne',
+    label: "Główne",
     items: [
-      { name: 'Panel', href: '/', icon: LayoutDashboard },
-      { name: 'Pacjenci', href: '/patients', icon: Users },
-      // { name: 'Kalendarz', href: '/appointments', icon: Calendar }, // Ukryty na ten moment
-      { name: 'Zestawy', href: '/exercise-sets', icon: FolderKanban },
-      { name: 'Ćwiczenia', href: '/exercises', icon: Dumbbell },
-      { name: 'Import AI', href: '/import', icon: FileUp },
+      { name: "Panel", href: "/", icon: LayoutDashboard },
+      { name: "Pacjenci", href: "/patients", icon: Users },
+      { name: "Zestawy", href: "/exercise-sets", icon: FolderKanban },
+      { name: "Ćwiczenia", href: "/exercises", icon: Dumbbell },
+      { name: "Import AI", href: "/import", icon: FileUp },
     ],
   },
   {
-    label: 'Zarządzanie',
+    label: "Organizacja",
     items: [
-      { name: 'Organizacja', href: '/organization', icon: Building2 },
-      { name: 'Subskrypcja', href: '/subscription', icon: CreditCard },
-      { name: 'Ustawienia', href: '/settings', icon: Settings },
+      { name: "Zespół", href: "/organization", icon: Building2 },
+      { name: "Rozliczenia", href: "/billing", icon: CreditCard },
+      { name: "Ustawienia", href: "/settings", icon: Settings },
     ],
   },
 ];
@@ -55,7 +54,7 @@ export function Sidebar({ isCollapsed, onToggleCollapse }: SidebarProps) {
   const { signOut } = useClerk();
 
   const isActive = (href: string) => {
-    if (href === '/') return pathname === '/';
+    if (href === "/") return pathname === "/";
     return pathname.startsWith(href);
   };
 
@@ -63,15 +62,15 @@ export function Sidebar({ isCollapsed, onToggleCollapse }: SidebarProps) {
     <TooltipProvider delayDuration={0}>
       <aside
         className={cn(
-          'hidden lg:flex h-screen flex-col border-r border-border/60 bg-surface transition-all duration-300 ease-in-out',
-          isCollapsed ? 'w-[72px]' : 'w-64'
+          "hidden lg:flex h-screen flex-col border-r border-border/60 bg-surface transition-all duration-300 ease-in-out",
+          isCollapsed ? "w-[72px]" : "w-64"
         )}
       >
         {/* Header with logo and toggle */}
         <div
           className={cn(
-            'flex h-16 items-center border-b border-border/60 transition-all duration-300',
-            isCollapsed ? 'justify-center px-3' : 'justify-between px-4'
+            "flex h-16 items-center border-b border-border/60 transition-all duration-300",
+            isCollapsed ? "justify-center px-3" : "justify-between px-4"
           )}
         >
           <Link href="/" className="flex items-center gap-3">
@@ -116,7 +115,7 @@ export function Sidebar({ isCollapsed, onToggleCollapse }: SidebarProps) {
         {/* Navigation groups */}
         <nav className="flex-1 overflow-y-auto py-4">
           {navigationGroups.map((group, groupIndex) => (
-            <div key={group.label} className={cn(groupIndex > 0 && 'mt-6')}>
+            <div key={group.label} className={cn(groupIndex > 0 && "mt-6")}>
               {/* Group label */}
               {!isCollapsed && (
                 <p className="px-4 mb-2 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
@@ -126,7 +125,7 @@ export function Sidebar({ isCollapsed, onToggleCollapse }: SidebarProps) {
               {isCollapsed && groupIndex > 0 && <div className="mx-3 mb-2 border-t border-border" />}
 
               {/* Navigation items */}
-              <div className={cn('space-y-1', isCollapsed ? 'flex flex-col items-center' : 'px-3')}>
+              <div className={cn("space-y-1", isCollapsed ? "flex flex-col items-center" : "px-3")}>
                 {group.items.map((item) => {
                   const active = isActive(item.href);
                   const Icon = item.icon;
@@ -135,18 +134,18 @@ export function Sidebar({ isCollapsed, onToggleCollapse }: SidebarProps) {
                     <Link
                       href={item.href}
                       className={cn(
-                        'group relative flex items-center rounded-xl text-sm font-medium transition-all duration-200',
-                        isCollapsed ? 'h-10 w-10 justify-center' : 'gap-3 px-3 py-2.5',
+                        "group relative flex items-center rounded-xl text-sm font-medium transition-all duration-200",
+                        isCollapsed ? "h-10 w-10 justify-center" : "gap-3 px-3 py-2.5",
                         active
-                          ? 'bg-primary text-primary-foreground shadow-md shadow-primary/20'
-                          : 'text-muted-foreground hover:bg-surface-light hover:text-foreground'
+                          ? "bg-primary text-primary-foreground shadow-md shadow-primary/20"
+                          : "text-muted-foreground hover:bg-surface-light hover:text-foreground"
                       )}
                     >
                       <Icon
                         className={cn(
-                          'shrink-0 transition-transform duration-200',
-                          isCollapsed ? 'h-5 w-5' : 'h-5 w-5',
-                          !active && 'group-hover:scale-110'
+                          "shrink-0 transition-transform duration-200",
+                          isCollapsed ? "h-5 w-5" : "h-5 w-5",
+                          !active && "group-hover:scale-110"
                         )}
                       />
 
@@ -171,11 +170,16 @@ export function Sidebar({ isCollapsed, onToggleCollapse }: SidebarProps) {
               </div>
             </div>
           ))}
+
+          {/* AI Credits Widget - pod Ustawienia */}
+          <div className={cn("mt-6", isCollapsed ? "px-2" : "px-3")}>
+            <AICreditsWidget isCollapsed={isCollapsed} />
+          </div>
         </nav>
 
         {/* Sign out */}
-        <div className={cn('border-t border-border', isCollapsed ? 'p-2' : 'p-3')}>
-          <div className={isCollapsed ? 'flex justify-center' : ''}>
+        <div className={cn(isCollapsed ? "p-2" : "p-3")}>
+          <div className={isCollapsed ? "flex justify-center" : ""}>
             {isCollapsed ? (
               <Tooltip>
                 <TooltipTrigger asChild>

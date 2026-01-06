@@ -20,142 +20,90 @@ export function WizardStepIndicator({
   allowNavigation = false,
 }: WizardStepIndicatorProps) {
   const currentIndex = steps.findIndex((s) => s.id === currentStep);
+  // Progress should fill to current dot position (same formula as dot positions)
+  const progressPercent = steps.length > 1
+    ? (currentIndex / (steps.length - 1)) * 100
+    : 100;
+  const currentStepConfig = steps.find((s) => s.id === currentStep);
 
   return (
-    <div className="w-full">
-      {/* Desktop view */}
-      <div className="hidden sm:flex items-center justify-between w-full">
-        {steps.map((step, index) => {
-          const isCompleted = completedSteps.has(step.id);
-          const isCurrent = step.id === currentStep;
-          const isPast = index < currentIndex;
-          const canClick = allowNavigation && (isCompleted || isPast);
+    <div className="w-full space-y-3">
+      {/* Progress bar with step dots - px-4 gives space for edge dots */}
+      <div className="relative px-4 py-3">
+        {/* Background track */}
+        <div className="h-1.5 w-full rounded-full bg-surface-light overflow-hidden">
+          {/* Animated fill */}
+          <div
+            className="h-full rounded-full bg-gradient-to-r from-primary via-primary to-emerald-400 transition-all duration-500 ease-out"
+            style={{ width: `${progressPercent}%` }}
+          />
+        </div>
 
-          return (
-            <div 
-              key={step.id} 
-              className={cn(
-                "flex items-center",
-                index < steps.length - 1 && "flex-1"
-              )}
-            >
-              {/* Step circle and content */}
+        {/* Step dots overlay - positioned relative to the track */}
+        <div className="absolute inset-x-4 top-0 bottom-0 flex items-center">
+          {steps.map((step, index) => {
+            const isCompleted = completedSteps.has(step.id);
+            const isCurrent = step.id === currentStep;
+            const isPast = index < currentIndex;
+            const canClick = allowNavigation && (isCompleted || isPast);
+            const dotPosition = steps.length > 1 ? (index / (steps.length - 1)) * 100 : 50;
+
+            return (
               <button
+                key={step.id}
                 type="button"
                 onClick={() => canClick && onStepClick?.(step.id)}
                 disabled={!canClick}
                 className={cn(
-                  "flex items-center gap-3 group min-w-0",
+                  "absolute flex items-center justify-center transition-all duration-300",
                   canClick && "cursor-pointer"
                 )}
+                style={{
+                  left: `${dotPosition}%`,
+                  transform: 'translateX(-50%)',
+                }}
+                title={step.label}
               >
-                {/* Circle */}
+                {/* Dot */}
                 <div
                   className={cn(
-                    "flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-semibold transition-all duration-200",
-                    isCurrent &&
-                      "bg-primary text-primary-foreground shadow-lg shadow-primary/30",
-                    isCompleted &&
-                      !isCurrent &&
-                      "bg-primary/20 text-primary border-2 border-primary",
-                    !isCurrent &&
-                      !isCompleted &&
-                      "bg-surface-light text-muted-foreground border border-border",
-                    canClick && "group-hover:border-primary group-hover:text-primary"
+                    "flex items-center justify-center rounded-full transition-all duration-300",
+                    isCurrent && "h-7 w-7 bg-primary text-primary-foreground shadow-lg shadow-primary/40 ring-4 ring-primary/20",
+                    isCompleted && !isCurrent && "h-5 w-5 bg-primary text-primary-foreground",
+                    !isCurrent && !isCompleted && "h-4 w-4 bg-surface-light border-2 border-border",
+                    canClick && !isCurrent && "hover:scale-125 hover:border-primary"
                   )}
                 >
-                  {isCompleted && !isCurrent ? (
-                    <Check className="h-4 w-4" />
-                  ) : (
-                    index + 1
+                  {isCompleted && !isCurrent && (
+                    <Check className="h-3 w-3" />
                   )}
-                </div>
-
-                {/* Label */}
-                <div className="text-left min-w-0">
-                  <p
-                    className={cn(
-                      "text-sm font-medium transition-colors",
-                      isCurrent && "text-foreground",
-                      !isCurrent && "text-muted-foreground",
-                      canClick && "group-hover:text-foreground"
-                    )}
-                  >
-                    {step.label}
-                  </p>
-                  <p className="text-xs text-muted-foreground hidden lg:block">
-                    {step.description}
-                  </p>
+                  {isCurrent && (
+                    <span className="text-xs font-bold">{index + 1}</span>
+                  )}
                 </div>
               </button>
-
-              {/* Connector line */}
-              {index < steps.length - 1 && (
-                <div className="flex-1 mx-3 min-w-[20px]">
-                  <div
-                    className={cn(
-                      "h-0.5 w-full rounded-full transition-colors duration-200",
-                      isPast || isCompleted
-                        ? "bg-primary/40"
-                        : "bg-border"
-                    )}
-                  />
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Mobile view - compact */}
-      <div className="sm:hidden">
-        <div className="flex items-center justify-between mb-3">
-          {steps.map((step, index) => {
-            const isCompleted = completedSteps.has(step.id);
-            const isCurrent = step.id === currentStep;
-
-            return (
-              <div key={step.id} className="flex items-center flex-1">
-                <div
-                  className={cn(
-                    "flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-semibold transition-all",
-                    isCurrent &&
-                      "bg-primary text-primary-foreground shadow-lg shadow-primary/30",
-                    isCompleted &&
-                      !isCurrent &&
-                      "bg-primary/20 text-primary",
-                    !isCurrent &&
-                      !isCompleted &&
-                      "bg-surface-light text-muted-foreground"
-                  )}
-                >
-                  {isCompleted && !isCurrent ? (
-                    <Check className="h-4 w-4" />
-                  ) : (
-                    index + 1
-                  )}
-                </div>
-                {index < steps.length - 1 && (
-                  <div
-                    className={cn(
-                      "flex-1 h-0.5 mx-2 rounded-full",
-                      isCompleted ? "bg-primary/40" : "bg-border"
-                    )}
-                  />
-                )}
-              </div>
             );
           })}
         </div>
-        <p className="text-sm font-medium text-center">
-          {steps.find((s) => s.id === currentStep)?.label}
-        </p>
-        <p className="text-xs text-muted-foreground text-center">
-          {steps.find((s) => s.id === currentStep)?.description}
+      </div>
+
+      {/* Current step info */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-medium text-muted-foreground">
+            Krok {currentIndex + 1} z {steps.length}
+          </span>
+          <span className="text-muted-foreground/40">•</span>
+          <span className="text-sm font-semibold text-foreground">
+            {currentStepConfig?.label}
+          </span>
+        </div>
+
+        {/* Mobile: show description */}
+        <p className="text-xs text-muted-foreground hidden sm:block max-w-[300px] text-right">
+          {currentStepConfig?.description}
         </p>
       </div>
     </div>
   );
 }
-
-

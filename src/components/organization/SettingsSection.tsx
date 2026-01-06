@@ -20,28 +20,9 @@ interface Organization {
   autoSyncExampleExercises?: boolean;
 }
 
-interface SubscriptionLimits {
-  maxExercises?: number;
-  maxPatients?: number;
-  maxTherapists?: number;
-  maxClinics?: number;
-  allowQRCodes?: boolean;
-  allowReports?: boolean;
-  allowCustomBranding?: boolean;
-  allowSMSReminders?: boolean;
-}
-
-interface CurrentUsage {
-  exercises?: number;
-  patients?: number;
-  therapists?: number;
-}
-
 interface SettingsSectionProps {
   organization: Organization;
   currentUserRole?: string;
-  limits?: SubscriptionLimits;
-  currentUsage?: CurrentUsage;
   isLoading?: boolean;
   onRefresh?: () => void;
   defaultOpen?: boolean;
@@ -50,8 +31,6 @@ interface SettingsSectionProps {
 export function SettingsSection({
   organization,
   currentUserRole,
-  limits,
-  currentUsage,
   isLoading = false,
   onRefresh,
   defaultOpen = false,
@@ -93,8 +72,6 @@ export function SettingsSection({
           <SettingsTab
             organization={organization}
             currentUserRole={currentUserRole}
-            limits={limits}
-            currentUsage={currentUsage}
             isLoading={isLoading}
             onRefresh={onRefresh}
           />
@@ -103,4 +80,3 @@ export function SettingsSection({
     </Collapsible>
   );
 }
-

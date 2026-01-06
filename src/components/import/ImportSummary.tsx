@@ -119,7 +119,7 @@ export function ImportSummary({
                     <FileText className="h-5 w-5 text-orange-500" />
                   </div>
                   <span className="text-base">
-                    Zapisano <strong>{result.clinicalNotesCreated}</strong> {result.clinicalNotesCreated === 1 ? 'notatkę' : 'notatki'} kliniczną
+                    Zapisano <strong>{result.clinicalNotesCreated}</strong> {result.clinicalNotesCreated === 1 ? 'notatkę kliniczną' : 'notatki kliniczne'}
                   </span>
                 </li>
               )}

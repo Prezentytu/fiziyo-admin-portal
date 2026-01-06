@@ -63,7 +63,7 @@ export function SelectPatientsStep({
 
   const togglePatient = (patient: Patient) => {
     const isAssigned = assignedPatientsMap.has(patient.id);
-    
+
     if (isAssigned) {
       // Toggle unassign selection for assigned patients
       setPatientsToUnassign((prev) => {
@@ -116,7 +116,7 @@ export function SelectPatientsStep({
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full min-h-0 p-6">
       {/* Left column - Patient list */}
       <div className="flex flex-col min-h-0">
         <div className="mb-4 space-y-3">
@@ -156,7 +156,7 @@ export function SelectPatientsStep({
           </div>
         </div>
 
-        <ScrollArea className="flex-1 rounded-xl border border-border">
+        <ScrollArea className="flex-1 min-h-0 rounded-xl border border-border">
           {loading ? (
             <div className="flex items-center justify-center py-12">
               <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
@@ -241,8 +241,8 @@ export function SelectPatientsStep({
                           {patient.name}
                         </p>
                         {isAssigned && (
-                          <Badge 
-                            variant={isSelectedForUnassign ? "destructive" : "secondary"} 
+                          <Badge
+                            variant={isSelectedForUnassign ? "destructive" : "secondary"}
                             className="text-[10px] shrink-0"
                           >
                             Ma ten zestaw
@@ -269,8 +269,8 @@ export function SelectPatientsStep({
       </div>
 
       {/* Right column - Selected patients */}
-      <div className="flex flex-col min-h-0 rounded-xl border border-border bg-surface/50 p-4">
-        <div className="mb-4">
+      <div className="flex flex-col min-h-0 h-full rounded-xl border border-border bg-surface/50">
+        <div className="p-4 border-b border-border">
           <h3 className="font-semibold text-lg">Wybrani pacjenci</h3>
           <p className="text-sm text-muted-foreground mt-1">
             {selectedPatients.length === 0 && patientsToUnassign.size === 0
@@ -288,7 +288,7 @@ export function SelectPatientsStep({
         </div>
 
         {selectedPatients.length > 0 || patientsToUnassign.size > 0 ? (
-          <ScrollArea className="flex-1">
+          <ScrollArea className="flex-1 p-4">
             <div className="space-y-2">
               {/* Patients to assign (green) */}
               {selectedPatients.map((patient) => (
@@ -324,12 +324,12 @@ export function SelectPatientsStep({
                   </Button>
                 </div>
               ))}
-              
+
               {/* Patients to unassign (red) */}
               {Array.from(patientsToUnassign).map((patientId) => {
                 const patient = patients.find((p) => p.id === patientId);
                 if (!patient) return null;
-                
+
                 return (
                   <div
                     key={patient.id}
@@ -339,12 +339,7 @@ export function SelectPatientsStep({
                       {patient.name[0]?.toUpperCase()}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <p className="text-sm font-medium truncate">{patient.name}</p>
-                        <Badge variant="destructive" className="text-[10px]">
-                          Odpisz
-                        </Badge>
-                      </div>
+                      <p className="text-sm font-medium truncate">{patient.name}</p>
                       {patient.email && (
                         <p className="text-xs text-muted-foreground truncate">
                           {patient.email}
@@ -375,7 +370,7 @@ export function SelectPatientsStep({
             </div>
           </ScrollArea>
         ) : (
-          <div className="flex-1 flex flex-col items-center justify-center text-center">
+          <div className="flex-1 flex flex-col items-center justify-center text-center p-4">
             <Users className="h-12 w-12 text-muted-foreground/30 mb-3" />
             <p className="text-sm font-medium text-muted-foreground">
               Brak wybranych pacjentów
@@ -387,7 +382,7 @@ export function SelectPatientsStep({
         )}
 
         {(selectedPatients.length > 0 || patientsToUnassign.size > 0) && (
-          <div className="mt-4 pt-4 border-t border-border">
+          <div className="p-4 border-t border-border mt-auto">
             <div className="flex items-center justify-between text-sm">
               <span className="text-muted-foreground">Łącznie:</span>
               <div className="flex items-center gap-2">
@@ -409,10 +404,3 @@ export function SelectPatientsStep({
     </div>
   );
 }
-
-
-
-
-
-
-

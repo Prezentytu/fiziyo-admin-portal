@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useEffect, useCallback } from 'react';
+import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQuery, useMutation } from '@apollo/client/react';
 import {
@@ -9,6 +9,7 @@ import {
   Dumbbell,
   Check,
   ArrowRight,
+  ArrowLeft,
   FolderPlus,
   Plus,
   Minus,
@@ -661,6 +662,108 @@ function SortableExerciseCard({
   );
 }
 
+// Step indicator component for CreateSetWizard
+interface StepConfig {
+  id: WizardStep;
+  label: string;
+  description: string;
+}
+
+const WIZARD_STEPS: StepConfig[] = [
+  { id: 'basics', label: 'Podstawy', description: 'Nazwa i opis zestawu' },
+  { id: 'exercises', label: 'Ćwiczenia', description: 'Wybierz i dostosuj ćwiczenia' },
+];
+
+function CreateSetStepIndicator({
+  currentStep,
+  completedSteps,
+  onStepClick,
+  allowNavigation = false,
+}: {
+  currentStep: WizardStep;
+  completedSteps: Set<WizardStep>;
+  onStepClick?: (step: WizardStep) => void;
+  allowNavigation?: boolean;
+}) {
+  const steps = WIZARD_STEPS;
+  const currentIndex = steps.findIndex((s) => s.id === currentStep);
+  const progressPercent = steps.length > 1 ? (currentIndex / (steps.length - 1)) * 100 : 100;
+  const currentStepConfig = steps.find((s) => s.id === currentStep);
+
+  return (
+    <div className="w-full space-y-3">
+      {/* Progress bar with step dots */}
+      <div className="relative px-4 py-3">
+        {/* Background track */}
+        <div className="h-1.5 w-full rounded-full bg-surface-light overflow-hidden">
+          {/* Animated fill */}
+          <div
+            className="h-full rounded-full bg-gradient-to-r from-primary via-primary to-emerald-400 transition-all duration-500 ease-out"
+            style={{ width: `${progressPercent}%` }}
+          />
+        </div>
+
+        {/* Step dots overlay */}
+        <div className="absolute inset-x-4 top-0 bottom-0 flex items-center">
+          {steps.map((step, index) => {
+            const isCompleted = completedSteps.has(step.id);
+            const isCurrent = step.id === currentStep;
+            const isPast = index < currentIndex;
+            const canClick = allowNavigation && (isCompleted || isPast);
+            const dotPosition = steps.length > 1 ? (index / (steps.length - 1)) * 100 : 50;
+
+            return (
+              <button
+                key={step.id}
+                type="button"
+                onClick={() => canClick && onStepClick?.(step.id)}
+                disabled={!canClick}
+                className={cn(
+                  'absolute flex items-center justify-center transition-all duration-300',
+                  canClick && 'cursor-pointer'
+                )}
+                style={{
+                  left: `${dotPosition}%`,
+                  transform: 'translateX(-50%)',
+                }}
+                title={step.label}
+              >
+                <div
+                  className={cn(
+                    'flex items-center justify-center rounded-full transition-all duration-300',
+                    isCurrent &&
+                      'h-7 w-7 bg-primary text-primary-foreground shadow-lg shadow-primary/40 ring-4 ring-primary/20',
+                    isCompleted && !isCurrent && 'h-5 w-5 bg-primary text-primary-foreground',
+                    !isCurrent && !isCompleted && 'h-4 w-4 bg-surface-light border-2 border-border',
+                    canClick && !isCurrent && 'hover:scale-125 hover:border-primary'
+                  )}
+                >
+                  {isCompleted && !isCurrent && <Check className="h-3 w-3" />}
+                  {isCurrent && <span className="text-xs font-bold">{index + 1}</span>}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Current step info */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-medium text-muted-foreground">
+            Krok {currentIndex + 1} z {steps.length}
+          </span>
+          <span className="text-muted-foreground/40">•</span>
+          <span className="text-sm font-semibold text-foreground">{currentStepConfig?.label}</span>
+        </div>
+        <p className="text-xs text-muted-foreground hidden sm:block max-w-[300px] text-right">
+          {currentStepConfig?.description}
+        </p>
+      </div>
+    </div>
+  );
+}
+
 export function CreateSetWizard({
   open,
   onOpenChange,
@@ -683,6 +786,9 @@ export function CreateSetWizard({
   const [previewExercise, setPreviewExercise] = useState<Exercise | null>(null);
   const [pickerView, setPickerView] = useState<'smart' | 'all'>('smart');
   const [_creationMode, setCreationMode] = useState<CreationMode>('manual');
+  const [completedSteps, setCompletedSteps] = useState<Set<WizardStep>>(new Set());
+  const [slideDirection, setSlideDirection] = useState<'left' | 'right'>('right');
+  const animationKey = useRef(0);
 
   // DnD sensors
   const sensors = useSensors(
@@ -1224,8 +1330,30 @@ export function CreateSetWizard({
   };
 
   const goToExercises = () => {
-    if (canProceedFromBasics) setCurrentStep('exercises');
+    if (canProceedFromBasics) {
+      setSlideDirection('right');
+      animationKey.current += 1;
+      setCompletedSteps((prev) => new Set([...prev, 'basics']));
+      setCurrentStep('exercises');
+    }
   };
+
+  const goBack = () => {
+    setSlideDirection('left');
+    animationKey.current += 1;
+    setCurrentStep('basics');
+  };
+
+  const goToStep = (step: WizardStep) => {
+    const steps = WIZARD_STEPS;
+    const currentIndex = steps.findIndex((s) => s.id === currentStep);
+    const targetIndex = steps.findIndex((s) => s.id === step);
+    setSlideDirection(targetIndex > currentIndex ? 'right' : 'left');
+    animationKey.current += 1;
+    setCurrentStep(step);
+  };
+
+  const isFirstStep = currentStep === 'basics';
 
   return (
     <Dialog open={open} onOpenChange={() => handleCloseAttempt()}>
@@ -1238,97 +1366,85 @@ export function CreateSetWizard({
         }}
       >
         {/* Header */}
-        <DialogHeader className="px-4 sm:px-6 py-3 sm:py-4 border-b border-border shrink-0">
-          <div className="flex items-center gap-2 sm:gap-4">
-            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-              <div className="flex h-9 w-9 sm:h-11 sm:w-11 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary-dark shadow-lg shadow-primary/20 shrink-0">
-                <FolderPlus className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
+        <DialogHeader className="px-6 pt-6 pb-4 border-b border-border shrink-0">
+          <div className="flex flex-col gap-4">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="h-11 w-11 rounded-xl bg-gradient-to-br from-primary to-primary-dark shadow-lg shadow-primary/20 flex items-center justify-center shrink-0">
+                  <FolderPlus className="h-5 w-5 text-white" />
+                </div>
+                <div>
+                  <DialogTitle className="text-xl">Nowy zestaw ćwiczeń</DialogTitle>
+                  <DialogDescription className="mt-1">
+                    {currentStep === 'basics'
+                      ? 'Podaj nazwę lub wybierz szybki start'
+                      : currentStep === 'ai'
+                      ? 'AI zaproponuje ćwiczenia na podstawie opisu'
+                      : 'Wybierz i dostosuj ćwiczenia'}
+                  </DialogDescription>
+                </div>
               </div>
-              <div className="min-w-0">
-                <DialogTitle className="text-base sm:text-xl font-bold truncate">Nowy zestaw ćwiczeń</DialogTitle>
-                <DialogDescription className="text-xs sm:text-sm text-muted-foreground truncate">
-                  {currentStep === 'basics'
-                    ? 'Podaj nazwę lub wybierz szybki start'
-                    : `${selectedExerciseIds.length} ćwiczeń • ~${estimatedTime} min`}
-                </DialogDescription>
-              </div>
+
+              {/* Floating Context Summary */}
+              {currentStep !== 'basics' && currentStep !== 'ai' && (
+                <div className="hidden sm:flex items-center gap-3 px-3 py-2 rounded-lg bg-surface-light/50 border border-border/50 text-xs shrink-0 mr-8">
+                  {name && (
+                    <div className="flex items-center gap-1.5 text-muted-foreground">
+                      <FileText className="h-3.5 w-3.5" />
+                      <span className="font-medium text-foreground max-w-[120px] truncate">{name}</span>
+                    </div>
+                  )}
+                  {selectedExerciseIds.length > 0 && (
+                    <>
+                      {name && <span className="text-border">•</span>}
+                      <div className="flex items-center gap-1.5 text-muted-foreground">
+                        <Dumbbell className="h-3.5 w-3.5" />
+                        <span>{selectedExerciseIds.length} ćwiczeń</span>
+                      </div>
+                    </>
+                  )}
+                  {estimatedTime > 0 && (
+                    <>
+                      <span className="text-border">•</span>
+                      <div className="flex items-center gap-1.5 text-muted-foreground">
+                        <Clock className="h-3.5 w-3.5" />
+                        <span>~{estimatedTime} min</span>
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
+
+              {/* AI mode indicator */}
+              {currentStep === 'ai' && (
+                <div className="hidden sm:flex items-center gap-2 px-3 py-2 rounded-lg bg-violet-500/10 border border-violet-500/30 text-xs shrink-0 mr-8">
+                  <Sparkles className="h-3.5 w-3.5 text-violet-400" />
+                  <span className="font-medium text-violet-300">AI Generator</span>
+                </div>
+              )}
             </div>
 
-            <div className="flex-1 flex items-center justify-end sm:justify-center">
-              <div className="flex items-center gap-1 sm:gap-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setCurrentStep('basics');
-                    setCreationMode('manual');
-                  }}
-                  className={cn(
-                    'flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-medium transition-all',
-                    currentStep === 'basics'
-                      ? 'bg-gradient-to-br from-primary to-primary-dark text-white shadow-lg shadow-primary/20'
-                      : 'bg-primary/20 text-primary hover:bg-primary/30'
-                  )}
-                >
-                  {currentStep !== 'basics' && <Check className="h-3.5 w-3.5 sm:h-4 sm:w-4" />}
-                  <FileText className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                  <span className="sm:hidden">Info</span>
-                  <span className="hidden sm:inline">Podstawy</span>
-                </button>
-                <div
-                  className={cn(
-                    'w-6 sm:w-10 h-1 rounded-full transition-all',
-                    currentStep === 'exercises' || currentStep === 'ai' ? 'bg-primary' : 'bg-border'
-                  )}
-                />
-                {currentStep === 'ai' ? (
-                  <button
-                    type="button"
-                    className="flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-medium bg-gradient-to-br from-violet-500 to-purple-600 text-white shadow-lg shadow-violet-500/20"
-                  >
-                    <Sparkles className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                    <span className="sm:hidden">AI</span>
-                    <span className="hidden sm:inline">AI Generator</span>
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={goToExercises}
-                    disabled={!canProceedFromBasics}
-                    className={cn(
-                      'flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 sm:py-2.5 rounded-xl text-xs sm:text-sm font-medium transition-all',
-                      currentStep === 'exercises'
-                        ? 'bg-gradient-to-br from-primary to-primary-dark text-white shadow-lg shadow-primary/20'
-                        : canProceedFromBasics
-                        ? 'bg-surface-light text-muted-foreground hover:bg-surface hover:text-foreground'
-                        : 'bg-surface-light text-muted-foreground/50 cursor-not-allowed'
-                    )}
-                  >
-                    <Dumbbell className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                    <span className="sm:hidden">Lista</span>
-                    <span className="hidden sm:inline">Ćwiczenia</span>
-                    {selectedExerciseIds.length > 0 && (
-                      <Badge
-                        className={cn(
-                          'text-xs h-5 px-1.5 font-semibold',
-                          currentStep === 'exercises'
-                            ? 'bg-white/25 text-white border-0'
-                            : 'bg-primary/20 text-primary border-0'
-                        )}
-                      >
-                        {selectedExerciseIds.length}
-                      </Badge>
-                    )}
-                  </button>
-                )}
-              </div>
-            </div>
-
-            <div className="w-11" />
+            {/* Step Indicator - hidden for AI step */}
+            {currentStep !== 'ai' && (
+              <CreateSetStepIndicator
+                currentStep={currentStep}
+                completedSteps={completedSteps}
+                onStepClick={goToStep}
+                allowNavigation={completedSteps.size > 0}
+              />
+            )}
           </div>
         </DialogHeader>
 
         {/* Content */}
         <div className="flex-1 overflow-hidden">
+          <div
+            key={animationKey.current}
+            className={cn(
+              'h-full',
+              slideDirection === 'right' ? 'animate-wizard-slide-in-right' : 'animate-wizard-slide-in-left'
+            )}
+          >
           {currentStep === 'basics' ? (
             <div className="h-full p-4 sm:p-6 flex flex-col lg:flex-row gap-4 lg:gap-6 overflow-auto">
               {/* Left: Form */}
@@ -1427,31 +1543,33 @@ export function CreateSetWizard({
               </div>
 
               {/* Right: Quick Start */}
-              <div className="w-full lg:flex-1 flex flex-col gap-4 lg:overflow-y-auto px-1 min-w-0">
-                {/* AI Generator Card */}
+              <div className="w-full lg:flex-1 flex flex-col gap-4 lg:overflow-y-auto lg:overflow-x-hidden px-1 min-w-0">
+                {/* AI Generator Card - Hero Action */}
                 <button
                   type="button"
                   onClick={handleStartAIMode}
                   className={cn(
-                    'group relative overflow-hidden rounded-xl sm:rounded-2xl p-2.5 sm:p-4 md:p-5 text-left transition-all duration-300 shrink-0 cursor-pointer',
-                    'bg-gradient-to-br from-violet-500 to-purple-600',
-                    'hover:shadow-lg hover:shadow-violet-500/15'
+                    'group relative overflow-hidden rounded-2xl p-5 sm:p-6 text-left transition-all duration-300 shrink-0 cursor-pointer m-1',
+                    'bg-gradient-to-br from-violet-500 via-purple-500 to-purple-600',
+                    'hover:shadow-xl hover:shadow-violet-500/20 hover:scale-[1.02]',
+                    'active:scale-[0.99]'
                   )}
                 >
-                  <div className="absolute inset-0 bg-gradient-to-br from-white/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                  <div className="absolute -top-20 -right-20 w-40 h-40 bg-white/5 rounded-full blur-3xl group-hover:bg-white/15 transition-all duration-500" />
+                  {/* Animated background glow */}
+                  <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                  <div className="absolute -top-24 -right-24 w-48 h-48 bg-white/10 rounded-full blur-3xl group-hover:bg-white/20 transition-all duration-500" />
 
-                  <div className="relative flex items-center gap-2.5 sm:gap-3 md:gap-4">
-                    <div className="flex h-8 w-8 sm:h-10 sm:w-10 md:h-12 md:w-12 items-center justify-center rounded-lg sm:rounded-xl bg-white/20 backdrop-blur-sm shrink-0 group-hover:bg-white/30 transition-all duration-300">
-                      <Sparkles className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 text-white" />
+                  <div className="relative flex items-center gap-4">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm shrink-0 group-hover:scale-110 transition-transform duration-300">
+                      <Sparkles className="h-6 w-6 text-white" />
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="text-sm sm:text-base md:text-lg font-bold text-white">AI Generator</h3>
-                      <p className="hidden sm:block text-xs md:text-sm text-white/80 line-clamp-1 md:line-clamp-none">
-                        Opisz potrzeby - AI zaproponuje ćwiczenia
+                    <div className="min-w-0 flex-1">
+                      <h3 className="text-lg font-bold text-white mb-1">AI Generator</h3>
+                      <p className="text-sm text-white/80">
+                        Opisz potrzeby pacjenta - AI zaproponuje ćwiczenia
                       </p>
                     </div>
-                    <ArrowRight className="h-4 w-4 sm:h-5 sm:w-5 text-white/60 group-hover:text-white group-hover:translate-x-1 transition-all duration-300 shrink-0" />
+                    <ArrowRight className="h-5 w-5 text-white/60 group-hover:text-white group-hover:translate-x-1 transition-all duration-300 shrink-0" />
                   </div>
                 </button>
 
@@ -1468,26 +1586,27 @@ export function CreateSetWizard({
                       <p className="text-xs text-muted-foreground">Brak tagów z ćwiczeniami</p>
                     </div>
                   ) : (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 animate-stagger">
                       {quickStartCategories.slice(0, 6).map((cat) => (
                         <button
                           key={cat.id}
                           type="button"
                           onClick={() => handleQuickStart(cat.id)}
                           className={cn(
-                            'group relative rounded-lg p-2.5 text-left transition-all duration-200',
-                            'border border-border/60 bg-background',
-                            'hover:border-primary/40 hover:shadow-md hover:-translate-y-0.5'
+                            'group relative rounded-xl p-3 text-left transition-all duration-300',
+                            'border border-border/60 bg-surface/50',
+                            'hover:-translate-y-1 hover:border-primary/40 hover:shadow-lg hover:shadow-primary/10',
+                            'active:scale-[0.98]'
                           )}
                         >
                           <div
-                            className="flex h-7 w-7 items-center justify-center rounded-md text-white mb-1"
+                            className="flex h-8 w-8 items-center justify-center rounded-lg text-white mb-2 transition-transform duration-300 group-hover:scale-110"
                             style={{ backgroundColor: cat.color }}
                           >
-                            <Tag className="h-3.5 w-3.5" />
+                            <Tag className="h-4 w-4" />
                           </div>
-                          <p className="font-medium text-xs truncate">{cat.label}</p>
-                          <p className="text-[10px] text-muted-foreground">{cat.exerciseCount}</p>
+                          <p className="font-medium text-sm truncate group-hover:text-primary transition-colors">{cat.label}</p>
+                          <p className="text-xs text-muted-foreground">{cat.exerciseCount} ćwiczeń</p>
                         </button>
                       ))}
                     </div>
@@ -1501,24 +1620,25 @@ export function CreateSetWizard({
                       <Copy className="h-4 w-4 text-muted-foreground" />
                       <h3 className="font-semibold text-sm">Z szablonu</h3>
                     </div>
-                    <div className="space-y-1.5">
+                    <div className="space-y-2 animate-stagger">
                       {templateSets.map((set) => (
                         <button
                           key={set.id}
                           type="button"
                           onClick={() => handleUseTemplate(set)}
                           className={cn(
-                            'w-full flex items-center gap-3 p-2.5 rounded-lg text-left transition-all',
-                            'border border-border/60 bg-background',
-                            'hover:border-primary/40 hover:bg-surface-light'
+                            'group w-full flex items-center gap-3 p-3 rounded-xl text-left transition-all duration-300',
+                            'border border-border/60 bg-surface/50',
+                            'hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-lg hover:shadow-primary/10',
+                            'active:scale-[0.99]'
                           )}
                         >
-                          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-surface-light shrink-0">
-                            <Dumbbell className="h-4 w-4 text-muted-foreground" />
+                          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-surface-light shrink-0 transition-all duration-300 group-hover:bg-primary/20 group-hover:scale-105">
+                            <Dumbbell className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="font-medium text-xs truncate">{set.name}</p>
-                            <p className="text-[10px] text-muted-foreground">
+                            <p className="font-medium text-sm truncate group-hover:text-primary transition-colors">{set.name}</p>
+                            <p className="text-xs text-muted-foreground">
                               {set.exerciseMappings?.length || 0} ćwiczeń
                               {set.patientAssignments && set.patientAssignments.length > 0 && (
                                 <span className="ml-1">
@@ -1527,7 +1647,7 @@ export function CreateSetWizard({
                               )}
                             </p>
                           </div>
-                          <ArrowRight className="h-4 w-4 text-muted-foreground shrink-0" />
+                          <ArrowRight className="h-4 w-4 text-muted-foreground shrink-0 group-hover:text-primary group-hover:translate-x-1 transition-all" />
                         </button>
                       ))}
                     </div>
@@ -1627,7 +1747,7 @@ export function CreateSetWizard({
                               <h4 className="text-sm font-semibold">Sugerowane</h4>
                               <span className="text-xs text-muted-foreground">na podstawie wybranych</span>
                             </div>
-                            <div className="grid gap-2">
+                            <div className="grid gap-2 animate-stagger">
                               {suggestedExercises.map((exercise) => (
                                 <ExercisePickerItem
                                   key={exercise.id}
@@ -1650,7 +1770,7 @@ export function CreateSetWizard({
                               <h4 className="text-sm font-semibold">Popularne</h4>
                               <span className="text-xs text-muted-foreground">najczęściej używane</span>
                             </div>
-                            <div className="grid gap-2">
+                            <div className="grid gap-2 animate-stagger">
                               {popularExercises.map((exercise) => (
                                 <ExercisePickerItem
                                   key={exercise.id}
@@ -1673,7 +1793,7 @@ export function CreateSetWizard({
                               <History className="h-4 w-4 text-muted-foreground" />
                               <h4 className="text-sm font-semibold">Ostatnio używane</h4>
                             </div>
-                            <div className="grid gap-2">
+                            <div className="grid gap-2 animate-stagger">
                               {recentExercises.map((exercise) => (
                                 <ExercisePickerItem
                                   key={exercise.id}
@@ -1800,6 +1920,8 @@ export function CreateSetWizard({
                 setCurrentStep('basics');
                 setCreationMode('manual');
               }}
+              setName={name}
+              onSetNameChange={setName}
               patientContext={
                 patientContext
                   ? {
@@ -1812,66 +1934,65 @@ export function CreateSetWizard({
               className="h-full"
             />
           ) : null}
+          </div>
         </div>
 
         {/* Footer - hidden for AI step (has its own footer) */}
         {currentStep !== 'ai' && (
-          <div className="px-4 sm:px-6 py-3 sm:py-4 border-t border-border shrink-0">
-            {currentStep === 'basics' ? (
-              <div className="flex items-center justify-between gap-2 sm:gap-4">
-                <Button variant="outline" onClick={handleCloseAttempt} disabled={isLoading} className="shrink-0">
-                  Anuluj
-                </Button>
+          <div className="px-6 py-4 border-t border-border shrink-0 flex items-center justify-between gap-4">
+            <Button variant="ghost" onClick={handleCloseAttempt} disabled={isLoading}>
+              Anuluj
+            </Button>
 
-                <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+            <div className="flex items-center gap-3">
+              {/* Mobile: show selected count */}
+              {currentStep === 'exercises' && (
+                <div className="flex lg:hidden items-center gap-2 text-sm text-muted-foreground">
+                  <Dumbbell className="h-4 w-4" />
+                  <span className="font-medium text-foreground">{selectedExerciseIds.length}</span>
+                </div>
+              )}
+
+              {!isFirstStep && (
+                <Button variant="ghost" onClick={goBack} disabled={isLoading}>
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Wstecz
+                </Button>
+              )}
+
+              {currentStep === 'basics' ? (
+                <>
                   <Button
-                    variant="ghost"
+                    variant="outline"
                     onClick={() => handleCreateSet(false)}
                     disabled={!canProceedFromBasics || isLoading}
-                    className="text-muted-foreground hidden sm:flex"
+                    className="hidden sm:flex"
                   >
                     {creatingSet && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Utwórz pusty zestaw
+                    Utwórz pusty
                   </Button>
 
                   <Button
                     onClick={goToExercises}
                     disabled={!canProceedFromBasics}
-                    className="gap-2 bg-gradient-to-br from-primary to-primary-dark shadow-lg shadow-primary/20"
+                    className="gap-2 bg-gradient-to-br from-primary to-primary-dark shadow-lg shadow-primary/20 min-w-[140px]"
                   >
-                    <span className="hidden sm:inline">Dalej: Dodaj ćwiczenia</span>
-                    <span className="sm:hidden">Dalej</span>
+                    Dalej: Ćwiczenia
                     <ArrowRight className="h-4 w-4" />
                   </Button>
-                </div>
-              </div>
-            ) : (
-              <div className="flex items-center justify-between gap-2 sm:gap-4">
-                <Button
-                  variant="outline"
-                  onClick={() => setCurrentStep('basics')}
-                  disabled={isLoading}
-                  className="shrink-0"
-                >
-                  Wstecz
-                </Button>
-
-                {/* Mobile: show selected count */}
-                <div className="flex lg:hidden items-center gap-2 text-sm text-muted-foreground">
-                  <span className="font-medium text-foreground">{selectedExerciseIds.length}</span>
-                  <span className="hidden xs:inline">wybrano</span>
-                </div>
-
+                </>
+              ) : (
                 <Button
                   onClick={() => handleCreateSet(true)}
                   disabled={isLoading}
-                  className="gap-2 bg-gradient-to-br from-primary to-primary-dark shadow-lg shadow-primary/20"
+                  className="gap-2 bg-gradient-to-br from-primary to-primary-dark shadow-lg shadow-primary/20 min-w-[160px]"
                 >
                   {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  <Check className="h-4 w-4 mr-1" />
                   Utwórz zestaw
                 </Button>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         )}
       </DialogContent>
@@ -1902,7 +2023,7 @@ export function CreateSetWizard({
                   <img
                     src={getMediaUrl(previewExercise.imageUrl || previewExercise.images?.[0]) || ''}
                     alt={previewExercise.name}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-contain"
                   />
                 </div>
               )}

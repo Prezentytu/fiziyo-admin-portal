@@ -18,6 +18,7 @@ import {
   MoreHorizontal,
   ChevronDown,
   Timer,
+  ZoomIn,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -29,6 +30,7 @@ import { ExerciseDialog } from '@/components/exercises/ExerciseDialog';
 import { AddExerciseToSetsDialog } from '@/components/exercises/AddExerciseToSetsDialog';
 import { ColorBadge } from '@/components/shared/ColorBadge';
 import { ImagePlaceholder } from '@/components/shared/ImagePlaceholder';
+import { ImageLightbox } from '@/components/shared/ImageLightbox';
 import { getMediaUrl, getMediaUrls } from '@/utils/mediaUrl';
 import {
   DropdownMenu,
@@ -78,6 +80,7 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isAddToSetDialogOpen, setIsAddToSetDialogOpen] = useState(false);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
   const [isTimesOpen, setIsTimesOpen] = useState(false);
   const [isNotesOpen, setIsNotesOpen] = useState(false);
 
@@ -236,15 +239,31 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
       <div className="grid gap-4 lg:grid-cols-12">
         {/* Hero Image */}
         <div className="lg:col-span-7 space-y-3">
-          <div className="relative aspect-video rounded-2xl overflow-hidden bg-surface-light">
+          <div className="relative aspect-video rounded-2xl overflow-hidden bg-surface-light group/hero">
             {currentImage ? (
               <>
                 <img
                   src={currentImage}
                   alt={exercise.name}
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-contain"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+
+                {/* Zoom button */}
+                <button
+                  type="button"
+                  onClick={() => setLightboxOpen(true)}
+                  className={cn(
+                    "absolute top-4 right-4 z-10",
+                    "flex h-10 w-10 items-center justify-center rounded-full",
+                    "bg-black/50 text-white/80 backdrop-blur-sm",
+                    "opacity-0 group-hover/hero:opacity-100 transition-all duration-200",
+                    "hover:bg-black/70 hover:text-white hover:scale-110"
+                  )}
+                  aria-label="Powiększ zdjęcie"
+                >
+                  <ZoomIn className="h-5 w-5" />
+                </button>
               </>
             ) : (
               <ImagePlaceholder type="exercise" className="h-full" iconClassName="h-16 w-16" />
@@ -503,6 +522,19 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
         onOpenChange={setIsAddToSetDialogOpen}
         exercise={exercise}
       />
+
+      {/* Image Lightbox */}
+      {currentImage && (
+        <ImageLightbox
+          src={currentImage}
+          alt={exercise.name}
+          open={lightboxOpen}
+          onOpenChange={setLightboxOpen}
+          images={allImages.length > 1 ? allImages : undefined}
+          currentIndex={selectedImageIndex}
+          onIndexChange={setSelectedImageIndex}
+        />
+      )}
     </div>
   );
 }

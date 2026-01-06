@@ -89,10 +89,17 @@ export default function ExercisesPage() {
   const totalCount = exercises.length;
 
   // Filter exercises
-  const filteredExercises = exercises.filter(
+  const searchFilteredExercises = exercises.filter(
     (exercise) =>
       matchesSearchQuery(exercise.name, searchQuery) || matchesSearchQuery(exercise.description, searchQuery)
   );
+
+  // Sort by creation date (newest first)
+  const filteredExercises = [...searchFilteredExercises].sort((a, b) => {
+    const aTime = a.creationTime ? new Date(a.creationTime).getTime() : 0;
+    const bTime = b.creationTime ? new Date(b.creationTime).getTime() : 0;
+    return bTime - aTime;
+  });
 
   const handleView = (exercise: Exercise) => {
     router.push(`/exercises/${exercise.id}`);
@@ -242,7 +249,7 @@ export default function ExercisesPage() {
             : 'space-y-2',
           'animate-stagger'
         )}>
-          <LoadingState type={viewMode === 'grid' ? 'card' : 'row'} count={6} />
+          <LoadingState type={viewMode === 'grid' ? 'exercise' : 'exercise-row'} count={8} />
         </div>
       ) : filteredExercises.length === 0 ? (
         <Card className="border-dashed border-border/60">

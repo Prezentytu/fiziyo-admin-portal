@@ -1,51 +1,49 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useQuery } from '@apollo/client/react';
-import { useUser } from '@clerk/nextjs';
+import { useState } from "react";
+import { useQuery } from "@apollo/client/react";
+import { useUser } from "@clerk/nextjs";
+import Link from "next/link";
 import {
   Building2,
   Users,
   MapPin,
-  Settings,
   UserPlus,
   Plus,
-  Search,
   CreditCard,
   Mail,
-} from 'lucide-react';
+  ArrowRight,
+} from "lucide-react";
 
-import { Input } from '@/components/ui/input';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { LoadingState } from '@/components/shared/LoadingState';
-import { EmptyState } from '@/components/shared/EmptyState';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { LoadingState } from "@/components/shared/LoadingState";
+import { EmptyState } from "@/components/shared/EmptyState";
 import {
   InviteMemberDialog,
   ClinicDialog,
   AssignToClinicDialog,
-  SettingsTab,
   InvitationsTab,
-} from '@/components/organization';
-import { TeamSection } from '@/components/organization/TeamSection';
-import { ClinicsSection, Clinic } from '@/components/organization/ClinicsSection';
-import type { OrganizationMember } from '@/components/organization/MemberCard';
-import { cn } from '@/lib/utils';
+} from "@/components/organization";
+import { TeamSection } from "@/components/organization/TeamSection";
+import { ClinicsSection, Clinic } from "@/components/organization/ClinicsSection";
+import type { OrganizationMember } from "@/components/organization/MemberCard";
+import { cn } from "@/lib/utils";
 
 import {
   GET_ORGANIZATION_BY_ID_QUERY,
   GET_ORGANIZATION_MEMBERS_QUERY,
   GET_CURRENT_ORGANIZATION_PLAN,
-} from '@/graphql/queries/organizations.queries';
-import { GET_USER_BY_CLERK_ID_QUERY, GET_USER_ORGANIZATIONS_QUERY } from '@/graphql/queries/users.queries';
-import { GET_ORGANIZATION_CLINICS_QUERY } from '@/graphql/queries/clinics.queries';
-import { useOrganization } from '@/contexts/OrganizationContext';
+} from "@/graphql/queries/organizations.queries";
+import { GET_USER_BY_CLERK_ID_QUERY, GET_USER_ORGANIZATIONS_QUERY } from "@/graphql/queries/users.queries";
+import { GET_ORGANIZATION_CLINICS_QUERY } from "@/graphql/queries/clinics.queries";
+import { useOrganization } from "@/contexts/OrganizationContext";
 import type {
   UserByClerkIdResponse,
   OrganizationByIdResponse,
   OrganizationMembersResponse,
   OrganizationClinicsResponse,
   UserOrganizationsResponse,
-} from '@/types/apollo';
+} from "@/types/apollo";
 
 interface ClinicFromQuery {
   id: string;
@@ -79,13 +77,12 @@ interface PlanResponse {
 }
 
 // Filter out patients - only show staff members
-const STAFF_ROLES = ['owner', 'admin', 'therapist', 'member'];
+const STAFF_ROLES = new Set(["owner", "admin", "therapist", "member"]);
 
 export default function OrganizationPage() {
   const { user } = useUser();
   const { currentOrganization } = useOrganization();
-  const [activeTab, setActiveTab] = useState('team');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [activeTab, setActiveTab] = useState("team");
   const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
   const [isClinicDialogOpen, setIsClinicDialogOpen] = useState(false);
   const [isAssignToClinicDialogOpen, setIsAssignToClinicDialogOpen] = useState(false);
@@ -117,7 +114,6 @@ export default function OrganizationPage() {
   const {
     data: orgData,
     loading: orgLoading,
-    refetch: refetchOrg,
   } = useQuery(GET_ORGANIZATION_BY_ID_QUERY, {
     variables: { id: organizationId },
     skip: !organizationId,
@@ -144,7 +140,7 @@ export default function OrganizationPage() {
   });
 
   // Get subscription plan info
-  const { data: planData, loading: planLoading } = useQuery(GET_CURRENT_ORGANIZATION_PLAN, {
+  const { data: planData } = useQuery(GET_CURRENT_ORGANIZATION_PLAN, {
     variables: { organizationId },
     skip: !organizationId,
   });
@@ -155,16 +151,16 @@ export default function OrganizationPage() {
   const planInfo = (planData as PlanResponse)?.currentOrganizationPlan;
 
   // Count only staff members (exclude patients)
-  const staffMembers = members.filter((m) => STAFF_ROLES.includes(m.role.toLowerCase()));
+  const staffMembers = members.filter((m) => STAFF_ROLES.has(m.role.toLowerCase()));
   const teamCount = staffMembers.length;
   const clinicsCount = clinics.length;
-  const planName = planInfo?.currentPlan || organization?.subscriptionPlan || 'Free';
+  const planName = planInfo?.currentPlan || organization?.subscriptionPlan || "Free";
 
-  const canEdit = currentUserRole === 'owner' || currentUserRole === 'admin';
+  const canEdit = currentUserRole === "owner" || currentUserRole === "admin";
 
   // Get therapists for clinic assignment (filter out patients)
   const therapists = members
-    .filter((m) => ['owner', 'admin', 'therapist'].includes(m.role.toLowerCase()))
+    .filter((m) => ["owner", "admin", "therapist"].includes(m.role.toLowerCase()))
     .map((m) => ({
       id: m.userId,
       fullname: m.user?.fullname,
@@ -174,7 +170,7 @@ export default function OrganizationPage() {
 
   // Patients for clinic assignment
   const patients = members
-    .filter((m) => m.role.toLowerCase() === 'patient')
+    .filter((m) => m.role.toLowerCase() === "patient")
     .map((m) => ({
       id: m.userId,
       fullname: m.user?.fullname,
@@ -202,12 +198,6 @@ export default function OrganizationPage() {
     setAssigningClinic(null);
   };
 
-  const handleRefreshAll = () => {
-    refetchOrg();
-    refetchMembers();
-    refetchClinics();
-  };
-
   if (orgLoading) {
     return (
       <div className="space-y-6">
@@ -226,130 +216,115 @@ export default function OrganizationPage() {
 
   return (
     <div className="space-y-6">
-      {/* Compact Header with Search */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-2xl font-bold text-foreground">Organizacja</h1>
-        <div className="relative w-full sm:w-72">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Szukaj w organizacji..."
-            className="pl-9 bg-surface border-border/60"
-          />
-        </div>
-      </div>
-
-      {/* Hero Action + Quick Stats */}
-      <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-12">
-        {/* Hero Action - Zaproś do zespołu */}
-        {canEdit && (
-          <button
-            onClick={() => setIsInviteDialogOpen(true)}
-            className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary via-primary to-primary-dark p-5 text-left transition-all duration-300 hover:shadow-xl hover:shadow-primary/20 hover:scale-[1.02] cursor-pointer sm:col-span-1 lg:col-span-5"
-          >
-            <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-            <div className="absolute -top-24 -right-24 w-48 h-48 bg-white/10 rounded-full blur-3xl group-hover:bg-white/20 transition-all duration-500" />
-
-            <div className="relative flex items-center gap-4">
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm shrink-0 group-hover:scale-110 transition-transform duration-300">
-                <UserPlus className="h-5 w-5 text-white" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <h3 className="text-base font-bold text-white">Zaproś do zespołu</h3>
-                <p className="text-sm text-white/70">Dodaj fizjoterapeutę lub administratora</p>
-              </div>
-              <Plus className="h-5 w-5 text-white/60 group-hover:text-white transition-colors shrink-0" />
-            </div>
-          </button>
-        )}
-
-        {/* Quick Stats - klikalne, przełączają Tabs */}
-        <div className={cn(
-          "grid grid-cols-3 gap-3",
-          canEdit ? "sm:col-span-1 lg:col-span-7" : "sm:col-span-2 lg:col-span-12"
-        )}>
-          {/* Team count */}
-          <button
-            onClick={() => setActiveTab('team')}
-            className={cn(
-              'rounded-2xl border p-4 flex flex-col items-center justify-center text-center transition-all duration-200',
-              activeTab === 'team'
-                ? 'border-primary/40 bg-primary/10 ring-1 ring-primary/20'
-                : 'border-border/40 bg-surface/50 hover:bg-surface-light hover:border-border'
-            )}
-          >
-            <div className="flex items-center gap-2">
-              <Users className={cn('h-4 w-4', activeTab === 'team' ? 'text-primary' : 'text-muted-foreground')} />
-              <span className={cn('text-2xl font-bold', activeTab === 'team' ? 'text-primary' : 'text-foreground')}>
-                {teamCount}
-              </span>
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">Zespół</p>
-          </button>
-
-          {/* Clinics count */}
-          <button
-            onClick={() => setActiveTab('clinics')}
-            className={cn(
-              'rounded-2xl border p-4 flex flex-col items-center justify-center text-center transition-all duration-200',
-              activeTab === 'clinics'
-                ? 'border-secondary/40 bg-secondary/10 ring-1 ring-secondary/20'
-                : 'border-border/40 bg-surface/50 hover:bg-surface-light hover:border-border'
-            )}
-          >
-            <div className="flex items-center gap-2">
-              <MapPin className={cn('h-4 w-4', activeTab === 'clinics' ? 'text-secondary' : 'text-muted-foreground')} />
-              <span className={cn('text-2xl font-bold', activeTab === 'clinics' ? 'text-secondary' : 'text-foreground')}>
-                {clinicsCount}
-              </span>
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">Gabinety</p>
-          </button>
-
-          {/* Plan */}
-          <button
-            onClick={() => setActiveTab('settings')}
-            className={cn(
-              'rounded-2xl border p-4 flex flex-col items-center justify-center text-center transition-all duration-200',
-              activeTab === 'settings'
-                ? 'border-info/40 bg-info/10 ring-1 ring-info/20'
-                : 'border-border/40 bg-surface/50 hover:bg-surface-light hover:border-border'
-            )}
-          >
-            <div className="flex items-center gap-2">
-              <CreditCard className={cn('h-4 w-4', activeTab === 'settings' ? 'text-info' : 'text-muted-foreground')} />
-              <span className={cn('text-lg font-bold', activeTab === 'settings' ? 'text-info' : 'text-foreground')}>
-                {planName}
-              </span>
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">Plan</p>
-          </button>
-        </div>
-      </div>
-
-      {/* Tabs */}
+      {/* Tabs - simplified without Settings tab */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList>
-          <TabsTrigger value="team" className="flex items-center gap-2">
-            <Users className="h-4 w-4" />
-            Zespół
-          </TabsTrigger>
-          {canEdit && (
-            <TabsTrigger value="invitations" className="flex items-center gap-2">
-              <Mail className="h-4 w-4" />
-              Zaproszenia
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <h1 className="text-2xl font-bold text-foreground">Zespół i gabinety</h1>
+          <TabsList className="h-9">
+            <TabsTrigger value="team" className="flex items-center gap-2 text-xs sm:text-sm">
+              <Users className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Zespół</span>
+              <span className="text-muted-foreground">({teamCount})</span>
             </TabsTrigger>
+            {canEdit && (
+              <TabsTrigger value="invitations" className="flex items-center gap-2 text-xs sm:text-sm">
+                <Mail className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Zaproszenia</span>
+              </TabsTrigger>
+            )}
+            <TabsTrigger value="clinics" className="flex items-center gap-2 text-xs sm:text-sm">
+              <MapPin className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Gabinety</span>
+              <span className="text-muted-foreground">({clinicsCount})</span>
+            </TabsTrigger>
+          </TabsList>
+        </div>
+
+        {/* Hero Action + Quick Stats */}
+        <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 mt-4">
+          {/* Hero Action - Zaproś do zespołu */}
+          {canEdit && (
+            <button
+              onClick={() => setIsInviteDialogOpen(true)}
+              className="group relative overflow-hidden rounded-2xl bg-linear-to-br from-primary via-primary to-primary-dark p-5 text-left transition-all duration-300 hover:shadow-xl hover:shadow-primary/20 hover:scale-[1.02] cursor-pointer sm:col-span-1 lg:col-span-5"
+            >
+              <div className="absolute inset-0 bg-linear-to-br from-white/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              <div className="absolute -top-24 -right-24 w-48 h-48 bg-white/10 rounded-full blur-3xl group-hover:bg-white/20 transition-all duration-500" />
+
+              <div className="relative flex items-center gap-4">
+                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm shrink-0 group-hover:scale-110 transition-transform duration-300">
+                  <UserPlus className="h-5 w-5 text-white" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <h3 className="text-base font-bold text-white">Zaproś do zespołu</h3>
+                  <p className="text-sm text-white/70">Dodaj fizjoterapeutę lub administratora</p>
+                </div>
+                <Plus className="h-5 w-5 text-white/60 group-hover:text-white transition-colors shrink-0" />
+              </div>
+            </button>
           )}
-          <TabsTrigger value="clinics" className="flex items-center gap-2">
-            <MapPin className="h-4 w-4" />
-            Gabinety
-          </TabsTrigger>
-          <TabsTrigger value="settings" className="flex items-center gap-2">
-            <Settings className="h-4 w-4" />
-            Ustawienia
-          </TabsTrigger>
-        </TabsList>
+
+          {/* Quick Stats - klikalne */}
+          <div className={cn(
+            "grid grid-cols-3 gap-3",
+            canEdit ? "sm:col-span-1 lg:col-span-7" : "sm:col-span-2 lg:col-span-12"
+          )}>
+            {/* Team count */}
+            <button
+              onClick={() => setActiveTab("team")}
+              className={cn(
+                "rounded-2xl border p-4 flex flex-col items-center justify-center text-center transition-all duration-200",
+                activeTab === "team"
+                  ? "border-primary/40 bg-primary/10 ring-1 ring-primary/20"
+                  : "border-border/40 bg-surface/50 hover:bg-surface-light hover:border-border"
+              )}
+            >
+              <div className="flex items-center gap-2">
+                <Users className={cn("h-4 w-4", activeTab === "team" ? "text-primary" : "text-muted-foreground")} />
+                <span className={cn("text-2xl font-bold", activeTab === "team" ? "text-primary" : "text-foreground")}>
+                  {teamCount}
+                </span>
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">Zespół</p>
+            </button>
+
+            {/* Clinics count */}
+            <button
+              onClick={() => setActiveTab("clinics")}
+              className={cn(
+                "rounded-2xl border p-4 flex flex-col items-center justify-center text-center transition-all duration-200",
+                activeTab === "clinics"
+                  ? "border-secondary/40 bg-secondary/10 ring-1 ring-secondary/20"
+                  : "border-border/40 bg-surface/50 hover:bg-surface-light hover:border-border"
+              )}
+            >
+              <div className="flex items-center gap-2">
+                <MapPin className={cn("h-4 w-4", activeTab === "clinics" ? "text-secondary" : "text-muted-foreground")} />
+                <span className={cn("text-2xl font-bold", activeTab === "clinics" ? "text-secondary" : "text-foreground")}>
+                  {clinicsCount}
+                </span>
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">Gabinety</p>
+            </button>
+
+            {/* Plan - links to /billing */}
+            <Link
+              href="/billing"
+              className="group rounded-2xl border border-border/40 bg-surface/50 p-4 flex flex-col items-center justify-center text-center transition-all duration-200 hover:bg-surface-light hover:border-border hover:shadow-lg"
+            >
+              <div className="flex items-center gap-2">
+                <CreditCard className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                <span className="text-lg font-bold text-foreground group-hover:text-primary transition-colors">
+                  {planName}
+                </span>
+              </div>
+              <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                Plan
+                <ArrowRight className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+              </p>
+            </Link>
+          </div>
+        </div>
 
         {/* Team Tab */}
         <TabsContent value="team" className="mt-6">
@@ -389,18 +364,6 @@ export default function OrganizationPage() {
             onEditClinic={handleEditClinic}
             onAssignPeople={handleAssignPeople}
             onRefresh={() => refetchClinics()}
-          />
-        </TabsContent>
-
-        {/* Settings Tab */}
-        <TabsContent value="settings" className="mt-6">
-          <SettingsTab
-            organization={organization}
-            currentUserRole={currentUserRole}
-            limits={planInfo?.limits}
-            currentUsage={planInfo?.currentUsage}
-            isLoading={planLoading}
-            onRefresh={handleRefreshAll}
           />
         </TabsContent>
       </Tabs>

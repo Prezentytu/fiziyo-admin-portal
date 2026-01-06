@@ -98,6 +98,8 @@ export interface ExerciseOverride {
   videoUrl?: string;
   imageUrl?: string;
   images?: string[];
+  // Visibility - hide exercise from this assignment
+  hidden?: boolean;
 }
 
 // Wizard state
@@ -201,4 +203,3 @@ export interface AssignmentWizardProps {
   therapistId?: string;
   onSuccess?: () => void;
 }
-

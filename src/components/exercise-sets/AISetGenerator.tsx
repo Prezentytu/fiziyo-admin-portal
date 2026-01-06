@@ -1,11 +1,13 @@
 'use client';
 
 import { useState, useCallback, useMemo } from 'react';
-import { Sparkles, Loader2, Check, X, RefreshCw, Wand2, AlertCircle, Plus, ChevronDown, ChevronUp } from 'lucide-react';
+import { Sparkles, Loader2, Check, X, RefreshCw, Wand2, AlertCircle, Plus, ChevronDown, ChevronUp, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -47,6 +49,8 @@ interface AISetGeneratorProps {
   exercises: Exercise[];
   onSelectExercises: (exerciseIds: string[]) => void;
   onCancel: () => void;
+  setName: string;
+  onSetNameChange: (name: string) => void;
   patientContext?: {
     patientName?: string;
     diagnosis?: string[];
@@ -100,6 +104,8 @@ export function AISetGenerator({
   exercises,
   onSelectExercises,
   onCancel,
+  setName,
+  onSetNameChange,
   patientContext,
   className,
 }: AISetGeneratorProps) {
@@ -239,12 +245,27 @@ export function AISetGenerator({
           </div>
         )}
 
-        {/* Input */}
+        {/* Set name input */}
+        <div className="space-y-2 mb-4">
+          <Label htmlFor="ai-set-name" className="text-sm font-medium">
+            Nazwa zestawu
+          </Label>
+          <Input
+            id="ai-set-name"
+            value={setName}
+            onChange={(e) => onSetNameChange(e.target.value)}
+            placeholder="np. Rehabilitacja kolana - tydzień 1"
+            className="h-10"
+            disabled={isGenerating}
+          />
+        </div>
+
+        {/* Prompt input */}
         <div className="space-y-3">
           <Textarea
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
-            placeholder="np. Rehabilitacja po skręceniu kostki, faza 2, pacjent aktywny sportowo..."
+            placeholder="Opisz potrzeby pacjenta, np. Rehabilitacja po skręceniu kostki, faza 2, pacjent aktywny sportowo..."
             className="min-h-[80px] resize-none"
             disabled={isGenerating}
           />
@@ -426,16 +447,17 @@ export function AISetGenerator({
       </ScrollArea>
 
       {/* Footer */}
-      <div className="p-4 border-t border-border flex items-center justify-between gap-4">
-        <Button variant="outline" onClick={onCancel}>
-          Anuluj
+      <div className="px-6 py-4 border-t border-border flex items-center justify-between gap-4">
+        <Button variant="ghost" onClick={onCancel}>
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Wróć
         </Button>
 
         {generatedMatches.length > 0 && (
           <Button
             onClick={handleConfirm}
             disabled={selectedCount === 0}
-            className="gap-2 bg-gradient-to-br from-primary to-primary-dark"
+            className="gap-2 bg-gradient-to-br from-primary to-primary-dark shadow-lg shadow-primary/20"
           >
             <Check className="h-4 w-4" />
             Dodaj {selectedCount} ćwiczeń

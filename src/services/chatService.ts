@@ -1,4 +1,5 @@
 import { getBackendToken } from "@/lib/tokenCache";
+import { triggerCreditsRefresh } from "@/components/settings/AICreditsPanel";
 import type { ChatQuestionRequest, ChatDataContainer } from "@/types/chat.types";
 
 const isDev = process.env.NODE_ENV === "development";
@@ -68,6 +69,9 @@ class ChatService {
         });
       }
 
+      // Odśwież kredyty po udanej akcji AI
+      triggerCreditsRefresh();
+
       return data;
     } catch (error) {
       if (isDev) {
@@ -80,10 +84,3 @@ class ChatService {
 
 // Singleton instance
 export const chatService = new ChatService();
-
-
-
-
-
-
-

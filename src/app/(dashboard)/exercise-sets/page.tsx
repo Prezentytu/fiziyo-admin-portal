@@ -82,15 +82,17 @@ export default function ExerciseSetsPage() {
     (set) => matchesSearchQuery(set.name, searchQuery) || matchesSearchQuery(set.description, searchQuery)
   );
 
-  // Sort by most assigned for better UX, inactive at the bottom
+  // Sort by creation date (newest first), inactive at the bottom
   const filteredSets = [...searchFilteredSets].sort((a, b) => {
     // Inactive at bottom
     const aInactive = a.isActive === false;
     const bInactive = b.isActive === false;
     if (aInactive && !bInactive) return 1;
     if (!aInactive && bInactive) return -1;
-    // Then by assignment count
-    return (b.patientAssignments?.length || 0) - (a.patientAssignments?.length || 0);
+    // Then by creation time (newest first)
+    const aTime = a.creationTime ? new Date(a.creationTime).getTime() : 0;
+    const bTime = b.creationTime ? new Date(b.creationTime).getTime() : 0;
+    return bTime - aTime;
   });
 
   const handleView = (set: ExerciseSet) => {
