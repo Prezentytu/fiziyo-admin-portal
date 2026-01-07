@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import Link from "next/link";
 import { useQuery } from "@apollo/client/react";
 import { Sparkles, Zap, ArrowRight } from "lucide-react";
@@ -25,13 +26,25 @@ export function AICreditsWidget({ isCollapsed }: AICreditsWidgetProps) {
   const { currentOrganization } = useOrganization();
   const organizationId = currentOrganization?.organizationId;
 
-  const { data, loading, error } = useQuery<{
+  const { data, loading, error, refetch } = useQuery<{
     aiCreditsStatus: AICreditsStatus;
   }>(GET_AI_CREDITS_STATUS, {
     variables: { organizationId: organizationId || "" },
     skip: !organizationId,
     errorPolicy: "ignore",
   });
+
+  // Nasłuchuj na event 'ai-credits-changed' i odśwież dane
+  useEffect(() => {
+    const handleCreditsChanged = () => {
+      if (organizationId) {
+        refetch();
+      }
+    };
+
+    window.addEventListener('ai-credits-changed', handleCreditsChanged);
+    return () => window.removeEventListener('ai-credits-changed', handleCreditsChanged);
+  }, [organizationId, refetch]);
 
   const credits = data?.aiCreditsStatus;
 
@@ -181,4 +194,3 @@ export function AICreditsWidget({ isCollapsed }: AICreditsWidgetProps) {
     </div>
   );
 }
-

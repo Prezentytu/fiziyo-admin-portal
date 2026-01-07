@@ -15,6 +15,7 @@ const routeNames: Record<string, string> = {
   'exercise-sets': 'Zestawy',
   patients: 'Pacjenci',
   organization: 'Organizacja',
+  billing: 'Rozliczenia',
   settings: 'Ustawienia',
   tags: 'Tagi',
   import: 'Import AI',
