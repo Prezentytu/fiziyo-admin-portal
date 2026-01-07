@@ -7,6 +7,7 @@ import { LayoutDashboard, Dumbbell, FolderKanban, Users, Building2, Settings, Lo
 import { useClerk } from '@clerk/nextjs';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { OrganizationSwitcher } from './OrganizationSwitcher';
+import { Logo } from '@/components/shared/Logo';
 
 // Navigation structure with grouping
 const navigationGroups = [
@@ -56,16 +57,8 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
       <SheetContent side="left" className="w-72 p-0" data-testid="nav-mobile-sidebar">
         {/* Header */}
         <SheetHeader className="border-b border-border p-4">
-          <SheetTitle className="flex items-center gap-3">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary-dark shadow-lg shadow-primary/20">
-              <span className="text-lg font-bold text-primary-foreground">F</span>
-            </div>
-            <div className="flex flex-col text-left">
-              <span className="text-lg font-bold leading-none">FiziYo</span>
-              <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-normal">
-                Admin Panel
-              </span>
-            </div>
+          <SheetTitle>
+            <Logo variant="full" size="md" />
           </SheetTitle>
         </SheetHeader>
 

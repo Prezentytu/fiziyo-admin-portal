@@ -14,13 +14,13 @@ import {
   LogOut,
   PanelLeftClose,
   PanelLeft,
-  HeartPulse,
   FileUp,
 } from "lucide-react";
 import { useClerk } from "@clerk/nextjs";
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
 import { OrganizationSwitcher } from "./OrganizationSwitcher";
 import { AICreditsWidget } from "./AICreditsWidget";
+import { Logo } from "@/components/shared/Logo";
 
 // Navigation structure with grouping - reorganized per plan
 const navigationGroups = [
@@ -74,17 +74,12 @@ export function Sidebar({ isCollapsed, onToggleCollapse }: SidebarProps) {
             isCollapsed ? "justify-center px-3" : "justify-between px-4"
           )}
         >
-          <Link href="/" data-testid="nav-logo-link" className="flex items-center gap-3">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary-dark shadow-lg shadow-primary/15">
-              <HeartPulse className="h-5 w-5 text-primary-foreground" />
-            </div>
-            {!isCollapsed && (
-              <div className="flex flex-col justify-center overflow-hidden">
-                <span className="text-lg font-bold leading-tight text-foreground">FiziYo</span>
-                <span className="text-[10px] text-muted-foreground uppercase tracking-wider leading-tight">Admin Panel</span>
-              </div>
-            )}
-          </Link>
+          <Logo
+            variant={isCollapsed ? "icon" : "full"}
+            size="md"
+            asLink
+            href="/"
+          />
 
           {!isCollapsed && (
             <button
