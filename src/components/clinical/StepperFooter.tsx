@@ -56,6 +56,7 @@ export function StepperFooter({
               onClick={onBack}
               disabled={isLoading}
               className="gap-2"
+              data-testid="clinical-note-back-btn"
             >
               <ArrowLeft className="h-4 w-4" />
               <span className="hidden sm:inline">Wróć</span>
@@ -71,6 +72,7 @@ export function StepperFooter({
               onClick={onSaveDraft}
               disabled={isLoading || isSaving}
               className="gap-2"
+              data-testid="clinical-note-save-draft-btn"
             >
               {isSaving ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -98,11 +100,12 @@ export function StepperFooter({
                 <ArrowRight className="h-4 w-4" />
               </Button>
             )
-          ) : isSummaryStep ? (
+          ) :           isSummaryStep ? (
             <Button
               onClick={onSignAndComplete}
               disabled={isLoading || !canSign}
               className="gap-2 bg-gradient-to-r from-primary to-emerald-600 hover:from-primary-dark hover:to-emerald-700 min-w-[180px]"
+              data-testid="clinical-note-sign-btn"
             >
               {isLoading ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -116,6 +119,7 @@ export function StepperFooter({
               onClick={onNext}
               disabled={isLoading}
               className="gap-2"
+              data-testid="clinical-note-next-btn"
             >
               <span className="hidden sm:inline">Dalej</span>
               <ArrowRight className="h-4 w-4" />
@@ -131,4 +135,3 @@ export function StepperFooter({
     </div>
   );
 }
-

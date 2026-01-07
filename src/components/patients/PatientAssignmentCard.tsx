@@ -309,7 +309,7 @@ export function PatientAssignmentCard({
         <Card className={cn(
           "transition-all duration-200 border-border/60",
           isExpanded && "ring-1 ring-primary/20 border-primary/30"
-        )}>
+        )} data-testid={`patient-assignment-${assignment.id}`}>
           {/* Header - always visible */}
           <CollapsibleTrigger asChild>
             <div className="flex items-center gap-4 p-4 cursor-pointer hover:bg-surface-light/50 transition-colors">
@@ -367,17 +367,17 @@ export function PatientAssignmentCard({
               <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                    <Button variant="ghost" size="icon" className="h-8 w-8" data-testid={`patient-assignment-${assignment.id}-menu-trigger`}>
                       <MoreHorizontal className="h-4 w-4" />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => onGeneratePDF?.(assignment)}>
+                    <DropdownMenuItem onClick={() => onGeneratePDF?.(assignment)} data-testid={`patient-assignment-${assignment.id}-pdf-btn`}>
                       <FileDown className="mr-2 h-4 w-4" />
                       Pobierz PDF
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => onEditSchedule?.(assignment)}>
+                    <DropdownMenuItem onClick={() => onEditSchedule?.(assignment)} data-testid={`patient-assignment-${assignment.id}-edit-btn`}>
                       <Calendar className="mr-2 h-4 w-4" />
                       Edytuj harmonogram
                     </DropdownMenuItem>
@@ -398,6 +398,7 @@ export function PatientAssignmentCard({
                     <DropdownMenuItem
                       onClick={() => setIsDeleteDialogOpen(true)}
                       className="text-destructive focus:text-destructive"
+                      data-testid={`patient-assignment-${assignment.id}-remove-btn`}
                     >
                       <Trash2 className="mr-2 h-4 w-4" />
                       Usuń przypisanie

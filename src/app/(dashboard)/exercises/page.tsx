@@ -142,7 +142,7 @@ export default function ExercisesPage() {
     <div className="space-y-6">
       {/* Compact Header with Search + View Toggle */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-2xl font-bold text-foreground">Ćwiczenia</h1>
+        <h1 data-testid="exercise-page-title" className="text-2xl font-bold text-foreground">Ćwiczenia</h1>
         <div className="flex items-center gap-2">
           {/* Search Input */}
           <div className="relative w-full sm:w-64">
@@ -152,12 +152,14 @@ export default function ExercisesPage() {
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Szukaj ćwiczeń..."
               className="pl-9 bg-surface border-border/60"
+              data-testid="exercise-search-input"
             />
           </div>
           {/* View Toggle - Linear/Figma style */}
           <div className="flex items-center rounded-lg border border-border/60 bg-surface p-1">
             <button
               onClick={() => setViewMode('grid')}
+              data-testid="exercise-view-grid-btn"
               className={cn(
                 'p-1.5 rounded-md transition-all duration-200',
                 viewMode === 'grid'
@@ -170,6 +172,7 @@ export default function ExercisesPage() {
             </button>
             <button
               onClick={() => setViewMode('list')}
+              data-testid="exercise-view-list-btn"
               className={cn(
                 'p-1.5 rounded-md transition-all duration-200',
                 viewMode === 'list'
@@ -190,6 +193,7 @@ export default function ExercisesPage() {
         <button
           onClick={() => setIsDialogOpen(true)}
           disabled={!organizationId}
+          data-testid="exercise-create-btn"
           className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary via-primary to-primary-dark p-5 text-left transition-all duration-300 hover:shadow-xl hover:shadow-primary/20 hover:scale-[1.02] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex-1 sm:max-w-sm"
         >
           <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />

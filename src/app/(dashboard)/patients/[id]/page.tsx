@@ -196,18 +196,19 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
           size="sm"
           onClick={() => router.push('/patients')}
           className="gap-2 text-muted-foreground hover:text-foreground"
+          data-testid="patient-detail-back-btn"
         >
           <ArrowLeft className="h-4 w-4" />
           Powrót
         </Button>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-8 w-8">
+            <Button variant="ghost" size="icon" className="h-8 w-8" data-testid="patient-detail-menu-trigger">
               <MoreHorizontal className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => setIsQRCodeDialogOpen(true)}>
+            <DropdownMenuItem onClick={() => setIsQRCodeDialogOpen(true)} data-testid="patient-detail-qr-btn">
               <QrCode className="mr-2 h-4 w-4" />
               Pokaż QR kod
             </DropdownMenuItem>
@@ -251,7 +252,7 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <h1 className="text-xl font-bold text-foreground truncate">{displayName}</h1>
+            <h1 className="text-xl font-bold text-foreground truncate" data-testid="patient-detail-name">{displayName}</h1>
             {patient.isShadowUser && (
               <Badge variant="secondary" className="text-[10px] shrink-0">
                 Tymczasowe
@@ -288,6 +289,7 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
           onClick={() => setIsAssignDialogOpen(true)}
           disabled={!organizationId || !therapistId}
           className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary via-primary to-primary-dark p-5 text-left transition-all duration-300 hover:shadow-xl hover:shadow-primary/20 hover:scale-[1.02] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 sm:col-span-4"
+          data-testid="patient-detail-assign-btn"
         >
           <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
           <div className="absolute -top-24 -right-24 w-48 h-48 bg-white/10 rounded-full blur-3xl group-hover:bg-white/20 transition-all duration-500" />

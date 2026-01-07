@@ -263,6 +263,7 @@ function EditExerciseOverrideDialogContent({
         e.preventDefault();
         onCloseAttempt();
       }}
+      data-testid="patient-exercise-override-dialog"
     >
       <DialogHeader className="px-6 pt-6 pb-4">
         <DialogTitle className="flex items-center gap-2">
@@ -330,6 +331,7 @@ function EditExerciseOverrideDialogContent({
                     value={sets}
                     onChange={(e) => setSets(Math.max(0, parseInt(e.target.value) || 0))}
                     className="h-11 text-center text-lg font-semibold"
+                    data-testid="patient-exercise-override-sets-input"
                   />
                   <Button
                     type="button"
@@ -360,6 +362,7 @@ function EditExerciseOverrideDialogContent({
                     value={reps}
                     onChange={(e) => setReps(Math.max(0, parseInt(e.target.value) || 0))}
                     className="h-11 text-center text-lg font-semibold"
+                    data-testid="patient-exercise-override-reps-input"
                   />
                   <Button
                     type="button"
@@ -396,6 +399,7 @@ function EditExerciseOverrideDialogContent({
                   onChange={(e) => setDuration(Math.max(0, parseInt(e.target.value) || 0))}
                   className="h-11 text-center text-lg font-semibold"
                   step={5}
+                  data-testid="patient-exercise-override-duration-input"
                 />
                 <Button
                   type="button"
@@ -468,10 +472,10 @@ function EditExerciseOverrideDialogContent({
 
       {/* Actions - fixed at bottom */}
       <div className="flex justify-end gap-3 px-6 py-4 border-t border-border bg-background">
-        <Button variant="outline" onClick={onCloseAttempt} className="rounded-xl">
+        <Button variant="outline" onClick={onCloseAttempt} className="rounded-xl" data-testid="patient-exercise-override-cancel-btn">
           Anuluj
         </Button>
-        <Button onClick={handleSave} disabled={loading} className="rounded-xl shadow-lg shadow-primary/20">
+        <Button onClick={handleSave} disabled={loading} className="rounded-xl shadow-lg shadow-primary/20" data-testid="patient-exercise-override-submit-btn">
           {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           Zapisz zmiany
         </Button>

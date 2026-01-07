@@ -104,22 +104,22 @@ export default function SettingsPage() {
       {/* Tabs with inline header */}
       <Tabs defaultValue="profile" className="space-y-4">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <h1 className="text-2xl font-bold text-foreground">Ustawienia</h1>
+          <h1 className="text-2xl font-bold text-foreground" data-testid="settings-page-title">Ustawienia</h1>
           <TabsList className="h-9">
-            <TabsTrigger value="profile" className="flex items-center gap-2 text-xs sm:text-sm">
+            <TabsTrigger value="profile" className="flex items-center gap-2 text-xs sm:text-sm" data-testid="settings-tab-profile">
               <User className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">Profil</span>
             </TabsTrigger>
-            <TabsTrigger value="organization" className="flex items-center gap-2 text-xs sm:text-sm">
+            <TabsTrigger value="organization" className="flex items-center gap-2 text-xs sm:text-sm" data-testid="settings-tab-organization">
               <Settings className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">Organizacja</span>
             </TabsTrigger>
-            <TabsTrigger value="organizations" className="flex items-center gap-2 text-xs sm:text-sm">
+            <TabsTrigger value="organizations" className="flex items-center gap-2 text-xs sm:text-sm" data-testid="settings-tab-organizations">
               <Building2 className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">Moje organizacje</span>
               <span className="text-muted-foreground">({organizations.length})</span>
             </TabsTrigger>
-            <TabsTrigger value="accessibility" className="flex items-center gap-2 text-xs sm:text-sm">
+            <TabsTrigger value="accessibility" className="flex items-center gap-2 text-xs sm:text-sm" data-testid="settings-tab-accessibility">
               <Eye className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">Dostępność</span>
             </TabsTrigger>

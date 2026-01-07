@@ -204,7 +204,7 @@ export function AIChatPanel({ className }: AIChatPanelProps) {
   const isVoiceListening = voiceState === 'listening';
 
   return (
-    <div className={cn('chat-panel flex h-full flex-col relative overflow-hidden', className)}>
+    <div className={cn('chat-panel flex h-full flex-col relative overflow-hidden', className)} data-testid="ai-chat-panel">
       {/* History Panel (sliding) */}
       <div
         className={cn(
@@ -245,6 +245,7 @@ export function AIChatPanel({ className }: AIChatPanelProps) {
               onClick={() => setShowHistory(true)}
               className="h-8 w-8 text-muted-foreground hover:text-foreground"
               title="Historia rozmów"
+              data-testid="ai-chat-history-btn"
             >
               <History className="h-4 w-4" />
             </Button>
@@ -257,6 +258,7 @@ export function AIChatPanel({ className }: AIChatPanelProps) {
                 onClick={clearChat}
                 className="h-8 w-8 text-muted-foreground hover:text-destructive"
                 title="Wyczyść czat"
+                data-testid="ai-chat-clear-btn"
               >
                 <Trash2 className="h-4 w-4" />
               </Button>
@@ -368,6 +370,7 @@ export function AIChatPanel({ className }: AIChatPanelProps) {
                 'disabled:opacity-50',
                 isVoiceListening && 'placeholder:text-destructive/60'
               )}
+              data-testid="ai-chat-input"
             />
 
             {/* File upload button */}
@@ -385,6 +388,7 @@ export function AIChatPanel({ className }: AIChatPanelProps) {
               disabled={isLoading || isAnalyzingFile}
               className="h-8 w-8 shrink-0 rounded-lg text-muted-foreground hover:text-primary"
               title="Zaimportuj dokument"
+              data-testid="ai-chat-upload-btn"
             >
               {isAnalyzingFile ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -412,6 +416,7 @@ export function AIChatPanel({ className }: AIChatPanelProps) {
                 'disabled:bg-surface-hover disabled:text-muted-foreground',
                 'focus-visible:ring-0 focus-visible:outline-none'
               )}
+              data-testid="ai-chat-send-btn"
             >
               <Send className="h-4 w-4" />
             </Button>

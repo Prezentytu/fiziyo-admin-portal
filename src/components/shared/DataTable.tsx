@@ -88,7 +88,7 @@ export function DataTable<TData, TValue>({
   });
 
   return (
-    <div className="w-full">
+    <div className="w-full" data-testid="common-data-table">
       <div className="flex items-center gap-4 py-4">
         {searchKey && (
           <Input
@@ -98,6 +98,7 @@ export function DataTable<TData, TValue>({
               table.getColumn(searchKey)?.setFilterValue(event.target.value)
             }
             className="max-w-sm"
+            data-testid="common-data-table-search"
           />
         )}
         {showColumnToggle && (
@@ -214,6 +215,7 @@ export function DataTable<TData, TValue>({
                 className="hidden h-8 w-8 p-0 lg:flex"
                 onClick={() => table.setPageIndex(0)}
                 disabled={!table.getCanPreviousPage()}
+                data-testid="common-data-table-first-page"
               >
                 <span className="sr-only">Pierwsza strona</span>
                 <ChevronsLeft className="h-4 w-4" />
@@ -223,6 +225,7 @@ export function DataTable<TData, TValue>({
                 className="h-8 w-8 p-0"
                 onClick={() => table.previousPage()}
                 disabled={!table.getCanPreviousPage()}
+                data-testid="common-data-table-prev-page"
               >
                 <span className="sr-only">Poprzednia strona</span>
                 <ChevronLeft className="h-4 w-4" />
@@ -232,6 +235,7 @@ export function DataTable<TData, TValue>({
                 className="h-8 w-8 p-0"
                 onClick={() => table.nextPage()}
                 disabled={!table.getCanNextPage()}
+                data-testid="common-data-table-next-page"
               >
                 <span className="sr-only">Następna strona</span>
                 <ChevronRight className="h-4 w-4" />
@@ -241,6 +245,7 @@ export function DataTable<TData, TValue>({
                 className="hidden h-8 w-8 p-0 lg:flex"
                 onClick={() => table.setPageIndex(table.getPageCount() - 1)}
                 disabled={!table.getCanNextPage()}
+                data-testid="common-data-table-last-page"
               >
                 <span className="sr-only">Ostatnia strona</span>
                 <ChevronsRight className="h-4 w-4" />
@@ -252,22 +257,3 @@ export function DataTable<TData, TValue>({
     </div>
   );
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

@@ -112,6 +112,7 @@ export function ChatSessionsList({
                     onSelectSession(session.id);
                     onClose();
                   }}
+                  data-testid={`ai-chat-session-${session.id}`}
                 >
                   <div className="flex items-start gap-3">
                     <div
@@ -165,6 +166,7 @@ export function ChatSessionsList({
                       "text-muted-foreground hover:text-destructive hover:bg-destructive/10",
                       "transition-opacity"
                     )}
+                    data-testid={`ai-chat-session-${session.id}-delete-btn`}
                   >
                     <Trash2 className="h-3.5 w-3.5" />
                   </Button>
@@ -186,4 +188,3 @@ export function ChatSessionsList({
     </div>
   );
 }
-

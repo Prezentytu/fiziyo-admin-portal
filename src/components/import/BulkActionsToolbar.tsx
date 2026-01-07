@@ -91,6 +91,7 @@ export function BulkActionsToolbar({
           onClick={onSetAllCreate}
           disabled={disabled}
           className="gap-2 h-9"
+          data-testid="import-bulk-create-all-btn"
         >
           <Check className="h-4 w-4 text-primary" />
           Utwórz nowe
@@ -115,6 +116,7 @@ export function BulkActionsToolbar({
           onClick={onSetAllSkip}
           disabled={disabled}
           className="gap-2 h-9"
+          data-testid="import-bulk-skip-all-btn"
         >
           <X className="h-4 w-4 text-muted-foreground" />
           Pomiń wszystkie

@@ -61,6 +61,7 @@ export function QuickActions({
             "transition-all duration-200",
             "disabled:opacity-50 disabled:cursor-not-allowed"
           )}
+          data-testid={`ai-chat-quick-action-${action.id}`}
         >
           {action.label}
         </button>
@@ -68,11 +69,3 @@ export function QuickActions({
     </div>
   );
 }
-
-
-
-
-
-
-
-

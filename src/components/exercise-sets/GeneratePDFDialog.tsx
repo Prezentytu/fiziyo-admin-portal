@@ -256,7 +256,7 @@ export function GeneratePDFDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-lg" data-testid="set-pdf-dialog">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <FileDown className="h-5 w-5 text-primary" />
@@ -393,7 +393,7 @@ export function GeneratePDFDialog({
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Anuluj
           </Button>
-          <Button onClick={handleGeneratePDF} disabled={isGenerating || !organization} className="gap-2">
+          <Button onClick={handleGeneratePDF} disabled={isGenerating || !organization} className="gap-2" data-testid="set-pdf-download-btn">
             {isGenerating ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" />

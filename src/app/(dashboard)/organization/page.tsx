@@ -219,20 +219,20 @@ export default function OrganizationPage() {
       {/* Tabs - simplified without Settings tab */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <h1 className="text-2xl font-bold text-foreground">Zespół i gabinety</h1>
+          <h1 className="text-2xl font-bold text-foreground" data-testid="org-page-title">Zespół i gabinety</h1>
           <TabsList className="h-9">
-            <TabsTrigger value="team" className="flex items-center gap-2 text-xs sm:text-sm">
+            <TabsTrigger value="team" className="flex items-center gap-2 text-xs sm:text-sm" data-testid="org-tab-team">
               <Users className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">Zespół</span>
               <span className="text-muted-foreground">({teamCount})</span>
             </TabsTrigger>
             {canEdit && (
-              <TabsTrigger value="invitations" className="flex items-center gap-2 text-xs sm:text-sm">
+              <TabsTrigger value="invitations" className="flex items-center gap-2 text-xs sm:text-sm" data-testid="org-tab-invitations">
                 <Mail className="h-3.5 w-3.5" />
                 <span className="hidden sm:inline">Zaproszenia</span>
               </TabsTrigger>
             )}
-            <TabsTrigger value="clinics" className="flex items-center gap-2 text-xs sm:text-sm">
+            <TabsTrigger value="clinics" className="flex items-center gap-2 text-xs sm:text-sm" data-testid="org-tab-clinics">
               <MapPin className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">Gabinety</span>
               <span className="text-muted-foreground">({clinicsCount})</span>
@@ -247,6 +247,7 @@ export default function OrganizationPage() {
             <button
               onClick={() => setIsInviteDialogOpen(true)}
               className="group relative overflow-hidden rounded-2xl bg-linear-to-br from-primary via-primary to-primary-dark p-5 text-left transition-all duration-300 hover:shadow-xl hover:shadow-primary/20 hover:scale-[1.02] cursor-pointer sm:col-span-1 lg:col-span-5"
+              data-testid="org-hero-invite-btn"
             >
               <div className="absolute inset-0 bg-linear-to-br from-white/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
               <div className="absolute -top-24 -right-24 w-48 h-48 bg-white/10 rounded-full blur-3xl group-hover:bg-white/20 transition-all duration-500" />
@@ -278,6 +279,7 @@ export default function OrganizationPage() {
                   ? "border-primary/40 bg-primary/10 ring-1 ring-primary/20"
                   : "border-border/40 bg-surface/50 hover:bg-surface-light hover:border-border"
               )}
+              data-testid="org-stat-team"
             >
               <div className="flex items-center gap-2">
                 <Users className={cn("h-4 w-4", activeTab === "team" ? "text-primary" : "text-muted-foreground")} />
@@ -297,6 +299,7 @@ export default function OrganizationPage() {
                   ? "border-secondary/40 bg-secondary/10 ring-1 ring-secondary/20"
                   : "border-border/40 bg-surface/50 hover:bg-surface-light hover:border-border"
               )}
+              data-testid="org-stat-clinics"
             >
               <div className="flex items-center gap-2">
                 <MapPin className={cn("h-4 w-4", activeTab === "clinics" ? "text-secondary" : "text-muted-foreground")} />
@@ -311,6 +314,7 @@ export default function OrganizationPage() {
             <Link
               href="/billing"
               className="group rounded-2xl border border-border/40 bg-surface/50 p-4 flex flex-col items-center justify-center text-center transition-all duration-200 hover:bg-surface-light hover:border-border hover:shadow-lg"
+              data-testid="org-stat-plan"
             >
               <div className="flex items-center gap-2">
                 <CreditCard className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />

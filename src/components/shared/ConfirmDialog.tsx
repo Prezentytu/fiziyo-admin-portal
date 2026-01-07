@@ -52,16 +52,17 @@ export function ConfirmDialog({
 
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent>
+      <AlertDialogContent data-testid="common-confirm-dialog">
         <AlertDialogHeader>
-          <AlertDialogTitle>{title}</AlertDialogTitle>
+          <AlertDialogTitle data-testid="common-confirm-dialog-title">{title}</AlertDialogTitle>
           <AlertDialogDescription>{description}</AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel onClick={handleCancel} disabled={isLoading}>
+          <AlertDialogCancel data-testid="common-confirm-dialog-cancel-btn" onClick={handleCancel} disabled={isLoading}>
             {cancelText}
           </AlertDialogCancel>
           <AlertDialogAction
+            data-testid="common-confirm-dialog-confirm-btn"
             onClick={handleConfirm}
             disabled={isLoading}
             className={cn(
@@ -76,22 +77,3 @@ export function ConfirmDialog({
     </AlertDialog>
   );
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

@@ -29,6 +29,7 @@ export function EmptyState({
 }: EmptyStateProps) {
   return (
     <div
+      data-testid="common-empty-state"
       className={cn(
         "flex flex-col items-center justify-center py-12 text-center",
         className
@@ -66,15 +67,3 @@ export function EmptyState({
     </div>
   );
 }
-
-
-
-
-
-
-
-
-
-
-
-

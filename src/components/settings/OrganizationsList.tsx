@@ -61,6 +61,7 @@ export function OrganizationsList({
         <button
           onClick={() => setShowJoinDialog(true)}
           className="group relative w-full overflow-hidden rounded-2xl bg-gradient-to-br from-primary via-primary to-primary-dark p-5 text-left transition-all duration-300 hover:shadow-xl hover:shadow-primary/20 hover:scale-[1.01] cursor-pointer"
+          data-testid="settings-orgs-join-btn"
         >
           <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
           <div className="absolute -top-24 -right-24 w-48 h-48 bg-white/10 rounded-full blur-3xl group-hover:bg-white/20 transition-all duration-500" />
@@ -105,6 +106,7 @@ export function OrganizationsList({
         <button
           onClick={() => setShowJoinDialog(true)}
           className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary via-primary to-primary-dark p-5 text-left transition-all duration-300 hover:shadow-xl hover:shadow-primary/20 hover:scale-[1.01] cursor-pointer lg:col-span-8"
+          data-testid="settings-orgs-join-hero-btn"
         >
           <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
           <div className="absolute -top-24 -right-24 w-48 h-48 bg-white/10 rounded-full blur-3xl group-hover:bg-white/20 transition-all duration-500" />
@@ -155,6 +157,7 @@ export function OrganizationsList({
                       ? "border-primary/50 bg-primary/5"
                       : "border-border/60 hover:bg-surface-light hover:border-border"
                   )}
+                  data-testid={`settings-org-item-${org.organizationId}`}
                 >
                   <div className="flex items-center gap-3">
                     {/* Logo/Avatar */}
@@ -208,6 +211,7 @@ export function OrganizationsList({
                         onClick={() => switchOrganization(org.organizationId)}
                         disabled={isSwitching}
                         className="text-xs h-7"
+                        data-testid={`settings-org-switch-${org.organizationId}`}
                       >
                         {isSwitching ? (
                           <Loader2 className="h-3 w-3 animate-spin" />

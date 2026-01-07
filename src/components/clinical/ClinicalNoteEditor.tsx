@@ -165,8 +165,8 @@ export function ClinicalNoteEditor({
   // Form state
   const [visitType, setVisitType] = useState<VisitType>(existingNote?.visitType || 'INITIAL');
   const [visitDate, setVisitDate] = useState(
-    existingNote?.visitDate 
-      ? format(new Date(existingNote.visitDate), 'yyyy-MM-dd') 
+    existingNote?.visitDate
+      ? format(new Date(existingNote.visitDate), 'yyyy-MM-dd')
       : format(new Date(), 'yyyy-MM-dd')
   );
   const [title, setTitle] = useState(existingNote?.title || '');
@@ -188,18 +188,18 @@ export function ClinicalNoteEditor({
   // Sync state when note data changes
   useEffect(() => {
     if (loadingFullNote && existingNote?.id) return;
-    
+
     setVisitType(noteData?.visitType || 'INITIAL');
     setVisitDate(
-      noteData?.visitDate 
-        ? format(new Date(noteData.visitDate), 'yyyy-MM-dd') 
+      noteData?.visitDate
+        ? format(new Date(noteData.visitDate), 'yyyy-MM-dd')
         : format(new Date(), 'yyyy-MM-dd')
     );
     setTitle(noteData?.title || '');
     setSections(noteData?.sections || {});
     setIsDirty(false);
     noteIdRef.current = noteData?.id || null;
-    
+
     // Mark completed steps based on existing data
     const completed = new Set<number>();
     completed.add(0); // Basic info always completed if we have data
@@ -239,7 +239,7 @@ export function ClinicalNoteEditor({
   // Auto-save function
   const performAutoSave = async () => {
     if (isSigned) return;
-    
+
     setSaveStatus('saving');
     try {
       const sectionInput = omitTypename({
@@ -338,7 +338,7 @@ export function ClinicalNoteEditor({
   const handleNext = () => {
     // Mark current step as completed
     setCompletedSteps((prev) => new Set([...prev, currentStep]));
-    
+
     if (currentStep < totalSteps - 1) {
       setCurrentStep(currentStep + 1);
     }
@@ -468,7 +468,7 @@ export function ClinicalNoteEditor({
                   onValueChange={(v) => handleVisitTypeChange(v as VisitType)}
                   disabled={isSigned}
                 >
-                  <SelectTrigger className="h-12">
+                  <SelectTrigger className="h-12" data-testid="clinical-note-visit-type-select">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -489,6 +489,7 @@ export function ClinicalNoteEditor({
                   onChange={(e) => handleVisitDateChange(e.target.value)}
                   disabled={isSigned}
                   className="h-12"
+                  data-testid="clinical-note-visit-date-input"
                 />
               </div>
 
@@ -500,6 +501,7 @@ export function ClinicalNoteEditor({
                   placeholder="np. Wizyta kontrolna - kolano"
                   disabled={isSigned}
                   className="h-12"
+                  data-testid="clinical-note-title-input"
                 />
               </div>
 
@@ -519,6 +521,7 @@ export function ClinicalNoteEditor({
                         size="sm"
                         onClick={copyFromLastNote}
                         className="gap-2"
+                        data-testid="clinical-note-copy-from-last-btn"
                       >
                         <Copy className="h-4 w-4" />
                         Kopiuj dane
@@ -642,11 +645,11 @@ export function ClinicalNoteEditor({
   };
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full" data-testid="clinical-note-editor">
       {/* Header with title and auto-save indicator */}
       <div className="flex items-center justify-between p-6 pb-4 shrink-0">
         <div>
-          <h2 className="text-lg font-semibold">
+          <h2 className="text-lg font-semibold" data-testid="clinical-note-title">
             {isEditing ? 'Edytuj wizytę' : 'Nowa wizyta'}
           </h2>
           <p className="text-sm text-muted-foreground">

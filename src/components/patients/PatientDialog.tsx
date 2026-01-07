@@ -181,6 +181,7 @@ export function PatientDialog({
             e.preventDefault();
             handleCloseAttempt();
           }}
+          data-testid="patient-dialog"
         >
           {createdPatient ? (
             // Success State - Animated
@@ -254,6 +255,7 @@ export function PatientDialog({
                 <Button
                   onClick={handleAssignSet}
                   className="w-full h-12 text-base gap-2 bg-gradient-to-r from-primary to-primary-dark shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 transition-all duration-200"
+                  data-testid="patient-dialog-assign-btn"
                 >
                   <Send className="h-5 w-5" />
                   Przypisz zestaw ćwiczeń
@@ -264,6 +266,7 @@ export function PatientDialog({
                   variant="outline"
                   onClick={handleAddAnother}
                   className="w-full h-11 gap-2 hover:bg-surface-light transition-all duration-200"
+                  data-testid="patient-dialog-add-another-btn"
                 >
                   <UserPlus2 className="h-4 w-4" />
                   Dodaj kolejnego pacjenta
@@ -274,6 +277,7 @@ export function PatientDialog({
                   variant="ghost"
                   onClick={handleClose}
                   className="w-full gap-2 text-muted-foreground hover:text-foreground transition-all duration-200"
+                  data-testid="patient-dialog-close-btn"
                 >
                   <X className="h-4 w-4" />
                   Zamknij
@@ -289,7 +293,7 @@ export function PatientDialog({
                     <UserPlus className="h-6 w-6 text-white" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <DialogTitle className="text-xl font-bold">Nowy pacjent</DialogTitle>
+                    <DialogTitle className="text-xl font-bold" data-testid="patient-dialog-title">Nowy pacjent</DialogTitle>
                     <DialogDescription className="text-sm">
                       Uzupełnij dane pacjenta i zacznij współpracę
                     </DialogDescription>

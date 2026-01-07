@@ -176,7 +176,7 @@ export function Sidebar({ isCollapsed, onToggleCollapse }: SidebarProps) {
           ))}
 
           {/* AI Credits Widget - pod Ustawienia */}
-          <div className={cn("mt-6", isCollapsed ? "px-2" : "px-3")}>
+          <div data-testid="nav-ai-credits-widget" className={cn("mt-6", isCollapsed ? "px-2" : "px-3")}>
             <AICreditsWidget isCollapsed={isCollapsed} />
           </div>
         </nav>
@@ -189,6 +189,7 @@ export function Sidebar({ isCollapsed, onToggleCollapse }: SidebarProps) {
                 <TooltipTrigger asChild>
                   <button
                     onClick={() => signOut()}
+                    data-testid="nav-logout-btn"
                     className="group flex h-10 w-10 items-center justify-center rounded-xl text-muted-foreground transition-all duration-200 hover:bg-error-muted hover:text-error"
                     aria-label="Wyloguj się"
                   >
@@ -202,6 +203,7 @@ export function Sidebar({ isCollapsed, onToggleCollapse }: SidebarProps) {
             ) : (
               <button
                 onClick={() => signOut()}
+                data-testid="nav-logout-btn"
                 className="group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-muted-foreground transition-all duration-200 hover:bg-error-muted hover:text-error"
               >
                 <LogOut className="h-5 w-5 transition-transform duration-200 group-hover:-translate-x-0.5" />

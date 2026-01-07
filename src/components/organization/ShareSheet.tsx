@@ -182,6 +182,7 @@ export function ShareSheet({
         isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4",
         className
       )}
+      data-testid="org-share-sheet"
     >
       {/* Header */}
       <div className="px-5 py-4 border-b border-border/40 bg-gradient-to-r from-primary/5 via-emerald-500/5 to-primary/5">
@@ -246,6 +247,7 @@ export function ShareSheet({
                     isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"
                   )}
                   style={{ transitionDelay: `${100 + index * 40}ms` }}
+                  data-testid={`org-share-${option.name.toLowerCase()}-btn`}
                 >
                   <option.icon className="h-6 w-6" />
                   <span className="text-xs font-medium">{option.name}</span>
@@ -266,6 +268,7 @@ export function ShareSheet({
                   isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"
                 )}
                 style={{ transitionDelay: `${100 + shareOptions.length * 40}ms` }}
+                data-testid="org-share-copy-btn"
               >
                 {copied ? (
                   <Check className="h-6 w-6" />

@@ -127,6 +127,7 @@ export function SelectPatientsStep({
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-9 h-11"
+              data-testid="assign-patient-search"
             />
           </div>
           <div className="flex items-center justify-between">
@@ -196,6 +197,7 @@ export function SelectPatientsStep({
                         : "hover:bg-surface-light border-2 border-transparent"
                     )}
                     onClick={() => togglePatient(patient)}
+                    data-testid={`assign-patient-item-${patient.id}`}
                   >
                     {!isAssigned ? (
                       <Checkbox

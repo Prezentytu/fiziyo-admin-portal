@@ -243,6 +243,7 @@ export function AssignToClinicDialog({
           e.preventDefault();
           handleCloseAttempt();
         }}
+        data-testid="org-assign-clinic-dialog"
       >
         <DialogHeader>
           <DialogTitle>Przypisz osoby do gabinetu</DialogTitle>
@@ -262,13 +263,14 @@ export function AssignToClinicDialog({
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10"
+              data-testid="org-assign-clinic-search-input"
             />
           </div>
 
           {/* Tabs */}
           <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as typeof activeTab)}>
             <TabsList className="w-full">
-              <TabsTrigger value="therapists" className="flex-1 gap-2">
+              <TabsTrigger value="therapists" className="flex-1 gap-2" data-testid="org-assign-clinic-tab-therapists">
                 <Users className="h-4 w-4" />
                 Terapeuci
                 {selectedTherapistIds.length > 0 && (
@@ -277,7 +279,7 @@ export function AssignToClinicDialog({
                   </Badge>
                 )}
               </TabsTrigger>
-              <TabsTrigger value="patients" className="flex-1 gap-2">
+              <TabsTrigger value="patients" className="flex-1 gap-2" data-testid="org-assign-clinic-tab-patients">
                 <UserCheck className="h-4 w-4" />
                 Pacjenci
                 {selectedPatientIds.length > 0 && (
@@ -303,10 +305,10 @@ export function AssignToClinicDialog({
         </div>
 
         <DialogFooter className="gap-2">
-          <Button variant="outline" onClick={handleCloseAttempt}>
+          <Button variant="outline" onClick={handleCloseAttempt} data-testid="org-assign-clinic-cancel-btn">
             Anuluj
           </Button>
-          <Button onClick={handleAssign} disabled={isLoading || totalSelected === 0} className="gap-2">
+          <Button onClick={handleAssign} disabled={isLoading || totalSelected === 0} className="gap-2" data-testid="org-assign-clinic-submit-btn">
             {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
             Przypisz {totalSelected > 0 ? `(${totalSelected})` : ''}
           </Button>
@@ -326,13 +328,3 @@ export function AssignToClinicDialog({
     </Dialog>
   );
 }
-
-
-
-
-
-
-
-
-
-

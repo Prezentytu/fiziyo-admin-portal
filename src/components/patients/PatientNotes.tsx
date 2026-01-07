@@ -127,7 +127,7 @@ export function PatientNotes({
   const hasNotes = (initialNotes || '').trim().length > 0;
 
   return (
-    <Card className="border-border/60">
+    <Card className="border-border/60" data-testid="patient-notes-section">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2 text-base font-medium">
@@ -135,7 +135,7 @@ export function PatientNotes({
             Notatki
           </CardTitle>
           {!isEditing && (
-            <Button variant="ghost" size="sm" onClick={startEditing} className="h-8 text-xs gap-1.5">
+            <Button variant="ghost" size="sm" onClick={startEditing} className="h-8 text-xs gap-1.5" data-testid="patient-notes-add-btn">
               {hasNotes ? (
                 <>
                   <Pencil className="h-3.5 w-3.5" />
@@ -161,6 +161,7 @@ export function PatientNotes({
               className="min-h-[120px] resize-none"
               autoFocus
               disabled={isAILoading}
+              data-testid="patient-notes-input"
             />
 
             {/* AI Actions */}
@@ -219,7 +220,7 @@ export function PatientNotes({
                   <X className="mr-1 h-3.5 w-3.5" />
                   Anuluj
                 </Button>
-                <Button size="sm" onClick={handleSave} disabled={loading || isAILoading}>
+                <Button size="sm" onClick={handleSave} disabled={loading || isAILoading} data-testid="patient-notes-save-btn">
                   {loading ? (
                     <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />
                   ) : (

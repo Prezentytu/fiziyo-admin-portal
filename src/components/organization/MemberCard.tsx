@@ -183,6 +183,7 @@ export function MemberCard({
   return (
     <>
       <Card
+        data-testid={`org-member-card-${member.id}`}
         className={cn(
           "group border-border/60 transition-all duration-200 hover:border-border hover:shadow-md",
           isCurrentUser && "ring-1 ring-primary/20"
@@ -248,6 +249,7 @@ export function MemberCard({
                     variant="ghost"
                     size="icon"
                     className="h-9 w-9 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                    data-testid={`org-member-menu-${member.id}`}
                   >
                     <MoreVertical className="h-4 w-4" />
                   </Button>
@@ -259,6 +261,7 @@ export function MemberCard({
                       {role !== "admin" && (
                         <DropdownMenuItem
                           onClick={() => initiateRoleChange("admin")}
+                          data-testid={`org-member-set-admin-${member.id}`}
                         >
                           <ShieldCheck className="mr-2 h-4 w-4 text-blue-500" />
                           Ustaw jako Administrator
@@ -267,6 +270,7 @@ export function MemberCard({
                       {role !== "therapist" && (
                         <DropdownMenuItem
                           onClick={() => initiateRoleChange("therapist")}
+                          data-testid={`org-member-set-therapist-${member.id}`}
                         >
                           <User className="mr-2 h-4 w-4 text-primary" />
                           Ustaw jako Fizjoterapeuta
@@ -275,6 +279,7 @@ export function MemberCard({
                       {role !== "member" && (
                         <DropdownMenuItem
                           onClick={() => initiateRoleChange("member")}
+                          data-testid={`org-member-set-member-${member.id}`}
                         >
                           <User className="mr-2 h-4 w-4" />
                           Ustaw jako Członek
@@ -286,6 +291,7 @@ export function MemberCard({
                   <DropdownMenuItem
                     onClick={() => setIsDeleteDialogOpen(true)}
                     className="text-destructive focus:text-destructive"
+                    data-testid={`org-member-remove-${member.id}`}
                   >
                     <Trash2 className="mr-2 h-4 w-4" />
                     Usuń z organizacji
@@ -325,16 +331,3 @@ export function MemberCard({
     </>
   );
 }
-
-
-
-
-
-
-
-
-
-
-
-
-

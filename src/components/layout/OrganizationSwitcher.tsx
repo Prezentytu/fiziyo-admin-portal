@@ -127,6 +127,7 @@ export function OrganizationSwitcher({
 
   const triggerContent = (
     <div
+      data-testid="nav-org-switcher-trigger"
       className={cn(
         "group flex items-center rounded-xl transition-all duration-200 cursor-pointer",
         isCollapsed
@@ -250,6 +251,7 @@ export function OrganizationSwitcher({
           return (
             <DropdownMenuItem
               key={org.organizationId}
+              data-testid={`nav-org-switcher-item-${org.organizationId}`}
               onClick={() => {
                 if (!isActive) {
                   switchOrganization(org.organizationId);
@@ -305,6 +307,7 @@ export function OrganizationSwitcher({
         <DropdownMenuItem asChild>
           <Link
             href="/onboarding"
+            data-testid="nav-org-switcher-create"
             className="flex items-center gap-3 p-2.5 text-muted-foreground hover:text-foreground cursor-pointer"
           >
             <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-dashed border-border">
@@ -339,6 +342,3 @@ export function OrganizationSwitcher({
     <div className="border-b border-border/60 p-3">{dropdownContent}</div>
   );
 }
-
-
-

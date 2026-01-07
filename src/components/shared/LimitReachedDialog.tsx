@@ -98,7 +98,7 @@ export function LimitReachedDialog({
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md" data-testid="common-limit-reached-dialog">
         <DialogHeader>
           <DialogTitle className="sr-only">Osiągnięto limit</DialogTitle>
         </DialogHeader>
@@ -143,14 +143,14 @@ export function LimitReachedDialog({
               asChild
               className="flex-1 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white shadow-lg shadow-orange-500/20"
             >
-              <Link href="/subscription" onClick={onClose}>
+              <Link href="/subscription" onClick={onClose} data-testid="common-limit-upgrade-btn">
                 <Crown className="h-4 w-4 mr-2" />
                 Ulepsz do {pricing.nextPlan}
                 <span className="ml-1 text-white/70 text-xs">({pricing.price})</span>
                 <ArrowRight className="h-4 w-4 ml-2" />
               </Link>
             </Button>
-            <Button variant="outline" onClick={onClose} className="sm:w-auto">
+            <Button variant="outline" onClick={onClose} className="sm:w-auto" data-testid="common-limit-cancel-btn">
               Anuluj
             </Button>
           </div>
@@ -165,4 +165,3 @@ export function LimitReachedDialog({
     </Dialog>
   );
 }
-

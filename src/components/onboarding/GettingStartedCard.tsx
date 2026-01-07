@@ -238,6 +238,7 @@ export function GettingStartedCard({
 
   return (
     <div
+      data-testid="onboarding-getting-started-card"
       className={cn(
         'relative overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/5 via-surface to-surface',
         className
@@ -267,6 +268,7 @@ export function GettingStartedCard({
             onClick={handleDismiss}
             className="shrink-0 p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-surface-light transition-colors"
             title="Nie pokazuj więcej"
+            data-testid="onboarding-dismiss-btn"
           >
             <X className="h-4 w-4" />
           </button>
@@ -293,6 +295,7 @@ export function GettingStartedCard({
                 key={step.id}
                 onClick={() => handleStepClick(step)}
                 disabled={isCompleted}
+                data-testid={`onboarding-getting-started-step-${step.id}`}
                 className={cn(
                   'w-full flex items-center gap-3 p-3 rounded-xl text-left transition-all duration-200',
                   isCompleted

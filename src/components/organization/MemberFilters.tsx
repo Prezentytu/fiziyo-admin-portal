@@ -51,6 +51,7 @@ export function MemberFilters({
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
             className="pl-10 h-11 bg-surface border-border/60"
+            data-testid="org-members-search-input"
           />
           {searchQuery && (
             <Button
@@ -78,6 +79,7 @@ export function MemberFilters({
                   ? "shadow-lg shadow-primary/20"
                   : "border-border/60 hover:border-border"
               )}
+              data-testid={`org-members-filter-${option.value}`}
             >
               {option.label}
             </Button>

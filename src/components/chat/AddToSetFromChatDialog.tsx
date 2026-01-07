@@ -292,7 +292,7 @@ export function AddToSetFromChatDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-w-lg max-h-[80vh] flex flex-col">
+      <DialogContent className="max-w-lg max-h-[80vh] flex flex-col" data-testid="ai-chat-add-to-set-dialog">
         <DialogHeader>
           <DialogTitle>
             {step === "create-set"
@@ -355,6 +355,7 @@ export function AddToSetFromChatDialog({
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="h-10 pl-10"
+                data-testid="ai-chat-add-to-set-search"
               />
             </div>
 
@@ -435,6 +436,7 @@ export function AddToSetFromChatDialog({
                 value={newSetName}
                 onChange={(e) => setNewSetName(e.target.value)}
                 autoFocus
+                data-testid="ai-chat-new-set-name-input"
               />
             </div>
 
@@ -445,6 +447,7 @@ export function AddToSetFromChatDialog({
               <Button
                 onClick={handleCreateAndAdd}
                 disabled={!newSetName.trim() || isSaving}
+                data-testid="ai-chat-create-set-submit-btn"
               >
                 {isSaving ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />

@@ -207,7 +207,7 @@ export function OnboardingWizard({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl p-0 overflow-hidden">
+      <DialogContent className="sm:max-w-2xl p-0 overflow-hidden" data-testid="onboarding-wizard">
         {/* Hidden title for accessibility */}
         <DialogTitle className="sr-only">
           {showCelebration ? 'Onboarding zakończony' : 'Wprowadzenie do FiziYo'}
@@ -228,11 +228,11 @@ export function OnboardingWizard({
               </p>
             </div>
             <div className="flex flex-col gap-3 pt-4">
-              <Button onClick={handleFinish} size="lg" className="gap-2">
+              <Button onClick={handleFinish} size="lg" className="gap-2" data-testid="onboarding-finish-btn">
                 <Rocket className="h-5 w-5" />
                 Rozpocznij pracę
               </Button>
-              <Button variant="ghost" onClick={handleReset} className="text-muted-foreground">
+              <Button variant="ghost" onClick={handleReset} className="text-muted-foreground" data-testid="onboarding-reset-btn">
                 Powtórz tutorial
               </Button>
             </div>
@@ -244,6 +244,7 @@ export function OnboardingWizard({
               <button
                 onClick={handleSkip}
                 className="absolute top-4 right-4 text-muted-foreground hover:text-foreground transition-colors"
+                data-testid="onboarding-skip-btn"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -284,6 +285,7 @@ export function OnboardingWizard({
                     <button
                       key={step.id}
                       onClick={() => !isCompleted && setCurrentStep(index)}
+                      data-testid={`onboarding-step-${step.id}`}
                       className={cn(
                         'w-full flex items-center gap-4 p-4 rounded-xl text-left transition-all',
                         isActive && !isCompleted
@@ -375,6 +377,7 @@ export function OnboardingWizard({
                       onClick={() => handleStepAction(currentStepData)}
                       className="w-full gap-2"
                       size="lg"
+                      data-testid="onboarding-step-action-btn"
                     >
                       {currentStepData.action.label}
                       <ArrowRight className="h-4 w-4" />

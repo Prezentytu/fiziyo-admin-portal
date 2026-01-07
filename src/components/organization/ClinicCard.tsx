@@ -107,7 +107,7 @@ export function ClinicCard({
 
   return (
     <>
-      <Card className="group border-border/60 transition-all duration-200 hover:border-border hover:shadow-sm">
+      <Card data-testid={`org-clinic-card-${clinic.id}`} className="group border-border/60 transition-all duration-200 hover:border-border hover:shadow-sm">
         <CardContent className="p-4">
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-start gap-4 min-w-0 flex-1">
@@ -155,17 +155,19 @@ export function ClinicCard({
                     variant="ghost"
                     size="icon"
                     className="h-8 w-8 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                    data-testid={`org-clinic-menu-${clinic.id}`}
                   >
                     <MoreVertical className="h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-48">
-                  <DropdownMenuItem onClick={() => onEdit?.(clinic)}>
+                  <DropdownMenuItem onClick={() => onEdit?.(clinic)} data-testid={`org-clinic-edit-${clinic.id}`}>
                     <Pencil className="mr-2 h-4 w-4" />
                     Edytuj
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={() => setIsToggleStatusDialogOpen(true)}
+                    data-testid={`org-clinic-toggle-status-${clinic.id}`}
                   >
                     {clinic.isActive ? (
                       <>
@@ -183,6 +185,7 @@ export function ClinicCard({
                   <DropdownMenuItem
                     onClick={() => setIsDeleteDialogOpen(true)}
                     className="text-destructive focus:text-destructive"
+                    data-testid={`org-clinic-delete-${clinic.id}`}
                   >
                     <Trash2 className="mr-2 h-4 w-4" />
                     Usuń gabinet
@@ -224,17 +227,3 @@ export function ClinicCard({
     </>
   );
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-

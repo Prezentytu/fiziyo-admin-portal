@@ -121,9 +121,10 @@ export function SetDialog({
           e.preventDefault();
           handleCloseAttempt();
         }}
+        data-testid="set-dialog"
       >
         <DialogHeader>
-          <DialogTitle>
+          <DialogTitle data-testid="set-dialog-title">
             {isEditing ? "Edytuj zestaw" : "Nowy zestaw ćwiczeń"}
           </DialogTitle>
           <DialogDescription>
@@ -155,4 +156,3 @@ export function SetDialog({
     </Dialog>
   );
 }
-

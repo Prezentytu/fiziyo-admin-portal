@@ -71,6 +71,7 @@ export function AccessibilitySettings() {
                   ? 'border-primary bg-primary/5 ring-2 ring-primary/20'
                   : 'border-border/60 bg-surface hover:bg-surface-light'
               )}
+              data-testid="settings-theme-dark"
             >
               <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#1a1a1a] border border-border">
                 <Moon className="h-6 w-6 text-white" />
@@ -92,6 +93,7 @@ export function AccessibilitySettings() {
                   ? 'border-primary bg-primary/5 ring-2 ring-primary/20'
                   : 'border-border/60 bg-surface hover:bg-surface-light'
               )}
+              data-testid="settings-theme-light"
             >
               <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white border border-gray-200">
                 <Sun className="h-6 w-6 text-amber-500" />
@@ -113,6 +115,7 @@ export function AccessibilitySettings() {
                   ? 'border-primary bg-primary/5 ring-2 ring-primary/20'
                   : 'border-border/60 bg-surface hover:bg-surface-light'
               )}
+              data-testid="settings-theme-system"
             >
               <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-white to-[#1a1a1a] border border-border">
                 <Monitor className="h-6 w-6 text-gray-500" />
@@ -157,6 +160,7 @@ export function AccessibilitySettings() {
                       ? 'border-primary bg-primary/5 ring-2 ring-primary/20'
                       : 'border-border/60 bg-surface hover:bg-surface-light'
                   )}
+                  data-testid={`settings-fontsize-${size}`}
                 >
                   <span
                     className="font-bold text-foreground transition-transform"
@@ -222,6 +226,7 @@ export function AccessibilitySettings() {
               id="high-contrast"
               checked={preferences.highContrast}
               onCheckedChange={(checked) => updatePreference('highContrast', checked)}
+              data-testid="settings-high-contrast-switch"
             />
           </div>
 
@@ -244,6 +249,7 @@ export function AccessibilitySettings() {
               id="reduced-motion"
               checked={preferences.reducedMotion}
               onCheckedChange={(checked) => updatePreference('reducedMotion', checked)}
+              data-testid="settings-reduced-motion-switch"
             />
           </div>
         </CardContent>
@@ -255,6 +261,7 @@ export function AccessibilitySettings() {
           variant="outline"
           onClick={handleResetToDefaults}
           className="gap-2"
+          data-testid="settings-reset-defaults-btn"
         >
           <RotateCcw className="h-4 w-4" />
           Przywróć domyślne

@@ -686,6 +686,7 @@ function AssignmentWizardContent({
         e.preventDefault();
         onCloseAttempt();
       }}
+      data-testid="assign-wizard"
     >
       {/* Header */}
       <DialogHeader className="px-6 pt-6 pb-4 border-b border-border shrink-0">
@@ -734,6 +735,7 @@ function AssignmentWizardContent({
             completedSteps={completedSteps}
             onStepClick={goToStep}
             allowNavigation={completedSteps.size > 0}
+            data-testid="assign-wizard-step-indicator"
           />
         </div>
       </DialogHeader>
@@ -756,14 +758,14 @@ function AssignmentWizardContent({
       {/* Footer */}
       <div className="px-6 py-4 border-t border-border shrink-0 flex items-center justify-between gap-4">
         {/* Left side - Cancel button */}
-        <Button variant="ghost" onClick={onCloseAttempt} className="text-muted-foreground hover:text-foreground">
+        <Button variant="ghost" onClick={onCloseAttempt} className="text-muted-foreground hover:text-foreground" data-testid="assign-wizard-close-btn">
           Anuluj
         </Button>
 
         {/* Right side - Navigation */}
         <div className="flex items-center gap-3">
           {!isFirstStep && (
-            <Button variant="ghost" onClick={goBack} className="text-muted-foreground hover:text-foreground">
+            <Button variant="ghost" onClick={goBack} className="text-muted-foreground hover:text-foreground" data-testid="assign-wizard-back-btn">
               <ArrowLeft className="h-4 w-4 mr-2" />
               Wstecz
             </Button>
@@ -776,6 +778,7 @@ function AssignmentWizardContent({
               "shadow-lg shadow-primary/20 min-w-[160px] transition-all duration-300",
               isLastStep && "bg-gradient-to-r from-primary to-emerald-500 hover:from-primary-dark hover:to-emerald-600"
             )}
+            data-testid={isLastStep ? "assign-summary-submit-btn" : "assign-wizard-next-btn"}
           >
             {assigning && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             {getNextButtonText()}

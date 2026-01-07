@@ -205,7 +205,7 @@ export function JoinOrganizationDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md" data-testid="settings-join-org-dialog">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <UserPlus className="h-5 w-5 text-primary" />
@@ -227,6 +227,7 @@ export function JoinOrganizationDialog({
                 onChange={(e) => setInputValue(e.target.value)}
                 className="pl-9 pr-10"
                 autoFocus
+                data-testid="settings-join-org-token-input"
               />
               {validationState === "validating" && (
                 <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground animate-spin" />
@@ -385,6 +386,7 @@ export function JoinOrganizationDialog({
               variant="outline"
               onClick={() => onOpenChange(false)}
               disabled={isAccepting}
+              data-testid="settings-join-org-cancel-btn"
             >
               Anuluj
             </Button>
@@ -396,6 +398,7 @@ export function JoinOrganizationDialog({
                 validationState === "valid" &&
                   "bg-gradient-to-r from-primary to-emerald-600 hover:from-primary-dark hover:to-emerald-700"
               )}
+              data-testid="settings-join-org-submit-btn"
             >
               {isAccepting ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -413,4 +416,3 @@ export function JoinOrganizationDialog({
     </Dialog>
   );
 }
-

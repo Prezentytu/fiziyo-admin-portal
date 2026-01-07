@@ -165,7 +165,7 @@ export function TeamSection({
           </div>
         </div>
         {canInvite && !isAtTherapistLimit && (
-          <Button onClick={onInviteClick} className="gap-2 shadow-lg shadow-primary/20">
+          <Button onClick={onInviteClick} className="gap-2 shadow-lg shadow-primary/20" data-testid="org-team-invite-btn">
             <UserPlus className="h-4 w-4" />
             Zaproś
           </Button>
@@ -192,6 +192,7 @@ export function TeamSection({
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-10 h-10 bg-surface border-border/60"
+            data-testid="org-team-search-input"
           />
           {searchQuery && (
             <Button
@@ -218,6 +219,7 @@ export function TeamSection({
                   ? "shadow-lg shadow-primary/20"
                   : "border-border/60 hover:border-border"
               )}
+              data-testid={`org-team-filter-${filter}`}
             >
               {filter === "all" && "Wszyscy"}
               {filter === "admin" && "Administratorzy"}

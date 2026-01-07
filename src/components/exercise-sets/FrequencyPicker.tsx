@@ -89,7 +89,7 @@ export function FrequencyPicker({
   };
 
   return (
-    <div className={cn("space-y-5", className)}>
+    <div className={cn("space-y-5", className)} data-testid="set-frequency-picker">
       {/* Days of week */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
@@ -135,6 +135,7 @@ export function FrequencyPicker({
                     : "bg-surface-light text-muted-foreground hover:bg-surface hover:text-foreground border border-transparent hover:border-border/50"
                 )}
                 title={day.fullLabel}
+                data-testid={`set-frequency-day-${day.key}`}
               >
                 {day.label}
               </button>
@@ -181,6 +182,7 @@ export function FrequencyPicker({
                 })
               }
               className="h-11 text-center text-lg font-semibold"
+              data-testid="set-frequency-times-per-day"
             />
             <Button
               type="button"

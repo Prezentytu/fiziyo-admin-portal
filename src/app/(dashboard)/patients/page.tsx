@@ -220,7 +220,7 @@ export default function PatientsPage() {
     <div className="space-y-6">
       {/* Compact Header with Search */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-2xl font-bold text-foreground">Pacjenci</h1>
+        <h1 className="text-2xl font-bold text-foreground" data-testid="patient-page-title">Pacjenci</h1>
         <div className="relative w-full sm:w-72">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
@@ -228,6 +228,7 @@ export default function PatientsPage() {
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Szukaj pacjentów..."
             className="pl-9 bg-surface border-border/60"
+            data-testid="patient-search-input"
           />
         </div>
       </div>
@@ -239,6 +240,7 @@ export default function PatientsPage() {
           onClick={() => setIsDialogOpen(true)}
           disabled={!organizationId}
           className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary via-primary to-primary-dark p-5 text-left transition-all duration-300 hover:shadow-xl hover:shadow-primary/20 hover:scale-[1.02] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 sm:col-span-1 lg:col-span-5"
+          data-testid="patient-create-btn"
         >
           <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
           <div className="absolute -top-24 -right-24 w-48 h-48 bg-white/10 rounded-full blur-3xl group-hover:bg-white/20 transition-all duration-500" />
@@ -270,6 +272,7 @@ export default function PatientsPage() {
                 ? 'border-primary/40 bg-primary/10 ring-1 ring-primary/20'
                 : 'border-border/40 bg-surface/50 hover:bg-surface-light hover:border-border'
             )}
+            data-testid="patient-filter-all-btn"
           >
             <div className="flex items-center gap-2">
               <Users className={cn('h-4 w-4', filter === 'all' ? 'text-primary' : 'text-muted-foreground')} />
@@ -289,6 +292,7 @@ export default function PatientsPage() {
                 ? 'border-secondary/40 bg-secondary/10 ring-1 ring-secondary/20'
                 : 'border-border/40 bg-surface/50 hover:bg-surface-light hover:border-border'
             )}
+            data-testid="patient-filter-active-btn"
           >
             <div className="flex items-center gap-2">
               <UserCheck className={cn('h-4 w-4', filter === 'active' ? 'text-secondary' : 'text-muted-foreground')} />
@@ -308,6 +312,7 @@ export default function PatientsPage() {
                 ? 'border-muted-foreground/40 bg-muted/30 ring-1 ring-muted-foreground/20'
                 : 'border-border/40 bg-surface/50 hover:bg-surface-light hover:border-border'
             )}
+            data-testid="patient-filter-inactive-btn"
           >
             <div className="flex items-center gap-2">
               <UserX className={cn('h-4 w-4', filter === 'inactive' ? 'text-muted-foreground' : 'text-muted-foreground')} />

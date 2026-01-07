@@ -99,7 +99,7 @@ export default function ImportPage() {
   }, [currentStepIndex, goToStep]);
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen" data-testid="import-page">
       {/* Header */}
       <div className="mb-8">
         <div className="flex items-center gap-4 mb-2">
@@ -107,7 +107,7 @@ export default function ImportPage() {
             <Sparkles className="h-7 w-7 text-primary" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Import dokumentów</h1>
+            <h1 className="text-2xl font-bold text-foreground" data-testid="import-page-title">Import dokumentów</h1>
             <p className="text-muted-foreground">
               Wyciągnij ćwiczenia, zestawy i notatki z dokumentów PDF lub Excel
             </p>
@@ -499,6 +499,7 @@ export default function ImportPage() {
                 onClick={() => analyzeDocument()}
                 disabled={!file || isAnalyzing}
                 className="gap-2 h-12 px-8 bg-primary hover:bg-primary-dark"
+                data-testid="import-analyze-btn"
               >
                 {isAnalyzing ? (
                   <Loader2 className="h-5 w-5 animate-spin" />
@@ -515,6 +516,7 @@ export default function ImportPage() {
                 onClick={goNext}
                 disabled={!canProceed}
                 className="gap-2 h-12 px-8 bg-primary hover:bg-primary-dark"
+                data-testid="import-next-btn"
               >
                 Dalej
                 <ArrowRight className="h-5 w-5" />
@@ -527,6 +529,7 @@ export default function ImportPage() {
                 onClick={executeImport}
                 disabled={isImporting}
                 className="gap-2 h-12 px-8 bg-primary hover:bg-primary-dark"
+                data-testid="import-execute-btn"
               >
                 {isImporting ? (
                   <Loader2 className="h-5 w-5 animate-spin" />

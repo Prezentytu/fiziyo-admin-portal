@@ -1359,6 +1359,7 @@ export function CreateSetWizard({
     <Dialog open={open} onOpenChange={() => handleCloseAttempt()}>
       <DialogContent
         className="max-w-7xl w-[98vw] max-h-[95vh] h-[90vh] md:h-[85vh] flex flex-col p-0 gap-0 overflow-hidden"
+        data-testid="set-wizard"
         onInteractOutside={(e) => e.preventDefault()}
         onEscapeKeyDown={(e) => {
           e.preventDefault();
@@ -1495,6 +1496,7 @@ export function CreateSetWizard({
                     className="h-12 text-base bg-surface border-border focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
                     autoFocus
                     autoComplete="off"
+                    data-testid="set-wizard-name-input"
                   />
                   <p className="text-xs text-muted-foreground">Minimum 2 znaki</p>
                 </div>
@@ -1512,6 +1514,7 @@ export function CreateSetWizard({
                     onChange={(e) => setDescription(e.target.value)}
                     placeholder="Opisz cel zestawu, dla kogo jest przeznaczony..."
                     className="flex-1 min-h-[120px] resize-none text-base bg-surface border-border focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all"
+                    data-testid="set-wizard-description-input"
                   />
                 </div>
 
@@ -1672,6 +1675,7 @@ export function CreateSetWizard({
                         }}
                         placeholder="Szukaj ćwiczeń..."
                         className="h-11 pl-10"
+                        data-testid="set-wizard-search-input"
                       />
                     </div>
                     <div className="flex rounded-lg border border-border overflow-hidden">
@@ -1954,7 +1958,7 @@ export function CreateSetWizard({
               )}
 
               {!isFirstStep && (
-                <Button variant="ghost" onClick={goBack} disabled={isLoading}>
+                <Button variant="ghost" onClick={goBack} disabled={isLoading} data-testid="set-wizard-back-btn">
                   <ArrowLeft className="h-4 w-4 mr-2" />
                   Wstecz
                 </Button>
@@ -1967,6 +1971,7 @@ export function CreateSetWizard({
                     onClick={() => handleCreateSet(false)}
                     disabled={!canProceedFromBasics || isLoading}
                     className="hidden sm:flex"
+                    data-testid="set-wizard-create-empty-btn"
                   >
                     {creatingSet && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     Utwórz pusty
@@ -1976,6 +1981,7 @@ export function CreateSetWizard({
                     onClick={goToExercises}
                     disabled={!canProceedFromBasics}
                     className="gap-2 bg-gradient-to-br from-primary to-primary-dark shadow-lg shadow-primary/20 min-w-[140px]"
+                    data-testid="set-wizard-next-btn"
                   >
                     Dalej: Ćwiczenia
                     <ArrowRight className="h-4 w-4" />
@@ -1986,6 +1992,7 @@ export function CreateSetWizard({
                   onClick={() => handleCreateSet(true)}
                   disabled={isLoading}
                   className="gap-2 bg-gradient-to-br from-primary to-primary-dark shadow-lg shadow-primary/20 min-w-[160px]"
+                  data-testid="set-wizard-create-btn"
                 >
                   {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   <Check className="h-4 w-4 mr-1" />

@@ -125,7 +125,7 @@ export function ClinicsSection({
           </div>
         </div>
         {canEdit && (
-          <Button onClick={onAddClick} variant="outline" className="gap-2">
+          <Button onClick={onAddClick} variant="outline" className="gap-2" data-testid="org-clinics-add-btn">
             <Plus className="h-4 w-4" />
             Dodaj gabinet
           </Button>
@@ -141,6 +141,7 @@ export function ClinicsSection({
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-10 h-10 bg-surface border-border/60"
+            data-testid="org-clinics-search-input"
           />
           {searchQuery && (
             <Button
@@ -179,6 +180,7 @@ export function ClinicsSection({
                   ? "border-border/40 hover:border-border hover:shadow-md"
                   : "border-border/20 opacity-60"
               )}
+              data-testid={`org-clinics-item-${clinic.id}`}
             >
               {/* Clinic info */}
               <div className="space-y-3">
@@ -217,16 +219,16 @@ export function ClinicsSection({
                 <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-8 w-8">
+                      <Button variant="ghost" size="icon" className="h-8 w-8" data-testid={`org-clinics-menu-${clinic.id}`}>
                         <MoreHorizontal className="h-4 w-4" />
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => onEditClinic(clinic)}>
+                      <DropdownMenuItem onClick={() => onEditClinic(clinic)} data-testid={`org-clinics-edit-${clinic.id}`}>
                         <Pencil className="mr-2 h-4 w-4" />
                         Edytuj
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => onAssignPeople(clinic)}>
+                      <DropdownMenuItem onClick={() => onAssignPeople(clinic)} data-testid={`org-clinics-assign-${clinic.id}`}>
                         <Users className="mr-2 h-4 w-4" />
                         Przypisz osoby
                       </DropdownMenuItem>
@@ -234,6 +236,7 @@ export function ClinicsSection({
                       <DropdownMenuItem
                         onClick={() => setDeletingClinic(clinic)}
                         className="text-destructive focus:text-destructive"
+                        data-testid={`org-clinics-delete-${clinic.id}`}
                       >
                         <Trash2 className="mr-2 h-4 w-4" />
                         Usuń
@@ -261,4 +264,3 @@ export function ClinicsSection({
     </section>
   );
 }
-
