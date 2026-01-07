@@ -88,7 +88,7 @@ export function ExerciseReviewCard({
         decision.action === 'create' && 'border-primary/40 bg-primary/5',
         className
       )}
-      data-testid={`import-exercise-card-${exercise.id}`}
+      data-testid={`import-exercise-card-${exercise.tempId}`}
     >
       <CardContent className="p-5">
         {/* Header z nazwą i parametrami */}
@@ -207,7 +207,7 @@ export function ExerciseReviewCard({
               'gap-2 h-9 px-4',
               decision.action === 'create' && 'bg-primary hover:bg-primary-dark'
             )}
-            data-testid={`import-exercise-card-${exercise.id}-create-btn`}
+            data-testid={`import-exercise-card-${exercise.tempId}-create-btn`}
           >
             <Check className="h-4 w-4" />
             Utwórz nowe
@@ -246,7 +246,7 @@ export function ExerciseReviewCard({
               'gap-2 h-9 px-4',
               decision.action === 'skip' && 'bg-muted text-muted-foreground'
             )}
-            data-testid={`import-exercise-card-${exercise.id}-skip-btn`}
+            data-testid={`import-exercise-card-${exercise.tempId}-skip-btn`}
           >
             <X className="h-4 w-4" />
             Pomiń

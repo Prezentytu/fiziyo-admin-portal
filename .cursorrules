@@ -1144,3 +1144,76 @@ CustomName, CustomDescription, Notes (personalizacja dla zestawu)
 
 Id, ExerciseSetId, UserId, AssignedById, Status, StartDate, EndDate
 Frequency (może nadpisywać zestaw)
+
+## 🧪 DATA-TESTID - OBOWIĄZKOWE DLA TESTÓW E2E
+
+### ZASADA: Każdy interaktywny element MUSI mieć data-testid
+
+Przy dodawaniu nowych funkcjonalności **ZAWSZE** dodawaj atrybuty `data-testid` do:
+- Przycisków (buttons)
+- Inputów i formularzy
+- Kart (cards) z akcjami
+- Linków nawigacyjnych
+- Elementów list (z dynamicznym ID)
+- Menu i dropdownów
+- Dialogów i modali
+
+### Konwencja nazewnictwa
+
+**Format:** `[modul]-[komponent]-[element]-[akcja?]`
+
+**Prefiksy modułów:**
+- `auth-` - Autentykacja
+- `nav-` - Nawigacja
+- `dashboard-` - Panel główny
+- `exercise-` - Ćwiczenia
+- `set-` - Zestawy ćwiczeń
+- `patient-` - Pacjenci
+- `assign-` - Przypisywanie
+- `ai-` - Funkcje AI
+- `import-` - Import dokumentów
+- `org-` - Organizacja
+- `settings-` - Ustawienia
+- `common-` - Wspólne komponenty
+
+**Sufiksy:**
+- `-btn` - Przyciski
+- `-input` - Pola tekstowe
+- `-select` - Selecty/dropdowny
+- `-link` - Linki
+- `-card` - Karty
+- `-item` - Elementy list
+
+### Przykłady
+
+```typescript
+// ✅ DOBRE: Dynamiczne ID dla list
+<Card data-testid={`exercise-card-${exercise.id}`}>
+
+// ✅ DOBRE: Hierarchia dla menu items
+<Button data-testid={`exercise-card-${id}-edit-btn`}>
+
+// ✅ DOBRE: Formularz
+<Input data-testid="patient-form-firstname-input" />
+<Button data-testid="patient-form-submit-btn">Zapisz</Button>
+
+// ✅ DOBRE: Dialog
+<Dialog data-testid="common-confirm-dialog">
+  <Button data-testid="common-confirm-dialog-confirm-btn">Potwierdź</Button>
+</Dialog>
+
+// ❌ ZŁE: Brak data-testid na interaktywnym elemencie
+<Button onClick={handleSave}>Zapisz</Button>
+
+// ❌ ZŁE: Używanie indeksu zamiast stabilnego ID
+<Card data-testid={`card-${index}`}>
+```
+
+### Dokumentacja
+
+Pełna mapa data-testid znajduje się w: `docs/testing/data-testid-map.md`
+
+**Po dodaniu nowych data-testid:**
+1. Zaktualizuj mapę w `docs/testing/data-testid-map.md`
+2. Upewnij się, że ID jest unikalne na stronie
+3. Używaj stabilnych identyfikatorów (ID z bazy, nie indeksy)
