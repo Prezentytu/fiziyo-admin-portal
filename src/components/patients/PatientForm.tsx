@@ -153,7 +153,7 @@ export function PatientForm({
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6" data-testid="patient-form">
         {/* Live Avatar Preview - Desktop: Side by side with form, Mobile: Above */}
         <div className="space-y-3">
           <div className="flex flex-col sm:flex-row gap-6">
@@ -196,6 +196,7 @@ export function PatientForm({
                       autoFocus
                       autoComplete="given-name"
                       className="h-11 text-base transition-all duration-200 focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                      data-testid="patient-form-firstname-input"
                       {...field}
                     />
                   </FormControl>
@@ -218,6 +219,7 @@ export function PatientForm({
                       placeholder="Kowalski"
                       autoComplete="family-name"
                       className="h-11 text-base transition-all duration-200 focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                      data-testid="patient-form-lastname-input"
                       {...field}
                     />
                   </FormControl>
@@ -264,6 +266,7 @@ export function PatientForm({
                       value={field.value ?? ''}
                       onChange={field.onChange}
                       className="h-11 text-base"
+                      data-testid="patient-form-phone-input"
                     />
                   </FormControl>
                   <FormMessage />
@@ -286,6 +289,7 @@ export function PatientForm({
                       placeholder="jan@przykład.pl"
                       autoComplete="email"
                       className="h-11 text-base transition-all duration-200 focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                      data-testid="patient-form-email-input"
                       {...field}
                     />
                   </FormControl>
@@ -311,6 +315,7 @@ export function PatientForm({
                 <Input
                   placeholder="np. Ból pleców, Rehabilitacja kolana..."
                   className="h-11 text-base transition-all duration-200 focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                  data-testid="patient-form-context-input"
                   {...field}
                 />
               </FormControl>
@@ -360,7 +365,7 @@ export function PatientForm({
         {/* Actions */}
         <div className="flex justify-end gap-3 pt-4 border-t border-border">
           {onCancel && (
-            <Button type="button" variant="outline" onClick={onCancel} disabled={isLoading}>
+            <Button type="button" variant="outline" onClick={onCancel} disabled={isLoading} data-testid="patient-form-cancel-btn">
               Anuluj
             </Button>
           )}
@@ -368,6 +373,7 @@ export function PatientForm({
             type="submit"
             disabled={isLoading}
             className="min-w-[140px] bg-gradient-to-r from-primary to-primary-dark shadow-lg shadow-primary/20 transition-all duration-200 hover:shadow-xl hover:shadow-primary/30"
+            data-testid="patient-form-submit-btn"
           >
             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             {submitLabel}

@@ -65,6 +65,7 @@ export function SetCard({
 
   return (
     <div
+      data-testid={`set-card-${set.id}`}
       className={cn(
         "group relative flex flex-col rounded-xl border border-border/60 bg-surface overflow-hidden",
         "transition-all duration-200 hover:border-border hover:shadow-lg hover:shadow-black/5",
@@ -133,6 +134,7 @@ export function SetCard({
               className="h-8 w-8 bg-black/60 hover:bg-black/80 text-white backdrop-blur-md border-0"
               onClick={(e) => handleAction(e, () => onEdit(set))}
               title="Edytuj"
+              data-testid={`set-card-${set.id}-edit-btn`}
             >
               <Pencil className="h-3.5 w-3.5" />
             </Button>
@@ -144,6 +146,7 @@ export function SetCard({
               className="h-8 w-8 bg-black/60 hover:bg-black/80 text-white backdrop-blur-md border-0"
               onClick={(e) => handleAction(e, () => onDuplicate(set))}
               title="Duplikuj"
+              data-testid={`set-card-${set.id}-duplicate-btn`}
             >
               <Copy className="h-3.5 w-3.5" />
             </Button>
@@ -155,6 +158,7 @@ export function SetCard({
               className="h-8 w-8 bg-black/60 hover:bg-red-600/80 text-white backdrop-blur-md border-0"
               onClick={(e) => handleAction(e, () => onDelete(set))}
               title="Usuń"
+              data-testid={`set-card-${set.id}-delete-btn`}
             >
               <Trash2 className="h-3.5 w-3.5" />
             </Button>

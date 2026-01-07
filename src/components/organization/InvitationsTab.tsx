@@ -220,6 +220,7 @@ export function InvitationsTab({
         <button
           onClick={onInviteClick}
           className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary via-primary to-primary-dark p-4 text-left transition-all duration-300 hover:shadow-xl hover:shadow-primary/20 hover:scale-[1.02] cursor-pointer lg:col-span-2"
+          data-testid="org-invitations-hero-invite-btn"
         >
           <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
           <div className="absolute -top-16 -right-16 w-32 h-32 bg-white/10 rounded-full blur-3xl group-hover:bg-white/20 transition-all duration-500" />
@@ -279,6 +280,7 @@ export function InvitationsTab({
               size="sm"
               onClick={() => refetchInvitations()}
               disabled={invitationsLoading}
+              data-testid="org-invitations-refresh-btn"
             >
               <RefreshCw
                 className={cn(
@@ -405,7 +407,7 @@ function InvitationRow({
   const isLink = !invitation.email;
 
   return (
-    <div className="group flex items-center justify-between rounded-lg border border-border/60 bg-surface p-3 transition-all duration-200 hover:bg-surface-light hover:border-border">
+    <div className="group flex items-center justify-between rounded-lg border border-border/60 bg-surface p-3 transition-all duration-200 hover:bg-surface-light hover:border-border" data-testid={`org-invitation-row-${invitation.id}`}>
       <div className="flex items-center gap-3 min-w-0 flex-1">
         {/* Icon */}
         <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-surface-light shrink-0">
@@ -473,6 +475,7 @@ function InvitationRow({
               onCopyLink();
             }}
             title="Kopiuj link"
+            data-testid={`org-invitation-copy-${invitation.id}`}
           >
             <Copy className="h-4 w-4" />
           </Button>
@@ -485,6 +488,7 @@ function InvitationRow({
               size="icon"
               className="h-8 w-8"
               disabled={isLoading}
+              data-testid={`org-invitation-menu-${invitation.id}`}
             >
               {isLoading ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -534,5 +538,3 @@ function InvitationRow({
     </div>
   );
 }
-
-

@@ -99,7 +99,7 @@ export function ExerciseForm({
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+      <form data-testid="exercise-form" onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
         <FormField
           control={form.control}
           name="name"
@@ -107,7 +107,7 @@ export function ExerciseForm({
             <FormItem>
               <FormLabel>Nazwa ćwiczenia *</FormLabel>
               <FormControl>
-                <Input placeholder="np. Przysiady" {...field} />
+                <Input placeholder="np. Przysiady" data-testid="exercise-form-name-input" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -124,6 +124,7 @@ export function ExerciseForm({
                 <Textarea
                   placeholder="Opisz technikę wykonania ćwiczenia..."
                   className="min-h-[100px]"
+                  data-testid="exercise-form-description-input"
                   {...field}
                 />
               </FormControl>
@@ -141,14 +142,14 @@ export function ExerciseForm({
                 <FormLabel>Typ ćwiczenia *</FormLabel>
                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                   <FormControl>
-                    <SelectTrigger>
+                    <SelectTrigger data-testid="exercise-form-type-select">
                       <SelectValue placeholder="Wybierz typ" />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="reps">Powtórzenia</SelectItem>
-                    <SelectItem value="time">Czasowe</SelectItem>
-                    <SelectItem value="hold">Utrzymywanie</SelectItem>
+                    <SelectItem value="reps" data-testid="exercise-form-type-option-reps">Powtórzenia</SelectItem>
+                    <SelectItem value="time" data-testid="exercise-form-type-option-time">Czasowe</SelectItem>
+                    <SelectItem value="hold" data-testid="exercise-form-type-option-hold">Utrzymywanie</SelectItem>
                   </SelectContent>
                 </Select>
                 <FormMessage />
@@ -164,7 +165,7 @@ export function ExerciseForm({
                 <FormLabel>Strona ciała</FormLabel>
                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                   <FormControl>
-                    <SelectTrigger>
+                    <SelectTrigger data-testid="exercise-form-side-select">
                       <SelectValue placeholder="Wybierz stronę" />
                     </SelectTrigger>
                   </FormControl>

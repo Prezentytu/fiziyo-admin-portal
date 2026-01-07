@@ -30,6 +30,7 @@ export function ChatMessage({
 
   return (
     <div
+      data-testid={`ai-chat-message-${message.id}`}
       className={cn(
         "flex gap-3",
         isUser ? "flex-row-reverse" : "flex-row",

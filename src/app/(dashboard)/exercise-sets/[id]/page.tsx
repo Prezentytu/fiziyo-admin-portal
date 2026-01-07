@@ -331,25 +331,25 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
     <div className="space-y-6">
       {/* Compact Header */}
       <div className="flex items-center justify-between">
-        <Button variant="ghost" onClick={() => router.push('/exercise-sets')} className="gap-2">
+        <Button variant="ghost" onClick={() => router.push('/exercise-sets')} className="gap-2" data-testid="set-detail-back-btn">
           <ArrowLeft className="h-4 w-4" />
           Powrót do zestawów
         </Button>
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm" className="gap-2">
+            <Button variant="outline" size="sm" className="gap-2" data-testid="set-detail-menu-trigger">
               Opcje
               <MoreHorizontal className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => setIsPDFDialogOpen(true)}>
+            <DropdownMenuItem onClick={() => setIsPDFDialogOpen(true)} data-testid="set-detail-pdf-btn">
               <FileDown className="mr-2 h-4 w-4" />
               Pobierz PDF
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => setIsEditDialogOpen(true)}>
+            <DropdownMenuItem onClick={() => setIsEditDialogOpen(true)} data-testid="set-detail-edit-btn">
               <Pencil className="mr-2 h-4 w-4" />
               Edytuj zestaw
             </DropdownMenuItem>
@@ -357,6 +357,7 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
             <DropdownMenuItem
               onClick={() => setIsDeleteDialogOpen(true)}
               className="text-destructive focus:text-destructive"
+              data-testid="set-detail-delete-btn"
             >
               <Trash2 className="mr-2 h-4 w-4" />
               Usuń zestaw
@@ -367,7 +368,7 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
 
       {/* Hero Section: Title + Description */}
       <div className="space-y-2">
-        <h1 className="text-2xl font-bold text-foreground">{exerciseSet.name}</h1>
+        <h1 className="text-2xl font-bold text-foreground" data-testid="set-detail-name">{exerciseSet.name}</h1>
         {exerciseSet.description && (
           <p className="text-muted-foreground">{exerciseSet.description}</p>
         )}
@@ -379,6 +380,7 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
         <button
           onClick={() => setIsAssignDialogOpen(true)}
           className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary via-primary to-primary-dark p-5 text-left transition-all duration-300 hover:shadow-xl hover:shadow-primary/20 hover:scale-[1.02] cursor-pointer sm:col-span-1 lg:col-span-4"
+          data-testid="set-detail-assign-btn"
         >
           <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
           <div className="absolute -top-24 -right-24 w-48 h-48 bg-white/10 rounded-full blur-3xl group-hover:bg-white/20 transition-all duration-500" />
@@ -443,7 +445,7 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
             <Dumbbell className="h-5 w-5 text-primary" />
             Ćwiczenia ({exercises.length})
           </h2>
-          <Button size="sm" onClick={() => setIsAddExerciseDialogOpen(true)}>
+          <Button size="sm" onClick={() => setIsAddExerciseDialogOpen(true)} data-testid="set-detail-add-exercise-btn">
             <Plus className="mr-2 h-4 w-4" />
             Dodaj
           </Button>

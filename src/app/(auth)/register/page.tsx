@@ -87,6 +87,7 @@ function PracticeNamePreview({ name, onEdit }: PracticeNamePreviewProps) {
     <button
       type="button"
       onClick={onEdit}
+      data-testid="auth-register-company-edit-btn"
       className="mb-4 flex w-full items-center justify-between rounded-xl border border-border bg-surface p-4 text-left transition-colors hover:bg-surface-light"
     >
       <div className="flex flex-1 items-center gap-3">
@@ -263,6 +264,7 @@ export default function RegisterPage() {
       <button
         type="button"
         onClick={currentStep > 1 ? handlePrevStep : undefined}
+        data-testid="auth-register-back-btn"
         className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors"
       >
         {currentStep > 1 ? (
@@ -293,7 +295,9 @@ export default function RegisterPage() {
       </div>
 
       {/* Step indicator */}
-      <StepIndicator currentStep={currentStep} />
+      <div data-testid="auth-register-step-indicator">
+        <StepIndicator currentStep={currentStep} />
+      </div>
 
       {/* Forms */}
       <form
@@ -322,6 +326,7 @@ export default function RegisterPage() {
                   className="h-11 pl-10"
                   autoComplete="email"
                   autoFocus
+                  data-testid="auth-register-email-input"
                 />
               </div>
             </div>
@@ -346,6 +351,7 @@ export default function RegisterPage() {
                   className="h-11 pl-10"
                   autoComplete="new-password"
                   autoFocus
+                  data-testid="auth-register-password-input"
                 />
               </div>
             </div>
@@ -364,6 +370,7 @@ export default function RegisterPage() {
                   }
                   className="h-11 pl-10"
                   autoComplete="new-password"
+                  data-testid="auth-register-password-confirm-input"
                 />
               </div>
             </div>
@@ -389,6 +396,7 @@ export default function RegisterPage() {
                     className="h-11 pl-10"
                     autoComplete="given-name"
                     autoFocus
+                    data-testid="auth-register-firstname-input"
                   />
                 </div>
               </div>
@@ -407,6 +415,7 @@ export default function RegisterPage() {
                     }
                     className="h-11 pl-10"
                     autoComplete="family-name"
+                    data-testid="auth-register-lastname-input"
                   />
                 </div>
               </div>
@@ -420,6 +429,7 @@ export default function RegisterPage() {
                 value={formData.phone}
                 onChange={(value) => handleInputChange("phone", value)}
                 className="h-11"
+                data-testid="auth-register-phone-input"
               />
             </div>
 
@@ -438,6 +448,7 @@ export default function RegisterPage() {
                     className="h-11 pl-10"
                     autoFocus
                     onBlur={() => setShowNameEditor(false)}
+                    data-testid="auth-register-company-input"
                   />
                 </div>
               </div>
@@ -466,7 +477,7 @@ export default function RegisterPage() {
 
         {/* Error message */}
         {error && (
-          <div className="mt-4 rounded-lg bg-error/10 p-3 text-sm text-error">
+          <div data-testid="auth-register-error" className="mt-4 rounded-lg bg-error/10 p-3 text-sm text-error">
             {error}
           </div>
         )}
@@ -477,6 +488,7 @@ export default function RegisterPage() {
             type="submit"
             disabled={loading}
             className="h-11 w-full rounded-xl text-base font-semibold"
+            data-testid={currentStep < 3 ? "auth-register-next-btn" : "auth-register-submit-btn"}
           >
             {loading ? (
               <Loader2 className="h-5 w-5 animate-spin" />
@@ -497,6 +509,7 @@ export default function RegisterPage() {
         Masz już konto?{" "}
         <Link
           href="/sign-in"
+          data-testid="auth-register-login-link"
           className="font-semibold text-primary hover:text-primary-light"
         >
           Zaloguj się
@@ -505,7 +518,3 @@ export default function RegisterPage() {
     </div>
   );
 }
-
-
-
-

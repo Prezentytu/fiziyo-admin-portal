@@ -181,3 +181,4 @@ export function AICreditsWidget({ isCollapsed }: AICreditsWidgetProps) {
     </div>
   );
 }
+

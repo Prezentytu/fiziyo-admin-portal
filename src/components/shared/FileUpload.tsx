@@ -39,7 +39,7 @@ export function FileUpload({
 
     const fileArray = Array.from(files);
     const validFiles: File[] = [];
-    
+
     for (const file of fileArray) {
       // Check max files
       if (value.length + validFiles.length >= maxFiles) {
@@ -128,6 +128,7 @@ export function FileUpload({
           onChange={handleChange}
           disabled={disabled}
           className="hidden"
+          data-testid="common-file-upload-input"
         />
         <Upload className="mb-2 h-8 w-8 text-muted-foreground" />
         <p className="mb-1 text-sm font-medium">
@@ -176,6 +177,7 @@ export function FileUpload({
                     e.stopPropagation();
                     handleRemove(index);
                   }}
+                  data-testid={`common-file-remove-${index}`}
                 >
                   <X className="h-4 w-4" />
                 </Button>
@@ -187,21 +189,3 @@ export function FileUpload({
     </div>
   );
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

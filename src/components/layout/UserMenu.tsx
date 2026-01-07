@@ -34,6 +34,7 @@ export function UserMenu() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
+        data-testid="nav-user-menu-trigger"
         className="flex items-center gap-2 rounded-xl p-1 pr-2 transition-colors hover:bg-surface-light"
         style={{ outline: "none", boxShadow: "none" }}
       >
@@ -81,6 +82,7 @@ export function UserMenu() {
         {/* Menu items */}
         <DropdownMenuItem
           onClick={() => openUserProfile()}
+          data-testid="nav-user-menu-profile"
           className="gap-3 px-3 py-2.5 cursor-pointer focus:outline-none focus-visible:outline-none"
           style={{ outline: "none" }}
         >
@@ -92,7 +94,7 @@ export function UserMenu() {
           asChild
           className="gap-3 px-3 py-2.5 cursor-pointer focus:outline-none focus-visible:outline-none"
         >
-          <Link href="/settings" style={{ outline: "none" }}>
+          <Link href="/settings" data-testid="nav-user-menu-settings" style={{ outline: "none" }}>
             <Settings className="h-4 w-4 text-muted-foreground" />
             <span>Ustawienia</span>
           </Link>
@@ -102,6 +104,7 @@ export function UserMenu() {
 
         <DropdownMenuItem
           onClick={() => signOut({ redirectUrl: "/sign-in" })}
+          data-testid="nav-user-menu-logout"
           className="gap-3 px-3 py-2.5 cursor-pointer text-error focus:text-error focus:bg-error/10 focus:outline-none focus-visible:outline-none"
           style={{ outline: "none" }}
         >
@@ -112,17 +115,3 @@ export function UserMenu() {
     </DropdownMenu>
   );
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-

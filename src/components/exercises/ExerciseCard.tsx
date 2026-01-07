@@ -129,6 +129,7 @@ export function ExerciseCard({
   if (compact) {
     return (
       <div
+        data-testid={`exercise-card-${exercise.id}`}
         className={cn(
           "group flex items-center gap-4 rounded-xl border border-border/60 bg-surface p-3",
           "transition-all duration-200 ease-out cursor-pointer",
@@ -229,6 +230,7 @@ export function ExerciseCard({
   return (
     <>
     <div
+      data-testid={`exercise-card-${exercise.id}`}
       className={cn(
         "group relative flex flex-col rounded-xl border border-border/60 bg-surface overflow-hidden",
         "transition-all duration-300 ease-out cursor-pointer",
@@ -298,6 +300,7 @@ export function ExerciseCard({
               <Button
                 variant="ghost"
                 size="icon"
+                data-testid={`exercise-card-${exercise.id}-menu-trigger`}
                 className="h-8 w-8 bg-black/40 hover:bg-black/60 text-white backdrop-blur-sm"
               >
                 <MoreVertical className="h-4 w-4" />
@@ -305,19 +308,19 @@ export function ExerciseCard({
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               {onView && (
-                <DropdownMenuItem onClick={() => onView(exercise)}>
+                <DropdownMenuItem data-testid={`exercise-card-${exercise.id}-view-btn`} onClick={() => onView(exercise)}>
                   <Eye className="mr-2 h-4 w-4" />
                   Podgląd
                 </DropdownMenuItem>
               )}
               {onEdit && (
-                <DropdownMenuItem onClick={() => onEdit(exercise)}>
+                <DropdownMenuItem data-testid={`exercise-card-${exercise.id}-edit-btn`} onClick={() => onEdit(exercise)}>
                   <Pencil className="mr-2 h-4 w-4" />
                   Edytuj
                 </DropdownMenuItem>
               )}
               {onAddToSet && (
-                <DropdownMenuItem onClick={() => onAddToSet(exercise)}>
+                <DropdownMenuItem data-testid={`exercise-card-${exercise.id}-add-to-set-btn`} onClick={() => onAddToSet(exercise)}>
                   <FolderPlus className="mr-2 h-4 w-4" />
                   Dodaj do zestawu
                 </DropdownMenuItem>
@@ -326,6 +329,7 @@ export function ExerciseCard({
                 <>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
+                    data-testid={`exercise-card-${exercise.id}-delete-btn`}
                     onClick={() => onDelete(exercise)}
                     className="text-destructive focus:text-destructive"
                   >

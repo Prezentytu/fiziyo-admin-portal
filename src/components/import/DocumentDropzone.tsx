@@ -179,6 +179,7 @@ export function DocumentDropzone({
           disabled && 'cursor-not-allowed opacity-50',
           error && 'border-destructive/50'
         )}
+        data-testid="import-dropzone"
       >
         <input
           type="file"

@@ -90,6 +90,7 @@ function FeedbackButtonComponent({
           size="sm"
           onClick={handleOpen}
           className={cn('gap-2 text-muted-foreground hover:text-info', className)}
+          data-testid="common-feedback-btn"
         >
           <Bug className="h-4 w-4" />
           <span className="hidden sm:inline">Zgłoś uwagę</span>
@@ -118,6 +119,7 @@ function FeedbackButtonComponent({
                 'hover:bg-info/10 hover:text-info',
                 className
               )}
+              data-testid="common-feedback-btn-collapsed"
             >
               <Bug className="h-5 w-5" />
               <span className="sr-only">Zgłoś uwagę</span>
@@ -147,6 +149,7 @@ function FeedbackButtonComponent({
           'text-muted-foreground hover:bg-info/10 hover:text-info',
           className
         )}
+        data-testid="common-feedback-btn-full"
       >
         <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-info/10 group-hover:bg-info/20 transition-colors">
           <Bug className="h-4 w-4 text-info" />
@@ -173,4 +176,3 @@ function FeedbackButtonComponent({
 
 // Memoizacja dla performance
 export const FeedbackButton = memo(FeedbackButtonComponent);
-

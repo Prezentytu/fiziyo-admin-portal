@@ -165,7 +165,7 @@ export function FeedbackDialog({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-4xl">
+      <DialogContent className="max-w-4xl" data-testid="common-feedback-dialog">
         <DialogHeader>
           <DialogTitle>Zgłoś uwagę</DialogTitle>
           <DialogDescription>
@@ -245,6 +245,7 @@ export function FeedbackDialog({
                 }
                 rows={8}
                 className="resize-none"
+                data-testid="common-feedback-description-input"
               />
               <div className="flex items-center justify-between text-xs text-muted-foreground">
                 <span>
@@ -297,6 +298,7 @@ export function FeedbackDialog({
             variant="outline"
             onClick={handleClose}
             disabled={isSending}
+            data-testid="common-feedback-cancel-btn"
           >
             Anuluj
           </Button>
@@ -304,6 +306,7 @@ export function FeedbackDialog({
             onClick={handleSubmit}
             disabled={!canSubmit}
             className="gap-2"
+            data-testid="common-feedback-submit-btn"
           >
             {isSending ? (
               <>

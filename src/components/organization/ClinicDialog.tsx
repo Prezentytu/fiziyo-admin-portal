@@ -170,6 +170,7 @@ export function ClinicDialog({
           e.preventDefault();
           handleCloseAttempt();
         }}
+        data-testid="org-clinic-dialog"
       >
         <DialogHeader>
           <div className="flex items-center gap-3">
@@ -201,6 +202,7 @@ export function ClinicDialog({
                     <Input
                       placeholder="np. Gabinet Główny"
                       className="h-11"
+                      data-testid="org-clinic-name-input"
                       {...field}
                     />
                   </FormControl>
@@ -219,6 +221,7 @@ export function ClinicDialog({
                     <Textarea
                       placeholder="ul. Przykładowa 123, 00-000 Miasto"
                       className="min-h-[80px] resize-none"
+                      data-testid="org-clinic-address-input"
                       {...field}
                     />
                   </FormControl>
@@ -237,6 +240,7 @@ export function ClinicDialog({
                     <Input
                       placeholder="Telefon, email lub inne dane"
                       className="h-11"
+                      data-testid="org-clinic-contact-input"
                       {...field}
                     />
                   </FormControl>
@@ -251,6 +255,7 @@ export function ClinicDialog({
                 variant="outline"
                 onClick={handleCloseAttempt}
                 className="rounded-xl"
+                data-testid="org-clinic-cancel-btn"
               >
                 Anuluj
               </Button>
@@ -258,6 +263,7 @@ export function ClinicDialog({
                 type="submit"
                 disabled={isLoading}
                 className="rounded-xl shadow-lg shadow-primary/20"
+                data-testid="org-clinic-submit-btn"
               >
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {isEditing ? "Zapisz zmiany" : "Utwórz gabinet"}
@@ -280,16 +286,3 @@ export function ClinicDialog({
     </Dialog>
   );
 }
-
-
-
-
-
-
-
-
-
-
-
-
-

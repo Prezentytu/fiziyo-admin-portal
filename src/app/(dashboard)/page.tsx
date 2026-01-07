@@ -178,7 +178,7 @@ export default function DashboardPage() {
       {/* Header Section - Greeting with date */}
       <div className="flex items-end justify-between">
         <div>
-          <h1 className="text-2xl lg:text-3xl font-bold text-foreground tracking-tight">
+          <h1 data-testid="dashboard-greeting" className="text-2xl lg:text-3xl font-bold text-foreground tracking-tight">
             {greeting}, {userName}!
           </h1>
           <p className="text-muted-foreground mt-1">
@@ -203,6 +203,7 @@ export default function DashboardPage() {
         <button
           onClick={() => setIsAssignWizardOpen(true)}
           disabled={!organizationId || !therapistId}
+          data-testid="dashboard-hero-assign-set-btn"
           className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary via-primary to-primary-dark p-5 sm:p-6 text-left transition-all duration-300 hover:shadow-xl hover:shadow-primary/20 hover:scale-[1.02] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 lg:col-span-6"
         >
           {/* Animated background glow */}
@@ -229,6 +230,7 @@ export default function DashboardPage() {
         <button
           onClick={() => setIsCreateSetWizardOpen(true)}
           disabled={!organizationId}
+          data-testid="dashboard-create-set-btn"
           className="group relative overflow-hidden rounded-2xl border border-border/60 bg-surface p-5 text-left transition-all duration-300 hover:border-primary/40 hover:bg-surface-light hover:shadow-lg cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed lg:col-span-3 flex items-center"
         >
           <div className="relative flex items-center gap-3 w-full">
@@ -250,6 +252,7 @@ export default function DashboardPage() {
         <button
           onClick={() => setIsPatientDialogOpen(true)}
           disabled={!organizationId || !therapistId}
+          data-testid="dashboard-add-patient-btn"
           className="group relative overflow-hidden rounded-2xl border border-border/60 bg-surface p-5 text-left transition-all duration-300 hover:border-info/40 hover:bg-surface-light hover:shadow-lg cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed lg:col-span-3 flex items-center"
         >
           <div className="relative flex items-center gap-3 w-full">
@@ -271,7 +274,7 @@ export default function DashboardPage() {
       {/* Main Content - Bento Grid */}
       <div className="grid gap-4 lg:grid-cols-2">
         {/* Patients Section */}
-        <Card className="border-border/40 bg-surface/50 backdrop-blur-sm overflow-hidden">
+        <Card data-testid="dashboard-patients-section" className="border-border/40 bg-surface/50 backdrop-blur-sm overflow-hidden">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
               <CardTitle className="flex items-center gap-3 text-base font-semibold">
@@ -283,7 +286,7 @@ export default function DashboardPage() {
                   {patientsCount}
                 </Badge>
               </CardTitle>
-              <Link href="/patients" className="group">
+              <Link href="/patients" data-testid="dashboard-patients-view-all" className="group">
                 <Button variant="ghost" size="sm" className="h-8 text-xs gap-1 text-muted-foreground hover:text-foreground">
                   Wszyscy
                   <ChevronRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
@@ -317,6 +320,7 @@ export default function DashboardPage() {
                     <Link
                       key={assignment.id}
                       href={`/patients/${assignment.patient?.id}`}
+                      data-testid={`dashboard-patient-item-${assignment.patient?.id}`}
                       className={`group flex items-center gap-3 p-3 rounded-xl transition-all duration-200 ${
                         isShadow
                           ? 'hover:bg-surface opacity-70 hover:opacity-100'
@@ -396,7 +400,7 @@ export default function DashboardPage() {
         </Card>
 
         {/* Exercise Sets Section */}
-        <Card className="border-border/40 bg-surface/50 backdrop-blur-sm overflow-hidden">
+        <Card data-testid="dashboard-sets-section" className="border-border/40 bg-surface/50 backdrop-blur-sm overflow-hidden">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
               <CardTitle className="flex items-center gap-3 text-base font-semibold">
@@ -408,7 +412,7 @@ export default function DashboardPage() {
                   {setsCount}
                 </Badge>
               </CardTitle>
-              <Link href="/exercise-sets" className="group">
+              <Link href="/exercise-sets" data-testid="dashboard-sets-view-all" className="group">
                 <Button variant="ghost" size="sm" className="h-8 text-xs gap-1 text-muted-foreground hover:text-foreground">
                   Wszystkie
                   <ChevronRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
@@ -446,6 +450,7 @@ export default function DashboardPage() {
                   <Link
                     key={set.id}
                     href={`/exercise-sets/${set.id}`}
+                    data-testid={`dashboard-set-item-${set.id}`}
                     className="group flex items-center gap-3 p-3 rounded-xl transition-all duration-200 hover:bg-surface-light"
                   >
                     <SetThumbnail exerciseMappings={set.exerciseMappings} size="sm" />

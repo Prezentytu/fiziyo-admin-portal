@@ -163,6 +163,7 @@ export function EditAssignmentScheduleDialog({
           e.preventDefault();
           handleCloseAttempt();
         }}
+        data-testid="patient-schedule-dialog"
       >
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
@@ -239,6 +240,7 @@ export function EditAssignmentScheduleDialog({
             onClick={handleSave}
             disabled={loading}
             className="shadow-lg shadow-primary/20"
+            data-testid="patient-schedule-submit-btn"
           >
             {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Zapisz zmiany

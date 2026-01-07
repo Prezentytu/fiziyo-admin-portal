@@ -261,6 +261,7 @@ export function AddExerciseToSetDialog({
           e.preventDefault();
           handleCloseAttempt();
         }}
+        data-testid="set-add-exercise-dialog"
       >
         <DialogHeader>
           <div className="flex items-center gap-3">
@@ -328,6 +329,7 @@ export function AddExerciseToSetDialog({
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="h-11 pl-10"
+                data-testid="set-add-exercise-search"
               />
             </div>
 
@@ -449,6 +451,7 @@ export function AddExerciseToSetDialog({
                 onClick={handleNextStep}
                 disabled={selectedExercises.size === 0}
                 className="rounded-xl font-semibold"
+                data-testid="set-add-exercise-next-btn"
               >
                 Dalej
                 <ArrowRight className="ml-2 h-4 w-4" />
@@ -676,6 +679,7 @@ export function AddExerciseToSetDialog({
                 onClick={handleSave}
                 disabled={adding || selectedExercises.size === 0}
                 className="rounded-xl font-semibold"
+                data-testid="set-add-exercise-submit-btn"
               >
                 {adding ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />

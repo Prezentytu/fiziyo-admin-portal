@@ -37,6 +37,7 @@ export function PatientFilters({
           onChange={onSearchChange}
           placeholder="Szukaj pacjentów..."
           className="max-w-md"
+          data-testid="patient-search-input"
         />
         <Badge variant="secondary" className="hidden sm:flex whitespace-nowrap">
           {resultCount} z {totalCount}
@@ -55,6 +56,7 @@ export function PatientFilters({
                 ? "bg-primary text-primary-foreground border-primary shadow-sm"
                 : "bg-surface text-muted-foreground hover:bg-surface-light hover:text-foreground"
             )}
+            data-testid={`patient-filter-${f.value}-btn`}
           >
             {f.label}
           </button>
@@ -63,16 +65,3 @@ export function PatientFilters({
     </div>
   );
 }
-
-
-
-
-
-
-
-
-
-
-
-
-

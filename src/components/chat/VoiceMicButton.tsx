@@ -59,6 +59,7 @@ export function VoiceMicButton({
               isProcessing && "text-muted-foreground",
               className
             )}
+            data-testid="ai-chat-voice-btn"
           >
             {isProcessing ? (
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -80,10 +81,3 @@ export function VoiceMicButton({
     </TooltipProvider>
   );
 }
-
-
-
-
-
-
-

@@ -133,7 +133,7 @@ export function ProfileForm({ user, clerkId, onSuccess }: ProfileFormProps) {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6" data-testid="settings-profile-form">
         {/* Section 1: Profile Photo */}
         <Card className="border-border/60">
           <CardHeader className="pb-4">
@@ -194,6 +194,7 @@ export function ProfileForm({ user, clerkId, onSuccess }: ProfileFormProps) {
                     <FormControl>
                       <Input
                         placeholder="Jan"
+                        data-testid="settings-profile-firstname-input"
                         {...field}
                       />
                     </FormControl>
@@ -211,6 +212,7 @@ export function ProfileForm({ user, clerkId, onSuccess }: ProfileFormProps) {
                     <FormControl>
                       <Input
                         placeholder="Kowalski"
+                        data-testid="settings-profile-lastname-input"
                         {...field}
                       />
                     </FormControl>
@@ -265,6 +267,7 @@ export function ProfileForm({ user, clerkId, onSuccess }: ProfileFormProps) {
                     <FormControl>
                       <Input
                         placeholder="+48 123 456 789"
+                        data-testid="settings-profile-phone-input"
                         {...field}
                       />
                     </FormControl>
@@ -285,6 +288,7 @@ export function ProfileForm({ user, clerkId, onSuccess }: ProfileFormProps) {
                     <FormControl>
                       <Input
                         placeholder="ul. Przykładowa 123, 00-000 Miasto"
+                        data-testid="settings-profile-address-input"
                         {...field}
                       />
                     </FormControl>
@@ -302,6 +306,7 @@ export function ProfileForm({ user, clerkId, onSuccess }: ProfileFormProps) {
             type="submit"
             disabled={loading || !isDirty}
             className="shadow-lg shadow-primary/20"
+            data-testid="settings-profile-submit-btn"
           >
             {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             Zapisz zmiany

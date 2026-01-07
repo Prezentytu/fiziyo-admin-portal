@@ -130,6 +130,7 @@ export function EditContextLabelDialog({
             e.preventDefault();
             handleCloseAttempt();
           }}
+          data-testid="patient-context-dialog"
         >
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -151,6 +152,7 @@ export function EditContextLabelDialog({
                 placeholder="np. Ból pleców, Rehabilitacja kolana..."
                 className="h-11"
                 autoFocus
+                data-testid="patient-context-input"
               />
             </div>
 
@@ -186,10 +188,10 @@ export function EditContextLabelDialog({
 
             {/* Actions */}
             <div className="flex justify-end gap-3 pt-2">
-              <Button variant="outline" onClick={handleCloseAttempt} disabled={loading}>
+              <Button variant="outline" onClick={handleCloseAttempt} disabled={loading} data-testid="patient-context-cancel-btn">
                 Anuluj
               </Button>
-              <Button onClick={handleSave} disabled={loading}>
+              <Button onClick={handleSave} disabled={loading} data-testid="patient-context-submit-btn">
                 {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Zapisz
               </Button>

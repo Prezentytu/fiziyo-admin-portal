@@ -72,6 +72,7 @@ export function ScheduleStep({
                 }
               }}
               className="h-11"
+              data-testid="assign-schedule-start-date"
             />
           </div>
           <div className="space-y-2">
@@ -82,6 +83,7 @@ export function ScheduleStep({
               onChange={(e) => onEndDateChange(new Date(e.target.value))}
               min={format(startDate, "yyyy-MM-dd")}
               className="h-11"
+              data-testid="assign-schedule-end-date"
             />
           </div>
         </div>
@@ -107,6 +109,7 @@ export function ScheduleStep({
                     ? "bg-primary text-primary-foreground"
                     : "bg-surface-light hover:bg-surface-hover"
                 )}
+                data-testid={`assign-schedule-duration-${days}-btn`}
               >
                 {label}
               </button>

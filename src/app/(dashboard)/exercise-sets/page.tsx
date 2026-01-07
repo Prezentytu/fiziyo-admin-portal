@@ -148,7 +148,7 @@ export default function ExerciseSetsPage() {
     <div className="space-y-6">
       {/* Compact Header with Search */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-2xl font-bold text-foreground">Zestawy ćwiczeń</h1>
+        <h1 className="text-2xl font-bold text-foreground" data-testid="set-page-title">Zestawy ćwiczeń</h1>
         <div className="relative w-full sm:w-72">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
@@ -156,6 +156,7 @@ export default function ExerciseSetsPage() {
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Szukaj zestawów..."
             className="pl-9 bg-surface border-border/60"
+            data-testid="set-search-input"
           />
         </div>
       </div>
@@ -167,6 +168,7 @@ export default function ExerciseSetsPage() {
           onClick={() => setIsCreateWizardOpen(true)}
           disabled={!organizationId}
           className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary via-primary to-primary-dark p-5 text-left transition-all duration-300 hover:shadow-xl hover:shadow-primary/20 hover:scale-[1.02] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 sm:col-span-1 lg:col-span-4"
+          data-testid="set-create-wizard-btn"
         >
           <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
           <div className="absolute -top-24 -right-24 w-48 h-48 bg-white/10 rounded-full blur-3xl group-hover:bg-white/20 transition-all duration-500" />
@@ -198,6 +200,7 @@ export default function ExerciseSetsPage() {
                 ? 'border-primary/40 bg-primary/10 ring-1 ring-primary/20'
                 : 'border-border/40 bg-surface/50 hover:bg-surface-light hover:border-border'
             )}
+            data-testid="set-filter-all-btn"
           >
             <div className="flex items-center gap-2">
               <FolderKanban className={cn('h-4 w-4', filter === 'all' ? 'text-primary' : 'text-muted-foreground')} />
@@ -217,6 +220,7 @@ export default function ExerciseSetsPage() {
                 ? 'border-secondary/40 bg-secondary/10 ring-1 ring-secondary/20'
                 : 'border-border/40 bg-surface/50 hover:bg-surface-light hover:border-border'
             )}
+            data-testid="set-filter-active-btn"
           >
             <div className="flex items-center gap-2">
               <FolderKanban className={cn('h-4 w-4', filter === 'active' ? 'text-secondary' : 'text-muted-foreground')} />
@@ -236,6 +240,7 @@ export default function ExerciseSetsPage() {
                 ? 'border-info/40 bg-info/10 ring-1 ring-info/20'
                 : 'border-border/40 bg-surface/50 hover:bg-surface-light hover:border-border'
             )}
+            data-testid="set-filter-templates-btn"
           >
             <div className="flex items-center gap-2">
               <Sparkles className={cn('h-4 w-4', filter === 'templates' ? 'text-info' : 'text-muted-foreground')} />

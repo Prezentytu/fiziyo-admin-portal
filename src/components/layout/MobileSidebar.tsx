@@ -13,17 +13,17 @@ const navigationGroups = [
   {
     label: 'Główne',
     items: [
-      { name: 'Panel', href: '/', icon: LayoutDashboard },
-      { name: 'Pacjenci', href: '/patients', icon: Users },
-      { name: 'Zestawy', href: '/exercise-sets', icon: FolderKanban },
-      { name: 'Ćwiczenia', href: '/exercises', icon: Dumbbell },
+      { name: 'Panel', href: '/', icon: LayoutDashboard, testId: 'nav-mobile-link-dashboard' },
+      { name: 'Pacjenci', href: '/patients', icon: Users, testId: 'nav-mobile-link-patients' },
+      { name: 'Zestawy', href: '/exercise-sets', icon: FolderKanban, testId: 'nav-mobile-link-exercise-sets' },
+      { name: 'Ćwiczenia', href: '/exercises', icon: Dumbbell, testId: 'nav-mobile-link-exercises' },
     ],
   },
   {
     label: 'Zarządzanie',
     items: [
-      { name: 'Organizacja', href: '/organization', icon: Building2 },
-      { name: 'Ustawienia', href: '/settings', icon: Settings },
+      { name: 'Organizacja', href: '/organization', icon: Building2, testId: 'nav-mobile-link-organization' },
+      { name: 'Ustawienia', href: '/settings', icon: Settings, testId: 'nav-mobile-link-settings' },
     ],
   },
 ];
@@ -53,7 +53,7 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
 
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>
-      <SheetContent side="left" className="w-72 p-0">
+      <SheetContent side="left" className="w-72 p-0" data-testid="nav-mobile-sidebar">
         {/* Header */}
         <SheetHeader className="border-b border-border p-4">
           <SheetTitle className="flex items-center gap-3">
@@ -92,6 +92,7 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
                       key={item.name}
                       href={item.href}
                       onClick={handleLinkClick}
+                      data-testid={item.testId}
                       className={cn(
                         'group relative flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium transition-all duration-200',
                         active
@@ -124,6 +125,7 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
         <div className="absolute bottom-0 left-0 right-0 border-t border-border p-3 bg-surface">
           <button
             onClick={handleSignOut}
+            data-testid="nav-mobile-logout-btn"
             className="group flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium text-muted-foreground transition-all duration-200 hover:bg-error-muted hover:text-error"
           >
             <LogOut className="h-5 w-5 transition-transform duration-200 group-hover:-translate-x-0.5" />
@@ -134,7 +136,3 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
     </Sheet>
   );
 }
-
-
-
-

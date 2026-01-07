@@ -315,3 +315,4 @@ export function OrganizationHero({
     </div>
   );
 }
+

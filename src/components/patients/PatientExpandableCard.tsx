@@ -99,6 +99,7 @@ export function PatientExpandableCard({
           'hover:bg-surface-light hover:border-primary/30 hover:shadow-md',
           !isActive && 'opacity-60 hover:opacity-100'
         )}
+        data-testid={`patient-expandable-${patient.id}`}
       >
         <div className="flex items-center gap-4 p-4">
         {/* Avatar */}
@@ -218,6 +219,7 @@ export function PatientExpandableCard({
             className="h-8 w-8 hover:bg-primary/10 hover:text-primary"
             onClick={(e) => handleAction(e, () => onAssignSet(patient))}
             title="Przypisz zestaw"
+            data-testid={`patient-expandable-${patient.id}-assign-btn`}
           >
             <FolderKanban className="h-4 w-4" />
           </Button>
@@ -230,6 +232,7 @@ export function PatientExpandableCard({
                 size="icon"
                 className="h-8 w-8"
                 onClick={(e) => e.stopPropagation()}
+                data-testid={`patient-expandable-${patient.id}-menu-trigger`}
               >
                 <MoreHorizontal className="h-4 w-4" />
               </Button>

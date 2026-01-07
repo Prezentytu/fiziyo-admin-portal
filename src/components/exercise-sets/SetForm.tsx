@@ -71,7 +71,7 @@ export function SetForm({
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4" data-testid="set-form">
         <FormField
           control={form.control}
           name="name"
@@ -84,6 +84,7 @@ export function SetForm({
                   <Input
                     placeholder="np. Rehabilitacja kolana"
                     className="h-11 pl-10"
+                    data-testid="set-form-name-input"
                     {...field}
                   />
                 </div>
@@ -105,6 +106,7 @@ export function SetForm({
                   <Textarea
                     placeholder="Opisz cel zestawu ćwiczeń..."
                     className="min-h-[100px] pl-10 pt-2"
+                    data-testid="set-form-description-input"
                     {...field}
                   />
                 </div>
@@ -121,6 +123,7 @@ export function SetForm({
               variant="outline"
               onClick={onCancel}
               className="rounded-xl"
+              data-testid="set-form-cancel-btn"
             >
               Anuluj
             </Button>
@@ -129,6 +132,7 @@ export function SetForm({
             type="submit"
             disabled={isLoading}
             className="rounded-xl font-semibold"
+            data-testid="set-form-submit-btn"
           >
             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             {submitLabel}
@@ -138,17 +142,3 @@ export function SetForm({
     </Form>
   );
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-

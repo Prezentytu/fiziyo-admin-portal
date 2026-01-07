@@ -130,6 +130,7 @@ export function SelectSetStep({
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-9 h-11"
+              data-testid="assign-set-search"
             />
           </div>
           <div className="flex items-center justify-between">
@@ -201,6 +202,7 @@ export function SelectSetStep({
                         : "hover:bg-surface-light border-2 border-transparent"
                     )}
                     onClick={() => handleSetClick(set)}
+                    data-testid={`assign-set-item-${set.id}`}
                   >
                     {/* Preview image */}
                     <div className="h-14 w-14 shrink-0 rounded-lg overflow-hidden">

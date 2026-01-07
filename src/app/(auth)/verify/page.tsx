@@ -138,6 +138,7 @@ export default function VerifyEmailPage() {
             className="h-11 text-center text-lg tracking-widest"
             autoComplete="one-time-code"
             autoFocus
+            data-testid="auth-verify-code-input"
           />
         </div>
 
@@ -157,6 +158,7 @@ export default function VerifyEmailPage() {
           type="submit"
           disabled={loading || !code.trim()}
           className="h-11 w-full rounded-xl text-base font-semibold"
+          data-testid="auth-verify-submit-btn"
         >
           {loading ? (
             <Loader2 className="h-5 w-5 animate-spin" />
@@ -172,6 +174,7 @@ export default function VerifyEmailPage() {
           type="button"
           onClick={handleResendCode}
           disabled={resending}
+          data-testid="auth-verify-resend-btn"
           className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground disabled:opacity-50"
         >
           {resending ? (
@@ -185,17 +188,3 @@ export default function VerifyEmailPage() {
     </div>
   );
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-

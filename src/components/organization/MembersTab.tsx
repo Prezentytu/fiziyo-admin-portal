@@ -124,7 +124,7 @@ export function MembersTab({
           </CardDescription>
         </div>
         {canInvite && (
-          <Button onClick={onInviteClick} className="gap-2 shadow-lg shadow-primary/20">
+          <Button onClick={onInviteClick} className="gap-2 shadow-lg shadow-primary/20" data-testid="org-members-invite-btn">
             <UserPlus className="h-4 w-4" />
             Zaproś użytkownika
           </Button>
@@ -184,16 +184,3 @@ export function MembersTab({
     </Card>
   );
 }
-
-
-
-
-
-
-
-
-
-
-
-
-

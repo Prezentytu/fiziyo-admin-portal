@@ -293,7 +293,7 @@ export function PatientQRCodeDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-lg" data-testid="patient-qr-dialog">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <QrCode className="h-5 w-5 text-primary" />
@@ -360,6 +360,7 @@ export function PatientQRCodeDialog({
               variant="outline"
               onClick={handleDownloadQR}
               className="gap-2"
+              data-testid="patient-qr-download-btn"
             >
               <Download className="h-4 w-4" />
               Pobierz QR
@@ -379,6 +380,7 @@ export function PatientQRCodeDialog({
               variant="outline"
               onClick={handleCopyLink}
               className="gap-2"
+              data-testid="patient-qr-copy-btn"
             >
               {copied ? (
                 <Check className="h-4 w-4 text-primary" />
@@ -401,7 +403,3 @@ export function PatientQRCodeDialog({
     </Dialog>
   );
 }
-
-
-
-

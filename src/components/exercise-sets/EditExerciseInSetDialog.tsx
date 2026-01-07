@@ -220,6 +220,7 @@ function EditExerciseInSetDialogContent({
         e.preventDefault();
         onCloseAttempt();
       }}
+      data-testid="set-edit-exercise-dialog"
     >
       <DialogHeader className="px-6 pt-6 pb-4">
         <DialogTitle>Edytuj parametry</DialogTitle>
@@ -424,7 +425,7 @@ function EditExerciseInSetDialogContent({
         <Button variant="outline" onClick={onCloseAttempt} className="rounded-xl">
           Anuluj
         </Button>
-        <Button onClick={handleSave} disabled={loading} className="rounded-xl font-semibold">
+        <Button onClick={handleSave} disabled={loading} className="rounded-xl font-semibold" data-testid="set-edit-exercise-submit-btn">
           {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           Zapisz
         </Button>

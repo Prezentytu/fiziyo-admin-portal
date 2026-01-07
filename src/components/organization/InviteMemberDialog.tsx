@@ -231,6 +231,7 @@ export function InviteMemberDialog({
           e.preventDefault();
           handleCloseAttempt();
         }}
+        data-testid="org-invite-dialog"
       >
         <DialogHeader>
           <DialogTitle>Zaproś osobę</DialogTitle>
@@ -241,11 +242,11 @@ export function InviteMemberDialog({
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="email" className="gap-2">
+            <TabsTrigger value="email" className="gap-2" data-testid="org-invite-tab-email">
               <Mail className="h-4 w-4" />
               Email
             </TabsTrigger>
-            <TabsTrigger value="link" className="gap-2">
+            <TabsTrigger value="link" className="gap-2" data-testid="org-invite-tab-link">
               <Link2 className="h-4 w-4" />
               Link
             </TabsTrigger>
@@ -267,6 +268,7 @@ export function InviteMemberDialog({
                       <FormControl>
                         <Input
                           placeholder="jan.kowalski@email.com"
+                          data-testid="org-invite-email-input"
                           {...field}
                         />
                       </FormControl>
@@ -289,15 +291,15 @@ export function InviteMemberDialog({
                         defaultValue={field.value}
                       >
                         <FormControl>
-                          <SelectTrigger>
+                          <SelectTrigger data-testid="org-invite-role-select">
                             <SelectValue placeholder="Wybierz rolę" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="therapist">
+                          <SelectItem value="therapist" data-testid="org-invite-role-therapist">
                             Fizjoterapeuta
                           </SelectItem>
-                          <SelectItem value="admin">Administrator</SelectItem>
+                          <SelectItem value="admin" data-testid="org-invite-role-admin">Administrator</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormDescription>
@@ -318,6 +320,7 @@ export function InviteMemberDialog({
                       <FormControl>
                         <Textarea
                           placeholder="Opcjonalna wiadomość dla zapraszanej osoby..."
+                          data-testid="org-invite-message-input"
                           {...field}
                         />
                       </FormControl>
@@ -331,10 +334,11 @@ export function InviteMemberDialog({
                     type="button"
                     variant="outline"
                     onClick={handleCloseAttempt}
+                    data-testid="org-invite-cancel-btn"
                   >
                     Anuluj
                   </Button>
-                  <Button type="submit" disabled={sendingEmail}>
+                  <Button type="submit" disabled={sendingEmail} data-testid="org-invite-send-btn">
                     {sendingEmail && (
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     )}
@@ -374,6 +378,7 @@ export function InviteMemberDialog({
                   onClick={handleGenerateLink}
                   disabled={generatingLink}
                   className="w-full"
+                  data-testid="org-invite-generate-link-btn"
                 >
                   {generatingLink ? (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -398,6 +403,7 @@ export function InviteMemberDialog({
                       setGeneratedLink(null);
                     }}
                     className="w-full"
+                    data-testid="org-invite-regenerate-link-btn"
                   >
                     <RefreshCw className="mr-2 h-4 w-4" />
                     Wygeneruj nowy link

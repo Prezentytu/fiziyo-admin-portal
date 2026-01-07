@@ -23,6 +23,7 @@ export default function AuthLandingPage() {
           asChild
           size="lg"
           className="h-12 w-full rounded-xl text-base font-semibold shadow-lg shadow-primary/20"
+          data-testid="auth-login-btn"
         >
           <Link href="/sign-in">
             <LogIn className="mr-2 h-5 w-5" />
@@ -35,6 +36,7 @@ export default function AuthLandingPage() {
           variant="outline"
           size="lg"
           className="h-12 w-full rounded-xl text-base font-semibold"
+          data-testid="auth-register-link-btn"
         >
           <Link href="/register">
             <UserPlus className="mr-2 h-5 w-5" />
@@ -65,7 +67,3 @@ export default function AuthLandingPage() {
     </div>
   );
 }
-
-
-
-

@@ -34,6 +34,7 @@ export function ExerciseCard({
 
   return (
     <div
+      data-testid={`ai-chat-exercise-card-${exercise.name.toLowerCase().replace(/\s+/g, '-')}`}
       className={cn(
         "group relative rounded-xl border border-border/60 bg-surface overflow-hidden",
         "transition-all duration-200",
@@ -53,6 +54,7 @@ export function ExerciseCard({
                 variant="ghost"
                 size="icon"
                 onClick={() => onAddToSet(exercise)}
+                data-testid="ai-chat-exercise-add-to-set-btn"
                 className={cn(
                   "absolute right-2 top-3 h-7 w-7 rounded-lg",
                   "opacity-0 group-hover:opacity-100",
