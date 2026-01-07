@@ -192,6 +192,10 @@ await expect(page.getByTestId(/^exercise-card-/)).toHaveCount(5);
 | `exercise-form-type-option-time` | Opcja: Czasowe | `ExerciseForm.tsx` |
 | `exercise-form-type-option-hold` | Opcja: Utrzymywanie | `ExerciseForm.tsx` |
 | `exercise-form-side-select` | Strona ciała | `ExerciseForm.tsx` |
+| `exercise-quick-templates` | Sekcja szybkich szablonów | `QuickTemplates.tsx` |
+| `exercise-quick-templates-toggle-btn` | Rozwiń/zwiń szablony | `QuickTemplates.tsx` |
+| `exercise-quick-template-{id}-btn` | Przycisk szablonu (np. plank, bird-dog) | `QuickTemplates.tsx` |
+| `exercise-create-ai-image-btn` | Wygeneruj obraz AI (widoczny od razu) | `CreateExerciseWizard.tsx` |
 
 ### 5. Zestawy ćwiczeń (set-)
 
