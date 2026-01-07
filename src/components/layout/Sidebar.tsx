@@ -27,19 +27,19 @@ const navigationGroups = [
   {
     label: "Główne",
     items: [
-      { name: "Panel", href: "/", icon: LayoutDashboard },
-      { name: "Pacjenci", href: "/patients", icon: Users },
-      { name: "Zestawy", href: "/exercise-sets", icon: FolderKanban },
-      { name: "Ćwiczenia", href: "/exercises", icon: Dumbbell },
-      { name: "Import AI", href: "/import", icon: FileUp },
+      { name: "Panel", href: "/", icon: LayoutDashboard, testId: "nav-link-dashboard" },
+      { name: "Pacjenci", href: "/patients", icon: Users, testId: "nav-link-patients" },
+      { name: "Zestawy", href: "/exercise-sets", icon: FolderKanban, testId: "nav-link-exercise-sets" },
+      { name: "Ćwiczenia", href: "/exercises", icon: Dumbbell, testId: "nav-link-exercises" },
+      { name: "Import AI", href: "/import", icon: FileUp, testId: "nav-link-import" },
     ],
   },
   {
     label: "Organizacja",
     items: [
-      { name: "Zespół", href: "/organization", icon: Building2 },
-      { name: "Rozliczenia", href: "/billing", icon: CreditCard },
-      { name: "Ustawienia", href: "/settings", icon: Settings },
+      { name: "Zespół", href: "/organization", icon: Building2, testId: "nav-link-organization" },
+      { name: "Rozliczenia", href: "/billing", icon: CreditCard, testId: "nav-link-billing" },
+      { name: "Ustawienia", href: "/settings", icon: Settings, testId: "nav-link-settings" },
     ],
   },
 ];
@@ -61,6 +61,7 @@ export function Sidebar({ isCollapsed, onToggleCollapse }: SidebarProps) {
   return (
     <TooltipProvider delayDuration={0}>
       <aside
+        data-testid="nav-sidebar"
         className={cn(
           "hidden lg:flex h-screen flex-col border-r border-border/60 bg-surface transition-all duration-300 ease-in-out",
           isCollapsed ? "w-[72px]" : "w-64"
@@ -73,7 +74,7 @@ export function Sidebar({ isCollapsed, onToggleCollapse }: SidebarProps) {
             isCollapsed ? "justify-center px-3" : "justify-between px-4"
           )}
         >
-          <Link href="/" className="flex items-center gap-3">
+          <Link href="/" data-testid="nav-logo-link" className="flex items-center gap-3">
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary-dark shadow-lg shadow-primary/15">
               <HeartPulse className="h-5 w-5 text-primary-foreground" />
             </div>
@@ -88,6 +89,7 @@ export function Sidebar({ isCollapsed, onToggleCollapse }: SidebarProps) {
           {!isCollapsed && (
             <button
               onClick={onToggleCollapse}
+              data-testid="nav-collapse-btn"
               className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-surface-light hover:text-foreground transition-colors"
               aria-label="Zwiń menu"
             >
@@ -101,6 +103,7 @@ export function Sidebar({ isCollapsed, onToggleCollapse }: SidebarProps) {
           <div className="flex justify-center py-3 border-b border-border">
             <button
               onClick={onToggleCollapse}
+              data-testid="nav-expand-btn"
               className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-surface-light hover:text-foreground transition-colors"
               aria-label="Rozwiń menu"
             >
@@ -133,6 +136,7 @@ export function Sidebar({ isCollapsed, onToggleCollapse }: SidebarProps) {
                   const linkContent = (
                     <Link
                       href={item.href}
+                      data-testid={item.testId}
                       className={cn(
                         "group relative flex items-center rounded-xl text-sm font-medium transition-all duration-200",
                         isCollapsed ? "h-10 w-10 justify-center" : "gap-3 px-3 py-2.5",
