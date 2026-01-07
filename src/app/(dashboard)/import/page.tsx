@@ -378,7 +378,7 @@ export default function ImportPage() {
                   <AlertTriangle className="h-6 w-6 text-warning shrink-0 mt-0.5" />
                   <div>
                     <p className="font-semibold text-foreground">
-                      Notatki kliniczne nie zostaną zaimportowane
+                      Notatki nie zostaną zaimportowane
                     </p>
                     <p className="text-sm text-muted-foreground mt-1">
                       Wybierz pacjenta powyżej, aby zaimportować {stats.notesToCreate} {stats.notesToCreate === 1 ? 'notatkę' : 'notatki'}.
@@ -421,7 +421,7 @@ export default function ImportPage() {
                   <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-orange-500/20">
                     <FileText className="h-5 w-5 text-orange-500" />
                   </div>
-                  Notatki kliniczne ({analysisResult.clinicalNotes.length})
+                  Notatki ({analysisResult.clinicalNotes.length})
                   {!selectedPatientId && (
                     <Badge variant="secondary" className="ml-2 bg-warning/20 text-warning border-0">
                       Wymaga pacjenta
@@ -450,7 +450,7 @@ export default function ImportPage() {
                   <CardContent className="py-16 text-center">
                     <Layers className="mx-auto mb-4 h-16 w-16 text-muted-foreground/30" />
                     <p className="text-lg text-muted-foreground">
-                      Nie znaleziono zestawów ani notatek klinicznych
+                      Nie znaleziono zestawów ani notatek
                     </p>
                     <p className="text-sm text-muted-foreground mt-2">
                       Możesz kontynuować z samymi ćwiczeniami

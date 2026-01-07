@@ -87,7 +87,7 @@ const actionTypeConfig: Record<string, { label: string; icon: React.ElementType;
   chat: { label: "Chat AI", icon: MessageSquare, color: "text-blue-400" },
   set_generate: { label: "Generowanie zestawu", icon: Bot, color: "text-purple-400" },
   exercise_suggest: { label: "Sugestia ćwiczenia", icon: Sparkles, color: "text-primary" },
-  clinical_notes: { label: "Notatki kliniczne", icon: FileText, color: "text-amber-400" },
+  clinical_notes: { label: "Notatki", icon: FileText, color: "text-amber-400" },
   document_import: { label: "Import dokumentu", icon: FileUp, color: "text-cyan-400" },
   voice_parse: { label: "Rozpoznawanie mowy", icon: Mic, color: "text-pink-400" },
 };

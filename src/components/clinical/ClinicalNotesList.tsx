@@ -168,7 +168,7 @@ export function ClinicalNotesList({
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2 text-base font-medium">
               <FileText className="h-4 w-4 text-secondary" />
-              Dokumentacja kliniczna
+              Dokumentacja
               {notes.length > 0 && (
                 <Badge variant="secondary" className="ml-1">
                   {notes.length}
@@ -192,7 +192,7 @@ export function ClinicalNotesList({
             <EmptyState
               icon={FileText}
               title="Brak dokumentacji"
-              description="Utwórz pierwszą notatkę kliniczną dla tego pacjenta"
+              description="Utwórz pierwszą notatkę dla tego pacjenta"
               actionLabel="Utwórz notatkę"
               onAction={handleNewNote}
             />
@@ -303,7 +303,7 @@ export function ClinicalNotesList({
 
       {/* Editor Dialog */}
       <Dialog open={isEditorOpen} onOpenChange={handleDialogOpenChange}>
-        <DialogContent 
+        <DialogContent
           className="max-w-4xl h-[90vh] flex flex-col p-0"
           hideCloseButton
           onInteractOutside={(e) => {
@@ -323,10 +323,10 @@ export function ClinicalNotesList({
             <X className="h-4 w-4" />
             <span className="sr-only">Zamknij</span>
           </button>
-          
+
           <DialogHeader className="sr-only">
             <DialogTitle>
-              {selectedNote ? 'Edycja notatki klinicznej' : 'Nowa notatka kliniczna'}
+              {selectedNote ? 'Edycja notatki' : 'Nowa notatka'}
             </DialogTitle>
           </DialogHeader>
           <ClinicalNoteEditor
@@ -367,4 +367,3 @@ export function ClinicalNotesList({
     </>
   );
 }
-

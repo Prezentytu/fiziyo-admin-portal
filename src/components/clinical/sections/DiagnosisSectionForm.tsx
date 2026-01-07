@@ -108,7 +108,7 @@ export function DiagnosisSectionForm({
       {/* Kody ICD-10 */}
       <div className="space-y-3">
         <Label>Rozpoznanie ICD-10</Label>
-        
+
         {/* Wybrane kody */}
         {(data.icd10Codes?.length ?? 0) > 0 && (
           <div className="flex flex-wrap gap-2 mb-3">
@@ -201,7 +201,7 @@ export function DiagnosisSectionForm({
       {/* Kody ICF */}
       <div className="space-y-3">
         <Label>Kody ICF (klasyfikacja funkcjonowania)</Label>
-        
+
         {/* Wybrane kody */}
         {(data.icfCodes?.length ?? 0) > 0 && (
           <div className="flex flex-wrap gap-2 mb-3">
@@ -296,7 +296,7 @@ export function DiagnosisSectionForm({
 
       {/* Rozumowanie kliniczne */}
       <div className="space-y-2">
-        <Label htmlFor="clinicalReasoning">Rozumowanie kliniczne</Label>
+        <Label htmlFor="clinicalReasoning">Rozumowanie i dodatkowe uwagi</Label>
         <Textarea
           id="clinicalReasoning"
           value={data.clinicalReasoning || ''}
@@ -309,4 +309,3 @@ export function DiagnosisSectionForm({
     </div>
   );
 }
-
