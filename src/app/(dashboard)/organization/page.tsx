@@ -242,23 +242,41 @@ export default function OrganizationPage() {
 
         {/* Hero Action + Quick Stats */}
         <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 mt-4">
-          {/* Hero Action - Zaproś do zespołu */}
+          {/* Hero Action - dynamiczny w zależności od zakładki */}
           {canEdit && (
             <button
-              onClick={() => setIsInviteDialogOpen(true)}
+              onClick={() => {
+                if (activeTab === "clinics") {
+                  setIsClinicDialogOpen(true);
+                } else {
+                  setIsInviteDialogOpen(true);
+                }
+              }}
               className="group relative overflow-hidden rounded-2xl bg-linear-to-br from-primary via-primary to-primary-dark p-5 text-left transition-all duration-300 hover:shadow-xl hover:shadow-primary/20 hover:scale-[1.02] cursor-pointer sm:col-span-1 lg:col-span-5"
-              data-testid="org-hero-invite-btn"
+              data-testid="org-hero-action-btn"
             >
               <div className="absolute inset-0 bg-linear-to-br from-white/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
               <div className="absolute -top-24 -right-24 w-48 h-48 bg-white/10 rounded-full blur-3xl group-hover:bg-white/20 transition-all duration-500" />
 
               <div className="relative flex items-center gap-4">
                 <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm shrink-0 group-hover:scale-110 transition-transform duration-300">
-                  <UserPlus className="h-5 w-5 text-white" />
+                  {activeTab === "clinics" ? (
+                    <MapPin className="h-5 w-5 text-white" />
+                  ) : (
+                    <UserPlus className="h-5 w-5 text-white" />
+                  )}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <h3 className="text-base font-bold text-white">Zaproś do zespołu</h3>
-                  <p className="text-sm text-white/70">Dodaj fizjoterapeutę lub administratora</p>
+                  <h3 className="text-base font-bold text-white">
+                    {activeTab === "team" && "Zaproś do zespołu"}
+                    {activeTab === "invitations" && "Nowe zaproszenie"}
+                    {activeTab === "clinics" && "Dodaj gabinet"}
+                  </h3>
+                  <p className="text-sm text-white/70">
+                    {activeTab === "team" && "Dodaj fizjoterapeutę lub administratora"}
+                    {activeTab === "invitations" && "Wyślij email lub wygeneruj link"}
+                    {activeTab === "clinics" && "Utwórz nową lokalizację"}
+                  </p>
                 </div>
                 <Plus className="h-5 w-5 text-white/60 group-hover:text-white transition-colors shrink-0" />
               </div>
@@ -350,10 +368,7 @@ export default function OrganizationPage() {
         {/* Invitations Tab */}
         {canEdit && organizationId && (
           <TabsContent value="invitations" className="mt-6">
-            <InvitationsTab
-              organizationId={organizationId}
-              onInviteClick={() => setIsInviteDialogOpen(true)}
-            />
+            <InvitationsTab organizationId={organizationId} />
           </TabsContent>
         )}
 

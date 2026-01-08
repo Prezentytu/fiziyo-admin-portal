@@ -108,20 +108,20 @@ export default function SettingsPage() {
           <TabsList className="h-9">
             <TabsTrigger value="profile" className="flex items-center gap-2 text-xs sm:text-sm" data-testid="settings-tab-profile">
               <User className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Profil</span>
+              <span className="hidden sm:inline">Mój profil</span>
             </TabsTrigger>
             <TabsTrigger value="organization" className="flex items-center gap-2 text-xs sm:text-sm" data-testid="settings-tab-organization">
               <Settings className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Organizacja</span>
+              <span className="hidden sm:inline">Profil firmy</span>
             </TabsTrigger>
             <TabsTrigger value="organizations" className="flex items-center gap-2 text-xs sm:text-sm" data-testid="settings-tab-organizations">
               <Building2 className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Moje organizacje</span>
+              <span className="hidden sm:inline">Organizacje</span>
               <span className="text-muted-foreground">({organizations.length})</span>
             </TabsTrigger>
             <TabsTrigger value="accessibility" className="flex items-center gap-2 text-xs sm:text-sm" data-testid="settings-tab-accessibility">
               <Eye className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Dostępność</span>
+              <span className="hidden sm:inline">Wygląd</span>
             </TabsTrigger>
           </TabsList>
         </div>

@@ -17,7 +17,6 @@ import {
   Link2,
   User,
   Loader2,
-  Send,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -54,7 +53,6 @@ import { cn } from "@/lib/utils";
 
 interface InvitationsTabProps {
   organizationId: string;
-  onInviteClick?: () => void;
 }
 
 // ========================================
@@ -109,7 +107,6 @@ function getInviteUrl(token: string): string {
 
 export function InvitationsTab({
   organizationId,
-  onInviteClick,
 }: InvitationsTabProps) {
   const [filter, setFilter] = useState<string>("all");
 
@@ -215,27 +212,7 @@ export function InvitationsTab({
   return (
     <div className="space-y-6">
       {/* Stats Cards */}
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-        {/* Hero Action - Invite */}
-        <button
-          onClick={onInviteClick}
-          className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary via-primary to-primary-dark p-4 text-left transition-all duration-300 hover:shadow-xl hover:shadow-primary/20 hover:scale-[1.02] cursor-pointer lg:col-span-2"
-          data-testid="org-invitations-hero-invite-btn"
-        >
-          <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-          <div className="absolute -top-16 -right-16 w-32 h-32 bg-white/10 rounded-full blur-3xl group-hover:bg-white/20 transition-all duration-500" />
-
-          <div className="relative flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm shrink-0 group-hover:scale-110 transition-transform duration-300">
-              <Send className="h-5 w-5 text-white" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <h3 className="text-sm font-bold text-white">Zaproś osobę</h3>
-              <p className="text-xs text-white/80">Email lub link</p>
-            </div>
-          </div>
-        </button>
-
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {/* Stats */}
         <StatCard
           label="Oczekujące"
