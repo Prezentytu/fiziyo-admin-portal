@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Mail, Phone, FolderKanban, Wrench, MoreHorizontal, Power, UserX, Tag, UserPlus } from 'lucide-react';
+import { Mail, Phone, FolderKanban, Wrench, MoreHorizontal, UserX, Tag, UserPlus, Trash2 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -52,8 +52,10 @@ interface PatientExpandableCardProps {
   onAssignSet: (patient: Patient) => void;
   /** @deprecated Click on card navigates to patient details */
   onViewReport?: (patient: Patient) => void;
-  onToggleStatus: (patient: Patient) => void;
-  onRemove: (patient: Patient) => void;
+  /** Odpięcie pacjenta od fizjoterapeuty - tylko Admin/Owner */
+  onUnassign: (patient: Patient) => void;
+  /** Usunięcie pacjenta z organizacji - tylko Admin/Owner */
+  onRemoveFromOrganization: (patient: Patient) => void;
   onTakeOver?: (patient: Patient) => void;
   organizationId: string;
   therapistId: string;
@@ -64,8 +66,8 @@ interface PatientExpandableCardProps {
 export function PatientExpandableCard({
   patient,
   onAssignSet,
-  onToggleStatus,
-  onRemove,
+  onUnassign,
+  onRemoveFromOrganization,
   onTakeOver,
   organizationId,
   therapistId,
@@ -79,6 +81,8 @@ export function PatientExpandableCard({
   const isMyPatient = patient.therapist?.id === therapistId;
   // Check if patient is unassigned
   const isUnassigned = !patient.therapist;
+  // Check if patient has any therapist assigned
+  const hasTherapist = !!patient.therapist;
 
   const displayName =
     patient.fullname ||
@@ -91,8 +95,6 @@ export function PatientExpandableCard({
     .join('')
     .slice(0, 2)
     .toUpperCase();
-
-  const isActive = patient.assignmentStatus !== 'inactive';
 
   const handleCardClick = () => {
     router.push(`/patients/${patient.id}`);
@@ -117,8 +119,7 @@ export function PatientExpandableCard({
         tabIndex={0}
         className={cn(
           'group rounded-xl border border-border/60 bg-surface transition-all cursor-pointer',
-          'hover:bg-surface-light hover:border-primary/30 hover:shadow-md',
-          !isActive && 'opacity-60 hover:opacity-100'
+          'hover:bg-surface-light hover:border-primary/30 hover:shadow-md'
         )}
         data-testid={`patient-expandable-${patient.id}`}
       >
@@ -232,14 +233,6 @@ export function PatientExpandableCard({
           </button>
         ) : null}
 
-        {/* Status Badge */}
-        <Badge
-          variant={isActive ? 'default' : 'secondary'}
-          className="text-[10px] px-2 py-0.5 shrink-0"
-        >
-          {isActive ? 'Aktywny' : 'Nieaktywny'}
-        </Badge>
-
         {/* Hover Actions */}
         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
           {/* Take Over button (only for patients not mine) */}
@@ -306,23 +299,32 @@ export function PatientExpandableCard({
                     <Tag className="mr-2 h-4 w-4" />
                     Edytuj notatkę
                   </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => onToggleStatus(patient)}>
-                    <Power className="mr-2 h-4 w-4" />
-                    {isActive ? 'Dezaktywuj' : 'Aktywuj'}
-                  </DropdownMenuItem>
                 </>
               )}
 
-              {/* Remove option - only for Admin/Owner */}
-              {canManageTeam && isMyPatient && (
-                <DropdownMenuItem
-                  onClick={() => onRemove(patient)}
-                  className="text-destructive focus:text-destructive"
-                >
-                  <UserX className="mr-2 h-4 w-4" />
-                  Odepnij pacjenta
-                </DropdownMenuItem>
+              {/* Admin/Owner actions */}
+              {canManageTeam && (
+                <>
+                  <DropdownMenuSeparator />
+                  {/* Unassign from therapist - only if patient has a therapist */}
+                  {hasTherapist && (
+                    <DropdownMenuItem
+                      onClick={() => onUnassign(patient)}
+                      className="text-warning focus:text-warning"
+                    >
+                      <UserX className="mr-2 h-4 w-4" />
+                      Odepnij od fizjoterapeuty
+                    </DropdownMenuItem>
+                  )}
+                  {/* Remove from organization */}
+                  <DropdownMenuItem
+                    onClick={() => onRemoveFromOrganization(patient)}
+                    className="text-destructive focus:text-destructive"
+                  >
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Usuń z organizacji
+                  </DropdownMenuItem>
+                </>
               )}
             </DropdownMenuContent>
           </DropdownMenu>

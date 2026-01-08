@@ -26,7 +26,7 @@ import { GET_ORGANIZATION_PATIENTS_QUERY } from '@/graphql/queries/therapists.qu
 import { GET_CURRENT_ORGANIZATION_PLAN } from '@/graphql/queries/organizations.queries';
 import {
   REMOVE_PATIENT_FROM_THERAPIST_MUTATION,
-  UPDATE_PATIENT_STATUS_MUTATION,
+  REMOVE_PATIENT_FROM_ORGANIZATION_MUTATION,
 } from '@/graphql/mutations/therapists.mutations';
 import { GET_USER_BY_CLERK_ID_QUERY } from '@/graphql/queries/users.queries';
 import { matchesSearchQuery } from '@/utils/textUtils';
@@ -42,8 +42,8 @@ export default function PatientsPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
-  const [deletingPatient, setDeletingPatient] = useState<Patient | null>(null);
-  const [togglingStatusPatient, setTogglingStatusPatient] = useState<Patient | null>(null);
+  const [unassigningPatient, setUnassigningPatient] = useState<Patient | null>(null);
+  const [removingFromOrgPatient, setRemovingFromOrgPatient] = useState<Patient | null>(null);
   const [takeOverPatient, setTakeOverPatient] = useState<Patient | null>(null);
 
   // Get organization ID from context (changes when user switches organization)
@@ -65,15 +65,17 @@ export default function PatientsPage() {
   });
 
   // Mutations
-  const [removePatient, { loading: removing }] = useMutation(REMOVE_PATIENT_FROM_THERAPIST_MUTATION, {
+  const [unassignPatient, { loading: unassigning }] = useMutation(REMOVE_PATIENT_FROM_THERAPIST_MUTATION, {
+    refetchQueries: [
+      { query: GET_ORGANIZATION_PATIENTS_QUERY, variables: { organizationId, filter: 'all' } },
+    ],
+  });
+
+  const [removeFromOrganization, { loading: removingFromOrg }] = useMutation(REMOVE_PATIENT_FROM_ORGANIZATION_MUTATION, {
     refetchQueries: [
       { query: GET_ORGANIZATION_PATIENTS_QUERY, variables: { organizationId, filter: 'all' } },
       { query: GET_CURRENT_ORGANIZATION_PLAN, variables: { organizationId } },
     ],
-  });
-
-  const [updateStatus, { loading: updatingStatus }] = useMutation(UPDATE_PATIENT_STATUS_MUTATION, {
-    refetchQueries: [{ query: GET_ORGANIZATION_PATIENTS_QUERY, variables: { organizationId, filter: 'all' } }],
   });
 
   // Transform data from OrganizationPatients query
@@ -147,52 +149,52 @@ export default function PatientsPage() {
     setIsAssignDialogOpen(true);
   };
 
-  const handleToggleStatus = (patient: Patient) => {
-    setTogglingStatusPatient(patient);
-  };
-
   const handleTakeOver = (patient: Patient) => {
     setTakeOverPatient(patient);
   };
 
-  const handleConfirmToggleStatus = async () => {
-    if (!togglingStatusPatient || !therapistId || !organizationId) return;
+  const handleUnassign = async () => {
+    if (!unassigningPatient || !organizationId) return;
 
-    const newStatus = togglingStatusPatient.assignmentStatus === 'inactive' ? 'active' : 'inactive';
+    // Use the patient's assigned therapist ID for unassigning
+    const therapistToUnassign = unassigningPatient.therapist?.id;
+    if (!therapistToUnassign) {
+      toast.error('Pacjent nie jest przypisany do żadnego fizjoterapeuty');
+      setUnassigningPatient(null);
+      return;
+    }
 
     try {
-      await updateStatus({
+      await unassignPatient({
         variables: {
-          therapistId,
-          patientId: togglingStatusPatient.id,
+          therapistId: therapistToUnassign,
+          patientId: unassigningPatient.id,
           organizationId,
-          status: newStatus,
         },
       });
-      toast.success(`Pacjent został ${newStatus === 'active' ? 'aktywowany' : 'dezaktywowany'}`);
-      setTogglingStatusPatient(null);
+      toast.success('Pacjent został odpięty od fizjoterapeuty');
+      setUnassigningPatient(null);
     } catch (err) {
-      console.error('Błąd podczas zmiany statusu:', err);
-      toast.error('Nie udało się zmienić statusu pacjenta');
+      console.error('Błąd podczas odpinania:', err);
+      toast.error('Nie udało się odpiąć pacjenta');
     }
   };
 
-  const handleDelete = async () => {
-    if (!deletingPatient || !therapistId || !organizationId) return;
+  const handleRemoveFromOrganization = async () => {
+    if (!removingFromOrgPatient || !organizationId) return;
 
     try {
-      await removePatient({
+      await removeFromOrganization({
         variables: {
-          therapistId,
-          patientId: deletingPatient.id,
+          patientId: removingFromOrgPatient.id,
           organizationId,
         },
       });
-      toast.success('Pacjent został usunięty z listy');
-      setDeletingPatient(null);
+      toast.success('Pacjent został usunięty z organizacji');
+      setRemovingFromOrgPatient(null);
     } catch (err) {
-      console.error('Błąd podczas usuwania:', err);
-      toast.error('Nie udało się usunąć pacjenta');
+      console.error('Błąd podczas usuwania z organizacji:', err);
+      toast.error('Nie udało się usunąć pacjenta z organizacji');
     }
   };
 
@@ -402,8 +404,8 @@ export default function PatientsPage() {
               patient={patient}
               onAssignSet={handleAssignSet}
               onViewReport={handleViewReport}
-              onToggleStatus={handleToggleStatus}
-              onRemove={(p) => setDeletingPatient(p)}
+              onUnassign={(p) => setUnassigningPatient(p)}
+              onRemoveFromOrganization={(p) => setRemovingFromOrgPatient(p)}
               onTakeOver={handleTakeOver}
               organizationId={organizationId || ''}
               therapistId={therapistId || ''}
@@ -444,32 +446,32 @@ export default function PatientsPage() {
         />
       )}
 
-      {/* Delete Confirmation */}
+      {/* Unassign from Therapist Confirmation */}
       <ConfirmDialog
-        open={!!deletingPatient}
-        onOpenChange={(open) => !open && setDeletingPatient(null)}
-        title="Odepnij pacjenta"
-        description={`Czy na pewno chcesz odepnąć pacjenta "${
-          deletingPatient?.fullname || 'Nieznany'
-        }" ze swojej listy? Pacjent pozostanie w organizacji.`}
+        open={!!unassigningPatient}
+        onOpenChange={(open) => !open && setUnassigningPatient(null)}
+        title="Odepnij od fizjoterapeuty"
+        description={`Czy na pewno chcesz odpiąć pacjenta "${
+          unassigningPatient?.fullname || 'Nieznany'
+        }" od fizjoterapeuty ${unassigningPatient?.therapist?.fullname || ''}? Pacjent pozostanie w organizacji jako nieprzypisany.`}
         confirmText="Odepnij"
-        variant="destructive"
-        onConfirm={handleDelete}
-        isLoading={removing}
+        variant="default"
+        onConfirm={handleUnassign}
+        isLoading={unassigning}
       />
 
-      {/* Toggle Status Confirmation */}
+      {/* Remove from Organization Confirmation */}
       <ConfirmDialog
-        open={!!togglingStatusPatient}
-        onOpenChange={(open) => !open && setTogglingStatusPatient(null)}
-        title={togglingStatusPatient?.assignmentStatus === 'inactive' ? 'Aktywuj pacjenta' : 'Dezaktywuj pacjenta'}
-        description={`Czy na pewno chcesz ${
-          togglingStatusPatient?.assignmentStatus === 'inactive' ? 'aktywować' : 'dezaktywować'
-        } pacjenta "${togglingStatusPatient?.fullname || 'Nieznany'}"?`}
-        confirmText={togglingStatusPatient?.assignmentStatus === 'inactive' ? 'Aktywuj' : 'Dezaktywuj'}
-        variant="default"
-        onConfirm={handleConfirmToggleStatus}
-        isLoading={updatingStatus}
+        open={!!removingFromOrgPatient}
+        onOpenChange={(open) => !open && setRemovingFromOrgPatient(null)}
+        title="Usuń z organizacji"
+        description={`Czy na pewno chcesz TRWALE usunąć pacjenta "${
+          removingFromOrgPatient?.fullname || 'Nieznany'
+        }" z organizacji? Ta operacja jest nieodwracalna!`}
+        confirmText="Usuń z organizacji"
+        variant="destructive"
+        onConfirm={handleRemoveFromOrganization}
+        isLoading={removingFromOrg}
       />
 
       {/* Take Over Dialog (Collaborative Care) */}

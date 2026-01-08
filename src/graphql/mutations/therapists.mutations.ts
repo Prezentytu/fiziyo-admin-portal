@@ -284,3 +284,14 @@ export const TAKE_OVER_PATIENT_MUTATION = gql`
     }
   }
 `;
+
+/**
+ * Mutacja do trwałego usunięcia pacjenta z organizacji
+ * Tylko dla Admin/Owner
+ * Usuwa wszystkie przypisania i relacje pacjenta z organizacją
+ */
+export const REMOVE_PATIENT_FROM_ORGANIZATION_MUTATION = gql`
+  mutation RemovePatientFromOrganization($patientId: String!, $organizationId: String!) {
+    removePatientFromOrganization(patientId: $patientId, organizationId: $organizationId)
+  }
+`;
