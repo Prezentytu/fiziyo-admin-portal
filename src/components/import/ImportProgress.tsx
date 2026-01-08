@@ -38,7 +38,7 @@ export function ImportProgress({ className }: ImportProgressProps) {
     const stepInterval = setInterval(() => {
       setElapsedSeconds((prev) => {
         const next = prev + 1;
-        
+
         // Aktualizuj aktywny krok na podstawie czasu
         if (next < 8) {
           setCurrentStepIndex(0);
@@ -47,7 +47,7 @@ export function ImportProgress({ className }: ImportProgressProps) {
         } else {
           setCurrentStepIndex(2);
         }
-        
+
         return next;
       });
     }, 1000);
@@ -71,7 +71,7 @@ export function ImportProgress({ className }: ImportProgressProps) {
         {/* Zewnętrzne pulsujące kółko */}
         <div className="absolute inset-0 rounded-full bg-primary/20 animate-ping" style={{ animationDuration: '2s' }} />
         <div className="absolute inset-0 rounded-full bg-primary/10 animate-pulse" />
-        
+
         {/* Główna ikona */}
         <div className="relative flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br from-primary/30 to-primary/10 backdrop-blur-sm">
           <Brain className="h-12 w-12 text-primary animate-pulse" />
@@ -158,7 +158,7 @@ export function ImportProgress({ className }: ImportProgressProps) {
       {/* Rotujący tip - informacyjny, żeby użytkownik wiedział co się dzieje */}
       <div className="w-full max-w-md">
         <div className="rounded-xl bg-surface-light/50 px-6 py-4 text-center">
-          <p 
+          <p
             className="text-sm text-muted-foreground transition-opacity duration-500"
             key={currentTipIndex}
           >

@@ -164,3 +164,45 @@ export const GET_SITE_ADMINS_QUERY = gql`
   }
   ${USER_FULL_FRAGMENT}
 `;
+
+// Fragment dla wyszukiwania pacjenta (Smart Patient Lookup)
+export const USER_LOOKUP_FRAGMENT = gql`
+  fragment UserLookupFragment on User {
+    id
+    fullname
+    email
+    image
+    isShadowUser
+    isActive
+    organizationIds
+    personalData {
+      firstName
+      lastName
+    }
+    contactData {
+      phone
+    }
+  }
+`;
+
+// Query do wyszukiwania użytkownika po email (Smart Patient Lookup)
+// Używa dedykowanego endpointu userByEmail - szybkie i case-insensitive
+export const FIND_USER_BY_EMAIL_QUERY = gql`
+  query FindUserByEmail($email: String!) {
+    userByEmail(email: $email) {
+      ...UserLookupFragment
+    }
+  }
+  ${USER_LOOKUP_FRAGMENT}
+`;
+
+// Query do wyszukiwania użytkownika po telefonie (Smart Patient Lookup)
+// Używa dedykowanego endpointu userByPhone
+export const FIND_USER_BY_PHONE_QUERY = gql`
+  query FindUserByPhone($phone: String!) {
+    userByPhone(phone: $phone) {
+      ...UserLookupFragment
+    }
+  }
+  ${USER_LOOKUP_FRAGMENT}
+`;
