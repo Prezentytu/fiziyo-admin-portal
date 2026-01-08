@@ -72,7 +72,7 @@ export function ExercisePreviewDrawer({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent 
+      <DialogContent
         className="max-w-2xl max-h-[90vh] p-0 flex flex-col overflow-hidden"
         data-testid="exercise-preview-dialog"
       >
@@ -207,7 +207,7 @@ export function ExercisePreviewDrawer({
                 <Separator />
                 <div className="rounded-xl bg-info/5 border border-info/20 p-4">
                   <p className="text-xs text-muted-foreground">
-                    <strong className="text-info">Uwaga:</strong> To ćwiczenie ma zmodyfikowane parametry 
+                    <strong className="text-info">Uwaga:</strong> To ćwiczenie ma zmodyfikowane parametry
                     specjalnie dla tego pacjenta. Oryginalne wartości z zestawu mogą być inne.
                   </p>
                 </div>

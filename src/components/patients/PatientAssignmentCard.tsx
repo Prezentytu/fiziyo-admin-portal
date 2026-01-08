@@ -93,6 +93,7 @@ export interface ExerciseMapping {
     exerciseSide?: string;
     imageUrl?: string;
     images?: string[];
+    videoUrl?: string;
     description?: string;
     sets?: number;
     reps?: number;
@@ -540,7 +541,7 @@ export function PatientAssignmentCard({
                             data-testid={`patient-assignment-exercise-${mapping.id}`}
                           >
                             {/* Larger Thumbnail - 64x64 */}
-                            <button 
+                            <button
                               type="button"
                               className="h-16 w-16 rounded-xl overflow-hidden shrink-0 bg-surface-light cursor-pointer ring-1 ring-border/20 hover:ring-primary/40 transition-all"
                               onClick={() => onPreviewExercise?.(mapping)}
@@ -559,7 +560,7 @@ export function PatientAssignmentCard({
                             {/* Info */}
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2 mb-1">
-                                <button 
+                                <button
                                   type="button"
                                   className="text-sm font-semibold truncate cursor-pointer hover:text-primary transition-colors text-left"
                                   onClick={() => onPreviewExercise?.(mapping)}

@@ -185,13 +185,13 @@ function AddExerciseToPatientDialogContent({
   const exercises: Exercise[] = useMemo(() => {
     const data = exercisesData as { availableExercises?: Exercise[] } | undefined;
     const all = data?.availableExercises || [];
-    
+
     // Filter out exercises already in the set
     const filtered = all.filter((e) => !existingExerciseIds.has(e.id));
-    
+
     // Apply search filter
     if (!searchQuery.trim()) return filtered;
-    
+
     const query = searchQuery.toLowerCase();
     return filtered.filter(
       (e) =>
@@ -459,7 +459,7 @@ function AddExerciseToPatientDialogContent({
               {/* Info note */}
               <div className="rounded-xl bg-info/5 border border-info/20 p-3">
                 <p className="text-xs text-muted-foreground">
-                  To ćwiczenie zostanie dodane <strong>tylko dla tego pacjenta</strong>. 
+                  To ćwiczenie zostanie dodane <strong>tylko dla tego pacjenta</strong>.
                   Oryginalny zestaw nie zostanie zmodyfikowany.
                 </p>
               </div>
