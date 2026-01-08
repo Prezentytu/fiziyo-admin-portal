@@ -33,6 +33,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { ACTIVATE_PLAN_WITH_CODE_MUTATION } from "@/graphql/mutations/organizations.mutations";
+import { triggerCreditsRefresh } from "@/components/settings/AICreditsPanel";
 
 interface SubscriptionLimits {
   maxExercises?: number;
@@ -174,6 +175,7 @@ export function SubscriptionCard({
       setIsUpgradeDialogOpen(false);
       setSelectedPlan(null);
       setActivationCode("");
+      triggerCreditsRefresh(); // Odśwież widget kredytów po zmianie planu
       onUpgradeSuccess?.();
     },
     onError: (error) => {
