@@ -13,7 +13,7 @@ export interface ExerciseSuggestionRequest {
 
 export interface ExerciseSuggestionResponse {
   description: string;
-  type: 'reps' | 'time' | 'hold';
+  type: 'reps' | 'time';
   sets: number;
   reps: number | null;
   duration: number | null;
@@ -85,7 +85,7 @@ export interface VoiceParseRequest {
 export interface VoiceParseResponse {
   name: string;
   description: string;
-  type: 'reps' | 'time' | 'hold';
+  type: 'reps' | 'time';
   sets: number;
   reps: number | null;
   duration: number | null;
@@ -94,5 +94,27 @@ export interface VoiceParseResponse {
   suggestedTags: string[];
 }
 
+// ============================================
+// 5. Exercise Image Generation
+// ============================================
 
+export type ImageStyle = 'illustration' | 'diagram' | 'photo';
 
+export interface ExerciseImageRequest {
+  exerciseName: string;
+  exerciseDescription?: string;
+  exerciseType?: 'reps' | 'time' | 'hold';
+  style?: ImageStyle;
+}
+
+export interface ExerciseImageResponse {
+  imageBase64: string;
+  contentType: string;
+  prompt: string;
+  success: boolean;
+  errorMessage?: string;
+  /** Opis tekstowy wygenerowany przez AI (gdy model zwraca tekst zamiast obrazu) */
+  textDescription?: string;
+  /** Czy odpowiedź zawiera tylko tekst (bez obrazu) */
+  isTextOnly?: boolean;
+}

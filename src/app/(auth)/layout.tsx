@@ -3,8 +3,8 @@
 import { useAuth } from "@clerk/nextjs";
 import { useRouter, usePathname } from "next/navigation";
 import { useEffect } from "react";
-import { Dumbbell } from "lucide-react";
 import Image from "next/image";
+import { Logo } from "@/components/shared/Logo";
 
 interface AuthLayoutProps {
   children: React.ReactNode;
@@ -47,12 +47,7 @@ export default function AuthLayout({ children }: AuthLayoutProps) {
       {/* Left side - Branding & Illustration (hidden on mobile) */}
       <div className="relative hidden lg:flex lg:flex-col lg:justify-between bg-surface p-10">
         {/* Logo */}
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/15">
-            <Dumbbell className="h-5 w-5 text-primary" />
-          </div>
-          <span className="text-2xl font-bold text-primary">FiziYo</span>
-        </div>
+        <Logo variant="default" size="lg" />
 
         {/* Illustration */}
         <div className="flex flex-1 items-center justify-center py-10">
@@ -84,11 +79,8 @@ export default function AuthLayout({ children }: AuthLayoutProps) {
       {/* Right side - Form */}
       <div className="flex min-h-screen flex-col lg:min-h-0">
         {/* Mobile logo */}
-        <div className="flex items-center gap-3 p-6 lg:hidden">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/15">
-            <Dumbbell className="h-5 w-5 text-primary" />
-          </div>
-          <span className="text-2xl font-bold text-primary">FiziYo</span>
+        <div className="p-6 lg:hidden">
+          <Logo variant="default" size="lg" />
         </div>
 
         {/* Form content */}

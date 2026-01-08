@@ -180,6 +180,19 @@
   }
 }
 
+/* Indeterminate progress bar animation */
+@keyframes progress-indeterminate {
+  0% {
+    transform: translateX(-100%);
+  }
+  50% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
 .animate-wizard-slide-in-right {
   animation: wizard-slide-in-right 0.3s ease-out forwards;
 }

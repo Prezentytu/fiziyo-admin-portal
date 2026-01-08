@@ -21,7 +21,7 @@ import { GET_ORGANIZATION_EXERCISES_QUERY } from '@/graphql/queries/exercises.qu
 import { GET_EXERCISE_TAGS_BY_ORGANIZATION_QUERY } from '@/graphql/queries/exerciseTags.queries';
 import { GET_TAG_CATEGORIES_BY_ORGANIZATION_QUERY } from '@/graphql/queries/tagCategories.queries';
 import { DELETE_EXERCISE_MUTATION } from '@/graphql/mutations/exercises.mutations';
-import { matchesSearchQuery } from '@/utils/textUtils';
+import { matchesSearchQuery, matchesAnyText } from '@/utils/textUtils';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { createTagsMap, mapExercisesWithTags } from '@/utils/tagUtils';
 import { useDataManagement } from '@/hooks/useDataManagement';
@@ -88,11 +88,24 @@ export default function ExercisesPage() {
   // Stats
   const totalCount = exercises.length;
 
-  // Filter exercises
-  const searchFilteredExercises = exercises.filter(
-    (exercise) =>
-      matchesSearchQuery(exercise.name, searchQuery) || matchesSearchQuery(exercise.description, searchQuery)
-  );
+  // Helper to get all tag names from an exercise
+  const getTagNames = (exercise: Exercise): string[] => {
+    const allTags = [...(exercise.mainTags || []), ...(exercise.additionalTags || [])];
+    return allTags
+      .map((tag) => (typeof tag === 'object' && 'name' in tag ? tag.name : null))
+      .filter((name): name is string => name !== null);
+  };
+
+  // Filter exercises - by name, description, or tag names
+  const searchFilteredExercises = exercises.filter((exercise) => {
+    // Match by name or description
+    if (matchesSearchQuery(exercise.name, searchQuery) || matchesSearchQuery(exercise.description, searchQuery)) {
+      return true;
+    }
+    // Match by tag names
+    const tagNames = getTagNames(exercise);
+    return matchesAnyText(tagNames, searchQuery);
+  });
 
   // Sort by creation date (newest first)
   const filteredExercises = [...searchFilteredExercises].sort((a, b) => {

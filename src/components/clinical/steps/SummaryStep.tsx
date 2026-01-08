@@ -113,7 +113,7 @@ function SectionSummary({
 
 function InterviewSummary({ data }: { data?: InterviewSection }) {
   if (!data) return null;
-  
+
   return (
     <>
       {data.mainComplaint && (
@@ -134,7 +134,7 @@ function InterviewSummary({ data }: { data?: InterviewSection }) {
 
 function ExaminationSummary({ data }: { data?: ExaminationSection }) {
   if (!data) return null;
-  
+
   return (
     <>
       {data.posture && (
@@ -155,7 +155,7 @@ function ExaminationSummary({ data }: { data?: ExaminationSection }) {
 
 function DiagnosisSummary({ data }: { data?: DiagnosisSection }) {
   if (!data) return null;
-  
+
   return (
     <>
       {data.icd10Codes && data.icd10Codes.length > 0 && (
@@ -165,7 +165,7 @@ function DiagnosisSummary({ data }: { data?: DiagnosisSection }) {
         </p>
       )}
       {data.clinicalReasoning && (
-        <p><strong>Rozumowanie kliniczne:</strong> {data.clinicalReasoning}</p>
+        <p><strong>Rozumowanie:</strong> {data.clinicalReasoning}</p>
       )}
     </>
   );
@@ -173,7 +173,7 @@ function DiagnosisSummary({ data }: { data?: DiagnosisSection }) {
 
 function TreatmentPlanSummary({ data }: { data?: TreatmentPlanSection }) {
   if (!data) return null;
-  
+
   return (
     <>
       {data.shortTermGoals && (
@@ -191,7 +191,7 @@ function TreatmentPlanSummary({ data }: { data?: TreatmentPlanSection }) {
 
 function VisitProgressSummary({ data }: { data?: VisitProgressSection }) {
   if (!data) return null;
-  
+
   return (
     <>
       {data.techniques && (
@@ -322,13 +322,4 @@ export function SummaryStep({
     </div>
   );
 }
-
-
-
-
-
-
-
-
-
 

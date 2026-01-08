@@ -140,10 +140,21 @@ export function PatientQRCodeDialog({
               margin-bottom: 30px;
             }
             .logo {
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              gap: 12px;
+              margin-bottom: 8px;
+            }
+            .logo img {
+              height: 48px;
+              width: 48px;
+              object-fit: contain;
+            }
+            .logo-text {
               font-size: 28px;
               font-weight: 700;
               color: #32965d;
-              margin-bottom: 8px;
             }
             .title {
               font-size: 22px;
@@ -231,7 +242,10 @@ export function PatientQRCodeDialog({
         </head>
         <body>
           <div class="header">
-            <div class="logo">FiziYo</div>
+            <div class="logo">
+              <img src="/images/logo.png" alt="FiziYo" />
+              <span class="logo-text">FiziYo</span>
+            </div>
             <div class="title">Twój program ćwiczeń</div>
             <div class="subtitle">Zeskanuj kod QR, aby rozpocząć</div>
           </div>

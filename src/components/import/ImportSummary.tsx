@@ -119,7 +119,7 @@ export function ImportSummary({
                     <FileText className="h-5 w-5 text-orange-500" />
                   </div>
                   <span className="text-base">
-                    Zapisano <strong>{result.clinicalNotesCreated}</strong> {result.clinicalNotesCreated === 1 ? 'notatkę kliniczną' : 'notatki kliniczne'}
+                    Zapisano <strong>{result.clinicalNotesCreated}</strong> {result.clinicalNotesCreated === 1 ? 'notatkę' : 'notatki'}
                   </span>
                 </li>
               )}
@@ -148,7 +148,7 @@ export function ImportSummary({
                 {skippedNotesCount} {skippedNotesCount === 1 ? 'notatka pominięta' : 'notatki pominięte'}
               </p>
               <p className="text-sm text-muted-foreground mt-1">
-                Notatki kliniczne nie zostały zaimportowane, ponieważ nie wybrano pacjenta.
+                Notatki nie zostały zaimportowane, ponieważ nie wybrano pacjenta.
                 Następnym razem wybierz pacjenta, aby zaimportować również notatki.
               </p>
             </div>

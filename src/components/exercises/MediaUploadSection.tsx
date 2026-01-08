@@ -334,8 +334,3 @@ export function MediaUploadSection({
     </div>
   );
 }
-
-
-
-
-

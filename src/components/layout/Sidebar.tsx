@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -14,16 +15,39 @@ import {
   LogOut,
   PanelLeftClose,
   PanelLeft,
-  HeartPulse,
   FileUp,
+  LucideIcon,
 } from "lucide-react";
 import { useClerk } from "@clerk/nextjs";
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
 import { OrganizationSwitcher } from "./OrganizationSwitcher";
 import { AICreditsWidget } from "./AICreditsWidget";
+import { Logo } from "@/components/shared/Logo";
+import { useRoleAccess } from "@/hooks/useRoleAccess";
 
-// Navigation structure with grouping - reorganized per plan
-const navigationGroups = [
+// ========================================
+// Types
+// ========================================
+
+interface NavigationItem {
+  name: string;
+  href: string;
+  icon: LucideIcon;
+  testId: string;
+}
+
+interface NavigationGroup {
+  label: string;
+  items: NavigationItem[];
+  /** If true, this group is only visible to owners and admins */
+  adminOnly?: boolean;
+}
+
+// ========================================
+// Navigation Configuration
+// ========================================
+
+const navigationGroups: NavigationGroup[] = [
   {
     label: "Główne",
     items: [
@@ -36,6 +60,7 @@ const navigationGroups = [
   },
   {
     label: "Organizacja",
+    adminOnly: true, // Only visible to owners and admins
     items: [
       { name: "Zespół", href: "/organization", icon: Building2, testId: "nav-link-organization" },
       { name: "Rozliczenia", href: "/billing", icon: CreditCard, testId: "nav-link-billing" },
@@ -52,11 +77,23 @@ interface SidebarProps {
 export function Sidebar({ isCollapsed, onToggleCollapse }: SidebarProps) {
   const pathname = usePathname();
   const { signOut } = useClerk();
+  const { canManageOrganization } = useRoleAccess();
 
   const isActive = (href: string) => {
     if (href === "/") return pathname === "/";
     return pathname.startsWith(href);
   };
+
+  // Filter navigation groups based on user role
+  const filteredNavigationGroups = useMemo(() => {
+    return navigationGroups.filter((group) => {
+      // If group requires admin access, check if user has permission
+      if (group.adminOnly) {
+        return canManageOrganization;
+      }
+      return true;
+    });
+  }, [canManageOrganization]);
 
   return (
     <TooltipProvider delayDuration={0}>
@@ -74,17 +111,12 @@ export function Sidebar({ isCollapsed, onToggleCollapse }: SidebarProps) {
             isCollapsed ? "justify-center px-3" : "justify-between px-4"
           )}
         >
-          <Link href="/" data-testid="nav-logo-link" className="flex items-center gap-3">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary-dark shadow-lg shadow-primary/15">
-              <HeartPulse className="h-5 w-5 text-primary-foreground" />
-            </div>
-            {!isCollapsed && (
-              <div className="flex flex-col justify-center overflow-hidden">
-                <span className="text-lg font-bold leading-tight text-foreground">FiziYo</span>
-                <span className="text-[10px] text-muted-foreground uppercase tracking-wider leading-tight">Admin Panel</span>
-              </div>
-            )}
-          </Link>
+          <Logo
+            variant={isCollapsed ? "icon" : "full"}
+            size="md"
+            asLink
+            href="/"
+          />
 
           {!isCollapsed && (
             <button
@@ -117,7 +149,7 @@ export function Sidebar({ isCollapsed, onToggleCollapse }: SidebarProps) {
 
         {/* Navigation groups */}
         <nav className="flex-1 overflow-y-auto py-4">
-          {navigationGroups.map((group, groupIndex) => (
+          {filteredNavigationGroups.map((group, groupIndex) => (
             <div key={group.label} className={cn(groupIndex > 0 && "mt-6")}>
               {/* Group label */}
               {!isCollapsed && (

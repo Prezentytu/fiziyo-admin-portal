@@ -59,7 +59,7 @@ export function OrganizationQuickStats({
   const patientsUsage = limits?.maxPatients && currentUsage?.patients
     ? Math.round((currentUsage.patients / limits.maxPatients) * 100)
     : null;
-  
+
   const therapistsUsage = limits?.maxTherapists && currentUsage?.therapists
     ? Math.round((currentUsage.therapists / limits.maxTherapists) * 100)
     : null;
@@ -121,17 +121,3 @@ export function OrganizationQuickStats({
     </div>
   );
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-

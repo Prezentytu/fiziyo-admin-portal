@@ -1,3 +1,4 @@
+export { AccessGuard } from "./AccessGuard";
 export { DataTable } from "./DataTable";
 export { ConfirmDialog } from "./ConfirmDialog";
 export { EmptyState } from "./EmptyState";

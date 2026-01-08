@@ -18,8 +18,8 @@ const iconMap = {
   generic: ImageIcon,
 };
 
-export function ImagePlaceholder({ 
-  type = "generic", 
+export function ImagePlaceholder({
+  type = "generic",
   className,
   iconClassName,
 }: ImagePlaceholderProps) {
@@ -36,22 +36,3 @@ export function ImagePlaceholder({
     </div>
   );
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

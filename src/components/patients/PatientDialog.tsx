@@ -9,7 +9,8 @@ import { UserPlus, CheckCircle2, Send, UserPlus2, X, Sparkles } from 'lucide-rea
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
-import { PatientForm, PatientFormValues } from './PatientForm';
+import { SmartPatientLookup } from './SmartPatientLookup';
+import { PatientFormValues } from './PatientForm';
 import { AssignmentWizard } from '@/components/assignment/AssignmentWizard';
 import { CREATE_SHADOW_PATIENT_MUTATION } from '@/graphql/mutations/users.mutations';
 import { GET_THERAPIST_PATIENTS_QUERY, GET_ALL_THERAPIST_PATIENTS_QUERY } from '@/graphql/queries/therapists.queries';
@@ -27,12 +28,12 @@ interface CreatedPatient {
 }
 
 interface PatientDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  organizationId: string;
-  therapistId: string;
-  clinicId?: string;
-  onSuccess?: () => void;
+  readonly open: boolean;
+  readonly onOpenChange: (open: boolean) => void;
+  readonly organizationId: string;
+  readonly therapistId: string;
+  readonly clinicId?: string;
+  readonly onSuccess?: () => void;
 }
 
 export function PatientDialog({
@@ -103,13 +104,18 @@ export function PatientDialog({
     ],
   });
 
-  const handleSubmit = async (values: PatientFormValues) => {
+  // Helper to format phone with +48 prefix
+  const formatPhoneNumber = (phone: string | undefined): string | null => {
+    if (!phone) return null;
+    return phone.startsWith('+') ? phone : `+48${phone}`;
+  };
+
+  // Handler for new patient creation (from SmartPatientLookup form mode)
+  const handleCreateNewPatient = async (values: PatientFormValues) => {
     try {
       // Format phone with +48 prefix if provided (backend expects full number)
       // Phone może być puste jeśli podano email - wysyłamy null zamiast ''
-      const formattedPhone = values.phone
-        ? (values.phone.startsWith('+') ? values.phone : `+48${values.phone}`)
-        : null;
+      const formattedPhone = formatPhoneNumber(values.phone);
 
       const result = await createPatient({
         variables: {
@@ -149,6 +155,24 @@ export function PatientDialog({
       toast.error('Nie udało się dodać pacjenta');
     }
   };
+
+  // Handler for SmartPatientLookup success (existing or new patient)
+  const handleLookupSuccess = useCallback((patient: { id: string; fullname: string; email?: string; firstName?: string; lastName?: string }) => {
+    if (patient.id) {
+      // Existing patient was added via SmartPatientLookup
+      setShowSuccessAnimation(true);
+      setCreatedPatient({
+        id: patient.id,
+        fullname: patient.fullname,
+        email: patient.email,
+        firstName: patient.firstName,
+        lastName: patient.lastName,
+      });
+      setFormIsDirty(false);
+    }
+    // Note: If id is empty, SmartPatientLookup's PatientForm will handle submission
+    // through onSubmit prop which we'll wire to handleCreateNewPatient
+  }, []);
 
   // Convert created patient to AssignmentWizard format
   const wizardPatient: Patient | undefined = createdPatient
@@ -254,7 +278,7 @@ export function PatientDialog({
                 {/* Primary Action - Assign Set */}
                 <Button
                   onClick={handleAssignSet}
-                  className="w-full h-12 text-base gap-2 bg-gradient-to-r from-primary to-primary-dark shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 transition-all duration-200"
+                  className="w-full h-12 text-base gap-2 bg-linear-to-r from-primary to-primary-dark shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 transition-all duration-200"
                   data-testid="patient-dialog-assign-btn"
                 >
                   <Send className="h-5 w-5" />
@@ -285,28 +309,31 @@ export function PatientDialog({
               </div>
             </div>
           ) : (
-            // Form State
+            // Smart Patient Lookup State
             <>
-              <DialogHeader className="px-6 py-5 border-b border-border shrink-0 bg-gradient-to-r from-surface to-surface-light/50">
+              <DialogHeader className="px-6 py-5 border-b border-border shrink-0 bg-linear-to-r from-surface to-surface-light/50">
                 <div className="flex items-center gap-4">
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary-dark shadow-lg shadow-primary/25">
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-linear-to-br from-primary to-primary-dark shadow-lg shadow-primary/25">
                     <UserPlus className="h-6 w-6 text-white" />
                   </div>
                   <div className="min-w-0 flex-1">
                     <DialogTitle className="text-xl font-bold" data-testid="patient-dialog-title">Nowy pacjent</DialogTitle>
                     <DialogDescription className="text-sm">
-                      Uzupełnij dane pacjenta i zacznij współpracę
+                      Podaj email lub telefon, aby znaleźć lub dodać pacjenta
                     </DialogDescription>
                   </div>
                 </div>
               </DialogHeader>
 
               <div className="p-6">
-                <PatientForm
-                  onSubmit={handleSubmit}
+                <SmartPatientLookup
+                  organizationId={organizationId}
+                  therapistId={therapistId}
+                  clinicId={clinicId}
+                  onSuccess={handleLookupSuccess}
+                  onCreateNewPatient={handleCreateNewPatient}
                   onCancel={handleCloseAttempt}
                   isLoading={loading}
-                  submitLabel="Dodaj pacjenta"
                   onDirtyChange={setFormIsDirty}
                 />
               </div>

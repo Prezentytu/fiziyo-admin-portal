@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Mail, Phone, FolderKanban, Wrench, MoreHorizontal, Power, UserX, Tag } from 'lucide-react';
+import { Mail, Phone, FolderKanban, Wrench, MoreHorizontal, UserX, Tag, UserPlus, Trash2 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -16,6 +16,8 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 import { EditContextLabelDialog } from './EditContextLabelDialog';
+import { TherapistBadge } from './TherapistBadge';
+import { useRoleAccess } from '@/hooks/useRoleAccess';
 
 export interface Patient {
   id: string;
@@ -36,28 +38,51 @@ export interface Patient {
   contextLabel?: string;
   contextColor?: string;
   assignedAt?: string;
+  // Collaborative Care fields
+  therapist?: {
+    id: string;
+    fullname?: string;
+    email?: string;
+    image?: string;
+  } | null;
 }
 
 interface PatientExpandableCardProps {
   patient: Patient;
   onAssignSet: (patient: Patient) => void;
-  onViewReport: (patient: Patient) => void;
-  onToggleStatus: (patient: Patient) => void;
-  onRemove: (patient: Patient) => void;
+  /** @deprecated Click on card navigates to patient details */
+  onViewReport?: (patient: Patient) => void;
+  /** Odpięcie pacjenta od fizjoterapeuty - tylko Admin/Owner */
+  onUnassign: (patient: Patient) => void;
+  /** Usunięcie pacjenta z organizacji - tylko Admin/Owner */
+  onRemoveFromOrganization: (patient: Patient) => void;
+  onTakeOver?: (patient: Patient) => void;
   organizationId: string;
   therapistId: string;
+  /** Show therapist badge (Collaborative Care mode) */
+  showTherapistBadge?: boolean;
 }
 
 export function PatientExpandableCard({
   patient,
   onAssignSet,
-  onToggleStatus,
-  onRemove,
+  onUnassign,
+  onRemoveFromOrganization,
+  onTakeOver,
   organizationId,
   therapistId,
+  showTherapistBadge = false,
 }: PatientExpandableCardProps) {
   const router = useRouter();
   const [isEditLabelOpen, setIsEditLabelOpen] = useState(false);
+  const { canManageTeam } = useRoleAccess();
+
+  // Check if current user is the assigned therapist
+  const isMyPatient = patient.therapist?.id === therapistId;
+  // Check if patient is unassigned
+  const isUnassigned = !patient.therapist;
+  // Check if patient has any therapist assigned
+  const hasTherapist = !!patient.therapist;
 
   const displayName =
     patient.fullname ||
@@ -70,8 +95,6 @@ export function PatientExpandableCard({
     .join('')
     .slice(0, 2)
     .toUpperCase();
-
-  const isActive = patient.assignmentStatus !== 'inactive';
 
   const handleCardClick = () => {
     router.push(`/patients/${patient.id}`);
@@ -96,8 +119,7 @@ export function PatientExpandableCard({
         tabIndex={0}
         className={cn(
           'group rounded-xl border border-border/60 bg-surface transition-all cursor-pointer',
-          'hover:bg-surface-light hover:border-primary/30 hover:shadow-md',
-          !isActive && 'opacity-60 hover:opacity-100'
+          'hover:bg-surface-light hover:border-primary/30 hover:shadow-md'
         )}
         data-testid={`patient-expandable-${patient.id}`}
       >
@@ -159,8 +181,17 @@ export function PatientExpandableCard({
           </div>
         </div>
 
+        {/* Therapist Badge (Collaborative Care) */}
+        {showTherapistBadge && (
+          <TherapistBadge
+            therapist={patient.therapist}
+            isCurrentUser={isMyPatient}
+            showUnassigned={true}
+          />
+        )}
+
         {/* Context Label - clickable to edit, hide default "Leczenie podstawowe" */}
-        {patient.contextLabel && patient.contextLabel !== 'Leczenie podstawowe' ? (
+        {isMyPatient && patient.contextLabel && patient.contextLabel !== 'Leczenie podstawowe' ? (
           <button
             type="button"
             onMouseDown={(e) => {
@@ -179,8 +210,8 @@ export function PatientExpandableCard({
               {patient.contextLabel}
             </ColorBadge>
           </button>
-        ) : (
-          /* Add note button when no label */
+        ) : isMyPatient ? (
+          /* Add note button when no label (only for my patients) */
           <button
             type="button"
             onMouseDown={(e) => {
@@ -200,29 +231,37 @@ export function PatientExpandableCard({
               Notatka
             </Badge>
           </button>
-        )}
-
-        {/* Status Badge */}
-        <Badge
-          variant={isActive ? 'default' : 'secondary'}
-          className="text-[10px] px-2 py-0.5 shrink-0"
-        >
-          {isActive ? 'Aktywny' : 'Nieaktywny'}
-        </Badge>
+        ) : null}
 
         {/* Hover Actions */}
         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-          {/* Quick Assign */}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 hover:bg-primary/10 hover:text-primary"
-            onClick={(e) => handleAction(e, () => onAssignSet(patient))}
-            title="Przypisz zestaw"
-            data-testid={`patient-expandable-${patient.id}-assign-btn`}
-          >
-            <FolderKanban className="h-4 w-4" />
-          </Button>
+          {/* Take Over button (only for patients not mine) */}
+          {!isMyPatient && onTakeOver && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 hover:bg-primary/10 hover:text-primary"
+              onClick={(e) => handleAction(e, () => onTakeOver(patient))}
+              title={isUnassigned ? 'Przypisz do mnie' : 'Przejmij opiekę'}
+              data-testid={`patient-takeover-btn`}
+            >
+              <UserPlus className="h-4 w-4" />
+            </Button>
+          )}
+
+          {/* Quick Assign (only for my patients) */}
+          {isMyPatient && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 hover:bg-primary/10 hover:text-primary"
+              onClick={(e) => handleAction(e, () => onAssignSet(patient))}
+              title="Przypisz zestaw"
+              data-testid={`patient-expandable-${patient.id}-assign-btn`}
+            >
+              <FolderKanban className="h-4 w-4" />
+            </Button>
+          )}
 
           {/* More Options Menu */}
           <DropdownMenu>
@@ -238,26 +277,55 @@ export function PatientExpandableCard({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-              <DropdownMenuItem onClick={() => onAssignSet(patient)}>
-                <FolderKanban className="mr-2 h-4 w-4" />
-                Przypisz zestaw
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setIsEditLabelOpen(true)}>
-                <Tag className="mr-2 h-4 w-4" />
-                Edytuj notatkę
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => onToggleStatus(patient)}>
-                <Power className="mr-2 h-4 w-4" />
-                {isActive ? 'Dezaktywuj' : 'Aktywuj'}
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => onRemove(patient)}
-                className="text-destructive focus:text-destructive"
-              >
-                <UserX className="mr-2 h-4 w-4" />
-                Odepnij pacjenta
-              </DropdownMenuItem>
+              {/* Take Over option */}
+              {!isMyPatient && onTakeOver && (
+                <>
+                  <DropdownMenuItem onClick={() => onTakeOver(patient)}>
+                    <UserPlus className="mr-2 h-4 w-4" />
+                    {isUnassigned ? 'Przypisz do mnie' : 'Przejmij opiekę'}
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                </>
+              )}
+
+              {/* Actions for my patients */}
+              {isMyPatient && (
+                <>
+                  <DropdownMenuItem onClick={() => onAssignSet(patient)}>
+                    <FolderKanban className="mr-2 h-4 w-4" />
+                    Przypisz zestaw
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setIsEditLabelOpen(true)}>
+                    <Tag className="mr-2 h-4 w-4" />
+                    Edytuj notatkę
+                  </DropdownMenuItem>
+                </>
+              )}
+
+              {/* Admin/Owner actions */}
+              {canManageTeam && (
+                <>
+                  <DropdownMenuSeparator />
+                  {/* Unassign from therapist - only if patient has a therapist */}
+                  {hasTherapist && (
+                    <DropdownMenuItem
+                      onClick={() => onUnassign(patient)}
+                      className="text-warning focus:text-warning"
+                    >
+                      <UserX className="mr-2 h-4 w-4" />
+                      Odepnij od fizjoterapeuty
+                    </DropdownMenuItem>
+                  )}
+                  {/* Remove from organization */}
+                  <DropdownMenuItem
+                    onClick={() => onRemoveFromOrganization(patient)}
+                    className="text-destructive focus:text-destructive"
+                  >
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Usuń z organizacji
+                  </DropdownMenuItem>
+                </>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
         </div>

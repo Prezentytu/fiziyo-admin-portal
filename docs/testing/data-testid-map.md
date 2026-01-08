@@ -192,6 +192,10 @@ await expect(page.getByTestId(/^exercise-card-/)).toHaveCount(5);
 | `exercise-form-type-option-time` | Opcja: Czasowe | `ExerciseForm.tsx` |
 | `exercise-form-type-option-hold` | Opcja: Utrzymywanie | `ExerciseForm.tsx` |
 | `exercise-form-side-select` | Strona ciała | `ExerciseForm.tsx` |
+| `exercise-quick-templates` | Sekcja szybkich szablonów | `QuickTemplates.tsx` |
+| `exercise-quick-templates-toggle-btn` | Rozwiń/zwiń szablony | `QuickTemplates.tsx` |
+| `exercise-quick-template-{id}-btn` | Przycisk szablonu (np. plank, bird-dog) | `QuickTemplates.tsx` |
+| `exercise-create-ai-image-btn` | Wygeneruj obraz AI (widoczny od razu) | `CreateExerciseWizard.tsx` |
 
 ### 5. Zestawy ćwiczeń (set-)
 
@@ -260,9 +264,13 @@ await expect(page.getByTestId(/^exercise-card-/)).toHaveCount(5);
 |-------------|---------|------|
 | `patient-page-title` | Tytuł strony | `patients/page.tsx` |
 | `patient-search-input` | Wyszukiwarka | `patients/page.tsx` |
-| `patient-filter-all-btn` | Filtr: Wszyscy | `patients/page.tsx` |
-| `patient-filter-active-btn` | Filtr: Aktywni | `patients/page.tsx` |
-| `patient-filter-inactive-btn` | Filtr: Nieaktywni | `patients/page.tsx` |
+| `patient-filter-dropdown` | Dropdown filtra (Collaborative Care) | `PatientFilter.tsx` |
+| `patient-filter-option-my` | Opcja: Moi pacjenci | `PatientFilter.tsx` |
+| `patient-filter-option-all` | Opcja: Wszyscy | `PatientFilter.tsx` |
+| `patient-filter-option-unassigned` | Opcja: Nieprzypisani | `PatientFilter.tsx` |
+| `patient-filter-my-btn` | Filtr: Moi (Quick Stats) | `patients/page.tsx` |
+| `patient-filter-all-btn` | Filtr: Wszyscy (Quick Stats) | `patients/page.tsx` |
+| `patient-filter-unassigned-btn` | Filtr: Nieprzypisani (Quick Stats) | `patients/page.tsx` |
 | `patient-create-btn` | Dodaj pacjenta | `patients/page.tsx` |
 | `patient-card-{id}` | Karta pacjenta | `PatientCard.tsx` |
 | `patient-card-{id}-menu-trigger` | Menu kontekstowe | `PatientCard.tsx` |
@@ -270,6 +278,11 @@ await expect(page.getByTestId(/^exercise-card-/)).toHaveCount(5);
 | `patient-card-{id}-edit-btn` | Edytuj | `PatientCard.tsx` |
 | `patient-card-{id}-assign-btn` | Przypisz zestaw | `PatientCard.tsx` |
 | `patient-card-{id}-delete-btn` | Usuń | `PatientCard.tsx` |
+| `patient-card-therapist-badge` | Badge fizjoterapeuty | `TherapistBadge.tsx` |
+| `patient-card-therapist-badge-unassigned` | Badge nieprzypisany | `TherapistBadge.tsx` |
+| `patient-takeover-btn` | Przejmij opiekę (przycisk) | `PatientExpandableCard.tsx` |
+| `patient-takeover-dialog` | Dialog przejmowania opieki | `TakeOverDialog.tsx` |
+| `patient-takeover-confirm-btn` | Potwierdź przejęcie | `TakeOverDialog.tsx` |
 | `patient-expandable-{id}` | Karta rozwijana | `PatientExpandableCard.tsx` |
 | `patient-expandable-{id}-assign-btn` | Przypisz zestaw | `PatientExpandableCard.tsx` |
 | `patient-expandable-{id}-menu-trigger` | Menu kontekstowe | `PatientExpandableCard.tsx` |
@@ -484,7 +497,7 @@ await expect(page.getByTestId(/^exercise-card-/)).toHaveCount(5);
 | `clinical-editor-save-btn` | Zapisz | `ClinicalNoteEditor.tsx` |
 | `clinical-editor-sign-btn` | Podpisz | `ClinicalNoteEditor.tsx` |
 | `clinical-notes-list` | Lista notatek | `ClinicalNotesList.tsx` |
-| `clinical-note-{id}` | Notatka kliniczna | `ClinicalNotesList.tsx` |
+| `clinical-note-{id}` | Notatka | `ClinicalNotesList.tsx` |
 | `clinical-note-{id}-edit-btn` | Edytuj | `ClinicalNotesList.tsx` |
 | `clinical-note-{id}-view-btn` | Podgląd | `ClinicalNotesList.tsx` |
 | `clinical-note-editor` | Kontener edytora | `ClinicalNoteEditor.tsx` |

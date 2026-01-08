@@ -19,6 +19,7 @@ import {
   Plus,
   Settings2,
   FileDown,
+  X,
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -39,10 +40,16 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { ImagePlaceholder } from "@/components/shared/ImagePlaceholder";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { cn } from "@/lib/utils";
-import { translateAssignmentStatus, getStatusColorClass } from "@/utils/statusUtils";
+import { translateAssignmentStatus } from "@/utils/statusUtils";
 import { getMediaUrl } from "@/utils/mediaUrl";
 
 import {
@@ -86,6 +93,7 @@ export interface ExerciseMapping {
     exerciseSide?: string;
     imageUrl?: string;
     images?: string[];
+    videoUrl?: string;
     description?: string;
     sets?: number;
     reps?: number;
@@ -129,6 +137,7 @@ interface PatientAssignmentCardProps {
   patientId: string;
   onEditSchedule?: (assignment: PatientAssignment) => void;
   onEditExercise?: (assignment: PatientAssignment, mapping: ExerciseMapping, override?: ExerciseOverride) => void;
+  onPreviewExercise?: (mapping: ExerciseMapping) => void;
   onAddExercise?: (assignment: PatientAssignment) => void;
   onGeneratePDF?: (assignment: PatientAssignment) => void;
   onRefresh?: () => void;
@@ -184,12 +193,15 @@ export function PatientAssignmentCard({
   patientId,
   onEditSchedule,
   onEditExercise,
+  onPreviewExercise,
   onAddExercise,
   onGeneratePDF,
   onRefresh,
 }: PatientAssignmentCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [removingExerciseId, setRemovingExerciseId] = useState<string | null>(null);
+  const [removingExerciseName, setRemovingExerciseName] = useState<string>("");
 
   // Parse exercise overrides
   const exerciseOverrides: Record<string, ExerciseOverride> = React.useMemo(() => {
@@ -270,6 +282,43 @@ export function PatientAssignmentCard({
     }
   };
 
+  const handleRemoveExercise = async () => {
+    if (!removingExerciseId) return;
+
+    const currentOverride = exerciseOverrides[removingExerciseId] || {};
+    const newOverrides = {
+      ...exerciseOverrides,
+      [removingExerciseId]: {
+        ...currentOverride,
+        hidden: true,
+      },
+    };
+
+    try {
+      await updateOverrides({
+        variables: {
+          assignmentId: assignment.id,
+          exerciseOverrides: JSON.stringify(newOverrides),
+        },
+        refetchQueries: [
+          { query: GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY, variables: { userId: patientId } },
+        ],
+      });
+      toast.success("Ćwiczenie usunięte z zestawu pacjenta");
+      setRemovingExerciseId(null);
+      setRemovingExerciseName("");
+      onRefresh?.();
+    } catch (error) {
+      console.error("Błąd usuwania ćwiczenia:", error);
+      toast.error("Nie udało się usunąć ćwiczenia");
+    }
+  };
+
+  const handleStartRemoveExercise = (mappingId: string, exerciseName: string) => {
+    setRemovingExerciseId(mappingId);
+    setRemovingExerciseName(exerciseName);
+  };
+
   const handleDelete = async () => {
     if (!exerciseSet) return;
     try {
@@ -307,7 +356,7 @@ export function PatientAssignmentCard({
     <>
       <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
         <Card className={cn(
-          "transition-all duration-200 border-border/60",
+          "transition-all duration-200 border-border/60 overflow-hidden",
           isExpanded && "ring-1 ring-primary/20 border-primary/30"
         )} data-testid={`patient-assignment-${assignment.id}`}>
           {/* Header - always visible */}
@@ -325,11 +374,11 @@ export function PatientAssignmentCard({
               {/* Set thumbnail */}
               <div className="h-12 w-12 rounded-lg overflow-hidden shrink-0 bg-surface-light">
                 {getMediaUrl(exercises[0]?.exercise?.imageUrl || exercises[0]?.exercise?.images?.[0]) ? (
-                  <img
-                    src={getMediaUrl(exercises[0]?.exercise?.imageUrl || exercises[0]?.exercise?.images?.[0]) || ""}
-                    alt=""
-                    className="h-full w-full object-cover"
-                  />
+<img
+                                    src={getMediaUrl(exercises[0]?.exercise?.imageUrl || exercises[0]?.exercise?.images?.[0]) || ""}
+                                    alt=""
+                                    className="h-full w-full object-contain"
+                                  />
                 ) : (
                   <ImagePlaceholder type="set" iconClassName="h-5 w-5" />
                 )}
@@ -452,127 +501,177 @@ export function PatientAssignmentCard({
               </div>
 
               {/* Exercises list */}
-              <div className="space-y-2">
+              <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                    Ćwiczenia ({exercises.length})
+                    Ćwiczenia ({visibleExercises.length}{exercises.length !== visibleExercises.length ? `/${exercises.length}` : ""})
                   </p>
                   <Button
-                    variant="ghost"
+                    variant="outline"
                     size="sm"
                     onClick={() => onAddExercise?.(assignment)}
-                    className="h-7 text-xs"
+                    className="h-8 text-xs gap-1.5 border-dashed hover:border-primary hover:bg-primary/5"
+                    data-testid={`patient-assignment-${assignment.id}-add-exercise-btn`}
                   >
-                    <Plus className="mr-1 h-3 w-3" />
-                    Dodaj
+                    <Plus className="h-3.5 w-3.5" />
+                    Dodaj ćwiczenie
                   </Button>
                 </div>
 
-                <div className="space-y-1.5">
-                  {[...exercises]
-                    .sort((a, b) => (a.order || 0) - (b.order || 0))
-                    .map((mapping) => {
-                      const params = getEffectiveParams(mapping);
-                      const imageUrl = getMediaUrl(mapping.exercise?.imageUrl || mapping.exercise?.images?.[0]);
-                      const hasOverride = exerciseOverrides[mapping.id] && (
-                        exerciseOverrides[mapping.id].sets !== undefined ||
-                        exerciseOverrides[mapping.id].reps !== undefined ||
-                        exerciseOverrides[mapping.id].duration !== undefined ||
-                        exerciseOverrides[mapping.id].customName
-                      );
+                <TooltipProvider delayDuration={300}>
+                  <div className="space-y-2">
+                    {[...exercises]
+                      .sort((a, b) => (a.order || 0) - (b.order || 0))
+                      .filter((m) => !exerciseOverrides[m.id]?.hidden) // Only show visible exercises
+                      .map((mapping) => {
+                        const params = getEffectiveParams(mapping);
+                        const imageUrl = getMediaUrl(mapping.exercise?.imageUrl || mapping.exercise?.images?.[0]);
+                        const hasOverride = exerciseOverrides[mapping.id] && (
+                          exerciseOverrides[mapping.id].sets !== undefined ||
+                          exerciseOverrides[mapping.id].reps !== undefined ||
+                          exerciseOverrides[mapping.id].duration !== undefined ||
+                          exerciseOverrides[mapping.id].customName
+                        );
+                        const exerciseName = params.customName || mapping.exercise?.name || "Nieznane";
 
-                      return (
-                        <div
-                          key={mapping.id}
-                          className={cn(
-                            "group flex items-center gap-3 p-2.5 rounded-lg border border-transparent transition-all",
-                            params.hidden
-                              ? "opacity-50 bg-surface-light/30"
-                              : "hover:bg-surface-light hover:border-border/40"
-                          )}
-                        >
-                          {/* Thumbnail */}
-                          <div className={cn(
-                            "h-10 w-10 rounded-lg overflow-hidden shrink-0",
-                            params.hidden && "grayscale"
-                          )}>
-                            {imageUrl ? (
-                              <img
-                                src={imageUrl}
-                                alt=""
-                                className="h-full w-full object-cover"
-                              />
-                            ) : (
-                              <ImagePlaceholder type="exercise" iconClassName="h-4 w-4" />
-                            )}
-                          </div>
-
-                          {/* Info */}
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-1.5">
-                              <p className={cn(
-                                "text-sm font-medium truncate",
-                                params.hidden && "line-through"
-                              )}>
-                                {params.customName || mapping.exercise?.name || "Nieznane"}
-                              </p>
-                              {hasOverride && (
-                                <span className="h-1.5 w-1.5 rounded-full bg-primary shrink-0" title="Zmodyfikowane" />
-                              )}
-                              {mapping.exercise?.type && (
-                                <Badge variant="secondary" className="text-[9px] shrink-0">
-                                  {translateType(mapping.exercise.type)}
-                                </Badge>
-                              )}
-                            </div>
-                            <div className="flex items-center gap-2 mt-0.5">
-                              {params.sets && (
-                                <span className="text-xs text-muted-foreground">
-                                  {params.sets} serii
-                                </span>
-                              )}
-                              {params.reps && (
-                                <span className="text-xs text-muted-foreground">
-                                  × {params.reps} powt.
-                                </span>
-                              )}
-                              {params.duration && (
-                                <span className="text-xs text-muted-foreground">
-                                  × {params.duration}s
-                                </span>
-                              )}
-                            </div>
-                          </div>
-
-                          {/* Actions */}
-                          <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-7 w-7"
-                              onClick={() => onEditExercise?.(assignment, mapping, exerciseOverrides[mapping.id])}
-                              title="Edytuj parametry"
+                        return (
+                          <div
+                            key={mapping.id}
+                            className="group flex items-center gap-4 p-3 rounded-xl border border-border/40 bg-surface/30 hover:bg-surface-light hover:border-border/60 transition-all"
+                            data-testid={`patient-assignment-exercise-${mapping.id}`}
+                          >
+                            {/* Larger Thumbnail - 64x64 */}
+                            <button
+                              type="button"
+                              className="h-16 w-16 rounded-xl overflow-hidden shrink-0 bg-surface-light cursor-pointer ring-1 ring-border/20 hover:ring-primary/40 transition-all"
+                              onClick={() => onPreviewExercise?.(mapping)}
                             >
-                              <Pencil className="h-3.5 w-3.5" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-7 w-7"
-                              onClick={() => handleToggleExerciseVisibility(mapping.id)}
-                              title={params.hidden ? "Pokaż ćwiczenie" : "Ukryj ćwiczenie"}
-                            >
-                              {params.hidden ? (
-                                <Eye className="h-3.5 w-3.5" />
+                              {imageUrl ? (
+<img
+                                                  src={imageUrl}
+                                                  alt={exerciseName}
+                                                  className="h-full w-full object-contain"
+                                                />
                               ) : (
-                                <EyeOff className="h-3.5 w-3.5" />
+                                <ImagePlaceholder type="exercise" iconClassName="h-6 w-6" />
                               )}
-                            </Button>
+                            </button>
+
+                            {/* Info */}
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-1">
+                                <button
+                                  type="button"
+                                  className="text-sm font-semibold truncate cursor-pointer hover:text-primary transition-colors text-left"
+                                  onClick={() => onPreviewExercise?.(mapping)}
+                                >
+                                  {exerciseName}
+                                </button>
+                                {hasOverride && (
+                                  <span className="h-2 w-2 rounded-full bg-primary shrink-0" title="Zmodyfikowane dla pacjenta" />
+                                )}
+                              </div>
+                              <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                                {params.sets && (
+                                  <span className="flex items-center gap-1">
+                                    <span className="font-medium text-foreground">{params.sets}</span> serii
+                                  </span>
+                                )}
+                                {params.reps && (
+                                  <span className="flex items-center gap-1">
+                                    <span className="font-medium text-foreground">{params.reps}</span> powt.
+                                  </span>
+                                )}
+                                {params.duration && (
+                                  <span className="flex items-center gap-1">
+                                    <span className="font-medium text-foreground">{params.duration}</span>s
+                                  </span>
+                                )}
+                              </div>
+                              {mapping.exercise?.type && (
+                                <div className="mt-1.5">
+                                  <Badge variant="secondary" className="text-[10px]">
+                                    {translateType(mapping.exercise.type)}
+                                  </Badge>
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Actions - Always visible */}
+                            <div className="flex items-center gap-1 shrink-0">
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                                    onClick={() => onPreviewExercise?.(mapping)}
+                                    data-testid={`patient-assignment-exercise-${mapping.id}-preview-btn`}
+                                  >
+                                    <Eye className="h-4 w-4" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent side="top">Podgląd</TooltipContent>
+                              </Tooltip>
+
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                                    onClick={() => onEditExercise?.(assignment, mapping, exerciseOverrides[mapping.id])}
+                                    data-testid={`patient-assignment-exercise-${mapping.id}-edit-btn`}
+                                  >
+                                    <Pencil className="h-4 w-4" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent side="top">Edytuj parametry</TooltipContent>
+                              </Tooltip>
+
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                                    onClick={() => handleStartRemoveExercise(mapping.id, exerciseName)}
+                                    data-testid={`patient-assignment-exercise-${mapping.id}-remove-btn`}
+                                  >
+                                    <X className="h-4 w-4" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent side="top">Usuń z zestawu</TooltipContent>
+                              </Tooltip>
+                            </div>
                           </div>
-                        </div>
-                      );
-                    })}
-                </div>
+                        );
+                      })}
+
+                    {/* Show hidden exercises count */}
+                    {exercises.length > visibleExercises.length && (
+                      <div className="flex items-center justify-center gap-2 py-2 text-xs text-muted-foreground">
+                        <EyeOff className="h-3.5 w-3.5" />
+                        {exercises.length - visibleExercises.length} ukrytych ćwiczeń
+                        <Button
+                          variant="link"
+                          size="sm"
+                          className="h-auto p-0 text-xs text-primary"
+                          onClick={() => {
+                            // Show all hidden exercises
+                            exercises.forEach((m) => {
+                              if (exerciseOverrides[m.id]?.hidden) {
+                                handleToggleExerciseVisibility(m.id);
+                              }
+                            });
+                          }}
+                        >
+                          Pokaż wszystkie
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                </TooltipProvider>
               </div>
 
               {/* Stats */}
@@ -591,7 +690,7 @@ export function PatientAssignmentCard({
         </Card>
       </Collapsible>
 
-      {/* Delete Confirmation */}
+      {/* Delete Assignment Confirmation */}
       <ConfirmDialog
         open={isDeleteDialogOpen}
         onOpenChange={setIsDeleteDialogOpen}
@@ -601,6 +700,22 @@ export function PatientAssignmentCard({
         variant="destructive"
         onConfirm={handleDelete}
         isLoading={removing}
+      />
+
+      {/* Remove Exercise Confirmation */}
+      <ConfirmDialog
+        open={!!removingExerciseId}
+        onOpenChange={(open) => {
+          if (!open) {
+            setRemovingExerciseId(null);
+            setRemovingExerciseName("");
+          }
+        }}
+        title="Usuń ćwiczenie z zestawu"
+        description={`Czy na pewno chcesz usunąć ćwiczenie "${removingExerciseName}" z zestawu tego pacjenta? Ćwiczenie pozostanie w oryginalnym zestawie.`}
+        confirmText="Usuń"
+        variant="destructive"
+        onConfirm={handleRemoveExercise}
       />
     </>
   );

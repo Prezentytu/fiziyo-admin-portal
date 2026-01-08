@@ -237,7 +237,7 @@ export const UPDATE_TREATMENT_CONTEXT_MUTATION = gql`
 
 /**
  * Mutacja do aktualizacji notatek przy pacjencie
- * Pozwala na dodawanie/edycję notatek klinicznych
+ * Pozwala na dodawanie/edycję notatek
  */
 export const UPDATE_PATIENT_NOTES_MUTATION = gql`
   mutation UpdatePatientNotes(
@@ -259,5 +259,39 @@ export const UPDATE_PATIENT_NOTES_MUTATION = gql`
       notes
       status
     }
+  }
+`;
+
+/**
+ * Mutacja do przejęcia opieki nad pacjentem (Collaborative Care Model)
+ * - Jeśli pacjent nie ma fizjo → przypisz od razu
+ * - Jeśli pacjent ma fizjo → zwróć info o poprzednim (requiresConfirmation=true)
+ * - Po potwierdzeniu (confirmed=true) → przenieś pacjenta
+ */
+export const TAKE_OVER_PATIENT_MUTATION = gql`
+  mutation TakeOverPatient($patientId: String!, $organizationId: String!, $confirmed: Boolean) {
+    takeOverPatient(patientId: $patientId, organizationId: $organizationId, confirmed: $confirmed) {
+      success
+      requiresConfirmation
+      previousTherapist {
+        id
+        fullname
+        email
+        image
+      }
+      assignmentId
+      message
+    }
+  }
+`;
+
+/**
+ * Mutacja do trwałego usunięcia pacjenta z organizacji
+ * Tylko dla Admin/Owner
+ * Usuwa wszystkie przypisania i relacje pacjenta z organizacją
+ */
+export const REMOVE_PATIENT_FROM_ORGANIZATION_MUTATION = gql`
+  mutation RemovePatientFromOrganization($patientId: String!, $organizationId: String!) {
+    removePatientFromOrganization(patientId: $patientId, organizationId: $organizationId)
   }
 `;

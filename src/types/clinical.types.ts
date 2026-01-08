@@ -1,4 +1,4 @@
-// Typy dla dokumentacji klinicznej
+// Typy dla dokumentacji
 
 export type VisitType = 'INITIAL' | 'FOLLOWUP' | 'DISCHARGE' | 'CONSULTATION';
 export type ClinicalNoteStatus = 'DRAFT' | 'COMPLETED' | 'SIGNED';
@@ -238,4 +238,3 @@ export const STATUS_LABELS: Record<ClinicalNoteStatus, string> = {
   COMPLETED: 'Zakończona',
   SIGNED: 'Podpisana',
 };
-

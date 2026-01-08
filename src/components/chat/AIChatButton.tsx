@@ -10,6 +10,7 @@ import {
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { AIChatPanel } from "./AIChatPanel";
+import { useScrollDirection } from "@/hooks/useScrollDirection";
 import * as VisuallyHidden from "@radix-ui/react-visually-hidden";
 
 /**
@@ -18,6 +19,7 @@ import * as VisuallyHidden from "@radix-ui/react-visually-hidden";
  */
 export function AIChatButton() {
   const [isOpen, setIsOpen] = useState(false);
+  const isVisible = useScrollDirection({ threshold: 10 });
 
   return (
     <TooltipProvider delayDuration={300}>
@@ -36,8 +38,8 @@ export function AIChatButton() {
               "hover:scale-110 hover:shadow-2xl hover:shadow-primary/30",
               "active:scale-95",
               "animate-pulse-glow",
-              // Hide when sheet is open
-              isOpen && "pointer-events-none opacity-0"
+              // Hide when sheet is open or scrolling down
+              (isOpen || !isVisible) && "translate-y-20 opacity-0 pointer-events-none"
             )}
             aria-label="Otwórz asystenta AI"
           >

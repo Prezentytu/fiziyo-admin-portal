@@ -1,4 +1,4 @@
-// Eksport komponentów dokumentacji klinicznej
+// Eksport komponentów dokumentacji
 export { ClinicalNoteEditor } from './ClinicalNoteEditor';
 export { ClinicalNotesList } from './ClinicalNotesList';
 export { QuickPhrases } from './QuickPhrases';
@@ -10,4 +10,3 @@ export { ExaminationSectionForm } from './sections/ExaminationSectionForm';
 export { DiagnosisSectionForm } from './sections/DiagnosisSectionForm';
 export { TreatmentPlanSectionForm } from './sections/TreatmentPlanSectionForm';
 export { VisitProgressSectionForm } from './sections/VisitProgressSectionForm';
-

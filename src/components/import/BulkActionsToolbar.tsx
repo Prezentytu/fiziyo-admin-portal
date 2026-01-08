@@ -62,13 +62,13 @@ export function BulkActionsToolbar({
       case 'all':
         return `Wszystkie (${totalCount})`;
       case 'create':
-        return `Do utworzenia (${createCount})`;
+        return `Nowe do bazy (${createCount})`;
       case 'reuse':
-        return `Istniejące (${reuseCount})`;
+        return `Z mojej bazy (${reuseCount})`;
       case 'skip':
-        return `Pominięte (${skipCount})`;
+        return `Nie importowane (${skipCount})`;
       case 'matched':
-        return `Z dopasowaniem (${matchedCount})`;
+        return `Znalezione w bazie (${matchedCount})`;
     }
   };
 
@@ -79,7 +79,7 @@ export function BulkActionsToolbar({
         className
       )}
     >
-      {/* Przyciski akcji zbiorczych - jasne etykiety */}
+      {/* Przyciski akcji zbiorczych - czytelne etykiety dla fizjoterapeutów */}
       <div className="flex flex-wrap items-center gap-3">
         <span className="text-sm font-medium text-muted-foreground">
           Dla wszystkich:
@@ -94,7 +94,7 @@ export function BulkActionsToolbar({
           data-testid="import-bulk-create-all-btn"
         >
           <Check className="h-4 w-4 text-primary" />
-          Utwórz nowe
+          Dodaj wszystkie do bazy
         </Button>
 
         {matchedCount > 0 && (
@@ -104,9 +104,10 @@ export function BulkActionsToolbar({
             onClick={onUseAllMatched}
             disabled={disabled}
             className="gap-2 h-9"
+            data-testid="import-bulk-use-matched-btn"
           >
             <Link2 className="h-4 w-4 text-blue-500" />
-            Użyj dopasowanych ({matchedCount})
+            Użyj znalezionych ({matchedCount})
           </Button>
         )}
 
@@ -119,7 +120,7 @@ export function BulkActionsToolbar({
           data-testid="import-bulk-skip-all-btn"
         >
           <X className="h-4 w-4 text-muted-foreground" />
-          Pomiń wszystkie
+          Nie importuj żadnego
         </Button>
       </div>
 
@@ -132,7 +133,7 @@ export function BulkActionsToolbar({
             <ChevronDown className="h-4 w-4 ml-1" />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-52">
+        <DropdownMenuContent align="end" className="w-56">
           <DropdownMenuItem
             onClick={() => onFilterChange('all')}
             className={cn('cursor-pointer', activeFilter === 'all' && 'bg-primary/10')}
@@ -147,7 +148,7 @@ export function BulkActionsToolbar({
             className={cn('cursor-pointer', activeFilter === 'create' && 'bg-primary/10')}
           >
             <Check className="mr-2 h-4 w-4 text-primary" />
-            Do utworzenia ({createCount})
+            Nowe do mojej bazy ({createCount})
           </DropdownMenuItem>
 
           <DropdownMenuItem
@@ -155,7 +156,7 @@ export function BulkActionsToolbar({
             className={cn('cursor-pointer', activeFilter === 'reuse' && 'bg-primary/10')}
           >
             <Link2 className="mr-2 h-4 w-4 text-blue-500" />
-            Istniejące ({reuseCount})
+            Z mojej bazy ({reuseCount})
           </DropdownMenuItem>
 
           <DropdownMenuItem
@@ -163,7 +164,7 @@ export function BulkActionsToolbar({
             className={cn('cursor-pointer', activeFilter === 'skip' && 'bg-primary/10')}
           >
             <X className="mr-2 h-4 w-4 text-muted-foreground" />
-            Pominięte ({skipCount})
+            Nie importowane ({skipCount})
           </DropdownMenuItem>
 
           {matchedCount > 0 && (
@@ -173,7 +174,7 @@ export function BulkActionsToolbar({
                 onClick={() => onFilterChange('matched')}
                 className={cn('cursor-pointer', activeFilter === 'matched' && 'bg-primary/10')}
               >
-                Z dopasowaniem AI ({matchedCount})
+                Znalezione w bazie ({matchedCount})
               </DropdownMenuItem>
             </>
           )}
