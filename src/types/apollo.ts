@@ -341,6 +341,50 @@ export interface TherapistPatientsResponse {
 }
 
 // ========================================
+// Organization Patients Types (Collaborative Care)
+// ========================================
+
+export interface OrganizationPatientDto {
+  patient: User;
+  therapist?: {
+    id: string;
+    fullname?: string;
+    email?: string;
+    image?: string;
+  } | null;
+  assignmentId?: string;
+  assignmentStatus: string; // "assigned" | "unassigned"
+  assignedAt?: string;
+  contextLabel?: string;
+  contextColor?: string;
+}
+
+export interface OrganizationPatientsResponse {
+  organizationPatients: OrganizationPatientDto[];
+}
+
+// ========================================
+// TakeOver Patient Types
+// ========================================
+
+export interface TakeOverPatientResult {
+  success: boolean;
+  requiresConfirmation: boolean;
+  previousTherapist?: {
+    id: string;
+    fullname?: string;
+    email?: string;
+    image?: string;
+  } | null;
+  assignmentId?: string;
+  message?: string;
+}
+
+export interface TakeOverPatientResponse {
+  takeOverPatient: TakeOverPatientResult;
+}
+
+// ========================================
 // Invitation Types
 // ========================================
 

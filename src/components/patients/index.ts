@@ -14,3 +14,9 @@ export { PatientNotes } from "./PatientNotes";
 export { PatientQRCodeDialog } from "./PatientQRCodeDialog";
 export { BodyMap } from "./BodyMap";
 export type { PainPoint, BodyMapSession } from "./BodyMap";
+
+// Collaborative Care components
+export { PatientFilter, usePatientFilter } from "./PatientFilter";
+export type { PatientFilterType } from "./PatientFilter";
+export { TherapistBadge } from "./TherapistBadge";
+export { TakeOverDialog } from "./TakeOverDialog";

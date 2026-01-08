@@ -226,3 +226,43 @@ export const GET_THERAPIST_PATIENT_ASSIGNMENTS_QUERY = gql`
     }
   }
 `;
+
+/**
+ * Query do pobierania WSZYSTKICH pacjentów organizacji (Collaborative Care Model)
+ * Zwraca pacjentów z informacją o przypisanym fizjoterapeucie (lub null jeśli brak)
+ * Filter: "all" | "my" | "unassigned"
+ */
+export const GET_ORGANIZATION_PATIENTS_QUERY = gql`
+  query GetOrganizationPatients($organizationId: String!, $filter: String) {
+    organizationPatients(organizationId: $organizationId, filter: $filter) {
+      patient {
+        id
+        clerkId
+        fullname
+        email
+        image
+        isShadowUser
+        organizationIds
+        personalData {
+          firstName
+          lastName
+        }
+        contactData {
+          phone
+          address
+        }
+      }
+      therapist {
+        id
+        fullname
+        email
+        image
+      }
+      assignmentId
+      assignmentStatus
+      assignedAt
+      contextLabel
+      contextColor
+    }
+  }
+`;

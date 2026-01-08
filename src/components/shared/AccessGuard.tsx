@@ -51,14 +51,14 @@ function AccessDenied() {
 
 /**
  * AccessGuard - Protects pages based on user's role in the organization.
- * 
+ *
  * @example
  * ```tsx
  * // Protect entire page - requires admin or owner role
  * <AccessGuard requiredAccess="admin">
  *   <BillingPage />
  * </AccessGuard>
- * 
+ *
  * // Protect page - requires owner role only
  * <AccessGuard requiredAccess="owner">
  *   <DangerZone />

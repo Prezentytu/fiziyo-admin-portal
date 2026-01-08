@@ -16,11 +16,13 @@ import { EmptyState } from '@/components/shared/EmptyState';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { PatientExpandableCard, Patient } from '@/components/patients/PatientExpandableCard';
 import { PatientDialog } from '@/components/patients/PatientDialog';
+import { TakeOverDialog } from '@/components/patients/TakeOverDialog';
+import type { PatientFilterType } from '@/components/patients/PatientFilter';
 import { AssignmentWizard } from '@/components/assignment/AssignmentWizard';
 import type { Patient as AssignmentPatient } from '@/components/assignment/types';
 import { cn } from '@/lib/utils';
 
-import { GET_ALL_THERAPIST_PATIENTS_QUERY } from '@/graphql/queries/therapists.queries';
+import { GET_ORGANIZATION_PATIENTS_QUERY } from '@/graphql/queries/therapists.queries';
 import { GET_CURRENT_ORGANIZATION_PLAN } from '@/graphql/queries/organizations.queries';
 import {
   REMOVE_PATIENT_FROM_THERAPIST_MUTATION,
@@ -29,21 +31,20 @@ import {
 import { GET_USER_BY_CLERK_ID_QUERY } from '@/graphql/queries/users.queries';
 import { matchesSearchQuery } from '@/utils/textUtils';
 import { useOrganization } from '@/contexts/OrganizationContext';
-import type { UserByClerkIdResponse, TherapistPatientsResponse } from '@/types/apollo';
-
-type FilterType = 'all' | 'active' | 'inactive';
+import type { UserByClerkIdResponse, OrganizationPatientsResponse, OrganizationPatientDto } from '@/types/apollo';
 
 export default function PatientsPage() {
   const { user } = useUser();
   const router = useRouter();
   const { currentOrganization } = useOrganization();
   const [searchQuery, setSearchQuery] = useState('');
-  const [filter, setFilter] = useState<FilterType>('all');
+  const [patientFilter, setPatientFilter] = useState<PatientFilterType>('my');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
   const [deletingPatient, setDeletingPatient] = useState<Patient | null>(null);
   const [togglingStatusPatient, setTogglingStatusPatient] = useState<Patient | null>(null);
+  const [takeOverPatient, setTakeOverPatient] = useState<Patient | null>(null);
 
   // Get organization ID from context (changes when user switches organization)
   const organizationId = currentOrganization?.organizationId;
@@ -57,73 +58,64 @@ export default function PatientsPage() {
   const userByClerkId = (userData as UserByClerkIdResponse)?.userByClerkId;
   const therapistId = userByClerkId?.id;
 
-  // Get patients (all, including inactive for filtering)
-  const { data, loading, error } = useQuery(GET_ALL_THERAPIST_PATIENTS_QUERY, {
-    variables: { therapistId, organizationId },
-    skip: !therapistId || !organizationId,
+  // Get ALL organization patients (always fetch all, filter client-side)
+  const { data, loading, error } = useQuery(GET_ORGANIZATION_PATIENTS_QUERY, {
+    variables: { organizationId, filter: 'all' },
+    skip: !organizationId,
   });
 
   // Mutations
   const [removePatient, { loading: removing }] = useMutation(REMOVE_PATIENT_FROM_THERAPIST_MUTATION, {
     refetchQueries: [
-      { query: GET_ALL_THERAPIST_PATIENTS_QUERY, variables: { therapistId, organizationId } },
+      { query: GET_ORGANIZATION_PATIENTS_QUERY, variables: { organizationId, filter: 'all' } },
       { query: GET_CURRENT_ORGANIZATION_PLAN, variables: { organizationId } },
     ],
   });
 
   const [updateStatus, { loading: updatingStatus }] = useMutation(UPDATE_PATIENT_STATUS_MUTATION, {
-    refetchQueries: [{ query: GET_ALL_THERAPIST_PATIENTS_QUERY, variables: { therapistId, organizationId } }],
+    refetchQueries: [{ query: GET_ORGANIZATION_PATIENTS_QUERY, variables: { organizationId, filter: 'all' } }],
   });
 
-  // Transform data
-  const therapistPatients = (data as TherapistPatientsResponse)?.therapistPatients || [];
-  const patients: Patient[] = therapistPatients.map(
-    (assignment: {
-      id: string;
-      status?: string;
-      assignedAt?: string;
-      contextLabel?: string;
-      contextColor?: string;
-      patient?: {
-        id: string;
-        fullname?: string;
-        email?: string;
-        image?: string;
-        isShadowUser?: boolean;
-        personalData?: { firstName?: string; lastName?: string };
-        contactData?: { phone?: string; address?: string };
-      };
-    }) => ({
-      id: assignment.patient?.id || assignment.id,
-      assignmentId: assignment.id, // ID of therapist-patient assignment
-      fullname: assignment.patient?.fullname,
-      email: assignment.patient?.email,
-      image: assignment.patient?.image,
-      isShadowUser: assignment.patient?.isShadowUser,
-      personalData: assignment.patient?.personalData,
-      contactData: assignment.patient?.contactData,
-      assignmentStatus: assignment.status,
-      contextLabel: assignment.contextLabel,
-      contextColor: assignment.contextColor,
-      assignedAt: assignment.assignedAt,
-    })
-  );
+  // Transform data from OrganizationPatients query
+  const organizationPatients = (data as OrganizationPatientsResponse)?.organizationPatients || [];
+  const allPatients: Patient[] = organizationPatients.map((item: OrganizationPatientDto) => ({
+    id: item.patient.id,
+    assignmentId: item.assignmentId,
+    fullname: item.patient.fullname,
+    email: item.patient.email,
+    image: item.patient.image,
+    isShadowUser: item.patient.isShadowUser,
+    personalData: item.patient.personalData,
+    contactData: item.patient.contactData,
+    assignmentStatus: item.assignmentStatus,
+    contextLabel: item.contextLabel,
+    contextColor: item.contextColor,
+    assignedAt: item.assignedAt,
+    // Collaborative Care fields
+    therapist: item.therapist,
+  }));
 
-  // Calculate stats
-  const totalCount = patients.length;
-  const activeCount = patients.filter((p) => p.assignmentStatus !== 'inactive').length;
-  const inactiveCount = patients.filter((p) => p.assignmentStatus === 'inactive').length;
+  // Calculate stats for filter counts (from all patients)
+  const myCount = allPatients.filter((p) => p.therapist?.id === therapistId).length;
+  const unassignedCount = allPatients.filter((p) => !p.therapist).length;
+  const totalCount = allPatients.length;
 
-  // Filter by status
-  const statusFilteredPatients = patients.filter((patient) => {
-    if (filter === 'all') return true;
-    if (filter === 'active') return patient.assignmentStatus !== 'inactive';
-    if (filter === 'inactive') return patient.assignmentStatus === 'inactive';
-    return true;
-  });
+  // Filter by selected filter (client-side)
+  const filterByType = (patients: Patient[]) => {
+    switch (patientFilter) {
+      case 'my':
+        return patients.filter((p) => p.therapist?.id === therapistId);
+      case 'unassigned':
+        return patients.filter((p) => !p.therapist);
+      default:
+        return patients;
+    }
+  };
+
+  const filteredByType = filterByType(allPatients);
 
   // Filter by search query
-  const searchFilteredPatients = statusFilteredPatients.filter((patient) => {
+  const searchFilteredPatients = filteredByType.filter((patient) => {
     const fullName =
       patient.fullname || `${patient.personalData?.firstName || ''} ${patient.personalData?.lastName || ''}`.trim();
     return (
@@ -134,13 +126,16 @@ export default function PatientsPage() {
     );
   });
 
-  // Sort: active patients first, inactive at the bottom
+  // Sort: my patients first, then by name
   const filteredPatients = [...searchFilteredPatients].sort((a, b) => {
-    const aInactive = a.assignmentStatus === 'inactive';
-    const bInactive = b.assignmentStatus === 'inactive';
-    if (aInactive && !bInactive) return 1;
-    if (!aInactive && bInactive) return -1;
-    return 0;
+    const aIsMine = a.therapist?.id === therapistId;
+    const bIsMine = b.therapist?.id === therapistId;
+    if (aIsMine && !bIsMine) return -1;
+    if (!aIsMine && bIsMine) return 1;
+    // Secondary sort by name
+    const aName = a.fullname || '';
+    const bName = b.fullname || '';
+    return aName.localeCompare(bName);
   });
 
   const handleViewReport = (patient: Patient) => {
@@ -154,6 +149,10 @@ export default function PatientsPage() {
 
   const handleToggleStatus = (patient: Patient) => {
     setTogglingStatusPatient(patient);
+  };
+
+  const handleTakeOver = (patient: Patient) => {
+    setTakeOverPatient(patient);
   };
 
   const handleConfirmToggleStatus = async () => {
@@ -208,6 +207,29 @@ export default function PatientsPage() {
       }
     : undefined;
 
+  // Helper functions for empty state messages
+  const getEmptyStateTitle = (filter: PatientFilterType) => {
+    switch (filter) {
+      case 'my':
+        return 'Brak Twoich pacjentów';
+      case 'unassigned':
+        return 'Brak nieprzypisanych pacjentów';
+      default:
+        return 'Brak pacjentów w organizacji';
+    }
+  };
+
+  const getEmptyStateDescription = (filter: PatientFilterType) => {
+    switch (filter) {
+      case 'my':
+        return 'Dodaj pierwszego pacjenta lub przejmij opiekę nad istniejącym';
+      case 'unassigned':
+        return 'Wszyscy pacjenci mają przypisanego fizjoterapeutę';
+      default:
+        return 'Dodaj pierwszego pacjenta do organizacji';
+    }
+  };
+
   if (error) {
     return (
       <div className="flex h-full items-center justify-center">
@@ -261,97 +283,85 @@ export default function PatientsPage() {
           </div>
         </button>
 
-        {/* Quick Stats - Clickable filters */}
+        {/* Quick Stats - Clickable filters (Collaborative Care) */}
         <div className="grid grid-cols-3 gap-3 sm:col-span-1 lg:col-span-7">
-          {/* All patients */}
+          {/* My patients */}
           <button
-            onClick={() => setFilter('all')}
+            onClick={() => setPatientFilter('my')}
             className={cn(
               'rounded-2xl border p-4 flex flex-col items-center justify-center text-center transition-all duration-200',
-              filter === 'all'
+              patientFilter === 'my'
                 ? 'border-primary/40 bg-primary/10 ring-1 ring-primary/20'
+                : 'border-border/40 bg-surface/50 hover:bg-surface-light hover:border-border'
+            )}
+            data-testid="patient-filter-my-btn"
+          >
+            <div className="flex items-center gap-2">
+              <UserCheck className={cn('h-4 w-4', patientFilter === 'my' ? 'text-primary' : 'text-muted-foreground')} />
+              <span className={cn('text-2xl font-bold', patientFilter === 'my' ? 'text-primary' : 'text-foreground')}>
+                {myCount}
+              </span>
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">Moi</p>
+          </button>
+
+          {/* All patients */}
+          <button
+            onClick={() => setPatientFilter('all')}
+            className={cn(
+              'rounded-2xl border p-4 flex flex-col items-center justify-center text-center transition-all duration-200',
+              patientFilter === 'all'
+                ? 'border-secondary/40 bg-secondary/10 ring-1 ring-secondary/20'
                 : 'border-border/40 bg-surface/50 hover:bg-surface-light hover:border-border'
             )}
             data-testid="patient-filter-all-btn"
           >
             <div className="flex items-center gap-2">
-              <Users className={cn('h-4 w-4', filter === 'all' ? 'text-primary' : 'text-muted-foreground')} />
-              <span className={cn('text-2xl font-bold', filter === 'all' ? 'text-primary' : 'text-foreground')}>
+              <Users className={cn('h-4 w-4', patientFilter === 'all' ? 'text-secondary' : 'text-muted-foreground')} />
+              <span className={cn('text-2xl font-bold', patientFilter === 'all' ? 'text-secondary' : 'text-foreground')}>
                 {totalCount}
               </span>
             </div>
             <p className="text-xs text-muted-foreground mt-1">Wszyscy</p>
           </button>
 
-          {/* Active patients */}
+          {/* Unassigned patients */}
           <button
-            onClick={() => setFilter('active')}
+            onClick={() => setPatientFilter('unassigned')}
             className={cn(
               'rounded-2xl border p-4 flex flex-col items-center justify-center text-center transition-all duration-200',
-              filter === 'active'
-                ? 'border-secondary/40 bg-secondary/10 ring-1 ring-secondary/20'
+              patientFilter === 'unassigned'
+                ? 'border-warning/40 bg-warning/10 ring-1 ring-warning/20'
                 : 'border-border/40 bg-surface/50 hover:bg-surface-light hover:border-border'
             )}
-            data-testid="patient-filter-active-btn"
+            data-testid="patient-filter-unassigned-btn"
           >
             <div className="flex items-center gap-2">
-              <UserCheck className={cn('h-4 w-4', filter === 'active' ? 'text-secondary' : 'text-muted-foreground')} />
-              <span className={cn('text-2xl font-bold', filter === 'active' ? 'text-secondary' : 'text-foreground')}>
-                {activeCount}
+              <UserX className={cn('h-4 w-4', patientFilter === 'unassigned' ? 'text-warning' : 'text-muted-foreground')} />
+              <span className={cn('text-2xl font-bold', patientFilter === 'unassigned' ? 'text-warning' : 'text-foreground')}>
+                {unassignedCount}
               </span>
             </div>
-            <p className="text-xs text-muted-foreground mt-1">Aktywni</p>
-          </button>
-
-          {/* Inactive patients */}
-          <button
-            onClick={() => setFilter('inactive')}
-            className={cn(
-              'rounded-2xl border p-4 flex flex-col items-center justify-center text-center transition-all duration-200',
-              filter === 'inactive'
-                ? 'border-muted-foreground/40 bg-muted/30 ring-1 ring-muted-foreground/20'
-                : 'border-border/40 bg-surface/50 hover:bg-surface-light hover:border-border'
-            )}
-            data-testid="patient-filter-inactive-btn"
-          >
-            <div className="flex items-center gap-2">
-              <UserX className={cn('h-4 w-4', filter === 'inactive' ? 'text-muted-foreground' : 'text-muted-foreground')} />
-              <span className={cn('text-2xl font-bold', filter === 'inactive' ? 'text-muted-foreground' : 'text-foreground')}>
-                {inactiveCount}
-              </span>
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">Nieaktywni</p>
+            <p className="text-xs text-muted-foreground mt-1">Nieprzypisani</p>
           </button>
         </div>
       </div>
 
       {/* Results info */}
-      {(searchQuery || filter !== 'all') && (
+      {searchQuery && (
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <span>Wyniki:</span>
           <Badge variant="secondary" className="text-xs">
-            {filteredPatients.length} z {totalCount}
+            {filteredPatients.length} z {filteredByType.length}
           </Badge>
-          {searchQuery && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-6 px-2 text-xs"
-              onClick={() => setSearchQuery('')}
-            >
-              Wyczyść wyszukiwanie
-            </Button>
-          )}
-          {filter !== 'all' && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-6 px-2 text-xs"
-              onClick={() => setFilter('all')}
-            >
-              Pokaż wszystkich
-            </Button>
-          )}
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-6 px-2 text-xs"
+            onClick={() => setSearchQuery('')}
+          >
+            Wyczyść wyszukiwanie
+          </Button>
         </div>
       )}
 
@@ -377,14 +387,10 @@ export default function PatientsPage() {
           <CardContent className="py-16">
             <EmptyState
               icon={Users}
-              title={searchQuery || filter !== 'all' ? 'Nie znaleziono pacjentów' : 'Brak pacjentów'}
-              description={
-                searchQuery || filter !== 'all'
-                  ? 'Spróbuj zmienić kryteria wyszukiwania lub filtry'
-                  : 'Dodaj pierwszego pacjenta do swojej listy'
-              }
-              actionLabel={!searchQuery && filter === 'all' ? 'Dodaj pacjenta' : undefined}
-              onAction={!searchQuery && filter === 'all' ? () => setIsDialogOpen(true) : undefined}
+              title={searchQuery ? 'Nie znaleziono pacjentów' : getEmptyStateTitle(patientFilter)}
+              description={searchQuery ? 'Spróbuj zmienić kryteria wyszukiwania' : getEmptyStateDescription(patientFilter)}
+              actionLabel={!searchQuery && patientFilter === 'my' ? 'Dodaj pacjenta' : undefined}
+              onAction={!searchQuery && patientFilter === 'my' ? () => setIsDialogOpen(true) : undefined}
             />
           </CardContent>
         </Card>
@@ -398,8 +404,10 @@ export default function PatientsPage() {
               onViewReport={handleViewReport}
               onToggleStatus={handleToggleStatus}
               onRemove={(p) => setDeletingPatient(p)}
+              onTakeOver={handleTakeOver}
               organizationId={organizationId || ''}
               therapistId={therapistId || ''}
+              showTherapistBadge={patientFilter !== 'my'}
             />
           ))}
         </div>
@@ -462,6 +470,16 @@ export default function PatientsPage() {
         variant="default"
         onConfirm={handleConfirmToggleStatus}
         isLoading={updatingStatus}
+      />
+
+      {/* Take Over Dialog (Collaborative Care) */}
+      <TakeOverDialog
+        open={!!takeOverPatient}
+        onOpenChange={(open) => !open && setTakeOverPatient(null)}
+        patient={takeOverPatient}
+        previousTherapist={takeOverPatient?.therapist}
+        organizationId={organizationId || ''}
+        onSuccess={() => setTakeOverPatient(null)}
       />
     </div>
   );

@@ -261,3 +261,26 @@ export const UPDATE_PATIENT_NOTES_MUTATION = gql`
     }
   }
 `;
+
+/**
+ * Mutacja do przejęcia opieki nad pacjentem (Collaborative Care Model)
+ * - Jeśli pacjent nie ma fizjo → przypisz od razu
+ * - Jeśli pacjent ma fizjo → zwróć info o poprzednim (requiresConfirmation=true)
+ * - Po potwierdzeniu (confirmed=true) → przenieś pacjenta
+ */
+export const TAKE_OVER_PATIENT_MUTATION = gql`
+  mutation TakeOverPatient($patientId: String!, $organizationId: String!, $confirmed: Boolean) {
+    takeOverPatient(patientId: $patientId, organizationId: $organizationId, confirmed: $confirmed) {
+      success
+      requiresConfirmation
+      previousTherapist {
+        id
+        fullname
+        email
+        image
+      }
+      assignmentId
+      message
+    }
+  }
+`;

@@ -34,11 +34,11 @@ export interface RoleAccessResult {
 
 /**
  * Hook to check user's role-based access permissions in the current organization.
- * 
+ *
  * @example
  * ```tsx
  * const { canManageOrganization, isOwner } = useRoleAccess();
- * 
+ *
  * if (!canManageOrganization) {
  *   return <AccessDenied />;
  * }
@@ -56,10 +56,10 @@ export function useRoleAccess(): RoleAccessResult {
 
     // Owner and Admin can manage organization settings
     const canManageOrganization = isOwner || isAdmin;
-    
+
     // Owner and Admin can view billing
     const canViewBilling = isOwner || isAdmin;
-    
+
     // Owner and Admin can manage team members
     const canManageTeam = isOwner || isAdmin;
 
