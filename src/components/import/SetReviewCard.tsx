@@ -132,7 +132,7 @@ export function SetReviewCard({
           </Button>
         </div>
 
-        {/* Przyciski akcji - z tekstem */}
+        {/* Przyciski akcji - czytelne etykiety dla fizjoterapeutów */}
         <div className="mt-4 flex flex-wrap gap-2">
           <Button
             variant={decision.action === 'create' ? 'default' : 'outline'}
@@ -143,9 +143,10 @@ export function SetReviewCard({
               'gap-2 h-9 px-4',
               decision.action === 'create' && hasActiveExercises && 'bg-primary hover:bg-primary-dark'
             )}
+            data-testid={`import-set-card-${exerciseSet.tempId}-create-btn`}
           >
             <Check className="h-4 w-4" />
-            Utwórz zestaw
+            Zapisz ten zestaw
           </Button>
 
           <Button
@@ -156,9 +157,10 @@ export function SetReviewCard({
               'gap-2 h-9 px-4',
               decision.action === 'skip' && 'bg-muted text-muted-foreground'
             )}
+            data-testid={`import-set-card-${exerciseSet.tempId}-skip-btn`}
           >
             <X className="h-4 w-4" />
-            Pomiń
+            Nie importuj zestawu
           </Button>
         </div>
 
@@ -195,17 +197,17 @@ export function SetReviewCard({
                     </span>
                     {exDecision?.action === 'reuse' && (
                       <Badge variant="secondary" className="shrink-0 text-xs bg-blue-500/20 text-blue-600 border-0">
-                        Istniejące
+                        Z mojej bazy
                       </Badge>
                     )}
                     {exDecision?.action === 'create' && (
                       <Badge className="shrink-0 bg-primary/20 text-primary text-xs border-0">
-                        Nowe
+                        Nowe ćwiczenie
                       </Badge>
                     )}
                     {exDecision?.action === 'skip' && (
                       <Badge variant="secondary" className="shrink-0 text-xs">
-                        Pominięte
+                        Nie importowane
                       </Badge>
                     )}
                   </div>

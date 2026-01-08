@@ -143,7 +143,7 @@ export function NoteReviewCard({
           </Button>
         </div>
 
-        {/* Przyciski akcji - z tekstem */}
+        {/* Przyciski akcji - czytelne etykiety dla fizjoterapeutów */}
         <div className="mt-4 flex flex-wrap gap-2">
           <Button
             variant={effectiveAction === 'create' ? 'default' : 'outline'}
@@ -154,9 +154,10 @@ export function NoteReviewCard({
               'gap-2 h-9 px-4',
               effectiveAction === 'create' && 'bg-primary hover:bg-primary-dark'
             )}
+            data-testid={`import-note-card-${note.tempId}-create-btn`}
           >
             <Check className="h-4 w-4" />
-            Importuj notatkę
+            Zapisz tę notatkę
           </Button>
 
           <Button
@@ -168,9 +169,10 @@ export function NoteReviewCard({
               'gap-2 h-9 px-4',
               effectiveAction === 'skip' && !disabled && 'bg-muted text-muted-foreground'
             )}
+            data-testid={`import-note-card-${note.tempId}-skip-btn`}
           >
             <X className="h-4 w-4" />
-            Pomiń
+            Nie importuj
           </Button>
         </div>
 

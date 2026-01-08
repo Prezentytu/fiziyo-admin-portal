@@ -156,28 +156,32 @@ export function ExerciseReviewCard({
               )}
             </div>
 
-            {/* AI Suggestion - prosta forma */}
+            {/* AI Suggestion - wyraźny komunikat co AI znalazło */}
             {aiSuggestsReuse && decision.action !== 'reuse' && (
-              <div className="mt-3 flex items-center gap-2 flex-wrap">
-                <span className="text-sm text-muted-foreground">
-                  AI sugeruje:
-                </span>
-                <span className="text-sm font-medium text-blue-600">
-                  {bestMatch.existingExerciseName}
-                </span>
-                <Badge variant="secondary" className={cn('text-xs', getConfidenceBadgeClass(bestMatch.confidence))}>
-                  {getConfidenceLabel(bestMatch.confidence)}
-                </Badge>
+              <div className="mt-3 rounded-lg bg-blue-500/10 border border-blue-500/20 p-3">
+                <p className="text-sm font-medium text-blue-600 mb-1">
+                  Znalazłem podobne ćwiczenie w Twojej bazie:
+                </p>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-sm font-semibold text-foreground">
+                    &ldquo;{bestMatch.existingExerciseName}&rdquo;
+                  </span>
+                  <Badge variant="secondary" className={cn('text-xs', getConfidenceBadgeClass(bestMatch.confidence))}>
+                    {getConfidenceLabel(bestMatch.confidence)}
+                  </Badge>
+                </div>
               </div>
             )}
 
             {/* Info o wybranym dopasowaniu */}
             {decision.action === 'reuse' && selectedMatch && (
-              <div className="mt-3 flex items-center gap-2 text-sm">
-                <Link2 className="h-4 w-4 text-blue-500" />
-                <span className="text-blue-600 font-medium">
-                  Używasz: {selectedMatch.existingExerciseName}
-                </span>
+              <div className="mt-3 rounded-lg bg-blue-500/10 border border-blue-500/20 p-3">
+                <div className="flex items-center gap-2 text-sm">
+                  <Link2 className="h-4 w-4 text-blue-500 shrink-0" />
+                  <span className="text-blue-600 font-medium">
+                    Użyjesz ćwiczenia z bazy: &ldquo;{selectedMatch.existingExerciseName}&rdquo;
+                  </span>
+                </div>
               </div>
             )}
           </div>
@@ -197,7 +201,7 @@ export function ExerciseReviewCard({
           </Button>
         </div>
 
-        {/* Przyciski akcji - Z TEKSTEM, jasne etykiety */}
+        {/* Przyciski akcji - czytelne etykiety dla fizjoterapeutów */}
         <div className="mt-4 flex flex-wrap gap-2">
           <Button
             variant={decision.action === 'create' ? 'default' : 'outline'}
@@ -210,7 +214,7 @@ export function ExerciseReviewCard({
             data-testid={`import-exercise-card-${exercise.tempId}-create-btn`}
           >
             <Check className="h-4 w-4" />
-            Utwórz nowe
+            Dodaj do mojej bazy
           </Button>
 
           {hasMatches && (
@@ -232,9 +236,10 @@ export function ExerciseReviewCard({
                 'gap-2 h-9 px-4',
                 decision.action === 'reuse' && 'bg-blue-500 hover:bg-blue-600'
               )}
+              data-testid={`import-exercise-card-${exercise.tempId}-reuse-btn`}
             >
               <Link2 className="h-4 w-4" />
-              {decision.action === 'reuse' ? 'Zmień dopasowanie' : 'Użyj istniejącego'}
+              {decision.action === 'reuse' ? 'Wybierz inne z bazy' : 'Mam takie – użyj'}
             </Button>
           )}
 
@@ -249,7 +254,7 @@ export function ExerciseReviewCard({
             data-testid={`import-exercise-card-${exercise.tempId}-skip-btn`}
           >
             <X className="h-4 w-4" />
-            Pomiń
+            Nie importuj
           </Button>
         </div>
 
@@ -257,7 +262,7 @@ export function ExerciseReviewCard({
         {showMatches && hasMatches && (
           <div className="mt-4 space-y-2 rounded-xl bg-surface-light p-4">
             <p className="text-sm font-medium text-foreground mb-3">
-              Wybierz istniejące ćwiczenie:
+              Wybierz ćwiczenie z Twojej bazy:
             </p>
             {matchSuggestions.map((match, index) => (
               <button

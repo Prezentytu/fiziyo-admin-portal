@@ -159,7 +159,7 @@ export function AICreditsPanel({ compact = false }: AICreditsReadonlyPanelProps)
   const totalCapacity = credits ? credits.monthlyLimit + credits.addonCredits : 0;
   const remaining = credits?.totalRemaining ?? 0;
   const availablePercent = totalCapacity > 0 ? (remaining / totalCapacity) * 100 : 0;
-  
+
   // Niski stan = poniżej 20% LUB poniżej 50 kredytów
   const isLow = remaining > 0 && (availablePercent < LOW_THRESHOLD_PERCENT || remaining < LOW_THRESHOLD_ABSOLUTE);
   const isEmpty = remaining <= 0;
@@ -232,9 +232,9 @@ export function AICreditsPanel({ compact = false }: AICreditsReadonlyPanelProps)
               <CardTitle className="flex items-center gap-3 text-lg font-semibold">
                 <div className={cn(
                   "flex h-12 w-12 items-center justify-center rounded-xl",
-                  isEmpty 
+                  isEmpty
                     ? "bg-gradient-to-br from-destructive to-red-600"
-                    : isLow 
+                    : isLow
                     ? "bg-gradient-to-br from-warning to-orange-600"
                     : "bg-gradient-to-br from-primary to-emerald-600"
                 )}>
@@ -249,7 +249,7 @@ export function AICreditsPanel({ compact = false }: AICreditsReadonlyPanelProps)
                 onClick={() => setIsPurchaseDialogOpen(true)}
                 className={cn(
                   "gap-2",
-                  isEmpty 
+                  isEmpty
                     ? "bg-gradient-to-r from-destructive to-red-600 hover:opacity-90"
                     : isLow
                     ? "bg-gradient-to-r from-warning to-orange-600 hover:opacity-90"
@@ -342,7 +342,7 @@ export function AICreditsPanel({ compact = false }: AICreditsReadonlyPanelProps)
       <Card className="relative overflow-hidden border-border/60 group">
         <div className={cn(
           "absolute inset-0 opacity-50 group-hover:opacity-70 transition-opacity",
-          isEmpty 
+          isEmpty
             ? "bg-gradient-to-br from-destructive/5 via-transparent to-red-500/5"
             : isLow
             ? "bg-gradient-to-br from-warning/5 via-transparent to-orange-500/5"
@@ -350,7 +350,7 @@ export function AICreditsPanel({ compact = false }: AICreditsReadonlyPanelProps)
         )} />
         <div className={cn(
           "absolute top-0 left-0 right-0 h-1",
-          isEmpty 
+          isEmpty
             ? "bg-gradient-to-r from-destructive via-red-500 to-orange-500"
             : isLow
             ? "bg-gradient-to-r from-warning via-orange-500 to-yellow-500"
@@ -362,7 +362,7 @@ export function AICreditsPanel({ compact = false }: AICreditsReadonlyPanelProps)
             <CardTitle className="flex items-center gap-3 text-lg">
               <div className={cn(
                 "flex h-10 w-10 items-center justify-center rounded-xl shadow-lg",
-                isEmpty 
+                isEmpty
                   ? "bg-gradient-to-br from-destructive to-red-600 shadow-destructive/25"
                   : isLow
                   ? "bg-gradient-to-br from-warning to-orange-600 shadow-warning/25"
@@ -423,7 +423,7 @@ export function AICreditsPanel({ compact = false }: AICreditsReadonlyPanelProps)
             </div>
             <div className={cn(
               "rounded-xl p-4 text-center border transition-colors",
-              isEmpty 
+              isEmpty
                 ? "bg-destructive/10 border-destructive/30"
                 : isLow
                 ? "bg-warning/10 border-warning/30"
@@ -471,7 +471,7 @@ export function AICreditsPanel({ compact = false }: AICreditsReadonlyPanelProps)
                 size="sm"
                 className={cn(
                   "gap-2 shrink-0",
-                  isEmpty 
+                  isEmpty
                     ? "bg-gradient-to-r from-destructive to-red-600"
                     : "bg-gradient-to-r from-warning to-orange-600"
                 )}
