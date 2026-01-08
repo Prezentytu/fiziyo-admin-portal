@@ -73,10 +73,10 @@ export function ExercisePreviewDrawer({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="max-w-2xl max-h-[90vh] p-0 flex flex-col overflow-hidden"
+        className="max-w-2xl p-0 flex flex-col"
         data-testid="exercise-preview-dialog"
       >
-        <DialogHeader className="px-6 pt-6 pb-4 border-b border-border shrink-0">
+        <DialogHeader className="px-6 pt-6 pb-4 border-b border-border">
           <div className="flex items-center gap-3">
             <DialogTitle className="text-lg">
               {effectiveName || "Nieznane ćwiczenie"}
@@ -94,7 +94,7 @@ export function ExercisePreviewDrawer({
           </div>
         </DialogHeader>
 
-        <div className="flex-1 min-h-0 overflow-y-auto">
+        <div className="max-h-[calc(90vh-180px)] overflow-y-auto">
           <div className="px-6 py-6 space-y-6">
             {/* Media - Image or Video */}
             <div className="relative aspect-video rounded-xl overflow-hidden bg-surface-light">
@@ -217,7 +217,7 @@ export function ExercisePreviewDrawer({
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t border-border shrink-0 flex justify-end gap-3">
+        <div className="px-6 py-4 border-t border-border flex justify-end gap-3">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Zamknij
           </Button>
