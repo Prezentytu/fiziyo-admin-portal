@@ -86,3 +86,30 @@ export const ADD_RESOURCE_ADDON_WITH_CODE = gql`
     }
   }
 `;
+
+/**
+ * Dodanie wielu addonów naraz z kodem promocyjnym
+ */
+export const ADD_MULTIPLE_ADDONS_WITH_CODE = gql`
+  mutation AddMultipleAddonsWithCode(
+    $organizationId: String!
+    $patients: Int!
+    $therapists: Int!
+    $clinics: Int!
+    $promoCode: String!
+  ) {
+    addMultipleAddonsWithCode(
+      organizationId: $organizationId
+      patients: $patients
+      therapists: $therapists
+      clinics: $clinics
+      promoCode: $promoCode
+    ) {
+      success
+      message
+      addedPatients
+      addedTherapists
+      addedClinics
+    }
+  }
+`;

@@ -1,56 +1,25 @@
 "use client";
 
 import { useState } from "react";
-import { useQuery, useMutation } from "@apollo/client/react";
+import { useQuery } from "@apollo/client/react";
 import {
   Users,
   UserPlus,
   Building2,
-  Plus,
-  Minus,
   TrendingUp,
-  Loader2,
   ChevronRight,
-  Key,
 } from "lucide-react";
 import { useOrganization } from "@/contexts/OrganizationContext";
-import { toast } from "sonner";
 
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import {
   GET_RESOURCE_ADDONS_STATUS,
   GET_ADDON_PRICING,
 } from "@/graphql/queries/aiCredits.queries";
-import {
-  PURCHASE_RESOURCE_ADDON,
-  CANCEL_RESOURCE_ADDON,
-  ADD_RESOURCE_ADDON_WITH_CODE,
-} from "@/graphql/mutations/aiCredits.mutations";
-import { triggerCreditsRefresh } from "./AICreditsPanel";
+import { PurchaseAddonsDialog } from "@/components/shared/PurchaseAddonsDialog";
 
 interface ResourceAddonsStatus {
   additionalPatients: number;
@@ -115,9 +84,8 @@ const addonConfigs: AddonConfig[] = [
 export function ResourceAddonsPanel({ compact = false }: ResourceAddonsPanelProps) {
   const { currentOrganization } = useOrganization();
   const organizationId = currentOrganization?.organizationId;
-  const [cancelDialog, setCancelDialog] = useState<{ open: boolean; type: string; label: string } | null>(null);
-  const [bypassDialog, setBypassDialog] = useState<{ open: boolean; type: string; label: string } | null>(null);
-  const [bypassCode, setBypassCode] = useState("");
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [initialAddonType, setInitialAddonType] = useState<"patients" | "therapists" | "clinics" | undefined>();
 
   const { data: statusData, loading: statusLoading, refetch, error: statusError } = useQuery<{
     resourceAddonsStatus: ResourceAddonsStatus;
@@ -131,94 +99,9 @@ export function ResourceAddonsPanel({ compact = false }: ResourceAddonsPanelProp
     errorPolicy: "ignore",
   });
 
-  interface PurchaseAddonResponse {
-    purchaseResourceAddon: {
-      success: boolean;
-      message: string;
-    };
-  }
-
-  interface CancelAddonResponse {
-    cancelResourceAddon: {
-      success: boolean;
-      message: string;
-    };
-  }
-
-  const [purchaseAddon, { loading: purchasing }] = useMutation<PurchaseAddonResponse>(PURCHASE_RESOURCE_ADDON, {
-    onCompleted: (data) => {
-      if (data.purchaseResourceAddon.success) {
-        toast.success(data.purchaseResourceAddon.message);
-        refetch();
-      } else {
-        toast.error(data.purchaseResourceAddon.message);
-      }
-    },
-    onError: (error) => toast.error(`Błąd: ${error.message}`),
-  });
-
-  const [cancelAddon, { loading: cancelling }] = useMutation<CancelAddonResponse>(CANCEL_RESOURCE_ADDON, {
-    onCompleted: (data) => {
-      if (data.cancelResourceAddon.success) {
-        toast.success(data.cancelResourceAddon.message);
-        refetch();
-      } else {
-        toast.error(data.cancelResourceAddon.message);
-      }
-      setCancelDialog(null);
-    },
-    onError: (error) => {
-      toast.error(`Błąd: ${error.message}`);
-      setCancelDialog(null);
-    },
-  });
-
-  // Mutacja bypass dla Early Access
-  interface BypassAddonResponse {
-    addResourceAddonWithCode: {
-      success: boolean;
-      message: string;
-      newLimit: number;
-    };
-  }
-
-  const [addAddonWithCode, { loading: bypassPurchasing }] = useMutation<BypassAddonResponse>(ADD_RESOURCE_ADDON_WITH_CODE, {
-    onCompleted: (data) => {
-      if (data.addResourceAddonWithCode.success) {
-        toast.success(data.addResourceAddonWithCode.message);
-        refetch();
-        triggerCreditsRefresh(); // Odśwież widget kredytów
-        setBypassDialog(null);
-        setBypassCode("");
-      } else {
-        toast.error(data.addResourceAddonWithCode.message);
-      }
-    },
-    onError: (error) => {
-      toast.error(`Błąd: ${error.message}`);
-    },
-  });
-
-  const handlePurchase = (addonType: string) => {
-    if (!organizationId) return;
-    purchaseAddon({ variables: { organizationId, addonType, quantity: 1 } });
-  };
-
-  const handleBypassPurchase = () => {
-    if (!organizationId || !bypassDialog || !bypassCode.trim()) return;
-    addAddonWithCode({
-      variables: {
-        organizationId,
-        addonType: bypassDialog.type,
-        quantity: 1,
-        bypassCode: bypassCode.trim(),
-      },
-    });
-  };
-
-  const handleCancel = (addonType: string) => {
-    if (!organizationId) return;
-    cancelAddon({ variables: { organizationId, addonType } });
+  const openDialog = (type: "patients" | "therapists" | "clinics") => {
+    setInitialAddonType(type);
+    setDialogOpen(true);
   };
 
   const fallbackPricing: AddonPricing = { patients10: 25, therapist1: 35, clinic1: 29 };
@@ -250,7 +133,7 @@ export function ResourceAddonsPanel({ compact = false }: ResourceAddonsPanelProp
 
   const hasAnyAddons = status.additionalPatients > 0 || status.additionalTherapists > 0 || status.additionalClinics > 0;
 
-  // Compact mode - Dashboard style list with readable fonts
+  // Compact mode - Dashboard style
   if (compact) {
     return (
       <>
@@ -285,17 +168,16 @@ export function ResourceAddonsPanel({ compact = false }: ResourceAddonsPanelProp
                 <button
                   key={config.type}
                   type="button"
-                  onClick={() => handlePurchase(config.type)}
-                  disabled={purchasing}
+                  onClick={() => openDialog(config.type)}
+                  data-testid={`addon-${config.type}-btn`}
                   className={cn(
                     "group flex items-center gap-4 py-4 px-5 rounded-xl w-full text-left",
                     "transition-all duration-300 cursor-pointer",
                     "hover:bg-surface-light hover:shadow-lg hover:-translate-y-0.5",
-                    "disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0",
                     hasAddon && "bg-cyan-500/5 border border-cyan-500/30"
                   )}
                 >
-                  {/* Icon with animation */}
+                  {/* Icon */}
                   <div className={cn(
                     "flex h-11 w-11 items-center justify-center rounded-xl shrink-0",
                     "transition-transform duration-300 group-hover:scale-110",
@@ -319,276 +201,121 @@ export function ResourceAddonsPanel({ compact = false }: ResourceAddonsPanelProp
                     </p>
                   </div>
 
-                  {/* Actions - visible on hover or when addon exists */}
-                  <div className={cn(
-                    "flex items-center gap-2 transition-opacity duration-300",
-                    hasAddon ? "opacity-100" : "opacity-0 group-hover:opacity-100"
-                  )}>
-                    {hasAddon && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-9 w-9 text-destructive hover:bg-destructive/10"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setCancelDialog({ open: true, type: config.type, label: config.label });
-                        }}
-                      >
-                        <Minus className="h-4 w-4" />
-                      </Button>
-                    )}
-                    {/* Bypass button */}
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-9 w-9 hover:bg-cyan-500/10"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setBypassDialog({ open: true, type: config.type, label: config.label });
-                      }}
-                      title="Aktywuj kodem Early Access"
-                    >
-                      <Key className="h-4 w-4 text-cyan-500" />
-                    </Button>
-                    <div className={cn(
-                      "flex h-9 w-9 items-center justify-center rounded-lg",
-                      "bg-cyan-500/20 text-cyan-500"
-                    )}>
-                      {purchasing || bypassPurchasing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
-                    </div>
-                  </div>
-
-                  {/* Chevron with animation */}
-                  <ChevronRight className="h-4 w-4 text-muted-foreground/30 group-hover:text-cyan-500 group-hover:translate-x-1 transition-all duration-300 shrink-0" />
+                  {/* Chevron */}
+                  <ChevronRight className="h-5 w-5 text-muted-foreground/30 group-hover:text-cyan-500 group-hover:translate-x-1 transition-all duration-300 shrink-0" />
                 </button>
               );
             })}
           </CardContent>
         </Card>
 
-        {/* Cancel Dialog */}
-        <AlertDialog open={cancelDialog?.open} onOpenChange={(open) => !open && setCancelDialog(null)}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle className="text-xl">Anulować rozszerzenie?</AlertDialogTitle>
-              <AlertDialogDescription className="text-base">
-                Rozszerzenie <strong>{cancelDialog?.label}</strong> zostanie anulowane na koniec okresu rozliczeniowego.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Nie</AlertDialogCancel>
-              <AlertDialogAction
-                onClick={() => cancelDialog && handleCancel(cancelDialog.type)}
-                disabled={cancelling}
-                className="bg-destructive hover:bg-destructive/90"
-              >
-                {cancelling && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-                Potwierdź anulowanie
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+        {/* Purchase Dialog */}
+        <PurchaseAddonsDialog
+          isOpen={dialogOpen}
+          onClose={() => {
+            setDialogOpen(false);
+            setInitialAddonType(undefined);
+          }}
+          organizationId={organizationId}
+          initialAddonType={initialAddonType}
+          onSuccess={() => refetch()}
+        />
       </>
     );
   }
 
   // Full mode - for settings page
   return (
-    <div className="space-y-4">
-      {hasAnyAddons && (
-        <div className="rounded-xl border border-cyan-500/30 bg-cyan-500/5 p-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <TrendingUp className="h-5 w-5 text-cyan-500" />
-              <div>
-                <p className="font-medium">Aktywne rozszerzenia</p>
-                <div className="flex gap-2 mt-1">
-                  {status.additionalPatients > 0 && (
-                    <Badge className="bg-cyan-500/20 text-cyan-500 border-0 text-xs">
-                      +{status.additionalPatients} pacjentów
-                    </Badge>
-                  )}
-                  {status.additionalTherapists > 0 && (
-                    <Badge className="bg-cyan-500/20 text-cyan-500 border-0 text-xs">
-                      +{status.additionalTherapists} terapeutów
-                    </Badge>
-                  )}
-                  {status.additionalClinics > 0 && (
-                    <Badge className="bg-cyan-500/20 text-cyan-500 border-0 text-xs">
-                      +{status.additionalClinics} gabinetów
-                    </Badge>
-                  )}
-                </div>
-              </div>
-            </div>
-            <p className="text-xl font-bold text-cyan-500">+{status.monthlyAddonsCost.toFixed(0)} zł/m</p>
-          </div>
-        </div>
-      )}
-
-      <div className="grid gap-3 sm:grid-cols-3">
-        {addonConfigs.map((config) => {
-          const currentAmount = status[config.currentKey] as number;
-          const effectiveLimit = status[config.effectiveKey] as number;
-          const price = pricing[config.priceKey];
-          const hasAddon = currentAmount > 0;
-          const Icon = config.icon;
-
-          return (
-            <div
-              key={config.type}
-              className={cn(
-                "rounded-xl border p-4 transition-all",
-                hasAddon ? "border-cyan-500/50 bg-cyan-500/5" : "border-border/60 hover:border-cyan-500/30"
-              )}
-            >
-              <div className="flex items-center gap-3 mb-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600">
-                  <Icon className="h-5 w-5 text-white" />
-                </div>
+    <>
+      <div className="space-y-4">
+        {hasAnyAddons && (
+          <div className="rounded-xl border border-cyan-500/30 bg-cyan-500/5 p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <TrendingUp className="h-5 w-5 text-cyan-500" />
                 <div>
-                  <p className="font-medium">{config.label}</p>
-                  <p className="text-xs text-muted-foreground">Limit: {effectiveLimit}</p>
+                  <p className="font-medium">Aktywne rozszerzenia</p>
+                  <div className="flex gap-2 mt-1">
+                    {status.additionalPatients > 0 && (
+                      <Badge className="bg-cyan-500/20 text-cyan-500 border-0 text-xs">
+                        +{status.additionalPatients} pacjentów
+                      </Badge>
+                    )}
+                    {status.additionalTherapists > 0 && (
+                      <Badge className="bg-cyan-500/20 text-cyan-500 border-0 text-xs">
+                        +{status.additionalTherapists} terapeutów
+                      </Badge>
+                    )}
+                    {status.additionalClinics > 0 && (
+                      <Badge className="bg-cyan-500/20 text-cyan-500 border-0 text-xs">
+                        +{status.additionalClinics} gabinetów
+                      </Badge>
+                    )}
+                  </div>
                 </div>
               </div>
-
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-sm text-muted-foreground">{config.unit}</span>
-                <span className="font-bold">{price} zł/m</span>
-              </div>
-
-              {hasAddon ? (
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="flex-1"
-                    onClick={() => handlePurchase(config.type)}
-                    disabled={purchasing || bypassPurchasing}
-                  >
-                    <Plus className="h-3 w-3 mr-1" />
-                    Więcej
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="h-8 w-8 text-destructive"
-                    onClick={() => setCancelDialog({ open: true, type: config.type, label: config.label })}
-                  >
-                    <Minus className="h-3 w-3" />
-                  </Button>
-                </div>
-              ) : (
-                <div className="flex flex-col gap-2">
-                  <Button
-                    className="w-full bg-gradient-to-r from-cyan-500 to-blue-600"
-                    size="sm"
-                    onClick={() => handlePurchase(config.type)}
-                    disabled={purchasing || bypassPurchasing}
-                  >
-                    {purchasing ? <Loader2 className="h-3 w-3 animate-spin" /> : <Plus className="h-3 w-3 mr-1" />}
-                    Dodaj (Stripe)
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="w-full gap-1"
-                    onClick={() => setBypassDialog({ open: true, type: config.type, label: config.label })}
-                    disabled={purchasing || bypassPurchasing}
-                    data-testid={`addon-${config.type}-bypass-btn`}
-                  >
-                    <Key className="h-3 w-3" />
-                    Aktywuj kodem
-                  </Button>
-                </div>
-              )}
+              <p className="text-xl font-bold text-cyan-500">+{status.monthlyAddonsCost.toFixed(0)} zł/m</p>
             </div>
-          );
-        })}
+          </div>
+        )}
+
+        <div className="grid gap-3 sm:grid-cols-3">
+          {addonConfigs.map((config) => {
+            const currentAmount = status[config.currentKey] as number;
+            const effectiveLimit = status[config.effectiveKey] as number;
+            const price = pricing[config.priceKey];
+            const hasAddon = currentAmount > 0;
+            const Icon = config.icon;
+
+            return (
+              <button
+                key={config.type}
+                type="button"
+                onClick={() => openDialog(config.type)}
+                data-testid={`addon-${config.type}-card-btn`}
+                className={cn(
+                  "rounded-xl border p-4 transition-all text-left",
+                  "hover:shadow-lg hover:-translate-y-0.5 cursor-pointer",
+                  hasAddon ? "border-cyan-500/50 bg-cyan-500/5" : "border-border/60 hover:border-cyan-500/30"
+                )}
+              >
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600">
+                    <Icon className="h-5 w-5 text-white" />
+                  </div>
+                  <div>
+                    <p className="font-medium">{config.label}</p>
+                    <p className="text-xs text-muted-foreground">Limit: {effectiveLimit}</p>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-sm text-muted-foreground">{config.unit}</span>
+                  <span className="font-bold">{price} zł/m</span>
+                </div>
+
+                {hasAddon && (
+                  <div className="text-xs text-cyan-500">
+                    Aktywne: +{currentAmount}
+                  </div>
+                )}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
-      <AlertDialog open={cancelDialog?.open} onOpenChange={(open) => !open && setCancelDialog(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Anulować rozszerzenie?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Rozszerzenie <strong>{cancelDialog?.label}</strong> zostanie anulowane.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Nie</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => cancelDialog && handleCancel(cancelDialog.type)}
-              disabled={cancelling}
-              className="bg-destructive hover:bg-destructive/90"
-            >
-              {cancelling && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
-              Potwierdź
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Bypass Dialog - Early Access */}
-      <Dialog open={bypassDialog?.open} onOpenChange={(open) => {
-        if (!open) {
-          setBypassDialog(null);
-          setBypassCode("");
-        }
-      }}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Key className="h-5 w-5 text-cyan-500" />
-              Aktywuj kodem Early Access
-            </DialogTitle>
-            <DialogDescription>
-              Dodaj rozszerzenie <strong>{bypassDialog?.label}</strong> używając kodu Early Access.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="addon-bypass-code">Kod aktywacyjny</Label>
-              <Input
-                id="addon-bypass-code"
-                type="password"
-                placeholder="Wpisz kod..."
-                value={bypassCode}
-                onChange={(e) => setBypassCode(e.target.value)}
-                disabled={bypassPurchasing}
-                data-testid="addon-bypass-code-input"
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setBypassDialog(null);
-                setBypassCode("");
-              }}
-              disabled={bypassPurchasing}
-            >
-              Anuluj
-            </Button>
-            <Button
-              onClick={handleBypassPurchase}
-              disabled={!bypassCode.trim() || bypassPurchasing}
-              className="gap-2 bg-gradient-to-r from-cyan-500 to-blue-600"
-              data-testid="addon-bypass-activate-btn"
-            >
-              {bypassPurchasing ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <>
-                  <Key className="h-4 w-4" />
-                  Aktywuj
-                </>
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </div>
+      {/* Purchase Dialog */}
+      <PurchaseAddonsDialog
+        isOpen={dialogOpen}
+        onClose={() => {
+          setDialogOpen(false);
+          setInitialAddonType(undefined);
+        }}
+        organizationId={organizationId}
+        initialAddonType={initialAddonType}
+        onSuccess={() => refetch()}
+      />
+    </>
   );
 }

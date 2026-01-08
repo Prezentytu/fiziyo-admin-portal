@@ -55,7 +55,7 @@ export default function AppointmentsPage() {
             Kalendarz wizyt w przygotowaniu
           </h2>
           <p className="text-muted-foreground max-w-md mx-auto mb-8">
-            Pracujemy nad funkcjonalnością kalendarza wizyt, która pozwoli Ci 
+            Pracujemy nad funkcjonalnością kalendarza wizyt, która pozwoli Ci
             efektywnie zarządzać harmonogramem spotkań z pacjentami.
           </p>
           <div className="flex flex-wrap justify-center gap-3">
@@ -121,19 +121,3 @@ export default function AppointmentsPage() {
     </div>
   );
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
