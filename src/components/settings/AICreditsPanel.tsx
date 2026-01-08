@@ -21,6 +21,7 @@ import {
   Star,
   Check,
   Loader2,
+  Key,
 } from "lucide-react";
 import { useOrganization } from "@/contexts/OrganizationContext";
 import { toast } from "sonner";
@@ -47,7 +48,9 @@ import {
   GET_AI_CREDITS_HISTORY,
   GET_AI_CREDITS_PACKAGE_PRICING,
 } from "@/graphql/queries/aiCredits.queries";
-import { PURCHASE_AI_CREDITS_PACKAGE } from "@/graphql/mutations/aiCredits.mutations";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { PURCHASE_AI_CREDITS_PACKAGE, ADD_CREDITS_WITH_CODE } from "@/graphql/mutations/aiCredits.mutations";
 
 interface AICreditsStatus {
   monthlyLimit: number;
@@ -130,22 +133,40 @@ interface PurchaseCreditsDialogProps {
   isOpen: boolean;
   onClose: () => void;
   onPurchase: (packageType: string) => void;
+  onBypassPurchase: (packageType: string, bypassCode: string) => void;
   purchasing: boolean;
+  bypassPurchasing: boolean;
 }
 
-function PurchaseCreditsDialog({ isOpen, onClose, onPurchase, purchasing }: PurchaseCreditsDialogProps) {
+function PurchaseCreditsDialog({
+  isOpen,
+  onClose,
+  onPurchase,
+  onBypassPurchase,
+  purchasing,
+  bypassPurchasing
+}: PurchaseCreditsDialogProps) {
   const [selectedPackage, setSelectedPackage] = useState<string | null>(null);
+  const [bypassCode, setBypassCode] = useState("");
 
   const handlePurchase = () => {
     if (!selectedPackage) return;
     onPurchase(selectedPackage);
   };
 
+  const handleBypassPurchase = () => {
+    if (!selectedPackage || !bypassCode.trim()) return;
+    onBypassPurchase(selectedPackage, bypassCode.trim());
+  };
+
+  const isLoading = purchasing || bypassPurchasing;
+
   return (
     <Dialog open={isOpen} onOpenChange={(open) => {
       if (!open) {
         onClose();
         setSelectedPackage(null);
+        setBypassCode("");
       }
     }}>
       <DialogContent className="sm:max-w-4xl p-0 gap-0">
@@ -171,10 +192,13 @@ function PurchaseCreditsDialog({ isOpen, onClose, onPurchase, purchasing }: Purc
                   key={pkg.type}
                   type="button"
                   onClick={() => setSelectedPackage(pkg.type)}
+                  disabled={isLoading}
+                  data-testid={`ai-credits-package-${pkg.type}-btn`}
                   className={cn(
                     "group relative flex flex-col rounded-2xl border-2 p-5 text-left min-h-[320px]",
                     "transition-all duration-300",
                     "hover:-translate-y-2 hover:shadow-2xl cursor-pointer",
+                    "disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0",
                     isSelected
                       ? pkg.best
                         ? "border-orange-500 bg-orange-500/5 shadow-xl shadow-orange-500/20"
@@ -258,6 +282,47 @@ function PurchaseCreditsDialog({ isOpen, onClose, onPurchase, purchasing }: Purc
             })}
           </div>
 
+          {/* Bypass code section */}
+          <div className="mt-6 p-4 rounded-xl border border-border/60 bg-surface-light/30">
+            <div className="flex items-center gap-2 mb-3">
+              <Key className="h-4 w-4 text-muted-foreground" />
+              <Label htmlFor="bypass-code" className="text-sm font-medium text-muted-foreground">
+                Kod Early Access (opcjonalnie)
+              </Label>
+            </div>
+            <div className="flex gap-3">
+              <Input
+                id="bypass-code"
+                type="password"
+                placeholder="Wpisz kod..."
+                value={bypassCode}
+                onChange={(e) => setBypassCode(e.target.value)}
+                disabled={isLoading}
+                className="flex-1 bg-surface border-border/60"
+                data-testid="ai-credits-bypass-code-input"
+              />
+              <Button
+                variant="outline"
+                onClick={handleBypassPurchase}
+                disabled={!selectedPackage || !bypassCode.trim() || isLoading}
+                className="gap-2 whitespace-nowrap"
+                data-testid="ai-credits-bypass-activate-btn"
+              >
+                {bypassPurchasing ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <>
+                    <Key className="h-4 w-4" />
+                    Aktywuj kodem
+                  </>
+                )}
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground mt-2">
+              Masz kod Early Access? Wpisz go powyżej, aby aktywować kredyty bez płatności.
+            </p>
+          </div>
+
           {/* Info text */}
           <p className="text-center text-sm text-muted-foreground mt-6">
             Płatność przez bezpieczny system Stripe. Kredyty zostaną dodane natychmiast.
@@ -266,12 +331,13 @@ function PurchaseCreditsDialog({ isOpen, onClose, onPurchase, purchasing }: Purc
 
         {/* Footer */}
         <div className="flex justify-end gap-3 p-6 pt-4 border-t border-border/60">
-          <Button variant="outline" onClick={onClose}>
+          <Button variant="outline" onClick={onClose} disabled={isLoading}>
             Anuluj
           </Button>
           <Button
             onClick={handlePurchase}
-            disabled={!selectedPackage || purchasing}
+            disabled={!selectedPackage || isLoading}
+            data-testid="ai-credits-purchase-stripe-btn"
             className={cn(
               "gap-2 min-w-[140px]",
               selectedPackage === "large"
@@ -283,7 +349,7 @@ function PurchaseCreditsDialog({ isOpen, onClose, onPurchase, purchasing }: Purc
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
               <>
-                Kup teraz
+                Kup przez Stripe
                 <ArrowRight className="h-4 w-4" />
               </>
             )}
@@ -373,12 +439,46 @@ export function AICreditsPanel({ compact = false }: AICreditsReadonlyPanelProps)
     },
   });
 
+  // Mutacja bypass dla Early Access
+  const [addCreditsWithCode, { loading: bypassPurchasing }] = useMutation<{
+    addCreditsWithCode: {
+      success: boolean;
+      message?: string;
+      creditsAdded?: number;
+    };
+  }>(ADD_CREDITS_WITH_CODE, {
+    onCompleted: (data) => {
+      if (data.addCreditsWithCode.success) {
+        toast.success(data.addCreditsWithCode.message || `Dodano ${data.addCreditsWithCode.creditsAdded} kredytów!`);
+        setIsPurchaseDialogOpen(false);
+        triggerCreditsRefresh(); // Odśwież widget i panel
+        refetch(); // Odśwież dane lokalne
+      } else {
+        toast.error(data.addCreditsWithCode.message || "Błąd podczas aktywacji");
+      }
+    },
+    onError: (error) => {
+      toast.error(`Błąd: ${error.message}`);
+    },
+  });
+
   const handlePurchase = (packageType: string) => {
     if (!organizationId) return;
     purchasePackage({
       variables: {
         organizationId,
         packageType,
+      },
+    });
+  };
+
+  const handleBypassPurchase = (packageType: string, bypassCode: string) => {
+    if (!organizationId) return;
+    addCreditsWithCode({
+      variables: {
+        organizationId,
+        packageType,
+        bypassCode,
       },
     });
   };
@@ -548,7 +648,9 @@ export function AICreditsPanel({ compact = false }: AICreditsReadonlyPanelProps)
           isOpen={isPurchaseDialogOpen}
           onClose={() => setIsPurchaseDialogOpen(false)}
           onPurchase={handlePurchase}
+          onBypassPurchase={handleBypassPurchase}
           purchasing={purchasing}
+          bypassPurchasing={bypassPurchasing}
         />
       </>
     );

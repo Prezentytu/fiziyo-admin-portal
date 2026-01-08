@@ -55,3 +55,34 @@ export const UPDATE_RESOURCE_ADDON = gql`
     }
   }
 `;
+
+// ============================================
+// Bypass mutations (Early Access - bez Stripe)
+// ============================================
+
+/**
+ * Dodanie kredytów AI z kodem Early Access (bypass Stripe)
+ */
+export const ADD_CREDITS_WITH_CODE = gql`
+  mutation AddCreditsWithCode($organizationId: String!, $packageType: String!, $bypassCode: String!) {
+    addCreditsWithCode(organizationId: $organizationId, packageType: $packageType, bypassCode: $bypassCode) {
+      success
+      message
+      creditsAdded
+    }
+  }
+`;
+
+/**
+ * Dodanie addonu zasobów z kodem Early Access (bypass Stripe)
+ */
+export const ADD_RESOURCE_ADDON_WITH_CODE = gql`
+  mutation AddResourceAddonWithCode($organizationId: String!, $addonType: String!, $quantity: Int!, $bypassCode: String!) {
+    addResourceAddonWithCode(organizationId: $organizationId, addonType: $addonType, quantity: $quantity, bypassCode: $bypassCode) {
+      success
+      message
+      newLimit
+      monthlyAddedCost
+    }
+  }
+`;

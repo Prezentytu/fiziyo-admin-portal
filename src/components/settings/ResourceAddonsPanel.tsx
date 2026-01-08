@@ -11,6 +11,7 @@ import {
   TrendingUp,
   Loader2,
   ChevronRight,
+  Key,
 } from "lucide-react";
 import { useOrganization } from "@/contexts/OrganizationContext";
 import { toast } from "sonner";
@@ -29,6 +30,16 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import {
   GET_RESOURCE_ADDONS_STATUS,
@@ -37,7 +48,9 @@ import {
 import {
   PURCHASE_RESOURCE_ADDON,
   CANCEL_RESOURCE_ADDON,
+  ADD_RESOURCE_ADDON_WITH_CODE,
 } from "@/graphql/mutations/aiCredits.mutations";
+import { triggerCreditsRefresh } from "./AICreditsPanel";
 
 interface ResourceAddonsStatus {
   additionalPatients: number;
@@ -103,6 +116,8 @@ export function ResourceAddonsPanel({ compact = false }: ResourceAddonsPanelProp
   const { currentOrganization } = useOrganization();
   const organizationId = currentOrganization?.organizationId;
   const [cancelDialog, setCancelDialog] = useState<{ open: boolean; type: string; label: string } | null>(null);
+  const [bypassDialog, setBypassDialog] = useState<{ open: boolean; type: string; label: string } | null>(null);
+  const [bypassCode, setBypassCode] = useState("");
 
   const { data: statusData, loading: statusLoading, refetch, error: statusError } = useQuery<{
     resourceAddonsStatus: ResourceAddonsStatus;
@@ -158,9 +173,47 @@ export function ResourceAddonsPanel({ compact = false }: ResourceAddonsPanelProp
     },
   });
 
+  // Mutacja bypass dla Early Access
+  interface BypassAddonResponse {
+    addResourceAddonWithCode: {
+      success: boolean;
+      message: string;
+      newLimit: number;
+    };
+  }
+
+  const [addAddonWithCode, { loading: bypassPurchasing }] = useMutation<BypassAddonResponse>(ADD_RESOURCE_ADDON_WITH_CODE, {
+    onCompleted: (data) => {
+      if (data.addResourceAddonWithCode.success) {
+        toast.success(data.addResourceAddonWithCode.message);
+        refetch();
+        triggerCreditsRefresh(); // Odśwież widget kredytów
+        setBypassDialog(null);
+        setBypassCode("");
+      } else {
+        toast.error(data.addResourceAddonWithCode.message);
+      }
+    },
+    onError: (error) => {
+      toast.error(`Błąd: ${error.message}`);
+    },
+  });
+
   const handlePurchase = (addonType: string) => {
     if (!organizationId) return;
     purchaseAddon({ variables: { organizationId, addonType, quantity: 1 } });
+  };
+
+  const handleBypassPurchase = () => {
+    if (!organizationId || !bypassDialog || !bypassCode.trim()) return;
+    addAddonWithCode({
+      variables: {
+        organizationId,
+        addonType: bypassDialog.type,
+        quantity: 1,
+        bypassCode: bypassCode.trim(),
+      },
+    });
   };
 
   const handleCancel = (addonType: string) => {
@@ -284,11 +337,24 @@ export function ResourceAddonsPanel({ compact = false }: ResourceAddonsPanelProp
                         <Minus className="h-4 w-4" />
                       </Button>
                     )}
+                    {/* Bypass button */}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-9 w-9 hover:bg-cyan-500/10"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setBypassDialog({ open: true, type: config.type, label: config.label });
+                      }}
+                      title="Aktywuj kodem Early Access"
+                    >
+                      <Key className="h-4 w-4 text-cyan-500" />
+                    </Button>
                     <div className={cn(
                       "flex h-9 w-9 items-center justify-center rounded-lg",
                       "bg-cyan-500/20 text-cyan-500"
                     )}>
-                      {purchasing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+                      {purchasing || bypassPurchasing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
                     </div>
                   </div>
 
@@ -398,7 +464,7 @@ export function ResourceAddonsPanel({ compact = false }: ResourceAddonsPanelProp
                     size="sm"
                     className="flex-1"
                     onClick={() => handlePurchase(config.type)}
-                    disabled={purchasing}
+                    disabled={purchasing || bypassPurchasing}
                   >
                     <Plus className="h-3 w-3 mr-1" />
                     Więcej
@@ -413,15 +479,28 @@ export function ResourceAddonsPanel({ compact = false }: ResourceAddonsPanelProp
                   </Button>
                 </div>
               ) : (
-                <Button
-                  className="w-full bg-gradient-to-r from-cyan-500 to-blue-600"
-                  size="sm"
-                  onClick={() => handlePurchase(config.type)}
-                  disabled={purchasing}
-                >
-                  {purchasing ? <Loader2 className="h-3 w-3 animate-spin" /> : <Plus className="h-3 w-3 mr-1" />}
-                  Dodaj
-                </Button>
+                <div className="flex flex-col gap-2">
+                  <Button
+                    className="w-full bg-gradient-to-r from-cyan-500 to-blue-600"
+                    size="sm"
+                    onClick={() => handlePurchase(config.type)}
+                    disabled={purchasing || bypassPurchasing}
+                  >
+                    {purchasing ? <Loader2 className="h-3 w-3 animate-spin" /> : <Plus className="h-3 w-3 mr-1" />}
+                    Dodaj (Stripe)
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full gap-1"
+                    onClick={() => setBypassDialog({ open: true, type: config.type, label: config.label })}
+                    disabled={purchasing || bypassPurchasing}
+                    data-testid={`addon-${config.type}-bypass-btn`}
+                  >
+                    <Key className="h-3 w-3" />
+                    Aktywuj kodem
+                  </Button>
+                </div>
               )}
             </div>
           );
@@ -449,6 +528,67 @@ export function ResourceAddonsPanel({ compact = false }: ResourceAddonsPanelProp
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Bypass Dialog - Early Access */}
+      <Dialog open={bypassDialog?.open} onOpenChange={(open) => {
+        if (!open) {
+          setBypassDialog(null);
+          setBypassCode("");
+        }
+      }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Key className="h-5 w-5 text-cyan-500" />
+              Aktywuj kodem Early Access
+            </DialogTitle>
+            <DialogDescription>
+              Dodaj rozszerzenie <strong>{bypassDialog?.label}</strong> używając kodu Early Access.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="addon-bypass-code">Kod aktywacyjny</Label>
+              <Input
+                id="addon-bypass-code"
+                type="password"
+                placeholder="Wpisz kod..."
+                value={bypassCode}
+                onChange={(e) => setBypassCode(e.target.value)}
+                disabled={bypassPurchasing}
+                data-testid="addon-bypass-code-input"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setBypassDialog(null);
+                setBypassCode("");
+              }}
+              disabled={bypassPurchasing}
+            >
+              Anuluj
+            </Button>
+            <Button
+              onClick={handleBypassPurchase}
+              disabled={!bypassCode.trim() || bypassPurchasing}
+              className="gap-2 bg-gradient-to-r from-cyan-500 to-blue-600"
+              data-testid="addon-bypass-activate-btn"
+            >
+              {bypassPurchasing ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <>
+                  <Key className="h-4 w-4" />
+                  Aktywuj
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
