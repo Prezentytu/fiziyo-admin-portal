@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -15,15 +16,38 @@ import {
   PanelLeftClose,
   PanelLeft,
   FileUp,
+  LucideIcon,
 } from "lucide-react";
 import { useClerk } from "@clerk/nextjs";
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
 import { OrganizationSwitcher } from "./OrganizationSwitcher";
 import { AICreditsWidget } from "./AICreditsWidget";
 import { Logo } from "@/components/shared/Logo";
+import { useRoleAccess } from "@/hooks/useRoleAccess";
 
-// Navigation structure with grouping - reorganized per plan
-const navigationGroups = [
+// ========================================
+// Types
+// ========================================
+
+interface NavigationItem {
+  name: string;
+  href: string;
+  icon: LucideIcon;
+  testId: string;
+}
+
+interface NavigationGroup {
+  label: string;
+  items: NavigationItem[];
+  /** If true, this group is only visible to owners and admins */
+  adminOnly?: boolean;
+}
+
+// ========================================
+// Navigation Configuration
+// ========================================
+
+const navigationGroups: NavigationGroup[] = [
   {
     label: "Główne",
     items: [
@@ -36,6 +60,7 @@ const navigationGroups = [
   },
   {
     label: "Organizacja",
+    adminOnly: true, // Only visible to owners and admins
     items: [
       { name: "Zespół", href: "/organization", icon: Building2, testId: "nav-link-organization" },
       { name: "Rozliczenia", href: "/billing", icon: CreditCard, testId: "nav-link-billing" },
@@ -52,11 +77,23 @@ interface SidebarProps {
 export function Sidebar({ isCollapsed, onToggleCollapse }: SidebarProps) {
   const pathname = usePathname();
   const { signOut } = useClerk();
+  const { canManageOrganization } = useRoleAccess();
 
   const isActive = (href: string) => {
     if (href === "/") return pathname === "/";
     return pathname.startsWith(href);
   };
+
+  // Filter navigation groups based on user role
+  const filteredNavigationGroups = useMemo(() => {
+    return navigationGroups.filter((group) => {
+      // If group requires admin access, check if user has permission
+      if (group.adminOnly) {
+        return canManageOrganization;
+      }
+      return true;
+    });
+  }, [canManageOrganization]);
 
   return (
     <TooltipProvider delayDuration={0}>
@@ -112,7 +149,7 @@ export function Sidebar({ isCollapsed, onToggleCollapse }: SidebarProps) {
 
         {/* Navigation groups */}
         <nav className="flex-1 overflow-y-auto py-4">
-          {navigationGroups.map((group, groupIndex) => (
+          {filteredNavigationGroups.map((group, groupIndex) => (
             <div key={group.label} className={cn(groupIndex > 0 && "mt-6")}>
               {/* Group label */}
               {!isCollapsed && (

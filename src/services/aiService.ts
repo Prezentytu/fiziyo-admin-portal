@@ -157,7 +157,7 @@ class AIService {
   // ============================================
 
   /**
-   * Asystent notatek klinicznych
+   * Asystent notatek
    * @param currentNote - aktualna treść notatki
    * @param action - akcja do wykonania: expand, summarize, suggest, format
    * @param patientContext - opcjonalny kontekst pacjenta

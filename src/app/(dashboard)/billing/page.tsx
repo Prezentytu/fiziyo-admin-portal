@@ -3,6 +3,7 @@
 import { useQuery } from "@apollo/client/react";
 
 import { LoadingState } from "@/components/shared/LoadingState";
+import { AccessGuard } from "@/components/shared/AccessGuard";
 import { SubscriptionCard } from "@/components/organization/SubscriptionCard";
 import { AICreditsPanel } from "@/components/settings/AICreditsPanel";
 import { ResourceAddonsPanel } from "@/components/settings/ResourceAddonsPanel";
@@ -78,40 +79,42 @@ export default function BillingPage() {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col gap-1">
-        <h1 className="text-2xl font-bold text-foreground">Rozliczenia</h1>
-        <p className="text-sm text-muted-foreground">
-          Zarządzaj planem subskrypcji, kredytami AI i dodatkowymi zasobami
-        </p>
-      </div>
-
-      {/* Main Grid - 12 columns, 7:5 ratio */}
-      <div className="grid gap-4 lg:grid-cols-12">
-        {/* Left Column: Subscription Plan (col-span-7) */}
-        <div className="lg:col-span-7">
-          {organization && (
-            <SubscriptionCard
-              organizationId={organization.id}
-              subscriptionPlan={planInfo?.currentPlan || organization.subscriptionPlan}
-              expiresAt={planInfo?.expiresAt || organization.subscriptionExpiresAt}
-              limits={planInfo?.limits}
-              currentUsage={planInfo?.currentUsage}
-              onUpgradeSuccess={handleRefresh}
-            />
-          )}
+    <AccessGuard requiredAccess="admin" fallbackUrl="/">
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex flex-col gap-1">
+          <h1 className="text-2xl font-bold text-foreground">Rozliczenia</h1>
+          <p className="text-sm text-muted-foreground">
+            Zarządzaj planem subskrypcji, kredytami AI i dodatkowymi zasobami
+          </p>
         </div>
 
-        {/* Right Column: AI Credits + Resource Addons (col-span-5) */}
-        <div className="lg:col-span-5 space-y-4">
-          {/* AI Credits - compact */}
-          <AICreditsPanel compact />
+        {/* Main Grid - 12 columns, 7:5 ratio */}
+        <div className="grid gap-4 lg:grid-cols-12">
+          {/* Left Column: Subscription Plan (col-span-7) */}
+          <div className="lg:col-span-7">
+            {organization && (
+              <SubscriptionCard
+                organizationId={organization.id}
+                subscriptionPlan={planInfo?.currentPlan || organization.subscriptionPlan}
+                expiresAt={planInfo?.expiresAt || organization.subscriptionExpiresAt}
+                limits={planInfo?.limits}
+                currentUsage={planInfo?.currentUsage}
+                onUpgradeSuccess={handleRefresh}
+              />
+            )}
+          </div>
 
-          {/* Resource Addons - compact, NOT collapsible */}
-          <ResourceAddonsPanel compact />
+          {/* Right Column: AI Credits + Resource Addons (col-span-5) */}
+          <div className="lg:col-span-5 space-y-4">
+            {/* AI Credits - compact */}
+            <AICreditsPanel compact />
+
+            {/* Resource Addons - compact, NOT collapsible */}
+            <ResourceAddonsPanel compact />
+          </div>
         </div>
       </div>
-    </div>
+    </AccessGuard>
   );
 }

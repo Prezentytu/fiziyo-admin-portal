@@ -18,7 +18,7 @@ interface NoteReviewCardProps {
 }
 
 /**
- * Karta notatki klinicznej do review - uproszczona
+ * Karta notatki do review - uproszczona
  * Przyciski z tekstem dla lepszej czytelności
  */
 export function NoteReviewCard({

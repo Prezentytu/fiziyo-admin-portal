@@ -16,11 +16,13 @@ import { SettingsTab } from "@/components/organization/SettingsTab";
 import { GET_USER_BY_CLERK_ID_QUERY, GET_USER_ORGANIZATIONS_QUERY } from "@/graphql/queries/users.queries";
 import { GET_ORGANIZATION_BY_ID_QUERY } from "@/graphql/queries/organizations.queries";
 import { useOrganization } from "@/contexts/OrganizationContext";
+import { useRoleAccess } from "@/hooks/useRoleAccess";
 import type { UserByClerkIdResponse, UserOrganizationsResponse, OrganizationByIdResponse } from "@/types/apollo";
 
 export default function SettingsPage() {
   const { user: clerkUser } = useUser();
   const { currentOrganization } = useOrganization();
+  const { canManageOrganization } = useRoleAccess();
   const organizationId = currentOrganization?.organizationId;
 
   // Get user data
@@ -110,10 +112,13 @@ export default function SettingsPage() {
               <User className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">Mój profil</span>
             </TabsTrigger>
-            <TabsTrigger value="organization" className="flex items-center gap-2 text-xs sm:text-sm" data-testid="settings-tab-organization">
-              <Settings className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Profil firmy</span>
-            </TabsTrigger>
+            {/* Only show "Profil firmy" tab for owners and admins */}
+            {canManageOrganization && (
+              <TabsTrigger value="organization" className="flex items-center gap-2 text-xs sm:text-sm" data-testid="settings-tab-organization">
+                <Settings className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Profil firmy</span>
+              </TabsTrigger>
+            )}
             <TabsTrigger value="organizations" className="flex items-center gap-2 text-xs sm:text-sm" data-testid="settings-tab-organizations">
               <Building2 className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">Organizacje</span>
@@ -130,28 +135,31 @@ export default function SettingsPage() {
           <ProfileForm user={userProfile} clerkId={clerkUser?.id || ""} onSuccess={() => refetchUser()} />
         </TabsContent>
 
-        <TabsContent value="organization" className="mt-4">
-          {orgLoading ? (
-            <LoadingState type="text" count={2} />
-          ) : organization ? (
-            <SettingsTab
-              organization={organization}
-              currentUserRole={currentUserRole}
-              isLoading={orgLoading}
-              onRefresh={() => refetchOrg()}
-            />
-          ) : (
-            <Card className="border-border/60">
-              <CardContent className="py-12">
-                <EmptyState
-                  icon={Building2}
-                  title="Brak aktywnej organizacji"
-                  description="Wybierz organizację, aby zarządzać jej ustawieniami"
-                />
-              </CardContent>
-            </Card>
-          )}
-        </TabsContent>
+        {/* Only render organization settings tab content for owners and admins */}
+        {canManageOrganization && (
+          <TabsContent value="organization" className="mt-4">
+            {orgLoading ? (
+              <LoadingState type="text" count={2} />
+            ) : organization ? (
+              <SettingsTab
+                organization={organization}
+                currentUserRole={currentUserRole}
+                isLoading={orgLoading}
+                onRefresh={() => refetchOrg()}
+              />
+            ) : (
+              <Card className="border-border/60">
+                <CardContent className="py-12">
+                  <EmptyState
+                    icon={Building2}
+                    title="Brak aktywnej organizacji"
+                    description="Wybierz organizację, aby zarządzać jej ustawieniami"
+                  />
+                </CardContent>
+              </Card>
+            )}
+          </TabsContent>
+        )}
 
         <TabsContent value="organizations" className="mt-4">
           {orgsLoading ? (

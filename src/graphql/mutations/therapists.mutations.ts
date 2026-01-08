@@ -237,7 +237,7 @@ export const UPDATE_TREATMENT_CONTEXT_MUTATION = gql`
 
 /**
  * Mutacja do aktualizacji notatek przy pacjencie
- * Pozwala na dodawanie/edycję notatek klinicznych
+ * Pozwala na dodawanie/edycję notatek
  */
 export const UPDATE_PATIENT_NOTES_MUTATION = gql`
   mutation UpdatePatientNotes(

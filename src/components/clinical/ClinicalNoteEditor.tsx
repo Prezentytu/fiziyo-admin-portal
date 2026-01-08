@@ -574,7 +574,7 @@ export function ClinicalNoteEditor({
             <div className="text-center mb-4">
               <h3 className="text-lg font-semibold mb-1">Rozpoznanie</h3>
               <p className="text-sm text-muted-foreground">
-                Kody ICD-10, ICF i rozumowanie kliniczne
+                Kody ICD-10, ICF i rozumowanie
               </p>
             </div>
             <DiagnosisSectionForm

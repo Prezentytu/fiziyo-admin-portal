@@ -294,7 +294,7 @@ export function DiagnosisSectionForm({
         />
       </div>
 
-      {/* Rozumowanie kliniczne */}
+      {/* Rozumowanie */}
       <div className="space-y-2">
         <Label htmlFor="clinicalReasoning">Rozumowanie i dodatkowe uwagi</Label>
         <Textarea

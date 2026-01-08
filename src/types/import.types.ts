@@ -16,7 +16,7 @@ export interface DocumentAnalysisResult {
   /** Wyekstrahowane zestawy ćwiczeń */
   exerciseSets: ExtractedExerciseSet[];
 
-  /** Wyekstrahowane notatki kliniczne */
+  /** Wyekstrahowane notatki */
   clinicalNotes: ExtractedClinicalNote[];
 
   /** Sugestie dopasowania do istniejących ćwiczeń */
@@ -75,7 +75,7 @@ export interface ExtractedExerciseSet {
 }
 
 /**
- * Notatka kliniczna wyekstrahowana
+ * Notatka wyekstrahowana
  */
 export interface ExtractedClinicalNote {
   tempId: string;
@@ -241,6 +241,3 @@ export interface ImportState {
   error: string | null;
   importResult: DocumentImportResult | null;
 }
-
-
-

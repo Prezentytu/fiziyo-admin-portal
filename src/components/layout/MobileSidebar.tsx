@@ -1,16 +1,39 @@
 'use client';
 
+import { useMemo } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { LayoutDashboard, Dumbbell, FolderKanban, Users, Building2, Settings, LogOut } from 'lucide-react';
+import { LayoutDashboard, Dumbbell, FolderKanban, Users, Building2, CreditCard, Settings, LogOut, LucideIcon, FileUp } from 'lucide-react';
 import { useClerk } from '@clerk/nextjs';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { OrganizationSwitcher } from './OrganizationSwitcher';
 import { Logo } from '@/components/shared/Logo';
+import { useRoleAccess } from '@/hooks/useRoleAccess';
 
-// Navigation structure with grouping
-const navigationGroups = [
+// ========================================
+// Types
+// ========================================
+
+interface NavigationItem {
+  name: string;
+  href: string;
+  icon: LucideIcon;
+  testId: string;
+}
+
+interface NavigationGroup {
+  label: string;
+  items: NavigationItem[];
+  /** If true, this group is only visible to owners and admins */
+  adminOnly?: boolean;
+}
+
+// ========================================
+// Navigation Configuration
+// ========================================
+
+const navigationGroups: NavigationGroup[] = [
   {
     label: 'Główne',
     items: [
@@ -18,12 +41,15 @@ const navigationGroups = [
       { name: 'Pacjenci', href: '/patients', icon: Users, testId: 'nav-mobile-link-patients' },
       { name: 'Zestawy', href: '/exercise-sets', icon: FolderKanban, testId: 'nav-mobile-link-exercise-sets' },
       { name: 'Ćwiczenia', href: '/exercises', icon: Dumbbell, testId: 'nav-mobile-link-exercises' },
+      { name: 'Import AI', href: '/import', icon: FileUp, testId: 'nav-mobile-link-import' },
     ],
   },
   {
-    label: 'Zarządzanie',
+    label: 'Organizacja',
+    adminOnly: true, // Only visible to owners and admins
     items: [
-      { name: 'Organizacja', href: '/organization', icon: Building2, testId: 'nav-mobile-link-organization' },
+      { name: 'Zespół', href: '/organization', icon: Building2, testId: 'nav-mobile-link-organization' },
+      { name: 'Rozliczenia', href: '/billing', icon: CreditCard, testId: 'nav-mobile-link-billing' },
       { name: 'Ustawienia', href: '/settings', icon: Settings, testId: 'nav-mobile-link-settings' },
     ],
   },
@@ -37,11 +63,23 @@ interface MobileSidebarProps {
 export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
   const pathname = usePathname();
   const { signOut } = useClerk();
+  const { canManageOrganization } = useRoleAccess();
 
   const isActive = (href: string) => {
     if (href === '/') return pathname === '/';
     return pathname.startsWith(href);
   };
+
+  // Filter navigation groups based on user role
+  const filteredNavigationGroups = useMemo(() => {
+    return navigationGroups.filter((group) => {
+      // If group requires admin access, check if user has permission
+      if (group.adminOnly) {
+        return canManageOrganization;
+      }
+      return true;
+    });
+  }, [canManageOrganization]);
 
   const handleLinkClick = () => {
     onClose();
@@ -67,7 +105,7 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
 
         {/* Navigation */}
         <nav className="flex-1 overflow-y-auto py-4">
-          {navigationGroups.map((group, groupIndex) => (
+          {filteredNavigationGroups.map((group, groupIndex) => (
             <div key={group.label} className={cn(groupIndex > 0 && 'mt-6')}>
               {/* Group label */}
               <p className="px-4 mb-2 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">

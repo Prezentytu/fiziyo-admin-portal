@@ -17,7 +17,7 @@ const steps = [
 const tips = [
   'AI przeszukuje Twoją bazę ćwiczeń, żeby znaleźć podobne...',
   'Analizuję parametry ćwiczeń: serie, powtórzenia, czas...',
-  'Szukam zestawów ćwiczeń i notatek klinicznych...',
+  'Szukam zestawów ćwiczeń i notatek...',
   'Rozpoznaję nazwy ćwiczeń i dopasowuję do Twojej bazy...',
   'Wyciągam informacje o pacjencie i dacie dokumentu...',
 ];

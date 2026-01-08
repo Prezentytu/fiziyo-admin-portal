@@ -18,6 +18,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LoadingState } from "@/components/shared/LoadingState";
 import { EmptyState } from "@/components/shared/EmptyState";
+import { AccessGuard } from "@/components/shared/AccessGuard";
 import {
   InviteMemberDialog,
   ClinicDialog,
@@ -215,6 +216,7 @@ export default function OrganizationPage() {
   }
 
   return (
+    <AccessGuard requiredAccess="admin" fallbackUrl="/">
     <div className="space-y-6">
       {/* Tabs - simplified without Settings tab */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -422,5 +424,6 @@ export default function OrganizationPage() {
         />
       )}
     </div>
+    </AccessGuard>
   );
 }

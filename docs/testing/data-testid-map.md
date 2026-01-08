@@ -488,7 +488,7 @@ await expect(page.getByTestId(/^exercise-card-/)).toHaveCount(5);
 | `clinical-editor-save-btn` | Zapisz | `ClinicalNoteEditor.tsx` |
 | `clinical-editor-sign-btn` | Podpisz | `ClinicalNoteEditor.tsx` |
 | `clinical-notes-list` | Lista notatek | `ClinicalNotesList.tsx` |
-| `clinical-note-{id}` | Notatka kliniczna | `ClinicalNotesList.tsx` |
+| `clinical-note-{id}` | Notatka | `ClinicalNotesList.tsx` |
 | `clinical-note-{id}-edit-btn` | Edytuj | `ClinicalNotesList.tsx` |
 | `clinical-note-{id}-view-btn` | Podgląd | `ClinicalNotesList.tsx` |
 | `clinical-note-editor` | Kontener edytora | `ClinicalNoteEditor.tsx` |
