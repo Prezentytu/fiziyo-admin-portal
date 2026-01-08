@@ -8,11 +8,8 @@ import {
   ArrowLeft,
   Mail,
   Phone,
-  MapPin,
-  Calendar,
   FolderKanban,
   Activity,
-  User,
   Plus,
   Settings,
   MoreHorizontal,
@@ -22,9 +19,9 @@ import {
   ChevronRight,
   CheckCircle2,
   Send,
-  FileDown,
   QrCode,
   Target,
+  User,
 } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
@@ -54,8 +51,6 @@ import type { PatientAssignment, ExerciseMapping, ExerciseOverride } from '@/com
 import { GET_USER_BY_ID_QUERY, GET_USER_BY_CLERK_ID_QUERY } from '@/graphql/queries/users.queries';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY } from '@/graphql/queries/patientAssignments.queries';
-import { format } from 'date-fns';
-import { pl } from 'date-fns/locale';
 import type { UserByIdResponse } from '@/types/apollo';
 
 // Dialogs
@@ -63,6 +58,8 @@ import { AssignmentWizard } from '@/components/assignment/AssignmentWizard';
 import type { Patient as AssignmentPatient } from '@/components/assignment/types';
 import { EditAssignmentScheduleDialog } from '@/components/patients/EditAssignmentScheduleDialog';
 import { EditExerciseOverrideDialog } from '@/components/patients/EditExerciseOverrideDialog';
+import { AddExerciseToPatientDialog } from '@/components/patients/AddExerciseToPatientDialog';
+import { ExercisePreviewDrawer } from '@/components/patients/ExercisePreviewDrawer';
 import { GeneratePDFDialog } from '@/components/exercise-sets/GeneratePDFDialog';
 import { PatientQRCodeDialog } from '@/components/patients/PatientQRCodeDialog';
 import { BodyMap } from '@/components/patients/bodymap/index';
@@ -83,7 +80,6 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
   const { currentOrganization } = useOrganization();
 
   // Collapsible sections state
-  const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isActivityOpen, setIsActivityOpen] = useState(false);
 
   // Dialog states
@@ -96,6 +92,8 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
     override?: ExerciseOverride;
   } | null>(null);
   const [pdfAssignment, setPdfAssignment] = useState<PatientAssignment | null>(null);
+  const [addExerciseAssignment, setAddExerciseAssignment] = useState<PatientAssignment | null>(null);
+  const [previewExercise, setPreviewExercise] = useState<ExerciseMapping | null>(null);
 
   // Get organization ID from context (changes when user switches organization)
   const organizationId = currentOrganization?.organizationId;
@@ -180,7 +178,11 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
   };
 
   const handleAddExerciseToAssignment = (assignment: PatientAssignment) => {
-    console.log('Add exercise to assignment', assignment.id);
+    setAddExerciseAssignment(assignment);
+  };
+
+  const handlePreviewExercise = (mapping: ExerciseMapping) => {
+    setPreviewExercise(mapping);
   };
 
   const handleGeneratePDF = (assignment: PatientAssignment) => {
@@ -390,6 +392,7 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
                 patientId={id}
                 onEditSchedule={handleEditSchedule}
                 onEditExercise={handleEditExercise}
+                onPreviewExercise={handlePreviewExercise}
                 onAddExercise={handleAddExerciseToAssignment}
                 onGeneratePDF={handleGeneratePDF}
                 onRefresh={() => refetchAssignments()}
@@ -435,89 +438,8 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
         />
       )}
 
-      {/* Collapsible Sections - Profile & Activity */}
+      {/* Collapsible Activity Section */}
       <div className="space-y-3 pt-4 border-t border-border/40">
-        {/* Profile Section */}
-        <Collapsible open={isProfileOpen} onOpenChange={setIsProfileOpen}>
-          <CollapsibleTrigger asChild>
-            <button className="w-full flex items-center justify-between p-4 rounded-xl bg-surface/50 border border-border/40 hover:bg-surface-light transition-colors">
-              <div className="flex items-center gap-3">
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-info/10">
-                  <User className="h-4 w-4 text-info" />
-                </div>
-                <span className="font-medium text-sm">Profil i dane kontaktowe</span>
-              </div>
-              {isProfileOpen ? (
-                <ChevronDown className="h-4 w-4 text-muted-foreground" />
-              ) : (
-                <ChevronRight className="h-4 w-4 text-muted-foreground" />
-              )}
-            </button>
-          </CollapsibleTrigger>
-          <CollapsibleContent className="pt-3">
-            <Card className="border-border/40">
-              <CardContent className="p-4 space-y-3">
-                {patient.email && (
-                  <a
-                    href={`mailto:${patient.email}`}
-                    className="flex items-center gap-3 p-3 rounded-xl hover:bg-surface-light transition-colors"
-                  >
-                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-surface-light">
-                      <Mail className="h-4 w-4 text-muted-foreground" />
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground">Email</p>
-                      <p className="text-sm font-medium">{patient.email}</p>
-                    </div>
-                  </a>
-                )}
-                {patient.contactData?.phone && (
-                  <a
-                    href={`tel:${patient.contactData.phone}`}
-                    className="flex items-center gap-3 p-3 rounded-xl hover:bg-surface-light transition-colors"
-                  >
-                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-surface-light">
-                      <Phone className="h-4 w-4 text-muted-foreground" />
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground">Telefon</p>
-                      <p className="text-sm font-medium">{patient.contactData.phone}</p>
-                    </div>
-                  </a>
-                )}
-                {patient.contactData?.address && (
-                  <div className="flex items-center gap-3 p-3 rounded-xl">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-surface-light">
-                      <MapPin className="h-4 w-4 text-muted-foreground" />
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground">Adres</p>
-                      <p className="text-sm font-medium">{patient.contactData.address}</p>
-                    </div>
-                  </div>
-                )}
-                {patient.creationTime && (
-                  <div className="flex items-center gap-3 p-3 rounded-xl">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-surface-light">
-                      <Calendar className="h-4 w-4 text-muted-foreground" />
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground">Dodano</p>
-                      <p className="text-sm font-medium">
-                        {format(new Date(patient.creationTime), 'd MMMM yyyy', { locale: pl })}
-                      </p>
-                    </div>
-                  </div>
-                )}
-                {!patient.email && !patient.contactData?.phone && !patient.contactData?.address && (
-                  <p className="text-sm text-muted-foreground text-center py-4">Brak danych kontaktowych</p>
-                )}
-              </CardContent>
-            </Card>
-          </CollapsibleContent>
-        </Collapsible>
-
-        {/* Activity Section */}
         <Collapsible open={isActivityOpen} onOpenChange={setIsActivityOpen}>
           <CollapsibleTrigger asChild>
             <button className="w-full flex items-center justify-between p-4 rounded-xl bg-surface/50 border border-border/40 hover:bg-surface-light transition-colors">
@@ -614,6 +536,28 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
           organizationId={organizationId}
         />
       )}
+
+      {/* Add Exercise to Patient Dialog */}
+      {organizationId && (
+        <AddExerciseToPatientDialog
+          open={!!addExerciseAssignment}
+          onOpenChange={(open) => !open && setAddExerciseAssignment(null)}
+          assignment={addExerciseAssignment}
+          patientId={id}
+          organizationId={organizationId}
+          onSuccess={() => {
+            refetchAssignments();
+            setAddExerciseAssignment(null);
+          }}
+        />
+      )}
+
+      {/* Exercise Preview Drawer */}
+      <ExercisePreviewDrawer
+        open={!!previewExercise}
+        onOpenChange={(open) => !open && setPreviewExercise(null)}
+        mapping={previewExercise}
+      />
     </div>
   );
 }
