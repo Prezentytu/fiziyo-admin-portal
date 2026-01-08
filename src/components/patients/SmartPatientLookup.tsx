@@ -27,6 +27,7 @@ import { FIND_USER_BY_EMAIL_QUERY, FIND_USER_BY_PHONE_QUERY } from '@/graphql/qu
 import { ASSIGN_PATIENT_TO_THERAPIST_MUTATION } from '@/graphql/mutations/therapists.mutations';
 import { GET_THERAPIST_PATIENTS_QUERY, GET_ALL_THERAPIST_PATIENTS_QUERY } from '@/graphql/queries/therapists.queries';
 import { GET_CURRENT_ORGANIZATION_PLAN } from '@/graphql/queries/organizations.queries';
+import type { FindUserByEmailData, FindUserByPhoneData } from '@/graphql/types/user.types';
 
 // Typy
 type LookupMode = 'email' | 'phone' | 'manual';
@@ -123,7 +124,7 @@ export function SmartPatientLookup({
     data: emailData,
     loading: emailLoading,
     error: emailError
-  } = useQuery(FIND_USER_BY_EMAIL_QUERY, {
+  } = useQuery<FindUserByEmailData>(FIND_USER_BY_EMAIL_QUERY, {
     variables: { email: debouncedEmail },
     skip: mode !== 'email' || !isValidEmail(debouncedEmail),
     fetchPolicy: 'network-only',
@@ -134,7 +135,7 @@ export function SmartPatientLookup({
     data: phoneData,
     loading: phoneLoading,
     error: phoneError
-  } = useQuery(FIND_USER_BY_PHONE_QUERY, {
+  } = useQuery<FindUserByPhoneData>(FIND_USER_BY_PHONE_QUERY, {
     variables: { phone: `+48${debouncedPhone}` },
     skip: mode !== 'phone' || !isValidPhone(debouncedPhone),
     fetchPolicy: 'network-only',

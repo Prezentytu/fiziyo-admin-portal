@@ -69,3 +69,37 @@ export interface UserOrganizationWithRole {
   role: string; // lowercase string z backendu
   joinedAt: string;
 }
+
+/**
+ * Użytkownik z fragmentu UserLookupFragment (Smart Patient Lookup)
+ */
+export interface UserLookup {
+  id: string;
+  fullname: string;
+  email?: string;
+  image?: string;
+  isShadowUser?: boolean;
+  isActive?: boolean;
+  organizationIds?: string[];
+  personalData?: {
+    firstName?: string;
+    lastName?: string;
+  };
+  contactData?: {
+    phone?: string;
+  };
+}
+
+/**
+ * Odpowiedź z zapytania FindUserByEmail
+ */
+export interface FindUserByEmailData {
+  userByEmail: UserLookup | null;
+}
+
+/**
+ * Odpowiedź z zapytania FindUserByPhone
+ */
+export interface FindUserByPhoneData {
+  userByPhone: UserLookup | null;
+}
