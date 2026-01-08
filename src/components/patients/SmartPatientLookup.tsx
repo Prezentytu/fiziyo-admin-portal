@@ -119,10 +119,10 @@ export function SmartPatientLookup({
   }, [isDirty, onDirtyChange]);
 
   // Query: szukaj po email w całej bazie
-  const { 
-    data: emailData, 
-    loading: emailLoading, 
-    error: emailError 
+  const {
+    data: emailData,
+    loading: emailLoading,
+    error: emailError
   } = useQuery(FIND_USER_BY_EMAIL_QUERY, {
     variables: { email: debouncedEmail },
     skip: mode !== 'email' || !isValidEmail(debouncedEmail),
@@ -130,10 +130,10 @@ export function SmartPatientLookup({
   });
 
   // Query: szukaj po telefonie w całej bazie
-  const { 
-    data: phoneData, 
-    loading: phoneLoading, 
-    error: phoneError 
+  const {
+    data: phoneData,
+    loading: phoneLoading,
+    error: phoneError
   } = useQuery(FIND_USER_BY_PHONE_QUERY, {
     variables: { phone: `+48${debouncedPhone}` },
     skip: mode !== 'phone' || !isValidPhone(debouncedPhone),
@@ -144,13 +144,13 @@ export function SmartPatientLookup({
   useEffect(() => {
     if (mode !== 'email' || !isValidEmail(debouncedEmail)) return;
     if (emailLoading) return;
-    
+
     if (emailError) {
       setState('form');
       setWasAutoExpanded(true);
       return;
     }
-    
+
     const user = emailData?.userByEmail;
     if (user?.id) {
       setFoundUser({
@@ -177,13 +177,13 @@ export function SmartPatientLookup({
   useEffect(() => {
     if (mode !== 'phone' || !isValidPhone(debouncedPhone)) return;
     if (phoneLoading) return;
-    
+
     if (phoneError) {
       setState('form');
       setWasAutoExpanded(true);
       return;
     }
-    
+
     const user = phoneData?.userByPhone;
     if (user?.id) {
       setFoundUser({
@@ -540,7 +540,7 @@ export function SmartPatientLookup({
                   Nie znaleziono pacjenta
                 </p>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  {mode === 'email' 
+                  {mode === 'email'
                     ? `Brak użytkownika z emailem "${emailValue}". Uzupełnij dane, aby utworzyć nowego pacjenta.`
                     : `Brak użytkownika z telefonem "+48 ${phoneValue}". Uzupełnij dane, aby utworzyć nowego pacjenta.`
                   }
