@@ -1,24 +1,42 @@
-import { urlConfig } from "@/graphql/config/urlConfig";
+/**
+ * URL bazowy dla Azure CDN
+ * Konfiguracja przez zmienną środowiskową NEXT_PUBLIC_CDN_URL
+ *
+ * Przykłady:
+ * - Dev: https://fiziyo-images-dev-bwg5chc5cwbvbngb.z03.azurefd.net
+ * - Prod: https://images.fiziyo.com
+ */
+const CDN_BASE_URL = process.env.NEXT_PUBLIC_CDN_URL || "";
 
 /**
- * Konwertuje względny URL mediów na pełny URL
- * Dla URL-ów proxy (/api/exercises/media/...) dodaje base URL backendu
+ * Konwertuje URL mediów na pełny URL CDN
+ *
+ * Backend zawsze zwraca pełny CDN URL dla obrazów.
+ * Ta funkcja obsługuje:
+ * - Pełne URL-e (http/https) - zwraca bez zmian
+ * - Data URL-e (base64) - zwraca bez zmian
+ * - Ścieżki relatywne - dodaje base URL CDN
  */
 export function getMediaUrl(relativeOrFullUrl: string | null | undefined): string | null {
   if (!relativeOrFullUrl) return null;
 
-  // Jeśli to już pełny URL, zwróć bez zmian
+  // Pełny URL - zwróć bez zmian
   if (relativeOrFullUrl.startsWith("http://") || relativeOrFullUrl.startsWith("https://")) {
     return relativeOrFullUrl;
   }
 
-  // Jeśli to URL proxy, dodaj base URL backendu
-  if (relativeOrFullUrl.startsWith("/api/")) {
-    const baseUrl = urlConfig.getBaseUrl().replace(/\/$/, "");
-    return `${baseUrl}${relativeOrFullUrl}`;
+  // Data URL (base64) - zwróć bez zmian
+  if (relativeOrFullUrl.startsWith("data:")) {
+    return relativeOrFullUrl;
   }
 
-  // Inne przypadki - zwróć bez zmian
+  // Ścieżka relatywna - użyj CDN
+  if (CDN_BASE_URL) {
+    const cleanPath = relativeOrFullUrl.replace(/^\//, "");
+    return `${CDN_BASE_URL}/${cleanPath}`;
+  }
+
+  // Brak CDN - zwróć bez zmian
   return relativeOrFullUrl;
 }
 
@@ -29,11 +47,9 @@ export function getMediaUrls(urls: (string | null | undefined)[]): string[] {
   return urls.map((url) => getMediaUrl(url)).filter((url): url is string => url !== null);
 }
 
-
-
-
-
-
-
-
-
+/**
+ * Sprawdza czy CDN jest skonfigurowane
+ */
+export function isCdnConfigured(): boolean {
+  return !!CDN_BASE_URL;
+}
