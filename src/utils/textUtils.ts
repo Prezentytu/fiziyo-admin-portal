@@ -318,3 +318,72 @@ export const getInitials = (
 
   return `${firstInitial}${lastInitial}` || '?';
 };
+
+/**
+ * Typy słów dla polskiej odmiany liczebników
+ */
+export type PluralWord = 'pacjent' | 'ćwiczenie' | 'zestaw' | 'dzień' | 'gabinet' | 'fizjoterapeuta' | 'notatka' | 'terapeuta';
+
+/**
+ * Słownik polskich form odmiany:
+ * [forma pojedyncza (1), forma dla 2-4, forma dla 5+]
+ */
+const PLURAL_FORMS: Record<PluralWord, [string, string, string]> = {
+  pacjent: ['pacjent', 'pacjentów', 'pacjentów'],
+  ćwiczenie: ['ćwiczenie', 'ćwiczenia', 'ćwiczeń'],
+  zestaw: ['zestaw', 'zestawy', 'zestawów'],
+  dzień: ['dzień', 'dni', 'dni'],
+  gabinet: ['gabinet', 'gabinety', 'gabinetów'],
+  fizjoterapeuta: ['fizjoterapeuta', 'fizjoterapeutów', 'fizjoterapeutów'],
+  notatka: ['notatka', 'notatki', 'notatek'],
+  terapeuta: ['terapeuta', 'terapeutów', 'terapeutów'],
+};
+
+/**
+ * Zwraca poprawną polską formę słowa dla danej liczby.
+ *
+ * Polska odmiana liczebników:
+ * - 1 → forma pojedyncza (pacjent, ćwiczenie)
+ * - 2-4, 22-24, 32-34... → forma dla kilku (pacjentów, ćwiczenia)
+ * - 0, 5-21, 25-31... → forma dla wielu (pacjentów, ćwiczeń)
+ *
+ * @param count - liczba
+ * @param word - słowo do odmiany
+ * @param includeCount - czy dołączyć liczbę (domyślnie true)
+ * @returns odmienione słowo z lub bez liczby
+ *
+ * @example
+ * pluralize(1, 'pacjent') // => "1 pacjent"
+ * pluralize(2, 'pacjent') // => "2 pacjentów"
+ * pluralize(5, 'pacjent') // => "5 pacjentów"
+ * pluralize(1, 'ćwiczenie') // => "1 ćwiczenie"
+ * pluralize(3, 'ćwiczenie') // => "3 ćwiczenia"
+ * pluralize(5, 'ćwiczenie') // => "5 ćwiczeń"
+ * pluralize(5, 'ćwiczenie', false) // => "ćwiczeń"
+ */
+export const pluralize = (
+  count: number | null | undefined,
+  word: PluralWord,
+  includeCount: boolean = true
+): string => {
+  const n = count ?? 0;
+  const forms = PLURAL_FORMS[word];
+
+  const lastDigit = Math.abs(n) % 10;
+  const lastTwoDigits = Math.abs(n) % 100;
+
+  let form: string;
+
+  if (n === 1) {
+    // Dokładnie 1 → forma pojedyncza
+    form = forms[0];
+  } else if (lastDigit >= 2 && lastDigit <= 4 && (lastTwoDigits < 12 || lastTwoDigits > 14)) {
+    // 2-4, 22-24, 32-34... (ale nie 12-14)
+    form = forms[1];
+  } else {
+    // 0, 5-21, 25-31...
+    form = forms[2];
+  }
+
+  return includeCount ? `${n} ${form}` : form;
+};

@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Mail, Phone, FolderKanban, Wrench, MoreHorizontal, UserX, Tag, UserPlus, Trash2 } from 'lucide-react';
+import { Mail, Phone, FolderKanban, Wrench, MoreHorizontal, UserX, Tag, UserPlus, Trash2, Settings } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 import { EditContextLabelDialog } from './EditContextLabelDialog';
+import { EditPatientDialog } from './EditPatientDialog';
 import { TherapistBadge } from './TherapistBadge';
 import { useRoleAccess } from '@/hooks/useRoleAccess';
 
@@ -75,6 +76,7 @@ export function PatientExpandableCard({
 }: PatientExpandableCardProps) {
   const router = useRouter();
   const [isEditLabelOpen, setIsEditLabelOpen] = useState(false);
+  const [isEditPatientOpen, setIsEditPatientOpen] = useState(false);
   const { canManageTeam } = useRoleAccess();
 
   // Check if current user is the assigned therapist
@@ -165,11 +167,11 @@ export function PatientExpandableCard({
               </Badge>
             )}
           </div>
-          <div className="flex items-center gap-3 text-xs text-muted-foreground">
+          <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
             {patient.email && (
-              <span className="flex items-center gap-1 truncate max-w-[180px]">
+              <span className="flex items-center gap-1">
                 <Mail className="h-3 w-3 flex-shrink-0" />
-                <span className="truncate">{patient.email}</span>
+                {patient.email}
               </span>
             )}
             {patient.contactData?.phone && (
@@ -299,6 +301,10 @@ export function PatientExpandableCard({
                     <Tag className="mr-2 h-4 w-4" />
                     Edytuj notatkę
                   </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setIsEditPatientOpen(true)}>
+                    <Settings className="mr-2 h-4 w-4" />
+                    Ustawienia pacjenta
+                  </DropdownMenuItem>
                 </>
               )}
 
@@ -341,6 +347,13 @@ export function PatientExpandableCard({
       currentLabel={patient.contextLabel}
       therapistId={therapistId}
       organizationId={organizationId}
+    />
+
+    {/* Edit Patient Dialog */}
+    <EditPatientDialog
+      open={isEditPatientOpen}
+      onOpenChange={setIsEditPatientOpen}
+      patient={patient}
     />
   </>
   );

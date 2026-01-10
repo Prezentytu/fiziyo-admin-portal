@@ -62,6 +62,7 @@ import { AddExerciseToPatientDialog } from '@/components/patients/AddExerciseToP
 import { ExercisePreviewDrawer } from '@/components/patients/ExercisePreviewDrawer';
 import { GeneratePDFDialog } from '@/components/exercise-sets/GeneratePDFDialog';
 import { PatientQRCodeDialog } from '@/components/patients/PatientQRCodeDialog';
+import { EditPatientDialog } from '@/components/patients/EditPatientDialog';
 import { BodyMap } from '@/components/patients/bodymap/index';
 import { FEATURE_FLAGS } from '@/lib/featureFlags';
 
@@ -85,6 +86,7 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
   // Dialog states
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
   const [isQRCodeDialogOpen, setIsQRCodeDialogOpen] = useState(false);
+  const [isEditPatientOpen, setIsEditPatientOpen] = useState(false);
   const [editingScheduleAssignment, setEditingScheduleAssignment] = useState<PatientAssignment | null>(null);
   const [editingExerciseData, setEditingExerciseData] = useState<{
     assignment: PatientAssignment;
@@ -93,7 +95,7 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
   } | null>(null);
   const [pdfAssignment, setPdfAssignment] = useState<PatientAssignment | null>(null);
   const [addExerciseAssignment, setAddExerciseAssignment] = useState<PatientAssignment | null>(null);
-  const [previewExercise, setPreviewExercise] = useState<ExerciseMapping | null>(null);
+  const [previewExercise, setPreviewExercise] = useState<{ mapping: ExerciseMapping; override?: ExerciseOverride } | null>(null);
 
   // Get organization ID from context (changes when user switches organization)
   const organizationId = currentOrganization?.organizationId;
@@ -181,8 +183,8 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
     setAddExerciseAssignment(assignment);
   };
 
-  const handlePreviewExercise = (mapping: ExerciseMapping) => {
-    setPreviewExercise(mapping);
+  const handlePreviewExercise = (mapping: ExerciseMapping, override?: ExerciseOverride) => {
+    setPreviewExercise({ mapping, override });
   };
 
   const handleGeneratePDF = (assignment: PatientAssignment) => {
@@ -214,7 +216,7 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
               <QrCode className="mr-2 h-4 w-4" />
               Pokaż QR kod
             </DropdownMenuItem>
-            <DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setIsEditPatientOpen(true)} data-testid="patient-detail-settings-btn">
               <Settings className="mr-2 h-4 w-4" />
               Ustawienia pacjenta
             </DropdownMenuItem>
@@ -265,10 +267,10 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
             {patient.email && (
               <a
                 href={`mailto:${patient.email}`}
-                className="flex items-center gap-1 hover:text-foreground transition-colors truncate max-w-[200px]"
+                className="flex items-center gap-1 hover:text-foreground transition-colors"
               >
                 <Mail className="h-3.5 w-3.5 shrink-0" />
-                <span className="truncate">{patient.email}</span>
+                {patient.email}
               </a>
             )}
             {patient.contactData?.phone && (
@@ -556,7 +558,15 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
       <ExercisePreviewDrawer
         open={!!previewExercise}
         onOpenChange={(open) => !open && setPreviewExercise(null)}
-        mapping={previewExercise}
+        mapping={previewExercise?.mapping ?? null}
+        override={previewExercise?.override}
+      />
+
+      {/* Edit Patient Dialog */}
+      <EditPatientDialog
+        open={isEditPatientOpen}
+        onOpenChange={setIsEditPatientOpen}
+        patient={patient}
       />
     </div>
   );

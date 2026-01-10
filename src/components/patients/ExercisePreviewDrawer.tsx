@@ -1,6 +1,7 @@
 "use client";
 
-import { Play, Clock, Dumbbell, Info, ArrowLeftRight } from "lucide-react";
+import { useState } from "react";
+import { Play, Clock, Dumbbell, Info, ArrowLeftRight, ChevronLeft, ChevronRight, ImageIcon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -50,11 +51,47 @@ export function ExercisePreviewDrawer({
   override,
   onEdit,
 }: ExercisePreviewDrawerProps) {
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
   if (!mapping) return null;
 
   const exercise = mapping.exercise;
-  const imageUrl = getMediaUrl(exercise?.imageUrl || exercise?.images?.[0]);
   const videoUrl = getMediaUrl(exercise?.videoUrl);
+
+  // Build array of all images (original + custom)
+  const allImages: { url: string; isCustom: boolean }[] = [];
+
+  // Add original image(s)
+  const originalImageUrl = getMediaUrl(exercise?.imageUrl);
+  if (originalImageUrl) {
+    allImages.push({ url: originalImageUrl, isCustom: false });
+  }
+  if (exercise?.images) {
+    for (const img of exercise.images) {
+      const url = getMediaUrl(img);
+      if (url && url !== originalImageUrl) {
+        allImages.push({ url, isCustom: false });
+      }
+    }
+  }
+
+  // Add custom images from override
+  if (override?.customImages) {
+    for (const img of override.customImages) {
+      allImages.push({ url: img, isCustom: true });
+    }
+  }
+
+  const hasMultipleImages = allImages.length > 1;
+  const currentImage = allImages[currentImageIndex];
+
+  const goToPrevious = () => {
+    setCurrentImageIndex((prev) => (prev === 0 ? allImages.length - 1 : prev - 1));
+  };
+
+  const goToNext = () => {
+    setCurrentImageIndex((prev) => (prev === allImages.length - 1 ? 0 : prev + 1));
+  };
 
   // Get effective params (with overrides)
   const effectiveSets = override?.sets ?? mapping.sets ?? exercise?.sets;
@@ -62,12 +99,14 @@ export function ExercisePreviewDrawer({
   const effectiveDuration = override?.duration ?? mapping.duration ?? exercise?.duration;
   const effectiveName = override?.customName ?? mapping.customName ?? exercise?.name;
   const effectiveDescription = override?.customDescription ?? mapping.customDescription ?? exercise?.description;
+  const effectiveSide = override?.exerciseSide ?? exercise?.exerciseSide;
 
   const hasOverride = override && (
     override.sets !== undefined ||
     override.reps !== undefined ||
     override.duration !== undefined ||
-    override.customName
+    override.customName ||
+    override.customImages?.length
   );
 
   return (
@@ -96,28 +135,75 @@ export function ExercisePreviewDrawer({
 
         <div className="max-h-[calc(90vh-180px)] overflow-y-auto">
           <div className="px-6 py-6 space-y-6">
-            {/* Media - Image or Video */}
+            {/* Media - Image Gallery or Video */}
             <div className="relative aspect-video rounded-xl overflow-hidden bg-surface-light">
               {videoUrl ? (
                 <video
                   src={videoUrl}
                   controls
                   className="w-full h-full object-contain"
-                  poster={imageUrl || undefined}
+                  poster={currentImage?.url || undefined}
                 >
                   <track kind="captions" />
                 </video>
-              ) : imageUrl ? (
-                <img
-                  src={imageUrl}
-                  alt={effectiveName || "Ćwiczenie"}
-                  className="w-full h-full object-contain"
-                />
+              ) : currentImage ? (
+                <>
+                  <img
+                    src={currentImage.url}
+                    alt={effectiveName || "Ćwiczenie"}
+                    className="w-full h-full object-contain"
+                  />
+                  {currentImage.isCustom && (
+                    <span className="absolute top-3 left-3 bg-primary text-primary-foreground text-xs font-medium px-2 py-1 rounded-md flex items-center gap-1">
+                      <ImageIcon className="h-3 w-3" />
+                      Dla pacjenta
+                    </span>
+                  )}
+                </>
               ) : (
                 <div className="flex items-center justify-center h-full">
                   <ImagePlaceholder type="exercise" iconClassName="h-16 w-16" />
                 </div>
               )}
+
+              {/* Navigation arrows */}
+              {hasMultipleImages && !videoUrl && (
+                <>
+                  <button
+                    type="button"
+                    onClick={goToPrevious}
+                    className="absolute left-2 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full bg-background/80 backdrop-blur-sm flex items-center justify-center hover:bg-background transition-colors"
+                  >
+                    <ChevronLeft className="h-6 w-6" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={goToNext}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full bg-background/80 backdrop-blur-sm flex items-center justify-center hover:bg-background transition-colors"
+                  >
+                    <ChevronRight className="h-6 w-6" />
+                  </button>
+                </>
+              )}
+
+              {/* Dots indicator */}
+              {hasMultipleImages && !videoUrl && (
+                <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
+                  {allImages.map((img, index) => (
+                    <button
+                      key={index}
+                      type="button"
+                      onClick={() => setCurrentImageIndex(index)}
+                      className={`h-2 rounded-full transition-all ${
+                        index === currentImageIndex
+                          ? 'w-6 bg-primary'
+                          : `w-2 ${img.isCustom ? 'bg-primary/40' : 'bg-white/60'} hover:bg-white/80`
+                      }`}
+                    />
+                  ))}
+                </div>
+              )}
+
               {videoUrl && !open && (
                 <div className="absolute inset-0 flex items-center justify-center bg-black/30">
                   <div className="h-16 w-16 rounded-full bg-white/90 flex items-center justify-center">
@@ -158,12 +244,12 @@ export function ExercisePreviewDrawer({
             </div>
 
             {/* Additional info */}
-            {(translateSide(exercise?.exerciseSide)) && (
+            {(translateSide(effectiveSide)) && (
               <div className="flex items-center gap-3 p-3 rounded-xl bg-surface-light/50 border border-border/40">
                 <ArrowLeftRight className="h-5 w-5 text-muted-foreground shrink-0" />
                 <div>
                   <p className="text-xs text-muted-foreground">Strona wykonania</p>
-                  <p className="text-sm font-medium">{translateSide(exercise?.exerciseSide)}</p>
+                  <p className="text-sm font-medium">{translateSide(effectiveSide)}</p>
                 </div>
               </div>
             )}
