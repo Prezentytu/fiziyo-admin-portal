@@ -199,7 +199,7 @@ function EditExerciseOverrideDialogContent({
   const handleGenerateImage = useCallback(async () => {
     const exerciseName = customName || exercise?.name;
     const exerciseDesc = customDescription || exercise?.description;
-    
+
     if (!exerciseName) {
       toast.error('Brak nazwy ćwiczenia do wygenerowania obrazu');
       return;
@@ -628,7 +628,7 @@ function EditExerciseOverrideDialogContent({
                 <Label className="text-sm">Dodatkowe zdjęcia dla pacjenta</Label>
                 <span className="text-xs text-muted-foreground">{customImages.length} zdjęć</span>
               </div>
-              
+
               {customImages.length > 0 && (
                 <div className="grid grid-cols-3 gap-3">
                   {customImages.map((img, index) => (

@@ -25,6 +25,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
+import { pluralize } from "@/utils/textUtils";
 import {
   UPDATE_CLINIC_MUTATION,
   DELETE_CLINIC_MUTATION,
@@ -141,7 +142,7 @@ export function ClinicCard({
                   {patientsCount !== undefined && (
                     <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                       <Users className="h-3 w-3" />
-                      <span>{patientsCount} pacjentów</span>
+                      <span>{pluralize(patientsCount, 'pacjent')}</span>
                     </div>
                   )}
                 </div>

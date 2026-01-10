@@ -28,7 +28,8 @@ import { toast } from 'sonner';
 import Link from 'next/link';
 
 import { cn } from '@/lib/utils';
-import { translateAssignmentStatus } from '@/utils/statusUtils';
+import { translateAssignmentStatus, type AssignmentStatus } from '@/utils/statusUtils';
+import { pluralize } from '@/utils/textUtils';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -266,8 +267,8 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
 
   // Helper function for status display
   const getStatusInfo = (status?: string) => {
-    const statusValue = status as any;
-    const label = translateAssignmentStatus(statusValue);
+    const safeStatus = (status || 'assigned') as AssignmentStatus;
+    const label = translateAssignmentStatus(safeStatus);
     let variant: 'success' | 'warning' | 'secondary' = 'secondary';
 
     switch (status) {
@@ -411,7 +412,7 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
               <Dumbbell className="h-4 w-4 text-primary" />
               <span className="text-2xl font-bold text-foreground">{exercises.length}</span>
             </div>
-            <p className="text-xs text-muted-foreground mt-1">Ćwiczeń</p>
+            <p className="text-xs text-muted-foreground mt-1">{pluralize(exercises.length, 'ćwiczenie', false)}</p>
           </div>
 
           {/* Patients count */}
@@ -420,7 +421,7 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
               <Users className="h-4 w-4 text-secondary" />
               <span className="text-2xl font-bold text-foreground">{assignments.length}</span>
             </div>
-            <p className="text-xs text-muted-foreground mt-1">Pacjentów</p>
+            <p className="text-xs text-muted-foreground mt-1">{pluralize(assignments.length, 'pacjent', false)}</p>
           </div>
 
           {/* Frequency */}

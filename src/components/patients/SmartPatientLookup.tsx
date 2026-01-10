@@ -25,6 +25,7 @@ import { getAvatarGradient, getInitials } from '@/utils/textUtils';
 
 import { FIND_USER_BY_EMAIL_QUERY, FIND_USER_BY_PHONE_QUERY } from '@/graphql/queries/users.queries';
 import { ASSIGN_PATIENT_TO_THERAPIST_MUTATION } from '@/graphql/mutations/therapists.mutations';
+import { ADD_DIRECT_MEMBER_MUTATION } from '@/graphql/mutations/organizations.mutations';
 import { GET_THERAPIST_PATIENTS_QUERY, GET_ALL_THERAPIST_PATIENTS_QUERY } from '@/graphql/queries/therapists.queries';
 import { GET_CURRENT_ORGANIZATION_PLAN } from '@/graphql/queries/organizations.queries';
 import type { FindUserByEmailData, FindUserByPhoneData } from '@/graphql/types/user.types';
@@ -85,6 +86,13 @@ function useDebounce<T>(value: T, delay: number): T {
   return debouncedValue;
 }
 
+// Typ dla przypisania pacjenta do terapeuty
+interface TherapistPatientAssignment {
+  id: string;
+  patientId: string;
+  status: string;
+}
+
 export function SmartPatientLookup({
   organizationId,
   therapistId,
@@ -119,6 +127,15 @@ export function SmartPatientLookup({
     onDirtyChange?.(isDirty);
   }, [isDirty, onDirtyChange]);
 
+  // Query: pobierz aktualnych pacjentów terapeuty (do walidacji duplikatów)
+  const { data: therapistPatientsData } = useQuery<{ therapistPatients: TherapistPatientAssignment[] }>(
+    GET_ALL_THERAPIST_PATIENTS_QUERY,
+    {
+      variables: { therapistId, organizationId },
+      skip: !therapistId || !organizationId,
+    }
+  );
+
   // Query: szukaj po email w całej bazie
   const {
     data: emailData,
@@ -141,7 +158,7 @@ export function SmartPatientLookup({
     fetchPolicy: 'network-only',
   });
 
-  // Obsługa wyniku email query
+  // Obsługa wyniku email query - synchronizacja stanu z wynikiem Apollo query
   useEffect(() => {
     if (mode !== 'email' || !isValidEmail(debouncedEmail)) return;
     if (emailLoading) return;
@@ -174,7 +191,7 @@ export function SmartPatientLookup({
     }
   }, [emailData, emailLoading, emailError, debouncedEmail, mode]);
 
-  // Obsługa wyniku phone query
+  // Obsługa wyniku phone query - synchronizacja stanu z wynikiem Apollo query
   useEffect(() => {
     if (mode !== 'phone' || !isValidPhone(debouncedPhone)) return;
     if (phoneLoading) return;
@@ -217,30 +234,35 @@ export function SmartPatientLookup({
       { query: GET_ALL_THERAPIST_PATIENTS_QUERY, variables: { therapistId, organizationId } },
       { query: GET_CURRENT_ORGANIZATION_PLAN, variables: { organizationId } },
     ],
+    awaitRefetchQueries: true,
   });
 
-  // Efekt: reset state gdy zmienia się wartość
-  useEffect(() => {
-    if (mode === 'email') {
-      if (!emailValue || !isValidEmail(emailValue)) {
-        setState('idle');
-        setFoundUser(null);
-      } else if (isValidEmail(emailValue)) {
-        setState('searching');
-      }
-    }
-  }, [emailValue, mode]);
+  // Mutacja: dodaj użytkownika do organizacji (gdy pacjent istnieje ale nie jest w tej organizacji)
+  const [addDirectMember, { loading: addMemberLoading }] = useMutation(ADD_DIRECT_MEMBER_MUTATION, {
+    awaitRefetchQueries: true,
+  });
 
-  useEffect(() => {
-    if (mode === 'phone') {
-      if (!phoneValue || !isValidPhone(phoneValue)) {
-        setState('idle');
-        setFoundUser(null);
-      } else if (isValidPhone(phoneValue)) {
-        setState('searching');
-      }
+  // Handler zmiany wartości email
+  const handleEmailChange = useCallback((value: string) => {
+    setEmailValue(value);
+    if (!value || !isValidEmail(value)) {
+      setState('idle');
+      setFoundUser(null);
+    } else {
+      setState('searching');
     }
-  }, [phoneValue, mode]);
+  }, []);
+
+  // Handler zmiany wartości telefonu
+  const handlePhoneChange = useCallback((value: string) => {
+    setPhoneValue(value);
+    if (!value || !isValidPhone(value)) {
+      setState('idle');
+      setFoundUser(null);
+    } else {
+      setState('searching');
+    }
+  }, []);
 
   // Timeout: jeśli szukanie trwa zbyt długo, przejdź do formularza
   useEffect(() => {
@@ -277,11 +299,26 @@ export function SmartPatientLookup({
     setWasAutoExpanded(false); // Manual choice, not auto-expanded
   }, []);
 
+  // Czy użytkownik jest już w organizacji (computed before handler)
+  const isAlreadyInOrg = foundUser?.organizationIds?.includes(organizationId);
+
   // Dodaj istniejącego pacjenta
   const handleAddExistingPatient = useCallback(async () => {
     if (!foundUser) return;
 
     try {
+      // Jeśli pacjent nie jest jeszcze w organizacji, najpierw go dodaj
+      if (!foundUser.organizationIds?.includes(organizationId)) {
+        await addDirectMember({
+          variables: {
+            organizationId,
+            userId: foundUser.id,
+            role: 'patient',
+          },
+        });
+      }
+
+      // Teraz przypisz pacjenta do terapeuty
       await assignPatient({
         variables: {
           patientId: foundUser.id,
@@ -303,12 +340,15 @@ export function SmartPatientLookup({
       });
     } catch (error) {
       console.error('Błąd przy dodawaniu pacjenta:', error);
-      toast.error('Nie udało się dodać pacjenta');
+      // Wyciągnij szczegółowy komunikat z GraphQL error
+      const gqlError = error as { graphQLErrors?: Array<{ message: string }> };
+      const errorMessage = gqlError.graphQLErrors?.[0]?.message || 'Nie udało się dodać pacjenta';
+      toast.error(errorMessage);
     }
-  }, [foundUser, assignPatient, therapistId, organizationId, clinicId, contextLabel, onSuccess]);
+  }, [foundUser, addDirectMember, assignPatient, therapistId, organizationId, clinicId, contextLabel, onSuccess]);
 
   // Loading state
-  const isLoading = externalLoading || assignLoading;
+  const isLoading = externalLoading || assignLoading || addMemberLoading;
 
   // Initials i gradient dla znalezionego użytkownika
   const foundInitials = foundUser
@@ -318,8 +358,11 @@ export function SmartPatientLookup({
     ? getAvatarGradient(foundUser.personalData?.firstName, foundUser.personalData?.lastName)
     : 'linear-gradient(135deg, #6b7280, #4b5563)';
 
-  // Czy użytkownik jest już w organizacji
-  const isAlreadyInOrg = foundUser?.organizationIds?.includes(organizationId);
+  // Sprawdź czy pacjent jest już przypisany do tego terapeuty
+  const existingAssignment = therapistPatientsData?.therapistPatients?.find(
+    (assignment) => assignment.patientId === foundUser?.id
+  );
+  const isAlreadyAssignedToTherapist = !!existingAssignment;
 
   return (
     <div className="space-y-6">
@@ -343,7 +386,7 @@ export function SmartPatientLookup({
                     type="email"
                     placeholder="jan@example.com"
                     value={emailValue}
-                    onChange={(e) => setEmailValue(e.target.value)}
+                    onChange={(e) => handleEmailChange(e.target.value)}
                     className={cn(
                       "h-12 text-base pr-10",
                       "transition-all duration-200",
@@ -385,7 +428,7 @@ export function SmartPatientLookup({
                     ref={phoneInputRef}
                     placeholder="123 456 789"
                     value={phoneValue}
-                    onChange={setPhoneValue}
+                    onChange={handlePhoneChange}
                     className={cn(
                       "h-12 text-base",
                       state === 'found' && "border-primary bg-primary/5"
@@ -451,15 +494,27 @@ export function SmartPatientLookup({
       {/* Found User Card */}
       {state === 'found' && foundUser && (
         <div className={cn(
-          "p-4 rounded-xl border border-primary/30 bg-primary/5",
+          "p-4 rounded-xl border",
+          isAlreadyAssignedToTherapist
+            ? "border-warning/30 bg-warning/5"
+            : "border-primary/30 bg-primary/5",
           "animate-in fade-in slide-in-from-bottom-2 duration-300"
         )} data-testid="patient-lookup-found-card">
           <div className="flex items-center gap-2 mb-4">
-            <UserCheck className="h-4 w-4 text-primary" />
-            <span className="text-sm font-medium text-primary">
-              {isAlreadyInOrg ? 'Pacjent już w organizacji' : 'Znaleziono pacjenta'}
+            <UserCheck className={cn("h-4 w-4", isAlreadyAssignedToTherapist ? "text-warning" : "text-primary")} />
+            <span className={cn("text-sm font-medium", isAlreadyAssignedToTherapist ? "text-warning" : "text-primary")}>
+              {isAlreadyAssignedToTherapist && 'Pacjent jest już na Twojej liście'}
+              {!isAlreadyAssignedToTherapist && isAlreadyInOrg && 'Pacjent już w organizacji'}
+              {!isAlreadyAssignedToTherapist && !isAlreadyInOrg && 'Znaleziono pacjenta w systemie'}
             </span>
           </div>
+          
+          {/* Info dla pacjentów spoza organizacji */}
+          {!isAlreadyAssignedToTherapist && !isAlreadyInOrg && (
+            <p className="text-xs text-muted-foreground mb-3">
+              Ten pacjent ma już konto w FiziYo. Zostanie dodany do Twojej organizacji.
+            </p>
+          )}
 
           <div className="flex items-center gap-4">
             <Avatar className="h-14 w-14 ring-2 ring-primary/20">
@@ -495,36 +550,50 @@ export function SmartPatientLookup({
             </div>
           </div>
 
-          {/* Context Label Input */}
-          <div className="mt-4 pt-4 border-t border-border/50">
-            <label htmlFor="patient-lookup-context" className="text-xs text-muted-foreground mb-1.5 block">
-              Notatka (opcjonalne)
-            </label>
-            <Input
-              id="patient-lookup-context"
-              placeholder="np. Rehabilitacja kolana, Ból pleców..."
-              value={contextLabel}
-              onChange={(e) => setContextLabel(e.target.value)}
-              className="h-9 text-sm"
-              data-testid="patient-lookup-context-input"
-            />
-          </div>
+          {/* Context Label Input - ukryj gdy pacjent jest już przypisany */}
+          {!isAlreadyAssignedToTherapist && (
+            <div className="mt-4 pt-4 border-t border-border/50">
+              <label htmlFor="patient-lookup-context" className="text-xs text-muted-foreground mb-1.5 block">
+                Notatka (opcjonalne)
+              </label>
+              <Input
+                id="patient-lookup-context"
+                placeholder="np. Rehabilitacja kolana, Ból pleców..."
+                value={contextLabel}
+                onChange={(e) => setContextLabel(e.target.value)}
+                className="h-9 text-sm"
+                data-testid="patient-lookup-context-input"
+              />
+            </div>
+          )}
 
           {/* Actions */}
           <div className="mt-4 flex gap-2">
-            <Button
-              onClick={handleAddExistingPatient}
-              disabled={isLoading}
-              className="flex-1 h-11 bg-linear-to-r from-primary to-primary-dark shadow-lg shadow-primary/20"
-              data-testid="patient-lookup-add-existing-btn"
-            >
-              {isLoading ? (
-                <Loader2 className="h-4 w-4 animate-spin mr-2" />
-              ) : (
-                <UserPlus className="h-4 w-4 mr-2" />
-              )}
-              Dodaj do moich pacjentów
-            </Button>
+            {isAlreadyAssignedToTherapist ? (
+              <Button
+                variant="outline"
+                onClick={() => { globalThis.location.href = `/patients/${foundUser.id}`; }}
+                className="flex-1 h-11"
+                data-testid="patient-lookup-go-to-patient-btn"
+              >
+                <UserCheck className="h-4 w-4 mr-2" />
+                Przejdź do profilu pacjenta
+              </Button>
+            ) : (
+              <Button
+                onClick={handleAddExistingPatient}
+                disabled={isLoading}
+                className="flex-1 h-11 bg-linear-to-r from-primary to-primary-dark shadow-lg shadow-primary/20"
+                data-testid="patient-lookup-add-existing-btn"
+              >
+                {isLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                ) : (
+                  <UserPlus className="h-4 w-4 mr-2" />
+                )}
+                Dodaj do moich pacjentów
+              </Button>
+            )}
           </div>
         </div>
       )}

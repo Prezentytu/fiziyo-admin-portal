@@ -330,3 +330,39 @@ export const ACTIVATE_SHADOW_PATIENT_MUTATION = gql`
     }
   }
 `;
+
+/**
+ * Mutacja do aktualizacji danych tymczasowego pacjenta (shadow user)
+ * UWAGA: Edycja emaila dozwolona TYLKO dla shadow userów!
+ * Dla użytkowników z prawdziwym kontem backend zwróci błąd.
+ */
+export const UPDATE_SHADOW_PATIENT_MUTATION = gql`
+  mutation UpdateShadowPatient(
+    $userId: String!
+    $email: String
+    $firstName: String
+    $lastName: String
+    $phone: String
+  ) {
+    updateShadowPatient(
+      userId: $userId
+      email: $email
+      firstName: $firstName
+      lastName: $lastName
+      phone: $phone
+    ) {
+      id
+      fullname
+      email
+      isShadowUser
+      personalData {
+        firstName
+        lastName
+      }
+      contactData {
+        phone
+        address
+      }
+    }
+  }
+`;

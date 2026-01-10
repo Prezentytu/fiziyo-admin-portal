@@ -20,6 +20,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { pluralize } from "@/utils/textUtils";
 import {
   Collapsible,
   CollapsibleContent,
@@ -185,8 +186,8 @@ export function ClinicExpandableCard({
                     <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                       <Users className="h-3 w-3" />
                       <span>
-                        {assignedTherapists.length} terapeutów,{" "}
-                        {assignedPatients.length} pacjentów
+                        {pluralize(assignedTherapists.length, 'terapeuta')},{" "}
+                        {pluralize(assignedPatients.length, 'pacjent')}
                       </span>
                     </div>
                   )}

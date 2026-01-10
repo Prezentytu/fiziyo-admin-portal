@@ -60,7 +60,7 @@ export function ExercisePreviewDrawer({
 
   // Build array of all images (original + custom)
   const allImages: { url: string; isCustom: boolean }[] = [];
-  
+
   // Add original image(s)
   const originalImageUrl = getMediaUrl(exercise?.imageUrl);
   if (originalImageUrl) {
@@ -74,7 +74,7 @@ export function ExercisePreviewDrawer({
       }
     }
   }
-  
+
   // Add custom images from override
   if (override?.customImages) {
     for (const img of override.customImages) {
@@ -165,7 +165,7 @@ export function ExercisePreviewDrawer({
                   <ImagePlaceholder type="exercise" iconClassName="h-16 w-16" />
                 </div>
               )}
-              
+
               {/* Navigation arrows */}
               {hasMultipleImages && !videoUrl && (
                 <>
@@ -195,8 +195,8 @@ export function ExercisePreviewDrawer({
                       type="button"
                       onClick={() => setCurrentImageIndex(index)}
                       className={`h-2 rounded-full transition-all ${
-                        index === currentImageIndex 
-                          ? 'w-6 bg-primary' 
+                        index === currentImageIndex
+                          ? 'w-6 bg-primary'
                           : `w-2 ${img.isCustom ? 'bg-primary/40' : 'bg-white/60'} hover:bg-white/80`
                       }`}
                     />
