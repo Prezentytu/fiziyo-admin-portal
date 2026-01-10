@@ -11,7 +11,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ImagePlaceholder } from '@/components/shared/ImagePlaceholder';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
@@ -214,7 +213,7 @@ function EditExerciseInSetDialogContent({
 
   return (
     <DialogContent
-      className="max-w-xl max-h-[90vh] flex flex-col p-0"
+      className="max-w-xl max-h-[90vh] flex flex-col p-0 overflow-hidden"
       onInteractOutside={(e) => e.preventDefault()}
       onEscapeKeyDown={(e) => {
         e.preventDefault();
@@ -222,13 +221,13 @@ function EditExerciseInSetDialogContent({
       }}
       data-testid="set-edit-exercise-dialog"
     >
-      <DialogHeader className="px-6 pt-6 pb-4">
+      <DialogHeader className="px-6 pt-6 pb-4 shrink-0">
         <DialogTitle>Edytuj parametry</DialogTitle>
         <DialogDescription>Dostosuj parametry ćwiczenia w tym zestawie</DialogDescription>
       </DialogHeader>
 
-      <ScrollArea className="flex-1 px-6">
-        <div className="space-y-5 pb-4">
+      <div className="flex-1 min-h-0 overflow-y-auto px-6">
+        <div className="space-y-5 pb-6">
           {/* Exercise preview */}
           <div className="rounded-xl border border-border bg-surface p-3">
             <div className="flex items-start gap-3">
@@ -418,10 +417,10 @@ function EditExerciseInSetDialogContent({
             </div>
           </div>
         </div>
-      </ScrollArea>
+      </div>
 
       {/* Actions - fixed at bottom */}
-      <div className="flex justify-end gap-3 px-6 py-4 border-t border-border bg-background">
+      <div className="flex justify-end gap-3 px-6 py-4 border-t border-border bg-background/95 backdrop-blur-sm shrink-0">
         <Button variant="outline" onClick={onCloseAttempt} className="rounded-xl">
           Anuluj
         </Button>

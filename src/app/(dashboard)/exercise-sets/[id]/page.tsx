@@ -88,6 +88,8 @@ interface ExerciseMapping {
   restSets?: number;
   restReps?: number;
   notes?: string;
+  customName?: string;
+  customDescription?: string;
   exercise?: {
     id: string;
     name: string;
@@ -496,7 +498,12 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
                     {/* Info */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <p className="font-semibold truncate">{mapping.exercise?.name || 'Nieznane ćwiczenie'}</p>
+                        <p className="font-semibold truncate">{mapping.customName || mapping.exercise?.name || 'Nieznane ćwiczenie'}</p>
+                        {mapping.customName && (
+                          <Badge variant="outline" className="text-[10px] shrink-0 border-primary/30 text-primary">
+                            zmieniona
+                          </Badge>
+                        )}
                         {mapping.exercise?.type && (
                           <Badge variant="secondary" className="text-[10px] shrink-0">
                             {translateType(mapping.exercise.type)}

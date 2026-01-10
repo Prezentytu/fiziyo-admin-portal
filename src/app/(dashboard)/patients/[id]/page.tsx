@@ -93,7 +93,7 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
   } | null>(null);
   const [pdfAssignment, setPdfAssignment] = useState<PatientAssignment | null>(null);
   const [addExerciseAssignment, setAddExerciseAssignment] = useState<PatientAssignment | null>(null);
-  const [previewExercise, setPreviewExercise] = useState<ExerciseMapping | null>(null);
+  const [previewExercise, setPreviewExercise] = useState<{ mapping: ExerciseMapping; override?: ExerciseOverride } | null>(null);
 
   // Get organization ID from context (changes when user switches organization)
   const organizationId = currentOrganization?.organizationId;
@@ -181,8 +181,8 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
     setAddExerciseAssignment(assignment);
   };
 
-  const handlePreviewExercise = (mapping: ExerciseMapping) => {
-    setPreviewExercise(mapping);
+  const handlePreviewExercise = (mapping: ExerciseMapping, override?: ExerciseOverride) => {
+    setPreviewExercise({ mapping, override });
   };
 
   const handleGeneratePDF = (assignment: PatientAssignment) => {
@@ -556,7 +556,8 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
       <ExercisePreviewDrawer
         open={!!previewExercise}
         onOpenChange={(open) => !open && setPreviewExercise(null)}
-        mapping={previewExercise}
+        mapping={previewExercise?.mapping ?? null}
+        override={previewExercise?.override}
       />
     </div>
   );

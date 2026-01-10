@@ -105,10 +105,14 @@ export interface ExerciseOverride {
   sets?: number;
   reps?: number;
   duration?: number;
+  restSets?: number;
+  restReps?: number;
   hidden?: boolean;
   customName?: string;
   customDescription?: string;
   notes?: string;
+  exerciseSide?: string;
+  customImages?: string[];
 }
 
 export interface PatientAssignment {
@@ -137,7 +141,7 @@ interface PatientAssignmentCardProps {
   patientId: string;
   onEditSchedule?: (assignment: PatientAssignment) => void;
   onEditExercise?: (assignment: PatientAssignment, mapping: ExerciseMapping, override?: ExerciseOverride) => void;
-  onPreviewExercise?: (mapping: ExerciseMapping) => void;
+  onPreviewExercise?: (mapping: ExerciseMapping, override?: ExerciseOverride) => void;
   onAddExercise?: (assignment: PatientAssignment) => void;
   onGeneratePDF?: (assignment: PatientAssignment) => void;
   onRefresh?: () => void;
@@ -348,6 +352,7 @@ export function PatientAssignmentCard({
       reps: override?.reps ?? mapping.reps ?? mapping.exercise?.reps,
       duration: override?.duration ?? mapping.duration ?? mapping.exercise?.duration,
       customName: override?.customName ?? mapping.customName,
+      customImages: override?.customImages ?? [],
       hidden: override?.hidden ?? false,
     };
   };
@@ -525,12 +530,15 @@ export function PatientAssignmentCard({
                       .filter((m) => !exerciseOverrides[m.id]?.hidden) // Only show visible exercises
                       .map((mapping) => {
                         const params = getEffectiveParams(mapping);
-                        const imageUrl = getMediaUrl(mapping.exercise?.imageUrl || mapping.exercise?.images?.[0]);
+                        // Use first custom image if available, otherwise original
+                        const imageUrl = params.customImages?.[0] || getMediaUrl(mapping.exercise?.imageUrl || mapping.exercise?.images?.[0]);
+                        const hasCustomImages = params.customImages && params.customImages.length > 0;
                         const hasOverride = exerciseOverrides[mapping.id] && (
                           exerciseOverrides[mapping.id].sets !== undefined ||
                           exerciseOverrides[mapping.id].reps !== undefined ||
                           exerciseOverrides[mapping.id].duration !== undefined ||
-                          exerciseOverrides[mapping.id].customName
+                          exerciseOverrides[mapping.id].customName ||
+                          exerciseOverrides[mapping.id].customImages?.length
                         );
                         const exerciseName = params.customName || mapping.exercise?.name || "Nieznane";
 
@@ -543,17 +551,22 @@ export function PatientAssignmentCard({
                             {/* Larger Thumbnail - 64x64 */}
                             <button
                               type="button"
-                              className="h-16 w-16 rounded-xl overflow-hidden shrink-0 bg-surface-light cursor-pointer ring-1 ring-border/20 hover:ring-primary/40 transition-all"
-                              onClick={() => onPreviewExercise?.(mapping)}
+                              className="relative h-16 w-16 rounded-xl overflow-hidden shrink-0 bg-surface-light cursor-pointer ring-1 ring-border/20 hover:ring-primary/40 transition-all"
+                              onClick={() => onPreviewExercise?.(mapping, exerciseOverrides[mapping.id])}
                             >
                               {imageUrl ? (
-<img
-                                                  src={imageUrl}
-                                                  alt={exerciseName}
-                                                  className="h-full w-full object-contain"
-                                                />
+                                <img
+                                  src={imageUrl}
+                                  alt={exerciseName}
+                                  className="h-full w-full object-contain"
+                                />
                               ) : (
                                 <ImagePlaceholder type="exercise" iconClassName="h-6 w-6" />
+                              )}
+                              {hasCustomImages && params.customImages && params.customImages.length > 0 && (
+                                <span className="absolute bottom-1 right-1 bg-primary text-primary-foreground text-[10px] font-medium px-1.5 py-0.5 rounded-md">
+                                  +{params.customImages.length}
+                                </span>
                               )}
                             </button>
 
@@ -563,7 +576,7 @@ export function PatientAssignmentCard({
                                 <button
                                   type="button"
                                   className="text-sm font-semibold truncate cursor-pointer hover:text-primary transition-colors text-left"
-                                  onClick={() => onPreviewExercise?.(mapping)}
+                                  onClick={() => onPreviewExercise?.(mapping, exerciseOverrides[mapping.id])}
                                 >
                                   {exerciseName}
                                 </button>
@@ -605,7 +618,7 @@ export function PatientAssignmentCard({
                                     variant="ghost"
                                     size="icon"
                                     className="h-8 w-8 text-muted-foreground hover:text-foreground"
-                                    onClick={() => onPreviewExercise?.(mapping)}
+                                    onClick={() => onPreviewExercise?.(mapping, exerciseOverrides[mapping.id])}
                                     data-testid={`patient-assignment-exercise-${mapping.id}-preview-btn`}
                                   >
                                     <Eye className="h-4 w-4" />
