@@ -163,12 +163,13 @@ await expect(page.getByTestId(/^exercise-card-/)).toHaveCount(5);
 | `dashboard-hero-assign-set-btn` | Przypisz zestaw (główna akcja) | `page.tsx` |
 | `dashboard-create-set-btn` | Utwórz zestaw | `page.tsx` |
 | `dashboard-add-patient-btn` | Dodaj pacjenta | `page.tsx` |
-| `dashboard-patients-section` | Sekcja pacjentów | `page.tsx` |
+| `dashboard-activity-section` | Sekcja "Wymagają uwagi" | `page.tsx` |
 | `dashboard-patients-view-all` | Link: Wszyscy pacjenci | `page.tsx` |
-| `dashboard-patient-item-{id}` | Element listy pacjentów | `page.tsx` |
-| `dashboard-sets-section` | Sekcja zestawów | `page.tsx` |
+| `dashboard-patient-item-{id}` | Element listy pacjentów z aktywnością | `page.tsx` |
+| `dashboard-sets-section` | Sekcja "Szybki wybór" | `page.tsx` |
 | `dashboard-sets-view-all` | Link: Wszystkie zestawy | `page.tsx` |
 | `dashboard-set-item-{id}` | Element listy zestawów | `page.tsx` |
+| `dashboard-quick-assign-{id}` | Przycisk szybkiego przypisania zestawu | `page.tsx` |
 
 ### 4. Ćwiczenia (exercise-)
 
@@ -462,6 +463,7 @@ await expect(page.getByTestId(/^exercise-card-/)).toHaveCount(5);
 | data-testid | Element | Plik |
 |-------------|---------|------|
 | `dashboard-billing-kpi-card` | Karta KPI rozliczeń (Dashboard) | `BillingKpiCard.tsx` |
+| `dashboard-billing-status-bar` | Pasek rozliczeń (Dashboard bottom) | `BillingStatusBar.tsx` |
 | `billing-summary-widget` | Widget rozliczeń (pełny) | `BillingSummaryWidget.tsx` |
 | `billing-active-patients-count` | Liczba aktywnych pacjentów | `BillingSummaryWidget.tsx` |
 | `billing-estimated-amount` | Estymowana należność | `BillingSummaryWidget.tsx` |

@@ -187,15 +187,15 @@ Backend musi implementować resolver `currentBillingStatus` zwracający:
 import { BillingSummaryWidget, TherapistBillingTable } from "@/components/billing";
 
 // Compact widget na dashboardzie
-<BillingSummaryWidget 
-  variant="compact" 
-  organizationId={organizationId} 
+<BillingSummaryWidget
+  variant="compact"
+  organizationId={organizationId}
 />
 
 // Full widget + tabela na stronie billing
-<BillingSummaryWidget 
-  variant="full" 
-  organizationId={organizationId} 
+<BillingSummaryWidget
+  variant="full"
+  organizationId={organizationId}
 />
 <TherapistBillingTable organizationId={organizationId} />
 ```

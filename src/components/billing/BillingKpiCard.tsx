@@ -2,7 +2,7 @@
 
 import { useQuery } from "@apollo/client/react";
 import Link from "next/link";
-import { Wallet, ChevronRight } from "lucide-react";
+import { Wallet, ChevronRight, Sparkles } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { GET_CURRENT_BILLING_STATUS_QUERY } from "@/graphql/queries/billing.queries";
@@ -23,8 +23,8 @@ interface BillingKpiCardProps {
 
 /**
  * Minimalistyczna karta KPI dla rozliczeń Pay-as-you-go.
- * Wyświetla tylko: kwotę należności + liczbę aktywnych pacjentów.
- * Całość jest linkiem do /billing.
+ * Wyświetla: kwotę należności + liczbę aktywnych pacjentów Premium.
+ * Zielona kwota = sukces, szara = brak aktywności.
  */
 export function BillingKpiCard({
   organizationId,
@@ -68,6 +68,7 @@ export function BillingKpiCard({
   }
 
   const { estimatedTotal, activePatientsInMonth, currency } = billingStatus;
+  const hasActivity = activePatientsInMonth > 0;
   const formattedAmount = `${estimatedTotal.toLocaleString("pl-PL")} ${currency}`;
 
   return (
@@ -84,22 +85,59 @@ export function BillingKpiCard({
     >
       <div className="relative flex items-center gap-3 w-full">
         {/* Icon */}
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 shrink-0 group-hover:bg-primary/20 group-hover:scale-110 transition-all duration-300">
-          <Wallet className="h-5 w-5 text-primary" />
+        <div
+          className={cn(
+            "flex h-10 w-10 items-center justify-center rounded-xl shrink-0 transition-all duration-300",
+            hasActivity
+              ? "bg-emerald-500/10 group-hover:bg-emerald-500/20"
+              : "bg-muted-foreground/10 group-hover:bg-muted-foreground/20",
+            "group-hover:scale-110"
+          )}
+        >
+          <Wallet
+            className={cn(
+              "h-5 w-5",
+              hasActivity ? "text-emerald-500" : "text-muted-foreground"
+            )}
+          />
         </div>
 
         {/* Content */}
         <div className="min-w-0 flex-1">
-          <p className="text-lg font-bold text-foreground tabular-nums group-hover:text-primary transition-colors">
+          {/* Kwota - zielona gdy > 0, szara gdy 0 */}
+          <p
+            className={cn(
+              "text-lg font-bold tabular-nums transition-colors",
+              hasActivity
+                ? "text-emerald-500 group-hover:text-emerald-400"
+                : "text-muted-foreground group-hover:text-foreground"
+            )}
+          >
             {formattedAmount}
           </p>
-          <p className="text-xs text-muted-foreground">
-            {activePatientsInMonth} aktywnych pacjentów
-          </p>
+
+          {/* Etykieta - dynamiczna */}
+          {hasActivity ? (
+            <p className="text-xs text-muted-foreground">
+              {activePatientsInMonth} aktywnych Premium
+            </p>
+          ) : (
+            <p className="text-xs text-muted-foreground flex items-center gap-1">
+              <Sparkles className="h-3 w-3" />
+              Aktywuj pierwszego
+            </p>
+          )}
         </div>
 
         {/* Arrow */}
-        <ChevronRight className="h-4 w-4 text-muted-foreground/30 group-hover:text-primary group-hover:translate-x-0.5 transition-all shrink-0" />
+        <ChevronRight
+          className={cn(
+            "h-4 w-4 transition-all group-hover:translate-x-0.5 shrink-0",
+            hasActivity
+              ? "text-emerald-500/30 group-hover:text-emerald-500"
+              : "text-muted-foreground/30 group-hover:text-muted-foreground"
+          )}
+        />
       </div>
     </Link>
   );
