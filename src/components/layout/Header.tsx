@@ -1,12 +1,17 @@
 'use client';
 
-import { ChevronRight, Home, Menu } from 'lucide-react';
+import { ChevronRight, Home, Menu, Bell } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { UserMenu } from '@/components/layout/UserMenu';
 import { MobileOrgIndicator } from '@/components/layout/MobileOrgIndicator';
 import { FeedbackButton } from '@/components/shared/FeedbackButton';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+  TooltipProvider,
+} from '@/components/ui/tooltip';
 
 // Route name mappings
 const routeNames: Record<string, string> = {
@@ -18,7 +23,7 @@ const routeNames: Record<string, string> = {
   billing: 'Rozliczenia',
   settings: 'Ustawienia',
   tags: 'Tagi',
-  import: 'Import AI',
+  import: 'Import Dokumentów',
 };
 
 function Breadcrumbs() {
@@ -33,7 +38,7 @@ function Breadcrumbs() {
     const isLast = index === segments.length - 1;
 
     // Check if this is an ID (UUID or similar)
-    const isId = segment.match(/^[0-9a-f-]{20,}$/i);
+    const isId = /^[0-9a-f-]{20,}$/i.exec(segment);
     const label = isId ? 'Szczegóły' : routeNames[segment] || segment;
 
     return { href, label, isLast };
@@ -61,56 +66,75 @@ function Breadcrumbs() {
 }
 
 interface HeaderProps {
-  onMobileMenuToggle?: () => void;
+  readonly onMobileMenuToggle?: () => void;
 }
 
 export function Header({ onMobileMenuToggle }: HeaderProps) {
+  // TODO: Replace with real notification count from backend
+  const notificationCount = 0;
+  const hasNotifications = notificationCount > 0;
+
   return (
-    <header data-testid="nav-header" className="flex h-16 items-center justify-between border-b border-border bg-surface px-4 lg:px-6">
-      {/* Left side - Mobile menu + Org indicator + Breadcrumbs */}
-      <div className="flex items-center gap-3">
-        {/* Mobile menu button */}
-        {onMobileMenuToggle && (
-          <Button
-            variant="ghost"
-            size="icon"
-            className="lg:hidden"
-            onClick={onMobileMenuToggle}
-            aria-label="Otwórz menu"
-            data-testid="nav-mobile-menu-btn"
-          >
-            <Menu className="h-5 w-5" />
-          </Button>
-        )}
+    <TooltipProvider delayDuration={0}>
+      <header data-testid="nav-header" className="flex h-16 items-center justify-between border-b border-border bg-surface px-4 lg:px-6">
+        {/* Left side - Mobile menu + Org indicator + Breadcrumbs */}
+        <div className="flex items-center gap-3">
+          {/* Mobile menu button */}
+          {onMobileMenuToggle && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="lg:hidden"
+              onClick={onMobileMenuToggle}
+              aria-label="Otwórz menu"
+              data-testid="nav-mobile-menu-btn"
+            >
+              <Menu className="h-5 w-5" />
+            </Button>
+          )}
 
-        {/* Mobile organization indicator - visible only on mobile */}
-        <div className="lg:hidden">
-          <MobileOrgIndicator />
+          {/* Mobile organization indicator - visible only on mobile */}
+          <div className="lg:hidden">
+            <MobileOrgIndicator />
+          </div>
+
+          {/* Breadcrumbs - hidden on mobile */}
+          <div className="hidden sm:block">
+            <Breadcrumbs />
+          </div>
         </div>
 
-        {/* Breadcrumbs - hidden on mobile */}
-        <div className="hidden sm:block">
-          <Breadcrumbs />
+        {/* Right side - Notifications & Feedback (kontekst "tu i teraz") */}
+        <div className="flex items-center gap-1 sm:gap-2">
+          {/* Notifications - KLUCZOWE dla engagement */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="relative"
+                data-testid="nav-notifications-btn"
+                aria-label="Powiadomienia"
+              >
+                <Bell className="h-5 w-5 text-muted-foreground" />
+                {/* Notification badge */}
+                {hasNotifications && (
+                  <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-white">
+                    {notificationCount > 9 ? '9+' : notificationCount}
+                  </span>
+                )}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Powiadomienia</p>
+              <p className="text-xs text-muted-foreground">Wkrótce dostępne</p>
+            </TooltipContent>
+          </Tooltip>
+
+          {/* Feedback / Help */}
+          <FeedbackButton variant="icon" />
         </div>
-      </div>
-
-      {/* Right side - Search and actions */}
-      <div className="flex items-center gap-2 sm:gap-3">
-        {/* Search */}
-        {/* <div className="relative hidden md:block">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Szukaj... (Ctrl+K)"
-            className="w-48 lg:w-64 pl-9 bg-surface-light border-border focus:border-primary"
-          />
-        </div> */}
-
-        {/* Feedback */}
-        <FeedbackButton variant="icon" />
-
-        {/* User */}
-        <UserMenu />
-      </div>
-    </header>
+      </header>
+    </TooltipProvider>
   );
 }

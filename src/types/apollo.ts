@@ -31,8 +31,6 @@ export interface User {
   creationTime?: string;
   personalData?: PersonalData;
   contactData?: ContactData;
-  /** Data wygaśnięcia dostępu Premium do aplikacji mobilnej */
-  premiumActiveUntil?: string;
 }
 
 export interface UserByClerkIdResponse {
@@ -359,6 +357,12 @@ export interface OrganizationPatientDto {
   assignedAt?: string;
   contextLabel?: string;
   contextColor?: string;
+  // Premium Access (Pay-as-you-go Billing)
+  premiumValidUntil?: string;
+  premiumActivatedAt?: string;
+  premiumStatus?: 'FREE' | 'ACTIVE' | 'EXPIRED';
+  // Activity Tracking
+  lastActivity?: string;
 }
 
 export interface OrganizationPatientsResponse {

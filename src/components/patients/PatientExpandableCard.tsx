@@ -2,11 +2,10 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Mail, Phone, FolderKanban, Wrench, MoreHorizontal, UserX, Tag, UserPlus, Trash2, Settings, Sparkles } from 'lucide-react';
+import { Mail, Phone, FolderKanban, Wrench, MoreHorizontal, UserX, Tag, UserPlus, Trash2, Settings, Sparkles, Activity } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { ColorBadge } from '@/components/shared/ColorBadge';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,7 +13,47 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
+
+// Helper: Format activity status
+function formatActivityStatus(lastActivity: string | undefined): {
+  text: string;
+  color: 'green' | 'yellow' | 'red' | 'gray';
+  isActive: boolean;
+} {
+  if (!lastActivity) {
+    return { text: 'Brak aktywności', color: 'gray', isActive: false };
+  }
+
+  const lastDate = new Date(lastActivity);
+  const now = new Date();
+  const diffMs = now.getTime() - lastDate.getTime();
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+
+  if (diffDays === 0) {
+    if (diffHours < 1) {
+      return { text: 'Ćwiczył przed chwilą', color: 'green', isActive: true };
+    }
+    return { text: 'Ćwiczył dzisiaj', color: 'green', isActive: true };
+  }
+  if (diffDays === 1) {
+    return { text: 'Ćwiczył wczoraj', color: 'green', isActive: true };
+  }
+  if (diffDays <= 3) {
+    return { text: `${diffDays} dni temu`, color: 'yellow', isActive: true };
+  }
+  if (diffDays <= 7) {
+    return { text: `${diffDays} dni temu`, color: 'yellow', isActive: false };
+  }
+  return { text: `Nieaktywny ${diffDays} dni`, color: 'red', isActive: false };
+}
 import { EditContextLabelDialog } from './EditContextLabelDialog';
 import { EditPatientDialog } from './EditPatientDialog';
 import { TherapistBadge } from './TherapistBadge';
@@ -42,8 +81,6 @@ export interface Patient {
   contextLabel?: string;
   contextColor?: string;
   assignedAt?: string;
-  // Premium access (Pay-as-you-go model)
-  premiumActiveUntil?: string;
   // Collaborative Care fields
   therapist?: {
     id: string;
@@ -51,13 +88,17 @@ export interface Patient {
     email?: string;
     image?: string;
   } | null;
+  // Premium Access (Pay-as-you-go Billing)
+  premiumValidUntil?: string;
+  premiumActivatedAt?: string;
+  premiumStatus?: 'FREE' | 'ACTIVE' | 'EXPIRED';
+  // Activity Tracking
+  lastActivity?: string;
 }
 
 interface PatientExpandableCardProps {
   patient: Patient;
   onAssignSet: (patient: Patient) => void;
-  /** @deprecated Click on card navigates to patient details */
-  onViewReport?: (patient: Patient) => void;
   /** Odpięcie pacjenta od fizjoterapeuty - tylko Admin/Owner */
   onUnassign: (patient: Patient) => void;
   /** Usunięcie pacjenta z organizacji - tylko Admin/Owner */
@@ -141,36 +182,59 @@ export function PatientExpandableCard({
         data-testid={`patient-expandable-${patient.id}`}
       >
         <div className="flex items-center gap-4 p-4">
-        {/* Avatar */}
-        <div className="relative shrink-0">
-          <Avatar
-            className={cn(
-              'h-11 w-11 ring-2 transition-all',
-              patient.isShadowUser
-                ? 'ring-muted-foreground/20 group-hover:ring-muted-foreground/30'
-                : 'ring-border/30 group-hover:ring-primary/30'
-            )}
-          >
-            <AvatarImage src={patient.image} alt={displayName} />
-            <AvatarFallback
-              className={cn(
-                'font-semibold text-sm',
-                patient.isShadowUser
-                  ? 'bg-muted-foreground/60 text-white'
-                  : 'bg-gradient-to-br from-info to-blue-600 text-white'
-              )}
-            >
-              {initials}
-            </AvatarFallback>
-          </Avatar>
-          {patient.isShadowUser && (
-            <div className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-muted-foreground/80 flex items-center justify-center ring-2 ring-surface">
-              <Wrench className="h-2.5 w-2.5 text-white" />
-            </div>
-          )}
-        </div>
+        {/* Avatar with Contact Tooltip */}
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="relative shrink-0 cursor-help">
+                <Avatar
+                  className={cn(
+                    'h-11 w-11 ring-2 transition-all',
+                    patient.isShadowUser
+                      ? 'ring-muted-foreground/20 group-hover:ring-muted-foreground/30'
+                      : 'ring-border/30 group-hover:ring-primary/30'
+                  )}
+                >
+                  <AvatarImage src={patient.image} alt={displayName} />
+                  <AvatarFallback
+                    className={cn(
+                      'font-semibold text-sm',
+                      patient.isShadowUser
+                        ? 'bg-muted-foreground/60 text-white'
+                        : 'bg-gradient-to-br from-info to-blue-600 text-white'
+                    )}
+                  >
+                    {initials}
+                  </AvatarFallback>
+                </Avatar>
+                {patient.isShadowUser && (
+                  <div className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-muted-foreground/80 flex items-center justify-center ring-2 ring-surface">
+                    <Wrench className="h-2.5 w-2.5 text-white" />
+                  </div>
+                )}
+              </div>
+            </TooltipTrigger>
+            <TooltipContent side="right" className="max-w-xs">
+              <div className="space-y-1.5">
+                <p className="font-medium">{displayName}</p>
+                {patient.email && (
+                  <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <Mail className="h-3 w-3" />
+                    {patient.email}
+                  </p>
+                )}
+                {patient.contactData?.phone && (
+                  <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <Phone className="h-3 w-3" />
+                    {patient.contactData.phone}
+                  </p>
+                )}
+              </div>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
 
-        {/* Main Content */}
+        {/* Main Content - Name + Diagnosis/Goal */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-0.5">
             <h3 className="font-semibold text-sm text-foreground truncate group-hover:text-primary transition-colors">
@@ -182,21 +246,40 @@ export function PatientExpandableCard({
               </Badge>
             )}
           </div>
-          <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
-            {patient.email && (
-              <span className="flex items-center gap-1">
-                <Mail className="h-3 w-3 flex-shrink-0" />
-                {patient.email}
-              </span>
-            )}
-            {patient.contactData?.phone && (
-              <span className="flex items-center gap-1 shrink-0">
-                <Phone className="h-3 w-3 flex-shrink-0" />
-                {patient.contactData.phone}
-              </span>
-            )}
-          </div>
+          {/* Diagnosis/Treatment Goal instead of email */}
+          <p className="text-xs text-muted-foreground truncate">
+            {patient.contextLabel && patient.contextLabel !== 'Leczenie podstawowe'
+              ? patient.contextLabel
+              : 'Brak celu terapii'}
+          </p>
         </div>
+
+        {/* Activity Indicator (only for my patients) */}
+        {isMyPatient && (() => {
+          const activity = formatActivityStatus(patient.lastActivity);
+          return (
+            <div className="hidden sm:flex flex-col items-end shrink-0 min-w-[100px]">
+              <div className="flex items-center gap-1.5">
+                <Activity className={cn(
+                  'h-3.5 w-3.5',
+                  activity.color === 'green' && 'text-green-500',
+                  activity.color === 'yellow' && 'text-yellow-500',
+                  activity.color === 'red' && 'text-red-500',
+                  activity.color === 'gray' && 'text-muted-foreground'
+                )} />
+                <span className={cn(
+                  'text-xs font-medium',
+                  activity.color === 'green' && 'text-green-500',
+                  activity.color === 'yellow' && 'text-yellow-500',
+                  activity.color === 'red' && 'text-red-500',
+                  activity.color === 'gray' && 'text-muted-foreground'
+                )}>
+                  {activity.text}
+                </span>
+              </div>
+            </div>
+          );
+        })()}
 
         {/* Therapist Badge (Collaborative Care) */}
         {showTherapistBadge && (
@@ -210,37 +293,18 @@ export function PatientExpandableCard({
         {/* Premium Status Badge (only for my patients) */}
         {isMyPatient && (
           <PremiumStatusBadge
-            premiumActiveUntil={patient.premiumActiveUntil}
+            premiumActiveUntil={patient.premiumValidUntil}
             patientId={patient.id}
             onActivate={() => initiateActivation(patient.id, displayName)}
+            isShadowUser={patient.isShadowUser}
             isActivating={isActivating && activationTarget?.patientId === patient.id}
             showActivateButton={true}
             size="sm"
           />
         )}
 
-        {/* Context Label - clickable to edit, hide default "Leczenie podstawowe" */}
-        {isMyPatient && patient.contextLabel && patient.contextLabel !== 'Leczenie podstawowe' ? (
-          <button
-            type="button"
-            onMouseDown={(e) => {
-              e.stopPropagation();
-              e.preventDefault();
-            }}
-            onClick={(e) => {
-              e.stopPropagation();
-              e.preventDefault();
-              setIsEditLabelOpen(true);
-            }}
-            className="shrink-0 hover:scale-105 transition-transform"
-            title="Kliknij aby edytować"
-          >
-            <ColorBadge color={patient.contextColor || '#888888'} size="sm">
-              {patient.contextLabel}
-            </ColorBadge>
-          </button>
-        ) : isMyPatient ? (
-          /* Add note button when no label (only for my patients) */
+        {/* Edit Diagnosis button (on hover, only for my patients) */}
+        {isMyPatient && (
           <button
             type="button"
             onMouseDown={(e) => {
@@ -253,14 +317,14 @@ export function PatientExpandableCard({
               setIsEditLabelOpen(true);
             }}
             className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
-            title="Dodaj notatkę"
+            title="Edytuj cel terapii"
           >
             <Badge variant="outline" className="text-[10px] px-2 py-0.5 gap-1 hover:bg-surface-light">
               <Tag className="h-3 w-3" />
-              Notatka
+              Cel terapii
             </Badge>
           </button>
-        ) : null}
+        )}
 
         {/* Hover Actions */}
         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
@@ -326,11 +390,13 @@ export function PatientExpandableCard({
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => initiateActivation(patient.id, displayName)}>
                     <Sparkles className="mr-2 h-4 w-4" />
-                    Aktywuj Premium (30 dni)
+                    {patient.premiumValidUntil && new Date(patient.premiumValidUntil) > new Date()
+                      ? 'Przedłuż dostęp (+30 dni)'
+                      : 'Odblokuj dostęp (30 dni)'}
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => setIsEditLabelOpen(true)}>
                     <Tag className="mr-2 h-4 w-4" />
-                    Edytuj notatkę
+                    Edytuj cel terapii
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => setIsEditPatientOpen(true)}>
                     <Settings className="mr-2 h-4 w-4" />

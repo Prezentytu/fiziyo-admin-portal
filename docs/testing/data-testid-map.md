@@ -123,36 +123,85 @@ await expect(page.getByTestId(/^exercise-card-/)).toHaveCount(5);
 
 ### 2. Nawigacja (nav-)
 
+#### Desktop Sidebar
+
 | data-testid | Element | Plik |
 |-------------|---------|------|
 | `nav-sidebar` | Główny sidebar | `Sidebar.tsx` |
 | `nav-logo-link` | Link logo | `Sidebar.tsx` |
 | `nav-collapse-btn` | Zwiń sidebar | `Sidebar.tsx` |
 | `nav-expand-btn` | Rozwiń sidebar | `Sidebar.tsx` |
+
+#### Linki nawigacyjne (Sidebar 2.0 - 3 strefy)
+
+**Strefa 1: Klinika**
+| data-testid | Element | Plik |
+|-------------|---------|------|
 | `nav-link-dashboard` | Link: Panel | `Sidebar.tsx` |
 | `nav-link-patients` | Link: Pacjenci | `Sidebar.tsx` |
 | `nav-link-exercise-sets` | Link: Zestawy | `Sidebar.tsx` |
 | `nav-link-exercises` | Link: Ćwiczenia | `Sidebar.tsx` |
-| `nav-link-import` | Link: Import AI | `Sidebar.tsx` |
+
+**Strefa 2: Smart Tools**
+| data-testid | Element | Plik |
+|-------------|---------|------|
+| `nav-link-import` | Link: Import Dokumentów (AI) | `Sidebar.tsx` |
+
+**Strefa 3: Organizacja (tylko admin/owner)**
+| data-testid | Element | Plik |
+|-------------|---------|------|
 | `nav-link-organization` | Link: Zespół | `Sidebar.tsx` |
 | `nav-link-billing` | Link: Rozliczenia | `Sidebar.tsx` |
 | `nav-link-settings` | Link: Ustawienia | `Sidebar.tsx` |
-| `nav-logout-btn` | Wyloguj się | `Sidebar.tsx` |
-| `nav-ai-credits-widget` | Widget kredytów AI | `Sidebar.tsx` |
+
+#### User Profile Footer (nowy komponent)
+
+| data-testid | Element | Plik |
+|-------------|---------|------|
+| `nav-user-footer-trigger` | Trigger profilu użytkownika (dół sidebara) | `UserProfileFooter.tsx` |
+| `nav-user-footer-profile` | Mój profil (Clerk modal) | `UserProfileFooter.tsx` |
+| `nav-user-footer-org-{id}` | Przełącz do organizacji | `UserProfileFooter.tsx` |
+| `nav-user-footer-settings` | Ustawienia konta | `UserProfileFooter.tsx` |
+| `nav-user-footer-help` | Pomoc / Support | `UserProfileFooter.tsx` |
+| `nav-user-footer-logout` | Wyloguj się | `UserProfileFooter.tsx` |
+
+#### Header (kontekst "tu i teraz")
+
+| data-testid | Element | Plik |
+|-------------|---------|------|
 | `nav-header` | Główny header | `Header.tsx` |
 | `nav-mobile-menu-btn` | Menu mobilne | `Header.tsx` |
 | `nav-breadcrumbs` | Breadcrumbs | `Header.tsx` |
 | `nav-breadcrumb-home` | Home link | `Header.tsx` |
 | `nav-breadcrumb-item-{n}` | Element breadcrumb | `Header.tsx` |
-| `nav-user-menu-trigger` | Trigger menu użytkownika | `UserMenu.tsx` |
-| `nav-user-menu-profile` | Profil | `UserMenu.tsx` |
-| `nav-user-menu-settings` | Ustawienia | `UserMenu.tsx` |
-| `nav-user-menu-logout` | Wyloguj | `UserMenu.tsx` |
+| `nav-notifications-btn` | Przycisk powiadomień (dzwoneczek) | `Header.tsx` |
+
+> **Uwaga:** UserMenu został usunięty z Headera. Wszystkie funkcje profilu są teraz w `UserProfileFooter` (lewy dolny róg sidebara) - wzorzec Linear/Slack.
+
+#### Organization Switcher
+
+| data-testid | Element | Plik |
+|-------------|---------|------|
 | `nav-org-switcher-trigger` | Przełącznik organizacji | `OrganizationSwitcher.tsx` |
 | `nav-org-switcher-item-{id}` | Organizacja | `OrganizationSwitcher.tsx` |
 | `nav-org-switcher-create` | Utwórz organizację | `OrganizationSwitcher.tsx` |
+
+#### Mobile Sidebar
+
+| data-testid | Element | Plik |
+|-------------|---------|------|
 | `nav-mobile-sidebar` | Sidebar mobilny | `MobileSidebar.tsx` |
-| `nav-mobile-link-*` | Linki mobilne | `MobileSidebar.tsx` |
+| `nav-mobile-link-dashboard` | Link: Panel (mobile) | `MobileSidebar.tsx` |
+| `nav-mobile-link-patients` | Link: Pacjenci (mobile) | `MobileSidebar.tsx` |
+| `nav-mobile-link-exercise-sets` | Link: Zestawy (mobile) | `MobileSidebar.tsx` |
+| `nav-mobile-link-exercises` | Link: Ćwiczenia (mobile) | `MobileSidebar.tsx` |
+| `nav-mobile-link-import` | Link: Import Dokumentów (mobile) | `MobileSidebar.tsx` |
+| `nav-mobile-link-organization` | Link: Zespół (mobile) | `MobileSidebar.tsx` |
+| `nav-mobile-link-billing` | Link: Rozliczenia (mobile) | `MobileSidebar.tsx` |
+| `nav-mobile-link-settings` | Link: Ustawienia (mobile) | `MobileSidebar.tsx` |
+| `nav-mobile-user-profile` | Ustawienia profilu (mobile) | `MobileSidebar.tsx` |
+| `nav-mobile-switch-org` | Przełącz organizację (mobile) | `MobileSidebar.tsx` |
+| `nav-mobile-help` | Pomoc / Support (mobile) | `MobileSidebar.tsx` |
 | `nav-mobile-logout-btn` | Wyloguj (mobile) | `MobileSidebar.tsx` |
 
 ### 3. Dashboard (dashboard-)

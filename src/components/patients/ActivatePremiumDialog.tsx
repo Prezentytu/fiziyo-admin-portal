@@ -84,27 +84,29 @@ export function ActivatePremiumDialog({
               Aktywacja dostępu Premium
             </AlertDialogTitle>
           </div>
-          <AlertDialogDescription className="space-y-3">
-            <p>
-              {patientName ? (
-                <>
-                  Zamierzasz aktywować dostęp Premium dla pacjenta{" "}
-                  <span className="font-medium text-foreground">{patientName}</span> na 30 dni.
-                </>
-              ) : (
-                "Zamierzasz aktywować dostęp Premium dla pacjenta na 30 dni."
-              )}
-            </p>
-            <div className="flex items-center gap-2 p-3 rounded-lg bg-surface-light border border-border/60">
-              <CreditCard className="h-4 w-4 text-muted-foreground shrink-0" />
-              <p className="text-sm">
-                Do Twojego miesięcznego rachunku zostanie doliczonych{" "}
-                <span className="font-semibold text-primary">15 PLN</span>.
+          <AlertDialogDescription asChild>
+            <div className="space-y-3 text-sm text-muted-foreground">
+              <p>
+                {patientName ? (
+                  <>
+                    Zamierzasz aktywować dostęp Premium dla pacjenta{" "}
+                    <span className="font-medium text-foreground">{patientName}</span> na 30 dni.
+                  </>
+                ) : (
+                  "Zamierzasz aktywować dostęp Premium dla pacjenta na 30 dni."
+                )}
+              </p>
+              <div className="flex items-center gap-2 p-3 rounded-lg bg-surface-light border border-border/60">
+                <CreditCard className="h-4 w-4 text-muted-foreground shrink-0" />
+                <p className="text-sm">
+                  Do Twojego miesięcznego rachunku zostanie doliczonych{" "}
+                  <span className="font-semibold text-primary">15 PLN</span>.
+                </p>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                To powiadomienie pojawi się tylko raz w miesiącu. Kolejne aktywacje będą wykonywane bez dodatkowego potwierdzenia.
               </p>
             </div>
-            <p className="text-xs text-muted-foreground">
-              To powiadomienie pojawi się tylko raz w miesiącu. Kolejne aktywacje będą wykonywane bez dodatkowego potwierdzenia.
-            </p>
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>

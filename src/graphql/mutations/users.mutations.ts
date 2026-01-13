@@ -383,8 +383,10 @@ export const ACTIVATE_PATIENT_PREMIUM_MUTATION = gql`
       organizationId: $organizationId
       durationDays: $durationDays
     ) {
-      id
-      premiumActiveUntil
+      success
+      patientId
+      premiumValidUntil
+      message
     }
   }
 `;

@@ -230,8 +230,8 @@ export const GET_THERAPIST_PATIENT_ASSIGNMENTS_QUERY = gql`
 /**
  * Query do pobierania WSZYSTKICH pacjentów organizacji (Collaborative Care Model)
  * Zwraca pacjentów z informacją o przypisanym fizjoterapeucie (lub null jeśli brak)
+ * oraz statusem Premium (Pay-as-you-go Billing)
  * Filter: "all" | "my" | "unassigned"
- * Zawiera premiumActiveUntil do wyświetlania statusu dostępu Premium
  */
 export const GET_ORGANIZATION_PATIENTS_QUERY = gql`
   query GetOrganizationPatients($organizationId: String!, $filter: String) {
@@ -244,7 +244,6 @@ export const GET_ORGANIZATION_PATIENTS_QUERY = gql`
         image
         isShadowUser
         organizationIds
-        premiumActiveUntil
         personalData {
           firstName
           lastName
@@ -254,6 +253,10 @@ export const GET_ORGANIZATION_PATIENTS_QUERY = gql`
           address
         }
       }
+      # Premium Access (Pay-as-you-go Billing)
+      premiumValidUntil
+      premiumActivatedAt
+      premiumStatus
       therapist {
         id
         fullname
@@ -265,6 +268,8 @@ export const GET_ORGANIZATION_PATIENTS_QUERY = gql`
       assignedAt
       contextLabel
       contextColor
+      # Activity Tracking
+      lastActivity
     }
   }
 `;

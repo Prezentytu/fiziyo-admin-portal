@@ -88,6 +88,17 @@ export const formatPremiumExpiry = (premiumActiveUntil: string | null | undefine
   });
 };
 
+/**
+ * Oblicza liczbę dni do wygaśnięcia Premium
+ */
+export const getDaysUntilExpiry = (premiumActiveUntil: string | null | undefined): number => {
+  if (!premiumActiveUntil) return 0;
+  const expiryDate = new Date(premiumActiveUntil);
+  const now = new Date();
+  const diffMs = expiryDate.getTime() - now.getTime();
+  return Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
+};
+
 // ========================================
 // Hook
 // ========================================
@@ -146,24 +157,15 @@ export function usePatientPremium({
   );
 
   /**
-   * Wykonaj aktywację Premium z optimistic update
+   * Wykonaj aktywację Premium
    */
   const executeActivation = useCallback(
     async (patientId: string) => {
-      const newExpiryDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
-
       await activateMutation({
         variables: {
           patientId,
           organizationId,
           durationDays: 30,
-        },
-        optimisticResponse: {
-          activatePatientPremium: {
-            __typename: "User",
-            id: patientId,
-            premiumActiveUntil: newExpiryDate,
-          },
         },
       });
     },

@@ -1,6 +1,6 @@
 "use client";
 
-import { Sparkles } from "lucide-react";
+import { Sparkles, Unlock, QrCode } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -10,7 +10,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
-import { isPremiumActive, formatPremiumExpiry } from "@/hooks/usePatientPremium";
+import { isPremiumActive, formatPremiumExpiry, getDaysUntilExpiry } from "@/hooks/usePatientPremium";
 
 // ========================================
 // Types
@@ -21,11 +21,15 @@ interface PremiumStatusBadgeProps {
   premiumActiveUntil: string | null | undefined;
   /** ID pacjenta (dla data-testid) */
   patientId: string;
-  /** Callback do aktywacji Premium */
+  /** Callback do aktywacji/przedłużenia Premium */
   onActivate?: () => void;
+  /** Callback do generowania QR kodu (dla shadow users) */
+  onGenerateQR?: () => void;
+  /** Czy pacjent jest tymczasowy (shadow user) */
+  isShadowUser?: boolean;
   /** Czy aktywacja jest w trakcie */
   isActivating?: boolean;
-  /** Czy pokazać przycisk aktywacji (tylko gdy nieaktywny) */
+  /** Czy pokazać przycisk akcji */
   showActivateButton?: boolean;
   /** Rozmiar badge'a */
   size?: "sm" | "default";
@@ -38,28 +42,18 @@ interface PremiumStatusBadgeProps {
 // ========================================
 
 /**
- * Badge wyświetlający status Premium pacjenta
+ * Badge wyświetlający status Premium pacjenta z ulepszoną narracją
  *
- * - 🟢 Aktywny - gdy premiumActiveUntil > now
- * - 🔴 Nieaktywny - gdy brak lub wygasł
- * - Tooltip z datą wygaśnięcia
- * - Opcjonalny przycisk aktywacji
- *
- * @example
- * ```tsx
- * <PremiumStatusBadge
- *   premiumActiveUntil={patient.premiumActiveUntil}
- *   patientId={patient.id}
- *   onActivate={() => initiateActivation(patient.id, patient.fullname)}
- *   isActivating={isActivating}
- *   showActivateButton={true}
- * />
- * ```
+ * - Aktywny: Zielony badge "Premium (X dni)" + hover "Przedłuż"
+ * - Nieaktywny: Przycisk "Odblokuj dostęp"
+ * - Shadow User: Przycisk "Generuj QR"
  */
 export function PremiumStatusBadge({
   premiumActiveUntil,
   patientId,
   onActivate,
+  onGenerateQR,
+  isShadowUser = false,
   isActivating = false,
   showActivateButton = true,
   size = "default",
@@ -67,61 +61,127 @@ export function PremiumStatusBadge({
 }: PremiumStatusBadgeProps) {
   const isActive = isPremiumActive(premiumActiveUntil);
   const expiryDate = formatPremiumExpiry(premiumActiveUntil);
+  const daysLeft = getDaysUntilExpiry(premiumActiveUntil);
 
-  const badgeContent = (
-    <Badge
-      variant={isActive ? "success" : "secondary"}
-      className={cn(
-        "gap-1 shrink-0 cursor-default",
-        size === "sm" && "text-[10px] px-1.5 py-0",
-        className
-      )}
-      data-testid={`patient-premium-badge-${patientId}`}
-    >
-      <Sparkles className={cn("h-3 w-3", size === "sm" && "h-2.5 w-2.5")} />
-      {isActive ? "Aktywny" : "Nieaktywny"}
-    </Badge>
-  );
+  // For shadow users without premium - show QR button
+  if (isShadowUser && !isActive && onGenerateQR) {
+    return (
+      <Button
+        variant="outline"
+        size="sm"
+        className={cn(
+          "gap-1.5 hover:bg-info/10 hover:text-info hover:border-info/30",
+          size === "sm" && "h-7 px-2 text-xs"
+        )}
+        onClick={(e) => {
+          e.stopPropagation();
+          onGenerateQR();
+        }}
+        data-testid={`patient-premium-qr-btn-${patientId}`}
+      >
+        <QrCode className={cn("h-3.5 w-3.5", size === "sm" && "h-3 w-3")} />
+        Generuj QR
+      </Button>
+    );
+  }
 
-  // Jeśli aktywny - pokaż badge z tooltipem z datą wygaśnięcia
+  // Active Premium - show badge with days left, extend on hover
   if (isActive) {
+    const daysText = daysLeft === 1 ? "1 dzień" : `${daysLeft} dni`;
+    
     return (
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>
-            {badgeContent}
+            <div className="group/premium relative">
+              {/* Default state - badge */}
+              <Badge
+                variant="success"
+                className={cn(
+                  "gap-1 shrink-0 cursor-pointer transition-all",
+                  size === "sm" && "text-[10px] px-1.5 py-0",
+                  showActivateButton && onActivate && "group-hover/premium:opacity-0",
+                  className
+                )}
+                data-testid={`patient-premium-badge-${patientId}`}
+                onClick={(e) => {
+                  if (onActivate && showActivateButton) {
+                    e.stopPropagation();
+                    onActivate();
+                  }
+                }}
+              >
+                <Sparkles className={cn("h-3 w-3", size === "sm" && "h-2.5 w-2.5")} />
+                Premium ({daysText})
+              </Badge>
+              
+              {/* Hover state - extend button */}
+              {showActivateButton && onActivate && (
+                <Button
+                  variant="default"
+                  size="sm"
+                  className={cn(
+                    "absolute inset-0 opacity-0 group-hover/premium:opacity-100 transition-opacity gap-1",
+                    size === "sm" && "h-auto px-1.5 py-0 text-[10px]"
+                  )}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onActivate();
+                  }}
+                  disabled={isActivating}
+                  data-testid={`patient-premium-extend-btn-${patientId}`}
+                >
+                  <Sparkles className={cn("h-3 w-3", size === "sm" && "h-2.5 w-2.5")} />
+                  {isActivating ? "..." : "Przedłuż"}
+                </Button>
+              )}
+            </div>
           </TooltipTrigger>
           <TooltipContent>
             <p>Wygasa: {expiryDate}</p>
+            {showActivateButton && <p className="text-xs text-muted-foreground">Kliknij aby przedłużyć</p>}
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>
     );
   }
 
-  // Jeśli nieaktywny i bez przycisku aktywacji
+  // Inactive Premium - show unlock button or badge
   if (!showActivateButton || !onActivate) {
-    return badgeContent;
+    return (
+      <Badge
+        variant="secondary"
+        className={cn(
+          "gap-1 shrink-0 cursor-default",
+          size === "sm" && "text-[10px] px-1.5 py-0",
+          className
+        )}
+        data-testid={`patient-premium-badge-${patientId}`}
+      >
+        <Sparkles className={cn("h-3 w-3", size === "sm" && "h-2.5 w-2.5")} />
+        Brak dostępu
+      </Badge>
+    );
   }
 
-  // Jeśli nieaktywny z przyciskiem aktywacji
+  // Inactive with button - "Odblokuj dostęp"
   return (
-    <div className="flex items-center gap-2">
-      {badgeContent}
-      <Button
-        variant="outline"
-        size="sm"
-        className="h-7 px-2 text-xs gap-1 hover:bg-primary/10 hover:text-primary hover:border-primary/30"
-        onClick={(e) => {
-          e.stopPropagation();
-          onActivate();
-        }}
-        disabled={isActivating}
-        data-testid={`patient-premium-activate-btn-${patientId}`}
-      >
-        <Sparkles className="h-3 w-3" />
-        {isActivating ? "Aktywacja..." : "Aktywuj (30 dni)"}
-      </Button>
-    </div>
+    <Button
+      variant="outline"
+      size="sm"
+      className={cn(
+        "gap-1.5 hover:bg-primary/10 hover:text-primary hover:border-primary/30",
+        size === "sm" && "h-7 px-2 text-xs"
+      )}
+      onClick={(e) => {
+        e.stopPropagation();
+        onActivate();
+      }}
+      disabled={isActivating}
+      data-testid={`patient-premium-activate-btn-${patientId}`}
+    >
+      <Unlock className={cn("h-3.5 w-3.5", size === "sm" && "h-3 w-3")} />
+      {isActivating ? "Aktywacja..." : "Odblokuj dostęp"}
+    </Button>
   );
 }

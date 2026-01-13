@@ -12,16 +12,15 @@ import {
   Building2,
   CreditCard,
   Settings,
-  LogOut,
   PanelLeftClose,
   PanelLeft,
-  FileUp,
+  FileText,
+  Sparkles,
   LucideIcon,
 } from "lucide-react";
-import { useClerk } from "@clerk/nextjs";
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
 import { OrganizationSwitcher } from "./OrganizationSwitcher";
-import { AICreditsWidget } from "./AICreditsWidget";
+import { UserProfileFooter } from "./UserProfileFooter";
 import { Logo } from "@/components/shared/Logo";
 import { useRoleAccess } from "@/hooks/useRoleAccess";
 
@@ -34,6 +33,10 @@ interface NavigationItem {
   href: string;
   icon: LucideIcon;
   testId: string;
+  /** Optional badge indicator (e.g., notifications count) */
+  badge?: number | null;
+  /** Optional accent icon for AI-powered features */
+  hasAiAccent?: boolean;
 }
 
 interface NavigationGroup {
@@ -44,23 +47,37 @@ interface NavigationGroup {
 }
 
 // ========================================
-// Navigation Configuration
+// Navigation Configuration - 3 Zones
 // ========================================
 
 const navigationGroups: NavigationGroup[] = [
+  // STREFA 1: KLINIKA (Codzienna praca - 90% czasu)
   {
-    label: "Główne",
+    label: "Klinika",
     items: [
       { name: "Panel", href: "/", icon: LayoutDashboard, testId: "nav-link-dashboard" },
       { name: "Pacjenci", href: "/patients", icon: Users, testId: "nav-link-patients" },
       { name: "Zestawy", href: "/exercise-sets", icon: FolderKanban, testId: "nav-link-exercise-sets" },
       { name: "Ćwiczenia", href: "/exercises", icon: Dumbbell, testId: "nav-link-exercises" },
-      { name: "Import AI", href: "/import", icon: FileUp, testId: "nav-link-import" },
     ],
   },
+  // STREFA 2: SMART TOOLS (AI & Import)
+  {
+    label: "Smart Tools",
+    items: [
+      { 
+        name: "Import Dokumentów", 
+        href: "/import", 
+        icon: FileText, 
+        testId: "nav-link-import",
+        hasAiAccent: true,
+      },
+    ],
+  },
+  // STREFA 3: ORGANIZACJA (Admin - rzadziej używane)
   {
     label: "Organizacja",
-    adminOnly: true, // Only visible to owners and admins
+    adminOnly: true,
     items: [
       { name: "Zespół", href: "/organization", icon: Building2, testId: "nav-link-organization" },
       { name: "Rozliczenia", href: "/billing", icon: CreditCard, testId: "nav-link-billing" },
@@ -70,13 +87,12 @@ const navigationGroups: NavigationGroup[] = [
 ];
 
 interface SidebarProps {
-  isCollapsed: boolean;
-  onToggleCollapse: () => void;
+  readonly isCollapsed: boolean;
+  readonly onToggleCollapse: () => void;
 }
 
 export function Sidebar({ isCollapsed, onToggleCollapse }: SidebarProps) {
   const pathname = usePathname();
-  const { signOut } = useClerk();
   const { canManageOrganization } = useRoleAccess();
 
   const isActive = (href: string) => {
@@ -87,7 +103,6 @@ export function Sidebar({ isCollapsed, onToggleCollapse }: SidebarProps) {
   // Filter navigation groups based on user role
   const filteredNavigationGroups = useMemo(() => {
     return navigationGroups.filter((group) => {
-      // If group requires admin access, check if user has permission
       if (group.adminOnly) {
         return canManageOrganization;
       }
@@ -177,15 +192,36 @@ export function Sidebar({ isCollapsed, onToggleCollapse }: SidebarProps) {
                           : "text-muted-foreground hover:bg-surface-light hover:text-foreground"
                       )}
                     >
-                      <Icon
-                        className={cn(
-                          "shrink-0 transition-transform duration-200",
-                          isCollapsed ? "h-5 w-5" : "h-5 w-5",
-                          !active && "group-hover:scale-110"
+                      <div className="relative">
+                        <Icon
+                          className={cn(
+                            "h-5 w-5 shrink-0 transition-transform duration-200",
+                            !active && "group-hover:scale-110"
+                          )}
+                        />
+                        {/* AI Accent - small sparkle indicator */}
+                        {item.hasAiAccent && !active && (
+                          <Sparkles className="absolute -top-1 -right-1 h-3 w-3 text-primary" />
                         )}
-                      />
+                      </div>
 
-                      {!isCollapsed && <span className="flex-1 truncate">{item.name}</span>}
+                      {!isCollapsed && (
+                        <>
+                          <span className="flex-1 truncate">{item.name}</span>
+                          
+                          {/* Badge indicator */}
+                          {item.badge && item.badge > 0 && (
+                            <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive px-1.5 text-[10px] font-bold text-white">
+                              {item.badge > 99 ? "99+" : item.badge}
+                            </span>
+                          )}
+                          
+                          {/* AI accent indicator in expanded mode */}
+                          {item.hasAiAccent && !active && (
+                            <Sparkles className="h-3.5 w-3.5 text-primary opacity-60" />
+                          )}
+                        </>
+                      )}
                     </Link>
                   );
 
@@ -195,7 +231,12 @@ export function Sidebar({ isCollapsed, onToggleCollapse }: SidebarProps) {
                       <Tooltip key={item.name}>
                         <TooltipTrigger asChild>{linkContent}</TooltipTrigger>
                         <TooltipContent side="right" className="font-medium">
-                          {item.name}
+                          <div className="flex items-center gap-2">
+                            {item.name}
+                            {item.hasAiAccent && (
+                              <Sparkles className="h-3 w-3 text-primary" />
+                            )}
+                          </div>
                         </TooltipContent>
                       </Tooltip>
                     );
@@ -206,44 +247,10 @@ export function Sidebar({ isCollapsed, onToggleCollapse }: SidebarProps) {
               </div>
             </div>
           ))}
-
-          {/* AI Credits Widget - pod Ustawienia */}
-          <div data-testid="nav-ai-credits-widget" className={cn("mt-6", isCollapsed ? "px-2" : "px-3")}>
-            <AICreditsWidget isCollapsed={isCollapsed} />
-          </div>
         </nav>
 
-        {/* Sign out */}
-        <div className={cn(isCollapsed ? "p-2" : "p-3")}>
-          <div className={isCollapsed ? "flex justify-center" : ""}>
-            {isCollapsed ? (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <button
-                    onClick={() => signOut()}
-                    data-testid="nav-logout-btn"
-                    className="group flex h-10 w-10 items-center justify-center rounded-xl text-muted-foreground transition-all duration-200 hover:bg-error-muted hover:text-error"
-                    aria-label="Wyloguj się"
-                  >
-                    <LogOut className="h-5 w-5 transition-transform duration-200 group-hover:-translate-x-0.5" />
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent side="right" className="font-medium">
-                  Wyloguj się
-                </TooltipContent>
-              </Tooltip>
-            ) : (
-              <button
-                onClick={() => signOut()}
-                data-testid="nav-logout-btn"
-                className="group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-muted-foreground transition-all duration-200 hover:bg-error-muted hover:text-error"
-              >
-                <LogOut className="h-5 w-5 transition-transform duration-200 group-hover:-translate-x-0.5" />
-                <span>Wyloguj się</span>
-              </button>
-            )}
-          </div>
-        </div>
+        {/* User Profile Footer */}
+        <UserProfileFooter isCollapsed={isCollapsed} />
       </aside>
     </TooltipProvider>
   );
