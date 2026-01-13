@@ -251,7 +251,7 @@ export const SET_DEFAULT_ORGANIZATION_MUTATION = gql`
  * Mutacja do tworzenia shadow patient (rozszerzona wersja shadow user)
  * Używana podczas dodawania pacjenta przed jego rejestracją w systemie
  * Tworzy usera + dodaje do organizacji + przypisuje do terapeuty w jednym kroku
- * 
+ *
  * UWAGA: Backend wymaga phone jako wymagane, ale email jest opcjonalny.
  * Fizjoterapeuta musi podać przynajmniej jedno z nich.
  */
@@ -363,6 +363,28 @@ export const UPDATE_SHADOW_PATIENT_MUTATION = gql`
         phone
         address
       }
+    }
+  }
+`;
+
+/**
+ * Mutacja do aktywacji dostępu Premium dla pacjenta
+ * Aktywuje dostęp do aplikacji mobilnej na określoną liczbę dni (domyślnie 30)
+ * Model Pay-as-you-go: Gabinet płaci za każdego aktywnego pacjenta w cyklu rozliczeniowym
+ */
+export const ACTIVATE_PATIENT_PREMIUM_MUTATION = gql`
+  mutation ActivatePatientPremium(
+    $patientId: String!
+    $organizationId: String!
+    $durationDays: Int = 30
+  ) {
+    activatePatientPremium(
+      patientId: $patientId
+      organizationId: $organizationId
+      durationDays: $durationDays
+    ) {
+      id
+      premiumActiveUntil
     }
   }
 `;

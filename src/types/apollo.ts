@@ -31,6 +31,8 @@ export interface User {
   creationTime?: string;
   personalData?: PersonalData;
   contactData?: ContactData;
+  /** Data wygaśnięcia dostępu Premium do aplikacji mobilnej */
+  premiumActiveUntil?: string;
 }
 
 export interface UserByClerkIdResponse {
@@ -437,4 +439,37 @@ export interface GenerateInviteLinkResponse {
 
 export interface ResendInvitationResponse {
   resendInvitation: OrganizationInvitation;
+}
+
+// ========================================
+// Billing Types - Pay-as-you-go Model
+// ========================================
+
+export interface TherapistBillingStats {
+  therapistId: string;
+  therapistName?: string;
+  therapistEmail?: string;
+  therapistImage?: string;
+  activePatientsCount: number;
+  estimatedAmount: number;
+}
+
+export interface CurrentBillingStatus {
+  organizationId: string;
+  month: number;
+  year: number;
+  /** Liczba pacjentów którzy mieli aktywne Premium w tym miesiącu */
+  activePatientsInMonth: number;
+  /** Liczba pacjentów którzy mają aktywne Premium teraz */
+  currentlyActivePremium: number;
+  pricePerPatient: number;
+  estimatedTotal: number;
+  currency: string;
+  partnerCode?: string;
+  /** Podział na terapeutów - kto aktywował ilu pacjentów */
+  therapistBreakdown: TherapistBillingStats[];
+}
+
+export interface GetCurrentBillingStatusResponse {
+  currentBillingStatus: CurrentBillingStatus;
 }

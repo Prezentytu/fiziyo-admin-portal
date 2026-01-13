@@ -508,7 +508,7 @@ export function SmartPatientLookup({
               {!isAlreadyAssignedToTherapist && !isAlreadyInOrg && 'Znaleziono pacjenta w systemie'}
             </span>
           </div>
-          
+
           {/* Info dla pacjentów spoza organizacji */}
           {!isAlreadyAssignedToTherapist && !isAlreadyInOrg && (
             <p className="text-xs text-muted-foreground mb-3">

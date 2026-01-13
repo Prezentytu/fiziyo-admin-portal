@@ -93,6 +93,8 @@ export default function PatientsPage() {
     contextLabel: item.contextLabel,
     contextColor: item.contextColor,
     assignedAt: item.assignedAt,
+    // Premium access (Pay-as-you-go model)
+    premiumActiveUntil: item.patient.premiumActiveUntil,
     // Collaborative Care fields
     therapist: item.therapist,
   }));

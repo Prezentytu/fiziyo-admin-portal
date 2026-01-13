@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Mail, Phone, FolderKanban, Wrench, MoreHorizontal, UserX, Tag, UserPlus, Trash2, Settings } from 'lucide-react';
+import { Mail, Phone, FolderKanban, Wrench, MoreHorizontal, UserX, Tag, UserPlus, Trash2, Settings, Sparkles } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -18,7 +18,10 @@ import { cn } from '@/lib/utils';
 import { EditContextLabelDialog } from './EditContextLabelDialog';
 import { EditPatientDialog } from './EditPatientDialog';
 import { TherapistBadge } from './TherapistBadge';
+import { PremiumStatusBadge } from './PremiumStatusBadge';
+import { ActivatePremiumDialog } from './ActivatePremiumDialog';
 import { useRoleAccess } from '@/hooks/useRoleAccess';
+import { usePatientPremium } from '@/hooks/usePatientPremium';
 
 export interface Patient {
   id: string;
@@ -39,6 +42,8 @@ export interface Patient {
   contextLabel?: string;
   contextColor?: string;
   assignedAt?: string;
+  // Premium access (Pay-as-you-go model)
+  premiumActiveUntil?: string;
   // Collaborative Care fields
   therapist?: {
     id: string;
@@ -78,6 +83,16 @@ export function PatientExpandableCard({
   const [isEditLabelOpen, setIsEditLabelOpen] = useState(false);
   const [isEditPatientOpen, setIsEditPatientOpen] = useState(false);
   const { canManageTeam } = useRoleAccess();
+
+  // Premium activation hook
+  const {
+    initiateActivation,
+    confirmActivation,
+    cancelActivation,
+    isActivating,
+    showConfirmDialog,
+    activationTarget,
+  } = usePatientPremium({ organizationId });
 
   // Check if current user is the assigned therapist
   const isMyPatient = patient.therapist?.id === therapistId;
@@ -192,6 +207,18 @@ export function PatientExpandableCard({
           />
         )}
 
+        {/* Premium Status Badge (only for my patients) */}
+        {isMyPatient && (
+          <PremiumStatusBadge
+            premiumActiveUntil={patient.premiumActiveUntil}
+            patientId={patient.id}
+            onActivate={() => initiateActivation(patient.id, displayName)}
+            isActivating={isActivating && activationTarget?.patientId === patient.id}
+            showActivateButton={true}
+            size="sm"
+          />
+        )}
+
         {/* Context Label - clickable to edit, hide default "Leczenie podstawowe" */}
         {isMyPatient && patient.contextLabel && patient.contextLabel !== 'Leczenie podstawowe' ? (
           <button
@@ -297,6 +324,10 @@ export function PatientExpandableCard({
                     <FolderKanban className="mr-2 h-4 w-4" />
                     Przypisz zestaw
                   </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => initiateActivation(patient.id, displayName)}>
+                    <Sparkles className="mr-2 h-4 w-4" />
+                    Aktywuj Premium (30 dni)
+                  </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => setIsEditLabelOpen(true)}>
                     <Tag className="mr-2 h-4 w-4" />
                     Edytuj notatkę
@@ -354,6 +385,16 @@ export function PatientExpandableCard({
       open={isEditPatientOpen}
       onOpenChange={setIsEditPatientOpen}
       patient={patient}
+    />
+
+    {/* Activate Premium Dialog */}
+    <ActivatePremiumDialog
+      open={showConfirmDialog}
+      onOpenChange={(open) => !open && cancelActivation()}
+      patientName={activationTarget?.patientName}
+      onConfirm={confirmActivation}
+      onCancel={cancelActivation}
+      isLoading={isActivating}
     />
   </>
   );

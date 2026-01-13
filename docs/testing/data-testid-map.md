@@ -14,6 +14,7 @@
 - `assign-` - Przypisywanie zestawów
 - `ai-` - Funkcje AI
 - `org-` - Organizacja
+- `billing-` - Rozliczenia Pay-as-you-go
 - `settings-` - Ustawienia
 - `common-` - Wspólne komponenty
 
@@ -325,6 +326,12 @@ await expect(page.getByTestId(/^exercise-card-/)).toHaveCount(5);
 | `patient-context-edit-btn` | Edytuj etykietę | `EditContextLabelDialog.tsx` |
 | `patient-context-dialog` | Dialog etykiety | `EditContextLabelDialog.tsx` |
 | `patient-context-submit-btn` | Zapisz etykietę | `EditContextLabelDialog.tsx` |
+| `patient-premium-badge-{id}` | Badge statusu Premium | `PremiumStatusBadge.tsx` |
+| `patient-premium-activate-btn-{id}` | Przycisk aktywacji Premium | `PremiumStatusBadge.tsx` |
+| `patient-premium-confirm-dialog` | Dialog potwierdzenia aktywacji | `ActivatePremiumDialog.tsx` |
+| `patient-premium-confirm-dialog-title` | Tytuł dialogu aktywacji | `ActivatePremiumDialog.tsx` |
+| `patient-premium-confirm-dialog-confirm-btn` | Przycisk potwierdzenia | `ActivatePremiumDialog.tsx` |
+| `patient-premium-confirm-dialog-cancel-btn` | Przycisk anulowania | `ActivatePremiumDialog.tsx` |
 
 ### 7. Przypisywanie zestawów (assign-)
 
@@ -450,7 +457,20 @@ await expect(page.getByTestId(/^exercise-card-/)).toHaveCount(5);
 | `org-invitation-{id}-resend-btn` | Wyślij ponownie | `InvitationsTab.tsx` |
 | `org-invitation-{id}-revoke-btn` | Anuluj | `InvitationsTab.tsx` |
 
-### 11. Ustawienia (settings-)
+### 11. Rozliczenia Pay-as-you-go (billing-)
+
+| data-testid | Element | Plik |
+|-------------|---------|------|
+| `dashboard-billing-kpi-card` | Karta KPI rozliczeń (Dashboard) | `BillingKpiCard.tsx` |
+| `billing-summary-widget` | Widget rozliczeń (pełny) | `BillingSummaryWidget.tsx` |
+| `billing-active-patients-count` | Liczba aktywnych pacjentów | `BillingSummaryWidget.tsx` |
+| `billing-estimated-amount` | Estymowana należność | `BillingSummaryWidget.tsx` |
+| `billing-details-btn` | Przycisk szczegółów (compact) | `BillingSummaryWidget.tsx` |
+| `billing-therapist-table` | Tabela terapeutów | `TherapistBillingTable.tsx` |
+| `billing-therapist-search-input` | Wyszukiwarka terapeutów | `TherapistBillingTable.tsx` |
+| `billing-therapist-row-{id}` | Wiersz terapeuty | `TherapistBillingTable.tsx` |
+
+### 12. Ustawienia (settings-)
 
 | data-testid | Element | Plik |
 |-------------|---------|------|
@@ -473,7 +493,7 @@ await expect(page.getByTestId(/^exercise-card-/)).toHaveCount(5);
 | `settings-ai-credits-balance` | Saldo kredytów | `AICreditsPanel.tsx` |
 | `settings-ai-credits-buy-btn` | Kup kredyty | `AICreditsPanel.tsx` |
 
-### 12. Onboarding (onboarding-)
+### 13. Onboarding (onboarding-)
 
 | data-testid | Element | Plik |
 |-------------|---------|------|
@@ -487,7 +507,7 @@ await expect(page.getByTestId(/^exercise-card-/)).toHaveCount(5);
 | `onboarding-getting-started-step-{id}` | Krok w karcie | `GettingStartedCard.tsx` |
 | `onboarding-dismiss-btn` | Ukryj kartę | `GettingStartedCard.tsx` |
 
-### 13. Moduł kliniczny (clinical-) - na ten moment beta funkcjonalność, na demo chcemy zebrać feedback i rozwijać/usunąć ten element
+### 14. Moduł kliniczny (clinical-) - na ten moment beta funkcjonalność, na demo chcemy zebrać feedback i rozwijać/usunąć ten element
 
 | data-testid | Element | Plik |
 |-------------|---------|------|
@@ -515,7 +535,7 @@ await expect(page.getByTestId(/^exercise-card-/)).toHaveCount(5);
 | `clinical-diagnosis-section` | Sekcja diagnozy | `DiagnosisSectionForm.tsx` |
 | `clinical-treatment-section` | Sekcja leczenia | `TreatmentPlanSectionForm.tsx` |
 
-### 14. Wspólne komponenty (common-)
+### 15. Wspólne komponenty (common-)
 
 | data-testid | Element | Plik |
 |-------------|---------|------|

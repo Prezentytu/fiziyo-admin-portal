@@ -7,6 +7,7 @@ import { AccessGuard } from "@/components/shared/AccessGuard";
 import { SubscriptionCard } from "@/components/organization/SubscriptionCard";
 import { AICreditsPanel } from "@/components/settings/AICreditsPanel";
 import { ResourceAddonsPanel } from "@/components/settings/ResourceAddonsPanel";
+import { BillingSummaryWidget, TherapistBillingTable } from "@/components/billing";
 import { useOrganization } from "@/contexts/OrganizationContext";
 import {
   GET_ORGANIZATION_BY_ID_QUERY,
@@ -85,9 +86,21 @@ export default function BillingPage() {
         <div className="flex flex-col gap-1">
           <h1 className="text-2xl font-bold text-foreground">Rozliczenia</h1>
           <p className="text-sm text-muted-foreground">
-            Zarządzaj planem subskrypcji, kredytami AI i dodatkowymi zasobami
+            Model Pay-as-you-go, kredyty AI i zarządzanie subskrypcją
           </p>
         </div>
+
+        {/* Pay-as-you-go Billing Summary - Full Widget */}
+        <BillingSummaryWidget
+          variant="full"
+          organizationId={organizationId}
+        />
+
+        {/* Therapist Billing Breakdown Table */}
+        <TherapistBillingTable organizationId={organizationId} />
+
+        {/* Separator */}
+        <div className="border-t border-border/40" />
 
         {/* Main Grid - 12 columns, 7:5 ratio */}
         <div className="grid gap-4 lg:grid-cols-12">

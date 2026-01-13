@@ -26,12 +26,12 @@ import { CreateSetWizard } from '@/components/exercise-sets/CreateSetWizard';
 import { AssignmentWizard } from '@/components/assignment/AssignmentWizard';
 import { PatientDialog } from '@/components/patients/PatientDialog';
 import { DashboardSkeleton } from '@/components/shared/DashboardSkeleton';
-import { SubscriptionBanner } from '@/components/subscription/SubscriptionBanner';
 import { GettingStartedCard } from '@/components/onboarding/GettingStartedCard';
+import { BillingKpiCard } from '@/components/billing';
 import { useOrganization } from '@/contexts/OrganizationContext';
+import { useRoleAccess } from '@/hooks/useRoleAccess';
 
 import { GET_ORGANIZATION_EXERCISE_SETS_QUERY } from '@/graphql/queries/exerciseSets.queries';
-import { GET_CURRENT_ORGANIZATION_PLAN } from '@/graphql/queries/organizations.queries';
 import { GET_THERAPIST_PATIENTS_QUERY } from '@/graphql/queries/therapists.queries';
 import { GET_USER_BY_CLERK_ID_QUERY } from '@/graphql/queries/users.queries';
 import { GET_ALL_PATIENT_ASSIGNMENTS_QUERY } from '@/graphql/queries/patientAssignments.queries';
@@ -39,7 +39,6 @@ import type {
   UserByClerkIdResponse,
   OrganizationExerciseSetsResponse,
   TherapistPatientsResponse,
-  CurrentOrganizationPlanResponse,
 } from '@/types/apollo';
 
 interface ExerciseSetItem {
@@ -79,6 +78,7 @@ function formatPolishDate(date: Date): string {
 export default function DashboardPage() {
   const { user } = useUser();
   const { currentOrganization, isLoading: orgLoading } = useOrganization();
+  const { canViewBilling } = useRoleAccess();
   const [isAssignWizardOpen, setIsAssignWizardOpen] = useState(false);
   const [isCreateSetWizardOpen, setIsCreateSetWizardOpen] = useState(false);
   const [isPatientDialogOpen, setIsPatientDialogOpen] = useState(false);
@@ -114,12 +114,6 @@ export default function DashboardPage() {
     fetchPolicy: 'cache-and-network', // Zawsze odświeżaj z serwera
   });
 
-  // Get subscription plan and limits
-  const { data: planData } = useQuery(GET_CURRENT_ORGANIZATION_PLAN, {
-    variables: { organizationId },
-    skip: !organizationId,
-  });
-
   const exerciseSets = (setsData as OrganizationExerciseSetsResponse)?.exerciseSets || [];
   const setsCount = exerciseSets.length;
 
@@ -145,26 +139,6 @@ export default function DashboardPage() {
   // Calculate active patients
   const activePatients = patients.filter((p: PatientAssignment) => p.status !== 'inactive');
   const displayedPatients = activePatients.slice(0, 4);
-
-  // Subscription plan info
-  const currentPlan = (planData as CurrentOrganizationPlanResponse)?.currentOrganizationPlan;
-  const limits = currentPlan?.limits;
-  const usage = currentPlan?.currentUsage;
-  const planName = currentPlan?.currentPlan || 'FREE';
-
-  // Check if any limit is reached
-  type LimitType = 'patients' | 'exercises' | 'therapists';
-  let reachedLimit: LimitType | null = null;
-
-  if (limits && usage) {
-    if (limits.maxPatients && usage.patients >= limits.maxPatients) {
-      reachedLimit = 'patients';
-    } else if (limits.maxExercises && usage.exercises >= limits.maxExercises) {
-      reachedLimit = 'exercises';
-    } else if (limits.maxTherapists && usage.therapists >= limits.maxTherapists) {
-      reachedLimit = 'therapists';
-    }
-  }
 
   // Show skeleton while initial data is loading
   const isInitialLoading = !user || userLoading || (!organizationId && !userData);
@@ -248,27 +222,34 @@ export default function DashboardPage() {
           </div>
         </button>
 
-        {/* Tertiary Action - Dodaj pacjenta */}
-        <button
-          onClick={() => setIsPatientDialogOpen(true)}
-          disabled={!organizationId || !therapistId}
-          data-testid="dashboard-add-patient-btn"
-          className="group relative overflow-hidden rounded-2xl border border-border/60 bg-surface p-5 text-left transition-all duration-300 hover:border-info/40 hover:bg-surface-light hover:shadow-lg cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed lg:col-span-3 flex items-center"
-        >
-          <div className="relative flex items-center gap-3 w-full">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-info/10 shrink-0 group-hover:bg-info/20 group-hover:scale-110 transition-all duration-300">
-              <UserPlus className="h-5 w-5 text-info" />
+        {/* Tertiary Action - Dodaj pacjenta (tylko gdy nie ma billingu) */}
+        {!canViewBilling && (
+          <button
+            onClick={() => setIsPatientDialogOpen(true)}
+            disabled={!organizationId || !therapistId}
+            data-testid="dashboard-add-patient-btn"
+            className="group relative overflow-hidden rounded-2xl border border-border/60 bg-surface p-5 text-left transition-all duration-300 hover:border-info/40 hover:bg-surface-light hover:shadow-lg cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed lg:col-span-3 flex items-center"
+          >
+            <div className="relative flex items-center gap-3 w-full">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-info/10 shrink-0 group-hover:bg-info/20 group-hover:scale-110 transition-all duration-300">
+                <UserPlus className="h-5 w-5 text-info" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <h3 className="text-sm font-semibold text-foreground group-hover:text-info transition-colors">
+                  Dodaj pacjenta
+                </h3>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Nowy pacjent
+                </p>
+              </div>
             </div>
-            <div className="min-w-0 flex-1">
-              <h3 className="text-sm font-semibold text-foreground group-hover:text-info transition-colors">
-                Dodaj pacjenta
-              </h3>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                Nowy pacjent
-              </p>
-            </div>
-          </div>
-        </button>
+          </button>
+        )}
+
+        {/* Billing KPI Card - Only for Owner/Admin (replaces "Dodaj pacjenta" in the grid) */}
+        {canViewBilling && organizationId && (
+          <BillingKpiCard organizationId={organizationId} />
+        )}
       </div>
 
       {/* Main Content - Bento Grid */}
@@ -491,20 +472,6 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
       </div>
-
-      {/* Subscription Banner - Urgent when limit reached, Promo otherwise */}
-      {reachedLimit ? (
-        <SubscriptionBanner
-          variant="urgent"
-          limitType={reachedLimit}
-          planName={planName}
-        />
-      ) : (
-        <SubscriptionBanner
-          variant="promo"
-          planName={planName}
-        />
-      )}
 
       {/* Assignment Wizard */}
       {organizationId && therapistId && (
