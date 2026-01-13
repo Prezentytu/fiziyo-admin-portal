@@ -69,10 +69,10 @@ const navigationGroups: NavigationGroup[] = [
   {
     label: 'Smart Tools',
     items: [
-      { 
-        name: 'Import Dokumentów', 
-        href: '/import', 
-        icon: FileText, 
+      {
+        name: 'Import Dokumentów',
+        href: '/import',
+        icon: FileText,
         testId: 'nav-mobile-link-import',
         hasAiAccent: true,
       },

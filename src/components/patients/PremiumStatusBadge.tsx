@@ -88,7 +88,7 @@ export function PremiumStatusBadge({
   // Active Premium - show badge with days left, extend on hover
   if (isActive) {
     const daysText = daysLeft === 1 ? "1 dzień" : `${daysLeft} dni`;
-    
+
     return (
       <TooltipProvider>
         <Tooltip>
@@ -114,7 +114,7 @@ export function PremiumStatusBadge({
                 <Sparkles className={cn("h-3 w-3", size === "sm" && "h-2.5 w-2.5")} />
                 Premium ({daysText})
               </Badge>
-              
+
               {/* Hover state - extend button */}
               {showActivateButton && onActivate && (
                 <Button

@@ -118,11 +118,11 @@ export function UserProfileFooter({ isCollapsed }: UserProfileFooterProps) {
               </div>
 
               {/* Menu Icon - changes on hover/open */}
-              <ChevronUp 
+              <ChevronUp
                 className={cn(
                   "h-4 w-4 text-muted-foreground transition-all shrink-0",
                   isOpen ? "opacity-100 rotate-0" : "opacity-0 group-hover:opacity-100 -rotate-180"
-                )} 
+                )}
               />
             </>
           )}
