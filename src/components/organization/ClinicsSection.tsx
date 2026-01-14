@@ -110,22 +110,22 @@ export function ClinicsSection({
   }
 
   return (
-    <section className="space-y-4">
+    <div className="space-y-8">
       {/* Section Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-secondary/10">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-secondary/10">
             <MapPin className="h-5 w-5 text-secondary" />
           </div>
           <div>
-            <h3 className="text-lg font-semibold text-foreground">Gabinety</h3>
+            <h2 className="text-xl font-bold tracking-tight text-foreground">Twoje Gabinety</h2>
             <p className="text-sm text-muted-foreground">
-              {clinics.length} {clinics.length === 1 ? "lokalizacja" : "lokalizacji"}
+              {clinics.length} {clinics.length === 1 ? "lokalizacja" : "lokalizacji"} w organizacji
             </p>
           </div>
         </div>
         {canEdit && (
-          <Button onClick={onAddClick} variant="outline" className="gap-2" data-testid="org-clinics-add-btn">
+          <Button onClick={onAddClick} className="gap-2 bg-primary text-white font-bold h-11 px-8 rounded-xl shadow-lg shadow-primary/20 transition-all hover:bg-primary/90" data-testid="org-clinics-add-btn">
             <Plus className="h-4 w-4" />
             Dodaj gabinet
           </Button>
@@ -134,24 +134,22 @@ export function ClinicsSection({
 
       {/* Search (only if more than 3 clinics) */}
       {clinics.length > 3 && (
-        <div className="relative max-w-sm">
+        <div className="relative w-full md:w-72">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder="Szukaj gabinetu..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 h-10 bg-surface border-border/60"
+            className="pl-10 h-10 bg-background border-input hover:border-primary/50 focus:ring-primary rounded-xl transition-all"
             data-testid="org-clinics-search-input"
           />
           {searchQuery && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8"
+            <button
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
               onClick={() => setSearchQuery("")}
             >
               <X className="h-4 w-4" />
-            </Button>
+            </button>
           )}
         </div>
       )}
@@ -170,45 +168,48 @@ export function ClinicsSection({
           onAction={!searchQuery && canEdit ? onAddClick : undefined}
         />
       ) : (
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {sortedClinics.map((clinic) => (
             <div
               key={clinic.id}
               className={cn(
-                "group relative rounded-xl border bg-surface p-4 transition-all duration-200",
+                "group relative rounded-xl border p-5 transition-all duration-300",
                 clinic.isActive
-                  ? "border-border/40 hover:border-border hover:shadow-md"
-                  : "border-border/20 opacity-60"
+                  ? "border-border/50 bg-card/30 hover:bg-card/50 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5"
+                  : "border-border/20 bg-muted/30 opacity-60"
               )}
               data-testid={`org-clinics-item-${clinic.id}`}
             >
               {/* Clinic info */}
-              <div className="space-y-3">
+              <div className="space-y-4">
                 <div className="flex items-start justify-between gap-2">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-secondary/10 shrink-0">
-                      <MapPin className="h-4 w-4 text-secondary" />
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-secondary/10 shrink-0 group-hover:scale-110 transition-transform">
+                      <MapPin className="h-5 w-5 text-secondary" />
                     </div>
-                    <h4 className="font-semibold text-foreground truncate">
-                      {clinic.name}
-                    </h4>
+                    <div>
+                      <h4 className="font-bold text-foreground truncate group-hover:text-primary transition-colors">
+                        {clinic.name}
+                      </h4>
+                      {!clinic.isActive && (
+                        <Badge variant="outline" className="mt-1 h-5 text-[10px] uppercase font-bold tracking-wider bg-background/50 border-border/50 text-muted-foreground">
+                          Nieaktywny
+                        </Badge>
+                      )}
+                    </div>
                   </div>
-                  {!clinic.isActive && (
-                    <Badge variant="secondary" className="shrink-0 text-xs">
-                      Nieaktywny
-                    </Badge>
-                  )}
                 </div>
 
                 {clinic.address && (
-                  <p className="text-sm text-muted-foreground line-clamp-2 pl-10">
-                    {clinic.address}
-                  </p>
+                  <div className="flex items-start gap-2 text-sm text-muted-foreground">
+                    <MapPin className="h-4 w-4 shrink-0 mt-0.5 opacity-50" />
+                    <p className="line-clamp-2">{clinic.address}</p>
+                  </div>
                 )}
 
                 {clinic.contactInfo && (
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground pl-10">
-                    <Phone className="h-3.5 w-3.5 shrink-0" />
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Phone className="h-4 w-4 shrink-0 opacity-50" />
                     <span className="truncate">{clinic.contactInfo}</span>
                   </div>
                 )}
@@ -216,30 +217,30 @@ export function ClinicsSection({
 
               {/* Hover actions */}
               {canEdit && (
-                <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-8 w-8" data-testid={`org-clinics-menu-${clinic.id}`}>
+                      <Button variant="ghost" size="icon" className="h-9 w-9 rounded-xl hover:bg-background border border-transparent hover:border-border/50 transition-all">
                         <MoreHorizontal className="h-4 w-4" />
                       </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => onEditClinic(clinic)} data-testid={`org-clinics-edit-${clinic.id}`}>
+                    <DropdownMenuContent align="end" className="w-48 rounded-xl">
+                      <DropdownMenuItem onClick={() => onEditClinic(clinic)} className="rounded-lg" data-testid={`org-clinics-edit-${clinic.id}`}>
                         <Pencil className="mr-2 h-4 w-4" />
-                        Edytuj
+                        Edytuj dane
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => onAssignPeople(clinic)} data-testid={`org-clinics-assign-${clinic.id}`}>
+                      <DropdownMenuItem onClick={() => onAssignPeople(clinic)} className="rounded-lg" data-testid={`org-clinics-assign-${clinic.id}`}>
                         <Users className="mr-2 h-4 w-4" />
-                        Przypisz osoby
+                        Przypisz zespół
                       </DropdownMenuItem>
-                      <DropdownMenuSeparator />
+                      <DropdownMenuSeparator className="bg-border/50" />
                       <DropdownMenuItem
                         onClick={() => setDeletingClinic(clinic)}
-                        className="text-destructive focus:text-destructive"
+                        className="text-destructive focus:text-destructive rounded-lg"
                         data-testid={`org-clinics-delete-${clinic.id}`}
                       >
                         <Trash2 className="mr-2 h-4 w-4" />
-                        Usuń
+                        Usuń gabinet
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
@@ -261,6 +262,6 @@ export function ClinicsSection({
         onConfirm={handleDelete}
         isLoading={deleting}
       />
-    </section>
+    </div>
   );
 }

@@ -51,7 +51,7 @@ const roleConfig = {
 };
 
 // Filter out patients - only show staff members
-const STAFF_ROLES = ["owner", "admin", "therapist", "member"];
+const STAFF_ROLES = new Set(["owner", "admin", "therapist", "member"]);
 
 export function TeamSection({
   members,
@@ -78,7 +78,7 @@ export function TeamSection({
   // Filter to staff only (exclude patients)
   const staffMembers = useMemo(() => {
     return members.filter((m) =>
-      STAFF_ROLES.includes(m.role.toLowerCase())
+      STAFF_ROLES.has(m.role.toLowerCase())
     );
   }, [members]);
 
@@ -153,24 +153,24 @@ export function TeamSection({
   }
 
   return (
-    <section className="space-y-4">
+    <div className="space-y-8">
       {/* Section Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
             <Users className="h-5 w-5 text-primary" />
           </div>
           <div>
-            <h3 className="text-lg font-semibold text-foreground">Zespół</h3>
+            <h2 className="text-xl font-bold tracking-tight text-foreground">Twój Zespół</h2>
             <p className="text-sm text-muted-foreground">
               {staffMembers.length} {staffMembers.length === 1 ? "osoba" : "osób"} w organizacji
             </p>
           </div>
         </div>
         {canInvite && !isAtTherapistLimit && (
-          <Button onClick={onInviteClick} className="gap-2 shadow-lg shadow-primary/20" data-testid="org-team-invite-btn">
+          <Button onClick={onInviteClick} className="gap-2 bg-primary text-white font-bold h-11 px-8 rounded-xl shadow-lg shadow-primary/20 transition-all hover:bg-primary/90" data-testid="org-team-invite-btn">
             <UserPlus className="h-4 w-4" />
-            Zaproś
+            Zaproś do zespołu
           </Button>
         )}
       </div>
@@ -186,49 +186,45 @@ export function TeamSection({
         />
       )}
 
-      {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Szukaj w zespole..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 h-10 bg-surface border-border/60"
-            data-testid="org-team-search-input"
-          />
-          {searchQuery && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8"
-              onClick={() => setSearchQuery("")}
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          )}
-        </div>
-
-        <div className="flex gap-2">
+      {/* Filters and Search */}
+      <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
+        <div className="flex items-center gap-2 p-1 rounded-xl bg-accent/30 border border-border/40 w-full md:w-auto overflow-x-auto">
           {(["all", "admin", "therapist"] as RoleFilter[]).map((filter) => (
-            <Button
+            <button
               key={filter}
-              variant={roleFilter === filter ? "default" : "outline"}
-              size="sm"
               onClick={() => setRoleFilter(filter)}
               className={cn(
-                "h-9 transition-all",
-                roleFilter === filter
-                  ? "shadow-lg shadow-primary/20"
-                  : "border-border/60 hover:border-border"
+                "px-4 py-1.5 text-xs font-medium rounded-lg transition-all whitespace-nowrap",
+                roleFilter === filter 
+                  ? "bg-background text-foreground shadow-sm" 
+                  : "text-muted-foreground hover:text-foreground hover:bg-background/50"
               )}
               data-testid={`org-team-filter-${filter}`}
             >
               {filter === "all" && "Wszyscy"}
               {filter === "admin" && "Administratorzy"}
               {filter === "therapist" && "Fizjoterapeuci"}
-            </Button>
+            </button>
           ))}
+        </div>
+
+        <div className="relative w-full md:w-72">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder="Szukaj pracownika..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10 h-10 bg-background border-input hover:border-primary/50 focus:ring-primary rounded-xl transition-all"
+            data-testid="org-team-search-input"
+          />
+          {searchQuery && (
+            <button
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              onClick={() => setSearchQuery("")}
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
         </div>
       </div>
 
@@ -237,21 +233,19 @@ export function TeamSection({
         <div className="flex items-center gap-2">
           <span className="text-sm text-muted-foreground">
             Znaleziono{" "}
-            <span className="font-medium text-foreground">{filteredMembers.length}</span> z{" "}
-            <span className="font-medium text-foreground">{staffMembers.length}</span>
+            <span className="font-semibold text-foreground">{filteredMembers.length}</span> pracownik(ów)
           </span>
-          <Badge variant="secondary" className="gap-1.5">
-            Aktywne filtry
-            <button
-              onClick={() => {
-                setSearchQuery("");
-                setRoleFilter("all");
-              }}
-              className="ml-1 hover:text-foreground transition-colors"
-            >
-              <X className="h-3 w-3" />
-            </button>
-          </Badge>
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={() => {
+              setSearchQuery("");
+              setRoleFilter("all");
+            }}
+            className="h-7 text-xs hover:bg-accent/50 rounded-lg text-primary"
+          >
+            Wyczyść filtry
+          </Button>
         </div>
       )}
 
@@ -306,6 +300,6 @@ export function TeamSection({
           })}
         </div>
       )}
-    </section>
+    </div>
   );
 }

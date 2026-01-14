@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useMutation } from "@apollo/client/react";
-import { Dumbbell, Globe, Loader2, Lock, Save, Users } from "lucide-react";
+import { Dumbbell, Loader2, Lock, Save, Users } from "lucide-react";
 import { toast } from "sonner";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -79,15 +79,15 @@ export function ExerciseVisibilitySettings({
   };
 
   return (
-    <Card className="border-border/60">
+    <Card className="rounded-xl border border-border/50 bg-card/30">
       <CardHeader>
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
             <Dumbbell className="h-5 w-5 text-primary" />
           </div>
           <div>
-            <CardTitle className="text-lg">Ustawienia ćwiczeń</CardTitle>
-            <CardDescription>
+            <CardTitle className="text-lg font-semibold tracking-tight">Ustawienia ćwiczeń</CardTitle>
+            <CardDescription className="text-sm text-muted-foreground">
               Kontroluj widoczność i udostępnianie ćwiczeń w organizacji
             </CardDescription>
           </div>
@@ -97,10 +97,10 @@ export function ExerciseVisibilitySettings({
         {/* Allow personal exercises */}
         <div
           className={cn(
-            "flex items-start gap-4 p-4 rounded-lg border transition-colors",
+            "flex items-start gap-4 p-4 rounded-xl border transition-all",
             allowPersonal
-              ? "border-primary/30 bg-primary/5"
-              : "border-border/60 bg-surface"
+              ? "border-primary/30 bg-primary/5 ring-1 ring-primary/10"
+              : "border-border/50 bg-background/50 hover:bg-background hover:border-primary/30"
           )}
         >
           <Checkbox
@@ -110,17 +110,17 @@ export function ExerciseVisibilitySettings({
               canEdit && setAllowPersonal(checked === true)
             }
             disabled={!canEdit}
-            className="mt-1"
+            className="mt-1 rounded-md"
           />
           <div className="flex-1 space-y-1">
             <Label
               htmlFor="allowPersonal"
-              className="text-base font-medium cursor-pointer flex items-center gap-2"
+              className="text-base font-semibold cursor-pointer flex items-center gap-2"
             >
               <Lock className="h-4 w-4 text-muted-foreground" />
               Pozwól na tworzenie osobistych ćwiczeń
             </Label>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-muted-foreground leading-relaxed">
               Członkowie organizacji mogą tworzyć ćwiczenia widoczne tylko dla
               siebie. Wyłączenie tej opcji wymusi udostępnianie wszystkich
               ćwiczeń całej organizacji.
@@ -131,10 +131,10 @@ export function ExerciseVisibilitySettings({
         {/* Shared by default */}
         <div
           className={cn(
-            "flex items-start gap-4 p-4 rounded-lg border transition-colors",
+            "flex items-start gap-4 p-4 rounded-xl border transition-all",
             sharedByDefault
-              ? "border-secondary/30 bg-secondary/5"
-              : "border-border/60 bg-surface"
+              ? "border-secondary/30 bg-secondary/5 ring-1 ring-secondary/10"
+              : "border-border/50 bg-background/50 hover:bg-background hover:border-secondary/30"
           )}
         >
           <Checkbox
@@ -144,17 +144,17 @@ export function ExerciseVisibilitySettings({
               canEdit && setSharedByDefault(checked === true)
             }
             disabled={!canEdit}
-            className="mt-1"
+            className="mt-1 rounded-md"
           />
           <div className="flex-1 space-y-1">
             <Label
               htmlFor="sharedByDefault"
-              className="text-base font-medium cursor-pointer flex items-center gap-2"
+              className="text-base font-semibold cursor-pointer flex items-center gap-2"
             >
               <Users className="h-4 w-4 text-muted-foreground" />
               Domyślnie udostępniaj ćwiczenia organizacji
             </Label>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-muted-foreground leading-relaxed">
               Nowo tworzone ćwiczenia będą automatycznie udostępniane wszystkim
               członkom organizacji. Użytkownicy nadal będą mogli zmienić zakres
               widoczności ręcznie.
@@ -162,13 +162,13 @@ export function ExerciseVisibilitySettings({
           </div>
         </div>
 
-        {/* Actions */}
+        {/* Actions - Sticky Footer style if changes */}
         {canEdit && hasChanges && (
-          <div className="flex items-center justify-end gap-3 pt-2 border-t border-border/60">
-            <Button variant="outline" onClick={handleReset} disabled={loading}>
-              Anuluj zmiany
+          <div className="flex items-center justify-end gap-3 pt-4 border-t border-border/50">
+            <Button variant="outline" onClick={handleReset} disabled={loading} className="rounded-xl border-border/50 h-10">
+              Anuluj
             </Button>
-            <Button onClick={handleSave} disabled={loading} className="gap-2">
+            <Button onClick={handleSave} disabled={loading} className="gap-2 bg-primary text-white font-bold h-10 px-6 rounded-xl shadow-lg shadow-primary/20 transition-all">
               {loading ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (

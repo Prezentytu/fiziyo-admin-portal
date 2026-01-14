@@ -36,10 +36,10 @@ export function formatDurationPolish(seconds: number): string {
   if (seconds < 60) {
     return formatSeconds(seconds);
   }
-  
+
   const minutes = Math.floor(seconds / 60);
   const remainingSeconds = seconds % 60;
-  
+
   let result = '';
   if (minutes === 1) {
     result = '1 minuta';
@@ -48,11 +48,11 @@ export function formatDurationPolish(seconds: number): string {
   } else {
     result = `${minutes} minut`;
   }
-  
+
   if (remainingSeconds > 0) {
     result += ` ${formatSeconds(remainingSeconds)}`;
   }
-  
+
   return result;
 }
 
@@ -96,7 +96,7 @@ export function formatDaysPolish(frequency: {
   };
 
   const activeDays: string[] = [];
-  
+
   if (frequency.monday) activeDays.push(dayNames.monday);
   if (frequency.tuesday) activeDays.push(dayNames.tuesday);
   if (frequency.wednesday) activeDays.push(dayNames.wednesday);
@@ -110,7 +110,7 @@ export function formatDaysPolish(frequency: {
   if (activeDays.length === 5 && !frequency.saturday && !frequency.sunday) {
     return 'Od poniedziałku do piątku';
   }
-  
+
   return activeDays.join(', ');
 }
 
@@ -138,5 +138,3 @@ export function translateExerciseSidePolish(side?: string): string {
   };
   return side ? sides[side] || '' : '';
 }
-
-

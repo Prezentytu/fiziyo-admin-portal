@@ -11,14 +11,14 @@ import {
   Repeat,
   Dumbbell,
   Play,
-  ExternalLink,
   FolderPlus,
   ArrowLeftRight,
   FileText,
   MoreHorizontal,
-  ChevronDown,
   Timer,
   ZoomIn,
+  ChevronRight,
+  Sparkles,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -31,7 +31,8 @@ import { AddExerciseToSetsDialog } from '@/components/exercises/AddExerciseToSet
 import { ColorBadge } from '@/components/shared/ColorBadge';
 import { ImagePlaceholder } from '@/components/shared/ImagePlaceholder';
 import { ImageLightbox } from '@/components/shared/ImageLightbox';
-import { getMediaUrl, getMediaUrls } from '@/utils/mediaUrl';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { getMediaUrls } from '@/utils/mediaUrl';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -39,11 +40,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from '@/components/ui/collapsible';
 import { cn } from '@/lib/utils';
 
 import { GET_EXERCISE_BY_ID_QUERY, GET_ORGANIZATION_EXERCISES_QUERY } from '@/graphql/queries/exercises.queries';
@@ -52,6 +48,7 @@ import { GET_TAG_CATEGORIES_BY_ORGANIZATION_QUERY } from '@/graphql/queries/tagC
 import { DELETE_EXERCISE_MUTATION } from '@/graphql/mutations/exercises.mutations';
 import { createTagsMap, mapExerciseTagsToObjects } from '@/utils/tagUtils';
 import { useOrganization } from '@/contexts/OrganizationContext';
+import { useExerciseBuilder } from '@/contexts/ExerciseBuilderContext';
 import type {
   ExerciseByIdResponse,
   ExerciseTagsResponse,
@@ -76,13 +73,12 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
   const { id } = use(params);
   const router = useRouter();
   const { currentOrganization } = useOrganization();
+  const { setIsChatOpen } = useExerciseBuilder();
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isAddToSetDialogOpen, setIsAddToSetDialogOpen] = useState(false);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
-  const [isTimesOpen, setIsTimesOpen] = useState(false);
-  const [isNotesOpen, setIsNotesOpen] = useState(false);
 
   // Get organization ID from context (changes when user switches organization)
   const organizationId = currentOrganization?.organizationId;
@@ -193,112 +189,70 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
   const allImages = getMediaUrls([exercise.imageUrl, ...(exercise.images || [])]);
   const currentImage = allImages[selectedImageIndex] || null;
 
-  const hasRestTimes =
-    (exercise.restSets && exercise.restSets > 0) ||
-    (exercise.restReps && exercise.restReps > 0) ||
-    (exercise.preparationTime && exercise.preparationTime > 0);
-
   const hasTags = (exercise.mainTags?.length ?? 0) > 0 || (exercise.additionalTags?.length ?? 0) > 0;
 
   return (
-    <div className="space-y-6">
-      {/* Compact Header */}
-      <div className="flex items-center justify-between">
-        <Button variant="ghost" onClick={() => router.push('/exercises')} className="gap-2">
-          <ArrowLeft className="h-4 w-4" />
-          Powrót do ćwiczeń
-        </Button>
-
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm" className="gap-2">
-              Opcje
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => setIsEditDialogOpen(true)}>
-              <Pencil className="mr-2 h-4 w-4" />
-              Edytuj
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              onClick={() => setIsDeleteDialogOpen(true)}
-              className="text-destructive focus:text-destructive"
-            >
-              <Trash2 className="mr-2 h-4 w-4" />
-              Usuń
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
-
-      {/* Hero Section: Image + Action + Stats */}
-      <div className="grid gap-4 lg:grid-cols-12">
-        {/* Hero Image */}
-        <div className="lg:col-span-7 space-y-3">
-          <div className="relative aspect-video rounded-2xl overflow-hidden bg-surface-light group/hero">
-            {currentImage ? (
-              <>
-                <img
-                  src={currentImage}
-                  alt={exercise.name}
-                  className="w-full h-full object-contain"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
-
-                {/* Zoom button */}
-                <button
-                  type="button"
-                  onClick={() => setLightboxOpen(true)}
-                  className={cn(
-                    "absolute top-4 right-4 z-10",
-                    "flex h-10 w-10 items-center justify-center rounded-full",
-                    "bg-black/50 text-white/80 backdrop-blur-sm",
-                    "opacity-0 group-hover/hero:opacity-100 transition-all duration-200",
-                    "hover:bg-black/70 hover:text-white hover:scale-110"
-                  )}
-                  aria-label="Powiększ zdjęcie"
-                >
-                  <ZoomIn className="h-5 w-5" />
-                </button>
-              </>
-            ) : (
-              <ImagePlaceholder type="exercise" className="h-full" iconClassName="h-16 w-16" />
-            )}
-
-            {/* Title overlay */}
-            <div className="absolute bottom-0 left-0 right-0 p-5">
-              <div className="flex items-center gap-2 mb-2">
-                {exercise.type && (
-                  <Badge className="bg-primary/90 text-primary-foreground border-0">
-                    {getTypeLabel(exercise.type)}
-                  </Badge>
+    <div className="flex h-[calc(100vh-(--spacing(16)))] flex-col lg:flex-row overflow-hidden -m-6 bg-zinc-950">
+      {/* Left Column: Media Hero (The Immersive Cinema) - 35% width */}
+      <div className="relative w-full lg:w-[35%] bg-black flex flex-col items-center justify-center overflow-hidden border-b lg:border-b-0 border-white/5">
+        {/* Background Layer: Immersive Backdrop */}
+        {currentImage && (
+          <>
+            <img 
+              src={currentImage} 
+              alt=""
+              className="absolute inset-0 w-full h-full object-cover blur-3xl opacity-80 scale-150 pointer-events-none"
+            />
+            <div className="absolute inset-0 bg-black/40 pointer-events-none" />
+          </>
+        )}
+        
+        {/* Main content area (Content Layer) - No boxes, no limits */}
+        <div className="relative z-10 w-full h-full flex items-center justify-center group/hero">
+          {currentImage ? (
+            <>
+              <img
+                src={currentImage}
+                alt={exercise.name}
+                className="relative w-full h-full object-contain z-10 p-4"
+              />
+              {/* Zoom button */}
+              <button
+                type="button"
+                onClick={() => setLightboxOpen(true)}
+                className={cn(
+                  "absolute top-8 right-8 z-20",
+                  "flex h-14 w-14 items-center justify-center rounded-full",
+                  "bg-black/40 text-white/80 backdrop-blur-xl border border-white/10",
+                  "opacity-0 group-hover/hero:opacity-100 transition-all duration-500",
+                  "hover:bg-black/60 hover:text-white hover:scale-110"
                 )}
-                <Badge variant="outline" className="bg-black/40 text-white border-white/20 backdrop-blur-sm">
-                  <ArrowLeftRight className="mr-1 h-3 w-3" />
-                  {getSideLabel(exercise.exerciseSide)}
-                </Badge>
-              </div>
-              <h1 className="text-2xl font-bold text-white">{exercise.name}</h1>
+                aria-label="Powiększ zdjęcie"
+              >
+                <ZoomIn className="h-7 w-7" />
+              </button>
+            </>
+          ) : (
+            <div className="h-full w-full flex items-center justify-center">
+              <ImagePlaceholder type="exercise" className="h-32 w-32 opacity-10" iconClassName="h-24 w-24" />
             </div>
-          </div>
+          )}
 
-          {/* Thumbnails + Video */}
+          {/* Thumbnails Overlay - Bottom left of the image column */}
           {(allImages.length > 1 || exercise.videoUrl) && (
-            <div className="flex gap-2 overflow-x-auto pb-1">
-              {allImages.map((img, index) => (
+            <div className="absolute bottom-8 left-8 z-20 flex gap-3 p-2 rounded-2xl bg-black/40 backdrop-blur-2xl border border-white/10 overflow-x-auto max-w-[calc(100%-4rem)] no-scrollbar opacity-0 group-hover/hero:opacity-100 transition-all duration-500">
+              {allImages.map((img) => (
                 <button
-                  key={index}
-                  onClick={() => setSelectedImageIndex(index)}
+                  key={img}
+                  onClick={() => setSelectedImageIndex(allImages.indexOf(img))}
                   className={cn(
-                    'shrink-0 w-14 h-14 rounded-lg overflow-hidden border-2 transition-all',
-                    selectedImageIndex === index
-                      ? 'border-primary ring-2 ring-primary/20'
-                      : 'border-border/40 opacity-60 hover:opacity-100 hover:border-border'
+                    'shrink-0 w-12 h-12 rounded-xl overflow-hidden border-2 transition-all duration-500',
+                    currentImage === img
+                      ? 'border-primary shadow-lg shadow-primary/20 scale-105'
+                      : 'border-transparent opacity-50 hover:opacity-100 hover:scale-105'
                   )}
                 >
-                  <img src={img} alt={`${exercise.name} ${index + 1}`} className="w-full h-full object-cover" />
+                  <img src={img} alt={exercise.name} className="w-full h-full object-cover" />
                 </button>
               ))}
               {exercise.videoUrl && (
@@ -306,191 +260,288 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
                   href={exercise.videoUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="shrink-0 w-14 h-14 rounded-lg overflow-hidden border-2 border-border/40 bg-surface flex items-center justify-center hover:border-primary hover:bg-primary/10 transition-all group"
+                  className="shrink-0 w-12 h-12 rounded-xl overflow-hidden border-2 border-transparent bg-white/10 flex items-center justify-center hover:bg-white/20 hover:border-white/30 transition-all group/vid"
                 >
-                  <Play className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
+                  <Play className="h-4 w-4 text-white/80 group-hover/vid:text-white transition-all" />
                 </a>
               )}
             </div>
           )}
         </div>
-
-        {/* Hero Action + Quick Stats */}
-        <div className="lg:col-span-5 flex flex-col gap-3">
-          {/* Hero Action - Dodaj do zestawu */}
-          <button
-            onClick={handleAddToSet}
-            className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary via-primary to-primary-dark p-5 text-left transition-all duration-300 hover:shadow-xl hover:shadow-primary/20 hover:scale-[1.02] cursor-pointer"
-          >
-            <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-            <div className="absolute -top-24 -right-24 w-48 h-48 bg-white/10 rounded-full blur-3xl group-hover:bg-white/20 transition-all duration-500" />
-
-            <div className="relative flex items-center gap-4">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm shrink-0 group-hover:scale-110 transition-transform duration-300">
-                <FolderPlus className="h-6 w-6 text-white" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <h3 className="text-lg font-bold text-white">
-                  Dodaj do zestawu
-                </h3>
-                <p className="text-sm text-white/70">
-                  Przypisz ćwiczenie do programu
-                </p>
-              </div>
-            </div>
-          </button>
-
-          {/* Quick Stats */}
-          <div className="grid grid-cols-3 gap-2">
-            <div className="rounded-xl border border-border/40 bg-surface/50 p-4 text-center">
-              <Repeat className="h-5 w-5 text-primary mx-auto mb-1" />
-              <p className="text-xl font-bold text-foreground">
-                {exercise.sets !== undefined && exercise.sets > 0 ? exercise.sets : '—'}
-              </p>
-              <p className="text-xs text-muted-foreground">Serii</p>
-            </div>
-            <div className="rounded-xl border border-border/40 bg-surface/50 p-4 text-center">
-              <Dumbbell className="h-5 w-5 text-secondary mx-auto mb-1" />
-              <p className="text-xl font-bold text-foreground">
-                {exercise.reps !== undefined && exercise.reps > 0 ? exercise.reps : '—'}
-              </p>
-              <p className="text-xs text-muted-foreground">Powtórzeń</p>
-            </div>
-            <div className="rounded-xl border border-border/40 bg-surface/50 p-4 text-center">
-              <Clock className="h-5 w-5 text-info mx-auto mb-1" />
-              <p className="text-xl font-bold text-foreground">
-                {exercise.duration !== undefined && exercise.duration > 0 ? `${exercise.duration}s` : '—'}
-              </p>
-              <p className="text-xs text-muted-foreground">Czas</p>
-            </div>
-          </div>
-
-          {/* Video link (if no thumbnails shown) */}
-          {exercise.videoUrl && allImages.length <= 1 && (
-            <a
-              href={exercise.videoUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-3 p-4 rounded-xl border border-border/40 bg-surface/50 hover:bg-surface-light hover:border-primary/30 transition-all group"
-            >
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors">
-                <Play className="h-5 w-5 text-primary" />
-              </div>
-              <div className="flex-1">
-                <p className="text-sm font-medium text-foreground">Obejrzyj wideo</p>
-                <p className="text-xs text-muted-foreground">Instrukcja wykonania</p>
-              </div>
-              <ExternalLink className="h-4 w-4 text-muted-foreground" />
-            </a>
-          )}
-        </div>
       </div>
 
-      {/* Description */}
-      {exercise.description && (
-        <div className="rounded-xl border border-border/40 bg-surface/50 p-5">
-          <p className="text-muted-foreground leading-relaxed">{exercise.description}</p>
-        </div>
-      )}
-
-      {/* Tags */}
-      {hasTags && (
-        <div className="flex flex-wrap gap-2">
-          {exercise.mainTags?.map((tag: string | ExerciseTag, index: number) => {
-            if (isTagObject(tag)) {
-              return (
-                <ColorBadge key={tag.id} color={tag.color}>
-                  {tag.name}
-                </ColorBadge>
-              );
-            }
-            return (
-              <Badge key={index} variant="secondary">
-                {tag}
-              </Badge>
-            );
-          })}
-          {exercise.additionalTags?.map((tag: string | ExerciseTag, index: number) => {
-            if (isTagObject(tag)) {
-              return (
-                <ColorBadge key={tag.id} color={tag.color}>
-                  {tag.name}
-                </ColorBadge>
-              );
-            }
-            return (
-              <Badge key={index} variant="outline">
-                {tag}
-              </Badge>
-            );
-          })}
-        </div>
-      )}
-
-      {/* Collapsible: Times & Rests */}
-      {hasRestTimes && (
-        <Collapsible open={isTimesOpen} onOpenChange={setIsTimesOpen}>
-          <CollapsibleTrigger className="flex items-center justify-between w-full p-4 rounded-xl border border-border/40 bg-surface/50 hover:bg-surface-light transition-colors group">
-            <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-info/10">
-                <Timer className="h-4 w-4 text-info" />
+      {/* Right Column: The Cockpit - 65% width */}
+      <div className="flex flex-col w-full lg:w-[65%] h-full bg-background relative">
+        <ScrollArea className="flex-1">
+          <div className="p-8 lg:p-12 pb-12 space-y-12">
+            {/* Meta Info & Tags */}
+            <div className="space-y-4">
+              <div className="flex flex-wrap gap-3">
+                {exercise.type && (
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-primary/10 text-primary border border-primary/20">
+                    {getTypeLabel(exercise.type)}
+                  </span>
+                )}
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-zinc-100 dark:bg-zinc-800 text-zinc-500 border border-zinc-200 dark:border-zinc-700">
+                  <ArrowLeftRight className="mr-1.5 h-3 w-3" />
+                  {getSideLabel(exercise.exerciseSide)}
+                </span>
               </div>
-              <span className="font-medium text-foreground">Czasy i przerwy</span>
             </div>
-            <ChevronDown className={cn(
-              'h-5 w-5 text-muted-foreground transition-transform duration-200',
-              isTimesOpen && 'rotate-180'
-            )} />
-          </CollapsibleTrigger>
-          <CollapsibleContent className="mt-2">
-            <div className="grid gap-2 sm:grid-cols-3 p-4 rounded-xl border border-border/40 bg-surface/30">
-              {exercise.restSets !== undefined && exercise.restSets > 0 && (
-                <div className="p-3 rounded-lg bg-surface-light">
-                  <p className="text-xs text-muted-foreground">Przerwa między seriami</p>
-                  <p className="font-semibold text-foreground">{exercise.restSets}s</p>
-                </div>
-              )}
-              {exercise.restReps !== undefined && exercise.restReps > 0 && (
-                <div className="p-3 rounded-lg bg-surface-light">
-                  <p className="text-xs text-muted-foreground">Przerwa między powtórzeniami</p>
-                  <p className="font-semibold text-foreground">{exercise.restReps}s</p>
-                </div>
-              )}
-              {exercise.preparationTime !== undefined && exercise.preparationTime > 0 && (
-                <div className="p-3 rounded-lg bg-surface-light">
-                  <p className="text-xs text-muted-foreground">Czas przygotowania</p>
-                  <p className="font-semibold text-foreground">{exercise.preparationTime}s</p>
-                </div>
-              )}
-            </div>
-          </CollapsibleContent>
-        </Collapsible>
-      )}
 
-      {/* Collapsible: Notes */}
-      {exercise.notes && (
-        <Collapsible open={isNotesOpen} onOpenChange={setIsNotesOpen}>
-          <CollapsibleTrigger className="flex items-center justify-between w-full p-4 rounded-xl border border-border/40 bg-surface/50 hover:bg-surface-light transition-colors group">
-            <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-secondary/10">
-                <FileText className="h-4 w-4 text-secondary" />
+            {/* Header Content */}
+            <div className="space-y-4">
+              <h1 className="text-4xl font-bold tracking-tight text-foreground transition-all">
+                {exercise.name}
+              </h1>
+              {hasTags && (
+                <div className="flex flex-wrap gap-2 pt-2">
+                  {exercise.mainTags?.map((tag) => (
+                    isTagObject(tag) ? (
+                      <ColorBadge 
+                        key={tag.id} 
+                        color={tag.color} 
+                        className="px-3 py-1 text-[10px] uppercase font-bold tracking-wider bg-transparent border-current/20"
+                        variant="outline"
+                      >
+                        {tag.name}
+                      </ColorBadge>
+                    ) : (
+                      <Badge key={tag} variant="outline" className="px-3 py-1 text-[10px] uppercase font-bold tracking-wider opacity-60">
+                        {tag}
+                      </Badge>
+                    )
+                  ))}
+                  {exercise.additionalTags?.map((tag) => (
+                    isTagObject(tag) ? (
+                      <ColorBadge 
+                        key={tag.id} 
+                        color={tag.color} 
+                        className="px-3 py-1 text-[10px] uppercase font-bold tracking-wider opacity-40 border-current/10"
+                        variant="outline"
+                      >
+                        {tag.name}
+                      </ColorBadge>
+                    ) : (
+                      <Badge key={tag} variant="outline" className="px-3 py-1 text-[10px] uppercase font-bold tracking-wider opacity-40">
+                        {tag}
+                      </Badge>
+                    )
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Metrics Dashboard */}
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-4">
+              {[
+                { id: 'sets', label: 'Serie', value: exercise.sets, icon: Repeat, color: 'text-primary' },
+                { id: 'reps', label: 'Powtórzenia', value: exercise.reps, icon: Dumbbell, color: 'text-secondary' },
+                { id: 'duration', label: 'Czas', value: exercise.duration ? `${exercise.duration}s` : null, icon: Clock, color: 'text-info' },
+                { id: 'rest', label: 'Przerwa', value: exercise.restSets ? `${exercise.restSets}s` : null, icon: Timer, color: 'text-orange-500' },
+                { id: 'prep', label: 'Przygotowanie', value: exercise.preparationTime ? `${exercise.preparationTime}s` : null, icon: Clock, color: 'text-emerald-500' },
+              ].filter(m => m.value).map((metric) => (
+                <div key={metric.id} className="rounded-2xl p-4 bg-card border border-border/60 transition-all hover:bg-zinc-50 dark:hover:bg-zinc-900">
+                  <metric.icon className={cn("h-4 w-4 mb-3", metric.color)} />
+                  <p className="text-2xl font-bold text-foreground tabular-nums leading-none">
+                    {metric.value || '—'}
+                  </p>
+                  <p className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground mt-2">{metric.label}</p>
+                </div>
+              ))}
+            </div>
+
+            {/* Description / Instructions */}
+            {exercise.description && (
+              <div className="space-y-10 mt-8">
+                {(() => {
+                  const sections = exercise.description.split(/(?=Instrukcja:|Najczęstsze błędy:)/i);
+                  return sections.map((section, idx) => {
+                    const isInstruction = /^Instrukcja:/i.test(section);
+                    const isErrors = /^Najczęstsze błędy:/i.test(section);
+                    
+                    if (isInstruction || isErrors) {
+                      const parts = section.split(':');
+                      const title = parts[0];
+                      const content = parts.slice(1).join(':').trim();
+                      
+                      return (
+                        <div key={section} className={cn(
+                          "space-y-5 p-8 rounded-2xl border transition-all",
+                          isErrors 
+                            ? "bg-destructive/3 border-destructive/10" 
+                            : "bg-zinc-50 dark:bg-zinc-900/50 border-zinc-200/50 dark:border-zinc-800/50"
+                        )}>
+                          <div className="flex items-center gap-3">
+                            <div className={cn(
+                              "flex h-8 w-8 items-center justify-center rounded-xl",
+                              isErrors ? "bg-destructive/10 text-destructive" : "bg-primary/10 text-primary"
+                            )}>
+                              {isInstruction ? <Play className="h-4 w-4" /> : <Trash2 className="h-4 w-4" />}
+                            </div>
+                            <span className={cn(
+                              "text-[11px] uppercase font-bold tracking-widest",
+                              isErrors ? "text-destructive/80" : "text-muted-foreground"
+                            )}>
+                              {title}
+                            </span>
+                          </div>
+                          
+                          {isErrors ? (
+                            <ul className="space-y-3">
+                              {content.split(/\.|\n/).filter(p => p.trim()).map((point) => (
+                                <li key={point} className="flex gap-3 text-muted-foreground leading-relaxed">
+                                  <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-destructive/40" />
+                                  <span>
+                                    {point.trim().split(/(Unikaj:|Pamiętaj:)/i).map((part, pIdx) => (
+                                      /Unikaj:|Pamiętaj:/i.test(part) 
+                                        ? <strong key={pIdx} className="font-bold text-foreground uppercase text-[11px] tracking-wide mr-1">{part}</strong>
+                                        : part
+                                    ))}
+                                  </span>
+                                </li>
+                              ))}
+                            </ul>
+                          ) : (
+                            <div className="space-y-4">
+                              {content.split(/\n\n+/).filter(p => p.trim()).map((paragraph, pIdx) => (
+                                <p key={pIdx} className="text-lg leading-relaxed text-muted-foreground font-medium">
+                                  {paragraph.trim().split(/(Unikaj:|Pamiętaj:)/i).map((part, sIdx) => (
+                                    /Unikaj:|Pamiętaj:/i.test(part) 
+                                      ? <strong key={sIdx} className="font-bold text-foreground uppercase text-[11px] tracking-wide mr-1">{part}</strong>
+                                      : part
+                                  ))}
+                                </p>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    }
+                    
+                    return (
+                      <div key={section} className="space-y-4">
+                        {!isInstruction && !isErrors && idx === 0 && (
+                          <div className="flex items-center gap-3 text-muted-foreground">
+                            <div className="h-px w-8 bg-border" />
+                            <span className="text-[10px] uppercase font-bold tracking-widest">O ćwiczeniu</span>
+                          </div>
+                        )}
+                        <div className="space-y-4">
+                          {section.trim().split(/\n\n+/).filter(p => p.trim()).map((paragraph, pIdx) => (
+                            <p key={pIdx} className="text-xl leading-relaxed font-medium text-muted-foreground">
+                              {paragraph.trim().split(/(Unikaj:|Pamiętaj:)/i).map((part, sIdx) => (
+                                /Unikaj:|Pamiętaj:/i.test(part) 
+                                  ? <strong key={sIdx} className="font-bold text-foreground uppercase text-[11px] tracking-wide mr-1">{part}</strong>
+                                  : part
+                              ))}
+                            </p>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  });
+                })()}
               </div>
-              <span className="font-medium text-foreground">Notatki</span>
+            )}
+
+            {/* Secondary details */}
+            <div className="grid gap-4">
+              {exercise.notes && (
+                <div className="p-8 rounded-2xl bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200/50 dark:border-zinc-800/50 space-y-6">
+                  <div className="flex items-center gap-3 text-muted-foreground">
+                    <FileText className="h-5 w-5" />
+                    <span className="text-[10px] uppercase font-bold tracking-widest">Notatki</span>
+                  </div>
+                  <div className="relative">
+                    <div className="absolute -left-4 top-0 bottom-0 w-1 bg-primary/20 rounded-full" />
+                    <p className="text-muted-foreground whitespace-pre-wrap leading-relaxed text-sm italic pl-2">
+                      "{exercise.notes}"
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
-            <ChevronDown className={cn(
-              'h-5 w-5 text-muted-foreground transition-transform duration-200',
-              isNotesOpen && 'rotate-180'
-            )} />
-          </CollapsibleTrigger>
-          <CollapsibleContent className="mt-2">
-            <div className="p-4 rounded-xl border border-border/40 bg-surface/30">
-              <p className="text-muted-foreground whitespace-pre-wrap text-sm leading-relaxed">
-                {exercise.notes}
-              </p>
+          </div>
+        </ScrollArea>
+
+        {/* Sticky Footer: Unified Toolbar */}
+        <div className="sticky bottom-0 left-0 right-0 p-4 bg-background/95 backdrop-blur-md border-t z-30">
+          <div className="relative flex items-center justify-between gap-3">
+            {/* Left Side: Secondary Tools */}
+            <div className="flex items-center gap-2">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-11 w-11 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all"
+                onClick={() => setIsEditDialogOpen(true)}
+              >
+                <Pencil className="h-5 w-5 text-muted-foreground" />
+              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-11 w-11 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all">
+                    <MoreHorizontal className="h-5 w-5 text-muted-foreground" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-64 p-2 rounded-2xl shadow-2xl border-border/50 backdrop-blur-xl">
+                  <DropdownMenuItem onClick={() => setLightboxOpen(true)} className="rounded-xl p-4 transition-colors">
+                    <ZoomIn className="mr-4 h-5 w-5 text-muted-foreground" />
+                    <div className="flex flex-col">
+                      <span className="font-bold">Powiększ</span>
+                      <span className="text-[11px] text-muted-foreground/60">Zobacz detale zdjęcia</span>
+                    </div>
+                  </DropdownMenuItem>
+                  {exercise.videoUrl && (
+                    <DropdownMenuItem asChild className="rounded-xl p-4 transition-colors">
+                      <a href={exercise.videoUrl} target="_blank" rel="noopener noreferrer">
+                        <Play className="mr-4 h-5 w-5 text-muted-foreground" />
+                        <div className="flex flex-col">
+                          <span className="font-bold">Wideo</span>
+                          <span className="text-[11px] text-muted-foreground/60">Otwórz instrukcję wideo</span>
+                        </div>
+                      </a>
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuSeparator className="my-2 opacity-50" />
+                  <DropdownMenuItem
+                    onClick={() => setIsDeleteDialogOpen(true)}
+                    className="text-destructive focus:text-destructive focus:bg-destructive/10 rounded-xl p-4 transition-colors"
+                  >
+                    <Trash2 className="mr-4 h-5 w-5" />
+                    <div className="flex flex-col">
+                      <span className="font-bold">Usuń ćwiczenie</span>
+                      <span className="text-[11px] opacity-60">Operacja nieodwracalna</span>
+                    </div>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
-          </CollapsibleContent>
-        </Collapsible>
-      )}
+
+            {/* Right Side: Action Cluster */}
+            <div className="flex items-center gap-3">
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-11 gap-2 rounded-xl border-primary/20 hover:bg-primary/5 transition-all"
+                onClick={() => setIsChatOpen(true)}
+              >
+                <Sparkles className="h-4 w-4 text-primary" />
+                <span className="hidden sm:inline font-medium">Asystent AI</span>
+              </Button>
+              
+              <Button 
+                size="lg" 
+                className="h-11 px-6 rounded-xl font-bold bg-primary text-white shadow-md hover:bg-primary/90 transition-all"
+                onClick={handleAddToSet}
+              >
+                <FolderPlus className="mr-2 h-5 w-5" />
+                Dodaj do zestawu
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
 
       {/* Edit Dialog */}
       {organizationId && (

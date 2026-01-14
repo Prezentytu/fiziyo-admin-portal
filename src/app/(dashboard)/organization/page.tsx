@@ -7,10 +7,7 @@ import {
   Building2,
   Users,
   MapPin,
-  UserPlus,
-  Plus,
   Mail,
-  Activity,
 } from "lucide-react";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -21,12 +18,11 @@ import {
   InviteMemberDialog,
   ClinicDialog,
   AssignToClinicDialog,
-  InvitationsModal,
 } from "@/components/organization";
 import { TeamSection } from "@/components/organization/TeamSection";
 import { ClinicsSection, Clinic } from "@/components/organization/ClinicsSection";
+import { InvitationsSection } from "@/components/organization/InvitationsSection";
 import type { OrganizationMember } from "@/components/organization/MemberCard";
-import { cn } from "@/lib/utils";
 
 import {
   GET_ORGANIZATION_BY_ID_QUERY,
@@ -89,7 +85,6 @@ export default function OrganizationPage() {
   const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
   const [isClinicDialogOpen, setIsClinicDialogOpen] = useState(false);
   const [isAssignToClinicDialogOpen, setIsAssignToClinicDialogOpen] = useState(false);
-  const [isInvitationsModalOpen, setIsInvitationsModalOpen] = useState(false);
   const [editingClinic, setEditingClinic] = useState<Clinic | null>(null);
   const [assigningClinic, setAssigningClinic] = useState<Clinic | null>(null);
 
@@ -183,9 +178,6 @@ export default function OrganizationPage() {
 
   // Billing data for patient counts
   const billingStatus = billingData?.currentBillingStatus;
-  const totalPatients = billingStatus?.activePatientsInMonth ?? 0;
-  const avgPatientsPerTherapist = teamCount > 0 ? Math.round(totalPatients / teamCount) : 0;
-
   // Create map of therapist -> patient count
   const therapistPatientCounts = useMemo(() => {
     const map = new Map<string, number>();
@@ -259,236 +251,131 @@ export default function OrganizationPage() {
 
   return (
     <AccessGuard requiredAccess="admin" fallbackUrl="/">
-    <div className="space-y-6">
-      {/* Tabs - simplified without Settings tab */}
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <h1 className="text-2xl font-bold text-foreground" data-testid="org-page-title">Zespół i gabinety</h1>
-          <TabsList className="h-9">
-            <TabsTrigger value="team" className="flex items-center gap-2 text-xs sm:text-sm" data-testid="org-tab-team">
-              <Users className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Zespół</span>
-              <span className="text-muted-foreground">({teamCount})</span>
-            </TabsTrigger>
-            <TabsTrigger value="clinics" className="flex items-center gap-2 text-xs sm:text-sm" data-testid="org-tab-clinics">
-              <MapPin className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Gabinety</span>
-              <span className="text-muted-foreground">({clinicsCount})</span>
-            </TabsTrigger>
-          </TabsList>
-        </div>
-
-        {/* Hero Action + Quick Stats */}
-        <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 mt-4">
-          {/* Hero Action - dynamiczny w zależności od zakładki */}
-          {canEdit && (
-            <button
-              onClick={() => {
-                if (activeTab === "clinics") {
-                  setIsClinicDialogOpen(true);
-                } else {
-                  setIsInviteDialogOpen(true);
-                }
-              }}
-              className="group relative overflow-hidden rounded-2xl bg-linear-to-br from-primary via-primary to-primary-dark p-5 text-left transition-all duration-300 hover:shadow-xl hover:shadow-primary/20 hover:scale-[1.02] cursor-pointer sm:col-span-1 lg:col-span-5"
-              data-testid="org-hero-action-btn"
-            >
-              <div className="absolute inset-0 bg-linear-to-br from-white/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-              <div className="absolute -top-24 -right-24 w-48 h-48 bg-white/10 rounded-full blur-3xl group-hover:bg-white/20 transition-all duration-500" />
-
-              <div className="relative flex items-center gap-4">
-                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm shrink-0 group-hover:scale-110 transition-transform duration-300">
-                  {activeTab === "clinics" ? (
-                    <MapPin className="h-5 w-5 text-white" />
-                  ) : (
-                    <UserPlus className="h-5 w-5 text-white" />
-                  )}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <h3 className="text-base font-bold text-white">
-                    {activeTab === "team" && "Zaproś do zespołu"}
-                    {activeTab === "invitations" && "Nowe zaproszenie"}
-                    {activeTab === "clinics" && "Dodaj gabinet"}
-                  </h3>
-                  <p className="text-sm text-white/70">
-                    {activeTab === "team" && "Dodaj fizjoterapeutę lub administratora"}
-                    {activeTab === "invitations" && "Wyślij email lub wygeneruj link"}
-                    {activeTab === "clinics" && "Utwórz nową lokalizację"}
-                  </p>
-                </div>
-                <Plus className="h-5 w-5 text-white/60 group-hover:text-white transition-colors shrink-0" />
-              </div>
-            </button>
-          )}
-
-          {/* Quick Stats - klikalne */}
-          <div className={cn(
-            "grid grid-cols-3 gap-3",
-            canEdit ? "sm:col-span-1 lg:col-span-7" : "sm:col-span-2 lg:col-span-12"
-          )}>
-            {/* Team count */}
-            <button
-              onClick={() => setActiveTab("team")}
-              className={cn(
-                "rounded-2xl border p-4 flex flex-col items-center justify-center text-center transition-all duration-200",
-                activeTab === "team"
-                  ? "border-primary/40 bg-primary/10 ring-1 ring-primary/20"
-                  : "border-border/40 bg-surface/50 hover:bg-surface-light hover:border-border"
-              )}
-              data-testid="org-stat-team"
-            >
-              <div className="flex items-center gap-2">
-                <Users className={cn("h-4 w-4", activeTab === "team" ? "text-primary" : "text-muted-foreground")} />
-                <span className={cn("text-2xl font-bold", activeTab === "team" ? "text-primary" : "text-foreground")}>
-                  {teamCount}
-                </span>
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">Terapeutów</p>
-            </button>
-
-            {/* Patient load - skuteczność */}
-            <button
-              onClick={() => setActiveTab("team")}
-              className={cn(
-                "rounded-2xl border p-4 flex flex-col items-center justify-center text-center transition-all duration-200",
-                "border-border/40 bg-surface/50 hover:bg-surface-light hover:border-border"
-              )}
-              data-testid="org-stat-patients"
-            >
-              <div className="flex items-center gap-2">
-                <Activity className="h-4 w-4 text-emerald-500" />
-                <span className="text-2xl font-bold text-foreground">
-                  {totalPatients}
-                </span>
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                Śr. {avgPatientsPerTherapist}/terapeutę
-              </p>
-            </button>
-
-            {/* Pending invitations - opens modal */}
-            {canEdit ? (
-              <button
-                onClick={() => setIsInvitationsModalOpen(true)}
-                className={cn(
-                  "rounded-2xl border p-4 flex flex-col items-center justify-center text-center transition-all duration-200",
-                  pendingInvitations > 0
-                    ? "border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20"
-                    : "border-border/40 bg-surface/50 hover:bg-surface-light hover:border-border"
+      <div className="flex h-[calc(100vh-64px)] -m-4 lg:-m-6 overflow-hidden bg-background">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex w-full overflow-hidden" orientation="vertical">
+          {/* Inner Sidebar */}
+          <div className="w-64 border-r border-border/40 bg-transparent flex flex-col shrink-0">
+            <div className="p-6">
+              <h1 className="text-xl font-bold text-foreground mb-6" data-testid="org-page-title">Mój Zespół</h1>
+              
+              <TabsList className="flex flex-col h-auto bg-transparent p-0 items-stretch gap-1">
+                <TabsTrigger 
+                  value="team" 
+                  className="justify-start gap-3 px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-accent/30 data-[state=active]:bg-accent/50 data-[state=active]:text-foreground data-[state=active]:font-medium data-[state=active]:shadow-none transition-all rounded-lg"
+                  data-testid="org-tab-team"
+                >
+                  <Users className="h-4 w-4" />
+                  <span>Pracownicy</span>
+                  <span className="ml-auto text-xs text-muted-foreground/60">{teamCount}</span>
+                </TabsTrigger>
+                
+                <TabsTrigger 
+                  value="clinics" 
+                  className="justify-start gap-3 px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-accent/30 data-[state=active]:bg-accent/50 data-[state=active]:text-foreground data-[state=active]:font-medium data-[state=active]:shadow-none transition-all rounded-lg"
+                  data-testid="org-tab-clinics"
+                >
+                  <MapPin className="h-4 w-4" />
+                  <span>Gabinety</span>
+                  <span className="ml-auto text-xs text-muted-foreground/60">{clinicsCount}</span>
+                </TabsTrigger>
+                
+                {canEdit && (
+                  <TabsTrigger 
+                    value="invitations" 
+                    className="justify-start gap-3 px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-accent/30 data-[state=active]:bg-accent/50 data-[state=active]:text-foreground data-[state=active]:font-medium data-[state=active]:shadow-none transition-all rounded-lg"
+                    data-testid="org-tab-invitations"
+                  >
+                    <Mail className="h-4 w-4" />
+                    <span>Zaproszenia</span>
+                    {pendingInvitations > 0 && (
+                      <Badge className="ml-auto bg-amber-500/10 text-amber-500 border-amber-500/20 text-[10px] px-1.5 h-4">
+                        {pendingInvitations}
+                      </Badge>
+                    )}
+                  </TabsTrigger>
                 )}
-                data-testid="org-stat-invitations"
-              >
-                <div className="flex items-center gap-2">
-                  <Mail className={cn("h-4 w-4", pendingInvitations > 0 ? "text-amber-500" : "text-muted-foreground")} />
-                  <span className={cn("text-2xl font-bold", pendingInvitations > 0 ? "text-amber-500" : "text-foreground")}>
-                    {pendingInvitations}
-                  </span>
-                </div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {pendingInvitations === 0 ? "Wszyscy na pokładzie" : "Oczekuje"}
-                </p>
-              </button>
-            ) : (
-              <button
-                onClick={() => setActiveTab("clinics")}
-                className={cn(
-                  "rounded-2xl border p-4 flex flex-col items-center justify-center text-center transition-all duration-200",
-                  activeTab === "clinics"
-                    ? "border-secondary/40 bg-secondary/10 ring-1 ring-secondary/20"
-                    : "border-border/40 bg-surface/50 hover:bg-surface-light hover:border-border"
-                )}
-                data-testid="org-stat-clinics"
-              >
-                <div className="flex items-center gap-2">
-                  <MapPin className={cn("h-4 w-4", activeTab === "clinics" ? "text-secondary" : "text-muted-foreground")} />
-                  <span className={cn("text-2xl font-bold", activeTab === "clinics" ? "text-secondary" : "text-foreground")}>
-                    {clinicsCount}
-                  </span>
-                </div>
-                <p className="text-xs text-muted-foreground mt-1">Gabinety</p>
-              </button>
-            )}
+              </TabsList>
+            </div>
           </div>
-        </div>
 
-        {/* Team Tab */}
-        <TabsContent value="team" className="mt-6">
-          <TeamSection
-            members={members}
-            organizationId={organizationId!}
-            currentUserId={currentUserId}
-            currentUserRole={currentUserRole}
-            isLoading={membersLoading}
-            canInvite={canEdit}
-            onInviteClick={() => setIsInviteDialogOpen(true)}
-            onRefresh={() => refetchMembers()}
-            limits={planInfo?.limits}
-            currentUsage={planInfo?.currentUsage}
-            planName={planName}
-            therapistPatientCounts={therapistPatientCounts}
+          {/* Content Area */}
+          <div className="flex-1 overflow-y-auto bg-background/30">
+            <div className="max-w-5xl mx-auto p-8 lg:p-12">
+              <TabsContent value="team" className="mt-0 outline-none">
+                <TeamSection
+                  members={members}
+                  organizationId={organizationId!}
+                  currentUserId={currentUserId}
+                  currentUserRole={currentUserRole}
+                  isLoading={membersLoading}
+                  canInvite={canEdit}
+                  onInviteClick={() => setIsInviteDialogOpen(true)}
+                  onRefresh={() => refetchMembers()}
+                  limits={planInfo?.limits}
+                  currentUsage={planInfo?.currentUsage}
+                  planName={planName}
+                  therapistPatientCounts={therapistPatientCounts}
+                />
+              </TabsContent>
+
+              <TabsContent value="clinics" className="mt-0 outline-none">
+                <ClinicsSection
+                  clinics={clinics}
+                  organizationId={organizationId!}
+                  isLoading={clinicsLoading}
+                  canEdit={canEdit}
+                  onAddClick={() => setIsClinicDialogOpen(true)}
+                  onEditClinic={handleEditClinic}
+                  onAssignPeople={handleAssignPeople}
+                  onRefresh={() => refetchClinics()}
+                />
+              </TabsContent>
+
+              {canEdit && (
+                <TabsContent value="invitations" className="mt-0 outline-none">
+                  <InvitationsSection
+                    organizationId={organizationId!}
+                    onInviteClick={() => setIsInviteDialogOpen(true)}
+                  />
+                </TabsContent>
+              )}
+            </div>
+          </div>
+        </Tabs>
+
+        {/* Dialogs */}
+        {organizationId && (
+          <InviteMemberDialog
+            open={isInviteDialogOpen}
+            onOpenChange={setIsInviteDialogOpen}
+            organizationId={organizationId}
+            organizationName={organization?.name}
+            onSuccess={() => refetchMembers()}
           />
-        </TabsContent>
+        )}
 
-        {/* Clinics Tab */}
-        <TabsContent value="clinics" className="mt-6">
-          <ClinicsSection
-            clinics={clinics}
-            organizationId={organizationId!}
-            isLoading={clinicsLoading}
-            canEdit={canEdit}
-            onAddClick={() => setIsClinicDialogOpen(true)}
-            onEditClinic={handleEditClinic}
-            onAssignPeople={handleAssignPeople}
-            onRefresh={() => refetchClinics()}
+        {organizationId && (
+          <ClinicDialog
+            open={isClinicDialogOpen}
+            onOpenChange={handleCloseClinicDialog}
+            clinic={editingClinic}
+            organizationId={organizationId}
+            onSuccess={() => refetchClinics()}
           />
-        </TabsContent>
-      </Tabs>
+        )}
 
-      {/* Invite Dialog */}
-      {organizationId && (
-        <InviteMemberDialog
-          open={isInviteDialogOpen}
-          onOpenChange={setIsInviteDialogOpen}
-          organizationId={organizationId}
-          organizationName={organization?.name}
-          onSuccess={() => refetchMembers()}
-        />
-      )}
-
-      {/* Clinic Dialog */}
-      {organizationId && (
-        <ClinicDialog
-          open={isClinicDialogOpen}
-          onOpenChange={handleCloseClinicDialog}
-          clinic={editingClinic}
-          organizationId={organizationId}
-          onSuccess={() => refetchClinics()}
-        />
-      )}
-
-      {/* Assign to Clinic Dialog */}
-      {organizationId && (
-        <AssignToClinicDialog
-          open={isAssignToClinicDialogOpen}
-          onOpenChange={handleCloseAssignDialog}
-          clinic={assigningClinic}
-          organizationId={organizationId}
-          therapists={therapists}
-          patients={patients}
-          onSuccess={() => refetchClinics()}
-        />
-      )}
-
-      {/* Invitations Modal */}
-      {organizationId && canEdit && (
-        <InvitationsModal
-          open={isInvitationsModalOpen}
-          onOpenChange={setIsInvitationsModalOpen}
-          organizationId={organizationId}
-          onInviteClick={() => setIsInviteDialogOpen(true)}
-        />
-      )}
-    </div>
+        {organizationId && (
+          <AssignToClinicDialog
+            open={isAssignToClinicDialogOpen}
+            onOpenChange={handleCloseAssignDialog}
+            clinic={assigningClinic}
+            organizationId={organizationId}
+            therapists={therapists}
+            patients={patients}
+            onSuccess={() => refetchClinics()}
+          />
+        )}
+      </div>
     </AccessGuard>
   );
 }

@@ -137,18 +137,18 @@ export function ResourceAddonsPanel({ compact = false }: ResourceAddonsPanelProp
   if (compact) {
     return (
       <>
-        <Card className="border-border/40 bg-surface/50 backdrop-blur-sm overflow-hidden">
-          <CardHeader className="pb-4">
+        <Card className="rounded-xl border border-border/50 bg-card/30 backdrop-blur-sm overflow-hidden group">
+          <CardHeader className="pb-6">
             <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-4 text-lg font-semibold">
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 shadow-lg">
+              <CardTitle className="flex items-center gap-4">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 shadow-lg shadow-cyan-500/25 transition-transform group-hover:scale-110 duration-300">
                   <TrendingUp className="h-6 w-6 text-white" />
                 </div>
                 <div>
-                  <span>Rozszerzenia zasobów</span>
+                  <span className="text-lg font-bold tracking-tight text-foreground">Rozszerzenia zasobów</span>
                   {hasAnyAddons && (
-                    <p className="text-sm text-cyan-500 font-normal">
-                      +{status.monthlyAddonsCost.toFixed(0)} zł/miesiąc
+                    <p className="text-sm text-cyan-500 font-bold uppercase tracking-wider mt-0.5">
+                      +{status.monthlyAddonsCost.toFixed(0)} zł / m
                     </p>
                   )}
                 </div>
@@ -156,7 +156,7 @@ export function ResourceAddonsPanel({ compact = false }: ResourceAddonsPanelProp
             </div>
           </CardHeader>
 
-          <CardContent className="pt-0 space-y-2">
+          <CardContent className="pt-0 space-y-3">
             {addonConfigs.map((config) => {
               const currentAmount = status[config.currentKey] as number;
               const effectiveLimit = status[config.effectiveKey] as number;
@@ -172,15 +172,14 @@ export function ResourceAddonsPanel({ compact = false }: ResourceAddonsPanelProp
                   data-testid={`addon-${config.type}-btn`}
                   className={cn(
                     "group flex items-center gap-4 py-4 px-5 rounded-xl w-full text-left",
-                    "transition-all duration-300 cursor-pointer",
-                    "hover:bg-surface-light hover:shadow-lg hover:-translate-y-0.5",
-                    hasAddon && "bg-cyan-500/5 border border-cyan-500/30"
+                    "transition-all duration-300 cursor-pointer border",
+                    "hover:bg-background hover:shadow-lg hover:border-cyan-500/30",
+                    hasAddon ? "bg-cyan-500/5 border-cyan-500/30 shadow-sm" : "bg-background/50 border-border/40"
                   )}
                 >
                   {/* Icon */}
                   <div className={cn(
-                    "flex h-11 w-11 items-center justify-center rounded-xl shrink-0",
-                    "transition-transform duration-300 group-hover:scale-110",
+                    "flex h-11 w-11 items-center justify-center rounded-xl shrink-0 transition-transform duration-300 group-hover:scale-110",
                     hasAddon ? "bg-gradient-to-br from-cyan-500 to-blue-600 shadow-lg shadow-cyan-500/25" : "bg-surface-light"
                   )}>
                     <Icon className={cn("h-5 w-5", hasAddon ? "text-white" : "text-muted-foreground")} />
@@ -188,21 +187,26 @@ export function ResourceAddonsPanel({ compact = false }: ResourceAddonsPanelProp
 
                   {/* Content */}
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-3">
-                      <span className="text-base font-medium text-foreground">{config.label}</span>
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-sm font-bold text-foreground">{config.label}</span>
                       {hasAddon && (
-                        <Badge className="bg-cyan-500/20 text-cyan-500 border-0">
+                        <Badge className="bg-cyan-500 text-white border-0 text-[10px] font-bold h-5 shadow-sm shadow-cyan-500/20">
                           +{currentAmount}
                         </Badge>
                       )}
                     </div>
-                    <p className="text-sm text-muted-foreground">
-                      Limit: {effectiveLimit} • {config.unit} za {price} zł/mies.
-                    </p>
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
+                        Limit: <span className="text-foreground font-bold">{effectiveLimit}</span>
+                      </p>
+                      <p className="text-xs font-bold text-cyan-600 dark:text-cyan-400">
+                        {price} zł/m
+                      </p>
+                    </div>
                   </div>
 
                   {/* Chevron */}
-                  <ChevronRight className="h-5 w-5 text-muted-foreground/30 group-hover:text-cyan-500 group-hover:translate-x-1 transition-all duration-300 shrink-0" />
+                  <ChevronRight className="h-4 w-4 text-muted-foreground/30 group-hover:text-cyan-500 group-hover:translate-x-1 transition-all duration-300 shrink-0" />
                 </button>
               );
             })}

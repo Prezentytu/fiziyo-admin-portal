@@ -226,91 +226,93 @@ export function SubscriptionPlans({
             <Card
               key={plan.id}
               className={cn(
-                "relative overflow-hidden transition-all duration-200",
+                "relative overflow-hidden transition-all duration-300 rounded-xl",
                 plan.popular
-                  ? "border-primary shadow-lg shadow-primary/10"
-                  : "border-border/60 hover:border-border",
-                isCurrent && "ring-2 ring-primary/50"
+                  ? "border-primary/50 bg-primary/5 shadow-xl shadow-primary/10 ring-1 ring-primary/20"
+                  : "border-border/50 bg-card/30 hover:border-primary/30",
+                isCurrent && !plan.popular && "border-primary/50 ring-1 ring-primary/20"
               )}
             >
               {/* Popular badge */}
               {plan.popular && (
                 <div className="absolute top-0 right-0">
-                  <div className="bg-primary text-primary-foreground text-[10px] font-bold px-2.5 py-1 rounded-bl-lg flex items-center gap-1">
-                    <Star className="h-2.5 w-2.5 fill-current" />
+                  <div className="bg-primary text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl flex items-center gap-1 shadow-lg shadow-primary/20">
+                    <Star className="h-3 w-3 fill-current" />
                     POPULARNY
                   </div>
                 </div>
               )}
 
-              <CardContent className="p-4">
+              <CardContent className="p-6">
                 {/* Header */}
-                <div className="flex items-center gap-2.5 mb-3">
+                <div className="flex items-center gap-3 mb-4">
                   <div
                     className={cn(
-                      "flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br text-white",
+                      "flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br text-white shadow-lg",
                       plan.color
                     )}
                   >
                     {plan.icon}
                   </div>
                   <div>
-                    <h3 className="font-semibold text-foreground">{plan.name}</h3>
+                    <h3 className="font-bold text-foreground">{plan.name}</h3>
                     <p className="text-xs text-muted-foreground">{plan.description}</p>
                   </div>
                 </div>
 
                 {/* Price */}
-                <div className="mb-4">
+                <div className="mb-6">
                   <div className="flex items-baseline gap-1">
                     {plan.price === 0 ? (
-                      <span className="text-2xl font-bold text-foreground">Darmowy</span>
+                      <span className="text-3xl font-bold text-foreground">Darmowy</span>
                     ) : (
                       <>
-                        <span className="text-2xl font-bold text-foreground">
+                        <span className="text-3xl font-bold text-foreground">
                           {monthlyEquivalent}
                         </span>
-                        <span className="text-sm text-muted-foreground">zł/mies.</span>
+                        <span className="text-sm font-medium text-muted-foreground">zł/mies.</span>
                       </>
                     )}
                   </div>
                   {billingPeriod === "yearly" && plan.price > 0 && (
-                    <p className="text-[11px] text-muted-foreground">
-                      {yearlyTotal} zł/rok · oszczędzasz {savings} zł
+                    <p className="text-[11px] font-bold uppercase tracking-wider text-primary mt-1">
+                      Oszczędzasz {savings} zł rocznie
                     </p>
                   )}
                 </div>
 
                 {/* Key Limits */}
-                <div className="space-y-2 mb-4 text-sm">
-                  <div className="flex items-center justify-between">
+                <div className="space-y-3 mb-6">
+                  <div className="flex items-center justify-between text-sm">
                     <span className="text-muted-foreground">Pacjenci</span>
-                    <span className="font-medium text-foreground">
+                    <span className="font-bold text-foreground tabular-nums">
                       {plan.limits.patients ?? "∞"}
                     </span>
                   </div>
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between text-sm">
                     <span className="text-muted-foreground">Terapeuci</span>
-                    <span className="font-medium text-foreground">{plan.limits.therapists}</span>
+                    <span className="font-bold text-foreground tabular-nums">{plan.limits.therapists}</span>
                   </div>
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between text-sm">
                     <span className="text-muted-foreground">Gabinety</span>
-                    <span className="font-medium text-foreground">{plan.limits.clinics}</span>
+                    <span className="font-bold text-foreground tabular-nums">{plan.limits.clinics}</span>
                   </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-muted-foreground flex items-center gap-1">
-                      <Sparkles className="h-3 w-3 text-primary" />
+                  <div className="flex items-center justify-between text-sm pt-1 border-t border-border/10">
+                    <span className="text-muted-foreground flex items-center gap-1.5">
+                      <Sparkles className="h-3.5 w-3.5 text-primary" />
                       Kredyty AI/mies.
                     </span>
-                    <span className="font-medium text-primary">{plan.limits.aiCredits}</span>
+                    <span className="font-bold text-primary tabular-nums">{plan.limits.aiCredits}</span>
                   </div>
                 </div>
 
                 {/* Features */}
-                <div className="space-y-1.5 mb-4">
+                <div className="space-y-2 mb-8">
                   {plan.features.map((feature, i) => (
-                    <div key={i} className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <Check className="h-3 w-3 text-primary shrink-0" />
+                    <div key={i} className="flex items-start gap-2.5 text-xs text-muted-foreground leading-snug">
+                      <div className="mt-1 flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full bg-primary/10">
+                        <Check className="h-2.5 w-2.5 text-primary" />
+                      </div>
                       <span>{feature}</span>
                     </div>
                   ))}
@@ -318,24 +320,22 @@ export function SubscriptionPlans({
 
                 {/* CTA Button */}
                 {isCurrent ? (
-                  <Button variant="outline" size="sm" className="w-full rounded-lg" disabled>
-                    <Shield className="mr-1.5 h-3.5 w-3.5" />
-                    Obecny plan
+                  <Button variant="outline" className="w-full rounded-xl border-primary/20 bg-primary/5 text-primary font-bold h-11" disabled>
+                    <Shield className="mr-2 h-4 w-4" />
+                    Twój plan
                   </Button>
                 ) : (
                   <Button
-                    size="sm"
                     className={cn(
-                      "w-full rounded-lg font-medium shadow-md transition-all",
+                      "w-full rounded-xl font-bold h-11 shadow-lg transition-all",
                       plan.popular
-                        ? "bg-primary hover:bg-primary-dark shadow-primary/20"
-                        : `bg-gradient-to-r ${plan.color} hover:opacity-90`
+                        ? "bg-primary text-white hover:bg-primary/90 shadow-primary/20"
+                        : "bg-foreground text-background hover:opacity-90 shadow-black/10"
                     )}
                     onClick={() => onUpgrade?.(plan.id)}
                   >
-                    <Rocket className="mr-1.5 h-3.5 w-3.5" />
-                    {plan.price === 0 ? "Aktywuj" : "Wybierz"}
-                    <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
+                    <Rocket className="mr-2 h-4 w-4" />
+                    {plan.price === 0 ? "Aktywuj" : "Wybierz plan"}
                   </Button>
                 )}
               </CardContent>

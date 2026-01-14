@@ -281,7 +281,7 @@ export function ExerciseCard({
         {imageUrl ? (
           <>
             {/* Blurred background */}
-            <div 
+            <div
               className="absolute inset-0 bg-cover bg-center blur-2xl opacity-40 scale-110"
               style={{ backgroundImage: `url(${imageUrl})` }}
             />
@@ -347,7 +347,7 @@ export function ExerciseCard({
               {isInBuilder ? <Check className="h-5 w-5" /> : <Plus className="h-5 w-5" />}
             </Button>
           )}
-          
+
           <DropdownMenu>
             <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
               <Button
@@ -393,7 +393,7 @@ export function ExerciseCard({
         <h3 className="font-bold text-sm sm:text-base leading-tight line-clamp-1 text-foreground">
           {exercise.name}
         </h3>
-        
+
         {/* Primary Metadata: Focus on Type & Body Parts */}
         <div className="flex items-center gap-2 text-[10px] sm:text-[11px] text-muted-foreground/80 font-medium">
           {exercise.type && (

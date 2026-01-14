@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@apollo/client/react";
-import { Loader2, Mail, Phone, MapPin, User, Camera } from "lucide-react";
+import { Loader2, User } from "lucide-react";
 import { toast } from "sonner";
 import * as z from "zod";
 
@@ -135,21 +135,18 @@ export function ProfileForm({ user, clerkId, onSuccess }: ProfileFormProps) {
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6" data-testid="settings-profile-form">
         {/* Section 1: Profile Photo */}
-        <Card className="border-border/60">
+        <Card className="rounded-xl border border-border/50 bg-card/30">
           <CardHeader className="pb-4">
-            <CardTitle className="flex items-center gap-2 text-base">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
-                <Camera className="h-4 w-4 text-primary" />
-              </div>
+            <CardTitle className="text-lg font-semibold tracking-tight">
               Zdjęcie profilowe
             </CardTitle>
-            <CardDescription>
+            <CardDescription className="text-sm text-muted-foreground">
               Widoczne dla innych członków organizacji
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="flex items-center gap-6">
-              <Avatar className="h-24 w-24 ring-4 ring-surface-light">
+              <Avatar className="h-24 w-24 ring-4 ring-zinc-100 dark:ring-zinc-800">
                 <AvatarImage src={user.image} alt={displayName} />
                 <AvatarFallback className="bg-gradient-to-br from-primary to-primary-dark text-primary-foreground text-2xl font-semibold">
                   {initials}
@@ -157,7 +154,7 @@ export function ProfileForm({ user, clerkId, onSuccess }: ProfileFormProps) {
               </Avatar>
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
-                  <Button type="button" variant="outline" size="sm" disabled>
+                  <Button type="button" variant="outline" size="sm" className="rounded-lg border-border/50 hover:border-primary/50 transition-all" disabled>
                     Zmień zdjęcie
                   </Button>
                   <span className="text-xs text-muted-foreground">(wkrótce)</span>
@@ -171,15 +168,12 @@ export function ProfileForm({ user, clerkId, onSuccess }: ProfileFormProps) {
         </Card>
 
         {/* Section 2: Basic Info */}
-        <Card className="border-border/60">
+        <Card className="rounded-xl border border-border/50 bg-card/30">
           <CardHeader className="pb-4">
-            <CardTitle className="flex items-center gap-2 text-base">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-info/10">
-                <User className="h-4 w-4 text-info" />
-              </div>
-              Dane podstawowe
+            <CardTitle className="text-lg font-semibold tracking-tight">
+              Informacje podstawowe
             </CardTitle>
-            <CardDescription>
+            <CardDescription className="text-sm text-muted-foreground">
               Twoje imię i nazwisko widoczne w aplikacji
             </CardDescription>
           </CardHeader>
@@ -190,10 +184,11 @@ export function ProfileForm({ user, clerkId, onSuccess }: ProfileFormProps) {
                 name="firstName"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Imię *</FormLabel>
+                    <FormLabel className="text-sm font-medium">Imię *</FormLabel>
                     <FormControl>
                       <Input
                         placeholder="Jan"
+                        className="bg-background border-input hover:border-primary/50 focus:ring-primary rounded-lg transition-all"
                         data-testid="settings-profile-firstname-input"
                         {...field}
                       />
@@ -208,10 +203,11 @@ export function ProfileForm({ user, clerkId, onSuccess }: ProfileFormProps) {
                 name="lastName"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Nazwisko *</FormLabel>
+                    <FormLabel className="text-sm font-medium">Nazwisko *</FormLabel>
                     <FormControl>
                       <Input
                         placeholder="Kowalski"
+                        className="bg-background border-input hover:border-primary/50 focus:ring-primary rounded-lg transition-all"
                         data-testid="settings-profile-lastname-input"
                         {...field}
                       />
@@ -224,14 +220,13 @@ export function ProfileForm({ user, clerkId, onSuccess }: ProfileFormProps) {
 
             {/* Email - read only */}
             <div className="space-y-2">
-              <Label className="flex items-center gap-1.5 text-sm font-medium">
-                <Mail className="h-3.5 w-3.5 text-muted-foreground" />
+              <Label className="text-sm font-medium">
                 Email
               </Label>
               <Input
                 value={user.email || ""}
                 disabled
-                className="bg-surface-light text-muted-foreground"
+                className="bg-muted text-muted-foreground rounded-lg opacity-70 cursor-not-allowed"
               />
               <p className="text-xs text-muted-foreground">
                 Email można zmienić w ustawieniach konta Clerk
@@ -241,15 +236,12 @@ export function ProfileForm({ user, clerkId, onSuccess }: ProfileFormProps) {
         </Card>
 
         {/* Section 3: Contact Info */}
-        <Card className="border-border/60">
+        <Card className="rounded-xl border border-border/50 bg-card/30">
           <CardHeader className="pb-4">
-            <CardTitle className="flex items-center gap-2 text-base">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-secondary/10">
-                <Phone className="h-4 w-4 text-secondary" />
-              </div>
+            <CardTitle className="text-lg font-semibold tracking-tight">
               Dane kontaktowe
             </CardTitle>
-            <CardDescription>
+            <CardDescription className="text-sm text-muted-foreground">
               Opcjonalne informacje kontaktowe
             </CardDescription>
           </CardHeader>
@@ -260,13 +252,13 @@ export function ProfileForm({ user, clerkId, onSuccess }: ProfileFormProps) {
                 name="phone"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="flex items-center gap-1.5">
-                      <Phone className="h-3.5 w-3.5 text-muted-foreground" />
+                    <FormLabel className="text-sm font-medium">
                       Telefon
                     </FormLabel>
                     <FormControl>
                       <Input
                         placeholder="+48 123 456 789"
+                        className="bg-background border-input hover:border-primary/50 focus:ring-primary rounded-lg transition-all"
                         data-testid="settings-profile-phone-input"
                         {...field}
                       />
@@ -281,13 +273,13 @@ export function ProfileForm({ user, clerkId, onSuccess }: ProfileFormProps) {
                 name="address"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="flex items-center gap-1.5">
-                      <MapPin className="h-3.5 w-3.5 text-muted-foreground" />
+                    <FormLabel className="text-sm font-medium">
                       Adres
                     </FormLabel>
                     <FormControl>
                       <Input
                         placeholder="ul. Przykładowa 123, 00-000 Miasto"
+                        className="bg-background border-input hover:border-primary/50 focus:ring-primary rounded-lg transition-all"
                         data-testid="settings-profile-address-input"
                         {...field}
                       />
@@ -300,18 +292,20 @@ export function ProfileForm({ user, clerkId, onSuccess }: ProfileFormProps) {
           </CardContent>
         </Card>
 
-        {/* Save Button - always visible when dirty */}
-        <div className="flex justify-end">
-          <Button
-            type="submit"
-            disabled={loading || !isDirty}
-            className="shadow-lg shadow-primary/20"
-            data-testid="settings-profile-submit-btn"
-          >
-            {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Zapisz zmiany
-          </Button>
-        </div>
+        {/* Sticky Footer: Save Action */}
+        {isDirty && (
+          <div className="sticky bottom-0 -mx-8 lg:-mx-12 px-8 lg:px-12 py-4 mt-8 border-t bg-background/95 backdrop-blur-md z-10 flex justify-end animate-in fade-in slide-in-from-bottom-4 duration-300">
+            <Button
+              type="submit"
+              disabled={loading}
+              className="bg-primary hover:bg-primary/90 text-white font-bold h-11 px-8 rounded-xl shadow-lg shadow-primary/20 transition-all"
+              data-testid="settings-profile-submit-btn"
+            >
+              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Zapisz zmiany
+            </Button>
+          </div>
+        )}
       </form>
     </Form>
   );

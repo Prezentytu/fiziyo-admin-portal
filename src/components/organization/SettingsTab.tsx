@@ -82,29 +82,29 @@ function SettingsSection({
       <div className="space-y-4">
         <CollapsibleTrigger asChild>
           <button className="w-full group">
-            <div className="flex items-center justify-between p-4 rounded-xl bg-surface-light/30 hover:bg-surface-light/50 border border-border/40 transition-colors cursor-pointer">
+            <div className="flex items-center justify-between p-4 rounded-xl bg-card/30 hover:bg-card/50 border border-border/50 transition-all cursor-pointer">
               <div className="flex items-center gap-4">
                 <div className={cn(
-                  "flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br shadow-lg",
+                  "flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br shadow-lg shadow-black/20",
                   gradient
                 )}>
                   <Icon className="h-5 w-5 text-white" />
                 </div>
                 <div className="text-left">
-                  <h3 className="font-semibold text-foreground">{title}</h3>
+                  <h3 className="text-lg font-semibold tracking-tight text-foreground">{title}</h3>
                   {description && (
                     <p className="text-sm text-muted-foreground">{description}</p>
                   )}
                 </div>
               </div>
               <ChevronDown className={cn(
-                "h-5 w-5 text-muted-foreground transition-transform duration-200",
+                "h-5 w-5 text-muted-foreground transition-transform duration-300",
                 isOpen && "rotate-180"
               )} />
             </div>
           </button>
         </CollapsibleTrigger>
-        <CollapsibleContent className="space-y-4">
+        <CollapsibleContent className="space-y-4 pt-2">
           {children}
         </CollapsibleContent>
       </div>
@@ -263,7 +263,7 @@ export function SettingsTab({
         gradient="from-primary to-emerald-600"
         defaultOpen={true}
       >
-        <Card className="border-border/60">
+        <Card className="rounded-xl border border-border/50 bg-card/30">
           <CardHeader>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -271,8 +271,8 @@ export function SettingsTab({
                   <Building2 className="h-5 w-5 text-primary" />
                 </div>
                 <div>
-                  <CardTitle className="text-lg">Informacje podstawowe</CardTitle>
-                  <CardDescription>
+                  <CardTitle className="text-lg font-semibold tracking-tight">Informacje podstawowe</CardTitle>
+                  <CardDescription className="text-sm text-muted-foreground">
                     Nazwa, opis i logo organizacji
                   </CardDescription>
                 </div>
@@ -282,7 +282,7 @@ export function SettingsTab({
                   variant="outline"
                   size="sm"
                   onClick={() => setIsEditingBasic(true)}
-                  className="gap-2"
+                  className="gap-2 rounded-xl border-border/50 hover:border-primary/50 transition-all"
                 >
                   <Pencil className="h-4 w-4" />
                   Edytuj
@@ -293,7 +293,7 @@ export function SettingsTab({
           <CardContent className="space-y-6">
             {/* Logo section */}
             <div className="flex items-start gap-6">
-              <Avatar className="h-20 w-20 border-2 border-surface-light">
+              <Avatar className="h-20 w-20 ring-4 ring-zinc-100 dark:ring-zinc-800">
                 <AvatarImage src={organization.logoUrl} alt={organization.name} />
                 <AvatarFallback className="bg-gradient-to-br from-primary/80 to-primary-dark/80 text-primary-foreground text-2xl font-bold">
                   {organization.name?.slice(0, 2).toUpperCase()}
@@ -304,7 +304,7 @@ export function SettingsTab({
                   <div className="flex items-center gap-2">
                     <Label
                       htmlFor="logo-upload"
-                      className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 rounded-lg border border-border bg-surface hover:bg-surface-light transition-colors text-sm font-medium"
+                      className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-border/50 bg-background/50 hover:bg-background hover:border-primary/50 transition-all text-sm font-medium"
                     >
                       {updatingLogo ? (
                         <Loader2 className="h-4 w-4 animate-spin" />
@@ -327,7 +327,7 @@ export function SettingsTab({
                         size="sm"
                         onClick={handleRemoveLogo}
                         disabled={removingLogo}
-                        className="gap-2 text-destructive hover:text-destructive"
+                        className="gap-2 rounded-xl border-border/50 text-destructive hover:text-destructive hover:bg-destructive/10 transition-all"
                       >
                         {removingLogo ? (
                           <Loader2 className="h-4 w-4 animate-spin" />
@@ -349,22 +349,22 @@ export function SettingsTab({
             {isEditingBasic ? (
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="org-name">Nazwa organizacji *</Label>
+                  <Label htmlFor="org-name" className="text-sm font-medium">Nazwa organizacji *</Label>
                   <Input
                     id="org-name"
                     value={editedName}
                     onChange={(e) => setEditedName(e.target.value)}
-                    className="max-w-md"
+                    className="max-w-md bg-background border-input hover:border-primary/50 focus:ring-primary rounded-xl transition-all"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="org-description">Opis</Label>
+                  <Label htmlFor="org-description" className="text-sm font-medium">Opis</Label>
                   <Textarea
                     id="org-description"
                     value={editedDescription}
                     onChange={(e) => setEditedDescription(e.target.value)}
                     placeholder="Krótki opis organizacji..."
-                    className="max-w-md resize-none"
+                    className="max-w-md resize-none bg-background border-input hover:border-primary/50 focus:ring-primary rounded-xl transition-all"
                     rows={3}
                   />
                 </div>
@@ -372,29 +372,29 @@ export function SettingsTab({
                   <Button
                     onClick={handleSaveBasicInfo}
                     disabled={isUpdating}
-                    className="gap-2"
+                    className="gap-2 rounded-xl bg-primary text-white font-bold h-11 px-8 shadow-lg shadow-primary/20 transition-all"
                   >
                     {updatingName ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
                     ) : (
                       <Save className="h-4 w-4" />
                     )}
-                    Zapisz
+                    Zapisz zmiany
                   </Button>
-                  <Button variant="outline" onClick={handleCancelEdit}>
+                  <Button variant="outline" onClick={handleCancelEdit} className="rounded-xl border-border/50 h-11 px-6">
                     Anuluj
                   </Button>
                 </div>
               </div>
             ) : (
-              <div className="space-y-4">
+              <div className="space-y-4 pt-2">
                 <div className="space-y-1">
-                  <Label className="text-muted-foreground">Nazwa</Label>
-                  <p className="font-medium">{organization.name}</p>
+                  <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Nazwa</Label>
+                  <p className="font-semibold text-lg text-foreground">{organization.name}</p>
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-muted-foreground">Opis</Label>
-                  <p className="text-muted-foreground">
+                  <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Opis</Label>
+                  <p className="text-muted-foreground leading-relaxed">
                     {organization.description || "Brak opisu"}
                   </p>
                 </div>

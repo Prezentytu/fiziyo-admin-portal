@@ -124,14 +124,14 @@ export function OrganizationsList({
         </button>
 
         {/* Stat Card */}
-        <Card className="border-border/60 lg:col-span-4">
+        <Card className="rounded-xl border border-border/50 bg-card/30 lg:col-span-4">
           <CardContent className="p-4 flex items-center gap-4">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10">
               <Building2 className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-foreground">{organizations.length}</p>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-2xl font-bold text-foreground tabular-nums">{organizations.length}</p>
+              <p className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground mt-0.5">
                 {organizations.length === 1 ? "Organizacja" : "Organizacje"}
               </p>
             </div>
@@ -140,9 +140,9 @@ export function OrganizationsList({
       </div>
 
       {/* Organizations List - Compact with Switch Action */}
-      <Card className="border-border/60">
-        <CardContent className="p-3">
-          <div className="space-y-2">
+      <Card className="rounded-xl border border-border/50 bg-card/30">
+        <CardContent className="p-4">
+          <div className="space-y-3">
             {organizations.map((org) => {
               const isDefault = org.organizationId === defaultOrganizationId;
               const isActive = org.organizationId === currentOrganization?.organizationId;
@@ -152,10 +152,10 @@ export function OrganizationsList({
                 <div
                   key={org.organizationId}
                   className={cn(
-                    "flex items-center justify-between rounded-lg border bg-surface p-3 transition-all duration-200",
+                    "flex items-center justify-between rounded-xl border p-4 transition-all duration-200",
                     isActive
-                      ? "border-primary/50 bg-primary/5"
-                      : "border-border/60 hover:bg-surface-light hover:border-border"
+                      ? "border-primary/50 bg-primary/5 ring-1 ring-primary/20"
+                      : "border-border/50 bg-background/50 hover:bg-background hover:border-primary/30"
                   )}
                   data-testid={`settings-org-item-${org.organizationId}`}
                 >

@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { SET_AUTO_SYNC_EXERCISES_MUTATION } from "@/graphql/mutations/organizations.mutations";
 import { GET_ORGANIZATION_BY_ID_QUERY } from "@/graphql/queries/organizations.queries";
+import { cn } from "@/lib/utils";
 
 interface AutoSyncSettingsProps {
   organizationId: string;
@@ -57,7 +58,7 @@ export function AutoSyncSettings({
   };
 
   return (
-    <Card className="border-border/60">
+    <Card className="rounded-xl border border-border/50 bg-card/30">
       <CardHeader>
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-secondary/10">
@@ -65,23 +66,28 @@ export function AutoSyncSettings({
           </div>
           <div className="flex-1">
             <div className="flex items-center gap-2">
-              <CardTitle className="text-lg">Auto-sync ćwiczeń</CardTitle>
-              <Badge variant="outline" className="text-xs">
+              <CardTitle className="text-lg font-semibold tracking-tight">Auto-sync ćwiczeń</CardTitle>
+              <Badge variant="outline" className="text-[10px] uppercase font-bold tracking-wider bg-secondary/10 text-secondary border-secondary/20">
                 Beta
               </Badge>
             </div>
-            <CardDescription>
+            <CardDescription className="text-sm text-muted-foreground">
               Automatyczny import nowych ćwiczeń z repozytorium
             </CardDescription>
           </div>
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="flex items-center justify-between rounded-lg border border-border/60 bg-surface/50 p-4">
+        <div className="flex items-center justify-between rounded-xl border border-border/50 bg-background/50 p-4 hover:border-primary/30 transition-all">
           <div className="flex items-center gap-3">
-            <RefreshCw className={`h-5 w-5 ${isEnabled ? "text-primary" : "text-muted-foreground"}`} />
+            <div className={cn(
+              "flex h-10 w-10 items-center justify-center rounded-lg transition-colors",
+              isEnabled ? "bg-primary/10" : "bg-muted"
+            )}>
+              <RefreshCw className={cn("h-5 w-5 transition-all", isEnabled ? "text-primary animate-spin-slow" : "text-muted-foreground")} />
+            </div>
             <div className="space-y-1">
-              <Label htmlFor="auto-sync" className="text-sm font-medium">
+              <Label htmlFor="auto-sync" className="text-sm font-semibold cursor-pointer">
                 Automatyczna synchronizacja
               </Label>
               <p className="text-xs text-muted-foreground">
@@ -101,24 +107,34 @@ export function AutoSyncSettings({
         </div>
 
         {/* Info box */}
-        <div className="flex items-start gap-3 rounded-lg border border-info/30 bg-info/5 p-4">
-          <Info className="h-5 w-5 text-info shrink-0 mt-0.5" />
+        <div className="flex items-start gap-3 rounded-xl border border-info/30 bg-info/5 p-4">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-info/10">
+            <Info className="h-4 w-4 text-info" />
+          </div>
           <div className="text-sm text-muted-foreground space-y-1">
-            <p>
-              <strong className="text-foreground">Jak to działa?</strong>
+            <p className="font-bold text-foreground text-xs uppercase tracking-wider">
+              Jak to działa?
             </p>
-            <ul className="list-disc list-inside space-y-1 text-xs">
-              <li>Nowe ćwiczenia są automatycznie dodawane do Twojej biblioteki</li>
-              <li>Tagi są generowane automatycznie na podstawie kategorii</li>
-              <li>Zdjęcia i opisy są pobierane bezpośrednio z bazy ćwiczeń</li>
-              <li>Możesz w każdej chwili wyłączyć tę funkcję</li>
+            <ul className="space-y-1.5 text-sm">
+              <li className="flex gap-2">
+                <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-info/40" />
+                Nowe ćwiczenia są automatycznie dodawane do Twojej biblioteki
+              </li>
+              <li className="flex gap-2">
+                <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-info/40" />
+                Tagi są generowane automatycznie na podstawie kategorii
+              </li>
+              <li className="flex gap-2">
+                <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-info/40" />
+                Zdjęcia i opisy są pobierane bezpośrednio z bazy ćwiczeń
+              </li>
             </ul>
           </div>
         </div>
 
         {/* Status indicator */}
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <div className={`h-2 w-2 rounded-full ${isEnabled ? "bg-success animate-pulse" : "bg-muted"}`} />
+        <div className="flex items-center gap-2 pt-2 text-xs font-bold uppercase tracking-widest text-muted-foreground">
+          <div className={cn("h-2 w-2 rounded-full", isEnabled ? "bg-success animate-pulse" : "bg-muted")} />
           <span>
             Status: {isEnabled ? "Aktywna synchronizacja" : "Wyłączona"}
           </span>

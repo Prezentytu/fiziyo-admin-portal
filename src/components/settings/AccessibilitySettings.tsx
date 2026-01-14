@@ -4,8 +4,6 @@ import {
   Sun,
   Moon,
   Monitor,
-  Type,
-  Eye,
   Contrast,
   Check,
   RotateCcw,
@@ -48,15 +46,12 @@ export function AccessibilitySettings() {
   return (
     <div className="space-y-6">
       {/* Motyw */}
-      <Card className="border-border/60">
+      <Card className="rounded-xl border border-border/50 bg-card/30">
         <CardHeader className="pb-4">
-          <CardTitle className="flex items-center gap-2 text-base">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-info/10">
-              <Monitor className="h-4 w-4 text-info" />
-            </div>
+          <CardTitle className="text-lg font-semibold tracking-tight">
             Motyw
           </CardTitle>
-          <CardDescription>
+          <CardDescription className="text-sm text-muted-foreground">
             Wybierz preferowany motyw kolorystyczny
           </CardDescription>
         </CardHeader>
@@ -69,7 +64,7 @@ export function AccessibilitySettings() {
                 'relative flex flex-col items-center gap-2 rounded-xl border p-4 transition-all',
                 preferences.theme === 'dark'
                   ? 'border-primary bg-primary/5 ring-2 ring-primary/20'
-                  : 'border-border/60 bg-surface hover:bg-surface-light'
+                  : 'border-border/50 bg-background/50 hover:bg-background hover:border-primary/50'
               )}
               data-testid="settings-theme-dark"
             >
@@ -78,7 +73,7 @@ export function AccessibilitySettings() {
               </div>
               <span className="text-sm font-medium">Ciemny</span>
               {preferences.theme === 'dark' && (
-                <div className="absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-primary">
+                <div className="absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-primary shadow-lg shadow-primary/20">
                   <Check className="h-3 w-3 text-white" />
                 </div>
               )}
@@ -91,7 +86,7 @@ export function AccessibilitySettings() {
                 'relative flex flex-col items-center gap-2 rounded-xl border p-4 transition-all',
                 preferences.theme === 'light'
                   ? 'border-primary bg-primary/5 ring-2 ring-primary/20'
-                  : 'border-border/60 bg-surface hover:bg-surface-light'
+                  : 'border-border/50 bg-background/50 hover:bg-background hover:border-primary/50'
               )}
               data-testid="settings-theme-light"
             >
@@ -100,7 +95,7 @@ export function AccessibilitySettings() {
               </div>
               <span className="text-sm font-medium">Jasny</span>
               {preferences.theme === 'light' && (
-                <div className="absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-primary">
+                <div className="absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-primary shadow-lg shadow-primary/20">
                   <Check className="h-3 w-3 text-white" />
                 </div>
               )}
@@ -113,7 +108,7 @@ export function AccessibilitySettings() {
                 'relative flex flex-col items-center gap-2 rounded-xl border p-4 transition-all',
                 preferences.theme === 'system'
                   ? 'border-primary bg-primary/5 ring-2 ring-primary/20'
-                  : 'border-border/60 bg-surface hover:bg-surface-light'
+                  : 'border-border/50 bg-background/50 hover:bg-background hover:border-primary/50'
               )}
               data-testid="settings-theme-system"
             >
@@ -122,7 +117,7 @@ export function AccessibilitySettings() {
               </div>
               <span className="text-sm font-medium">Systemowy</span>
               {preferences.theme === 'system' && (
-                <div className="absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-primary">
+                <div className="absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-primary shadow-lg shadow-primary/20">
                   <Check className="h-3 w-3 text-white" />
                 </div>
               )}
@@ -132,15 +127,12 @@ export function AccessibilitySettings() {
       </Card>
 
       {/* Rozmiar czcionki */}
-      <Card className="border-border/60">
+      <Card className="rounded-xl border border-border/50 bg-card/30">
         <CardHeader className="pb-4">
-          <CardTitle className="flex items-center gap-2 text-base">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-secondary/10">
-              <Type className="h-4 w-4 text-secondary" />
-            </div>
+          <CardTitle className="text-lg font-semibold tracking-tight">
             Rozmiar czcionki
           </CardTitle>
-          <CardDescription>
+          <CardDescription className="text-sm text-muted-foreground">
             Dostosuj wielkość tekstu w aplikacji
           </CardDescription>
         </CardHeader>
@@ -158,7 +150,7 @@ export function AccessibilitySettings() {
                     'relative flex flex-col items-center gap-2 rounded-xl border p-3 transition-all',
                     isSelected
                       ? 'border-primary bg-primary/5 ring-2 ring-primary/20'
-                      : 'border-border/60 bg-surface hover:bg-surface-light'
+                      : 'border-border/50 bg-background/50 hover:bg-background hover:border-primary/50'
                   )}
                   data-testid={`settings-fontsize-${size}`}
                 >
@@ -170,7 +162,7 @@ export function AccessibilitySettings() {
                   </span>
                   <span className="text-xs text-muted-foreground">{label}</span>
                   {isSelected && (
-                    <div className="absolute -top-1.5 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-primary">
+                    <div className="absolute -top-1.5 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-primary shadow-lg shadow-primary/20">
                       <Check className="h-2.5 w-2.5 text-white" />
                     </div>
                   )}
@@ -180,8 +172,8 @@ export function AccessibilitySettings() {
           </div>
 
           {/* Podgląd */}
-          <div className="mt-4 rounded-xl border border-border/60 bg-surface-light p-4">
-            <p className="text-xs text-muted-foreground mb-2">Podgląd:</p>
+          <div className="mt-4 rounded-xl border border-border/50 bg-background/50 p-4">
+            <p className="text-xs text-muted-foreground mb-2 font-medium uppercase tracking-wider">Podgląd:</p>
             <p
               className="text-foreground leading-relaxed"
               style={{ fontSize: FONT_SIZE_VALUES[preferences.fontSize].css }}
@@ -194,21 +186,18 @@ export function AccessibilitySettings() {
       </Card>
 
       {/* Opcje dostępności */}
-      <Card className="border-border/60">
+      <Card className="rounded-xl border border-border/50 bg-card/30">
         <CardHeader className="pb-4">
-          <CardTitle className="flex items-center gap-2 text-base">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
-              <Eye className="h-4 w-4 text-primary" />
-            </div>
+          <CardTitle className="text-lg font-semibold tracking-tight">
             Opcje dostępności
           </CardTitle>
-          <CardDescription>
+          <CardDescription className="text-sm text-muted-foreground">
             Dodatkowe ustawienia dla lepszej widoczności
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {/* Wysoki kontrast */}
-          <div className="flex items-center justify-between rounded-xl border border-border/60 bg-surface p-4">
+          <div className="flex items-center justify-between rounded-xl border border-border/50 bg-background/50 p-4 hover:border-primary/30 transition-all">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-warning/10">
                 <Contrast className="h-5 w-5 text-warning" />
@@ -231,7 +220,7 @@ export function AccessibilitySettings() {
           </div>
 
           {/* Ograniczone animacje */}
-          <div className="flex items-center justify-between rounded-xl border border-border/60 bg-surface p-4">
+          <div className="flex items-center justify-between rounded-xl border border-border/50 bg-background/50 p-4 hover:border-primary/30 transition-all">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-info/10">
                 <RotateCcw className="h-5 w-5 text-info" />
@@ -256,15 +245,15 @@ export function AccessibilitySettings() {
       </Card>
 
       {/* Przycisk resetowania */}
-      <div className="flex justify-end">
+      <div className="flex justify-end pt-4">
         <Button
           variant="outline"
           onClick={handleResetToDefaults}
-          className="gap-2"
+          className="gap-2 rounded-xl border-border/50 hover:bg-accent/50 transition-all"
           data-testid="settings-reset-defaults-btn"
         >
-          <RotateCcw className="h-4 w-4" />
-          Przywróć domyślne
+          <RotateCcw className="h-4 w-4 text-muted-foreground" />
+          <span className="text-muted-foreground">Przywróć domyślne</span>
         </Button>
       </div>
     </div>

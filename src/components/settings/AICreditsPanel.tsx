@@ -176,15 +176,15 @@ export function AICreditsPanel({ compact = false }: AICreditsReadonlyPanelProps)
   // Error state
   if (statusError || (!compact && pricingError)) {
     return (
-      <Card className="relative overflow-hidden border-border/60 h-full">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent" />
+      <Card className="relative overflow-hidden rounded-xl border border-border/50 bg-card/30 h-full group">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
         <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary via-emerald-500 to-cyan-500" />
-        <CardContent className="relative p-6 text-center">
-          <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-primary/20 to-emerald-500/20 mb-3">
+        <CardContent className="relative p-8 text-center">
+          <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-primary/20 to-emerald-500/20 mb-4 shadow-lg shadow-primary/10">
             <Sparkles className="h-6 w-6 text-primary" />
           </div>
-          <h3 className="text-base font-semibold text-foreground mb-1">Kredyty AI</h3>
-          <p className="text-xs text-muted-foreground">
+          <h3 className="text-lg font-bold text-foreground mb-1 tracking-tight">Kredyty AI</h3>
+          <p className="text-sm text-muted-foreground">
             Wkrótce dostępne
           </p>
         </CardContent>
@@ -195,25 +195,25 @@ export function AICreditsPanel({ compact = false }: AICreditsReadonlyPanelProps)
   // Pokazuj skeleton tylko przy pierwszym ładowaniu (nie przy refetch)
   if (statusLoading && !credits) {
     return (
-      <Card className="border-border/40 bg-surface/50 backdrop-blur-sm overflow-hidden">
-        <CardHeader className="pb-4">
+      <Card className="rounded-xl border border-border/50 bg-card/30 backdrop-blur-sm overflow-hidden">
+        <CardHeader className="pb-6">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-4">
               <Skeleton className="h-12 w-12 rounded-xl" />
               <div>
-                <Skeleton className="h-5 w-24 mb-1" />
-                <Skeleton className="h-4 w-32" />
+                <Skeleton className="h-6 w-32 mb-2" />
+                <Skeleton className="h-4 w-40" />
               </div>
             </div>
-            <Skeleton className="h-10 w-24 rounded-lg" />
+            <Skeleton className="h-11 w-32 rounded-xl" />
           </div>
         </CardHeader>
-        <CardContent className="pt-0 space-y-4">
-          <Skeleton className="h-16 w-full rounded-lg" />
-          <div className="grid grid-cols-3 gap-3">
-            <Skeleton className="h-16 rounded-lg" />
-            <Skeleton className="h-16 rounded-lg" />
-            <Skeleton className="h-16 rounded-lg" />
+        <CardContent className="pt-0 space-y-6">
+          <Skeleton className="h-24 w-full rounded-xl" />
+          <div className="grid grid-cols-3 gap-4">
+            <Skeleton className="h-20 rounded-xl" />
+            <Skeleton className="h-20 rounded-xl" />
+            <Skeleton className="h-20 rounded-xl" />
           </div>
         </CardContent>
       </Card>
@@ -226,34 +226,34 @@ export function AICreditsPanel({ compact = false }: AICreditsReadonlyPanelProps)
   if (compact) {
     return (
       <>
-        <Card className="border-border/40 bg-surface/50 backdrop-blur-sm overflow-hidden">
-          <CardHeader className="pb-4">
+        <Card className="rounded-xl border border-border/50 bg-card/30 backdrop-blur-sm overflow-hidden group">
+          <CardHeader className="pb-6">
             <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-3 text-lg font-semibold">
+              <CardTitle className="flex items-center gap-4">
                 <div className={cn(
-                  "flex h-12 w-12 items-center justify-center rounded-xl",
+                  "flex h-12 w-12 items-center justify-center rounded-xl shadow-lg transition-transform group-hover:scale-110 duration-300",
                   isEmpty
-                    ? "bg-gradient-to-br from-destructive to-red-600"
+                    ? "bg-gradient-to-br from-destructive to-red-600 shadow-destructive/25"
                     : isLow
-                    ? "bg-gradient-to-br from-warning to-orange-600"
-                    : "bg-gradient-to-br from-primary to-emerald-600"
+                    ? "bg-gradient-to-br from-warning to-orange-600 shadow-warning/25"
+                    : "bg-gradient-to-br from-primary to-emerald-600 shadow-primary/25"
                 )}>
                   <Sparkles className="h-6 w-6 text-white" />
                 </div>
                 <div>
-                  <span className="text-lg font-bold">Kredyty AI</span>
-                  <p className="text-sm text-muted-foreground font-normal">Reset za {daysUntilReset} dni</p>
+                  <span className="text-lg font-bold tracking-tight">Kredyty AI</span>
+                  <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Reset za {daysUntilReset} dni</p>
                 </div>
               </CardTitle>
               <Button
                 onClick={() => setIsPurchaseDialogOpen(true)}
                 className={cn(
-                  "gap-2",
+                  "gap-2 rounded-xl font-bold h-10 px-6 shadow-lg transition-all",
                   isEmpty
-                    ? "bg-gradient-to-r from-destructive to-red-600 hover:opacity-90"
+                    ? "bg-destructive text-white hover:bg-destructive/90 shadow-destructive/20"
                     : isLow
-                    ? "bg-gradient-to-r from-warning to-orange-600 hover:opacity-90"
-                    : "bg-gradient-to-r from-primary to-emerald-600 hover:opacity-90"
+                    ? "bg-warning text-white hover:bg-warning/90 shadow-warning/20"
+                    : "bg-primary text-white hover:bg-primary/90 shadow-primary/20"
                 )}
               >
                 <Zap className="h-4 w-4" />
@@ -264,22 +264,22 @@ export function AICreditsPanel({ compact = false }: AICreditsReadonlyPanelProps)
 
           <CardContent className="pt-0 space-y-4">
             {/* Main credits display - pokazuje DOSTĘPNE */}
-            <div className="rounded-lg bg-surface-light/50 p-4">
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-sm font-medium text-muted-foreground">Dostępne kredyty</span>
+            <div className="rounded-xl bg-background/50 p-6 border border-border/40">
+              <div className="flex items-center justify-between mb-4">
+                <span className="text-sm font-bold uppercase tracking-widest text-muted-foreground">Dostępne</span>
                 <span className={cn(
-                  "text-3xl font-bold tabular-nums",
+                  "text-4xl font-bold tabular-nums tracking-tighter",
                   isEmpty ? "text-destructive" : isLow ? "text-warning" : "text-primary"
                 )}>
                   {remaining}
                 </span>
               </div>
               {/* Pasek pokazuje stan DOSTĘPNYCH (pełny = dużo) */}
-              <div className="h-2 w-full overflow-hidden rounded-full bg-surface">
+              <div className="h-3 w-full overflow-hidden rounded-full bg-surface">
                 <div
                   className={cn(
-                    "h-full rounded-full transition-all duration-500",
-                    isEmpty ? "bg-destructive" : isLow ? "bg-warning" : "bg-primary"
+                    "h-full rounded-full transition-all duration-700 ease-out bg-gradient-to-r shadow-inner",
+                    isEmpty ? "from-destructive to-red-600" : isLow ? "from-warning to-orange-500" : "from-primary to-emerald-500"
                   )}
                   style={{ width: `${Math.min(availablePercent, 100)}%` }}
                 />

@@ -85,32 +85,32 @@ export function DataManagementCard({
   return (
     <>
       {/* Import Example Sets Card */}
-      <Card className="border-border/60">
+      <Card className="rounded-xl border border-border/50 bg-card/30">
         <CardHeader>
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
               <Package className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <CardTitle className="text-lg">Przykładowe dane</CardTitle>
-              <CardDescription>
+              <CardTitle className="text-lg font-semibold tracking-tight">Przykładowe dane</CardTitle>
+              <CardDescription className="text-sm text-muted-foreground">
                 Zaimportuj gotowe zestawy ćwiczeń do Twojej biblioteki
               </CardDescription>
             </div>
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-muted-foreground leading-relaxed">
             Importuj przykładowe zestawy ćwiczeń dla różnych schorzeń i
             przypadków. Obejmuje gotowe programy rehabilitacyjne z ćwiczeniami,
             kategoriami i tagami.
           </p>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 pt-2">
             <Button
               onClick={importExampleSets}
               disabled={isImporting || hasImportedExamples}
-              className="gap-2"
+              className="gap-2 bg-primary text-white font-bold h-11 px-8 rounded-xl shadow-lg shadow-primary/20 transition-all"
             >
               {isImporting ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -127,8 +127,8 @@ export function DataManagementCard({
             </Button>
 
             {hasImportedExamples && (
-              <span className="text-sm text-muted-foreground">
-                Przykładowe dane zostały już zaimportowane
+              <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground/60">
+                Dane zostały już zaimportowane
               </span>
             )}
           </div>
@@ -136,46 +136,48 @@ export function DataManagementCard({
       </Card>
 
       {/* Danger Zone Card */}
-      <Card className="border-destructive/30 bg-destructive/5">
-        <CardHeader>
+      <Card className="rounded-xl border-destructive/20 bg-destructive/5 overflow-hidden">
+        <CardHeader className="bg-destructive/5">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-destructive/10">
               <AlertTriangle className="h-5 w-5 text-destructive" />
             </div>
             <div>
-              <CardTitle className="text-lg text-destructive">
+              <CardTitle className="text-lg font-semibold tracking-tight text-destructive">
                 Strefa niebezpieczna
               </CardTitle>
-              <CardDescription className="text-destructive/80">
+              <CardDescription className="text-sm text-destructive/70">
                 Nieodwracalne operacje na danych organizacji
               </CardDescription>
             </div>
           </div>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="rounded-lg border border-destructive/20 bg-background p-4">
+        <CardContent className="space-y-4 p-6">
+          <div className="rounded-xl border border-destructive/20 bg-background/50 p-6 hover:bg-background transition-all">
             <div className="flex items-start gap-4">
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-destructive/10">
                 <Database className="h-5 w-5 text-destructive" />
               </div>
               <div className="flex-1 space-y-2">
-                <h4 className="font-medium text-foreground">
+                <h4 className="font-bold text-foreground">
                   Usuń wszystkie dane
                 </h4>
-                <p className="text-sm text-muted-foreground">
-                  Ta operacja nieodwracalnie usunie WSZYSTKIE ćwiczenia,
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  Ta operacja nieodwracalnie usunie <strong className="text-destructive font-bold uppercase text-[10px] tracking-widest bg-destructive/10 px-1.5 py-0.5 rounded ml-1">Wszystkie dane</strong>: ćwiczenia,
                   zestawy, tagi i kategorie z Twojej organizacji. Przypisania
                   pacjentów również zostaną usunięte.
                 </p>
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  onClick={() => setIsClearDialogOpen(true)}
-                  className="mt-2 gap-2"
-                >
-                  <Trash2 className="h-4 w-4" />
-                  Usuń wszystkie dane
-                </Button>
+                <div className="pt-2">
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={() => setIsClearDialogOpen(true)}
+                    className="gap-2 font-bold h-10 px-6 rounded-lg shadow-lg shadow-destructive/20 transition-all"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    Usuń wszystkie dane
+                  </Button>
+                </div>
               </div>
             </div>
           </div>
@@ -241,13 +243,3 @@ export function DataManagementCard({
     </>
   );
 }
-
-
-
-
-
-
-
-
-
-

@@ -12,6 +12,7 @@ import { AIChatPanel } from "./AIChatPanel";
 import { useScrollDirection } from "@/hooks/useScrollDirection";
 import * as VisuallyHidden from "@radix-ui/react-visually-hidden";
 import { useExerciseBuilder } from "@/contexts/ExerciseBuilderContext";
+import { usePathname } from "next/navigation";
 
 /**
  * Floating Action Button z panelem czatu AI
@@ -20,6 +21,9 @@ import { useExerciseBuilder } from "@/contexts/ExerciseBuilderContext";
 export function AIChatButton() {
   const { isChatOpen, setIsChatOpen, hasExercises } = useExerciseBuilder();
   const isVisible = useScrollDirection({ threshold: 10 });
+  const pathname = usePathname();
+
+  const isExerciseDetailsPage = pathname?.includes('/exercises/') && pathname?.split('/').length > 2;
 
   return (
     <TooltipProvider delayDuration={300}>
@@ -38,8 +42,8 @@ export function AIChatButton() {
               "hover:scale-110 hover:shadow-2xl hover:shadow-primary/30",
               "active:scale-95",
               "animate-pulse-glow",
-              // Hide when sheet is open, scrolling down, or builder is active on desktop
-              (isChatOpen || !isVisible) && "translate-y-20 opacity-0 pointer-events-none",
+              // Hide when sheet is open, scrolling down, builder is active on desktop, or on specific pages
+              (isChatOpen || !isVisible || isExerciseDetailsPage) && "translate-y-20 opacity-0 pointer-events-none",
               hasExercises && "lg:scale-0 lg:opacity-0 lg:pointer-events-none"
             )}
             aria-label="Otwórz asystenta AI"
