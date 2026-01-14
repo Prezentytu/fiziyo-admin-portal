@@ -174,7 +174,7 @@ export function SetCard({
       onClick={() => onView?.(set)}
     >
       {/* ImageArea - Interactive section with state-based rendering */}
-      <div 
+      <div
         className="relative aspect-[4/3] overflow-hidden bg-surface-light"
         onMouseLeave={handleMouseLeave}
         onMouseMove={handleMouseMove}
@@ -184,19 +184,19 @@ export function SetCard({
           <>
             {/* Blurred background layer */}
             <img
-              src={activeExerciseIndex !== null && allExerciseImages[activeExerciseIndex]?.url 
-                ? allExerciseImages[activeExerciseIndex].url 
+              src={activeExerciseIndex !== null && allExerciseImages[activeExerciseIndex]?.url
+                ? allExerciseImages[activeExerciseIndex].url
                 : allExerciseImages[0].url}
               alt=""
               className="absolute inset-0 w-full h-full object-cover blur-xl scale-110 opacity-50"
             />
             {/* Main image - shows first image (cover) in IDLE, active image in HOVER */}
             <img
-              src={activeExerciseIndex !== null && allExerciseImages[activeExerciseIndex]?.url 
-                ? allExerciseImages[activeExerciseIndex].url 
+              src={activeExerciseIndex !== null && allExerciseImages[activeExerciseIndex]?.url
+                ? allExerciseImages[activeExerciseIndex].url
                 : allExerciseImages[0].url}
-              alt={activeExerciseIndex !== null && allExerciseImages[activeExerciseIndex]?.name 
-                ? allExerciseImages[activeExerciseIndex].name 
+              alt={activeExerciseIndex !== null && allExerciseImages[activeExerciseIndex]?.name
+                ? allExerciseImages[activeExerciseIndex].name
                 : allExerciseImages[0].name}
               className="absolute inset-0 w-full h-full object-contain z-10 transition-opacity duration-200"
             />
