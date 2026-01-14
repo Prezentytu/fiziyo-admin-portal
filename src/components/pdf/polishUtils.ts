@@ -121,7 +121,6 @@ export function translateExerciseTypePolish(type?: string): string {
   const types: Record<string, string> = {
     reps: 'Na powtórzenia',
     time: 'Na czas',
-    hold: 'Utrzymanie pozycji',
   };
   return type ? types[type] || type : '';
 }

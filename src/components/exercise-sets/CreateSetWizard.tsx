@@ -160,7 +160,6 @@ const translateType = (type?: string) => {
   const types: Record<string, string> = {
     time: 'czasowe',
     reps: 'powtórzenia',
-    hold: 'utrzymanie',
   };
   return type ? types[type] || type : '';
 };
@@ -175,7 +174,7 @@ function estimateWorkoutTime(
 
   for (const exercise of exercises) {
     const params = paramsMap.get(exercise.id) || getDefaultParams(exercise);
-    const isTimeType = exercise.type === 'time' || exercise.type === 'hold';
+    const isTimeType = exercise.type === 'time';
 
     if (isTimeType) {
       totalSeconds += params.sets * params.duration;
@@ -366,7 +365,7 @@ function SortableExerciseCard({
   };
 
   const imageUrl = getMediaUrl(exercise.imageUrl || exercise.images?.[0]);
-  const isTimeType = exercise.type === 'time' || exercise.type === 'hold';
+  const isTimeType = exercise.type === 'time';
 
   // Format params summary for chips
   const paramsSummary = isTimeType ? `${params.sets}×${params.duration}s` : `${params.sets}×${params.reps}`;

@@ -112,7 +112,7 @@ export function ExerciseDialog({
     ? {
         name: exercise.name,
         description: exercise.description || "",
-        type: (exercise.type as "reps" | "time" | "hold") || "reps",
+        type: (exercise.type as "reps" | "time") || "reps",
         sets: exercise.sets,
         reps: exercise.reps,
         duration: exercise.duration,

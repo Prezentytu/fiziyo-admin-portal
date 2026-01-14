@@ -103,7 +103,7 @@ export type ImageStyle = 'illustration' | 'diagram' | 'photo';
 export interface ExerciseImageRequest {
   exerciseName: string;
   exerciseDescription?: string;
-  exerciseType?: 'reps' | 'time' | 'hold';
+  exerciseType?: 'reps' | 'time';
   style?: ImageStyle;
 }
 

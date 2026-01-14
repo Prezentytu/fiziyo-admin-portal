@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { Sparkles, X } from "lucide-react";
 import {
   Sheet,
@@ -12,13 +11,14 @@ import { cn } from "@/lib/utils";
 import { AIChatPanel } from "./AIChatPanel";
 import { useScrollDirection } from "@/hooks/useScrollDirection";
 import * as VisuallyHidden from "@radix-ui/react-visually-hidden";
+import { useExerciseBuilder } from "@/contexts/ExerciseBuilderContext";
 
 /**
  * Floating Action Button z panelem czatu AI
  * Umieszczany w layout.tsx dashboardu
  */
 export function AIChatButton() {
-  const [isOpen, setIsOpen] = useState(false);
+  const { isChatOpen, setIsChatOpen, hasExercises } = useExerciseBuilder();
   const isVisible = useScrollDirection({ threshold: 10 });
 
   return (
@@ -27,7 +27,7 @@ export function AIChatButton() {
       <Tooltip>
         <TooltipTrigger asChild>
           <button
-            onClick={() => setIsOpen(true)}
+            onClick={() => setIsChatOpen(true)}
             className={cn(
               "fixed bottom-6 right-6 z-40",
               "flex h-14 w-14 items-center justify-center",
@@ -38,8 +38,9 @@ export function AIChatButton() {
               "hover:scale-110 hover:shadow-2xl hover:shadow-primary/30",
               "active:scale-95",
               "animate-pulse-glow",
-              // Hide when sheet is open or scrolling down
-              (isOpen || !isVisible) && "translate-y-20 opacity-0 pointer-events-none"
+              // Hide when sheet is open, scrolling down, or builder is active on desktop
+              (isChatOpen || !isVisible) && "translate-y-20 opacity-0 pointer-events-none",
+              hasExercises && "lg:scale-0 lg:opacity-0 lg:pointer-events-none"
             )}
             aria-label="Otwórz asystenta AI"
           >
@@ -52,7 +53,7 @@ export function AIChatButton() {
       </Tooltip>
 
       {/* Chat Sheet */}
-      <Sheet open={isOpen} onOpenChange={setIsOpen}>
+      <Sheet open={isChatOpen} onOpenChange={setIsChatOpen}>
         <SheetContent
           side="right"
           hideCloseButton
@@ -69,7 +70,7 @@ export function AIChatButton() {
 
           {/* Custom close button */}
           <button
-            onClick={() => setIsOpen(false)}
+            onClick={() => setIsChatOpen(false)}
             className={cn(
               "absolute right-4 top-4 z-10",
               "flex h-8 w-8 items-center justify-center rounded-lg",
@@ -83,7 +84,7 @@ export function AIChatButton() {
           </button>
 
           {/* Chat Panel */}
-          <AIChatPanel onClose={() => setIsOpen(false)} />
+          <AIChatPanel onClose={() => setIsChatOpen(false)} />
         </SheetContent>
       </Sheet>
     </TooltipProvider>

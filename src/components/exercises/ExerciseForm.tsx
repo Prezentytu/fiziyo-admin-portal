@@ -29,7 +29,7 @@ import {
 const exerciseFormSchema = z.object({
   name: z.string().min(2, "Nazwa musi mieć min. 2 znaki").max(100, "Nazwa może mieć max. 100 znaków"),
   description: z.string().optional(),
-  type: z.enum(["reps", "time", "hold"]),
+  type: z.enum(["reps", "time"]),
   sets: z.number().min(0).max(100).optional().nullable(),
   reps: z.number().min(0).max(1000).optional().nullable(),
   duration: z.number().min(0).max(3600).optional().nullable(),
@@ -149,7 +149,6 @@ export function ExerciseForm({
                   <SelectContent>
                     <SelectItem value="reps" data-testid="exercise-form-type-option-reps">Powtórzenia</SelectItem>
                     <SelectItem value="time" data-testid="exercise-form-type-option-time">Czasowe</SelectItem>
-                    <SelectItem value="hold" data-testid="exercise-form-type-option-hold">Utrzymywanie</SelectItem>
                   </SelectContent>
                 </Select>
                 <FormMessage />
@@ -225,7 +224,7 @@ export function ExerciseForm({
             />
           )}
 
-          {(watchType === "time" || watchType === "hold") && (
+          {watchType === "time" && (
             <FormField
               control={form.control}
               name="duration"

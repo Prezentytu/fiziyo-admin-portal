@@ -70,7 +70,6 @@ const translateType = (type?: string) => {
   const types: Record<string, string> = {
     time: 'czasowe',
     reps: 'powtórzenia',
-    hold: 'utrzymanie',
   };
   return type ? types[type] || type : '';
 };

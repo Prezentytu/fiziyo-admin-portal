@@ -47,11 +47,10 @@ export interface ExtractedExercise {
   tempId: string;
   name: string;
   description?: string;
-  type: 'reps' | 'time' | 'hold';
+  type: 'reps' | 'time';
   sets?: number;
   reps?: number;
   duration?: number;
-  holdTime?: number;
   restBetweenSets?: number;
   restBetweenReps?: number;
   exerciseSide?: 'none' | 'left' | 'right' | 'both' | 'alternating';

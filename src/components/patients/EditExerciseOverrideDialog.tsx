@@ -533,7 +533,7 @@ function EditExerciseOverrideDialogContent({
                   <Plus className="h-4 w-4" />
                 </Button>
               </div>
-              <p className="text-xs text-muted-foreground">Użyj dla ćwiczeń czasowych (np. utrzymanie pozycji)</p>
+              <p className="text-xs text-muted-foreground">Użyj dla ćwiczeń czasowych (np. deska, rozciąganie)</p>
             </div>
 
             {/* Rest parameters */}

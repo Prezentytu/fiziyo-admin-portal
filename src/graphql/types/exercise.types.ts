@@ -6,7 +6,7 @@
 // Enums
 // ============================================
 
-export type ExerciseType = 'reps' | 'time' | 'hold';
+export type ExerciseType = 'reps' | 'time';
 export type ExerciseSide = 'none' | 'left' | 'right' | 'both' | 'alternating';
 export type ExerciseScope = 'PERSONAL' | 'ORGANIZATION' | 'GLOBAL';
 

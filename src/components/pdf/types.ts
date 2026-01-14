@@ -4,7 +4,7 @@ export interface PDFExercise {
   id: string;
   name: string;
   description?: string;
-  type?: 'reps' | 'time' | 'hold';
+  type?: 'reps' | 'time';
   exerciseSide?: 'left' | 'right' | 'alternating' | 'both' | 'none';
   imageUrl?: string;
   images?: string[];

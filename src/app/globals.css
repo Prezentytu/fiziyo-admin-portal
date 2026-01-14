@@ -218,6 +218,7 @@
 }
 
 :root {
+  --base-font-size: 16px;
   /* Base colors - Fizjo App Dark Theme */
   --background: #121212;
   --foreground: #ffffff;
@@ -375,6 +376,23 @@ body {
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 5px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
 }
 
 ::-webkit-scrollbar-track {
@@ -870,6 +888,44 @@ input[type="number"] {
   animation: slide-in-right 0.3s ease-out;
 }
 
+/* Exercise Builder Animations */
+@keyframes bounce-once {
+  0%, 100% {
+    transform: scale(1);
+  }
+  25% {
+    transform: scale(1.2);
+  }
+  50% {
+    transform: scale(0.9);
+  }
+  75% {
+    transform: scale(1.05);
+  }
+}
+
+@keyframes bounce-in {
+  0% {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-bounce-once {
+  animation: bounce-once 0.3s ease-out;
+}
+
+.animate-bounce-in {
+  animation: bounce-in 0.3s ease-out;
+}
+
 /* Mic pulse animation */
 .animate-mic-pulse {
   animation: mic-pulse 1.5s ease-in-out infinite;
@@ -965,11 +1021,6 @@ input[type="number"] {
   animation-iteration-count: 1 !important;
   transition-duration: 0.01ms !important;
   scroll-behavior: auto !important;
-}
-
-/* Base font size variable support */
-:root {
-  --base-font-size: 16px;
 }
 
 html {

@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { Dumbbell, Clock, Repeat, MoreVertical, Pencil, Trash2, FolderPlus, Eye, ZoomIn } from "lucide-react";
+import { useState, useCallback } from "react";
+import { Clock, Repeat, MoreVertical, Pencil, Trash2, FolderPlus, Eye, ZoomIn, Plus, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -46,6 +46,10 @@ interface ExerciseCardProps {
   onEdit?: (exercise: Exercise) => void;
   onDelete?: (exercise: Exercise) => void;
   onAddToSet?: (exercise: Exercise) => void;
+  /** Whether this exercise is currently in the builder */
+  isInBuilder?: boolean;
+  /** Toggle exercise in/out of builder */
+  onToggleBuilder?: (exercise: Exercise) => void;
   className?: string;
   compact?: boolean;
 }
@@ -53,11 +57,9 @@ interface ExerciseCardProps {
 function getTypeLabel(type?: string) {
   switch (type) {
     case "reps":
-      return "Powtórzenia";
+      return "Powtórzeniowe";
     case "time":
       return "Czasowe";
-    case "hold":
-      return "Utrzymywanie";
     default:
       return type || "Inne";
   }
@@ -104,10 +106,23 @@ export function ExerciseCard({
   onEdit,
   onDelete,
   onAddToSet,
+  isInBuilder = false,
+  onToggleBuilder,
   className,
   compact = false,
 }: ExerciseCardProps) {
   const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [isBouncing, setIsBouncing] = useState(false);
+
+  const handleToggleBuilder = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (onToggleBuilder) {
+      setIsBouncing(true);
+      setTimeout(() => setIsBouncing(false), 300);
+      onToggleBuilder(exercise);
+    }
+  }, [exercise, onToggleBuilder]);
 
   const rawImageUrl = exercise.imageUrl || exercise.images?.[0];
   const imageUrl = getMediaUrl(rawImageUrl);
@@ -134,6 +149,7 @@ export function ExerciseCard({
           "group flex items-center gap-4 rounded-xl border border-border/60 bg-surface p-3",
           "transition-all duration-200 ease-out cursor-pointer",
           "hover:bg-surface-light hover:border-primary/30 hover:shadow-md hover:shadow-primary/5",
+          isInBuilder && "border-primary bg-primary/5 ring-1 ring-primary/20",
           className
         )}
         onClick={() => onView?.(exercise)}
@@ -181,6 +197,26 @@ export function ExerciseCard({
         <div className="hidden sm:block">
           {renderTags(exercise.mainTags, 2)}
         </div>
+
+        {/* Add to builder button */}
+        {onToggleBuilder && (
+          <Button
+            variant={isInBuilder ? "default" : "outline"}
+            size="icon"
+            className={cn(
+              "h-8 w-8 shrink-0 transition-all duration-200",
+              isInBuilder
+                ? "bg-primary text-primary-foreground hover:bg-primary/90"
+                : "border-primary/50 text-primary hover:bg-primary/10 hover:border-primary",
+              isBouncing && "animate-bounce-once"
+            )}
+            onClick={handleToggleBuilder}
+            data-testid={`exercise-card-${exercise.id}-toggle-builder-btn`}
+            title={isInBuilder ? "Usuń z zestawu" : "Dodaj do zestawu"}
+          >
+            {isInBuilder ? <Check className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+          </Button>
+        )}
 
         {/* Actions */}
         <DropdownMenu>
@@ -232,104 +268,113 @@ export function ExerciseCard({
     <div
       data-testid={`exercise-card-${exercise.id}`}
       className={cn(
-        "group relative flex flex-col rounded-xl border border-border/60 bg-surface overflow-hidden",
+        "group relative flex flex-col rounded-2xl border border-border/60 bg-zinc-900/40 overflow-hidden",
         "transition-all duration-300 ease-out cursor-pointer",
         "hover:-translate-y-1 hover:border-primary/40 hover:shadow-xl hover:shadow-primary/10",
+        isInBuilder && "ring-2 ring-primary border-primary/50 shadow-lg shadow-primary/20",
         className
       )}
       onClick={() => onView?.(exercise)}
     >
-      {/* Image section with overlay */}
-      <div className="relative aspect-[16/10] overflow-hidden bg-surface-light">
+      {/* Image section with Atlas pattern (Blurred backdrop + Contain) */}
+      <div className="relative aspect-[4/3] overflow-hidden bg-zinc-950">
         {imageUrl ? (
           <>
+            {/* Blurred background */}
+            <div 
+              className="absolute inset-0 bg-cover bg-center blur-2xl opacity-40 scale-110"
+              style={{ backgroundImage: `url(${imageUrl})` }}
+            />
+            {/* Main image */}
             <img
               src={imageUrl}
               alt={exercise.name}
               loading="lazy"
-              className="h-full w-full object-contain transition-transform duration-500 ease-out group-hover:scale-[1.03]"
+              className="relative h-full w-full object-contain transition-transform duration-500 ease-out group-hover:scale-[1.05]"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-transparent opacity-60 group-hover:opacity-40 transition-opacity duration-300" />
+            {/* Dark gradient overlay */}
+            <div className="absolute inset-0 bg-linear-to-t from-black/60 via-transparent to-transparent opacity-60 group-hover:opacity-40 transition-opacity duration-300" />
+
+            {/* Selection state tint (Subtle) */}
+            {isInBuilder && (
+              <div className="absolute inset-0 bg-primary/10 pointer-events-none" />
+            )}
 
             {/* Zoom button */}
-            <button
-              type="button"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                setLightboxOpen(true);
-              }}
-              onMouseDown={(e) => e.stopPropagation()}
-              onPointerDown={(e) => e.stopPropagation()}
-              className={cn(
-                "absolute bottom-3 right-3 z-10",
-                "flex h-8 w-8 items-center justify-center rounded-full",
-                "bg-black/50 text-white/80 backdrop-blur-sm",
-                "opacity-0 group-hover:opacity-100 transition-all duration-200",
-                "hover:bg-black/70 hover:text-white hover:scale-110"
-              )}
-              aria-label="Powiększ zdjęcie"
-            >
-              <ZoomIn className="h-4 w-4" />
-            </button>
+            {!isInBuilder && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setLightboxOpen(true);
+                }}
+                className={cn(
+                  "absolute bottom-3 right-3 z-10",
+                  "flex h-8 w-8 items-center justify-center rounded-full",
+                  "bg-black/50 text-white/80 backdrop-blur-sm",
+                  "opacity-0 group-hover:opacity-100 transition-all duration-200",
+                  "hover:bg-black/70 hover:text-white hover:scale-110"
+                )}
+                aria-label="Powiększ zdjęcie"
+              >
+                <ZoomIn className="h-4 w-4" />
+              </button>
+            )}
           </>
         ) : (
-          <ImagePlaceholder type="exercise" className="aspect-[16/10]" iconClassName="h-12 w-12" />
+          <ImagePlaceholder type="exercise" className="aspect-[4/3]" iconClassName="h-12 w-12" />
         )}
 
-        {/* Tags overlay on image */}
-        {(exercise.mainTags?.length || 0) > 0 && (
-          <div className="absolute bottom-3 left-3 right-12">
-            {renderTags(exercise.mainTags, 3)}
-          </div>
-        )}
-
-        {/* Type badge */}
-        {exercise.type && (
-          <div className="absolute top-3 left-3">
-            <Badge className="bg-black/60 text-white border-0 backdrop-blur-sm">
-              {getTypeLabel(exercise.type)}
-            </Badge>
-          </div>
-        )}
-
-        {/* Actions button */}
-        <div className="absolute top-3 right-3">
+        {/* Actions buttons */}
+        <div className="absolute top-3 right-3 flex items-center gap-2">
+          {/* Add to builder button */}
+          {onToggleBuilder && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className={cn(
+                "h-9 w-9 backdrop-blur-md transition-all duration-300 rounded-xl shadow-lg",
+                isInBuilder
+                  ? "bg-primary text-white border-primary/50"
+                  : "bg-black/40 hover:bg-black/60 text-white border border-white/10 hover:scale-105",
+                isBouncing && "animate-bounce-once"
+              )}
+              onClick={handleToggleBuilder}
+              data-testid={`exercise-card-${exercise.id}-toggle-builder-btn`}
+              title={isInBuilder ? "W zestawie" : "Dodaj do zestawu"}
+            >
+              {isInBuilder ? <Check className="h-5 w-5" /> : <Plus className="h-5 w-5" />}
+            </Button>
+          )}
+          
           <DropdownMenu>
             <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
               <Button
                 variant="ghost"
                 size="icon"
-                data-testid={`exercise-card-${exercise.id}-menu-trigger`}
-                className="h-8 w-8 bg-black/40 hover:bg-black/60 text-white backdrop-blur-sm"
+                className="h-9 w-9 bg-black/40 hover:bg-black/60 text-white backdrop-blur-sm rounded-xl border border-white/10 shadow-lg"
               >
-                <MoreVertical className="h-4 w-4" />
+                <MoreVertical className="h-5 w-5" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               {onView && (
-                <DropdownMenuItem data-testid={`exercise-card-${exercise.id}-view-btn`} onClick={() => onView(exercise)}>
+                <DropdownMenuItem onClick={() => onView(exercise)}>
                   <Eye className="mr-2 h-4 w-4" />
                   Podgląd
                 </DropdownMenuItem>
               )}
               {onEdit && (
-                <DropdownMenuItem data-testid={`exercise-card-${exercise.id}-edit-btn`} onClick={() => onEdit(exercise)}>
+                <DropdownMenuItem onClick={() => onEdit(exercise)}>
                   <Pencil className="mr-2 h-4 w-4" />
                   Edytuj
-                </DropdownMenuItem>
-              )}
-              {onAddToSet && (
-                <DropdownMenuItem data-testid={`exercise-card-${exercise.id}-add-to-set-btn`} onClick={() => onAddToSet(exercise)}>
-                  <FolderPlus className="mr-2 h-4 w-4" />
-                  Dodaj do zestawu
                 </DropdownMenuItem>
               )}
               {onDelete && (
                 <>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
-                    data-testid={`exercise-card-${exercise.id}-delete-btn`}
                     onClick={() => onDelete(exercise)}
                     className="text-destructive focus:text-destructive"
                   >
@@ -344,40 +389,28 @@ export function ExerciseCard({
       </div>
 
       {/* Content section */}
-      <div className="flex flex-col flex-1 p-4 space-y-3">
-        {/* Title */}
-        <h3 className="font-semibold text-base leading-tight line-clamp-1">
+      <div className="flex flex-col p-4 pt-3 space-y-1 bg-zinc-900/20 backdrop-blur-sm">
+        <h3 className="font-bold text-sm sm:text-base leading-tight line-clamp-1 text-foreground">
           {exercise.name}
         </h3>
-
-        {/* Description */}
-        <p className="text-sm text-muted-foreground line-clamp-2 flex-1">
-          {exercise.description || "Brak opisu"}
-        </p>
-
-        {/* Parameters footer */}
-        {hasParams && (
-          <div className="flex items-center gap-4 pt-2 border-t border-border text-xs text-muted-foreground">
-            {exercise.sets !== undefined && exercise.sets > 0 && (
-              <span className="flex items-center gap-1.5">
-                <Repeat className="h-3.5 w-3.5 text-primary" />
-                <span className="font-medium text-foreground">{exercise.sets}</span> serii
+        
+        {/* Primary Metadata: Focus on Type & Body Parts */}
+        <div className="flex items-center gap-2 text-[10px] sm:text-[11px] text-muted-foreground/80 font-medium">
+          {exercise.type && (
+            <span className="text-primary/90 font-bold uppercase tracking-widest">{getTypeLabel(exercise.type)}</span>
+          )}
+          {exercise.mainTags && (exercise.mainTags as any).length > 0 && (
+            <>
+              <span className="w-1 h-1 rounded-full bg-zinc-700" />
+              <span className="truncate">
+                {(exercise.mainTags as any)
+                  .slice(0, 2)
+                  .map((t: any) => (isTagObject(t) ? t.name : t))
+                  .join(", ")}
               </span>
-            )}
-            {exercise.reps !== undefined && exercise.reps > 0 && (
-              <span className="flex items-center gap-1.5">
-                <Dumbbell className="h-3.5 w-3.5 text-primary" />
-                <span className="font-medium text-foreground">{exercise.reps}</span> powt.
-              </span>
-            )}
-            {exercise.duration !== undefined && exercise.duration > 0 && (
-              <span className="flex items-center gap-1.5">
-                <Clock className="h-3.5 w-3.5 text-primary" />
-                <span className="font-medium text-foreground">{exercise.duration}</span>s
-              </span>
-            )}
-          </div>
-        )}
+            </>
+          )}
+        </div>
       </div>
     </div>
 

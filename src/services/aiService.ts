@@ -237,7 +237,7 @@ class AIService {
   async generateExerciseImage(
     exerciseName: string,
     exerciseDescription?: string,
-    exerciseType?: 'reps' | 'time' | 'hold',
+    exerciseType?: 'reps' | 'time',
     style: ImageStyle = 'illustration'
   ): Promise<{ file?: File; response: ExerciseImageResponse } | null> {
     if (!exerciseName.trim() || exerciseName.length < 2) {

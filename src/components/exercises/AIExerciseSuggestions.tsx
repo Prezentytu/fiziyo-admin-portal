@@ -19,7 +19,6 @@ interface AIExerciseSuggestionsProps {
 const EXERCISE_TYPE_LABELS: Record<string, string> = {
   reps: 'Powtórzenia',
   time: 'Czasowe',
-  hold: 'Utrzymywanie',
 };
 
 /**

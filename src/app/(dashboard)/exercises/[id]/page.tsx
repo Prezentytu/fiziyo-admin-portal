@@ -147,8 +147,6 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
         return 'Powtórzenia';
       case 'time':
         return 'Czasowe';
-      case 'hold':
-        return 'Utrzymywanie';
       default:
         return type || 'Inne';
     }

@@ -59,8 +59,6 @@ export function ExerciseReviewCard({
         return 'Powtórzenia';
       case 'time':
         return 'Czasowe';
-      case 'hold':
-        return 'Utrzymanie';
       default:
         return type;
     }
@@ -146,12 +144,6 @@ export function ExerciseReviewCard({
                 <span className="flex items-center gap-1.5">
                   <Timer className="h-4 w-4" />
                   {exercise.duration} sekund
-                </span>
-              )}
-              {exercise.holdTime && (
-                <span className="flex items-center gap-1.5">
-                  <Clock className="h-4 w-4" />
-                  {exercise.holdTime}s utrzymania
                 </span>
               )}
             </div>
