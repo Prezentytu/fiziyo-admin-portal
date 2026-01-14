@@ -195,8 +195,8 @@ export function TeamSection({
               onClick={() => setRoleFilter(filter)}
               className={cn(
                 "px-4 py-1.5 text-xs font-medium rounded-lg transition-all whitespace-nowrap",
-                roleFilter === filter 
-                  ? "bg-background text-foreground shadow-sm" 
+                roleFilter === filter
+                  ? "bg-background text-foreground shadow-sm"
                   : "text-muted-foreground hover:text-foreground hover:bg-background/50"
               )}
               data-testid={`org-team-filter-${filter}`}
@@ -235,9 +235,9 @@ export function TeamSection({
             Znaleziono{" "}
             <span className="font-semibold text-foreground">{filteredMembers.length}</span> pracownik(ów)
           </span>
-          <Button 
-            variant="ghost" 
-            size="sm" 
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={() => {
               setSearchQuery("");
               setRoleFilter("all");

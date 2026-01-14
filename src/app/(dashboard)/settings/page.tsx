@@ -108,20 +108,20 @@ export default function SettingsPage() {
         <div className="w-64 border-r border-border/40 bg-transparent flex flex-col shrink-0">
           <div className="p-6">
             <h1 className="text-xl font-bold text-foreground mb-6" data-testid="settings-page-title">Ustawienia</h1>
-            
+
             <TabsList className="flex flex-col h-auto bg-transparent p-0 items-stretch gap-1">
-              <TabsTrigger 
-                value="profile" 
+              <TabsTrigger
+                value="profile"
                 className="justify-start gap-3 px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-accent/30 data-[state=active]:bg-accent/50 data-[state=active]:text-foreground data-[state=active]:font-medium data-[state=active]:shadow-none transition-all rounded-lg"
                 data-testid="settings-tab-profile"
               >
                 <User className="h-4 w-4" />
                 Mój profil
               </TabsTrigger>
-              
+
               {canManageOrganization && (
-                <TabsTrigger 
-                  value="organization" 
+                <TabsTrigger
+                  value="organization"
                   className="justify-start gap-3 px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-accent/30 data-[state=active]:bg-accent/50 data-[state=active]:text-foreground data-[state=active]:font-medium data-[state=active]:shadow-none transition-all rounded-lg"
                   data-testid="settings-tab-organization"
                 >
@@ -129,9 +129,9 @@ export default function SettingsPage() {
                   Profil firmy
                 </TabsTrigger>
               )}
-              
-              <TabsTrigger 
-                value="organizations" 
+
+              <TabsTrigger
+                value="organizations"
                 className="justify-start gap-3 px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-accent/30 data-[state=active]:bg-accent/50 data-[state=active]:text-foreground data-[state=active]:font-medium data-[state=active]:shadow-none transition-all rounded-lg"
                 data-testid="settings-tab-organizations"
               >
@@ -139,9 +139,9 @@ export default function SettingsPage() {
                 <span>Organizacje</span>
                 <span className="ml-auto text-xs text-muted-foreground/60">{organizations.length}</span>
               </TabsTrigger>
-              
-              <TabsTrigger 
-                value="accessibility" 
+
+              <TabsTrigger
+                value="accessibility"
                 className="justify-start gap-3 px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-accent/30 data-[state=active]:bg-accent/50 data-[state=active]:text-foreground data-[state=active]:font-medium data-[state=active]:shadow-none transition-all rounded-lg"
                 data-testid="settings-tab-accessibility"
               >

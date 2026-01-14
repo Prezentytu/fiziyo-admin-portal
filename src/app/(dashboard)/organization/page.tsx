@@ -257,10 +257,10 @@ export default function OrganizationPage() {
           <div className="w-64 border-r border-border/40 bg-transparent flex flex-col shrink-0">
             <div className="p-6">
               <h1 className="text-xl font-bold text-foreground mb-6" data-testid="org-page-title">Mój Zespół</h1>
-              
+
               <TabsList className="flex flex-col h-auto bg-transparent p-0 items-stretch gap-1">
-                <TabsTrigger 
-                  value="team" 
+                <TabsTrigger
+                  value="team"
                   className="justify-start gap-3 px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-accent/30 data-[state=active]:bg-accent/50 data-[state=active]:text-foreground data-[state=active]:font-medium data-[state=active]:shadow-none transition-all rounded-lg"
                   data-testid="org-tab-team"
                 >
@@ -268,9 +268,9 @@ export default function OrganizationPage() {
                   <span>Pracownicy</span>
                   <span className="ml-auto text-xs text-muted-foreground/60">{teamCount}</span>
                 </TabsTrigger>
-                
-                <TabsTrigger 
-                  value="clinics" 
+
+                <TabsTrigger
+                  value="clinics"
                   className="justify-start gap-3 px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-accent/30 data-[state=active]:bg-accent/50 data-[state=active]:text-foreground data-[state=active]:font-medium data-[state=active]:shadow-none transition-all rounded-lg"
                   data-testid="org-tab-clinics"
                 >
@@ -278,10 +278,10 @@ export default function OrganizationPage() {
                   <span>Gabinety</span>
                   <span className="ml-auto text-xs text-muted-foreground/60">{clinicsCount}</span>
                 </TabsTrigger>
-                
+
                 {canEdit && (
-                  <TabsTrigger 
-                    value="invitations" 
+                  <TabsTrigger
+                    value="invitations"
                     className="justify-start gap-3 px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-accent/30 data-[state=active]:bg-accent/50 data-[state=active]:text-foreground data-[state=active]:font-medium data-[state=active]:shadow-none transition-all rounded-lg"
                     data-testid="org-tab-invitations"
                   >

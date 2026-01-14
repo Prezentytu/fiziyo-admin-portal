@@ -10,7 +10,7 @@ import {
   FolderKanban,
   Users,
   Building2,
-  CreditCard,
+  Wallet,
   Settings,
   PanelLeftClose,
   PanelLeft,
@@ -80,7 +80,7 @@ const navigationGroups: NavigationGroup[] = [
     adminOnly: true,
     items: [
       { name: "Zespół", href: "/organization", icon: Building2, testId: "nav-link-organization" },
-      { name: "Rozliczenia", href: "/billing", icon: CreditCard, testId: "nav-link-billing" },
+      { name: "Finanse", href: "/finances", icon: Wallet, testId: "nav-link-finances" },
       { name: "Ustawienia", href: "/settings", icon: Settings, testId: "nav-link-settings" },
     ],
   },

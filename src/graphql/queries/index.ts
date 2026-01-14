@@ -50,3 +50,6 @@ export * from "./weeklyProgress.queries";
 
 // Onboarding Stats
 export * from "./onboardingStats.queries";
+
+// Revenue Share (zarobki, Stripe Connect, zaproszenia pacjentów)
+export * from "./revenue.queries";

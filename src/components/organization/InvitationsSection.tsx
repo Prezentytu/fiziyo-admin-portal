@@ -208,8 +208,8 @@ export function InvitationsSection({
               onClick={() => setActiveTab("pending")}
               className={cn(
                 "px-4 py-1.5 text-xs font-medium rounded-lg transition-all",
-                activeTab === "pending" 
-                  ? "bg-background text-foreground shadow-sm" 
+                activeTab === "pending"
+                  ? "bg-background text-foreground shadow-sm"
                   : "text-muted-foreground hover:text-foreground"
               )}
             >
@@ -219,8 +219,8 @@ export function InvitationsSection({
               onClick={() => setActiveTab("all")}
               className={cn(
                 "px-4 py-1.5 text-xs font-medium rounded-lg transition-all",
-                activeTab === "all" 
-                  ? "bg-background text-foreground shadow-sm" 
+                activeTab === "all"
+                  ? "bg-background text-foreground shadow-sm"
                   : "text-muted-foreground hover:text-foreground"
               )}
             >

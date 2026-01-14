@@ -20,3 +20,6 @@ export * from "./therapists.mutations";
 
 // Users
 export * from "./users.mutations";
+
+// Revenue Share (Stripe Connect, zaproszenia pacjentów, kody partnerskie)
+export * from "./revenue.mutations";

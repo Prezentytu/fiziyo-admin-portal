@@ -222,8 +222,8 @@ export function MemberCard({
 
               {/* Meta info */}
               <div className="flex flex-wrap items-center gap-2">
-                <Badge 
-                  variant="outline" 
+                <Badge
+                  variant="outline"
                   className={cn(
                     "gap-1.5 text-[10px] uppercase font-bold tracking-wider px-1.5 py-0 h-5 bg-background/50 border-border/50",
                     config.color

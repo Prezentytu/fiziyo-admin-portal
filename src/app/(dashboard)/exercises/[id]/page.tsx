@@ -198,15 +198,15 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
         {/* Background Layer: Immersive Backdrop */}
         {currentImage && (
           <>
-            <img 
-              src={currentImage} 
+            <img
+              src={currentImage}
               alt=""
               className="absolute inset-0 w-full h-full object-cover blur-3xl opacity-80 scale-150 pointer-events-none"
             />
             <div className="absolute inset-0 bg-black/40 pointer-events-none" />
           </>
         )}
-        
+
         {/* Main content area (Content Layer) - No boxes, no limits */}
         <div className="relative z-10 w-full h-full flex items-center justify-center group/hero">
           {currentImage ? (
@@ -298,9 +298,9 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
                 <div className="flex flex-wrap gap-2 pt-2">
                   {exercise.mainTags?.map((tag) => (
                     isTagObject(tag) ? (
-                      <ColorBadge 
-                        key={tag.id} 
-                        color={tag.color} 
+                      <ColorBadge
+                        key={tag.id}
+                        color={tag.color}
                         className="px-3 py-1 text-[10px] uppercase font-bold tracking-wider bg-transparent border-current/20"
                         variant="outline"
                       >
@@ -314,9 +314,9 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
                   ))}
                   {exercise.additionalTags?.map((tag) => (
                     isTagObject(tag) ? (
-                      <ColorBadge 
-                        key={tag.id} 
-                        color={tag.color} 
+                      <ColorBadge
+                        key={tag.id}
+                        color={tag.color}
                         className="px-3 py-1 text-[10px] uppercase font-bold tracking-wider opacity-40 border-current/10"
                         variant="outline"
                       >
@@ -359,17 +359,17 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
                   return sections.map((section, idx) => {
                     const isInstruction = /^Instrukcja:/i.test(section);
                     const isErrors = /^Najczęstsze błędy:/i.test(section);
-                    
+
                     if (isInstruction || isErrors) {
                       const parts = section.split(':');
                       const title = parts[0];
                       const content = parts.slice(1).join(':').trim();
-                      
+
                       return (
                         <div key={section} className={cn(
                           "space-y-5 p-8 rounded-2xl border transition-all",
-                          isErrors 
-                            ? "bg-destructive/3 border-destructive/10" 
+                          isErrors
+                            ? "bg-destructive/3 border-destructive/10"
                             : "bg-zinc-50 dark:bg-zinc-900/50 border-zinc-200/50 dark:border-zinc-800/50"
                         )}>
                           <div className="flex items-center gap-3">
@@ -386,7 +386,7 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
                               {title}
                             </span>
                           </div>
-                          
+
                           {isErrors ? (
                             <ul className="space-y-3">
                               {content.split(/\.|\n/).filter(p => p.trim()).map((point) => (
@@ -394,7 +394,7 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
                                   <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-destructive/40" />
                                   <span>
                                     {point.trim().split(/(Unikaj:|Pamiętaj:)/i).map((part, pIdx) => (
-                                      /Unikaj:|Pamiętaj:/i.test(part) 
+                                      /Unikaj:|Pamiętaj:/i.test(part)
                                         ? <strong key={pIdx} className="font-bold text-foreground uppercase text-[11px] tracking-wide mr-1">{part}</strong>
                                         : part
                                     ))}
@@ -407,7 +407,7 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
                               {content.split(/\n\n+/).filter(p => p.trim()).map((paragraph, pIdx) => (
                                 <p key={pIdx} className="text-lg leading-relaxed text-muted-foreground font-medium">
                                   {paragraph.trim().split(/(Unikaj:|Pamiętaj:)/i).map((part, sIdx) => (
-                                    /Unikaj:|Pamiętaj:/i.test(part) 
+                                    /Unikaj:|Pamiętaj:/i.test(part)
                                       ? <strong key={sIdx} className="font-bold text-foreground uppercase text-[11px] tracking-wide mr-1">{part}</strong>
                                       : part
                                   ))}
@@ -418,7 +418,7 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
                         </div>
                       );
                     }
-                    
+
                     return (
                       <div key={section} className="space-y-4">
                         {!isInstruction && !isErrors && idx === 0 && (
@@ -431,7 +431,7 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
                           {section.trim().split(/\n\n+/).filter(p => p.trim()).map((paragraph, pIdx) => (
                             <p key={pIdx} className="text-xl leading-relaxed font-medium text-muted-foreground">
                               {paragraph.trim().split(/(Unikaj:|Pamiętaj:)/i).map((part, sIdx) => (
-                                /Unikaj:|Pamiętaj:/i.test(part) 
+                                /Unikaj:|Pamiętaj:/i.test(part)
                                   ? <strong key={sIdx} className="font-bold text-foreground uppercase text-[11px] tracking-wide mr-1">{part}</strong>
                                   : part
                               ))}
@@ -456,7 +456,7 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
                   <div className="relative">
                     <div className="absolute -left-4 top-0 bottom-0 w-1 bg-primary/20 rounded-full" />
                     <p className="text-muted-foreground whitespace-pre-wrap leading-relaxed text-sm italic pl-2">
-                      "{exercise.notes}"
+                      &quot;{exercise.notes}&quot;
                     </p>
                   </div>
                 </div>
@@ -470,9 +470,9 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
           <div className="relative flex items-center justify-between gap-3">
             {/* Left Side: Secondary Tools */}
             <div className="flex items-center gap-2">
-              <Button 
-                variant="ghost" 
-                size="icon" 
+              <Button
+                variant="ghost"
+                size="icon"
                 className="h-11 w-11 rounded-xl hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all"
                 onClick={() => setIsEditDialogOpen(true)}
               >
@@ -529,9 +529,9 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
                 <Sparkles className="h-4 w-4 text-primary" />
                 <span className="hidden sm:inline font-medium">Asystent AI</span>
               </Button>
-              
-              <Button 
-                size="lg" 
+
+              <Button
+                size="lg"
                 className="h-11 px-6 rounded-xl font-bold bg-primary text-white shadow-md hover:bg-primary/90 transition-all"
                 onClick={handleAddToSet}
               >
