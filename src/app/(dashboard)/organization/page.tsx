@@ -1,18 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery } from "@apollo/client/react";
 import { useUser } from "@clerk/nextjs";
-import Link from "next/link";
 import {
   Building2,
   Users,
   MapPin,
   UserPlus,
   Plus,
-  CreditCard,
   Mail,
-  ArrowRight,
+  Activity,
 } from "lucide-react";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -23,7 +21,7 @@ import {
   InviteMemberDialog,
   ClinicDialog,
   AssignToClinicDialog,
-  InvitationsTab,
+  InvitationsModal,
 } from "@/components/organization";
 import { TeamSection } from "@/components/organization/TeamSection";
 import { ClinicsSection, Clinic } from "@/components/organization/ClinicsSection";
@@ -34,9 +32,11 @@ import {
   GET_ORGANIZATION_BY_ID_QUERY,
   GET_ORGANIZATION_MEMBERS_QUERY,
   GET_CURRENT_ORGANIZATION_PLAN,
+  GET_ORGANIZATION_INVITATION_STATS_QUERY,
 } from "@/graphql/queries/organizations.queries";
 import { GET_USER_BY_CLERK_ID_QUERY, GET_USER_ORGANIZATIONS_QUERY } from "@/graphql/queries/users.queries";
 import { GET_ORGANIZATION_CLINICS_QUERY } from "@/graphql/queries/clinics.queries";
+import { GET_CURRENT_BILLING_STATUS_QUERY } from "@/graphql/queries/billing.queries";
 import { useOrganization } from "@/contexts/OrganizationContext";
 import type {
   UserByClerkIdResponse,
@@ -44,6 +44,8 @@ import type {
   OrganizationMembersResponse,
   OrganizationClinicsResponse,
   UserOrganizationsResponse,
+  OrganizationInvitationStatsResponse,
+  GetCurrentBillingStatusResponse,
 } from "@/types/apollo";
 
 interface ClinicFromQuery {
@@ -87,6 +89,7 @@ export default function OrganizationPage() {
   const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
   const [isClinicDialogOpen, setIsClinicDialogOpen] = useState(false);
   const [isAssignToClinicDialogOpen, setIsAssignToClinicDialogOpen] = useState(false);
+  const [isInvitationsModalOpen, setIsInvitationsModalOpen] = useState(false);
   const [editingClinic, setEditingClinic] = useState<Clinic | null>(null);
   const [assigningClinic, setAssigningClinic] = useState<Clinic | null>(null);
 
@@ -146,6 +149,25 @@ export default function OrganizationPage() {
     skip: !organizationId,
   });
 
+  // Get billing status (for therapist patient counts)
+  const { data: billingData } = useQuery<GetCurrentBillingStatusResponse>(
+    GET_CURRENT_BILLING_STATUS_QUERY,
+    {
+      variables: { organizationId: organizationId || "" },
+      skip: !organizationId,
+      errorPolicy: "all",
+    }
+  );
+
+  // Get invitation stats (for KPI card)
+  const { data: invitationStatsData } = useQuery<OrganizationInvitationStatsResponse>(
+    GET_ORGANIZATION_INVITATION_STATS_QUERY,
+    {
+      variables: { organizationId },
+      skip: !organizationId,
+    }
+  );
+
   const organization = (orgData as OrganizationByIdResponse)?.organizationById;
   const members: OrganizationMember[] = (membersData as OrganizationMembersResponse)?.organizationMembers || [];
   const clinics: ClinicFromQuery[] = (clinicsData as OrganizationClinicsResponse)?.organizationClinics || [];
@@ -158,6 +180,26 @@ export default function OrganizationPage() {
   const planName = planInfo?.currentPlan || organization?.subscriptionPlan || "Free";
 
   const canEdit = currentUserRole === "owner" || currentUserRole === "admin";
+
+  // Billing data for patient counts
+  const billingStatus = billingData?.currentBillingStatus;
+  const totalPatients = billingStatus?.activePatientsInMonth ?? 0;
+  const avgPatientsPerTherapist = teamCount > 0 ? Math.round(totalPatients / teamCount) : 0;
+
+  // Create map of therapist -> patient count
+  const therapistPatientCounts = useMemo(() => {
+    const map = new Map<string, number>();
+    if (billingStatus?.therapistBreakdown) {
+      for (const t of billingStatus.therapistBreakdown) {
+        map.set(t.therapistId, t.activePatientsCount);
+      }
+    }
+    return map;
+  }, [billingStatus?.therapistBreakdown]);
+
+  // Invitation stats
+  const invitationStats = invitationStatsData?.organizationInvitationStats;
+  const pendingInvitations = invitationStats?.pending ?? 0;
 
   // Get therapists for clinic assignment (filter out patients)
   const therapists = members
@@ -228,12 +270,6 @@ export default function OrganizationPage() {
               <span className="hidden sm:inline">Zespół</span>
               <span className="text-muted-foreground">({teamCount})</span>
             </TabsTrigger>
-            {canEdit && (
-              <TabsTrigger value="invitations" className="flex items-center gap-2 text-xs sm:text-sm" data-testid="org-tab-invitations">
-                <Mail className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">Zaproszenia</span>
-              </TabsTrigger>
-            )}
             <TabsTrigger value="clinics" className="flex items-center gap-2 text-xs sm:text-sm" data-testid="org-tab-clinics">
               <MapPin className="h-3.5 w-3.5" />
               <span className="hidden sm:inline">Gabinety</span>
@@ -307,46 +343,71 @@ export default function OrganizationPage() {
                   {teamCount}
                 </span>
               </div>
-              <p className="text-xs text-muted-foreground mt-1">Zespół</p>
+              <p className="text-xs text-muted-foreground mt-1">Terapeutów</p>
             </button>
 
-            {/* Clinics count */}
+            {/* Patient load - skuteczność */}
             <button
-              onClick={() => setActiveTab("clinics")}
+              onClick={() => setActiveTab("team")}
               className={cn(
                 "rounded-2xl border p-4 flex flex-col items-center justify-center text-center transition-all duration-200",
-                activeTab === "clinics"
-                  ? "border-secondary/40 bg-secondary/10 ring-1 ring-secondary/20"
-                  : "border-border/40 bg-surface/50 hover:bg-surface-light hover:border-border"
+                "border-border/40 bg-surface/50 hover:bg-surface-light hover:border-border"
               )}
-              data-testid="org-stat-clinics"
+              data-testid="org-stat-patients"
             >
               <div className="flex items-center gap-2">
-                <MapPin className={cn("h-4 w-4", activeTab === "clinics" ? "text-secondary" : "text-muted-foreground")} />
-                <span className={cn("text-2xl font-bold", activeTab === "clinics" ? "text-secondary" : "text-foreground")}>
-                  {clinicsCount}
+                <Activity className="h-4 w-4 text-emerald-500" />
+                <span className="text-2xl font-bold text-foreground">
+                  {totalPatients}
                 </span>
               </div>
-              <p className="text-xs text-muted-foreground mt-1">Gabinety</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Śr. {avgPatientsPerTherapist}/terapeutę
+              </p>
             </button>
 
-            {/* Plan - links to /billing */}
-            <Link
-              href="/billing"
-              className="group rounded-2xl border border-border/40 bg-surface/50 p-4 flex flex-col items-center justify-center text-center transition-all duration-200 hover:bg-surface-light hover:border-border hover:shadow-lg"
-              data-testid="org-stat-plan"
-            >
-              <div className="flex items-center gap-2">
-                <CreditCard className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
-                <span className="text-lg font-bold text-foreground group-hover:text-primary transition-colors">
-                  {planName}
-                </span>
-              </div>
-              <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
-                Plan
-                <ArrowRight className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
-              </p>
-            </Link>
+            {/* Pending invitations - opens modal */}
+            {canEdit ? (
+              <button
+                onClick={() => setIsInvitationsModalOpen(true)}
+                className={cn(
+                  "rounded-2xl border p-4 flex flex-col items-center justify-center text-center transition-all duration-200",
+                  pendingInvitations > 0
+                    ? "border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20"
+                    : "border-border/40 bg-surface/50 hover:bg-surface-light hover:border-border"
+                )}
+                data-testid="org-stat-invitations"
+              >
+                <div className="flex items-center gap-2">
+                  <Mail className={cn("h-4 w-4", pendingInvitations > 0 ? "text-amber-500" : "text-muted-foreground")} />
+                  <span className={cn("text-2xl font-bold", pendingInvitations > 0 ? "text-amber-500" : "text-foreground")}>
+                    {pendingInvitations}
+                  </span>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {pendingInvitations === 0 ? "Wszyscy na pokładzie" : "Oczekuje"}
+                </p>
+              </button>
+            ) : (
+              <button
+                onClick={() => setActiveTab("clinics")}
+                className={cn(
+                  "rounded-2xl border p-4 flex flex-col items-center justify-center text-center transition-all duration-200",
+                  activeTab === "clinics"
+                    ? "border-secondary/40 bg-secondary/10 ring-1 ring-secondary/20"
+                    : "border-border/40 bg-surface/50 hover:bg-surface-light hover:border-border"
+                )}
+                data-testid="org-stat-clinics"
+              >
+                <div className="flex items-center gap-2">
+                  <MapPin className={cn("h-4 w-4", activeTab === "clinics" ? "text-secondary" : "text-muted-foreground")} />
+                  <span className={cn("text-2xl font-bold", activeTab === "clinics" ? "text-secondary" : "text-foreground")}>
+                    {clinicsCount}
+                  </span>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">Gabinety</p>
+              </button>
+            )}
           </div>
         </div>
 
@@ -364,15 +425,9 @@ export default function OrganizationPage() {
             limits={planInfo?.limits}
             currentUsage={planInfo?.currentUsage}
             planName={planName}
+            therapistPatientCounts={therapistPatientCounts}
           />
         </TabsContent>
-
-        {/* Invitations Tab */}
-        {canEdit && organizationId && (
-          <TabsContent value="invitations" className="mt-6">
-            <InvitationsTab organizationId={organizationId} />
-          </TabsContent>
-        )}
 
         {/* Clinics Tab */}
         <TabsContent value="clinics" className="mt-6">
@@ -421,6 +476,16 @@ export default function OrganizationPage() {
           therapists={therapists}
           patients={patients}
           onSuccess={() => refetchClinics()}
+        />
+      )}
+
+      {/* Invitations Modal */}
+      {organizationId && canEdit && (
+        <InvitationsModal
+          open={isInvitationsModalOpen}
+          onOpenChange={setIsInvitationsModalOpen}
+          organizationId={organizationId}
+          onInviteClick={() => setIsInviteDialogOpen(true)}
         />
       )}
     </div>

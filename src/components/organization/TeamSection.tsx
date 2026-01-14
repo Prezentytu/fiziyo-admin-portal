@@ -39,6 +39,8 @@ interface TeamSectionProps {
   limits?: SubscriptionLimits;
   currentUsage?: CurrentUsage;
   planName?: string;
+  /** Map of userId -> patient count (from billing/therapist breakdown) */
+  therapistPatientCounts?: Map<string, number>;
 }
 
 const roleConfig = {
@@ -63,6 +65,7 @@ export function TeamSection({
   limits,
   currentUsage,
   planName = "Free",
+  therapistPatientCounts,
 }: TeamSectionProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState<RoleFilter>("all");
@@ -294,6 +297,7 @@ export function TeamSection({
                       currentUserId={currentUserId}
                       currentUserRole={currentUserRole}
                       onRefresh={onRefresh}
+                      assignedPatientsCount={therapistPatientCounts?.get(member.userId)}
                     />
                   ))}
                 </div>

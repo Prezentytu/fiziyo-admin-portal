@@ -254,18 +254,19 @@ await expect(page.getByTestId(/^exercise-card-/)).toHaveCount(5);
 |-------------|---------|------|
 | `set-page-title` | Tytuł strony | `exercise-sets/page.tsx` |
 | `set-search-input` | Wyszukiwarka | `exercise-sets/page.tsx` |
+| `set-tag-filter-btn` | Dropdown filtra tagów | `exercise-sets/page.tsx` |
 | `set-filter-all-btn` | Filtr: Wszystkie | `exercise-sets/page.tsx` |
-| `set-filter-active-btn` | Filtr: Aktywne | `exercise-sets/page.tsx` |
+| `set-filter-recent-btn` | Filtr: Ostatnio używane | `exercise-sets/page.tsx` |
 | `set-filter-templates-btn` | Filtr: Szablony | `exercise-sets/page.tsx` |
-| `set-filter-inactive-btn` | Filtr: Nieaktywne | `exercise-sets/page.tsx` |
 | `set-create-btn` | Utwórz zestaw | `exercise-sets/page.tsx` |
 | `set-create-wizard-btn` | Kreator zestawu | `exercise-sets/page.tsx` |
 | `set-card-{id}` | Karta zestawu | `SetCard.tsx` |
-| `set-card-{id}-menu-trigger` | Menu kontekstowe | `SetCard.tsx` |
-| `set-card-{id}-view-btn` | Podgląd | `SetCard.tsx` |
-| `set-card-{id}-edit-btn` | Edytuj | `SetCard.tsx` |
-| `set-card-{id}-duplicate-btn` | Duplikuj | `SetCard.tsx` |
-| `set-card-{id}-delete-btn` | Usuń | `SetCard.tsx` |
+| `set-card-{id}-assign-btn` | Przypisz do pacjenta | `SetCard.tsx` |
+| `set-card-{id}-copy-link-btn` | Kopiuj link publiczny | `SetCard.tsx` |
+| `set-card-{id}-menu-trigger` | Menu kontekstowe (3 kropki) | `SetCard.tsx` |
+| `set-card-{id}-edit-btn` | Edytuj (w menu) | `SetCard.tsx` |
+| `set-card-{id}-duplicate-btn` | Duplikuj (w menu) | `SetCard.tsx` |
+| `set-card-{id}-delete-btn` | Usuń (w menu) | `SetCard.tsx` |
 | `set-detail-back-btn` | Przycisk wstecz | `exercise-sets/[id]/page.tsx` |
 | `set-detail-name` | Nazwa zestawu | `exercise-sets/[id]/page.tsx` |
 | `set-detail-menu-trigger` | Menu akcji | `exercise-sets/[id]/page.tsx` |

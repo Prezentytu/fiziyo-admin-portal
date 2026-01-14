@@ -6,16 +6,12 @@ import {
   Crown,
   Mail,
   MoreVertical,
-  Shield,
   ShieldCheck,
   Trash2,
   User,
-  UserCog,
-  Calendar,
+  Users,
 } from "lucide-react";
 import { toast } from "sonner";
-import { format } from "date-fns";
-import { pl } from "date-fns/locale";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -57,6 +53,8 @@ interface MemberCardProps {
   currentUserId?: string;
   currentUserRole?: string;
   onRefresh?: () => void;
+  /** Number of patients assigned to this team member (from billing data) */
+  assignedPatientsCount?: number;
 }
 
 const roleConfig: Record<
@@ -100,6 +98,7 @@ export function MemberCard({
   currentUserId,
   currentUserRole,
   onRefresh,
+  assignedPatientsCount,
 }: MemberCardProps) {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isChangeRoleDialogOpen, setIsChangeRoleDialogOpen] = useState(false);
@@ -194,7 +193,7 @@ export function MemberCard({
             {/* Avatar */}
             <Avatar className="h-14 w-14 border-2 border-surface-light shadow-md">
               <AvatarImage src={member.user?.image} alt={displayName} />
-              <AvatarFallback className="bg-gradient-to-br from-primary/80 to-primary-dark/80 text-primary-foreground text-lg font-semibold">
+              <AvatarFallback className="bg-linear-to-br from-primary/80 to-primary-dark/80 text-primary-foreground text-lg font-semibold">
                 {initials}
               </AvatarFallback>
             </Avatar>
@@ -227,16 +226,20 @@ export function MemberCard({
                   {config.label}
                 </Badge>
 
-                {member.joinedAt && (
-                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                    <Calendar className="h-3 w-3" />
-                    <span>
-                      Dołączył{" "}
-                      {format(new Date(member.joinedAt), "d MMM yyyy", {
-                        locale: pl,
-                      })}
-                    </span>
-                  </div>
+                {/* Patients count badge - shows workload */}
+                {assignedPatientsCount !== undefined && (
+                  <Badge
+                    variant="secondary"
+                    className={cn(
+                      "gap-1.5",
+                      assignedPatientsCount > 0
+                        ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/20"
+                        : "bg-zinc-800 text-zinc-500 border-zinc-700"
+                    )}
+                  >
+                    <Users className="h-3 w-3" />
+                    {assignedPatientsCount} {assignedPatientsCount === 1 ? "pacjent" : "pacjentów"}
+                  </Badge>
                 )}
               </div>
             </div>

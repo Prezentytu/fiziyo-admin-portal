@@ -19,6 +19,7 @@ export type { RoleFilter } from "./MemberFilters";
 
 // Invitations
 export { InvitationsTab } from "./InvitationsTab";
+export { InvitationsModal } from "./InvitationsModal";
 
 // Clinics (legacy)
 export { ClinicsTab } from "./ClinicsTab";

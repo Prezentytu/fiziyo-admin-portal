@@ -59,6 +59,8 @@ export const EXERCISE_SET_WITH_EXERCISES_FRAGMENT = gql`
         duration
         restSets
         restReps
+        mainTags
+        additionalTags
       }
     }
   }
@@ -108,9 +110,26 @@ export const GET_ORGANIZATION_EXERCISE_SETS_QUERY = gql`
   query GetOrganizationExerciseSets($organizationId: String!) {
     exerciseSets(where: { organizationId: { eq: $organizationId }, isActive: { eq: true } }) {
       ...ExerciseSetWithExercisesFragment
+      isTemplate
+      patientAssignments {
+        id
+      }
     }
   }
   ${EXERCISE_SET_WITH_EXERCISES_FRAGMENT}
+`;
+
+// Query do pobierania ostatnio używanych zestawów (na podstawie przypisań)
+export const GET_RECENTLY_USED_SETS_QUERY = gql`
+  query GetRecentlyUsedSets($organizationId: String!) {
+    patientAssignments(
+      where: { exerciseSet: { organizationId: { eq: $organizationId } } }
+      order: [{ assignedAt: DESC }]
+    ) {
+      exerciseSetId
+      assignedAt
+    }
+  }
 `;
 
 // Query do pobierania zestawu z przypisaniami
