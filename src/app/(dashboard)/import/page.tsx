@@ -8,10 +8,8 @@ import {
   Layers,
   FileText,
   ArrowLeft,
-  ArrowRight,
   Loader2,
   CheckCircle,
-  Link2,
   X,
   AlertTriangle,
   Check,
@@ -24,12 +22,11 @@ import { useDocumentImport } from '@/hooks/useDocumentImport';
 import {
   DocumentDropzone,
   ImportProgress,
-  ExerciseReviewCard,
   SetReviewCard,
   NoteReviewCard,
   ImportSummary,
   PatientContextPanel,
-  BulkActionsToolbar,
+  ImportReviewDashboard,
 } from '@/components/import';
 
 type StepId = 'upload' | 'processing' | 'review-exercises' | 'review-sets' | 'summary';
@@ -58,23 +55,19 @@ export default function ImportPage() {
     noteDecisions,
     selectedPatientId,
     assignSetsToPatient,
-    exerciseFilter,
+    createSetAfterImport,
     error,
     importResult,
     stats,
-    canProceed,
-    filteredExercises,
     setFile,
     setPatientId,
     setAssignSetsToPatient,
-    setExerciseFilter,
+    setCreateSetAfterImport,
     analyzeDocument,
     updateExerciseDecision,
     updateSetDecision,
     updateNoteDecision,
-    setAllExercisesCreate,
-    setAllExercisesSkip,
-    useAllMatchedExercises,
+    approveAllConfidentMatches,
     goNext,
     goBack,
     executeImport,
@@ -221,138 +214,19 @@ export default function ImportPage() {
         {/* Step 2: Processing */}
         {step === 'processing' && <ImportProgress />}
 
-        {/* Step 3: Review Exercises */}
+        {/* Step 3: Review Exercises - New Review Dashboard */}
         {step === 'review-exercises' && analysisResult && (
-          <div className="space-y-6">
-            {/* Stats - prostsze */}
-            <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
-              <Card className="border-primary/30 bg-primary/5">
-                <CardContent className="flex items-center gap-4 p-5">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/20">
-                    <Dumbbell className="h-6 w-6 text-primary" />
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold text-foreground">{stats.totalExercises}</p>
-                    <p className="text-sm text-muted-foreground">Znaleziono</p>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardContent className="flex items-center gap-4 p-5">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/20">
-                    <CheckCircle className="h-6 w-6 text-primary" />
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold text-foreground">{stats.exercisesToCreate}</p>
-                    <p className="text-sm text-muted-foreground">Do utworzenia</p>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardContent className="flex items-center gap-4 p-5">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-500/20">
-                    <Link2 className="h-6 w-6 text-blue-500" />
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold text-foreground">{stats.exercisesToReuse}</p>
-                    <p className="text-sm text-muted-foreground">Istniejących</p>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardContent className="flex items-center gap-4 p-5">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-surface-light">
-                    <X className="h-6 w-6 text-muted-foreground" />
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold text-foreground">{stats.exercisesToSkip}</p>
-                    <p className="text-sm text-muted-foreground">Pominiętych</p>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Document info */}
-            {analysisResult.documentInfo.patientName && (
-              <Card className="bg-surface-light">
-                <CardContent className="flex flex-wrap items-center gap-4 p-5">
-                  <FileText className="h-6 w-6 text-muted-foreground" />
-                  <span className="text-sm font-medium text-foreground">
-                    Informacje z dokumentu:
-                  </span>
-                  {analysisResult.documentInfo.patientName && (
-                    <Badge variant="secondary" className="text-sm">
-                      Pacjent: {analysisResult.documentInfo.patientName}
-                    </Badge>
-                  )}
-                  {analysisResult.documentInfo.date && (
-                    <Badge variant="secondary" className="text-sm">
-                      Data: {analysisResult.documentInfo.date}
-                    </Badge>
-                  )}
-                  {analysisResult.documentInfo.therapistName && (
-                    <Badge variant="secondary" className="text-sm">
-                      Terapeuta: {analysisResult.documentInfo.therapistName}
-                    </Badge>
-                  )}
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Bulk Actions Toolbar */}
-            <BulkActionsToolbar
-              totalCount={stats.totalExercises}
-              matchedCount={stats.exercisesWithMatches}
-              createCount={stats.exercisesToCreate}
-              reuseCount={stats.exercisesToReuse}
-              skipCount={stats.exercisesToSkip}
-              activeFilter={exerciseFilter}
-              onFilterChange={setExerciseFilter}
-              onSetAllCreate={setAllExercisesCreate}
-              onSetAllSkip={setAllExercisesSkip}
-              onUseAllMatched={useAllMatchedExercises}
-              disabled={isAnalyzing}
-            />
-
-            {/* Exercises list */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold text-foreground">
-                {exerciseFilter === 'all'
-                  ? `Znalezione ćwiczenia (${filteredExercises.length})`
-                  : `Filtrowane ćwiczenia (${filteredExercises.length} z ${stats.totalExercises})`
-                }
-              </h3>
-
-              <div className="space-y-3">
-                {filteredExercises.map((exercise) => (
-                  <ExerciseReviewCard
-                    key={exercise.tempId}
-                    exercise={exercise}
-                    matchSuggestions={analysisResult.matchSuggestions[exercise.tempId] || []}
-                    decision={exerciseDecisions[exercise.tempId]}
-                    onDecisionChange={(d) => updateExerciseDecision(exercise.tempId, d)}
-                  />
-                ))}
-              </div>
-
-              {filteredExercises.length === 0 && (
-                <Card>
-                  <CardContent className="py-16 text-center">
-                    <Dumbbell className="mx-auto mb-4 h-16 w-16 text-muted-foreground/30" />
-                    <p className="text-lg text-muted-foreground">
-                      {exerciseFilter !== 'all'
-                        ? 'Brak ćwiczeń pasujących do filtra'
-                        : 'Nie znaleziono ćwiczeń w dokumencie'
-                      }
-                    </p>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
-          </div>
+          <ImportReviewDashboard
+            exercises={analysisResult.exercises}
+            matchSuggestions={analysisResult.matchSuggestions}
+            decisions={exerciseDecisions}
+            onDecisionChange={updateExerciseDecision}
+            onApproveAllConfident={approveAllConfidentMatches}
+            onNext={goNext}
+            createSetAfterImport={createSetAfterImport}
+            onCreateSetChange={setCreateSetAfterImport}
+            disabled={isAnalyzing}
+          />
         )}
 
         {/* Step 4: Review Sets & Notes */}
@@ -473,7 +347,8 @@ export default function ImportPage() {
       </div>
 
       {/* Navigation buttons - większe, czytelniejsze */}
-      {step !== 'processing' && step !== 'summary' && (
+      {/* Note: review-exercises step has its own sticky footer */}
+      {step !== 'processing' && step !== 'summary' && step !== 'review-exercises' && (
         <div className="mt-10 flex items-center justify-between border-t border-border/60 pt-6">
           <Button
             variant="outline"
@@ -487,12 +362,6 @@ export default function ImportPage() {
           </Button>
 
           <div className="flex items-center gap-4">
-            {step === 'review-exercises' && (
-              <p className="text-sm text-muted-foreground">
-                {stats.exercisesToCreate + stats.exercisesToReuse} ćwiczeń do importu
-              </p>
-            )}
-
             {step === 'upload' && (
               <Button
                 size="lg"
@@ -507,19 +376,6 @@ export default function ImportPage() {
                   <Sparkles className="h-5 w-5" />
                 )}
                 Analizuj dokument
-              </Button>
-            )}
-
-            {step === 'review-exercises' && (
-              <Button
-                size="lg"
-                onClick={goNext}
-                disabled={!canProceed}
-                className="gap-2 h-12 px-8 bg-primary hover:bg-primary-dark"
-                data-testid="import-next-btn"
-              >
-                Dalej
-                <ArrowRight className="h-5 w-5" />
               </Button>
             )}
 

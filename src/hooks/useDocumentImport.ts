@@ -19,6 +19,7 @@ type ExerciseFilterType = 'all' | 'create' | 'reuse' | 'skip' | 'matched';
 interface ExtendedImportState extends ImportState {
   assignSetsToPatient: boolean;
   exerciseFilter: ExerciseFilterType;
+  createSetAfterImport: boolean;
 }
 
 const initialState: ExtendedImportState = {
@@ -35,6 +36,7 @@ const initialState: ExtendedImportState = {
   importResult: null,
   assignSetsToPatient: false,
   exerciseFilter: 'all',
+  createSetAfterImport: false,
 };
 
 /**
@@ -78,6 +80,13 @@ export function useDocumentImport() {
     setState((prev) => ({
       ...prev,
       exerciseFilter: filter,
+    }));
+  }, []);
+
+  const setCreateSetAfterImport = useCallback((create: boolean) => {
+    setState((prev) => ({
+      ...prev,
+      createSetAfterImport: create,
     }));
   }, []);
 
@@ -301,6 +310,38 @@ export function useDocumentImport() {
         const suggestions = prev.analysisResult.matchSuggestions[exercise.tempId];
         if (suggestions && suggestions.length > 0) {
           const bestMatch = suggestions[0];
+          newDecisions[exercise.tempId] = {
+            tempId: exercise.tempId,
+            action: "reuse",
+            reuseExerciseId: bestMatch.existingExerciseId,
+          };
+        }
+      }
+
+      return {
+        ...prev,
+        exerciseDecisions: newDecisions,
+      };
+    });
+  }, []);
+
+  /**
+   * Zatwierdź wszystkie pewne dopasowania (confidence >= 0.7)
+   * Używane przez sekcję A w Review Dashboard
+   */
+  const approveAllConfidentMatches = useCallback(() => {
+    setState((prev) => {
+      if (!prev.analysisResult) return prev;
+
+      const CONFIDENT_THRESHOLD = 0.7;
+      const newDecisions: Record<string, ExerciseDecision> = { ...prev.exerciseDecisions };
+
+      for (const exercise of prev.analysisResult.exercises) {
+        const suggestions = prev.analysisResult.matchSuggestions[exercise.tempId];
+        const bestMatch = suggestions?.[0];
+        
+        // Tylko pewne dopasowania (confidence >= 0.7)
+        if (bestMatch && bestMatch.confidence >= CONFIDENT_THRESHOLD) {
           newDecisions[exercise.tempId] = {
             tempId: exercise.tempId,
             action: "reuse",
@@ -621,6 +662,7 @@ export function useDocumentImport() {
     setPatientId,
     setAssignSetsToPatient,
     setExerciseFilter,
+    setCreateSetAfterImport,
     analyzeDocument,
     updateExerciseDecision,
     updateSetDecision,
@@ -630,6 +672,7 @@ export function useDocumentImport() {
     setAllExercisesCreate,
     setAllExercisesSkip,
     useAllMatchedExercises,
+    approveAllConfidentMatches,
 
     // Navigation
     goToStep,
