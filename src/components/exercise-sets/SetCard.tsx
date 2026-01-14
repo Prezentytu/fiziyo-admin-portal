@@ -70,20 +70,11 @@ export function SetCard({
   onAssign,
   className,
 }: SetCardProps) {
-  // State for Dynamic Preview (scrubbing)
+  // State for Dynamic Preview (scrubbing) - tracks which exercise image is shown
   const [activeExerciseIndex, setActiveExerciseIndex] = useState<number | null>(null);
-  const [isHovering, setIsHovering] = useState(false);
 
   const exerciseCount = set.exerciseMappings?.length || 0;
   const assignmentCount = set.patientAssignments?.length || 0;
-
-  // Get first 4 exercise images for grid (default view)
-  const exerciseImages = set.exerciseMappings
-    ?.slice(0, 4)
-    .map((m) => getMediaUrl(m.exercise?.imageUrl || m.exercise?.images?.[0]))
-    .filter(Boolean) as string[];
-
-  const remainingCount = exerciseCount > 4 ? exerciseCount - 4 : 0;
 
   // Get ALL exercise images with names for scrubbing
   const allExerciseImages = useMemo(() => {
@@ -120,7 +111,7 @@ export function SetCard({
   // Aggregate unique tags from all exercises in this set
   const aggregatedTags = useMemo(() => {
     if (!tagsMap) return [];
-    
+
     const tagIds = new Set<string>();
     for (const mapping of set.exerciseMappings || []) {
       const exercise = mapping.exercise;
@@ -130,7 +121,7 @@ export function SetCard({
         }
       }
     }
-    
+
     // Return full tag objects, sorted by name, limited to first 5
     return Array.from(tagIds)
       .map(id => tagsMap.get(id))
@@ -152,12 +143,7 @@ export function SetCard({
     setActiveExerciseIndex(index);
   };
 
-  const handleMouseEnter = () => {
-    setIsHovering(true);
-  };
-
   const handleMouseLeave = () => {
-    setIsHovering(false);
     setActiveExerciseIndex(null);
   };
 
@@ -187,80 +173,47 @@ export function SetCard({
       )}
       onClick={() => onView?.(set)}
     >
-      {/* Image section with Dynamic Preview */}
+      {/* ImageArea - Interactive section with state-based rendering */}
       <div 
         className="relative aspect-[4/3] overflow-hidden bg-surface-light"
-        onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
         onMouseMove={handleMouseMove}
       >
-        {allExerciseImages.length > 0 ? (
+        {/* LAYER 1: IMAGE - Cover (IDLE) or Scrubbing (HOVER) */}
+        {allExerciseImages.length > 0 && allExerciseImages[0]?.url ? (
           <>
-            {/* Dynamic Preview Mode - single large image with scrubbing + Blurred Backdrop */}
-            {isHovering && activeExerciseIndex !== null && allExerciseImages.length > 1 ? (
-              <div className="relative h-full">
-                {/* Layer 1: Blurred background */}
-                <img
-                  src={allExerciseImages[activeExerciseIndex].url}
-                  alt=""
-                  className="absolute inset-0 w-full h-full object-cover blur-xl scale-110 opacity-60"
-                />
-                {/* Layer 2: Main image with contain */}
-                <img
-                  src={allExerciseImages[activeExerciseIndex].url}
-                  alt={allExerciseImages[activeExerciseIndex].name}
-                  className="relative w-full h-full object-contain z-10"
-                />
-                {/* Exercise name overlay */}
-                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-3 pt-8 z-20">
-                  <p className="text-white text-sm font-medium truncate">
-                    {allExerciseImages[activeExerciseIndex].name}
-                  </p>
-                </div>
-              </div>
-            ) : (
-              /* Default Grid View 2x2 with Blurred Backdrop */
-              <div className="grid grid-cols-2 grid-rows-2 h-full gap-0.5">
-                {[0, 1, 2, 3].map((index) => (
-                  <div key={index} className="relative overflow-hidden bg-surface">
-                    {exerciseImages[index] ? (
-                      <>
-                        {/* Layer 1: Blurred background */}
-                        <img
-                          src={exerciseImages[index]}
-                          alt=""
-                          className="absolute inset-0 w-full h-full object-cover blur-lg scale-110 opacity-50"
-                        />
-                        {/* Layer 2: Main image with contain - full body visible */}
-                        <img
-                          src={exerciseImages[index]}
-                          alt=""
-                          className="relative w-full h-full object-contain z-10 transition-transform duration-500 group-hover:scale-105"
-                        />
-                      </>
-                    ) : (
-                      <div className="h-full w-full bg-surface flex items-center justify-center">
-                        <Dumbbell className="h-6 w-6 text-muted-foreground/40" />
-                      </div>
-                    )}
-                    {/* Show remaining count on last cell if there are more */}
-                    {index === 3 && remainingCount > 0 && (
-                      <div className="absolute inset-0 bg-black/70 flex items-center justify-center backdrop-blur-[2px] z-20">
-                        <span className="text-white font-bold text-xl">+{remainingCount}</span>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
+            {/* Blurred background layer */}
+            <img
+              src={activeExerciseIndex !== null && allExerciseImages[activeExerciseIndex]?.url 
+                ? allExerciseImages[activeExerciseIndex].url 
+                : allExerciseImages[0].url}
+              alt=""
+              className="absolute inset-0 w-full h-full object-cover blur-xl scale-110 opacity-50"
+            />
+            {/* Main image - shows first image (cover) in IDLE, active image in HOVER */}
+            <img
+              src={activeExerciseIndex !== null && allExerciseImages[activeExerciseIndex]?.url 
+                ? allExerciseImages[activeExerciseIndex].url 
+                : allExerciseImages[0].url}
+              alt={activeExerciseIndex !== null && allExerciseImages[activeExerciseIndex]?.name 
+                ? allExerciseImages[activeExerciseIndex].name 
+                : allExerciseImages[0].name}
+              className="absolute inset-0 w-full h-full object-contain z-10 transition-opacity duration-200"
+            />
           </>
         ) : (
           <ImagePlaceholder type="set" className="h-full" iconClassName="h-12 w-12" />
         )}
 
-        {/* Layer A: Progress bars - Instagram Stories style (zawsze na hover) */}
-        {isHovering && allExerciseImages.length > 1 && (
-          <div className="absolute top-2 left-2 right-2 flex gap-1 z-20">
+        {/* GRADIENT SCRIM - Subtle vignette for text readability (top & bottom) */}
+        <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-transparent to-black/60 z-[15] pointer-events-none" />
+
+        {/* LAYER 2: TOP - Progress bars (HOVER only) */}
+        {allExerciseImages.length > 1 && (
+          <div className={cn(
+            "absolute top-2 left-2 right-2 flex gap-1 z-20 transition-opacity duration-300",
+            "opacity-0 group-hover:opacity-100"
+          )}>
             {allExerciseImages.map((_, i) => (
               <div
                 key={i}
@@ -275,25 +228,81 @@ export function SetCard({
           </div>
         )}
 
-        {/* Subtle gradient overlay for better text readability */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent pointer-events-none" />
-
-        {/* Info Pill - unified badge with exercise count and duration (above assign button) */}
-        <div className="absolute bottom-14 left-3 z-10">
-          <div className="flex items-center gap-1.5 bg-black/70 backdrop-blur-md rounded-full px-2.5 py-1 text-xs text-white font-medium shadow-lg">
-            <Dumbbell className="h-3 w-3" />
-            <span>{exerciseCount}</span>
-            {estimatedDuration > 0 && (
-              <>
-                <span className="text-white/60">•</span>
-                <Clock className="h-3 w-3" />
-                <span>~{estimatedDuration} min</span>
-              </>
+        {/* TOP HEADER AREA - Flex Layout (Below Progress Bars) */}
+        {activeExerciseIndex !== null && allExerciseImages.length > 1 && (
+          <div className={cn(
+            "absolute top-4 left-0 right-0 px-3 flex items-start justify-between z-20 pointer-events-none transition-opacity duration-200",
+            "opacity-0 group-hover:opacity-100"
+          )}>
+            {/* A. Exercise Name (Flexible Width) */}
+            {allExerciseImages[activeExerciseIndex]?.name && (
+              <div className="flex-1 pr-2 pt-1 pointer-events-none min-w-0">
+                <span className="text-white text-xs font-bold leading-tight drop-shadow-md line-clamp-2">
+                  {allExerciseImages[activeExerciseIndex].name}
+                </span>
+              </div>
             )}
-          </div>
-        </div>
 
-        {/* Template badge (below progress bars) */}
+            {/* B. Action Buttons (Fixed Width) */}
+            <div className="flex gap-1 flex-none pointer-events-auto">
+              {/* Copy Link */}
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 bg-black/40 hover:bg-black/80 backdrop-blur-sm rounded-full border border-white/10 text-white transition-colors"
+                onClick={handleCopyLink}
+                title="Kopiuj link publiczny"
+                data-testid={`set-card-${set.id}-copy-link-btn`}
+              >
+                <LinkIcon className="h-3.5 w-3.5" />
+              </Button>
+
+              {/* Menu dropdown */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 bg-black/40 hover:bg-black/80 backdrop-blur-sm rounded-full border border-white/10 text-white transition-colors"
+                    onClick={(e) => e.stopPropagation()}
+                    data-testid={`set-card-${set.id}-menu-trigger`}
+                  >
+                    <MoreVertical className="h-3.5 w-3.5" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+                  {onEdit && (
+                    <DropdownMenuItem onClick={() => onEdit(set)} data-testid={`set-card-${set.id}-edit-btn`}>
+                      <Pencil className="mr-2 h-4 w-4" />
+                      Edytuj
+                    </DropdownMenuItem>
+                  )}
+                  {onDuplicate && (
+                    <DropdownMenuItem onClick={() => onDuplicate(set)} data-testid={`set-card-${set.id}-duplicate-btn`}>
+                      <Copy className="mr-2 h-4 w-4" />
+                      Duplikuj
+                    </DropdownMenuItem>
+                  )}
+                  {onDelete && (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        onClick={() => onDelete(set)}
+                        className="text-destructive focus:text-destructive"
+                        data-testid={`set-card-${set.id}-delete-btn`}
+                      >
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Usuń
+                      </DropdownMenuItem>
+                    </>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          </div>
+        )}
+
+        {/* LAYER 4: TOP-LEFT - Template badge (always visible if template) */}
         {set.isTemplate && (
           <div className="absolute top-6 left-3 z-10">
             <Badge className="bg-primary text-primary-foreground border-0 shadow-lg gap-1.5">
@@ -303,80 +312,42 @@ export function SetCard({
           </div>
         )}
 
-        {/* Layer D: Primary Action "Przypisz" - Floating na dole */}
-        {onAssign && (
-          <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-30 w-[90%]">
-            <Button
-              className={cn(
-                "w-full bg-primary/90 hover:bg-primary text-white backdrop-blur-md",
-                "shadow-xl shadow-black/20 rounded-lg font-semibold",
-                "transform translate-y-4 opacity-0 transition-all duration-300",
-                "group-hover:translate-y-0 group-hover:opacity-100"
-              )}
-              onClick={(e) => handleAction(e, () => onAssign(set))}
-              data-testid={`set-card-${set.id}-assign-btn`}
-            >
-              <Send className="h-4 w-4 mr-2" />
-              Przypisz
-            </Button>
-          </div>
-        )}
-
-        {/* Layer C: Top-right secondary actions (below progress bars) */}
-        <div className="absolute top-6 right-3 z-20 flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-          {/* Copy Link */}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 bg-black/60 hover:bg-black/80 text-white backdrop-blur-md border-0"
-            onClick={handleCopyLink}
-            title="Kopiuj link publiczny"
-            data-testid={`set-card-${set.id}-copy-link-btn`}
-          >
-            <LinkIcon className="h-3.5 w-3.5" />
-          </Button>
-
-          {/* Menu dropdown with Edit, Duplicate, Delete */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 bg-black/60 hover:bg-black/80 text-white backdrop-blur-md border-0"
-                onClick={(e) => e.stopPropagation()}
-                data-testid={`set-card-${set.id}-menu-trigger`}
-              >
-                <MoreVertical className="h-3.5 w-3.5" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-              {onEdit && (
-                <DropdownMenuItem onClick={() => onEdit(set)} data-testid={`set-card-${set.id}-edit-btn`}>
-                  <Pencil className="mr-2 h-4 w-4" />
-                  Edytuj
-                </DropdownMenuItem>
-              )}
-              {onDuplicate && (
-                <DropdownMenuItem onClick={() => onDuplicate(set)} data-testid={`set-card-${set.id}-duplicate-btn`}>
-                  <Copy className="mr-2 h-4 w-4" />
-                  Duplikuj
-                </DropdownMenuItem>
-              )}
-              {onDelete && (
+        {/* LAYER 5: BOTTOM - "Wymiana warty" (The Swap) */}
+        <div className="absolute bottom-3 left-3 right-3 z-20 h-9">
+          {/* A. INFO BADGE - Visible in IDLE, fades out on HOVER */}
+          <div className={cn(
+            "absolute inset-0 flex items-center transition-all duration-300",
+            "group-hover:opacity-0 group-hover:translate-y-2"
+          )}>
+            <div className="flex items-center gap-1.5 bg-black/70 backdrop-blur-md rounded-full px-2.5 py-1 text-xs text-white font-medium shadow-lg">
+              <Dumbbell className="h-3 w-3" />
+              <span>{exerciseCount} ćw</span>
+              {estimatedDuration > 0 && (
                 <>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    onClick={() => onDelete(set)}
-                    className="text-destructive focus:text-destructive"
-                    data-testid={`set-card-${set.id}-delete-btn`}
-                  >
-                    <Trash2 className="mr-2 h-4 w-4" />
-                    Usuń
-                  </DropdownMenuItem>
+                  <span className="text-white/50">•</span>
+                  <Clock className="h-3 w-3" />
+                  <span>~{estimatedDuration} min</span>
                 </>
               )}
-            </DropdownMenuContent>
-          </DropdownMenu>
+            </div>
+          </div>
+
+          {/* B. ASSIGN BUTTON - Compact Pill (Hidden in IDLE, slides up on HOVER) */}
+          {onAssign && (
+            <div className={cn(
+              "absolute inset-0 flex items-center justify-center transition-all duration-300",
+              "opacity-0 translate-y-4 group-hover:opacity-100 group-hover:translate-y-0"
+            )}>
+              <Button
+                className="h-9 px-5 bg-primary/90 hover:bg-primary text-white backdrop-blur-sm shadow-lg rounded-full font-medium"
+                onClick={(e) => handleAction(e, () => onAssign(set))}
+                data-testid={`set-card-${set.id}-assign-btn`}
+              >
+                <Send className="h-3.5 w-3.5 mr-1.5" />
+                Przypisz
+              </Button>
+            </div>
+          )}
         </div>
       </div>
 

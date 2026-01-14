@@ -184,7 +184,7 @@ export default function ExerciseSetsPage() {
   // Sort based on filter type
   const filteredSets = useMemo(() => {
     const sorted = [...searchFilteredSets];
-    
+
     if (filter === 'recent') {
       // Sort by last assignment date (most recent first)
       sorted.sort((a, b) => {
@@ -207,7 +207,7 @@ export default function ExerciseSetsPage() {
         return bTime - aTime;
       });
     }
-    
+
     return sorted;
   }, [searchFilteredSets, filter, recentSetMap]);
 
@@ -228,7 +228,7 @@ export default function ExerciseSetsPage() {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const newSetId = (result.data as any)?.duplicateExerciseSet?.id;
       toast.success('Zestaw został zduplikowany');
-      
+
       // Smart Duplicate: redirect to the new set's detail page for editing
       if (newSetId) {
         router.push(`/exercise-sets/${newSetId}`);
@@ -276,7 +276,7 @@ export default function ExerciseSetsPage() {
       {/* Compact Header with Search and Tag Filter */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-2xl font-bold text-foreground shrink-0" data-testid="set-page-title">Zestawy ćwiczeń</h1>
-        
+
         <div className="flex items-center gap-3 flex-1 justify-end">
           {/* Enlarged Search */}
           <div className="relative w-full sm:w-80 lg:w-96">
@@ -301,8 +301,8 @@ export default function ExerciseSetsPage() {
           {/* Tag Filter Dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 className={cn(
                   "gap-2 shrink-0",
                   selectedTags.length > 0 && "border-primary/40 bg-primary/5"
@@ -461,7 +461,7 @@ export default function ExerciseSetsPage() {
           <Badge variant="secondary" className="text-xs">
             {filteredSets.length} z {totalCount}
           </Badge>
-          
+
           {/* Selected tags display */}
           {selectedTags.length > 0 && (
             <div className="flex flex-wrap items-center gap-1.5">
@@ -472,7 +472,7 @@ export default function ExerciseSetsPage() {
                   <Badge
                     key={tag.id}
                     className="text-xs px-2 py-0.5 gap-1 cursor-pointer hover:opacity-80"
-                    style={{ 
+                    style={{
                       backgroundColor: `${tag.color || '#22c55e'}20`,
                       color: tag.color || '#22c55e',
                       borderColor: `${tag.color || '#22c55e'}40`
@@ -486,7 +486,7 @@ export default function ExerciseSetsPage() {
               })}
             </div>
           )}
-          
+
           {searchQuery && (
             <Button
               variant="ghost"
