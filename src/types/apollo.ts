@@ -166,31 +166,61 @@ export interface OrganizationClinicsResponse {
 export interface Exercise {
   id: string;
   name: string;
-  description?: string;
+  // Opisy
+  patientDescription?: string;
+  clinicalDescription?: string;
+  audioCue?: string;
+  notes?: string;
+  // Parametry wykonania
   type: string;
+  side?: string;
+  defaultSets?: number;
+  defaultReps?: number;
+  defaultDuration?: number;
+  defaultExecutionTime?: number;
+  defaultRestBetweenSets?: number;
+  defaultRestBetweenReps?: number;
+  preparationTime?: number;
+  tempo?: string;
+  // Media
+  imageUrl?: string;
+  thumbnailUrl?: string;
+  images?: string[];
+  gifUrl?: string;
+  videoUrl?: string;
+  // Status i widoczność
+  scope?: string;
+  status?: string;
+  isActive: boolean;
+  isPublicTemplate?: boolean;
+  isSystem?: boolean;
+  isSystemExample?: boolean;
+  adminReviewNotes?: string;
+  // Tagi
+  mainTags?: string[];
+  additionalTags?: string[];
+  // Progresja
+  progressionFamilyId?: string;
+  difficultyLevel?: string;
+  // Metadane
+  createdById?: string;
+  contributorId?: string;
+  organizationId?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  
+  // Legacy aliasy (dla kompatybilności wstecznej)
+  description?: string;
+  exerciseSide?: string;
+  executionTime?: number;
   sets?: number;
   reps?: number;
   duration?: number;
   restSets?: number;
   restReps?: number;
-  preparationTime?: number;
-  executionTime?: number;
-  exerciseSide?: string;
-  imageUrl?: string;
-  images?: string[];
-  gifUrl?: string;
-  videoUrl?: string;
-  notes?: string;
-  mainTags?: string[];
-  additionalTags?: string[];
-  scope?: string;
-  isActive: boolean;
-  isGlobal?: boolean;
-  isPublicTemplate?: boolean;
-  createdById?: string;
-  organizationId?: string;
-  ownerId?: string;
   creationTime?: string;
+  isGlobal?: boolean;
+  ownerId?: string;
 }
 
 export interface OrganizationExercisesResponse {
@@ -228,6 +258,8 @@ export interface ExerciseSetMapping {
   duration?: number;
   restSets?: number;
   restReps?: number;
+  executionTime?: number;
+  tempo?: string;
   notes?: string;
   customName?: string;
   customDescription?: string;
@@ -235,13 +267,26 @@ export interface ExerciseSetMapping {
     id: string;
     name: string;
     imageUrl?: string;
+    thumbnailUrl?: string;
     images?: string[];
     type?: string;
-    exerciseSide?: string;
-    description?: string;
+    side?: string;
+    patientDescription?: string;
     notes?: string;
     videoUrl?: string;
     preparationTime?: number;
+    defaultExecutionTime?: number;
+    defaultSets?: number;
+    defaultReps?: number;
+    defaultDuration?: number;
+    defaultRestBetweenSets?: number;
+    defaultRestBetweenReps?: number;
+    scope?: string;
+    status?: string;
+    difficultyLevel?: string;
+    // Legacy aliasy
+    exerciseSide?: string;
+    description?: string;
     executionTime?: number;
     sets?: number;
     reps?: number;

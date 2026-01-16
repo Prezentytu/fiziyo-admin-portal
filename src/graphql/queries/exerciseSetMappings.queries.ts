@@ -22,22 +22,25 @@ export const EXERCISE_SET_MAPPING_FULL_FRAGMENT = gql`
     duration
     restSets
     restReps
+    executionTime
+    tempo
     notes
     customName
     customDescription
     exercise {
       id
       name
-      description
+      patientDescription
       type
-      exerciseSide
+      side
       imageUrl
-      executionTime
-      sets
-      reps
-      duration
-      restSets
-      restReps
+      thumbnailUrl
+      defaultExecutionTime
+      defaultSets
+      defaultReps
+      defaultDuration
+      defaultRestBetweenSets
+      defaultRestBetweenReps
     }
   }
 `;

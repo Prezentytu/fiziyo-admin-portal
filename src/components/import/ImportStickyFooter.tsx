@@ -60,14 +60,14 @@ export function ImportStickyFooter({
           {/* Summary stats */}
           <div className="flex flex-wrap items-center gap-4 text-sm">
             <span className="text-muted-foreground">Importujesz:</span>
-            
+
             {reuseCount > 0 && (
               <span className="flex items-center gap-1.5 text-green-600 font-medium">
                 <CheckCircle className="h-4 w-4" />
                 {reuseCount} istniejących
               </span>
             )}
-            
+
             {createCount > 0 && (
               <span className="flex items-center gap-1.5 text-blue-600 font-medium">
                 <span className="flex h-4 w-4 items-center justify-center rounded-full bg-blue-500 text-[10px] text-white font-bold">
@@ -76,7 +76,7 @@ export function ImportStickyFooter({
                 {createCount} nowych
               </span>
             )}
-            
+
             {skipCount > 0 && (
               <span className="text-muted-foreground">
                 ({skipCount} pominiętych)

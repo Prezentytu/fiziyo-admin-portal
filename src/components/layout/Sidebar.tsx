@@ -16,6 +16,7 @@ import {
   PanelLeft,
   FileText,
   Sparkles,
+  ShieldCheck,
   LucideIcon,
 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
@@ -23,6 +24,7 @@ import { OrganizationSwitcher } from "./OrganizationSwitcher";
 import { UserProfileFooter } from "./UserProfileFooter";
 import { Logo } from "@/components/shared/Logo";
 import { useRoleAccess } from "@/hooks/useRoleAccess";
+import { useSystemRole } from "@/hooks/useSystemRole";
 
 // ========================================
 // Types
@@ -44,6 +46,8 @@ interface NavigationGroup {
   items: NavigationItem[];
   /** If true, this group is only visible to owners and admins */
   adminOnly?: boolean;
+  /** If true, this group is only visible to ContentManager or SiteSuperAdmin (system roles) */
+  contentManagerOnly?: boolean;
 }
 
 // ========================================
@@ -84,6 +88,19 @@ const navigationGroups: NavigationGroup[] = [
       { name: "Ustawienia", href: "/settings", icon: Settings, testId: "nav-link-settings" },
     ],
   },
+  // STREFA 4: WERYFIKACJA (ContentManager / SiteSuperAdmin - globalne)
+  {
+    label: "Weryfikacja",
+    contentManagerOnly: true,
+    items: [
+      {
+        name: "Centrum Weryfikacji",
+        href: "/verification",
+        icon: ShieldCheck,
+        testId: "nav-link-verification",
+      },
+    ],
+  },
 ];
 
 interface SidebarProps {
@@ -94,6 +111,7 @@ interface SidebarProps {
 export function Sidebar({ isCollapsed, onToggleCollapse }: SidebarProps) {
   const pathname = usePathname();
   const { canManageOrganization } = useRoleAccess();
+  const { canReviewExercises } = useSystemRole();
 
   const isActive = (href: string) => {
     if (href === "/") return pathname === "/";
@@ -103,12 +121,17 @@ export function Sidebar({ isCollapsed, onToggleCollapse }: SidebarProps) {
   // Filter navigation groups based on user role
   const filteredNavigationGroups = useMemo(() => {
     return navigationGroups.filter((group) => {
+      // ContentManager-only groups (system role)
+      if (group.contentManagerOnly) {
+        return canReviewExercises;
+      }
+      // Admin-only groups (organization role)
       if (group.adminOnly) {
         return canManageOrganization;
       }
       return true;
     });
-  }, [canManageOrganization]);
+  }, [canManageOrganization, canReviewExercises]);
 
   return (
     <TooltipProvider delayDuration={0}>

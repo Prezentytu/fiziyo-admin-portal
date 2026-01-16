@@ -83,6 +83,8 @@ export interface ExerciseMapping {
   duration?: number;
   restSets?: number;
   restReps?: number;
+  executionTime?: number;
+  tempo?: string;
   notes?: string;
   customName?: string;
   customDescription?: string;
@@ -90,6 +92,17 @@ export interface ExerciseMapping {
     id: string;
     name: string;
     type?: string;
+    // Nowe pola
+    side?: string;
+    patientDescription?: string;
+    thumbnailUrl?: string;
+    defaultSets?: number;
+    defaultReps?: number;
+    defaultDuration?: number;
+    defaultRestBetweenSets?: number;
+    defaultRestBetweenReps?: number;
+    defaultExecutionTime?: number;
+    // Legacy aliasy
     exerciseSide?: string;
     imageUrl?: string;
     images?: string[];

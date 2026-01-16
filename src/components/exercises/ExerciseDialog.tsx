@@ -108,19 +108,20 @@ export function ExerciseDialog({
   }
 
   // For editing, use the simple form
+  // Support both new and legacy field names
   const defaultValues = exercise
     ? {
         name: exercise.name,
-        description: exercise.description || "",
-        type: (exercise.type as "reps" | "time") || "reps",
-        sets: exercise.sets,
-        reps: exercise.reps,
-        duration: exercise.duration,
+        description: exercise.patientDescription || exercise.description || "",
+        type: ((exercise.type?.toLowerCase()) as "reps" | "time") || "reps",
+        sets: exercise.defaultSets ?? exercise.sets,
+        reps: exercise.defaultReps ?? exercise.reps,
+        duration: exercise.defaultDuration ?? exercise.duration,
         restSets: undefined,
         restReps: undefined,
         preparationTime: undefined,
         executionTime: undefined,
-        exerciseSide: (exercise.exerciseSide as "none" | "left" | "right" | "both") || "none",
+        exerciseSide: ((exercise.side?.toLowerCase() || exercise.exerciseSide) as "none" | "left" | "right" | "both") || "none",
         videoUrl: "",
         notes: "",
       }

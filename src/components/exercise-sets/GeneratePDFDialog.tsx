@@ -45,12 +45,22 @@ interface ExerciseMapping {
   duration?: number;
   restSets?: number;
   restReps?: number;
+  executionTime?: number;
+  tempo?: string;
   notes?: string;
   customName?: string;
   customDescription?: string;
   exercise?: {
     id: string;
     name: string;
+    // Nowe pola
+    patientDescription?: string;
+    side?: string;
+    thumbnailUrl?: string;
+    defaultSets?: number;
+    defaultReps?: number;
+    defaultDuration?: number;
+    // Legacy aliasy
     description?: string;
     type?: string;
     imageUrl?: string;
@@ -156,10 +166,10 @@ export function GeneratePDFDialog({
       const pdfExercises: PDFExercise[] = (exerciseSet.exerciseMappings || []).map((mapping) => ({
         id: mapping.id,
         name: mapping.exercise?.name || 'Nieznane ćwiczenie',
-        description: mapping.exercise?.description,
+        description: mapping.exercise?.patientDescription || mapping.exercise?.description,
         type: mapping.exercise?.type as PDFExercise['type'],
-        exerciseSide: mapping.exercise?.exerciseSide as PDFExercise['exerciseSide'],
-        imageUrl: mapping.exercise?.imageUrl,
+        exerciseSide: (mapping.exercise?.side?.toLowerCase() || mapping.exercise?.exerciseSide) as PDFExercise['exerciseSide'],
+        imageUrl: mapping.exercise?.thumbnailUrl || mapping.exercise?.imageUrl,
         images: mapping.exercise?.images,
         notes: mapping.notes || mapping.exercise?.notes,
         sets: mapping.sets,

@@ -23,3 +23,6 @@ export * from "./users.mutations";
 
 // Revenue Share (Stripe Connect, zaproszenia pacjentów, kody partnerskie)
 export * from "./revenue.mutations";
+
+// Admin Exercises (weryfikacja ćwiczeń - Centrum Weryfikacji)
+export * from "./adminExercises.mutations";

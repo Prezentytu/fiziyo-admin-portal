@@ -29,12 +29,25 @@ interface ExerciseMapping {
   duration?: number;
   restSets?: number;
   restReps?: number;
+  executionTime?: number;
+  tempo?: string;
   notes?: string;
   customName?: string;
   customDescription?: string;
   exercise?: {
     id: string;
     name: string;
+    // Nowe pola
+    patientDescription?: string;
+    side?: string;
+    thumbnailUrl?: string;
+    defaultSets?: number;
+    defaultReps?: number;
+    defaultDuration?: number;
+    defaultExecutionTime?: number;
+    defaultRestBetweenSets?: number;
+    defaultRestBetweenReps?: number;
+    // Legacy aliasy
     description?: string;
     type?: string;
     imageUrl?: string;
@@ -201,6 +214,8 @@ function EditExerciseInSetDialogContent({
   };
 
   const translateSide = (side?: string) => {
+    if (!side) return '';
+    const normalizedSide = side.toLowerCase();
     const sides: Record<string, string> = {
       left: 'lewa strona',
       right: 'prawa strona',
@@ -208,7 +223,7 @@ function EditExerciseInSetDialogContent({
       alternating: 'naprzemiennie',
       none: 'bez strony',
     };
-    return side ? sides[side] || side : '';
+    return sides[normalizedSide] || side;
   };
 
   return (
@@ -246,9 +261,11 @@ function EditExerciseInSetDialogContent({
                       {translateType(exercise.type)}
                     </Badge>
                   )}
-                  {exercise?.exerciseSide && exercise.exerciseSide !== 'none' && (
+                  {(exercise?.side || exercise?.exerciseSide) && 
+                   (exercise?.side || exercise?.exerciseSide) !== 'none' &&
+                   (exercise?.side || exercise?.exerciseSide)?.toLowerCase() !== 'none' && (
                     <Badge variant="outline" className="text-[10px]">
-                      {translateSide(exercise.exerciseSide)}
+                      {translateSide(exercise?.side || exercise?.exerciseSide)}
                     </Badge>
                   )}
                 </div>

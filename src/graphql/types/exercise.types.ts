@@ -6,9 +6,28 @@
 // Enums
 // ============================================
 
-export type ExerciseType = 'reps' | 'time';
-export type ExerciseSide = 'none' | 'left' | 'right' | 'both' | 'alternating';
+export type ExerciseType = 'REPS' | 'TIME';
+export type ExerciseSide = 'NONE' | 'LEFT' | 'RIGHT' | 'BOTH' | 'ALTERNATING';
 export type ExerciseScope = 'PERSONAL' | 'ORGANIZATION' | 'GLOBAL';
+export type ContentStatus = 'DRAFT' | 'PENDING_REVIEW' | 'CHANGES_REQUESTED' | 'APPROVED' | 'PUBLISHED';
+export type MediaType = 'VIDEO' | 'IMAGE' | 'AUDIO';
+export type MediaContext = 'MAIN_DEMO' | 'THUMBNAIL' | 'COMMON_MISTAKE' | 'STEP_BY_STEP' | 'ANATOMY_VIEW' | 'PATIENT_MATERIAL';
+export type DifficultyLevel = 'EASY' | 'MEDIUM' | 'HARD' | 'EXPERT';
+
+// ============================================
+// ExerciseMedia Model
+// ============================================
+
+export interface ExerciseMedia {
+  id: string;
+  exerciseId: string;
+  url: string;
+  type: MediaType;
+  context: MediaContext;
+  order: number;
+  caption?: string;
+  createdAt?: string;
+}
 
 // ============================================
 // Exercise Model
@@ -18,29 +37,61 @@ export interface Exercise {
   id: string;
   organizationId?: string;
   name: string;
-  description?: string;
-  type: string;
-  sets?: number;
-  reps?: number;
-  duration?: number;
-  restSets?: number;
-  restReps?: number;
+  // Opisy
+  patientDescription?: string;
+  clinicalDescription?: string;
+  audioCue?: string;
+  notes?: string;
+  // Parametry wykonania
+  type: ExerciseType | string;
+  side?: ExerciseSide | string;
+  defaultSets?: number;
+  defaultReps?: number;
+  defaultDuration?: number;
+  defaultExecutionTime?: number;
+  defaultRestBetweenSets?: number;
+  defaultRestBetweenReps?: number;
   preparationTime?: number;
-  executionTime?: number;
+  tempo?: string;
+  // Media (legacy + nowe)
   videoUrl?: string;
   gifUrl?: string;
   imageUrl?: string;
+  thumbnailUrl?: string;
   images?: string[];
-  notes?: string;
+  media?: ExerciseMedia[];
+  // Status i widoczność
   isActive?: boolean;
   scope?: ExerciseScope;
+  status?: ContentStatus;
   isPublicTemplate?: boolean;
-  exerciseSide?: ExerciseSide | string;
+  isSystem?: boolean;
+  isSystemExample?: boolean;
+  adminReviewNotes?: string;
+  // Tagi
   mainTags?: string[];
   additionalTags?: string[];
+  // Progresja
+  progressionFamilyId?: string;
+  difficultyLevel?: DifficultyLevel;
+  // Metadane
   createdById?: string;
-  ownerId?: string;
-  creationTime?: string;
+  contributorId?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  
+  // Legacy aliasy (dla kompatybilności wstecznej w komponentach)
+  description?: string; // alias dla patientDescription
+  exerciseSide?: ExerciseSide | string; // alias dla side
+  executionTime?: number; // alias dla defaultExecutionTime
+  sets?: number; // alias dla defaultSets
+  reps?: number; // alias dla defaultReps
+  duration?: number; // alias dla defaultDuration
+  restSets?: number; // alias dla defaultRestBetweenSets
+  restReps?: number; // alias dla defaultRestBetweenReps
+  creationTime?: string; // alias dla createdAt
+  isGlobal?: boolean; // deprecated - używać scope === 'GLOBAL'
+  ownerId?: string; // deprecated - używać contributorId
 }
 
 // ============================================
@@ -51,7 +102,7 @@ export interface CreateExerciseVariables {
   organizationId: string;
   scope: ExerciseScope;
   name: string;
-  description: string;
+  description: string; // mapuje na patientDescription w backendzie
   type: string;
   sets?: number | null;
   reps?: number | null;
@@ -82,7 +133,7 @@ export interface CreateExerciseMutationResult {
 
 export interface UpdateExerciseVariables {
   exerciseId: string;
-  description?: string | null;
+  description?: string | null; // mapuje na patientDescription w backendzie
   type?: string | null;
   sets?: number | null;
   reps?: number | null;

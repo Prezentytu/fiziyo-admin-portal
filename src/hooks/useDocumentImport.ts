@@ -339,7 +339,7 @@ export function useDocumentImport() {
       for (const exercise of prev.analysisResult.exercises) {
         const suggestions = prev.analysisResult.matchSuggestions[exercise.tempId];
         const bestMatch = suggestions?.[0];
-        
+
         // Tylko pewne dopasowania (confidence >= 0.7)
         if (bestMatch && bestMatch.confidence >= CONFIDENT_THRESHOLD) {
           newDecisions[exercise.tempId] = {

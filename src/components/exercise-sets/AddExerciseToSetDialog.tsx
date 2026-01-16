@@ -41,6 +41,14 @@ interface Exercise {
   id: string;
   name: string;
   type?: string;
+  // Nowe pola
+  patientDescription?: string;
+  side?: string;
+  defaultSets?: number;
+  defaultReps?: number;
+  defaultDuration?: number;
+  thumbnailUrl?: string;
+  // Legacy aliasy
   description?: string;
   imageUrl?: string;
   images?: string[];
@@ -77,6 +85,8 @@ const translateType = (type?: string) => {
 };
 
 const translateSide = (side?: string) => {
+  if (!side) return "";
+  const normalizedSide = side.toLowerCase();
   const sides: Record<string, string> = {
     left: "lewa",
     right: "prawa",
@@ -84,7 +94,7 @@ const translateSide = (side?: string) => {
     alternating: "naprzemiennie",
     none: "",
   };
-  return side ? sides[side] || side : "";
+  return sides[normalizedSide] || side;
 };
 
 export function AddExerciseToSetDialog({
@@ -427,10 +437,11 @@ export function AddExerciseToSetDialog({
                                 {translateType(exercise.type)}
                               </Badge>
                             )}
-                            {exercise.exerciseSide &&
-                              exercise.exerciseSide !== "none" && (
+                            {(exercise.side || exercise.exerciseSide) &&
+                              (exercise.side || exercise.exerciseSide) !== "none" &&
+                              (exercise.side || exercise.exerciseSide)?.toLowerCase() !== "none" && (
                                 <Badge variant="outline" className="text-xs">
-                                  {translateSide(exercise.exerciseSide)}
+                                  {translateSide(exercise.side || exercise.exerciseSide)}
                                 </Badge>
                               )}
                           </div>

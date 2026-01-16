@@ -56,28 +56,33 @@ export const CREATE_EXERCISE_MUTATION = gql`
       id
       organizationId
       name
-      description
+      patientDescription
       type
-      sets
-      reps
-      duration
-      restSets
-      restReps
+      defaultSets
+      defaultReps
+      defaultDuration
+      defaultRestBetweenSets
+      defaultRestBetweenReps
       preparationTime
-      executionTime
+      defaultExecutionTime
       videoUrl
       gifUrl
       imageUrl
+      thumbnailUrl
       images
       notes
       isActive
       createdById
       scope
       isPublicTemplate
-      exerciseSide
+      isSystem
+      isSystemExample
+      status
+      side
       mainTags
       additionalTags
-      ownerId
+      contributorId
+      difficultyLevel
     }
   }
 `;
@@ -125,22 +130,23 @@ export const UPDATE_EXERCISE_MUTATION = gql`
       id
       organizationId
       name
-      description
+      patientDescription
       type
-      sets
-      reps
-      duration
-      restSets
-      restReps
+      defaultSets
+      defaultReps
+      defaultDuration
+      defaultRestBetweenSets
+      defaultRestBetweenReps
       preparationTime
-      executionTime
+      defaultExecutionTime
       videoUrl
       images
       notes
       isActive
-      exerciseSide
+      side
       mainTags
       additionalTags
+      updatedAt
     }
   }
 `;
@@ -737,16 +743,16 @@ export const COPY_EXERCISE_TEMPLATE_MUTATION = gql`
     copyExerciseTemplate(templateExerciseId: $templateExerciseId, targetOrganizationId: $targetOrganizationId) {
       id
       name
-      description
+      patientDescription
       type
       scope
       organizationId
-      ownerId
+      contributorId
       isPublicTemplate
-      sets
-      reps
-      duration
-      exerciseSide
+      defaultSets
+      defaultReps
+      defaultDuration
+      side
       mainTags
       additionalTags
     }

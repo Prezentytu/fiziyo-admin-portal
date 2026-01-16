@@ -53,3 +53,6 @@ export * from "./onboardingStats.queries";
 
 // Revenue Share (zarobki, Stripe Connect, zaproszenia pacjentów)
 export * from "./revenue.queries";
+
+// Admin Exercises (weryfikacja ćwiczeń - Centrum Weryfikacji)
+export * from "./adminExercises.queries";

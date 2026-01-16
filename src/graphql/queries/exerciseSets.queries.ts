@@ -39,6 +39,8 @@ export const EXERCISE_SET_WITH_EXERCISES_FRAGMENT = gql`
       duration
       restSets
       restReps
+      executionTime
+      tempo
       notes
       customName
       customDescription
@@ -46,21 +48,25 @@ export const EXERCISE_SET_WITH_EXERCISES_FRAGMENT = gql`
         id
         name
         type
-        exerciseSide
+        side
         imageUrl
         images
-        description
+        thumbnailUrl
+        patientDescription
         notes
         videoUrl
         preparationTime
-        executionTime
-        sets
-        reps
-        duration
-        restSets
-        restReps
+        defaultExecutionTime
+        defaultSets
+        defaultReps
+        defaultDuration
+        defaultRestBetweenSets
+        defaultRestBetweenReps
         mainTags
         additionalTags
+        scope
+        status
+        difficultyLevel
       }
     }
   }

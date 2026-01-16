@@ -42,6 +42,8 @@ const translateType = (type?: string) => {
 };
 
 const translateSide = (side?: string) => {
+  if (!side) return '';
+  const normalizedSide = side.toLowerCase();
   const sides: Record<string, string> = {
     left: 'lewa strona',
     right: 'prawa strona',
@@ -49,7 +51,7 @@ const translateSide = (side?: string) => {
     alternating: 'naprzemiennie',
     none: 'bez strony',
   };
-  return side ? sides[side] || side : '';
+  return sides[normalizedSide] || side;
 };
 
 // Exercise side options
@@ -153,9 +155,11 @@ function EditExerciseOverrideDialogContent({
   const initialRestSets = currentOverride?.restSets ?? mapping.restSets ?? 0;
   const initialRestReps = currentOverride?.restReps ?? mapping.restReps ?? 0;
   const initialCustomName = currentOverride?.customName ?? mapping.customName ?? '';
-  const initialCustomDescription = currentOverride?.customDescription ?? mapping.customDescription ?? exercise?.description ?? '';
+  const initialCustomDescription = currentOverride?.customDescription ?? mapping.customDescription ?? exercise?.patientDescription ?? exercise?.description ?? '';
   const initialNotes = currentOverride?.notes ?? mapping.notes ?? '';
-  const initialExerciseSide = currentOverride?.exerciseSide ?? exercise?.exerciseSide ?? 'none';
+  // Support both new 'side' and legacy 'exerciseSide' field names
+  const exerciseSideValue = exercise?.side?.toLowerCase() || exercise?.exerciseSide;
+  const initialExerciseSide = currentOverride?.exerciseSide ?? exerciseSideValue ?? 'none';
   const initialCustomImages = currentOverride?.customImages ?? [];
 
   // Form state - initialized directly from props (no useEffect needed)
@@ -319,7 +323,8 @@ function EditExerciseOverrideDialogContent({
       if (notes) {
         newOverride.notes = notes;
       }
-      if (exerciseSide && exerciseSide !== (exerciseDefaults?.exerciseSide ?? 'none')) {
+      const defaultExerciseSide = exerciseDefaults?.side?.toLowerCase() || exerciseDefaults?.exerciseSide || 'none';
+      if (exerciseSide && exerciseSide !== defaultExerciseSide) {
         newOverride.exerciseSide = exerciseSide;
       }
       if (customImages.length > 0) {
@@ -362,15 +367,15 @@ function EditExerciseOverrideDialogContent({
   };
 
   const handleReset = () => {
-    setSets(mapping.sets ?? exercise?.sets ?? 0);
-    setReps(mapping.reps ?? exercise?.reps ?? 0);
-    setDuration(mapping.duration ?? exercise?.duration ?? 0);
-    setRestSets(mapping.restSets ?? 0);
-    setRestReps(mapping.restReps ?? 0);
+    setSets(mapping.sets ?? exercise?.defaultSets ?? exercise?.sets ?? 0);
+    setReps(mapping.reps ?? exercise?.defaultReps ?? exercise?.reps ?? 0);
+    setDuration(mapping.duration ?? exercise?.defaultDuration ?? exercise?.duration ?? 0);
+    setRestSets(mapping.restSets ?? exercise?.defaultRestBetweenSets ?? 0);
+    setRestReps(mapping.restReps ?? exercise?.defaultRestBetweenReps ?? 0);
     setCustomName(mapping.customName ?? '');
-    setCustomDescription(mapping.customDescription ?? exercise?.description ?? '');
+    setCustomDescription(mapping.customDescription ?? exercise?.patientDescription ?? exercise?.description ?? '');
     setNotes(mapping.notes ?? '');
-    setExerciseSide(exercise?.exerciseSide ?? 'none');
+    setExerciseSide(exercise?.side?.toLowerCase() || exercise?.exerciseSide || 'none');
     setCustomImages([]);
   };
 
@@ -415,9 +420,11 @@ function EditExerciseOverrideDialogContent({
                       {translateType(exercise.type)}
                     </Badge>
                   )}
-                  {exercise?.exerciseSide && exercise.exerciseSide !== 'none' && (
+                  {(exercise?.side || exercise?.exerciseSide) && 
+                   (exercise?.side || exercise?.exerciseSide) !== 'none' &&
+                   (exercise?.side || exercise?.exerciseSide)?.toLowerCase() !== 'none' && (
                     <Badge variant="outline" className="text-xs">
-                      {translateSide(exercise.exerciseSide)}
+                      {translateSide(exercise?.side || exercise?.exerciseSide)}
                     </Badge>
                   )}
                 </div>

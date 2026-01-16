@@ -208,26 +208,36 @@ function AssignmentWizardContent({
         notes: m.notes,
         customName: m.customName,
         customDescription: m.customDescription,
-        // Exercise data with all fields
+        // Exercise data with all fields (support both new and legacy names)
         exercise: m.exercise
           ? {
               id: m.exercise.id,
               name: m.exercise.name,
               type: m.exercise.type,
-              description: m.exercise.description,
-              exerciseSide: m.exercise.exerciseSide,
-              imageUrl: m.exercise.imageUrl,
+              // Support both new and legacy field names
+              description: m.exercise.patientDescription || m.exercise.description,
+              patientDescription: m.exercise.patientDescription,
+              side: m.exercise.side,
+              exerciseSide: m.exercise.side?.toLowerCase() || m.exercise.exerciseSide,
+              imageUrl: m.exercise.thumbnailUrl || m.exercise.imageUrl,
+              thumbnailUrl: m.exercise.thumbnailUrl,
               images: m.exercise.images,
               videoUrl: m.exercise.videoUrl,
               notes: m.exercise.notes,
-              // Exercise default values
-              sets: m.exercise.sets,
-              reps: m.exercise.reps,
-              duration: m.exercise.duration,
-              restSets: m.exercise.restSets,
-              restReps: m.exercise.restReps,
+              // Exercise default values (support both new and legacy names)
+              sets: m.exercise.defaultSets ?? m.exercise.sets,
+              reps: m.exercise.defaultReps ?? m.exercise.reps,
+              duration: m.exercise.defaultDuration ?? m.exercise.duration,
+              restSets: m.exercise.defaultRestBetweenSets ?? m.exercise.restSets,
+              restReps: m.exercise.defaultRestBetweenReps ?? m.exercise.restReps,
               preparationTime: m.exercise.preparationTime,
-              executionTime: m.exercise.executionTime,
+              executionTime: m.exercise.defaultExecutionTime ?? m.exercise.executionTime,
+              defaultSets: m.exercise.defaultSets,
+              defaultReps: m.exercise.defaultReps,
+              defaultDuration: m.exercise.defaultDuration,
+              defaultRestBetweenSets: m.exercise.defaultRestBetweenSets,
+              defaultRestBetweenReps: m.exercise.defaultRestBetweenReps,
+              defaultExecutionTime: m.exercise.defaultExecutionTime,
             }
           : undefined,
       })),

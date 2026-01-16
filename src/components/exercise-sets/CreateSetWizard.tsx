@@ -100,6 +100,17 @@ interface Exercise {
   id: string;
   name: string;
   type?: string;
+  // Nowe pola
+  patientDescription?: string;
+  side?: string;
+  thumbnailUrl?: string;
+  defaultSets?: number;
+  defaultReps?: number;
+  defaultDuration?: number;
+  defaultRestBetweenSets?: number;
+  defaultRestBetweenReps?: number;
+  defaultExecutionTime?: number;
+  // Legacy aliasy
   description?: string;
   imageUrl?: string;
   images?: string[];
@@ -1055,15 +1066,15 @@ export function CreateSetWizard({
 
   const getDefaultParams = useCallback(
     (exercise: Exercise): ExerciseParams => ({
-      sets: exercise.sets || 3,
-      reps: exercise.reps || 10,
-      duration: exercise.duration || 30,
-      restSets: exercise.restSets || 60,
-      restReps: exercise.restReps || 0,
+      sets: exercise.defaultSets ?? exercise.sets ?? 3,
+      reps: exercise.defaultReps ?? exercise.reps ?? 10,
+      duration: exercise.defaultDuration ?? exercise.duration ?? 30,
+      restSets: exercise.defaultRestBetweenSets ?? exercise.restSets ?? 60,
+      restReps: exercise.defaultRestBetweenReps ?? exercise.restReps ?? 0,
       preparationTime: 0,
-      executionTime: 0,
+      executionTime: exercise.defaultExecutionTime ?? 0,
       notes: '',
-      exerciseSide: exercise.exerciseSide || 'both',
+      exerciseSide: (exercise.side?.toLowerCase() || exercise.exerciseSide) || 'both',
       customName: '',
       customDescription: '',
     }),
@@ -1233,16 +1244,17 @@ export function CreateSetWizard({
         const next = new Map(prev);
         for (const mapping of templateSet.exerciseMappings || []) {
           if (mapping.exerciseId && mapping.exercise) {
+            const ex = mapping.exercise;
             next.set(mapping.exerciseId, {
-              sets: mapping.sets ?? mapping.exercise.sets ?? 3,
-              reps: mapping.reps ?? mapping.exercise.reps ?? 10,
-              duration: mapping.duration ?? mapping.exercise.duration ?? 30,
-              restSets: mapping.restSets ?? mapping.exercise.restSets ?? 60,
-              restReps: mapping.restReps ?? mapping.exercise.restReps ?? 0,
+              sets: mapping.sets ?? ex.defaultSets ?? ex.sets ?? 3,
+              reps: mapping.reps ?? ex.defaultReps ?? ex.reps ?? 10,
+              duration: mapping.duration ?? ex.defaultDuration ?? ex.duration ?? 30,
+              restSets: mapping.restSets ?? ex.defaultRestBetweenSets ?? ex.restSets ?? 60,
+              restReps: mapping.restReps ?? ex.defaultRestBetweenReps ?? ex.restReps ?? 0,
               preparationTime: 0,
-              executionTime: 0,
+              executionTime: mapping.executionTime ?? ex.defaultExecutionTime ?? 0,
               notes: mapping.notes ?? '',
-              exerciseSide: mapping.exercise.exerciseSide || 'both',
+              exerciseSide: (ex.side?.toLowerCase() || ex.exerciseSide) || 'both',
               customName: mapping.customName ?? '',
               customDescription: mapping.customDescription ?? '',
             });

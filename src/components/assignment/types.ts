@@ -25,6 +25,7 @@ export interface ExerciseMapping {
   // Time parameters
   preparationTime?: number;
   executionTime?: number;
+  tempo?: string;
   // Custom content
   notes?: string;
   customName?: string;
@@ -40,20 +41,40 @@ export interface ExerciseMapping {
 export interface Exercise {
   id: string;
   name: string;
+  // Opisy
+  patientDescription?: string;
+  clinicalDescription?: string;
+  notes?: string;
+  // Parametry wykonania
+  type?: "REPS" | "TIME" | "reps" | "time" | string;
+  side?: "LEFT" | "RIGHT" | "BOTH" | "ALTERNATING" | "NONE" | "left" | "right" | "both" | "alternating" | "none" | string;
+  defaultSets?: number;
+  defaultReps?: number;
+  defaultDuration?: number;
+  defaultExecutionTime?: number;
+  defaultRestBetweenSets?: number;
+  defaultRestBetweenReps?: number;
+  preparationTime?: number;
+  tempo?: string;
+  // Media
+  imageUrl?: string;
+  thumbnailUrl?: string;
+  images?: string[];
+  videoUrl?: string;
+  // Status
+  scope?: string;
+  status?: string;
+  difficultyLevel?: string;
+  
+  // Legacy aliasy (dla kompatybilności wstecznej)
   description?: string;
-  type?: "reps" | "time" | string;
+  exerciseSide?: "left" | "right" | "both" | "alternating" | "none" | string;
+  executionTime?: number;
   sets?: number;
   reps?: number;
   duration?: number;
   restSets?: number;
   restReps?: number;
-  preparationTime?: number;
-  executionTime?: number;
-  exerciseSide?: "left" | "right" | "both" | "alternating" | "none" | string;
-  imageUrl?: string;
-  images?: string[];
-  videoUrl?: string;
-  notes?: string;
 }
 
 export interface Patient {

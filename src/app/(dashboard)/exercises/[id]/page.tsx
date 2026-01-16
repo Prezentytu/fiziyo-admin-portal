@@ -149,7 +149,9 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
   };
 
   const getSideLabel = (side?: string) => {
-    switch (side) {
+    if (!side) return 'Bez podziału';
+    const normalizedSide = side.toLowerCase();
+    switch (normalizedSide) {
       case 'left':
         return 'Lewa strona';
       case 'right':
@@ -284,7 +286,7 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
                 )}
                 <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-zinc-100 dark:bg-zinc-800 text-zinc-500 border border-zinc-200 dark:border-zinc-700">
                   <ArrowLeftRight className="mr-1.5 h-3 w-3" />
-                  {getSideLabel(exercise.exerciseSide)}
+                  {getSideLabel(exercise.side || exercise.exerciseSide)}
                 </span>
               </div>
             </div>

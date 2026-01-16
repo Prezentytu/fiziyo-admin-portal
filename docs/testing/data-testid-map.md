@@ -16,6 +16,7 @@
 - `org-` - Organizacja
 - `billing-` - Rozliczenia Pay-as-you-go
 - `settings-` - Ustawienia
+- `verification-` - Centrum weryfikacji ćwiczeń (ContentManager)
 - `common-` - Wspólne komponenty
 
 **Sufiksy:**
@@ -587,7 +588,34 @@ await expect(page.getByTestId(/^exercise-card-/)).toHaveCount(5);
 | `clinical-diagnosis-section` | Sekcja diagnozy | `DiagnosisSectionForm.tsx` |
 | `clinical-treatment-section` | Sekcja leczenia | `TreatmentPlanSectionForm.tsx` |
 
-### 15. Wspólne komponenty (common-)
+### 15. Centrum Weryfikacji (verification-)
+
+| data-testid | Element | Plik |
+|-------------|---------|------|
+| `nav-link-verification` | Link: Centrum Weryfikacji | `Sidebar.tsx` |
+| `verification-search-input` | Wyszukiwarka ćwiczeń | `verification/page.tsx` |
+| `verification-stats-pending` | Karta statystyk: Oczekujące | `VerificationStatsCards.tsx` |
+| `verification-stats-changes` | Karta statystyk: Do poprawy | `VerificationStatsCards.tsx` |
+| `verification-stats-approved` | Karta statystyk: Zatwierdzone | `VerificationStatsCards.tsx` |
+| `verification-stats-published` | Karta statystyk: Opublikowane | `VerificationStatsCards.tsx` |
+| `verification-card-{id}` | Karta zadania weryfikacji | `VerificationTaskCard.tsx` |
+| `verification-card-{id}-start-btn` | Przycisk rozpoczęcia weryfikacji | `VerificationTaskCard.tsx` |
+| `verification-checklist-clinical` | Checkbox: Poprawność kliniczna | `QualityChecklist.tsx` |
+| `verification-checklist-media` | Checkbox: Jakość mediów | `QualityChecklist.tsx` |
+| `verification-checklist-description` | Checkbox: Kompletność opisu | `QualityChecklist.tsx` |
+| `verification-checklist-tags` | Checkbox: Odpowiednie tagi | `QualityChecklist.tsx` |
+| `verification-reject-btn` | Przycisk odrzucenia | `VerificationStickyFooter.tsx` |
+| `verification-skip-btn` | Przycisk pominięcia | `VerificationStickyFooter.tsx` |
+| `verification-approve-btn` | Przycisk zatwierdzenia | `VerificationStickyFooter.tsx` |
+| `verification-reject-dialog` | Dialog odrzucenia | `RejectReasonDialog.tsx` |
+| `verification-reject-reason-select` | Dropdown wyboru powodu | `RejectReasonDialog.tsx` |
+| `verification-reject-notes-input` | Textarea notatki (wymagana) | `RejectReasonDialog.tsx` |
+| `verification-reject-confirm-btn` | Przycisk potwierdzenia odrzucenia | `RejectReasonDialog.tsx` |
+| `verification-approve-dialog` | Dialog zatwierdzenia | `ApproveDialog.tsx` |
+| `verification-approve-notes-input` | Textarea notatki (opcjonalna) | `ApproveDialog.tsx` |
+| `verification-approve-confirm-btn` | Przycisk potwierdzenia zatwierdzenia | `ApproveDialog.tsx` |
+
+### 16. Wspólne komponenty (common-)
 
 | data-testid | Element | Plik |
 |-------------|---------|------|

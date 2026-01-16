@@ -93,6 +93,14 @@ interface ExerciseMapping {
   exercise?: {
     id: string;
     name: string;
+    // Nowe pola
+    patientDescription?: string;
+    side?: string;
+    thumbnailUrl?: string;
+    defaultSets?: number;
+    defaultReps?: number;
+    defaultDuration?: number;
+    // Legacy aliasy
     description?: string;
     type?: string;
     imageUrl?: string;
@@ -794,11 +802,14 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
               exercise: m.exercise ? {
                 id: m.exercise.id,
                 name: m.exercise.name,
-                description: m.exercise.description,
+                description: m.exercise.patientDescription || m.exercise.description,
+                patientDescription: m.exercise.patientDescription,
                 type: m.exercise.type,
-                imageUrl: m.exercise.imageUrl,
+                imageUrl: m.exercise.thumbnailUrl || m.exercise.imageUrl,
+                thumbnailUrl: m.exercise.thumbnailUrl,
                 images: m.exercise.images,
-                exerciseSide: m.exercise.exerciseSide,
+                side: m.exercise.side,
+                exerciseSide: m.exercise.side?.toLowerCase() || m.exercise.exerciseSide,
               } : undefined,
             })),
           } as AssignmentExerciseSet}

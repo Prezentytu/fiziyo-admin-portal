@@ -26,6 +26,15 @@ export interface ExerciseTag {
 export interface Exercise {
   id: string;
   name: string;
+  // Nowe pola
+  patientDescription?: string;
+  side?: string;
+  defaultSets?: number;
+  defaultReps?: number;
+  defaultDuration?: number;
+  thumbnailUrl?: string;
+  createdAt?: string;
+  // Legacy aliasy
   description?: string;
   type?: string;
   sets?: number;
@@ -124,7 +133,7 @@ export function ExerciseCard({
     }
   }, [exercise, onToggleBuilder]);
 
-  const rawImageUrl = exercise.imageUrl || exercise.images?.[0];
+  const rawImageUrl = exercise.thumbnailUrl || exercise.imageUrl || exercise.images?.[0];
   const imageUrl = getMediaUrl(rawImageUrl);
 
   // Collect all images for gallery
@@ -136,9 +145,14 @@ export function ExerciseCard({
     .map((img) => getMediaUrl(img))
     .filter((img): img is string => !!img);
 
-  const hasParams = (exercise.sets && exercise.sets > 0) ||
-                    (exercise.reps && exercise.reps > 0) ||
-                    (exercise.duration && exercise.duration > 0);
+  // Support both new and legacy field names
+  const sets = exercise.defaultSets ?? exercise.sets;
+  const reps = exercise.defaultReps ?? exercise.reps;
+  const duration = exercise.defaultDuration ?? exercise.duration;
+
+  const hasParams = (sets && sets > 0) ||
+                    (reps && reps > 0) ||
+                    (duration && duration > 0);
 
   // Compact list view
   if (compact) {
@@ -175,19 +189,19 @@ export function ExerciseCard({
             {exercise.type && (
               <span className="text-primary font-medium">{getTypeLabel(exercise.type)}</span>
             )}
-            {exercise.sets && exercise.sets > 0 && (
+            {sets && sets > 0 && (
               <span className="flex items-center gap-1">
                 <Repeat className="h-3 w-3" />
-                {exercise.sets} serii
+                {sets} serii
               </span>
             )}
-            {exercise.reps && exercise.reps > 0 && (
-              <span>{exercise.reps} powt.</span>
+            {reps && reps > 0 && (
+              <span>{reps} powt.</span>
             )}
-            {exercise.duration && exercise.duration > 0 && (
+            {duration && duration > 0 && (
               <span className="flex items-center gap-1">
                 <Clock className="h-3 w-3" />
-                {exercise.duration}s
+                {duration}s
               </span>
             )}
           </div>
