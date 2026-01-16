@@ -9,3 +9,4 @@ export { QualityChecklist } from "./QualityChecklist";
 export { TagRefinementPanel } from "./TagRefinementPanel";
 export { RejectReasonDialog } from "./RejectReasonDialog";
 export { ApproveDialog } from "./ApproveDialog";
+export { ReviewerAchievements } from "./ReviewerAchievements";export { VerificationIntro } from "./VerificationIntro";

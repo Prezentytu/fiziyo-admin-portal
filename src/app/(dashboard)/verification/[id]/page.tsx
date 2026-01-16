@@ -1,9 +1,9 @@
 "use client";
 
-import { use, useState, useCallback } from "react";
+import { use, useState, useCallback, useEffect } from "react";
 import { useQuery, useMutation } from "@apollo/client/react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, FileText, Sparkles } from "lucide-react";
+import { ArrowLeft, FileText, Sparkles, Keyboard } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -25,7 +25,7 @@ import { useSystemRole } from "@/hooks/useSystemRole";
 import { GET_EXERCISE_BY_ID_QUERY } from "@/graphql/queries/exercises.queries";
 import {
   GET_PENDING_EXERCISES_QUERY,
-  GET_EXERCISE_STATUS_STATS_QUERY,
+  GET_VERIFICATION_STATS_QUERY,
 } from "@/graphql/queries/adminExercises.queries";
 import {
   APPROVE_EXERCISE_MUTATION,
@@ -37,6 +37,8 @@ import type {
   RejectionReason,
   ApproveExerciseResponse,
   RejectExerciseResponse,
+  GetPendingReviewExercisesResponse,
+  GetVerificationStatsResponse,
 } from "@/graphql/types/adminExercise.types";
 
 interface VerificationDetailPageProps {
@@ -78,13 +80,33 @@ export default function VerificationDetailPage({ params }: VerificationDetailPag
     },
   });
 
+  // Query for pending exercises (for progress indicator and auto-advance)
+  const { data: pendingData } = useQuery<GetPendingReviewExercisesResponse>(GET_PENDING_EXERCISES_QUERY);
+
+  // Query for stats
+  const { data: statsData } = useQuery<GetVerificationStatsResponse>(GET_VERIFICATION_STATS_QUERY);
+
+  // Calculate progress
+  const pendingExercises = pendingData?.pendingReviewExercises || [];
+  const currentIndex = pendingExercises.findIndex((ex) => ex.id === id);
+  const totalPending = statsData?.verificationStats?.pendingReview || pendingExercises.length;
+  const positionInQueue = currentIndex >= 0 ? currentIndex + 1 : null;
+
+  // Get next exercise ID for auto-advance
+  const getNextExerciseId = useCallback((): string | null => {
+    if (currentIndex < 0 || currentIndex >= pendingExercises.length - 1) {
+      return null;
+    }
+    return pendingExercises[currentIndex + 1]?.id || null;
+  }, [currentIndex, pendingExercises]);
+
   // Mutations
   const [approveExercise, { loading: approving }] = useMutation<ApproveExerciseResponse>(
     APPROVE_EXERCISE_MUTATION,
     {
       refetchQueries: [
         { query: GET_PENDING_EXERCISES_QUERY },
-        { query: GET_EXERCISE_STATUS_STATS_QUERY },
+        { query: GET_VERIFICATION_STATS_QUERY },
       ],
     }
   );
@@ -94,14 +116,14 @@ export default function VerificationDetailPage({ params }: VerificationDetailPag
     {
       refetchQueries: [
         { query: GET_PENDING_EXERCISES_QUERY },
-        { query: GET_EXERCISE_STATUS_STATS_QUERY },
+        { query: GET_VERIFICATION_STATS_QUERY },
       ],
     }
   );
 
   const exercise = data?.exerciseById as unknown as AdminExercise | null;
 
-  // Handlers
+  // Handlers with auto-advance
   const handleApprove = useCallback(
     async (notes: string | null) => {
       try {
@@ -110,13 +132,20 @@ export default function VerificationDetailPage({ params }: VerificationDetailPag
         });
         toast.success("Ćwiczenie zostało zatwierdzone i opublikowane!");
         setIsApproveDialogOpen(false);
-        router.push("/verification");
+
+        // Auto-advance to next exercise or go back to list
+        const nextId = getNextExerciseId();
+        if (nextId) {
+          router.push(`/verification/${nextId}`);
+        } else {
+          router.push("/verification");
+        }
       } catch (err) {
         console.error("Błąd zatwierdzania:", err);
         toast.error("Nie udało się zatwierdzić ćwiczenia");
       }
     },
-    [approveExercise, id, router]
+    [approveExercise, id, router, getNextExerciseId]
   );
 
   const handleReject = useCallback(
@@ -128,13 +157,20 @@ export default function VerificationDetailPage({ params }: VerificationDetailPag
         });
         toast.success("Ćwiczenie zostało odrzucone z uwagami");
         setIsRejectDialogOpen(false);
-        router.push("/verification");
+
+        // Auto-advance to next exercise or go back to list
+        const nextId = getNextExerciseId();
+        if (nextId) {
+          router.push(`/verification/${nextId}`);
+        } else {
+          router.push("/verification");
+        }
       } catch (err) {
         console.error("Błąd odrzucania:", err);
         toast.error("Nie udało się odrzucić ćwiczenia");
       }
     },
-    [rejectExercise, id, router]
+    [rejectExercise, id, router, getNextExerciseId]
   );
 
   const handleSkip = useCallback(() => {
@@ -143,6 +179,45 @@ export default function VerificationDetailPage({ params }: VerificationDetailPag
 
   // Check if all quality checks are passed
   const allChecksPassed = Object.values(qualityChecks).every((v) => v === true);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't trigger shortcuts when typing in inputs/textareas
+      if (
+        e.target instanceof HTMLInputElement ||
+        e.target instanceof HTMLTextAreaElement
+      ) {
+        return;
+      }
+
+      // Ctrl+Enter = Open Approve dialog (if checks passed)
+      if (e.ctrlKey && e.key === "Enter" && allChecksPassed && !isApproveDialogOpen && !isRejectDialogOpen) {
+        e.preventDefault();
+        setIsApproveDialogOpen(true);
+      }
+
+      // Ctrl+Backspace = Open Reject dialog
+      if (e.ctrlKey && e.key === "Backspace" && !isApproveDialogOpen && !isRejectDialogOpen) {
+        e.preventDefault();
+        setIsRejectDialogOpen(true);
+      }
+
+      // Escape = Skip (close dialogs first or navigate away)
+      if (e.key === "Escape") {
+        if (isApproveDialogOpen) {
+          setIsApproveDialogOpen(false);
+        } else if (isRejectDialogOpen) {
+          setIsRejectDialogOpen(false);
+        } else {
+          handleSkip();
+        }
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [allChecksPassed, isApproveDialogOpen, isRejectDialogOpen, handleSkip]);
 
   // Access denied
   if (!roleLoading && !canReviewExercises) {
@@ -197,16 +272,36 @@ export default function VerificationDetailPage({ params }: VerificationDetailPag
       {/* Left Column: Mobile Preview */}
       <div className="w-full lg:w-[420px] bg-zinc-950 border-r border-border/20 flex-shrink-0 overflow-y-auto">
         <div className="p-6 lg:p-8">
-          {/* Back button */}
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => router.push("/verification")}
-            className="mb-6 text-zinc-400 hover:text-white -ml-2"
-          >
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Powrót do listy
-          </Button>
+          {/* Progress indicator + Back button */}
+          <div className="flex items-center justify-between mb-6">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => router.push("/verification")}
+              className="text-zinc-400 hover:text-white -ml-2"
+            >
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Powrót do listy
+            </Button>
+
+            {/* Progress indicator */}
+            {positionInQueue && totalPending > 0 && (
+              <div className="flex items-center gap-3">
+                <div className="text-xs text-zinc-500">
+                  <span className="text-zinc-300 font-semibold">{positionInQueue}</span>
+                  <span> z </span>
+                  <span className="text-zinc-300 font-semibold">{totalPending}</span>
+                  <span className="ml-1">oczekujących</span>
+                </div>
+                <div className="w-24 h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-primary rounded-full transition-all duration-300"
+                    style={{ width: `${(positionInQueue / totalPending) * 100}%` }}
+                  />
+                </div>
+              </div>
+            )}
+          </div>
 
           {/* Phone simulator */}
           <MobileSimulator exercise={exercise} />

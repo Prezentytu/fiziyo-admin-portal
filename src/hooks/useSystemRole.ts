@@ -70,7 +70,7 @@ export function useSystemRole(): SystemRoleResult {
 
   return useMemo(() => {
     const rawRole = data?.userByClerkId?.systemRole;
-    
+
     // Normalize role to match our SystemRole type (case-insensitive comparison)
     // Backend returns SCREAMING_SNAKE_CASE (e.g., "CONTENT_MANAGER")
     let systemRole: SystemRole | null = null;

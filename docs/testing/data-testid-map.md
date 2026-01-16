@@ -590,6 +590,19 @@ await expect(page.getByTestId(/^exercise-card-/)).toHaveCount(5);
 
 ### 15. Centrum Weryfikacji (verification-)
 
+#### Ekran powitalny (Intro)
+
+| data-testid | Element | Plik |
+|-------------|---------|------|
+| `verification-intro-container` | Kontener ekranu powitalnego | `VerificationIntro.tsx` |
+| `verification-intro-hero-icon` | Ikona hero | `VerificationIntro.tsx` |
+| `verification-intro-status-card` | Karta statusu (wynik scan) | `VerificationIntro.tsx` |
+| `verification-intro-load-btn` | Przycisk "Załaduj ćwiczenia" | `VerificationIntro.tsx` |
+| `reviewer-achievements-card` | Karta osiągnięć recenzenta (wariant full) | `ReviewerAchievements.tsx` |
+| `reviewer-achievements-compact` | Kompaktowy element osiągnięć (wariant compact) | `ReviewerAchievements.tsx` |
+
+#### Widok pełny (z zadaniami)
+
 | data-testid | Element | Plik |
 |-------------|---------|------|
 | `nav-link-verification` | Link: Centrum Weryfikacji | `Sidebar.tsx` |

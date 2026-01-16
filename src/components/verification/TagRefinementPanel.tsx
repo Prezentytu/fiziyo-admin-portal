@@ -1,13 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { Tag, X, Plus } from "lucide-react";
+import { useQuery } from "@apollo/client/react";
+import { Tag, X, Plus, Sparkles, Loader2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-import type { AdminExercise } from "@/graphql/types/adminExercise.types";
+import { GET_SUGGESTED_TAGS_QUERY } from "@/graphql/queries/adminExercises.queries";
+import type { AdminExercise, GetSuggestedTagsResponse, GetSuggestedTagsVariables } from "@/graphql/types/adminExercise.types";
 
 interface TagRefinementPanelProps {
   exercise: AdminExercise;
@@ -106,6 +108,38 @@ export function TagRefinementPanel({
   const [newMainTag, setNewMainTag] = useState("");
   const [newAdditionalTag, setNewAdditionalTag] = useState("");
 
+  // Fetch AI tag suggestions
+  const { data: suggestionsData, loading: suggestionsLoading } = useQuery<GetSuggestedTagsResponse, GetSuggestedTagsVariables>(
+    GET_SUGGESTED_TAGS_QUERY,
+    {
+      variables: { exerciseId: exercise.id },
+      skip: !exercise.id,
+    }
+  );
+
+  const suggestions = suggestionsData?.suggestedTags;
+
+  // Filter out already added tags from suggestions
+  const availableMainSuggestions = suggestions?.mainTags.filter(
+    (tag) => !mainTags.includes(tag) && !additionalTags.includes(tag)
+  ) || [];
+  const availableAdditionalSuggestions = suggestions?.additionalTags.filter(
+    (tag) => !mainTags.includes(tag) && !additionalTags.includes(tag)
+  ) || [];
+  const allSuggestions = [...new Set([...availableMainSuggestions, ...availableAdditionalSuggestions])];
+
+  const handleAddSuggestionAsMain = (tag: string) => {
+    if (!mainTags.includes(tag)) {
+      onMainTagsChange([...mainTags, tag]);
+    }
+  };
+
+  const handleAddSuggestionAsAdditional = (tag: string) => {
+    if (!additionalTags.includes(tag)) {
+      onAdditionalTagsChange([...additionalTags, tag]);
+    }
+  };
+
   const handleAddMainTag = () => {
     const tag = newMainTag.trim();
     if (tag && !mainTags.includes(tag)) {
@@ -139,6 +173,58 @@ export function TagRefinementPanel({
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
+        {/* AI Tag Suggestions */}
+        {(suggestionsLoading || allSuggestions.length > 0) && (
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <Sparkles className="h-4 w-4 text-amber-500" />
+              <h4 className="text-sm font-medium text-foreground">Sugestie AI</h4>
+              {suggestionsLoading && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />}
+            </div>
+            {!suggestionsLoading && allSuggestions.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {allSuggestions.slice(0, 8).map((tag) => (
+                  <Badge
+                    key={tag}
+                    variant="outline"
+                    className="pr-1 gap-1 cursor-pointer border-dashed border-amber-500/40 bg-amber-500/5 text-amber-600 hover:bg-amber-500/10 transition-colors"
+                    data-testid={`tag-suggestion-${tag}`}
+                  >
+                    <Plus className="h-3 w-3" />
+                    {tag}
+                    <div className="flex ml-1 gap-0.5">
+                      <button
+                        onClick={() => handleAddSuggestionAsMain(tag)}
+                        className="px-1 py-0.5 text-[10px] rounded bg-primary/20 hover:bg-primary/30 transition-colors"
+                        title="Dodaj jako główny"
+                      >
+                        G
+                      </button>
+                      <button
+                        onClick={() => handleAddSuggestionAsAdditional(tag)}
+                        className="px-1 py-0.5 text-[10px] rounded bg-muted hover:bg-muted/80 transition-colors"
+                        title="Dodaj jako dodatkowy"
+                      >
+                        D
+                      </button>
+                    </div>
+                  </Badge>
+                ))}
+              </div>
+            )}
+            {!suggestionsLoading && allSuggestions.length === 0 && suggestions && (
+              <p className="text-xs text-muted-foreground italic">
+                Wszystkie sugestie zostały już dodane
+              </p>
+            )}
+            {suggestions?.suggestedCategory && (
+              <p className="text-xs text-muted-foreground">
+                Sugerowana kategoria: <span className="text-foreground font-medium">{suggestions.suggestedCategory}</span>
+              </p>
+            )}
+          </div>
+        )}
+
         {/* Main Tags */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">

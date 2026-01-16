@@ -1,33 +1,58 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { useQuery } from "@apollo/client/react";
+import { useQuery, useMutation } from "@apollo/client/react";
 import { useUser } from "@clerk/nextjs";
 import { ShieldCheck, Search, RefreshCw } from "lucide-react";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { VerificationStatsCards } from "@/components/verification/VerificationStatsCards";
 import { VerificationTaskCard } from "@/components/verification/VerificationTaskCard";
+import { ReviewerAchievements } from "@/components/verification/ReviewerAchievements";
+import { VerificationIntro } from "@/components/verification/VerificationIntro";
 import { useSystemRole } from "@/hooks/useSystemRole";
 
 import { GET_USER_BY_CLERK_ID_QUERY } from "@/graphql/queries/users.queries";
 import {
   GET_PENDING_EXERCISES_QUERY,
-  GET_EXERCISES_BY_STATUS_QUERY,
-  GET_EXERCISE_STATUS_STATS_QUERY,
+  GET_CHANGES_REQUESTED_EXERCISES_QUERY,
+  GET_VERIFICATION_STATS_QUERY,
 } from "@/graphql/queries/adminExercises.queries";
+import {
+  SCAN_EXERCISE_REPOSITORY_MUTATION,
+  IMPORT_EXERCISES_TO_REVIEW_MUTATION,
+} from "@/graphql/mutations/adminExercises.mutations";
 import type { UserByClerkIdResponse } from "@/types/apollo";
 import type {
-  GetPendingExercisesResponse,
-  GetExercisesByStatusResponse,
-  GetExerciseStatusStatsResponse,
+  GetPendingReviewExercisesResponse,
+  GetChangesRequestedExercisesResponse,
+  GetVerificationStatsResponse,
   AdminExercise,
   ContentStatus,
 } from "@/graphql/types/adminExercise.types";
+
+// Types for repository scan and import
+interface RepositoryScanResult {
+  success: boolean;
+  totalInRepository: number;
+  newExercisesCount: number;
+  existingCount: number;
+  message: string;
+}
+
+interface ImportToReviewResult {
+  success: boolean;
+  totalToImport: number;
+  importedCount: number;
+  failedCount: number;
+  message: string;
+  errors: string[];
+}
 
 export default function VerificationPage() {
   const { user: clerkUser } = useUser();
@@ -35,6 +60,7 @@ export default function VerificationPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState<"pending" | "changes" | "all">("pending");
   const [statusFilter, setStatusFilter] = useState<ContentStatus | null>(null);
+  const [scanResult, setScanResult] = useState<RepositoryScanResult | null>(null);
 
   // Get user data
   const { data: userData } = useQuery<UserByClerkIdResponse>(GET_USER_BY_CLERK_ID_QUERY, {
@@ -46,35 +72,84 @@ export default function VerificationPage() {
     clerkUser?.firstName ||
     "Weryfikator";
 
-  // Get exercise stats
-  const { data: statsData, loading: statsLoading, refetch: refetchStats } = useQuery<GetExerciseStatusStatsResponse>(
-    GET_EXERCISE_STATUS_STATS_QUERY,
+  // Get verification stats
+  const { data: statsData, loading: statsLoading, refetch: refetchStats } = useQuery<GetVerificationStatsResponse>(
+    GET_VERIFICATION_STATS_QUERY,
     { skip: !canReviewExercises }
   );
 
   // Get pending exercises
-  const { data: pendingData, loading: pendingLoading, refetch: refetchPending } = useQuery<GetPendingExercisesResponse>(
+  const { data: pendingData, loading: pendingLoading, refetch: refetchPending } = useQuery<GetPendingReviewExercisesResponse>(
     GET_PENDING_EXERCISES_QUERY,
     { skip: !canReviewExercises || activeTab !== "pending" }
   );
 
   // Get exercises with changes requested
-  const { data: changesData, loading: changesLoading, refetch: refetchChanges } = useQuery<GetExercisesByStatusResponse>(
-    GET_EXERCISES_BY_STATUS_QUERY,
+  const { data: changesData, loading: changesLoading, refetch: refetchChanges } = useQuery<GetChangesRequestedExercisesResponse>(
+    GET_CHANGES_REQUESTED_EXERCISES_QUERY,
+    { skip: !canReviewExercises || activeTab !== "changes" }
+  );
+
+  // Scan repository mutation
+  const [scanRepository, { loading: scanning }] = useMutation<{ scanExerciseRepository: RepositoryScanResult }>(
+    SCAN_EXERCISE_REPOSITORY_MUTATION,
     {
-      variables: { status: "CHANGES_REQUESTED" },
-      skip: !canReviewExercises || activeTab !== "changes",
+      onCompleted: (data) => {
+        setScanResult(data.scanExerciseRepository);
+        if (data.scanExerciseRepository.success) {
+          if (data.scanExerciseRepository.newExercisesCount > 0) {
+            toast.success(`Znaleziono ${data.scanExerciseRepository.newExercisesCount} nowych ćwiczeń do zaimportowania.`);
+          } else {
+            toast.info("Wszystkie ćwiczenia z repozytorium są już w bazie.");
+          }
+        } else {
+          toast.error(data.scanExerciseRepository.message || "Błąd skanowania");
+        }
+      },
+      onError: (error) => {
+        toast.error(`Błąd skanowania: ${error.message}`);
+      },
     }
   );
+
+  // Import to review mutation
+  const [importToReview, { loading: importing }] = useMutation<{ importExercisesToReview: ImportToReviewResult }>(
+    IMPORT_EXERCISES_TO_REVIEW_MUTATION,
+    {
+      onCompleted: (data) => {
+        const result = data.importExercisesToReview;
+        if (result.success) {
+          toast.success(result.message || `Zaimportowano ${result.importedCount} ćwiczeń do weryfikacji.`);
+          setScanResult(null); // Reset scan result
+          // Refetch queries
+          refetchStats();
+          refetchPending();
+        } else {
+          toast.error(result.message || "Błąd importowania");
+        }
+      },
+      onError: (error) => {
+        toast.error(`Błąd importowania: ${error.message}`);
+      },
+    }
+  );
+
+  const handleScanRepository = () => {
+    scanRepository();
+  };
+
+  const handleImportToReview = () => {
+    importToReview();
+  };
 
   // Combine and filter exercises based on active tab
   const exercises = useMemo(() => {
     let list: AdminExercise[] = [];
-    
+
     if (activeTab === "pending") {
-      list = pendingData?.pendingExercises || [];
+      list = pendingData?.pendingReviewExercises || [];
     } else if (activeTab === "changes") {
-      list = changesData?.exercisesByStatus || [];
+      list = changesData?.changesRequestedExercises || [];
     }
 
     // Apply search filter
@@ -118,14 +193,36 @@ export default function VerificationPage() {
     );
   }
 
-  const stats = statsData?.exerciseStatusStats || null;
+  const stats = statsData?.verificationStats || null;
   const pendingCount = stats?.pendingReview || 0;
   const changesCount = stats?.changesRequested || 0;
 
+  // Check if there are tasks to do
+  const hasTasks = pendingCount + changesCount > 0;
+
+  // CLEAN VIEW: No tasks to verify - show simplified intro screen
+  if (!statsLoading && !hasTasks) {
+    return (
+      <div className="space-y-6">
+        <VerificationIntro
+          userName={userName}
+          scanResult={scanResult}
+          onScan={handleScanRepository}
+          onImport={handleImportToReview}
+          isScanning={scanning}
+          isImporting={importing}
+        />
+        {/* Show achievements only if user has review history */}
+        <ReviewerAchievements showOnlyIfHasHistory />
+      </div>
+    );
+  }
+
+  // FULL VIEW: There are tasks to verify
   return (
     <div className="space-y-6">
-      {/* Hero Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+      {/* Hero Header with compact achievements */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="text-2xl lg:text-3xl font-bold text-foreground tracking-tight">
             Centrum Weryfikacji
@@ -134,16 +231,20 @@ export default function VerificationPage() {
             Cześć {userName}, dzięki Tobie baza ćwiczeń jest bezpieczna i profesjonalna.
           </p>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleRefresh}
-          disabled={isLoading}
-          className="gap-2"
-        >
-          <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
-          Odśwież
-        </Button>
+        <div className="flex items-center gap-3 flex-wrap sm:flex-nowrap">
+          {/* Compact achievements in header */}
+          <ReviewerAchievements variant="compact" />
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleRefresh}
+            disabled={isLoading}
+            className="gap-2"
+          >
+            <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
+            Odśwież
+          </Button>
+        </div>
       </div>
 
       {/* Stats Cards */}

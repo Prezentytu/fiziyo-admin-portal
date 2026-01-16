@@ -59,8 +59,8 @@ export const ADMIN_EXERCISE_FRAGMENT = gql`
  * Used in verification queue
  */
 export const GET_PENDING_EXERCISES_QUERY = gql`
-  query GetPendingExercises {
-    pendingExercises {
+  query GetPendingReviewExercises {
+    pendingReviewExercises {
       ...AdminExerciseFragment
     }
   }
@@ -68,12 +68,12 @@ export const GET_PENDING_EXERCISES_QUERY = gql`
 `;
 
 /**
- * Get exercises by specific status
- * Used for filtering in tabs (PendingReview, ChangesRequested, etc.)
+ * Get exercises with changes requested
+ * Used in verification queue
  */
-export const GET_EXERCISES_BY_STATUS_QUERY = gql`
-  query GetExercisesByStatus($status: ContentStatus!) {
-    exercisesByStatus(status: $status) {
+export const GET_CHANGES_REQUESTED_EXERCISES_QUERY = gql`
+  query GetChangesRequestedExercises {
+    changesRequestedExercises {
       ...AdminExerciseFragment
     }
   }
@@ -81,13 +81,24 @@ export const GET_EXERCISES_BY_STATUS_QUERY = gql`
 `;
 
 /**
- * Get exercise status statistics
+ * Get approved exercises (ready to publish)
+ */
+export const GET_APPROVED_EXERCISES_QUERY = gql`
+  query GetApprovedExercises {
+    approvedExercises {
+      ...AdminExerciseFragment
+    }
+  }
+  ${ADMIN_EXERCISE_FRAGMENT}
+`;
+
+/**
+ * Get exercise verification statistics
  * Used in dashboard stats cards
  */
-export const GET_EXERCISE_STATUS_STATS_QUERY = gql`
-  query GetExerciseStatusStats {
-    exerciseStatusStats {
-      draft
+export const GET_VERIFICATION_STATS_QUERY = gql`
+  query GetVerificationStats {
+    verificationStats {
       pendingReview
       changesRequested
       approved
@@ -121,4 +132,33 @@ export const GET_EXERCISES_WITH_UNCATEGORIZED_TAGS_QUERY = gql`
     }
   }
   ${ADMIN_EXERCISE_FRAGMENT}
+`;
+
+/**
+ * Get reviewer statistics for gamification
+ * Used in "Twoje Wpływy" section
+ */
+export const GET_REVIEWER_STATS_QUERY = gql`
+  query GetReviewerStats {
+    reviewerStats {
+      totalApproved
+      totalRejected
+      currentStreak
+      total
+    }
+  }
+`;
+
+/**
+ * Get suggested tags for an exercise
+ * AI-powered tag suggestions based on exercise content
+ */
+export const GET_SUGGESTED_TAGS_QUERY = gql`
+  query GetSuggestedTags($exerciseId: String!) {
+    suggestedTags(exerciseId: $exerciseId) {
+      mainTags
+      additionalTags
+      suggestedCategory
+    }
+  }
 `;

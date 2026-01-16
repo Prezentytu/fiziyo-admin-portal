@@ -793,3 +793,32 @@ export const DELETE_EXERCISE_IMAGE_MUTATION = gql`
     deleteExerciseImage(exerciseId: $exerciseId, imageUrl: $imageUrl)
   }
 `;
+
+/**
+ * Mutacja do synchronizacji opublikowanych ćwiczeń systemowych do organizacji
+ * Kopiuje TYLKO Published ćwiczenia z bazy FiziYo, których jeszcze nie ma w organizacji
+ */
+export const SYNC_PUBLISHED_EXERCISES_MUTATION = gql`
+  mutation SyncPublishedExercises($organizationId: String!) {
+    syncPublishedExercises(organizationId: $organizationId) {
+      success
+      addedCount
+      skippedCount
+      totalAvailable
+      message
+    }
+  }
+`;
+
+/**
+ * Query do sprawdzenia ile nowych ćwiczeń jest dostępnych do synchronizacji
+ */
+export const CHECK_SYNC_AVAILABILITY_QUERY = gql`
+  query CheckSyncAvailability($organizationId: String!) {
+    checkSyncAvailability(organizationId: $organizationId) {
+      totalPublished
+      alreadyInOrganization
+      newAvailable
+    }
+  }
+`;

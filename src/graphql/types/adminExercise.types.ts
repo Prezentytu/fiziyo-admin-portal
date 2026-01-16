@@ -11,7 +11,7 @@
  * Exercise content status in the verification workflow
  * Matches backend ContentStatus enum
  */
-export type ContentStatus = 
+export type ContentStatus =
   | 'DRAFT'           // Robocze - widzi tylko twórca
   | 'PENDING_REVIEW'  // Zgłoszone do weryfikacji
   | 'CHANGES_REQUESTED' // Odrzucone z uwagami
@@ -30,11 +30,10 @@ export type RejectionReason =
   | 'OTHER';                  // Inne
 
 // ============================================
-// Exercise Status Stats
+// Verification Stats (from GetVerificationStats)
 // ============================================
 
-export interface ExerciseStatusStats {
-  draft: number;
+export interface VerificationStats {
   pendingReview: number;
   changesRequested: number;
   approved: number;
@@ -119,41 +118,36 @@ export interface GetExercisesByStatusVariables {
 
 export interface ApproveExerciseVariables {
   exerciseId: string;
-  notes?: string | null;
+  reviewNotes?: string | null;
 }
 
 export interface RejectExerciseVariables {
   exerciseId: string;
-  notes: string;
+  rejectionReason: string;
 }
 
-export interface BulkApproveExercisesVariables {
+export interface BatchApproveExercisesVariables {
   exerciseIds: string[];
-}
-
-export interface BulkRejectExercisesVariables {
-  exerciseIds: string[];
-  notes: string;
-}
-
-export interface ResubmitForReviewVariables {
-  exerciseId: string;
 }
 
 // ============================================
 // Query Responses
 // ============================================
 
-export interface GetPendingExercisesResponse {
-  pendingExercises: AdminExercise[];
+export interface GetPendingReviewExercisesResponse {
+  pendingReviewExercises: AdminExercise[];
 }
 
-export interface GetExercisesByStatusResponse {
-  exercisesByStatus: AdminExercise[];
+export interface GetChangesRequestedExercisesResponse {
+  changesRequestedExercises: AdminExercise[];
 }
 
-export interface GetExerciseStatusStatsResponse {
-  exerciseStatusStats: ExerciseStatusStats;
+export interface GetApprovedExercisesResponse {
+  approvedExercises: AdminExercise[];
+}
+
+export interface GetVerificationStatsResponse {
+  verificationStats: VerificationStats;
 }
 
 // ============================================
@@ -168,14 +162,52 @@ export interface RejectExerciseResponse {
   rejectExercise: AdminExercise;
 }
 
-export interface BulkApproveExercisesResponse {
-  bulkApproveExercises: BulkOperationResult;
+export interface BatchApproveExercisesResponse {
+  batchApproveExercises: {
+    success: boolean;
+    processedCount: number;
+    totalRequested: number;
+    errors: string[];
+  };
 }
 
-export interface BulkRejectExercisesResponse {
-  bulkRejectExercises: BulkOperationResult;
+export interface PublishApprovedExercisesResponse {
+  publishApprovedExercises: {
+    success: boolean;
+    publishedCount: number;
+    message?: string;
+  };
 }
 
-export interface ResubmitForReviewResponse {
-  resubmitForReview: AdminExercise;
+// ============================================
+// Reviewer Stats (Gamification)
+// ============================================
+
+export interface ReviewerStats {
+  totalApproved: number;
+  totalRejected: number;
+  currentStreak: number;
+  total: number;
+}
+
+export interface GetReviewerStatsResponse {
+  reviewerStats: ReviewerStats;
+}
+
+// ============================================
+// Tag Suggestions (AI)
+// ============================================
+
+export interface TagSuggestions {
+  mainTags: string[];
+  additionalTags: string[];
+  suggestedCategory: string;
+}
+
+export interface GetSuggestedTagsVariables {
+  exerciseId: string;
+}
+
+export interface GetSuggestedTagsResponse {
+  suggestedTags: TagSuggestions;
 }

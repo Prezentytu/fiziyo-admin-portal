@@ -36,7 +36,7 @@ export function MobileSimulator({ exercise, className }: MobileSimulatorProps) {
         <div className="relative bg-zinc-900 rounded-[2.5rem] p-3 shadow-2xl">
           {/* Notch */}
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-24 h-6 bg-zinc-900 rounded-b-2xl z-10" />
-          
+
           {/* Screen */}
           <div className="relative bg-zinc-950 rounded-[2rem] overflow-hidden aspect-[9/19.5]">
             {/* Status bar */}

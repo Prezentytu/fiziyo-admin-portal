@@ -3,7 +3,7 @@
 import { useState, useCallback } from 'react';
 import { useQuery, useMutation } from '@apollo/client/react';
 import { useRouter } from 'next/navigation';
-import { Plus, Dumbbell, LayoutGrid, List, Search } from 'lucide-react';
+import { Plus, Dumbbell, LayoutGrid, List, Search, Download, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
@@ -22,7 +22,7 @@ import { cn } from '@/lib/utils';
 import { GET_ORGANIZATION_EXERCISES_QUERY } from '@/graphql/queries/exercises.queries';
 import { GET_EXERCISE_TAGS_BY_ORGANIZATION_QUERY } from '@/graphql/queries/exerciseTags.queries';
 import { GET_TAG_CATEGORIES_BY_ORGANIZATION_QUERY } from '@/graphql/queries/tagCategories.queries';
-import { DELETE_EXERCISE_MUTATION } from '@/graphql/mutations/exercises.mutations';
+import { DELETE_EXERCISE_MUTATION, SYNC_PUBLISHED_EXERCISES_MUTATION, CHECK_SYNC_AVAILABILITY_QUERY } from '@/graphql/mutations/exercises.mutations';
 import { matchesSearchQuery, matchesAnyText } from '@/utils/textUtils';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { useExerciseBuilder, type BuilderExercise } from '@/contexts/ExerciseBuilderContext';
@@ -93,6 +93,40 @@ export default function ExercisesPage() {
       },
     ],
   });
+
+  // Sync availability query
+  const { data: syncData, refetch: refetchSyncAvailability } = useQuery(CHECK_SYNC_AVAILABILITY_QUERY, {
+    variables: { organizationId },
+    skip: !organizationId,
+  });
+
+  // Sync exercises mutation
+  const [syncExercises, { loading: syncing }] = useMutation(SYNC_PUBLISHED_EXERCISES_MUTATION, {
+    refetchQueries: [
+      { query: GET_ORGANIZATION_EXERCISES_QUERY, variables: { organizationId } },
+    ],
+    onCompleted: (data) => {
+      const result = data?.syncPublishedExercises;
+      if (result?.success) {
+        if (result.addedCount > 0) {
+          toast.success(result.message || `Dodano ${result.addedCount} ćwiczeń z bazy FiziYo`);
+        } else {
+          toast.info(result.message || 'Wszystkie ćwiczenia są już dostępne');
+        }
+        refetchSyncAvailability();
+      }
+    },
+    onError: (error) => {
+      toast.error(`Błąd synchronizacji: ${error.message}`);
+    },
+  });
+
+  const newExercisesAvailable = syncData?.checkSyncAvailability?.newAvailable || 0;
+
+  const handleSyncExercises = async () => {
+    if (!organizationId) return;
+    await syncExercises({ variables: { organizationId } });
+  };
 
   const rawExercises: Exercise[] = (data as OrganizationExercisesResponse)?.organizationExercises || [];
   const tags = (tagsData as ExerciseTagsResponse)?.exerciseTags || [];
@@ -227,24 +261,73 @@ export default function ExercisesPage() {
               onClick={() => setIsDialogOpen(true)}
               disabled={!organizationId}
               data-testid="exercise-create-btn"
-              className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary via-primary to-primary-dark p-5 text-left transition-all duration-300 hover:shadow-xl hover:shadow-primary/20 hover:scale-[1.02] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex-1 sm:max-w-sm"
+              className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary via-primary to-primary-dark p-5 text-left transition-all duration-300 hover:shadow-xl hover:shadow-primary/20 hover:scale-[1.02] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex-1 sm:max-w-xs"
             >
               <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
               <div className="absolute -top-24 -right-24 w-48 h-48 bg-white/10 rounded-full blur-3xl group-hover:bg-white/20 transition-all duration-500" />
 
               <div className="relative flex items-center gap-4">
                 <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm shrink-0 group-hover:scale-110 transition-transform duration-300">
-                  <Dumbbell className="h-5 w-5 text-white" />
+                  <Plus className="h-5 w-5 text-white" />
                 </div>
                 <div className="min-w-0 flex-1">
                   <h3 className="text-base font-bold text-white">
                     Dodaj ćwiczenie
                   </h3>
                   <p className="text-sm text-white/70">
-                    Nowe ćwiczenie w bibliotece
+                    Utwórz własne
                   </p>
                 </div>
-                <Plus className="h-5 w-5 text-white/60 group-hover:text-white transition-colors shrink-0" />
+              </div>
+            </button>
+
+            {/* Sync Exercises Button */}
+            <button
+              onClick={handleSyncExercises}
+              disabled={!organizationId || syncing || newExercisesAvailable === 0}
+              data-testid="exercise-sync-btn"
+              className={cn(
+                "group relative overflow-hidden rounded-2xl p-5 text-left transition-all duration-300 cursor-pointer flex-1 sm:max-w-xs",
+                newExercisesAvailable > 0
+                  ? "bg-gradient-to-br from-violet-500 via-purple-500 to-purple-600 hover:shadow-xl hover:shadow-purple-500/20 hover:scale-[1.02]"
+                  : "bg-surface border border-border/40",
+                "disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+              )}
+            >
+              {newExercisesAvailable > 0 && (
+                <>
+                  <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                  <div className="absolute -top-24 -right-24 w-48 h-48 bg-white/10 rounded-full blur-3xl group-hover:bg-white/20 transition-all duration-500" />
+                </>
+              )}
+
+              <div className="relative flex items-center gap-4">
+                <div className={cn(
+                  "flex h-11 w-11 items-center justify-center rounded-xl shrink-0 group-hover:scale-110 transition-transform duration-300",
+                  newExercisesAvailable > 0 ? "bg-white/20 backdrop-blur-sm" : "bg-muted"
+                )}>
+                  {syncing ? (
+                    <Download className={cn("h-5 w-5 animate-bounce", newExercisesAvailable > 0 ? "text-white" : "text-muted-foreground")} />
+                  ) : (
+                    <Sparkles className={cn("h-5 w-5", newExercisesAvailable > 0 ? "text-white" : "text-muted-foreground")} />
+                  )}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <h3 className={cn("text-base font-bold", newExercisesAvailable > 0 ? "text-white" : "text-foreground")}>
+                    {syncing ? 'Ładowanie...' : 'Baza FiziYo'}
+                  </h3>
+                  <p className={cn("text-sm", newExercisesAvailable > 0 ? "text-white/70" : "text-muted-foreground")}>
+                    {newExercisesAvailable > 0
+                      ? `${newExercisesAvailable} nowych ćwiczeń`
+                      : 'Wszystko aktualne'
+                    }
+                  </p>
+                </div>
+                {newExercisesAvailable > 0 && (
+                  <Badge className="bg-white/20 text-white border-0 text-xs">
+                    +{newExercisesAvailable}
+                  </Badge>
+                )}
               </div>
             </button>
 

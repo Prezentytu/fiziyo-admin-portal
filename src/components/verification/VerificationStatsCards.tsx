@@ -4,10 +4,10 @@ import { Clock, CheckCircle2, AlertTriangle, FileCheck } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
-import type { ExerciseStatusStats } from "@/graphql/types/adminExercise.types";
+import type { VerificationStats } from "@/graphql/types/adminExercise.types";
 
 interface VerificationStatsCardsProps {
-  stats: ExerciseStatusStats | null;
+  stats: VerificationStats | null;
   isLoading?: boolean;
   activeFilter?: string | null;
   onFilterChange?: (filter: string | null) => void;

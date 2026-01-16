@@ -31,7 +31,7 @@ function getStatusBadge(status: ContentStatus) {
 
 function getQualityIndicators(exercise: AdminExercise) {
   const indicators: { label: string; type: "warning" | "info" }[] = [];
-  
+
   if (!exercise.videoUrl && !exercise.gifUrl) {
     indicators.push({ label: "Brak wideo", type: "warning" });
   }
@@ -44,13 +44,13 @@ function getQualityIndicators(exercise: AdminExercise) {
   if (!exercise.mainTags || exercise.mainTags.length === 0) {
     indicators.push({ label: "Brak tagów", type: "warning" });
   }
-  
+
   return indicators;
 }
 
 function formatRelativeTime(dateString?: string): string {
   if (!dateString) return "";
-  
+
   const date = new Date(dateString);
   const now = new Date();
   const diffMs = now.getTime() - date.getTime();
@@ -100,7 +100,7 @@ export function VerificationTaskCard({ exercise, className }: VerificationTaskCa
             ) : (
               <ImagePlaceholder type="exercise" className="h-full" iconClassName="h-12 w-12" />
             )}
-            
+
             {/* Status badge overlay */}
             <div className="absolute top-3 left-3">
               <Badge className={cn("border", statusBadge.className)}>
