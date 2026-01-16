@@ -162,3 +162,103 @@ export const GET_SUGGESTED_TAGS_QUERY = gql`
     }
   }
 `;
+
+// ============================================
+// Exercise Relationships (Graph) Queries
+// ============================================
+
+/**
+ * Get exercise relationships (regression, progression)
+ * Backend returns ExerciseRelationTarget directly (flat structure)
+ * @param exerciseId - ID of the exercise
+ */
+export const GET_EXERCISE_RELATIONSHIPS_QUERY = gql`
+  query GetExerciseRelationships($exerciseId: String!) {
+    exerciseRelationships(exerciseId: $exerciseId) {
+      exerciseId
+      regression {
+        id
+        name
+        thumbnailUrl
+        gifUrl
+        difficultyLevel
+        isVerified
+        isAISuggested
+      }
+      progression {
+        id
+        name
+        thumbnailUrl
+        gifUrl
+        difficultyLevel
+        isVerified
+        isAISuggested
+      }
+    }
+  }
+`;
+
+/**
+ * Get AI-suggested candidates for relation
+ * Uses DifficultyLevel and ProgressionFamilyId to find similar exercises
+ * @param exerciseId - ID of the exercise
+ * @param relationType - REGRESSION or PROGRESSION
+ * @param limit - Max number of candidates
+ */
+export const GET_RELATION_CANDIDATES_QUERY = gql`
+  query GetRelationCandidates(
+    $exerciseId: String!
+    $relationType: ExerciseRelationType!
+    $limit: Int
+  ) {
+    relationCandidates(
+      exerciseId: $exerciseId
+      relationType: $relationType
+      limit: $limit
+    ) {
+      exerciseId
+      relationType
+      candidates {
+        id
+        name
+        thumbnailUrl
+        gifUrl
+        difficultyLevel
+        isSameFamily
+        mainTags
+      }
+    }
+  }
+`;
+
+/**
+ * Search exercises for relation assignment
+ * Used in "Smart Search" popover
+ * @param searchQuery - Search query
+ * @param excludeExerciseId - ID to exclude (current exercise)
+ * @param difficultyLevel - Optional difficulty filter
+ * @param limit - Max results
+ */
+export const SEARCH_EXERCISES_FOR_RELATION_QUERY = gql`
+  query SearchExercisesForRelation(
+    $searchQuery: String!
+    $excludeExerciseId: String
+    $difficultyLevel: DifficultyLevel
+    $limit: Int
+  ) {
+    searchExercisesForRelation(
+      searchQuery: $searchQuery
+      excludeExerciseId: $excludeExerciseId
+      difficultyLevel: $difficultyLevel
+      limit: $limit
+    ) {
+      id
+      name
+      thumbnailUrl
+      gifUrl
+      difficultyLevel
+      mainTags
+      type
+    }
+  }
+`;

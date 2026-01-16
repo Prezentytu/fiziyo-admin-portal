@@ -32,9 +32,9 @@ export function VerificationStickyFooter({
     <TooltipProvider>
       <div
         className={cn(
-          "fixed bottom-0 left-0 right-0 lg:left-64 z-40",
+          "sticky bottom-0 z-40",
           "bg-background/95 backdrop-blur-md border-t border-border/60",
-          "px-4 py-4 lg:px-8",
+          "px-4 py-3 sm:py-4 lg:px-8",
           className
         )}
       >

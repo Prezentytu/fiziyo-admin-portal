@@ -164,7 +164,7 @@ export function MobileSimulator({ exercise, className }: MobileSimulatorProps) {
         <div className="flex gap-2 mt-4 overflow-x-auto max-w-[320px] pb-2">
           {allImages.map((img, idx) => (
             <button
-              key={img}
+              key={`${img}-${idx}`}
               onClick={() => setSelectedImageIndex(idx)}
               className={cn(
                 "shrink-0 w-12 h-12 rounded-lg overflow-hidden border-2 transition-all",

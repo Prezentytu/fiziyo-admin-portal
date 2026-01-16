@@ -41,10 +41,15 @@ export function getMediaUrl(relativeOrFullUrl: string | null | undefined): strin
 }
 
 /**
- * Konwertuje tablicę URL-ów mediów
+ * Konwertuje tablicę URL-ów mediów i usuwa duplikaty
  */
 export function getMediaUrls(urls: (string | null | undefined)[]): string[] {
-  return urls.map((url) => getMediaUrl(url)).filter((url): url is string => url !== null);
+  const processed = urls
+    .map((url) => getMediaUrl(url))
+    .filter((url): url is string => url !== null);
+
+  // Usuń duplikaty zachowując kolejność
+  return [...new Set(processed)];
 }
 
 /**

@@ -211,3 +211,108 @@ export interface GetSuggestedTagsVariables {
 export interface GetSuggestedTagsResponse {
   suggestedTags: TagSuggestions;
 }
+
+// ============================================
+// Exercise Relationships (Graph)
+// ============================================
+
+/**
+ * Typ relacji między ćwiczeniami
+ */
+export type ExerciseRelationType = 'REGRESSION' | 'PROGRESSION' | 'ALTERNATIVE' | 'VARIATION';
+
+/**
+ * Poziom trudności ćwiczenia (dla walidacji relacji)
+ */
+export type DifficultyLevel = 'BEGINNER' | 'EASY' | 'MEDIUM' | 'HARD' | 'EXPERT';
+
+/**
+ * Minimalna reprezentacja ćwiczenia dla relacji
+ */
+export interface ExerciseRelationTarget {
+  id: string;
+  name: string;
+  thumbnailUrl?: string;
+  gifUrl?: string;
+  videoUrl?: string;
+  difficultyLevel?: DifficultyLevel;
+  mainTags?: string[];
+  type?: string;
+}
+
+/**
+ * Pełna relacja między ćwiczeniami
+ */
+export interface ExerciseRelation {
+  id: string;
+  sourceExerciseId: string;
+  targetExerciseId: string;
+  relationType: ExerciseRelationType;
+  targetExercise: ExerciseRelationTarget;
+  confidence?: number; // 0-1, jak pewna jest sugestia AI
+  isAISuggested?: boolean;
+  isVerified?: boolean;
+  createdAt?: string;
+  verifiedAt?: string;
+  verifiedById?: string;
+}
+
+/**
+ * Relacje ćwiczenia (regresja + progresja)
+ */
+export interface ExerciseRelationships {
+  regression?: ExerciseRelation | null;
+  progression?: ExerciseRelation | null;
+  alternatives?: ExerciseRelation[];
+  variations?: ExerciseRelation[];
+}
+
+/**
+ * Kandydat do relacji (sugestia AI)
+ */
+export interface RelationCandidate {
+  exercise: ExerciseRelationTarget;
+  confidence: number;
+  reason?: string; // np. "Podobne tagi", "Podobna nazwa", "Embeddings similarity"
+}
+
+// ============================================
+// Relationship Mutations Variables
+// ============================================
+
+export interface SetExerciseRelationVariables {
+  sourceExerciseId: string;
+  targetExerciseId: string;
+  relationType: ExerciseRelationType;
+}
+
+export interface RemoveExerciseRelationVariables {
+  sourceExerciseId: string;
+  relationType: ExerciseRelationType;
+}
+
+export interface GetRelationCandidatesVariables {
+  exerciseId: string;
+  relationType: ExerciseRelationType;
+  limit?: number;
+}
+
+// ============================================
+// Relationship Query/Mutation Responses
+// ============================================
+
+export interface GetExerciseRelationshipsResponse {
+  exerciseRelationships: ExerciseRelationships;
+}
+
+export interface GetRelationCandidatesResponse {
+  relationCandidates: RelationCandidate[];
+}
+
+export interface SetExerciseRelationResponse {
+  setExerciseRelation: ExerciseRelation;
+}
+
+export interface RemoveExerciseRelationResponse {
+  removeExerciseRelation: boolean;
+}

@@ -628,6 +628,79 @@ await expect(page.getByTestId(/^exercise-card-/)).toHaveCount(5);
 | `verification-approve-notes-input` | Textarea notatki (opcjonalna) | `ApproveDialog.tsx` |
 | `verification-approve-confirm-btn` | Przycisk potwierdzenia zatwierdzenia | `ApproveDialog.tsx` |
 
+#### Inline Editing Components (NEW)
+
+| data-testid | Element | Plik |
+|-------------|---------|------|
+| `verification-details-panel` | Panel szczegółów ćwiczenia | `ExerciseDetailsPanel.tsx` |
+| `verification-details-name` | Inline edit: Nazwa | `ExerciseDetailsPanel.tsx` |
+| `verification-details-type` | Inline select: Typ | `ExerciseDetailsPanel.tsx` |
+| `verification-details-side` | Inline select: Strona | `ExerciseDetailsPanel.tsx` |
+| `verification-details-sets` | Clickable stat: Serie | `ExerciseDetailsPanel.tsx` |
+| `verification-details-reps` | Clickable stat: Powtórzenia | `ExerciseDetailsPanel.tsx` |
+| `verification-details-duration` | Clickable stat: Czas | `ExerciseDetailsPanel.tsx` |
+| `verification-details-rest` | Inline edit: Przerwa | `ExerciseDetailsPanel.tsx` |
+| `verification-details-tempo` | Inline edit: Tempo | `ExerciseDetailsPanel.tsx` |
+| `verification-details-audiocue` | Inline edit: Audio cue | `ExerciseDetailsPanel.tsx` |
+| `verification-details-media-toggle` | Toggle: Media | `ExerciseDetailsPanel.tsx` |
+| `verification-details-advanced-toggle` | Toggle: Zaawansowane | `ExerciseDetailsPanel.tsx` |
+
+#### Tag Smart Chips (NEW)
+
+| data-testid | Element | Plik |
+|-------------|---------|------|
+| `verification-main-tags` | Tagi główne | `TagSmartChips.tsx` |
+| `verification-main-tags-ai-btn` | Przycisk AI sugestii (główne) | `TagSmartChips.tsx` |
+| `verification-main-tags-add-btn` | Dodaj tag (główne) | `TagSmartChips.tsx` |
+| `verification-main-tags-remove-{tag}` | Usuń tag | `TagSmartChips.tsx` |
+| `verification-main-tags-ghost-{tag}` | Ghost chip (AI sugestia) | `TagSmartChips.tsx` |
+| `verification-additional-tags` | Tagi dodatkowe | `TagSmartChips.tsx` |
+| `verification-additional-tags-ai-btn` | Przycisk AI sugestii (dodatkowe) | `TagSmartChips.tsx` |
+| `verification-additional-tags-add-btn` | Dodaj tag (dodatkowe) | `TagSmartChips.tsx` |
+
+#### Inline Description (NEW)
+
+| data-testid | Element | Plik |
+|-------------|---------|------|
+| `verification-description` | Panel opisu | `InlineDescription.tsx` |
+| `verification-description-textarea` | Textarea opisu | `InlineDescription.tsx` |
+| `verification-description-ai-btn` | Przycisk AI rephrase | `InlineDescription.tsx` |
+| `verification-description-ai-accept-btn` | Akceptuj sugestię AI | `InlineDescription.tsx` |
+| `verification-description-ai-reject-btn` | Odrzuć sugestię AI | `InlineDescription.tsx` |
+| `verification-description-save-btn` | Zapisz opis | `InlineDescription.tsx` |
+
+#### Publish Guardrails (NEW)
+
+| data-testid | Element | Plik |
+|-------------|---------|------|
+| `verification-guardrails` | Panel walidacji | `PublishGuardrails.tsx` |
+
+#### Changes Summary (NEW)
+
+| data-testid | Element | Plik |
+|-------------|---------|------|
+| `verification-changes-summary` | Historia zmian | `ChangesSummary.tsx` |
+
+#### Sticky Footer V2 (NEW)
+
+| data-testid | Element | Plik |
+|-------------|---------|------|
+| `verification-sticky-footer` | Sticky footer | `VerificationStickyFooterV2.tsx` |
+
+#### Relationship Manager - Knowledge Graph (NEW)
+
+| data-testid | Element | Plik |
+|-------------|---------|------|
+| `verification-relationships` | Panel relacji (Drabina Progresji) | `RelationshipManager.tsx` |
+| `verification-relationships-regression-slot` | Slot regresji (łatwiejsze) | `RelationshipManager.tsx` |
+| `verification-relationships-progression-slot` | Slot progresji (trudniejsze) | `RelationshipManager.tsx` |
+| `verification-relationships-regression-slot-add-btn` | Dodaj regresję | `RelationSlot.tsx` |
+| `verification-relationships-progression-slot-add-btn` | Dodaj progresję | `RelationSlot.tsx` |
+| `verification-relationships-search-popover` | Popover wyszukiwania | `ExerciseSearchPopover.tsx` |
+| `verification-relationships-search-input` | Input wyszukiwania | `ExerciseSearchPopover.tsx` |
+| `verification-relationships-search-result-{id}` | Wynik wyszukiwania | `ExerciseSearchPopover.tsx` |
+| `verification-relationships-ai-candidate-{id}` | Kandydat AI | `ExerciseSearchPopover.tsx` |
+
 ### 16. Wspólne komponenty (common-)
 
 | data-testid | Element | Plik |

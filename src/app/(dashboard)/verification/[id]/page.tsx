@@ -1,26 +1,31 @@
 "use client";
 
-import { use, useState, useCallback, useEffect } from "react";
+import { use, useState, useCallback, useEffect, useMemo } from "react";
 import { useQuery, useMutation } from "@apollo/client/react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, FileText, Sparkles, Keyboard } from "lucide-react";
+import { ArrowLeft, FileText } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { MobileSimulator } from "@/components/verification/MobileSimulator";
 import { QualityChecklist, type QualityChecks } from "@/components/verification/QualityChecklist";
-import { TagRefinementPanel } from "@/components/verification/TagRefinementPanel";
-import { VerificationStickyFooter } from "@/components/verification/VerificationStickyFooter";
 import { RejectReasonDialog } from "@/components/verification/RejectReasonDialog";
 import { ApproveDialog } from "@/components/verification/ApproveDialog";
+
+// NEW Inline Editing Components
+import { ExerciseDetailsPanel } from "@/components/verification/ExerciseDetailsPanel";
+import { TagSmartChips } from "@/components/verification/TagSmartChips";
+import { InlineDescription } from "@/components/verification/InlineDescription";
+import { RelationshipManager } from "@/components/verification/RelationshipManager";
+import { VerificationStickyFooterV2 } from "@/components/verification/VerificationStickyFooterV2";
+import { PublishGuardrails, useExerciseValidation } from "@/components/verification/PublishGuardrails";
+
 import { useSystemRole } from "@/hooks/useSystemRole";
+import { useVerificationHotkeys } from "@/hooks/useVerificationHotkeys";
 
 import { GET_EXERCISE_BY_ID_QUERY } from "@/graphql/queries/exercises.queries";
 import {
@@ -30,6 +35,7 @@ import {
 import {
   APPROVE_EXERCISE_MUTATION,
   REJECT_EXERCISE_MUTATION,
+  UPDATE_EXERCISE_FIELD_MUTATION,
 } from "@/graphql/mutations/adminExercises.mutations";
 import type { ExerciseByIdResponse } from "@/types/apollo";
 import type {
@@ -39,6 +45,7 @@ import type {
   RejectExerciseResponse,
   GetPendingReviewExercisesResponse,
   GetVerificationStatsResponse,
+  ExerciseRelationTarget,
 } from "@/graphql/types/adminExercise.types";
 
 interface VerificationDetailPageProps {
@@ -59,26 +66,32 @@ export default function VerificationDetailPage({ params }: VerificationDetailPag
     descriptionComplete: null,
     tagsAppropriate: null,
   });
+
+  // Tags state (for local editing)
   const [mainTags, setMainTags] = useState<string[]>([]);
   const [additionalTags, setAdditionalTags] = useState<string[]>([]);
-  const [patientDescription, setPatientDescription] = useState("");
-  const [clinicalDescription, setClinicalDescription] = useState("");
-  const [isInitialized, setIsInitialized] = useState(false);
+
+  // Relations state
+  const [regressionExercise, setRegressionExercise] = useState<ExerciseRelationTarget | null>(null);
+  const [progressionExercise, setProgressionExercise] = useState<ExerciseRelationTarget | null>(null);
+
+  // Save tracking
+  const [lastSavedTime, setLastSavedTime] = useState<Date | null>(null);
+  const [isSavingDraft, setIsSavingDraft] = useState(false);
 
   // Queries
-  const { data, loading, error } = useQuery<ExerciseByIdResponse>(GET_EXERCISE_BY_ID_QUERY, {
+  const { data, loading, error, refetch } = useQuery<ExerciseByIdResponse>(GET_EXERCISE_BY_ID_QUERY, {
     variables: { id },
-    onCompleted: (data) => {
-      if (data?.exerciseById && !isInitialized) {
-        const ex = data.exerciseById as unknown as AdminExercise;
-        setMainTags(ex.mainTags || []);
-        setAdditionalTags(ex.additionalTags || []);
-        setPatientDescription(ex.patientDescription || ex.description || "");
-        setClinicalDescription(ex.clinicalDescription || "");
-        setIsInitialized(true);
-      }
-    },
   });
+
+  // Initialize tags when data loads
+  useEffect(() => {
+    if (data?.exerciseById) {
+      const ex = data.exerciseById as unknown as AdminExercise;
+      setMainTags(ex.mainTags || []);
+      setAdditionalTags(ex.additionalTags || []);
+    }
+  }, [data?.exerciseById]);
 
   // Query for pending exercises (for progress indicator and auto-advance)
   const { data: pendingData } = useQuery<GetPendingReviewExercisesResponse>(GET_PENDING_EXERCISES_QUERY);
@@ -91,6 +104,7 @@ export default function VerificationDetailPage({ params }: VerificationDetailPag
   const currentIndex = pendingExercises.findIndex((ex) => ex.id === id);
   const totalPending = statsData?.verificationStats?.pendingReview || pendingExercises.length;
   const positionInQueue = currentIndex >= 0 ? currentIndex + 1 : null;
+  const remainingCount = totalPending - (positionInQueue || 0);
 
   // Get next exercise ID for auto-advance
   const getNextExerciseId = useCallback((): string | null => {
@@ -99,6 +113,14 @@ export default function VerificationDetailPage({ params }: VerificationDetailPag
     }
     return pendingExercises[currentIndex + 1]?.id || null;
   }, [currentIndex, pendingExercises]);
+
+  // Prefetch next exercise
+  const nextExerciseId = useMemo(() => getNextExerciseId(), [getNextExerciseId]);
+  useEffect(() => {
+    if (nextExerciseId) {
+      router.prefetch(`/verification/${nextExerciseId}`);
+    }
+  }, [nextExerciseId, router]);
 
   // Mutations
   const [approveExercise, { loading: approving }] = useMutation<ApproveExerciseResponse>(
@@ -121,14 +143,87 @@ export default function VerificationDetailPage({ params }: VerificationDetailPag
     }
   );
 
+  const [updateExerciseField] = useMutation(UPDATE_EXERCISE_FIELD_MUTATION, {
+    onCompleted: () => {
+      setLastSavedTime(new Date());
+    },
+    onError: (error) => {
+      toast.error(`Błąd zapisu: ${error.message}`);
+    },
+  });
+
   const exercise = data?.exerciseById as unknown as AdminExercise | null;
+
+  // Validation
+  const { canPublish, hasBlockingErrors, validationRules, validationResults } = useExerciseValidation(
+    exercise || ({} as AdminExercise)
+  );
+
+  // Check if all quality checks are passed
+  const allChecksPassed = Object.values(qualityChecks).every((v) => v === true);
+  const canApprove = allChecksPassed && canPublish;
+
+  // Handle field update (inline editing)
+  const handleFieldUpdate = useCallback(
+    async (field: string, value: unknown) => {
+      if (!exercise) return;
+
+      setIsSavingDraft(true);
+      try {
+        await updateExerciseField({
+          variables: {
+            exerciseId: id,
+            field,
+            value,
+          },
+          optimisticResponse: {
+            updateExerciseField: {
+              __typename: "Exercise",
+              id: exercise.id,
+              [field]: value,
+            },
+          },
+        });
+        await refetch();
+      } finally {
+        setIsSavingDraft(false);
+      }
+    },
+    [exercise, id, updateExerciseField, refetch]
+  );
+
+  // Handle tags update
+  const handleMainTagsChange = useCallback(
+    async (newTags: string[]) => {
+      setMainTags(newTags);
+      await handleFieldUpdate("mainTags", newTags);
+    },
+    [handleFieldUpdate]
+  );
+
+  const handleAdditionalTagsChange = useCallback(
+    async (newTags: string[]) => {
+      setAdditionalTags(newTags);
+      await handleFieldUpdate("additionalTags", newTags);
+    },
+    [handleFieldUpdate]
+  );
+
+  // Relations change handler
+  const handleRelationsChange = useCallback(
+    (relations: { regression: ExerciseRelationTarget | null; progression: ExerciseRelationTarget | null }) => {
+      setRegressionExercise(relations.regression);
+      setProgressionExercise(relations.progression);
+    },
+    []
+  );
 
   // Handlers with auto-advance
   const handleApprove = useCallback(
     async (notes: string | null) => {
       try {
         await approveExercise({
-          variables: { exerciseId: id, notes },
+          variables: { exerciseId: id, reviewNotes: notes },
         });
         toast.success("Ćwiczenie zostało zatwierdzone i opublikowane!");
         setIsApproveDialogOpen(false);
@@ -148,12 +243,20 @@ export default function VerificationDetailPage({ params }: VerificationDetailPag
     [approveExercise, id, router, getNextExerciseId]
   );
 
+  const handleApproveAndNext = useCallback(() => {
+    if (canApprove) {
+      setIsApproveDialogOpen(true);
+    } else {
+      toast.error("Sprawdź wymagania przed zatwierdzeniem");
+    }
+  }, [canApprove]);
+
   const handleReject = useCallback(
     async (reason: RejectionReason, notes: string) => {
       try {
         const fullNotes = `[${reason}] ${notes}`;
         await rejectExercise({
-          variables: { exerciseId: id, notes: fullNotes },
+          variables: { exerciseId: id, rejectionReason: fullNotes },
         });
         toast.success("Ćwiczenie zostało odrzucone z uwagami");
         setIsRejectDialogOpen(false);
@@ -174,50 +277,28 @@ export default function VerificationDetailPage({ params }: VerificationDetailPag
   );
 
   const handleSkip = useCallback(() => {
-    router.push("/verification");
-  }, [router]);
+    const nextId = getNextExerciseId();
+    if (nextId) {
+      router.push(`/verification/${nextId}`);
+    } else {
+      router.push("/verification");
+    }
+  }, [router, getNextExerciseId]);
 
-  // Check if all quality checks are passed
-  const allChecksPassed = Object.values(qualityChecks).every((v) => v === true);
+  const handleSaveDraft = useCallback(() => {
+    toast.success("Szkic zapisany");
+    setLastSavedTime(new Date());
+  }, []);
 
   // Keyboard shortcuts
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // Don't trigger shortcuts when typing in inputs/textareas
-      if (
-        e.target instanceof HTMLInputElement ||
-        e.target instanceof HTMLTextAreaElement
-      ) {
-        return;
-      }
-
-      // Ctrl+Enter = Open Approve dialog (if checks passed)
-      if (e.ctrlKey && e.key === "Enter" && allChecksPassed && !isApproveDialogOpen && !isRejectDialogOpen) {
-        e.preventDefault();
-        setIsApproveDialogOpen(true);
-      }
-
-      // Ctrl+Backspace = Open Reject dialog
-      if (e.ctrlKey && e.key === "Backspace" && !isApproveDialogOpen && !isRejectDialogOpen) {
-        e.preventDefault();
-        setIsRejectDialogOpen(true);
-      }
-
-      // Escape = Skip (close dialogs first or navigate away)
-      if (e.key === "Escape") {
-        if (isApproveDialogOpen) {
-          setIsApproveDialogOpen(false);
-        } else if (isRejectDialogOpen) {
-          setIsRejectDialogOpen(false);
-        } else {
-          handleSkip();
-        }
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [allChecksPassed, isApproveDialogOpen, isRejectDialogOpen, handleSkip]);
+  useVerificationHotkeys({
+    onApproveAndNext: handleApproveAndNext,
+    onReject: () => setIsRejectDialogOpen(true),
+    onSaveDraft: handleSaveDraft,
+    onSkip: handleSkip,
+    canApprove: canApprove,
+    enabled: !isApproveDialogOpen && !isRejectDialogOpen,
+  });
 
   // Access denied
   if (!roleLoading && !canReviewExercises) {
@@ -235,14 +316,23 @@ export default function VerificationDetailPage({ params }: VerificationDetailPag
   // Loading
   if (loading) {
     return (
-      <div className="flex h-[calc(100vh-4rem)] flex-col lg:flex-row overflow-hidden -m-6">
-        <div className="w-full lg:w-[400px] bg-zinc-950 p-8 flex items-center justify-center">
-          <Skeleton className="w-[280px] h-[560px] rounded-[2.5rem]" />
-        </div>
-        <div className="flex-1 p-8 space-y-6">
-          <Skeleton className="h-8 w-64" />
-          <Skeleton className="h-48 w-full" />
-          <Skeleton className="h-48 w-full" />
+      <div className="min-h-[calc(100vh-4rem)] flex flex-col -m-6">
+        <div className="flex-1 flex flex-col lg:flex-row">
+          <div className="w-full lg:w-[420px] bg-zinc-950 p-4 sm:p-6 lg:p-8 border-b lg:border-b-0 lg:border-r border-border/20">
+            <div className="flex items-center justify-between mb-6">
+              <Skeleton className="h-8 w-32" />
+              <Skeleton className="h-4 w-24" />
+            </div>
+            <div className="flex justify-center">
+              <Skeleton className="w-[280px] h-[560px] rounded-[2.5rem]" />
+            </div>
+          </div>
+          <div className="flex-1 p-4 sm:p-6 lg:p-8 space-y-6">
+            <Skeleton className="h-8 w-64" />
+            <Skeleton className="h-48 w-full" />
+            <Skeleton className="h-48 w-full" />
+            <Skeleton className="h-32 w-full" />
+          </div>
         </div>
       </div>
     );
@@ -268,56 +358,57 @@ export default function VerificationDetailPage({ params }: VerificationDetailPag
   }
 
   return (
-    <div className="flex h-[calc(100vh-4rem)] flex-col lg:flex-row overflow-hidden -m-6">
-      {/* Left Column: Mobile Preview */}
-      <div className="w-full lg:w-[420px] bg-zinc-950 border-r border-border/20 flex-shrink-0 overflow-y-auto">
-        <div className="p-6 lg:p-8">
-          {/* Progress indicator + Back button */}
-          <div className="flex items-center justify-between mb-6">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => router.push("/verification")}
-              className="text-zinc-400 hover:text-white -ml-2"
-            >
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Powrót do listy
-            </Button>
+    <div className="min-h-[calc(100vh-4rem)] flex flex-col -m-6">
+      {/* Main content area */}
+      <div className="flex-1 flex flex-col lg:flex-row">
+        {/* Left Column: Mobile Preview */}
+        <div className="w-full lg:w-[420px] bg-zinc-950 border-b lg:border-b-0 lg:border-r border-border/20 flex-shrink-0">
+          <div className="p-4 sm:p-6 lg:p-8 flex flex-col h-full">
+            {/* Progress indicator + Back button */}
+            <div className="flex items-center justify-between gap-4 mb-6">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => router.push("/verification")}
+                className="text-zinc-400 hover:text-white -ml-2"
+                data-testid="verification-back-btn"
+              >
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Powrót do listy
+              </Button>
 
-            {/* Progress indicator */}
-            {positionInQueue && totalPending > 0 && (
-              <div className="flex items-center gap-3">
-                <div className="text-xs text-zinc-500">
-                  <span className="text-zinc-300 font-semibold">{positionInQueue}</span>
-                  <span> z </span>
-                  <span className="text-zinc-300 font-semibold">{totalPending}</span>
-                  <span className="ml-1">oczekujących</span>
+              {/* Progress indicator */}
+              {positionInQueue && totalPending > 0 && (
+                <div className="flex items-center gap-2 text-right">
+                  <div className="text-xs text-zinc-500">
+                    <span className="text-zinc-300 font-semibold">{positionInQueue}</span>
+                    <span> z </span>
+                    <span className="text-zinc-300 font-semibold">{totalPending}</span>
+                    <span className="ml-1 hidden sm:inline">oczekujących</span>
+                  </div>
+                  <div className="w-16 sm:w-24 h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-primary rounded-full transition-all duration-300"
+                      style={{ width: `${(positionInQueue / totalPending) * 100}%` }}
+                    />
+                  </div>
                 </div>
-                <div className="w-24 h-1.5 bg-zinc-800 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-primary rounded-full transition-all duration-300"
-                    style={{ width: `${(positionInQueue / totalPending) * 100}%` }}
-                  />
-                </div>
-              </div>
-            )}
+              )}
+            </div>
+
+            {/* Phone simulator - always centered */}
+            <div className="flex-1 flex items-start justify-center">
+              <MobileSimulator exercise={exercise} />
+            </div>
           </div>
-
-          {/* Phone simulator */}
-          <MobileSimulator exercise={exercise} />
         </div>
-      </div>
 
-      {/* Right Column: Expert Panel */}
-      <div className="flex-1 flex flex-col min-h-0 bg-background">
-        <ScrollArea className="flex-1">
-          <div className="p-6 lg:p-8 pb-32 space-y-6">
-            {/* Header */}
+        {/* Right Column: Expert Panel (NEW Inline Editing) */}
+        <div className="flex-1 bg-background overflow-y-auto pb-24">
+          <div className="p-4 sm:p-6 lg:p-8 space-y-6">
+            {/* Header with status */}
             <div className="space-y-2">
-              <div className="flex items-center gap-3">
-                <h1 className="text-2xl font-bold text-foreground">
-                  {exercise.name}
-                </h1>
+              <div className="flex items-center gap-3 flex-wrap">
                 <Badge
                   variant="outline"
                   className={
@@ -334,12 +425,12 @@ export default function VerificationDetailPage({ params }: VerificationDetailPag
                     ? "Wymaga poprawek"
                     : exercise.status}
                 </Badge>
+                {exercise.createdBy && (
+                  <span className="text-sm text-muted-foreground">
+                    Autor: {exercise.createdBy.fullname || exercise.createdBy.email}
+                  </span>
+                )}
               </div>
-              {exercise.createdBy && (
-                <p className="text-sm text-muted-foreground">
-                  Autor: {exercise.createdBy.fullname || exercise.createdBy.email}
-                </p>
-              )}
             </div>
 
             {/* Previous review notes */}
@@ -359,6 +450,13 @@ export default function VerificationDetailPage({ params }: VerificationDetailPag
               </Card>
             )}
 
+            {/* NEW: Exercise Details Panel (Inline Editing) */}
+            <ExerciseDetailsPanel
+              exercise={exercise}
+              onFieldChange={handleFieldUpdate}
+              data-testid="verification-details-panel"
+            />
+
             {/* Quality Checklist */}
             <QualityChecklist
               exercise={exercise}
@@ -366,71 +464,72 @@ export default function VerificationDetailPage({ params }: VerificationDetailPag
               onChecksChange={setQualityChecks}
             />
 
-            {/* Tag Refinement */}
-            <TagRefinementPanel
-              exercise={exercise}
-              mainTags={mainTags}
-              additionalTags={additionalTags}
-              onMainTagsChange={setMainTags}
-              onAdditionalTagsChange={setAdditionalTags}
-            />
-
-            {/* Description Editor */}
+            {/* NEW: Tag Smart Chips (Main Tags) */}
             <Card className="border-border/60">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base font-semibold flex items-center gap-2">
-                  <FileText className="h-5 w-5 text-primary" />
-                  Opisy ćwiczenia
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="patientDesc">Opis dla pacjenta</Label>
-                  <Textarea
-                    id="patientDesc"
-                    placeholder="Prosty, zrozumiały opis dla pacjenta..."
-                    value={patientDescription}
-                    onChange={(e) => setPatientDescription(e.target.value)}
-                    rows={4}
-                    className="resize-none"
-                  />
-                  <div className="flex items-center justify-between">
-                    <p className="text-xs text-muted-foreground">
-                      {patientDescription.length} znaków
-                    </p>
-                    <Button variant="ghost" size="sm" className="h-7 text-xs gap-1">
-                      <Sparkles className="h-3 w-3 text-primary" />
-                      Popraw styl z AI
-                    </Button>
-                  </div>
-                </div>
+              <CardContent className="p-4 space-y-4">
+                <TagSmartChips
+                  exerciseId={exercise.id}
+                  exerciseName={exercise.name}
+                  exerciseDescription={exercise.patientDescription || exercise.description}
+                  tags={mainTags}
+                  onTagsChange={handleMainTagsChange}
+                  tagType="main"
+                  label="Tagi główne (anatomiczne)"
+                  data-testid="verification-main-tags"
+                />
 
-                <div className="space-y-2">
-                  <Label htmlFor="clinicalDesc">Opis kliniczny (dla fizjo)</Label>
-                  <Textarea
-                    id="clinicalDesc"
-                    placeholder="Profesjonalny opis medyczny..."
-                    value={clinicalDescription}
-                    onChange={(e) => setClinicalDescription(e.target.value)}
-                    rows={3}
-                    className="resize-none"
-                  />
-                </div>
+                <TagSmartChips
+                  exerciseId={exercise.id}
+                  exerciseName={exercise.name}
+                  exerciseDescription={exercise.patientDescription || exercise.description}
+                  tags={additionalTags}
+                  onTagsChange={handleAdditionalTagsChange}
+                  tagType="additional"
+                  label="Tagi dodatkowe"
+                  data-testid="verification-additional-tags"
+                />
               </CardContent>
             </Card>
-          </div>
-        </ScrollArea>
 
-        {/* Sticky Footer */}
-        <VerificationStickyFooter
-          onReject={() => setIsRejectDialogOpen(true)}
-          onSkip={handleSkip}
-          onApprove={() => setIsApproveDialogOpen(true)}
-          isRejectLoading={rejecting}
-          isApproveLoading={approving}
-          canApprove={allChecksPassed}
-        />
+            {/* NEW: Inline Description */}
+            <InlineDescription
+              exerciseId={exercise.id}
+              exerciseName={exercise.name}
+              label="Opis dla pacjenta"
+              value={exercise.patientDescription || exercise.description || ""}
+              onCommit={(value) => handleFieldUpdate("patientDescription", value)}
+              placeholder="Prosty, zrozumiały opis dla pacjenta..."
+              data-testid="verification-description"
+            />
+
+            {/* NEW: Relationship Manager (Knowledge Graph) */}
+            <RelationshipManager
+              exercise={exercise}
+              onRelationsChange={handleRelationsChange}
+              data-testid="verification-relationships"
+            />
+
+            {/* NEW: Publish Guardrails */}
+            <PublishGuardrails
+              exercise={exercise}
+              validationRules={validationRules}
+            />
+          </div>
+        </div>
       </div>
+
+      {/* NEW: Sticky Footer V2 */}
+      <VerificationStickyFooterV2
+        onReject={() => setIsRejectDialogOpen(true)}
+        onSkip={handleSkip}
+        onApproveAndNext={handleApproveAndNext}
+        isRejecting={rejecting}
+        isApproving={approving}
+        canApprove={canApprove}
+        remainingTasksCount={remainingCount}
+        isSavingDraft={isSavingDraft}
+        lastSavedTime={lastSavedTime}
+      />
 
       {/* Dialogs */}
       <RejectReasonDialog
