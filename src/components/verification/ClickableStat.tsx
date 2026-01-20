@@ -26,6 +26,8 @@ interface ClickableStatProps {
   icon?: React.ReactNode;
   /** Czy wyłączony */
   disabled?: boolean;
+  /** Compact variant for dense layouts - inline display */
+  variant?: "default" | "compact";
   /** Dodatkowe klasy CSS */
   className?: string;
   /** data-testid dla testów */
@@ -52,6 +54,7 @@ export function ClickableStat({
   onCommit,
   icon,
   disabled = false,
+  variant = "default",
   className,
   "data-testid": testId,
 }: ClickableStatProps) {
@@ -60,6 +63,7 @@ export function ClickableStat({
   const [originalValue, setOriginalValue] = useState<number | null>(value);
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const isCompact = variant === "compact";
 
   // Sync with external value
   useEffect(() => {
@@ -145,6 +149,41 @@ export function ClickableStat({
 
   // Editing mode
   if (status === "editing" || status === "saving") {
+    // Compact editing - inline input only
+    if (isCompact) {
+      return (
+        <div
+          ref={containerRef}
+          className={cn(
+            "flex items-center gap-1.5 px-2 py-1 bg-surface rounded-lg border border-primary transition-all",
+            status === "saving" && "opacity-70",
+            className
+          )}
+          data-testid={testId}
+        >
+          <span className="text-xs text-muted-foreground shrink-0">{label}:</span>
+          <Input
+            ref={inputRef}
+            type="number"
+            value={editValue ?? ""}
+            onChange={handleInputChange}
+            onBlur={handleBlur}
+            onKeyDown={handleKeyDown}
+            min={min}
+            max={max}
+            step={step}
+            disabled={status === "saving"}
+            className="h-6 w-14 text-center text-sm font-semibold px-1"
+          />
+          {unit && <span className="text-xs text-muted-foreground">{unit}</span>}
+          {status === "saving" && (
+            <Loader2 className="h-3 w-3 animate-spin text-primary shrink-0" />
+          )}
+        </div>
+      );
+    }
+
+    // Default editing - full panel with slider
     return (
       <div
         ref={containerRef}
@@ -197,7 +236,48 @@ export function ClickableStat({
     );
   }
 
-  // Read mode
+  // Read mode - Compact variant (inline)
+  if (isCompact) {
+    return (
+      <button
+        type="button"
+        onClick={handleStartEdit}
+        onMouseEnter={() => !disabled && setStatus("hover")}
+        onMouseLeave={() => status === "hover" && setStatus("idle")}
+        disabled={disabled}
+        className={cn(
+          "group flex items-center gap-1.5 px-2 py-1 rounded-lg border border-transparent transition-all cursor-pointer",
+          status === "hover" && "border-border/60 bg-surface-light/50",
+          status === "success" && "border-emerald-500/50 bg-emerald-500/5",
+          status === "error" && "border-destructive/50 bg-destructive/5",
+          disabled && "opacity-50 cursor-not-allowed",
+          className
+        )}
+        data-testid={testId}
+      >
+        {icon && <span className="text-muted-foreground">{icon}</span>}
+        <span className="text-xs text-muted-foreground">{label}:</span>
+        <span
+          className={cn(
+            "text-sm font-semibold text-foreground transition-colors",
+            status === "hover" && "text-primary",
+            status === "success" && "text-emerald-500",
+            status === "error" && "text-destructive"
+          )}
+        >
+          {value ?? "—"}
+        </span>
+        {unit && value !== null && (
+          <span className="text-xs text-muted-foreground">{unit}</span>
+        )}
+        {status === "saving" && (
+          <Loader2 className="h-3 w-3 animate-spin text-primary" />
+        )}
+      </button>
+    );
+  }
+
+  // Read mode - Default variant (card)
   return (
     <button
       type="button"

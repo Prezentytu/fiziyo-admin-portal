@@ -4,8 +4,6 @@
 export { VerificationStatsCards } from "./VerificationStatsCards";
 export { VerificationTaskCard } from "./VerificationTaskCard";
 export { VerificationStickyFooter } from "./VerificationStickyFooter";
-export { MobileSimulator } from "./MobileSimulator";
-export { QualityChecklist } from "./QualityChecklist";
 export { TagRefinementPanel } from "./TagRefinementPanel";
 export { RejectReasonDialog } from "./RejectReasonDialog";
 export { ApproveDialog } from "./ApproveDialog";
@@ -29,3 +27,19 @@ export type { ValidationRule, ValidationResult } from "./PublishGuardrails";
 export { RelationSlot } from "./RelationSlot";
 export { ExerciseSearchPopover, ExerciseSearchDialog } from "./ExerciseSearchPopover";
 export { RelationshipManager, useExerciseRelationships, getRelationsForApprove } from "./RelationshipManager";
+
+// Clinical Operator UI - Zero Scroll Layout (2025)
+export { VerificationEditorPanel } from "./VerificationEditorPanel";
+export { ProgressionChain } from "./ProgressionChain";
+export { ClinicalMacrosBar } from "./ClinicalMacrosBar";
+export { MasterVideoPlayer } from "./MasterVideoPlayer";
+
+// Training Design System - Engineering Grade (2025)
+export { AIAnalysisHeader } from "./AIAnalysisHeader";
+export { TrainingParametersGrid } from "./TrainingParametersGrid";
+export { DualDescriptionTabs } from "./DualDescriptionTabs";
+export { QualityChecklist } from "./QualityChecklist";
+export type { QualityChecks } from "./QualityChecklist";
+
+// Legacy (deprecated - use MasterVideoPlayer instead)
+export { MobileSimulator } from "./MobileSimulator";

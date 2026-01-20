@@ -1,6 +1,6 @@
 "use client";
 
-import { Clock, CheckCircle2, AlertTriangle, FileCheck } from "lucide-react";
+import { Clock, AlertTriangle, FileCheck } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
@@ -92,8 +92,7 @@ export function VerificationStatsCards({
 
   if (isLoading || !stats) {
     return (
-      <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">
-        <StatCardSkeleton />
+      <div className="grid gap-3 grid-cols-3">
         <StatCardSkeleton />
         <StatCardSkeleton />
         <StatCardSkeleton />
@@ -102,7 +101,7 @@ export function VerificationStatsCards({
   }
 
   return (
-    <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">
+    <div className="grid gap-3 grid-cols-3">
       <StatCard
         testId="verification-stats-pending"
         label="Oczekujące"
@@ -124,17 +123,6 @@ export function VerificationStatsCards({
         filterKey="CHANGES_REQUESTED"
         isActive={activeFilter === "CHANGES_REQUESTED"}
         onClick={() => handleFilterClick("CHANGES_REQUESTED")}
-      />
-      <StatCard
-        testId="verification-stats-approved"
-        label="Zatwierdzone"
-        value={stats.approved}
-        icon={CheckCircle2}
-        color="text-emerald-500"
-        bgColor="bg-emerald-500/10"
-        filterKey="APPROVED"
-        isActive={activeFilter === "APPROVED"}
-        onClick={() => handleFilterClick("APPROVED")}
       />
       <StatCard
         testId="verification-stats-published"

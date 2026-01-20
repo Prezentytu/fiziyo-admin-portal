@@ -118,3 +118,57 @@ export interface ExerciseImageResponse {
   /** Czy odpowiedź zawiera tylko tekst (bez obrazu) */
   isTextOnly?: boolean;
 }
+
+// ============================================
+// 6. Video Analysis (AI Auto-Analysis dla weryfikacji)
+// ============================================
+
+export type DifficultyLevelType = 'BEGINNER' | 'EASY' | 'MEDIUM' | 'HARD' | 'EXPERT';
+
+export interface AIVideoAnalysisRequest {
+  exerciseId: string;
+  exerciseName: string;
+  videoUrl?: string;
+  existingTags?: string[];
+}
+
+/**
+ * Odpowiedź z AI Video Analysis - używana do auto-wypełniania parametrów ćwiczenia
+ * Na razie używa fallback na getExerciseSuggestion, docelowo będzie analizować wideo
+ */
+export interface AIVideoAnalysisResponse {
+  /** Tempo ćwiczenia w formacie "X-Y-Z" (eccentric-pause-concentric) */
+  tempo: string | null;
+  /** Czas wykonania jednego powtórzenia (sekundy) */
+  executionTime: number | null;
+  /** Opis kliniczny (żargon medyczny, biomechanika) */
+  clinicalDescription: string | null;
+  /** Opis dla pacjenta (prosty język) */
+  patientDescription: string | null;
+  /** Audio cue - tekst lektora do odtworzenia */
+  audioCue: string | null;
+  /** Sugerowane tagi */
+  suggestedTags: string[];
+  /** Poziom trudności */
+  difficultyLevel: DifficultyLevelType | null;
+  /** Przerwa między seriami (sekundy) */
+  restBetweenSets: number | null;
+  /** Przerwa między powtórzeniami (sekundy) */
+  restBetweenReps: number | null;
+  /** Czas przygotowania (sekundy) */
+  preparationTime: number | null;
+  /** Domyślna liczba serii */
+  sets: number | null;
+  /** Domyślna liczba powtórzeń */
+  reps: number | null;
+  /** Domyślny czas trwania (sekundy) */
+  duration: number | null;
+  /** Typ ćwiczenia */
+  type: 'reps' | 'time' | null;
+  /** Strona ciała */
+  side: 'none' | 'left' | 'right' | 'both' | 'alternating' | null;
+  /** Pewność sugestii AI (0-1) */
+  confidence: number;
+  /** Lista pól które zostały wypełnione przez AI */
+  updatedFields: string[];
+}

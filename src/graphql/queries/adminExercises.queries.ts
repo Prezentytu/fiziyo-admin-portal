@@ -81,11 +81,24 @@ export const GET_CHANGES_REQUESTED_EXERCISES_QUERY = gql`
 `;
 
 /**
- * Get approved exercises (ready to publish)
+ * Get approved exercises (ready to publish) - DEPRECATED: use Published status instead
  */
 export const GET_APPROVED_EXERCISES_QUERY = gql`
   query GetApprovedExercises {
     approvedExercises {
+      ...AdminExerciseFragment
+    }
+  }
+  ${ADMIN_EXERCISE_FRAGMENT}
+`;
+
+/**
+ * Get published exercises
+ * Used in verification center to manage published exercises
+ */
+export const GET_PUBLISHED_EXERCISES_QUERY = gql`
+  query GetPublishedExercises {
+    exercisesByStatus(status: PUBLISHED) {
       ...AdminExerciseFragment
     }
   }

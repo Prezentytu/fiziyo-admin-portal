@@ -701,7 +701,48 @@ await expect(page.getByTestId(/^exercise-card-/)).toHaveCount(5);
 | `verification-relationships-search-result-{id}` | Wynik wyszukiwania | `ExerciseSearchPopover.tsx` |
 | `verification-relationships-ai-candidate-{id}` | Kandydat AI | `ExerciseSearchPopover.tsx` |
 
-### 16. Wspólne komponenty (common-)
+### 16. Smart Validation (common-completion-, ghost-field-, smart-accordion-)
+
+#### Completion Bar
+
+| data-testid | Element | Plik |
+|-------------|---------|------|
+| `common-completion-bar` | Pasek postępu wypełnienia formularza | `CompletionBar.tsx` |
+| `common-completion-bar-tooltip` | Tooltip z listą brakujących pól | `CompletionBar.tsx` |
+
+#### Ghost Fields (AI Trigger)
+
+| data-testid | Element | Plik |
+|-------------|---------|------|
+| `ghost-field-description` | GhostField dla opisu | `GhostField.tsx` |
+| `ghost-field-description-manual-btn` | Przycisk ręcznego dodania opisu | `GhostField.tsx` |
+| `ghost-field-media` | GhostField dla mediów | `GhostField.tsx` |
+| `ghost-field-media-manual-btn` | Przycisk ręcznego dodania mediów | `GhostField.tsx` |
+| `ghost-field-tags` | GhostField dla tagów | `GhostField.tsx` |
+| `ghost-field-tags-manual-btn` | Przycisk ręcznego dodania tagów | `GhostField.tsx` |
+| `exercise-ghost-description` | GhostField opisu w CreateExerciseWizard | `CreateExerciseWizard.tsx` |
+| `exercise-ghost-tags` | GhostField tagów w CreateExerciseWizard | `CreateExerciseWizard.tsx` |
+
+#### Smart Accordion (No-Noise Policy)
+
+| data-testid | Element | Plik |
+|-------------|---------|------|
+| `exercise-create-media-accordion` | SmartAccordion dla mediów | `CreateExerciseWizard.tsx` |
+| `exercise-create-media-accordion-trigger` | Trigger akordeon mediów | `CreateExerciseWizard.tsx` |
+| `exercise-create-media-accordion-badge` | Badge braków mediów | `CreateExerciseWizard.tsx` |
+| `exercise-create-notes-accordion` | SmartAccordion dla notatek | `CreateExerciseWizard.tsx` |
+| `exercise-create-notes-accordion-trigger` | Trigger akordeon notatek | `CreateExerciseWizard.tsx` |
+| `exercise-create-notes-accordion-badge` | Badge braków notatek | `CreateExerciseWizard.tsx` |
+
+#### Footer Buttons (Draft vs Publish)
+
+| data-testid | Element | Plik |
+|-------------|---------|------|
+| `exercise-create-cancel-btn` | Przycisk anulowania | `CreateExerciseWizard.tsx` |
+| `exercise-create-save-draft-btn` | Zapisz szkic (aktywny 40%+) | `CreateExerciseWizard.tsx` |
+| `exercise-create-publish-btn` | Opublikuj (aktywny 100%) | `CreateExerciseWizard.tsx` |
+
+### 17. Wspólne komponenty (common-)
 
 | data-testid | Element | Plik |
 |-------------|---------|------|

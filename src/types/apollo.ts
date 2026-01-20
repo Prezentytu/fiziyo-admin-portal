@@ -208,7 +208,7 @@ export interface Exercise {
   organizationId?: string;
   createdAt?: string;
   updatedAt?: string;
-  
+
   // Legacy aliasy (dla kompatybilności wstecznej)
   description?: string;
   exerciseSide?: string;
@@ -225,6 +225,10 @@ export interface Exercise {
 
 export interface OrganizationExercisesResponse {
   organizationExercises: Exercise[];
+}
+
+export interface AvailableExercisesResponse {
+  availableExercises: Exercise[];
 }
 
 export interface ExerciseByIdResponse {

@@ -21,17 +21,21 @@ import { GET_USER_BY_CLERK_ID_QUERY } from "@/graphql/queries/users.queries";
 import {
   GET_PENDING_EXERCISES_QUERY,
   GET_CHANGES_REQUESTED_EXERCISES_QUERY,
+  GET_PUBLISHED_EXERCISES_QUERY,
   GET_VERIFICATION_STATS_QUERY,
 } from "@/graphql/queries/adminExercises.queries";
 import {
   SCAN_EXERCISE_REPOSITORY_MUTATION,
   IMPORT_EXERCISES_TO_REVIEW_MUTATION,
+  UNPUBLISH_EXERCISE_MUTATION,
 } from "@/graphql/mutations/adminExercises.mutations";
 import type { UserByClerkIdResponse } from "@/types/apollo";
 import type {
   GetPendingReviewExercisesResponse,
   GetChangesRequestedExercisesResponse,
+  GetPublishedExercisesResponse,
   GetVerificationStatsResponse,
+  UnpublishExerciseResponse,
   AdminExercise,
   ContentStatus,
 } from "@/graphql/types/adminExercise.types";
@@ -58,7 +62,7 @@ export default function VerificationPage() {
   const { user: clerkUser } = useUser();
   const { canReviewExercises, isLoading: roleLoading } = useSystemRole();
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeTab, setActiveTab] = useState<"pending" | "changes" | "all">("pending");
+  const [activeTab, setActiveTab] = useState<"pending" | "changes" | "published">("pending");
   const [statusFilter, setStatusFilter] = useState<ContentStatus | null>(null);
   const [scanResult, setScanResult] = useState<RepositoryScanResult | null>(null);
 
@@ -88,6 +92,12 @@ export default function VerificationPage() {
   const { data: changesData, loading: changesLoading, refetch: refetchChanges } = useQuery<GetChangesRequestedExercisesResponse>(
     GET_CHANGES_REQUESTED_EXERCISES_QUERY,
     { skip: !canReviewExercises || activeTab !== "changes" }
+  );
+
+  // Get published exercises
+  const { data: publishedData, loading: publishedLoading, refetch: refetchPublished } = useQuery<GetPublishedExercisesResponse>(
+    GET_PUBLISHED_EXERCISES_QUERY,
+    { skip: !canReviewExercises || activeTab !== "published" }
   );
 
   // Scan repository mutation
@@ -142,6 +152,25 @@ export default function VerificationPage() {
     importToReview();
   };
 
+  // Unpublish exercise mutation
+  const [unpublishExercise, { loading: unpublishing }] = useMutation<UnpublishExerciseResponse>(
+    UNPUBLISH_EXERCISE_MUTATION,
+    {
+      onCompleted: () => {
+        toast.success("Ćwiczenie zostało cofnięte do wersji roboczej.");
+        refetchStats();
+        refetchPublished();
+      },
+      onError: (error) => {
+        toast.error(`Błąd cofania publikacji: ${error.message}`);
+      },
+    }
+  );
+
+  const handleUnpublish = (exerciseId: string, reason?: string) => {
+    unpublishExercise({ variables: { exerciseId, reason } });
+  };
+
   // Combine and filter exercises based on active tab
   const exercises = useMemo(() => {
     let list: AdminExercise[] = [];
@@ -150,6 +179,8 @@ export default function VerificationPage() {
       list = pendingData?.pendingReviewExercises || [];
     } else if (activeTab === "changes") {
       list = changesData?.changesRequestedExercises || [];
+    } else if (activeTab === "published") {
+      list = publishedData?.exercisesByStatus || [];
     }
 
     // Apply search filter
@@ -170,14 +201,15 @@ export default function VerificationPage() {
     }
 
     return list;
-  }, [activeTab, pendingData, changesData, searchQuery, statusFilter]);
+  }, [activeTab, pendingData, changesData, publishedData, searchQuery, statusFilter]);
 
-  const isLoading = statsLoading || pendingLoading || changesLoading;
+  const isLoading = statsLoading || pendingLoading || changesLoading || publishedLoading;
 
   const handleRefresh = () => {
     refetchStats();
     refetchPending();
     refetchChanges();
+    refetchPublished();
   };
 
   // Access denied for non-content managers
@@ -196,9 +228,10 @@ export default function VerificationPage() {
   const stats = statsData?.verificationStats || null;
   const pendingCount = stats?.pendingReview || 0;
   const changesCount = stats?.changesRequested || 0;
+  const publishedCount = stats?.published || 0;
 
-  // Check if there are tasks to do
-  const hasTasks = pendingCount + changesCount > 0;
+  // Check if there are tasks to do (pending or changes) or published to manage
+  const hasTasks = pendingCount + changesCount > 0 || publishedCount > 0;
 
   // CLEAN VIEW: No tasks to verify - show simplified intro screen
   if (!statsLoading && !hasTasks) {
@@ -259,7 +292,7 @@ export default function VerificationPage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as typeof activeTab)} className="w-full sm:w-auto">
           <TabsList>
-            <TabsTrigger value="pending" className="gap-2">
+            <TabsTrigger value="pending" className="gap-2" data-testid="verification-tab-pending">
               Oczekujące
               {pendingCount > 0 && (
                 <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-amber-500 px-1.5 text-[10px] font-bold text-white">
@@ -267,11 +300,19 @@ export default function VerificationPage() {
                 </span>
               )}
             </TabsTrigger>
-            <TabsTrigger value="changes" className="gap-2">
+            <TabsTrigger value="changes" className="gap-2" data-testid="verification-tab-changes">
               Do poprawy
               {changesCount > 0 && (
                 <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-orange-500 px-1.5 text-[10px] font-bold text-white">
                   {changesCount > 99 ? "99+" : changesCount}
+                </span>
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="published" className="gap-2" data-testid="verification-tab-published">
+              Opublikowane
+              {publishedCount > 0 && (
+                <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-[10px] font-bold text-primary-foreground">
+                  {publishedCount > 99 ? "99+" : publishedCount}
                 </span>
               )}
             </TabsTrigger>
@@ -312,20 +353,29 @@ export default function VerificationPage() {
               ? "Brak wyników"
               : activeTab === "pending"
               ? "Wszystko zweryfikowane!"
-              : "Brak ćwiczeń do poprawy"
+              : activeTab === "changes"
+              ? "Brak ćwiczeń do poprawy"
+              : "Brak opublikowanych ćwiczeń"
           }
           description={
             searchQuery
               ? "Spróbuj zmienić kryteria wyszukiwania"
               : activeTab === "pending"
               ? "Nie ma ćwiczeń oczekujących na weryfikację. Świetna robota!"
-              : "Wszystkie ćwiczenia wymagające poprawek zostały zaktualizowane."
+              : activeTab === "changes"
+              ? "Wszystkie ćwiczenia wymagające poprawek zostały zaktualizowane."
+              : "Zatwierdź ćwiczenia z zakładki 'Oczekujące' żeby je opublikować."
           }
         />
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 animate-stagger">
           {exercises.map((exercise) => (
-            <VerificationTaskCard key={exercise.id} exercise={exercise} />
+            <VerificationTaskCard
+              key={exercise.id}
+              exercise={exercise}
+              onUnpublish={activeTab === "published" ? handleUnpublish : undefined}
+              isUnpublishing={unpublishing}
+            />
           ))}
         </div>
       )}

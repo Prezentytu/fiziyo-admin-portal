@@ -76,12 +76,15 @@ const DEFAULT_RULES: ValidationRule[] = [
     autoDetect: true,
   },
   {
-    id: "description-min-length",
+    id: "patient-description-required",
     label: "Opis dla pacjenta",
-    description: "Opis musi mieć min. 50 znaków",
+    description: "Opis dla pacjenta musi mieć min. 50 znaków",
     severity: "error",
     category: "content",
-    check: (e) => !!(e.description && e.description.length >= 50),
+    check: (e) => {
+      const desc = e.patientDescription || e.description;
+      return !!(desc && desc.length >= 50);
+    },
     autoDetect: true,
   },
   {
@@ -90,7 +93,19 @@ const DEFAULT_RULES: ValidationRule[] = [
     description: "Opis powinien mieć min. 100 znaków dla lepszego zrozumienia",
     severity: "warning",
     category: "content",
-    check: (e) => !!(e.description && e.description.length >= 100),
+    check: (e) => {
+      const desc = e.patientDescription || e.description;
+      return !!(desc && desc.length >= 100);
+    },
+    autoDetect: true,
+  },
+  {
+    id: "clinical-description",
+    label: "Opis kliniczny",
+    description: "Zalecany opis kliniczny dla profesjonalistów (min. 20 znaków)",
+    severity: "info",
+    category: "content",
+    check: (e) => !!(e.clinicalDescription && e.clinicalDescription.length >= 20),
     autoDetect: true,
   },
 
@@ -150,12 +165,39 @@ const DEFAULT_RULES: ValidationRule[] = [
     autoDetect: true,
   },
   {
+    id: "has-difficulty-level",
+    label: "Poziom trudności",
+    description: "Ćwiczenie musi mieć określony poziom trudności",
+    severity: "error",
+    category: "parameters",
+    check: (e) => !!(e.difficultyLevel && e.difficultyLevel !== ""),
+    autoDetect: true,
+  },
+  {
     id: "has-parameters",
     label: "Parametry domyślne",
     description: "Ćwiczenie powinno mieć serie, powtórzenia lub czas",
     severity: "warning",
     category: "parameters",
-    check: (e) => !!(e.sets || e.reps || e.duration),
+    check: (e) => !!(e.defaultSets || e.defaultReps || e.defaultDuration),
+    autoDetect: true,
+  },
+  {
+    id: "has-tempo",
+    label: "Tempo ćwiczenia",
+    description: "Zalecane jest określenie tempa (np. 2-0-2)",
+    severity: "info",
+    category: "parameters",
+    check: (e) => !!(e.tempo && e.tempo.trim() !== ""),
+    autoDetect: true,
+  },
+  {
+    id: "has-rest-times",
+    label: "Czasy przerw",
+    description: "Zalecane określenie przerw między seriami",
+    severity: "info",
+    category: "parameters",
+    check: (e) => !!(e.defaultRestBetweenSets && e.defaultRestBetweenSets > 0),
     autoDetect: true,
   },
 ];

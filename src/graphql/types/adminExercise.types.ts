@@ -126,6 +126,11 @@ export interface RejectExerciseVariables {
   rejectionReason: string;
 }
 
+export interface UnpublishExerciseVariables {
+  exerciseId: string;
+  reason?: string | null;
+}
+
 export interface BatchApproveExercisesVariables {
   exerciseIds: string[];
 }
@@ -146,6 +151,10 @@ export interface GetApprovedExercisesResponse {
   approvedExercises: AdminExercise[];
 }
 
+export interface GetPublishedExercisesResponse {
+  exercisesByStatus: AdminExercise[];
+}
+
 export interface GetVerificationStatsResponse {
   verificationStats: VerificationStats;
 }
@@ -160,6 +169,10 @@ export interface ApproveExerciseResponse {
 
 export interface RejectExerciseResponse {
   rejectExercise: AdminExercise;
+}
+
+export interface UnpublishExerciseResponse {
+  unpublishExercise: AdminExercise;
 }
 
 export interface BatchApproveExercisesResponse {

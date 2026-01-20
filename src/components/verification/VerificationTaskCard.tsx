@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { Clock, User, AlertCircle, ChevronRight } from "lucide-react";
+import { Clock, User, AlertCircle, ChevronRight, Undo2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { ImagePlaceholder } from "@/components/shared/ImagePlaceholder";
 import { cn } from "@/lib/utils";
 import { getMediaUrl } from "@/utils/mediaUrl";
@@ -12,6 +13,8 @@ import type { AdminExercise, ContentStatus } from "@/graphql/types/adminExercise
 interface VerificationTaskCardProps {
   exercise: AdminExercise;
   className?: string;
+  onUnpublish?: (exerciseId: string, reason?: string) => void;
+  isUnpublishing?: boolean;
 }
 
 function getStatusBadge(status: ContentStatus) {
@@ -64,11 +67,24 @@ function formatRelativeTime(dateString?: string): string {
   return `${Math.floor(diffDays / 7)} tyg. temu`;
 }
 
-export function VerificationTaskCard({ exercise, className }: VerificationTaskCardProps) {
+export function VerificationTaskCard({
+  exercise,
+  className,
+  onUnpublish,
+  isUnpublishing,
+}: VerificationTaskCardProps) {
   const imageUrl = getMediaUrl(exercise.thumbnailUrl || exercise.imageUrl || exercise.images?.[0]);
   const statusBadge = getStatusBadge(exercise.status);
   const qualityIndicators = getQualityIndicators(exercise);
   const hasWarnings = qualityIndicators.some(i => i.type === "warning");
+
+  const handleUnpublish = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (onUnpublish) {
+      onUnpublish(exercise.id);
+    }
+  };
 
   return (
     <Link href={`/verification/${exercise.id}`}>
@@ -166,7 +182,21 @@ export function VerificationTaskCard({ exercise, className }: VerificationTaskCa
                   </div>
                 )}
               </div>
-              <ChevronRight className="h-4 w-4 text-muted-foreground/40 group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
+              {onUnpublish ? (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleUnpublish}
+                  disabled={isUnpublishing}
+                  className="h-7 px-2 text-xs text-muted-foreground hover:text-destructive"
+                  data-testid={`verification-card-${exercise.id}-unpublish-btn`}
+                >
+                  <Undo2 className="h-3 w-3 mr-1" />
+                  Cofnij
+                </Button>
+              ) : (
+                <ChevronRight className="h-4 w-4 text-muted-foreground/40 group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
+              )}
             </div>
           </div>
         </CardContent>

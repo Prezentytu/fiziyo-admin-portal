@@ -28,6 +28,10 @@ interface InlineEditFieldProps {
   max?: number;
   rows?: number;
   disabled?: boolean;
+  /** Ghost variant - looks like text, shows border on hover/focus */
+  variant?: "default" | "ghost";
+  /** Compact size for dense layouts */
+  size?: "default" | "compact";
   "data-testid"?: string;
 }
 
@@ -56,8 +60,12 @@ export function InlineEditField({
   max,
   rows = 3,
   disabled = false,
+  variant = "default",
+  size = "default",
   "data-testid": testId,
 }: InlineEditFieldProps) {
+  const isGhost = variant === "ghost";
+  const isCompact = size === "compact";
   const [status, setStatus] = useState<FieldStatus>("idle");
   const [editValue, setEditValue] = useState<string | number | null>(value);
   const [originalValue, setOriginalValue] = useState<string | number | null>(value);
@@ -175,7 +183,9 @@ export function InlineEditField({
             disabled={status === "saving"}
             className={cn(
               "transition-all resize-none",
-              status === "saving" && "opacity-70"
+              status === "saving" && "opacity-70",
+              isGhost && "border-primary bg-surface focus:bg-surface",
+              isCompact && "text-sm py-1.5"
             )}
           />
         ) : type === "select" && options ? (
@@ -184,7 +194,10 @@ export function InlineEditField({
             onValueChange={handleSelectChange}
             disabled={status === "saving"}
           >
-            <SelectTrigger className={cn(status === "saving" && "opacity-70")}>
+            <SelectTrigger className={cn(
+              status === "saving" && "opacity-70",
+              isCompact && "h-8 text-sm"
+            )}>
               <SelectValue placeholder={placeholder} />
             </SelectTrigger>
             <SelectContent>
@@ -217,7 +230,9 @@ export function InlineEditField({
             disabled={status === "saving"}
             className={cn(
               "transition-all",
-              status === "saving" && "opacity-70"
+              status === "saving" && "opacity-70",
+              isGhost && "border-primary bg-surface focus:bg-surface",
+              isCompact && "h-8 text-sm"
             )}
           />
         )}
@@ -245,8 +260,20 @@ export function InlineEditField({
       onMouseLeave={() => status === "hover" && setStatus("idle")}
       disabled={disabled}
       className={cn(
-        "group flex items-center gap-2 px-2 py-1.5 rounded-md transition-all text-left w-full min-h-[2.25rem]",
-        status === "hover" && "bg-surface-light",
+        "group flex items-center gap-2 rounded-md transition-all text-left w-full",
+        // Size variants
+        isCompact ? "px-1.5 py-1 min-h-[1.75rem] text-sm" : "px-2 py-1.5 min-h-[2.25rem]",
+        // Ghost variant - no background by default
+        isGhost
+          ? cn(
+              "border border-transparent",
+              status === "hover" && "border-border/60 bg-surface-light/50",
+              status === "idle" && "hover:border-border/40"
+            )
+          : cn(
+              status === "hover" && "bg-surface-light"
+            ),
+        // Status colors
         status === "error" && "bg-destructive/10 text-destructive",
         status === "success" && "bg-emerald-500/10",
         disabled && "opacity-50 cursor-not-allowed",
@@ -256,7 +283,7 @@ export function InlineEditField({
     >
       <span
         className={cn(
-          "flex-1 min-w-0",
+          "flex-1 min-w-0 truncate",
           isEmpty && "text-muted-foreground italic"
         )}
       >
@@ -293,6 +320,10 @@ interface InlineEditSelectProps {
   placeholder?: string;
   className?: string;
   disabled?: boolean;
+  /** Ghost variant - minimal border, shows on hover/focus */
+  variant?: "default" | "ghost";
+  /** Compact size for dense layouts */
+  size?: "default" | "compact";
   "data-testid"?: string;
 }
 
@@ -303,10 +334,14 @@ export function InlineEditSelect({
   placeholder,
   className,
   disabled = false,
+  variant = "default",
+  size = "default",
   "data-testid": testId,
 }: InlineEditSelectProps) {
   const [status, setStatus] = useState<"idle" | "saving" | "error" | "success">("idle");
   const [optimisticValue, setOptimisticValue] = useState(value);
+  const isGhost = variant === "ghost";
+  const isCompact = size === "compact";
 
   useEffect(() => {
     if (status === "idle") {
@@ -344,6 +379,11 @@ export function InlineEditSelect({
         <SelectTrigger
           className={cn(
             "transition-all",
+            // Size
+            isCompact && "h-8 text-sm px-2",
+            // Ghost variant
+            isGhost && "border-transparent bg-transparent hover:border-border/60 hover:bg-surface-light/50 focus:border-primary focus:bg-surface",
+            // Status
             status === "saving" && "opacity-70",
             status === "success" && "border-emerald-500/50",
             status === "error" && "border-destructive/50",
@@ -352,7 +392,7 @@ export function InlineEditSelect({
         >
           <SelectValue placeholder={placeholder}>
             {selectedOption && (
-              <span className="flex items-center gap-2">
+              <span className="flex items-center gap-1.5">
                 {selectedOption.icon}
                 {selectedOption.label}
               </span>
@@ -362,7 +402,7 @@ export function InlineEditSelect({
         <SelectContent>
           {options.map((opt) => (
             <SelectItem key={opt.value} value={opt.value}>
-              <span className="flex items-center gap-2">
+              <span className="flex items-center gap-1.5">
                 {opt.icon}
                 {opt.label}
               </span>

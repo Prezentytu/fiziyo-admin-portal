@@ -19,7 +19,7 @@ import { ExerciseBuilderSidebar } from '@/components/exercise-builder/ExerciseBu
 import { ExerciseBuilderFAB } from '@/components/exercise-builder/ExerciseBuilderFAB';
 import { cn } from '@/lib/utils';
 
-import { GET_ORGANIZATION_EXERCISES_QUERY } from '@/graphql/queries/exercises.queries';
+import { GET_AVAILABLE_EXERCISES_QUERY } from '@/graphql/queries/exercises.queries';
 import { GET_EXERCISE_TAGS_BY_ORGANIZATION_QUERY } from '@/graphql/queries/exerciseTags.queries';
 import { GET_TAG_CATEGORIES_BY_ORGANIZATION_QUERY } from '@/graphql/queries/tagCategories.queries';
 import { DELETE_EXERCISE_MUTATION, SYNC_PUBLISHED_EXERCISES_MUTATION, CHECK_SYNC_AVAILABILITY_QUERY } from '@/graphql/mutations/exercises.mutations';
@@ -29,7 +29,7 @@ import { useExerciseBuilder, type BuilderExercise } from '@/contexts/ExerciseBui
 import { createTagsMap, mapExercisesWithTags } from '@/utils/tagUtils';
 import { useDataManagement } from '@/hooks/useDataManagement';
 import type {
-  OrganizationExercisesResponse,
+  AvailableExercisesResponse,
   ExerciseTagsResponse,
   TagCategoriesResponse,
 } from '@/types/apollo';
@@ -66,8 +66,8 @@ export default function ExercisesPage() {
     organizationId,
   });
 
-  // Get exercises
-  const { data, loading, error } = useQuery(GET_ORGANIZATION_EXERCISES_QUERY, {
+  // Get exercises (includes organization, global, and personal exercises)
+  const { data, loading, error } = useQuery(GET_AVAILABLE_EXERCISES_QUERY, {
     variables: { organizationId },
     skip: !organizationId,
   });
@@ -88,7 +88,7 @@ export default function ExercisesPage() {
   const [deleteExercise, { loading: deleting }] = useMutation(DELETE_EXERCISE_MUTATION, {
     refetchQueries: [
       {
-        query: GET_ORGANIZATION_EXERCISES_QUERY,
+        query: GET_AVAILABLE_EXERCISES_QUERY,
         variables: { organizationId },
       },
     ],
@@ -103,7 +103,7 @@ export default function ExercisesPage() {
   // Sync exercises mutation
   const [syncExercises, { loading: syncing }] = useMutation(SYNC_PUBLISHED_EXERCISES_MUTATION, {
     refetchQueries: [
-      { query: GET_ORGANIZATION_EXERCISES_QUERY, variables: { organizationId } },
+      { query: GET_AVAILABLE_EXERCISES_QUERY, variables: { organizationId } },
     ],
     onCompleted: (data) => {
       const result = data?.syncPublishedExercises;
@@ -128,7 +128,7 @@ export default function ExercisesPage() {
     await syncExercises({ variables: { organizationId } });
   };
 
-  const rawExercises: Exercise[] = (data as OrganizationExercisesResponse)?.organizationExercises || [];
+  const rawExercises: Exercise[] = (data as AvailableExercisesResponse)?.availableExercises || [];
   const tags = (tagsData as ExerciseTagsResponse)?.exerciseTags || [];
   const categories = (categoriesData as TagCategoriesResponse)?.tagsByOrganizationId || [];
 

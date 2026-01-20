@@ -10,4 +10,6 @@ export { ImagePlaceholder } from "./ImagePlaceholder";
 export { StatsCard } from "./StatsCard";
 export { FeedbackButton } from "./FeedbackButton";
 export { FeedbackDialog } from "./FeedbackDialog";
-
+export { CompletionBar } from "./CompletionBar";
+export { GhostField } from "./GhostField";
+export { SmartAccordion } from "./SmartAccordion";

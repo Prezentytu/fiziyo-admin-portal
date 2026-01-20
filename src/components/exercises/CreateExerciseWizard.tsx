@@ -44,10 +44,14 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
+import { CompletionBar } from '@/components/shared/CompletionBar';
+import { GhostField } from '@/components/shared/GhostField';
+import { SmartAccordion } from '@/components/shared/SmartAccordion';
 import { MediaUploadSection } from './MediaUploadSection';
 import { TagPicker } from './TagPicker';
 import { AIExerciseSuggestions } from './AIExerciseSuggestions';
 import { cn } from '@/lib/utils';
+import { useFormCompletion, type FieldConfig } from '@/hooks/useFormCompletion';
 
 import { CREATE_EXERCISE_MUTATION, UPLOAD_EXERCISE_IMAGE_MUTATION } from '@/graphql/mutations/exercises.mutations';
 import { GET_ORGANIZATION_EXERCISES_QUERY } from '@/graphql/queries/exercises.queries';
@@ -504,6 +508,117 @@ export function CreateExerciseWizard({
   // Validation
   const isBasicsValid = data.name.trim().length >= 2;
 
+  // Form completion calculation
+  const completionFields: FieldConfig[] = useMemo(() => [
+    {
+      key: 'name',
+      label: 'Nazwa',
+      weight: 40,
+      priority: 'critical',
+      isFilled: data.name.trim().length >= 2
+    },
+    {
+      key: 'description',
+      label: 'Opis',
+      weight: 15,
+      priority: 'recommended',
+      isFilled: data.description.trim().length > 0
+    },
+    {
+      key: 'media',
+      label: 'Media',
+      weight: 20,
+      priority: 'recommended',
+      isFilled: mediaFiles.length > 0 || !!data.videoUrl
+    },
+    {
+      key: 'tags',
+      label: 'Tagi',
+      weight: 15,
+      priority: 'recommended',
+      isFilled: data.mainTags.length > 0
+    },
+    {
+      key: 'params',
+      label: 'Parametry',
+      weight: 10,
+      priority: 'optional',
+      isFilled: true // Always filled with defaults
+    },
+  ], [data.name, data.description, data.mainTags, data.videoUrl, mediaFiles.length]);
+
+  const completion = useFormCompletion(completionFields);
+
+  // AI Description generation handler for GhostField
+  const handleGenerateDescription = useCallback(async () => {
+    if (!aiSuggestion?.description) {
+      // If no AI suggestion yet, trigger it
+      if (data.name.length >= 2) {
+        setIsLoadingAI(true);
+        try {
+          const suggestion = await aiService.getExerciseSuggestion(data.name, tagNames);
+          if (suggestion?.description) {
+            updateField('description', suggestion.description);
+            toast.success('Opis wygenerowany przez AI');
+          }
+        } catch {
+          toast.error('Nie udało się wygenerować opisu');
+        } finally {
+          setIsLoadingAI(false);
+        }
+      }
+    } else {
+      // Use existing AI suggestion
+      updateField('description', aiSuggestion.description);
+      toast.success('Opis z sugestii AI zastosowany');
+    }
+  }, [aiSuggestion, data.name, tagNames, updateField]);
+
+  // AI Tags suggestion handler for GhostField
+  const handleGenerateTags = useCallback(async () => {
+    if (aiSuggestion?.suggestedTags && aiSuggestion.suggestedTags.length > 0) {
+      // Use existing AI suggestion
+      const matchingTags = tags.filter(t =>
+        aiSuggestion.suggestedTags.some(st =>
+          t.name.toLowerCase().includes(st.toLowerCase()) ||
+          st.toLowerCase().includes(t.name.toLowerCase())
+        )
+      );
+      if (matchingTags.length > 0) {
+        updateField('mainTags', matchingTags.slice(0, 3).map(t => t.id));
+        toast.success('Tagi z sugestii AI zastosowane');
+      } else {
+        toast.info('Brak pasujących tagów w organizacji');
+        setOpenSections(prev => ({ ...prev, params: true }));
+      }
+    } else if (data.name.length >= 2) {
+      // Trigger AI suggestion
+      setIsLoadingAI(true);
+      try {
+        const suggestion = await aiService.getExerciseSuggestion(data.name, tagNames);
+        if (suggestion?.suggestedTags && suggestion.suggestedTags.length > 0) {
+          const matchingTags = tags.filter(t =>
+            suggestion.suggestedTags.some(st =>
+              t.name.toLowerCase().includes(st.toLowerCase()) ||
+              st.toLowerCase().includes(t.name.toLowerCase())
+            )
+          );
+          if (matchingTags.length > 0) {
+            updateField('mainTags', matchingTags.slice(0, 3).map(t => t.id));
+            toast.success('Tagi wygenerowane przez AI');
+          } else {
+            toast.info('Brak pasujących tagów - dodaj ręcznie');
+            setOpenSections(prev => ({ ...prev, params: true }));
+          }
+        }
+      } catch {
+        toast.error('Nie udało się wygenerować tagów');
+      } finally {
+        setIsLoadingAI(false);
+      }
+    }
+  }, [aiSuggestion, data.name, tags, tagNames, updateField]);
+
   // Convert file to base64
   const fileToBase64 = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
@@ -603,7 +718,7 @@ export function CreateExerciseWizard({
         }}
       >
         {/* Header */}
-        <DialogHeader className="px-6 pt-6 pb-4 border-b border-border">
+        <DialogHeader className="px-6 pt-6 pb-4 border-b border-border space-y-0">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-emerald-600">
@@ -622,6 +737,17 @@ export function CreateExerciseWizard({
                 </DialogDescription>
               </div>
             </div>
+          </div>
+
+          {/* Completion Bar */}
+          <div className="pt-4">
+            <CompletionBar
+              percentage={completion.percentage}
+              colorStatus={completion.colorStatus}
+              criticalMissing={completion.criticalMissing}
+              recommendedMissing={completion.recommendedMissing}
+              showMilestones={true}
+            />
           </div>
         </DialogHeader>
 
@@ -1005,14 +1131,44 @@ export function CreateExerciseWizard({
                   </div>
                 )}
 
-                {/* Toggle advanced options */}
+                {/* Ghost Fields - AI Triggers for empty recommended fields */}
+                <div className="space-y-3 animate-in fade-in slide-in-from-bottom-2 duration-300 delay-250">
+                  {/* Description GhostField */}
+                  {!data.description && (
+                    <GhostField
+                      type="description"
+                      onAIGenerate={handleGenerateDescription}
+                      onManualAdd={() => setOpenSections(prev => ({ ...prev, params: true }))}
+                      isAILoading={isLoadingAI && !aiSuggestion}
+                      hasAI={true}
+                      testId="exercise-ghost-description"
+                    />
+                  )}
+
+                  {/* Tags GhostField */}
+                  {data.mainTags.length === 0 && (
+                    <GhostField
+                      type="tags"
+                      onAIGenerate={handleGenerateTags}
+                      onManualAdd={() => setOpenSections(prev => ({ ...prev, params: true }))}
+                      isAILoading={isLoadingAI && !aiSuggestion}
+                      hasAI={true}
+                      testId="exercise-ghost-tags"
+                    />
+                  )}
+                </div>
+
+                {/* Toggle advanced options - now using SmartAccordion style button */}
                 <div className="animate-in fade-in slide-in-from-bottom-2 duration-300 delay-300">
                   <Button
                     type="button"
                     variant="ghost"
                     size="sm"
                     onClick={() => setOpenSections(prev => ({ ...prev, params: !prev.params }))}
-                    className="gap-2 w-full justify-center sm:w-auto sm:justify-start"
+                    className={cn(
+                      "gap-2 w-full justify-center sm:w-auto sm:justify-start",
+                      completion.missingCounts.optional > 0 && "text-muted-foreground"
+                    )}
                     data-testid="exercise-create-toggle-params-btn"
                   >
                     <Dumbbell className="h-4 w-4" />
@@ -1295,41 +1451,41 @@ export function CreateExerciseWizard({
                   />
                 </div>
 
-                {/* Dodatkowe media - collapsed by default */}
-                <details className="rounded-xl border border-border/60 bg-surface/50 group">
-                  <summary className="flex items-center gap-2 p-4 cursor-pointer list-none">
-                    <Image className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm font-medium text-muted-foreground">Dodatkowe media</span>
-                    <ChevronDown className="h-4 w-4 text-muted-foreground ml-auto transition-transform group-open:rotate-180" />
-                  </summary>
-                  <div className="px-4 pb-4">
-                    <MediaUploadSection
-                      files={mediaFiles}
-                      onFilesChange={setMediaFiles}
-                      videoUrl={data.videoUrl}
-                      onVideoUrlChange={(url) => updateField('videoUrl', url)}
-                      gifUrl={data.gifUrl}
-                      onGifUrlChange={(url) => updateField('gifUrl', url)}
-                    />
-                  </div>
-                </details>
+                {/* Dodatkowe media - SmartAccordion with No-Noise Policy */}
+                <SmartAccordion
+                  title="Dodatkowe media"
+                  icon={Image}
+                  optionalMissing={mediaFiles.length === 0 && !data.videoUrl ? 1 : 0}
+                  open={openSections.media}
+                  onOpenChange={(open) => setOpenSections(prev => ({ ...prev, media: open }))}
+                  testId="exercise-create-media-accordion"
+                >
+                  <MediaUploadSection
+                    files={mediaFiles}
+                    onFilesChange={setMediaFiles}
+                    videoUrl={data.videoUrl}
+                    onVideoUrlChange={(url) => updateField('videoUrl', url)}
+                    gifUrl={data.gifUrl}
+                    onGifUrlChange={(url) => updateField('gifUrl', url)}
+                  />
+                </SmartAccordion>
 
-                {/* Notatki - collapsed by default */}
-                <details className="rounded-xl border border-border/60 bg-surface/50 group">
-                  <summary className="flex items-center gap-2 p-4 cursor-pointer list-none">
-                    <FileText className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm font-medium text-muted-foreground">Notatki wewnętrzne</span>
-                    <ChevronDown className="h-4 w-4 text-muted-foreground ml-auto transition-transform group-open:rotate-180" />
-                  </summary>
-                  <div className="px-4 pb-4">
-                    <Textarea
-                      value={data.notes}
-                      onChange={(e) => updateField('notes', e.target.value)}
-                      placeholder="Dodatkowe uwagi, modyfikacje, przeciwwskazania..."
-                      className="min-h-[60px] resize-none bg-background/50"
-                    />
-                  </div>
-                </details>
+                {/* Notatki - SmartAccordion with No-Noise Policy */}
+                <SmartAccordion
+                  title="Notatki wewnętrzne"
+                  icon={FileText}
+                  optionalMissing={!data.notes ? 1 : 0}
+                  open={openSections.notes}
+                  onOpenChange={(open) => setOpenSections(prev => ({ ...prev, notes: open }))}
+                  testId="exercise-create-notes-accordion"
+                >
+                  <Textarea
+                    value={data.notes}
+                    onChange={(e) => updateField('notes', e.target.value)}
+                    placeholder="Dodatkowe uwagi, modyfikacje, przeciwwskazania..."
+                    className="min-h-[60px] resize-none bg-background/50"
+                  />
+                </SmartAccordion>
 
               </div>
             )}
@@ -1337,44 +1493,77 @@ export function CreateExerciseWizard({
           </div>
         </div>
 
-        {/* Footer */}
+        {/* Footer - Draft vs Publish */}
         <div className="px-6 py-4 border-t border-border bg-surface/50 flex items-center justify-between gap-3">
           <Button
             type="button"
             variant="ghost"
             onClick={handleCloseAttempt}
             disabled={isSaving}
+            data-testid="exercise-create-cancel-btn"
           >
             Anuluj
           </Button>
 
           <div className="flex items-center gap-2">
+            {/* Save Draft - aktywny gdy nazwa wypełniona (40%+) */}
             <Button
               type="button"
               variant="outline"
               onClick={() => handleSave(true)}
-              disabled={isSaving || !isBasicsValid}
-              className="gap-2"
+              disabled={isSaving || !completion.canSaveDraft}
+              className={cn(
+                "gap-2 border-border hover:border-primary/50 hover:bg-primary/5",
+                !completion.canSaveDraft && "opacity-50"
+              )}
+              title={!completion.canSaveDraft ? "Wpisz nazwę ćwiczenia aby zapisać szkic" : "Zapisz jako szkic i dodaj kolejne"}
+              data-testid="exercise-create-save-draft-btn"
             >
               {isSaving && saveAndAddAnother ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
                 <Plus className="h-4 w-4" />
               )}
-              Zapisz i dodaj kolejne
+              <span className="hidden sm:inline">Zapisz szkic</span>
+              <span className="sm:hidden">Szkic</span>
             </Button>
+
+            {/* Publish - aktywny przy 100% */}
             <Button
               type="button"
               onClick={() => handleSave(false)}
-              disabled={isSaving || !isBasicsValid}
-              className="gap-2 bg-gradient-to-r from-primary to-emerald-600 hover:from-primary/90 hover:to-emerald-600/90"
+              disabled={isSaving || !completion.canSaveDraft}
+              className={cn(
+                "gap-2",
+                completion.canPublish
+                  ? "bg-gradient-to-r from-primary to-emerald-600 hover:from-primary/90 hover:to-emerald-600/90"
+                  : "bg-amber-500 hover:bg-amber-600"
+              )}
+              title={
+                !completion.canSaveDraft
+                  ? "Wpisz nazwę ćwiczenia"
+                  : !completion.canPublish
+                    ? `Brakuje: ${[...completion.recommendedMissing].join(', ')}`
+                    : "Opublikuj ćwiczenie"
+              }
+              data-testid="exercise-create-publish-btn"
             >
               {isSaving && !saveAndAddAnother ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
                 <Check className="h-4 w-4" />
               )}
-              Zapisz ćwiczenie
+              {completion.canPublish ? (
+                <>
+                  <span className="hidden sm:inline">Opublikuj</span>
+                  <span className="sm:hidden">Publikuj</span>
+                </>
+              ) : (
+                <>
+                  <span className="hidden sm:inline">Zapisz ({completion.percentage}%)</span>
+                  <span className="sm:hidden">{completion.percentage}%</span>
+                </>
+              )}
             </Button>
           </div>
         </div>

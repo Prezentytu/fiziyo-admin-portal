@@ -8,21 +8,16 @@ import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/shared/EmptyState";
-import { MobileSimulator } from "@/components/verification/MobileSimulator";
-import { QualityChecklist, type QualityChecks } from "@/components/verification/QualityChecklist";
+import { MasterVideoPlayer } from "@/components/verification/MasterVideoPlayer";
 import { RejectReasonDialog } from "@/components/verification/RejectReasonDialog";
 import { ApproveDialog } from "@/components/verification/ApproveDialog";
 
-// NEW Inline Editing Components
-import { ExerciseDetailsPanel } from "@/components/verification/ExerciseDetailsPanel";
-import { TagSmartChips } from "@/components/verification/TagSmartChips";
-import { InlineDescription } from "@/components/verification/InlineDescription";
-import { RelationshipManager } from "@/components/verification/RelationshipManager";
+// Clinical Operator UI Components - Zero Scroll Layout
+import { VerificationEditorPanel } from "@/components/verification/VerificationEditorPanel";
 import { VerificationStickyFooterV2 } from "@/components/verification/VerificationStickyFooterV2";
-import { PublishGuardrails, useExerciseValidation } from "@/components/verification/PublishGuardrails";
+import { useExerciseValidation } from "@/components/verification/PublishGuardrails";
 
 import { useSystemRole } from "@/hooks/useSystemRole";
 import { useVerificationHotkeys } from "@/hooks/useVerificationHotkeys";
@@ -52,22 +47,34 @@ interface VerificationDetailPageProps {
   params: Promise<{ id: string }>;
 }
 
+/**
+ * VerificationDetailPage - Clinical Operator UI
+ *
+ * Filozofia "Zero Scroll" (Bloomberg Terminal style):
+ * - Wszystko widoczne bez scrollowania na 1366x768
+ * - MasterVideoPlayer zamiast MobileSimulator (pełna wysokość)
+ * - Aggressive compact layout w prawej kolumnie
+ * - Review by Exception - ekspert tylko poprawia błędy
+ * - Checkbox bezpieczeństwa klinicznego w footerze
+ * - Hotkeys dla power users
+ */
 export default function VerificationDetailPage({ params }: VerificationDetailPageProps) {
   const { id } = use(params);
   const router = useRouter();
   const { canReviewExercises, isLoading: roleLoading } = useSystemRole();
 
-  // State
+  // ============================================
+  // STATE
+  // ============================================
+
+  // Dialog states
   const [isRejectDialogOpen, setIsRejectDialogOpen] = useState(false);
   const [isApproveDialogOpen, setIsApproveDialogOpen] = useState(false);
-  const [qualityChecks, setQualityChecks] = useState<QualityChecks>({
-    clinicallyCorrect: null,
-    mediaQuality: null,
-    descriptionComplete: null,
-    tagsAppropriate: null,
-  });
 
-  // Tags state (for local editing)
+  // Clinical safety checkbox (new!)
+  const [clinicalCheckboxChecked, setClinicalCheckboxChecked] = useState(false);
+
+  // Tags state (for local editing before save)
   const [mainTags, setMainTags] = useState<string[]>([]);
   const [additionalTags, setAdditionalTags] = useState<string[]>([]);
 
@@ -79,7 +86,25 @@ export default function VerificationDetailPage({ params }: VerificationDetailPag
   const [lastSavedTime, setLastSavedTime] = useState<Date | null>(null);
   const [isSavingDraft, setIsSavingDraft] = useState(false);
 
-  // Queries
+  // Smart Validation completion state (from VerificationEditorPanel)
+  const [completionData, setCompletionData] = useState<{
+    percentage: number;
+    canSaveDraft: boolean;
+    canPublish: boolean;
+    criticalMissing: string[];
+    recommendedMissing: string[];
+  }>({
+    percentage: 0,
+    canSaveDraft: false,
+    canPublish: false,
+    criticalMissing: [],
+    recommendedMissing: [],
+  });
+
+  // ============================================
+  // QUERIES
+  // ============================================
+
   const { data, loading, error, refetch } = useQuery<ExerciseByIdResponse>(GET_EXERCISE_BY_ID_QUERY, {
     variables: { id },
   });
@@ -90,6 +115,8 @@ export default function VerificationDetailPage({ params }: VerificationDetailPag
       const ex = data.exerciseById as unknown as AdminExercise;
       setMainTags(ex.mainTags || []);
       setAdditionalTags(ex.additionalTags || []);
+      // Reset checkbox when switching exercises
+      setClinicalCheckboxChecked(false);
     }
   }, [data?.exerciseById]);
 
@@ -99,14 +126,64 @@ export default function VerificationDetailPage({ params }: VerificationDetailPag
   // Query for stats
   const { data: statsData } = useQuery<GetVerificationStatsResponse>(GET_VERIFICATION_STATS_QUERY);
 
-  // Calculate progress
+  // ============================================
+  // COMPUTED VALUES
+  // ============================================
+
+  const exercise = data?.exerciseById as unknown as AdminExercise | null;
+
+  // Progress tracking
   const pendingExercises = pendingData?.pendingReviewExercises || [];
   const currentIndex = pendingExercises.findIndex((ex) => ex.id === id);
   const totalPending = statsData?.verificationStats?.pendingReview || pendingExercises.length;
   const positionInQueue = currentIndex >= 0 ? currentIndex + 1 : null;
   const remainingCount = totalPending - (positionInQueue || 0);
 
-  // Get next exercise ID for auto-advance
+  // Validation (using existing hook)
+  const { canPublish: legacyCanPublish, errors: validationErrorRules } = useExerciseValidation(
+    exercise || ({} as AdminExercise),
+    { mainTags, additionalTags }
+  );
+
+  // Convert validation errors to footer format (combine legacy + smart validation)
+  const validationErrors = useMemo(() => {
+    const legacyErrors = validationErrorRules?.map(rule => ({
+      id: rule.id,
+      message: rule.label,
+    })) || [];
+
+    // Add smart validation missing fields as errors
+    const smartErrors = [
+      ...completionData.criticalMissing.map((field, i) => ({
+        id: `smart-critical-${i}`,
+        message: `Brak: ${field}`,
+      })),
+      ...completionData.recommendedMissing.map((field, i) => ({
+        id: `smart-recommended-${i}`,
+        message: `Sugerowane: ${field}`,
+      })),
+    ];
+
+    // Deduplicate by message
+    const combined = [...legacyErrors, ...smartErrors];
+    const seen = new Set<string>();
+    return combined.filter(err => {
+      if (seen.has(err.message)) return false;
+      seen.add(err.message);
+      return true;
+    });
+  }, [validationErrorRules, completionData.criticalMissing, completionData.recommendedMissing]);
+
+  // Can publish = smart validation says OK OR legacy validation says OK
+  const canPublish = completionData.canPublish || legacyCanPublish;
+
+  // Can approve = clinical checkbox + validation passed
+  const canApprove = clinicalCheckboxChecked && canPublish;
+
+  // ============================================
+  // NAVIGATION
+  // ============================================
+
   const getNextExerciseId = useCallback((): string | null => {
     if (currentIndex < 0 || currentIndex >= pendingExercises.length - 1) {
       return null;
@@ -122,7 +199,10 @@ export default function VerificationDetailPage({ params }: VerificationDetailPag
     }
   }, [nextExerciseId, router]);
 
-  // Mutations
+  // ============================================
+  // MUTATIONS
+  // ============================================
+
   const [approveExercise, { loading: approving }] = useMutation<ApproveExerciseResponse>(
     APPROVE_EXERCISE_MUTATION,
     {
@@ -152,18 +232,11 @@ export default function VerificationDetailPage({ params }: VerificationDetailPag
     },
   });
 
-  const exercise = data?.exerciseById as unknown as AdminExercise | null;
+  // ============================================
+  // HANDLERS
+  // ============================================
 
-  // Validation
-  const { canPublish, hasBlockingErrors, validationRules, validationResults } = useExerciseValidation(
-    exercise || ({} as AdminExercise)
-  );
-
-  // Check if all quality checks are passed
-  const allChecksPassed = Object.values(qualityChecks).every((v) => v === true);
-  const canApprove = allChecksPassed && canPublish;
-
-  // Handle field update (inline editing)
+  // Field update (inline editing)
   const handleFieldUpdate = useCallback(
     async (field: string, value: unknown) => {
       if (!exercise) return;
@@ -192,7 +265,7 @@ export default function VerificationDetailPage({ params }: VerificationDetailPag
     [exercise, id, updateExerciseField, refetch]
   );
 
-  // Handle tags update
+  // Tags handlers
   const handleMainTagsChange = useCallback(
     async (newTags: string[]) => {
       setMainTags(newTags);
@@ -209,7 +282,7 @@ export default function VerificationDetailPage({ params }: VerificationDetailPag
     [handleFieldUpdate]
   );
 
-  // Relations change handler
+  // Relations handler
   const handleRelationsChange = useCallback(
     (relations: { regression: ExerciseRelationTarget | null; progression: ExerciseRelationTarget | null }) => {
       setRegressionExercise(relations.regression);
@@ -218,7 +291,21 @@ export default function VerificationDetailPage({ params }: VerificationDetailPag
     []
   );
 
-  // Handlers with auto-advance
+  // Completion change handler (from Smart Validation)
+  const handleCompletionChange = useCallback(
+    (completion: {
+      percentage: number;
+      canSaveDraft: boolean;
+      canPublish: boolean;
+      criticalMissing: string[];
+      recommendedMissing: string[];
+    }) => {
+      setCompletionData(completion);
+    },
+    []
+  );
+
+  // Approve handler
   const handleApprove = useCallback(
     async (notes: string | null) => {
       try {
@@ -243,14 +330,20 @@ export default function VerificationDetailPage({ params }: VerificationDetailPag
     [approveExercise, id, router, getNextExerciseId]
   );
 
+  // Approve & Next (with checkbox validation)
   const handleApproveAndNext = useCallback(() => {
-    if (canApprove) {
-      setIsApproveDialogOpen(true);
-    } else {
-      toast.error("Sprawdź wymagania przed zatwierdzeniem");
+    if (!clinicalCheckboxChecked) {
+      toast.error("Zaznacz checkbox potwierdzający poprawność kliniczną");
+      return;
     }
-  }, [canApprove]);
+    if (!canPublish) {
+      toast.error("Popraw błędy walidacji przed zatwierdzeniem");
+      return;
+    }
+    setIsApproveDialogOpen(true);
+  }, [clinicalCheckboxChecked, canPublish]);
 
+  // Reject handler
   const handleReject = useCallback(
     async (reason: RejectionReason, notes: string) => {
       try {
@@ -276,6 +369,7 @@ export default function VerificationDetailPage({ params }: VerificationDetailPag
     [rejectExercise, id, router, getNextExerciseId]
   );
 
+  // Skip handler
   const handleSkip = useCallback(() => {
     const nextId = getNextExerciseId();
     if (nextId) {
@@ -285,20 +379,34 @@ export default function VerificationDetailPage({ params }: VerificationDetailPag
     }
   }, [router, getNextExerciseId]);
 
+  // Save draft handler
   const handleSaveDraft = useCallback(() => {
     toast.success("Szkic zapisany");
     setLastSavedTime(new Date());
   }, []);
 
-  // Keyboard shortcuts
+  // Toggle checkbox handler
+  const handleToggleClinicalCheckbox = useCallback(() => {
+    setClinicalCheckboxChecked(prev => !prev);
+  }, []);
+
+  // ============================================
+  // KEYBOARD SHORTCUTS
+  // ============================================
+
   useVerificationHotkeys({
     onApproveAndNext: handleApproveAndNext,
     onReject: () => setIsRejectDialogOpen(true),
     onSaveDraft: handleSaveDraft,
     onSkip: handleSkip,
+    onToggleClinicalCheckbox: handleToggleClinicalCheckbox,
     canApprove: canApprove,
     enabled: !isApproveDialogOpen && !isRejectDialogOpen,
   });
+
+  // ============================================
+  // RENDER STATES
+  // ============================================
 
   // Access denied
   if (!roleLoading && !canReviewExercises) {
@@ -316,22 +424,23 @@ export default function VerificationDetailPage({ params }: VerificationDetailPag
   // Loading
   if (loading) {
     return (
-      <div className="min-h-[calc(100vh-4rem)] flex flex-col -m-6">
-        <div className="flex-1 flex flex-col lg:flex-row">
-          <div className="w-full lg:w-[420px] bg-zinc-950 p-4 sm:p-6 lg:p-8 border-b lg:border-b-0 lg:border-r border-border/20">
-            <div className="flex items-center justify-between mb-6">
-              <Skeleton className="h-8 w-32" />
-              <Skeleton className="h-4 w-24" />
+      <div className="h-[calc(100vh-4rem)] flex flex-col -m-6">
+        <div className="flex-1 flex flex-col lg:flex-row min-h-0">
+          {/* Left: Video skeleton */}
+          <div className="flex-1 bg-zinc-950 p-3">
+            <div className="flex items-center justify-between mb-3">
+              <Skeleton className="h-8 w-24" />
+              <Skeleton className="h-4 w-16" />
             </div>
-            <div className="flex justify-center">
-              <Skeleton className="w-[280px] h-[560px] rounded-[2.5rem]" />
-            </div>
+            <Skeleton className="w-full h-[calc(100%-3rem)] rounded-lg" />
           </div>
-          <div className="flex-1 p-4 sm:p-6 lg:p-8 space-y-6">
-            <Skeleton className="h-8 w-64" />
-            <Skeleton className="h-48 w-full" />
-            <Skeleton className="h-48 w-full" />
+          {/* Right: Editor skeleton */}
+          <div className="flex-1 p-3 space-y-3 border-l border-border/20">
+            <Skeleton className="h-8 w-3/4" />
+            <Skeleton className="h-10 w-full" />
             <Skeleton className="h-32 w-full" />
+            <Skeleton className="h-16 w-full" />
+            <Skeleton className="h-20 w-full" />
           </div>
         </div>
       </div>
@@ -357,175 +466,100 @@ export default function VerificationDetailPage({ params }: VerificationDetailPag
     );
   }
 
+  // ============================================
+  // MAIN RENDER - Zero Scroll Clinical Operator UI
+  // ============================================
+
   return (
-    <div className="min-h-[calc(100vh-4rem)] flex flex-col -m-6">
-      {/* Main content area */}
-      <div className="flex-1 flex flex-col lg:flex-row">
-        {/* Left Column: Mobile Preview */}
-        <div className="w-full lg:w-[420px] bg-zinc-950 border-b lg:border-b-0 lg:border-r border-border/20 flex-shrink-0">
-          <div className="p-4 sm:p-6 lg:p-8 flex flex-col h-full">
-            {/* Progress indicator + Back button */}
-            <div className="flex items-center justify-between gap-4 mb-6">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => router.push("/verification")}
-                className="text-zinc-400 hover:text-white -ml-2"
-                data-testid="verification-back-btn"
-              >
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Powrót do listy
-              </Button>
+    <div className="h-[calc(100vh-4rem)] flex flex-col -m-6">
+      {/* Main content area - 2 column layout, NO SCROLL */}
+      <div className="flex-1 flex flex-col lg:flex-row min-h-0">
 
-              {/* Progress indicator */}
-              {positionInQueue && totalPending > 0 && (
-                <div className="flex items-center gap-2 text-right">
-                  <div className="text-xs text-zinc-500">
-                    <span className="text-zinc-300 font-semibold">{positionInQueue}</span>
-                    <span> z </span>
-                    <span className="text-zinc-300 font-semibold">{totalPending}</span>
-                    <span className="ml-1 hidden sm:inline">oczekujących</span>
-                  </div>
-                  <div className="w-16 sm:w-24 h-1.5 bg-zinc-800 rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-primary rounded-full transition-all duration-300"
-                      style={{ width: `${(positionInQueue / totalPending) * 100}%` }}
-                    />
-                  </div>
+        {/* LEFT COLUMN: Master Video Player (flex-1, not fixed width) */}
+        <div className="flex-1 bg-zinc-950 border-b lg:border-b-0 lg:border-r border-border/20 flex flex-col min-h-0">
+          {/* Compact Header: Back + Progress */}
+          <div className="flex items-center justify-between gap-3 px-3 py-2 border-b border-zinc-800/50 shrink-0">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => router.push("/verification")}
+              className="text-zinc-400 hover:text-white -ml-1 h-7 px-2"
+              data-testid="verification-back-btn"
+            >
+              <ArrowLeft className="mr-1.5 h-3.5 w-3.5" />
+              <span className="text-xs">Powrót</span>
+            </Button>
+
+            {/* Progress indicator - compact */}
+            {positionInQueue && totalPending > 0 && (
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-zinc-400">
+                  <span className="text-zinc-200 font-semibold">{positionInQueue}</span>
+                  <span className="text-zinc-500"> / </span>
+                  <span className="text-zinc-200 font-semibold">{totalPending}</span>
+                </span>
+                <div className="w-12 h-1 bg-zinc-800 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-primary rounded-full transition-all duration-300"
+                    style={{ width: `${(positionInQueue / totalPending) * 100}%` }}
+                  />
                 </div>
-              )}
-            </div>
+              </div>
+            )}
+          </div>
 
-            {/* Phone simulator - always centered */}
-            <div className="flex-1 flex items-start justify-center">
-              <MobileSimulator exercise={exercise} />
-            </div>
+          {/* Master Video Player - fills remaining space */}
+          <div className="flex-1 min-h-0">
+            <MasterVideoPlayer exercise={exercise} />
           </div>
         </div>
 
-        {/* Right Column: Expert Panel (NEW Inline Editing) */}
-        <div className="flex-1 bg-background overflow-y-auto pb-24">
-          <div className="p-4 sm:p-6 lg:p-8 space-y-6">
-            {/* Header with status */}
-            <div className="space-y-2">
-              <div className="flex items-center gap-3 flex-wrap">
-                <Badge
-                  variant="outline"
-                  className={
-                    exercise.status === "PENDING_REVIEW"
-                      ? "bg-amber-500/10 text-amber-600 border-amber-500/20"
-                      : exercise.status === "CHANGES_REQUESTED"
-                      ? "bg-orange-500/10 text-orange-600 border-orange-500/20"
-                      : "bg-muted text-muted-foreground"
-                  }
-                >
-                  {exercise.status === "PENDING_REVIEW"
-                    ? "Oczekuje na weryfikację"
-                    : exercise.status === "CHANGES_REQUESTED"
-                    ? "Wymaga poprawek"
-                    : exercise.status}
-                </Badge>
-                {exercise.createdBy && (
-                  <span className="text-sm text-muted-foreground">
-                    Autor: {exercise.createdBy.fullname || exercise.createdBy.email}
-                  </span>
-                )}
-              </div>
-            </div>
-
-            {/* Previous review notes */}
+        {/* RIGHT COLUMN: Compact Editor Panel (flex-1, NO overflow-y-auto) */}
+        <div className="flex-1 bg-background flex flex-col min-h-0 pb-16">
+          <div className="flex-1 p-3 flex flex-col min-h-0 overflow-hidden">
+            {/* Previous review notes (if any) - compact */}
             {exercise.adminReviewNotes && (
-              <Card className="border-amber-500/30 bg-amber-500/5">
-                <CardContent className="p-4">
-                  <div className="flex items-start gap-3">
-                    <FileText className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
-                    <div>
-                      <p className="text-sm font-medium text-amber-600 mb-1">
-                        Poprzednie uwagi weryfikatora:
-                      </p>
-                      <p className="text-sm text-foreground">{exercise.adminReviewNotes}</p>
+              <Card className="border-amber-500/30 bg-amber-500/5 mb-2 shrink-0">
+                <CardContent className="p-2">
+                  <div className="flex items-start gap-2">
+                    <FileText className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+                    <div className="min-w-0">
+                      <p className="text-xs font-medium text-amber-600">Poprzednie uwagi:</p>
+                      <p className="text-xs text-foreground line-clamp-2">{exercise.adminReviewNotes}</p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
             )}
 
-            {/* NEW: Exercise Details Panel (Inline Editing) */}
-            <ExerciseDetailsPanel
+            {/* MAIN: VerificationEditorPanel - Zero Scroll Compact */}
+            <VerificationEditorPanel
               exercise={exercise}
               onFieldChange={handleFieldUpdate}
-              data-testid="verification-details-panel"
-            />
-
-            {/* Quality Checklist */}
-            <QualityChecklist
-              exercise={exercise}
-              checks={qualityChecks}
-              onChecksChange={setQualityChecks}
-            />
-
-            {/* NEW: Tag Smart Chips (Main Tags) */}
-            <Card className="border-border/60">
-              <CardContent className="p-4 space-y-4">
-                <TagSmartChips
-                  exerciseId={exercise.id}
-                  exerciseName={exercise.name}
-                  exerciseDescription={exercise.patientDescription || exercise.description}
-                  tags={mainTags}
-                  onTagsChange={handleMainTagsChange}
-                  tagType="main"
-                  label="Tagi główne (anatomiczne)"
-                  data-testid="verification-main-tags"
-                />
-
-                <TagSmartChips
-                  exerciseId={exercise.id}
-                  exerciseName={exercise.name}
-                  exerciseDescription={exercise.patientDescription || exercise.description}
-                  tags={additionalTags}
-                  onTagsChange={handleAdditionalTagsChange}
-                  tagType="additional"
-                  label="Tagi dodatkowe"
-                  data-testid="verification-additional-tags"
-                />
-              </CardContent>
-            </Card>
-
-            {/* NEW: Inline Description */}
-            <InlineDescription
-              exerciseId={exercise.id}
-              exerciseName={exercise.name}
-              label="Opis dla pacjenta"
-              value={exercise.patientDescription || exercise.description || ""}
-              onCommit={(value) => handleFieldUpdate("patientDescription", value)}
-              placeholder="Prosty, zrozumiały opis dla pacjenta..."
-              data-testid="verification-description"
-            />
-
-            {/* NEW: Relationship Manager (Knowledge Graph) */}
-            <RelationshipManager
-              exercise={exercise}
+              mainTags={mainTags}
+              onMainTagsChange={handleMainTagsChange}
+              additionalTags={additionalTags}
+              onAdditionalTagsChange={handleAdditionalTagsChange}
               onRelationsChange={handleRelationsChange}
-              data-testid="verification-relationships"
-            />
-
-            {/* NEW: Publish Guardrails */}
-            <PublishGuardrails
-              exercise={exercise}
-              validationRules={validationRules}
+              onCompletionChange={handleCompletionChange}
+              className="flex-1 min-h-0"
+              data-testid="verification-editor-panel"
             />
           </div>
         </div>
       </div>
 
-      {/* NEW: Sticky Footer V2 */}
+      {/* FIXED FOOTER - Clinical Operator style */}
       <VerificationStickyFooterV2
         onReject={() => setIsRejectDialogOpen(true)}
         onSkip={handleSkip}
         onApproveAndNext={handleApproveAndNext}
+        validationPassed={canPublish}
+        validationErrors={validationErrors}
+        clinicalCheckboxChecked={clinicalCheckboxChecked}
+        onClinicalCheckboxChange={setClinicalCheckboxChecked}
         isRejecting={rejecting}
         isApproving={approving}
-        canApprove={canApprove}
         remainingTasksCount={remainingCount}
         isSavingDraft={isSavingDraft}
         lastSavedTime={lastSavedTime}

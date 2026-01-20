@@ -9,6 +9,8 @@ interface UseVerificationHotkeysOptions {
   onSaveDraft?: () => void;
   /** Callback: Pomiń ćwiczenie (Escape) */
   onSkip?: () => void;
+  /** Callback: Zaznacz/odznacz checkbox kliniczny (CMD/CTRL + D) */
+  onToggleClinicalCheckbox?: () => void;
   /** Czy można zatwierdzić (np. wszystkie checky przeszły) */
   canApprove: boolean;
   /** Czy aktualnie trwa edycja inline (blokuje niektóre skróty) */
@@ -20,12 +22,14 @@ interface UseVerificationHotkeysOptions {
 /**
  * useVerificationHotkeys - Skróty klawiszowe dla weryfikacji ćwiczeń
  *
- * Keyboard-First Workflow dla Power Users:
+ * Clinical Operator Workflow - Keyboard-First dla Power Users:
  * - CMD/CTRL + Enter → Zatwierdź i Następne (NAJWAŻNIEJSZE!)
  * - CMD/CTRL + Backspace → Odrzuć
  * - CMD/CTRL + S → Zapisz draft
+ * - CMD/CTRL + D → Toggle checkbox bezpieczeństwa
  * - Escape → Pomiń / Anuluj edycję
  * - Tab → Następne pole (native behavior)
+ * - Shift+Tab → Poprzednie pole (native behavior)
  *
  * Zasady:
  * - Skróty z modyfikatorem (CMD/CTRL) działają zawsze
@@ -37,6 +41,7 @@ export function useVerificationHotkeys({
   onReject,
   onSaveDraft,
   onSkip,
+  onToggleClinicalCheckbox,
   canApprove,
   isEditing = false,
   enabled = true,
@@ -46,6 +51,7 @@ export function useVerificationHotkeys({
   const onRejectRef = useRef(onReject);
   const onSaveDraftRef = useRef(onSaveDraft);
   const onSkipRef = useRef(onSkip);
+  const onToggleClinicalCheckboxRef = useRef(onToggleClinicalCheckbox);
   const canApproveRef = useRef(canApprove);
   const isEditingRef = useRef(isEditing);
   const enabledRef = useRef(enabled);
@@ -56,6 +62,7 @@ export function useVerificationHotkeys({
     onRejectRef.current = onReject;
     onSaveDraftRef.current = onSaveDraft;
     onSkipRef.current = onSkip;
+    onToggleClinicalCheckboxRef.current = onToggleClinicalCheckbox;
     canApproveRef.current = canApprove;
     isEditingRef.current = isEditing;
     enabledRef.current = enabled;
@@ -71,7 +78,8 @@ export function useVerificationHotkeys({
     // CMD/CTRL + Enter → Zatwierdź i Następne
     if (isMod && key === "enter") {
       e.preventDefault();
-      if (canApproveRef.current && !isEditingRef.current) {
+      // Nawet jeśli canApprove=false, callback może obsłużyć logikę (np. wyświetlić toast)
+      if (!isEditingRef.current) {
         onApproveAndNextRef.current();
       }
       return;
@@ -81,6 +89,13 @@ export function useVerificationHotkeys({
     if (isMod && key === "s") {
       e.preventDefault();
       onSaveDraftRef.current?.();
+      return;
+    }
+
+    // CMD/CTRL + D → Toggle checkbox bezpieczeństwa
+    if (isMod && key === "d") {
+      e.preventDefault();
+      onToggleClinicalCheckboxRef.current?.();
       return;
     }
 
@@ -131,25 +146,34 @@ export function useIsEditingDetection(): boolean {
 
 /**
  * Komponent wyświetlający dostępne skróty klawiszowe
+ * Clinical Operator UI - Extended shortcuts
  */
 export function KeyboardShortcutsHint() {
   const isMac = typeof navigator !== "undefined" && navigator.platform.includes("Mac");
   const modKey = isMac ? "⌘" : "Ctrl";
 
   const shortcuts = [
-    { keys: `${modKey}+↵`, label: "Zatwierdź i Następne" },
-    { keys: `${modKey}+⌫`, label: "Odrzuć" },
-    { keys: `${modKey}+S`, label: "Zapisz draft" },
-    { keys: "Esc", label: "Pomiń" },
+    { keys: `${modKey}+↵`, label: "Zatwierdź i Następne", primary: true },
+    { keys: `${modKey}+D`, label: "Toggle checkbox", primary: false },
+    { keys: `${modKey}+⌫`, label: "Odrzuć", primary: false },
+    { keys: `${modKey}+S`, label: "Zapisz draft", primary: false },
+    { keys: "Esc", label: "Pomiń", primary: false },
+    { keys: "Tab", label: "Następne pole", primary: false },
   ];
 
   return (
     <div className="text-xs space-y-1.5 p-3">
       <p className="font-semibold mb-2">Skróty klawiszowe</p>
-      {shortcuts.map(({ keys, label }) => (
+      {shortcuts.map(({ keys, label, primary }) => (
         <div key={keys} className="flex items-center justify-between gap-4">
-          <span className="text-muted-foreground">{label}</span>
-          <kbd className="px-1.5 py-0.5 text-[10px] bg-muted rounded border border-border font-mono">
+          <span className={primary ? "text-foreground font-medium" : "text-muted-foreground"}>
+            {label}
+          </span>
+          <kbd className={`px-1.5 py-0.5 text-[10px] rounded border font-mono ${
+            primary
+              ? "bg-primary/20 border-primary/30 text-primary"
+              : "bg-muted border-border"
+          }`}>
             {keys}
           </kbd>
         </div>

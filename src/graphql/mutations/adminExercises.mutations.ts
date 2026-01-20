@@ -35,6 +35,21 @@ export const REJECT_EXERCISE_MUTATION = gql`
 `;
 
 /**
+ * Unpublish an exercise - changes status back to Draft
+ * Used when exercise was published by mistake
+ * @param exerciseId - ID of the exercise to unpublish
+ * @param reason - Optional reason for unpublishing
+ */
+export const UNPUBLISH_EXERCISE_MUTATION = gql`
+  mutation UnpublishExercise($exerciseId: String!, $reason: String) {
+    unpublishExercise(exerciseId: $exerciseId, reason: $reason) {
+      ...AdminExerciseFragment
+    }
+  }
+  ${ADMIN_EXERCISE_FRAGMENT}
+`;
+
+/**
  * Batch approve multiple exercises
  * @param exerciseIds - Array of exercise IDs to approve
  */
