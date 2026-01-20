@@ -32,12 +32,12 @@ interface MasterVideoPlayerProps {
 
 /**
  * MasterVideoPlayer - Pełnoekranowy player wideo/obrazu
- * 
+ *
  * Filozofia "Zero Scroll":
  * - Maksymalizacja przestrzeni na media źródłowe (Master View)
  * - Toggle "Preview Mobile" nakłada maskę telefonu (opcjonalnie)
  * - Ekspert widzi detale anatomiczne bez przeszkód
- * 
+ *
  * Features:
  * - Responsywny player (100% wysokości kontenera)
  * - Lightbox do pełnoekranowego podglądu
@@ -116,8 +116,8 @@ export function MasterVideoPlayer({ exercise, className }: MasterVideoPlayerProp
                 </div>
               </div>
               {/* Darken outside frame */}
-              <div className="absolute inset-0 bg-black/60" style={{ 
-                clipPath: 'polygon(0 0, 100% 0, 100% 100%, 0 100%, 0 0, calc(50% - 140px) calc(50% - 280px), calc(50% - 140px) calc(50% + 280px), calc(50% + 140px) calc(50% + 280px), calc(50% + 140px) calc(50% - 280px), calc(50% - 140px) calc(50% - 280px))' 
+              <div className="absolute inset-0 bg-black/60" style={{
+                clipPath: 'polygon(0 0, 100% 0, 100% 100%, 0 100%, 0 0, calc(50% - 140px) calc(50% - 280px), calc(50% - 140px) calc(50% + 280px), calc(50% + 140px) calc(50% + 280px), calc(50% + 140px) calc(50% - 280px), calc(50% - 140px) calc(50% - 280px))'
               }} />
             </div>
           )}

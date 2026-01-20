@@ -66,7 +66,7 @@ async function mockAIVideoAnalysis(
 
   // Mapuj odpowiedź na AIVideoAnalysisResponse
   const updatedFields: string[] = [];
-  
+
   const response: AIVideoAnalysisResponse = {
     tempo: "2-0-2", // Domyślne tempo
     executionTime: suggestion.type === "time" ? 30 : 3,
@@ -152,11 +152,9 @@ export function AIAnalysisHeader({
         description: "Sprawdź fioletowe pola i zatwierdź lub edytuj",
       });
 
-      // Auto-hide po 10 sekundach
+      // Auto-hide po 10 sekundach - używamy functional update żeby uniknąć stale closure
       setTimeout(() => {
-        if (status === "complete") {
-          setStatus("idle");
-        }
+        setStatus((currentStatus) => currentStatus === "complete" ? "idle" : currentStatus);
       }, 10000);
     } catch (error) {
       console.error("AI Analysis error:", error);

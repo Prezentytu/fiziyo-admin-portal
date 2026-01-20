@@ -1,58 +1,21 @@
 "use client";
 
 import { useState, useCallback, useMemo, useEffect } from "react";
-import {
-  Timer,
-  RotateCcw,
-  Tag,
-  Dumbbell,
-  ArrowLeftRight,
-} from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { FileText, Settings2 } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 
 // Sub-components
-import { InlineEditField, InlineEditSelect } from "./InlineEditField";
+import { VerificationStickyHeader } from "./VerificationStickyHeader";
 import { TagSmartChips } from "./TagSmartChips";
-import { ProgressionChain } from "./ProgressionChain";
-
-// New Engineering Grade Components
-import { AIAnalysisHeader } from "./AIAnalysisHeader";
-import { TrainingParametersGrid } from "./TrainingParametersGrid";
 import { DualDescriptionTabs } from "./DualDescriptionTabs";
-
-// Smart Validation Components
-import { CompletionBar } from "@/components/shared/CompletionBar";
-import { GhostField } from "@/components/shared/GhostField";
-import { SmartAccordion } from "@/components/shared/SmartAccordion";
-import { useFormCompletion, type FieldConfig } from "@/hooks/useFormCompletion";
+import { TrainingParametersGrid } from "./TrainingParametersGrid";
 
 import type { AdminExercise, ExerciseRelationTarget } from "@/graphql/types/adminExercise.types";
-import type { AIVideoAnalysisResponse } from "@/types/ai.types";
 
 // ============================================
-// TYPES & OPTIONS
+// TYPES
 // ============================================
-
-const EXERCISE_TYPES = [
-  { value: "reps", label: "Powtórzenia", icon: <RotateCcw className="h-3.5 w-3.5" /> },
-  { value: "time", label: "Czasowe", icon: <Timer className="h-3.5 w-3.5" /> },
-  { value: "hold", label: "Izometryczne", icon: <Dumbbell className="h-3.5 w-3.5" /> },
-];
-
-const EXERCISE_SIDES = [
-  { value: "none", label: "Brak" },
-  { value: "left", label: "Lewa" },
-  { value: "right", label: "Prawa" },
-  { value: "both", label: "Obie" },
-  { value: "alternating", label: "Naprzem." },
-];
 
 interface VerificationEditorPanelProps {
   /** Ćwiczenie do edycji */
@@ -72,7 +35,9 @@ interface VerificationEditorPanelProps {
     regression: ExerciseRelationTarget | null;
     progression: ExerciseRelationTarget | null;
   }) => void;
-  /** Callback zwracający dane o completion (do footera) */
+  /** Callback zwracający dane o walidacji (do footera) */
+  onValidationChange?: (isValid: boolean, missingFields: string[]) => void;
+  /** Callback zwracający dane o completion (legacy - do footera) */
   onCompletionChange?: (completion: {
     percentage: number;
     canSaveDraft: boolean;
@@ -80,8 +45,6 @@ interface VerificationEditorPanelProps {
     criticalMissing: string[];
     recommendedMissing: string[];
   }) => void;
-  /** Czy pokazać AI Analysis Header */
-  showAIHeader?: boolean;
   /** Czy komponent jest disabled */
   disabled?: boolean;
   /** Dodatkowe klasy CSS */
@@ -91,20 +54,18 @@ interface VerificationEditorPanelProps {
 }
 
 /**
- * VerificationEditorPanel - "Training Design System" Engineering Grade Layout
+ * VerificationEditorPanel - Clean Cockpit Layout with Smart Tabs
  *
- * Filozofia "AI First, Human Second":
- * - AI wypełnia parametry, człowiek zatwierdza
- * - Wszystkie 20+ parametrów w czytelnym układzie
- * - Visual cues dla pól wypełnionych przez AI (fioletowa poświata)
+ * Filozofia "Clean Cockpit":
+ * - 2 główne taby: Merytoryka (opisy) | Klinika (parametry + tagi)
+ * - Smart Tabs z Notification Dots (czerwona kropka gdy brakuje danych)
+ * - Sticky header z nazwą, statusem i autorem
+ * - Walidacja wizualna - ekspert widzi co trzeba uzupełnić
  *
- * Struktura (6 stref):
- * A. AI Analysis Header (sticky) - przycisk "AI Auto-Analysis"
- * B. Identity Header - Nazwa + Typ + Strona + Status
- * C. Training Matrix - Grid z parametrami czasowymi
- * D. Dual Description - Zakładki Pacjent/Kliniczny
- * E. Tags (collapsible)
- * F. Relations - Łańcuch progresji
+ * Workflow eksperta:
+ * 1. Sprawdź opisy (Tab Merytoryka)
+ * 2. Sprawdź parametry i tagi (Tab Klinika)
+ * 3. Zatwierdź lub odrzuć
  */
 export function VerificationEditorPanel({
   exercise,
@@ -114,394 +75,233 @@ export function VerificationEditorPanel({
   additionalTags,
   onAdditionalTagsChange,
   onRelationsChange,
+  onValidationChange,
   onCompletionChange,
-  showAIHeader = true,
   disabled = false,
   className,
   "data-testid": testId,
 }: VerificationEditorPanelProps) {
-  // AI Analysis state
-  const [isAIHeaderHidden, setIsAIHeaderHidden] = useState(false);
-  const [aiSuggestedFields, setAiSuggestedFields] = useState<Set<string>>(new Set());
-  const [previousValues, setPreviousValues] = useState<Record<string, unknown>>({});
-
-  // Section expansion states
-  const [isTagsExpanded, setIsTagsExpanded] = useState(false);
-  const [isParamsExpanded, setIsParamsExpanded] = useState(false);
-
-  // All tags for description context
-  const allTags = useMemo(() => [...mainTags, ...additionalTags], [mainTags, additionalTags]);
+  // ============================================
+  // VALIDATION STATE
+  // ============================================
+  const [isContentValid, setIsContentValid] = useState(false);
+  const [isDataValid, setIsDataValid] = useState(false);
 
   // ============================================
-  // SMART VALIDATION - Form Completion
+  // VALIDATION LOGIC
   // ============================================
 
-  const completionFields: FieldConfig[] = useMemo(() => [
-    {
-      key: 'name',
-      label: 'Nazwa',
-      weight: 20,
-      priority: 'critical',
-      isFilled: (exercise.name?.trim().length || 0) >= 2
-    },
-    {
-      key: 'patientDescription',
-      label: 'Opis dla pacjenta',
-      weight: 20,
-      priority: 'recommended',
-      isFilled: (exercise.patientDescription?.trim().length || 0) > 10
-    },
-    {
-      key: 'media',
-      label: 'Media (wideo/zdjęcie)',
-      weight: 15,
-      priority: 'recommended',
-      isFilled: !!(exercise.videoUrl || exercise.thumbnailUrl || exercise.imageUrl || (exercise.images && exercise.images.length > 0))
-    },
-    {
-      key: 'tags',
-      label: 'Kategorie',
-      weight: 15,
-      priority: 'recommended',
-      isFilled: mainTags.length > 0
-    },
-    {
-      key: 'difficultyLevel',
-      label: 'Poziom trudności',
-      weight: 10,
-      priority: 'recommended',
-      isFilled: !!exercise.difficultyLevel
-    },
-    {
-      key: 'params',
-      label: 'Parametry treningowe',
-      weight: 10,
-      priority: 'optional',
-      isFilled: !!(exercise.defaultSets || exercise.defaultReps || exercise.defaultDuration)
-    },
-    {
-      key: 'tempo',
-      label: 'Tempo',
-      weight: 5,
-      priority: 'optional',
-      isFilled: !!exercise.tempo
-    },
-    {
-      key: 'clinicalDescription',
-      label: 'Opis kliniczny',
-      weight: 5,
-      priority: 'optional',
-      isFilled: (exercise.clinicalDescription?.trim().length || 0) > 0
-    },
-  ], [exercise, mainTags]);
+  // Content validation (Tab Merytoryka)
+  const contentValidation = useMemo(() => {
+    const patientDescLength = (exercise.patientDescription || "").trim().length;
+    const clinicalDescLength = (exercise.clinicalDescription || "").trim().length;
 
-  const completion = useFormCompletion(completionFields);
+    const isPatientDescValid = patientDescLength >= 50;
+    const isClinicalDescValid = clinicalDescLength >= 20;
 
-  // Notify parent about completion changes
+    return {
+      isValid: isPatientDescValid && isClinicalDescValid,
+      patientDescLength,
+      clinicalDescLength,
+      isPatientDescValid,
+      isClinicalDescValid,
+    };
+  }, [exercise.patientDescription, exercise.clinicalDescription]);
+
+  // Data validation (Tab Klinika)
+  const dataValidation = useMemo(() => {
+    const hasSets = (exercise.defaultSets ?? 0) > 0;
+    const hasReps = (exercise.defaultReps ?? 0) > 0;
+    const hasDuration = (exercise.defaultDuration ?? 0) > 0;
+    const hasVolume = hasReps || hasDuration;
+    const hasTags = mainTags.length > 0;
+
+    return {
+      isValid: hasSets && hasVolume && hasTags,
+      hasSets,
+      hasReps,
+      hasDuration,
+      hasVolume,
+      hasTags,
+    };
+  }, [exercise.defaultSets, exercise.defaultReps, exercise.defaultDuration, mainTags]);
+
+  // Update content validity
   useEffect(() => {
-    onCompletionChange?.({
-      percentage: completion.percentage,
-      canSaveDraft: completion.canSaveDraft,
-      canPublish: completion.canPublish,
-      criticalMissing: completion.criticalMissing,
-      recommendedMissing: completion.recommendedMissing,
-    });
-  }, [completion, onCompletionChange]);
+    setIsContentValid(contentValidation.isValid);
+  }, [contentValidation.isValid]);
 
-  // Count missing fields for SmartAccordion badges
-  const paramsMissingCount = useMemo(() => {
-    let count = 0;
-    if (!exercise.defaultSets && !exercise.defaultReps && !exercise.defaultDuration) count++;
-    if (!exercise.tempo) count++;
-    if (!exercise.defaultRestBetweenSets) count++;
-    return count;
-  }, [exercise]);
+  // Update data validity
+  useEffect(() => {
+    setIsDataValid(dataValidation.isValid);
+  }, [dataValidation.isValid]);
 
-  const tagsMissingCount = useMemo(() => {
-    return mainTags.length === 0 ? 1 : 0;
-  }, [mainTags]);
+  // Combined missing fields for footer
+  const missingFields = useMemo(() => {
+    const missing: string[] = [];
 
-  // Generic field change handler
-  const handleFieldCommit = useCallback(
-    (field: string) => async (value: unknown) => {
-      await onFieldChange(field, value);
-    },
-    [onFieldChange]
-  );
-
-  // Handle AI analysis completion
-  const handleAIAnalysisComplete = useCallback(
-    async (result: AIVideoAnalysisResponse) => {
-      // Store previous values for undo
-      const prevValues: Record<string, unknown> = {};
-
-      // Apply AI suggestions to fields
-      const fieldsToUpdate: [string, unknown][] = [];
-
-      if (result.patientDescription && !exercise.patientDescription) {
-        prevValues.patientDescription = exercise.patientDescription;
-        fieldsToUpdate.push(["patientDescription", result.patientDescription]);
-      }
-      if (result.tempo && !exercise.tempo) {
-        prevValues.tempo = exercise.tempo;
-        fieldsToUpdate.push(["tempo", result.tempo]);
-      }
-      if (result.sets && !exercise.defaultSets) {
-        prevValues.defaultSets = exercise.defaultSets;
-        fieldsToUpdate.push(["defaultSets", result.sets]);
-      }
-      if (result.reps && !exercise.defaultReps) {
-        prevValues.defaultReps = exercise.defaultReps;
-        fieldsToUpdate.push(["defaultReps", result.reps]);
-      }
-      if (result.duration && !exercise.defaultDuration) {
-        prevValues.defaultDuration = exercise.defaultDuration;
-        fieldsToUpdate.push(["defaultDuration", result.duration]);
-      }
-      if (result.restBetweenSets && !exercise.defaultRestBetweenSets) {
-        prevValues.defaultRestBetweenSets = exercise.defaultRestBetweenSets;
-        fieldsToUpdate.push(["defaultRestBetweenSets", result.restBetweenSets]);
-      }
-      if (result.restBetweenReps && !exercise.defaultRestBetweenReps) {
-        prevValues.defaultRestBetweenReps = exercise.defaultRestBetweenReps;
-        fieldsToUpdate.push(["defaultRestBetweenReps", result.restBetweenReps]);
-      }
-      if (result.preparationTime && !exercise.preparationTime) {
-        prevValues.preparationTime = exercise.preparationTime;
-        fieldsToUpdate.push(["preparationTime", result.preparationTime]);
-      }
-      if (result.executionTime && !exercise.defaultExecutionTime) {
-        prevValues.defaultExecutionTime = exercise.defaultExecutionTime;
-        fieldsToUpdate.push(["defaultExecutionTime", result.executionTime]);
-      }
-      if (result.difficultyLevel && !exercise.difficultyLevel) {
-        prevValues.difficultyLevel = exercise.difficultyLevel;
-        fieldsToUpdate.push(["difficultyLevel", result.difficultyLevel]);
-      }
-
-      setPreviousValues(prevValues);
-
-      // Update fields sequentially
-      for (const [field, value] of fieldsToUpdate) {
-        try {
-          await onFieldChange(field, value);
-        } catch (error) {
-          console.error(`Failed to update field ${field}:`, error);
-        }
-      }
-
-      // Mark fields as AI-suggested
-      setAiSuggestedFields(new Set(result.updatedFields));
-    },
-    [exercise, onFieldChange]
-  );
-
-  // Handle AI analysis undo
-  const handleAIAnalysisUndo = useCallback(async () => {
-    // Restore previous values
-    for (const [field, value] of Object.entries(previousValues)) {
-      try {
-        await onFieldChange(field, value);
-      } catch (error) {
-        console.error(`Failed to restore field ${field}:`, error);
-      }
+    // Content missing
+    if (!contentValidation.isPatientDescValid) {
+      missing.push("Opis pacjenta (min. 50 znaków)");
+    }
+    if (!contentValidation.isClinicalDescValid) {
+      missing.push("Opis kliniczny (min. 20 znaków)");
     }
 
-    setPreviousValues({});
-    setAiSuggestedFields(new Set());
-  }, [previousValues, onFieldChange]);
+    // Data missing
+    if (!dataValidation.hasSets) {
+      missing.push("Liczba serii");
+    }
+    if (!dataValidation.hasVolume) {
+      missing.push("Powtórzenia lub czas");
+    }
+    if (!dataValidation.hasTags) {
+      missing.push("Kategorie główne");
+    }
 
-  // Handle AI field touch (remove suggestion styling)
-  const handleAiFieldTouched = useCallback((field: string) => {
-    setAiSuggestedFields((prev) => {
-      const next = new Set(prev);
-      next.delete(field);
-      return next;
+    // Name validation
+    if (!exercise.name?.trim() || exercise.name.trim().length < 2) {
+      missing.push("Nazwa ćwiczenia");
+    }
+
+    // Media validation
+    if (!exercise.videoUrl && !exercise.thumbnailUrl && !exercise.imageUrl && (!exercise.images || exercise.images.length === 0)) {
+      missing.push("Media (wideo lub zdjęcie)");
+    }
+
+    return missing;
+  }, [contentValidation, dataValidation, exercise.name, exercise.videoUrl, exercise.thumbnailUrl, exercise.imageUrl, exercise.images]);
+
+  // Notify parent about validation changes
+  useEffect(() => {
+    const isValid = missingFields.length === 0;
+    onValidationChange?.(isValid, missingFields);
+  }, [missingFields, onValidationChange]);
+
+  // Legacy completion callback (backward compatibility)
+  useEffect(() => {
+    const totalCritical = 6;
+    const filledCritical = totalCritical - Math.min(missingFields.length, totalCritical);
+    const percentage = Math.round((filledCritical / totalCritical) * 100);
+
+    onCompletionChange?.({
+      percentage,
+      canSaveDraft: percentage >= 40,
+      canPublish: missingFields.length === 0,
+      criticalMissing: missingFields,
+      recommendedMissing: [],
     });
+  }, [missingFields, onCompletionChange]);
+
+  // ============================================
+  // HANDLERS
+  // ============================================
+
+  const handleContentValidityChange = useCallback((isValid: boolean) => {
+    setIsContentValid(isValid);
+  }, []);
+
+  const handleDataValidityChange = useCallback((isValid: boolean) => {
+    setIsDataValid(isValid);
   }, []);
 
   // Get description value for tags context
   const descriptionValue = exercise.patientDescription || exercise.description || "";
 
   return (
-    <TooltipProvider>
-      <div
-        className={cn("flex flex-col h-full", className)}
-        data-testid={testId}
-      >
-        {/* ============================================ */}
-        {/* STREFA 0: Completion Bar (Smart Validation) */}
-        {/* ============================================ */}
-        <div className="mb-3 shrink-0" data-testid="verification-completion-section">
-          <CompletionBar
-            percentage={completion.percentage}
-            colorStatus={completion.colorStatus}
-            criticalMissing={completion.criticalMissing}
-            recommendedMissing={completion.recommendedMissing}
-            showMilestones={false}
-          />
-        </div>
+    <div
+      className={cn("flex flex-col h-full", className)}
+      data-testid={testId}
+    >
+      {/* ============================================ */}
+      {/* STICKY HEADER */}
+      {/* ============================================ */}
+      <VerificationStickyHeader
+        exercise={exercise}
+        onFieldChange={onFieldChange}
+        disabled={disabled}
+        className="shrink-0 mb-4"
+        data-testid="verification-editor-header"
+      />
 
-        {/* ============================================ */}
-        {/* STREFA A: AI Analysis Header (sticky) */}
-        {/* ============================================ */}
-        {showAIHeader && (
-          <AIAnalysisHeader
-            exercise={exercise}
-            onAIAnalysisComplete={handleAIAnalysisComplete}
-            onAIAnalysisUndo={handleAIAnalysisUndo}
-            aiFieldsCount={aiSuggestedFields.size}
-            disabled={disabled}
-            hidden={isAIHeaderHidden}
-            onHide={() => setIsAIHeaderHidden(true)}
-            className="mb-3 shrink-0"
-            data-testid="verification-editor-ai-header"
-          />
-        )}
-
-        {/* ============================================ */}
-        {/* STREFA B: Identity Header - Name + Type + Side + Status */}
-        {/* ============================================ */}
-        <div className="flex items-start justify-between gap-2 mb-3 shrink-0" data-testid="verification-editor-header">
-          <div className="flex-1 min-w-0">
-            <InlineEditField
-              value={exercise.name}
-              onCommit={handleFieldCommit("name")}
-              type="text"
-              placeholder="Nazwa ćwiczenia..."
-              disabled={disabled}
-              variant="ghost"
-              className="text-lg font-bold -ml-1.5"
-              data-testid="verification-editor-name"
-            />
-
-            {/* Type & Side badges */}
-            <div className="flex items-center gap-2 mt-1">
-              <InlineEditSelect
-                value={exercise.type || "reps"}
-                onCommit={handleFieldCommit("type")}
-                options={EXERCISE_TYPES}
-                disabled={disabled}
-                variant="ghost"
-                size="compact"
-                data-testid="verification-editor-type"
-              />
-              <InlineEditSelect
-                value={exercise.side || "none"}
-                onCommit={handleFieldCommit("side")}
-                options={EXERCISE_SIDES.map(s => ({ ...s, icon: <ArrowLeftRight className="h-3 w-3" /> }))}
-                disabled={disabled}
-                variant="ghost"
-                size="compact"
-                data-testid="verification-editor-side"
-              />
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2 shrink-0">
-            <Badge
-              variant="outline"
-              className={cn(
-                "text-[10px]",
-                exercise.status === "PENDING_REVIEW"
-                  ? "bg-amber-500/10 text-amber-600 border-amber-500/20"
-                  : "bg-muted text-muted-foreground"
-              )}
-            >
-              {exercise.status === "PENDING_REVIEW" ? "Oczekuje" : exercise.status}
-            </Badge>
-
-            {/* Author tooltip */}
-            {exercise.createdBy && (
-              <Tooltip>
-                <TooltipTrigger>
-                  <div className="w-6 h-6 rounded-full bg-surface-light flex items-center justify-center text-[10px] font-medium text-muted-foreground">
-                    {(exercise.createdBy.fullname || exercise.createdBy.email || "?")[0].toUpperCase()}
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent side="bottom">
-                  <p className="text-xs">Autor: {exercise.createdBy.fullname || exercise.createdBy.email}</p>
-                </TooltipContent>
-              </Tooltip>
+      {/* ============================================ */}
+      {/* SMART TABS WITH NOTIFICATION DOTS */}
+      {/* ============================================ */}
+      <Tabs defaultValue="content" className="flex-1 flex flex-col min-h-0">
+        <TabsList className="grid w-full grid-cols-2 shrink-0 mb-4">
+          {/* Tab: Opis i Instrukcje */}
+          <TabsTrigger
+            value="content"
+            className="relative gap-2"
+            data-testid="verification-tab-content"
+          >
+            <FileText className="h-4 w-4" />
+            Opis i Instrukcje
+            {/* Notification Dot */}
+            {!isContentValid && (
+              <span className="absolute -top-1 -right-1 flex h-3 w-3">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500" />
+              </span>
             )}
-          </div>
-        </div>
+          </TabsTrigger>
+
+          {/* Tab: Parametry i Tagi */}
+          <TabsTrigger
+            value="data"
+            className="relative gap-2"
+            data-testid="verification-tab-data"
+          >
+            <Settings2 className="h-4 w-4" />
+            Parametry i Tagi
+            {/* Notification Dot */}
+            {!isDataValid && (
+              <span className="absolute -top-1 -right-1 flex h-3 w-3">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500" />
+              </span>
+            )}
+          </TabsTrigger>
+        </TabsList>
 
         {/* ============================================ */}
-        {/* STREFA C: Training Matrix Grid (SmartAccordion) */}
+        {/* TAB CONTENT: OPIS I INSTRUKCJE */}
         {/* ============================================ */}
-        <SmartAccordion
-          title="Parametry Treningowe"
-          icon={Dumbbell}
-          optionalMissing={paramsMissingCount}
-          open={isParamsExpanded}
-          onOpenChange={setIsParamsExpanded}
-          className="mb-3 shrink-0"
-          testId="verification-params-accordion"
+        <TabsContent
+          value="content"
+          className="flex-1 min-h-0 mt-0"
+          data-testid="verification-content-tab"
         >
-          <TrainingParametersGrid
-            exercise={exercise}
+          <DualDescriptionTabs
+            patientDescription={exercise.patientDescription || null}
+            clinicalDescription={exercise.clinicalDescription || null}
             onFieldChange={onFieldChange}
-            aiSuggestedFields={aiSuggestedFields}
-            onAiFieldTouched={handleAiFieldTouched}
+            onValidityChange={handleContentValidityChange}
             disabled={disabled}
-            data-testid="verification-editor-training-grid"
+            className="h-full"
           />
-        </SmartAccordion>
+        </TabsContent>
 
         {/* ============================================ */}
-        {/* STREFA D: Dual Description Tabs + GhostField */}
+        {/* TAB CONTENT: PARAMETRY I TAGI */}
         {/* ============================================ */}
-        {/* GhostField for empty patient description */}
-        {!exercise.patientDescription && (
-          <div className="mb-3 shrink-0">
-            <GhostField
-              type="description"
-              label="Wygeneruj opis dla pacjenta"
-              description="AI napisze zrozumiały opis techniki wykonania ćwiczenia"
-              onManualAdd={() => {}}
-              hasAI={true}
-              testId="verification-ghost-description"
-            />
-          </div>
-        )}
-
-        <DualDescriptionTabs
-          patientDescription={exercise.patientDescription || null}
-          clinicalDescription={exercise.clinicalDescription || null}
-          onFieldChange={onFieldChange}
-          exerciseTags={allTags}
-          aiSuggestedFields={aiSuggestedFields}
-          onAiFieldTouched={handleAiFieldTouched}
-          disabled={disabled}
-          className="flex-1 min-h-0 mb-3"
-          data-testid="verification-editor-descriptions"
-        />
-
-        {/* ============================================ */}
-        {/* STREFA E: TAGS - SmartAccordion */}
-        {/* ============================================ */}
-        <SmartAccordion
-          title={`Tagi (${mainTags.length + additionalTags.length})`}
-          icon={Tag}
-          recommendedMissing={tagsMissingCount}
-          open={isTagsExpanded}
-          onOpenChange={setIsTagsExpanded}
-          className="mb-3 shrink-0"
-          testId="verification-tags-accordion"
+        <TabsContent
+          value="data"
+          className="flex-1 min-h-0 mt-0 overflow-y-auto"
+          data-testid="verification-data-tab"
         >
-          <div className="space-y-3">
-            {/* GhostField when no main tags */}
-            {mainTags.length === 0 ? (
-              <GhostField
-                type="tags"
-                label="Zasugeruj tagi AI"
-                description="Automatycznie przypisz kategorie na podstawie nazwy i opisu"
-                onManualAdd={() => {}}
-                hasAI={true}
-                testId="verification-ghost-tags"
-              />
-            ) : (
+          <div className="space-y-6">
+            {/* Training Parameters Grid */}
+            <TrainingParametersGrid
+              exercise={exercise}
+              onFieldChange={onFieldChange}
+              onValidityChange={handleDataValidityChange}
+              disabled={disabled}
+              data-testid="verification-editor-training-grid"
+            />
+
+            {/* Tags Section */}
+            <div className="space-y-4 pt-4 border-t border-border/30">
               <TagSmartChips
                 exerciseId={exercise.id}
                 exerciseName={exercise.name}
@@ -509,58 +309,28 @@ export function VerificationEditorPanel({
                 tags={mainTags}
                 onTagsChange={onMainTagsChange}
                 tagType="main"
-                label="Główne"
+                label="Kategorie główne"
                 disabled={disabled}
                 data-testid="verification-editor-main-tags"
               />
-            )}
 
-            <TagSmartChips
-              exerciseId={exercise.id}
-              exerciseName={exercise.name}
-              exerciseDescription={descriptionValue}
-              tags={additionalTags}
-              onTagsChange={onAdditionalTagsChange}
-              tagType="additional"
-              label="Dodatkowe"
-              disabled={disabled}
-              data-testid="verification-editor-additional-tags"
-            />
+              {additionalTags.length > 0 && (
+                <TagSmartChips
+                  exerciseId={exercise.id}
+                  exerciseName={exercise.name}
+                  exerciseDescription={descriptionValue}
+                  tags={additionalTags}
+                  onTagsChange={onAdditionalTagsChange}
+                  tagType="additional"
+                  label="Dodatkowe"
+                  disabled={disabled}
+                  data-testid="verification-editor-additional-tags"
+                />
+              )}
+            </div>
           </div>
-        </SmartAccordion>
-
-        {/* Inline tag preview when collapsed */}
-        {!isTagsExpanded && (mainTags.length > 0 || additionalTags.length > 0) && (
-          <div className="flex flex-wrap gap-1 -mt-2 mb-3 px-1">
-            {[...mainTags, ...additionalTags].slice(0, 6).map((tag) => (
-              <Badge
-                key={tag}
-                variant="secondary"
-                className="text-[10px] px-1.5 py-0"
-              >
-                {tag}
-              </Badge>
-            ))}
-            {mainTags.length + additionalTags.length > 6 && (
-              <span className="text-[10px] text-muted-foreground">
-                +{mainTags.length + additionalTags.length - 6}
-              </span>
-            )}
-          </div>
-        )}
-
-        {/* ============================================ */}
-        {/* STREFA F: RELATIONS - Horizontal chain */}
-        {/* ============================================ */}
-        <div className="shrink-0 pt-2 border-t border-border/40" data-testid="verification-editor-relations">
-          <ProgressionChain
-            exercise={exercise}
-            onRelationsChange={onRelationsChange}
-            disabled={disabled}
-            data-testid="verification-editor-progression"
-          />
-        </div>
-      </div>
-    </TooltipProvider>
+        </TabsContent>
+      </Tabs>
+    </div>
   );
 }

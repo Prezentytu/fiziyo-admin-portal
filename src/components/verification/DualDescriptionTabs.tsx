@@ -12,7 +12,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
 import {
   Tooltip,
   TooltipContent,
@@ -21,7 +20,6 @@ import {
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { ClinicalMacrosBar } from "./ClinicalMacrosBar";
 
 interface DualDescriptionTabsProps {
   /** Opis dla pacjenta */
@@ -30,12 +28,12 @@ interface DualDescriptionTabsProps {
   clinicalDescription: string | null;
   /** Callback przy zmianie pola */
   onFieldChange: (field: string, value: unknown) => Promise<void>;
-  /** Tagi ćwiczenia (dla clinical macros) */
-  exerciseTags?: string[];
   /** Pola wypełnione przez AI */
   aiSuggestedFields?: Set<string>;
   /** Callback gdy użytkownik kliknie w pole AI */
   onAiFieldTouched?: (field: string) => void;
+  /** Callback przy zmianie walidacji (do Smart Tabs) */
+  onValidityChange?: (isValid: boolean) => void;
   /** Czy wyłączony */
   disabled?: boolean;
   /** Dodatkowe klasy CSS */
@@ -54,16 +52,14 @@ interface DualDescriptionTabsProps {
  *
  * Funkcje:
  * - AI: Tłumacz na Pacjenta (bierze opis kliniczny -> upraszcza)
- * - Licznik znaków (min 50)
- * - Clinical Macros dla opisu klinicznego
  */
 export function DualDescriptionTabs({
   patientDescription,
   clinicalDescription,
   onFieldChange,
-  exerciseTags = [],
   aiSuggestedFields = new Set(),
   onAiFieldTouched,
+  onValidityChange,
   disabled = false,
   className,
   "data-testid": testId,
@@ -174,21 +170,6 @@ export function DualDescriptionTabs({
     setIsClinicalEditing(false);
   };
 
-  // Clinical macro insert
-  const handleMacroInsert = (text: string) => {
-    const currentValue = clinicalValue;
-    const newValue = currentValue ? `${currentValue}\n\n${text}` : text;
-    setClinicalValue(newValue);
-
-    if (!isClinicalEditing) {
-      setIsClinicalEditing(true);
-      setTimeout(() => {
-        clinicalRef.current?.focus();
-        clinicalRef.current?.setSelectionRange(newValue.length, newValue.length);
-      }, 0);
-    }
-  };
-
   // AI: Translate clinical to patient
   const handleTranslateToPatient = async () => {
     if (!clinicalValue.trim()) {
@@ -210,7 +191,7 @@ export function DualDescriptionTabs({
       setPatientValue(simplifiedText);
       setActiveTab("patient");
       setIsPatientEditing(true);
-      
+
       toast.success("Wygenerowano uproszczony opis", {
         description: "Sprawdź i dostosuj tekst przed zapisaniem",
       });
@@ -225,6 +206,12 @@ export function DualDescriptionTabs({
   const clinicalLength = clinicalValue.length;
   const isPatientValid = patientLength >= 50;
   const isClinicalValid = clinicalLength >= 20;
+
+  // Notify parent about validity changes
+  useEffect(() => {
+    const isValid = isPatientValid && isClinicalValid;
+    onValidityChange?.(isValid);
+  }, [isPatientValid, isClinicalValid, onValidityChange]);
 
   return (
     <TooltipProvider>
@@ -314,47 +301,32 @@ export function DualDescriptionTabs({
                   placeholder="Wpisz opis ćwiczenia zrozumiały dla pacjenta..."
                   disabled={isPatientSaving}
                   className={cn(
-                    "flex-1 min-h-[120px] resize-none text-sm border-primary bg-surface",
-                    isPatientSaving && "opacity-70",
-                    !isPatientValid && patientLength > 0 && "border-amber-500/50"
+                    "flex-1 min-h-[200px] resize-none text-base leading-relaxed border-primary bg-surface",
+                    isPatientSaving && "opacity-70"
                   )}
                   data-testid="dual-desc-patient-textarea"
                 />
-                <div className="flex items-center justify-between text-xs mt-2">
-                  <span
-                    className={cn(
-                      "text-muted-foreground",
-                      !isPatientValid && patientLength > 0 && "text-amber-600"
-                    )}
+                <div className="flex items-center justify-end gap-2 mt-3">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handlePatientCancel}
+                    disabled={isPatientSaving}
                   >
-                    {patientLength < 50
-                      ? `Min. 50 znaków (brakuje ${50 - patientLength})`
-                      : `${patientLength} znaków`}
-                  </span>
-                  <div className="flex gap-1.5">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={handlePatientCancel}
-                      disabled={isPatientSaving}
-                      className="h-6 text-xs px-2"
-                    >
-                      Anuluj
-                    </Button>
-                    <Button
-                      size="sm"
-                      onClick={handlePatientSave}
-                      disabled={isPatientSaving || !isPatientValid}
-                      className="h-6 text-xs px-2"
-                    >
-                      {isPatientSaving ? (
-                        <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-                      ) : (
-                        <Check className="h-3 w-3 mr-1" />
-                      )}
-                      Zapisz
-                    </Button>
-                  </div>
+                    Anuluj
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={handlePatientSave}
+                    disabled={isPatientSaving}
+                  >
+                    {isPatientSaving ? (
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    ) : (
+                      <Check className="h-4 w-4 mr-2" />
+                    )}
+                    Zapisz
+                  </Button>
                 </div>
               </div>
             ) : (
@@ -362,17 +334,17 @@ export function DualDescriptionTabs({
                 onClick={handlePatientEdit}
                 disabled={disabled}
                 className={cn(
-                  "w-full text-left p-3 rounded-lg border transition-colors text-sm min-h-[120px]",
+                  "w-full text-left p-4 rounded-lg border transition-colors min-h-[140px]",
                   "hover:border-primary/40 hover:bg-surface-light/50",
                   patientValue ? "border-transparent" : "border-dashed border-border/40"
                 )}
                 data-testid="dual-desc-patient-display"
               >
                 {patientValue ? (
-                  <p className="text-foreground whitespace-pre-wrap">{patientValue}</p>
+                  <p className="text-foreground text-base leading-relaxed whitespace-pre-wrap">{patientValue}</p>
                 ) : (
-                  <p className="text-muted-foreground italic flex items-center gap-1.5">
-                    <User className="h-4 w-4" />
+                  <p className="text-muted-foreground italic flex items-center gap-2 text-sm">
+                    <User className="h-5 w-5" />
                     Kliknij aby dodać opis dla pacjenta...
                   </p>
                 )}
@@ -401,119 +373,57 @@ export function DualDescriptionTabs({
                   placeholder="Opis kliniczny: biomechanika, mięśnie aktywowane, wskazania medyczne..."
                   disabled={isClinicalSaving}
                   className={cn(
-                    "flex-1 min-h-[120px] resize-none text-sm border-primary bg-surface font-mono text-[13px]",
-                    isClinicalSaving && "opacity-70",
-                    !isClinicalValid && clinicalLength > 0 && "border-amber-500/50"
+                    "flex-1 min-h-[200px] resize-none text-base leading-relaxed border-primary bg-surface",
+                    isClinicalSaving && "opacity-70"
                   )}
                   data-testid="dual-desc-clinical-textarea"
                 />
-                
-                {/* Clinical Macros */}
-                <ClinicalMacrosBar
-                  exerciseTags={exerciseTags}
-                  onInsert={handleMacroInsert}
-                  disabled={disabled || isClinicalSaving}
-                  className="mt-2"
-                  data-testid="dual-desc-clinical-macros"
-                />
-                
-                <div className="flex items-center justify-between text-xs mt-2">
-                  <span
-                    className={cn(
-                      "text-muted-foreground",
-                      !isClinicalValid && clinicalLength > 0 && "text-amber-600"
-                    )}
+                <div className="flex items-center justify-end gap-2 mt-3">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleClinicalCancel}
+                    disabled={isClinicalSaving}
                   >
-                    {clinicalLength < 20
-                      ? `Min. 20 znaków (brakuje ${20 - clinicalLength})`
-                      : `${clinicalLength} znaków`}
-                  </span>
-                  <div className="flex gap-1.5">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={handleClinicalCancel}
-                      disabled={isClinicalSaving}
-                      className="h-6 text-xs px-2"
-                    >
-                      Anuluj
-                    </Button>
-                    <Button
-                      size="sm"
-                      onClick={handleClinicalSave}
-                      disabled={isClinicalSaving || !isClinicalValid}
-                      className="h-6 text-xs px-2"
-                    >
-                      {isClinicalSaving ? (
-                        <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-                      ) : (
-                        <Check className="h-3 w-3 mr-1" />
-                      )}
-                      Zapisz
-                    </Button>
-                  </div>
+                    Anuluj
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={handleClinicalSave}
+                    disabled={isClinicalSaving}
+                  >
+                    {isClinicalSaving ? (
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    ) : (
+                      <Check className="h-4 w-4 mr-2" />
+                    )}
+                    Zapisz
+                  </Button>
                 </div>
               </div>
             ) : (
-              <div className="flex flex-col h-full">
-                <button
-                  onClick={handleClinicalEdit}
-                  disabled={disabled}
-                  className={cn(
-                    "w-full text-left p-3 rounded-lg border transition-colors text-sm min-h-[100px] flex-1",
-                    "hover:border-primary/40 hover:bg-surface-light/50",
-                    clinicalValue ? "border-transparent" : "border-dashed border-border/40"
-                  )}
-                  data-testid="dual-desc-clinical-display"
-                >
-                  {clinicalValue ? (
-                    <p className="text-foreground whitespace-pre-wrap font-mono text-[13px]">{clinicalValue}</p>
-                  ) : (
-                    <p className="text-muted-foreground italic flex items-center gap-1.5">
-                      <Stethoscope className="h-4 w-4" />
-                      Kliknij aby dodać opis kliniczny...
-                    </p>
-                  )}
-                </button>
-                
-                {/* Clinical Macros (visible in read mode too) */}
-                <ClinicalMacrosBar
-                  exerciseTags={exerciseTags}
-                  onInsert={handleMacroInsert}
-                  disabled={disabled}
-                  className="mt-2"
-                  data-testid="dual-desc-clinical-macros-readonly"
-                />
-              </div>
+              <button
+                onClick={handleClinicalEdit}
+                disabled={disabled}
+                className={cn(
+                  "w-full text-left p-4 rounded-lg border transition-colors min-h-[200px]",
+                  "hover:border-primary/40 hover:bg-surface-light/50",
+                  clinicalValue ? "border-transparent" : "border-dashed border-border/40"
+                )}
+                data-testid="dual-desc-clinical-display"
+              >
+                {clinicalValue ? (
+                  <p className="text-foreground text-base leading-relaxed whitespace-pre-wrap">{clinicalValue}</p>
+                ) : (
+                  <p className="text-muted-foreground italic flex items-center gap-2 text-sm">
+                    <Stethoscope className="h-5 w-5" />
+                    Kliknij aby dodać opis kliniczny...
+                  </p>
+                )}
+              </button>
             )}
           </TabsContent>
         </Tabs>
-
-        {/* Status badges */}
-        <div className="flex items-center gap-2 mt-2">
-          <Badge
-            variant="outline"
-            className={cn(
-              "text-[10px]",
-              isPatientValid
-                ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
-                : "bg-amber-500/10 text-amber-600 border-amber-500/20"
-            )}
-          >
-            Pacjent: {patientLength} zn.
-          </Badge>
-          <Badge
-            variant="outline"
-            className={cn(
-              "text-[10px]",
-              isClinicalValid
-                ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20"
-                : "bg-muted text-muted-foreground"
-            )}
-          >
-            Kliniczny: {clinicalLength} zn.
-          </Badge>
-        </div>
       </div>
     </TooltipProvider>
   );

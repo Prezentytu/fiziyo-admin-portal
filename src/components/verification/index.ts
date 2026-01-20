@@ -30,6 +30,7 @@ export { RelationshipManager, useExerciseRelationships, getRelationsForApprove }
 
 // Clinical Operator UI - Zero Scroll Layout (2025)
 export { VerificationEditorPanel } from "./VerificationEditorPanel";
+export { VerificationStickyHeader } from "./VerificationStickyHeader";
 export { ProgressionChain } from "./ProgressionChain";
 export { ClinicalMacrosBar } from "./ClinicalMacrosBar";
 export { MasterVideoPlayer } from "./MasterVideoPlayer";
@@ -40,6 +41,7 @@ export { TrainingParametersGrid } from "./TrainingParametersGrid";
 export { DualDescriptionTabs } from "./DualDescriptionTabs";
 export { QualityChecklist } from "./QualityChecklist";
 export type { QualityChecks } from "./QualityChecklist";
+export { QualityGateBar } from "./QualityGateBar";
 
 // Legacy (deprecated - use MasterVideoPlayer instead)
 export { MobileSimulator } from "./MobileSimulator";

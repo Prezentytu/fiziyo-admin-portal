@@ -1,19 +1,28 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Timer,
   RotateCcw,
   Dumbbell,
-  Clock,
-  Pause,
   Gauge,
-  Volume2,
-  Zap,
-  Hourglass,
+  AlertCircle,
 } from "lucide-react";
-import { ClickableStat } from "./ClickableStat";
-import { InlineEditField, InlineEditSelect } from "./InlineEditField";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import type { AdminExercise } from "@/graphql/types/adminExercise.types";
 
@@ -34,10 +43,8 @@ interface TrainingParametersGridProps {
   exercise: AdminExercise;
   /** Callback przy zmianie pola */
   onFieldChange: (field: string, value: unknown) => Promise<void>;
-  /** Pola wypełnione przez AI (pokazują fioletową poświatę) */
-  aiSuggestedFields?: Set<string>;
-  /** Callback gdy użytkownik kliknie w pole AI */
-  onAiFieldTouched?: (field: string) => void;
+  /** Callback przy zmianie walidacji */
+  onValidityChange?: (isValid: boolean) => void;
   /** Czy wyłączony */
   disabled?: boolean;
   /** Dodatkowe klasy CSS */
@@ -46,336 +53,296 @@ interface TrainingParametersGridProps {
   "data-testid"?: string;
 }
 
-interface GridCellProps {
-  icon: React.ReactNode;
-  label: string;
-  children: React.ReactNode;
-  isAiSuggested?: boolean;
-  onFocus?: () => void;
-  className?: string;
-  "data-testid"?: string;
-}
-
 /**
- * GridCell - Pojedyncza komórka w Training Matrix
- */
-function GridCell({
-  icon,
-  label,
-  children,
-  isAiSuggested,
-  onFocus,
-  className,
-  "data-testid": testId,
-}: GridCellProps) {
-  return (
-    <div
-      className={cn(
-        "relative flex flex-col p-2.5 rounded-lg border border-border/40 bg-surface/30 transition-all",
-        "hover:border-border/60 hover:bg-surface/50",
-        isAiSuggested && "ai-suggested",
-        className
-      )}
-      onFocus={onFocus}
-      data-testid={testId}
-    >
-      {/* AI Badge */}
-      {isAiSuggested && (
-        <div className="ai-suggested-badge">
-          <Zap />
-        </div>
-      )}
-      
-      {/* Header */}
-      <div className="flex items-center gap-1.5 mb-1.5">
-        <span className="text-muted-foreground">{icon}</span>
-        <span className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium">
-          {label}
-        </span>
-      </div>
-      
-      {/* Content */}
-      <div className="flex-1 flex items-center">
-        {children}
-      </div>
-    </div>
-  );
-}
-
-/**
- * TrainingParametersGrid - Bento Grid z parametrami treningowymi
+ * TrainingParametersGrid - Parametry treningowe w czystym grid layout
  *
- * Layout (4 kolumny):
- * | Serie | Powtórzenia | Czas | Tempo |
- * | Przerwa (Serie) | Przerwa (Powt.) | Przygotowanie | Czas wyk. |
- * | Trudność | Audio Cue (colspan 3) |
+ * Layout:
+ * | Serie *  | Powtórzenia | Czas (s) |
+ * | Trudność | Tempo       | Przerwa  |
  */
 export function TrainingParametersGrid({
   exercise,
   onFieldChange,
-  aiSuggestedFields = new Set(),
-  onAiFieldTouched,
+  onValidityChange,
   disabled = false,
   className,
   "data-testid": testId,
 }: TrainingParametersGridProps) {
-  // Track which fields have been touched (to remove AI suggestion styling)
-  const [touchedFields, setTouchedFields] = useState<Set<string>>(new Set());
+  // Local state for immediate feedback
+  const [localSets, setLocalSets] = useState<number | null>(exercise.defaultSets ?? null);
+  const [localReps, setLocalReps] = useState<number | null>(exercise.defaultReps ?? null);
+  const [localDuration, setLocalDuration] = useState<number | null>(exercise.defaultDuration ?? null);
+  const [localRest, setLocalRest] = useState<number | null>(exercise.defaultRestBetweenSets ?? null);
+  const [savingField, setSavingField] = useState<string | null>(null);
+
+  // Sync with external values
+  useEffect(() => {
+    setLocalSets(exercise.defaultSets ?? null);
+    setLocalReps(exercise.defaultReps ?? null);
+    setLocalDuration(exercise.defaultDuration ?? null);
+    setLocalRest(exercise.defaultRestBetweenSets ?? null);
+  }, [exercise.defaultSets, exercise.defaultReps, exercise.defaultDuration, exercise.defaultRestBetweenSets]);
+
+  // ============================================
+  // VALIDATION
+  // ============================================
+
+  const isInvalid = (value: number | null) => value === null || value <= 0;
+
+  const validation = useMemo(() => {
+    const hasSets = !isInvalid(localSets);
+    const hasReps = !isInvalid(localReps);
+    const hasDuration = !isInvalid(localDuration);
+    const hasVolume = hasReps || hasDuration;
+
+    return {
+      isValid: hasSets && hasVolume,
+      hasSets,
+      hasReps,
+      hasDuration,
+      hasVolume,
+    };
+  }, [localSets, localReps, localDuration]);
+
+  // Notify parent about validity changes
+  useEffect(() => {
+    onValidityChange?.(validation.isValid);
+  }, [validation.isValid, onValidityChange]);
+
+  // ============================================
+  // HANDLERS
+  // ============================================
 
   const handleFieldCommit = useCallback(
-    (field: string) => async (value: unknown) => {
-      await onFieldChange(field, value);
+    async (field: string, value: number | null) => {
+      setSavingField(field);
+      try {
+        await onFieldChange(field, value);
+      } finally {
+        setSavingField(null);
+      }
     },
     [onFieldChange]
   );
 
-  const handleFieldFocus = useCallback(
-    (field: string) => {
-      if (aiSuggestedFields.has(field) && !touchedFields.has(field)) {
-        setTouchedFields((prev) => new Set([...prev, field]));
-        onAiFieldTouched?.(field);
-      }
-    },
-    [aiSuggestedFields, touchedFields, onAiFieldTouched]
-  );
+  const handleSetsChange = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value === "" ? null : parseInt(e.target.value, 10);
+    setLocalSets(isNaN(val as number) ? null : val);
+  }, []);
 
-  const isAiSuggested = (field: string) =>
-    aiSuggestedFields.has(field) && !touchedFields.has(field);
+  const handleSetsBlur = useCallback(async () => {
+    await handleFieldCommit("defaultSets", localSets);
+  }, [localSets, handleFieldCommit]);
+
+  const handleRepsChange = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value === "" ? null : parseInt(e.target.value, 10);
+    setLocalReps(isNaN(val as number) ? null : val);
+  }, []);
+
+  const handleRepsBlur = useCallback(async () => {
+    await handleFieldCommit("defaultReps", localReps);
+  }, [localReps, handleFieldCommit]);
+
+  const handleDurationChange = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value === "" ? null : parseInt(e.target.value, 10);
+    setLocalDuration(isNaN(val as number) ? null : val);
+  }, []);
+
+  const handleDurationBlur = useCallback(async () => {
+    await handleFieldCommit("defaultDuration", localDuration);
+  }, [localDuration, handleFieldCommit]);
+
+  const handleRestChange = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value === "" ? null : parseInt(e.target.value, 10);
+    setLocalRest(isNaN(val as number) ? null : val);
+  }, []);
+
+  const handleRestBlur = useCallback(async () => {
+    await handleFieldCommit("defaultRestBetweenSets", localRest);
+  }, [localRest, handleFieldCommit]);
+
+  // Local state for tempo and difficulty
+  const [localTempo, setLocalTempo] = useState<string>(exercise.tempo || "");
+  const [localDifficulty, setLocalDifficulty] = useState<string>(exercise.difficultyLevel || "");
+
+  // Sync tempo and difficulty with external values
+  useEffect(() => {
+    setLocalTempo(exercise.tempo || "");
+    setLocalDifficulty(exercise.difficultyLevel || "");
+  }, [exercise.tempo, exercise.difficultyLevel]);
+
+  const handleTempoChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setLocalTempo(e.target.value);
+  }, []);
+
+  const handleTempoBlur = useCallback(async () => {
+    await onFieldChange("tempo", localTempo || null);
+  }, [localTempo, onFieldChange]);
+
+  const handleDifficultyChange = useCallback(async (value: string) => {
+    setLocalDifficulty(value);
+    await onFieldChange("difficultyLevel", value || null);
+  }, [onFieldChange]);
 
   return (
-    <div
-      className={cn("space-y-2", className)}
-      data-testid={testId}
-    >
-      {/* Row 1: Volume & Basic Timing */}
-      <div className="grid grid-cols-4 gap-2">
-        {/* Serie */}
-        <GridCell
-          icon={<Dumbbell className="h-3.5 w-3.5" />}
-          label="Serie"
-          isAiSuggested={isAiSuggested("defaultSets")}
-          onFocus={() => handleFieldFocus("defaultSets")}
-          data-testid="training-grid-sets-cell"
-        >
-          <ClickableStat
-            value={exercise.defaultSets ?? null}
-            label=""
-            min={0}
-            max={20}
-            onCommit={handleFieldCommit("defaultSets")}
-            disabled={disabled}
-            variant="compact"
-            className="w-full justify-center"
-            data-testid="training-grid-sets"
-          />
-        </GridCell>
+    <TooltipProvider>
+      <div className={cn("space-y-4", className)} data-testid={testId}>
+        {/* Header */}
+        <div className="flex items-center gap-2">
+          <h3 className="text-sm font-semibold flex items-center gap-2 text-foreground">
+            <Dumbbell className="h-4 w-4 text-primary" />
+            Parametry Treningowe
+          </h3>
+          {!validation.isValid && (
+            <Tooltip>
+              <TooltipTrigger>
+                <AlertCircle className="h-4 w-4 text-destructive" />
+              </TooltipTrigger>
+              <TooltipContent className="bg-destructive text-destructive-foreground">
+                Uzupełnij: Serie + (Powtórzenia lub Czas)
+              </TooltipContent>
+            </Tooltip>
+          )}
+        </div>
 
-        {/* Powtórzenia */}
-        <GridCell
-          icon={<RotateCcw className="h-3.5 w-3.5" />}
-          label="Powtórzenia"
-          isAiSuggested={isAiSuggested("defaultReps")}
-          onFocus={() => handleFieldFocus("defaultReps")}
-          data-testid="training-grid-reps-cell"
-        >
-          <ClickableStat
-            value={exercise.defaultReps ?? null}
-            label=""
-            min={0}
-            max={100}
-            onCommit={handleFieldCommit("defaultReps")}
-            disabled={disabled}
-            variant="compact"
-            className="w-full justify-center"
-            data-testid="training-grid-reps"
-          />
-        </GridCell>
+        {/* Row 1: Volume - Serie, Powtórzenia, Czas */}
+        <div className="grid grid-cols-3 gap-4">
+          {/* Serie (Wymagane) */}
+          <div className="space-y-1.5">
+            <Label
+              className={cn(
+                "text-xs flex items-center gap-1",
+                isInvalid(localSets) ? "text-destructive font-medium" : "text-muted-foreground"
+              )}
+            >
+              <Dumbbell className="h-3.5 w-3.5" />
+              Serie *
+            </Label>
+            <Input
+              type="number"
+              min={1}
+              max={20}
+              value={localSets ?? ""}
+              onChange={handleSetsChange}
+              onBlur={handleSetsBlur}
+              disabled={disabled || savingField === "defaultSets"}
+              placeholder="0"
+              className={cn(
+                "font-mono text-center h-10",
+                isInvalid(localSets) && "border-destructive"
+              )}
+              data-testid="training-grid-sets"
+            />
+          </div>
 
-        {/* Czas ćwiczenia */}
-        <GridCell
-          icon={<Timer className="h-3.5 w-3.5" />}
-          label="Czas"
-          isAiSuggested={isAiSuggested("defaultDuration")}
-          onFocus={() => handleFieldFocus("defaultDuration")}
-          data-testid="training-grid-duration-cell"
-        >
-          <ClickableStat
-            value={exercise.defaultDuration ?? null}
-            label=""
-            unit="s"
-            min={0}
-            max={600}
-            step={5}
-            onCommit={handleFieldCommit("defaultDuration")}
-            disabled={disabled}
-            variant="compact"
-            className="w-full justify-center"
-            data-testid="training-grid-duration"
-          />
-        </GridCell>
+          {/* Powtórzenia */}
+          <div className="space-y-1.5">
+            <Label className="text-xs flex items-center gap-1 text-muted-foreground">
+              <RotateCcw className="h-3.5 w-3.5" />
+              Powtórzenia
+            </Label>
+            <Input
+              type="number"
+              min={1}
+              max={100}
+              value={localReps ?? ""}
+              onChange={handleRepsChange}
+              onBlur={handleRepsBlur}
+              disabled={disabled || savingField === "defaultReps"}
+              placeholder="0"
+              className="font-mono text-center h-10"
+              data-testid="training-grid-reps"
+            />
+          </div>
 
-        {/* Tempo */}
-        <GridCell
-          icon={<Gauge className="h-3.5 w-3.5" />}
-          label="Tempo"
-          isAiSuggested={isAiSuggested("tempo")}
-          onFocus={() => handleFieldFocus("tempo")}
-          data-testid="training-grid-tempo-cell"
-        >
-          <InlineEditField
-            value={exercise.tempo || null}
-            onCommit={handleFieldCommit("tempo")}
-            type="text"
-            placeholder="2-0-2"
-            disabled={disabled}
-            variant="ghost"
-            size="compact"
-            className="w-full text-center font-mono"
-            data-testid="training-grid-tempo"
-          />
-        </GridCell>
+          {/* Czas (Sekundy) */}
+          <div className="space-y-1.5">
+            <Label className="text-xs flex items-center gap-1 text-muted-foreground">
+              <Timer className="h-3.5 w-3.5" />
+              Czas (s)
+            </Label>
+            <Input
+              type="number"
+              min={5}
+              max={600}
+              step={5}
+              value={localDuration ?? ""}
+              onChange={handleDurationChange}
+              onBlur={handleDurationBlur}
+              disabled={disabled || savingField === "defaultDuration"}
+              placeholder="0"
+              className="font-mono text-center h-10"
+              data-testid="training-grid-duration"
+            />
+          </div>
+        </div>
+
+        {/* Row 2: Details - Trudność, Tempo, Przerwa */}
+        <div className="grid grid-cols-3 gap-4">
+          {/* Trudność */}
+          <div className="space-y-1.5">
+            <Label className="text-xs flex items-center gap-1 text-muted-foreground">
+              <Gauge className="h-3.5 w-3.5" />
+              Trudność
+            </Label>
+            <Select
+              value={localDifficulty}
+              onValueChange={handleDifficultyChange}
+              disabled={disabled}
+            >
+              <SelectTrigger className="h-10" data-testid="training-grid-difficulty">
+                <SelectValue placeholder="Wybierz" />
+              </SelectTrigger>
+              <SelectContent>
+                {DIFFICULTY_LEVELS.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Tempo */}
+          <div className="space-y-1.5">
+            <Label className="text-xs flex items-center gap-1 text-muted-foreground">
+              <Gauge className="h-3.5 w-3.5" />
+              Tempo
+            </Label>
+            <Input
+              type="text"
+              value={localTempo}
+              onChange={handleTempoChange}
+              onBlur={handleTempoBlur}
+              disabled={disabled}
+              placeholder="2-0-2"
+              className="font-mono text-center h-10"
+              data-testid="training-grid-tempo"
+            />
+          </div>
+
+          {/* Przerwa */}
+          <div className="space-y-1.5">
+            <Label className="text-xs flex items-center gap-1 text-muted-foreground">
+              <Timer className="h-3.5 w-3.5" />
+              Przerwa (s)
+            </Label>
+            <Input
+              type="number"
+              min={0}
+              max={300}
+              step={5}
+              value={localRest ?? ""}
+              onChange={handleRestChange}
+              onBlur={handleRestBlur}
+              disabled={disabled || savingField === "defaultRestBetweenSets"}
+              placeholder="60"
+              className="font-mono text-center h-10"
+              data-testid="training-grid-rest"
+            />
+          </div>
+        </div>
       </div>
-
-      {/* Row 2: Rest Times & Advanced Timing */}
-      <div className="grid grid-cols-4 gap-2">
-        {/* Przerwa między seriami */}
-        <GridCell
-          icon={<Pause className="h-3.5 w-3.5" />}
-          label="Przerwa (Serie)"
-          isAiSuggested={isAiSuggested("defaultRestBetweenSets")}
-          onFocus={() => handleFieldFocus("defaultRestBetweenSets")}
-          data-testid="training-grid-rest-sets-cell"
-        >
-          <ClickableStat
-            value={exercise.defaultRestBetweenSets ?? null}
-            label=""
-            unit="s"
-            min={0}
-            max={300}
-            step={5}
-            onCommit={handleFieldCommit("defaultRestBetweenSets")}
-            disabled={disabled}
-            variant="compact"
-            className="w-full justify-center"
-            data-testid="training-grid-rest-sets"
-          />
-        </GridCell>
-
-        {/* Przerwa między powtórzeniami */}
-        <GridCell
-          icon={<Clock className="h-3.5 w-3.5" />}
-          label="Przerwa (Powt.)"
-          isAiSuggested={isAiSuggested("defaultRestBetweenReps")}
-          onFocus={() => handleFieldFocus("defaultRestBetweenReps")}
-          data-testid="training-grid-rest-reps-cell"
-        >
-          <ClickableStat
-            value={exercise.defaultRestBetweenReps ?? null}
-            label=""
-            unit="s"
-            min={0}
-            max={60}
-            step={1}
-            onCommit={handleFieldCommit("defaultRestBetweenReps")}
-            disabled={disabled}
-            variant="compact"
-            className="w-full justify-center"
-            data-testid="training-grid-rest-reps"
-          />
-        </GridCell>
-
-        {/* Czas przygotowania */}
-        <GridCell
-          icon={<Hourglass className="h-3.5 w-3.5" />}
-          label="Przygotowanie"
-          isAiSuggested={isAiSuggested("preparationTime")}
-          onFocus={() => handleFieldFocus("preparationTime")}
-          data-testid="training-grid-prep-cell"
-        >
-          <ClickableStat
-            value={exercise.preparationTime ?? null}
-            label=""
-            unit="s"
-            min={0}
-            max={30}
-            step={1}
-            onCommit={handleFieldCommit("preparationTime")}
-            disabled={disabled}
-            variant="compact"
-            className="w-full justify-center"
-            data-testid="training-grid-prep"
-          />
-        </GridCell>
-
-        {/* Czas wykonania (jednego powtórzenia) */}
-        <GridCell
-          icon={<Zap className="h-3.5 w-3.5" />}
-          label="Czas wyk."
-          isAiSuggested={isAiSuggested("defaultExecutionTime")}
-          onFocus={() => handleFieldFocus("defaultExecutionTime")}
-          data-testid="training-grid-exec-cell"
-        >
-          <ClickableStat
-            value={exercise.defaultExecutionTime ?? null}
-            label=""
-            unit="s"
-            min={0}
-            max={120}
-            step={1}
-            onCommit={handleFieldCommit("defaultExecutionTime")}
-            disabled={disabled}
-            variant="compact"
-            className="w-full justify-center"
-            data-testid="training-grid-exec"
-          />
-        </GridCell>
-      </div>
-
-      {/* Row 3: Difficulty & Audio */}
-      <div className="grid grid-cols-4 gap-2">
-        {/* Poziom trudności */}
-        <GridCell
-          icon={<Gauge className="h-3.5 w-3.5" />}
-          label="Trudność"
-          isAiSuggested={isAiSuggested("difficultyLevel")}
-          onFocus={() => handleFieldFocus("difficultyLevel")}
-          data-testid="training-grid-difficulty-cell"
-        >
-          <InlineEditSelect
-            value={exercise.difficultyLevel || ""}
-            onCommit={handleFieldCommit("difficultyLevel")}
-            options={DIFFICULTY_LEVELS}
-            placeholder="Wybierz..."
-            disabled={disabled}
-            variant="ghost"
-            size="compact"
-            className="w-full"
-            data-testid="training-grid-difficulty"
-          />
-        </GridCell>
-
-        {/* Audio Cue - colspan 3 */}
-        <GridCell
-          icon={<Volume2 className="h-3.5 w-3.5" />}
-          label="Audio Cue"
-          isAiSuggested={isAiSuggested("audioCue")}
-          onFocus={() => handleFieldFocus("audioCue")}
-          className="col-span-3"
-          data-testid="training-grid-audio-cell"
-        >
-          <InlineEditField
-            value={exercise.audioCue || null}
-            onCommit={handleFieldCommit("audioCue")}
-            type="text"
-            placeholder="Tekst lektora, np. 'Napnij brzuch, trzymaj proste plecy...'"
-            disabled={disabled}
-            variant="ghost"
-            size="compact"
-            className="w-full"
-            data-testid="training-grid-audio"
-          />
-        </GridCell>
-      </div>
-    </div>
+    </TooltipProvider>
   );
 }

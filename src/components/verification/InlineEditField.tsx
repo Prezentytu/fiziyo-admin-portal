@@ -32,6 +32,8 @@ interface InlineEditFieldProps {
   variant?: "default" | "ghost";
   /** Compact size for dense layouts */
   size?: "default" | "compact";
+  /** Allow multiline text display (no truncate) */
+  multiline?: boolean;
   "data-testid"?: string;
 }
 
@@ -62,6 +64,7 @@ export function InlineEditField({
   disabled = false,
   variant = "default",
   size = "default",
+  multiline = false,
   "data-testid": testId,
 }: InlineEditFieldProps) {
   const isGhost = variant === "ghost";
@@ -185,7 +188,8 @@ export function InlineEditField({
               "transition-all resize-none",
               status === "saving" && "opacity-70",
               isGhost && "border-primary bg-surface focus:bg-surface",
-              isCompact && "text-sm py-1.5"
+              isCompact && "text-sm py-1.5",
+              className
             )}
           />
         ) : type === "select" && options ? (
@@ -229,10 +233,11 @@ export function InlineEditField({
             max={max}
             disabled={status === "saving"}
             className={cn(
-              "transition-all",
+              "transition-all h-auto",
               status === "saving" && "opacity-70",
               isGhost && "border-primary bg-surface focus:bg-surface",
-              isCompact && "h-8 text-sm"
+              isCompact && "h-8 text-sm",
+              className
             )}
           />
         )}
@@ -283,7 +288,8 @@ export function InlineEditField({
     >
       <span
         className={cn(
-          "flex-1 min-w-0 truncate",
+          "flex-1 min-w-0",
+          multiline ? "whitespace-pre-wrap break-words" : "truncate",
           isEmpty && "text-muted-foreground italic"
         )}
       >

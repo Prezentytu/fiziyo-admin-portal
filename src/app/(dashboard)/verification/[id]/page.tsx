@@ -101,6 +101,9 @@ export default function VerificationDetailPage({ params }: VerificationDetailPag
     recommendedMissing: [],
   });
 
+  // Missing fields state (from new validation layer)
+  const [missingFields, setMissingFields] = useState<string[]>([]);
+
   // ============================================
   // QUERIES
   // ============================================
@@ -305,6 +308,14 @@ export default function VerificationDetailPage({ params }: VerificationDetailPag
     []
   );
 
+  // Validation change handler (from new Clean Cockpit validation layer)
+  const handleValidationChange = useCallback(
+    (isValid: boolean, fields: string[]) => {
+      setMissingFields(fields);
+    },
+    []
+  );
+
   // Approve handler
   const handleApprove = useCallback(
     async (notes: string | null) => {
@@ -467,40 +478,40 @@ export default function VerificationDetailPage({ params }: VerificationDetailPag
   }
 
   // ============================================
-  // MAIN RENDER - Zero Scroll Clinical Operator UI
+  // MAIN RENDER - Simplified Review UI
   // ============================================
 
   return (
     <div className="h-[calc(100vh-4rem)] flex flex-col -m-6">
-      {/* Main content area - 2 column layout, NO SCROLL */}
+      {/* Main content area - 2 column layout 60/40 */}
       <div className="flex-1 flex flex-col lg:flex-row min-h-0">
 
-        {/* LEFT COLUMN: Master Video Player (flex-1, not fixed width) */}
-        <div className="flex-1 bg-zinc-950 border-b lg:border-b-0 lg:border-r border-border/20 flex flex-col min-h-0">
+        {/* LEFT COLUMN: Media Player (60% on desktop) */}
+        <div className="h-[40vh] lg:h-auto lg:w-[60%] bg-zinc-950 border-b lg:border-b-0 lg:border-r border-border/20 flex flex-col min-h-0">
           {/* Compact Header: Back + Progress */}
-          <div className="flex items-center justify-between gap-3 px-3 py-2 border-b border-zinc-800/50 shrink-0">
+          <div className="flex items-center justify-between gap-3 px-4 py-2.5 border-b border-zinc-800/50 shrink-0">
             <Button
               variant="ghost"
               size="sm"
               onClick={() => router.push("/verification")}
-              className="text-zinc-400 hover:text-white -ml-1 h-7 px-2"
+              className="text-zinc-400 hover:text-white -ml-2 h-8 px-3"
               data-testid="verification-back-btn"
             >
-              <ArrowLeft className="mr-1.5 h-3.5 w-3.5" />
-              <span className="text-xs">Powrót</span>
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              <span className="text-sm">Powrót</span>
             </Button>
 
-            {/* Progress indicator - compact */}
+            {/* Progress indicator */}
             {positionInQueue && totalPending > 0 && (
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-zinc-400">
-                  <span className="text-zinc-200 font-semibold">{positionInQueue}</span>
-                  <span className="text-zinc-500"> / </span>
-                  <span className="text-zinc-200 font-semibold">{totalPending}</span>
+              <div className="flex items-center gap-3">
+                <span className="text-sm text-zinc-400">
+                  <span className="text-white font-semibold">{positionInQueue}</span>
+                  <span className="text-zinc-500 mx-1">/</span>
+                  <span className="text-white font-semibold">{totalPending}</span>
                 </span>
-                <div className="w-12 h-1 bg-zinc-800 rounded-full overflow-hidden">
+                <div className="w-16 h-1.5 bg-zinc-800 rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-primary rounded-full transition-all duration-300"
+                    className="h-full bg-emerald-500 rounded-full transition-all duration-300"
                     style={{ width: `${(positionInQueue / totalPending) * 100}%` }}
                   />
                 </div>
@@ -508,31 +519,31 @@ export default function VerificationDetailPage({ params }: VerificationDetailPag
             )}
           </div>
 
-          {/* Master Video Player - fills remaining space */}
+          {/* Master Video Player */}
           <div className="flex-1 min-h-0">
             <MasterVideoPlayer exercise={exercise} />
           </div>
         </div>
 
-        {/* RIGHT COLUMN: Compact Editor Panel (flex-1, NO overflow-y-auto) */}
-        <div className="flex-1 bg-background flex flex-col min-h-0 pb-16">
-          <div className="flex-1 p-3 flex flex-col min-h-0 overflow-hidden">
-            {/* Previous review notes (if any) - compact */}
+        {/* RIGHT COLUMN: Editor Panel (40% on desktop) */}
+        <div className="flex-1 lg:w-[40%] bg-background flex flex-col min-h-0 pb-16">
+          <div className="flex-1 p-4 lg:p-5 flex flex-col min-h-0 overflow-y-auto">
+            {/* Previous review notes (if any) */}
             {exercise.adminReviewNotes && (
-              <Card className="border-amber-500/30 bg-amber-500/5 mb-2 shrink-0">
-                <CardContent className="p-2">
+              <Card className="border-amber-500/30 bg-amber-500/5 mb-4 shrink-0">
+                <CardContent className="p-3">
                   <div className="flex items-start gap-2">
                     <FileText className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
                     <div className="min-w-0">
-                      <p className="text-xs font-medium text-amber-600">Poprzednie uwagi:</p>
-                      <p className="text-xs text-foreground line-clamp-2">{exercise.adminReviewNotes}</p>
+                      <p className="text-sm font-medium text-amber-600">Poprzednie uwagi:</p>
+                      <p className="text-sm text-foreground mt-1">{exercise.adminReviewNotes}</p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
             )}
 
-            {/* MAIN: VerificationEditorPanel - Zero Scroll Compact */}
+            {/* MAIN: VerificationEditorPanel */}
             <VerificationEditorPanel
               exercise={exercise}
               onFieldChange={handleFieldUpdate}
@@ -541,6 +552,7 @@ export default function VerificationDetailPage({ params }: VerificationDetailPag
               additionalTags={additionalTags}
               onAdditionalTagsChange={handleAdditionalTagsChange}
               onRelationsChange={handleRelationsChange}
+              onValidationChange={handleValidationChange}
               onCompletionChange={handleCompletionChange}
               className="flex-1 min-h-0"
               data-testid="verification-editor-panel"
@@ -549,20 +561,19 @@ export default function VerificationDetailPage({ params }: VerificationDetailPag
         </div>
       </div>
 
-      {/* FIXED FOOTER - Clinical Operator style */}
+      {/* FIXED FOOTER - Clean Cockpit with Quality Gate */}
       <VerificationStickyFooterV2
         onReject={() => setIsRejectDialogOpen(true)}
-        onSkip={handleSkip}
         onApproveAndNext={handleApproveAndNext}
+        onSaveDraft={handleSaveDraft}
         validationPassed={canPublish}
-        validationErrors={validationErrors}
+        missingFields={missingFields}
         clinicalCheckboxChecked={clinicalCheckboxChecked}
         onClinicalCheckboxChange={setClinicalCheckboxChecked}
         isRejecting={rejecting}
         isApproving={approving}
-        remainingTasksCount={remainingCount}
         isSavingDraft={isSavingDraft}
-        lastSavedTime={lastSavedTime}
+        remainingTasksCount={remainingCount}
       />
 
       {/* Dialogs */}
