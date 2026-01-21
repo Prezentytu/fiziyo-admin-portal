@@ -54,6 +54,7 @@ import type {
   ExerciseTagsResponse,
   TagCategoriesResponse,
 } from '@/types/apollo';
+import { translateExerciseTypeShort, translateExerciseSidePolish } from '@/components/pdf/polishUtils';
 
 interface ExerciseDetailPageProps {
   params: Promise<{ id: string }>;
@@ -135,34 +136,6 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
 
   const handleAddToSet = () => {
     setIsAddToSetDialogOpen(true);
-  };
-
-  const getTypeLabel = (type?: string) => {
-    switch (type) {
-      case 'reps':
-        return 'Powtórzenia';
-      case 'time':
-        return 'Czasowe';
-      default:
-        return type || 'Inne';
-    }
-  };
-
-  const getSideLabel = (side?: string) => {
-    if (!side) return 'Bez podziału';
-    const normalizedSide = side.toLowerCase();
-    switch (normalizedSide) {
-      case 'left':
-        return 'Lewa strona';
-      case 'right':
-        return 'Prawa strona';
-      case 'both':
-        return 'Obie strony';
-      case 'alternating':
-        return 'Naprzemiennie';
-      default:
-        return 'Bez podziału';
-    }
   };
 
   if (loading) {
@@ -281,12 +254,12 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
               <div className="flex flex-wrap gap-3">
                 {exercise.type && (
                   <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-primary/10 text-primary border border-primary/20">
-                    {getTypeLabel(exercise.type)}
+                    {translateExerciseTypeShort(exercise.type)}
                   </span>
                 )}
                 <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-zinc-100 dark:bg-zinc-800 text-zinc-500 border border-zinc-200 dark:border-zinc-700">
                   <ArrowLeftRight className="mr-1.5 h-3 w-3" />
-                  {getSideLabel(exercise.side || exercise.exerciseSide)}
+                  {translateExerciseSidePolish(exercise.side || exercise.exerciseSide) || 'Bez podziału'}
                 </span>
               </div>
             </div>

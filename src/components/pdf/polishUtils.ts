@@ -115,20 +115,37 @@ export function formatDaysPolish(frequency: {
 }
 
 /**
- * Tłumaczenie typu ćwiczenia
+ * Tłumaczenie typu ćwiczenia (wersja pełna)
+ * Obsługuje zarówno REPS/TIME jak i reps/time
  */
 export function translateExerciseTypePolish(type?: string): string {
+  if (!type) return '';
   const types: Record<string, string> = {
     reps: 'Na powtórzenia',
     time: 'Na czas',
   };
-  return type ? types[type] || type : '';
+  return types[type.toLowerCase()] || type;
+}
+
+/**
+ * Tłumaczenie typu ćwiczenia (wersja krótka dla badge'y)
+ * Obsługuje zarówno REPS/TIME jak i reps/time
+ */
+export function translateExerciseTypeShort(type?: string): string {
+  if (!type) return '';
+  const types: Record<string, string> = {
+    reps: 'Powtórzenia',
+    time: 'Czasowe',
+  };
+  return types[type.toLowerCase()] || type;
 }
 
 /**
  * Tłumaczenie strony ćwiczenia
+ * Obsługuje zarówno LEFT/RIGHT/etc jak i left/right/etc
  */
 export function translateExerciseSidePolish(side?: string): string {
+  if (!side) return '';
   const sides: Record<string, string> = {
     left: 'Lewa strona',
     right: 'Prawa strona',
@@ -136,5 +153,5 @@ export function translateExerciseSidePolish(side?: string): string {
     both: 'Obie strony jednocześnie',
     none: '',
   };
-  return side ? sides[side] || '' : '';
+  return sides[side.toLowerCase()] || '';
 }

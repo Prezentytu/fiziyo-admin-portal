@@ -15,6 +15,7 @@ import { Separator } from "@/components/ui/separator";
 import { ImagePlaceholder } from "@/components/shared/ImagePlaceholder";
 import { getMediaUrl } from "@/utils/mediaUrl";
 import type { ExerciseMapping, ExerciseOverride } from "./PatientAssignmentCard";
+import { translateExerciseTypeShort, translateExerciseSidePolish } from "@/components/pdf/polishUtils";
 
 interface ExercisePreviewDrawerProps {
   open: boolean;
@@ -24,25 +25,6 @@ interface ExercisePreviewDrawerProps {
   onEdit?: () => void;
 }
 
-// Helper functions
-const translateType = (type?: string) => {
-  const types: Record<string, string> = {
-    time: "Czasowe",
-    reps: "Powtórzenia",
-  };
-  return type ? types[type] || type : "Nieznane";
-};
-
-const translateSide = (side?: string) => {
-  const sides: Record<string, string> = {
-    left: "Lewa strona",
-    right: "Prawa strona",
-    both: "Obie strony",
-    alternating: "Naprzemiennie",
-    none: "Bez strony",
-  };
-  return side ? sides[side] || side : null;
-};
 
 export function ExercisePreviewDrawer({
   open,
@@ -122,7 +104,7 @@ export function ExercisePreviewDrawer({
             </DialogTitle>
             {exercise?.type && (
               <Badge variant="secondary" className="text-xs">
-                {translateType(exercise.type)}
+                {translateExerciseTypeShort(exercise.type)}
               </Badge>
             )}
             {hasOverride && (
@@ -244,12 +226,12 @@ export function ExercisePreviewDrawer({
             </div>
 
             {/* Additional info */}
-            {(translateSide(effectiveSide)) && (
+            {(translateExerciseSidePolish(effectiveSide)) && (
               <div className="flex items-center gap-3 p-3 rounded-xl bg-surface-light/50 border border-border/40">
                 <ArrowLeftRight className="h-5 w-5 text-muted-foreground shrink-0" />
                 <div>
                   <p className="text-xs text-muted-foreground">Strona wykonania</p>
-                  <p className="text-sm font-medium">{translateSide(effectiveSide)}</p>
+                  <p className="text-sm font-medium">{translateExerciseSidePolish(effectiveSide)}</p>
                 </div>
               </div>
             )}

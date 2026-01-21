@@ -10,6 +10,7 @@ import { ImagePlaceholder } from "@/components/shared/ImagePlaceholder";
 import { cn } from "@/lib/utils";
 import { getMediaUrl } from "@/utils/mediaUrl";
 import type { ExerciseSet, AssignedSetInfo } from "./types";
+import { translateExerciseTypeShort } from "@/components/pdf/polishUtils";
 
 interface SelectSetStepProps {
   exerciseSets: ExerciseSet[];
@@ -93,14 +94,6 @@ export function SelectSetStep({
     setPreviewSet(null);
   };
 
-  // Helper to get exercise type label
-  const getTypeLabel = (type?: string) => {
-    const types: Record<string, string> = {
-      reps: "Powtórzenia",
-      time: "Czasowe",
-    };
-    return type ? types[type] || type : "";
-  };
 
   // Toggle exercise exclusion
   const toggleExclude = (mappingId: string) => {
@@ -385,7 +378,7 @@ export function SelectSetStep({
                       </div>
                       {!isExcluded && exercise?.type && (
                         <Badge variant="secondary" className="text-[10px] shrink-0">
-                          {getTypeLabel(exercise.type)}
+                          {translateExerciseTypeShort(exercise.type)}
                         </Badge>
                       )}
                       {/* Exclude/include toggle - only show when set is selected */}

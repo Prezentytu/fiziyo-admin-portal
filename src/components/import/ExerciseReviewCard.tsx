@@ -21,6 +21,7 @@ import type {
   MatchSuggestion,
   ExerciseDecision,
 } from '@/types/import.types';
+import { translateExerciseTypeShort } from '@/components/pdf/polishUtils';
 
 interface ExerciseReviewCardProps {
   exercise: ExtractedExercise;
@@ -53,16 +54,6 @@ export function ExerciseReviewCard({
   // Czy AI sugeruje użycie istniejącego (wysoka pewność dopasowania)
   const aiSuggestsReuse = bestMatch && bestMatch.confidence >= 0.7;
 
-  const getTypeLabel = (type: string) => {
-    switch (type) {
-      case 'reps':
-        return 'Powtórzenia';
-      case 'time':
-        return 'Czasowe';
-      default:
-        return type;
-    }
-  };
 
   // Prosty label zgodności (słowny, nie %)
   const getConfidenceLabel = (confidence: number) => {
@@ -122,7 +113,7 @@ export function ExerciseReviewCard({
                 {exercise.name}
               </h3>
               <Badge variant="secondary" className="text-xs">
-                {getTypeLabel(exercise.type)}
+                {translateExerciseTypeShort(exercise.type)}
               </Badge>
             </div>
 

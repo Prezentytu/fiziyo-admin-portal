@@ -10,7 +10,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { GET_COMMISSION_TIER_INFO_QUERY } from "@/graphql/queries";
+import { GET_COMMISSION_TIER_INFO_QUERY, GET_CURRENT_BILLING_STATUS_QUERY } from "@/graphql/queries";
 import type { GetCommissionTierInfoResponse } from "@/types/apollo";
 import {
   CommissionTier,
@@ -56,7 +56,7 @@ export function GamificationProgress({
   organizationId,
   className,
 }: GamificationProgressProps) {
-  // Fetch tier info
+  // Fetch tier info (Revenue Share)
   const { data, loading, error } = useQuery<GetCommissionTierInfoResponse>(
     GET_COMMISSION_TIER_INFO_QUERY,
     {
@@ -66,14 +66,26 @@ export function GamificationProgress({
     }
   );
 
+  // Fetch billing status (Pay-as-you-go / Pilot Mode) - for premium patient count
+  const { data: billingData } = useQuery(GET_CURRENT_BILLING_STATUS_QUERY, {
+    variables: { organizationId: organizationId || "" },
+    skip: !organizationId,
+    errorPolicy: "all",
+  });
+
   const tierInfo = data?.commissionTierInfo;
+  const billing = billingData?.currentBillingStatus;
+  
+  // Use the higher count from either source (billing premium or revenue subscribers)
+  const premiumPatientCount = billing?.currentlyActivePremium ?? 0;
 
   // Calculate progress and markers
   const progressData = useMemo(() => {
     if (!tierInfo) return null;
 
     const currentTier = tierInfo.tier as CommissionTier;
-    const activeSubscribers = tierInfo.activeSubscribers;
+    // Use max of billing premium patients and revenue subscribers
+    const activeSubscribers = Math.max(tierInfo.activeSubscribers, premiumPatientCount);
 
     // Max subscribers for scale (ELITE threshold + some buffer)
     const maxScale = COMMISSION_TIERS.ELITE.minSubscribers + 100; // 400
@@ -154,7 +166,7 @@ export function GamificationProgress({
       isCloseToNextTier,
       isPartner: tierInfo.isPartner,
     };
-  }, [tierInfo]);
+  }, [tierInfo, premiumPatientCount]);
 
   // Loading state
   if (loading) {
@@ -207,7 +219,7 @@ export function GamificationProgress({
           <div>
             <p className="text-2xl font-bold text-white">PARTNER</p>
             <p className="text-sm text-zinc-400">
-              Stała prowizja: {formatPercent(progressData.commissionRate)}
+              Stały udział: {formatPercent(progressData.commissionRate)}
             </p>
           </div>
         </div>
@@ -235,7 +247,7 @@ export function GamificationProgress({
           </div>
           <div className="flex items-center gap-2 text-sm text-zinc-400">
             <Users className="h-4 w-4" />
-            <span>{progressData.activeSubscribers} pacjentów</span>
+            <span>{progressData.activeSubscribers} {progressData.activeSubscribers === 1 ? "pacjent" : "pacjentów"}</span>
           </div>
         </div>
 
@@ -299,7 +311,7 @@ export function GamificationProgress({
                   <div className="text-center">
                     <p className="font-bold text-white">{marker.tier}</p>
                     <p className="text-sm text-emerald-400">
-                      Prowizja: {formatPercent(marker.rate)}
+                      Twój udział: {formatPercent(marker.rate)}
                     </p>
                     <p className="text-xs text-zinc-400">
                       {marker.minSubscribers > 0
@@ -343,7 +355,7 @@ export function GamificationProgress({
               <p className="text-white">
                 Jeszcze tylko{" "}
                 <span className="font-bold text-emerald-400">
-                  {progressData.progressToNext} pacjentów
+                  {progressData.progressToNext} {progressData.progressToNext === 1 ? "pacjent" : "pacjentów"}
                 </span>{" "}
                 do{" "}
                 <span className="font-bold text-white">
@@ -357,7 +369,7 @@ export function GamificationProgress({
                       (progressData.nextTierRate - progressData.commissionRate) *
                         100
                     )}
-                    % prowizji!)
+                    % udziału!)
                   </span>
                 )}
               </p>

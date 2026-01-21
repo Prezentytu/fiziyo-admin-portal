@@ -36,6 +36,7 @@ import { cn } from "@/lib/utils";
 import { GET_ORGANIZATION_EXERCISES_QUERY } from "@/graphql/queries/exercises.queries";
 import { ADD_EXERCISE_TO_EXERCISE_SET_MUTATION } from "@/graphql/mutations/exercises.mutations";
 import { GET_EXERCISE_SET_WITH_ASSIGNMENTS_QUERY } from "@/graphql/queries/exerciseSets.queries";
+import { translateExerciseTypeShort, translateExerciseSidePolish } from "@/components/pdf/polishUtils";
 
 interface Exercise {
   id: string;
@@ -73,16 +74,6 @@ interface AddExerciseToSetDialogProps {
   existingExerciseIds?: string[];
   onSuccess?: () => void;
 }
-
-// Tłumaczenie typów na polski
-const translateType = (type?: string) => {
-  const types: Record<string, string> = {
-    time: "czasowe",
-    reps: "powtórzenia",
-    hold: "utrzymanie",
-  };
-  return type ? types[type] || type : "";
-};
 
 const translateSide = (side?: string) => {
   if (!side) return "";
@@ -434,7 +425,7 @@ export function AddExerciseToSetDialog({
                           <div className="flex items-center gap-2 mt-1">
                             {exercise.type && (
                               <Badge variant="secondary" className="text-xs">
-                                {translateType(exercise.type)}
+                                {translateExerciseTypeShort(exercise.type)}
                               </Badge>
                             )}
                             {(exercise.side || exercise.exerciseSide) &&
@@ -507,7 +498,7 @@ export function AddExerciseToSetDialog({
                           </p>
                           {exercise.type && (
                             <Badge variant="secondary" className="text-xs mt-1">
-                              {translateType(exercise.type)}
+                              {translateExerciseTypeShort(exercise.type)}
                             </Badge>
                           )}
                         </div>

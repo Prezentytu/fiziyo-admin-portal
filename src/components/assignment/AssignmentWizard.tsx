@@ -18,6 +18,7 @@ import { SelectPatientsStep } from './SelectPatientsStep';
 import { CustomizeExercisesStep } from './CustomizeExercisesStep';
 import { ScheduleStep } from './ScheduleStep';
 import { SummaryStep } from './SummaryStep';
+import { AssignmentSuccessDialog } from './AssignmentSuccessDialog';
 import {
   getWizardSteps,
   type AssignmentWizardProps,
@@ -31,17 +32,28 @@ import {
 } from './types';
 
 import { GET_ORGANIZATION_EXERCISE_SETS_QUERY } from '@/graphql/queries/exerciseSets.queries';
-import { GET_THERAPIST_PATIENTS_QUERY } from '@/graphql/queries/therapists.queries';
+import { GET_THERAPIST_PATIENTS_QUERY, GET_ORGANIZATION_PATIENTS_QUERY } from '@/graphql/queries/therapists.queries';
 import { ASSIGN_EXERCISE_SET_TO_PATIENT_MUTATION, REMOVE_EXERCISE_SET_ASSIGNMENT_MUTATION, UPDATE_PATIENT_EXERCISE_OVERRIDES_MUTATION } from '@/graphql/mutations/exercises.mutations';
 import { GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY } from '@/graphql/queries/patientAssignments.queries';
 import { GET_EXERCISE_SET_WITH_ASSIGNMENTS_QUERY } from '@/graphql/queries/exerciseSets.queries';
 import type { TherapistPatientsResponse } from '@/types/apollo';
 
+// Success dialog data type
+interface SuccessDialogData {
+  patients: Array<{ id: string; name: string; email?: string }>;
+  setName: string;
+  premiumValidUntil: string | null;
+}
+
 // Wrapper component that handles dialog state - content remounts on each open
 export function AssignmentWizard(props: AssignmentWizardProps) {
-  const { open, onOpenChange } = props;
+  const { open, onOpenChange, therapistId, organizationId } = props;
   const [showCloseConfirm, setShowCloseConfirm] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
+  
+  // Success dialog state - lifted to wrapper so it persists after wizard closes
+  const [showSuccessDialog, setShowSuccessDialog] = useState(false);
+  const [successData, setSuccessData] = useState<SuccessDialogData | null>(null);
 
   const handleCloseAttempt = useCallback(() => {
     if (hasChanges) {
@@ -57,32 +69,67 @@ export function AssignmentWizard(props: AssignmentWizardProps) {
     onOpenChange(false);
   }, [onOpenChange]);
 
+  // Callback for AssignmentWizardContent to show success dialog
+  const handleAssignmentSuccess = useCallback((data: SuccessDialogData) => {
+    setSuccessData(data);
+    setShowSuccessDialog(true);
+    // Close the wizard dialog
+    onOpenChange(false);
+  }, [onOpenChange]);
+
   // Reset when dialog opens
   if (!open && hasChanges) {
     setHasChanges(false);
   }
 
   return (
-    <Dialog open={open} onOpenChange={() => handleCloseAttempt()}>
-      {open && (
-        <AssignmentWizardContent
-          {...props}
-          onCloseAttempt={handleCloseAttempt}
-          onHasChanges={setHasChanges}
+    <>
+      <Dialog open={open} onOpenChange={() => handleCloseAttempt()}>
+        {open && (
+          <AssignmentWizardContent
+            {...props}
+            onCloseAttempt={handleCloseAttempt}
+            onHasChanges={setHasChanges}
+            onAssignmentSuccess={handleAssignmentSuccess}
+          />
+        )}
+
+        <ConfirmDialog
+          open={showCloseConfirm}
+          onOpenChange={setShowCloseConfirm}
+          title="Porzucić zmiany?"
+          description="Masz niezapisane zmiany. Czy na pewno chcesz zamknąć bez zapisywania?"
+          confirmText="Tak, zamknij"
+          cancelText="Kontynuuj edycję"
+          variant="destructive"
+          onConfirm={handleConfirmClose}
+        />
+      </Dialog>
+
+      {/* Success dialog - OUTSIDE main dialog so it persists after wizard closes */}
+      {successData && (
+        <AssignmentSuccessDialog
+          open={showSuccessDialog}
+          onOpenChange={(open) => {
+            setShowSuccessDialog(open);
+            if (!open) {
+              setSuccessData(null);
+            }
+          }}
+          patients={successData.patients}
+          setName={successData.setName}
+          premiumValidUntil={successData.premiumValidUntil}
+          therapistId={therapistId}
+          organizationId={organizationId}
+          onAssignAnother={() => {
+            // Reset success state and reopen wizard
+            setSuccessData(null);
+            setShowSuccessDialog(false);
+            onOpenChange(true);
+          }}
         />
       )}
-
-      <ConfirmDialog
-        open={showCloseConfirm}
-        onOpenChange={setShowCloseConfirm}
-        title="Porzucić zmiany?"
-        description="Masz niezapisane zmiany. Czy na pewno chcesz zamknąć bez zapisywania?"
-        confirmText="Tak, zamknij"
-        cancelText="Kontynuuj edycję"
-        variant="destructive"
-        onConfirm={handleConfirmClose}
-      />
-    </Dialog>
+    </>
   );
 }
 
@@ -90,6 +137,7 @@ export function AssignmentWizard(props: AssignmentWizardProps) {
 interface AssignmentWizardContentProps extends AssignmentWizardProps {
   onCloseAttempt: () => void;
   onHasChanges: (hasChanges: boolean) => void;
+  onAssignmentSuccess: (data: SuccessDialogData) => void;
 }
 
 // Inner component with all the wizard logic - remounts on each dialog open
@@ -104,6 +152,7 @@ function AssignmentWizardContent({
   onSuccess,
   onCloseAttempt,
   onHasChanges,
+  onAssignmentSuccess,
 }: AssignmentWizardContentProps) {
   // Compute dynamic steps based on what's preselected
   const steps = useMemo(
@@ -494,9 +543,10 @@ function AssignmentWizardContent({
 
     try {
       const overridesJson = buildExerciseOverridesJson();
+      let lastPremiumValidUntil: string | null = null;
 
       for (const patient of selectedPatients) {
-        // Step 1: Assign the exercise set
+        // Step 1: Assign the exercise set (auto-aktywuje Premium)
         const assignResult = await assignSet({
           variables: {
             exerciseSetId: selectedSet.id,
@@ -517,6 +567,8 @@ function AssignmentWizardContent({
             },
           },
           refetchQueries: [
+            // Always refetch patients list (premium status may change)
+            { query: GET_ORGANIZATION_PATIENTS_QUERY, variables: { organizationId, filter: 'all' } },
             ...(mode === 'from-patient' && preselectedPatient
               ? [
                   {
@@ -536,9 +588,15 @@ function AssignmentWizardContent({
           ],
         });
 
-        // Step 2: If we have overrides or excluded exercises, update the assignment
+        // Pobierz premiumValidUntil z odpowiedzi (Beta Pilot Flow)
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const assignmentId = (assignResult.data as any)?.assignExerciseSetToPatient?.id;
+        const responseData = (assignResult.data as any)?.assignExerciseSetToPatient;
+        if (responseData?.premiumValidUntil) {
+          lastPremiumValidUntil = responseData.premiumValidUntil;
+        }
+
+        // Step 2: If we have overrides or excluded exercises, update the assignment
+        const assignmentId = responseData?.id;
         if (assignmentId && overridesJson) {
           await updatePatientOverrides({
             variables: {
@@ -549,17 +607,19 @@ function AssignmentWizardContent({
         }
       }
 
-      const patientCount = selectedPatients.length;
-      toast.success(
-        `Zestaw "${selectedSet.name}" przypisany do ${patientCount} pacjent${
-          patientCount === 1 ? 'a' : patientCount < 5 ? 'ów' : 'ów'
-        }`,
-        {
-          description: 'Pacjenci zobaczą ćwiczenia w aplikacji mobilnej',
-          duration: 5000,
-        }
-      );
-      onOpenChange(false);
+      // 🎯 Beta Pilot Flow: Pokazuj QR dialog zamiast zamykać od razu
+      // Call parent to show success dialog (lifted state to wrapper)
+      onAssignmentSuccess({
+        patients: selectedPatients.map((p) => ({
+          id: p.id,
+          name: p.name,
+          email: p.email,
+        })),
+        setName: selectedSet.name,
+        premiumValidUntil: lastPremiumValidUntil,
+      });
+
+      // Notify success callback
       onSuccess?.();
     } catch (error) {
       console.error('Błąd przypisywania:', error);
@@ -689,6 +749,7 @@ function AssignmentWizardContent({
   };
 
   return (
+    <>
     <DialogContent
       className="max-w-7xl w-[98vw] max-h-[95vh] h-[90vh] md:h-[85vh] flex flex-col p-0 gap-0 overflow-hidden"
       onInteractOutside={(e) => e.preventDefault()}
@@ -813,6 +874,8 @@ function AssignmentWizardContent({
         onConfirm={handleUnassignConfirm}
         isLoading={removing}
       />
+
     </DialogContent>
+    </>
   );
 }

@@ -60,6 +60,7 @@ import { EditAssignmentScheduleDialog } from '@/components/patients/EditAssignme
 import { EditExerciseOverrideDialog } from '@/components/patients/EditExerciseOverrideDialog';
 import { AddExerciseToPatientDialog } from '@/components/patients/AddExerciseToPatientDialog';
 import { ExercisePreviewDrawer } from '@/components/patients/ExercisePreviewDrawer';
+import { ExtendSetDialog } from '@/components/patients/ExtendSetDialog';
 import { GeneratePDFDialog } from '@/components/exercise-sets/GeneratePDFDialog';
 import { PatientQRCodeDialog } from '@/components/patients/PatientQRCodeDialog';
 import { EditPatientDialog } from '@/components/patients/EditPatientDialog';
@@ -96,6 +97,7 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
   const [pdfAssignment, setPdfAssignment] = useState<PatientAssignment | null>(null);
   const [addExerciseAssignment, setAddExerciseAssignment] = useState<PatientAssignment | null>(null);
   const [previewExercise, setPreviewExercise] = useState<{ mapping: ExerciseMapping; override?: ExerciseOverride } | null>(null);
+  const [extendingAssignment, setExtendingAssignment] = useState<PatientAssignment | null>(null);
 
   // Get organization ID from context (changes when user switches organization)
   const organizationId = currentOrganization?.organizationId;
@@ -189,6 +191,10 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
 
   const handleGeneratePDF = (assignment: PatientAssignment) => {
     setPdfAssignment(assignment);
+  };
+
+  const handleExtend = (assignment: PatientAssignment) => {
+    setExtendingAssignment(assignment);
   };
 
   return (
@@ -396,6 +402,7 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
                 onEditExercise={handleEditExercise}
                 onPreviewExercise={handlePreviewExercise}
                 onAddExercise={handleAddExerciseToAssignment}
+                onExtend={handleExtend}
                 onGeneratePDF={handleGeneratePDF}
                 onRefresh={() => refetchAssignments()}
               />
@@ -561,6 +568,27 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
         mapping={previewExercise?.mapping ?? null}
         override={previewExercise?.override}
       />
+
+      {/* Extend Set Dialog */}
+      {extendingAssignment?.exerciseSet && (
+        <ExtendSetDialog
+          open={!!extendingAssignment}
+          onOpenChange={(open) => !open && setExtendingAssignment(null)}
+          assignment={{
+            id: extendingAssignment.id,
+            exerciseSetId: extendingAssignment.exerciseSetId || '',
+            exerciseSetName: extendingAssignment.exerciseSet.name,
+            startDate: extendingAssignment.startDate || new Date().toISOString(),
+            endDate: extendingAssignment.endDate || new Date().toISOString(),
+            frequency: extendingAssignment.frequency,
+          }}
+          patient={{
+            id: patient.id,
+            name: displayName,
+          }}
+          onSuccess={() => refetchAssignments()}
+        />
+      )}
 
       {/* Edit Patient Dialog */}
       <EditPatientDialog

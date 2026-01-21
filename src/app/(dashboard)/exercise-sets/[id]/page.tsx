@@ -64,15 +64,7 @@ import {
 } from '@/graphql/mutations/exercises.mutations';
 import { GET_USER_BY_CLERK_ID_QUERY } from '@/graphql/queries/users.queries';
 import { useOrganization } from '@/contexts/OrganizationContext';
-
-// Tłumaczenie typów na polski
-const translateType = (type?: string) => {
-  const types: Record<string, string> = {
-    time: 'czasowe',
-    reps: 'powtórzenia',
-  };
-  return type ? types[type] || type : '';
-};
+import { translateExerciseTypeShort } from '@/components/pdf/polishUtils';
 
 interface SetDetailPageProps {
   params: Promise<{ id: string }>;
@@ -514,7 +506,7 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
                         )}
                         {mapping.exercise?.type && (
                           <Badge variant="secondary" className="text-[10px] shrink-0">
-                            {translateType(mapping.exercise.type)}
+                            {translateExerciseTypeShort(mapping.exercise.type)}
                           </Badge>
                         )}
                       </div>

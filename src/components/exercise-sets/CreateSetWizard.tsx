@@ -88,6 +88,7 @@ import { GET_EXERCISE_TAGS_BY_ORGANIZATION_QUERY } from '@/graphql/queries/exerc
 import { GET_TAG_CATEGORIES_BY_ORGANIZATION_QUERY } from '@/graphql/queries/tagCategories.queries';
 import { GET_PATIENT_CLINICAL_NOTES_QUERY } from '@/graphql/queries/clinicalNotes.queries';
 import { createTagsMap, mapExercisesWithTags } from '@/utils/tagUtils';
+import { translateExerciseTypeShort } from '@/components/pdf/polishUtils';
 import type { ExerciseTagsResponse, TagCategoriesResponse, OrganizationExerciseSetsResponse } from '@/types/apollo';
 
 interface ExerciseTag {
@@ -167,13 +168,6 @@ interface QuickStartCategory {
   exerciseCount: number;
 }
 
-const translateType = (type?: string) => {
-  const types: Record<string, string> = {
-    time: 'czasowe',
-    reps: 'powtórzenia',
-  };
-  return type ? types[type] || type : '';
-};
 
 // Estimate workout time in minutes
 function estimateWorkoutTime(
@@ -267,7 +261,7 @@ function ExercisePickerItem({
       <div className="flex-1 min-w-0">
         <p className="font-medium text-sm truncate">{exercise.name}</p>
         <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
-          <span className="text-xs text-muted-foreground">{translateType(exercise.type)}</span>
+          <span className="text-xs text-muted-foreground">{translateExerciseTypeShort(exercise.type)}</span>
           {getExerciseTags(exercise)
             .slice(0, 2)
             .map((tag) => (
@@ -417,7 +411,7 @@ function SortableExerciseCard({
         </div>
         <div className="flex-1 min-w-0 overflow-hidden">
           <p className="font-medium text-sm truncate" title={exercise.name}>{exercise.name}</p>
-          <p className="text-xs text-muted-foreground truncate">{translateType(exercise.type)}</p>
+          <p className="text-xs text-muted-foreground truncate">{translateExerciseTypeShort(exercise.type)}</p>
         </div>
         <Button
           type="button"
@@ -2032,7 +2026,7 @@ export function CreateSetWizard({
         <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>{previewExercise?.name}</DialogTitle>
-            <DialogDescription>{translateType(previewExercise?.type)}</DialogDescription>
+            <DialogDescription>{translateExerciseTypeShort(previewExercise?.type)}</DialogDescription>
           </DialogHeader>
           {previewExercise && (
             <div className="space-y-4">

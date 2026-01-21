@@ -16,6 +16,7 @@ import { ColorBadge } from "@/components/shared/ColorBadge";
 import { ImagePlaceholder } from "@/components/shared/ImagePlaceholder";
 import { ImageLightbox } from "@/components/shared/ImageLightbox";
 import { getMediaUrl } from "@/utils/mediaUrl";
+import { translateExerciseTypeShort } from "@/components/pdf/polishUtils";
 
 export interface ExerciseTag {
   id: string;
@@ -61,17 +62,6 @@ interface ExerciseCardProps {
   onToggleBuilder?: (exercise: Exercise) => void;
   className?: string;
   compact?: boolean;
-}
-
-function getTypeLabel(type?: string) {
-  switch (type) {
-    case "reps":
-      return "Powtórzeniowe";
-    case "time":
-      return "Czasowe";
-    default:
-      return type || "Inne";
-  }
 }
 
 function isTagObject(tag: string | ExerciseTag): tag is ExerciseTag {
@@ -187,7 +177,7 @@ export function ExerciseCard({
           <p className="font-semibold truncate">{exercise.name}</p>
           <div className="flex items-center gap-3 text-xs text-muted-foreground">
             {exercise.type && (
-              <span className="text-primary font-medium">{getTypeLabel(exercise.type)}</span>
+              <span className="text-primary font-medium">{translateExerciseTypeShort(exercise.type)}</span>
             )}
             {sets && sets > 0 && (
               <span className="flex items-center gap-1">
@@ -411,7 +401,7 @@ export function ExerciseCard({
         {/* Primary Metadata: Focus on Type & Body Parts */}
         <div className="flex items-center gap-2 text-[10px] sm:text-[11px] text-muted-foreground/80 font-medium">
           {exercise.type && (
-            <span className="text-primary/90 font-bold uppercase tracking-widest">{getTypeLabel(exercise.type)}</span>
+            <span className="text-primary/90 font-bold uppercase tracking-widest">{translateExerciseTypeShort(exercise.type)}</span>
           )}
           {exercise.mainTags && (exercise.mainTags as any).length > 0 && (
             <>

@@ -29,6 +29,7 @@ import { ImagePlaceholder } from "@/components/shared/ImagePlaceholder";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { cn } from "@/lib/utils";
 import { getMediaUrl } from "@/utils/mediaUrl";
+import { translateExerciseTypeShort, translateExerciseSidePolish } from "@/components/pdf/polishUtils";
 import type { ExerciseSet, ExerciseMapping, ExerciseOverride } from "./types";
 
 interface CustomizeExercisesStepProps {
@@ -39,25 +40,6 @@ interface CustomizeExercisesStepProps {
   onExcludedExercisesChange: (excluded: Set<string>) => void;
 }
 
-// Helper functions outside component
-const getTypeLabel = (type?: string) => {
-  const types: Record<string, string> = {
-    reps: "Powtórzenia",
-    time: "Czasowe",
-  };
-  return type ? types[type] || type : "";
-};
-
-const getSideLabel = (side?: string) => {
-  const sides: Record<string, string> = {
-    left: "Lewa strona",
-    right: "Prawa strona",
-    both: "Obie strony",
-    alternating: "Naprzemiennie",
-    none: "Bez strony",
-  };
-  return side ? sides[side] || side : "";
-};
 
 export function CustomizeExercisesStep({
   exerciseSet,
@@ -442,13 +424,13 @@ export function CustomizeExercisesStep({
                   <div className="flex items-center gap-1.5 mt-1">
                     {selectedMapping.exercise?.type && (
                       <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
-                        {getTypeLabel(selectedMapping.exercise.type)}
+                        {translateExerciseTypeShort(selectedMapping.exercise.type)}
                       </Badge>
                     )}
                     {selectedMapping.exercise?.exerciseSide &&
                       selectedMapping.exercise.exerciseSide !== "none" && (
                         <Badge variant="outline" className="text-[10px] px-1.5 py-0">
-                          {getSideLabel(selectedMapping.exercise.exerciseSide)}
+                          {translateExerciseSidePolish(selectedMapping.exercise.exerciseSide)}
                         </Badge>
                       )}
                   </div>

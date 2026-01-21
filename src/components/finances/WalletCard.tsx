@@ -3,10 +3,11 @@
 import { useMemo } from "react";
 import { useQuery } from "@apollo/client/react";
 import CountUp from "react-countup";
-import { Wallet, TrendingUp, Clock, CheckCircle } from "lucide-react";
+import { Wallet, TrendingUp, Clock, CheckCircle, Sparkles, Users } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
 import { Logo } from "@/components/shared/Logo";
-import { GET_ORGANIZATION_EARNINGS_QUERY } from "@/graphql/queries";
+import { GET_ORGANIZATION_EARNINGS_QUERY, GET_CURRENT_BILLING_STATUS_QUERY } from "@/graphql/queries";
 import type { GetOrganizationEarningsResponse } from "@/types/apollo";
 import { cn } from "@/lib/utils";
 
@@ -24,7 +25,7 @@ interface WalletCardProps {
 // ========================================
 
 export function WalletCard({ organizationId, className }: WalletCardProps) {
-  // Fetch earnings data
+  // Fetch earnings data (Revenue Share)
   const { data, loading, error } = useQuery<GetOrganizationEarningsResponse>(
     GET_ORGANIZATION_EARNINGS_QUERY,
     {
@@ -34,21 +35,52 @@ export function WalletCard({ organizationId, className }: WalletCardProps) {
     }
   );
 
-  const earnings = data?.organizationEarnings;
+  // Fetch billing status (Pay-as-you-go / Pilot Mode)
+  const { data: billingData } = useQuery(GET_CURRENT_BILLING_STATUS_QUERY, {
+    variables: { organizationId: organizationId || "" },
+    skip: !organizationId,
+    errorPolicy: "all",
+  });
 
-  // Calculate display values
+  const earnings = data?.organizationEarnings;
+  const billing = billingData?.currentBillingStatus;
+
+  // Calculate display values - combine earnings and billing data
   const displayData = useMemo(() => {
-    if (!earnings) return null;
+    // Use billing data if available (Pay-as-you-go / Pilot mode)
+    const isPilotMode = billing?.isPilotMode ?? false;
+    const premiumPatients = billing?.currentlyActivePremium ?? 0;
+
+    // If no earnings AND no billing data, return null
+    if (!earnings && !billing) {
+      return null;
+    }
+
+    // If no earnings data, still show billing info
+    if (!earnings) {
+      return {
+        monthlyEarnings: billing?.estimatedTotal ?? 0,
+        totalEarnings: 0,
+        pendingEarnings: 0,
+        activeSubscribers: premiumPatients,
+        hasStripeConnect: false,
+        stripeOnboardingComplete: false,
+        isPilotMode,
+        premiumPatients,
+      };
+    }
 
     return {
-      monthlyEarnings: earnings.monthlyEarnings,
+      monthlyEarnings: isPilotMode ? 0 : earnings.monthlyEarnings,
       totalEarnings: earnings.totalEarnings,
       pendingEarnings: earnings.pendingEarnings,
-      activeSubscribers: earnings.activeSubscribers,
+      activeSubscribers: Math.max(earnings.activeSubscribers, premiumPatients),
       hasStripeConnect: earnings.hasStripeConnect,
       stripeOnboardingComplete: earnings.stripeOnboardingComplete,
+      isPilotMode,
+      premiumPatients,
     };
-  }, [earnings]);
+  }, [earnings, billing]);
 
   // Loading state
   if (loading) {
@@ -121,11 +153,19 @@ export function WalletCard({ organizationId, className }: WalletCardProps) {
       {/* Content */}
       <div className="relative z-10 p-6 flex flex-col h-full">
         {/* Header */}
-        <div className="flex items-center gap-2 mb-4">
-          <Wallet className="h-5 w-5 text-emerald-400" />
-          <span className="text-sm font-medium text-zinc-400">
-            Dostępne środki
-          </span>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <Wallet className="h-5 w-5 text-emerald-400" />
+            <span className="text-sm font-medium text-zinc-400">
+              Dostępne środki
+            </span>
+          </div>
+          {displayData.isPilotMode && (
+            <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/30 gap-1">
+              <Sparkles className="h-3 w-3" />
+              Pilot 100% gratis
+            </Badge>
+          )}
         </div>
 
         {/* Main Balance with CountUp animation */}
@@ -199,9 +239,14 @@ export function WalletCard({ organizationId, className }: WalletCardProps) {
             />
           </div>
 
-          {/* Active subscribers count */}
-          <div className="text-xs text-zinc-500">
-            {displayData.activeSubscribers} pacjentów
+          {/* Active Premium patients count */}
+          <div className="flex items-center gap-1.5 text-xs">
+            <Users className="h-3.5 w-3.5 text-emerald-400" />
+            <span className={cn(
+              displayData.premiumPatients > 0 ? "text-emerald-400 font-medium" : "text-zinc-500"
+            )}>
+              {displayData.premiumPatients} {displayData.premiumPatients === 1 ? "pacjent" : "pacjentów"} Premium
+            </span>
           </div>
         </div>
       </div>

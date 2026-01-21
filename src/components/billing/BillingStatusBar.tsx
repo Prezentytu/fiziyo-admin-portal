@@ -2,8 +2,9 @@
 
 import { useQuery } from "@apollo/client/react";
 import Link from "next/link";
-import { Wallet, ChevronRight, Sparkles } from "lucide-react";
+import { Wallet, ChevronRight, Sparkles, Gift } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { GET_CURRENT_BILLING_STATUS_QUERY } from "@/graphql/queries/billing.queries";
 import type { GetCurrentBillingStatusResponse } from "@/types/apollo";
@@ -68,9 +69,14 @@ export function BillingStatusBar({
     return null;
   }
 
-  const { estimatedTotal, activePatientsInMonth, currency } = billingStatus;
-  const hasActivity = activePatientsInMonth > 0;
-  const formattedAmount = `${estimatedTotal.toLocaleString("pl-PL")} ${currency}`;
+  const { estimatedTotal, activePatientsInMonth, currentlyActivePremium, currency, isPilotMode } = billingStatus;
+  // Use currentlyActivePremium (teraz aktywni) zamiast activePatientsInMonth (w tym miesiącu)
+  const activeCount = currentlyActivePremium ?? activePatientsInMonth;
+  const hasActivity = activeCount > 0;
+  
+  // W pilot mode zawsze 0 PLN
+  const displayAmount = isPilotMode ? 0 : estimatedTotal;
+  const formattedAmount = `${displayAmount.toLocaleString("pl-PL")} ${currency}`;
 
   return (
     <Link
@@ -111,7 +117,7 @@ export function BillingStatusBar({
           {/* Active patients count */}
           {hasActivity ? (
             <span className="text-sm text-muted-foreground">
-              {activePatientsInMonth} aktywnych
+              {activeCount} {activeCount === 1 ? "aktywny" : "aktywnych"}
             </span>
           ) : (
             <span className="text-sm text-muted-foreground flex items-center gap-1">
@@ -120,13 +126,26 @@ export function BillingStatusBar({
             </span>
           )}
 
+          {/* Pilot mode badge */}
+          {isPilotMode && hasActivity && (
+            <Badge 
+              variant="outline" 
+              className="bg-amber-500/10 text-amber-500 border-amber-500/30 gap-1 text-xs"
+            >
+              <Gift className="h-3 w-3" />
+              Pilot gratis
+            </Badge>
+          )}
+
           {/* Amount */}
           <span
             className={cn(
               "text-base font-bold tabular-nums transition-colors",
-              hasActivity
-                ? "text-emerald-500 group-hover:text-emerald-400"
-                : "text-muted-foreground group-hover:text-foreground"
+              isPilotMode
+                ? "text-amber-500 group-hover:text-amber-400"
+                : hasActivity
+                  ? "text-emerald-500 group-hover:text-emerald-400"
+                  : "text-muted-foreground group-hover:text-foreground"
             )}
           >
             {formattedAmount}

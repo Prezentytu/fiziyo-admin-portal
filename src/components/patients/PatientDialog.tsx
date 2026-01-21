@@ -13,7 +13,7 @@ import { SmartPatientLookup } from './SmartPatientLookup';
 import { PatientFormValues } from './PatientForm';
 import { AssignmentWizard } from '@/components/assignment/AssignmentWizard';
 import { CREATE_SHADOW_PATIENT_MUTATION } from '@/graphql/mutations/users.mutations';
-import { GET_THERAPIST_PATIENTS_QUERY, GET_ALL_THERAPIST_PATIENTS_QUERY } from '@/graphql/queries/therapists.queries';
+import { GET_THERAPIST_PATIENTS_QUERY, GET_ALL_THERAPIST_PATIENTS_QUERY, GET_ORGANIZATION_PATIENTS_QUERY } from '@/graphql/queries/therapists.queries';
 import { GET_CURRENT_ORGANIZATION_PLAN } from '@/graphql/queries/organizations.queries';
 import { cn } from '@/lib/utils';
 import { getAvatarGradient, getInitials } from '@/utils/textUtils';
@@ -100,6 +100,7 @@ export function PatientDialog({
     refetchQueries: [
       { query: GET_THERAPIST_PATIENTS_QUERY, variables: { therapistId, organizationId } },
       { query: GET_ALL_THERAPIST_PATIENTS_QUERY, variables: { therapistId, organizationId } },
+      { query: GET_ORGANIZATION_PATIENTS_QUERY, variables: { organizationId, filter: 'all' } },
       { query: GET_CURRENT_ORGANIZATION_PLAN, variables: { organizationId } },
     ],
   });

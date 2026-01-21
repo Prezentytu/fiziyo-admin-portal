@@ -396,6 +396,7 @@ export const DELETE_TAG_CATEGORY_MUTATION = gql`
 
 /**
  * Mutacja do przypisywania zestawu ćwiczeń do pacjenta
+ * Automatycznie aktywuje Premium na czas trwania zestawu (Beta Pilot Flow)
  */
 export const ASSIGN_EXERCISE_SET_TO_PATIENT_MUTATION = gql`
   mutation AssignExerciseSetToPatient(
@@ -420,6 +421,8 @@ export const ASSIGN_EXERCISE_SET_TO_PATIENT_MUTATION = gql`
       startDate
       endDate
       status
+      premiumActivated
+      premiumValidUntil
     }
   }
 `;
