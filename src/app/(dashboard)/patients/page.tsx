@@ -163,11 +163,11 @@ export default function PatientsPage() {
   const filteredPatients = [...searchFilteredPatients].sort((a, b) => {
     const aIsMine = a.therapist?.id === therapistId;
     const bIsMine = b.therapist?.id === therapistId;
-    
+
     // 1. My patients first
     if (aIsMine && !bIsMine) return -1;
     if (!aIsMine && bIsMine) return 1;
-    
+
     // 2. Sort by most recent activity (lastActivity or assignedAt)
     // Use the more recent of lastActivity and assignedAt for each patient
     const getRecentDate = (patient: Patient): number => {
@@ -175,13 +175,13 @@ export default function PatientsPage() {
       const assigned = patient.assignedAt ? new Date(patient.assignedAt).getTime() : 0;
       return Math.max(activity, assigned);
     };
-    
+
     const aRecent = getRecentDate(a);
     const bRecent = getRecentDate(b);
-    
+
     // Newest first (descending)
     if (aRecent !== bRecent) return bRecent - aRecent;
-    
+
     // 3. Fallback: alphabetically by name
     const aName = a.fullname || '';
     const bName = b.fullname || '';
