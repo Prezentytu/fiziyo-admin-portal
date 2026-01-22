@@ -69,7 +69,7 @@ export function AssignmentSuccessDialog({
 
   // Generowanie linku do aplikacji pacjenta
   const appDeepLink = `fiziyo://connect?patient=${selectedPatient.id}&therapist=${therapistId}&org=${organizationId}`;
-  const webLink = `https://app.fiziyo.pl/connect?patient=${selectedPatient.id}&therapist=${therapistId}&org=${organizationId}`;
+  const webLink = `https://fiziyo.pl/instrukcja`;
 
   // Formatowanie daty premium
   const premiumDate = premiumValidUntil ? new Date(premiumValidUntil) : null;
@@ -365,7 +365,7 @@ export function AssignmentSuccessDialog({
               }}
               data-testid="assign-success-another-btn"
             >
-              Przypisz kolejnemu
+              Przypisz kolejny zestaw
             </Button>
           )}
         </div>

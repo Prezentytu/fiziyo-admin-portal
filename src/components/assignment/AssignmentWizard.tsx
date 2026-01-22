@@ -36,6 +36,7 @@ import { GET_THERAPIST_PATIENTS_QUERY, GET_ORGANIZATION_PATIENTS_QUERY } from '@
 import { ASSIGN_EXERCISE_SET_TO_PATIENT_MUTATION, REMOVE_EXERCISE_SET_ASSIGNMENT_MUTATION, UPDATE_PATIENT_EXERCISE_OVERRIDES_MUTATION } from '@/graphql/mutations/exercises.mutations';
 import { GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY } from '@/graphql/queries/patientAssignments.queries';
 import { GET_EXERCISE_SET_WITH_ASSIGNMENTS_QUERY } from '@/graphql/queries/exerciseSets.queries';
+import { GET_CURRENT_BILLING_STATUS_QUERY } from '@/graphql/queries/billing.queries';
 import type { TherapistPatientsResponse } from '@/types/apollo';
 
 // Success dialog data type
@@ -50,7 +51,7 @@ export function AssignmentWizard(props: AssignmentWizardProps) {
   const { open, onOpenChange, therapistId, organizationId } = props;
   const [showCloseConfirm, setShowCloseConfirm] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
-  
+
   // Success dialog state - lifted to wrapper so it persists after wizard closes
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
   const [successData, setSuccessData] = useState<SuccessDialogData | null>(null);
@@ -567,6 +568,8 @@ function AssignmentWizardContent({
             },
           },
           refetchQueries: [
+            // Billing status (aktywni pacjenci premium) - odświeża badge na dashboardzie
+            { query: GET_CURRENT_BILLING_STATUS_QUERY, variables: { organizationId } },
             // Always refetch patients list (premium status may change)
             { query: GET_ORGANIZATION_PATIENTS_QUERY, variables: { organizationId, filter: 'all' } },
             ...(mode === 'from-patient' && preselectedPatient

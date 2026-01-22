@@ -360,17 +360,16 @@ export function PatientDialog({
           open={showAssignWizard}
           onOpenChange={(isOpen) => {
             setShowAssignWizard(isOpen);
-            if (!isOpen) {
-              handleClose();
-            }
+            // Don't close PatientDialog when wizard closes - AssignmentSuccessDialog needs to show first
+            // User can close PatientDialog after interacting with QR code
           }}
           mode="from-patient"
           preselectedPatient={wizardPatient}
           organizationId={organizationId}
           therapistId={therapistId}
           onSuccess={() => {
-            setShowAssignWizard(false);
-            handleClose();
+            // Don't close immediately - let user see QR code in AssignmentSuccessDialog first
+            // PatientDialog can be closed via X button or by clicking outside
           }}
         />
       )}

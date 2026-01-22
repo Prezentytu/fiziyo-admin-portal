@@ -570,7 +570,7 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
       />
 
       {/* Extend Set Dialog */}
-      {extendingAssignment?.exerciseSet && (
+      {extendingAssignment?.exerciseSet && organizationId && (
         <ExtendSetDialog
           open={!!extendingAssignment}
           onOpenChange={(open) => !open && setExtendingAssignment(null)}
@@ -586,6 +586,7 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
             id: patient.id,
             name: displayName,
           }}
+          organizationId={organizationId}
           onSuccess={() => refetchAssignments()}
         />
       )}

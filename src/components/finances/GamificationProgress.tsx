@@ -75,7 +75,7 @@ export function GamificationProgress({
 
   const tierInfo = data?.commissionTierInfo;
   const billing = billingData?.currentBillingStatus;
-  
+
   // Use the higher count from either source (billing premium or revenue subscribers)
   const premiumPatientCount = billing?.currentlyActivePremium ?? 0;
 

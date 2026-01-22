@@ -28,6 +28,7 @@ import { useOrganization } from '@/contexts/OrganizationContext';
 import { useExerciseBuilder, type BuilderExercise } from '@/contexts/ExerciseBuilderContext';
 import { createTagsMap, mapExercisesWithTags } from '@/utils/tagUtils';
 import { useDataManagement } from '@/hooks/useDataManagement';
+import { useRealtimeExercises } from '@/hooks/useRealtimeExercises';
 import type {
   AvailableExercisesResponse,
   ExerciseTagsResponse,
@@ -70,6 +71,14 @@ export default function ExercisesPage() {
   const { data, loading, error } = useQuery(GET_AVAILABLE_EXERCISES_QUERY, {
     variables: { organizationId },
     skip: !organizationId,
+  });
+
+  // Real-time updates dla ćwiczeń (WebSocket subscriptions)
+  // Automatycznie aktualizuje Apollo Cache - nie wymaga refetchQueries
+  useRealtimeExercises({
+    organizationId: organizationId ?? null,
+    onCreated: (exercise) => toast.success(`Nowe ćwiczenie: ${exercise.name}`),
+    onDeleted: () => toast.info('Ćwiczenie zostało usunięte'),
   });
 
   // Get tags for mapping

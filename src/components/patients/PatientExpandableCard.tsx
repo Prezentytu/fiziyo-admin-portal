@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Mail, Phone, FolderKanban, Wrench, MoreHorizontal, UserX, Tag, UserPlus, Trash2, Settings, Sparkles, Activity } from 'lucide-react';
+import { Mail, Phone, FolderKanban, Wrench, MoreHorizontal, UserX, Tag, UserPlus, Trash2, Settings, Sparkles, Activity, QrCode } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -99,6 +99,8 @@ export interface Patient {
 interface PatientExpandableCardProps {
   patient: Patient;
   onAssignSet: (patient: Patient) => void;
+  /** Pokaż QR kod / receptę dla pacjenta */
+  onShowQR?: (patient: Patient) => void;
   /** Odpięcie pacjenta od fizjoterapeuty - tylko Admin/Owner */
   onUnassign: (patient: Patient) => void;
   /** Usunięcie pacjenta z organizacji - tylko Admin/Owner */
@@ -113,6 +115,7 @@ interface PatientExpandableCardProps {
 export function PatientExpandableCard({
   patient,
   onAssignSet,
+  onShowQR,
   onUnassign,
   onRemoveFromOrganization,
   onTakeOver,
@@ -356,6 +359,20 @@ export function PatientExpandableCard({
             </Button>
           )}
 
+          {/* QR Code / Recepta (only for my patients) */}
+          {isMyPatient && onShowQR && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 hover:bg-primary/10 hover:text-primary"
+              onClick={(e) => handleAction(e, () => onShowQR(patient))}
+              title="Pokaż receptę (QR)"
+              data-testid={`patient-expandable-${patient.id}-qr-btn`}
+            >
+              <QrCode className="h-4 w-4" />
+            </Button>
+          )}
+
           {/* More Options Menu */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -388,6 +405,12 @@ export function PatientExpandableCard({
                     <FolderKanban className="mr-2 h-4 w-4" />
                     Przypisz zestaw
                   </DropdownMenuItem>
+                  {onShowQR && (
+                    <DropdownMenuItem onClick={() => onShowQR(patient)}>
+                      <QrCode className="mr-2 h-4 w-4" />
+                      Pokaż receptę (QR)
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuItem onClick={() => initiateActivation(patient.id, displayName)}>
                     <Sparkles className="mr-2 h-4 w-4" />
                     {patient.premiumValidUntil && new Date(patient.premiumValidUntil) > new Date()

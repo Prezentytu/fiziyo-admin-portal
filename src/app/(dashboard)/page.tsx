@@ -34,6 +34,8 @@ import { GettingStartedCard } from '@/components/onboarding/GettingStartedCard';
 import { BillingStatusBar } from '@/components/billing';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { useRoleAccess } from '@/hooks/useRoleAccess';
+import { useRealtimePatients } from '@/hooks/useRealtimePatients';
+import { useRealtimeExerciseSets } from '@/hooks/useRealtimeExerciseSets';
 
 import { GET_ORGANIZATION_EXERCISE_SETS_QUERY } from '@/graphql/queries/exerciseSets.queries';
 import { GET_THERAPIST_PATIENTS_QUERY } from '@/graphql/queries/therapists.queries';
@@ -196,6 +198,17 @@ export default function DashboardPage() {
   const { data: assignmentsData } = useQuery(GET_ALL_PATIENT_ASSIGNMENTS_QUERY, {
     skip: !therapistId,
     fetchPolicy: 'cache-and-network',
+  });
+
+  // Real-time updates - automatycznie odświeżają Apollo Cache
+  useRealtimePatients({
+    organizationId: organizationId ?? null,
+    enabled: !!organizationId,
+  });
+
+  useRealtimeExerciseSets({
+    organizationId: organizationId ?? null,
+    enabled: !!organizationId,
   });
 
   const exerciseSets = (setsData as OrganizationExerciseSetsResponse)?.exerciseSets || [];

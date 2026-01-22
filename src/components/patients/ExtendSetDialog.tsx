@@ -27,6 +27,7 @@ import {
 
 import { ASSIGN_EXERCISE_SET_TO_PATIENT_MUTATION } from '@/graphql/mutations/exercises.mutations';
 import { GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY } from '@/graphql/queries/patientAssignments.queries';
+import { GET_CURRENT_BILLING_STATUS_QUERY } from '@/graphql/queries/billing.queries';
 
 interface ExtendSetDialogProps {
   open: boolean;
@@ -56,6 +57,8 @@ interface ExtendSetDialogProps {
     id: string;
     name: string;
   };
+  /** ID organizacji (do odświeżenia billing status) */
+  organizationId: string;
   /** Callback do otworzenia wizarda ze zmianami */
   onEditWithWizard?: () => void;
   /** Callback po udanym przedłużeniu */
@@ -76,6 +79,7 @@ export function ExtendSetDialog({
   onOpenChange,
   assignment,
   patient,
+  organizationId,
   onEditWithWizard,
   onSuccess,
 }: ExtendSetDialogProps) {
@@ -83,6 +87,8 @@ export function ExtendSetDialog({
 
   const [assignSet, { loading }] = useMutation(ASSIGN_EXERCISE_SET_TO_PATIENT_MUTATION, {
     refetchQueries: [
+      // Billing status (aktywni pacjenci premium) - odświeża badge na dashboardzie
+      { query: GET_CURRENT_BILLING_STATUS_QUERY, variables: { organizationId } },
       {
         query: GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY,
         variables: { userId: patient.id },

@@ -73,7 +73,7 @@ export function BillingStatusBar({
   // Use currentlyActivePremium (teraz aktywni) zamiast activePatientsInMonth (w tym miesiącu)
   const activeCount = currentlyActivePremium ?? activePatientsInMonth;
   const hasActivity = activeCount > 0;
-  
+
   // W pilot mode zawsze 0 PLN
   const displayAmount = isPilotMode ? 0 : estimatedTotal;
   const formattedAmount = `${displayAmount.toLocaleString("pl-PL")} ${currency}`;
@@ -128,12 +128,12 @@ export function BillingStatusBar({
 
           {/* Pilot mode badge */}
           {isPilotMode && hasActivity && (
-            <Badge 
-              variant="outline" 
+            <Badge
+              variant="outline"
               className="bg-amber-500/10 text-amber-500 border-amber-500/30 gap-1 text-xs"
             >
               <Gift className="h-3 w-3" />
-              Pilot gratis
+              Wczesny dostęp
             </Badge>
           )}
 

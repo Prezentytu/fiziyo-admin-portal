@@ -413,7 +413,7 @@ function EditExerciseOverrideDialogContent({
                       {translateExerciseTypeShort(exercise.type)}
                     </Badge>
                   )}
-                  {(exercise?.side || exercise?.exerciseSide) && 
+                  {(exercise?.side || exercise?.exerciseSide) &&
                    (exercise?.side || exercise?.exerciseSide) !== 'none' &&
                    (exercise?.side || exercise?.exerciseSide)?.toLowerCase() !== 'none' && (
                     <Badge variant="outline" className="text-xs">

@@ -1,5 +1,5 @@
 import { useCallback, useState, useRef } from "react";
-import { useMutation, useApolloClient } from "@apollo/client";
+import { useMutation, useApolloClient } from "@apollo/client/react";
 import { toast } from "sonner";
 import {
   UPDATE_EXERCISE_FIELD_MUTATION,
