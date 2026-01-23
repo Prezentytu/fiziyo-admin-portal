@@ -3,9 +3,9 @@
 import { useState, useCallback, useMemo } from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { 
-  ChevronRight, 
-  Clock, 
+import {
+  ChevronRight,
+  Clock,
   StickyNote,
   Settings2,
   GripVertical,
@@ -30,10 +30,10 @@ import { cn } from "@/lib/utils";
 import { getMediaUrl } from "@/utils/mediaUrl";
 import { ImagePlaceholder } from "@/components/shared/ImagePlaceholder";
 import { parseLoad, formatLoad, hasLoad, getLoadBadgeColor, getLoadBadgeLabel } from "@/utils/loadParser";
-import { 
-  calculateEstimatedTime, 
+import {
+  calculateEstimatedTime,
   formatEstimatedTime,
-  shouldShowSideBadge 
+  shouldShowSideBadge
 } from "@/utils/exerciseTime";
 import type { ExerciseMapping, ExerciseOverride } from "./types";
 
@@ -49,15 +49,15 @@ interface GhostInputProps {
   disabled?: boolean;
 }
 
-function GhostInput({ 
-  value, 
-  onChange, 
-  label, 
-  suffix = "", 
-  min = 0, 
+function GhostInput({
+  value,
+  onChange,
+  label,
+  suffix = "",
+  min = 0,
   max = 999,
   step = 1,
-  disabled = false 
+  disabled = false
 }: GhostInputProps) {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
@@ -99,7 +99,7 @@ function GhostInput({
 
         {/* Input */}
         <div className="relative mx-1">
-          <input 
+          <input
             type="text"
             inputMode="numeric"
             pattern="[0-9]*"
@@ -153,7 +153,7 @@ interface ExerciseRowProps {
 
 /**
  * ExerciseRow - Two-Floor Card Design (Apple Wallet Style)
- * 
+ *
  * PIĘTRO 1 (Header): Nazwa (2 linie), Miniatura, Czas, Akcje
  * PIĘTRO 2 (Control Deck): Serie × Powt × Czas - pełna szerokość
  */
@@ -272,7 +272,7 @@ export function ExerciseRow({
         >
           <GripVertical className="h-4 w-4" />
         </button>
-        
+
         {/* Thumbnail */}
         <div className="w-11 h-11 rounded-lg overflow-hidden shrink-0 bg-surface-light border border-border/50">
           {imageUrl ? (
@@ -294,26 +294,26 @@ export function ExerciseRow({
               <p className="font-medium">{exerciseName}</p>
             </TooltipContent>
           </Tooltip>
-          
+
           {/* Meta badges */}
           <div className="flex items-center gap-3 mt-1.5">
             <span className="text-[10px] text-muted-foreground/60 flex items-center gap-1">
               <Clock className="h-3 w-3" />
               ~{formatEstimatedTime(estimatedTime)}
             </span>
-            
+
             {hasProTuneData.hasLoadValue && (
               <span className={cn("text-[10px] font-medium", getLoadBadgeColor(effectiveValues.load))}>
                 {getLoadBadgeLabel(effectiveValues.load)}
               </span>
             )}
-            
+
             {showDurationColumn && (
               <span className="text-[10px] text-info bg-info/10 px-1.5 py-0.5 rounded">
                 Izometria
               </span>
             )}
-            
+
             {hasProTuneData.hasNotes && (
               <StickyNote className="h-3 w-3 text-muted-foreground/40" />
             )}
@@ -328,8 +328,8 @@ export function ExerciseRow({
               onClick={() => setIsExpanded(!isExpanded)}
               className={cn(
                 "relative p-1.5 rounded-md transition-all",
-                isExpanded 
-                  ? "bg-primary/10 text-primary" 
+                isExpanded
+                  ? "bg-primary/10 text-primary"
                   : "text-muted-foreground/40 hover:text-foreground hover:bg-surface-light"
               )}
               title={isExpanded ? "Zwiń" : "Więcej opcji"}
@@ -345,7 +345,7 @@ export function ExerciseRow({
               )}
             </button>
           )}
-          
+
           {onRemove && (
             <button
               type="button"
@@ -470,11 +470,11 @@ export function ExerciseRow({
               onClick={() => setShowMoreOptions(!showMoreOptions)}
               className="flex items-center gap-1.5 text-xs text-muted-foreground/60 hover:text-foreground transition-colors"
             >
-              <ChevronRight 
+              <ChevronRight
                 className={cn(
                   "h-3.5 w-3.5 transition-transform",
                   showMoreOptions && "rotate-90"
-                )} 
+                )}
               />
               Zaawansowane
             </button>

@@ -184,21 +184,32 @@ export function ScheduleStep({
 
   const toggleFrequencyType = () => {
     if (frequencyType === "flexible") {
+      // Przełączamy na "specific" - ustawiamy domyślne dni na podstawie timesPerWeek
       setFrequencyType("specific");
+      const currentWeekly = frequency.timesPerWeek || 3;
+      // Rozłóż dni równomiernie w tygodniu
+      const defaultDays = currentWeekly >= 5
+        ? { monday: true, tuesday: true, wednesday: true, thursday: true, friday: true, saturday: false, sunday: false }
+        : currentWeekly >= 4
+        ? { monday: true, tuesday: false, wednesday: true, thursday: false, friday: true, saturday: true, sunday: false }
+        : currentWeekly >= 3
+        ? { monday: true, tuesday: false, wednesday: true, thursday: false, friday: true, saturday: false, sunday: false }
+        : currentWeekly >= 2
+        ? { monday: true, tuesday: false, wednesday: false, thursday: true, friday: false, saturday: false, sunday: false }
+        : { monday: true, tuesday: false, wednesday: false, thursday: false, friday: false, saturday: false, sunday: false };
+      
       onFrequencyChange({
         ...frequency,
-        monday: true,
-        tuesday: true,
-        wednesday: true,
-        thursday: false,
-        friday: true,
-        saturday: false,
-        sunday: false,
+        ...defaultDays,
+        isFlexible: false,
       });
     } else {
+      // Przełączamy na "flexible" - zachowaj timesPerWeek jako liczbę wybranych dni
       setFrequencyType("flexible");
       onFrequencyChange({
         ...frequency,
+        timesPerWeek: selectedDaysCount || frequency.timesPerWeek || 3,
+        isFlexible: true,
         monday: false,
         tuesday: false,
         wednesday: false,
@@ -335,19 +346,26 @@ export function ScheduleStep({
 
             <div className="space-y-6">
               {/* 1. Tygodniowo */}
-              <div className={cn(
-                "transition-all duration-300",
-                frequencyType === "specific" && "opacity-40 pointer-events-none"
-              )}>
+              {frequencyType === "flexible" ? (
                 <CleanStepper
                   value={frequency.timesPerWeek || 3}
                   onChange={handleWeeklyFrequencyChange}
                   min={1}
                   max={7}
                   label="Sesje w tygodniu"
-                  subLabel={frequencyType === "flexible" ? getIntensityLabel(frequency.timesPerWeek || 3) : undefined}
+                  subLabel={getIntensityLabel(frequency.timesPerWeek || 3)}
                 />
-              </div>
+              ) : (
+                // W trybie specific pokazujemy tylko info o wybranych dniach
+                <div className="bg-surface-light/50 border border-border/40 rounded-xl p-4 text-center">
+                  <div className="font-bold text-3xl text-foreground tabular-nums">
+                    {selectedDaysCount}
+                  </div>
+                  <div className="text-xs uppercase font-bold text-muted-foreground/70 tracking-wider mt-2">
+                    Wybrane dni
+                  </div>
+                </div>
+              )}
 
               {/* 2. Dziennie */}
               <CleanStepper

@@ -177,7 +177,7 @@ function AssignmentWizardContent({
   const [endDate, setEndDate] = useState<Date>(() => addDays(new Date(), 30));
   const [frequency, setFrequency] = useState<Frequency>(defaultFrequency as Frequency);
   const [isCreatingSet, setIsCreatingSet] = useState(false);
-  
+
   // Ghost Copy state - lokalna tablica ćwiczeń (nie dotyka bazy)
   const [localExercises, setLocalExercises] = useState<LocalExerciseMapping[]>([]);
   // Nazwa planu dla pacjenta (Assignment name)
@@ -201,19 +201,19 @@ function AssignmentWizardContent({
     setSelectedSet(set);
     // Reset customizations when changing set
     setOverrides(new Map());
-    
+
     // Ghost Copy - kopiuj ćwiczenia do lokalnego stanu (nie dotyka bazy)
     if (set?.exerciseMappings) {
       setLocalExercises(set.exerciseMappings.map(createGhostCopy));
     } else {
       setLocalExercises([]);
     }
-    
+
     // Set plan name (dla pacjenta) i template name (dla biblioteki)
     const baseName = set?.name || "Nowy Plan";
     setPlanName(baseName);
     setTemplateName(`${baseName} (szablon)`);
-    
+
     // Smart Defaults: wypełnij frequency z szablonu jeśli dostępne
     if (set?.frequency) {
       setFrequency({
@@ -427,7 +427,7 @@ function AssignmentWizardContent({
       : `Nowy zestaw - ${today}`;
 
     // Smart Draft Logic: Sprawdź czy istnieje pusty szkic z dzisiaj
-    const existingDraft = exerciseSets.find(s => 
+    const existingDraft = exerciseSets.find(s =>
       (s.exerciseMappings?.length || 0) === 0 && // Jest pusty
       s.name.includes(today) // Utworzony dzisiaj (data w nazwie)
     );
@@ -674,10 +674,10 @@ function AssignmentWizardContent({
     try {
       const overridesJson = buildExerciseOverridesJson();
       let lastPremiumValidUntil: string | null = null;
-      
+
       // Określ exerciseSetId do przypisania
       let exerciseSetIdToAssign = selectedSet.id;
-      
+
       // Jeśli saveAsTemplate - utwórz nowy szablon w bibliotece
       if (saveAsTemplate && templateName.trim() && localExercises.length > 0) {
         try {
@@ -690,7 +690,7 @@ function AssignmentWizardContent({
               description: `Utworzono z planu: ${planName}`,
             },
           });
-          
+
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const newSet = (createResult.data as any)?.createExerciseSet;
           if (newSet?.id) {
@@ -711,7 +711,7 @@ function AssignmentWizardContent({
                 },
               });
             }
-            
+
             toast.success(`Zapisano szablon "${templateName}"`);
             // Użyj nowego setu do przypisania
             exerciseSetIdToAssign = newSet.id;
@@ -736,8 +736,8 @@ function AssignmentWizardContent({
           frequency.saturday,
           frequency.sunday,
         ].filter(Boolean).length;
-        const effectiveTimesPerWeek = selectedDaysCount > 0 
-          ? selectedDaysCount 
+        const effectiveTimesPerWeek = selectedDaysCount > 0
+          ? selectedDaysCount
           : (frequency.timesPerWeek || 3);
 
         const assignResult = await assignSet({
@@ -750,6 +750,7 @@ function AssignmentWizardContent({
               timesPerDay: String(frequency.timesPerDay),
               timesPerWeek: String(effectiveTimesPerWeek),
               breakBetweenSets: String(frequency.breakBetweenSets),
+              isFlexible: selectedDaysCount === 0, // Elastyczny gdy nie ma wybranych dni
               monday: frequency.monday,
               tuesday: frequency.tuesday,
               wednesday: frequency.wednesday,
@@ -832,8 +833,7 @@ function AssignmentWizardContent({
     const nextStep = steps[currentIndex + 1];
 
     if (isLastStep) {
-      const count = selectedPatients.length;
-      return `Przypisz do ${count} pacjent${count === 1 ? 'a' : count < 5 ? 'ów' : 'ów'}`;
+      return 'Przypisz zestaw';
     }
 
     if (nextStep) {
@@ -945,6 +945,7 @@ function AssignmentWizardContent({
             frequency={frequency}
             overrides={overrides}
             excludedExercises={excludedExercises}
+            onGoToStep={goToStep}
           />
         );
 
@@ -1016,12 +1017,12 @@ function AssignmentWizardContent({
         </div>
       </DialogHeader>
 
-      {/* Content - bez scroll, pełna wysokość */}
+      {/* Content - overflow-hidden dla clip animacji, scroll wewnątrz */}
       <div className="flex-1 overflow-hidden min-h-0">
         <div
           key={animationKey.current}
           className={cn(
-            "h-full",
+            "h-full overflow-y-auto",
             slideDirection === 'right'
               ? 'animate-wizard-slide-in-right'
               : 'animate-wizard-slide-in-left'
@@ -1058,7 +1059,7 @@ function AssignmentWizardContent({
           >
             {assigning && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             {getNextButtonText()}
-            {!isLastStep && <ArrowRight className="ml-2 h-4 w-4" />}
+            <ArrowRight className="ml-2 h-4 w-4" />
           </Button>
         </div>
       </div>

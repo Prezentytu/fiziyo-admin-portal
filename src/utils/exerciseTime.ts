@@ -1,9 +1,9 @@
 /**
  * Oblicza szacowany czas wykonania ćwiczenia w sekundach.
- * 
+ *
  * Dla ćwiczeń czasowych (TIME):
  *   serie * czas_trwania + (serie - 1) * przerwa
- * 
+ *
  * Dla ćwiczeń na powtórzenia (REPS):
  *   serie * (powtórzenia * czas_jednego_powtórzenia) + (serie - 1) * przerwa
  */
@@ -32,7 +32,7 @@ export function calculateEstimatedTime(params: {
 
 /**
  * Formatuje czas w sekundach do czytelnego formatu.
- * 
+ *
  * Przykłady:
  * - 90 sekund → "~2 min"
  * - 45 sekund → "~1 min"
@@ -52,7 +52,7 @@ export function formatEstimatedTime(seconds: number): string {
 
 /**
  * Mapuje wartość Side na ikonę/label do wyświetlenia.
- * 
+ *
  * - None / Both → "↔" (obustronne)
  * - Left → "L"
  * - Right → "R"

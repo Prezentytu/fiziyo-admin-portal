@@ -17,7 +17,7 @@ interface CleanInputProps {
 
 /**
  * CleanInput - Ghost Input (Linear Style)
- * 
+ *
  * Przezroczysty input wyglądający jak tekst.
  * Edytowalny po kliknięciu, z subtelną linią na hover/focus.
  */

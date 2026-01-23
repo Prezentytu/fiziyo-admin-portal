@@ -99,10 +99,10 @@ export function SelectSetStep({
 
     // Assigned sets always at the bottom
     if (aAssigned !== bAssigned) return aAssigned ? 1 : -1;
-    
+
     // Empty sets (newly created) at the top
     if (aEmpty !== bEmpty) return aEmpty ? -1 : 1;
-    
+
     return 0;
   });
 

@@ -84,7 +84,7 @@ export interface Exercise {
   scope?: string;
   status?: string;
   difficultyLevel?: string;
-  
+
   // Legacy aliasy (dla kompatybilności wstecznej)
   description?: string;
   exerciseSide?: "left" | "right" | "both" | "alternating" | "none" | string;
@@ -106,7 +106,12 @@ export interface Patient {
 
 export interface Frequency {
   timesPerDay: number;
+  /** Zalecana częstotliwość tygodniowa (w trybie elastycznym) */
   timesPerWeek?: number;
+  /** Minimalna częstotliwość tygodniowa (opcjonalna) */
+  minTimesPerWeek?: number;
+  /** Czy harmonogram jest elastyczny (pacjent wybiera dni) */
+  isFlexible?: boolean;
   breakBetweenSets: number;
   monday: boolean;
   tuesday: boolean;

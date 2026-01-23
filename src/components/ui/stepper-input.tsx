@@ -19,7 +19,7 @@ interface StepperInputProps {
 
 /**
  * StepperInput - Premium Minimal Design
- * 
+ *
  * Clean, precise controls with subtle interactions.
  */
 const StepperInput = React.forwardRef<HTMLDivElement, StepperInputProps>(

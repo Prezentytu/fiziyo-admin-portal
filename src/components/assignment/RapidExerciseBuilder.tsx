@@ -50,7 +50,7 @@ interface RapidExerciseBuilderProps {
 
 /**
  * RapidExerciseBuilder - Liquid Assignment Flow
- * 
+ *
  * Drag & Drop sorting, premium design, tooltips.
  */
 export function RapidExerciseBuilder({
@@ -71,7 +71,7 @@ export function RapidExerciseBuilder({
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
-  
+
   const lastRemovedRef = useRef<{
     exercise: LocalExerciseMapping;
     index: number;
@@ -93,11 +93,11 @@ export function RapidExerciseBuilder({
   // Handle drag end
   const handleDragEnd = useCallback((event: DragEndEvent) => {
     const { active, over } = event;
-    
+
     if (over && active.id !== over.id) {
       const oldIndex = exercises.findIndex((e) => e.id === active.id);
       const newIndex = exercises.findIndex((e) => e.id === over.id);
-      
+
       const newExercises = arrayMove(exercises, oldIndex, newIndex);
       onExercisesChange(newExercises);
     }
@@ -106,7 +106,7 @@ export function RapidExerciseBuilder({
   // Handle override change
   const handleOverrideChange = useCallback((mappingId: string, updates: Partial<ExerciseOverride>) => {
     if (!onOverridesChange) return;
-    
+
     const newOverrides = new Map(overrides);
     const existing = newOverrides.get(mappingId) || { exerciseMappingId: mappingId };
     newOverrides.set(mappingId, { ...existing, ...updates });
@@ -157,18 +157,18 @@ export function RapidExerciseBuilder({
     (mappingId: string) => {
       const index = exercises.findIndex(e => e.id === mappingId);
       const removed = exercises.find(e => e.id === mappingId);
-      
+
       if (!removed) return;
-      
+
       lastRemovedRef.current = {
         exercise: removed,
         index,
         exercises: [...exercises],
       };
-      
+
       const newExercises = exercises.filter(e => e.id !== mappingId);
       onExercisesChange(newExercises);
-      
+
       toast(`Usunięto "${removed.exercise?.name || 'ćwiczenie'}"`, {
         action: {
           label: "Cofnij",
@@ -208,7 +208,7 @@ export function RapidExerciseBuilder({
   const totalMinutes = useMemo(() => {
     const totalSeconds = exercises.reduce((acc, m) => {
       const override = overrides.get(m.id);
-      
+
       const sets = override?.sets ?? m.sets ?? m.exercise?.defaultSets ?? 3;
       const reps = override?.reps ?? m.reps ?? m.exercise?.defaultReps ?? 10;
       const duration = override?.duration ?? m.duration ?? m.exercise?.defaultDuration;
@@ -223,7 +223,7 @@ export function RapidExerciseBuilder({
         rest,
       });
     }, 0);
-    
+
     return totalSeconds / 60;
   }, [exercises, overrides]);
 
@@ -275,8 +275,8 @@ export function RapidExerciseBuilder({
                     key={ex.id}
                     className={cn(
                       "flex items-center gap-3 p-3 cursor-pointer transition-all w-full text-left",
-                      i === selectedIndex 
-                        ? "bg-primary/10 border-l-2 border-l-primary" 
+                      i === selectedIndex
+                        ? "bg-primary/10 border-l-2 border-l-primary"
                         : "border-l-2 border-l-transparent hover:bg-surface-light/50"
                     )}
                     onClick={() => addExercise(ex)}
@@ -349,7 +349,7 @@ export function RapidExerciseBuilder({
                       </span>
                     </div>
                   )}
-                  
+
                   {exercises.map((m, i) => (
                     <ExerciseRow
                       key={m.id}
@@ -382,7 +382,7 @@ export function RapidExerciseBuilder({
                   Zapisz również jako <span className="font-medium">szablon</span> w bibliotece
                 </span>
               </label>
-              
+
               {saveAsTemplate && onTemplateNameChange && (
                 <Input
                   value={templateName}
@@ -394,7 +394,7 @@ export function RapidExerciseBuilder({
               )}
             </div>
           )}
-          
+
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 text-sm">
               <Clock className="h-4 w-4 text-muted-foreground/50" />
