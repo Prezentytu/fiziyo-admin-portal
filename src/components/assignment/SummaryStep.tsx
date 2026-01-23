@@ -50,14 +50,14 @@ function formatDosage(
   const sets = override?.sets ?? mapping.sets ?? exercise?.defaultSets ?? 3;
   const reps = override?.reps ?? mapping.reps ?? exercise?.defaultReps ?? 10;
   const duration = override?.duration ?? mapping.duration ?? exercise?.defaultDuration;
-  
+
   const exerciseType = exercise?.type?.toLowerCase();
   const isTimeBased = exerciseType === "time";
 
   if (isTimeBased && duration) {
     return `${sets} × ${duration}s`;
   }
-  
+
   return `${sets} × ${reps}`;
 }
 
@@ -69,7 +69,7 @@ function calculateTotalTime(
   return mappings.reduce((total, mapping) => {
     const exercise = mapping.exercise;
     const override = overrides.get(mapping.id);
-    
+
     const sets = override?.sets ?? mapping.sets ?? exercise?.defaultSets ?? 3;
     const reps = override?.reps ?? mapping.reps ?? exercise?.defaultReps ?? 10;
     const duration = override?.duration ?? mapping.duration ?? exercise?.defaultDuration;
@@ -101,7 +101,7 @@ export function SummaryStep({
   const [feedbackSent, setFeedbackSent] = useState(false);
 
   const durationDays = differenceInDays(endDate, startDate);
-  
+
   // Oblicz liczbę wybranych konkretnych dni
   const selectedDaysCount = [
     frequency.monday,
@@ -115,9 +115,9 @@ export function SummaryStep({
 
   // Czy używamy trybu elastycznego (bez konkretnych dni)?
   const isFlexibleMode = selectedDaysCount === 0;
-  
+
   // Efektywna częstotliwość tygodniowa
-  const effectiveWeeklyFrequency = isFlexibleMode 
+  const effectiveWeeklyFrequency = isFlexibleMode
     ? (frequency.timesPerWeek || 3)
     : selectedDaysCount;
 
@@ -145,18 +145,18 @@ export function SummaryStep({
   };
 
   // Filter out excluded exercises
-  const visibleMappings = useMemo(() => 
+  const visibleMappings = useMemo(() =>
     exerciseSet.exerciseMappings?.filter(
       (m) => !excludedExercises.has(m.id)
-    ) || [], 
+    ) || [],
     [exerciseSet.exerciseMappings, excludedExercises]
   );
-  
+
   const exerciseCount = visibleMappings.length;
   const excludedCount = excludedExercises.size;
 
   // Oblicz łączny czas zestawu
-  const totalTimeSeconds = useMemo(() => 
+  const totalTimeSeconds = useMemo(() =>
     calculateTotalTime(visibleMappings, overrides),
     [visibleMappings, overrides]
   );
@@ -176,7 +176,7 @@ export function SummaryStep({
   };
 
   return (
-    <div 
+    <div
       className="max-w-5xl mx-auto grid grid-cols-12 gap-4 sm:gap-6 animate-in fade-in slide-in-from-bottom-4 p-4 sm:p-6 lg:p-8 items-start lg:items-stretch"
       data-testid="summary-step"
     >
@@ -184,9 +184,9 @@ export function SummaryStep({
       {/* KOLUMNA LEWA: WSAD MERYTORYCZNY (8/12)                         */}
       {/* ══════════════════════════════════════════════════════════════ */}
       <div className="col-span-12 lg:col-span-8 flex flex-col gap-3 sm:gap-4">
-        
+
         {/* KARTA 1: ĆWICZENIA (Zawsze rozwinięte!) */}
-        <div 
+        <div
           className="bg-surface border border-border/60 rounded-xl overflow-hidden flex flex-col min-h-[200px] sm:min-h-[280px] lg:min-h-0 lg:flex-1"
           data-testid="summary-exercises-card"
         >
@@ -203,7 +203,7 @@ export function SummaryStep({
             </div>
             {/* Edytuj - powrót do kroku 1 */}
             {onGoToStep && (
-              <button 
+              <button
                 onClick={() => onGoToStep("select-set")}
                 className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1.5 transition-colors"
                 data-testid="summary-edit-exercises-btn"
@@ -237,7 +237,7 @@ export function SummaryStep({
                     <span className="text-sm text-muted-foreground/50 font-mono w-6 text-right shrink-0">
                       {i + 1}.
                     </span>
-                    
+
                     {/* Miniatura */}
                     <div className="w-10 h-10 rounded-lg overflow-hidden shrink-0 bg-surface-light border border-border/30">
                       {imageUrl ? (
@@ -246,12 +246,12 @@ export function SummaryStep({
                         <ImagePlaceholder type="exercise" iconClassName="h-4 w-4" />
                       )}
                     </div>
-                    
+
                     {/* Nazwa */}
                     <span className="text-base text-foreground font-medium truncate">
                       {exerciseName}
                     </span>
-                    
+
                     {/* Badge "Zmienione" */}
                     {hasOverride && (
                       <Badge variant="outline" className="text-[10px] border-primary/40 text-primary shrink-0 ml-1">
@@ -260,7 +260,7 @@ export function SummaryStep({
                       </Badge>
                     )}
                   </div>
-                  
+
                   {/* Dawkowanie */}
                   <div className="flex items-center gap-2 shrink-0">
                     <span className="text-sm text-primary font-mono bg-primary/10 px-2.5 py-1.5 rounded-md border border-primary/20 min-w-[72px] text-center">
@@ -274,7 +274,7 @@ export function SummaryStep({
         </div>
 
         {/* KARTA 2: EARLY ACCESS CONCIERGE */}
-        <div 
+        <div
           className={cn(
             "border rounded-xl p-4 sm:p-5 transition-all shrink-0",
             feedbackSent
@@ -323,8 +323,8 @@ export function SummaryStep({
                 <label className="text-[10px] sm:text-xs font-bold text-amber-500 uppercase tracking-wide">
                   Twoje uwagi dla zespołu FiziYo
                 </label>
-                <button 
-                  onClick={() => setShowConcierge(false)} 
+                <button
+                  onClick={() => setShowConcierge(false)}
                   className="text-muted-foreground hover:text-foreground transition-colors shrink-0 p-1 -m-1"
                   data-testid="summary-concierge-close-btn"
                 >
@@ -369,9 +369,9 @@ export function SummaryStep({
       {/* KOLUMNA PRAWA: KONTEKST I AKCJA (4/12)                         */}
       {/* ══════════════════════════════════════════════════════════════ */}
       <div className="col-span-12 lg:col-span-4 flex flex-col gap-3 sm:gap-4">
-        
+
         {/* KARTA 3: PACJENT(CI) */}
-        <div 
+        <div
           className="bg-surface border border-border/60 rounded-xl p-4 sm:p-5"
           data-testid="summary-patients-card"
         >
@@ -455,7 +455,7 @@ export function SummaryStep({
         </div>
 
         {/* KARTA 4: HARMONOGRAM */}
-        <div 
+        <div
           className="bg-surface border border-border/60 rounded-xl p-4 sm:p-5"
           data-testid="summary-schedule-card"
         >
@@ -505,7 +505,7 @@ export function SummaryStep({
                 Dni: <span className="text-foreground">{getDayNames()}</span>
               </div>
             )}
-            
+
             {/* Info o trybie elastycznym */}
             {isFlexibleMode && (
               <div className="text-xs text-muted-foreground">
@@ -529,9 +529,9 @@ export function SummaryStep({
         {/* Compliance Shield - "Pieczątka prawna" */}
         <div className="p-3 sm:p-4 rounded-xl bg-surface border border-border/40">
           <p className="text-[11px] sm:text-xs text-muted-foreground leading-relaxed">
-            Przypisując zestaw ćwiczeń potwierdzasz, że dobór ćwiczeń jest odpowiedni 
-            dla stanu zdrowia pacjenta i został ustalony na podstawie przeprowadzonej 
-            diagnostyki. FiziYo nie ponosi odpowiedzialności za skutki nieprawidłowego 
+            Przypisując zestaw ćwiczeń potwierdzasz, że dobór ćwiczeń jest odpowiedni
+            dla stanu zdrowia pacjenta i został ustalony na podstawie przeprowadzonej
+            diagnostyki. FiziYo nie ponosi odpowiedzialności za skutki nieprawidłowego
             doboru ćwiczeń.
           </p>
         </div>

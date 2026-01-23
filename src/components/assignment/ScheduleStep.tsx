@@ -197,7 +197,7 @@ export function ScheduleStep({
         : currentWeekly >= 2
         ? { monday: true, tuesday: false, wednesday: false, thursday: true, friday: false, saturday: false, sunday: false }
         : { monday: true, tuesday: false, wednesday: false, thursday: false, friday: false, saturday: false, sunday: false };
-      
+
       onFrequencyChange({
         ...frequency,
         ...defaultDays,
