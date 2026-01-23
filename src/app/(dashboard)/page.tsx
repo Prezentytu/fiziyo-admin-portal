@@ -271,23 +271,23 @@ export default function DashboardPage() {
     return enhanced.sort((a, b) => {
       const aHasNoActivity = !a.lastActivityDate;
       const bHasNoActivity = !b.lastActivityDate;
-      
+
       // Patients without any activity (newly added) go first
       if (aHasNoActivity && !bHasNoActivity) return -1;
       if (!aHasNoActivity && bHasNoActivity) return 1;
-      
+
       // Both have no activity - sort by assignedAt (newest first)
       if (aHasNoActivity && bHasNoActivity) {
         const aAssigned = a.assignedAt ? new Date(a.assignedAt).getTime() : 0;
         const bAssigned = b.assignedAt ? new Date(b.assignedAt).getTime() : 0;
         return bAssigned - aAssigned;
       }
-      
+
       // Both have activity - sort by status priority, then by date
       const priorityOrder: Record<ActivityStatus, number> = { warning: 0, inactive: 1, active: 2 };
       const priorityDiff = priorityOrder[a.activityStatus] - priorityOrder[b.activityStatus];
       if (priorityDiff !== 0) return priorityDiff;
-      
+
       // Within same priority, sort by date (most recent first)
       if (a.lastActivityDate && b.lastActivityDate) {
         return b.lastActivityDate.getTime() - a.lastActivityDate.getTime();

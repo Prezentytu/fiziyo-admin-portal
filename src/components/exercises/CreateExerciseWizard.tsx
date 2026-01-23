@@ -54,7 +54,7 @@ import { cn } from '@/lib/utils';
 import { useFormCompletion, type FieldConfig } from '@/hooks/useFormCompletion';
 
 import { CREATE_EXERCISE_MUTATION, UPLOAD_EXERCISE_IMAGE_MUTATION } from '@/graphql/mutations/exercises.mutations';
-import { GET_ORGANIZATION_EXERCISES_QUERY } from '@/graphql/queries/exercises.queries';
+import { GET_AVAILABLE_EXERCISES_QUERY } from '@/graphql/queries/exercises.queries';
 import { GET_EXERCISE_TAGS_BY_ORGANIZATION_QUERY } from '@/graphql/queries/exerciseTags.queries';
 import { GET_TAG_CATEGORIES_BY_ORGANIZATION_QUERY } from '@/graphql/queries/tagCategories.queries';
 import type { ExerciseTagsResponse, TagCategoriesResponse } from '@/types/apollo';
@@ -199,7 +199,7 @@ export function CreateExerciseWizard({
     CREATE_EXERCISE_MUTATION,
     {
       refetchQueries: [
-        { query: GET_ORGANIZATION_EXERCISES_QUERY, variables: { organizationId } },
+        { query: GET_AVAILABLE_EXERCISES_QUERY, variables: { organizationId } },
       ],
     }
   );

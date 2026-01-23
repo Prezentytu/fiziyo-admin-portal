@@ -5,7 +5,7 @@ import {
   ON_EXERCISE_UPDATED,
   ON_EXERCISE_DELETED,
 } from "@/graphql/subscriptions";
-import { GET_ORGANIZATION_EXERCISES_QUERY } from "@/graphql/queries/exercises.queries";
+import { GET_AVAILABLE_EXERCISES_QUERY } from "@/graphql/queries/exercises.queries";
 
 interface UseRealtimeExercisesOptions {
   /** ID organizacji do subskrypcji */
@@ -49,7 +49,7 @@ export function useRealtimeExercises({
   const refetch = useCallback(() => {
     if (!organizationId) return;
     client.refetchQueries({
-      include: [GET_ORGANIZATION_EXERCISES_QUERY],
+      include: [GET_AVAILABLE_EXERCISES_QUERY],
     });
   }, [client, organizationId]);
 

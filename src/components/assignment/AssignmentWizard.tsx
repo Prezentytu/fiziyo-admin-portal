@@ -2,9 +2,9 @@
 
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { useQuery, useMutation } from '@apollo/client/react';
-import { Loader2, ArrowLeft, ArrowRight, FolderKanban, Users, Calendar, Dumbbell } from 'lucide-react';
+import { Loader2, ArrowLeft, ArrowRight, FolderKanban, Users, Calendar } from 'lucide-react';
 import { toast } from 'sonner';
-import { addDays, differenceInDays } from 'date-fns';
+import { addDays, differenceInDays, format } from 'date-fns';
 import { cn } from '@/lib/utils';
 
 import { Button } from '@/components/ui/button';
@@ -15,12 +15,13 @@ import { defaultFrequency } from '@/components/exercise-sets/FrequencyPicker';
 import { WizardStepIndicator } from './WizardStepIndicator';
 import { SelectSetStep } from './SelectSetStep';
 import { SelectPatientsStep } from './SelectPatientsStep';
-import { CustomizeExercisesStep } from './CustomizeExercisesStep';
+// CustomizeExercisesStep removed - Progressive Disclosure merged into SelectSetStep
 import { ScheduleStep } from './ScheduleStep';
 import { SummaryStep } from './SummaryStep';
 import { AssignmentSuccessDialog } from './AssignmentSuccessDialog';
 import {
   getWizardSteps,
+  createGhostCopy,
   type AssignmentWizardProps,
   type WizardStep,
   type ExerciseSet,
@@ -29,13 +30,15 @@ import {
   type ExerciseOverride,
   type AssignedSetInfo,
   type AssignedPatientInfo,
+  type Exercise,
+  type LocalExerciseMapping,
 } from './types';
 
-import { GET_ORGANIZATION_EXERCISE_SETS_QUERY } from '@/graphql/queries/exerciseSets.queries';
+import { GET_ORGANIZATION_EXERCISE_SETS_QUERY, GET_EXERCISE_SET_WITH_ASSIGNMENTS_QUERY } from '@/graphql/queries/exerciseSets.queries';
 import { GET_THERAPIST_PATIENTS_QUERY, GET_ORGANIZATION_PATIENTS_QUERY } from '@/graphql/queries/therapists.queries';
-import { ASSIGN_EXERCISE_SET_TO_PATIENT_MUTATION, REMOVE_EXERCISE_SET_ASSIGNMENT_MUTATION, UPDATE_PATIENT_EXERCISE_OVERRIDES_MUTATION } from '@/graphql/mutations/exercises.mutations';
+import { ASSIGN_EXERCISE_SET_TO_PATIENT_MUTATION, REMOVE_EXERCISE_SET_ASSIGNMENT_MUTATION, UPDATE_PATIENT_EXERCISE_OVERRIDES_MUTATION, CREATE_EXERCISE_SET_MUTATION, ADD_EXERCISE_TO_EXERCISE_SET_MUTATION } from '@/graphql/mutations/exercises.mutations';
+import { GET_ORGANIZATION_EXERCISES_QUERY } from '@/graphql/queries/exercises.queries';
 import { GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY } from '@/graphql/queries/patientAssignments.queries';
-import { GET_EXERCISE_SET_WITH_ASSIGNMENTS_QUERY } from '@/graphql/queries/exerciseSets.queries';
 import { GET_CURRENT_BILLING_STATUS_QUERY } from '@/graphql/queries/billing.queries';
 import type { TherapistPatientsResponse } from '@/types/apollo';
 
@@ -173,7 +176,17 @@ function AssignmentWizardContent({
   const [startDate, setStartDate] = useState<Date>(() => new Date());
   const [endDate, setEndDate] = useState<Date>(() => addDays(new Date(), 30));
   const [frequency, setFrequency] = useState<Frequency>(defaultFrequency as Frequency);
-  const [excludedExercises, setExcludedExercises] = useState<Set<string>>(new Set());
+  const [isCreatingSet, setIsCreatingSet] = useState(false);
+  
+  // Ghost Copy state - lokalna tablica ćwiczeń (nie dotyka bazy)
+  const [localExercises, setLocalExercises] = useState<LocalExerciseMapping[]>([]);
+  // Nazwa planu dla pacjenta (Assignment name)
+  const [planName, setPlanName] = useState<string>("");
+  // Szablon - opcjonalny zapis do biblioteki
+  const [saveAsTemplate, setSaveAsTemplate] = useState(false);
+  const [templateName, setTemplateName] = useState<string>("");
+  // Wykluczone ćwiczenia (legacy - pustý Set bo customize step został usunięty)
+  const [excludedExercises] = useState<Set<string>>(new Set());
 
   // Track changes for close confirmation
   const hasChanges = !preselectedSet ? selectedSet !== null : selectedPatients.length > (preselectedPatient ? 1 : 0);
@@ -183,12 +196,39 @@ function AssignmentWizardContent({
     onHasChanges(hasChanges);
   }, [hasChanges, onHasChanges]);
 
-  // Handle set change - reset overrides and excluded exercises
+  // Handle set change - create Ghost Copy and apply Smart Defaults
   const handleSetChange = useCallback((set: ExerciseSet | null) => {
     setSelectedSet(set);
     // Reset customizations when changing set
-    setExcludedExercises(new Set());
     setOverrides(new Map());
+    
+    // Ghost Copy - kopiuj ćwiczenia do lokalnego stanu (nie dotyka bazy)
+    if (set?.exerciseMappings) {
+      setLocalExercises(set.exerciseMappings.map(createGhostCopy));
+    } else {
+      setLocalExercises([]);
+    }
+    
+    // Set plan name (dla pacjenta) i template name (dla biblioteki)
+    const baseName = set?.name || "Nowy Plan";
+    setPlanName(baseName);
+    setTemplateName(`${baseName} (szablon)`);
+    
+    // Smart Defaults: wypełnij frequency z szablonu jeśli dostępne
+    if (set?.frequency) {
+      setFrequency({
+        timesPerDay: set.frequency.timesPerDay || 1,
+        timesPerWeek: set.frequency.timesPerWeek,
+        breakBetweenSets: set.frequency.breakBetweenSets || 60,
+        monday: set.frequency.monday ?? true,
+        tuesday: set.frequency.tuesday ?? true,
+        wednesday: set.frequency.wednesday ?? true,
+        thursday: set.frequency.thursday ?? true,
+        friday: set.frequency.friday ?? true,
+        saturday: set.frequency.saturday ?? false,
+        sunday: set.frequency.sunday ?? false,
+      });
+    }
   }, []);
 
   // Queries - load sets if needed (from-patient mode or no preselected set)
@@ -219,10 +259,27 @@ function AssignmentWizardContent({
     skip: !effectiveSetId || !open,
   });
 
+  // Load available exercises for Rapid Builder
+  const { data: exercisesData } = useQuery(GET_ORGANIZATION_EXERCISES_QUERY, {
+    variables: { organizationId },
+    skip: !organizationId || !open,
+  });
+
   // Mutations
   const [assignSet, { loading: assigning }] = useMutation(ASSIGN_EXERCISE_SET_TO_PATIENT_MUTATION);
   const [removeAssignment, { loading: removing }] = useMutation(REMOVE_EXERCISE_SET_ASSIGNMENT_MUTATION);
   const [updatePatientOverrides, { loading: updatingOverrides }] = useMutation(UPDATE_PATIENT_EXERCISE_OVERRIDES_MUTATION);
+  const [createExerciseSet] = useMutation(CREATE_EXERCISE_SET_MUTATION, {
+    refetchQueries: [
+      { query: GET_ORGANIZATION_EXERCISE_SETS_QUERY, variables: { organizationId } },
+    ],
+    awaitRefetchQueries: true,
+  });
+  const [addExerciseToSet] = useMutation(ADD_EXERCISE_TO_EXERCISE_SET_MUTATION, {
+    refetchQueries: [
+      { query: GET_ORGANIZATION_EXERCISE_SETS_QUERY, variables: { organizationId } },
+    ],
+  });
 
   // State for unassign confirmation dialog
   const [unassignConfirm, setUnassignConfirm] = useState<{
@@ -341,6 +398,90 @@ function AssignmentWizardContent({
     }));
   }, [setAssignmentsData]);
 
+  // Process available exercises for Rapid Builder
+  const availableExercises: Exercise[] = useMemo(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const data = exercisesData as { organizationExercises?: any[] } | undefined;
+    return (data?.organizationExercises || [])
+      .filter((ex) => ex.isActive !== false)
+      .map((ex) => ({
+        id: ex.id,
+        name: ex.name,
+        type: ex.type,
+        patientDescription: ex.patientDescription,
+        notes: ex.notes,
+        defaultSets: ex.defaultSets,
+        defaultReps: ex.defaultReps,
+        defaultDuration: ex.defaultDuration,
+        thumbnailUrl: ex.thumbnailUrl,
+        imageUrl: ex.imageUrl,
+        images: ex.images,
+      }));
+  }, [exercisesData]);
+
+  // Handle create new set (Phantom Set) with Smart Draft Logic
+  const handleCreateSet = useCallback(async () => {
+    const today = format(new Date(), 'dd.MM.yyyy');
+    const setNamePattern = preselectedPatient
+      ? `Terapia dla ${preselectedPatient.name} - ${today}`
+      : `Nowy zestaw - ${today}`;
+
+    // Smart Draft Logic: Sprawdź czy istnieje pusty szkic z dzisiaj
+    const existingDraft = exerciseSets.find(s => 
+      (s.exerciseMappings?.length || 0) === 0 && // Jest pusty
+      s.name.includes(today) // Utworzony dzisiaj (data w nazwie)
+    );
+
+    if (existingDraft) {
+      // Otwórz istniejący szkic zamiast tworzyć nowy
+      setSelectedSet(existingDraft);
+      toast.info('Otwarto istniejący szkic');
+      return;
+    }
+
+    // Nie ma szkicu - utwórz nowy
+    setIsCreatingSet(true);
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const result = await createExerciseSet({
+        variables: {
+          organizationId,
+          name: setNamePattern,
+          description: null,
+        },
+      });
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const newSet = (result.data as any)?.createExerciseSet;
+      if (newSet) {
+        // Auto-select the new set
+        setSelectedSet({
+          id: newSet.id,
+          name: newSet.name,
+          description: newSet.description,
+          exerciseMappings: [], // pusty zestaw
+        });
+        toast.success('Utworzono zestaw');
+      }
+    } catch (error) {
+      console.error('Błąd tworzenia zestawu:', error);
+      toast.error('Nie udało się utworzyć zestawu');
+    } finally {
+      setIsCreatingSet(false);
+    }
+  }, [organizationId, preselectedPatient, createExerciseSet, exerciseSets]);
+
+  // Ghost Copy - synchronizuj localExercises gdy zmieni się selectedSet z zewnątrz
+  useEffect(() => {
+    if (selectedSet && exerciseSets.length > 0) {
+      const updatedSet = exerciseSets.find((s) => s.id === selectedSet.id);
+      // Tylko przy pierwszym załadowaniu (gdy localExercises jest puste)
+      if (updatedSet && localExercises.length === 0 && updatedSet.exerciseMappings?.length) {
+        setLocalExercises(updatedSet.exerciseMappings.map(createGhostCopy));
+      }
+    }
+  }, [exerciseSets, selectedSet, localExercises.length]);
+
   // Handle unassign action
   const handleUnassignRequest = useCallback((assignmentId: string, name: string, type: 'set' | 'patient') => {
     setUnassignConfirm({ open: true, assignmentId, name, type });
@@ -441,11 +582,7 @@ function AssignmentWizardContent({
             ? `Wybierz pacjentów dla zestawu "${selectedSet.name}"`
             : 'Wybierz pacjentów do przypisania',
         };
-      case 'customize':
-        return {
-          title: 'Personalizacja ćwiczeń',
-          description: 'Dostosuj parametry ćwiczeń dla wybranych pacjentów (opcjonalnie)',
-        };
+      // customize step removed - Progressive Disclosure merged into select-set
       case 'schedule':
         return {
           title: 'Harmonogram',
@@ -470,8 +607,7 @@ function AssignmentWizardContent({
         return selectedSet !== null;
       case 'select-patients':
         return selectedPatients.length > 0;
-      case 'customize':
-        return true; // Always can skip
+      // customize step removed - Progressive Disclosure merged into select-set
       case 'schedule':
         return true;
       case 'summary':
@@ -516,28 +652,21 @@ function AssignmentWizardContent({
   // Calculate duration for context summary
   const durationDays = differenceInDays(endDate, startDate);
 
-  // Build exercise overrides JSON for backend
+  // Build exercise overrides JSON for backend (Ghost Copy model)
   const buildExerciseOverridesJson = useCallback((): string | null => {
-    const hasOverrides = overrides.size > 0;
-    const hasExcluded = excludedExercises.size > 0;
-
-    if (!hasOverrides && !hasExcluded) return null;
+    if (overrides.size === 0) return null;
 
     const result: Record<string, Record<string, unknown>> = {};
 
     // Add overrides (without exerciseMappingId field)
     overrides.forEach((override, mappingId) => {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { exerciseMappingId, ...rest } = override;
       result[mappingId] = { ...rest };
     });
 
-    // Add hidden: true for excluded exercises
-    excludedExercises.forEach((mappingId) => {
-      result[mappingId] = { ...result[mappingId], hidden: true };
-    });
-
     return JSON.stringify(result);
-  }, [overrides, excludedExercises]);
+  }, [overrides]);
 
   const handleSubmit = async () => {
     if (!selectedSet || selectedPatients.length === 0) return;
@@ -545,18 +674,81 @@ function AssignmentWizardContent({
     try {
       const overridesJson = buildExerciseOverridesJson();
       let lastPremiumValidUntil: string | null = null;
+      
+      // Określ exerciseSetId do przypisania
+      let exerciseSetIdToAssign = selectedSet.id;
+      
+      // Jeśli saveAsTemplate - utwórz nowy szablon w bibliotece
+      if (saveAsTemplate && templateName.trim() && localExercises.length > 0) {
+        try {
+          // 1. Utwórz nowy Set
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const createResult = await createExerciseSet({
+            variables: {
+              organizationId,
+              name: templateName.trim(),
+              description: `Utworzono z planu: ${planName}`,
+            },
+          });
+          
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const newSet = (createResult.data as any)?.createExerciseSet;
+          if (newSet?.id) {
+            // 2. Dodaj ćwiczenia do nowego setu
+            for (let i = 0; i < localExercises.length; i++) {
+              const mapping = localExercises[i];
+              await addExerciseToSet({
+                variables: {
+                  exerciseId: mapping.exerciseId,
+                  exerciseSetId: newSet.id,
+                  order: i + 1,
+                  sets: mapping.sets || mapping.exercise?.defaultSets,
+                  reps: mapping.reps || mapping.exercise?.defaultReps,
+                  duration: mapping.duration || mapping.exercise?.defaultDuration,
+                  restSets: mapping.restSets,
+                  notes: mapping.notes,
+                  customName: mapping.customName,
+                },
+              });
+            }
+            
+            toast.success(`Zapisano szablon "${templateName}"`);
+            // Użyj nowego setu do przypisania
+            exerciseSetIdToAssign = newSet.id;
+          }
+        } catch (templateError) {
+          console.error('Błąd tworzenia szablonu:', templateError);
+          toast.error('Nie udało się zapisać szablonu, ale przypisanie będzie kontynuowane');
+        }
+      }
 
       for (const patient of selectedPatients) {
         // Step 1: Assign the exercise set (auto-aktywuje Premium)
+        // Oblicz efektywną częstotliwość tygodniową:
+        // - Jeśli są zaznaczone dni (specific mode) → użyj liczby dni
+        // - Jeśli nie (flexible mode) → użyj timesPerWeek
+        const selectedDaysCount = [
+          frequency.monday,
+          frequency.tuesday,
+          frequency.wednesday,
+          frequency.thursday,
+          frequency.friday,
+          frequency.saturday,
+          frequency.sunday,
+        ].filter(Boolean).length;
+        const effectiveTimesPerWeek = selectedDaysCount > 0 
+          ? selectedDaysCount 
+          : (frequency.timesPerWeek || 3);
+
         const assignResult = await assignSet({
           variables: {
-            exerciseSetId: selectedSet.id,
+            exerciseSetId: exerciseSetIdToAssign,
             patientId: patient.id,
             startDate: startDate.toISOString(),
             endDate: endDate.toISOString(),
             frequency: {
               timesPerDay: String(frequency.timesPerDay),
-              timesPerWeek: String(Object.values(frequency).filter((v) => v === true).length),
+              timesPerWeek: String(effectiveTimesPerWeek),
               breakBetweenSets: String(frequency.breakBetweenSets),
               monday: frequency.monday,
               tuesday: frequency.tuesday,
@@ -618,7 +810,7 @@ function AssignmentWizardContent({
           name: p.name,
           email: p.email,
         })),
-        setName: selectedSet.name,
+        setName: planName || selectedSet.name,
         premiumValidUntil: lastPremiumValidUntil,
       });
 
@@ -690,8 +882,28 @@ function AssignmentWizardContent({
             assignedSets={assignedSets}
             onUnassign={(assignmentId, setName) => handleUnassignRequest(assignmentId, setName, 'set')}
             loading={loadingSets}
-            excludedExercises={excludedExercises}
-            onExcludedExercisesChange={setExcludedExercises}
+            // Ghost Copy props
+            localExercises={localExercises}
+            onLocalExercisesChange={setLocalExercises}
+            planName={planName}
+            onPlanNameChange={setPlanName}
+            sourceTemplateName={selectedSet?.name}
+            // Progressive Disclosure props
+            overrides={overrides}
+            onOverridesChange={setOverrides}
+            selectedPatientsCount={selectedPatients.length}
+            // Phantom Set props
+            onCreateSet={handleCreateSet}
+            isCreatingSet={isCreatingSet}
+            patientName={preselectedPatient?.name}
+            // Rapid Builder props
+            availableExercises={availableExercises}
+            organizationId={organizationId}
+            // Save as template props
+            saveAsTemplate={saveAsTemplate}
+            onSaveAsTemplateChange={setSaveAsTemplate}
+            templateName={templateName}
+            onTemplateNameChange={setTemplateName}
           />
         );
 
@@ -707,17 +919,7 @@ function AssignmentWizardContent({
           />
         );
 
-      case 'customize':
-        if (!selectedSet) return null;
-        return (
-          <CustomizeExercisesStep
-            exerciseSet={selectedSet}
-            overrides={overrides}
-            onOverridesChange={setOverrides}
-            excludedExercises={excludedExercises}
-            onExcludedExercisesChange={setExcludedExercises}
-          />
-        );
+      // customize step removed - Progressive Disclosure merged into select-set
 
       case 'schedule':
         if (!selectedSet) return null;

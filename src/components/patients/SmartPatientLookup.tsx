@@ -6,7 +6,7 @@
  * - Single input field for email/phone (auto-detection)
  * - Automatic form morphing when patient not found
  * - Zero-friction flow without manual mode switching
- * 
+ *
  * This file will be removed in a future version.
  */
 

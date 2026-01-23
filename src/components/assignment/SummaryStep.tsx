@@ -257,8 +257,17 @@ export function SummaryStep({
         </CollapsibleContent>
       </Collapsible>
 
+      {/* Compliance Shield - Legal Disclaimer */}
+      <div className="mt-6 p-3 rounded-lg bg-muted/30 border border-border/50">
+        <p className="text-[11px] text-muted-foreground leading-relaxed">
+          Przypisując zestaw ćwiczeń potwierdzasz, że dobór ćwiczeń jest odpowiedni dla stanu zdrowia pacjenta 
+          i został ustalony na podstawie przeprowadzonej diagnostyki. FiziYo nie ponosi odpowiedzialności 
+          za skutki nieprawidłowego doboru ćwiczeń.
+        </p>
+      </div>
+
       {/* Keyboard hint */}
-      <p className="text-xs text-muted-foreground text-center mt-6">
+      <p className="text-xs text-muted-foreground text-center mt-4">
         Naciśnij <kbd className="px-1.5 py-0.5 rounded bg-surface-light border border-border text-xs">Enter</kbd> aby przypisać
       </p>
     </div>

@@ -163,7 +163,7 @@ export function UnifiedPatientInput({
   // ============================================
   // STATE
   // ============================================
-  
+
   const [contactValue, setContactValue] = useState('');
   const [contactType, setContactType] = useState<ContactType>('unknown');
   const [viewState, setViewState] = useState<ViewState>('search');
@@ -362,12 +362,12 @@ export function UnifiedPatientInput({
     // If it looks like a phone number (digits only), limit to 9 digits
     const digitsOnly = value.replaceAll(/[\s+\-()]/g, '');
     const isPhoneLike = /^\d*$/.test(digitsOnly) && !value.includes('@');
-    
+
     if (isPhoneLike && digitsOnly.length > 9) {
       // Limit to 9 digits for phone numbers
       return;
     }
-    
+
     setContactValue(value);
   }, []);
 
@@ -464,7 +464,7 @@ export function UnifiedPatientInput({
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     const key = e.key;
-    
+
     // Escape key handling for all states
     if (key === 'Escape') {
       e.preventDefault();
@@ -477,7 +477,7 @@ export function UnifiedPatientInput({
       }
       return;
     }
-    
+
     // Enter key in found state
     if (key === 'Enter' && viewState === 'found' && foundUser) {
       e.preventDefault();
@@ -497,8 +497,8 @@ export function UnifiedPatientInput({
   const ContactIcon = contactType === 'email' ? Mail : contactType === 'phone' ? Phone : Search;
 
   return (
-    <div 
-      ref={containerRef} 
+    <div
+      ref={containerRef}
       className="space-y-6"
       onKeyDown={handleKeyDown}
     >

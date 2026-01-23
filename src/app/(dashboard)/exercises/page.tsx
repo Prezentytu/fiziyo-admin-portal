@@ -77,7 +77,8 @@ export default function ExercisesPage() {
   // Automatycznie aktualizuje Apollo Cache - nie wymaga refetchQueries
   useRealtimeExercises({
     organizationId: organizationId ?? null,
-    onCreated: (exercise) => toast.success(`Nowe ćwiczenie: ${exercise.name}`),
+    onCreated: () => toast.success('Nowe ćwiczenie zostało dodane'),
+    onUpdated: () => toast.info('Ćwiczenie zostało zaktualizowane'),
     onDeleted: () => toast.info('Ćwiczenie zostało usunięte'),
   });
 
