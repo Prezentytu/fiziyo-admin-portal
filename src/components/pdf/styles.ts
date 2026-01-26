@@ -3,20 +3,28 @@ import { StyleSheet } from '@react-pdf/renderer';
 // Importuj rejestrację fontów
 import './registerFonts';
 
-// Kolory - profesjonalne, czytelne
+// Kolory - CLEAN MEDICAL: Flat Design, Economy of Ink
 const colors = {
-  primary: '#16a34a', // Ciemniejszy zielony dla lepszej czytelności
-  primaryLight: '#22c55e',
-  text: '#1f2937',
-  textMuted: '#6b7280',
-  textLight: '#9ca3af',
-  border: '#e5e7eb',
-  borderLight: '#f3f4f6',
+  // Podstawowe
+  text: '#18181b',           // zinc-900
+  textMuted: '#52525b',      // zinc-600
+  textLight: '#a1a1aa',      // zinc-400
+  
+  // Tła - minimalne!
   background: '#ffffff',
-  surface: '#f9fafb',
-  accent: '#ecfdf5', // Jasny zielony tło
-  warning: '#fef3c7',
-  warningText: '#92400e',
+  surface: '#fafafa',        // zinc-50
+  
+  // Ramki
+  border: '#e4e4e7',         // zinc-200
+  borderLight: '#f4f4f5',    // zinc-100
+  borderDark: '#18181b',     // zinc-900
+  
+  // Akcenty - tylko tekst!
+  accent: '#047857',         // emerald-700
+  
+  // Ostrzeżenia
+  warning: '#fef9c3',
+  warningText: '#854d0e',
 };
 
 export const pdfStyles = StyleSheet.create({
@@ -24,171 +32,175 @@ export const pdfStyles = StyleSheet.create({
   page: {
     flexDirection: 'column',
     backgroundColor: colors.background,
-    padding: 36,
-    paddingBottom: 60,
+    padding: 40,
+    paddingBottom: 80,
     fontFamily: 'OpenSans',
     fontSize: 10,
     color: colors.text,
   },
 
-  // ==================== NAGŁÓWEK ====================
+  // ==================== NAGŁÓWEK (Minimalistyczny) ====================
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    alignItems: 'flex-end',
     marginBottom: 20,
-    paddingBottom: 16,
-    borderBottomWidth: 3,
-    borderBottomColor: colors.primary,
+    paddingBottom: 14,
+    borderBottomWidth: 2,
+    borderBottomColor: colors.borderDark,
   },
   headerLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 14,
+    gap: 10,
   },
   logo: {
-    width: 56,
-    height: 56,
+    width: 36,
+    height: 36,
     objectFit: 'contain',
   },
   logoPlaceholder: {
-    width: 56,
-    height: 56,
-    backgroundColor: colors.primary,
-    borderRadius: 10,
+    width: 36,
+    height: 36,
+    backgroundColor: colors.accent,
+    borderRadius: 4,
     justifyContent: 'center',
     alignItems: 'center',
   },
   logoPlaceholderText: {
     color: colors.background,
-    fontSize: 20,
+    fontSize: 14,
     fontWeight: 'bold',
   },
   organizationInfo: {
     flexDirection: 'column',
-    gap: 2,
+    gap: 1,
   },
   organizationName: {
     fontSize: 16,
     fontWeight: 'bold',
     color: colors.text,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
-  organizationDetails: {
-    fontSize: 9,
-    color: colors.textMuted,
-    lineHeight: 1.5,
+  organizationSubtitle: {
+    fontSize: 7,
+    color: colors.textLight,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
   },
   headerRight: {
     alignItems: 'flex-end',
+    gap: 2,
   },
-  date: {
-    fontSize: 10,
+  headerContact: {
+    fontSize: 8,
     color: colors.textMuted,
+    textAlign: 'right',
+  },
+  headerWebsite: {
+    fontSize: 8,
+    color: colors.accent,
+    fontWeight: 'bold',
   },
 
-  // ==================== SEKCJA TYTUŁOWA ====================
-  titleSection: {
+  // ==================== INFO STRIP (Scalona sekcja) ====================
+  infoStrip: {
     marginBottom: 20,
-    padding: 18,
-    backgroundColor: colors.accent,
-    borderRadius: 10,
-    borderLeftWidth: 4,
-    borderLeftColor: colors.primary,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+    borderRadius: 6,
+    padding: 14,
   },
-  title: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: colors.primary,
-    marginBottom: 12,
-  },
-  patientInfoRow: {
+  infoStripRow: {
     flexDirection: 'row',
-    marginBottom: 6,
+    gap: 0,
   },
-  patientLabel: {
+  infoStripColumn: {
+    flex: 1,
+    paddingHorizontal: 8,
+    borderRightWidth: 1,
+    borderRightColor: colors.border,
+  },
+  infoStripColumnLast: {
+    flex: 1,
+    paddingHorizontal: 8,
+    borderRightWidth: 0,
+  },
+  infoStripLabel: {
+    fontSize: 7,
+    color: colors.textLight,
+    textTransform: 'uppercase',
+    fontWeight: 'bold',
+    marginBottom: 3,
+  },
+  infoStripValue: {
     fontSize: 10,
+    color: colors.text,
+    fontWeight: 'bold',
+  },
+  infoStripValueSmall: {
+    fontSize: 9,
     color: colors.textMuted,
-    width: 80,
   },
-  patientValue: {
-    fontSize: 11,
-    fontWeight: 'semibold',
-    color: colors.text,
-  },
-  description: {
+  infoStripValueAccent: {
     fontSize: 10,
-    color: colors.text,
+    color: colors.accent,
+    fontWeight: 'bold',
+  },
+  infoStripNote: {
+    fontSize: 7,
+    color: colors.textLight,
+    marginTop: 8,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+  },
+  // Dni tygodnia w Info Strip
+  infoStripDaysRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
     marginTop: 10,
     paddingTop: 10,
     borderTopWidth: 1,
-    borderTopColor: colors.primaryLight,
-    lineHeight: 1.5,
+    borderTopColor: colors.border,
   },
-
-  // ==================== HARMONOGRAM ====================
-  frequencySection: {
-    marginBottom: 20,
-    padding: 14,
-    backgroundColor: colors.surface,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  frequencyTitle: {
-    fontSize: 12,
+  infoStripDaysLabel: {
+    fontSize: 7,
+    color: colors.textLight,
+    textTransform: 'uppercase',
     fontWeight: 'bold',
-    color: colors.text,
-    marginBottom: 10,
   },
-  frequencyContent: {
-    flexDirection: 'column',
-    gap: 8,
-  },
-  frequencyRow: {
+  infoStripDaysContainer: {
     flexDirection: 'row',
-    alignItems: 'center',
+    gap: 3,
   },
-  frequencyLabel: {
-    fontSize: 10,
-    color: colors.textMuted,
-    width: 100,
-  },
-  frequencyValue: {
-    fontSize: 11,
-    fontWeight: 'semibold',
-    color: colors.text,
-    flex: 1,
-  },
-  daysContainer: {
-    flexDirection: 'row',
-    gap: 6,
-    marginTop: 8,
-  },
-  dayBox: {
-    width: 32,
-    height: 28,
+  infoStripDayBox: {
+    width: 18,
+    height: 14,
     justifyContent: 'center',
     alignItems: 'center',
-    borderRadius: 6,
-    borderWidth: 1,
+    borderRadius: 2,
   },
-  dayBoxActive: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
+  infoStripDayBoxActive: {
+    backgroundColor: colors.accent,
   },
-  dayBoxInactive: {
+  infoStripDayBoxInactive: {
     backgroundColor: colors.background,
-    borderColor: colors.border,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
   },
-  dayText: {
-    fontSize: 9,
+  infoStripDayText: {
+    fontSize: 6,
     fontWeight: 'bold',
   },
-  dayTextActive: {
+  infoStripDayTextActive: {
     color: colors.background,
   },
-  dayTextInactive: {
-    color: colors.textLight,
+  infoStripDayTextInactive: {
+    color: colors.borderLight,
   },
 
   // ==================== LISTA ĆWICZEŃ ====================
@@ -197,286 +209,499 @@ export const pdfStyles = StyleSheet.create({
   },
   exercisesSectionHeader: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 14,
-    paddingBottom: 8,
+    paddingBottom: 6,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
   },
   exercisesSectionTitle: {
-    fontSize: 14,
+    fontSize: 8,
     fontWeight: 'bold',
-    color: colors.text,
+    color: colors.textLight,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   exercisesSectionCount: {
-    fontSize: 10,
-    color: colors.textMuted,
-    backgroundColor: colors.surface,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 4,
+    fontSize: 8,
+    color: colors.textLight,
   },
 
-  // ==================== ĆWICZENIE - PEŁNY WIDOK ====================
-  exerciseCard: {
-    marginBottom: 14,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 10,
-    backgroundColor: colors.background,
-  },
-  exerciseHeader: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginBottom: 10,
-  },
-  exerciseNumber: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: colors.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  exerciseNumberText: {
-    color: colors.background,
-    fontSize: 13,
-    fontWeight: 'bold',
-  },
-  exerciseTitle: {
-    flex: 1,
-  },
-  exerciseName: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: colors.text,
-    marginBottom: 3,
-  },
-  exerciseType: {
-    fontSize: 9,
-    color: colors.textMuted,
-  },
-  exerciseContent: {
+  // ==================== CLEAN EXERCISE ROW ====================
+  exerciseRowClean: {
     flexDirection: 'row',
     gap: 14,
+    marginBottom: 20,
+    paddingBottom: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.borderLight,
   },
-  exerciseImage: {
-    width: 90,
-    height: 90,
-    borderRadius: 8,
+  
+  // Kolumna 1: Obrazek
+  exerciseColImageClean: {
+    width: 70,
+    flexShrink: 0,
+  },
+  exerciseThumbnailClean: {
+    width: 70,
+    height: 70,
+    borderRadius: 6,
     objectFit: 'cover',
-    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
-  exerciseImagePlaceholder: {
-    width: 90,
-    height: 90,
-    borderRadius: 8,
+  exerciseThumbnailPlaceholderClean: {
+    width: 70,
+    height: 70,
+    borderRadius: 6,
     backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: colors.borderLight,
-    borderStyle: 'dashed',
   },
-  exerciseImagePlaceholderText: {
-    fontSize: 8,
+  exerciseThumbnailPlaceholderText: {
+    fontSize: 7,
     color: colors.textLight,
     textAlign: 'center',
   },
-  exerciseDetails: {
+
+  // Kolumna 2: Treść
+  exerciseColContentClean: {
     flex: 1,
+    minWidth: 0,
+    paddingRight: 10,
   },
-  
-  // Parametry ćwiczenia - bardziej widoczne
-  exerciseParams: {
+  exerciseHeaderClean: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginBottom: 10,
+    alignItems: 'baseline',
+    gap: 6,
+    marginBottom: 6,
   },
-  paramBox: {
-    paddingVertical: 6,
-    paddingHorizontal: 10,
-    backgroundColor: colors.accent,
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: colors.primaryLight,
+  exerciseNumberClean: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: colors.text,
   },
-  paramLabel: {
-    fontSize: 8,
-    color: colors.textMuted,
-    marginBottom: 2,
-    textTransform: 'uppercase',
-  },
-  paramValue: {
+  exerciseNameClean: {
     fontSize: 12,
     fontWeight: 'bold',
-    color: colors.primary,
-  },
-  
-  // Opis ćwiczenia
-  exerciseDescription: {
-    fontSize: 10,
     color: colors.text,
-    lineHeight: 1.6,
+    textTransform: 'uppercase',
+    flex: 1,
   },
-  
-  // Dodatkowe uwagi do ćwiczenia
-  exerciseNotes: {
+  exerciseSideTagClean: {
+    fontSize: 7,
+    color: colors.textMuted,
+    paddingHorizontal: 4,
+    paddingVertical: 2,
+    backgroundColor: colors.surface,
+    borderRadius: 2,
+  },
+  exerciseDescriptionClean: {
+    fontSize: 9,
+    color: colors.textMuted,
+    lineHeight: 1.6,
+    marginBottom: 10,
+  },
+  // Notatki - liniatura
+  exerciseNotesSection: {
+    marginTop: 6,
+  },
+  exerciseNotesLabelClean: {
+    fontSize: 7,
+    color: colors.textLight,
+    textTransform: 'uppercase',
+    fontWeight: 'bold',
+    letterSpacing: 0.5,
+    marginBottom: 4,
+  },
+  exerciseNotesLineClean: {
+    height: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+    marginBottom: 2,
+  },
+  // Uwagi terapeuty
+  exerciseTherapistNotesClean: {
     marginTop: 8,
     padding: 8,
     backgroundColor: colors.warning,
-    borderRadius: 6,
+    borderRadius: 4,
   },
-  exerciseNotesLabel: {
+  exerciseTherapistNotesTextClean: {
     fontSize: 8,
-    fontWeight: 'bold',
     color: colors.warningText,
+    lineHeight: 1.4,
+  },
+
+  // Kolumna 3: Parametry (Czysta tabelka)
+  exerciseColParamsClean: {
+    width: 90,
+    flexShrink: 0,
+    backgroundColor: colors.surface,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+    padding: 10,
+  },
+  paramItemClean: {
+    alignItems: 'center',
+    paddingVertical: 6,
+  },
+  paramItemCleanWithBorder: {
+    alignItems: 'center',
+    paddingVertical: 6,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  paramLabelClean: {
+    fontSize: 7,
+    color: colors.textLight,
+    textTransform: 'uppercase',
+    fontWeight: 'bold',
     marginBottom: 2,
   },
-  exerciseNotesText: {
-    fontSize: 9,
-    color: colors.warningText,
-    lineHeight: 1.5,
+  paramValueCleanLarge: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: colors.accent,
   },
-
-  // Strona ćwiczenia (lewa/prawa)
-  exerciseSide: {
-    marginTop: 6,
-    paddingVertical: 4,
-    paddingHorizontal: 8,
-    backgroundColor: colors.surface,
-    borderRadius: 4,
-    alignSelf: 'flex-start',
+  paramValueCleanMedium: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: colors.text,
   },
-  exerciseSideText: {
-    fontSize: 9,
+  paramValueCleanSmall: {
+    fontSize: 11,
+    fontWeight: 'bold',
     color: colors.textMuted,
-    fontWeight: 'semibold',
   },
 
-  // ==================== ĆWICZENIE - KOMPAKTOWY WIDOK ====================
-  exerciseCardCompact: {
+  // ==================== KOMPAKTOWY WIDOK ====================
+  exerciseRowCompact: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
-    padding: 10,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 8,
-    backgroundColor: colors.background,
+    marginBottom: 6,
+    paddingBottom: 6,
+    paddingVertical: 4,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.borderLight,
   },
   exerciseCompactNumber: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: colors.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 10,
+    fontSize: 10,
+    fontWeight: 'bold',
+    color: colors.text,
+    marginRight: 8,
+    width: 20,
   },
   exerciseCompactNumberText: {
     color: colors.background,
-    fontSize: 11,
+    fontSize: 9,
     fontWeight: 'bold',
   },
   exerciseCompactName: {
     flex: 1,
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: 'semibold',
     color: colors.text,
   },
   exerciseCompactParams: {
     flexDirection: 'row',
-    gap: 14,
+    gap: 12,
     alignItems: 'center',
   },
   exerciseCompactParam: {
-    fontSize: 10,
-    color: colors.text,
+    fontSize: 9,
+    color: colors.textMuted,
   },
 
-  // ==================== NOTATKI OGÓLNE ====================
-  notesSection: {
-    marginTop: 16,
-    padding: 14,
-    backgroundColor: colors.warning,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#fcd34d',
-  },
-  notesTitle: {
-    fontSize: 11,
-    fontWeight: 'bold',
-    color: colors.warningText,
-    marginBottom: 6,
-  },
-  notesText: {
-    fontSize: 10,
-    color: colors.warningText,
-    lineHeight: 1.6,
-  },
-
-  // ==================== KOD QR ====================
-  qrSection: {
-    marginTop: 16,
+  // ==================== STOPKA Z QR ====================
+  qrFooterSection: {
+    marginTop: 'auto',
+    paddingTop: 14,
+    borderTopWidth: 2,
+    borderTopColor: colors.borderDark,
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 14,
-    backgroundColor: colors.surface,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: colors.border,
+    gap: 14,
   },
   qrCode: {
-    width: 70,
-    height: 70,
-    marginRight: 14,
+    width: 60,
+    height: 60,
   },
-  qrText: {
+  qrContent: {
     flex: 1,
   },
   qrTitle: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: 'bold',
     color: colors.text,
-    marginBottom: 4,
+    marginBottom: 3,
   },
   qrDescription: {
-    fontSize: 9,
+    fontSize: 8,
     color: colors.textMuted,
-    lineHeight: 1.5,
+    lineHeight: 1.4,
   },
-
-  // ==================== SEKCJA KONTAKTOWA ====================
-  contactSection: {
-    marginTop: 16,
-    padding: 12,
-    backgroundColor: colors.accent,
-    borderRadius: 8,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
+  qrMeta: {
+    alignItems: 'flex-end',
   },
-  contactText: {
-    fontSize: 10,
-    color: colors.primary,
-    textAlign: 'center',
+  qrMetaDate: {
+    fontSize: 7,
+    color: colors.textLight,
   },
-  contactBold: {
+  qrMetaBrand: {
+    fontSize: 7,
+    color: colors.accent,
     fontWeight: 'bold',
   },
 
-  // ==================== STOPKA ====================
+  // ==================== APP BANNER (Marketing Footer) ====================
+  appBanner: {
+    marginTop: 'auto',
+    paddingTop: 16,
+    borderTopWidth: 2,
+    borderTopColor: colors.borderDark,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 16,
+  },
+  appBannerQR: {
+    width: 72,
+    height: 72,
+    backgroundColor: colors.text,
+    flexShrink: 0,
+  },
+  appBannerQRImage: {
+    width: '100%',
+    height: '100%',
+  },
+  appBannerContent: {
+    flex: 1,
+  },
+  appBannerTitle: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    color: colors.accent,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 4,
+  },
+  appBannerSubtitle: {
+    fontSize: 9,
+    color: colors.text,
+    lineHeight: 1.5,
+    marginBottom: 8,
+  },
+  appBannerFeatures: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    marginBottom: 8,
+  },
+  appBannerFeature: {
+    fontSize: 8,
+    color: colors.textMuted,
+  },
+  appBannerLegal: {
+    fontSize: 7,
+    color: colors.textLight,
+    marginTop: 4,
+  },
+
+  // ==================== NUMER STRONY ====================
+  pageNumber: {
+    position: 'absolute',
+    bottom: 30,
+    left: 0,
+    right: 0,
+    fontSize: 8,
+    color: colors.textLight,
+    textAlign: 'center',
+  },
+
+  // ==================== LEGACY STYLES (dla kompatybilności) ====================
+  // ... zachowane dla innych komponentów
+  patientInfoSection: {
+    marginBottom: 16,
+    flexDirection: 'row',
+    gap: 20,
+  },
+  patientInfoMain: {
+    flex: 1,
+    borderLeftWidth: 4,
+    borderLeftColor: colors.accent,
+    paddingLeft: 12,
+    paddingVertical: 4,
+  },
+  patientInfoTitle: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: colors.text,
+    marginBottom: 8,
+  },
+  patientInfoGrid: {
+    flexDirection: 'column',
+    gap: 4,
+  },
+  patientInfoRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  patientInfoLabel: {
+    fontSize: 9,
+    color: colors.textMuted,
+    width: 70,
+  },
+  patientInfoValue: {
+    fontSize: 9,
+    fontWeight: 'bold',
+    color: colors.text,
+  },
+  patientInfoSchedule: {
+    width: 180,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 4,
+    padding: 10,
+  },
+  scheduleTitle: {
+    fontSize: 8,
+    fontWeight: 'bold',
+    color: colors.textMuted,
+    textTransform: 'uppercase',
+    marginBottom: 6,
+  },
+  scheduleRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 4,
+  },
+  scheduleLabel: {
+    fontSize: 9,
+    color: colors.textMuted,
+  },
+  scheduleValue: {
+    fontSize: 9,
+    fontWeight: 'bold',
+    color: colors.text,
+  },
+  scheduleValueAccent: {
+    fontSize: 9,
+    fontWeight: 'bold',
+    color: colors.accent,
+  },
+  patientInfoColumn: {
+    flexDirection: 'column',
+    gap: 2,
+  },
+  patientInfoValueSmall: {
+    fontSize: 9,
+    color: colors.text,
+  },
+  patientInfoAccent: {
+    fontSize: 9,
+    color: colors.accent,
+    fontWeight: 'bold',
+  },
+  frequencySection: {
+    marginBottom: 16,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 4,
+    padding: 10,
+  },
+  frequencyTitle: {
+    fontSize: 8,
+    fontWeight: 'bold',
+    color: colors.textMuted,
+    textTransform: 'uppercase',
+    marginBottom: 6,
+  },
+  frequencyContent: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 16,
+    alignItems: 'center',
+  },
+  frequencyItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  frequencyLabel: {
+    fontSize: 9,
+    color: colors.textMuted,
+  },
+  frequencyValue: {
+    fontSize: 9,
+    fontWeight: 'bold',
+    color: colors.text,
+  },
+  frequencyValueAccent: {
+    fontSize: 9,
+    fontWeight: 'bold',
+    color: colors.accent,
+  },
+  daysContainer: {
+    flexDirection: 'row',
+    gap: 3,
+  },
+  dayBox: {
+    width: 18,
+    height: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 2,
+    borderWidth: 1,
+  },
+  dayBoxActive: {
+    backgroundColor: colors.borderDark,
+    borderColor: colors.borderDark,
+  },
+  dayBoxInactive: {
+    backgroundColor: colors.background,
+    borderColor: colors.border,
+  },
+  dayText: {
+    fontSize: 7,
+    fontWeight: 'bold',
+  },
+  dayTextActive: {
+    color: colors.background,
+  },
+  dayTextInactive: {
+    color: colors.textLight,
+  },
+  generalNotes: {
+    marginBottom: 16,
+    borderLeftWidth: 4,
+    borderLeftColor: colors.accent,
+    paddingLeft: 12,
+    paddingVertical: 8,
+  },
+  sectionTitle: {
+    fontSize: 9,
+    fontWeight: 'bold',
+    color: colors.textMuted,
+    textTransform: 'uppercase',
+    marginBottom: 6,
+  },
+  generalNotesText: {
+    fontSize: 9,
+    color: colors.text,
+    lineHeight: 1.6,
+  },
   footer: {
     position: 'absolute',
-    bottom: 24,
-    left: 36,
-    right: 36,
-    paddingTop: 10,
+    bottom: 30,
+    left: 40,
+    right: 40,
+    paddingTop: 8,
     borderTopWidth: 1,
     borderTopColor: colors.border,
     flexDirection: 'row',
@@ -484,23 +709,170 @@ export const pdfStyles = StyleSheet.create({
     alignItems: 'center',
   },
   footerText: {
-    fontSize: 8,
+    fontSize: 7,
     color: colors.textLight,
   },
   footerBrand: {
-    fontSize: 9,
-    color: colors.primary,
+    fontSize: 8,
+    color: colors.textLight,
+  },
+  qrSection: {
+    marginTop: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    backgroundColor: colors.surface,
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  qrText: {
+    flex: 1,
+  },
+  qrLegal: {
+    fontSize: 7,
+    color: colors.textLight,
+    lineHeight: 1.4,
+  },
+  exerciseRowFixed: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 16,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  exerciseColImage: {
+    width: 60,
+    flexShrink: 0,
+  },
+  exerciseThumbnailFixed: {
+    width: 60,
+    height: 60,
+    borderRadius: 4,
+    objectFit: 'cover',
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  exerciseThumbnailPlaceholderFixed: {
+    width: 60,
+    height: 60,
+    borderRadius: 4,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  exerciseColContent: {
+    flex: 1,
+    minWidth: 0,
+  },
+  exerciseHeaderFixed: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 6,
+  },
+  exerciseNumberFixed: {
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    backgroundColor: colors.borderDark,
+    justifyContent: 'center',
+    alignItems: 'center',
+    flexShrink: 0,
+  },
+  exerciseNumberTextFixed: {
+    color: colors.background,
+    fontSize: 10,
     fontWeight: 'bold',
   },
-
-  // ==================== NUMER STRONY ====================
-  pageNumber: {
-    position: 'absolute',
-    bottom: 24,
-    left: 0,
-    right: 0,
+  exerciseNameFixed: {
+    fontSize: 11,
+    fontWeight: 'bold',
+    color: colors.text,
+    flex: 1,
+  },
+  exerciseSideTagFixed: {
+    fontSize: 7,
+    color: colors.textMuted,
+    paddingHorizontal: 4,
+    paddingVertical: 2,
+    backgroundColor: colors.surface,
+    borderRadius: 2,
+  },
+  exerciseDescriptionFixed: {
     fontSize: 9,
     color: colors.textMuted,
-    textAlign: 'center',
+    lineHeight: 1.5,
+    marginBottom: 6,
+  },
+  exerciseTherapistNotesFixed: {
+    marginBottom: 6,
+    padding: 6,
+    backgroundColor: colors.warning,
+    borderRadius: 3,
+  },
+  exerciseTherapistNotesTextFixed: {
+    fontSize: 8,
+    color: colors.warningText,
+    lineHeight: 1.4,
+  },
+  exerciseNotesLineFixed: {
+    marginTop: 4,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopStyle: 'dotted',
+    borderTopColor: colors.border,
+  },
+  exerciseNotesLabelFixed: {
+    fontSize: 7,
+    color: colors.textLight,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  exerciseColParams: {
+    width: 80,
+    flexShrink: 0,
+    flexDirection: 'column',
+    gap: 4,
+  },
+  paramBoxFixed: {
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 4,
+    padding: 6,
+    alignItems: 'center',
+  },
+  paramBoxLight: {
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 4,
+    padding: 6,
+    alignItems: 'center',
+  },
+  paramLabelFixed: {
+    fontSize: 7,
+    color: colors.textMuted,
+    textTransform: 'uppercase',
+    marginBottom: 2,
+  },
+  paramValueFixed: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: colors.accent,
+  },
+  paramValueLight: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: colors.text,
+  },
+  paramValueSmallFixed: {
+    fontSize: 10,
+    fontWeight: 'bold',
+    color: colors.text,
   },
 });

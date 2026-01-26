@@ -7,16 +7,17 @@ interface PDFHeaderProps {
   date: string;
 }
 
+/**
+ * Clinical Letterhead Header
+ * Logo po lewej, dane kontaktowe po prawej
+ * Bez kolorowych teł - oszczędność tuszu
+ */
 export function PDFHeader({ organization, date }: PDFHeaderProps) {
   const initials = organization.name?.slice(0, 2).toUpperCase() || 'FZ';
 
-  // Formatuj dane kontaktowe
-  const contactParts: string[] = [];
-  if (organization.address) contactParts.push(organization.address);
-  if (organization.phone) contactParts.push(`tel. ${organization.phone}`);
-  
   return (
     <View style={pdfStyles.header}>
+      {/* LEWA STRONA: Logo + Nazwa */}
       <View style={pdfStyles.headerLeft}>
         {organization.logoUrl ? (
           <Image src={organization.logoUrl} style={pdfStyles.logo} />
@@ -27,18 +28,29 @@ export function PDFHeader({ organization, date }: PDFHeaderProps) {
         )}
         <View style={pdfStyles.organizationInfo}>
           <Text style={pdfStyles.organizationName}>{organization.name}</Text>
-          {contactParts.length > 0 && (
-            <Text style={pdfStyles.organizationDetails}>
-              {contactParts.join(' | ')}
-            </Text>
-          )}
-          {organization.email && (
-            <Text style={pdfStyles.organizationDetails}>{organization.email}</Text>
-          )}
+          <Text style={pdfStyles.organizationSubtitle}>
+            CENTRUM REHABILITACJI
+          </Text>
         </View>
       </View>
+
+      {/* PRAWA STRONA: Dane kontaktowe */}
       <View style={pdfStyles.headerRight}>
-        <Text style={pdfStyles.date}>{date}</Text>
+        {organization.address && (
+          <Text style={pdfStyles.headerContact}>{organization.address}</Text>
+        )}
+        {organization.phone && (
+          <Text style={pdfStyles.headerContact}>tel. {organization.phone}</Text>
+        )}
+        {organization.email && (
+          <Text style={pdfStyles.headerContact}>{organization.email}</Text>
+        )}
+        {organization.website && (
+          <Text style={pdfStyles.headerWebsite}>{organization.website}</Text>
+        )}
+        {!organization.website && !organization.email && !organization.phone && (
+          <Text style={pdfStyles.headerContact}>{date}</Text>
+        )}
       </View>
     </View>
   );

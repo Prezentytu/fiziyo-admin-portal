@@ -47,6 +47,8 @@ interface SuccessDialogData {
   patients: Array<{ id: string; name: string; email?: string }>;
   setName: string;
   premiumValidUntil: string | null;
+  exerciseSet: ExerciseSet;
+  frequency: Frequency;
 }
 
 // Wrapper component that handles dialog state - content remounts on each open
@@ -125,6 +127,8 @@ export function AssignmentWizard(props: AssignmentWizardProps) {
           premiumValidUntil={successData.premiumValidUntil}
           therapistId={therapistId}
           organizationId={organizationId}
+          exerciseSet={successData.exerciseSet}
+          frequency={successData.frequency}
           onAssignAnother={() => {
             // Reset success state and reopen wizard
             setSuccessData(null);
@@ -813,6 +817,8 @@ function AssignmentWizardContent({
         })),
         setName: planName || selectedSet.name,
         premiumValidUntil: lastPremiumValidUntil,
+        exerciseSet: selectedSet,
+        frequency,
       });
 
       // Notify success callback
