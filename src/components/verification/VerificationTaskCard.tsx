@@ -1,7 +1,8 @@
 "use client";
 
+import { useState, useRef } from "react";
 import Link from "next/link";
-import { Clock, User, AlertCircle, ChevronRight, Undo2 } from "lucide-react";
+import { Clock, User, AlertCircle, ChevronRight, Undo2, Play, Building2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -73,7 +74,14 @@ export function VerificationTaskCard({
   onUnpublish,
   isUnpublishing,
 }: VerificationTaskCardProps) {
+  const [isHovered, setIsHovered] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+
   const imageUrl = getMediaUrl(exercise.thumbnailUrl || exercise.imageUrl || exercise.images?.[0]);
+  const gifUrl = getMediaUrl(exercise.gifUrl);
+  const videoUrl = getMediaUrl(exercise.videoUrl);
+  const hasVideoPreview = gifUrl || videoUrl;
+
   const statusBadge = getStatusBadge(exercise.status);
   const qualityIndicators = getQualityIndicators(exercise);
   const hasWarnings = qualityIndicators.some(i => i.type === "warning");
@@ -83,6 +91,24 @@ export function VerificationTaskCard({
     e.stopPropagation();
     if (onUnpublish) {
       onUnpublish(exercise.id);
+    }
+  };
+
+  // Handle hover to play video preview
+  const handleMouseEnter = () => {
+    setIsHovered(true);
+    if (videoRef.current && videoUrl && !gifUrl) {
+      videoRef.current.play().catch(() => {
+        // Ignore autoplay errors
+      });
+    }
+  };
+
+  const handleMouseLeave = () => {
+    setIsHovered(false);
+    if (videoRef.current) {
+      videoRef.current.pause();
+      videoRef.current.currentTime = 0;
     }
   };
 
@@ -96,25 +122,75 @@ export function VerificationTaskCard({
           hasWarnings && "border-amber-500/30",
           className
         )}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
       >
         <CardContent className="p-0">
-          {/* Image section */}
+          {/* Image/Video section with hover preview */}
           <div className="relative aspect-video overflow-hidden bg-surface-light">
-            {imageUrl ? (
+            {/* Static image (shown when not hovered or no video preview) */}
+            {imageUrl && (
               <>
                 <div
-                  className="absolute inset-0 bg-cover bg-center blur-xl opacity-40 scale-110"
+                  className={cn(
+                    "absolute inset-0 bg-cover bg-center blur-xl opacity-40 scale-110 transition-opacity duration-300",
+                    isHovered && hasVideoPreview && "opacity-0"
+                  )}
                   style={{ backgroundImage: `url(${imageUrl})` }}
                 />
                 <img
                   src={imageUrl}
                   alt={exercise.name}
                   loading="lazy"
-                  className="relative h-full w-full object-contain transition-transform duration-500 group-hover:scale-[1.03]"
+                  className={cn(
+                    "relative h-full w-full object-contain transition-all duration-500",
+                    "group-hover:scale-[1.03]",
+                    isHovered && hasVideoPreview && "opacity-0"
+                  )}
                 />
               </>
-            ) : (
+            )}
+
+            {/* GIF preview (shown on hover if available) */}
+            {gifUrl && (
+              <img
+                src={gifUrl}
+                alt={`${exercise.name} preview`}
+                className={cn(
+                  "absolute inset-0 h-full w-full object-contain transition-opacity duration-300",
+                  isHovered ? "opacity-100" : "opacity-0"
+                )}
+              />
+            )}
+
+            {/* Video preview (shown on hover if no GIF available) */}
+            {videoUrl && !gifUrl && (
+              <video
+                ref={videoRef}
+                src={videoUrl}
+                muted
+                loop
+                playsInline
+                className={cn(
+                  "absolute inset-0 h-full w-full object-contain transition-opacity duration-300",
+                  isHovered ? "opacity-100" : "opacity-0"
+                )}
+              />
+            )}
+
+            {/* No image fallback */}
+            {!imageUrl && (
               <ImagePlaceholder type="exercise" className="h-full" iconClassName="h-12 w-12" />
+            )}
+
+            {/* Video indicator badge */}
+            {hasVideoPreview && !isHovered && (
+              <div className="absolute bottom-3 left-3 flex items-center gap-1 px-2 py-1 rounded-md bg-black/60 backdrop-blur-sm">
+                <Play className="h-3 w-3 text-white fill-white" />
+                <span className="text-[10px] text-white font-medium">
+                  {gifUrl ? "GIF" : "Wideo"}
+                </span>
+              </div>
             )}
 
             {/* Status badge overlay */}
@@ -166,19 +242,32 @@ export function VerificationTaskCard({
 
             {/* Meta info */}
             <div className="flex items-center justify-between text-xs text-muted-foreground">
-              <div className="flex items-center gap-3">
-                {exercise.createdBy && (
-                  <div className="flex items-center gap-1">
-                    <User className="h-3 w-3" />
-                    <span className="truncate max-w-[100px]">
-                      {exercise.createdBy.fullname || exercise.createdBy.email}
+              <div className="flex flex-col gap-1.5">
+                {/* Author row */}
+                <div className="flex items-center gap-3">
+                  {exercise.createdBy && (
+                    <div className="flex items-center gap-1">
+                      <User className="h-3 w-3" />
+                      <span className="truncate max-w-[100px]">
+                        {exercise.createdBy.fullname || exercise.createdBy.email}
+                      </span>
+                    </div>
+                  )}
+                  {exercise.createdAt && (
+                    <div className="flex items-center gap-1">
+                      <Clock className="h-3 w-3" />
+                      <span>{formatRelativeTime(exercise.createdAt)}</span>
+                    </div>
+                  )}
+                </div>
+                {/* Organization row (if available) */}
+                {exercise.organizationId && (
+                  <div className="flex items-center gap-1 text-[10px] text-muted-foreground/70">
+                    <Building2 className="h-2.5 w-2.5" />
+                    <span className="truncate max-w-[120px]">
+                      {/* TODO: Replace with organization.name when backend provides it */}
+                      Org: {exercise.organizationId.slice(0, 8)}...
                     </span>
-                  </div>
-                )}
-                {exercise.createdAt && (
-                  <div className="flex items-center gap-1">
-                    <Clock className="h-3 w-3" />
-                    <span>{formatRelativeTime(exercise.createdAt)}</span>
                   </div>
                 )}
               </div>

@@ -106,6 +106,19 @@ export const GET_PUBLISHED_EXERCISES_QUERY = gql`
 `;
 
 /**
+ * Get archived exercises (soft deleted from global)
+ * Used in verification center to view withdrawn exercises
+ */
+export const GET_ARCHIVED_EXERCISES_QUERY = gql`
+  query GetArchivedExercises {
+    exercisesByStatus(status: ARCHIVED_GLOBAL) {
+      ...AdminExerciseFragment
+    }
+  }
+  ${ADMIN_EXERCISE_FRAGMENT}
+`;
+
+/**
  * Get exercise verification statistics
  * Used in dashboard stats cards
  */
@@ -116,6 +129,7 @@ export const GET_VERIFICATION_STATS_QUERY = gql`
       changesRequested
       approved
       published
+      archivedGlobal
       total
     }
   }

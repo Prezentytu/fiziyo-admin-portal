@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { Clock, Repeat, MoreVertical, Pencil, Trash2, FolderPlus, Eye, ZoomIn, Plus, Check } from "lucide-react";
+import { Clock, Repeat, MoreVertical, Pencil, Trash2, FolderPlus, Eye, ZoomIn, Plus, Check, Rocket, Globe, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -29,12 +29,19 @@ export interface Exercise {
   name: string;
   // Nowe pola
   patientDescription?: string;
+  clinicalDescription?: string;
   side?: string;
   defaultSets?: number;
   defaultReps?: number;
   defaultDuration?: number;
   thumbnailUrl?: string;
+  videoUrl?: string;
+  gifUrl?: string;
   createdAt?: string;
+  // Status and scope for verification workflow
+  status?: 'DRAFT' | 'PENDING_REVIEW' | 'CHANGES_REQUESTED' | 'APPROVED' | 'PUBLISHED' | 'REJECTED';
+  scope?: 'PERSONAL' | 'ORGANIZATION' | 'GLOBAL';
+  adminReviewNotes?: string;
   // Legacy aliasy
   description?: string;
   type?: string;
@@ -56,6 +63,8 @@ interface ExerciseCardProps {
   onEdit?: (exercise: Exercise) => void;
   onDelete?: (exercise: Exercise) => void;
   onAddToSet?: (exercise: Exercise) => void;
+  /** Callback to submit exercise to global database for verification */
+  onSubmitToGlobal?: (exercise: Exercise) => void;
   /** Whether this exercise is currently in the builder */
   isInBuilder?: boolean;
   /** Toggle exercise in/out of builder */
@@ -105,6 +114,7 @@ export function ExerciseCard({
   onEdit,
   onDelete,
   onAddToSet,
+  onSubmitToGlobal,
   isInBuilder = false,
   onToggleBuilder,
   className,
@@ -112,6 +122,17 @@ export function ExerciseCard({
 }: ExerciseCardProps) {
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [isBouncing, setIsBouncing] = useState(false);
+
+  // Determine if "Submit to Global" should be shown
+  // Only for ORGANIZATION scope exercises that are DRAFT or REJECTED
+  const canSubmitToGlobal = 
+    onSubmitToGlobal && 
+    exercise.scope === 'ORGANIZATION' && 
+    (!exercise.status || exercise.status === 'DRAFT' || exercise.status === 'REJECTED');
+
+  // Check if exercise is pending review (locked)
+  const isPendingReview = exercise.status === 'PENDING_REVIEW';
+  const isChangesRequested = exercise.status === 'CHANGES_REQUESTED';
 
   const handleToggleBuilder = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
@@ -150,14 +171,25 @@ export function ExerciseCard({
       <div
         data-testid={`exercise-card-${exercise.id}`}
         className={cn(
-          "group flex items-center gap-4 rounded-xl border border-border/60 bg-surface p-3",
+          "group relative flex items-center gap-4 rounded-xl border border-border/60 bg-surface p-3",
           "transition-all duration-200 ease-out cursor-pointer",
           "hover:bg-surface-light hover:border-primary/30 hover:shadow-md hover:shadow-primary/5",
           isInBuilder && "border-primary bg-primary/5 ring-1 ring-primary/20",
+          isPendingReview && "border-amber-500/30 bg-amber-500/5",
+          isChangesRequested && "border-orange-500/30 bg-orange-500/5",
           className
         )}
         onClick={() => onView?.(exercise)}
       >
+        {/* Notification dot for CHANGES_REQUESTED in compact mode */}
+        {isChangesRequested && (
+          <div className="absolute -top-1 -right-1 z-10">
+            <span className="flex h-3 w-3">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
+              <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500" />
+            </span>
+          </div>
+        )}
         {/* Thumbnail */}
         <div className="relative h-14 w-14 flex-shrink-0 overflow-hidden rounded-lg bg-surface-light">
           {imageUrl ? (
@@ -174,7 +206,22 @@ export function ExerciseCard({
 
         {/* Content */}
         <div className="flex-1 min-w-0 space-y-1">
-          <p className="font-semibold truncate">{exercise.name}</p>
+          <div className="flex items-center gap-2">
+            <p className="font-semibold truncate">{exercise.name}</p>
+            {/* Status badges in compact view */}
+            {isPendingReview && (
+              <Badge variant="outline" className="text-[9px] bg-amber-500/10 text-amber-600 border-amber-500/20 shrink-0">
+                <Clock className="h-2.5 w-2.5 mr-0.5" />
+                Weryfikacja
+              </Badge>
+            )}
+            {isChangesRequested && (
+              <Badge variant="outline" className="text-[9px] bg-orange-500/10 text-orange-600 border-orange-500/20 shrink-0">
+                <AlertCircle className="h-2.5 w-2.5 mr-0.5" />
+                Do poprawy
+              </Badge>
+            )}
+          </div>
           <div className="flex items-center gap-3 text-xs text-muted-foreground">
             {exercise.type && (
               <span className="text-primary font-medium">{translateExerciseTypeShort(exercise.type)}</span>
@@ -247,6 +294,24 @@ export function ExerciseCard({
                 <FolderPlus className="mr-2 h-4 w-4" />
                 Dodaj do zestawu
               </DropdownMenuItem>
+            )}
+            {canSubmitToGlobal && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem 
+                  onClick={() => onSubmitToGlobal(exercise)}
+                  className="text-primary focus:text-primary"
+                >
+                  <Rocket className="mr-2 h-4 w-4" />
+                  Zgłoś do Bazy Globalnej
+                </DropdownMenuItem>
+              </>
+            )}
+            {isPendingReview && (
+              <div className="px-2 py-1.5 text-xs text-amber-600 flex items-center gap-1">
+                <Globe className="h-3 w-3" />
+                Oczekuje na weryfikację
+              </div>
             )}
             {onDelete && (
               <>
@@ -330,6 +395,43 @@ export function ExerciseCard({
           <ImagePlaceholder type="exercise" className="aspect-[4/3]" iconClassName="h-12 w-12" />
         )}
 
+        {/* Status badges - top left */}
+        {(isPendingReview || isChangesRequested) && (
+          <div className="absolute top-3 left-3 z-10">
+            <Badge
+              variant="outline"
+              className={cn(
+                "text-[10px] font-semibold backdrop-blur-md border shadow-lg",
+                isPendingReview && "bg-amber-500/80 text-white border-amber-600",
+                isChangesRequested && "bg-orange-500/80 text-white border-orange-600"
+              )}
+            >
+              {isPendingReview && (
+                <>
+                  <Clock className="h-3 w-3 mr-1" />
+                  Weryfikacja
+                </>
+              )}
+              {isChangesRequested && (
+                <>
+                  <AlertCircle className="h-3 w-3 mr-1" />
+                  Do poprawy
+                </>
+              )}
+            </Badge>
+          </div>
+        )}
+
+        {/* Notification dot - for CHANGES_REQUESTED */}
+        {isChangesRequested && (
+          <div className="absolute top-0 right-0 z-20 -translate-y-1 translate-x-1">
+            <span className="flex h-4 w-4">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
+              <span className="relative inline-flex rounded-full h-4 w-4 bg-red-500 border-2 border-background" />
+            </span>
+          </div>
+        )}
+
         {/* Actions buttons */}
         <div className="absolute top-3 right-3 flex items-center gap-2">
           {/* Add to builder button */}
@@ -369,13 +471,31 @@ export function ExerciseCard({
                   Podgląd
                 </DropdownMenuItem>
               )}
-              {onEdit && (
+              {onEdit && !isPendingReview && (
                 <DropdownMenuItem onClick={() => onEdit(exercise)}>
                   <Pencil className="mr-2 h-4 w-4" />
                   Edytuj
                 </DropdownMenuItem>
               )}
-              {onDelete && (
+              {canSubmitToGlobal && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem 
+                    onClick={() => onSubmitToGlobal(exercise)}
+                    className="text-primary focus:text-primary"
+                  >
+                    <Rocket className="mr-2 h-4 w-4" />
+                    Zgłoś do Bazy Globalnej
+                  </DropdownMenuItem>
+                </>
+              )}
+              {isPendingReview && (
+                <div className="px-2 py-1.5 text-xs text-amber-600 flex items-center gap-1">
+                  <Globe className="h-3 w-3" />
+                  Oczekuje na weryfikację
+                </div>
+              )}
+              {onDelete && !isPendingReview && (
                 <>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem

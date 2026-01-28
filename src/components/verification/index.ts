@@ -28,9 +28,10 @@ export { RelationSlot } from "./RelationSlot";
 export { ExerciseSearchPopover, ExerciseSearchDialog } from "./ExerciseSearchPopover";
 export { RelationshipManager, useExerciseRelationships, getRelationsForApprove } from "./RelationshipManager";
 
-// Clinical Operator UI - Zero Scroll Layout (2025)
+// Clinical Operator UI - 3-Column Verification Cockpit (2025)
 export { VerificationEditorPanel } from "./VerificationEditorPanel";
 export { VerificationStickyHeader } from "./VerificationStickyHeader";
+export { VerdictPanel } from "./VerdictPanel";
 export { ProgressionChain } from "./ProgressionChain";
 export { ClinicalMacrosBar } from "./ClinicalMacrosBar";
 export { MasterVideoPlayer } from "./MasterVideoPlayer";

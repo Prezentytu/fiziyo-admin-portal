@@ -59,25 +59,38 @@ interface AISetGeneratorProps {
 }
 
 // Prompt templates for exercise set generation
+// Bardziej szczegółowe prompty z kontekstem fazy i celu terapeutycznego
 const QUICK_PROMPTS = [
   {
     id: 'acl',
     label: 'Rehabilitacja ACL',
-    prompt: 'Zaproponuj zestaw ćwiczeń do rehabilitacji po rekonstrukcji ACL, faza 2',
+    prompt: 'Rehabilitacja po rekonstrukcji ACL - faza 2 (podostra). Cel: przywrócenie zakresu ruchu i wzmocnienie mięśnia czworogłowego. Pacjent chodzi bez kul.',
   },
   {
     id: 'lbp',
-    label: 'Ból dolnego odcinka',
-    prompt: 'Zestaw ćwiczeń na ból dolnego odcinka kręgosłupa dla osoby pracującej siedząco',
+    label: 'Ból lędźwiowy',
+    prompt: 'Ból dolnego odcinka kręgosłupa - faza przewlekła. Pacjent pracuje siedząco 8h. Cel: stabilizacja głęboka, redukcja napięcia mięśni przykręgosłupowych, edukacja posturalna.',
   },
   {
     id: 'shoulder',
-    label: 'Bark - mobilność',
-    prompt: 'Ćwiczenia na poprawę mobilności barku i wzmocnienie rotatorów',
+    label: 'Bark - rotatory',
+    prompt: 'Dysfunkcja stożka rotatorów - faza podostra. Cel: przywrócenie mobilności barku, wzmocnienie rotatorów zewnętrznych, stabilizacja łopatki. Bez bólu w spoczynku.',
   },
-  { id: 'knee', label: 'Kolano - wzmocnienie', prompt: 'Ćwiczenia wzmacniające mięśnie stabilizujące kolano' },
-  { id: 'core', label: 'Core - stabilizacja', prompt: 'Zestaw ćwiczeń stabilizacyjnych na core dla początkujących' },
-  { id: 'posture', label: 'Korekta postawy', prompt: 'Ćwiczenia korygujące postawę przy pracy biurowej' },
+  { 
+    id: 'knee', 
+    label: 'Kolano - stabilizacja', 
+    prompt: 'Niestabilność kolana po skręceniu - faza przewlekła. Cel: wzmocnienie VMO i mięśni stabilizujących, propriocepcja, przygotowanie do powrotu do sportu.',
+  },
+  { 
+    id: 'core', 
+    label: 'Core - początkujący', 
+    prompt: 'Trening stabilizacji centralnej dla początkującego pacjenta. Cel: nauka aktywacji mięśni głębokich, poprawa kontroli miednicy. Bez dolegliwości bólowych.',
+  },
+  { 
+    id: 'posture', 
+    label: 'Postawa - biurowa', 
+    prompt: 'Korekta postawy przy pracy biurowej - profilaktyka. Cel: mobilizacja odcinka piersiowego, rozciąganie mięśni piersiowych, wzmocnienie stabilizatorów łopatki.',
+  },
 ];
 
 // Find exercise by matched name from AI response

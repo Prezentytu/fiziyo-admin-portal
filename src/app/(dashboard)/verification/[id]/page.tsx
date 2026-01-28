@@ -14,9 +14,9 @@ import { MasterVideoPlayer } from "@/components/verification/MasterVideoPlayer";
 import { RejectReasonDialog } from "@/components/verification/RejectReasonDialog";
 import { ApproveDialog } from "@/components/verification/ApproveDialog";
 
-// Clinical Operator UI Components - Zero Scroll Layout
+// Clinical Operator UI Components - 3-Column Layout
 import { VerificationEditorPanel } from "@/components/verification/VerificationEditorPanel";
-import { VerificationStickyFooterV2 } from "@/components/verification/VerificationStickyFooterV2";
+import { VerdictPanel } from "@/components/verification/VerdictPanel";
 import { useExerciseValidation } from "@/components/verification/PublishGuardrails";
 
 import { useSystemRole } from "@/hooks/useSystemRole";
@@ -71,8 +71,18 @@ export default function VerificationDetailPage({ params }: VerificationDetailPag
   const [isRejectDialogOpen, setIsRejectDialogOpen] = useState(false);
   const [isApproveDialogOpen, setIsApproveDialogOpen] = useState(false);
 
-  // Clinical safety checkbox (new!)
-  const [clinicalCheckboxChecked, setClinicalCheckboxChecked] = useState(false);
+  // Safety checklist state (for VerdictPanel)
+  const [safetyChecklist, setSafetyChecklist] = useState({
+    videoReadable: false,
+    techniqueSafe: false,
+    noContraindications: false,
+  });
+
+  // Comment for author (for VerdictPanel)
+  const [authorComment, setAuthorComment] = useState("");
+
+  // Clinical safety checkbox (legacy - derived from checklist)
+  const clinicalCheckboxChecked = Object.values(safetyChecklist).every(Boolean);
 
   // Tags state (for local editing before save)
   const [mainTags, setMainTags] = useState<string[]>([]);
@@ -118,8 +128,13 @@ export default function VerificationDetailPage({ params }: VerificationDetailPag
       const ex = data.exerciseById as unknown as AdminExercise;
       setMainTags(ex.mainTags || []);
       setAdditionalTags(ex.additionalTags || []);
-      // Reset checkbox when switching exercises
-      setClinicalCheckboxChecked(false);
+      // Reset safety checklist when switching exercises
+      setSafetyChecklist({
+        videoReadable: false,
+        techniqueSafe: false,
+        noContraindications: false,
+      });
+      setAuthorComment("");
     }
   }, [data?.exerciseById]);
 
@@ -396,10 +411,24 @@ export default function VerificationDetailPage({ params }: VerificationDetailPag
     setLastSavedTime(new Date());
   }, []);
 
-  // Toggle checkbox handler
+  // Toggle all safety checkboxes handler (for keyboard shortcut)
   const handleToggleClinicalCheckbox = useCallback(() => {
-    setClinicalCheckboxChecked(prev => !prev);
-  }, []);
+    const allChecked = Object.values(safetyChecklist).every(Boolean);
+    setSafetyChecklist({
+      videoReadable: !allChecked,
+      techniqueSafe: !allChecked,
+      noContraindications: !allChecked,
+    });
+  }, [safetyChecklist]);
+
+  // Handle request changes (send back to author)
+  const handleRequestChanges = useCallback(async () => {
+    if (!authorComment.trim()) {
+      toast.error("Wpisz komentarz dla autora");
+      return;
+    }
+    setIsRejectDialogOpen(true);
+  }, [authorComment]);
 
   // ============================================
   // KEYBOARD SHORTCUTS
@@ -437,21 +466,30 @@ export default function VerificationDetailPage({ params }: VerificationDetailPag
     return (
       <div className="h-[calc(100vh-4rem)] flex flex-col -m-6">
         <div className="flex-1 flex flex-col lg:flex-row min-h-0">
-          {/* Left: Video skeleton */}
-          <div className="flex-1 bg-zinc-950 p-3">
+          {/* Left: Video skeleton (40%) */}
+          <div className="lg:w-[40%] bg-zinc-950 p-3">
             <div className="flex items-center justify-between mb-3">
               <Skeleton className="h-8 w-24" />
               <Skeleton className="h-4 w-16" />
             </div>
             <Skeleton className="w-full h-[calc(100%-3rem)] rounded-lg" />
           </div>
-          {/* Right: Editor skeleton */}
-          <div className="flex-1 p-3 space-y-3 border-l border-border/20">
+          {/* Middle: Editor skeleton (35%) */}
+          <div className="lg:w-[35%] p-3 space-y-3 border-l border-border/20">
             <Skeleton className="h-8 w-3/4" />
             <Skeleton className="h-10 w-full" />
             <Skeleton className="h-32 w-full" />
             <Skeleton className="h-16 w-full" />
-            <Skeleton className="h-20 w-full" />
+          </div>
+          {/* Right: Verdict skeleton (25%) */}
+          <div className="lg:w-[25%] p-3 space-y-3 border-l border-border/20 bg-zinc-950/50">
+            <Skeleton className="h-6 w-24" />
+            <Skeleton className="h-8 w-full" />
+            <Skeleton className="h-8 w-full" />
+            <Skeleton className="h-8 w-full" />
+            <Skeleton className="h-24 w-full" />
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
           </div>
         </div>
       </div>
@@ -478,16 +516,16 @@ export default function VerificationDetailPage({ params }: VerificationDetailPag
   }
 
   // ============================================
-  // MAIN RENDER - Simplified Review UI
+  // MAIN RENDER - 3-Column Verification Cockpit
   // ============================================
 
   return (
     <div className="h-[calc(100vh-4rem)] flex flex-col -m-6">
-      {/* Main content area - 2 column layout 60/40 */}
+      {/* Main content area - 3 column layout 40/35/25 */}
       <div className="flex-1 flex flex-col lg:flex-row min-h-0">
 
-        {/* LEFT COLUMN: Media Player (60% on desktop) */}
-        <div className="h-[40vh] lg:h-auto lg:w-[60%] bg-zinc-950 border-b lg:border-b-0 lg:border-r border-border/20 flex flex-col min-h-0">
+        {/* LEFT COLUMN: Media Player (40% on desktop) */}
+        <div className="h-[30vh] lg:h-auto lg:w-[40%] bg-zinc-950 border-b lg:border-b-0 lg:border-r border-border/20 flex flex-col min-h-0">
           {/* Compact Header: Back + Progress */}
           <div className="flex items-center justify-between gap-3 px-4 py-2.5 border-b border-zinc-800/50 shrink-0">
             <Button
@@ -525,8 +563,8 @@ export default function VerificationDetailPage({ params }: VerificationDetailPag
           </div>
         </div>
 
-        {/* RIGHT COLUMN: Editor Panel (40% on desktop) */}
-        <div className="flex-1 lg:w-[40%] bg-background flex flex-col min-h-0 pb-16">
+        {/* MIDDLE COLUMN: Editor Panel (35% on desktop) */}
+        <div className="flex-1 lg:w-[35%] bg-background flex flex-col min-h-0 border-r border-border/20">
           <div className="flex-1 p-4 lg:p-5 flex flex-col min-h-0 overflow-y-auto">
             {/* Previous review notes (if any) */}
             {exercise.adminReviewNotes && (
@@ -559,22 +597,28 @@ export default function VerificationDetailPage({ params }: VerificationDetailPag
             />
           </div>
         </div>
-      </div>
 
-      {/* FIXED FOOTER - Clean Cockpit with Quality Gate */}
-      <VerificationStickyFooterV2
-        onReject={() => setIsRejectDialogOpen(true)}
-        onApproveAndNext={handleApproveAndNext}
-        onSaveDraft={handleSaveDraft}
-        validationPassed={canPublish}
-        missingFields={missingFields}
-        clinicalCheckboxChecked={clinicalCheckboxChecked}
-        onClinicalCheckboxChange={setClinicalCheckboxChecked}
-        isRejecting={rejecting}
-        isApproving={approving}
-        isSavingDraft={isSavingDraft}
-        remainingTasksCount={remainingCount}
-      />
+        {/* RIGHT COLUMN: Verdict Panel (25% on desktop) */}
+        <div className="lg:w-[25%] min-w-[280px] flex flex-col min-h-0">
+          <VerdictPanel
+            status={exercise.status}
+            submittedAt={exercise.createdAt}
+            onApprove={handleApproveAndNext}
+            onRequestChanges={handleRequestChanges}
+            onReject={() => setIsRejectDialogOpen(true)}
+            comment={authorComment}
+            onCommentChange={setAuthorComment}
+            validationPassed={canPublish}
+            missingFields={missingFields}
+            safetyChecklist={safetyChecklist}
+            onSafetyChecklistChange={setSafetyChecklist}
+            isApproving={approving}
+            isRejecting={rejecting}
+            remainingCount={remainingCount}
+            className="flex-1"
+          />
+        </div>
+      </div>
 
       {/* Dialogs */}
       <RejectReasonDialog

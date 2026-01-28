@@ -391,7 +391,7 @@ function AIDiffDrawer({
     hasDifferentDuration,
     hasDifferentRest,
     hasDifferentSide,
-    matchedTags.length > 0,
+    hasSuggestedTags, // Liczymy tagi nawet bez dopasowań w bazie
   ].filter(Boolean).length;
 
   return (
@@ -479,7 +479,7 @@ function AIDiffDrawer({
         )}
 
         {/* === SEKCJA 3: TREŚĆ (📝 Content) === */}
-        {(hasDescription || (hasSuggestedTags && matchedTags.length > 0)) && (
+        {(hasDescription || hasSuggestedTags) && (
           <AISection 
             icon="📝" 
             title="Treść" 
@@ -498,31 +498,76 @@ function AIDiffDrawer({
               />
             )}
             
-            {hasSuggestedTags && matchedTags.length > 0 && (
+            {hasSuggestedTags && suggestion.suggestedTags && suggestion.suggestedTags.length > 0 && (
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
                   <Tag className="h-3 w-3 text-muted-foreground" />
                   <span className="text-[10px] font-medium text-muted-foreground uppercase">Sugerowane tagi</span>
                 </div>
+                
+                <p className="text-[10px] text-muted-foreground">Kliknij tag aby dodać (jeśli istnieje w bazie):</p>
+                
                 <div className="flex flex-wrap gap-1.5">
-                  {matchedTags.map(tag => (
-                    <Badge
-                      key={tag.id}
-                      variant="secondary"
-                      className="text-xs bg-primary/10 text-primary border-0 cursor-pointer hover:bg-primary/20 transition-colors"
-                      style={{ borderLeftColor: tag.color, borderLeftWidth: 2 }}
-                      onClick={() => {
-                        const newTags = [...currentData.mainTags];
-                        if (!newTags.includes(tag.id)) {
-                          newTags.push(tag.id);
-                          onAcceptField('mainTags', newTags);
+                  {suggestion.suggestedTags.map((tagName, idx) => {
+                    // Znajdź pasujący tag w bazie
+                    const matchedTag = availableTags.find(t => 
+                      normalizeText(t.name).includes(normalizeText(tagName)) || 
+                      normalizeText(tagName).includes(normalizeText(t.name))
+                    );
+                    const isAlreadyAdded = matchedTag && currentData.mainTags.includes(matchedTag.id);
+                    
+                    return (
+                      <Badge
+                        key={idx}
+                        variant={matchedTag ? "secondary" : "outline"}
+                        className={cn(
+                          "text-xs transition-colors",
+                          matchedTag && !isAlreadyAdded 
+                            ? "bg-secondary/10 text-secondary border-0 cursor-pointer hover:bg-secondary/20" 
+                            : matchedTag && isAlreadyAdded
+                              ? "bg-secondary/30 text-secondary border-0 opacity-50 cursor-default"
+                              : "border-zinc-700 text-zinc-500 cursor-not-allowed"
+                        )}
+                        style={matchedTag ? { borderLeftColor: matchedTag.color, borderLeftWidth: 2 } : undefined}
+                        onClick={() => {
+                          if (matchedTag && !isAlreadyAdded) {
+                            const newTags = [...currentData.mainTags, matchedTag.id];
+                            onAcceptField('mainTags', newTags);
+                          }
+                        }}
+                        title={matchedTag 
+                          ? (isAlreadyAdded ? 'Już dodany' : `Kliknij aby dodać "${matchedTag.name}"`)
+                          : 'Nie znaleziono w bazie'
                         }
-                      }}
-                    >
-                      + {tag.name}
-                    </Badge>
-                  ))}
+                      >
+                        {matchedTag && !isAlreadyAdded && <ChevronLeft className="h-3 w-3 mr-0.5" />}
+                        {isAlreadyAdded && <Check className="h-3 w-3 mr-0.5" />}
+                        {tagName}
+                        {matchedTag && matchedTag.name !== tagName && (
+                          <span className="ml-1 text-[9px] opacity-60">→ {matchedTag.name}</span>
+                        )}
+                      </Badge>
+                    );
+                  })}
                 </div>
+                
+                {/* Przycisk dodaj wszystkie pasujące */}
+                {matchedTags.filter(t => !currentData.mainTags.includes(t.id)).length > 1 && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 text-xs text-secondary hover:text-secondary hover:bg-secondary/10"
+                    onClick={() => {
+                      const newTagIds = matchedTags
+                        .filter(t => !currentData.mainTags.includes(t.id))
+                        .map(t => t.id);
+                      onAcceptField('mainTags', [...currentData.mainTags, ...newTagIds]);
+                    }}
+                  >
+                    <Check className="h-3 w-3 mr-1" />
+                    Dodaj wszystkie pasujące ({matchedTags.filter(t => !currentData.mainTags.includes(t.id)).length})
+                  </Button>
+                )}
               </div>
             )}
           </AISection>
@@ -1097,12 +1142,20 @@ export function CreateExerciseWizard({
 
     setData(prev => ({
       ...prev,
+      // Korekta nazwy (jeśli jest)
+      name: aiSuggestion.correctedName || prev.name,
+      // Opis
       description: aiSuggestion.description || prev.description,
+      // Parametry podstawowe
       sets: aiSuggestion.sets,
       reps: aiSuggestion.reps,
       duration: aiSuggestion.duration,
       restSets: aiSuggestion.restSets,
       exerciseSide: aiSuggestion.exerciseSide as ExerciseSide,
+      // Pro Tuning fields
+      tempo: aiSuggestion.advancedParams?.tempo || prev.tempo,
+      weight: aiSuggestion.advancedParams?.weight || prev.weight,
+      rangeOfMotion: aiSuggestion.advancedParams?.rangeOfMotion || prev.rangeOfMotion,
     }));
 
     // Add suggested tags if they match available tags
@@ -1163,6 +1216,36 @@ export function CreateExerciseWizard({
     const inferredType = data.duration ? 'time' : 'reps';
 
     try {
+      // Parse weight field into load components
+      // Format: "20kg", "RPE 7", "Guma czerwona" etc.
+      let loadType: string | null = null;
+      let loadValue: number | null = null;
+      let loadUnit: string | null = null;
+      let loadText: string | null = null;
+
+      if (data.weight) {
+        const weightStr = data.weight.trim();
+        // Try to parse numeric weight with unit (e.g., "20kg", "15 lbs")
+        const numericMatch = weightStr.match(/^(\d+(?:\.\d+)?)\s*(kg|lbs?|lb)?$/i);
+        if (numericMatch) {
+          loadType = 'weight';
+          loadValue = parseFloat(numericMatch[1]);
+          loadUnit = numericMatch[2]?.toLowerCase() || 'kg';
+          loadText = weightStr;
+        } else if (weightStr.toLowerCase().startsWith('rpe')) {
+          // RPE format (e.g., "RPE 7")
+          const rpeMatch = weightStr.match(/rpe\s*(\d+)/i);
+          loadType = 'rpe';
+          loadValue = rpeMatch ? parseInt(rpeMatch[1]) : null;
+          loadText = weightStr;
+        } else {
+          // Free text (e.g., "Guma czerwona", "Własna waga")
+          loadType = weightStr.toLowerCase().includes('gum') ? 'band' : 
+                     weightStr.toLowerCase().includes('waga') ? 'bodyweight' : 'other';
+          loadText = weightStr;
+        }
+      }
+
       const result = await createExercise({
         variables: {
           organizationId,
@@ -1184,6 +1267,14 @@ export function CreateExerciseWizard({
           isActive: true,
           mainTags: data.mainTags.length > 0 ? data.mainTags : null,
           additionalTags: data.additionalTags.length > 0 ? data.additionalTags : null,
+          // Pro Tuning fields
+          tempo: data.tempo || null,
+          rangeOfMotion: data.rangeOfMotion || null,
+          // Load fields
+          loadType,
+          loadValue,
+          loadUnit,
+          loadText,
         },
       });
 

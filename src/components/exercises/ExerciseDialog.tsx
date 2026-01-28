@@ -4,6 +4,7 @@ import * as React from "react";
 import { useState, useCallback } from "react";
 import { useMutation } from "@apollo/client/react";
 import { toast } from "sonner";
+import { Clock, Lock } from "lucide-react";
 
 import {
   Dialog,
@@ -12,9 +13,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { ExerciseForm, ExerciseFormValues } from "./ExerciseForm";
 import { CreateExerciseWizard } from "./CreateExerciseWizard";
+import { FeedbackBanner } from "./FeedbackBanner";
 import { UPDATE_EXERCISE_MUTATION } from "@/graphql/mutations/exercises.mutations";
 import { GET_ORGANIZATION_EXERCISES_QUERY } from "@/graphql/queries/exercises.queries";
 import type { Exercise } from "./ExerciseCard";
@@ -25,6 +29,8 @@ interface ExerciseDialogProps {
   exercise?: Exercise | null;
   organizationId: string;
   onSuccess?: () => void;
+  /** Callback to resubmit exercise after fixing issues */
+  onResubmit?: (exerciseId: string) => Promise<void>;
 }
 
 export function ExerciseDialog({
@@ -33,10 +39,17 @@ export function ExerciseDialog({
   exercise,
   organizationId,
   onSuccess,
+  onResubmit,
 }: ExerciseDialogProps) {
   const isEditing = !!exercise;
   const [showCloseConfirm, setShowCloseConfirm] = useState(false);
   const [formIsDirty, setFormIsDirty] = useState(false);
+  const [isResubmitting, setIsResubmitting] = useState(false);
+
+  // Status-based modes
+  const isPendingReview = exercise?.status === 'PENDING_REVIEW';
+  const isChangesRequested = exercise?.status === 'CHANGES_REQUESTED';
+  const isFixMode = isChangesRequested; // Enable editing to fix issues
 
   const handleCloseAttempt = useCallback(() => {
     if (formIsDirty) {
@@ -68,6 +81,7 @@ export function ExerciseDialog({
   const handleSubmit = async (values: ExerciseFormValues) => {
     try {
       if (isEditing && exercise) {
+        // First save the changes
         await updateExercise({
           variables: {
             exerciseId: exercise.id,
@@ -85,7 +99,23 @@ export function ExerciseDialog({
             exerciseSide: values.exerciseSide === "none" ? null : values.exerciseSide,
           },
         });
-        toast.success("Ćwiczenie zostało zaktualizowane");
+
+        // If in fix mode (CHANGES_REQUESTED), also resubmit for review
+        if (isFixMode && onResubmit) {
+          setIsResubmitting(true);
+          try {
+            await onResubmit(exercise.id);
+            toast.success("Poprawki wysłane do weryfikacji!");
+          } catch {
+            toast.error("Nie udało się wysłać poprawek");
+            return;
+          } finally {
+            setIsResubmitting(false);
+          }
+        } else {
+          toast.success("Ćwiczenie zostało zaktualizowane");
+        }
+        
         onOpenChange(false);
         onSuccess?.();
       }
@@ -127,6 +157,45 @@ export function ExerciseDialog({
       }
     : undefined;
 
+  // Edit locked state for PENDING_REVIEW
+  if (isPendingReview) {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Lock className="h-5 w-5 text-amber-500" />
+              Ćwiczenie oczekuje na weryfikację
+            </DialogTitle>
+            <DialogDescription>
+              "{exercise?.name}" zostało zgłoszone do bazy globalnej i oczekuje na weryfikację.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="py-6">
+            <div className="flex items-center justify-center gap-3 p-6 rounded-lg bg-amber-500/10 border border-amber-500/20">
+              <Clock className="h-8 w-8 text-amber-500" />
+              <div>
+                <p className="font-medium text-amber-600">Edycja zablokowana</p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Nie możesz edytować ćwiczenia podczas weryfikacji.
+                  Poczekaj na decyzję weryfikatora.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-3">
+            <Button variant="outline" onClick={() => onOpenChange(false)}>
+              Zamknij
+            </Button>
+            {/* TODO: Add "Withdraw submission" button when backend supports it */}
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
   return (
     <Dialog open={open} onOpenChange={() => handleCloseAttempt()}>
       <DialogContent
@@ -138,17 +207,38 @@ export function ExerciseDialog({
         }}
       >
         <DialogHeader>
-          <DialogTitle>Edytuj ćwiczenie</DialogTitle>
+          <div className="flex items-center gap-2">
+            <DialogTitle>
+              {isFixMode ? "Popraw ćwiczenie" : "Edytuj ćwiczenie"}
+            </DialogTitle>
+            {isFixMode && (
+              <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/20">
+                Do poprawy
+              </Badge>
+            )}
+          </div>
           <DialogDescription>
-            Zmień parametry ćwiczenia "{exercise?.name}"
+            {isFixMode 
+              ? `Wprowadź poprawki do "${exercise?.name}" i wyślij ponownie do weryfikacji`
+              : `Zmień parametry ćwiczenia "${exercise?.name}"`
+            }
           </DialogDescription>
         </DialogHeader>
+
+        {/* Feedback Banner for CHANGES_REQUESTED */}
+        {isFixMode && exercise?.adminReviewNotes && (
+          <FeedbackBanner
+            adminReviewNotes={exercise.adminReviewNotes}
+            updatedAt={exercise.createdAt}
+          />
+        )}
+
         <ExerciseForm
           defaultValues={defaultValues}
           onSubmit={handleSubmit}
           onCancel={handleCloseAttempt}
-          isLoading={updating}
-          submitLabel="Zapisz zmiany"
+          isLoading={updating || isResubmitting}
+          submitLabel={isFixMode ? "Wyślij poprawki" : "Zapisz zmiany"}
           onDirtyChange={setFormIsDirty}
         />
       </DialogContent>

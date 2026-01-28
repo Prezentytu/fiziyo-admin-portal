@@ -16,7 +16,8 @@ export type ContentStatus =
   | 'PENDING_REVIEW'  // Zgłoszone do weryfikacji
   | 'CHANGES_REQUESTED' // Odrzucone z uwagami
   | 'APPROVED'        // Zatwierdzone
-  | 'PUBLISHED';      // Publiczne
+  | 'PUBLISHED'       // Publiczne
+  | 'ARCHIVED_GLOBAL';  // Wycofane z bazy globalnej (soft delete)
 
 /**
  * Predefiniowane powody odrzucenia ćwiczenia
@@ -38,6 +39,7 @@ export interface VerificationStats {
   changesRequested: number;
   approved: number;
   published: number;
+  archivedGlobal: number; // ARCHIVED_GLOBAL count
   total: number;
 }
 
@@ -152,6 +154,10 @@ export interface GetApprovedExercisesResponse {
 }
 
 export interface GetPublishedExercisesResponse {
+  exercisesByStatus: AdminExercise[];
+}
+
+export interface GetArchivedExercisesResponse {
   exercisesByStatus: AdminExercise[];
 }
 

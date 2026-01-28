@@ -1016,6 +1016,12 @@ export function CreateSetWizard({
               duration: params.duration || null,
               restSets: params.restSets || null,
               restReps: params.restReps || null,
+              // Pola które były w UI ale nie były wysyłane
+              preparationTime: params.preparationTime || null,
+              executionTime: params.executionTime || null,
+              notes: params.notes || null,
+              customName: params.customName || null,
+              customDescription: params.customDescription || null,
             },
           });
         }
