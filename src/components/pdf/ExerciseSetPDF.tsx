@@ -21,7 +21,7 @@ const DAYS = [
 
 /**
  * Clean Medical PDF - Total Flat Design
- * 
+ *
  * Zmiany:
  * - Info Strip zamiast dublowanych sekcji (4 kolumny: Pacjent | Terapeuta | Data | Częstotliwość)
  * - Dni tygodnia TYLKO jeśli wybrano konkretne (brak szarych kółek)
@@ -55,11 +55,11 @@ export function ExerciseSetPDF({
   const isEveryDay = selectedDays.length === 7;
 
   // Tekst częstotliwości
-  const frequencyText = frequency?.timesPerDay 
+  const frequencyText = frequency?.timesPerDay
     ? `${frequency.timesPerDay}x dziennie`
     : '1x dziennie';
-  const daysText = isEveryDay || selectedDays.length === 0 
-    ? '(Codziennie)' 
+  const daysText = isEveryDay || selectedDays.length === 0
+    ? '(Codziennie)'
     : null;
 
   return (
@@ -123,16 +123,16 @@ export function ExerciseSetPDF({
                       key={day.key}
                       style={[
                         pdfStyles.infoStripDayBox,
-                        isActive 
-                          ? pdfStyles.infoStripDayBoxActive 
+                        isActive
+                          ? pdfStyles.infoStripDayBoxActive
                           : pdfStyles.infoStripDayBoxInactive,
                       ]}
                     >
                       <Text
                         style={[
                           pdfStyles.infoStripDayText,
-                          isActive 
-                            ? pdfStyles.infoStripDayTextActive 
+                          isActive
+                            ? pdfStyles.infoStripDayTextActive
                             : pdfStyles.infoStripDayTextInactive,
                         ]}
                       >

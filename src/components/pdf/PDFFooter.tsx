@@ -9,7 +9,7 @@ interface PDFFooterProps {
 
 /**
  * App Banner Footer - Wersja Marketingowa
- * 
+ *
  * Strategia: Papier = DEMO, Aplikacja = PREMIUM
  * Podkreślamy to, czego papier NIE potrafi:
  * - Timer (nie musisz liczyć)
@@ -17,7 +17,7 @@ interface PDFFooterProps {
  * - Historia (śledzenie postępów)
  */
 export function PDFFooter({ generatedAt, qrCodeDataUrl, therapistName }: PDFFooterProps) {
-  
+
   // WERSJA Z QR KODEM - APP PROMO BANNER
   if (qrCodeDataUrl) {
     return (
@@ -33,10 +33,10 @@ export function PDFFooter({ generatedAt, qrCodeDataUrl, therapistName }: PDFFoot
           <Text style={pdfStyles.appBannerTitle}>
             URUCHOM ASYSTENTA TRENINGU
           </Text>
-          
+
           {/* Subtitle */}
           <Text style={pdfStyles.appBannerSubtitle}>
-            Papier to tylko ściąga. Zeskanuj kod, aby pobrać bezpłatną aplikację 
+            Papier to tylko ściąga. Zeskanuj kod, aby pobrać bezpłatną aplikację
             i ćwiczyć bezpieczniej w domu.
           </Text>
 

@@ -17,7 +17,7 @@ interface ExercisePDFItemProps {
 
 /**
  * Clean Exercise Row - Total Flat Design
- * 
+ *
  * Struktura: [Obrazek] [Treść + Notatki] [Parametry]
  * - Parametry w czystej tabelce (bez guzikowych obwódek)
  * - Liniatura na notatki (zamiast pustego miejsca)
@@ -59,7 +59,7 @@ export function ExercisePDFItem({ exercise, index, showImage, compact }: Exercis
   // Pełny widok - Clean Layout
   return (
     <View style={pdfStyles.exerciseRowClean} wrap={false}>
-      
+
       {/* KOLUMNA 1: OBRAZEK */}
       {showImage && (
         <View style={pdfStyles.exerciseColImageClean}>
@@ -120,28 +120,28 @@ export function ExercisePDFItem({ exercise, index, showImage, compact }: Exercis
             <Text style={pdfStyles.paramValueCleanLarge}>{exercise.sets}</Text>
           </View>
         )}
-        
+
         {exercise.reps && (
           <View style={pdfStyles.paramItemCleanWithBorder}>
             <Text style={pdfStyles.paramLabelClean}>Powtórzenia</Text>
             <Text style={pdfStyles.paramValueCleanMedium}>{exercise.reps}</Text>
           </View>
         )}
-        
+
         {durationText && !exercise.reps && (
           <View style={pdfStyles.paramItemCleanWithBorder}>
             <Text style={pdfStyles.paramLabelClean}>Czas</Text>
             <Text style={pdfStyles.paramValueCleanSmall}>{durationText}</Text>
           </View>
         )}
-        
+
         {restText && (
           <View style={pdfStyles.paramItemClean}>
             <Text style={pdfStyles.paramLabelClean}>Przerwa</Text>
             <Text style={pdfStyles.paramValueCleanSmall}>{restText}</Text>
           </View>
         )}
-        
+
         {/* Fallback */}
         {!exercise.sets && !exercise.reps && !exercise.duration && (
           <View style={pdfStyles.paramItemClean}>

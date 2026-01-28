@@ -11,7 +11,29 @@ export interface ExerciseSuggestionRequest {
   availableTags?: string[];
 }
 
+/** 
+ * Pojedyncza korekta/sugestia AI z uzasadnieniem
+ */
+export interface AISuggestionItem {
+  field: string;           // np. 'name', 'description', 'reps', 'duration'
+  original: string | number | null;
+  suggested: string | number | null;
+  reason: string;          // "Wykryto literówkę", "Standard FiziYo", "Optymalizacja pod hipertrofię"
+  priority: 'high' | 'medium' | 'low';
+}
+
+/**
+ * Podpowiedź AI dotycząca danych
+ */
+export interface AIBiomechanicalWarning {
+  type: 'reps_too_high' | 'reps_too_low' | 'duration_too_short' | 'duration_too_long' | 'technique_concern';
+  message: string;
+  suggestion: string;
+  severity: 'warning' | 'info';
+}
+
 export interface ExerciseSuggestionResponse {
+  // === Podstawowe sugestie (zachowane dla kompatybilności) ===
   description: string;
   type: 'reps' | 'time';
   sets: number;
@@ -21,6 +43,36 @@ export interface ExerciseSuggestionResponse {
   exerciseSide: 'none' | 'left' | 'right' | 'both' | 'alternating';
   suggestedTags: string[];
   confidence: number;
+  
+  // === Asystent Redakcyjny (nowe) ===
+  
+  /** Poprawiona nazwa (Physio-Grammarly) - null jeśli bez zmian */
+  correctedName: string | null;
+  
+  /** Powód korekty nazwy */
+  nameCorrection: {
+    reason: string;        // "Literówka", "Błąd fleksyjny", "Standard kliniczny"
+    original: string;
+  } | null;
+  
+  /** Kategorie sugestii (The "Why") */
+  corrections: {
+    naming: AISuggestionItem[];      // 🔤 Nazewnictwo (literówki, fleksja)
+    content: AISuggestionItem[];     // 📝 Treść (opis, tagi)
+    parameters: AISuggestionItem[];  // ⚡ Parametry (tylko jeśli nielogiczne)
+  };
+  
+  /** Podpowiedzi AI */
+  warnings: AIBiomechanicalWarning[];
+  
+  /** Zaawansowane parametry (Pro Tuning) */
+  advancedParams: {
+    tempo: string | null;           // np. "3010"
+    weight: string | null;          // np. "20kg" lub "RPE 7"
+    rangeOfMotion: string | null;   // np. "Pełen zakres"
+    preparationTime: number | null; // sekundy
+    executionTime: number | null;   // czas pojedynczego powtórzenia
+  } | null;
 }
 
 // ============================================

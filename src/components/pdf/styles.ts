@@ -9,19 +9,19 @@ const colors = {
   text: '#18181b',           // zinc-900
   textMuted: '#52525b',      // zinc-600
   textLight: '#a1a1aa',      // zinc-400
-  
+
   // Tła - minimalne!
   background: '#ffffff',
   surface: '#fafafa',        // zinc-50
-  
+
   // Ramki
   border: '#e4e4e7',         // zinc-200
   borderLight: '#f4f4f5',    // zinc-100
   borderDark: '#18181b',     // zinc-900
-  
+
   // Akcenty - tylko tekst!
   accent: '#047857',         // emerald-700
-  
+
   // Ostrzeżenia
   warning: '#fef9c3',
   warningText: '#854d0e',
@@ -237,7 +237,7 @@ export const pdfStyles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: colors.borderLight,
   },
-  
+
   // Kolumna 1: Obrazek
   exerciseColImageClean: {
     width: 70,
