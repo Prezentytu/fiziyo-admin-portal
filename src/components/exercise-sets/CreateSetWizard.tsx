@@ -16,9 +16,7 @@ import {
   Eye,
   Sliders,
   TrendingUp,
-  History,
   Sparkles,
-  Filter,
   Timer,
 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -121,6 +119,11 @@ interface ExerciseParams {
   exerciseSide: string;
   customName: string;
   customDescription: string;
+  tempo: string;
+  loadType: string;
+  loadValue: number;
+  loadUnit: string;
+  loadText: string;
 }
 
 interface CreateSetWizardProps {
@@ -178,10 +181,10 @@ function InlineNumberInput({ value, onChange, min = 0, className }: InlineNumber
 // BULK ACTION BAR
 // ============================================================
 
-function BulkActionBar({ 
-  onApply 
-}: { 
-  onApply: (field: keyof ExerciseParams, value: number) => void 
+function BulkActionBar({
+  onApply
+}: {
+  onApply: (field: keyof ExerciseParams, value: number) => void
 }) {
   return (
     <div className="flex items-center gap-3 px-4 py-2.5 bg-zinc-900/80 border-b border-zinc-800 backdrop-blur-sm">
@@ -189,34 +192,34 @@ function BulkActionBar({
         <Sparkles className="h-3.5 w-3.5 text-primary" />
         <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Ustaw wszystkim:</span>
       </div>
-      
+
       <div className="flex items-center gap-4">
         <div className="flex items-center gap-1.5">
           <span className="text-[10px] text-zinc-500 font-medium">Serie</span>
-          <InlineNumberInput 
-            value={0} 
-            onChange={(v) => onApply('sets', v)} 
+          <InlineNumberInput
+            value={0}
+            onChange={(v) => onApply('sets', v)}
             className="h-8 w-11 bg-zinc-800 border-zinc-700"
           />
         </div>
-        
+
         <div className="flex items-center gap-1.5">
           <span className="text-[10px] text-zinc-500 font-medium">Powt/Czas</span>
-          <InlineNumberInput 
-            value={0} 
+          <InlineNumberInput
+            value={0}
             onChange={(v) => {
               onApply('reps', v);
               onApply('duration', v);
-            }} 
+            }}
             className="h-8 w-11 bg-zinc-800 border-zinc-700"
           />
         </div>
-        
+
         <div className="flex items-center gap-1.5">
           <span className="text-[10px] text-zinc-500 font-medium whitespace-nowrap">Prz. serii</span>
-          <InlineNumberInput 
-            value={0} 
-            onChange={(v) => onApply('restSets', v)} 
+          <InlineNumberInput
+            value={0}
+            onChange={(v) => onApply('restSets', v)}
             className="h-8 w-11 bg-zinc-800 border-zinc-700"
           />
           <span className="text-[10px] text-zinc-600">s</span>
@@ -316,6 +319,23 @@ const EXERCISE_SIDE_OPTIONS = [
   { value: 'none', label: 'Nie dotyczy' },
 ];
 
+const LOAD_TYPE_OPTIONS = [
+  { value: '', label: 'Brak' },
+  { value: 'weight', label: 'Ciężar' },
+  { value: 'band', label: 'Guma' },
+  { value: 'bodyweight', label: 'Masa ciała' },
+  { value: 'percentage', label: 'Procent' },
+  { value: 'rpe', label: 'RPE' },
+  { value: 'other', label: 'Inne' },
+];
+
+const LOAD_UNIT_OPTIONS = [
+  { value: 'kg', label: 'kg' },
+  { value: 'lbs', label: 'lbs' },
+  { value: '%', label: '%' },
+  { value: 'rpe', label: 'RPE' },
+];
+
 function SortableExerciseCard({
   instanceId,
   exercise,
@@ -345,9 +365,10 @@ function SortableExerciseCard({
 
   const imageUrl = getMediaUrl(exercise.imageUrl || exercise.images?.[0]);
   const isTimeType = exercise.type === 'time';
-  
-  // Check if there are any custom settings
-  const hasCustomSettings = params.customName || params.notes || params.exerciseSide !== 'both';
+
+  // Check if there are any custom settings (side is custom only if not default values)
+  const hasSideSet = params.exerciseSide !== 'both' && params.exerciseSide !== 'none';
+  const hasCustomSettings = params.customName || params.notes || hasSideSet || params.loadType;
 
   return (
     <div
@@ -395,9 +416,14 @@ function SortableExerciseCard({
           </p>
           {hasCustomSettings && (
             <div className="flex items-center gap-1 mt-0.5">
-              {params.exerciseSide !== 'both' && (
+              {hasSideSet && (
                 <span className="text-[9px] px-1 py-0.5 rounded bg-zinc-800 text-zinc-500 border border-zinc-700">
                   {EXERCISE_SIDE_OPTIONS.find(o => o.value === params.exerciseSide)?.label}
+                </span>
+              )}
+              {params.loadType && (
+                <span className="text-[9px] px-1 py-0.5 rounded bg-zinc-800 text-zinc-500 border border-zinc-700">
+                  {params.loadValue ? `${params.loadValue}${params.loadUnit || ''}` : LOAD_TYPE_OPTIONS.find(o => o.value === params.loadType)?.label}
                 </span>
               )}
               {params.notes && (
@@ -426,27 +452,16 @@ function SortableExerciseCard({
           {isTimeType && <span className="text-[10px] text-zinc-600">s</span>}
         </div>
 
-        {/* Rest between sets */}
-        <div className="flex items-center gap-1 ml-2 shrink-0">
-          <InlineNumberInput
-            value={params.restSets}
-            onChange={(v) => onUpdateParams('restSets', v)}
-            min={0}
-            className="w-12"
-          />
-          <span className="text-[10px] text-zinc-600">s</span>
-        </div>
-
         {/* Tune Button */}
         <button
           type="button"
           onClick={() => setShowTuning(!showTuning)}
           className={cn(
             'p-1.5 rounded-lg transition-colors shrink-0 ml-1',
-            showTuning 
-              ? 'bg-primary/20 text-primary' 
-              : hasCustomSettings 
-                ? 'bg-zinc-800 text-zinc-400' 
+            showTuning
+              ? 'bg-primary/20 text-primary'
+              : hasCustomSettings
+                ? 'bg-zinc-800 text-zinc-400'
                 : 'hover:bg-zinc-800 text-zinc-600'
           )}
           title="Dostrojenie"
@@ -502,6 +517,19 @@ function SortableExerciseCard({
             </div>
 
             <div className="grid grid-cols-2 gap-4">
+              {/* Rest between sets */}
+              <div>
+                <label className="text-[10px] text-zinc-500 uppercase font-bold tracking-wider block mb-1.5">
+                  Przerwa między seriami (s)
+                </label>
+                <Input
+                  type="number"
+                  value={params.restSets}
+                  onChange={(e) => onUpdateParams('restSets', Number.parseInt(e.target.value) || 0)}
+                  className="h-9 text-sm bg-zinc-800/50 border-zinc-700"
+                />
+              </div>
+
               {/* Rest between reps */}
               <div>
                 <label className="text-[10px] text-zinc-500 uppercase font-bold tracking-wider block mb-1.5">
@@ -514,7 +542,9 @@ function SortableExerciseCard({
                   className="h-9 text-sm bg-zinc-800/50 border-zinc-700"
                 />
               </div>
-              
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
               {/* Execution time */}
               <div>
                 <label className="text-[10px] text-zinc-500 uppercase font-bold tracking-wider block mb-1.5">
@@ -527,7 +557,88 @@ function SortableExerciseCard({
                   className="h-9 text-sm bg-zinc-800/50 border-zinc-700"
                 />
               </div>
+
+              {/* Tempo */}
+              <div>
+                <label className="text-[10px] text-zinc-500 uppercase font-bold tracking-wider block mb-1.5">
+                  Tempo
+                </label>
+                <Input
+                  value={params.tempo}
+                  onChange={(e) => onUpdateParams('tempo', e.target.value)}
+                  placeholder="np. 2-1-2-0 (ekscentryka-pauza-koncentryka-pauza)"
+                  className="h-9 text-sm bg-zinc-800/50 border-zinc-700 focus:border-primary/50"
+                />
+              </div>
             </div>
+
+            {/* Load settings */}
+            <div className="grid grid-cols-3 gap-4">
+              {/* Load Type */}
+              <div>
+                <label className="text-[10px] text-zinc-500 uppercase font-bold tracking-wider block mb-1.5">
+                  Typ obciążenia
+                </label>
+                <select
+                  value={params.loadType}
+                  onChange={(e) => onUpdateParams('loadType', e.target.value)}
+                  className="h-9 w-full rounded-lg border border-zinc-700 bg-zinc-800/50 px-3 text-sm focus:border-primary/50 outline-none transition-colors"
+                >
+                  {LOAD_TYPE_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Load Value */}
+              <div>
+                <label className="text-[10px] text-zinc-500 uppercase font-bold tracking-wider block mb-1.5">
+                  Wartość
+                </label>
+                <Input
+                  type="number"
+                  value={params.loadValue || ''}
+                  onChange={(e) => onUpdateParams('loadValue', Number.parseFloat(e.target.value) || 0)}
+                  placeholder="0"
+                  className="h-9 text-sm bg-zinc-800/50 border-zinc-700"
+                />
+              </div>
+
+              {/* Load Unit */}
+              <div>
+                <label className="text-[10px] text-zinc-500 uppercase font-bold tracking-wider block mb-1.5">
+                  Jednostka
+                </label>
+                <select
+                  value={params.loadUnit}
+                  onChange={(e) => onUpdateParams('loadUnit', e.target.value)}
+                  className="h-9 w-full rounded-lg border border-zinc-700 bg-zinc-800/50 px-3 text-sm focus:border-primary/50 outline-none transition-colors"
+                >
+                  {LOAD_UNIT_OPTIONS.map((opt) => (
+                    <option key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* Load Text (for custom descriptions) */}
+            {params.loadType === 'other' && (
+              <div>
+                <label className="text-[10px] text-zinc-500 uppercase font-bold tracking-wider block mb-1.5">
+                  Opis obciążenia
+                </label>
+                <Input
+                  value={params.loadText}
+                  onChange={(e) => onUpdateParams('loadText', e.target.value)}
+                  placeholder="np. lekka guma, średni opór..."
+                  className="h-9 text-sm bg-zinc-800/50 border-zinc-700 focus:border-primary/50"
+                />
+              </div>
+            )}
 
             {/* Notes */}
             <div>
@@ -574,7 +685,6 @@ export function CreateSetWizard({
   const [exerciseParams, setExerciseParams] = useState<Map<string, ExerciseParams>>(new Map());
   const [showCloseConfirm, setShowCloseConfirm] = useState(false);
   const [previewExercise, setPreviewExercise] = useState<Exercise | null>(null);
-  const [pickerView, setPickerView] = useState<'smart' | 'all'>('smart');
   const [showAIPanel, setShowAIPanel] = useState(false);
 
   // DnD sensors
@@ -610,7 +720,6 @@ export function CreateSetWizard({
       setExerciseParams(new Map());
       setShowCloseConfirm(false);
       setPreviewExercise(null);
-      setPickerView('smart');
       setShowAIPanel(false);
     }
   }, [open, patientName]);
@@ -716,48 +825,6 @@ export function CreateSetWizard({
       .slice(0, 10);
   }, [exercises, exercisePopularity]);
 
-  const recentExercises = useMemo(() => {
-    const recentSets = exerciseSets.slice(0, 5);
-    const recentExerciseIds = new Set<string>();
-
-    for (const set of recentSets) {
-      for (const mapping of set.exerciseMappings || []) {
-        if (mapping.exerciseId) {
-          recentExerciseIds.add(mapping.exerciseId);
-        }
-      }
-    }
-
-    return exercises.filter((ex) => recentExerciseIds.has(ex.id)).slice(0, 8);
-  }, [exercises, exerciseSets]);
-
-  const suggestedExercises = useMemo(() => {
-    if (selectedInstances.length === 0) return [];
-
-    const selectedTags = new Set<string>();
-    for (const { exerciseId } of selectedInstances) {
-      const exercise = exercises.find((ex) => ex.id === exerciseId);
-      if (exercise) {
-        const exerciseTags = getExerciseTags(exercise);
-        exerciseTags.forEach((tag) => selectedTags.add(tag.id));
-      }
-    }
-
-    const currentExerciseIds = new Set(selectedInstances.map(si => si.exerciseId));
-
-    return exercises
-      .filter((ex) => !currentExerciseIds.has(ex.id))
-      .map((ex) => {
-        const exerciseTags = getExerciseTags(ex);
-        const matchingTags = exerciseTags.filter((tag) => selectedTags.has(tag.id)).length;
-        return { exercise: ex, score: matchingTags };
-      })
-      .filter((item) => item.score > 0)
-      .sort((a, b) => b.score - a.score)
-      .slice(0, 6)
-      .map((item) => item.exercise);
-  }, [exercises, selectedInstances, getExerciseTags]);
-
   // Category filters
   const quickStartCategories = useMemo(() => {
     const tagExerciseCounts: Record<string, number> = {};
@@ -833,6 +900,11 @@ export function CreateSetWizard({
       exerciseSide: (exercise.side?.toLowerCase() || exercise.exerciseSide) || 'both',
       customName: '',
       customDescription: '',
+      tempo: '',
+      loadType: '',
+      loadValue: 0,
+      loadUnit: 'kg',
+      loadText: '',
     }),
     []
   );
@@ -852,7 +924,7 @@ export function CreateSetWizard({
         const next = new Map(prev);
         const instance = selectedInstances.find(i => i.instanceId === instanceId);
         const exercise = exercises.find((e) => e.id === instance?.exerciseId);
-        
+
         const current =
           next.get(instanceId) ||
           (exercise
@@ -869,6 +941,11 @@ export function CreateSetWizard({
                 exerciseSide: 'both',
                 customName: '',
                 customDescription: '',
+                tempo: '',
+                loadType: '',
+                loadValue: 0,
+                loadUnit: 'kg',
+                loadText: '',
               });
         const newValue = typeof value === 'number' ? Math.max(0, value) : value;
         next.set(instanceId, { ...current, [field]: newValue });
@@ -899,9 +976,9 @@ export function CreateSetWizard({
   const addExerciseToSet = useCallback(
     (exercise: Exercise) => {
       const instanceId = `${exercise.id}-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
-      
+
       setSelectedInstances((prev) => [...prev, { instanceId, exerciseId: exercise.id }]);
-      
+
       setExerciseParams((prev) => {
         const next = new Map(prev);
         next.set(instanceId, getDefaultParams(exercise));
@@ -974,11 +1051,12 @@ export function CreateSetWizard({
         totalSeconds += params.sets * params.duration;
         totalSeconds += (params.sets - 1) * params.restSets;
       } else {
-        const repTime = params.reps * 3;
+        // Use executionTime if provided, otherwise default to 2 seconds per rep
+        const secondsPerRep = params.executionTime > 0 ? params.executionTime : 2;
+        const repTime = params.reps * secondsPerRep;
         totalSeconds += params.sets * repTime;
         totalSeconds += (params.sets - 1) * params.restSets;
       }
-      totalSeconds += 15;
     }
 
     return Math.round(totalSeconds / 60);
@@ -1016,12 +1094,16 @@ export function CreateSetWizard({
               duration: params.duration || null,
               restSets: params.restSets || null,
               restReps: params.restReps || null,
-              // Pola które były w UI ale nie były wysyłane
               preparationTime: params.preparationTime || null,
               executionTime: params.executionTime || null,
               notes: params.notes || null,
               customName: params.customName || null,
               customDescription: params.customDescription || null,
+              tempo: params.tempo || null,
+              loadType: params.loadType || null,
+              loadValue: params.loadValue || null,
+              loadUnit: params.loadUnit || null,
+              loadText: params.loadText || null,
             },
           });
         }
@@ -1158,69 +1240,34 @@ export function CreateSetWizard({
                   <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                   <Input
                     value={searchQuery}
-                    onChange={(e) => {
-                      setSearchQuery(e.target.value);
-                      if (e.target.value.trim()) setPickerView('all');
-                    }}
+                    onChange={(e) => setSearchQuery(e.target.value)}
                     placeholder="Szukaj ćwiczeń..."
                     className="h-10 pl-10 bg-surface border-border placeholder:text-muted-foreground/50"
                     data-testid="set-composer-search-input"
                   />
                 </div>
-                <div className="flex rounded-lg border border-border overflow-hidden">
-                  <button
-                    type="button"
-                    onClick={() => setPickerView('smart')}
-                    className={cn(
-                      'px-3 py-2 text-xs font-medium flex items-center gap-1.5 transition-colors',
-                      pickerView === 'smart'
-                        ? 'bg-primary text-primary-foreground'
-                        : 'bg-surface-light text-muted-foreground hover:text-foreground'
-                    )}
-                  >
-                    <Sparkles className="h-3.5 w-3.5" />
-                    Smart
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setPickerView('all')}
-                    className={cn(
-                      'px-3 py-2 text-xs font-medium flex items-center gap-1.5 transition-colors',
-                      pickerView === 'all'
-                        ? 'bg-primary text-primary-foreground'
-                        : 'bg-surface-light text-muted-foreground hover:text-foreground'
-                    )}
-                  >
-                    <Filter className="h-3.5 w-3.5" />
-                    Wszystkie
-                  </button>
-                </div>
               </div>
 
-              {/* Category filters - only in "all" view */}
-              {pickerView === 'all' && (
-                <div className="flex flex-wrap gap-1.5">
-                  {categoryFilters.map((cat) => (
-                    <button
-                      key={cat.id}
-                      type="button"
-                      onClick={() => setCategoryFilter(cat.id)}
-                      className={cn(
-                        'px-2.5 py-1 rounded-lg text-xs font-medium transition-all',
-                        categoryFilter === cat.id
-                          ? 'bg-primary text-primary-foreground'
-                          : 'bg-surface-light text-muted-foreground hover:bg-surface-hover hover:text-foreground'
-                      )}
-                    >
-                      {cat.label}
-                    </button>
-                  ))}
-                </div>
-              )}
+              {/* Category filters */}
+              <div className="flex flex-wrap gap-1.5">
+                {categoryFilters.map((cat) => (
+                  <button
+                    key={cat.id}
+                    type="button"
+                    onClick={() => setCategoryFilter(cat.id)}
+                    className={cn(
+                      'px-2.5 py-1 rounded-lg text-xs font-medium transition-all',
+                      categoryFilter === cat.id
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-surface-light text-muted-foreground hover:bg-surface-hover hover:text-foreground'
+                    )}
+                  >
+                    {cat.label}
+                  </button>
+                ))}
+              </div>
 
-              {pickerView === 'all' && (
-                <p className="text-xs text-muted-foreground">{filteredExercises.length} ćwiczeń</p>
-              )}
+              <p className="text-xs text-muted-foreground">{filteredExercises.length} ćwiczeń</p>
             </div>
 
             {/* Exercise list */}
@@ -1230,33 +1277,17 @@ export function CreateSetWizard({
                   <div className="flex items-center justify-center py-16">
                     <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                   </div>
-                ) : pickerView === 'smart' ? (
+                ) : filteredExercises.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-16 text-center">
+                    <Dumbbell className="h-12 w-12 text-muted-foreground/50 mb-4" />
+                    <p className="text-sm font-medium text-muted-foreground">
+                      {searchQuery ? 'Brak wyników wyszukiwania' : 'Brak ćwiczeń w tej kategorii'}
+                    </p>
+                  </div>
+                ) : (
                   <div className="space-y-6">
-                    {/* Suggested */}
-                    {suggestedExercises.length > 0 && (
-                      <div>
-                        <div className="flex items-center gap-2 mb-3">
-                          <Sparkles className="h-4 w-4 text-amber-500" />
-                          <h4 className="text-sm font-semibold">Sugerowane</h4>
-                          <span className="text-xs text-muted-foreground">na podstawie wybranych</span>
-                        </div>
-                        <div className="grid gap-2">
-                          {suggestedExercises.map((exercise) => (
-                            <ExercisePickerItem
-                              key={exercise.id}
-                              exercise={exercise}
-                              instanceCount={selectedInstances.filter(si => si.exerciseId === exercise.id).length}
-                              onAdd={() => addExerciseToSet(exercise)}
-                              onPreview={() => setPreviewExercise(exercise)}
-                              getExerciseTags={getExerciseTags}
-                            />
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Popular */}
-                    {popularExercises.length > 0 && (
+                    {/* Popular - show at top when no search/filter active */}
+                    {!searchQuery && categoryFilter === 'all' && popularExercises.length > 0 && (
                       <div>
                         <div className="flex items-center gap-2 mb-3">
                           <TrendingUp className="h-4 w-4 text-primary" />
@@ -1266,7 +1297,7 @@ export function CreateSetWizard({
                         <div className="grid gap-2">
                           {popularExercises.map((exercise) => (
                             <ExercisePickerItem
-                              key={exercise.id}
+                              key={`popular-${exercise.id}`}
                               exercise={exercise}
                               instanceCount={selectedInstances.filter(si => si.exerciseId === exercise.id).length}
                               onAdd={() => addExerciseToSet(exercise)}
@@ -1279,15 +1310,24 @@ export function CreateSetWizard({
                       </div>
                     )}
 
-                    {/* Recent */}
-                    {recentExercises.length > 0 && (
-                      <div>
+                    {/* All exercises (excluding popular when shown) */}
+                    <div>
+                      {!searchQuery && categoryFilter === 'all' && popularExercises.length > 0 && (
                         <div className="flex items-center gap-2 mb-3">
-                          <History className="h-4 w-4 text-muted-foreground" />
-                          <h4 className="text-sm font-semibold">Ostatnio używane</h4>
+                          <Dumbbell className="h-4 w-4 text-muted-foreground" />
+                          <h4 className="text-sm font-semibold">Wszystkie ćwiczenia</h4>
                         </div>
-                        <div className="grid gap-2">
-                          {recentExercises.map((exercise) => (
+                      )}
+                      <div className="grid gap-2">
+                        {(() => {
+                          // Exclude popular exercises when showing popular section
+                          const showPopular = !searchQuery && categoryFilter === 'all' && popularExercises.length > 0;
+                          const popularIds = new Set(popularExercises.map(e => e.id));
+                          const exercisesToShow = showPopular
+                            ? filteredExercises.filter(e => !popularIds.has(e.id))
+                            : filteredExercises;
+
+                          return exercisesToShow.map((exercise) => (
                             <ExercisePickerItem
                               key={exercise.id}
                               exercise={exercise}
@@ -1296,44 +1336,10 @@ export function CreateSetWizard({
                               onPreview={() => setPreviewExercise(exercise)}
                               getExerciseTags={getExerciseTags}
                             />
-                          ))}
-                        </div>
+                          ));
+                        })()}
                       </div>
-                    )}
-
-                    {/* Empty state */}
-                    {popularExercises.length === 0 && recentExercises.length === 0 && (
-                      <div className="flex flex-col items-center justify-center py-12 text-center">
-                        <Sparkles className="h-10 w-10 text-muted-foreground/50 mb-3" />
-                        <p className="text-sm font-medium text-muted-foreground">Brak danych do sugestii</p>
-                        <p className="text-xs text-muted-foreground/70 mt-1">
-                          Przełącz na &quot;Wszystkie&quot; aby zobaczyć pełną listę
-                        </p>
-                        <Button variant="outline" size="sm" className="mt-4 border-border" onClick={() => setPickerView('all')}>
-                          Zobacz wszystkie
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-                ) : filteredExercises.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-16 text-center">
-                    <Dumbbell className="h-12 w-12 text-muted-foreground/50 mb-4" />
-                    <p className="text-sm font-medium text-muted-foreground">
-                      {searchQuery ? 'Brak wyników wyszukiwania' : 'Brak ćwiczeń w tej kategorii'}
-                    </p>
-                  </div>
-                ) : (
-                  <div className="grid gap-2">
-                    {filteredExercises.map((exercise) => (
-                      <ExercisePickerItem
-                        key={exercise.id}
-                        exercise={exercise}
-                        instanceCount={selectedInstances.filter(si => si.exerciseId === exercise.id).length}
-                        onAdd={() => addExerciseToSet(exercise)}
-                        onPreview={() => setPreviewExercise(exercise)}
-                        getExerciseTags={getExerciseTags}
-                      />
-                    ))}
+                    </div>
                   </div>
                 )}
               </div>
@@ -1349,7 +1355,7 @@ export function CreateSetWizard({
                 <Badge variant="secondary" className="h-5 px-1.5 text-[10px] bg-zinc-800 text-zinc-400 border-none">
                   {selectedInstances.length}
                 </Badge>
-                
+
                 {/* Hero Duration Badge */}
                 {estimatedTime > 0 && (
                   <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-950/30 border border-emerald-900/50">
@@ -1358,11 +1364,11 @@ export function CreateSetWizard({
                   </div>
                 )}
               </div>
-              
+
               <div className="flex items-center gap-2">
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
+                <Button
+                  variant="ghost"
+                  size="sm"
                   className="h-7 text-[10px] text-zinc-500 hover:text-destructive"
                   onClick={() => setSelectedInstances([])}
                   disabled={selectedInstances.length === 0}

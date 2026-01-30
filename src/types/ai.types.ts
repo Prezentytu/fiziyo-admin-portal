@@ -9,6 +9,8 @@
 export interface ExerciseSuggestionRequest {
   exerciseName: string;
   availableTags?: string[];
+  /** Lista nazw istniejących ćwiczeń w bazie - AI sprawdzi duplikaty */
+  existingExerciseNames?: string[];
 }
 
 /** 
@@ -72,6 +74,14 @@ export interface ExerciseSuggestionResponse {
     rangeOfMotion: string | null;   // np. "Pełen zakres"
     preparationTime: number | null; // sekundy
     executionTime: number | null;   // czas pojedynczego powtórzenia
+  } | null;
+  
+  /** Informacja o podobnych ćwiczeniach w bazie (wykryte przez AI) */
+  similarInDatabase: {
+    /** Dokładne dopasowanie - ćwiczenie już istnieje! */
+    exactMatch: string | null;
+    /** Lista podobnych nazw (max 3) */
+    similar: string[];
   } | null;
 }
 

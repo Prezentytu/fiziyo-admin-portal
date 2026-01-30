@@ -111,7 +111,7 @@ function CleanNumberInput({
       <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider text-center">
         {label}
       </span>
-      
+
       {/* Clean Number Input */}
       <div className={cn(
         "relative h-14 rounded-xl transition-all duration-200",
@@ -119,7 +119,7 @@ function CleanNumberInput({
         "hover:border-zinc-700 focus-within:border-primary/50 focus-within:bg-zinc-900",
         dimmed && "hover:border-zinc-800"
       )}>
-        <input 
+        <input
           type="number"
           inputMode="numeric"
           min={0}
@@ -258,7 +258,7 @@ function SimilarExercisesAlert({ exercises, onUseExisting }: SimilarExercisesAle
   if (exercises.length === 0) return null;
 
   return (
-    <div 
+    <div
       className="mt-3 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 animate-in fade-in slide-in-from-top-2 duration-200"
       data-testid="exercise-similar-alert"
     >
@@ -268,14 +268,14 @@ function SimilarExercisesAlert({ exercises, onUseExisting }: SimilarExercisesAle
       </div>
       <div className="space-y-1.5">
         {exercises.map((ex) => (
-          <div 
-            key={ex.id} 
+          <div
+            key={ex.id}
             className="flex items-center justify-between gap-2 p-2 rounded-md bg-surface/50 hover:bg-surface transition-colors"
           >
             <div className="flex items-center gap-2 min-w-0">
               {ex.imageUrl ? (
-                <img 
-                  src={ex.imageUrl} 
+                <img
+                  src={ex.imageUrl}
                   alt={ex.name}
                   className="w-8 h-8 rounded object-cover shrink-0"
                 />
@@ -299,6 +299,114 @@ function SimilarExercisesAlert({ exercises, onUseExisting }: SimilarExercisesAle
           </div>
         ))}
       </div>
+    </div>
+  );
+}
+
+// ============================================================
+// NAME SUGGESTION HERO COMPONENT
+// ============================================================
+interface NameSuggestionHeroProps {
+  currentName: string;
+  suggestedName: string;
+  reason?: string;
+  similarInDatabase?: {
+    exactMatch: string | null;
+    similar: string[];
+  } | null;
+  onAccept: () => void;
+}
+
+function NameSuggestionHero({
+  currentName,
+  suggestedName,
+  reason,
+  similarInDatabase,
+  onAccept,
+}: NameSuggestionHeroProps) {
+  const hasExactMatch = similarInDatabase?.exactMatch;
+  const hasSimilar = similarInDatabase?.similar && similarInDatabase.similar.length > 0;
+
+  return (
+    <div className="border-b border-zinc-800" data-testid="ai-name-suggestion-hero">
+      {/* Hero section - prominent name suggestion */}
+      <div className="px-5 py-5 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent">
+        <p className="text-[10px] font-semibold text-primary/70 uppercase tracking-widest mb-2">
+          Proponowana nazwa ćwiczenia to:
+        </p>
+        
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex-1 min-w-0">
+            {/* Current name (strikethrough) */}
+            {currentName !== suggestedName && (
+              <p className="text-sm text-zinc-500 line-through mb-1 truncate">
+                {currentName}
+              </p>
+            )}
+            {/* Suggested name - large and prominent */}
+            <p className="text-xl font-bold text-foreground leading-tight">
+              {suggestedName}
+            </p>
+            {/* Reason */}
+            {reason && (
+              <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1.5">
+                <Sparkles className="h-3 w-3 text-primary" />
+                {reason}
+              </p>
+            )}
+          </div>
+          
+          {/* Accept button */}
+          <Button
+            type="button"
+            size="sm"
+            onClick={onAccept}
+            className="shrink-0 bg-primary hover:bg-primary/90 text-primary-foreground font-medium"
+            data-testid="ai-name-suggestion-accept-btn"
+          >
+            <Check className="h-3.5 w-3.5 mr-1.5" />
+            Użyj
+          </Button>
+        </div>
+      </div>
+
+      {/* Alert: Exact match found in database */}
+      {hasExactMatch && (
+        <div className="px-5 py-3 bg-destructive/10 border-t border-destructive/20">
+          <div className="flex items-start gap-2">
+            <AlertTriangle className="h-4 w-4 text-destructive shrink-0 mt-0.5" />
+            <div>
+              <p className="text-xs font-semibold text-destructive">
+                Ćwiczenie o tej nazwie już istnieje!
+              </p>
+              <p className="text-xs text-destructive/80 mt-0.5">
+                &quot;{similarInDatabase.exactMatch}&quot; - rozważ użycie istniejącego ćwiczenia.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Alert: Similar exercises in database */}
+      {!hasExactMatch && hasSimilar && (
+        <div className="px-5 py-3 bg-amber-500/10 border-t border-amber-500/20">
+          <div className="flex items-start gap-2">
+            <AlertTriangle className="h-4 w-4 text-amber-400 shrink-0 mt-0.5" />
+            <div>
+              <p className="text-xs font-semibold text-amber-400">
+                Podobne ćwiczenia w Twojej bazie:
+              </p>
+              <ul className="mt-1 space-y-0.5">
+                {similarInDatabase!.similar.slice(0, 3).map((name, idx) => (
+                  <li key={idx} className="text-xs text-amber-400/80">
+                    &bull; {name}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -365,7 +473,7 @@ function AIDiffDrawer({
     suggestion.advancedParams.weight ||
     suggestion.advancedParams.rangeOfMotion
   );
-  
+
   // Standard diff checks
   const hasDifferentSets = suggestion.sets !== currentData.sets;
   const hasDifferentReps = suggestion.reps !== currentData.reps;
@@ -375,9 +483,9 @@ function AIDiffDrawer({
   const hasSuggestedTags = suggestion.suggestedTags && suggestion.suggestedTags.length > 0;
 
   // Find matching tags from available tags
-  const matchedTags = availableTags.filter(tag => 
+  const matchedTags = availableTags.filter(tag =>
     suggestion.suggestedTags?.some(
-      st => normalizeText(st).includes(normalizeText(tag.name)) || 
+      st => normalizeText(st).includes(normalizeText(tag.name)) ||
             normalizeText(tag.name).includes(normalizeText(st))
     )
   );
@@ -426,41 +534,34 @@ function AIDiffDrawer({
 
       {/* Content - Categorized sections */}
       <div className="flex-1 overflow-y-auto">
-        
-        {/* === SEKCJA 1: NAZEWNICTWO (🔤 Physio-Grammarly) === */}
+
+        {/* === HERO SEKCJA: PROPONOWANA NAZWA ĆWICZENIA === */}
+        {/* Pokazuj tylko gdy jest korekta nazwy do zaakceptowania - znika po kliknięciu "Użyj" */}
         {hasNameCorrection && (
-          <AISection 
-            icon="🔤" 
-            title="Nazewnictwo" 
-            priority="high"
-            description="Poprawa literówek i formatowanie"
-          >
-            <SuggestionCard
-              label="Nazwa ćwiczenia"
-              currentValue={currentData.name}
-              suggestedValue={suggestion.correctedName!}
-              reason={suggestion.nameCorrection?.reason || 'Popularna nazwa w bazie'}
-              onAccept={() => onAcceptField('name', suggestion.correctedName)}
-              priority="high"
-            />
-          </AISection>
+          <NameSuggestionHero
+            currentName={currentData.name}
+            suggestedName={suggestion.correctedName!}
+            reason={suggestion.nameCorrection?.reason || 'Poprawiona nazwa'}
+            similarInDatabase={suggestion.similarInDatabase}
+            onAccept={() => onAcceptField('name', suggestion.correctedName)}
+          />
         )}
 
         {/* === SEKCJA 2: PODPOWIEDZI (💡 Typowe wartości) === */}
         {hasHints && (
-          <AISection 
-            icon="💡" 
-            title="Podpowiedzi" 
+          <AISection
+            icon="💡"
+            title="Podpowiedzi"
             priority="low"
             description="Typowe wartości z bazy danych"
           >
             {suggestion.warnings!.map((hint, idx) => (
-              <div 
+              <div
                 key={idx}
                 className={cn(
                   "p-3 rounded-lg border",
-                  hint.severity === 'warning' 
-                    ? "bg-secondary/5 border-secondary/20" 
+                  hint.severity === 'warning'
+                    ? "bg-secondary/5 border-secondary/20"
                     : "bg-blue-500/5 border-blue-500/20"
                 )}
               >
@@ -480,9 +581,9 @@ function AIDiffDrawer({
 
         {/* === SEKCJA 3: TREŚĆ (📝 Content) === */}
         {(hasDescription || hasSuggestedTags) && (
-          <AISection 
-            icon="📝" 
-            title="Treść" 
+          <AISection
+            icon="📝"
+            title="Treść"
             priority="medium"
             description="Opis techniczny i kategoryzacja"
           >
@@ -497,33 +598,33 @@ function AIDiffDrawer({
                 priority="medium"
               />
             )}
-            
+
             {hasSuggestedTags && suggestion.suggestedTags && suggestion.suggestedTags.length > 0 && (
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
                   <Tag className="h-3 w-3 text-muted-foreground" />
                   <span className="text-[10px] font-medium text-muted-foreground uppercase">Sugerowane tagi</span>
                 </div>
-                
+
                 <p className="text-[10px] text-muted-foreground">Kliknij tag aby dodać (jeśli istnieje w bazie):</p>
-                
+
                 <div className="flex flex-wrap gap-1.5">
                   {suggestion.suggestedTags.map((tagName, idx) => {
                     // Znajdź pasujący tag w bazie
-                    const matchedTag = availableTags.find(t => 
-                      normalizeText(t.name).includes(normalizeText(tagName)) || 
+                    const matchedTag = availableTags.find(t =>
+                      normalizeText(t.name).includes(normalizeText(tagName)) ||
                       normalizeText(tagName).includes(normalizeText(t.name))
                     );
                     const isAlreadyAdded = matchedTag && currentData.mainTags.includes(matchedTag.id);
-                    
+
                     return (
                       <Badge
                         key={idx}
                         variant={matchedTag ? "secondary" : "outline"}
                         className={cn(
                           "text-xs transition-colors",
-                          matchedTag && !isAlreadyAdded 
-                            ? "bg-secondary/10 text-secondary border-0 cursor-pointer hover:bg-secondary/20" 
+                          matchedTag && !isAlreadyAdded
+                            ? "bg-secondary/10 text-secondary border-0 cursor-pointer hover:bg-secondary/20"
                             : matchedTag && isAlreadyAdded
                               ? "bg-secondary/30 text-secondary border-0 opacity-50 cursor-default"
                               : "border-zinc-700 text-zinc-500 cursor-not-allowed"
@@ -535,7 +636,7 @@ function AIDiffDrawer({
                             onAcceptField('mainTags', newTags);
                           }
                         }}
-                        title={matchedTag 
+                        title={matchedTag
                           ? (isAlreadyAdded ? 'Już dodany' : `Kliknij aby dodać "${matchedTag.name}"`)
                           : 'Nie znaleziono w bazie'
                         }
@@ -550,7 +651,7 @@ function AIDiffDrawer({
                     );
                   })}
                 </div>
-                
+
                 {/* Przycisk dodaj wszystkie pasujące */}
                 {matchedTags.filter(t => !currentData.mainTags.includes(t.id)).length > 1 && (
                   <Button
@@ -575,9 +676,9 @@ function AIDiffDrawer({
 
         {/* === SEKCJA 4: PARAMETRY (⚡ Parameters - tylko jeśli różne) === */}
         {(hasDifferentSets || hasDifferentReps || hasDifferentDuration || hasDifferentRest || hasDifferentSide) && (
-          <AISection 
-            icon="⚡" 
-            title="Parametry" 
+          <AISection
+            icon="⚡"
+            title="Parametry"
             priority="low"
             description="Optymalizacja pod cel treningowy"
           >
@@ -592,7 +693,7 @@ function AIDiffDrawer({
                 inline
               />
             )}
-            
+
             {hasDifferentReps && suggestion.reps && (
               <SuggestionCard
                 label="Powtórzenia"
@@ -645,9 +746,9 @@ function AIDiffDrawer({
 
         {/* === SEKCJA 5: PRO TUNING (🎛️ Advanced) === */}
         {hasAdvancedParams && (
-          <AISection 
-            icon="🎛️" 
-            title="Pro Tuning" 
+          <AISection
+            icon="🎛️"
+            title="Pro Tuning"
             priority="low"
             description="Dodatkowe pola do uzupełnienia"
           >
@@ -656,7 +757,7 @@ function AIDiffDrawer({
                 <div className="p-2.5 rounded-lg bg-zinc-900/50 border border-zinc-800">
                   <p className="text-[9px] text-muted-foreground uppercase mb-1">Tempo</p>
                   <p className="text-sm font-mono font-bold text-primary">{suggestion.advancedParams.tempo}</p>
-                  <button 
+                  <button
                     onClick={() => onAcceptField('tempo', suggestion.advancedParams?.tempo)}
                     className="text-[9px] text-secondary hover:text-secondary/80 mt-1"
                   >
@@ -668,7 +769,7 @@ function AIDiffDrawer({
                 <div className="p-2.5 rounded-lg bg-zinc-900/50 border border-zinc-800">
                   <p className="text-[9px] text-muted-foreground uppercase mb-1">Obciążenie</p>
                   <p className="text-sm font-medium text-foreground">{suggestion.advancedParams.weight}</p>
-                  <button 
+                  <button
                     onClick={() => onAcceptField('weight', suggestion.advancedParams?.weight)}
                     className="text-[9px] text-secondary hover:text-secondary/80 mt-1"
                   >
@@ -680,7 +781,7 @@ function AIDiffDrawer({
                 <div className="p-2.5 rounded-lg bg-zinc-900/50 border border-zinc-800 col-span-2">
                   <p className="text-[9px] text-muted-foreground uppercase mb-1">Zakres ruchu</p>
                   <p className="text-sm font-medium text-foreground">{suggestion.advancedParams.rangeOfMotion}</p>
-                  <button 
+                  <button
                     onClick={() => onAcceptField('rangeOfMotion', suggestion.advancedParams?.rangeOfMotion)}
                     className="text-[9px] text-secondary hover:text-secondary/80 mt-1"
                   >
@@ -783,15 +884,15 @@ interface SuggestionCardProps {
   priority: 'high' | 'medium' | 'low';
 }
 
-function SuggestionCard({ 
-  label, 
-  currentValue, 
-  suggestedValue, 
-  reason, 
-  onAccept, 
+function SuggestionCard({
+  label,
+  currentValue,
+  suggestedValue,
+  reason,
+  onAccept,
   isText,
   inline,
-  priority 
+  priority
 }: SuggestionCardProps) {
   if (inline) {
     return (
@@ -877,7 +978,7 @@ export function CreateExerciseWizard({
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
   const [showTagPicker, setShowTagPicker] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
-  
+
   // AI Enhancement states
   const [showAIDiff, setShowAIDiff] = useState(false);
   const [aiSuggestion, setAiSuggestion] = useState<ExerciseSuggestionResponse | null>(null);
@@ -907,16 +1008,16 @@ export function CreateExerciseWizard({
   // Similar exercises detection (Inline Library Guard)
   const similarExercises = useMemo((): ExistingExercise[] => {
     if (!data.name || data.name.length < 2) return [];
-    
+
     const exercises = (exercisesData as { organizationExercises?: ExistingExercise[] })?.organizationExercises || [];
     const normalizedInput = normalizeText(data.name);
-    
+
     return exercises
       .filter((ex) => {
         const normalizedName = normalizeText(ex.name);
         // Check if similar but not exact match
         return (
-          normalizedName.includes(normalizedInput) || 
+          normalizedName.includes(normalizedInput) ||
           normalizedInput.includes(normalizedName)
         ) && normalizedName !== normalizedInput;
       })
@@ -1116,10 +1217,13 @@ export function CreateExerciseWizard({
 
     setIsLoadingAI(true);
     setShowAIDiff(true);
-    
+
     try {
       const tagNames = tags.map(t => t.name);
-      const suggestion = await aiService.getExerciseSuggestion(data.name, tagNames);
+      // Pobierz nazwy istniejących ćwiczeń dla wykrywania duplikatów przez AI
+      const existingNames = ((exercisesData as { organizationExercises?: ExistingExercise[] })?.organizationExercises || [])
+        .map(e => e.name);
+      const suggestion = await aiService.getExerciseSuggestion(data.name, tagNames, existingNames);
       setAiSuggestion(suggestion);
     } catch (error) {
       console.error('AI enhancement error:', error);
@@ -1128,7 +1232,7 @@ export function CreateExerciseWizard({
     } finally {
       setIsLoadingAI(false);
     }
-  }, [data.name, tags]);
+  }, [data.name, tags, exercisesData]);
 
   // Accept single AI field
   const handleAcceptAIField = useCallback(<K extends keyof ExerciseData>(field: K, value: unknown) => {
@@ -1160,9 +1264,9 @@ export function CreateExerciseWizard({
 
     // Add suggested tags if they match available tags
     const matchedTagIds = tags
-      .filter(tag => 
+      .filter(tag =>
         aiSuggestion.suggestedTags?.some(
-          st => normalizeText(st).includes(normalizeText(tag.name)) || 
+          st => normalizeText(st).includes(normalizeText(tag.name)) ||
                 normalizeText(tag.name).includes(normalizeText(st))
         )
       )
@@ -1240,7 +1344,7 @@ export function CreateExerciseWizard({
           loadText = weightStr;
         } else {
           // Free text (e.g., "Guma czerwona", "Własna waga")
-          loadType = weightStr.toLowerCase().includes('gum') ? 'band' : 
+          loadType = weightStr.toLowerCase().includes('gum') ? 'band' :
                      weightStr.toLowerCase().includes('waga') ? 'bodyweight' : 'other';
           loadText = weightStr;
         }
@@ -1343,10 +1447,10 @@ export function CreateExerciseWizard({
 
         {/* ========== MAIN CONTENT WRAPPER (with AI Drawer) ========== */}
         <div className="flex-1 flex overflow-hidden">
-          
+
           {/* ========== CONTENT ========== */}
           <div className="flex-1 overflow-y-auto px-6 py-6">
-            
+
             {/* SEKCJA 1: NAZWA + AI ENHANCE */}
             <section className="mb-6">
               <div className="flex items-center justify-between mb-2">
@@ -1412,8 +1516,8 @@ export function CreateExerciseWizard({
               )}
 
               {/* INLINE LIBRARY GUARD - Similar Exercises Alert */}
-              <SimilarExercisesAlert 
-                exercises={similarExercises} 
+              <SimilarExercisesAlert
+                exercises={similarExercises}
                 onUseExisting={handleUseExisting}
               />
 
@@ -1470,7 +1574,7 @@ export function CreateExerciseWizard({
             <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mb-2 block">
               Media
             </label>
-            
+
             {mediaFiles.length === 0 ? (
               /* STAN PUSTY: Hero Dropzone Banner */
               <div
@@ -1506,7 +1610,7 @@ export function CreateExerciseWizard({
                     </p>
                   </div>
                 </div>
-                
+
                 {/* Inline AI Generate hint */}
                 <div className="flex items-center gap-4 mt-1">
                   <span className="text-[10px] text-zinc-600">lub</span>
@@ -1572,7 +1676,7 @@ export function CreateExerciseWizard({
                     </button>
                   </div>
                 ))}
-                
+
                 {/* Przycisk "Dodaj kolejny" - pasuje do gridu */}
                 {mediaFiles.length < 5 && (
                   <button
@@ -1591,7 +1695,7 @@ export function CreateExerciseWizard({
                     <span className="text-xs text-zinc-500 group-hover:text-zinc-400">Dodaj</span>
                   </button>
                 )}
-                
+
                 {/* AI Generate jako ostatni kafelek jeśli jest miejsce */}
                 {mediaFiles.length < 4 && (
                   <button
@@ -1617,7 +1721,7 @@ export function CreateExerciseWizard({
                 )}
               </div>
             )}
-            
+
             <input
               ref={fileInputRef}
               type="file"
@@ -1634,7 +1738,7 @@ export function CreateExerciseWizard({
               <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">
                 Parametry
               </label>
-              
+
               {/* Quick Presets */}
               <div className="flex gap-1.5">
                 {QUICK_PRESETS.map((preset, idx) => (
@@ -1666,7 +1770,7 @@ export function CreateExerciseWizard({
                 tabIndex={3}
                 testId="exercise-sets"
               />
-              
+
               <CleanNumberInput
                 label="POWT."
                 value={data.reps}
@@ -1676,7 +1780,7 @@ export function CreateExerciseWizard({
                 tabIndex={4}
                 testId="exercise-reps"
               />
-              
+
               <CleanNumberInput
                 label="CZAS POWT."
                 value={data.duration}
@@ -1687,7 +1791,7 @@ export function CreateExerciseWizard({
                 tabIndex={5}
                 testId="exercise-duration"
               />
-              
+
               <CleanNumberInput
                 label="PRZERWA"
                 value={data.restSets}
@@ -1699,16 +1803,13 @@ export function CreateExerciseWizard({
               />
             </div>
 
-            {/* Hint - Implicit Type */}
-            <p className="text-[9px] text-zinc-600 mt-2 text-center">
-              CZAS POWT. = czas wykonania jednego powtórzenia (dla ćwiczeń izometrycznych/czasowych)
-            </p>
+
           </section>
 
           {/* SEKCJA 4: OPIS / INSTRUKCJA */}
           <section className="mb-6">
             <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mb-2 block">
-              Instrukcja <span className="text-zinc-600 font-normal">(opcjonalnie)</span>
+              Instrukcja
             </label>
             <Textarea
               value={data.description}
@@ -1736,7 +1837,7 @@ export function CreateExerciseWizard({
                 <div className="flex items-center gap-2">
                   <Settings2 className="h-3.5 w-3.5" />
                   <span>Zaawansowane</span>
-                  {(data.exerciseSide !== 'none' || data.restReps || data.executionTime || 
+                  {(data.exerciseSide !== 'none' || data.restReps || data.executionTime ||
                     data.tempo || data.weight || data.rangeOfMotion) && (
                     <span className="px-1.5 py-0.5 text-[9px] rounded bg-primary/20 text-primary normal-case">
                       Zmienione
