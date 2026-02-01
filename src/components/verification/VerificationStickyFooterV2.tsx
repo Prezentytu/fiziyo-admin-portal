@@ -169,7 +169,7 @@ export function VerificationStickyFooterV2({
                   </Button>
                 </span>
               </TooltipTrigger>
-              
+
               {/* Tooltip content - only show when cannot publish */}
               {!canPublish && missingFields.length > 0 && (
                 <TooltipContent

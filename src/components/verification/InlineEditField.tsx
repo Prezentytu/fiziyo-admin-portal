@@ -172,9 +172,14 @@ export function InlineEditField({
 
   // Editing mode
   if (status === "editing" || status === "saving") {
+    // Extract font-related classes from className to apply to input
+    const fontClasses = className?.split(" ").filter(c => 
+      c.startsWith("text-") || c.startsWith("font-") || c === "break-words"
+    ).join(" ") || "";
+
     return (
-      <div ref={containerRef} className="relative" data-testid={testId}>
-        {type === "textarea" ? (
+      <div ref={containerRef} className={cn("relative w-full max-w-full overflow-hidden")} data-testid={testId}>
+        {(type === "textarea" || multiline) ? (
           <Textarea
             ref={inputRef as React.RefObject<HTMLTextAreaElement>}
             value={editValue ?? ""}
@@ -182,14 +187,14 @@ export function InlineEditField({
             onBlur={handleBlur}
             onKeyDown={handleKeyDown}
             placeholder={placeholder}
-            rows={rows}
+            rows={multiline ? 3 : rows}
             disabled={status === "saving"}
             className={cn(
-              "transition-all resize-none",
+              "transition-all resize-none w-full",
               status === "saving" && "opacity-70",
-              isGhost && "border-primary bg-surface focus:bg-surface",
+              isGhost && "border-border/60 bg-transparent focus:bg-surface-light/30 focus:border-primary/50",
               isCompact && "text-sm py-1.5",
-              className
+              fontClasses
             )}
           />
         ) : type === "select" && options ? (
@@ -199,6 +204,7 @@ export function InlineEditField({
             disabled={status === "saving"}
           >
             <SelectTrigger className={cn(
+              "w-full",
               status === "saving" && "opacity-70",
               isCompact && "h-8 text-sm"
             )}>
@@ -233,11 +239,11 @@ export function InlineEditField({
             max={max}
             disabled={status === "saving"}
             className={cn(
-              "transition-all h-auto",
+              "transition-all h-auto w-full px-2 py-1.5",
               status === "saving" && "opacity-70",
-              isGhost && "border-primary bg-surface focus:bg-surface",
+              isGhost && "border-border/60 bg-transparent focus:bg-surface-light/30 focus:border-primary/50",
               isCompact && "h-8 text-sm",
-              className
+              fontClasses
             )}
           />
         )}

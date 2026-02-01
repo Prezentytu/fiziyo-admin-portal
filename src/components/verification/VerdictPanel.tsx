@@ -28,6 +28,37 @@ import { cn } from "@/lib/utils";
 import { formatDistanceToNow } from "date-fns";
 import { pl } from "date-fns/locale";
 
+// ============================================
+// QUICK REJECT CHIPS - Predefined rejection reasons
+// ============================================
+const QUICK_REJECT_REASONS = [
+  { 
+    id: 'lighting', 
+    label: 'Złe oświetlenie', 
+    text: 'Wideo ma niewystarczające oświetlenie. Proszę nagrać ponownie w jasnym miejscu, najlepiej przy świetle dziennym lub z dobrym sztucznym oświetleniem.'
+  },
+  { 
+    id: 'name', 
+    label: 'Błąd w nazwie', 
+    text: 'Nazwa ćwiczenia zawiera błąd lub jest nieprecyzyjna. Proszę poprawić nazwę zgodnie z nomenklaturą fizjoterapeutyczną.'
+  },
+  { 
+    id: 'technique', 
+    label: 'Niepoprawna technika', 
+    text: 'Technika wykonania ćwiczenia wymaga poprawy. Proszę zwrócić uwagę na prawidłową biomechanikę ruchu i bezpieczeństwo kręgosłupa.'
+  },
+  { 
+    id: 'framing', 
+    label: 'Zły kadr', 
+    text: 'Kadrowanie nie pokazuje całego ruchu lub kluczowe elementy są ucięte. Proszę nagrać ponownie tak, aby cały ruch był widoczny od początku do końca.'
+  },
+  { 
+    id: 'audio', 
+    label: 'Problem z audio', 
+    text: 'Jakość dźwięku jest niewystarczająca lub występują szumy/zakłócenia. Proszę nagrać ponownie w cichym otoczeniu lub z lepszym mikrofonem.'
+  },
+];
+
 interface SafetyCheckItem {
   id: string;
   label: string;
@@ -121,23 +152,23 @@ export function VerdictPanel({
     }
   }, [submittedAt]);
 
-  // Safety checks
+  // Safety checks - Clinical Precision labels
   const safetyItems: SafetyCheckItem[] = [
     {
       id: "videoReadable",
-      label: "Wideo jest czytelne",
+      label: "Wideo ostre i dobrze oświetlone",
       icon: <Eye className="h-3.5 w-3.5" />,
       checked: safetyChecklist.videoReadable,
     },
     {
       id: "techniqueSafe",
-      label: "Technika jest bezpieczna",
+      label: "Technika bezpieczna dla kręgosłupa",
       icon: <Shield className="h-3.5 w-3.5" />,
       checked: safetyChecklist.techniqueSafe,
     },
     {
       id: "noContraindications",
-      label: "Brak przeciwwskazań",
+      label: "Brak przeciwwskazań i ryzyk",
       icon: <Activity className="h-3.5 w-3.5" />,
       checked: safetyChecklist.noContraindications,
     },
@@ -300,6 +331,37 @@ export function VerdictPanel({
               ? "Opcjonalne - wyjaśnienie dla autora"
               : "Wymagane przy odrzuceniu lub odesłaniu do poprawki"}
           </p>
+
+          {/* Quick Reject Chips */}
+          {!isPublished && (
+            <div className="mt-3">
+              <p className="text-[10px] text-zinc-500 mb-2">Szybkie powody:</p>
+              <div className="flex flex-wrap gap-1.5">
+                {QUICK_REJECT_REASONS.map((reason) => (
+                  <button
+                    key={reason.id}
+                    type="button"
+                    onClick={() => {
+                      const newComment = comment
+                        ? `${comment}\n\n${reason.text}`
+                        : reason.text;
+                      onCommentChange(newComment);
+                    }}
+                    disabled={anyLoading}
+                    className={cn(
+                      "px-2 py-1 text-[10px] font-medium rounded-md transition-colors",
+                      "bg-zinc-800/50 text-zinc-400 border border-zinc-700/50",
+                      "hover:bg-amber-500/10 hover:text-amber-400 hover:border-amber-500/30",
+                      "disabled:opacity-50 disabled:cursor-not-allowed"
+                    )}
+                    data-testid={`quick-reject-${reason.id}`}
+                  >
+                    {reason.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Action Buttons */}

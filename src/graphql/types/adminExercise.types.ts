@@ -86,6 +86,12 @@ export interface AdminExercise {
   progressionFamilyId?: string;
   createdAt?: string;
   updatedAt?: string;
+  // Extended training parameters
+  rangeOfMotion?: string;
+  loadType?: string;
+  loadValue?: number;
+  loadUnit?: string;
+  loadText?: string;
   // Navigation properties
   createdBy?: {
     id: string;

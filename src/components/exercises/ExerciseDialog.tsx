@@ -4,7 +4,7 @@ import * as React from "react";
 import { useState, useCallback } from "react";
 import { useMutation } from "@apollo/client/react";
 import { toast } from "sonner";
-import { Clock, Lock } from "lucide-react";
+import { Clock, Lock, Sparkles, Copy } from "lucide-react";
 
 import {
   Dialog,
@@ -19,8 +19,8 @@ import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { ExerciseForm, ExerciseFormValues } from "./ExerciseForm";
 import { CreateExerciseWizard } from "./CreateExerciseWizard";
 import { FeedbackBanner } from "./FeedbackBanner";
-import { UPDATE_EXERCISE_MUTATION } from "@/graphql/mutations/exercises.mutations";
-import { GET_ORGANIZATION_EXERCISES_QUERY } from "@/graphql/queries/exercises.queries";
+import { UPDATE_EXERCISE_MUTATION, COPY_EXERCISE_TEMPLATE_MUTATION } from "@/graphql/mutations/exercises.mutations";
+import { GET_ORGANIZATION_EXERCISES_QUERY, GET_AVAILABLE_EXERCISES_QUERY } from "@/graphql/queries/exercises.queries";
 import type { Exercise } from "./ExerciseCard";
 
 interface ExerciseDialogProps {
@@ -45,6 +45,9 @@ export function ExerciseDialog({
   const [showCloseConfirm, setShowCloseConfirm] = useState(false);
   const [formIsDirty, setFormIsDirty] = useState(false);
   const [isResubmitting, setIsResubmitting] = useState(false);
+
+  // Scope-based modes
+  const isGlobalExercise = exercise?.scope === 'GLOBAL';
 
   // Status-based modes
   const isPendingReview = exercise?.status === 'PENDING_REVIEW';
@@ -77,6 +80,32 @@ export function ExerciseDialog({
       { query: GET_ORGANIZATION_EXERCISES_QUERY, variables: { organizationId } },
     ],
   });
+
+  // Fork mutation - copy global exercise to organization
+  const [copyExercise, { loading: copying }] = useMutation(COPY_EXERCISE_TEMPLATE_MUTATION, {
+    refetchQueries: [
+      { query: GET_AVAILABLE_EXERCISES_QUERY, variables: { organizationId } },
+    ],
+  });
+
+  const handleForkExercise = async () => {
+    if (!exercise) return;
+    
+    try {
+      await copyExercise({
+        variables: {
+          templateExerciseId: exercise.id,
+          targetOrganizationId: organizationId,
+        },
+      });
+      toast.success(`Utworzono kopię "${exercise.name}" w Twoich ćwiczeniach`);
+      onOpenChange(false);
+      onSuccess?.();
+    } catch (error: unknown) {
+      console.error("Błąd podczas kopiowania ćwiczenia:", error);
+      toast.error("Nie udało się skopiować ćwiczenia");
+    }
+  };
 
   const handleSubmit = async (values: ExerciseFormValues) => {
     try {
@@ -156,6 +185,51 @@ export function ExerciseDialog({
         notes: "",
       }
     : undefined;
+
+  // Read-only view for GLOBAL exercises from FiziYo database
+  if (isGlobalExercise) {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-violet-500" />
+              Ćwiczenie z bazy FiziYo
+            </DialogTitle>
+            <DialogDescription>
+              "{exercise?.name}" pochodzi z globalnej bazy FiziYo i nie może być edytowane.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="py-6">
+            <div className="flex items-start gap-3 p-6 rounded-lg bg-violet-500/10 border border-violet-500/20">
+              <Lock className="h-8 w-8 text-violet-500 shrink-0 mt-0.5" />
+              <div>
+                <p className="font-medium text-violet-600">Ćwiczenie tylko do odczytu</p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  To jest zweryfikowane ćwiczenie z globalnej bazy FiziYo. 
+                  Możesz je używać w zestawach, ale nie możesz go edytować ani usunąć.
+                </p>
+                <p className="text-sm text-muted-foreground mt-2">
+                  Jeśli chcesz wprowadzić zmiany, utwórz własną kopię tego ćwiczenia.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-3">
+            <Button variant="outline" onClick={() => onOpenChange(false)}>
+              Zamknij
+            </Button>
+            <Button onClick={handleForkExercise} disabled={copying}>
+              <Copy className="mr-2 h-4 w-4" />
+              {copying ? "Kopiowanie..." : "Utwórz własną kopię"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   // Edit locked state for PENDING_REVIEW
   if (isPendingReview) {

@@ -25,6 +25,7 @@ const routeNames: Record<string, string> = {
   settings: 'Ustawienia',
   tags: 'Tagi',
   import: 'Import Dokumentów',
+  verification: 'Weryfikacja',
 };
 
 function Breadcrumbs() {

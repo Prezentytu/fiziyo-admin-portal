@@ -13,7 +13,7 @@ export interface ExerciseSuggestionRequest {
   existingExerciseNames?: string[];
 }
 
-/** 
+/**
  * Pojedyncza korekta/sugestia AI z uzasadnieniem
  */
 export interface AISuggestionItem {
@@ -45,28 +45,28 @@ export interface ExerciseSuggestionResponse {
   exerciseSide: 'none' | 'left' | 'right' | 'both' | 'alternating';
   suggestedTags: string[];
   confidence: number;
-  
+
   // === Asystent Redakcyjny (nowe) ===
-  
+
   /** Poprawiona nazwa (Physio-Grammarly) - null jeśli bez zmian */
   correctedName: string | null;
-  
+
   /** Powód korekty nazwy */
   nameCorrection: {
     reason: string;        // "Literówka", "Błąd fleksyjny", "Standard kliniczny"
     original: string;
   } | null;
-  
+
   /** Kategorie sugestii (The "Why") */
   corrections: {
     naming: AISuggestionItem[];      // 🔤 Nazewnictwo (literówki, fleksja)
     content: AISuggestionItem[];     // 📝 Treść (opis, tagi)
     parameters: AISuggestionItem[];  // ⚡ Parametry (tylko jeśli nielogiczne)
   };
-  
+
   /** Podpowiedzi AI */
   warnings: AIBiomechanicalWarning[];
-  
+
   /** Zaawansowane parametry (Pro Tuning) */
   advancedParams: {
     tempo: string | null;           // np. "3010"
@@ -75,7 +75,7 @@ export interface ExerciseSuggestionResponse {
     preparationTime: number | null; // sekundy
     executionTime: number | null;   // czas pojedynczego powtórzenia
   } | null;
-  
+
   /** Informacja o podobnych ćwiczeniach w bazie (wykryte przez AI) */
   similarInDatabase: {
     /** Dokładne dopasowanie - ćwiczenie już istnieje! */

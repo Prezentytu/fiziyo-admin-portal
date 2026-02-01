@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { Clock, Repeat, MoreVertical, Pencil, Trash2, FolderPlus, Eye, ZoomIn, Plus, Check, Rocket, Globe, AlertCircle } from "lucide-react";
+import { Clock, Repeat, MoreVertical, Pencil, Trash2, FolderPlus, Eye, ZoomIn, Plus, Check, Rocket, Globe, AlertCircle, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -42,6 +42,10 @@ export interface Exercise {
   status?: 'DRAFT' | 'PENDING_REVIEW' | 'CHANGES_REQUESTED' | 'APPROVED' | 'PUBLISHED' | 'REJECTED';
   scope?: 'PERSONAL' | 'ORGANIZATION' | 'GLOBAL';
   adminReviewNotes?: string;
+  // Global submission tracking (nowy model weryfikacji)
+  globalSubmissionId?: string;
+  sourceOrganizationExerciseId?: string;
+  submittedToGlobalAt?: string;
   // Legacy aliasy
   description?: string;
   type?: string;
@@ -123,16 +127,28 @@ export function ExerciseCard({
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [isBouncing, setIsBouncing] = useState(false);
 
+  // Check if exercise is from global FiziYo database (read-only)
+  const isGlobalExercise = exercise.scope === 'GLOBAL';
+
   // Determine if "Submit to Global" should be shown
-  // Only for ORGANIZATION scope exercises that are DRAFT or REJECTED
+  // Only for ORGANIZATION scope exercises that don't have an active global submission
   const canSubmitToGlobal = 
     onSubmitToGlobal && 
     exercise.scope === 'ORGANIZATION' && 
-    (!exercise.status || exercise.status === 'DRAFT' || exercise.status === 'REJECTED');
+    !exercise.globalSubmissionId; // Nie ma jeszcze zgłoszenia
 
-  // Check if exercise is pending review (locked)
+  // Check if exercise has been submitted to global (new model)
+  const hasGlobalSubmission = !!exercise.globalSubmissionId;
+  
+  // Check if exercise is pending review (locked) - for legacy support
   const isPendingReview = exercise.status === 'PENDING_REVIEW';
   const isChangesRequested = exercise.status === 'CHANGES_REQUESTED';
+  
+  // For organization exercises with global submission, show as "submitted"
+  const isSubmittedToGlobal = hasGlobalSubmission && exercise.scope === 'ORGANIZATION';
+  
+  // Global exercises and pending review exercises are read-only (no edit/delete)
+  const isReadOnly = isGlobalExercise || isPendingReview;
 
   const handleToggleBuilder = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
@@ -209,6 +225,18 @@ export function ExerciseCard({
           <div className="flex items-center gap-2">
             <p className="font-semibold truncate">{exercise.name}</p>
             {/* Status badges in compact view */}
+            {isGlobalExercise && (
+              <Badge variant="outline" className="text-[9px] bg-violet-500/10 text-violet-600 border-violet-500/20 shrink-0">
+                <Sparkles className="h-2.5 w-2.5 mr-0.5" />
+                FiziYo
+              </Badge>
+            )}
+            {isSubmittedToGlobal && !isPendingReview && !isChangesRequested && (
+              <Badge variant="outline" className="text-[9px] bg-blue-500/10 text-blue-600 border-blue-500/20 shrink-0">
+                <Globe className="h-2.5 w-2.5 mr-0.5" />
+                W FiziYo
+              </Badge>
+            )}
             {isPendingReview && (
               <Badge variant="outline" className="text-[9px] bg-amber-500/10 text-amber-600 border-amber-500/20 shrink-0">
                 <Clock className="h-2.5 w-2.5 mr-0.5" />
@@ -283,7 +311,7 @@ export function ExerciseCard({
                 Podgląd
               </DropdownMenuItem>
             )}
-            {onEdit && (
+            {onEdit && !isReadOnly && (
               <DropdownMenuItem onClick={() => onEdit(exercise)}>
                 <Pencil className="mr-2 h-4 w-4" />
                 Edytuj
@@ -307,13 +335,25 @@ export function ExerciseCard({
                 </DropdownMenuItem>
               </>
             )}
+            {isGlobalExercise && (
+              <div className="px-2 py-1.5 text-xs text-violet-600 flex items-center gap-1">
+                <Sparkles className="h-3 w-3" />
+                Ćwiczenie z bazy FiziYo
+              </div>
+            )}
+            {isSubmittedToGlobal && (
+              <div className="px-2 py-1.5 text-xs text-blue-600 flex items-center gap-1">
+                <Globe className="h-3 w-3" />
+                Zgłoszono do FiziYo
+              </div>
+            )}
             {isPendingReview && (
               <div className="px-2 py-1.5 text-xs text-amber-600 flex items-center gap-1">
                 <Globe className="h-3 w-3" />
                 Oczekuje na weryfikację
               </div>
             )}
-            {onDelete && (
+            {onDelete && !isReadOnly && (
               <>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
@@ -396,16 +436,30 @@ export function ExerciseCard({
         )}
 
         {/* Status badges - top left */}
-        {(isPendingReview || isChangesRequested) && (
+        {(isGlobalExercise || isSubmittedToGlobal || isPendingReview || isChangesRequested) && (
           <div className="absolute top-3 left-3 z-10">
             <Badge
               variant="outline"
               className={cn(
                 "text-[10px] font-semibold backdrop-blur-md border shadow-lg",
+                isGlobalExercise && "bg-violet-500/80 text-white border-violet-600",
+                isSubmittedToGlobal && !isPendingReview && !isChangesRequested && !isGlobalExercise && "bg-blue-500/80 text-white border-blue-600",
                 isPendingReview && "bg-amber-500/80 text-white border-amber-600",
                 isChangesRequested && "bg-orange-500/80 text-white border-orange-600"
               )}
             >
+              {isGlobalExercise && (
+                <>
+                  <Sparkles className="h-3 w-3 mr-1" />
+                  FiziYo
+                </>
+              )}
+              {isSubmittedToGlobal && !isPendingReview && !isChangesRequested && !isGlobalExercise && (
+                <>
+                  <Globe className="h-3 w-3 mr-1" />
+                  W FiziYo
+                </>
+              )}
               {isPendingReview && (
                 <>
                   <Clock className="h-3 w-3 mr-1" />
@@ -471,7 +525,7 @@ export function ExerciseCard({
                   Podgląd
                 </DropdownMenuItem>
               )}
-              {onEdit && !isPendingReview && (
+              {onEdit && !isReadOnly && (
                 <DropdownMenuItem onClick={() => onEdit(exercise)}>
                   <Pencil className="mr-2 h-4 w-4" />
                   Edytuj
@@ -489,13 +543,25 @@ export function ExerciseCard({
                   </DropdownMenuItem>
                 </>
               )}
+              {isGlobalExercise && (
+                <div className="px-2 py-1.5 text-xs text-violet-600 flex items-center gap-1">
+                  <Sparkles className="h-3 w-3" />
+                  Ćwiczenie z bazy FiziYo
+                </div>
+              )}
+              {isSubmittedToGlobal && !isGlobalExercise && (
+                <div className="px-2 py-1.5 text-xs text-blue-600 flex items-center gap-1">
+                  <Globe className="h-3 w-3" />
+                  Zgłoszono do FiziYo
+                </div>
+              )}
               {isPendingReview && (
                 <div className="px-2 py-1.5 text-xs text-amber-600 flex items-center gap-1">
                   <Globe className="h-3 w-3" />
                   Oczekuje na weryfikację
                 </div>
               )}
-              {onDelete && !isPendingReview && (
+              {onDelete && !isReadOnly && (
                 <>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem

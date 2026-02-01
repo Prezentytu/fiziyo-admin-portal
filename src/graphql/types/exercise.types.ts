@@ -81,6 +81,11 @@ export interface Exercise {
   createdAt?: string;
   updatedAt?: string;
   
+  // Global submission tracking (nowy model weryfikacji)
+  globalSubmissionId?: string;
+  sourceOrganizationExerciseId?: string;
+  submittedToGlobalAt?: string;
+  
   // Legacy aliasy (dla kompatybilności wstecznej w komponentach)
   description?: string; // alias dla patientDescription
   exerciseSide?: ExerciseSide | string; // alias dla side

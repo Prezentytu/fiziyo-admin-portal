@@ -58,6 +58,10 @@ export const EXERCISE_FULL_FRAGMENT = gql`
     defaultSets
     type
     videoUrl
+    # Global submission tracking (nowy model weryfikacji)
+    globalSubmissionId
+    sourceOrganizationExerciseId
+    submittedToGlobalAt
   }
 `;
 

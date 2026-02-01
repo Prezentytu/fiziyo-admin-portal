@@ -261,26 +261,27 @@ export default function VerificationDetailPage({ params }: VerificationDetailPag
 
       setIsSavingDraft(true);
       try {
+        // Convert value to string for backend (expects string?)
+        const stringValue = value === null || value === undefined 
+          ? null 
+          : typeof value === 'string' 
+            ? value 
+            : JSON.stringify(value);
+
         await updateExerciseField({
           variables: {
             exerciseId: id,
-            field,
-            value,
-          },
-          optimisticResponse: {
-            updateExerciseField: {
-              __typename: "Exercise",
-              id: exercise.id,
-              [field]: value,
-            },
+            fieldName: field,
+            value: stringValue,
           },
         });
-        await refetch();
+        // Note: Removed refetch() to prevent resetting local state in VerificationEditorPanel
+        // The mutation updates the cache, and local state is managed optimistically
       } finally {
         setIsSavingDraft(false);
       }
     },
-    [exercise, id, updateExerciseField, refetch]
+    [exercise, id, updateExerciseField]
   );
 
   // Tags handlers
@@ -504,12 +505,8 @@ export default function VerificationDetailPage({ params }: VerificationDetailPag
           icon={FileText}
           title="Nie znaleziono"
           description={error ? `Błąd: ${error.message}` : "Ćwiczenie nie istnieje."}
-          action={
-            <Button variant="outline" onClick={() => router.push("/verification")}>
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Wróć do listy
-            </Button>
-          }
+          actionLabel="Wróć do listy"
+          onAction={() => router.push("/verification")}
         />
       </div>
     );
@@ -565,7 +562,7 @@ export default function VerificationDetailPage({ params }: VerificationDetailPag
 
         {/* MIDDLE COLUMN: Editor Panel (35% on desktop) */}
         <div className="flex-1 lg:w-[35%] bg-background flex flex-col min-h-0 border-r border-border/20">
-          <div className="flex-1 p-4 lg:p-5 flex flex-col min-h-0 overflow-y-auto">
+          <div className="flex-1 p-4 pr-5 lg:p-5 lg:pr-6 flex flex-col min-h-0 overflow-y-auto">
             {/* Previous review notes (if any) */}
             {exercise.adminReviewNotes && (
               <Card className="border-amber-500/30 bg-amber-500/5 mb-4 shrink-0">

@@ -45,6 +45,10 @@ export const ADMIN_EXERCISE_FRAGMENT = gql`
     progressionFamilyId
     createdAt
     updatedAt
+    # Global submission tracking (nowy model weryfikacji)
+    globalSubmissionId
+    sourceOrganizationExerciseId
+    submittedToGlobalAt
     createdBy {
       id
       fullname

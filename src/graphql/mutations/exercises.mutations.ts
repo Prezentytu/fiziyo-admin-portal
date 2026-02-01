@@ -907,7 +907,7 @@ export const CHECK_SYNC_AVAILABILITY_QUERY = gql`
 
 /**
  * Mutacja do zgłaszania ćwiczenia do weryfikacji w bazie globalnej.
- * Dostępne dla każdego zalogowanego użytkownika, który jest twórcą ćwiczenia.
+ * Tworzy KOPIĘ ćwiczenia do globalnej kolejki, zachowując oryginał bez zmian.
  * Automatycznie waliduje: czy jest media, opis min. 50 znaków, min. 2 tagi.
  */
 export const SUBMIT_TO_GLOBAL_REVIEW_MUTATION = gql`
@@ -921,13 +921,17 @@ export const SUBMIT_TO_GLOBAL_REVIEW_MUTATION = gql`
       contributorId
       adminReviewNotes
       updatedAt
+      # Nowe pola dla śledzenia zgłoszenia
+      globalSubmissionId
+      submittedToGlobalAt
     }
   }
 `;
 
 /**
+ * @deprecated Użyj RESUBMIT_FROM_ORIGINAL_MUTATION zamiast tej mutacji
  * Mutacja do ponownego zgłaszania ćwiczenia po wprowadzeniu poprawek.
- * Dostępne dla twórcy ćwiczenia gdy status to CHANGES_REQUESTED.
+ * Działa na starym modelu (bez kopii globalnej).
  */
 export const RESUBMIT_EXERCISE_FOR_REVIEW_MUTATION = gql`
   mutation ResubmitExerciseForReview($exerciseId: String!) {
@@ -944,6 +948,28 @@ export const RESUBMIT_EXERCISE_FOR_REVIEW_MUTATION = gql`
 `;
 
 /**
+ * Mutacja do ponownego zgłaszania ćwiczenia z oryginału po wprowadzeniu poprawek.
+ * Aktualizuje istniejącą globalną kopię danymi z poprawionego oryginału.
+ * Dostępne dla twórcy ćwiczenia gdy globalna kopia ma status CHANGES_REQUESTED.
+ * @param originalExerciseId - ID oryginału (ćwiczenie organizacyjne)
+ */
+export const RESUBMIT_FROM_ORIGINAL_MUTATION = gql`
+  mutation ResubmitFromOriginal($originalExerciseId: String!) {
+    resubmitFromOriginal(originalExerciseId: $originalExerciseId) {
+      id
+      name
+      status
+      scope
+      isPublicTemplate
+      adminReviewNotes
+      updatedAt
+      globalSubmissionId
+      submittedToGlobalAt
+    }
+  }
+`;
+
+/**
  * Mutacja do wycofania zgłoszenia ćwiczenia z kolejki weryfikacji.
  * Dostępne dla twórcy ćwiczenia gdy status to PENDING_REVIEW.
  */
@@ -955,6 +981,7 @@ export const WITHDRAW_FROM_REVIEW_MUTATION = gql`
       status
       scope
       updatedAt
+      globalSubmissionId
     }
   }
 `;

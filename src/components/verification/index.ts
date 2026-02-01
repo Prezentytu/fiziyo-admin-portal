@@ -43,6 +43,3 @@ export { DualDescriptionTabs } from "./DualDescriptionTabs";
 export { QualityChecklist } from "./QualityChecklist";
 export type { QualityChecks } from "./QualityChecklist";
 export { QualityGateBar } from "./QualityGateBar";
-
-// Legacy (deprecated - use MasterVideoPlayer instead)
-export { MobileSimulator } from "./MobileSimulator";

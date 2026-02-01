@@ -3,13 +3,15 @@
 import { useState, useCallback, useMemo, useEffect } from "react";
 import {
   Dumbbell,
-  RotateCcw,
   Timer,
   Gauge,
-  ArrowLeftRight,
   User,
   Stethoscope,
   AlertCircle,
+  Hash,
+  Repeat,
+  Hourglass,
+  ChevronDown,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -28,6 +30,11 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import { cn } from "@/lib/utils";
 
 // Sub-components
@@ -54,6 +61,22 @@ const BODY_SIDES = [
   { value: "RIGHT", label: "Prawa" },
   { value: "BOTH", label: "Obie" },
   { value: "ALTERNATING", label: "Naprzemiennie" },
+];
+
+const RANGE_OF_MOTION_OPTIONS = [
+  { value: "FULL", label: "Pełny zakres" },
+  { value: "PARTIAL", label: "Częściowy zakres" },
+  { value: "ISOMETRIC", label: "Izometryczny" },
+  { value: "ECCENTRIC", label: "Ekscentryczny" },
+  { value: "CONCENTRIC", label: "Koncentryczny" },
+];
+
+const LOAD_UNITS = [
+  { value: "kg", label: "kg" },
+  { value: "lb", label: "lb" },
+  { value: "band", label: "Guma" },
+  { value: "bodyweight", label: "Ciężar ciała" },
+  { value: "rpe", label: "RPE" },
 ];
 
 // ============================================
@@ -134,13 +157,28 @@ export function VerificationEditorPanel({
   const [localDifficulty, setLocalDifficulty] = useState<string>(exercise.difficultyLevel || "");
   const [localSide, setLocalSide] = useState<string>(exercise.side || "NONE");
 
+  // Extended parameters state
+  const [localRestBetweenReps, setLocalRestBetweenReps] = useState<number | null>(exercise.defaultRestBetweenReps ?? null);
+  const [localPrepTime, setLocalPrepTime] = useState<number | null>(exercise.preparationTime ?? null);
+  const [localExecTime, setLocalExecTime] = useState<number | null>(exercise.defaultExecutionTime ?? null);
+  const [localRangeOfMotion, setLocalRangeOfMotion] = useState<string>(exercise.rangeOfMotion || "");
+  const [localLoadValue, setLocalLoadValue] = useState<string>(exercise.loadValue?.toString() || "");
+  const [localLoadUnit, setLocalLoadUnit] = useState<string>(exercise.loadUnit || "kg");
+  const [localLoadText, setLocalLoadText] = useState<string>(exercise.loadText || "");
+
+  // Collapsible state for technical details
+  const [isTechnicalOpen, setIsTechnicalOpen] = useState(false);
+
+  // Track if any technical details have been modified
+  const [technicalDetailsModified, setTechnicalDetailsModified] = useState(false);
+
   // Description states
   const [localPatientDesc, setLocalPatientDesc] = useState(exercise.patientDescription || "");
   const [localClinicalDesc, setLocalClinicalDesc] = useState(exercise.clinicalDescription || "");
   const [activeDescTab, setActiveDescTab] = useState<"clinical" | "patient">("patient");
   const [isDescSaving, setIsDescSaving] = useState(false);
 
-  // Sync with external values
+  // Sync with external values ONLY when exercise ID changes (new exercise loaded)
   useEffect(() => {
     setLocalSets(exercise.defaultSets ?? null);
     setLocalReps(exercise.defaultReps ?? null);
@@ -151,7 +189,17 @@ export function VerificationEditorPanel({
     setLocalSide(exercise.side || "NONE");
     setLocalPatientDesc(exercise.patientDescription || "");
     setLocalClinicalDesc(exercise.clinicalDescription || "");
-  }, [exercise]);
+    // Extended params sync
+    setLocalRestBetweenReps(exercise.defaultRestBetweenReps ?? null);
+    setLocalPrepTime(exercise.preparationTime ?? null);
+    setLocalExecTime(exercise.defaultExecutionTime ?? null);
+    setLocalRangeOfMotion(exercise.rangeOfMotion || "");
+    setLocalLoadValue(exercise.loadValue?.toString() || "");
+    setLocalLoadUnit(exercise.loadUnit || "kg");
+    setLocalLoadText(exercise.loadText || "");
+    // Only sync when exercise ID changes (new exercise loaded), not on every field update
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [exercise.id]);
 
   // ============================================
   // VALIDATION LOGIC
@@ -204,7 +252,7 @@ export function VerificationEditorPanel({
       missing.push("Powtórzenia lub czas");
     }
     if (!dataValidation.hasTags) {
-      missing.push("Kategorie główne");
+      missing.push("Tagi główne");
     }
     if (!exercise.name?.trim() || exercise.name.trim().length < 2) {
       missing.push("Nazwa ćwiczenia");
@@ -278,7 +326,7 @@ export function VerificationEditorPanel({
   return (
     <TooltipProvider>
       <div
-        className={cn("flex flex-col h-full overflow-y-auto", className)}
+        className={cn("flex flex-col h-full overflow-y-auto overflow-x-hidden pr-2", className)}
         data-testid={testId}
       >
         {/* ============================================ */}
@@ -288,12 +336,12 @@ export function VerificationEditorPanel({
           exercise={exercise}
           onFieldChange={onFieldChange}
           disabled={disabled}
-          className="shrink-0 mb-4"
+          className="shrink-0 mb-4 min-w-0"
           data-testid="verification-editor-header"
         />
 
         {/* Tags under header */}
-        <div className="shrink-0 mb-5">
+        <div className="shrink-0 mb-5 min-w-0">
           <TagSmartChips
             exerciseId={exercise.id}
             exerciseName={exercise.name}
@@ -301,7 +349,7 @@ export function VerificationEditorPanel({
             tags={mainTags}
             onTagsChange={onMainTagsChange}
             tagType="main"
-            label="Kategorie"
+            label="Tagi"
             disabled={disabled}
             data-testid="verification-editor-main-tags"
           />
@@ -310,7 +358,7 @@ export function VerificationEditorPanel({
         {/* ============================================ */}
         {/* SECTION 2: CORE METRICS (Tier 1) */}
         {/* ============================================ */}
-        <div className="shrink-0 mb-5">
+        <div className="shrink-0 mb-5 min-w-0">
           <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3 flex items-center gap-2">
             <Dumbbell className="h-3.5 w-3.5 text-primary" />
             Parametry podstawowe
@@ -326,18 +374,18 @@ export function VerificationEditorPanel({
             )}
           </h3>
 
-          {/* Large 4-column grid for core metrics */}
-          <div className="grid grid-cols-4 gap-2">
-            {/* Serie */}
-            <div className="space-y-1">
+          {/* Flex row for core metrics - always in one line, shrinks responsively */}
+          <div className="flex gap-1.5">
+            {/* Liczba serii */}
+            <div className="flex-1 min-w-0 space-y-1">
               <Label className={cn(
-                "text-[10px] uppercase tracking-wider text-center block",
+                "text-[9px] uppercase tracking-wider text-center flex items-center justify-center gap-0.5 truncate",
                 isInvalid(localSets) ? "text-destructive font-medium" : "text-muted-foreground"
               )}>
-                Serie *
+                <span>Serie</span>
               </Label>
               <div className={cn(
-                "relative h-14 rounded-xl transition-all duration-200",
+                "relative h-12 rounded-lg transition-all duration-200",
                 "bg-zinc-900/50 border",
                 isInvalid(localSets) ? "border-destructive/50" : "border-zinc-800",
                 "hover:border-zinc-700 focus-within:border-primary/50"
@@ -351,19 +399,19 @@ export function VerificationEditorPanel({
                   onBlur={() => handleNumberBlur("defaultSets", localSets)}
                   disabled={disabled}
                   placeholder="0"
-                  className="w-full h-full bg-transparent text-xl font-bold text-center outline-none text-foreground placeholder:text-zinc-600 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                  className="w-full h-full bg-transparent text-lg font-bold text-center outline-none text-foreground placeholder:text-zinc-600 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                   data-testid="core-metric-sets"
                 />
               </div>
             </div>
 
             {/* Powtórzenia */}
-            <div className="space-y-1">
-              <Label className="text-[10px] uppercase tracking-wider text-center block text-muted-foreground">
-                Powt.
+            <div className="flex-1 min-w-0 space-y-1">
+              <Label className="text-[9px] uppercase tracking-wider text-center text-muted-foreground flex items-center justify-center gap-0.5 truncate">
+                <span>Powt.</span>
               </Label>
               <div className={cn(
-                "relative h-14 rounded-xl transition-all duration-200",
+                "relative h-12 rounded-lg transition-all duration-200",
                 "bg-zinc-900/50 border border-zinc-800",
                 "hover:border-zinc-700 focus-within:border-primary/50",
                 localDuration && !localReps && "opacity-40"
@@ -377,19 +425,19 @@ export function VerificationEditorPanel({
                   onBlur={() => handleNumberBlur("defaultReps", localReps)}
                   disabled={disabled}
                   placeholder="0"
-                  className="w-full h-full bg-transparent text-xl font-bold text-center outline-none text-foreground placeholder:text-zinc-600 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                  className="w-full h-full bg-transparent text-lg font-bold text-center outline-none text-foreground placeholder:text-zinc-600 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                   data-testid="core-metric-reps"
                 />
               </div>
             </div>
 
-            {/* Czas */}
-            <div className="space-y-1">
-              <Label className="text-[10px] uppercase tracking-wider text-center block text-muted-foreground">
-                Czas
+            {/* Czas wykonania (Time Under Tension) */}
+            <div className="flex-1 min-w-0 space-y-1">
+              <Label className="text-[9px] uppercase tracking-wider text-center text-muted-foreground flex items-center justify-center gap-0.5 truncate">
+                <span>Czas powt.</span>
               </Label>
               <div className={cn(
-                "relative h-14 rounded-xl transition-all duration-200",
+                "relative h-12 rounded-lg transition-all duration-200",
                 "bg-zinc-900/50 border border-zinc-800",
                 "hover:border-zinc-700 focus-within:border-primary/50",
                 localReps && !localDuration && "opacity-40"
@@ -404,22 +452,22 @@ export function VerificationEditorPanel({
                   onBlur={() => handleNumberBlur("defaultDuration", localDuration)}
                   disabled={disabled}
                   placeholder="—"
-                  className="w-full h-full bg-transparent text-xl font-bold text-center outline-none text-foreground placeholder:text-zinc-600 pr-6 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                  className="w-full h-full bg-transparent text-lg font-bold text-center outline-none text-foreground placeholder:text-zinc-600 pr-5 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                   data-testid="core-metric-duration"
                 />
-                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground font-medium pointer-events-none">
+                <span className="absolute right-1.5 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground font-medium pointer-events-none">
                   s
                 </span>
               </div>
             </div>
 
-            {/* Przerwa */}
-            <div className="space-y-1">
-              <Label className="text-[10px] uppercase tracking-wider text-center block text-muted-foreground">
-                Przerwa
+            {/* Przerwa między seriami */}
+            <div className="flex-1 min-w-0 space-y-1">
+              <Label className="text-[9px] uppercase tracking-wider text-center text-muted-foreground flex items-center justify-center gap-0.5 truncate">
+                <span>Przerwa (serie)</span>
               </Label>
               <div className={cn(
-                "relative h-14 rounded-xl transition-all duration-200",
+                "relative h-12 rounded-lg transition-all duration-200",
                 "bg-zinc-900/50 border border-zinc-800",
                 "hover:border-zinc-700 focus-within:border-primary/50"
               )}>
@@ -433,10 +481,10 @@ export function VerificationEditorPanel({
                   onBlur={() => handleNumberBlur("defaultRestBetweenSets", localRest)}
                   disabled={disabled}
                   placeholder="60"
-                  className="w-full h-full bg-transparent text-xl font-bold text-center outline-none text-foreground placeholder:text-zinc-600 pr-6 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                  className="w-full h-full bg-transparent text-lg font-bold text-center outline-none text-foreground placeholder:text-zinc-600 pr-5 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                   data-testid="core-metric-rest"
                 />
-                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground font-medium pointer-events-none">
+                <span className="absolute right-1.5 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground font-medium pointer-events-none">
                   s
                 </span>
               </div>
@@ -445,105 +493,276 @@ export function VerificationEditorPanel({
         </div>
 
         {/* ============================================ */}
-        {/* SECTION 3: PROPERTY GRID (Tier 2) */}
+        {/* SECTION 3: SZCZEGÓŁY TECHNICZNE (Collapsible) */}
         {/* ============================================ */}
-        <div className="shrink-0 mb-5 p-3 rounded-lg bg-zinc-900/30 border border-zinc-800/50">
-          <h4 className="text-[10px] font-semibold text-muted-foreground/70 uppercase tracking-wider mb-3">
-            Szczegóły techniczne
-          </h4>
-          <div className="grid grid-cols-2 gap-3">
-            {/* Tempo */}
-            <div className="space-y-1">
-              <Label className="text-xs flex items-center gap-1.5 text-muted-foreground">
-                <Gauge className="h-3 w-3" />
-                Tempo
-              </Label>
-              <Input
-                type="text"
-                value={localTempo}
-                onChange={(e) => {
-                  const value = e.target.value.replace(/\D/g, "").slice(0, 4);
-                  setLocalTempo(value);
-                }}
-                onBlur={() => handleSelectChange("tempo", localTempo)}
-                disabled={disabled}
-                placeholder="3010"
-                className="font-mono text-center h-9 bg-zinc-900/50 border-zinc-800"
-                maxLength={4}
-                data-testid="property-tempo"
-              />
+        <Collapsible
+          open={isTechnicalOpen}
+          onOpenChange={setIsTechnicalOpen}
+          className="shrink-0 mb-5"
+        >
+          <CollapsibleTrigger className="flex items-center justify-between w-full p-3 rounded-t-lg bg-zinc-900/30 border border-zinc-800/50 hover:bg-zinc-900/50 transition-colors data-[state=open]:rounded-b-none data-[state=open]:border-b-0">
+            <div className="flex items-center gap-2">
+              <Gauge className="h-3.5 w-3.5 text-muted-foreground" />
+              <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+                Szczegóły techniczne
+              </span>
+              {technicalDetailsModified && (
+                <span className="w-2 h-2 rounded-full bg-emerald-500" />
+              )}
             </div>
+            <ChevronDown className={cn(
+              "h-4 w-4 text-muted-foreground transition-transform duration-200",
+              isTechnicalOpen && "rotate-180"
+            )} />
+          </CollapsibleTrigger>
 
-            {/* Trudność */}
-            <div className="space-y-1">
-              <Label className="text-xs flex items-center gap-1.5 text-muted-foreground">
-                <Gauge className="h-3 w-3" />
-                Trudność
-              </Label>
-              <Select
-                value={localDifficulty}
-                onValueChange={(v) => {
-                  setLocalDifficulty(v);
-                  handleSelectChange("difficultyLevel", v);
-                }}
-                disabled={disabled}
-              >
-                <SelectTrigger className="h-9 bg-zinc-900/50 border-zinc-800" data-testid="property-difficulty">
-                  <SelectValue placeholder="Wybierz" />
-                </SelectTrigger>
-                <SelectContent>
-                  {DIFFICULTY_LEVELS.map((opt) => (
-                    <SelectItem key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+          <CollapsibleContent>
+            <div className="p-4 rounded-b-lg bg-zinc-900/30 border border-t-0 border-zinc-800/50">
+              {/* Uniform 3-column grid for all parameters */}
+              <div className="grid grid-cols-3 gap-x-4 gap-y-4">
+                {/* Tempo */}
+                <div className="space-y-1.5">
+                  <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                    Tempo
+                  </Label>
+                  <Input
+                    type="text"
+                    value={localTempo}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/\D/g, "").slice(0, 4);
+                      setLocalTempo(value);
+                      setTechnicalDetailsModified(true);
+                    }}
+                    onBlur={() => handleSelectChange("tempo", localTempo)}
+                    disabled={disabled}
+                    placeholder="3010"
+                    className="font-mono text-center h-9 bg-zinc-900/50 border-zinc-800"
+                    maxLength={4}
+                    data-testid="property-tempo"
+                  />
+                </div>
 
-            {/* Strona ciała */}
-            <div className="space-y-1">
-              <Label className="text-xs flex items-center gap-1.5 text-muted-foreground">
-                <ArrowLeftRight className="h-3 w-3" />
-                Strona ciała
-              </Label>
-              <Select
-                value={localSide}
-                onValueChange={(v) => {
-                  setLocalSide(v);
-                  handleSelectChange("side", v);
-                }}
-                disabled={disabled}
-              >
-                <SelectTrigger className="h-9 bg-zinc-900/50 border-zinc-800" data-testid="property-side">
-                  <SelectValue placeholder="Wybierz" />
-                </SelectTrigger>
-                <SelectContent>
-                  {BODY_SIDES.map((opt) => (
-                    <SelectItem key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+                {/* Trudność */}
+                <div className="space-y-1.5">
+                  <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                    Trudność
+                  </Label>
+                  <Select
+                    value={localDifficulty}
+                    onValueChange={(v) => {
+                      setLocalDifficulty(v);
+                      setTechnicalDetailsModified(true);
+                      handleSelectChange("difficultyLevel", v);
+                    }}
+                    disabled={disabled}
+                  >
+                    <SelectTrigger className="h-9 bg-zinc-900/50 border-zinc-800" data-testid="property-difficulty">
+                      <SelectValue placeholder="—" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {DIFFICULTY_LEVELS.map((opt) => (
+                        <SelectItem key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
 
-            {/* Obciążenie (placeholder - przyszłe pole) */}
-            <div className="space-y-1">
-              <Label className="text-xs flex items-center gap-1.5 text-muted-foreground">
-                <Dumbbell className="h-3 w-3" />
-                Obciążenie
-              </Label>
-              <Input
-                type="text"
-                placeholder="np. 10kg, RPE 7"
-                disabled={disabled}
-                className="h-9 bg-zinc-900/50 border-zinc-800"
-                data-testid="property-load"
-              />
+                {/* Strona ciała */}
+                <div className="space-y-1.5">
+                  <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                    Strona
+                  </Label>
+                  <Select
+                    value={localSide}
+                    onValueChange={(v) => {
+                      setLocalSide(v);
+                      setTechnicalDetailsModified(true);
+                      handleSelectChange("side", v);
+                    }}
+                    disabled={disabled}
+                  >
+                    <SelectTrigger className="h-9 bg-zinc-900/50 border-zinc-800" data-testid="property-side">
+                      <SelectValue placeholder="—" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {BODY_SIDES.map((opt) => (
+                        <SelectItem key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Zakres ruchu */}
+                <div className="space-y-1.5">
+                  <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                    Zakres ruchu
+                  </Label>
+                  <Select
+                    value={localRangeOfMotion}
+                    onValueChange={(v) => {
+                      setLocalRangeOfMotion(v);
+                      setTechnicalDetailsModified(true);
+                      handleSelectChange("rangeOfMotion", v);
+                    }}
+                    disabled={disabled}
+                  >
+                    <SelectTrigger className="h-9 bg-zinc-900/50 border-zinc-800" data-testid="property-rom">
+                      <SelectValue placeholder="—" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {RANGE_OF_MOTION_OPTIONS.map((opt) => (
+                        <SelectItem key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Przerwa między powtórzeniami */}
+                <div className="space-y-1.5">
+                  <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                    Przerwa powt.
+                  </Label>
+                  <div className="relative">
+                    <Input
+                      type="number"
+                      min={0}
+                      max={60}
+                      value={localRestBetweenReps ?? ""}
+                      onChange={(e) => {
+                        setLocalRestBetweenReps(e.target.value === "" ? null : parseInt(e.target.value, 10));
+                        setTechnicalDetailsModified(true);
+                      }}
+                      onBlur={() => handleNumberBlur("defaultRestBetweenReps", localRestBetweenReps)}
+                      disabled={disabled}
+                      placeholder="0"
+                      className="h-9 bg-zinc-900/50 border-zinc-800 pr-6 text-center"
+                      data-testid="property-rest-reps"
+                    />
+                    <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">s</span>
+                  </div>
+                </div>
+
+                {/* Czas przygotowania */}
+                <div className="space-y-1.5">
+                  <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                    Przygotowanie
+                  </Label>
+                  <div className="relative">
+                    <Input
+                      type="number"
+                      min={0}
+                      max={120}
+                      value={localPrepTime ?? ""}
+                      onChange={(e) => {
+                        setLocalPrepTime(e.target.value === "" ? null : parseInt(e.target.value, 10));
+                        setTechnicalDetailsModified(true);
+                      }}
+                      onBlur={() => handleNumberBlur("preparationTime", localPrepTime)}
+                      disabled={disabled}
+                      placeholder="0"
+                      className="h-9 bg-zinc-900/50 border-zinc-800 pr-6 text-center"
+                      data-testid="property-prep-time"
+                    />
+                    <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">s</span>
+                  </div>
+                </div>
+
+                {/* Czas wykonania powtórzenia */}
+                <div className="space-y-1.5">
+                  <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                    Czas wyk. powt.
+                  </Label>
+                  <div className="relative">
+                    <Input
+                      type="number"
+                      min={1}
+                      max={60}
+                      value={localExecTime ?? ""}
+                      onChange={(e) => {
+                        setLocalExecTime(e.target.value === "" ? null : parseInt(e.target.value, 10));
+                        setTechnicalDetailsModified(true);
+                      }}
+                      onBlur={() => handleNumberBlur("defaultExecutionTime", localExecTime)}
+                      disabled={disabled}
+                      placeholder="0"
+                      className="h-9 bg-zinc-900/50 border-zinc-800 pr-6 text-center"
+                      data-testid="property-exec-time"
+                    />
+                    <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">s</span>
+                  </div>
+                </div>
+
+                {/* Sugerowany opór/obciążenie */}
+                <div className="space-y-1.5">
+                  <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                    Sugerowany opór
+                  </Label>
+                  <div className="flex gap-1">
+                    <Input
+                      type="text"
+                      value={localLoadValue}
+                      onChange={(e) => {
+                        setLocalLoadValue(e.target.value);
+                        setTechnicalDetailsModified(true);
+                      }}
+                      onBlur={() => handleSelectChange("loadValue", localLoadValue)}
+                      disabled={disabled}
+                      placeholder="10"
+                      className="h-9 bg-zinc-900/50 border-zinc-800 w-16 text-center"
+                      data-testid="property-load-value"
+                    />
+                    <Select
+                      value={localLoadUnit}
+                      onValueChange={(v) => {
+                        setLocalLoadUnit(v);
+                        setTechnicalDetailsModified(true);
+                        handleSelectChange("loadUnit", v);
+                      }}
+                      disabled={disabled}
+                    >
+                      <SelectTrigger className="h-9 bg-zinc-900/50 border-zinc-800 flex-1" data-testid="property-load-unit">
+                        <SelectValue placeholder="kg" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {LOAD_UNITS.map((opt) => (
+                          <SelectItem key={opt.value} value={opt.value}>
+                            {opt.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                {/* Opis obciążenia - zajmuje 2 kolumny */}
+                <div className="space-y-1.5 col-span-2">
+                  <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                    Opis obciążenia
+                  </Label>
+                  <Input
+                    type="text"
+                    value={localLoadText}
+                    onChange={(e) => {
+                      setLocalLoadText(e.target.value);
+                      setTechnicalDetailsModified(true);
+                    }}
+                    onBlur={() => handleSelectChange("loadText", localLoadText)}
+                    disabled={disabled}
+                    placeholder="np. RPE 7, 60% 1RM, lekka guma..."
+                    className="h-9 bg-zinc-900/50 border-zinc-800"
+                    data-testid="property-load-text"
+                  />
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
+          </CollapsibleContent>
+        </Collapsible>
 
         {/* ============================================ */}
         {/* SECTION 4: CONTENT SWITCHER (Tier 3) */}

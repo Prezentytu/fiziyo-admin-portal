@@ -8,7 +8,6 @@ import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/shared/EmptyState";
 import { VerificationStatsCards } from "@/components/verification/VerificationStatsCards";
@@ -43,7 +42,6 @@ import type {
   GetVerificationStatsResponse,
   UnpublishExerciseResponse,
   AdminExercise,
-  ContentStatus,
 } from "@/graphql/types/adminExercise.types";
 
 // Helper function
@@ -177,8 +175,7 @@ export default function VerificationPage() {
   const { user: clerkUser } = useUser();
   const { canReviewExercises, isLoading: roleLoading } = useSystemRole();
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeTab, setActiveTab] = useState<"pending" | "changes" | "published" | "archived">("pending");
-  const [statusFilter, setStatusFilter] = useState<ContentStatus | null>(null);
+  const [activeFilter, setActiveFilter] = useState<"pending" | "changes" | "published" | "archived">("pending");
   const [scanResult, setScanResult] = useState<RepositoryScanResult | null>(null);
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
 
@@ -201,25 +198,25 @@ export default function VerificationPage() {
   // Get pending exercises
   const { data: pendingData, loading: pendingLoading, refetch: refetchPending } = useQuery<GetPendingReviewExercisesResponse>(
     GET_PENDING_EXERCISES_QUERY,
-    { skip: !canReviewExercises || activeTab !== "pending" }
+    { skip: !canReviewExercises || activeFilter !== "pending" }
   );
 
   // Get exercises with changes requested
   const { data: changesData, loading: changesLoading, refetch: refetchChanges } = useQuery<GetChangesRequestedExercisesResponse>(
     GET_CHANGES_REQUESTED_EXERCISES_QUERY,
-    { skip: !canReviewExercises || activeTab !== "changes" }
+    { skip: !canReviewExercises || activeFilter !== "changes" }
   );
 
   // Get published exercises
   const { data: publishedData, loading: publishedLoading, refetch: refetchPublished } = useQuery<GetPublishedExercisesResponse>(
     GET_PUBLISHED_EXERCISES_QUERY,
-    { skip: !canReviewExercises || activeTab !== "published" }
+    { skip: !canReviewExercises || activeFilter !== "published" }
   );
 
   // Get archived exercises (withdrawn from global)
   const { data: archivedData, loading: archivedLoading, refetch: refetchArchived } = useQuery<GetArchivedExercisesResponse>(
     GET_ARCHIVED_EXERCISES_QUERY,
-    { skip: !canReviewExercises || activeTab !== "archived" }
+    { skip: !canReviewExercises || activeFilter !== "archived" }
   );
 
   // Scan repository mutation
@@ -293,19 +290,29 @@ export default function VerificationPage() {
     unpublishExercise({ variables: { exerciseId, reason } });
   };
 
-  // Combine and filter exercises based on active tab
+  // Combine and filter exercises based on active filter (cards)
   const exercises = useMemo(() => {
     let list: AdminExercise[] = [];
 
-    if (activeTab === "pending") {
+    if (activeFilter === "pending") {
       list = pendingData?.pendingReviewExercises || [];
-    } else if (activeTab === "changes") {
+    } else if (activeFilter === "changes") {
       list = changesData?.changesRequestedExercises || [];
-    } else if (activeTab === "published") {
+    } else if (activeFilter === "published") {
       list = publishedData?.exercisesByStatus || [];
-    } else if (activeTab === "archived") {
+    } else if (activeFilter === "archived") {
       list = archivedData?.exercisesByStatus || [];
     }
+
+    // Deduplikacja po ID - usuwa duplikaty z backendu
+    const seenIds = new Set<string>();
+    list = list.filter((ex) => {
+      if (seenIds.has(ex.id)) {
+        return false;
+      }
+      seenIds.add(ex.id);
+      return true;
+    });
 
     // Apply search filter
     if (searchQuery.trim()) {
@@ -319,13 +326,8 @@ export default function VerificationPage() {
       );
     }
 
-    // Apply status filter from stats cards
-    if (statusFilter) {
-      list = list.filter((ex) => ex.status === statusFilter);
-    }
-
     return list;
-  }, [activeTab, pendingData, changesData, publishedData, archivedData, searchQuery, statusFilter]);
+  }, [activeFilter, pendingData, changesData, publishedData, archivedData, searchQuery]);
 
   const isLoading = statsLoading || pendingLoading || changesLoading || publishedLoading || archivedLoading;
 
@@ -406,54 +408,16 @@ export default function VerificationPage() {
         </div>
       </div>
 
-      {/* Stats Cards */}
+      {/* Stats Cards - Interactive Filter Cards */}
       <VerificationStatsCards
         stats={stats}
         isLoading={statsLoading}
-        activeFilter={statusFilter}
-        onFilterChange={(filter) => setStatusFilter(filter as ContentStatus | null)}
+        activeFilter={activeFilter}
+        onFilterChange={setActiveFilter}
       />
 
-      {/* Search and Tabs */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as typeof activeTab)} className="w-full sm:w-auto">
-          <TabsList>
-            <TabsTrigger value="pending" className="gap-2" data-testid="verification-tab-pending">
-              Oczekujące
-              {pendingCount > 0 && (
-                <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-amber-500 px-1.5 text-[10px] font-bold text-white">
-                  {pendingCount > 99 ? "99+" : pendingCount}
-                </span>
-              )}
-            </TabsTrigger>
-            <TabsTrigger value="changes" className="gap-2" data-testid="verification-tab-changes">
-              Do poprawy
-              {changesCount > 0 && (
-                <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-orange-500 px-1.5 text-[10px] font-bold text-white">
-                  {changesCount > 99 ? "99+" : changesCount}
-                </span>
-              )}
-            </TabsTrigger>
-            <TabsTrigger value="published" className="gap-2" data-testid="verification-tab-published">
-              Opublikowane
-              {publishedCount > 0 && (
-                <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-[10px] font-bold text-primary-foreground">
-                  {publishedCount > 99 ? "99+" : publishedCount}
-                </span>
-              )}
-            </TabsTrigger>
-            <TabsTrigger value="archived" className="gap-2" data-testid="verification-tab-archived">
-              Wycofane
-              {archivedCount > 0 && (
-                <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-zinc-500 px-1.5 text-[10px] font-bold text-white">
-                  {archivedCount > 99 ? "99+" : archivedCount}
-                </span>
-              )}
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
-
-        <div className="flex items-center gap-3">
+      {/* Search and View Mode */}
+      <div className="flex items-center gap-3 justify-end">
           <div className="relative w-full sm:w-64">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
@@ -486,7 +450,6 @@ export default function VerificationPage() {
               <List className="h-4 w-4" />
             </Button>
           </div>
-        </div>
       </div>
 
       {/* Exercise Grid */}
@@ -509,24 +472,24 @@ export default function VerificationPage() {
           title={
             searchQuery
               ? "Brak wyników"
-              : activeTab === "pending"
+              : activeFilter === "pending"
               ? "Wszystko zweryfikowane!"
-              : activeTab === "changes"
+              : activeFilter === "changes"
               ? "Brak ćwiczeń do poprawy"
-              : activeTab === "archived"
+              : activeFilter === "archived"
               ? "Brak wycofanych ćwiczeń"
               : "Brak opublikowanych ćwiczeń"
           }
           description={
             searchQuery
               ? "Spróbuj zmienić kryteria wyszukiwania"
-              : activeTab === "pending"
+              : activeFilter === "pending"
               ? "Nie ma ćwiczeń oczekujących na weryfikację. Świetna robota!"
-              : activeTab === "changes"
+              : activeFilter === "changes"
               ? "Wszystkie ćwiczenia wymagające poprawek zostały zaktualizowane."
-              : activeTab === "archived"
+              : activeFilter === "archived"
               ? "Żadne ćwiczenie nie zostało wycofane z bazy globalnej."
-              : "Zatwierdź ćwiczenia z zakładki 'Oczekujące' żeby je opublikować."
+              : "Zatwierdź ćwiczenia z karty 'Oczekujące' żeby je opublikować."
           }
         />
       ) : viewMode === "grid" ? (
@@ -536,7 +499,7 @@ export default function VerificationPage() {
             <VerificationTaskCard
               key={exercise.id}
               exercise={exercise}
-              onUnpublish={activeTab === "published" ? handleUnpublish : undefined}
+              onUnpublish={activeFilter === "published" ? handleUnpublish : undefined}
               isUnpublishing={unpublishing}
             />
           ))}
@@ -548,7 +511,7 @@ export default function VerificationPage() {
             <VerificationTaskRow
               key={exercise.id}
               exercise={exercise}
-              onUnpublish={activeTab === "published" ? handleUnpublish : undefined}
+              onUnpublish={activeFilter === "published" ? handleUnpublish : undefined}
               isUnpublishing={unpublishing}
             />
           ))}

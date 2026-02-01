@@ -1,16 +1,18 @@
 "use client";
 
-import { Clock, AlertTriangle, FileCheck } from "lucide-react";
+import { Clock, AlertTriangle, FileCheck, Archive } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import type { VerificationStats } from "@/graphql/types/adminExercise.types";
 
+type FilterType = "pending" | "changes" | "published" | "archived";
+
 interface VerificationStatsCardsProps {
   stats: VerificationStats | null;
   isLoading?: boolean;
-  activeFilter?: string | null;
-  onFilterChange?: (filter: string | null) => void;
+  activeFilter: FilterType;
+  onFilterChange: (filter: FilterType) => void;
 }
 
 interface StatCardProps {
@@ -19,7 +21,8 @@ interface StatCardProps {
   icon: React.ElementType;
   color: string;
   bgColor: string;
-  filterKey: string | null;
+  activeBgColor: string;
+  activeBorderColor: string;
   isActive: boolean;
   onClick: () => void;
   testId: string;
@@ -31,6 +34,8 @@ function StatCard({
   icon: Icon,
   color,
   bgColor,
+  activeBgColor,
+  activeBorderColor,
   isActive,
   onClick,
   testId,
@@ -41,8 +46,8 @@ function StatCard({
       className={cn(
         "relative overflow-hidden transition-all duration-300 cursor-pointer",
         isActive
-          ? "border-primary shadow-xl shadow-primary/10 scale-[1.02]"
-          : "border-border/60 hover:border-border hover:shadow-lg"
+          ? `${activeBgColor} ${activeBorderColor} shadow-lg`
+          : "border-border/60 bg-card opacity-70 hover:opacity-100 hover:border-border hover:shadow-md"
       )}
       onClick={onClick}
     >
@@ -83,16 +88,10 @@ export function VerificationStatsCards({
   activeFilter,
   onFilterChange,
 }: VerificationStatsCardsProps) {
-  const handleFilterClick = (filter: string | null) => {
-    if (onFilterChange) {
-      // Toggle filter if clicking same one
-      onFilterChange(activeFilter === filter ? null : filter);
-    }
-  };
-
   if (isLoading || !stats) {
     return (
-      <div className="grid gap-3 grid-cols-3">
+      <div className="grid gap-3 grid-cols-4">
+        <StatCardSkeleton />
         <StatCardSkeleton />
         <StatCardSkeleton />
         <StatCardSkeleton />
@@ -101,17 +100,18 @@ export function VerificationStatsCards({
   }
 
   return (
-    <div className="grid gap-3 grid-cols-3">
+    <div className="grid gap-3 grid-cols-4">
       <StatCard
         testId="verification-stats-pending"
         label="Oczekujące"
         value={stats.pendingReview}
         icon={Clock}
         color="text-amber-500"
-        bgColor="bg-amber-500/10"
-        filterKey="PENDING_REVIEW"
-        isActive={activeFilter === "PENDING_REVIEW"}
-        onClick={() => handleFilterClick("PENDING_REVIEW")}
+        bgColor="bg-amber-500/20"
+        activeBgColor="bg-amber-500/10"
+        activeBorderColor="border-amber-500/40"
+        isActive={activeFilter === "pending"}
+        onClick={() => onFilterChange("pending")}
       />
       <StatCard
         testId="verification-stats-changes"
@@ -119,10 +119,11 @@ export function VerificationStatsCards({
         value={stats.changesRequested}
         icon={AlertTriangle}
         color="text-orange-500"
-        bgColor="bg-orange-500/10"
-        filterKey="CHANGES_REQUESTED"
-        isActive={activeFilter === "CHANGES_REQUESTED"}
-        onClick={() => handleFilterClick("CHANGES_REQUESTED")}
+        bgColor="bg-orange-500/20"
+        activeBgColor="bg-orange-500/10"
+        activeBorderColor="border-orange-500/40"
+        isActive={activeFilter === "changes"}
+        onClick={() => onFilterChange("changes")}
       />
       <StatCard
         testId="verification-stats-published"
@@ -130,10 +131,23 @@ export function VerificationStatsCards({
         value={stats.published}
         icon={FileCheck}
         color="text-primary"
-        bgColor="bg-primary/10"
-        filterKey="PUBLISHED"
-        isActive={activeFilter === "PUBLISHED"}
-        onClick={() => handleFilterClick("PUBLISHED")}
+        bgColor="bg-primary/20"
+        activeBgColor="bg-primary/10"
+        activeBorderColor="border-primary/40"
+        isActive={activeFilter === "published"}
+        onClick={() => onFilterChange("published")}
+      />
+      <StatCard
+        testId="verification-stats-archived"
+        label="Wycofane"
+        value={stats.archivedGlobal || 0}
+        icon={Archive}
+        color="text-zinc-500"
+        bgColor="bg-zinc-500/20"
+        activeBgColor="bg-zinc-500/10"
+        activeBorderColor="border-zinc-500/40"
+        isActive={activeFilter === "archived"}
+        onClick={() => onFilterChange("archived")}
       />
     </div>
   );

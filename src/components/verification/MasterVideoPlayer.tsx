@@ -3,16 +3,12 @@
 import { useState, useCallback } from "react";
 import {
   Play,
-  Pause,
   Volume2,
   VolumeX,
-  ZoomIn,
-  Smartphone,
   Maximize2,
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import {
   Tooltip,
   TooltipContent,
@@ -35,7 +31,6 @@ interface MasterVideoPlayerProps {
  *
  * Filozofia "Zero Scroll":
  * - Maksymalizacja przestrzeni na media źródłowe (Master View)
- * - Toggle "Preview Mobile" nakłada maskę telefonu (opcjonalnie)
  * - Ekspert widzi detale anatomiczne bez przeszkód
  *
  * Features:
@@ -48,8 +43,6 @@ export function MasterVideoPlayer({ exercise, className }: MasterVideoPlayerProp
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [isMuted, setIsMuted] = useState(true);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [showMobilePreview, setShowMobilePreview] = useState(false);
 
   // Collect all media
   const allImages = getMediaUrls([
@@ -97,31 +90,6 @@ export function MasterVideoPlayer({ exercise, className }: MasterVideoPlayerProp
       >
         {/* Main Media Area */}
         <div className="relative flex-1 min-h-0 flex items-center justify-center overflow-hidden">
-          {/* Mobile Preview Overlay */}
-          {showMobilePreview && (
-            <div className="absolute inset-0 z-10 pointer-events-none flex items-center justify-center">
-              {/* Phone frame SVG mask */}
-              <div className="relative w-[280px] h-[560px]">
-                <div className="absolute inset-0 bg-zinc-900 rounded-[2.5rem] shadow-2xl border-4 border-zinc-800">
-                  {/* Notch */}
-                  <div className="absolute top-0 left-1/2 -translate-x-1/2 w-24 h-6 bg-zinc-900 rounded-b-2xl" />
-                  {/* Screen area */}
-                  <div className="absolute inset-3 rounded-[2rem] overflow-hidden bg-black/80">
-                    <div className="absolute top-0 left-0 right-0 h-8 bg-gradient-to-b from-black/60 to-transparent flex items-center justify-center">
-                      <span className="text-[10px] text-white/50">FiziYo App Preview</span>
-                    </div>
-                  </div>
-                  {/* Home indicator */}
-                  <div className="absolute bottom-2 left-1/2 -translate-x-1/2 w-32 h-1 bg-white/30 rounded-full" />
-                </div>
-              </div>
-              {/* Darken outside frame */}
-              <div className="absolute inset-0 bg-black/60" style={{
-                clipPath: 'polygon(0 0, 100% 0, 100% 100%, 0 100%, 0 0, calc(50% - 140px) calc(50% - 280px), calc(50% - 140px) calc(50% + 280px), calc(50% + 140px) calc(50% + 280px), calc(50% + 140px) calc(50% - 280px), calc(50% - 140px) calc(50% - 280px))'
-              }} />
-            </div>
-          )}
-
           {/* Blurred background for aesthetics */}
           {currentImage && (
             <div
@@ -135,10 +103,7 @@ export function MasterVideoPlayer({ exercise, className }: MasterVideoPlayerProp
             <img
               src={currentImage}
               alt={exercise.name}
-              className={cn(
-                "relative max-h-full max-w-full object-contain transition-all duration-300",
-                showMobilePreview && "scale-[0.6]"
-              )}
+              className="relative max-h-full max-w-full object-contain transition-all duration-300"
               loading="eager"
             />
           ) : hasGif && gifUrl ? (
@@ -191,28 +156,6 @@ export function MasterVideoPlayer({ exercise, className }: MasterVideoPlayerProp
 
           {/* Controls overlay - top right */}
           <div className="absolute top-3 right-3 z-20 flex items-center gap-2">
-            {/* Mobile Preview Toggle */}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  onClick={() => setShowMobilePreview(!showMobilePreview)}
-                  className={cn(
-                    "flex h-9 w-9 items-center justify-center rounded-lg",
-                    "transition-all",
-                    showMobilePreview
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-black/50 text-white/80 backdrop-blur-sm hover:bg-black/70"
-                  )}
-                  data-testid="master-player-mobile-preview-btn"
-                >
-                  <Smartphone className="h-4 w-4" />
-                </button>
-              </TooltipTrigger>
-              <TooltipContent side="bottom">
-                {showMobilePreview ? "Wyłącz podgląd mobilny" : "Podgląd mobilny"}
-              </TooltipContent>
-            </Tooltip>
-
             {/* Fullscreen/Lightbox */}
             <Tooltip>
               <TooltipTrigger asChild>

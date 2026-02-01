@@ -115,16 +115,16 @@ export const IMPORT_EXERCISES_TO_REVIEW_MUTATION = gql`
  * Update a single exercise field - optimized for inline editing
  * Supports optimistic UI with immediate response
  * @param exerciseId - ID of the exercise to update
- * @param field - Field name to update
- * @param value - New value (JSON encoded)
+ * @param fieldName - Field name to update
+ * @param value - New value (string)
  */
 export const UPDATE_EXERCISE_FIELD_MUTATION = gql`
   mutation UpdateExerciseField(
     $exerciseId: String!
-    $field: String!
-    $value: JSON!
+    $fieldName: String!
+    $value: String
   ) {
-    updateExerciseField(exerciseId: $exerciseId, field: $field, value: $value) {
+    updateExerciseField(exerciseId: $exerciseId, fieldName: $fieldName, value: $value) {
       ...AdminExerciseFragment
     }
   }
