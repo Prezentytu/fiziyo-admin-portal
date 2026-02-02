@@ -701,7 +701,7 @@ export function VerificationEditorPanel({
                 {/* Sugerowany opór/obciążenie */}
                 <div className="space-y-1.5">
                   <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                    Sugerowany opór
+                    Opór/obciążenie
                   </Label>
                   <div className="flex gap-1">
                     <Input

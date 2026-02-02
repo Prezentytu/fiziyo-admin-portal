@@ -32,29 +32,29 @@ import { pl } from "date-fns/locale";
 // QUICK REJECT CHIPS - Predefined rejection reasons
 // ============================================
 const QUICK_REJECT_REASONS = [
-  { 
-    id: 'lighting', 
-    label: 'Złe oświetlenie', 
+  {
+    id: 'lighting',
+    label: 'Złe oświetlenie',
     text: 'Wideo ma niewystarczające oświetlenie. Proszę nagrać ponownie w jasnym miejscu, najlepiej przy świetle dziennym lub z dobrym sztucznym oświetleniem.'
   },
-  { 
-    id: 'name', 
-    label: 'Błąd w nazwie', 
+  {
+    id: 'name',
+    label: 'Błąd w nazwie',
     text: 'Nazwa ćwiczenia zawiera błąd lub jest nieprecyzyjna. Proszę poprawić nazwę zgodnie z nomenklaturą fizjoterapeutyczną.'
   },
-  { 
-    id: 'technique', 
-    label: 'Niepoprawna technika', 
+  {
+    id: 'technique',
+    label: 'Niepoprawna technika',
     text: 'Technika wykonania ćwiczenia wymaga poprawy. Proszę zwrócić uwagę na prawidłową biomechanikę ruchu i bezpieczeństwo kręgosłupa.'
   },
-  { 
-    id: 'framing', 
-    label: 'Zły kadr', 
+  {
+    id: 'framing',
+    label: 'Zły kadr',
     text: 'Kadrowanie nie pokazuje całego ruchu lub kluczowe elementy są ucięte. Proszę nagrać ponownie tak, aby cały ruch był widoczny od początku do końca.'
   },
-  { 
-    id: 'audio', 
-    label: 'Problem z audio', 
+  {
+    id: 'audio',
+    label: 'Problem z audio',
     text: 'Jakość dźwięku jest niewystarczająca lub występują szumy/zakłócenia. Proszę nagrać ponownie w cichym otoczeniu lub z lepszym mikrofonem.'
   },
 ];
@@ -111,7 +111,7 @@ interface VerdictPanelProps {
 
 /**
  * VerdictPanel - Right column for verification decisions
- * 
+ *
  * Contains:
  * - Status indicator with wait time
  * - Safety checklist (required before approval)
@@ -162,7 +162,7 @@ export function VerdictPanel({
     },
     {
       id: "techniqueSafe",
-      label: "Technika bezpieczna dla kręgosłupa",
+      label: "Bezpieczna technika wykonania",
       icon: <Shield className="h-3.5 w-3.5" />,
       checked: safetyChecklist.techniqueSafe,
     },
