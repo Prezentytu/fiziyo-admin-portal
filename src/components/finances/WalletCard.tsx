@@ -8,7 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Logo } from "@/components/shared/Logo";
 import { GET_ORGANIZATION_EARNINGS_QUERY, GET_CURRENT_BILLING_STATUS_QUERY } from "@/graphql/queries";
-import type { GetOrganizationEarningsResponse } from "@/types/apollo";
+import type { GetOrganizationEarningsResponse, GetCurrentBillingStatusResponse } from "@/types/apollo";
 import { cn } from "@/lib/utils";
 
 // ========================================
@@ -36,7 +36,7 @@ export function WalletCard({ organizationId, className }: WalletCardProps) {
   );
 
   // Fetch billing status (Pay-as-you-go / Pilot Mode)
-  const { data: billingData } = useQuery(GET_CURRENT_BILLING_STATUS_QUERY, {
+  const { data: billingData } = useQuery<GetCurrentBillingStatusResponse>(GET_CURRENT_BILLING_STATUS_QUERY, {
     variables: { organizationId: organizationId || "" },
     skip: !organizationId,
     errorPolicy: "all",

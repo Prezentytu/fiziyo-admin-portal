@@ -40,9 +40,9 @@ interface ExtendSetDialogProps {
     startDate: string;
     endDate: string;
     frequency?: {
-      timesPerDay?: string;
-      timesPerWeek?: string;
-      breakBetweenSets?: string;
+      timesPerDay?: number | string;
+      timesPerWeek?: number | string;
+      breakBetweenSets?: number | string;
       monday?: boolean;
       tuesday?: boolean;
       wednesday?: boolean;
@@ -125,9 +125,9 @@ export function ExtendSetDialog({
           startDate: newStartDate.toISOString(),
           endDate: newEndDate.toISOString(),
           frequency: {
-            timesPerDay: frequency.timesPerDay || '1',
-            timesPerWeek: frequency.timesPerWeek || '7',
-            breakBetweenSets: frequency.breakBetweenSets || '30',
+            timesPerDay: String(frequency.timesPerDay || '1'),
+            timesPerWeek: String(frequency.timesPerWeek || '7'),
+            breakBetweenSets: String(frequency.breakBetweenSets || '30'),
             monday: frequency.monday ?? true,
             tuesday: frequency.tuesday ?? true,
             wednesday: frequency.wednesday ?? true,

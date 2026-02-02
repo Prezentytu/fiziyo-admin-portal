@@ -13,7 +13,7 @@
  * - Przy ponownym żądaniu zwracane z cache ($0)
  */
 
-import { getAuthHeaders } from "@/lib/tokens";
+import { getAuthHeaders } from "@/lib/tokenCache";
 
 // Types
 export interface TagSuggestions {

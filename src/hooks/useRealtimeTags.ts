@@ -45,11 +45,11 @@ export function useRealtimeTags({
   }, [client, organizationId]);
 
   // Subskrypcja na nowe tagi
-  useSubscription(ON_TAG_CREATED, {
+  useSubscription<{ onExerciseTagCreated: string }>(ON_TAG_CREATED, {
     skip,
     variables: { organizationId: organizationId! },
     onData: ({ data }) => {
-      const tagId = data.data?.onExerciseTagCreated as string | undefined;
+      const tagId = data.data?.onExerciseTagCreated;
       if (!tagId) return;
 
       refetch();
@@ -58,11 +58,11 @@ export function useRealtimeTags({
   });
 
   // Subskrypcja na aktualizacje tagów
-  useSubscription(ON_TAG_UPDATED, {
+  useSubscription<{ onExerciseTagUpdated: string }>(ON_TAG_UPDATED, {
     skip,
     variables: { organizationId: organizationId! },
     onData: ({ data }) => {
-      const tagId = data.data?.onExerciseTagUpdated as string | undefined;
+      const tagId = data.data?.onExerciseTagUpdated;
       if (!tagId) return;
 
       refetch();
@@ -71,11 +71,11 @@ export function useRealtimeTags({
   });
 
   // Subskrypcja na usunięte tagi
-  useSubscription(ON_TAG_DELETED, {
+  useSubscription<{ onExerciseTagDeleted: string }>(ON_TAG_DELETED, {
     skip,
     variables: { organizationId: organizationId! },
     onData: ({ data }) => {
-      const tagId = data.data?.onExerciseTagDeleted as string | undefined;
+      const tagId = data.data?.onExerciseTagDeleted;
       if (!tagId) return;
 
       // Usuń z cache

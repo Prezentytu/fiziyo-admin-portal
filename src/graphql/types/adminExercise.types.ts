@@ -263,6 +263,10 @@ export interface ExerciseRelationTarget {
   difficultyLevel?: DifficultyLevel;
   mainTags?: string[];
   type?: string;
+  /** Czy sugestia AI */
+  isAISuggested?: boolean;
+  /** Czy zweryfikowane */
+  isVerified?: boolean;
 }
 
 /**
@@ -330,8 +334,26 @@ export interface GetExerciseRelationshipsResponse {
   exerciseRelationships: ExerciseRelationships;
 }
 
+export interface RelationCandidatesResult {
+  exerciseId: string;
+  relationType: string;
+  candidates: Array<{
+    id: string;
+    name: string;
+    thumbnailUrl?: string;
+    gifUrl?: string;
+    difficultyLevel?: DifficultyLevel;
+    isSameFamily?: boolean;
+    mainTags?: string[];
+  }>;
+}
+
 export interface GetRelationCandidatesResponse {
-  relationCandidates: RelationCandidate[];
+  relationCandidates: RelationCandidatesResult;
+}
+
+export interface SearchExercisesForRelationResponse {
+  searchExercisesForRelation: ExerciseRelationTarget[];
 }
 
 export interface SetExerciseRelationResponse {

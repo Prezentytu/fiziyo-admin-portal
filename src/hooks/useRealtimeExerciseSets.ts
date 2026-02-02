@@ -45,11 +45,11 @@ export function useRealtimeExerciseSets({
   }, [client, organizationId]);
 
   // Subskrypcja na nowe zestawy
-  useSubscription(ON_EXERCISE_SET_CREATED, {
+  useSubscription<{ onExerciseSetCreated: string }>(ON_EXERCISE_SET_CREATED, {
     skip,
     variables: { organizationId: organizationId! },
     onData: ({ data }) => {
-      const setId = data.data?.onExerciseSetCreated as string | undefined;
+      const setId = data.data?.onExerciseSetCreated;
       if (!setId) return;
 
       refetch();
@@ -58,11 +58,11 @@ export function useRealtimeExerciseSets({
   });
 
   // Subskrypcja na aktualizacje zestawów
-  useSubscription(ON_EXERCISE_SET_UPDATED, {
+  useSubscription<{ onExerciseSetUpdated: string }>(ON_EXERCISE_SET_UPDATED, {
     skip,
     variables: { organizationId: organizationId! },
     onData: ({ data }) => {
-      const setId = data.data?.onExerciseSetUpdated as string | undefined;
+      const setId = data.data?.onExerciseSetUpdated;
       if (!setId) return;
 
       refetch();
@@ -71,11 +71,11 @@ export function useRealtimeExerciseSets({
   });
 
   // Subskrypcja na usunięte zestawy
-  useSubscription(ON_EXERCISE_SET_DELETED, {
+  useSubscription<{ onExerciseSetDeleted: string }>(ON_EXERCISE_SET_DELETED, {
     skip,
     variables: { organizationId: organizationId! },
     onData: ({ data }) => {
-      const setId = data.data?.onExerciseSetDeleted as string | undefined;
+      const setId = data.data?.onExerciseSetDeleted;
       if (!setId) return;
 
       // Usuń z cache

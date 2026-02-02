@@ -60,7 +60,7 @@ interface AssignmentSuccessDialogProps {
   /** Data wygaśnięcia Premium (z backendu) */
   premiumValidUntil?: string | null;
   /** ID terapeuty (dla QR) */
-  therapistId: string;
+  therapistId?: string;
   /** ID organizacji (dla QR i PDF) */
   organizationId: string;
   /** Zestaw ćwiczeń z exerciseMappings */
@@ -120,7 +120,7 @@ export function AssignmentSuccessDialog({
   if (!selectedPatient) return null;
 
   // Generowanie linku do aplikacji pacjenta
-  const appDeepLink = `fiziyo://connect?patient=${selectedPatient.id}&therapist=${therapistId}&org=${organizationId}`;
+  const appDeepLink = `fiziyo://connect?patient=${selectedPatient.id}${therapistId ? `&therapist=${therapistId}` : ''}&org=${organizationId}`;
   const webLink = `https://fiziyo.pl/instrukcja`;
 
   // Formatowanie daty premium

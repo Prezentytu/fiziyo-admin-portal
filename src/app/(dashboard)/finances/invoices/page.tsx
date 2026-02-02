@@ -19,7 +19,7 @@ import {
 // ========================================
 
 export default function InvoicesPage() {
-  const { currentOrganization, loading: orgLoading } = useOrganization();
+  const { currentOrganization, isLoading: orgLoading } = useOrganization();
   const organizationId = currentOrganization?.organizationId;
 
   if (orgLoading) {

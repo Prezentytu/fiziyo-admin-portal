@@ -54,7 +54,10 @@ interface ExerciseSetItem {
   creationTime?: string;
   exerciseMappings?: Array<{
     id: string;
+    exerciseId: string;
     exercise?: {
+      id: string;
+      name: string;
       imageUrl?: string;
       images?: string[];
     };
@@ -693,7 +696,10 @@ export default function DashboardPage() {
             description: quickAssignSet.description,
             exerciseMappings: quickAssignSet.exerciseMappings?.map(m => ({
               id: m.id,
+              exerciseId: m.exerciseId,
               exercise: m.exercise ? {
+                id: m.exercise.id,
+                name: m.exercise.name,
                 imageUrl: m.exercise.imageUrl,
                 images: m.exercise.images,
               } : undefined,

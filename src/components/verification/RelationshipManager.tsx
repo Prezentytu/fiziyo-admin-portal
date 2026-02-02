@@ -37,6 +37,8 @@ import type {
   AdminExercise,
   ExerciseRelationTarget,
   DifficultyLevel,
+  GetExerciseRelationshipsResponse,
+  GetRelationCandidatesResponse,
 } from "@/graphql/types/adminExercise.types";
 
 // Difficulty level order for validation
@@ -99,28 +101,33 @@ export function RelationshipManager({
   const [isProgressionSearchOpen, setIsProgressionSearchOpen] = useState(false);
 
   // Fetch existing relationships
-  const { data: relationsData, loading: relationsLoading, refetch } = useQuery(
+  const { data: relationsData, loading: relationsLoading, error: relationsError, refetch } = useQuery<GetExerciseRelationshipsResponse>(
     GET_EXERCISE_RELATIONSHIPS_QUERY,
     {
       variables: { exerciseId: exercise.id },
       skip: !exercise.id,
       fetchPolicy: "cache-and-network",
-      onCompleted: (data) => {
-        const rels = data?.exerciseRelationships;
-        if (rels) {
-          setLocalRegression(rels.regression || null);
-          setLocalProgression(rels.progression || null);
-        }
-      },
-      onError: (error) => {
-        console.error("Error fetching relationships:", error);
-        // Don't show toast for expected "field not found" errors during development
-      },
     }
   );
 
+  // Handle relationships data
+  useEffect(() => {
+    if (relationsData?.exerciseRelationships) {
+      const rels = relationsData.exerciseRelationships;
+      setLocalRegression(rels.regression?.targetExercise || null);
+      setLocalProgression(rels.progression?.targetExercise || null);
+    }
+  }, [relationsData]);
+
+  // Log errors
+  useEffect(() => {
+    if (relationsError) {
+      console.error("Error fetching relationships:", relationsError);
+    }
+  }, [relationsError]);
+
   // Fetch AI candidates for empty slots
-  const { data: regressionCandidates, loading: regressionCandidatesLoading } = useQuery(
+  const { data: regressionCandidates, loading: regressionCandidatesLoading } = useQuery<GetRelationCandidatesResponse>(
     GET_RELATION_CANDIDATES_QUERY,
     {
       variables: {
@@ -133,7 +140,7 @@ export function RelationshipManager({
     }
   );
 
-  const { data: progressionCandidates, loading: progressionCandidatesLoading } = useQuery(
+  const { data: progressionCandidates, loading: progressionCandidatesLoading } = useQuery<GetRelationCandidatesResponse>(
     GET_RELATION_CANDIDATES_QUERY,
     {
       variables: {
@@ -455,7 +462,7 @@ export function RelationshipManager({
  * Hook do pobierania relacji ćwiczenia
  */
 export function useExerciseRelationships(exerciseId: string) {
-  const { data, loading, error, refetch } = useQuery(
+  const { data, loading, error, refetch } = useQuery<GetExerciseRelationshipsResponse>(
     GET_EXERCISE_RELATIONSHIPS_QUERY,
     {
       variables: { exerciseId },
@@ -464,8 +471,8 @@ export function useExerciseRelationships(exerciseId: string) {
   );
 
   return {
-    regression: data?.exerciseRelationships?.regression as ExerciseRelationTarget | null,
-    progression: data?.exerciseRelationships?.progression as ExerciseRelationTarget | null,
+    regression: data?.exerciseRelationships?.regression?.targetExercise || null,
+    progression: data?.exerciseRelationships?.progression?.targetExercise || null,
     loading,
     error,
     refetch,

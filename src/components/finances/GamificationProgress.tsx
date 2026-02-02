@@ -11,7 +11,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { GET_COMMISSION_TIER_INFO_QUERY, GET_CURRENT_BILLING_STATUS_QUERY } from "@/graphql/queries";
-import type { GetCommissionTierInfoResponse } from "@/types/apollo";
+import type { GetCommissionTierInfoResponse, GetCurrentBillingStatusResponse } from "@/types/apollo";
 import {
   CommissionTier,
   COMMISSION_TIERS,
@@ -67,7 +67,7 @@ export function GamificationProgress({
   );
 
   // Fetch billing status (Pay-as-you-go / Pilot Mode) - for premium patient count
-  const { data: billingData } = useQuery(GET_CURRENT_BILLING_STATUS_QUERY, {
+  const { data: billingData } = useQuery<GetCurrentBillingStatusResponse>(GET_CURRENT_BILLING_STATUS_QUERY, {
     variables: { organizationId: organizationId || "" },
     skip: !organizationId,
     errorPolicy: "all",

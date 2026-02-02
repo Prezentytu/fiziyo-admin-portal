@@ -48,7 +48,7 @@ export function useVerificationApprove({
   const [isApproving, setIsApproving] = useState(false);
 
   // Mutation: Approve exercise
-  const [approveExercise] = useMutation(APPROVE_EXERCISE_MUTATION);
+  const [approveExercise] = useMutation<{ approveExercise: AdminExercise }>(APPROVE_EXERCISE_MUTATION);
 
   // Mutation: Set relations batch
   const [setRelationsBatch] = useMutation(SET_EXERCISE_RELATIONS_BATCH_MUTATION);

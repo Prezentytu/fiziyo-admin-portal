@@ -79,7 +79,7 @@ function EmptyStateTeaser({
 // ========================================
 
 export default function FinancesPage() {
-  const { currentOrganization, loading: orgLoading } = useOrganization();
+  const { currentOrganization, isLoading: orgLoading } = useOrganization();
   const organizationId = currentOrganization?.organizationId;
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
 

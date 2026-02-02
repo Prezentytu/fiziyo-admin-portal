@@ -67,7 +67,7 @@ export function useExerciseFieldUpdate({
   const pendingUpdatesRef = useRef<Record<string, unknown>>({});
 
   // Single field mutation
-  const [updateFieldMutation] = useMutation(UPDATE_EXERCISE_FIELD_MUTATION, {
+  const [updateFieldMutation] = useMutation<{ updateExerciseField: AdminExercise }>(UPDATE_EXERCISE_FIELD_MUTATION, {
     onError: (err) => {
       setError(err);
       toast.error(`Nie udało się zapisać: ${err.message}`);
@@ -75,7 +75,7 @@ export function useExerciseFieldUpdate({
   });
 
   // Batch update mutation
-  const [batchUpdateMutation] = useMutation(BATCH_UPDATE_EXERCISE_FIELDS_MUTATION, {
+  const [batchUpdateMutation] = useMutation<{ batchUpdateExerciseFields: AdminExercise }>(BATCH_UPDATE_EXERCISE_FIELDS_MUTATION, {
     onError: (err) => {
       setError(err);
       toast.error(`Nie udało się zapisać zmian: ${err.message}`);
@@ -100,7 +100,7 @@ export function useExerciseFieldUpdate({
               __typename: "AdminExercise",
               id: exerciseId,
               [field]: value,
-            },
+            } as unknown as AdminExercise,
           },
           update: (cache, { data }) => {
             if (data?.updateExerciseField) {
@@ -108,7 +108,7 @@ export function useExerciseFieldUpdate({
               cache.modify({
                 id: cache.identify({ __typename: "AdminExercise", id: exerciseId }),
                 fields: {
-                  [field]: () => value,
+                  [field]: () => value as never,
                 },
               });
             }
@@ -154,7 +154,7 @@ export function useExerciseFieldUpdate({
               __typename: "AdminExercise",
               id: exerciseId,
               ...updates,
-            },
+            } as unknown as AdminExercise,
           },
           update: (cache, { data }) => {
             if (data?.batchUpdateExerciseFields) {
@@ -164,7 +164,7 @@ export function useExerciseFieldUpdate({
                 fields: Object.fromEntries(
                   Object.entries(updates).map(([field, value]) => [
                     field,
-                    () => value,
+                    () => value as never,
                   ])
                 ),
               });

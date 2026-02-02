@@ -35,7 +35,7 @@ import { cn } from "@/lib/utils";
 // ========================================
 
 export default function PayoutsPage() {
-  const { currentOrganization, loading: orgLoading } = useOrganization();
+  const { currentOrganization, isLoading: orgLoading } = useOrganization();
   const organizationId = currentOrganization?.organizationId;
 
   // Stripe Connect Status

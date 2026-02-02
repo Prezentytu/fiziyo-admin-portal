@@ -36,6 +36,8 @@ import type {
   ExerciseRelationTarget,
   RelationCandidate,
   DifficultyLevel,
+  GetRelationCandidatesResponse,
+  SearchExercisesForRelationResponse,
 } from "@/graphql/types/adminExercise.types";
 
 // Difficulty colors
@@ -100,7 +102,7 @@ export function ExerciseSearchPopover({
   const setIsOpen = onOpenChange ?? setInternalOpen;
 
   // Fetch AI candidates
-  const { data: candidatesData, loading: candidatesLoading } = useQuery(
+  const { data: candidatesData, loading: candidatesLoading } = useQuery<GetRelationCandidatesResponse>(
     GET_RELATION_CANDIDATES_QUERY,
     {
       variables: {
@@ -113,7 +115,7 @@ export function ExerciseSearchPopover({
   );
 
   // Search exercises
-  const { data: searchData, loading: searchLoading } = useQuery(
+  const { data: searchData, loading: searchLoading } = useQuery<SearchExercisesForRelationResponse>(
     SEARCH_EXERCISES_FOR_RELATION_QUERY,
     {
       variables: {
@@ -125,7 +127,7 @@ export function ExerciseSearchPopover({
     }
   );
 
-  const candidates: RelationCandidate[] = candidatesData?.relationCandidates || [];
+  const candidates = candidatesData?.relationCandidates?.candidates || [];
   const searchResults: ExerciseRelationTarget[] = searchData?.searchExercisesForRelation || [];
 
   // Reset search when closing
@@ -193,10 +195,15 @@ export function ExerciseSearchPopover({
               <CommandGroup heading="Sugestie AI">
                 {candidates.map((candidate) => (
                   <ExerciseCommandItem
-                    key={candidate.exercise.id}
-                    exercise={candidate.exercise}
-                    confidence={candidate.confidence}
-                    reason={candidate.reason}
+                    key={candidate.id}
+                    exercise={{
+                      id: candidate.id,
+                      name: candidate.name,
+                      thumbnailUrl: candidate.thumbnailUrl,
+                      gifUrl: candidate.gifUrl,
+                      difficultyLevel: candidate.difficultyLevel,
+                      mainTags: candidate.mainTags,
+                    }}
                     isAISuggestion
                     onSelect={handleSelect}
                     onHover={setHoveredExercise}

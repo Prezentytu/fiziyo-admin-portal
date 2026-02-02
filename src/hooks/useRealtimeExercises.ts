@@ -54,11 +54,11 @@ export function useRealtimeExercises({
   }, [client, organizationId]);
 
   // Subskrypcja na nowe ćwiczenia
-  useSubscription(ON_EXERCISE_CREATED, {
+  useSubscription<{ onExerciseCreated: string }>(ON_EXERCISE_CREATED, {
     skip,
     variables: { organizationId: organizationId! },
     onData: ({ data }) => {
-      const exerciseId = data.data?.onExerciseCreated as string | undefined;
+      const exerciseId = data.data?.onExerciseCreated;
       if (!exerciseId) return;
 
       // Refetch listy żeby pobrać nowe ćwiczenie
@@ -68,11 +68,11 @@ export function useRealtimeExercises({
   });
 
   // Subskrypcja na aktualizacje ćwiczeń
-  useSubscription(ON_EXERCISE_UPDATED, {
+  useSubscription<{ onExerciseUpdated: string }>(ON_EXERCISE_UPDATED, {
     skip,
     variables: { organizationId: organizationId! },
     onData: ({ data }) => {
-      const exerciseId = data.data?.onExerciseUpdated as string | undefined;
+      const exerciseId = data.data?.onExerciseUpdated;
       if (!exerciseId) return;
 
       // Refetch żeby pobrać zaktualizowane dane
@@ -82,11 +82,11 @@ export function useRealtimeExercises({
   });
 
   // Subskrypcja na usunięte ćwiczenia
-  useSubscription(ON_EXERCISE_DELETED, {
+  useSubscription<{ onExerciseDeleted: string }>(ON_EXERCISE_DELETED, {
     skip,
     variables: { organizationId: organizationId! },
     onData: ({ data }) => {
-      const exerciseId = data.data?.onExerciseDeleted as string | undefined;
+      const exerciseId = data.data?.onExerciseDeleted;
       if (!exerciseId) return;
 
       // Usuń z cache

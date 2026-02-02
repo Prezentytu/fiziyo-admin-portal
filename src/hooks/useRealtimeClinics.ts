@@ -45,11 +45,11 @@ export function useRealtimeClinics({
   }, [client, organizationId]);
 
   // Subskrypcja na nowe gabinety
-  useSubscription(ON_CLINIC_CREATED, {
+  useSubscription<{ onClinicCreated: string }>(ON_CLINIC_CREATED, {
     skip,
     variables: { organizationId: organizationId! },
     onData: ({ data }) => {
-      const clinicId = data.data?.onClinicCreated as string | undefined;
+      const clinicId = data.data?.onClinicCreated;
       if (!clinicId) return;
 
       refetch();
@@ -58,11 +58,11 @@ export function useRealtimeClinics({
   });
 
   // Subskrypcja na aktualizacje gabinetów
-  useSubscription(ON_CLINIC_UPDATED, {
+  useSubscription<{ onClinicUpdated: string }>(ON_CLINIC_UPDATED, {
     skip,
     variables: { organizationId: organizationId! },
     onData: ({ data }) => {
-      const clinicId = data.data?.onClinicUpdated as string | undefined;
+      const clinicId = data.data?.onClinicUpdated;
       if (!clinicId) return;
 
       refetch();
@@ -71,11 +71,11 @@ export function useRealtimeClinics({
   });
 
   // Subskrypcja na usunięte gabinety
-  useSubscription(ON_CLINIC_DELETED, {
+  useSubscription<{ onClinicDeleted: string }>(ON_CLINIC_DELETED, {
     skip,
     variables: { organizationId: organizationId! },
     onData: ({ data }) => {
-      const clinicId = data.data?.onClinicDeleted as string | undefined;
+      const clinicId = data.data?.onClinicDeleted;
       if (!clinicId) return;
 
       // Usuń z cache

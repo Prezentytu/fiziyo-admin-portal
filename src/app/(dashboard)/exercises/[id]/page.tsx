@@ -361,7 +361,6 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
                   key={tag.id}
                   color={tag.color}
                   className="text-[10px] uppercase font-medium tracking-wider"
-                  variant="outline"
                 >
                   {tag.name}
                 </ColorBadge>
@@ -377,7 +376,6 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
                   key={tag.id}
                   color={tag.color}
                   className="text-[10px] uppercase font-medium tracking-wider opacity-60"
-                  variant="outline"
                 >
                   {tag.name}
                 </ColorBadge>

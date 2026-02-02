@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useQuery, useMutation } from "@apollo/client/react";
 import {
   ArrowLeft,
@@ -34,6 +34,7 @@ import {
 import type {
   AdminExercise,
   ExerciseRelationTarget,
+  GetExerciseRelationshipsResponse,
 } from "@/graphql/types/adminExercise.types";
 import { getMediaUrl } from "@/utils/mediaUrl";
 
@@ -88,29 +89,36 @@ export function ProgressionChain({
   const [isProgressionSearchOpen, setIsProgressionSearchOpen] = useState(false);
 
   // Fetch existing relationships
-  const { loading: relationsLoading, refetch } = useQuery(
+  const { data: relationsData, loading: relationsLoading, error: relationsError, refetch } = useQuery<GetExerciseRelationshipsResponse>(
     GET_EXERCISE_RELATIONSHIPS_QUERY,
     {
       variables: { exerciseId: exercise.id },
       skip: !exercise.id,
       fetchPolicy: "cache-and-network",
-      onCompleted: (data) => {
-        const rels = data?.exerciseRelationships;
-        if (rels) {
-          setLocalRegression(rels.regression || null);
-          setLocalProgression(rels.progression || null);
-          onRelationsChange?.({
-            regression: rels.regression || null,
-            progression: rels.progression || null,
-          });
-        }
-      },
-      onError: (error) => {
-        // Silently handle - relationships may not exist yet
-        console.debug("Relationships query:", error.message);
-      },
     }
   );
+
+  // Handle relationships data
+  useEffect(() => {
+    if (relationsData?.exerciseRelationships) {
+      const rels = relationsData.exerciseRelationships;
+      const regressionTarget = rels.regression?.targetExercise || null;
+      const progressionTarget = rels.progression?.targetExercise || null;
+      setLocalRegression(regressionTarget);
+      setLocalProgression(progressionTarget);
+      onRelationsChange?.({
+        regression: regressionTarget,
+        progression: progressionTarget,
+      });
+    }
+  }, [relationsData, onRelationsChange]);
+
+  // Log errors silently
+  useEffect(() => {
+    if (relationsError) {
+      console.debug("Relationships query:", relationsError.message);
+    }
+  }, [relationsError]);
 
   // Mutations
   const [setRelation, { loading: setRelationLoading }] = useMutation(

@@ -270,9 +270,6 @@ export function ClickableStat({
         {unit && value !== null && (
           <span className="text-xs text-muted-foreground">{unit}</span>
         )}
-        {status === "saving" && (
-          <Loader2 className="h-3 w-3 animate-spin text-primary" />
-        )}
       </button>
     );
   }
@@ -317,11 +314,6 @@ export function ClickableStat({
 
       {/* Label */}
       <span className="text-xs text-muted-foreground">{label}</span>
-
-      {/* Status indicators */}
-      {status === "saving" && (
-        <Loader2 className="h-4 w-4 animate-spin text-primary mt-1" />
-      )}
     </button>
   );
 }

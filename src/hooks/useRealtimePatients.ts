@@ -45,11 +45,11 @@ export function useRealtimePatients({
   }, [client, organizationId]);
 
   // Subskrypcja na nowych pacjentów
-  useSubscription(ON_PATIENT_CREATED, {
+  useSubscription<{ onPatientCreated: string }>(ON_PATIENT_CREATED, {
     skip,
     variables: { organizationId: organizationId! },
     onData: ({ data }) => {
-      const patientId = data.data?.onPatientCreated as string | undefined;
+      const patientId = data.data?.onPatientCreated;
       if (!patientId) return;
 
       refetch();
@@ -58,11 +58,11 @@ export function useRealtimePatients({
   });
 
   // Subskrypcja na aktualizacje pacjentów
-  useSubscription(ON_PATIENT_UPDATED, {
+  useSubscription<{ onPatientUpdated: string }>(ON_PATIENT_UPDATED, {
     skip,
     variables: { organizationId: organizationId! },
     onData: ({ data }) => {
-      const patientId = data.data?.onPatientUpdated as string | undefined;
+      const patientId = data.data?.onPatientUpdated;
       if (!patientId) return;
 
       refetch();
@@ -71,11 +71,11 @@ export function useRealtimePatients({
   });
 
   // Subskrypcja na usuniętych pacjentów
-  useSubscription(ON_PATIENT_DELETED, {
+  useSubscription<{ onPatientDeleted: string }>(ON_PATIENT_DELETED, {
     skip,
     variables: { organizationId: organizationId! },
     onData: ({ data }) => {
-      const patientId = data.data?.onPatientDeleted as string | undefined;
+      const patientId = data.data?.onPatientDeleted;
       if (!patientId) return;
 
       // Usuń z cache
