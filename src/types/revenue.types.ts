@@ -3,12 +3,12 @@
 // ========================================
 
 /**
- * Tier prowizji organizacji
- * - START: 0-49 pacjentów = 40%
- * - PRO: 50-99 pacjentów = 45%
- * - EXPERT: 100-299 pacjentów = 50%
- * - ELITE: 300+ pacjentów = 60%
- * - PARTNER: Stała prowizja z kodu partnerskiego
+ * Tier prowizji organizacji (Twój udział z 39 PLN/mc od pacjenta)
+ * - START: 0-49 pacjentów = 35%
+ * - PRO: 50-99 pacjentów = 40%
+ * - EXPERT: 100-299 pacjentów = 45%
+ * - ELITE: 300+ pacjentów = 50%
+ * - PARTNER: 80% przez pierwsze 2 lata, potem 50% (ELITE)
  */
 export type CommissionTier = "START" | "PRO" | "EXPERT" | "ELITE" | "PARTNER";
 
@@ -262,7 +262,7 @@ export interface SetCommissionResult {
 export const COMMISSION_TIERS = {
   START: {
     name: "START",
-    rate: 0.4,
+    rate: 0.35,
     minSubscribers: 0,
     maxSubscribers: 49,
     color: "zinc",
@@ -271,7 +271,7 @@ export const COMMISSION_TIERS = {
   },
   PRO: {
     name: "PRO",
-    rate: 0.45,
+    rate: 0.40,
     minSubscribers: 50,
     maxSubscribers: 99,
     color: "amber",
@@ -280,7 +280,7 @@ export const COMMISSION_TIERS = {
   },
   EXPERT: {
     name: "EXPERT",
-    rate: 0.5,
+    rate: 0.45,
     minSubscribers: 100,
     maxSubscribers: 299,
     color: "emerald",
@@ -289,7 +289,7 @@ export const COMMISSION_TIERS = {
   },
   ELITE: {
     name: "ELITE",
-    rate: 0.6,
+    rate: 0.50,
     minSubscribers: 300,
     maxSubscribers: null,
     color: "violet",
@@ -298,7 +298,7 @@ export const COMMISSION_TIERS = {
   },
   PARTNER: {
     name: "PARTNER",
-    rate: null, // Variable
+    rate: 0.80, // 80% przez pierwsze 2 lata, potem spada do ELITE (50%)
     minSubscribers: null,
     maxSubscribers: null,
     color: "primary",

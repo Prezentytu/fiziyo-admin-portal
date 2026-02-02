@@ -1,5 +1,15 @@
 'use client';
 
+/**
+ * @deprecated This component is deprecated. Use UnifiedPatientInput instead.
+ * UnifiedPatientInput provides a better UX with:
+ * - Single input field for email/phone (auto-detection)
+ * - Automatic form morphing when patient not found
+ * - Zero-friction flow without manual mode switching
+ *
+ * This file will be removed in a future version.
+ */
+
 import * as React from 'react';
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useQuery, useMutation } from '@apollo/client/react';

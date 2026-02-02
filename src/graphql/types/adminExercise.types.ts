@@ -16,7 +16,8 @@ export type ContentStatus =
   | 'PENDING_REVIEW'  // Zgłoszone do weryfikacji
   | 'CHANGES_REQUESTED' // Odrzucone z uwagami
   | 'APPROVED'        // Zatwierdzone
-  | 'PUBLISHED';      // Publiczne
+  | 'PUBLISHED'       // Publiczne
+  | 'ARCHIVED_GLOBAL';  // Wycofane z bazy globalnej (soft delete)
 
 /**
  * Predefiniowane powody odrzucenia ćwiczenia
@@ -38,6 +39,7 @@ export interface VerificationStats {
   changesRequested: number;
   approved: number;
   published: number;
+  archivedGlobal: number; // ARCHIVED_GLOBAL count
   total: number;
 }
 
@@ -84,6 +86,12 @@ export interface AdminExercise {
   progressionFamilyId?: string;
   createdAt?: string;
   updatedAt?: string;
+  // Extended training parameters
+  rangeOfMotion?: string;
+  loadType?: string;
+  loadValue?: number;
+  loadUnit?: string;
+  loadText?: string;
   // Navigation properties
   createdBy?: {
     id: string;
@@ -126,6 +134,11 @@ export interface RejectExerciseVariables {
   rejectionReason: string;
 }
 
+export interface UnpublishExerciseVariables {
+  exerciseId: string;
+  reason?: string | null;
+}
+
 export interface BatchApproveExercisesVariables {
   exerciseIds: string[];
 }
@@ -146,6 +159,14 @@ export interface GetApprovedExercisesResponse {
   approvedExercises: AdminExercise[];
 }
 
+export interface GetPublishedExercisesResponse {
+  exercisesByStatus: AdminExercise[];
+}
+
+export interface GetArchivedExercisesResponse {
+  exercisesByStatus: AdminExercise[];
+}
+
 export interface GetVerificationStatsResponse {
   verificationStats: VerificationStats;
 }
@@ -160,6 +181,10 @@ export interface ApproveExerciseResponse {
 
 export interface RejectExerciseResponse {
   rejectExercise: AdminExercise;
+}
+
+export interface UnpublishExerciseResponse {
+  unpublishExercise: AdminExercise;
 }
 
 export interface BatchApproveExercisesResponse {
@@ -210,4 +235,131 @@ export interface GetSuggestedTagsVariables {
 
 export interface GetSuggestedTagsResponse {
   suggestedTags: TagSuggestions;
+}
+
+// ============================================
+// Exercise Relationships (Graph)
+// ============================================
+
+/**
+ * Typ relacji między ćwiczeniami
+ */
+export type ExerciseRelationType = 'REGRESSION' | 'PROGRESSION' | 'ALTERNATIVE' | 'VARIATION';
+
+/**
+ * Poziom trudności ćwiczenia (dla walidacji relacji)
+ */
+export type DifficultyLevel = 'BEGINNER' | 'EASY' | 'MEDIUM' | 'HARD' | 'EXPERT';
+
+/**
+ * Minimalna reprezentacja ćwiczenia dla relacji
+ */
+export interface ExerciseRelationTarget {
+  id: string;
+  name: string;
+  thumbnailUrl?: string;
+  gifUrl?: string;
+  videoUrl?: string;
+  difficultyLevel?: DifficultyLevel;
+  mainTags?: string[];
+  type?: string;
+  /** Czy sugestia AI */
+  isAISuggested?: boolean;
+  /** Czy zweryfikowane */
+  isVerified?: boolean;
+}
+
+/**
+ * Pełna relacja między ćwiczeniami
+ */
+export interface ExerciseRelation {
+  id: string;
+  sourceExerciseId: string;
+  targetExerciseId: string;
+  relationType: ExerciseRelationType;
+  targetExercise: ExerciseRelationTarget;
+  confidence?: number; // 0-1, jak pewna jest sugestia AI
+  isAISuggested?: boolean;
+  isVerified?: boolean;
+  createdAt?: string;
+  verifiedAt?: string;
+  verifiedById?: string;
+}
+
+/**
+ * Relacje ćwiczenia (regresja + progresja)
+ */
+export interface ExerciseRelationships {
+  regression?: ExerciseRelation | null;
+  progression?: ExerciseRelation | null;
+  alternatives?: ExerciseRelation[];
+  variations?: ExerciseRelation[];
+}
+
+/**
+ * Kandydat do relacji (sugestia AI)
+ */
+export interface RelationCandidate {
+  exercise: ExerciseRelationTarget;
+  confidence: number;
+  reason?: string; // np. "Podobne tagi", "Podobna nazwa", "Embeddings similarity"
+}
+
+// ============================================
+// Relationship Mutations Variables
+// ============================================
+
+export interface SetExerciseRelationVariables {
+  sourceExerciseId: string;
+  targetExerciseId: string;
+  relationType: ExerciseRelationType;
+}
+
+export interface RemoveExerciseRelationVariables {
+  sourceExerciseId: string;
+  relationType: ExerciseRelationType;
+}
+
+export interface GetRelationCandidatesVariables {
+  exerciseId: string;
+  relationType: ExerciseRelationType;
+  limit?: number;
+}
+
+// ============================================
+// Relationship Query/Mutation Responses
+// ============================================
+
+export interface GetExerciseRelationshipsResponse {
+  exerciseRelationships: ExerciseRelationships;
+}
+
+export interface RelationCandidatesResult {
+  exerciseId: string;
+  relationType: string;
+  candidates: Array<{
+    id: string;
+    name: string;
+    thumbnailUrl?: string;
+    gifUrl?: string;
+    difficultyLevel?: DifficultyLevel;
+    isSameFamily?: boolean;
+    mainTags?: string[];
+  }>;
+}
+
+export interface GetRelationCandidatesResponse {
+  relationCandidates: RelationCandidatesResult;
+}
+
+export interface SearchExercisesForRelationResponse {
+  searchExercisesForRelation: ExerciseRelationTarget[];
+}
+
+export interface SetExerciseRelationResponse {
+  setExerciseRelation: ExerciseRelation;
+}
+
+export interface RemoveExerciseRelationResponse {
+  removeExerciseRelation: boolean;
 }

@@ -54,5 +54,8 @@ export * from "./onboardingStats.queries";
 // Revenue Share (zarobki, Stripe Connect, zaproszenia pacjentów)
 export * from "./revenue.queries";
 
+// Billing (Pay-as-you-go, Pilot Mode)
+export * from "./billing.queries";
+
 // Admin Exercises (weryfikacja ćwiczeń - Centrum Weryfikacji)
 export * from "./adminExercises.queries";

@@ -9,11 +9,10 @@ import { UserPlus, CheckCircle2, Send, UserPlus2, X, Sparkles } from 'lucide-rea
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
-import { SmartPatientLookup } from './SmartPatientLookup';
-import { PatientFormValues } from './PatientForm';
+import { UnifiedPatientInput, PatientFormValues } from './UnifiedPatientInput';
 import { AssignmentWizard } from '@/components/assignment/AssignmentWizard';
 import { CREATE_SHADOW_PATIENT_MUTATION } from '@/graphql/mutations/users.mutations';
-import { GET_THERAPIST_PATIENTS_QUERY, GET_ALL_THERAPIST_PATIENTS_QUERY } from '@/graphql/queries/therapists.queries';
+import { GET_THERAPIST_PATIENTS_QUERY, GET_ALL_THERAPIST_PATIENTS_QUERY, GET_ORGANIZATION_PATIENTS_QUERY } from '@/graphql/queries/therapists.queries';
 import { GET_CURRENT_ORGANIZATION_PLAN } from '@/graphql/queries/organizations.queries';
 import { cn } from '@/lib/utils';
 import { getAvatarGradient, getInitials } from '@/utils/textUtils';
@@ -100,6 +99,7 @@ export function PatientDialog({
     refetchQueries: [
       { query: GET_THERAPIST_PATIENTS_QUERY, variables: { therapistId, organizationId } },
       { query: GET_ALL_THERAPIST_PATIENTS_QUERY, variables: { therapistId, organizationId } },
+      { query: GET_ORGANIZATION_PATIENTS_QUERY, variables: { organizationId, filter: 'all' } },
       { query: GET_CURRENT_ORGANIZATION_PLAN, variables: { organizationId } },
     ],
   });
@@ -196,10 +196,7 @@ export function PatientDialog({
     <>
       <Dialog open={open} onOpenChange={() => handleCloseAttempt()}>
         <DialogContent
-          className={cn(
-            "p-0 gap-0 overflow-hidden",
-            createdPatient ? "sm:max-w-md" : "sm:max-w-2xl"
-          )}
+          className="p-0 gap-0 overflow-hidden max-w-[95vw] sm:max-w-xl"
           onInteractOutside={(e) => e.preventDefault()}
           onEscapeKeyDown={(e) => {
             e.preventDefault();
@@ -228,7 +225,7 @@ export function PatientDialog({
                   <div
                     className={cn(
                       "relative flex items-center justify-center rounded-full text-white font-bold text-3xl",
-                      "w-24 h-24 shadow-2xl ring-4 ring-primary/20",
+                      "w-28 h-28 shadow-2xl ring-4 ring-primary/20",
                       "transition-all duration-500",
                       showSuccessAnimation && "animate-in zoom-in-50 duration-500"
                     )}
@@ -311,7 +308,7 @@ export function PatientDialog({
           ) : (
             // Smart Patient Lookup State
             <>
-              <DialogHeader className="px-6 py-5 border-b border-border shrink-0 bg-linear-to-r from-surface to-surface-light/50">
+              <DialogHeader className="px-8 py-6 border-b border-border shrink-0 bg-linear-to-r from-surface to-surface-light/50">
                 <div className="flex items-center gap-4">
                   <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-linear-to-br from-primary to-primary-dark shadow-lg shadow-primary/25">
                     <UserPlus className="h-6 w-6 text-white" />
@@ -325,8 +322,8 @@ export function PatientDialog({
                 </div>
               </DialogHeader>
 
-              <div className="p-6">
-                <SmartPatientLookup
+              <div className="p-8">
+                <UnifiedPatientInput
                   organizationId={organizationId}
                   therapistId={therapistId}
                   clinicId={clinicId}
@@ -359,17 +356,16 @@ export function PatientDialog({
           open={showAssignWizard}
           onOpenChange={(isOpen) => {
             setShowAssignWizard(isOpen);
-            if (!isOpen) {
-              handleClose();
-            }
+            // Don't close PatientDialog when wizard closes - AssignmentSuccessDialog needs to show first
+            // User can close PatientDialog after interacting with QR code
           }}
           mode="from-patient"
           preselectedPatient={wizardPatient}
           organizationId={organizationId}
           therapistId={therapistId}
           onSuccess={() => {
-            setShowAssignWizard(false);
-            handleClose();
+            // Don't close immediately - let user see QR code in AssignmentSuccessDialog first
+            // PatientDialog can be closed via X button or by clicking outside
           }}
         />
       )}

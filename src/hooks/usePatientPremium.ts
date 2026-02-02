@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { useMutation, type ApolloError } from "@apollo/client/react";
+import { useMutation } from "@apollo/client/react";
 import { toast } from "sonner";
 
 import { ACTIVATE_PATIENT_PREMIUM_MUTATION } from "@/graphql/mutations/users.mutations";
@@ -150,7 +150,7 @@ export function usePatientPremium({
         toast.success("Dostęp Premium został aktywowany na 30 dni");
         onSuccess?.();
       },
-      onError: (error: ApolloError) => {
+      onError: (error) => {
         toast.error(`Błąd aktywacji: ${error.message}`);
       },
     }

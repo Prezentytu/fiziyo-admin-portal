@@ -2,11 +2,8 @@ import { View, Text, Image } from '@react-pdf/renderer';
 import { pdfStyles } from './styles';
 import { getMediaUrl } from '@/utils/mediaUrl';
 import {
-  formatSets,
-  formatReps,
   formatDurationPolish,
   formatSeconds,
-  translateExerciseTypePolish,
   translateExerciseSidePolish
 } from './polishUtils';
 import type { PDFExercise } from './types';
@@ -18,35 +15,37 @@ interface ExercisePDFItemProps {
   compact: boolean;
 }
 
+/**
+ * Clean Exercise Row - Total Flat Design
+ *
+ * Struktura: [Obrazek] [Treść + Notatki] [Parametry]
+ * - Parametry w czystej tabelce (bez guzikowych obwódek)
+ * - Liniatura na notatki (zamiast pustego miejsca)
+ */
 export function ExercisePDFItem({ exercise, index, showImage, compact }: ExercisePDFItemProps) {
   const displayName = exercise.customName || exercise.name;
   const displayDescription = exercise.customDescription || exercise.description;
   const imageUrl = getMediaUrl(exercise.imageUrl || exercise.images?.[0]);
-  const typeLabel = translateExerciseTypePolish(exercise.type);
   const sideLabel = translateExerciseSidePolish(exercise.exerciseSide);
 
-  // Formatowanie parametrów z polską odmianą
-  const setsText = exercise.sets ? formatSets(exercise.sets) : null;
-  const repsText = exercise.reps ? formatReps(exercise.reps) : null;
+  // Formatowanie parametrów
   const durationText = exercise.duration ? formatDurationPolish(exercise.duration) : null;
   const restText = exercise.restSets ? formatSeconds(exercise.restSets) : null;
 
-  // Kompaktowy widok - lista bez obrazków
+  // Kompaktowy widok
   if (compact) {
     return (
-      <View style={pdfStyles.exerciseCardCompact} wrap={false}>
-        <View style={pdfStyles.exerciseCompactNumber}>
-          <Text style={pdfStyles.exerciseCompactNumberText}>{index + 1}</Text>
-        </View>
+      <View style={pdfStyles.exerciseRowCompact} wrap={false}>
+        <Text style={pdfStyles.exerciseCompactNumber}>{index + 1}.</Text>
         <Text style={pdfStyles.exerciseCompactName}>{displayName}</Text>
         <View style={pdfStyles.exerciseCompactParams}>
-          {setsText && (
-            <Text style={pdfStyles.exerciseCompactParam}>{setsText}</Text>
+          {exercise.sets && (
+            <Text style={pdfStyles.exerciseCompactParam}>{exercise.sets} serii</Text>
           )}
-          {repsText && (
-            <Text style={pdfStyles.exerciseCompactParam}>{repsText}</Text>
+          {exercise.reps && (
+            <Text style={pdfStyles.exerciseCompactParam}>{exercise.reps} powt.</Text>
           )}
-          {durationText && (
+          {durationText && !exercise.reps && (
             <Text style={pdfStyles.exerciseCompactParam}>{durationText}</Text>
           )}
           {sideLabel && (
@@ -57,83 +56,99 @@ export function ExercisePDFItem({ exercise, index, showImage, compact }: Exercis
     );
   }
 
-  // Pełny widok z obrazkiem i szczegółami
+  // Pełny widok - Clean Layout
   return (
-    <View style={pdfStyles.exerciseCard} wrap={false}>
-      {/* Nagłówek z numerem i nazwą */}
-      <View style={pdfStyles.exerciseHeader}>
-        <View style={pdfStyles.exerciseNumber}>
-          <Text style={pdfStyles.exerciseNumberText}>{index + 1}</Text>
-        </View>
-        <View style={pdfStyles.exerciseTitle}>
-          <Text style={pdfStyles.exerciseName}>{displayName}</Text>
-          {typeLabel && (
-            <Text style={pdfStyles.exerciseType}>{typeLabel}</Text>
+    <View style={pdfStyles.exerciseRowClean} wrap={false}>
+
+      {/* KOLUMNA 1: OBRAZEK */}
+      {showImage && (
+        <View style={pdfStyles.exerciseColImageClean}>
+          {imageUrl ? (
+            <Image src={imageUrl} style={pdfStyles.exerciseThumbnailClean} />
+          ) : (
+            <View style={pdfStyles.exerciseThumbnailPlaceholderClean}>
+              <Text style={pdfStyles.exerciseThumbnailPlaceholderText}>
+                Rysunek
+              </Text>
+            </View>
           )}
+        </View>
+      )}
+
+      {/* KOLUMNA 2: TREŚĆ */}
+      <View style={pdfStyles.exerciseColContentClean}>
+        {/* Nagłówek */}
+        <View style={pdfStyles.exerciseHeaderClean}>
+          <Text style={pdfStyles.exerciseNumberClean}>{index + 1}.</Text>
+          <Text style={pdfStyles.exerciseNameClean}>{displayName.toUpperCase()}</Text>
+          {sideLabel && (
+            <Text style={pdfStyles.exerciseSideTagClean}>{sideLabel}</Text>
+          )}
+        </View>
+
+        {/* Opis */}
+        {displayDescription ? (
+          <Text style={pdfStyles.exerciseDescriptionClean}>{displayDescription}</Text>
+        ) : (
+          <Text style={pdfStyles.exerciseDescriptionClean}>
+            Wykonuj ćwiczenie zgodnie z instrukcjami terapeuty. Pamiętaj o prawidłowym oddychaniu.
+          </Text>
+        )}
+
+        {/* Uwagi terapeuty (jeśli są) */}
+        {exercise.notes && (
+          <View style={pdfStyles.exerciseTherapistNotesClean}>
+            <Text style={pdfStyles.exerciseTherapistNotesTextClean}>
+              Uwaga: {exercise.notes}
+            </Text>
+          </View>
+        )}
+
+        {/* Notatki - liniatura */}
+        <View style={pdfStyles.exerciseNotesSection}>
+          <Text style={pdfStyles.exerciseNotesLabelClean}>Notatki terapeuty:</Text>
+          <View style={pdfStyles.exerciseNotesLineClean} />
+          <View style={pdfStyles.exerciseNotesLineClean} />
         </View>
       </View>
 
-      {/* Treść - obrazek + szczegóły */}
-      <View style={pdfStyles.exerciseContent}>
-        {/* Obrazek */}
-        {showImage && imageUrl ? (
-          <Image src={imageUrl} style={pdfStyles.exerciseImage} />
-        ) : showImage ? (
-          <View style={pdfStyles.exerciseImagePlaceholder}>
-            <Text style={pdfStyles.exerciseImagePlaceholderText}>Brak{'\n'}zdjęcia</Text>
+      {/* KOLUMNA 3: PARAMETRY (Czysta tabelka) */}
+      <View style={pdfStyles.exerciseColParamsClean}>
+        {exercise.sets && (
+          <View style={pdfStyles.paramItemCleanWithBorder}>
+            <Text style={pdfStyles.paramLabelClean}>Serie</Text>
+            <Text style={pdfStyles.paramValueCleanLarge}>{exercise.sets}</Text>
           </View>
-        ) : null}
+        )}
 
-        {/* Szczegóły ćwiczenia */}
-        <View style={pdfStyles.exerciseDetails}>
-          {/* Parametry - duże, widoczne */}
-          <View style={pdfStyles.exerciseParams}>
-            {setsText && (
-              <View style={pdfStyles.paramBox}>
-                <Text style={pdfStyles.paramLabel}>Serie</Text>
-                <Text style={pdfStyles.paramValue}>{exercise.sets}</Text>
-              </View>
-            )}
-            {repsText && (
-              <View style={pdfStyles.paramBox}>
-                <Text style={pdfStyles.paramLabel}>Powtórzenia</Text>
-                <Text style={pdfStyles.paramValue}>{exercise.reps}</Text>
-              </View>
-            )}
-            {durationText && (
-              <View style={pdfStyles.paramBox}>
-                <Text style={pdfStyles.paramLabel}>Czas serii</Text>
-                <Text style={pdfStyles.paramValue}>{durationText}</Text>
-              </View>
-            )}
-            {restText && (
-              <View style={pdfStyles.paramBox}>
-                <Text style={pdfStyles.paramLabel}>Przerwa między seriami</Text>
-                <Text style={pdfStyles.paramValue}>{restText}</Text>
-              </View>
-            )}
+        {exercise.reps && (
+          <View style={pdfStyles.paramItemCleanWithBorder}>
+            <Text style={pdfStyles.paramLabelClean}>Powtórzenia</Text>
+            <Text style={pdfStyles.paramValueCleanMedium}>{exercise.reps}</Text>
           </View>
+        )}
 
-          {/* Strona ćwiczenia (lewa/prawa) */}
-          {sideLabel && (
-            <View style={pdfStyles.exerciseSide}>
-              <Text style={pdfStyles.exerciseSideText}>{sideLabel}</Text>
-            </View>
-          )}
+        {durationText && !exercise.reps && (
+          <View style={pdfStyles.paramItemCleanWithBorder}>
+            <Text style={pdfStyles.paramLabelClean}>Czas</Text>
+            <Text style={pdfStyles.paramValueCleanSmall}>{durationText}</Text>
+          </View>
+        )}
 
-          {/* Opis - jak wykonać */}
-          {displayDescription && (
-            <Text style={pdfStyles.exerciseDescription}>{displayDescription}</Text>
-          )}
+        {restText && (
+          <View style={pdfStyles.paramItemClean}>
+            <Text style={pdfStyles.paramLabelClean}>Przerwa</Text>
+            <Text style={pdfStyles.paramValueCleanSmall}>{restText}</Text>
+          </View>
+        )}
 
-          {/* Dodatkowe uwagi terapeuty */}
-          {exercise.notes && (
-            <View style={pdfStyles.exerciseNotes}>
-              <Text style={pdfStyles.exerciseNotesLabel}>UWAGA OD TERAPEUTY:</Text>
-              <Text style={pdfStyles.exerciseNotesText}>{exercise.notes}</Text>
-            </View>
-          )}
-        </View>
+        {/* Fallback */}
+        {!exercise.sets && !exercise.reps && !exercise.duration && (
+          <View style={pdfStyles.paramItemClean}>
+            <Text style={pdfStyles.paramLabelClean}>Dawkowanie</Text>
+            <Text style={pdfStyles.paramValueCleanSmall}>Wg zaleceń</Text>
+          </View>
+        )}
       </View>
     </View>
   );

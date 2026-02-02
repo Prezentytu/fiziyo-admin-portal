@@ -21,6 +21,7 @@ import { UPDATE_PATIENT_EXERCISE_OVERRIDES_MUTATION } from '@/graphql/mutations/
 import { GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY } from '@/graphql/queries/patientAssignments.queries';
 import { aiService } from '@/services/aiService';
 import type { PatientAssignment, ExerciseMapping, ExerciseOverride } from './PatientAssignmentCard';
+import { translateExerciseTypeShort } from '@/components/pdf/polishUtils';
 
 interface EditExerciseOverrideDialogProps {
   open: boolean;
@@ -33,14 +34,6 @@ interface EditExerciseOverrideDialogProps {
 }
 
 // Helper
-const translateType = (type?: string) => {
-  const types: Record<string, string> = {
-    time: 'czasowe',
-    reps: 'powtórzenia',
-  };
-  return type ? types[type] || type : '';
-};
-
 const translateSide = (side?: string) => {
   if (!side) return '';
   const normalizedSide = side.toLowerCase();
@@ -417,10 +410,10 @@ function EditExerciseOverrideDialogContent({
                 <div className="flex items-center gap-2 mt-1 flex-wrap">
                   {exercise?.type && (
                     <Badge variant="secondary" className="text-xs">
-                      {translateType(exercise.type)}
+                      {translateExerciseTypeShort(exercise.type)}
                     </Badge>
                   )}
-                  {(exercise?.side || exercise?.exerciseSide) && 
+                  {(exercise?.side || exercise?.exerciseSide) &&
                    (exercise?.side || exercise?.exerciseSide) !== 'none' &&
                    (exercise?.side || exercise?.exerciseSide)?.toLowerCase() !== 'none' && (
                     <Badge variant="outline" className="text-xs">

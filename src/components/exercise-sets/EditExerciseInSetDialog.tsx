@@ -18,6 +18,7 @@ import { getMediaUrl } from '@/utils/mediaUrl';
 
 import { UPDATE_EXERCISE_IN_SET_MUTATION } from '@/graphql/mutations/exercises.mutations';
 import { GET_EXERCISE_SET_WITH_ASSIGNMENTS_QUERY } from '@/graphql/queries/exerciseSets.queries';
+import { translateExerciseTypeShort } from '@/components/pdf/polishUtils';
 
 interface ExerciseMapping {
   id: string;
@@ -204,15 +205,6 @@ function EditExerciseInSetDialogContent({
   const exercise = exerciseMapping.exercise;
   const imageUrl = getMediaUrl(exercise?.imageUrl || exercise?.images?.[0]);
 
-  // Tłumaczenie typów na polski
-  const translateType = (type?: string) => {
-    const types: Record<string, string> = {
-      time: 'czasowe',
-      reps: 'powtórzenia',
-    };
-    return type ? types[type] || type : '';
-  };
-
   const translateSide = (side?: string) => {
     if (!side) return '';
     const normalizedSide = side.toLowerCase();
@@ -258,10 +250,10 @@ function EditExerciseInSetDialogContent({
                 <div className="flex items-center gap-2 mt-1.5 flex-wrap">
                   {exercise?.type && (
                     <Badge variant="secondary" className="text-[10px]">
-                      {translateType(exercise.type)}
+                      {translateExerciseTypeShort(exercise.type)}
                     </Badge>
                   )}
-                  {(exercise?.side || exercise?.exerciseSide) && 
+                  {(exercise?.side || exercise?.exerciseSide) &&
                    (exercise?.side || exercise?.exerciseSide) !== 'none' &&
                    (exercise?.side || exercise?.exerciseSide)?.toLowerCase() !== 'none' && (
                     <Badge variant="outline" className="text-[10px]">

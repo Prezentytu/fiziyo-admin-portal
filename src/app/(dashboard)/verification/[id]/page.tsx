@@ -1,26 +1,26 @@
 "use client";
 
-import { use, useState, useCallback, useEffect } from "react";
+import { use, useState, useCallback, useEffect, useMemo } from "react";
 import { useQuery, useMutation } from "@apollo/client/react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, FileText, Sparkles, Keyboard } from "lucide-react";
+import { ArrowLeft, FileText } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/shared/EmptyState";
-import { MobileSimulator } from "@/components/verification/MobileSimulator";
-import { QualityChecklist, type QualityChecks } from "@/components/verification/QualityChecklist";
-import { TagRefinementPanel } from "@/components/verification/TagRefinementPanel";
-import { VerificationStickyFooter } from "@/components/verification/VerificationStickyFooter";
+import { MasterVideoPlayer } from "@/components/verification/MasterVideoPlayer";
 import { RejectReasonDialog } from "@/components/verification/RejectReasonDialog";
 import { ApproveDialog } from "@/components/verification/ApproveDialog";
+
+// Clinical Operator UI Components - 3-Column Layout
+import { VerificationEditorPanel } from "@/components/verification/VerificationEditorPanel";
+import { VerdictPanel } from "@/components/verification/VerdictPanel";
+import { useExerciseValidation } from "@/components/verification/PublishGuardrails";
+
 import { useSystemRole } from "@/hooks/useSystemRole";
+import { useVerificationHotkeys } from "@/hooks/useVerificationHotkeys";
 
 import { GET_EXERCISE_BY_ID_QUERY } from "@/graphql/queries/exercises.queries";
 import {
@@ -30,6 +30,7 @@ import {
 import {
   APPROVE_EXERCISE_MUTATION,
   REJECT_EXERCISE_MUTATION,
+  UPDATE_EXERCISE_FIELD_MUTATION,
 } from "@/graphql/mutations/adminExercises.mutations";
 import type { ExerciseByIdResponse } from "@/types/apollo";
 import type {
@@ -39,46 +40,103 @@ import type {
   RejectExerciseResponse,
   GetPendingReviewExercisesResponse,
   GetVerificationStatsResponse,
+  ExerciseRelationTarget,
 } from "@/graphql/types/adminExercise.types";
 
 interface VerificationDetailPageProps {
   params: Promise<{ id: string }>;
 }
 
+/**
+ * VerificationDetailPage - Clinical Operator UI
+ *
+ * Filozofia "Zero Scroll" (Bloomberg Terminal style):
+ * - Wszystko widoczne bez scrollowania na 1366x768
+ * - MasterVideoPlayer zamiast MobileSimulator (pełna wysokość)
+ * - Aggressive compact layout w prawej kolumnie
+ * - Review by Exception - ekspert tylko poprawia błędy
+ * - Checkbox bezpieczeństwa klinicznego w footerze
+ * - Hotkeys dla power users
+ */
 export default function VerificationDetailPage({ params }: VerificationDetailPageProps) {
   const { id } = use(params);
   const router = useRouter();
   const { canReviewExercises, isLoading: roleLoading } = useSystemRole();
 
-  // State
+  // ============================================
+  // STATE
+  // ============================================
+
+  // Dialog states
   const [isRejectDialogOpen, setIsRejectDialogOpen] = useState(false);
   const [isApproveDialogOpen, setIsApproveDialogOpen] = useState(false);
-  const [qualityChecks, setQualityChecks] = useState<QualityChecks>({
-    clinicallyCorrect: null,
-    mediaQuality: null,
-    descriptionComplete: null,
-    tagsAppropriate: null,
+
+  // Safety checklist state (for VerdictPanel)
+  const [safetyChecklist, setSafetyChecklist] = useState({
+    videoReadable: false,
+    techniqueSafe: false,
+    noContraindications: false,
   });
+
+  // Comment for author (for VerdictPanel)
+  const [authorComment, setAuthorComment] = useState("");
+
+  // Clinical safety checkbox (legacy - derived from checklist)
+  const clinicalCheckboxChecked = Object.values(safetyChecklist).every(Boolean);
+
+  // Tags state (for local editing before save)
   const [mainTags, setMainTags] = useState<string[]>([]);
   const [additionalTags, setAdditionalTags] = useState<string[]>([]);
-  const [patientDescription, setPatientDescription] = useState("");
-  const [clinicalDescription, setClinicalDescription] = useState("");
-  const [isInitialized, setIsInitialized] = useState(false);
 
-  // Queries
-  const { data, loading, error } = useQuery<ExerciseByIdResponse>(GET_EXERCISE_BY_ID_QUERY, {
-    variables: { id },
-    onCompleted: (data) => {
-      if (data?.exerciseById && !isInitialized) {
-        const ex = data.exerciseById as unknown as AdminExercise;
-        setMainTags(ex.mainTags || []);
-        setAdditionalTags(ex.additionalTags || []);
-        setPatientDescription(ex.patientDescription || ex.description || "");
-        setClinicalDescription(ex.clinicalDescription || "");
-        setIsInitialized(true);
-      }
-    },
+  // Relations state
+  const [regressionExercise, setRegressionExercise] = useState<ExerciseRelationTarget | null>(null);
+  const [progressionExercise, setProgressionExercise] = useState<ExerciseRelationTarget | null>(null);
+
+  // Save tracking
+  const [lastSavedTime, setLastSavedTime] = useState<Date | null>(null);
+  const [isSavingDraft, setIsSavingDraft] = useState(false);
+
+  // Smart Validation completion state (from VerificationEditorPanel)
+  const [completionData, setCompletionData] = useState<{
+    percentage: number;
+    canSaveDraft: boolean;
+    canPublish: boolean;
+    criticalMissing: string[];
+    recommendedMissing: string[];
+  }>({
+    percentage: 0,
+    canSaveDraft: false,
+    canPublish: false,
+    criticalMissing: [],
+    recommendedMissing: [],
   });
+
+  // Missing fields state (from new validation layer)
+  const [missingFields, setMissingFields] = useState<string[]>([]);
+
+  // ============================================
+  // QUERIES
+  // ============================================
+
+  const { data, loading, error, refetch } = useQuery<ExerciseByIdResponse>(GET_EXERCISE_BY_ID_QUERY, {
+    variables: { id },
+  });
+
+  // Initialize tags when data loads
+  useEffect(() => {
+    if (data?.exerciseById) {
+      const ex = data.exerciseById as unknown as AdminExercise;
+      setMainTags(ex.mainTags || []);
+      setAdditionalTags(ex.additionalTags || []);
+      // Reset safety checklist when switching exercises
+      setSafetyChecklist({
+        videoReadable: false,
+        techniqueSafe: false,
+        noContraindications: false,
+      });
+      setAuthorComment("");
+    }
+  }, [data?.exerciseById]);
 
   // Query for pending exercises (for progress indicator and auto-advance)
   const { data: pendingData } = useQuery<GetPendingReviewExercisesResponse>(GET_PENDING_EXERCISES_QUERY);
@@ -86,13 +144,64 @@ export default function VerificationDetailPage({ params }: VerificationDetailPag
   // Query for stats
   const { data: statsData } = useQuery<GetVerificationStatsResponse>(GET_VERIFICATION_STATS_QUERY);
 
-  // Calculate progress
+  // ============================================
+  // COMPUTED VALUES
+  // ============================================
+
+  const exercise = data?.exerciseById as unknown as AdminExercise | null;
+
+  // Progress tracking
   const pendingExercises = pendingData?.pendingReviewExercises || [];
   const currentIndex = pendingExercises.findIndex((ex) => ex.id === id);
   const totalPending = statsData?.verificationStats?.pendingReview || pendingExercises.length;
   const positionInQueue = currentIndex >= 0 ? currentIndex + 1 : null;
+  const remainingCount = totalPending - (positionInQueue || 0);
 
-  // Get next exercise ID for auto-advance
+  // Validation (using existing hook)
+  const { canPublish: legacyCanPublish, errors: validationErrorRules } = useExerciseValidation(
+    exercise || ({} as AdminExercise),
+    { mainTags, additionalTags }
+  );
+
+  // Convert validation errors to footer format (combine legacy + smart validation)
+  const validationErrors = useMemo(() => {
+    const legacyErrors = validationErrorRules?.map(rule => ({
+      id: rule.id,
+      message: rule.label,
+    })) || [];
+
+    // Add smart validation missing fields as errors
+    const smartErrors = [
+      ...completionData.criticalMissing.map((field, i) => ({
+        id: `smart-critical-${i}`,
+        message: `Brak: ${field}`,
+      })),
+      ...completionData.recommendedMissing.map((field, i) => ({
+        id: `smart-recommended-${i}`,
+        message: `Sugerowane: ${field}`,
+      })),
+    ];
+
+    // Deduplicate by message
+    const combined = [...legacyErrors, ...smartErrors];
+    const seen = new Set<string>();
+    return combined.filter(err => {
+      if (seen.has(err.message)) return false;
+      seen.add(err.message);
+      return true;
+    });
+  }, [validationErrorRules, completionData.criticalMissing, completionData.recommendedMissing]);
+
+  // Can publish = smart validation says OK OR legacy validation says OK
+  const canPublish = completionData.canPublish || legacyCanPublish;
+
+  // Can approve = clinical checkbox + validation passed
+  const canApprove = clinicalCheckboxChecked && canPublish;
+
+  // ============================================
+  // NAVIGATION
+  // ============================================
+
   const getNextExerciseId = useCallback((): string | null => {
     if (currentIndex < 0 || currentIndex >= pendingExercises.length - 1) {
       return null;
@@ -100,7 +209,18 @@ export default function VerificationDetailPage({ params }: VerificationDetailPag
     return pendingExercises[currentIndex + 1]?.id || null;
   }, [currentIndex, pendingExercises]);
 
-  // Mutations
+  // Prefetch next exercise
+  const nextExerciseId = useMemo(() => getNextExerciseId(), [getNextExerciseId]);
+  useEffect(() => {
+    if (nextExerciseId) {
+      router.prefetch(`/verification/${nextExerciseId}`);
+    }
+  }, [nextExerciseId, router]);
+
+  // ============================================
+  // MUTATIONS
+  // ============================================
+
   const [approveExercise, { loading: approving }] = useMutation<ApproveExerciseResponse>(
     APPROVE_EXERCISE_MUTATION,
     {
@@ -121,14 +241,103 @@ export default function VerificationDetailPage({ params }: VerificationDetailPag
     }
   );
 
-  const exercise = data?.exerciseById as unknown as AdminExercise | null;
+  const [updateExerciseField] = useMutation(UPDATE_EXERCISE_FIELD_MUTATION, {
+    onCompleted: () => {
+      setLastSavedTime(new Date());
+    },
+    onError: (error) => {
+      toast.error(`Błąd zapisu: ${error.message}`);
+    },
+  });
 
-  // Handlers with auto-advance
+  // ============================================
+  // HANDLERS
+  // ============================================
+
+  // Field update (inline editing)
+  const handleFieldUpdate = useCallback(
+    async (field: string, value: unknown) => {
+      if (!exercise) return;
+
+      setIsSavingDraft(true);
+      try {
+        // Convert value to string for backend (expects string?)
+        const stringValue = value === null || value === undefined 
+          ? null 
+          : typeof value === 'string' 
+            ? value 
+            : JSON.stringify(value);
+
+        await updateExerciseField({
+          variables: {
+            exerciseId: id,
+            fieldName: field,
+            value: stringValue,
+          },
+        });
+        // Note: Removed refetch() to prevent resetting local state in VerificationEditorPanel
+        // The mutation updates the cache, and local state is managed optimistically
+      } finally {
+        setIsSavingDraft(false);
+      }
+    },
+    [exercise, id, updateExerciseField]
+  );
+
+  // Tags handlers
+  const handleMainTagsChange = useCallback(
+    async (newTags: string[]) => {
+      setMainTags(newTags);
+      await handleFieldUpdate("mainTags", newTags);
+    },
+    [handleFieldUpdate]
+  );
+
+  const handleAdditionalTagsChange = useCallback(
+    async (newTags: string[]) => {
+      setAdditionalTags(newTags);
+      await handleFieldUpdate("additionalTags", newTags);
+    },
+    [handleFieldUpdate]
+  );
+
+  // Relations handler
+  const handleRelationsChange = useCallback(
+    (relations: { regression: ExerciseRelationTarget | null; progression: ExerciseRelationTarget | null }) => {
+      setRegressionExercise(relations.regression);
+      setProgressionExercise(relations.progression);
+    },
+    []
+  );
+
+  // Completion change handler (from Smart Validation)
+  const handleCompletionChange = useCallback(
+    (completion: {
+      percentage: number;
+      canSaveDraft: boolean;
+      canPublish: boolean;
+      criticalMissing: string[];
+      recommendedMissing: string[];
+    }) => {
+      setCompletionData(completion);
+    },
+    []
+  );
+
+  // Validation change handler (from new Clean Cockpit validation layer)
+  const handleValidationChange = useCallback(
+    (isValid: boolean, fields: string[]) => {
+      setMissingFields(fields);
+    },
+    []
+  );
+
+  // Approve handler
   const handleApprove = useCallback(
     async (notes: string | null) => {
       try {
         await approveExercise({
-          variables: { exerciseId: id, notes },
+          variables: { exerciseId: id, reviewNotes: notes },
         });
         toast.success("Ćwiczenie zostało zatwierdzone i opublikowane!");
         setIsApproveDialogOpen(false);
@@ -148,12 +357,26 @@ export default function VerificationDetailPage({ params }: VerificationDetailPag
     [approveExercise, id, router, getNextExerciseId]
   );
 
+  // Approve & Next (with checkbox validation)
+  const handleApproveAndNext = useCallback(() => {
+    if (!clinicalCheckboxChecked) {
+      toast.error("Zaznacz checkbox potwierdzający poprawność kliniczną");
+      return;
+    }
+    if (!canPublish) {
+      toast.error("Popraw błędy walidacji przed zatwierdzeniem");
+      return;
+    }
+    setIsApproveDialogOpen(true);
+  }, [clinicalCheckboxChecked, canPublish]);
+
+  // Reject handler
   const handleReject = useCallback(
     async (reason: RejectionReason, notes: string) => {
       try {
         const fullNotes = `[${reason}] ${notes}`;
         await rejectExercise({
-          variables: { exerciseId: id, notes: fullNotes },
+          variables: { exerciseId: id, rejectionReason: fullNotes },
         });
         toast.success("Ćwiczenie zostało odrzucone z uwagami");
         setIsRejectDialogOpen(false);
@@ -173,51 +396,58 @@ export default function VerificationDetailPage({ params }: VerificationDetailPag
     [rejectExercise, id, router, getNextExerciseId]
   );
 
+  // Skip handler
   const handleSkip = useCallback(() => {
-    router.push("/verification");
-  }, [router]);
+    const nextId = getNextExerciseId();
+    if (nextId) {
+      router.push(`/verification/${nextId}`);
+    } else {
+      router.push("/verification");
+    }
+  }, [router, getNextExerciseId]);
 
-  // Check if all quality checks are passed
-  const allChecksPassed = Object.values(qualityChecks).every((v) => v === true);
+  // Save draft handler
+  const handleSaveDraft = useCallback(() => {
+    toast.success("Szkic zapisany");
+    setLastSavedTime(new Date());
+  }, []);
 
-  // Keyboard shortcuts
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // Don't trigger shortcuts when typing in inputs/textareas
-      if (
-        e.target instanceof HTMLInputElement ||
-        e.target instanceof HTMLTextAreaElement
-      ) {
-        return;
-      }
+  // Toggle all safety checkboxes handler (for keyboard shortcut)
+  const handleToggleClinicalCheckbox = useCallback(() => {
+    const allChecked = Object.values(safetyChecklist).every(Boolean);
+    setSafetyChecklist({
+      videoReadable: !allChecked,
+      techniqueSafe: !allChecked,
+      noContraindications: !allChecked,
+    });
+  }, [safetyChecklist]);
 
-      // Ctrl+Enter = Open Approve dialog (if checks passed)
-      if (e.ctrlKey && e.key === "Enter" && allChecksPassed && !isApproveDialogOpen && !isRejectDialogOpen) {
-        e.preventDefault();
-        setIsApproveDialogOpen(true);
-      }
+  // Handle request changes (send back to author)
+  const handleRequestChanges = useCallback(async () => {
+    if (!authorComment.trim()) {
+      toast.error("Wpisz komentarz dla autora");
+      return;
+    }
+    setIsRejectDialogOpen(true);
+  }, [authorComment]);
 
-      // Ctrl+Backspace = Open Reject dialog
-      if (e.ctrlKey && e.key === "Backspace" && !isApproveDialogOpen && !isRejectDialogOpen) {
-        e.preventDefault();
-        setIsRejectDialogOpen(true);
-      }
+  // ============================================
+  // KEYBOARD SHORTCUTS
+  // ============================================
 
-      // Escape = Skip (close dialogs first or navigate away)
-      if (e.key === "Escape") {
-        if (isApproveDialogOpen) {
-          setIsApproveDialogOpen(false);
-        } else if (isRejectDialogOpen) {
-          setIsRejectDialogOpen(false);
-        } else {
-          handleSkip();
-        }
-      }
-    };
+  useVerificationHotkeys({
+    onApproveAndNext: handleApproveAndNext,
+    onReject: () => setIsRejectDialogOpen(true),
+    onSaveDraft: handleSaveDraft,
+    onSkip: handleSkip,
+    onToggleClinicalCheckbox: handleToggleClinicalCheckbox,
+    canApprove: canApprove,
+    enabled: !isApproveDialogOpen && !isRejectDialogOpen,
+  });
 
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [allChecksPassed, isApproveDialogOpen, isRejectDialogOpen, handleSkip]);
+  // ============================================
+  // RENDER STATES
+  // ============================================
 
   // Access denied
   if (!roleLoading && !canReviewExercises) {
@@ -235,14 +465,33 @@ export default function VerificationDetailPage({ params }: VerificationDetailPag
   // Loading
   if (loading) {
     return (
-      <div className="flex h-[calc(100vh-4rem)] flex-col lg:flex-row overflow-hidden -m-6">
-        <div className="w-full lg:w-[400px] bg-zinc-950 p-8 flex items-center justify-center">
-          <Skeleton className="w-[280px] h-[560px] rounded-[2.5rem]" />
-        </div>
-        <div className="flex-1 p-8 space-y-6">
-          <Skeleton className="h-8 w-64" />
-          <Skeleton className="h-48 w-full" />
-          <Skeleton className="h-48 w-full" />
+      <div className="h-[calc(100vh-4rem)] flex flex-col -m-6">
+        <div className="flex-1 flex flex-col lg:flex-row min-h-0">
+          {/* Left: Video skeleton (40%) */}
+          <div className="lg:w-[40%] bg-zinc-950 p-3">
+            <div className="flex items-center justify-between mb-3">
+              <Skeleton className="h-8 w-24" />
+              <Skeleton className="h-4 w-16" />
+            </div>
+            <Skeleton className="w-full h-[calc(100%-3rem)] rounded-lg" />
+          </div>
+          {/* Middle: Editor skeleton (35%) */}
+          <div className="lg:w-[35%] p-3 space-y-3 border-l border-border/20">
+            <Skeleton className="h-8 w-3/4" />
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-32 w-full" />
+            <Skeleton className="h-16 w-full" />
+          </div>
+          {/* Right: Verdict skeleton (25%) */}
+          <div className="lg:w-[25%] p-3 space-y-3 border-l border-border/20 bg-zinc-950/50">
+            <Skeleton className="h-6 w-24" />
+            <Skeleton className="h-8 w-full" />
+            <Skeleton className="h-8 w-full" />
+            <Skeleton className="h-8 w-full" />
+            <Skeleton className="h-24 w-full" />
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
+          </div>
         </div>
       </div>
     );
@@ -256,46 +505,48 @@ export default function VerificationDetailPage({ params }: VerificationDetailPag
           icon={FileText}
           title="Nie znaleziono"
           description={error ? `Błąd: ${error.message}` : "Ćwiczenie nie istnieje."}
-          action={
-            <Button variant="outline" onClick={() => router.push("/verification")}>
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Wróć do listy
-            </Button>
-          }
+          actionLabel="Wróć do listy"
+          onAction={() => router.push("/verification")}
         />
       </div>
     );
   }
 
+  // ============================================
+  // MAIN RENDER - 3-Column Verification Cockpit
+  // ============================================
+
   return (
-    <div className="flex h-[calc(100vh-4rem)] flex-col lg:flex-row overflow-hidden -m-6">
-      {/* Left Column: Mobile Preview */}
-      <div className="w-full lg:w-[420px] bg-zinc-950 border-r border-border/20 flex-shrink-0 overflow-y-auto">
-        <div className="p-6 lg:p-8">
-          {/* Progress indicator + Back button */}
-          <div className="flex items-center justify-between mb-6">
+    <div className="h-[calc(100vh-4rem)] flex flex-col -m-6">
+      {/* Main content area - 3 column layout 40/35/25 */}
+      <div className="flex-1 flex flex-col lg:flex-row min-h-0">
+
+        {/* LEFT COLUMN: Media Player (40% on desktop) */}
+        <div className="h-[30vh] lg:h-auto lg:w-[40%] bg-zinc-950 border-b lg:border-b-0 lg:border-r border-border/20 flex flex-col min-h-0">
+          {/* Compact Header: Back + Progress */}
+          <div className="flex items-center justify-between gap-3 px-4 py-2.5 border-b border-zinc-800/50 shrink-0">
             <Button
               variant="ghost"
               size="sm"
               onClick={() => router.push("/verification")}
-              className="text-zinc-400 hover:text-white -ml-2"
+              className="text-zinc-400 hover:text-white -ml-2 h-8 px-3"
+              data-testid="verification-back-btn"
             >
               <ArrowLeft className="mr-2 h-4 w-4" />
-              Powrót do listy
+              <span className="text-sm">Powrót</span>
             </Button>
 
             {/* Progress indicator */}
             {positionInQueue && totalPending > 0 && (
               <div className="flex items-center gap-3">
-                <div className="text-xs text-zinc-500">
-                  <span className="text-zinc-300 font-semibold">{positionInQueue}</span>
-                  <span> z </span>
-                  <span className="text-zinc-300 font-semibold">{totalPending}</span>
-                  <span className="ml-1">oczekujących</span>
-                </div>
-                <div className="w-24 h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+                <span className="text-sm text-zinc-400">
+                  <span className="text-white font-semibold">{positionInQueue}</span>
+                  <span className="text-zinc-500 mx-1">/</span>
+                  <span className="text-white font-semibold">{totalPending}</span>
+                </span>
+                <div className="w-16 h-1.5 bg-zinc-800 rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-primary rounded-full transition-all duration-300"
+                    className="h-full bg-emerald-500 rounded-full transition-all duration-300"
                     style={{ width: `${(positionInQueue / totalPending) * 100}%` }}
                   />
                 </div>
@@ -303,133 +554,67 @@ export default function VerificationDetailPage({ params }: VerificationDetailPag
             )}
           </div>
 
-          {/* Phone simulator */}
-          <MobileSimulator exercise={exercise} />
+          {/* Master Video Player */}
+          <div className="flex-1 min-h-0">
+            <MasterVideoPlayer exercise={exercise} />
+          </div>
         </div>
-      </div>
 
-      {/* Right Column: Expert Panel */}
-      <div className="flex-1 flex flex-col min-h-0 bg-background">
-        <ScrollArea className="flex-1">
-          <div className="p-6 lg:p-8 pb-32 space-y-6">
-            {/* Header */}
-            <div className="space-y-2">
-              <div className="flex items-center gap-3">
-                <h1 className="text-2xl font-bold text-foreground">
-                  {exercise.name}
-                </h1>
-                <Badge
-                  variant="outline"
-                  className={
-                    exercise.status === "PENDING_REVIEW"
-                      ? "bg-amber-500/10 text-amber-600 border-amber-500/20"
-                      : exercise.status === "CHANGES_REQUESTED"
-                      ? "bg-orange-500/10 text-orange-600 border-orange-500/20"
-                      : "bg-muted text-muted-foreground"
-                  }
-                >
-                  {exercise.status === "PENDING_REVIEW"
-                    ? "Oczekuje na weryfikację"
-                    : exercise.status === "CHANGES_REQUESTED"
-                    ? "Wymaga poprawek"
-                    : exercise.status}
-                </Badge>
-              </div>
-              {exercise.createdBy && (
-                <p className="text-sm text-muted-foreground">
-                  Autor: {exercise.createdBy.fullname || exercise.createdBy.email}
-                </p>
-              )}
-            </div>
-
-            {/* Previous review notes */}
+        {/* MIDDLE COLUMN: Editor Panel (35% on desktop) */}
+        <div className="flex-1 lg:w-[35%] bg-background flex flex-col min-h-0 border-r border-border/20">
+          <div className="flex-1 p-4 pr-5 lg:p-5 lg:pr-6 flex flex-col min-h-0 overflow-y-auto">
+            {/* Previous review notes (if any) */}
             {exercise.adminReviewNotes && (
-              <Card className="border-amber-500/30 bg-amber-500/5">
-                <CardContent className="p-4">
-                  <div className="flex items-start gap-3">
-                    <FileText className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
-                    <div>
-                      <p className="text-sm font-medium text-amber-600 mb-1">
-                        Poprzednie uwagi weryfikatora:
-                      </p>
-                      <p className="text-sm text-foreground">{exercise.adminReviewNotes}</p>
+              <Card className="border-amber-500/30 bg-amber-500/5 mb-4 shrink-0">
+                <CardContent className="p-3">
+                  <div className="flex items-start gap-2">
+                    <FileText className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium text-amber-600">Poprzednie uwagi:</p>
+                      <p className="text-sm text-foreground mt-1">{exercise.adminReviewNotes}</p>
                     </div>
                   </div>
                 </CardContent>
               </Card>
             )}
 
-            {/* Quality Checklist */}
-            <QualityChecklist
+            {/* MAIN: VerificationEditorPanel */}
+            <VerificationEditorPanel
               exercise={exercise}
-              checks={qualityChecks}
-              onChecksChange={setQualityChecks}
-            />
-
-            {/* Tag Refinement */}
-            <TagRefinementPanel
-              exercise={exercise}
+              onFieldChange={handleFieldUpdate}
               mainTags={mainTags}
+              onMainTagsChange={handleMainTagsChange}
               additionalTags={additionalTags}
-              onMainTagsChange={setMainTags}
-              onAdditionalTagsChange={setAdditionalTags}
+              onAdditionalTagsChange={handleAdditionalTagsChange}
+              onRelationsChange={handleRelationsChange}
+              onValidationChange={handleValidationChange}
+              onCompletionChange={handleCompletionChange}
+              className="flex-1 min-h-0"
+              data-testid="verification-editor-panel"
             />
-
-            {/* Description Editor */}
-            <Card className="border-border/60">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-base font-semibold flex items-center gap-2">
-                  <FileText className="h-5 w-5 text-primary" />
-                  Opisy ćwiczenia
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="patientDesc">Opis dla pacjenta</Label>
-                  <Textarea
-                    id="patientDesc"
-                    placeholder="Prosty, zrozumiały opis dla pacjenta..."
-                    value={patientDescription}
-                    onChange={(e) => setPatientDescription(e.target.value)}
-                    rows={4}
-                    className="resize-none"
-                  />
-                  <div className="flex items-center justify-between">
-                    <p className="text-xs text-muted-foreground">
-                      {patientDescription.length} znaków
-                    </p>
-                    <Button variant="ghost" size="sm" className="h-7 text-xs gap-1">
-                      <Sparkles className="h-3 w-3 text-primary" />
-                      Popraw styl z AI
-                    </Button>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="clinicalDesc">Opis kliniczny (dla fizjo)</Label>
-                  <Textarea
-                    id="clinicalDesc"
-                    placeholder="Profesjonalny opis medyczny..."
-                    value={clinicalDescription}
-                    onChange={(e) => setClinicalDescription(e.target.value)}
-                    rows={3}
-                    className="resize-none"
-                  />
-                </div>
-              </CardContent>
-            </Card>
           </div>
-        </ScrollArea>
+        </div>
 
-        {/* Sticky Footer */}
-        <VerificationStickyFooter
-          onReject={() => setIsRejectDialogOpen(true)}
-          onSkip={handleSkip}
-          onApprove={() => setIsApproveDialogOpen(true)}
-          isRejectLoading={rejecting}
-          isApproveLoading={approving}
-          canApprove={allChecksPassed}
-        />
+        {/* RIGHT COLUMN: Verdict Panel (25% on desktop) */}
+        <div className="lg:w-[25%] min-w-[280px] flex flex-col min-h-0">
+          <VerdictPanel
+            status={exercise.status}
+            submittedAt={exercise.createdAt}
+            onApprove={handleApproveAndNext}
+            onRequestChanges={handleRequestChanges}
+            onReject={() => setIsRejectDialogOpen(true)}
+            comment={authorComment}
+            onCommentChange={setAuthorComment}
+            validationPassed={canPublish}
+            missingFields={missingFields}
+            safetyChecklist={safetyChecklist}
+            onSafetyChecklistChange={setSafetyChecklist}
+            isApproving={approving}
+            isRejecting={rejecting}
+            remainingCount={remainingCount}
+            className="flex-1"
+          />
+        </div>
       </div>
 
       {/* Dialogs */}

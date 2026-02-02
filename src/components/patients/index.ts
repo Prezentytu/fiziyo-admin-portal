@@ -20,3 +20,6 @@ export { PatientFilter, usePatientFilter } from "./PatientFilter";
 export type { PatientFilterType } from "./PatientFilter";
 export { TherapistBadge } from "./TherapistBadge";
 export { TakeOverDialog } from "./TakeOverDialog";
+
+// Beta Pilot Flow - Set extension
+export { ExtendSetDialog } from "./ExtendSetDialog";

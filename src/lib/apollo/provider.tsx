@@ -1,16 +1,21 @@
 "use client";
 
-import { ApolloClient, InMemoryCache, ApolloLink } from "@apollo/client";
+import { ApolloClient, InMemoryCache, ApolloLink, split } from "@apollo/client";
 import { ApolloProvider } from "@apollo/client/react";
+import { getMainDefinition } from "@apollo/client/utilities";
 import { useAuth } from "@clerk/nextjs";
 import { useMemo } from "react";
 import { AuthLinkFactory } from "@/graphql/links/authLink";
 import { HttpLinkFactory } from "@/graphql/links/httpLink";
 import { ErrorLinkFactory } from "@/graphql/links/errorLink";
+import { WsLinkFactory } from "@/graphql/links/wsLink";
 import { BackendAuthTokenProvider } from "@/graphql/providers/BackendAuthTokenProvider";
 
 // ZMIANA 2025: Używamy BackendAuthTokenProvider zamiast bezpośrednio Clerk
 // Provider automatycznie wymienia token Clerk na JWT backendu i cache'uje go
+
+// ZMIANA 2026: Dodano WebSocket link dla real-time subscriptions
+// Split link kieruje subscriptions przez WebSocket, a queries/mutations przez HTTP
 
 export function ApolloWrapper({ children }: { children: React.ReactNode }) {
   const { getToken } = useAuth();
@@ -22,15 +27,38 @@ export function ApolloWrapper({ children }: { children: React.ReactNode }) {
     // Backend token provider - automatycznie wymienia Clerk token na backend JWT
     const tokenProvider = new BackendAuthTokenProvider(getToken);
 
+    // HTTP link dla queries i mutations
+    const httpLink = ApolloLink.from([
+      new ErrorLinkFactory().create(),
+      new AuthLinkFactory(tokenProvider).create(),
+      new HttpLinkFactory({
+        getGraphQLEndpoint: () => `${process.env.NEXT_PUBLIC_API_URL}/graphql`,
+        getBaseUrl: () => process.env.NEXT_PUBLIC_API_URL!,
+      }).create(),
+    ]);
+
+    // WebSocket link dla subscriptions (real-time updates)
+    // Przekazujemy funkcję która pobiera token z tokenProvider
+    const wsLink = new WsLinkFactory(async () => {
+      return tokenProvider.getToken();
+    }).create();
+
+    // Split link - kieruje operacje do odpowiedniego transportu
+    // Subscriptions → WebSocket, Queries/Mutations → HTTP
+    const splitLink = split(
+      ({ query }) => {
+        const definition = getMainDefinition(query);
+        return (
+          definition.kind === "OperationDefinition" &&
+          definition.operation === "subscription"
+        );
+      },
+      wsLink,
+      httpLink
+    );
+
     return new ApolloClient({
-      link: ApolloLink.from([
-        new ErrorLinkFactory().create(),
-        new AuthLinkFactory(tokenProvider).create(),
-        new HttpLinkFactory({
-          getGraphQLEndpoint: () => `${process.env.NEXT_PUBLIC_API_URL}/graphql`,
-          getBaseUrl: () => process.env.NEXT_PUBLIC_API_URL!,
-        }).create(),
-      ]),
+      link: splitLink,
       cache: new InMemoryCache(),
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps

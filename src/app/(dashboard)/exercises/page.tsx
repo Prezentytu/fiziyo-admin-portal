@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { useQuery, useMutation } from '@apollo/client/react';
 import { useRouter } from 'next/navigation';
-import { Plus, Dumbbell, LayoutGrid, List, Search, Download, Sparkles } from 'lucide-react';
+import { Plus, Dumbbell, LayoutGrid, List, Search, Sparkles } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
@@ -19,20 +19,24 @@ import { ExerciseBuilderSidebar } from '@/components/exercise-builder/ExerciseBu
 import { ExerciseBuilderFAB } from '@/components/exercise-builder/ExerciseBuilderFAB';
 import { cn } from '@/lib/utils';
 
-import { GET_ORGANIZATION_EXERCISES_QUERY } from '@/graphql/queries/exercises.queries';
+import { GET_AVAILABLE_EXERCISES_QUERY } from '@/graphql/queries/exercises.queries';
 import { GET_EXERCISE_TAGS_BY_ORGANIZATION_QUERY } from '@/graphql/queries/exerciseTags.queries';
 import { GET_TAG_CATEGORIES_BY_ORGANIZATION_QUERY } from '@/graphql/queries/tagCategories.queries';
-import { DELETE_EXERCISE_MUTATION, SYNC_PUBLISHED_EXERCISES_MUTATION, CHECK_SYNC_AVAILABILITY_QUERY } from '@/graphql/mutations/exercises.mutations';
+import { DELETE_EXERCISE_MUTATION } from '@/graphql/mutations/exercises.mutations';
 import { matchesSearchQuery, matchesAnyText } from '@/utils/textUtils';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { useExerciseBuilder, type BuilderExercise } from '@/contexts/ExerciseBuilderContext';
 import { createTagsMap, mapExercisesWithTags } from '@/utils/tagUtils';
 import { useDataManagement } from '@/hooks/useDataManagement';
+import { useRealtimeExercises } from '@/hooks/useRealtimeExercises';
 import type {
-  OrganizationExercisesResponse,
+  AvailableExercisesResponse,
   ExerciseTagsResponse,
   TagCategoriesResponse,
 } from '@/types/apollo';
+
+// Typ dla filtra źródła ćwiczeń
+type ExerciseSourceFilter = 'all' | 'organization' | 'fiziyo';
 
 export default function ExercisesPage() {
   const router = useRouter();
@@ -40,6 +44,7 @@ export default function ExercisesPage() {
   const { toggleExercise, isInBuilder } = useExerciseBuilder();
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [sourceFilter, setSourceFilter] = useState<ExerciseSourceFilter>('all');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingExercise, setEditingExercise] = useState<Exercise | null>(null);
   const [deletingExercise, setDeletingExercise] = useState<Exercise | null>(null);
@@ -66,10 +71,19 @@ export default function ExercisesPage() {
     organizationId,
   });
 
-  // Get exercises
-  const { data, loading, error } = useQuery(GET_ORGANIZATION_EXERCISES_QUERY, {
+  // Get exercises (includes organization, global, and personal exercises)
+  const { data, loading, error } = useQuery(GET_AVAILABLE_EXERCISES_QUERY, {
     variables: { organizationId },
     skip: !organizationId,
+  });
+
+  // Real-time updates dla ćwiczeń (WebSocket subscriptions)
+  // Automatycznie aktualizuje Apollo Cache - nie wymaga refetchQueries
+  useRealtimeExercises({
+    organizationId: organizationId ?? null,
+    onCreated: () => toast.success('Nowe ćwiczenie zostało dodane'),
+    onUpdated: () => toast.info('Ćwiczenie zostało zaktualizowane'),
+    onDeleted: () => toast.info('Ćwiczenie zostało usunięte'),
   });
 
   // Get tags for mapping
@@ -88,47 +102,13 @@ export default function ExercisesPage() {
   const [deleteExercise, { loading: deleting }] = useMutation(DELETE_EXERCISE_MUTATION, {
     refetchQueries: [
       {
-        query: GET_ORGANIZATION_EXERCISES_QUERY,
+        query: GET_AVAILABLE_EXERCISES_QUERY,
         variables: { organizationId },
       },
     ],
   });
 
-  // Sync availability query
-  const { data: syncData, refetch: refetchSyncAvailability } = useQuery(CHECK_SYNC_AVAILABILITY_QUERY, {
-    variables: { organizationId },
-    skip: !organizationId,
-  });
-
-  // Sync exercises mutation
-  const [syncExercises, { loading: syncing }] = useMutation(SYNC_PUBLISHED_EXERCISES_MUTATION, {
-    refetchQueries: [
-      { query: GET_ORGANIZATION_EXERCISES_QUERY, variables: { organizationId } },
-    ],
-    onCompleted: (data) => {
-      const result = data?.syncPublishedExercises;
-      if (result?.success) {
-        if (result.addedCount > 0) {
-          toast.success(result.message || `Dodano ${result.addedCount} ćwiczeń z bazy FiziYo`);
-        } else {
-          toast.info(result.message || 'Wszystkie ćwiczenia są już dostępne');
-        }
-        refetchSyncAvailability();
-      }
-    },
-    onError: (error) => {
-      toast.error(`Błąd synchronizacji: ${error.message}`);
-    },
-  });
-
-  const newExercisesAvailable = syncData?.checkSyncAvailability?.newAvailable || 0;
-
-  const handleSyncExercises = async () => {
-    if (!organizationId) return;
-    await syncExercises({ variables: { organizationId } });
-  };
-
-  const rawExercises: Exercise[] = (data as OrganizationExercisesResponse)?.organizationExercises || [];
+  const rawExercises: Exercise[] = (data as AvailableExercisesResponse)?.availableExercises || [];
   const tags = (tagsData as ExerciseTagsResponse)?.exerciseTags || [];
   const categories = (categoriesData as TagCategoriesResponse)?.tagsByOrganizationId || [];
 
@@ -136,7 +116,29 @@ export default function ExercisesPage() {
   const tagsMap = createTagsMap(tags, categories);
   const exercises = mapExercisesWithTags(rawExercises, tagsMap);
 
-  // Stats
+  // Filtrowanie po źródle (zakładki)
+  const sourceFilteredExercises = useMemo(() => {
+    if (sourceFilter === 'all') return exercises;
+    if (sourceFilter === 'organization') {
+      return exercises.filter(e => e.scope === 'ORGANIZATION' || e.scope === 'PERSONAL');
+    }
+    if (sourceFilter === 'fiziyo') {
+      return exercises.filter(e => e.scope === 'GLOBAL');
+    }
+    return exercises;
+  }, [exercises, sourceFilter]);
+
+  // Liczniki dla zakładek (po deduplikacji)
+  const organizationCount = useMemo(() => 
+    exercises.filter(e => e.scope === 'ORGANIZATION' || e.scope === 'PERSONAL').length,
+    [exercises]
+  );
+  const fiziyoCount = useMemo(() => 
+    exercises.filter(e => e.scope === 'GLOBAL').length,
+    [exercises]
+  );
+
+  // Stats - łączna liczba (po deduplikacji)
   const totalCount = exercises.length;
 
   // Helper to get all tag names from an exercise
@@ -148,7 +150,7 @@ export default function ExercisesPage() {
   };
 
   // Filter exercises - by name, description, or tag names
-  const searchFilteredExercises = exercises.filter((exercise) => {
+  const searchFilteredExercises = sourceFilteredExercises.filter((exercise) => {
     // Match by name or description
     if (matchesSearchQuery(exercise.name, searchQuery) || matchesSearchQuery(exercise.description, searchQuery)) {
       return true;
@@ -254,14 +256,14 @@ export default function ExercisesPage() {
             </div>
           </div>
 
-          {/* Hero Action + Stats + View Toggle */}
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-stretch">
+          {/* Hero Action + Source Filters */}
+          <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-12">
             {/* Hero Action - Dodaj ćwiczenie */}
             <button
               onClick={() => setIsDialogOpen(true)}
               disabled={!organizationId}
               data-testid="exercise-create-btn"
-              className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary via-primary to-primary-dark p-5 text-left transition-all duration-300 hover:shadow-xl hover:shadow-primary/20 hover:scale-[1.02] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex-1 sm:max-w-xs"
+              className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary via-primary to-primary-dark p-5 text-left transition-all duration-300 hover:shadow-xl hover:shadow-primary/20 hover:scale-[1.02] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 sm:col-span-1 lg:col-span-4"
             >
               <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
               <div className="absolute -top-24 -right-24 w-48 h-48 bg-white/10 rounded-full blur-3xl group-hover:bg-white/20 transition-all duration-500" />
@@ -281,65 +283,67 @@ export default function ExercisesPage() {
               </div>
             </button>
 
-            {/* Sync Exercises Button */}
-            <button
-              onClick={handleSyncExercises}
-              disabled={!organizationId || syncing || newExercisesAvailable === 0}
-              data-testid="exercise-sync-btn"
-              className={cn(
-                "group relative overflow-hidden rounded-2xl p-5 text-left transition-all duration-300 cursor-pointer flex-1 sm:max-w-xs",
-                newExercisesAvailable > 0
-                  ? "bg-gradient-to-br from-violet-500 via-purple-500 to-purple-600 hover:shadow-xl hover:shadow-purple-500/20 hover:scale-[1.02]"
-                  : "bg-surface border border-border/40",
-                "disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
-              )}
-            >
-              {newExercisesAvailable > 0 && (
-                <>
-                  <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                  <div className="absolute -top-24 -right-24 w-48 h-48 bg-white/10 rounded-full blur-3xl group-hover:bg-white/20 transition-all duration-500" />
-                </>
-              )}
-
-              <div className="relative flex items-center gap-4">
-                <div className={cn(
-                  "flex h-11 w-11 items-center justify-center rounded-xl shrink-0 group-hover:scale-110 transition-transform duration-300",
-                  newExercisesAvailable > 0 ? "bg-white/20 backdrop-blur-sm" : "bg-muted"
-                )}>
-                  {syncing ? (
-                    <Download className={cn("h-5 w-5 animate-bounce", newExercisesAvailable > 0 ? "text-white" : "text-muted-foreground")} />
-                  ) : (
-                    <Sparkles className={cn("h-5 w-5", newExercisesAvailable > 0 ? "text-white" : "text-muted-foreground")} />
-                  )}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <h3 className={cn("text-base font-bold", newExercisesAvailable > 0 ? "text-white" : "text-foreground")}>
-                    {syncing ? 'Ładowanie...' : 'Baza FiziYo'}
-                  </h3>
-                  <p className={cn("text-sm", newExercisesAvailable > 0 ? "text-white/70" : "text-muted-foreground")}>
-                    {newExercisesAvailable > 0
-                      ? `${newExercisesAvailable} nowych ćwiczeń`
-                      : 'Wszystko aktualne'
-                    }
-                  </p>
-                </div>
-                {newExercisesAvailable > 0 && (
-                  <Badge className="bg-white/20 text-white border-0 text-xs">
-                    +{newExercisesAvailable}
-                  </Badge>
+            {/* Source Filters - subtelne kafle */}
+            <div className="grid grid-cols-3 gap-3 sm:col-span-1 lg:col-span-8">
+              {/* Wszystkie */}
+              <button
+                onClick={() => setSourceFilter('all')}
+                data-testid="exercise-filter-all"
+                className={cn(
+                  'rounded-2xl border p-4 flex flex-col items-center justify-center text-center transition-all duration-200',
+                  sourceFilter === 'all'
+                    ? 'border-primary/40 bg-primary/10 ring-1 ring-primary/20'
+                    : 'border-border/40 bg-surface/50 hover:bg-surface-light hover:border-border'
                 )}
-              </div>
-            </button>
+              >
+                <div className="flex items-center gap-2">
+                  <Dumbbell className={cn('h-4 w-4', sourceFilter === 'all' ? 'text-primary' : 'text-muted-foreground')} />
+                  <span className={cn('text-2xl font-bold', sourceFilter === 'all' ? 'text-primary' : 'text-foreground')}>
+                    {totalCount}
+                  </span>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">Wszystkie</p>
+              </button>
 
-            {/* Stats Card */}
-            <div className="rounded-2xl border border-border/40 bg-surface/50 p-5 flex items-center gap-4 flex-1 sm:max-w-xs">
-              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-secondary/10 shrink-0">
-                <Dumbbell className="h-5 w-5 text-secondary" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-foreground">{totalCount}</p>
-                <p className="text-xs text-muted-foreground">Ćwiczeń w bibliotece</p>
-              </div>
+              {/* Moje ćwiczenia */}
+              <button
+                onClick={() => setSourceFilter('organization')}
+                data-testid="exercise-filter-organization"
+                className={cn(
+                  'rounded-2xl border p-4 flex flex-col items-center justify-center text-center transition-all duration-200',
+                  sourceFilter === 'organization'
+                    ? 'border-secondary/40 bg-secondary/10 ring-1 ring-secondary/20'
+                    : 'border-border/40 bg-surface/50 hover:bg-surface-light hover:border-border'
+                )}
+              >
+                <div className="flex items-center gap-2">
+                  <Dumbbell className={cn('h-4 w-4', sourceFilter === 'organization' ? 'text-secondary' : 'text-muted-foreground')} />
+                  <span className={cn('text-2xl font-bold', sourceFilter === 'organization' ? 'text-secondary' : 'text-foreground')}>
+                    {organizationCount}
+                  </span>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">Moje ćwiczenia</p>
+              </button>
+
+              {/* Baza FiziYo */}
+              <button
+                onClick={() => setSourceFilter('fiziyo')}
+                data-testid="exercise-filter-fiziyo"
+                className={cn(
+                  'rounded-2xl border p-4 flex flex-col items-center justify-center text-center transition-all duration-200',
+                  sourceFilter === 'fiziyo'
+                    ? 'border-violet-500/40 bg-violet-500/10 ring-1 ring-violet-500/20'
+                    : 'border-border/40 bg-surface/50 hover:bg-surface-light hover:border-border'
+                )}
+              >
+                <div className="flex items-center gap-2">
+                  <Sparkles className={cn('h-4 w-4', sourceFilter === 'fiziyo' ? 'text-violet-500' : 'text-muted-foreground')} />
+                  <span className={cn('text-2xl font-bold', sourceFilter === 'fiziyo' ? 'text-violet-500' : 'text-foreground')}>
+                    {fiziyoCount}
+                  </span>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">Baza FiziYo</p>
+              </button>
             </div>
           </div>
 

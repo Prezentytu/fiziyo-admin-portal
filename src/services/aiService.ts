@@ -86,11 +86,13 @@ class AIService {
    * Generuje sugestie parametrów dla ćwiczenia na podstawie nazwy
    * @param exerciseName - nazwa ćwiczenia (min. 2 znaki)
    * @param availableTags - opcjonalna lista dostępnych tagów
+   * @param existingExerciseNames - opcjonalna lista nazw istniejących ćwiczeń (do wykrywania duplikatów)
    * @returns sugestia lub null w przypadku błędu
    */
   async getExerciseSuggestion(
     exerciseName: string,
-    availableTags?: string[]
+    availableTags?: string[],
+    existingExerciseNames?: string[]
   ): Promise<ExerciseSuggestionResponse | null> {
     if (!exerciseName.trim() || exerciseName.length < 2) {
       return null;
@@ -100,6 +102,7 @@ class AIService {
       const request: ExerciseSuggestionRequest = {
         exerciseName: exerciseName.trim(),
         availableTags,
+        existingExerciseNames,
       };
 
       return await this.request<ExerciseSuggestionResponse>(

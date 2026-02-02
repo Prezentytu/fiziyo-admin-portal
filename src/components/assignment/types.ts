@@ -1,5 +1,20 @@
 // Types for Assignment Wizard
 
+/**
+ * Strukturalne obciążenie/opór z wsparciem dla analityki.
+ * Smart String - parsowane z tekstu użytkownika do struktury JSONB.
+ */
+export interface ExerciseLoad {
+  /** Typ obciążenia: weight (ciężar), band (guma), bodyweight (własna waga), other (inne) */
+  type: "weight" | "band" | "bodyweight" | "other";
+  /** Wartość liczbowa (dla wykresów postępów, np. 5, 10, 15) */
+  value?: number;
+  /** Jednostka: kg, lbs, level */
+  unit?: "kg" | "lbs" | "level";
+  /** Tekst wyświetlany użytkownikowi (np. "5 kg", "Guma czerwona") */
+  text: string;
+}
+
 export interface ExerciseSet {
   id: string;
   name: string;
@@ -26,6 +41,8 @@ export interface ExerciseMapping {
   preparationTime?: number;
   executionTime?: number;
   tempo?: string;
+  // Load/Resistance - Smart String
+  load?: ExerciseLoad;
   // Custom content
   notes?: string;
   customName?: string;
@@ -56,6 +73,8 @@ export interface Exercise {
   defaultRestBetweenReps?: number;
   preparationTime?: number;
   tempo?: string;
+  // Load/Resistance - Smart String
+  defaultLoad?: ExerciseLoad;
   // Media
   imageUrl?: string;
   thumbnailUrl?: string;
@@ -65,7 +84,7 @@ export interface Exercise {
   scope?: string;
   status?: string;
   difficultyLevel?: string;
-  
+
   // Legacy aliasy (dla kompatybilności wstecznej)
   description?: string;
   exerciseSide?: "left" | "right" | "both" | "alternating" | "none" | string;
@@ -87,7 +106,12 @@ export interface Patient {
 
 export interface Frequency {
   timesPerDay: number;
+  /** Zalecana częstotliwość tygodniowa (w trybie elastycznym) */
   timesPerWeek?: number;
+  /** Minimalna częstotliwość tygodniowa (opcjonalna) */
+  minTimesPerWeek?: number;
+  /** Czy harmonogram jest elastyczny (pacjent wybiera dni) */
+  isFlexible?: boolean;
   breakBetweenSets: number;
   monday: boolean;
   tuesday: boolean;
@@ -111,6 +135,10 @@ export interface ExerciseOverride {
   // Time parameters
   preparationTime?: number;
   executionTime?: number;
+  // Tempo
+  tempo?: string;
+  // Load/Resistance - Smart String
+  load?: ExerciseLoad;
   // Custom content
   customName?: string;
   customDescription?: string;
@@ -123,7 +151,50 @@ export interface ExerciseOverride {
   hidden?: boolean;
 }
 
-// Wizard state
+/**
+ * Ghost Copy - lokalna kopia ćwiczenia w RAM.
+ * Używana podczas komponowania przypisania (nie dotyka bazy).
+ * ID może być tymczasowe (temp-*) dla nowo dodanych ćwiczeń.
+ */
+export interface LocalExerciseMapping extends ExerciseMapping {
+  /** Czy to nowo dodane ćwiczenie (nie z szablonu) */
+  isNew?: boolean;
+  /** ID oryginalnego mappingu (jeśli pochodzi z szablonu) */
+  sourceId?: string;
+}
+
+/**
+ * Tworzy Ghost Copy z ExerciseMapping.
+ * Zachowuje sourceId dla śledzenia pochodzenia.
+ */
+export function createGhostCopy(mapping: ExerciseMapping): LocalExerciseMapping {
+  return {
+    ...mapping,
+    sourceId: mapping.id,
+    isNew: false,
+  };
+}
+
+/**
+ * Tworzy nowy LocalExerciseMapping z Exercise.
+ * Używane przy dodawaniu ćwiczeń przez wyszukiwarkę.
+ */
+export function createLocalMapping(exercise: Exercise, order: number): LocalExerciseMapping {
+  return {
+    id: `temp-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`,
+    exerciseId: exercise.id,
+    exercise,
+    order,
+    sets: exercise.defaultSets || 3,
+    reps: exercise.defaultReps || 10,
+    duration: exercise.defaultDuration,
+    restSets: exercise.defaultRestBetweenSets || 60,
+    tempo: exercise.tempo,
+    isNew: true,
+  };
+}
+
+// Wizard state (updated for Ghost Copy architecture)
 export interface AssignmentWizardState {
   selectedSet: ExerciseSet | null;
   selectedPatients: Patient[];
@@ -131,10 +202,15 @@ export interface AssignmentWizardState {
   startDate: Date;
   endDate: Date;
   frequency: Frequency;
+  // Ghost Copy state
+  localExercises: LocalExerciseMapping[];
+  planName: string;
+  templateName: string;
+  saveAsTemplate: boolean;
 }
 
-// Step definitions
-export type WizardStep = "select-set" | "select-patients" | "customize" | "schedule" | "summary";
+// Step definitions (customize step removed - Progressive Disclosure merged into select-set)
+export type WizardStep = "select-set" | "select-patients" | "schedule" | "summary";
 
 export interface WizardStepConfig {
   id: WizardStep;
@@ -173,12 +249,7 @@ export function getWizardSteps(
     // Already added above
   }
 
-  // Customize step
-  steps.push({
-    id: "customize",
-    label: "Personalizacja",
-    description: "Dostosuj ćw.",
-  });
+  // Note: Customize step removed - Progressive Disclosure merged into select-set step
 
   // Schedule step
   steps.push({

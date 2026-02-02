@@ -7,6 +7,7 @@ import {
   ChevronDown,
   ChevronRight,
   Calendar,
+  CalendarPlus,
   Clock,
   Dumbbell,
   MoreHorizontal,
@@ -51,6 +52,7 @@ import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { cn } from "@/lib/utils";
 import { translateAssignmentStatus } from "@/utils/statusUtils";
 import { getMediaUrl } from "@/utils/mediaUrl";
+import { translateExerciseTypeShort } from "@/components/pdf/polishUtils";
 
 import {
   UPDATE_EXERCISE_SET_ASSIGNMENT_MUTATION,
@@ -156,18 +158,12 @@ interface PatientAssignmentCardProps {
   onEditExercise?: (assignment: PatientAssignment, mapping: ExerciseMapping, override?: ExerciseOverride) => void;
   onPreviewExercise?: (mapping: ExerciseMapping, override?: ExerciseOverride) => void;
   onAddExercise?: (assignment: PatientAssignment) => void;
+  onExtend?: (assignment: PatientAssignment) => void;
   onGeneratePDF?: (assignment: PatientAssignment) => void;
   onRefresh?: () => void;
 }
 
 // Helper functions
-const translateType = (type?: string) => {
-  const types: Record<string, string> = {
-    time: "czasowe",
-    reps: "powtórzenia",
-  };
-  return type ? types[type] || type : "";
-};
 
 const getActiveDays = (frequency?: Frequency): string => {
   if (!frequency) return "Brak harmonogramu";
@@ -212,6 +208,7 @@ export function PatientAssignmentCard({
   onEditExercise,
   onPreviewExercise,
   onAddExercise,
+  onExtend,
   onGeneratePDF,
   onRefresh,
 }: PatientAssignmentCardProps) {
@@ -448,6 +445,10 @@ export function PatientAssignmentCard({
                       <Calendar className="mr-2 h-4 w-4" />
                       Edytuj harmonogram
                     </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => onExtend?.(assignment)} data-testid={`patient-assignment-${assignment.id}-extend-btn`}>
+                      <CalendarPlus className="mr-2 h-4 w-4" />
+                      Przedłuż zestaw
+                    </DropdownMenuItem>
                     <DropdownMenuItem onClick={handleToggleStatus} disabled={updating}>
                       {assignment.status === "active" ? (
                         <>
@@ -617,7 +618,7 @@ export function PatientAssignmentCard({
                               {mapping.exercise?.type && (
                                 <div className="mt-1.5">
                                   <Badge variant="secondary" className="text-[10px]">
-                                    {translateType(mapping.exercise.type)}
+                                    {translateExerciseTypeShort(mapping.exercise.type)}
                                   </Badge>
                                 </div>
                               )}

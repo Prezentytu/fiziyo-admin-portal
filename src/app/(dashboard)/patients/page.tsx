@@ -16,6 +16,7 @@ import { EmptyState } from '@/components/shared/EmptyState';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { PatientExpandableCard, Patient } from '@/components/patients/PatientExpandableCard';
 import { PatientDialog } from '@/components/patients/PatientDialog';
+import { PatientQRCodeDialog } from '@/components/patients/PatientQRCodeDialog';
 import { TakeOverDialog } from '@/components/patients/TakeOverDialog';
 import { AssignmentWizard } from '@/components/assignment/AssignmentWizard';
 
@@ -62,6 +63,7 @@ export default function PatientsPage() {
   const [unassigningPatient, setUnassigningPatient] = useState<Patient | null>(null);
   const [removingFromOrgPatient, setRemovingFromOrgPatient] = useState<Patient | null>(null);
   const [takeOverPatient, setTakeOverPatient] = useState<Patient | null>(null);
+  const [qrPatient, setQrPatient] = useState<Patient | null>(null);
 
   // Get organization ID from context (changes when user switches organization)
   const organizationId = currentOrganization?.organizationId;
@@ -157,13 +159,30 @@ export default function PatientsPage() {
     );
   });
 
-  // Sort: my patients first, then by name
+  // Sort: my patients first, then by recent activity/assignment date, then by name
   const filteredPatients = [...searchFilteredPatients].sort((a, b) => {
     const aIsMine = a.therapist?.id === therapistId;
     const bIsMine = b.therapist?.id === therapistId;
+
+    // 1. My patients first
     if (aIsMine && !bIsMine) return -1;
     if (!aIsMine && bIsMine) return 1;
-    // Secondary sort by name
+
+    // 2. Sort by most recent activity (lastActivity or assignedAt)
+    // Use the more recent of lastActivity and assignedAt for each patient
+    const getRecentDate = (patient: Patient): number => {
+      const activity = patient.lastActivity ? new Date(patient.lastActivity).getTime() : 0;
+      const assigned = patient.assignedAt ? new Date(patient.assignedAt).getTime() : 0;
+      return Math.max(activity, assigned);
+    };
+
+    const aRecent = getRecentDate(a);
+    const bRecent = getRecentDate(b);
+
+    // Newest first (descending)
+    if (aRecent !== bRecent) return bRecent - aRecent;
+
+    // 3. Fallback: alphabetically by name
     const aName = a.fullname || '';
     const bName = b.fullname || '';
     return aName.localeCompare(bName);
@@ -176,6 +195,10 @@ export default function PatientsPage() {
 
   const handleTakeOver = (patient: Patient) => {
     setTakeOverPatient(patient);
+  };
+
+  const handleShowQR = (patient: Patient) => {
+    setQrPatient(patient);
   };
 
   const handleUnassign = async () => {
@@ -434,6 +457,7 @@ export default function PatientsPage() {
               key={patient.id}
               patient={patient}
               onAssignSet={handleAssignSet}
+              onShowQR={handleShowQR}
               onUnassign={(p) => setUnassigningPatient(p)}
               onRemoveFromOrganization={(p) => setRemovingFromOrgPatient(p)}
               onTakeOver={handleTakeOver}
@@ -513,6 +537,21 @@ export default function PatientsPage() {
         organizationId={organizationId || ''}
         onSuccess={() => setTakeOverPatient(null)}
       />
+
+      {/* QR Code / Recepta Dialog */}
+      {therapistId && organizationId && (
+        <PatientQRCodeDialog
+          open={!!qrPatient}
+          onOpenChange={(open) => !open && setQrPatient(null)}
+          patient={qrPatient ? {
+            id: qrPatient.id,
+            name: qrPatient.fullname || 'Nieznany pacjent',
+            email: qrPatient.email,
+          } : null}
+          therapistId={therapistId}
+          organizationId={organizationId}
+        />
+      )}
     </div>
   );
 }

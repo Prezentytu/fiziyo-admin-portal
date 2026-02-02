@@ -20,6 +20,7 @@ export const GET_CURRENT_BILLING_STATUS_QUERY = gql`
       estimatedTotal
       currency
       partnerCode
+      isPilotMode
       therapistBreakdown {
         therapistId
         therapistName

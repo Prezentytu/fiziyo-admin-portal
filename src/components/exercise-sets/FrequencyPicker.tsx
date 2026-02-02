@@ -265,8 +265,9 @@ export function FrequencyPicker({
   );
 }
 
-export const defaultFrequency: FrequencyValue = {
+export const defaultFrequency: FrequencyValue & { timesPerWeek?: number } = {
   timesPerDay: 1,
+  timesPerWeek: 3, // Cel tygodniowy (Flexible Mode)
   breakBetweenSets: 4,
   monday: false,
   tuesday: false,

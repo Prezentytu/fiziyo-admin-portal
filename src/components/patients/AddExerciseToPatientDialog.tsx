@@ -35,6 +35,7 @@ import { GET_AVAILABLE_EXERCISES_QUERY } from "@/graphql/queries/exercises.queri
 import { UPDATE_PATIENT_EXERCISE_OVERRIDES_MUTATION } from "@/graphql/mutations/exercises.mutations";
 import { GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY } from "@/graphql/queries/patientAssignments.queries";
 import type { PatientAssignment, ExerciseOverride } from "./PatientAssignmentCard";
+import { translateExerciseTypeShort } from "@/components/pdf/polishUtils";
 
 // Types
 interface Exercise {
@@ -58,15 +59,6 @@ interface AddExerciseToPatientDialogProps {
   organizationId: string;
   onSuccess?: () => void;
 }
-
-// Helper to translate exercise type
-const translateType = (type?: string) => {
-  const types: Record<string, string> = {
-    time: "czasowe",
-    reps: "powtórzenia",
-  };
-  return type ? types[type] || type : "";
-};
 
 // Generate unique ID for patient-added exercises
 const generatePatientExerciseId = () => {
@@ -326,7 +318,7 @@ function AddExerciseToPatientDialogContent({
                     <p className="font-semibold text-lg">{selectedExercise.name}</p>
                     {selectedExercise.type && (
                       <Badge variant="secondary" className="text-xs">
-                        {translateType(selectedExercise.type)}
+                        {translateExerciseTypeShort(selectedExercise.type)}
                       </Badge>
                     )}
                   </div>
@@ -512,7 +504,7 @@ function AddExerciseToPatientDialogContent({
                           <p className="font-medium text-sm truncate">{exercise.name}</p>
                           {exercise.type && (
                             <Badge variant="secondary" className="text-[10px] mt-1">
-                              {translateType(exercise.type)}
+                              {translateExerciseTypeShort(exercise.type)}
                             </Badge>
                           )}
                         </div>

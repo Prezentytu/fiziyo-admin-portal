@@ -53,6 +53,7 @@ export interface Exercise {
   defaultRestBetweenReps?: number;
   preparationTime?: number;
   tempo?: string;
+  rangeOfMotion?: string;
   // Media (legacy + nowe)
   videoUrl?: string;
   gifUrl?: string;
@@ -79,6 +80,11 @@ export interface Exercise {
   contributorId?: string;
   createdAt?: string;
   updatedAt?: string;
+  
+  // Global submission tracking (nowy model weryfikacji)
+  globalSubmissionId?: string;
+  sourceOrganizationExerciseId?: string;
+  submittedToGlobalAt?: string;
   
   // Legacy aliasy (dla kompatybilności wstecznej w komponentach)
   description?: string; // alias dla patientDescription
@@ -121,6 +127,17 @@ export interface CreateExerciseVariables {
   exerciseSide?: string | null;
   mainTags?: string[] | null;
   additionalTags?: string[] | null;
+  // Pro Tuning fields
+  tempo?: string | null;
+  clinicalDescription?: string | null;
+  audioCue?: string | null;
+  difficultyLevel?: DifficultyLevel | null;
+  rangeOfMotion?: string | null;
+  // Load fields
+  loadType?: string | null;
+  loadValue?: number | null;
+  loadUnit?: string | null;
+  loadText?: string | null;
 }
 
 export interface CreateExerciseMutationResult {
@@ -133,6 +150,7 @@ export interface CreateExerciseMutationResult {
 
 export interface UpdateExerciseVariables {
   exerciseId: string;
+  name?: string | null;
   description?: string | null; // mapuje na patientDescription w backendzie
   type?: string | null;
   sets?: number | null;
@@ -148,6 +166,17 @@ export interface UpdateExerciseVariables {
   mainTags?: string[] | null;
   additionalTags?: string[] | null;
   exerciseSide?: string | null;
+  // Pro Tuning fields
+  tempo?: string | null;
+  clinicalDescription?: string | null;
+  audioCue?: string | null;
+  difficultyLevel?: DifficultyLevel | null;
+  rangeOfMotion?: string | null;
+  // Load fields
+  loadType?: string | null;
+  loadValue?: number | null;
+  loadUnit?: string | null;
+  loadText?: string | null;
 }
 
 export interface UpdateExerciseMutationResult {

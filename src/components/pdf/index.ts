@@ -21,6 +21,7 @@ export {
   formatTimes,
   formatDaysPolish,
   translateExerciseTypePolish,
+  translateExerciseTypeShort,
   translateExerciseSidePolish,
 } from './polishUtils';
 

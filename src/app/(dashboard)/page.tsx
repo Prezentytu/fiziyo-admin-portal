@@ -34,6 +34,8 @@ import { GettingStartedCard } from '@/components/onboarding/GettingStartedCard';
 import { BillingStatusBar } from '@/components/billing';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { useRoleAccess } from '@/hooks/useRoleAccess';
+import { useRealtimePatients } from '@/hooks/useRealtimePatients';
+import { useRealtimeExerciseSets } from '@/hooks/useRealtimeExerciseSets';
 
 import { GET_ORGANIZATION_EXERCISE_SETS_QUERY } from '@/graphql/queries/exerciseSets.queries';
 import { GET_THERAPIST_PATIENTS_QUERY } from '@/graphql/queries/therapists.queries';
@@ -52,7 +54,10 @@ interface ExerciseSetItem {
   creationTime?: string;
   exerciseMappings?: Array<{
     id: string;
+    exerciseId: string;
     exercise?: {
+      id: string;
+      name: string;
       imageUrl?: string;
       images?: string[];
     };
@@ -70,6 +75,7 @@ interface PatientAssignmentData {
   };
   contextLabel?: string;
   status?: string;
+  assignedAt?: string;
 }
 
 interface ExerciseAssignment {
@@ -198,6 +204,17 @@ export default function DashboardPage() {
     fetchPolicy: 'cache-and-network',
   });
 
+  // Real-time updates - automatycznie odświeżają Apollo Cache
+  useRealtimePatients({
+    organizationId: organizationId ?? null,
+    enabled: !!organizationId,
+  });
+
+  useRealtimeExerciseSets({
+    organizationId: organizationId ?? null,
+    enabled: !!organizationId,
+  });
+
   const exerciseSets = (setsData as OrganizationExerciseSetsResponse)?.exerciseSets || [];
   const setsCount = exerciseSets.length;
 
@@ -252,11 +269,28 @@ export default function DashboardPage() {
       };
     });
 
-    // Sort: warning first, then inactive, then active (most urgent on top)
-    const priorityOrder: Record<ActivityStatus, number> = { warning: 0, inactive: 1, active: 2 };
+    // Sort: newly added (no activity) first, then warning, inactive, active
+    // Newly added patients without any activity should appear at the top
     return enhanced.sort((a, b) => {
+      const aHasNoActivity = !a.lastActivityDate;
+      const bHasNoActivity = !b.lastActivityDate;
+
+      // Patients without any activity (newly added) go first
+      if (aHasNoActivity && !bHasNoActivity) return -1;
+      if (!aHasNoActivity && bHasNoActivity) return 1;
+
+      // Both have no activity - sort by assignedAt (newest first)
+      if (aHasNoActivity && bHasNoActivity) {
+        const aAssigned = a.assignedAt ? new Date(a.assignedAt).getTime() : 0;
+        const bAssigned = b.assignedAt ? new Date(b.assignedAt).getTime() : 0;
+        return bAssigned - aAssigned;
+      }
+
+      // Both have activity - sort by status priority, then by date
+      const priorityOrder: Record<ActivityStatus, number> = { warning: 0, inactive: 1, active: 2 };
       const priorityDiff = priorityOrder[a.activityStatus] - priorityOrder[b.activityStatus];
       if (priorityDiff !== 0) return priorityDiff;
+
       // Within same priority, sort by date (most recent first)
       if (a.lastActivityDate && b.lastActivityDate) {
         return b.lastActivityDate.getTime() - a.lastActivityDate.getTime();
@@ -662,7 +696,10 @@ export default function DashboardPage() {
             description: quickAssignSet.description,
             exerciseMappings: quickAssignSet.exerciseMappings?.map(m => ({
               id: m.id,
+              exerciseId: m.exerciseId,
               exercise: m.exercise ? {
+                id: m.exercise.id,
+                name: m.exercise.name,
                 imageUrl: m.exercise.imageUrl,
                 images: m.exercise.images,
               } : undefined,

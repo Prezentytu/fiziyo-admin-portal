@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { ExerciseActionSelect } from '../ExerciseActionSelect';
+import { translateExerciseTypeShort } from '@/components/pdf/polishUtils';
 import type {
   ExtractedExercise,
   ExerciseDecision,
@@ -78,17 +79,6 @@ export function NewExerciseCard({
       action,
       reuseExerciseId,
     });
-  };
-
-  const getTypeLabel = (type: string) => {
-    switch (type) {
-      case 'reps':
-        return 'Powtórzenia';
-      case 'time':
-        return 'Czasowe';
-      default:
-        return type;
-    }
   };
 
   const displayName = decision.editedData?.name || exercise.name;
@@ -169,7 +159,7 @@ export function NewExerciseCard({
                 ) : (
                   <Dumbbell className="h-3 w-3 mr-1" />
                 )}
-                {getTypeLabel(exercise.type)}
+                {translateExerciseTypeShort(exercise.type)}
               </Badge>
             </div>
           </div>

@@ -61,6 +61,20 @@ export const clearBackendToken = (): void => {
   }
 };
 
+/**
+ * Tworzy nagłówki autoryzacji z tokenem backendu
+ * @returns HeadersInit z tokenem Bearer lub pusty obiekt
+ */
+export const getAuthHeaders = (): HeadersInit => {
+  const token = getBackendToken();
+  if (!token) {
+    return {};
+  }
+  return {
+    Authorization: `Bearer ${token}`,
+  };
+};
+
 
 
 

@@ -52,8 +52,8 @@ export function ShareInviteButton({
   // Check if Native Share API is available
   const canShare =
     typeof navigator !== "undefined" &&
-    navigator.share &&
-    navigator.canShare &&
+    'share' in navigator &&
+    'canShare' in navigator &&
     navigator.canShare(shareData);
 
   // Handle native share

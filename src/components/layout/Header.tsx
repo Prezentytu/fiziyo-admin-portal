@@ -19,11 +19,13 @@ const routeNames: Record<string, string> = {
   exercises: 'Ćwiczenia',
   'exercise-sets': 'Zestawy',
   patients: 'Pacjenci',
+  finances: 'Finanse',
   organization: 'Organizacja',
   billing: 'Rozliczenia',
   settings: 'Ustawienia',
   tags: 'Tagi',
   import: 'Import Dokumentów',
+  verification: 'Weryfikacja',
 };
 
 function Breadcrumbs() {

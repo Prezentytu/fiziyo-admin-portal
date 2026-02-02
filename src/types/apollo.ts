@@ -189,8 +189,8 @@ export interface Exercise {
   gifUrl?: string;
   videoUrl?: string;
   // Status i widoczność
-  scope?: string;
-  status?: string;
+  scope?: 'PERSONAL' | 'ORGANIZATION' | 'GLOBAL';
+  status?: 'DRAFT' | 'PENDING_REVIEW' | 'CHANGES_REQUESTED' | 'APPROVED' | 'PUBLISHED' | 'REJECTED';
   isActive: boolean;
   isPublicTemplate?: boolean;
   isSystem?: boolean;
@@ -208,7 +208,12 @@ export interface Exercise {
   organizationId?: string;
   createdAt?: string;
   updatedAt?: string;
-  
+
+  // Global submission tracking (nowy model weryfikacji)
+  globalSubmissionId?: string;
+  sourceOrganizationExerciseId?: string;
+  submittedToGlobalAt?: string;
+
   // Legacy aliasy (dla kompatybilności wstecznej)
   description?: string;
   exerciseSide?: string;
@@ -225,6 +230,10 @@ export interface Exercise {
 
 export interface OrganizationExercisesResponse {
   organizationExercises: Exercise[];
+}
+
+export interface AvailableExercisesResponse {
+  availableExercises: Exercise[];
 }
 
 export interface ExerciseByIdResponse {
@@ -515,6 +524,8 @@ export interface CurrentBillingStatus {
   estimatedTotal: number;
   currency: string;
   partnerCode?: string;
+  /** Czy organizacja jest w trybie pilotażowym (bez opłat) */
+  isPilotMode?: boolean;
   /** Podział na terapeutów - kto aktywował ilu pacjentów */
   therapistBreakdown: TherapistBillingStats[];
 }

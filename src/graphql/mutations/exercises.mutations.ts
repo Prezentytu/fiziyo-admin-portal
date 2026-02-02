@@ -28,6 +28,17 @@ export const CREATE_EXERCISE_MUTATION = gql`
     $exerciseSide: String
     $mainTags: [String!]
     $additionalTags: [String!]
+    # Pro Tuning fields
+    $tempo: String
+    $clinicalDescription: String
+    $audioCue: String
+    $difficultyLevel: DifficultyLevel
+    $rangeOfMotion: String
+    # Load fields
+    $loadType: String
+    $loadValue: Decimal
+    $loadUnit: String
+    $loadText: String
   ) {
     createExercise(
       organizationId: $organizationId
@@ -52,11 +63,21 @@ export const CREATE_EXERCISE_MUTATION = gql`
       exerciseSide: $exerciseSide
       mainTags: $mainTags
       additionalTags: $additionalTags
+      tempo: $tempo
+      clinicalDescription: $clinicalDescription
+      audioCue: $audioCue
+      difficultyLevel: $difficultyLevel
+      rangeOfMotion: $rangeOfMotion
+      loadType: $loadType
+      loadValue: $loadValue
+      loadUnit: $loadUnit
+      loadText: $loadText
     ) {
       id
       organizationId
       name
       patientDescription
+      clinicalDescription
       type
       defaultSets
       defaultReps
@@ -71,6 +92,9 @@ export const CREATE_EXERCISE_MUTATION = gql`
       thumbnailUrl
       images
       notes
+      tempo
+      audioCue
+      rangeOfMotion
       isActive
       createdById
       scope
@@ -93,6 +117,7 @@ export const CREATE_EXERCISE_MUTATION = gql`
 export const UPDATE_EXERCISE_MUTATION = gql`
   mutation UpdateExercise(
     $exerciseId: String!
+    $name: String
     $description: String
     $type: String
     $sets: Decimal
@@ -108,9 +133,21 @@ export const UPDATE_EXERCISE_MUTATION = gql`
     $mainTags: [String!]
     $additionalTags: [String!]
     $exerciseSide: String
+    # Pro Tuning fields
+    $tempo: String
+    $clinicalDescription: String
+    $audioCue: String
+    $difficultyLevel: DifficultyLevel
+    $rangeOfMotion: String
+    # Load fields
+    $loadType: String
+    $loadValue: Decimal
+    $loadUnit: String
+    $loadText: String
   ) {
     updateExercise(
       exerciseId: $exerciseId
+      name: $name
       description: $description
       type: $type
       sets: $sets
@@ -126,11 +163,21 @@ export const UPDATE_EXERCISE_MUTATION = gql`
       mainTags: $mainTags
       additionalTags: $additionalTags
       exerciseSide: $exerciseSide
+      tempo: $tempo
+      clinicalDescription: $clinicalDescription
+      audioCue: $audioCue
+      difficultyLevel: $difficultyLevel
+      rangeOfMotion: $rangeOfMotion
+      loadType: $loadType
+      loadValue: $loadValue
+      loadUnit: $loadUnit
+      loadText: $loadText
     ) {
       id
       organizationId
       name
       patientDescription
+      clinicalDescription
       type
       defaultSets
       defaultReps
@@ -142,10 +189,14 @@ export const UPDATE_EXERCISE_MUTATION = gql`
       videoUrl
       images
       notes
+      tempo
+      audioCue
+      rangeOfMotion
       isActive
       side
       mainTags
       additionalTags
+      difficultyLevel
       updatedAt
     }
   }
@@ -396,6 +447,7 @@ export const DELETE_TAG_CATEGORY_MUTATION = gql`
 
 /**
  * Mutacja do przypisywania zestawu ćwiczeń do pacjenta
+ * Automatycznie aktywuje Premium na czas trwania zestawu (Beta Pilot Flow)
  */
 export const ASSIGN_EXERCISE_SET_TO_PATIENT_MUTATION = gql`
   mutation AssignExerciseSetToPatient(
@@ -420,6 +472,8 @@ export const ASSIGN_EXERCISE_SET_TO_PATIENT_MUTATION = gql`
       startDate
       endDate
       status
+      premiumActivated
+      premiumValidUntil
     }
   }
 `;
@@ -539,6 +593,12 @@ export const UPDATE_EXERCISE_IN_SET_MUTATION = gql`
     $notes: String
     $customName: String
     $customDescription: String
+    # Pro Tuning fields
+    $tempo: String
+    $loadType: String
+    $loadValue: Decimal
+    $loadUnit: String
+    $loadText: String
   ) {
     updateExerciseInSet(
       exerciseId: $exerciseId
@@ -554,6 +614,11 @@ export const UPDATE_EXERCISE_IN_SET_MUTATION = gql`
       notes: $notes
       customName: $customName
       customDescription: $customDescription
+      tempo: $tempo
+      loadType: $loadType
+      loadValue: $loadValue
+      loadUnit: $loadUnit
+      loadText: $loadText
     ) {
       id
       exerciseSetId
@@ -567,6 +632,7 @@ export const UPDATE_EXERCISE_IN_SET_MUTATION = gql`
       notes
       customName
       customDescription
+      tempo
     }
   }
 `;
@@ -616,6 +682,12 @@ export const ADD_EXERCISE_TO_EXERCISE_SET_MUTATION = gql`
     $notes: String
     $customName: String
     $customDescription: String
+    # Pro Tuning fields
+    $tempo: String
+    $loadType: String
+    $loadValue: Decimal
+    $loadUnit: String
+    $loadText: String
   ) {
     addExerciseToExerciseSet(
       exerciseId: $exerciseId
@@ -631,6 +703,11 @@ export const ADD_EXERCISE_TO_EXERCISE_SET_MUTATION = gql`
       notes: $notes
       customName: $customName
       customDescription: $customDescription
+      tempo: $tempo
+      loadType: $loadType
+      loadValue: $loadValue
+      loadUnit: $loadUnit
+      loadText: $loadText
     ) {
       id
       exerciseSetId
@@ -644,6 +721,7 @@ export const ADD_EXERCISE_TO_EXERCISE_SET_MUTATION = gql`
       notes
       customName
       customDescription
+      tempo
     }
   }
 `;
@@ -819,6 +897,91 @@ export const CHECK_SYNC_AVAILABILITY_QUERY = gql`
       totalPublished
       alreadyInOrganization
       newAvailable
+    }
+  }
+`;
+
+// ============================================
+// ZGŁASZANIE DO BAZY GLOBALNEJ - dla Autorów
+// ============================================
+
+/**
+ * Mutacja do zgłaszania ćwiczenia do weryfikacji w bazie globalnej.
+ * Tworzy KOPIĘ ćwiczenia do globalnej kolejki, zachowując oryginał bez zmian.
+ * Automatycznie waliduje: czy jest media, opis min. 50 znaków, min. 2 tagi.
+ */
+export const SUBMIT_TO_GLOBAL_REVIEW_MUTATION = gql`
+  mutation SubmitToGlobalReview($exerciseId: String!) {
+    submitToGlobalReview(exerciseId: $exerciseId) {
+      id
+      name
+      status
+      scope
+      isPublicTemplate
+      contributorId
+      adminReviewNotes
+      updatedAt
+      # Nowe pola dla śledzenia zgłoszenia
+      globalSubmissionId
+      submittedToGlobalAt
+    }
+  }
+`;
+
+/**
+ * @deprecated Użyj RESUBMIT_FROM_ORIGINAL_MUTATION zamiast tej mutacji
+ * Mutacja do ponownego zgłaszania ćwiczenia po wprowadzeniu poprawek.
+ * Działa na starym modelu (bez kopii globalnej).
+ */
+export const RESUBMIT_EXERCISE_FOR_REVIEW_MUTATION = gql`
+  mutation ResubmitExerciseForReview($exerciseId: String!) {
+    resubmitExerciseForReview(exerciseId: $exerciseId) {
+      id
+      name
+      status
+      scope
+      isPublicTemplate
+      adminReviewNotes
+      updatedAt
+    }
+  }
+`;
+
+/**
+ * Mutacja do ponownego zgłaszania ćwiczenia z oryginału po wprowadzeniu poprawek.
+ * Aktualizuje istniejącą globalną kopię danymi z poprawionego oryginału.
+ * Dostępne dla twórcy ćwiczenia gdy globalna kopia ma status CHANGES_REQUESTED.
+ * @param originalExerciseId - ID oryginału (ćwiczenie organizacyjne)
+ */
+export const RESUBMIT_FROM_ORIGINAL_MUTATION = gql`
+  mutation ResubmitFromOriginal($originalExerciseId: String!) {
+    resubmitFromOriginal(originalExerciseId: $originalExerciseId) {
+      id
+      name
+      status
+      scope
+      isPublicTemplate
+      adminReviewNotes
+      updatedAt
+      globalSubmissionId
+      submittedToGlobalAt
+    }
+  }
+`;
+
+/**
+ * Mutacja do wycofania zgłoszenia ćwiczenia z kolejki weryfikacji.
+ * Dostępne dla twórcy ćwiczenia gdy status to PENDING_REVIEW.
+ */
+export const WITHDRAW_FROM_REVIEW_MUTATION = gql`
+  mutation WithdrawFromReview($exerciseId: String!) {
+    withdrawFromReview(exerciseId: $exerciseId) {
+      id
+      name
+      status
+      scope
+      updatedAt
+      globalSubmissionId
     }
   }
 `;

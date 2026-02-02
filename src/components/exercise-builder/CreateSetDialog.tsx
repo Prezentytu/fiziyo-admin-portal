@@ -47,6 +47,13 @@ const createSetFormSchema = z.object({
 
 type CreateSetFormValues = z.infer<typeof createSetFormSchema>;
 
+interface CreateExerciseSetResponse {
+  createExerciseSet: {
+    id: string;
+    name: string;
+  };
+}
+
 // ========================================
 // Component
 // ========================================
@@ -72,7 +79,7 @@ export function CreateSetDialog({ open, onOpenChange }: CreateSetDialogProps) {
     },
   });
 
-  const [createExerciseSet] = useMutation(CREATE_EXERCISE_SET_MUTATION);
+  const [createExerciseSet] = useMutation<CreateExerciseSetResponse>(CREATE_EXERCISE_SET_MUTATION);
   const [addExerciseToSet] = useMutation(ADD_EXERCISE_TO_EXERCISE_SET_MUTATION);
 
   const handleSubmit = async (values: CreateSetFormValues) => {

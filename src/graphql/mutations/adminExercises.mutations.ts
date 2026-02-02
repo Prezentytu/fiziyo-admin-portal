@@ -35,6 +35,21 @@ export const REJECT_EXERCISE_MUTATION = gql`
 `;
 
 /**
+ * Unpublish an exercise - changes status back to Draft
+ * Used when exercise was published by mistake
+ * @param exerciseId - ID of the exercise to unpublish
+ * @param reason - Optional reason for unpublishing
+ */
+export const UNPUBLISH_EXERCISE_MUTATION = gql`
+  mutation UnpublishExercise($exerciseId: String!, $reason: String) {
+    unpublishExercise(exerciseId: $exerciseId, reason: $reason) {
+      ...AdminExerciseFragment
+    }
+  }
+  ${ADMIN_EXERCISE_FRAGMENT}
+`;
+
+/**
  * Batch approve multiple exercises
  * @param exerciseIds - Array of exercise IDs to approve
  */
@@ -94,4 +109,161 @@ export const IMPORT_EXERCISES_TO_REVIEW_MUTATION = gql`
       errors
     }
   }
+`;
+
+/**
+ * Update a single exercise field - optimized for inline editing
+ * Supports optimistic UI with immediate response
+ * @param exerciseId - ID of the exercise to update
+ * @param fieldName - Field name to update
+ * @param value - New value (string)
+ */
+export const UPDATE_EXERCISE_FIELD_MUTATION = gql`
+  mutation UpdateExerciseField(
+    $exerciseId: String!
+    $fieldName: String!
+    $value: String
+  ) {
+    updateExerciseField(exerciseId: $exerciseId, fieldName: $fieldName, value: $value) {
+      ...AdminExerciseFragment
+    }
+  }
+  ${ADMIN_EXERCISE_FRAGMENT}
+`;
+
+/**
+ * Approve exercise and get next one - for "Approve & Next" flow
+ * Returns the approved exercise and the next pending exercise
+ * @param exerciseId - ID of the exercise to approve
+ * @param reviewNotes - Optional review notes
+ */
+export const APPROVE_EXERCISE_AND_GET_NEXT_MUTATION = gql`
+  mutation ApproveExerciseAndGetNext($exerciseId: String!, $reviewNotes: String) {
+    approveExerciseAndGetNext(exerciseId: $exerciseId, reviewNotes: $reviewNotes) {
+      approvedExercise {
+        ...AdminExerciseFragment
+      }
+      nextExercise {
+        ...AdminExerciseFragment
+      }
+      remainingCount
+    }
+  }
+  ${ADMIN_EXERCISE_FRAGMENT}
+`;
+
+/**
+ * Batch update exercise fields - for saving multiple changes at once
+ * @param exerciseId - ID of the exercise to update
+ * @param updates - Object with field:value pairs
+ */
+export const BATCH_UPDATE_EXERCISE_FIELDS_MUTATION = gql`
+  mutation BatchUpdateExerciseFields(
+    $exerciseId: String!
+    $updates: JSON!
+  ) {
+    batchUpdateExerciseFields(exerciseId: $exerciseId, updates: $updates) {
+      ...AdminExerciseFragment
+    }
+  }
+  ${ADMIN_EXERCISE_FRAGMENT}
+`;
+
+// ============================================
+// Exercise Relationships (Graph) Mutations
+// ============================================
+
+/**
+ * Fragment dla relacji ćwiczenia
+ */
+export const EXERCISE_RELATION_FRAGMENT = gql`
+  fragment ExerciseRelationFragment on ExerciseRelation {
+    id
+    sourceExerciseId
+    targetExerciseId
+    relationType
+    confidence
+    isAISuggested
+    isVerified
+    createdAt
+    verifiedAt
+    targetExercise {
+      id
+      name
+      thumbnailUrl
+      gifUrl
+      videoUrl
+      difficultyLevel
+      mainTags
+      type
+    }
+  }
+`;
+
+/**
+ * Set exercise relation (regression/progression)
+ * Relations are bidirectional - setting A->B also sets B->A (inverse)
+ * @param sourceExerciseId - Current exercise
+ * @param targetExerciseId - Related exercise
+ * @param relationType - REGRESSION or PROGRESSION
+ */
+export const SET_EXERCISE_RELATION_MUTATION = gql`
+  mutation SetExerciseRelation(
+    $sourceExerciseId: String!
+    $targetExerciseId: String!
+    $relationType: String!
+  ) {
+    setExerciseRelation(
+      sourceExerciseId: $sourceExerciseId
+      targetExerciseId: $targetExerciseId
+      relationType: $relationType
+    ) {
+      ...ExerciseRelationFragment
+    }
+  }
+  ${EXERCISE_RELATION_FRAGMENT}
+`;
+
+/**
+ * Remove exercise relation
+ * Also removes the inverse relation
+ * @param sourceExerciseId - Current exercise
+ * @param relationType - REGRESSION or PROGRESSION
+ */
+export const REMOVE_EXERCISE_RELATION_MUTATION = gql`
+  mutation RemoveExerciseRelation(
+    $sourceExerciseId: String!
+    $relationType: String!
+  ) {
+    removeExerciseRelation(
+      sourceExerciseId: $sourceExerciseId
+      relationType: $relationType
+    )
+  }
+`;
+
+/**
+ * Batch set relations during approve
+ * Saves all relationships when approving exercise
+ */
+export const SET_EXERCISE_RELATIONS_BATCH_MUTATION = gql`
+  mutation SetExerciseRelationsBatch(
+    $exerciseId: String!
+    $regressionId: String
+    $progressionId: String
+  ) {
+    setExerciseRelationsBatch(
+      exerciseId: $exerciseId
+      regressionId: $regressionId
+      progressionId: $progressionId
+    ) {
+      regression {
+        ...ExerciseRelationFragment
+      }
+      progression {
+        ...ExerciseRelationFragment
+      }
+    }
+  }
+  ${EXERCISE_RELATION_FRAGMENT}
 `;
