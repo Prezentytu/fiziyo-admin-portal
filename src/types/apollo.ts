@@ -209,6 +209,11 @@ export interface Exercise {
   createdAt?: string;
   updatedAt?: string;
 
+  // Global submission tracking (nowy model weryfikacji)
+  globalSubmissionId?: string;
+  sourceOrganizationExerciseId?: string;
+  submittedToGlobalAt?: string;
+
   // Legacy aliasy (dla kompatybilności wstecznej)
   description?: string;
   exerciseSide?: string;
