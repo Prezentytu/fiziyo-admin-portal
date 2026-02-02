@@ -121,7 +121,7 @@ export function BuilderExerciseItem({
       <div className="flex-1 flex flex-col min-w-0 gap-1.5">
         {/* Row 1: Name and Delete */}
         <div className="flex items-start justify-between gap-2">
-          <p className="font-bold text-sm truncate text-foreground leading-tight">
+          <p className="font-bold text-sm text-foreground leading-tight line-clamp-2 min-w-0">
             {exercise.name}
           </p>
           <Button
