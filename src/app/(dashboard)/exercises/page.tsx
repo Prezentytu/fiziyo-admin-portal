@@ -23,7 +23,10 @@ import { cn } from '@/lib/utils';
 import { GET_AVAILABLE_EXERCISES_QUERY } from '@/graphql/queries/exercises.queries';
 import { GET_EXERCISE_TAGS_BY_ORGANIZATION_QUERY } from '@/graphql/queries/exerciseTags.queries';
 import { GET_TAG_CATEGORIES_BY_ORGANIZATION_QUERY } from '@/graphql/queries/tagCategories.queries';
-import { DELETE_EXERCISE_MUTATION } from '@/graphql/mutations/exercises.mutations';
+import {
+  DELETE_EXERCISE_MUTATION,
+  SUBMIT_TO_GLOBAL_REVIEW_MUTATION,
+} from '@/graphql/mutations/exercises.mutations';
 import { matchesSearchQuery, matchesAnyText } from '@/utils/textUtils';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { useExerciseBuilder, type BuilderExercise } from '@/contexts/ExerciseBuilderContext';
@@ -110,6 +113,19 @@ export default function ExercisesPage() {
     ],
   });
 
+  // Submit to global review mutation
+  const [submitToGlobalReview, { loading: submittingToGlobal }] = useMutation(
+    SUBMIT_TO_GLOBAL_REVIEW_MUTATION,
+    {
+      refetchQueries: [
+        {
+          query: GET_AVAILABLE_EXERCISES_QUERY,
+          variables: { organizationId },
+        },
+      ],
+    }
+  );
+
   const rawExercises: Exercise[] = (data as AvailableExercisesResponse)?.availableExercises || [];
   const tags = (tagsData as ExerciseTagsResponse)?.exerciseTags || [];
   const categories = (categoriesData as TagCategoriesResponse)?.tagsByOrganizationId || [];
@@ -190,6 +206,19 @@ export default function ExercisesPage() {
     } catch (err) {
       console.error('Błąd podczas usuwania:', err);
       toast.error('Nie udało się usunąć ćwiczenia');
+    }
+  };
+
+  const handleSubmitToGlobal = async (exerciseId: string) => {
+    try {
+      await submitToGlobalReview({
+        variables: { exerciseId },
+      });
+      toast.success('Ćwiczenie zostało zgłoszone do weryfikacji');
+      setSubmitToGlobalExercise(null);
+    } catch (err) {
+      console.error('Błąd podczas zgłaszania:', err);
+      toast.error('Nie udało się zgłosić ćwiczenia do weryfikacji');
     }
   };
 
@@ -458,7 +487,8 @@ export default function ExercisesPage() {
           open={!!submitToGlobalExercise}
           onOpenChange={(open) => !open && setSubmitToGlobalExercise(null)}
           exercise={submitToGlobalExercise}
-          organizationId={organizationId}
+          onConfirm={handleSubmitToGlobal}
+          isLoading={submittingToGlobal}
         />
       )}
 
