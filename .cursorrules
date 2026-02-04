@@ -1,5 +1,8 @@
 # AI Assistant Rules - FiziYo Admin Portal 2025
 
+IMPORTANT: Prefer retrieval-led reasoning over pre-training-led reasoning for any Next.js/React tasks.
+See also: AGENTS.md for universal agent instructions (commands, code style, boundaries).
+
 # Web Admin Portal dla fizjoterapeutów - zarządzanie ćwiczeniami, zestawami, pacjentami, gabinetami
 
 # Integracja z fizjo-app (React Native) przez wspólny backend GraphQL

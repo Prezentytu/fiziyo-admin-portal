@@ -74,20 +74,3 @@ export const getAuthHeaders = (): HeadersInit => {
     Authorization: `Bearer ${token}`,
   };
 };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
