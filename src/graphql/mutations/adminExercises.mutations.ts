@@ -23,11 +23,12 @@ export const APPROVE_EXERCISE_MUTATION = gql`
 /**
  * Reject an exercise - changes status to ChangesRequested
  * @param exerciseId - ID of the exercise to reject
- * @param rejectionReason - Required reason for rejection
+ * @param rejectionReason - Required reason category for rejection
+ * @param notes - Required notes/feedback for the author
  */
 export const REJECT_EXERCISE_MUTATION = gql`
-  mutation RejectExercise($exerciseId: String!, $rejectionReason: String!) {
-    rejectExercise(exerciseId: $exerciseId, rejectionReason: $rejectionReason) {
+  mutation RejectExercise($exerciseId: String!, $rejectionReason: String!, $notes: String!) {
+    rejectExercise(exerciseId: $exerciseId, rejectionReason: $rejectionReason, notes: $notes) {
       ...AdminExerciseFragment
     }
   }

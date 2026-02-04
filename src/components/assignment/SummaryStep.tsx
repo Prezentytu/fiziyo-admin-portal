@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
+import { useUser } from "@clerk/nextjs";
 import {
   Calendar,
   User,
@@ -11,9 +12,11 @@ import {
   Pencil,
   Check,
   Settings2,
+  Loader2,
 } from "lucide-react";
 import { format, differenceInDays } from "date-fns";
 import { pl } from "date-fns/locale";
+import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { ImagePlaceholder } from "@/components/shared/ImagePlaceholder";
@@ -22,16 +25,20 @@ import {
   calculateEstimatedTime,
   formatEstimatedTime,
 } from "@/utils/exerciseTime";
+import { useOrganization } from "@/contexts/OrganizationContext";
+import { sendExerciseReport } from "@/services/exerciseReportService";
 import type {
   ExerciseSet,
   Patient,
   Frequency,
   ExerciseOverride,
   ExerciseMapping,
+  LocalExerciseMapping,
 } from "./types";
 
 interface SummaryStepProps {
   exerciseSet: ExerciseSet;
+  localExercises: LocalExerciseMapping[];
   selectedPatients: Patient[];
   startDate: Date;
   endDate: Date;
@@ -88,6 +95,7 @@ function calculateTotalTime(
 
 export function SummaryStep({
   exerciseSet,
+  localExercises,
   selectedPatients,
   startDate,
   endDate,
@@ -96,9 +104,12 @@ export function SummaryStep({
   excludedExercises,
   onGoToStep,
 }: SummaryStepProps) {
+  const { user } = useUser();
+  const { currentOrganization } = useOrganization();
   const [showConcierge, setShowConcierge] = useState(false);
   const [feedback, setFeedback] = useState("");
   const [feedbackSent, setFeedbackSent] = useState(false);
+  const [isSendingFeedback, setIsSendingFeedback] = useState(false);
 
   const durationDays = differenceInDays(endDate, startDate);
 
@@ -144,12 +155,12 @@ export function SummaryStep({
     return days.join(", ");
   };
 
-  // Filter out excluded exercises
+  // Filter out excluded exercises - use localExercises (ghost copy) instead of exerciseSet.exerciseMappings
   const visibleMappings = useMemo(() =>
-    exerciseSet.exerciseMappings?.filter(
+    localExercises.filter(
       (m) => !excludedExercises.has(m.id)
-    ) || [],
-    [exerciseSet.exerciseMappings, excludedExercises]
+    ),
+    [localExercises, excludedExercises]
   );
 
   const exerciseCount = visibleMappings.length;
@@ -162,18 +173,68 @@ export function SummaryStep({
   );
   const totalTimeFormatted = formatEstimatedTime(totalTimeSeconds);
 
-  // Obsługa wysyłania feedbacku
-  const handleSendFeedback = () => {
-    if (!feedback.trim()) return;
-    // TODO: Integracja z backendem
-    console.log("Feedback wysłany:", feedback);
-    setFeedbackSent(true);
-    setTimeout(() => {
-      setShowConcierge(false);
-      setFeedback("");
-      setFeedbackSent(false);
-    }, 2000);
-  };
+  // Obsługa wysyłania feedbacku - wysyła raport na Discord
+  const handleSendFeedback = useCallback(async () => {
+    if (!feedback.trim() || !user || isSendingFeedback) return;
+
+    setIsSendingFeedback(true);
+
+    try {
+      // Przygotuj listę ćwiczeń z zestawu
+      const exercises = (exerciseSet.exerciseMappings || []).map((m) => ({
+        id: m.id,
+        name: m.customName || m.exercise?.name || "Nieznane ćwiczenie",
+        exerciseId: m.exerciseId || m.exercise?.id,
+      }));
+
+      // Przygotuj listę pacjentów
+      const patients = selectedPatients.map((p) => ({
+        id: p.id,
+        name: p.name,
+      }));
+
+      const result = await sendExerciseReport({
+        message: feedback.trim(),
+        exerciseSet: {
+          id: exerciseSet.id,
+          name: exerciseSet.name,
+          exercises,
+        },
+        patients,
+        reporter: {
+          userId: user.id,
+          email: user.primaryEmailAddress?.emailAddress || "unknown@email.com",
+          name: user.firstName
+            ? `${user.firstName} ${user.lastName || ""}`.trim()
+            : undefined,
+        },
+        organizationId: currentOrganization?.organizationId || "unknown",
+      });
+
+      if (result.success) {
+        setFeedbackSent(true);
+        toast.success("Dziękujemy!", {
+          description: "Zgłoszenie zostało wysłane do zespołu FiziYo.",
+        });
+        setTimeout(() => {
+          setShowConcierge(false);
+          setFeedback("");
+          setFeedbackSent(false);
+        }, 2000);
+      } else {
+        toast.error("Błąd wysyłania", {
+          description: result.error || "Nie udało się wysłać zgłoszenia.",
+        });
+      }
+    } catch (error) {
+      console.error("[SummaryStep] Error sending feedback:", error);
+      toast.error("Błąd", {
+        description: "Wystąpił nieoczekiwany błąd.",
+      });
+    } finally {
+      setIsSendingFeedback(false);
+    }
+  }, [feedback, user, exerciseSet, selectedPatients, currentOrganization, isSendingFeedback]);
 
   return (
     <div
@@ -194,10 +255,17 @@ export function SummaryStep({
           <div className="bg-surface-light/30 p-3 sm:p-4 border-b border-border/40 flex justify-between items-center shrink-0">
             <div>
               <h3 className="text-sm font-bold text-foreground">Zestaw Ćwiczeń</h3>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                &ldquo;{exerciseSet.name}&rdquo; • {exerciseCount} ćwiczeń • {totalTimeFormatted}
+              <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1.5 flex-wrap">
+                <span>&ldquo;{exerciseSet.name}&rdquo;</span>
+                <span>•</span>
+                <span>{exerciseCount} ćwiczeń</span>
+                <span>•</span>
+                <span className="inline-flex items-center gap-1 text-primary font-semibold bg-primary/10 px-1.5 py-0.5 rounded">
+                  <Clock className="h-3 w-3" />
+                  {totalTimeFormatted}
+                </span>
                 {excludedCount > 0 && (
-                  <span className="text-muted-foreground/60"> (-{excludedCount} wykluczone)</span>
+                  <span className="text-muted-foreground/60">(-{excludedCount} wykluczone)</span>
                 )}
               </p>
             </div>
@@ -352,11 +420,18 @@ export function SummaryStep({
                   </button>
                   <button
                     onClick={handleSendFeedback}
-                    disabled={!feedback.trim()}
-                    className="text-xs bg-amber-500 text-black px-3 py-1.5 rounded font-bold hover:bg-amber-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-1 sm:flex-none"
+                    disabled={!feedback.trim() || isSendingFeedback}
+                    className="text-xs bg-amber-500 text-black px-3 py-1.5 rounded font-bold hover:bg-amber-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-1 sm:flex-none flex items-center justify-center gap-1.5"
                     data-testid="summary-concierge-submit-btn"
                   >
-                    Wyślij zgłoszenie
+                    {isSendingFeedback ? (
+                      <>
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                        Wysyłanie...
+                      </>
+                    ) : (
+                      "Wyślij zgłoszenie"
+                    )}
                   </button>
                 </div>
               </div>

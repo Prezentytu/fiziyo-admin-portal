@@ -1,18 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { CheckCircle2, Loader2, Sparkles } from "lucide-react";
+import { Check, Loader2 } from "lucide-react";
+import * as VisuallyHidden from "@radix-ui/react-visually-hidden";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
-  DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
 
 interface ApproveDialogProps {
   open: boolean;
@@ -45,94 +43,75 @@ export function ApproveDialog({
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent
-        className="sm:max-w-md"
+        className="max-w-sm p-6"
         data-testid="verification-approve-dialog"
       >
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2 text-primary">
-            <CheckCircle2 className="h-5 w-5" />
-            Certyfikuj ćwiczenie
-          </DialogTitle>
+        <VisuallyHidden.Root>
+          <DialogTitle>Zatwierdź i Opublikuj</DialogTitle>
           <DialogDescription>
-            {exerciseName ? (
-              <>
-                Zatwierdzasz ćwiczenie <strong>&quot;{exerciseName}&quot;</strong> jako{" "}
-                <span className="text-primary font-medium">Złoty Standard FiziYo</span>.
-                Będzie widoczne dla wszystkich użytkowników platformy.
-              </>
-            ) : (
-              <>
-                Ćwiczenie zostanie opublikowane jako{" "}
-                <span className="text-primary font-medium">Złoty Standard FiziYo</span>.
-              </>
-            )}
+            Potwierdź publikację ćwiczenia do Bazy Globalnej
           </DialogDescription>
-        </DialogHeader>
+        </VisuallyHidden.Root>
 
-        <div className="space-y-4 py-4">
-          {/* Optional Notes Textarea */}
-          <div className="space-y-2">
-            <Label htmlFor="notes" className="flex items-center gap-2">
-              Notatka dla autora
-              <span className="text-xs text-muted-foreground font-normal">(opcjonalna)</span>
-            </Label>
-            <Textarea
-              id="notes"
-              placeholder="Np. 'Świetna jakość!', 'Przydałby się wariant dla początkujących...'"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              rows={3}
-              className="resize-none"
-              data-testid="verification-approve-notes-input"
-            />
-            <p className="text-xs text-muted-foreground">
-              Pochwała lub sugestie dla autora ćwiczenia.
-            </p>
-          </div>
-
-          {/* Info box */}
-          <div className="flex items-start gap-3 p-3 rounded-xl bg-primary/5 border border-primary/20">
-            <Sparkles className="h-5 w-5 text-primary shrink-0 mt-0.5" />
-            <div className="text-sm">
-              <p className="font-medium text-foreground">
-                Po zatwierdzeniu ćwiczenie:
-              </p>
-              <ul className="mt-1 text-muted-foreground space-y-0.5">
-                <li>• Otrzyma status &quot;Opublikowane&quot;</li>
-                <li>• Będzie widoczne w Global Search</li>
-                <li>• Zostanie oznaczone jako Public Template</li>
-              </ul>
-            </div>
+        {/* Icon */}
+        <div className="flex justify-center mb-4">
+          <div className="w-12 h-12 rounded-full bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20">
+            <Check className="h-6 w-6 text-emerald-500" />
           </div>
         </div>
 
-        <DialogFooter className="gap-2 sm:gap-0">
+        {/* Header */}
+        <div className="text-center mb-6">
+          <h3 className="text-lg font-bold text-foreground mb-1">
+            Zatwierdź i Opublikuj
+          </h3>
+          <p className="text-sm text-muted-foreground">
+            Publikujesz{" "}
+            <strong className="text-foreground">
+              {exerciseName ? `"${exerciseName}"` : "ćwiczenie"}
+            </strong>{" "}
+            do Bazy Globalnej.
+          </p>
+        </div>
+
+        {/* Notes */}
+        <div className="mb-6">
+          <Textarea
+            placeholder="Opcjonalna wiadomość dla autora (np. świetna robota!)"
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            rows={2}
+            className="resize-none text-sm"
+            data-testid="verification-approve-notes-input"
+          />
+        </div>
+
+        {/* Actions */}
+        <div className="flex gap-3">
           <Button
-            variant="outline"
+            variant="ghost"
             onClick={() => handleOpenChange(false)}
             disabled={isLoading}
+            className="flex-1"
           >
             Anuluj
           </Button>
           <Button
             onClick={handleConfirm}
             disabled={isLoading}
-            className="gap-2 bg-gradient-to-r from-primary to-emerald-600 hover:from-primary/90 hover:to-emerald-600/90"
+            className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white shadow-[0_0_15px_rgba(16,185,129,0.3)]"
             data-testid="verification-approve-confirm-btn"
           >
             {isLoading ? (
               <>
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Zatwierdzanie...
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                Publikuję...
               </>
             ) : (
-              <>
-                <CheckCircle2 className="h-4 w-4" />
-                Certyfikuj
-              </>
+              "Opublikuj"
             )}
           </Button>
-        </DialogFooter>
+        </div>
       </DialogContent>
     </Dialog>
   );

@@ -70,6 +70,9 @@ export default function VerificationDetailPage({ params }: VerificationDetailPag
   // Dialog states
   const [isRejectDialogOpen, setIsRejectDialogOpen] = useState(false);
   const [isApproveDialogOpen, setIsApproveDialogOpen] = useState(false);
+  
+  // Transition state - stays true after approval until redirect completes
+  const [isTransitioning, setIsTransitioning] = useState(false);
 
   // Safety checklist state (for VerdictPanel)
   const [safetyChecklist, setSafetyChecklist] = useState({
@@ -335,6 +338,9 @@ export default function VerificationDetailPage({ params }: VerificationDetailPag
   // Approve handler
   const handleApprove = useCallback(
     async (notes: string | null) => {
+      // Lock UI immediately to prevent flash of unwanted state
+      setIsTransitioning(true);
+      
       try {
         await approveExercise({
           variables: { exerciseId: id, reviewNotes: notes },
@@ -343,6 +349,7 @@ export default function VerificationDetailPage({ params }: VerificationDetailPag
         setIsApproveDialogOpen(false);
 
         // Auto-advance to next exercise or go back to list
+        // Note: isTransitioning stays true - redirect will unmount component
         const nextId = getNextExerciseId();
         if (nextId) {
           router.push(`/verification/${nextId}`);
@@ -352,6 +359,7 @@ export default function VerificationDetailPage({ params }: VerificationDetailPag
       } catch (err) {
         console.error("Błąd zatwierdzania:", err);
         toast.error("Nie udało się zatwierdzić ćwiczenia");
+        setIsTransitioning(false); // Unlock on error
       }
     },
     [approveExercise, id, router, getNextExerciseId]
@@ -372,11 +380,10 @@ export default function VerificationDetailPage({ params }: VerificationDetailPag
 
   // Reject handler
   const handleReject = useCallback(
-    async (reason: RejectionReason, notes: string) => {
+    async (reason: RejectionReason, notesText: string) => {
       try {
-        const fullNotes = `[${reason}] ${notes}`;
         await rejectExercise({
-          variables: { exerciseId: id, rejectionReason: fullNotes },
+          variables: { exerciseId: id, rejectionReason: reason, notes: notesText },
         });
         toast.success("Ćwiczenie zostało odrzucone z uwagami");
         setIsRejectDialogOpen(false);
@@ -603,13 +610,14 @@ export default function VerificationDetailPage({ params }: VerificationDetailPag
             onApprove={handleApproveAndNext}
             onRequestChanges={handleRequestChanges}
             onReject={() => setIsRejectDialogOpen(true)}
+            onSkip={handleSkip}
             comment={authorComment}
             onCommentChange={setAuthorComment}
             validationPassed={canPublish}
             missingFields={missingFields}
             safetyChecklist={safetyChecklist}
             onSafetyChecklistChange={setSafetyChecklist}
-            isApproving={approving}
+            isApproving={approving || isTransitioning}
             isRejecting={rejecting}
             remainingCount={remainingCount}
             className="flex-1"

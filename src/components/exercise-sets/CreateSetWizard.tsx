@@ -52,7 +52,7 @@ import { ColorBadge } from '@/components/shared/ColorBadge';
 import { cn } from '@/lib/utils';
 import { AISetGenerator } from './AISetGenerator';
 
-import { GET_ORGANIZATION_EXERCISES_QUERY } from '@/graphql/queries/exercises.queries';
+import { GET_AVAILABLE_EXERCISES_QUERY } from '@/graphql/queries/exercises.queries';
 import {
   CREATE_EXERCISE_SET_MUTATION,
   ADD_EXERCISE_TO_EXERCISE_SET_MUTATION,
@@ -253,7 +253,7 @@ function ExercisePickerItem({
   return (
     <div
       className={cn(
-        'w-full flex items-center gap-3 p-2.5 rounded-xl text-left transition-all duration-200 border',
+        'w-full flex items-center gap-3 p-2.5 rounded-xl text-left transition-all duration-200 border overflow-hidden',
         instanceCount > 0
           ? 'bg-zinc-900/60 border-zinc-800/80 opacity-80'
           : 'bg-zinc-900/30 hover:bg-zinc-900/50 border-zinc-800/50 hover:border-zinc-700'
@@ -725,7 +725,7 @@ export function CreateSetWizard({
   }, [open, patientName]);
 
   // GraphQL queries
-  const { data: exercisesData, loading: loadingExercises } = useQuery(GET_ORGANIZATION_EXERCISES_QUERY, {
+  const { data: exercisesData, loading: loadingExercises } = useQuery(GET_AVAILABLE_EXERCISES_QUERY, {
     variables: { organizationId },
     skip: !organizationId || !open,
   });
@@ -740,7 +740,7 @@ export function CreateSetWizard({
     skip: !organizationId || !open,
   });
 
-  const { data: exerciseSetsData } = useQuery(GET_ORGANIZATION_EXERCISE_SETS_QUERY, {
+  const { data: exerciseSetsData, refetch: refetchExerciseSets } = useQuery(GET_ORGANIZATION_EXERCISE_SETS_QUERY, {
     variables: { organizationId },
     skip: !organizationId || !open,
   });
@@ -781,9 +781,7 @@ export function CreateSetWizard({
   }, [patientId, patientName, clinicalNotesData]);
 
   // Mutations
-  const [createSet, { loading: creatingSet }] = useMutation(CREATE_EXERCISE_SET_MUTATION, {
-    refetchQueries: [{ query: GET_ORGANIZATION_EXERCISE_SETS_QUERY, variables: { organizationId } }],
-  });
+  const [createSet, { loading: creatingSet }] = useMutation(CREATE_EXERCISE_SET_MUTATION);
 
   const [addExercise, { loading: addingExercises }] = useMutation(ADD_EXERCISE_TO_EXERCISE_SET_MUTATION);
 
@@ -797,7 +795,7 @@ export function CreateSetWizard({
 
   const exercises: Exercise[] = useMemo(() => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const rawExercises = (exercisesData as { organizationExercises?: any[] })?.organizationExercises || [];
+    const rawExercises = (exercisesData as { availableExercises?: any[] })?.availableExercises || [];
     return mapExercisesWithTags(rawExercises, tagsMap);
   }, [exercisesData, tagsMap]);
 
@@ -984,8 +982,6 @@ export function CreateSetWizard({
         next.set(instanceId, getDefaultParams(exercise));
         return next;
       });
-
-      toast.success(`Dodano: ${exercise.name}`, { duration: 1500 });
     },
     [getDefaultParams]
   );
@@ -1108,6 +1104,9 @@ export function CreateSetWizard({
           });
         }
       }
+
+      // Refresh exercise sets cache after all exercises are added
+      await refetchExerciseSets();
 
       if (autoAssign && patientId) {
         await assignSetToPatient({
@@ -1378,10 +1377,6 @@ export function CreateSetWizard({
               </div>
             </div>
 
-            {/* Bulk Actions */}
-            {selectedInstances.length > 0 && (
-              <BulkActionBar onApply={applyParamsToAll} />
-            )}
 
             {/* Exercise list with inline editing */}
             <div className="flex-1 overflow-y-auto overflow-x-hidden bg-zinc-950/20">

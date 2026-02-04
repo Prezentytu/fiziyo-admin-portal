@@ -132,6 +132,7 @@ export interface ApproveExerciseVariables {
 export interface RejectExerciseVariables {
   exerciseId: string;
   rejectionReason: string;
+  notes: string;
 }
 
 export interface UnpublishExerciseVariables {

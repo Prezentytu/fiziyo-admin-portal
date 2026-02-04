@@ -12,6 +12,7 @@ import {
   Shield,
   Activity,
   MessageSquare,
+  SkipForward,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -79,6 +80,8 @@ interface VerdictPanelProps {
   onReject: () => void;
   /** Callback: Unpublish (for published exercises) */
   onUnpublish?: () => void;
+  /** Callback: Skip to next exercise */
+  onSkip?: () => void;
   /** Comment for author */
   comment: string;
   /** Callback when comment changes */
@@ -125,6 +128,7 @@ export function VerdictPanel({
   onRequestChanges,
   onReject,
   onUnpublish,
+  onSkip,
   comment,
   onCommentChange,
   validationPassed = false,
@@ -366,7 +370,18 @@ export function VerdictPanel({
 
         {/* Action Buttons */}
         <div className="p-4 border-t border-zinc-800/50 space-y-2.5">
-          {isPublished ? (
+          {/* Transition state: Show success message during approval */}
+          {isApproving ? (
+            <div className="flex flex-col items-center justify-center py-4 gap-3">
+              <div className="w-10 h-10 rounded-full bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20">
+                <Loader2 className="h-5 w-5 text-emerald-500 animate-spin" />
+              </div>
+              <p className="text-sm text-emerald-400 font-medium">Publikuję...</p>
+              {hasMoreExercises && (
+                <p className="text-xs text-zinc-500">Przechodzę do następnego</p>
+              )}
+            </div>
+          ) : isPublished ? (
             /* Published state: Unpublish button */
             <Button
               variant="destructive"
@@ -402,11 +417,7 @@ export function VerdictPanel({
                       )}
                       data-testid="verdict-approve-btn"
                     >
-                      {isApproving ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <CheckCircle2 className="h-4 w-4" />
-                      )}
+                      <CheckCircle2 className="h-4 w-4" />
                       Zatwierdź i Opublikuj
                       {hasMoreExercises && (
                         <ChevronRight className="h-4 w-4" />
@@ -463,13 +474,23 @@ export function VerdictPanel({
             </>
           )}
 
-          {/* Remaining count indicator */}
-          {!isPublished && hasMoreExercises && (
-            <p className="text-center text-xs text-zinc-600 pt-1">
-              Pozostało:{" "}
-              <span className="text-zinc-400 font-medium">{remainingCount}</span>{" "}
-              ćwiczeń w kolejce
-            </p>
+          {/* Skip / Remaining count */}
+          {!isPublished && hasMoreExercises && onSkip && (
+            <button
+              type="button"
+              onClick={onSkip}
+              disabled={anyLoading}
+              className="w-full flex items-center justify-center gap-2 py-2 text-xs text-zinc-500 hover:text-zinc-300 transition-colors disabled:opacity-50"
+              data-testid="verdict-skip-btn"
+            >
+              <span>
+                Pozostało <span className="text-zinc-400 font-medium">{remainingCount}</span>
+              </span>
+              <span className="text-zinc-600">•</span>
+              <span className="flex items-center gap-1 text-zinc-400 hover:text-white">
+                Pomiń <SkipForward className="h-3 w-3" />
+              </span>
+            </button>
           )}
         </div>
       </div>

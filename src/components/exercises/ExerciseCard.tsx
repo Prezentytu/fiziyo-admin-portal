@@ -11,6 +11,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { ColorBadge } from "@/components/shared/ColorBadge";
 import { ImagePlaceholder } from "@/components/shared/ImagePlaceholder";
@@ -184,6 +190,7 @@ export function ExerciseCard({
   // Compact list view
   if (compact) {
     return (
+      <TooltipProvider delayDuration={200}>
       <div
         data-testid={`exercise-card-${exercise.id}`}
         className={cn(
@@ -191,11 +198,18 @@ export function ExerciseCard({
           "transition-all duration-200 ease-out cursor-pointer",
           "hover:bg-surface-light hover:border-primary/30 hover:shadow-md hover:shadow-primary/5",
           isInBuilder && "border-primary bg-primary/5 ring-1 ring-primary/20",
-          isPendingReview && "border-amber-500/30 bg-amber-500/5",
-          isChangesRequested && "border-orange-500/30 bg-orange-500/5",
+          isPendingReview && "border-yellow-500/30 bg-yellow-500/5 opacity-70",
+          isChangesRequested && "border-red-500/30 bg-red-500/5",
           className
         )}
-        onClick={() => onView?.(exercise)}
+        onClick={() => {
+          // For CHANGES_REQUESTED, open edit directly to show feedback
+          if (isChangesRequested && onEdit) {
+            onEdit(exercise);
+          } else {
+            onView?.(exercise);
+          }
+        }}
       >
         {/* Notification dot for CHANGES_REQUESTED in compact mode */}
         {isChangesRequested && (
@@ -226,28 +240,56 @@ export function ExerciseCard({
             <p className="font-semibold truncate">{exercise.name}</p>
             {/* Status badges in compact view */}
             {isGlobalExercise && (
-              <Badge variant="outline" className="text-[9px] bg-violet-500/10 text-violet-600 border-violet-500/20 shrink-0">
-                <Sparkles className="h-2.5 w-2.5 mr-0.5" />
-                FiziYo
-              </Badge>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Badge variant="outline" className="text-[9px] bg-violet-500/10 text-violet-600 border-violet-500/20 shrink-0">
+                    <Sparkles className="h-2.5 w-2.5 mr-0.5" />
+                    FiziYo
+                  </Badge>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="text-xs">
+                  Ćwiczenie dostępne w globalnej bazie FiziYo
+                </TooltipContent>
+              </Tooltip>
             )}
-            {isSubmittedToGlobal && !isPendingReview && !isChangesRequested && (
-              <Badge variant="outline" className="text-[9px] bg-blue-500/10 text-blue-600 border-blue-500/20 shrink-0">
-                <Globe className="h-2.5 w-2.5 mr-0.5" />
-                W FiziYo
-              </Badge>
+            {isSubmittedToGlobal && !isPendingReview && !isChangesRequested && !isGlobalExercise && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Badge variant="outline" className="text-[9px] bg-blue-500/10 text-blue-600 border-blue-500/20 shrink-0">
+                    <Globe className="h-2.5 w-2.5 mr-0.5" />
+                    W FiziYo
+                  </Badge>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="text-xs">
+                  Zgłoszono do bazy globalnej FiziYo
+                </TooltipContent>
+              </Tooltip>
             )}
             {isPendingReview && (
-              <Badge variant="outline" className="text-[9px] bg-amber-500/10 text-amber-600 border-amber-500/20 shrink-0">
-                <Clock className="h-2.5 w-2.5 mr-0.5" />
-                Weryfikacja
-              </Badge>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Badge variant="outline" className="text-[9px] bg-yellow-500/10 text-yellow-600 border-yellow-500/20 shrink-0">
+                    <Clock className="h-2.5 w-2.5 mr-0.5" />
+                    Weryfikacja
+                  </Badge>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="text-xs max-w-[200px]">
+                  Nasi eksperci sprawdzają to ćwiczenie. Średni czas: 24h.
+                </TooltipContent>
+              </Tooltip>
             )}
             {isChangesRequested && (
-              <Badge variant="outline" className="text-[9px] bg-orange-500/10 text-orange-600 border-orange-500/20 shrink-0">
-                <AlertCircle className="h-2.5 w-2.5 mr-0.5" />
-                Do poprawy
-              </Badge>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Badge variant="outline" className="text-[9px] bg-red-500/10 text-red-600 border-red-500/20 shrink-0">
+                    <AlertCircle className="h-2.5 w-2.5 mr-0.5" />
+                    Do poprawy
+                  </Badge>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="text-xs">
+                  Admin dodał uwagi. Kliknij aby zobaczyć.
+                </TooltipContent>
+              </Tooltip>
             )}
           </div>
           <div className="flex items-center gap-3 text-xs text-muted-foreground">
@@ -368,11 +410,13 @@ export function ExerciseCard({
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
+      </TooltipProvider>
     );
   }
 
   // Grid card view - new design with large image
   return (
+    <TooltipProvider delayDuration={200}>
     <>
     <div
       data-testid={`exercise-card-${exercise.id}`}
@@ -383,7 +427,14 @@ export function ExerciseCard({
         isInBuilder && "ring-2 ring-primary border-primary/50 shadow-lg shadow-primary/20",
         className
       )}
-      onClick={() => onView?.(exercise)}
+      onClick={() => {
+        // For CHANGES_REQUESTED, open edit directly to show feedback
+        if (isChangesRequested && onEdit) {
+          onEdit(exercise);
+        } else {
+          onView?.(exercise);
+        }
+      }}
     >
       {/* Image section with Atlas pattern (Blurred backdrop + Contain) */}
       <div className="relative aspect-[4/3] overflow-hidden bg-zinc-950">
@@ -407,6 +458,11 @@ export function ExerciseCard({
             {/* Selection state tint (Subtle) */}
             {isInBuilder && (
               <div className="absolute inset-0 bg-primary/10 pointer-events-none" />
+            )}
+
+            {/* Pending review overlay - dimmed state */}
+            {isPendingReview && (
+              <div className="absolute inset-0 bg-black/30 pointer-events-none" />
             )}
 
             {/* Zoom button */}
@@ -438,41 +494,51 @@ export function ExerciseCard({
         {/* Status badges - top left */}
         {(isGlobalExercise || isSubmittedToGlobal || isPendingReview || isChangesRequested) && (
           <div className="absolute top-3 left-3 z-10">
-            <Badge
-              variant="outline"
-              className={cn(
-                "text-[10px] font-semibold backdrop-blur-md border shadow-lg",
-                isGlobalExercise && "bg-violet-500/80 text-white border-violet-600",
-                isSubmittedToGlobal && !isPendingReview && !isChangesRequested && !isGlobalExercise && "bg-blue-500/80 text-white border-blue-600",
-                isPendingReview && "bg-amber-500/80 text-white border-amber-600",
-                isChangesRequested && "bg-orange-500/80 text-white border-orange-600"
-              )}
-            >
-              {isGlobalExercise && (
-                <>
-                  <Sparkles className="h-3 w-3 mr-1" />
-                  FiziYo
-                </>
-              )}
-              {isSubmittedToGlobal && !isPendingReview && !isChangesRequested && !isGlobalExercise && (
-                <>
-                  <Globe className="h-3 w-3 mr-1" />
-                  W FiziYo
-                </>
-              )}
-              {isPendingReview && (
-                <>
-                  <Clock className="h-3 w-3 mr-1" />
-                  Weryfikacja
-                </>
-              )}
-              {isChangesRequested && (
-                <>
-                  <AlertCircle className="h-3 w-3 mr-1" />
-                  Do poprawy
-                </>
-              )}
-            </Badge>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Badge
+                  variant="outline"
+                  className={cn(
+                    "text-[10px] font-semibold backdrop-blur-md border shadow-lg cursor-help",
+                    isGlobalExercise && "bg-violet-500/90 text-white border-violet-600",
+                    isSubmittedToGlobal && !isPendingReview && !isChangesRequested && !isGlobalExercise && "bg-blue-500/80 text-white border-blue-600",
+                    isPendingReview && "bg-yellow-500/90 text-black border-yellow-600",
+                    isChangesRequested && "bg-red-500/90 text-white border-red-600"
+                  )}
+                >
+                  {isGlobalExercise && (
+                    <>
+                      <Sparkles className="h-3 w-3 mr-1" />
+                      FiziYo
+                    </>
+                  )}
+                  {isSubmittedToGlobal && !isPendingReview && !isChangesRequested && !isGlobalExercise && (
+                    <>
+                      <Globe className="h-3 w-3 mr-1" />
+                      W FiziYo
+                    </>
+                  )}
+                  {isPendingReview && (
+                    <>
+                      <Clock className="h-3 w-3 mr-1" />
+                      Weryfikacja
+                    </>
+                  )}
+                  {isChangesRequested && (
+                    <>
+                      <AlertCircle className="h-3 w-3 mr-1" />
+                      Do poprawy
+                    </>
+                  )}
+                </Badge>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" className="text-xs max-w-[220px]">
+                {isGlobalExercise && "Ćwiczenie dostępne w globalnej bazie FiziYo"}
+                {isSubmittedToGlobal && !isPendingReview && !isChangesRequested && !isGlobalExercise && "Zgłoszono do bazy globalnej FiziYo"}
+                {isPendingReview && "Nasi eksperci sprawdzają to ćwiczenie. Średni czas: 24h."}
+                {isChangesRequested && "Admin dodał uwagi. Kliknij aby zobaczyć."}
+              </TooltipContent>
+            </Tooltip>
           </div>
         )}
 
@@ -615,5 +681,6 @@ export function ExerciseCard({
       />
     )}
   </>
+  </TooltipProvider>
   );
 }

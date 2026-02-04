@@ -215,13 +215,14 @@ export function ExerciseRow({
     });
   }, [effectiveValues]);
 
-  // Check if any Pro Tune fields are filled
+  // Check if user has modified any fields (override exists)
   const hasProTuneData = useMemo(() => ({
-    hasLoadValue: hasLoad(effectiveValues.load),
-    hasCustomRest: effectiveValues.restSets !== 60,
-    hasNotes: Boolean(effectiveValues.notes?.trim()),
+    // Only show indicators when user has actually changed something (override exists)
+    hasLoadValue: override?.load !== undefined && hasLoad(override.load),
+    hasCustomRest: override?.restSets !== undefined,
+    hasNotes: override?.notes !== undefined && Boolean(override.notes?.trim()),
     hasSide: shouldShowSideBadge(effectiveValues.side),
-  }), [effectiveValues]);
+  }), [override, effectiveValues.side]);
 
   // Handle field updates
   const handleFieldChange = useCallback((field: keyof ExerciseOverride, value: unknown) => {
@@ -299,18 +300,12 @@ export function ExerciseRow({
           <div className="flex items-center gap-3 mt-1.5">
             <span className="text-[10px] text-muted-foreground/60 flex items-center gap-1">
               <Clock className="h-3 w-3" />
-              ~{formatEstimatedTime(estimatedTime)}
+              {formatEstimatedTime(estimatedTime)}
             </span>
 
             {hasProTuneData.hasLoadValue && (
               <span className={cn("text-[10px] font-medium", getLoadBadgeColor(effectiveValues.load))}>
                 {getLoadBadgeLabel(effectiveValues.load)}
-              </span>
-            )}
-
-            {showDurationColumn && (
-              <span className="text-[10px] text-info bg-info/10 px-1.5 py-0.5 rounded">
-                Izometria
               </span>
             )}
 

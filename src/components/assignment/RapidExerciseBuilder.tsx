@@ -144,7 +144,6 @@ export function RapidExerciseBuilder({
     (exercise: Exercise) => {
       const newMapping = createLocalMapping(exercise, exercises.length + 1);
       onExercisesChange([...exercises, newMapping]);
-      toast.success(`Dodano "${exercise.name}"`);
       setSearchQuery("");
       setSelectedIndex(0);
       inputRef.current?.focus();

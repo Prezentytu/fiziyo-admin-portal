@@ -51,6 +51,8 @@ interface ExerciseFormProps {
   isLoading?: boolean;
   submitLabel?: string;
   onDirtyChange?: (isDirty: boolean) => void;
+  /** Optional secondary action button (e.g., "Submit to Global") */
+  secondaryAction?: React.ReactNode;
 }
 
 export function ExerciseForm({
@@ -60,6 +62,7 @@ export function ExerciseForm({
   isLoading = false,
   submitLabel = "Zapisz",
   onDirtyChange,
+  secondaryAction,
 }: ExerciseFormProps) {
   const form = useForm<ExerciseFormValues>({
     resolver: zodResolver(exerciseFormSchema),
@@ -376,6 +379,7 @@ export function ExerciseForm({
             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             {submitLabel}
           </Button>
+          {secondaryAction}
         </div>
       </form>
     </Form>

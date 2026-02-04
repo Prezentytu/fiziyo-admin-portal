@@ -15,6 +15,7 @@ import { EmptyState } from '@/components/shared/EmptyState';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { ExerciseCard, Exercise } from '@/components/exercises/ExerciseCard';
 import { ExerciseDialog } from '@/components/exercises/ExerciseDialog';
+import { SubmitToGlobalDialog } from '@/components/exercises/SubmitToGlobalDialog';
 import { ExerciseBuilderSidebar } from '@/components/exercise-builder/ExerciseBuilderSidebar';
 import { ExerciseBuilderFAB } from '@/components/exercise-builder/ExerciseBuilderFAB';
 import { cn } from '@/lib/utils';
@@ -48,6 +49,7 @@ export default function ExercisesPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingExercise, setEditingExercise] = useState<Exercise | null>(null);
   const [deletingExercise, setDeletingExercise] = useState<Exercise | null>(null);
+  const [submitToGlobalExercise, setSubmitToGlobalExercise] = useState<Exercise | null>(null);
 
   // Get organization ID from context (changes when user switches organization)
   const organizationId = currentOrganization?.organizationId;
@@ -406,6 +408,7 @@ export default function ExercisesPage() {
                   onEdit={handleEdit}
                   onDelete={(e) => setDeletingExercise(e)}
                   onAddToSet={() => {}}
+                  onSubmitToGlobal={(e) => setSubmitToGlobalExercise(e)}
                   isInBuilder={isInBuilder(exercise.id)}
                   onToggleBuilder={handleToggleBuilder}
                 />
@@ -422,6 +425,7 @@ export default function ExercisesPage() {
                   onEdit={handleEdit}
                   onDelete={(e) => setDeletingExercise(e)}
                   onAddToSet={() => {}}
+                  onSubmitToGlobal={(e) => setSubmitToGlobalExercise(e)}
                   isInBuilder={isInBuilder(exercise.id)}
                   onToggleBuilder={handleToggleBuilder}
                 />
@@ -443,6 +447,17 @@ export default function ExercisesPage() {
           open={isDialogOpen}
           onOpenChange={handleCloseDialog}
           exercise={editingExercise}
+          organizationId={organizationId}
+          onSubmitToGlobal={(exercise) => setSubmitToGlobalExercise(exercise)}
+        />
+      )}
+
+      {/* Submit to Global Dialog */}
+      {organizationId && (
+        <SubmitToGlobalDialog
+          open={!!submitToGlobalExercise}
+          onOpenChange={(open) => !open && setSubmitToGlobalExercise(null)}
+          exercise={submitToGlobalExercise}
           organizationId={organizationId}
         />
       )}

@@ -4,7 +4,7 @@ import * as React from "react";
 import { useState, useCallback } from "react";
 import { useMutation } from "@apollo/client/react";
 import { toast } from "sonner";
-import { Clock, Lock, Sparkles, Copy } from "lucide-react";
+import { Clock, Lock, Sparkles, Copy, Rocket } from "lucide-react";
 
 import {
   Dialog,
@@ -31,6 +31,8 @@ interface ExerciseDialogProps {
   onSuccess?: () => void;
   /** Callback to resubmit exercise after fixing issues */
   onResubmit?: (exerciseId: string) => Promise<void>;
+  /** Callback to submit exercise to global database */
+  onSubmitToGlobal?: (exercise: Exercise) => void;
 }
 
 export function ExerciseDialog({
@@ -40,6 +42,7 @@ export function ExerciseDialog({
   organizationId,
   onSuccess,
   onResubmit,
+  onSubmitToGlobal,
 }: ExerciseDialogProps) {
   const isEditing = !!exercise;
   const [showCloseConfirm, setShowCloseConfirm] = useState(false);
@@ -53,6 +56,14 @@ export function ExerciseDialog({
   const isPendingReview = exercise?.status === 'PENDING_REVIEW';
   const isChangesRequested = exercise?.status === 'CHANGES_REQUESTED';
   const isFixMode = isChangesRequested; // Enable editing to fix issues
+
+  // Can submit to global: ORGANIZATION scope, no existing submission, not in review
+  const canSubmitToGlobal = 
+    onSubmitToGlobal && 
+    exercise?.scope === 'ORGANIZATION' && 
+    !exercise?.globalSubmissionId &&
+    !isPendingReview &&
+    !isChangesRequested;
 
   const handleCloseAttempt = useCallback(() => {
     if (formIsDirty) {
@@ -314,6 +325,21 @@ export function ExerciseDialog({
           isLoading={updating || isResubmitting}
           submitLabel={isFixMode ? "Wyślij poprawki" : "Zapisz zmiany"}
           onDirtyChange={setFormIsDirty}
+          secondaryAction={
+            canSubmitToGlobal && exercise ? (
+              <Button
+                type="button"
+                onClick={() => {
+                  onOpenChange(false);
+                  onSubmitToGlobal(exercise);
+                }}
+                className="gap-2 bg-gradient-to-r from-primary to-emerald-600 hover:from-primary/90 hover:to-emerald-600/90"
+              >
+                <Rocket className="h-4 w-4" />
+                Wyślij do weryfikacji
+              </Button>
+            ) : undefined
+          }
         />
       </DialogContent>
 

@@ -25,7 +25,7 @@ import {
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 
-import { GET_ORGANIZATION_EXERCISES_QUERY } from "@/graphql/queries/exercises.queries";
+import { GET_AVAILABLE_EXERCISES_QUERY } from "@/graphql/queries/exercises.queries";
 import { useOrganization } from "@/contexts/OrganizationContext";
 import { GET_ORGANIZATION_EXERCISE_SETS_QUERY } from "@/graphql/queries/exerciseSets.queries";
 import {
@@ -79,9 +79,9 @@ export function AddToSetFromChatDialog({
   // Get organization ID from context (changes when user switches organization)
   const organizationId = currentOrganization?.organizationId;
 
-  // Get exercises from DB to find matching one
+  // Get exercises from DB to find matching one (includes global FiziYo exercises)
   const { data: exercisesData, loading: exercisesLoading } = useQuery(
-    GET_ORGANIZATION_EXERCISES_QUERY,
+    GET_AVAILABLE_EXERCISES_QUERY,
     {
       variables: { organizationId: organizationId || "" },
       skip: !organizationId || !open,
@@ -105,12 +105,12 @@ export function AddToSetFromChatDialog({
     ADD_EXERCISE_TO_EXERCISE_SET_MUTATION
   );
 
-  // Find matching exercise in DB by name
+  // Find matching exercise in DB by name (searches both organization and global exercises)
   const matchingExercise = useMemo(() => {
     if (!exercise || !exercisesData) return null;
 
-    const exercises = (exercisesData as { organizationExercises?: ExerciseFromDB[] })
-      ?.organizationExercises || [];
+    const exercises = (exercisesData as { availableExercises?: ExerciseFromDB[] })
+      ?.availableExercises || [];
 
     // Try exact match first
     let match = exercises.find(

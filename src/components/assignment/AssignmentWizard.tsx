@@ -37,7 +37,7 @@ import {
 import { GET_ORGANIZATION_EXERCISE_SETS_QUERY, GET_EXERCISE_SET_WITH_ASSIGNMENTS_QUERY } from '@/graphql/queries/exerciseSets.queries';
 import { GET_THERAPIST_PATIENTS_QUERY, GET_ORGANIZATION_PATIENTS_QUERY } from '@/graphql/queries/therapists.queries';
 import { ASSIGN_EXERCISE_SET_TO_PATIENT_MUTATION, REMOVE_EXERCISE_SET_ASSIGNMENT_MUTATION, UPDATE_PATIENT_EXERCISE_OVERRIDES_MUTATION, CREATE_EXERCISE_SET_MUTATION, ADD_EXERCISE_TO_EXERCISE_SET_MUTATION } from '@/graphql/mutations/exercises.mutations';
-import { GET_ORGANIZATION_EXERCISES_QUERY } from '@/graphql/queries/exercises.queries';
+import { GET_AVAILABLE_EXERCISES_QUERY } from '@/graphql/queries/exercises.queries';
 import { GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY } from '@/graphql/queries/patientAssignments.queries';
 import { GET_CURRENT_BILLING_STATUS_QUERY } from '@/graphql/queries/billing.queries';
 import type { TherapistPatientsResponse } from '@/types/apollo';
@@ -235,8 +235,8 @@ function AssignmentWizardContent({
     }
   }, []);
 
-  // Queries - load sets if needed (from-patient mode or no preselected set)
-  const needsSets = mode === 'from-patient' || !preselectedSet;
+  // Queries - load sets if needed (from-patient mode, no preselected set, or user navigates to select-set step)
+  const needsSets = mode === 'from-patient' || !preselectedSet || currentStep === 'select-set';
   const { data: setsData, loading: loadingSets } = useQuery(GET_ORGANIZATION_EXERCISE_SETS_QUERY, {
     variables: { organizationId },
     skip: !organizationId || !open || !needsSets,
@@ -263,8 +263,8 @@ function AssignmentWizardContent({
     skip: !effectiveSetId || !open,
   });
 
-  // Load available exercises for Rapid Builder
-  const { data: exercisesData } = useQuery(GET_ORGANIZATION_EXERCISES_QUERY, {
+  // Load available exercises for Rapid Builder (includes global FiziYo exercises)
+  const { data: exercisesData } = useQuery(GET_AVAILABLE_EXERCISES_QUERY, {
     variables: { organizationId },
     skip: !organizationId || !open,
   });
@@ -402,11 +402,11 @@ function AssignmentWizardContent({
     }));
   }, [setAssignmentsData]);
 
-  // Process available exercises for Rapid Builder
+  // Process available exercises for Rapid Builder (includes global FiziYo exercises)
   const availableExercises: Exercise[] = useMemo(() => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const data = exercisesData as { organizationExercises?: any[] } | undefined;
-    return (data?.organizationExercises || [])
+    const data = exercisesData as { availableExercises?: any[] } | undefined;
+    return (data?.availableExercises || [])
       .filter((ex) => ex.isActive !== false)
       .map((ex) => ({
         id: ex.id,
@@ -945,6 +945,7 @@ function AssignmentWizardContent({
         return (
           <SummaryStep
             exerciseSet={selectedSet}
+            localExercises={localExercises}
             selectedPatients={selectedPatients}
             startDate={startDate}
             endDate={endDate}
