@@ -76,12 +76,18 @@ function calculateTotalTime(
   return mappings.reduce((total, mapping) => {
     const exercise = mapping.exercise;
     const override = overrides.get(mapping.id);
+    const exerciseType = exercise?.type?.toLowerCase();
+    const isTimeBased = exerciseType === "time";
 
     const sets = override?.sets ?? mapping.sets ?? exercise?.defaultSets ?? 3;
     const reps = override?.reps ?? mapping.reps ?? exercise?.defaultReps ?? 10;
-    const duration = override?.duration ?? mapping.duration ?? exercise?.defaultDuration;
     const executionTime = override?.executionTime ?? mapping.executionTime ?? exercise?.defaultExecutionTime;
     const rest = override?.restSets ?? mapping.restSets ?? exercise?.defaultRestBetweenSets ?? 60;
+    
+    // Duration tylko dla ćwiczeń time-based, dla rep-based używamy executionTime
+    const duration = isTimeBased 
+      ? (override?.duration ?? mapping.duration ?? exercise?.defaultDuration) 
+      : undefined;
 
     return total + calculateEstimatedTime({
       sets,

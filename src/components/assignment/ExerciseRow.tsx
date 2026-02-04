@@ -186,16 +186,16 @@ export function ExerciseRow({
     transition,
   };
 
-  // Compute effective values
+  // Compute effective values - mapping has priority (updated directly via ghost copy)
   const effectiveValues = useMemo(() => ({
-    sets: override?.sets ?? mapping.sets ?? exercise?.defaultSets ?? 3,
-    reps: override?.reps ?? mapping.reps ?? exercise?.defaultReps ?? 10,
-    duration: override?.duration ?? mapping.duration ?? exercise?.defaultDuration,
-    restSets: override?.restSets ?? mapping.restSets ?? exercise?.defaultRestBetweenSets ?? 60,
-    tempo: override?.tempo ?? mapping.tempo ?? exercise?.tempo ?? "",
-    load: override?.load ?? mapping.load ?? exercise?.defaultLoad,
-    notes: override?.notes ?? mapping.notes ?? "",
-    executionTime: override?.executionTime ?? mapping.executionTime ?? exercise?.defaultExecutionTime,
+    sets: mapping.sets ?? override?.sets ?? exercise?.defaultSets ?? 3,
+    reps: mapping.reps ?? override?.reps ?? exercise?.defaultReps ?? 10,
+    duration: mapping.duration ?? override?.duration ?? exercise?.defaultDuration,
+    restSets: mapping.restSets ?? override?.restSets ?? exercise?.defaultRestBetweenSets ?? 60,
+    tempo: mapping.tempo ?? override?.tempo ?? exercise?.tempo ?? "",
+    load: mapping.load ?? override?.load ?? exercise?.defaultLoad,
+    notes: mapping.notes ?? override?.notes ?? "",
+    executionTime: mapping.executionTime ?? override?.executionTime ?? exercise?.defaultExecutionTime,
     side: exercise?.side ?? "none",
   }), [override, mapping, exercise]);
 
@@ -209,11 +209,12 @@ export function ExerciseRow({
     return calculateEstimatedTime({
       sets: effectiveValues.sets,
       reps: effectiveValues.reps,
-      duration: effectiveValues.duration,
+      // Duration tylko dla ćwiczeń time-based, dla rep-based używamy executionTime
+      duration: isTimeBased ? effectiveValues.duration : undefined,
       executionTime: effectiveValues.executionTime,
       rest: effectiveValues.restSets,
     });
-  }, [effectiveValues]);
+  }, [effectiveValues, isTimeBased]);
 
   // Check if user has modified any fields (override exists)
   const hasProTuneData = useMemo(() => ({

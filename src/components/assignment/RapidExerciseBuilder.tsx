@@ -103,15 +103,17 @@ export function RapidExerciseBuilder({
     }
   }, [exercises, onExercisesChange]);
 
-  // Handle override change
-  const handleOverrideChange = useCallback((mappingId: string, updates: Partial<ExerciseOverride>) => {
-    if (!onOverridesChange) return;
-
-    const newOverrides = new Map(overrides);
-    const existing = newOverrides.get(mappingId) || { exerciseMappingId: mappingId };
-    newOverrides.set(mappingId, { ...existing, ...updates });
-    onOverridesChange(newOverrides);
-  }, [overrides, onOverridesChange]);
+  // Handle exercise field change - update localExercises directly (ghost copy)
+  const handleOverrideChange = (mappingId: string, updates: Partial<ExerciseOverride>) => {
+    // Update localExercises directly - this is the source of truth for the wizard
+    const newExercises = exercises.map(ex => {
+      if (ex.id === mappingId) {
+        return { ...ex, ...updates };
+      }
+      return ex;
+    });
+    onExercisesChange(newExercises);
+  };
 
   // Filter available exercises
   const addedExerciseIds = useMemo(
@@ -203,28 +205,28 @@ export function RapidExerciseBuilder({
     [searchResults, selectedIndex, addExercise]
   );
 
-  // Total time - uwzględnia overrides (zmiany użytkownika)
-  const totalMinutes = useMemo(() => {
-    const totalSeconds = exercises.reduce((acc, m) => {
-      const override = overrides.get(m.id);
+  // Total time - obliczany bezpośrednio z exercises (ghost copy)
+  const totalSeconds = exercises.reduce((acc, m) => {
+    const exerciseType = m.exercise?.type?.toLowerCase();
+    const isTimeBased = exerciseType === "time";
+    
+    const sets = m.sets ?? m.exercise?.defaultSets ?? 3;
+    const reps = m.reps ?? m.exercise?.defaultReps ?? 10;
+    const rest = m.restSets ?? m.exercise?.defaultRestBetweenSets ?? 60;
+    const executionTime = m.executionTime ?? m.exercise?.defaultExecutionTime;
+    
+    // Duration tylko dla ćwiczeń time-based, dla rep-based używamy executionTime
+    const duration = isTimeBased ? (m.duration ?? m.exercise?.defaultDuration) : undefined;
 
-      const sets = override?.sets ?? m.sets ?? m.exercise?.defaultSets ?? 3;
-      const reps = override?.reps ?? m.reps ?? m.exercise?.defaultReps ?? 10;
-      const duration = override?.duration ?? m.duration ?? m.exercise?.defaultDuration;
-      const rest = override?.restSets ?? m.restSets ?? m.exercise?.defaultRestBetweenSets ?? 60;
-      const executionTime = override?.executionTime ?? m.executionTime ?? m.exercise?.defaultExecutionTime;
-
-      return acc + calculateEstimatedTime({
-        sets,
-        reps,
-        duration,
-        executionTime,
-        rest,
-      });
-    }, 0);
-
-    return totalSeconds / 60;
-  }, [exercises, overrides]);
+    return acc + calculateEstimatedTime({
+      sets,
+      reps,
+      duration,
+      executionTime,
+      rest,
+    });
+  }, 0);
+  const totalMinutes = totalSeconds / 60;
 
   // Exercise IDs for sortable
   const exerciseIds = useMemo(() => exercises.map(e => e.id), [exercises]);
