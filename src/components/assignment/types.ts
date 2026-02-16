@@ -209,8 +209,9 @@ export interface AssignmentWizardState {
   saveAsTemplate: boolean;
 }
 
-// Step definitions (customize step removed - Progressive Disclosure merged into select-set)
-export type WizardStep = "select-set" | "select-patients" | "schedule" | "summary";
+// Step definitions
+// Flow: select-set -> customize-set -> select-patients -> schedule -> summary
+export type WizardStep = "select-set" | "customize-set" | "select-patients" | "schedule" | "summary";
 
 export interface WizardStepConfig {
   id: WizardStep;
@@ -222,11 +223,13 @@ export interface WizardStepConfig {
 export function getWizardSteps(
   mode: "from-set" | "from-patient",
   hasPreselectedSet: boolean,
-  hasPreselectedPatient: boolean
+  hasPreselectedPatient: boolean,
+  isCreatingNewSet: boolean = false
 ): WizardStepConfig[] {
   const steps: WizardStepConfig[] = [];
 
-  // Step 1: Select set (if not preselected in from-patient mode, or always in dashboard mode)
+  // Step 1: Select set (if not preselected in from-patient mode)
+  // When creating new set, we still show select-set first (user clicks "Stwórz nowy")
   if (mode === "from-patient" && !hasPreselectedSet) {
     steps.push({
       id: "select-set",
@@ -235,7 +238,15 @@ export function getWizardSteps(
     });
   }
 
-  // Step 2: Select patients (if not preselected)
+  // Step 2: Customize set (ALWAYS after selecting/creating a set)
+  // This is where user can personalize exercises (add, remove, edit parameters)
+  steps.push({
+    id: "customize-set",
+    label: isCreatingNewSet ? "Nowy zestaw" : "Personalizacja",
+    description: isCreatingNewSet ? "Utwórz zestaw ćw." : "Dostosuj ćwiczenia",
+  });
+
+  // Step 3: Select patients (if not preselected)
   if (!hasPreselectedPatient) {
     steps.push({
       id: "select-patients",
@@ -244,21 +255,14 @@ export function getWizardSteps(
     });
   }
 
-  // If from-set mode and set is preselected, we need patients step
-  if (mode === "from-set" && hasPreselectedSet && !hasPreselectedPatient) {
-    // Already added above
-  }
-
-  // Note: Customize step removed - Progressive Disclosure merged into select-set step
-
-  // Schedule step
+  // Step 4: Schedule
   steps.push({
     id: "schedule",
     label: "Harmonogram",
     description: "Ustal częstotliwość",
   });
 
-  // Summary step
+  // Step 5: Summary
   steps.push({
     id: "summary",
     label: "Podsumowanie",

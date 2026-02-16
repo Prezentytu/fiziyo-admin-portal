@@ -370,7 +370,7 @@ export default function DashboardPage() {
                 Przypisz zestaw
               </h3>
               <p className="text-xs text-white/70">
-                Dla powracających
+                Dla obecnych pacjentów
               </p>
             </div>
             <ArrowRight className="h-5 w-5 text-white/60 group-hover:text-white group-hover:translate-x-1 transition-all duration-300 shrink-0" />

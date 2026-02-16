@@ -15,10 +15,11 @@ import { defaultFrequency } from '@/components/exercise-sets/FrequencyPicker';
 import { WizardStepIndicator } from './WizardStepIndicator';
 import { SelectSetStep } from './SelectSetStep';
 import { SelectPatientsStep } from './SelectPatientsStep';
-// CustomizeExercisesStep removed - Progressive Disclosure merged into SelectSetStep
+import { CustomizeSetStep } from './CustomizeSetStep';
 import { ScheduleStep } from './ScheduleStep';
 import { SummaryStep } from './SummaryStep';
 import { AssignmentSuccessDialog } from './AssignmentSuccessDialog';
+import type { ExerciseInstance, ExerciseParams } from '@/components/shared/ExerciseSetBuilder';
 import {
   getWizardSteps,
   createGhostCopy,
@@ -162,10 +163,13 @@ function AssignmentWizardContent({
   onHasChanges,
   onAssignmentSuccess,
 }: AssignmentWizardContentProps) {
-  // Compute dynamic steps based on what's preselected
+  // State for customize-set mode - true when creating new set, false when customizing existing
+  const [isCreatingNewSet, setIsCreatingNewSet] = useState(false);
+
+  // Compute dynamic steps based on what's preselected and if creating new set
   const steps = useMemo(
-    () => getWizardSteps(mode, !!preselectedSet, !!preselectedPatient),
-    [mode, preselectedSet, preselectedPatient]
+    () => getWizardSteps(mode, !!preselectedSet, !!preselectedPatient, isCreatingNewSet),
+    [mode, preselectedSet, preselectedPatient, isCreatingNewSet]
   );
 
   // Get first step id
@@ -191,6 +195,10 @@ function AssignmentWizardContent({
   const [templateName, setTemplateName] = useState<string>("");
   // Wykluczone ćwiczenia (legacy - pustý Set bo customize step został usunięty)
   const [excludedExercises] = useState<Set<string>>(new Set());
+  
+  // State for CustomizeSetStep builder
+  const [builderInstances, setBuilderInstances] = useState<ExerciseInstance[]>([]);
+  const [builderParams, setBuilderParams] = useState<Map<string, ExerciseParams>>(new Map());
 
   // Track changes for close confirmation
   const hasChanges = !preselectedSet ? selectedSet !== null : selectedPatients.length > (preselectedPatient ? 1 : 0);
@@ -205,12 +213,45 @@ function AssignmentWizardContent({
     setSelectedSet(set);
     // Reset customizations when changing set
     setOverrides(new Map());
+    // Clear create-new mode when selecting existing set
+    setIsCreatingNewSet(false);
 
     // Ghost Copy - kopiuj ćwiczenia do lokalnego stanu (nie dotyka bazy)
     if (set?.exerciseMappings) {
       setLocalExercises(set.exerciseMappings.map(createGhostCopy));
+      
+      // Also populate builder state for customize-set step
+      const instances: ExerciseInstance[] = [];
+      const params = new Map<string, ExerciseParams>();
+      
+      set.exerciseMappings.forEach((mapping) => {
+        const instanceId = `existing-${mapping.id}`;
+        instances.push({
+          instanceId,
+          exerciseId: mapping.exerciseId,
+        });
+        params.set(instanceId, {
+          sets: mapping.sets ?? undefined,
+          reps: mapping.reps ?? undefined,
+          duration: mapping.duration ?? undefined,
+          restSets: mapping.restSets ?? undefined,
+          restReps: mapping.restReps ?? undefined,
+          executionTime: mapping.executionTime ?? undefined,
+          preparationTime: mapping.preparationTime ?? undefined,
+          tempo: mapping.tempo ?? '',
+          load: mapping.load ?? undefined,
+          notes: mapping.notes ?? '',
+          customName: mapping.customName ?? '',
+          customDescription: mapping.customDescription ?? '',
+        });
+      });
+      
+      setBuilderInstances(instances);
+      setBuilderParams(params);
     } else {
       setLocalExercises([]);
+      setBuilderInstances([]);
+      setBuilderParams(new Map());
     }
 
     // Set plan name (dla pacjenta) i template name (dla biblioteki)
@@ -371,7 +412,7 @@ function AssignmentWizardContent({
     if (mode !== 'from-patient' || !patientAssignmentsData) return [];
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const assignments = (patientAssignmentsData as any)?.patientAssignments || [];
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     return assignments
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .filter((a: any) => a.exerciseSetId) // Only exercise set assignments
@@ -423,57 +464,27 @@ function AssignmentWizardContent({
       }));
   }, [exercisesData]);
 
-  // Handle create new set (Phantom Set) with Smart Draft Logic
-  const handleCreateSet = useCallback(async () => {
+  // Handle create new set - sets mode to creating new and navigates to customize step
+  const handleCreateSet = useCallback(() => {
     const today = format(new Date(), 'dd.MM.yyyy');
     const setNamePattern = preselectedPatient
-      ? `Terapia dla ${preselectedPatient.name} - ${today}`
+      ? `Plan dla ${preselectedPatient.name} - ${today}`
       : `Nowy zestaw - ${today}`;
 
-    // Smart Draft Logic: Sprawdź czy istnieje pusty szkic z dzisiaj
-    const existingDraft = exerciseSets.find(s =>
-      (s.exerciseMappings?.length || 0) === 0 && // Jest pusty
-      s.name.includes(today) // Utworzony dzisiaj (data w nazwie)
-    );
-
-    if (existingDraft) {
-      // Otwórz istniejący szkic zamiast tworzyć nowy
-      setSelectedSet(existingDraft);
-      toast.info('Otwarto istniejący szkic');
-      return;
-    }
-
-    // Nie ma szkicu - utwórz nowy
-    setIsCreatingSet(true);
-    try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const result = await createExerciseSet({
-        variables: {
-          organizationId,
-          name: setNamePattern,
-          description: null,
-        },
-      });
-
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const newSet = (result.data as any)?.createExerciseSet;
-      if (newSet) {
-        // Auto-select the new set
-        setSelectedSet({
-          id: newSet.id,
-          name: newSet.name,
-          description: newSet.description,
-          exerciseMappings: [], // pusty zestaw
-        });
-        toast.success('Utworzono zestaw');
-      }
-    } catch (error) {
-      console.error('Błąd tworzenia zestawu:', error);
-      toast.error('Nie udało się utworzyć zestawu');
-    } finally {
-      setIsCreatingSet(false);
-    }
-  }, [organizationId, preselectedPatient, createExerciseSet, exerciseSets]);
+    // Reset builder state for new set
+    setBuilderInstances([]);
+    setBuilderParams(new Map());
+    setPlanName(setNamePattern);
+    setTemplateName(`${setNamePattern} (szablon)`);
+    
+    // Clear any previously selected set
+    setSelectedSet(null);
+    setLocalExercises([]);
+    
+    // Switch to creating-new mode and navigate to customize step
+    setIsCreatingNewSet(true);
+    setCurrentStep('customize-set');
+  }, [preselectedPatient]);
 
   // Ghost Copy - synchronizuj localExercises gdy zmieni się selectedSet z zewnątrz
   useEffect(() => {
@@ -579,14 +590,26 @@ function AssignmentWizardContent({
             ? `Wybierz zestaw dla pacjenta ${preselectedPatient.name}`
             : 'Wybierz zestaw ćwiczeń do przypisania',
         };
+      case 'customize-set':
+        return {
+          title: isCreatingNewSet ? 'Nowy zestaw ćwiczeń' : 'Personalizacja zestawu',
+          description: isCreatingNewSet
+            ? preselectedPatient
+              ? `Utwórz zestaw dla pacjenta ${preselectedPatient.name}`
+              : 'Dodaj ćwiczenia i skonfiguruj parametry'
+            : preselectedPatient
+              ? `Dostosuj ćwiczenia dla pacjenta ${preselectedPatient.name}`
+              : 'Dodaj, usuń lub edytuj parametry ćwiczeń',
+        };
       case 'select-patients':
         return {
           title: 'Wybierz pacjentów',
           description: selectedSet
             ? `Wybierz pacjentów dla zestawu "${selectedSet.name}"`
+            : planName
+            ? `Wybierz pacjentów dla zestawu "${planName}"`
             : 'Wybierz pacjentów do przypisania',
         };
-      // customize step removed - Progressive Disclosure merged into select-set
       case 'schedule':
         return {
           title: 'Harmonogram',
@@ -609,9 +632,11 @@ function AssignmentWizardContent({
     switch (currentStep) {
       case 'select-set':
         return selectedSet !== null;
+      case 'customize-set':
+        // Must have at least 1 exercise and a name
+        return builderInstances.length > 0 && planName.trim().length >= 2;
       case 'select-patients':
         return selectedPatients.length > 0;
-      // customize step removed - Progressive Disclosure merged into select-set
       case 'schedule':
         return true;
       case 'summary':
@@ -673,52 +698,120 @@ function AssignmentWizardContent({
   }, [overrides]);
 
   const handleSubmit = async () => {
-    if (!selectedSet || selectedPatients.length === 0) return;
+    // Need either: creating new set with exercises, or customizing existing set
+    if (builderInstances.length === 0) return;
+    if (selectedPatients.length === 0) return;
 
     try {
       const overridesJson = buildExerciseOverridesJson();
       let lastPremiumValidUntil: string | null = null;
 
-      // Określ exerciseSetId do przypisania
-      let exerciseSetIdToAssign = selectedSet.id;
+      // Zawsze tworzymy NOWY zestaw z builderInstances (bo customize-set jest zawsze wykonywany)
+      let exerciseSetIdToAssign = '';
+      let createdSetForSuccess: ExerciseSet | null = null;
 
-      // Jeśli saveAsTemplate - utwórz nowy szablon w bibliotece
-      if (saveAsTemplate && templateName.trim() && localExercises.length > 0) {
+      setIsCreatingSet(true);
+      try {
+        // 1. Utwórz nowy Set (personalizowana kopia lub zupełnie nowy)
+         
+        const createResult = await createExerciseSet({
+          variables: {
+            organizationId,
+            name: planName.trim(),
+            description: isCreatingNewSet ? null : `Spersonalizowany z: ${selectedSet?.name || 'szablonu'}`,
+          },
+        });
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const newSet = (createResult.data as any)?.createExerciseSet;
+        if (newSet?.id) {
+          // 2. Dodaj ćwiczenia do nowego setu
+          for (let i = 0; i < builderInstances.length; i++) {
+            const instance = builderInstances[i];
+            const params = builderParams.get(instance.instanceId);
+            const exercise = availableExercises.find(e => e.id === instance.exerciseId);
+            
+            await addExerciseToSet({
+              variables: {
+                exerciseId: instance.exerciseId,
+                exerciseSetId: newSet.id,
+                order: i + 1,
+                sets: params?.sets || exercise?.defaultSets || 3,
+                reps: params?.reps || exercise?.defaultReps || 10,
+                duration: params?.duration || exercise?.defaultDuration,
+                restSets: params?.restSets || exercise?.defaultRestBetweenSets || 60,
+                restReps: params?.restReps || 0,
+                executionTime: params?.executionTime || 0,
+                tempo: params?.tempo || null,
+                notes: params?.notes || null,
+                customName: params?.customName || null,
+                customDescription: params?.customDescription || null,
+                loadType: params?.loadType || null,
+                loadValue: params?.loadValue || null,
+                loadUnit: params?.loadUnit || null,
+                loadText: params?.loadText || null,
+              },
+            });
+          }
+
+          exerciseSetIdToAssign = newSet.id;
+          createdSetForSuccess = {
+            id: newSet.id,
+            name: planName.trim(),
+            description: undefined,
+            exerciseMappings: [],
+          };
+        } else {
+          throw new Error('Nie udało się utworzyć zestawu');
+        }
+      } catch (createError) {
+        console.error('Błąd tworzenia zestawu:', createError);
+        toast.error('Nie udało się utworzyć zestawu');
+        setIsCreatingSet(false);
+        return;
+      } finally {
+        setIsCreatingSet(false);
+      }
+
+      // Jeśli saveAsTemplate - utwórz DODATKOWY szablon w bibliotece (kopia do ponownego użycia)
+      if (saveAsTemplate && templateName.trim() && builderInstances.length > 0) {
         try {
-          // 1. Utwórz nowy Set
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const createResult = await createExerciseSet({
+           
+          const templateResult = await createExerciseSet({
             variables: {
               organizationId,
               name: templateName.trim(),
-              description: `Utworzono z planu: ${planName}`,
+              description: `Szablon utworzony z planu: ${planName}`,
             },
           });
 
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const newSet = (createResult.data as any)?.createExerciseSet;
-          if (newSet?.id) {
-            // 2. Dodaj ćwiczenia do nowego setu
-            for (let i = 0; i < localExercises.length; i++) {
-              const mapping = localExercises[i];
+          const templateSet = (templateResult.data as any)?.createExerciseSet;
+          if (templateSet?.id) {
+            for (let i = 0; i < builderInstances.length; i++) {
+              const instance = builderInstances[i];
+              const params = builderParams.get(instance.instanceId);
+              const exercise = availableExercises.find(e => e.id === instance.exerciseId);
+              
               await addExerciseToSet({
                 variables: {
-                  exerciseId: mapping.exerciseId,
-                  exerciseSetId: newSet.id,
+                  exerciseId: instance.exerciseId,
+                  exerciseSetId: templateSet.id,
                   order: i + 1,
-                  sets: mapping.sets || mapping.exercise?.defaultSets,
-                  reps: mapping.reps || mapping.exercise?.defaultReps,
-                  duration: mapping.duration || mapping.exercise?.defaultDuration,
-                  restSets: mapping.restSets,
-                  notes: mapping.notes,
-                  customName: mapping.customName,
+                  sets: params?.sets || exercise?.defaultSets || 3,
+                  reps: params?.reps || exercise?.defaultReps || 10,
+                  duration: params?.duration || exercise?.defaultDuration,
+                  restSets: params?.restSets || exercise?.defaultRestBetweenSets || 60,
+                  restReps: params?.restReps || 0,
+                  executionTime: params?.executionTime || 0,
+                  tempo: params?.tempo || null,
+                  notes: params?.notes || null,
+                  customName: params?.customName || null,
+                  customDescription: params?.customDescription || null,
                 },
               });
             }
-
-            toast.success(`Zapisano szablon "${templateName}"`);
-            // Użyj nowego setu do przypisania
-            exerciseSetIdToAssign = newSet.id;
+            toast.success(`Zapisano szablon "${templateName}" do biblioteki`);
           }
         } catch (templateError) {
           console.error('Błąd tworzenia szablonu:', templateError);
@@ -809,15 +902,16 @@ function AssignmentWizardContent({
 
       // 🎯 Beta Pilot Flow: Pokazuj QR dialog zamiast zamykać od razu
       // Call parent to show success dialog (lifted state to wrapper)
+      const effectiveSet = createdSetForSuccess || selectedSet;
       onAssignmentSuccess({
         patients: selectedPatients.map((p) => ({
           id: p.id,
           name: p.name,
           email: p.email,
         })),
-        setName: planName || selectedSet.name,
+        setName: planName || effectiveSet?.name || 'Nowy zestaw',
         premiumValidUntil: lastPremiumValidUntil,
-        exerciseSet: selectedSet,
+        exerciseSet: effectiveSet!,
         frequency,
       });
 
@@ -888,28 +982,29 @@ function AssignmentWizardContent({
             assignedSets={assignedSets}
             onUnassign={(assignmentId, setName) => handleUnassignRequest(assignmentId, setName, 'set')}
             loading={loadingSets}
-            // Ghost Copy props
-            localExercises={localExercises}
-            onLocalExercisesChange={setLocalExercises}
-            planName={planName}
-            onPlanNameChange={setPlanName}
-            sourceTemplateName={selectedSet?.name}
-            // Progressive Disclosure props
-            overrides={overrides}
-            onOverridesChange={setOverrides}
-            selectedPatientsCount={selectedPatients.length}
             // Phantom Set props
             onCreateSet={handleCreateSet}
             isCreatingSet={isCreatingSet}
             patientName={preselectedPatient?.name}
-            // Rapid Builder props
+          />
+        );
+
+      case 'customize-set':
+        return (
+          <CustomizeSetStep
+            planName={planName}
+            onPlanNameChange={setPlanName}
+            isCreatingNew={isCreatingNewSet}
+            sourceSetName={selectedSet?.name}
+            selectedInstances={builderInstances}
+            onSelectedInstancesChange={setBuilderInstances}
+            exerciseParams={builderParams}
+            onExerciseParamsChange={setBuilderParams}
             availableExercises={availableExercises}
+            loadingExercises={false}
             organizationId={organizationId}
-            // Save as template props
-            saveAsTemplate={saveAsTemplate}
-            onSaveAsTemplateChange={setSaveAsTemplate}
-            templateName={templateName}
-            onTemplateNameChange={setTemplateName}
+            patientName={preselectedPatient?.name}
+            showAI={true}
           />
         );
 
@@ -925,10 +1020,9 @@ function AssignmentWizardContent({
           />
         );
 
-      // customize step removed - Progressive Disclosure merged into select-set
-
       case 'schedule':
-        if (!selectedSet) return null;
+        // When creating new set, we use builderInstances instead of selectedSet
+        if (!isCreatingNewSet && !selectedSet) return null;
         return (
           <ScheduleStep
             startDate={startDate}
@@ -940,12 +1034,48 @@ function AssignmentWizardContent({
           />
         );
 
-      case 'summary':
-        if (!selectedSet) return null;
+      case 'summary': {
+        // Need either a selected set (customized) or creating new set
+        if (builderInstances.length === 0) return null;
+        
+        // Always build exercise set from builder state (it's always customized in customize-set step)
+        const summaryExerciseSet: ExerciseSet = {
+          id: isCreatingNewSet ? 'new-set' : (selectedSet?.id || 'customized-set'),
+          name: planName,
+          description: selectedSet?.description,
+          exerciseMappings: builderInstances.map((instance, index) => {
+            const exercise = availableExercises.find(e => e.id === instance.exerciseId);
+            const params = builderParams.get(instance.instanceId);
+            return {
+              id: instance.instanceId,
+              exerciseId: instance.exerciseId,
+              order: index + 1,
+              sets: params?.sets,
+              reps: params?.reps,
+              duration: params?.duration,
+              restSets: params?.restSets,
+              restReps: params?.restReps,
+              executionTime: params?.executionTime,
+              preparationTime: params?.preparationTime,
+              tempo: params?.tempo,
+              load: params?.load,
+              notes: params?.notes,
+              customName: params?.customName,
+              customDescription: params?.customDescription,
+              exercise: exercise,
+            };
+          }),
+        };
+        
+        const summaryLocalExercises = summaryExerciseSet.exerciseMappings?.map(m => ({ 
+          ...m, 
+          isNew: isCreatingNewSet 
+        })) || [];
+        
         return (
           <SummaryStep
-            exerciseSet={selectedSet}
-            localExercises={localExercises}
+            exerciseSet={summaryExerciseSet}
+            localExercises={summaryLocalExercises}
             selectedPatients={selectedPatients}
             startDate={startDate}
             endDate={endDate}
@@ -955,6 +1085,7 @@ function AssignmentWizardContent({
             onGoToStep={goToStep}
           />
         );
+      }
 
       default:
         return null;

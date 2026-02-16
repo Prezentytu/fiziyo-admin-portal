@@ -17,6 +17,7 @@ Przykład: `SPEC-001-2026-02-04-assignment-wizard.md`
 ### Struktura specyfikacji
 
 Każda specyfikacja powinna zawierać:
+
 1. **Cel biznesowy** - dlaczego ta funkcjonalność istnieje
 2. **Architektura** - jak jest zbudowana
 3. **Interfejsy API** - GraphQL queries/mutations
@@ -32,23 +33,40 @@ Każda specyfikacja powinna mieć sekcję Changelog na końcu:
 ## Changelog
 
 ### 2026-02-04
+
 - Utworzenie specyfikacji
 
 ### 2026-02-10
+
 - Dodanie nowej funkcjonalności X
 - Zmiana API Y
 ```
 
 ## Indeks specyfikacji
 
-| Nr | Tytuł | Opis | Status |
-|----|-------|------|--------|
+| Nr  | Tytuł                                                         | Opis                                            | Status  |
+| --- | ------------------------------------------------------------- | ----------------------------------------------- | ------- |
 | 001 | [Assignment Wizard](SPEC-001-2026-02-04-assignment-wizard.md) | Wizard przypisywania zestawów ćwiczeń pacjentom | Aktywny |
-| 002 | [Billing Widget](SPEC-002-2026-02-04-billing-widget.md) | Widget rozliczeniowy Pay-as-you-go | Aktywny |
+| 002 | [Billing Widget](SPEC-002-2026-02-04-billing-widget.md)       | Widget rozliczeniowy Pay-as-you-go              | Aktywny |
+
+## Planowane specyfikacje
+
+Tworzone stopniowo, przy okazji pracy nad danym modułem:
+
+| Nr  | Tytuł                | Opis                                      |
+| --- | -------------------- | ----------------------------------------- |
+| 003 | Exercises Module     | Ćwiczenia — formularz, lista, filtrowanie |
+| 004 | Exercise Sets Module | Zestawy ćwiczeń                           |
+| 005 | Patients Module      | Pacjenci — lista, profil, przypisania     |
+| 006 | Organization Module  | Organizacja, zaproszenia, role            |
+| 007 | Chat/AI Module       | Chat AI, asystent                         |
+| 008 | Import Module        | Import dokumentów                         |
+| 009 | Settings Module      | Ustawienia użytkownika                    |
 
 ## Dla AI Agentów
 
 Przed implementacją nowych funkcjonalności:
+
 1. Sprawdź czy istnieje specyfikacja w tym folderze
 2. Jeśli nie - utwórz nową specyfikację przed kodowaniem
 3. Po zmianach - zaktualizuj changelog w specyfikacji

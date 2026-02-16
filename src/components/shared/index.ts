@@ -13,3 +13,6 @@ export { FeedbackDialog } from "./FeedbackDialog";
 export { CompletionBar } from "./CompletionBar";
 export { GhostField } from "./GhostField";
 export { SmartAccordion } from "./SmartAccordion";
+export { LabeledStepper } from "./LabeledStepper";
+export { ExerciseSetBuilder } from "./ExerciseSetBuilder";
+export type { ExerciseSetBuilderProps, ExerciseInstance, ExerciseParams, BuilderExercise, ExerciseTag } from "./ExerciseSetBuilder";

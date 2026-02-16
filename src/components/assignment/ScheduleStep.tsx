@@ -453,14 +453,6 @@ export function ScheduleStep({
             </div>
           </div>
 
-          {/* Micro formula */}
-          <div className="hidden sm:flex items-center gap-2.5 text-sm text-muted-foreground">
-            <span>{effectiveWeeklyFrequency}×/tyg</span>
-            <span>×</span>
-            <span>{frequency.timesPerDay}×/dzień</span>
-            <span>×</span>
-            <span>{Math.round(durationDays / 7)} tyg</span>
-          </div>
         </div>
 
       </div>

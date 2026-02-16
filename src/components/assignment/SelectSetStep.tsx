@@ -9,9 +9,8 @@ import { Button } from "@/components/ui/button";
 import { ImagePlaceholder } from "@/components/shared/ImagePlaceholder";
 import { cn } from "@/lib/utils";
 import { getMediaUrl } from "@/utils/mediaUrl";
-import type { ExerciseSet, AssignedSetInfo, Exercise, ExerciseOverride, LocalExerciseMapping } from "./types";
+import type { ExerciseSet, AssignedSetInfo } from "./types";
 import { translateExerciseTypeShort } from "@/components/pdf/polishUtils";
-import { RapidExerciseBuilder } from "./RapidExerciseBuilder";
 
 interface SelectSetStepProps {
   exerciseSets: ExerciseSet[];
@@ -20,28 +19,10 @@ interface SelectSetStepProps {
   assignedSets?: AssignedSetInfo[];
   onUnassign?: (assignmentId: string, setName: string) => void;
   loading?: boolean;
-  // Ghost Copy props
-  localExercises: LocalExerciseMapping[];
-  onLocalExercisesChange: (exercises: LocalExerciseMapping[]) => void;
-  planName: string;
-  onPlanNameChange: (name: string) => void;
-  sourceTemplateName?: string;
-  // Exercise overrides (Progressive Disclosure)
-  overrides?: Map<string, ExerciseOverride>;
-  onOverridesChange?: (overrides: Map<string, ExerciseOverride>) => void;
-  selectedPatientsCount?: number;
   // Phantom Set props
-  onCreateSet?: () => Promise<void>;
+  onCreateSet?: () => void | Promise<void>;
   isCreatingSet?: boolean;
   patientName?: string;
-  // Rapid Builder props
-  availableExercises?: Exercise[];
-  organizationId?: string;
-  // Save as template props
-  saveAsTemplate?: boolean;
-  onSaveAsTemplateChange?: (save: boolean) => void;
-  templateName?: string;
-  onTemplateNameChange?: (name: string) => void;
 }
 
 export function SelectSetStep({
@@ -51,28 +32,10 @@ export function SelectSetStep({
   assignedSets = [],
   onUnassign,
   loading = false,
-  // Ghost Copy props
-  localExercises,
-  onLocalExercisesChange,
-  planName,
-  onPlanNameChange,
-  sourceTemplateName,
-  // Exercise overrides (Progressive Disclosure)
-  overrides = new Map(),
-  onOverridesChange,
-  selectedPatientsCount = 0,
   // Phantom Set props
   onCreateSet,
   isCreatingSet = false,
   patientName,
-  // Rapid Builder props
-  availableExercises = [],
-  organizationId,
-  // Save as template props
-  saveAsTemplate = false,
-  onSaveAsTemplateChange,
-  templateName = "",
-  onTemplateNameChange,
 }: SelectSetStepProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [previewSet, setPreviewSet] = useState<ExerciseSet | null>(selectedSet);
@@ -327,34 +290,9 @@ export function SelectSetStep({
         </ScrollArea>
       </div>
 
-      {/* Right column - Rapid Builder (zawsze dla wybranego zestawu) */}
+      {/* Right column - Set Preview (read-only) */}
       <div className="flex flex-col min-h-0 h-full rounded-xl border border-border bg-surface/50">
         {previewSet ? (
-          // Rapid Builder dla każdego zestawu - szybkie dodawanie i Time Counter
-          (availableExercises.length > 0 && organizationId) ? (
-            <RapidExerciseBuilder
-              // Ghost Copy - lokalna tablica (nie z bazy)
-              exercises={localExercises}
-              onExercisesChange={onLocalExercisesChange}
-              // Plan name (dla pacjenta)
-              planName={planName}
-              onPlanNameChange={onPlanNameChange}
-              // Bazowy szablon (read-only info)
-              sourceTemplateName={sourceTemplateName}
-              // Dodawanie ćwiczeń
-              availableExercises={availableExercises}
-              // Save as template props
-              saveAsTemplate={saveAsTemplate}
-              onSaveAsTemplateChange={onSaveAsTemplateChange}
-              templateName={templateName}
-              onTemplateNameChange={onTemplateNameChange}
-              // Progressive Disclosure props
-              overrides={overrides}
-              onOverridesChange={onOverridesChange}
-              selectedPatientsCount={selectedPatientsCount}
-            />
-          ) : (
-          // Fallback gdy brak danych do Rapid Builder - prosty podgląd
           <>
             <div className="p-4 border-b border-border">
               <h3 className="font-semibold text-lg">{previewSet.name}</h3>
@@ -425,15 +363,15 @@ export function SelectSetStep({
                           {mapping.customName || exercise?.name || "Nieznane ćwiczenie"}
                         </p>
                         <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5 flex-wrap">
-                          {(mapping.sets || exercise?.sets) && (
-                            <span>{mapping.sets || exercise?.sets} serie</span>
+                          {(mapping.sets ?? exercise?.defaultSets) && (
+                            <span>{mapping.sets ?? exercise?.defaultSets} serie</span>
                           )}
-                          {(mapping.reps || exercise?.reps) && (
-                            <span>• {mapping.reps || exercise?.reps} powt.</span>
+                          {(mapping.reps ?? exercise?.defaultReps) && (
+                            <span>• {mapping.reps ?? exercise?.defaultReps} powt.</span>
                           )}
-                          {(mapping.duration || exercise?.duration) && (
-                            <span>• {mapping.duration || exercise?.duration}s</span>
-                          )}
+                          {(mapping.executionTime ?? exercise?.defaultExecutionTime) ? (
+                            <span>• {mapping.executionTime ?? exercise?.defaultExecutionTime}s/powt.</span>
+                          ) : null}
                         </div>
                       </div>
                       {exercise?.type && (
@@ -447,7 +385,6 @@ export function SelectSetStep({
               </div>
             </ScrollArea>
           </>
-          )
         ) : (
           <div className="flex-1 flex flex-col items-center justify-center text-center p-4">
             <Dumbbell className="h-12 w-12 text-muted-foreground/30 mb-3" />

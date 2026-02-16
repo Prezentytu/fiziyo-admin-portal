@@ -7,7 +7,6 @@ import { pl } from "date-fns/locale";
 
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { JoinOrganizationDialog } from "@/components/settings/JoinOrganizationDialog";
 import { useOrganization } from "@/contexts/OrganizationContext";
 import { cn } from "@/lib/utils";
@@ -24,6 +23,7 @@ interface OrganizationsListProps {
   organizations: UserOrganization[];
   defaultOrganizationId?: string;
   onOrganizationsChange?: () => void;
+  onNavigateToOrganization?: () => void;
 }
 
 const roleLabels: Record<string, string> = {
@@ -46,12 +46,20 @@ export function OrganizationsList({
   organizations,
   defaultOrganizationId,
   onOrganizationsChange,
+  onNavigateToOrganization,
 }: OrganizationsListProps) {
   const { currentOrganization, switchOrganization, isSwitching } = useOrganization();
   const [showJoinDialog, setShowJoinDialog] = useState(false);
 
   const handleJoinSuccess = () => {
     onOrganizationsChange?.();
+  };
+
+  const handleOrganizationClick = async (organizationId: string, isActive: boolean) => {
+    if (!isActive) {
+      await switchOrganization(organizationId);
+    }
+    onNavigateToOrganization?.();
   };
 
   if (organizations.length === 0) {
@@ -149,10 +157,12 @@ export function OrganizationsList({
               const roleKey = org.role?.toUpperCase() || "MEMBER";
 
               return (
-                <div
+                <button
                   key={org.organizationId}
+                  onClick={() => handleOrganizationClick(org.organizationId, isActive)}
+                  disabled={isSwitching}
                   className={cn(
-                    "flex items-center justify-between rounded-xl border p-4 transition-all duration-200",
+                    "flex w-full items-center justify-between rounded-xl border p-4 transition-all duration-200 text-left cursor-pointer",
                     isActive
                       ? "border-primary/50 bg-primary/5 ring-1 ring-primary/20"
                       : "border-border/50 bg-background/50 hover:bg-background hover:border-primary/30"
@@ -191,7 +201,7 @@ export function OrganizationsList({
                         )}
                       </div>
                       {org.joinedAt && (
-                        <p className="text-xs text-muted-foreground">
+                        <p className="text-xs text-muted-foreground text-left">
                           {format(new Date(org.joinedAt), "d MMM yyyy", {
                             locale: pl,
                           })}
@@ -204,24 +214,11 @@ export function OrganizationsList({
                       {roleIcons[roleKey]}
                       {roleLabels[roleKey] || org.role}
                     </Badge>
-                    {!isActive && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => switchOrganization(org.organizationId)}
-                        disabled={isSwitching}
-                        className="text-xs h-7"
-                        data-testid={`settings-org-switch-${org.organizationId}`}
-                      >
-                        {isSwitching ? (
-                          <Loader2 className="h-3 w-3 animate-spin" />
-                        ) : (
-                          "Przełącz"
-                        )}
-                      </Button>
+                    {isSwitching && !isActive && (
+                      <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
                     )}
                   </div>
-                </div>
+                </button>
               );
             })}
           </div>

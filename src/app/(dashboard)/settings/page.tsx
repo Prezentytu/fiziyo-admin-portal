@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useQuery } from "@apollo/client/react";
 import { useUser } from "@clerk/nextjs";
 import { User, Building2, Eye, Settings } from "lucide-react";
@@ -24,6 +25,7 @@ export default function SettingsPage() {
   const { currentOrganization } = useOrganization();
   const { canManageOrganization } = useRoleAccess();
   const organizationId = currentOrganization?.organizationId;
+  const [activeTab, setActiveTab] = useState("profile");
 
   // Get user data
   const {
@@ -103,7 +105,7 @@ export default function SettingsPage() {
 
   return (
     <div className="flex h-[calc(100vh-64px)] -m-4 lg:-m-6 overflow-hidden bg-background">
-      <Tabs defaultValue="profile" className="flex w-full overflow-hidden" orientation="vertical">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="flex w-full overflow-hidden" orientation="vertical">
         {/* Inner Sidebar */}
         <div className="w-64 border-r border-border/40 bg-transparent flex flex-col shrink-0">
           <div className="p-6">
@@ -192,6 +194,7 @@ export default function SettingsPage() {
                   organizations={organizations as UserOrganization[]}
                   defaultOrganizationId={userByClerkId.organizationIds?.[0]}
                   onOrganizationsChange={() => refetchOrganizations()}
+                  onNavigateToOrganization={() => setActiveTab("organization")}
                 />
               )}
             </TabsContent>
