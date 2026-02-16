@@ -50,7 +50,7 @@ import {
 import { ImagePlaceholder } from "@/components/shared/ImagePlaceholder";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { cn } from "@/lib/utils";
-import { translateAssignmentStatus } from "@/utils/statusUtils";
+import { translateAssignmentStatus, type AssignmentStatus } from "@/utils/statusUtils";
 import { getMediaUrl } from "@/utils/mediaUrl";
 import { translateExerciseTypeShort } from "@/components/pdf/polishUtils";
 
@@ -242,6 +242,20 @@ export function PatientAssignmentCard({
 
   const exerciseSet = assignment.exerciseSet;
   const exercises = exerciseSet?.exerciseMappings || [];
+  const assignmentStatus: AssignmentStatus = React.useMemo(() => {
+    const status = assignment.status;
+    if (
+      status === "assigned" ||
+      status === "active" ||
+      status === "paused" ||
+      status === "completed" ||
+      status === "cancelled"
+    ) {
+      return status;
+    }
+    return "assigned";
+  }, [assignment.status]);
+
   const visibleExercises = exercises.filter((m) => {
     const override = exerciseOverrides[m.id];
     return !override?.hidden;
@@ -406,7 +420,7 @@ export function PatientAssignmentCard({
                     {exerciseSet?.name || "Nieznany zestaw"}
                   </p>
                   <Badge variant={getStatusVariant(assignment.status)} className="text-[10px] shrink-0">
-                    {translateAssignmentStatus(assignment.status as any)}
+                    {translateAssignmentStatus(assignmentStatus)}
                   </Badge>
                 </div>
                 <div className="flex items-center gap-3 mt-1 text-sm text-muted-foreground">

@@ -96,7 +96,7 @@ export function FeedbackBanner({
 
       {/* Helper text */}
       <p className="text-[11px] text-amber-600/60 mt-3 ml-8">
-        Wprowadź poprawki i kliknij "Wyślij poprawki" aby ponownie zgłosić do weryfikacji
+        Wprowadź poprawki i kliknij &quot;Wyślij poprawki&quot; aby ponownie zgłosić do weryfikacji
       </p>
     </div>
   );

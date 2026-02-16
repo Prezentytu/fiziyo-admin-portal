@@ -208,7 +208,7 @@ export function ExerciseDialog({
               Ćwiczenie z bazy FiziYo
             </DialogTitle>
             <DialogDescription>
-              "{exercise?.name}" pochodzi z globalnej bazy FiziYo i nie może być edytowane.
+              &quot;{exercise?.name}&quot; pochodzi z globalnej bazy FiziYo i nie może być edytowane.
             </DialogDescription>
           </DialogHeader>
           
@@ -253,7 +253,7 @@ export function ExerciseDialog({
               Ćwiczenie oczekuje na weryfikację
             </DialogTitle>
             <DialogDescription>
-              "{exercise?.name}" zostało zgłoszone do bazy globalnej i oczekuje na weryfikację.
+              &quot;{exercise?.name}&quot; zostało zgłoszone do bazy globalnej i oczekuje na weryfikację.
             </DialogDescription>
           </DialogHeader>
           

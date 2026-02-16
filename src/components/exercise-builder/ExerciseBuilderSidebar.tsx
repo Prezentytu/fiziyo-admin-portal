@@ -131,7 +131,7 @@ export function ExerciseBuilderSidebar({ className }: ExerciseBuilderSidebarProp
                   <Plus className="h-8 w-8 text-muted-foreground/40" />
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  Kliknij "+" na karcie ćwiczenia,<br />
+                  Kliknij &quot;+&quot; na karcie ćwiczenia,<br />
                   aby dodać je do zestawu
                 </p>
               </div>

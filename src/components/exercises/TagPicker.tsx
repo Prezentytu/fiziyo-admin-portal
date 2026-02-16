@@ -234,7 +234,7 @@ export function TagPicker({
           </div>
         ) : filteredTags.length === 0 ? (
           <div className="text-center py-4 text-muted-foreground">
-            <p className="text-sm">Brak wyników dla "{searchQuery}"</p>
+            <p className="text-sm">Brak wyników dla &quot;{searchQuery}&quot;</p>
           </div>
         ) : (
           <div className="space-y-3">

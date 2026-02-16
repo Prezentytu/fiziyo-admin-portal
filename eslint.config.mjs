@@ -6,6 +6,14 @@ import eslintConfigPrettier from "eslint-config-prettier";
 const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTs,
+  {
+    rules: {
+      "react-hooks/set-state-in-effect": "warn",
+      "react-hooks/preserve-manual-memoization": "warn",
+      "react-hooks/purity": "warn",
+      "react-hooks/static-components": "warn",
+    },
+  },
   eslintConfigPrettier,
   // Override default ignores of eslint-config-next.
   globalIgnores([

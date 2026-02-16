@@ -165,7 +165,7 @@ export function SubmitToGlobalDialog({
             <div className="flex flex-wrap gap-1 mt-2">
               {(exercise.mainTags as string[]).slice(0, 3).map((tag, i) => (
                 <Badge key={i} variant="secondary" className="text-[10px]">
-                  {typeof tag === "string" ? tag : (tag as any).name}
+                  {tag}
                 </Badge>
               ))}
             </div>

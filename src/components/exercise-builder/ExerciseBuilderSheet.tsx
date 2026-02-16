@@ -135,7 +135,7 @@ export function ExerciseBuilderSheet({ open, onOpenChange }: ExerciseBuilderShee
                   <Plus className="h-8 w-8 text-muted-foreground" />
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  Kliknij "+" na karcie ćwiczenia,<br />
+                  Kliknij &quot;+&quot; na karcie ćwiczenia,<br />
                   aby dodać je do zestawu
                 </p>
               </div>

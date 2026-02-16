@@ -109,7 +109,7 @@ export function CommissionTierCard({
     let progressPercent = 0;
     let progressToNext = tierInfo.progressToNextTier || 0;
     let nextTierName = "";
-    let nextTierRate = tierInfo.nextTierRate;
+    const nextTierRate = tierInfo.nextTierRate;
 
     if (currentTier === "START" && tierInfo.nextTierThreshold) {
       const startMin = COMMISSION_TIERS.START.minSubscribers;
