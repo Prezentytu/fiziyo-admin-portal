@@ -1,15 +1,13 @@
 "use client";
 
-import { useState, useCallback, useMemo, useEffect } from "react";
+import { useState, useCallback } from "react";
 import { useQuery } from "@apollo/client/react";
 import {
-  Search,
   Loader2,
   Play,
   Sparkles,
   ArrowLeft,
   ArrowRight,
-  Check,
 } from "lucide-react";
 import {
   Popover,
@@ -26,7 +24,6 @@ import {
   CommandSeparator,
 } from "@/components/ui/command";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
   GET_RELATION_CANDIDATES_QUERY,
@@ -34,7 +31,6 @@ import {
 } from "@/graphql/queries/adminExercises.queries";
 import type {
   ExerciseRelationTarget,
-  RelationCandidate,
   DifficultyLevel,
   GetRelationCandidatesResponse,
   SearchExercisesForRelationResponse,
@@ -130,13 +126,16 @@ export function ExerciseSearchPopover({
   const candidates = candidatesData?.relationCandidates?.candidates || [];
   const searchResults: ExerciseRelationTarget[] = searchData?.searchExercisesForRelation || [];
 
-  // Reset search when closing
-  useEffect(() => {
-    if (!isOpen) {
-      setSearchQuery("");
-      setHoveredExercise(null);
-    }
-  }, [isOpen]);
+  const handleOpenStateChange = useCallback(
+    (nextOpen: boolean) => {
+      if (!nextOpen) {
+        setSearchQuery("");
+        setHoveredExercise(null);
+      }
+      setIsOpen(nextOpen);
+    },
+    [setIsOpen]
+  );
 
   const handleSelect = useCallback(
     (exercise: ExerciseRelationTarget) => {
@@ -153,7 +152,7 @@ export function ExerciseSearchPopover({
     : "Wybierz trudniejszą wersję";
 
   return (
-    <Popover open={isOpen} onOpenChange={setIsOpen}>
+    <Popover open={isOpen} onOpenChange={handleOpenStateChange}>
       <PopoverTrigger asChild>{children}</PopoverTrigger>
       <PopoverContent
         className={cn("w-[400px] p-0", className)}

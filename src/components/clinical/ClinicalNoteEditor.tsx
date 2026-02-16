@@ -126,7 +126,7 @@ export function ClinicalNoteEditor({
   organizationId,
   existingNote,
   onSave,
-  onCancel,
+  onCancel: _onCancel,
   onDirtyChange,
 }: ClinicalNoteEditorProps) {
   const isEditing = !!existingNote;
@@ -189,25 +189,27 @@ export function ClinicalNoteEditor({
   useEffect(() => {
     if (loadingFullNote && existingNote?.id) return;
 
-    setVisitType(noteData?.visitType || 'INITIAL');
-    setVisitDate(
-      noteData?.visitDate
-        ? format(new Date(noteData.visitDate), 'yyyy-MM-dd')
-        : format(new Date(), 'yyyy-MM-dd')
-    );
-    setTitle(noteData?.title || '');
-    setSections(noteData?.sections || {});
-    setIsDirty(false);
-    noteIdRef.current = noteData?.id || null;
+    queueMicrotask(() => {
+      setVisitType(noteData?.visitType || 'INITIAL');
+      setVisitDate(
+        noteData?.visitDate
+          ? format(new Date(noteData.visitDate), 'yyyy-MM-dd')
+          : format(new Date(), 'yyyy-MM-dd')
+      );
+      setTitle(noteData?.title || '');
+      setSections(noteData?.sections || {});
+      setIsDirty(false);
+      noteIdRef.current = noteData?.id || null;
 
-    // Mark completed steps based on existing data
-    const completed = new Set<number>();
-    completed.add(0); // Basic info always completed if we have data
-    if (noteData?.sections?.interview?.mainComplaint) completed.add(1);
-    if (noteData?.sections?.examination?.posture || noteData?.sections?.examination?.specialTests?.length) completed.add(2);
-    if (noteData?.sections?.diagnosis?.icd10Codes?.length) completed.add(3);
-    if (noteData?.sections?.treatmentPlan?.shortTermGoals || noteData?.sections?.treatmentPlan?.interventions?.length) completed.add(4);
-    setCompletedSteps(completed);
+      // Mark completed steps based on existing data
+      const completed = new Set<number>();
+      completed.add(0); // Basic info always completed if we have data
+      if (noteData?.sections?.interview?.mainComplaint) completed.add(1);
+      if (noteData?.sections?.examination?.posture || noteData?.sections?.examination?.specialTests?.length) completed.add(2);
+      if (noteData?.sections?.diagnosis?.icd10Codes?.length) completed.add(3);
+      if (noteData?.sections?.treatmentPlan?.shortTermGoals || noteData?.sections?.treatmentPlan?.interventions?.length) completed.add(4);
+      setCompletedSteps(completed);
+    });
   }, [noteData, loadingFullNote, existingNote?.id]);
 
   // Notify parent when dirty state changes
@@ -215,29 +217,8 @@ export function ClinicalNoteEditor({
     onDirtyChange?.(isDirty);
   }, [isDirty, onDirtyChange]);
 
-  // Auto-save effect
-  useEffect(() => {
-    if (!isDirty || isSigned) return;
-
-    // Clear previous timeout
-    if (autoSaveTimeoutRef.current) {
-      clearTimeout(autoSaveTimeoutRef.current);
-    }
-
-    // Set new timeout for auto-save (30 seconds)
-    autoSaveTimeoutRef.current = setTimeout(async () => {
-      await performAutoSave();
-    }, 30000);
-
-    return () => {
-      if (autoSaveTimeoutRef.current) {
-        clearTimeout(autoSaveTimeoutRef.current);
-      }
-    };
-  }, [isDirty, sections, visitType, visitDate, title]);
-
   // Auto-save function
-  const performAutoSave = async () => {
+  const performAutoSave = useCallback(async () => {
     if (isSigned) return;
 
     setSaveStatus('saving');
@@ -285,7 +266,38 @@ export function ClinicalNoteEditor({
       console.error('Auto-save failed:', error);
       setSaveStatus('error');
     }
-  };
+  }, [
+    isSigned,
+    sections,
+    updateNote,
+    visitType,
+    visitDate,
+    title,
+    createNote,
+    patientId,
+    organizationId,
+  ]);
+
+  // Auto-save effect
+  useEffect(() => {
+    if (!isDirty || isSigned) return;
+
+    // Clear previous timeout
+    if (autoSaveTimeoutRef.current) {
+      clearTimeout(autoSaveTimeoutRef.current);
+    }
+
+    // Set new timeout for auto-save (30 seconds)
+    autoSaveTimeoutRef.current = setTimeout(async () => {
+      await performAutoSave();
+    }, 30000);
+
+    return () => {
+      if (autoSaveTimeoutRef.current) {
+        clearTimeout(autoSaveTimeoutRef.current);
+      }
+    };
+  }, [isDirty, isSigned, performAutoSave]);
 
   // Section update handlers
   const updateSection = useCallback(<K extends keyof ClinicalNoteSections>(

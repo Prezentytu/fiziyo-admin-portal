@@ -23,7 +23,6 @@ import {
 } from "@/components/finances";
 import { GET_ORGANIZATION_EARNINGS_QUERY } from "@/graphql/queries";
 import type { GetOrganizationEarningsResponse } from "@/types/apollo";
-import { cn } from "@/lib/utils";
 
 // ========================================
 // Empty State Component (Blurred Teaser)

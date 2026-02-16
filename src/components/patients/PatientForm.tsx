@@ -99,7 +99,7 @@ export function PatientForm({
   }, [watchedValues, onValuesChange]);
 
   // Track added tags for visual feedback
-  const [addedTags, setAddedTags] = React.useState<Set<string>>(new Set());
+  const [_addedTags, setAddedTags] = React.useState<Set<string>>(new Set());
 
   const handleAddTag = (tag: string, currentValue: string, onChange: (value: string) => void) => {
     // Check if tag already exists in the value

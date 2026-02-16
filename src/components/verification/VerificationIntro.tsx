@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { Library, Sparkles, ArrowRight, CheckCircle2, Loader2, CloudDownload, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";

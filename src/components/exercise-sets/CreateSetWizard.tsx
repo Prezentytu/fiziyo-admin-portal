@@ -178,58 +178,6 @@ function InlineNumberInput({ value, onChange, min = 0, className }: InlineNumber
 }
 
 // ============================================================
-// BULK ACTION BAR
-// ============================================================
-
-function BulkActionBar({
-  onApply
-}: {
-  onApply: (field: keyof ExerciseParams, value: number) => void
-}) {
-  return (
-    <div className="flex items-center gap-3 px-4 py-2.5 bg-zinc-900/80 border-b border-zinc-800 backdrop-blur-sm">
-      <div className="flex items-center gap-1.5 mr-2">
-        <Sparkles className="h-3.5 w-3.5 text-primary" />
-        <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Ustaw wszystkim:</span>
-      </div>
-
-      <div className="flex items-center gap-4">
-        <div className="flex items-center gap-1.5">
-          <span className="text-[10px] text-zinc-500 font-medium">Serie</span>
-          <InlineNumberInput
-            value={0}
-            onChange={(v) => onApply('sets', v)}
-            className="h-8 w-11 bg-zinc-800 border-zinc-700"
-          />
-        </div>
-
-        <div className="flex items-center gap-1.5">
-          <span className="text-[10px] text-zinc-500 font-medium">Powt/Czas</span>
-          <InlineNumberInput
-            value={0}
-            onChange={(v) => {
-              onApply('reps', v);
-              onApply('duration', v);
-            }}
-            className="h-8 w-11 bg-zinc-800 border-zinc-700"
-          />
-        </div>
-
-        <div className="flex items-center gap-1.5">
-          <span className="text-[10px] text-zinc-500 font-medium whitespace-nowrap">Prz. serii</span>
-          <InlineNumberInput
-            value={0}
-            onChange={(v) => onApply('restSets', v)}
-            className="h-8 w-11 bg-zinc-800 border-zinc-700"
-          />
-          <span className="text-[10px] text-zinc-600">s</span>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ============================================================
 // EXERCISE PICKER ITEM
 // ============================================================
 
@@ -239,7 +187,7 @@ function ExercisePickerItem({
   onAdd,
   onPreview,
   getExerciseTags,
-  badge,
+  badge: _badge,
 }: {
   exercise: Exercise;
   instanceCount: number;
@@ -951,24 +899,6 @@ export function CreateSetWizard({
       });
     },
     [exercises, getDefaultParams, selectedInstances]
-  );
-
-  const applyParamsToAll = useCallback(
-    (field: keyof ExerciseParams, value: number) => {
-      setExerciseParams((prev) => {
-        const next = new Map(prev);
-        for (const { instanceId, exerciseId } of selectedInstances) {
-          const exercise = exercises.find((e) => e.id === exerciseId);
-          if (exercise) {
-            const current = next.get(instanceId) || getExerciseParams(exercise);
-            next.set(instanceId, { ...current, [field]: value });
-          }
-        }
-        return next;
-      });
-      toast.success(`Zastosowano do ${selectedInstances.length} ćwiczeń`);
-    },
-    [selectedInstances, exercises, getExerciseParams]
   );
 
   const addExerciseToSet = useCallback(

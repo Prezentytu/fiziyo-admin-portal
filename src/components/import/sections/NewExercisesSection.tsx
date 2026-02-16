@@ -31,7 +31,7 @@ export function NewExercisesSection({
   exercises,
   decisions,
   onDecisionChange,
-  disabled = false,
+  disabled: _disabled = false,
   className,
 }: NewExercisesSectionProps) {
   if (exercises.length === 0) return null;

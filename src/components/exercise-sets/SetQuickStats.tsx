@@ -3,8 +3,7 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { FolderKanban, Users, Dumbbell, Sparkles } from "lucide-react";
-import Link from "next/link";
+import { FolderKanban, Users, Sparkles } from "lucide-react";
 
 interface SetQuickStatsProps {
   totalSets: number;
@@ -114,19 +113,3 @@ export function SetQuickStats({
     </div>
   );
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

@@ -69,7 +69,7 @@ export function ClinicalNotesList({
   patientId,
   therapistId,
   organizationId,
-  patientName,
+  patientName: _patientName,
 }: ClinicalNotesListProps) {
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [selectedNote, setSelectedNote] = useState<ClinicalNote | null>(null);

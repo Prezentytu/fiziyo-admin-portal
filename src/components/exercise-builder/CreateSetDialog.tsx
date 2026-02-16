@@ -34,8 +34,6 @@ import {
   CREATE_EXERCISE_SET_MUTATION,
   ADD_EXERCISE_TO_EXERCISE_SET_MUTATION,
 } from "@/graphql/mutations/exercises.mutations";
-import { GET_ORGANIZATION_EXERCISE_SETS_QUERY } from "@/graphql/queries/exerciseSets.queries";
-
 // ========================================
 // Form Schema
 // ========================================

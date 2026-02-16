@@ -60,10 +60,6 @@ export function OrganizationQuickStats({
     ? Math.round((currentUsage.patients / limits.maxPatients) * 100)
     : null;
 
-  const therapistsUsage = limits?.maxTherapists && currentUsage?.therapists
-    ? Math.round((currentUsage.therapists / limits.maxTherapists) * 100)
-    : null;
-
   return (
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
       {/* Members */}

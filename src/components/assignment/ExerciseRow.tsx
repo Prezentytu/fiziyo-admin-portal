@@ -159,7 +159,7 @@ interface ExerciseRowProps {
  */
 export function ExerciseRow({
   mapping,
-  index,
+  index: _index,
   override,
   onOverrideChange,
   onRemove,

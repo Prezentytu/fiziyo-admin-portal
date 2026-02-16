@@ -92,12 +92,12 @@ export default function VerificationDetailPage({ params }: VerificationDetailPag
   const [additionalTags, setAdditionalTags] = useState<string[]>([]);
 
   // Relations state
-  const [regressionExercise, setRegressionExercise] = useState<ExerciseRelationTarget | null>(null);
-  const [progressionExercise, setProgressionExercise] = useState<ExerciseRelationTarget | null>(null);
+  const [_regressionExercise, setRegressionExercise] = useState<ExerciseRelationTarget | null>(null);
+  const [_progressionExercise, setProgressionExercise] = useState<ExerciseRelationTarget | null>(null);
 
   // Save tracking
-  const [lastSavedTime, setLastSavedTime] = useState<Date | null>(null);
-  const [isSavingDraft, setIsSavingDraft] = useState(false);
+  const [_lastSavedTime, setLastSavedTime] = useState<Date | null>(null);
+  const [_isSavingDraft, setIsSavingDraft] = useState(false);
 
   // Smart Validation completion state (from VerificationEditorPanel)
   const [completionData, setCompletionData] = useState<{
@@ -121,7 +121,7 @@ export default function VerificationDetailPage({ params }: VerificationDetailPag
   // QUERIES
   // ============================================
 
-  const { data, loading, error, refetch } = useQuery<ExerciseByIdResponse>(GET_EXERCISE_BY_ID_QUERY, {
+  const { data, loading, error } = useQuery<ExerciseByIdResponse>(GET_EXERCISE_BY_ID_QUERY, {
     variables: { id },
   });
 
@@ -165,35 +165,6 @@ export default function VerificationDetailPage({ params }: VerificationDetailPag
     exercise || ({} as AdminExercise),
     { mainTags, additionalTags }
   );
-
-  // Convert validation errors to footer format (combine legacy + smart validation)
-  const validationErrors = useMemo(() => {
-    const legacyErrors = validationErrorRules?.map(rule => ({
-      id: rule.id,
-      message: rule.label,
-    })) || [];
-
-    // Add smart validation missing fields as errors
-    const smartErrors = [
-      ...completionData.criticalMissing.map((field, i) => ({
-        id: `smart-critical-${i}`,
-        message: `Brak: ${field}`,
-      })),
-      ...completionData.recommendedMissing.map((field, i) => ({
-        id: `smart-recommended-${i}`,
-        message: `Sugerowane: ${field}`,
-      })),
-    ];
-
-    // Deduplicate by message
-    const combined = [...legacyErrors, ...smartErrors];
-    const seen = new Set<string>();
-    return combined.filter(err => {
-      if (seen.has(err.message)) return false;
-      seen.add(err.message);
-      return true;
-    });
-  }, [validationErrorRules, completionData.criticalMissing, completionData.recommendedMissing]);
 
   // Can publish = smart validation says OK OR legacy validation says OK
   const canPublish = completionData.canPublish || legacyCanPublish;
@@ -329,7 +300,7 @@ export default function VerificationDetailPage({ params }: VerificationDetailPag
 
   // Validation change handler (from new Clean Cockpit validation layer)
   const handleValidationChange = useCallback(
-    (isValid: boolean, fields: string[]) => {
+    (_isValid: boolean, fields: string[]) => {
       setMissingFields(fields);
     },
     []

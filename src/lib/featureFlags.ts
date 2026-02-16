@@ -3,19 +3,6 @@
 
 export const FEATURE_FLAGS = {
   /**
-   * Professional Body Pain Map (NEW)
-   * - 4 views (front, back, left, right)
-   * - Clinical pain types (sharp, dull, radiating, etc.)
-   * - Touch support for tablets
-   * - Exercise suggestions based on pain regions
-   * - Export to PNG/PDF
-   * - Session history with comparison
-   *
-   * Set to true to enable, false to hide completely
-   */
-  BODY_PAIN_MAP: false,
-
-  /**
    * AI-powered exercise set generator
    */
   AI_SET_GENERATOR: true,

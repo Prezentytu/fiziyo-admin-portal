@@ -11,7 +11,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
 type FieldStatus = "idle" | "hover" | "editing" | "saving" | "error" | "success";
@@ -78,8 +77,10 @@ export function InlineEditField({
   // Sync with external value changes
   useEffect(() => {
     if (status === "idle") {
-      setEditValue(value);
-      setOriginalValue(value);
+      queueMicrotask(() => {
+        setEditValue(value);
+        setOriginalValue(value);
+      });
     }
   }, [value, status]);
 
@@ -357,7 +358,9 @@ export function InlineEditSelect({
 
   useEffect(() => {
     if (status === "idle") {
-      setOptimisticValue(value);
+      queueMicrotask(() => {
+        setOptimisticValue(value);
+      });
     }
   }, [value, status]);
 

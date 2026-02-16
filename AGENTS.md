@@ -26,12 +26,21 @@ Przed rozpoczęciem pracy dopasuj zadanie do tabeli i przeczytaj WSZYSTKIE pasuj
 4. **Verification**: Uruchom build, sprawdź lint. Zapytaj: "Czy senior developer zaakceptowałby ten kod?"
 5. **Elegance**: Dla nietrywialnych zmian, zatrzymaj się i zapytaj "czy istnieje bardziej eleganckie rozwiązanie?"
 
+## Core Principles
+
+- **Simplicity First**: Każda zmiana tak prosta jak to możliwe. Minimalny wpływ na kod.
+- **No Laziness**: Szukaj root cause. Zero tymczasowych fixów. Standardy senior developera.
+- **Minimal Impact**: Zmiana dotyka tylko to co konieczne. Unikaj wprowadzania błędów.
+
 ## Komendy
 
 - Instalacja: `npm install`
 - Serwer dev: `npm run dev` (HTTPS)
 - Build: `npm run build`
-- Lint: `npm run lint`
+- Lint: `npm run lint`, `npm run lint:fix`
+- Type-check: `npm run type-check`
+- Formatowanie: `npm run format`, `npm run format:check`
+- Walidacja pełna: `npm run validate` (lint + type-check + build)
 
 ## Opis projektu
 

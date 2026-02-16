@@ -63,7 +63,7 @@ export function VerificationStickyFooterV2({
   validationPassed = true,
   missingFields = [],
   clinicalCheckboxChecked = true, // Legacy - domyślnie true jeśli nie używane
-  onClinicalCheckboxChange,
+  onClinicalCheckboxChange: _onClinicalCheckboxChange,
   isRejecting = false,
   isApproving = false,
   isSavingDraft = false,

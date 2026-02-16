@@ -31,9 +31,34 @@ interface ActivityReportProps {
   onCall?: () => void;
 }
 
+interface ExerciseProgressQueryItem {
+  id: string;
+  completedAt?: string | null;
+  status: string;
+  painLevel?: number | null;
+  difficultyLevel?: number | null;
+  patientNotes?: string | null;
+}
+
+interface PatientAssignmentsQueryItem {
+  id: string;
+  startDate?: string | null;
+  endDate?: string | null;
+  status?: string | null;
+  frequency?: PatientAssignmentData["frequency"];
+}
+
+interface ExerciseProgressQueryResponse {
+  exerciseProgress?: ExerciseProgressQueryItem[];
+}
+
+interface PatientAssignmentsQueryResponse {
+  patientAssignments?: PatientAssignmentsQueryItem[];
+}
+
 export function ActivityReport({
   patientId,
-  patientName,
+  patientName: _patientName,
   onSendMessage,
   onSendPraise,
   onEditPlan,
@@ -59,25 +84,26 @@ export function ActivityReport({
 
   // Map to ExerciseProgressData type with all needed fields
   const exerciseProgress: ExerciseProgressData[] =
-    ((progressData as any)?.exerciseProgress || []).map((p: any) => ({
-      id: p.id,
-      completedAt: p.completedAt,
-      status: p.status,
-      painLevel: p.painLevel,
-      difficultyLevel: p.difficultyLevel,
-      patientNotes: p.patientNotes,
+    ((progressData as ExerciseProgressQueryResponse | undefined)?.exerciseProgress || []).map((progress) => ({
+      id: progress.id,
+      completedAt: progress.completedAt,
+      status: progress.status,
+      painLevel: progress.painLevel,
+      difficultyLevel: progress.difficultyLevel,
+      patientNotes: progress.patientNotes,
     }));
 
-  const rawAssignments = (assignmentsData as any)?.patientAssignments || [];
-  
+  const rawAssignments =
+    (assignmentsData as PatientAssignmentsQueryResponse | undefined)?.patientAssignments || [];
+
   // Map to PatientAssignmentData for therapy status calculation
-  const assignmentsForStatus: PatientAssignmentData[] = rawAssignments.map((a: any) => ({
-    id: a.id,
-    startDate: a.startDate,
-    endDate: a.endDate,
-    status: a.status,
-    frequency: a.frequency,
-  }));
+  const assignmentsForStatus: PatientAssignmentData[] = rawAssignments.map((assignment) => ({
+      id: assignment.id,
+      startDate: assignment.startDate,
+      endDate: assignment.endDate,
+      status: assignment.status,
+      frequency: assignment.frequency,
+    }));
 
   // Calculate therapy status (with assignments for proper schedule awareness)
   const therapyStatus = calculateTherapyStatus(exerciseProgress, assignmentsForStatus);

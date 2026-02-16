@@ -10,7 +10,6 @@
  * This file will be removed in a future version.
  */
 
-import * as React from 'react';
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useQuery, useMutation } from '@apollo/client/react';
 import { toast } from 'sonner';
@@ -174,30 +173,36 @@ export function SmartPatientLookup({
     if (emailLoading) return;
 
     if (emailError) {
-      setState('form');
-      setWasAutoExpanded(true);
+      queueMicrotask(() => {
+        setState('form');
+        setWasAutoExpanded(true);
+      });
       return;
     }
 
     const user = emailData?.userByEmail;
     if (user?.id) {
-      setFoundUser({
-        id: user.id,
-        fullname: user.fullname || '',
-        email: user.email,
-        image: user.image,
-        isShadowUser: user.isShadowUser,
-        isActive: user.isActive,
-        organizationIds: user.organizationIds,
-        personalData: user.personalData,
-        contactData: user.contactData,
+      queueMicrotask(() => {
+        setFoundUser({
+          id: user.id,
+          fullname: user.fullname || '',
+          email: user.email,
+          image: user.image,
+          isShadowUser: user.isShadowUser,
+          isActive: user.isActive,
+          organizationIds: user.organizationIds,
+          personalData: user.personalData,
+          contactData: user.contactData,
+        });
+        setState('found');
+        setWasAutoExpanded(false);
       });
-      setState('found');
-      setWasAutoExpanded(false);
     } else if (emailData) {
-      setFoundUser(null);
-      setState('form');
-      setWasAutoExpanded(true);
+      queueMicrotask(() => {
+        setFoundUser(null);
+        setState('form');
+        setWasAutoExpanded(true);
+      });
     }
   }, [emailData, emailLoading, emailError, debouncedEmail, mode]);
 
@@ -207,30 +212,36 @@ export function SmartPatientLookup({
     if (phoneLoading) return;
 
     if (phoneError) {
-      setState('form');
-      setWasAutoExpanded(true);
+      queueMicrotask(() => {
+        setState('form');
+        setWasAutoExpanded(true);
+      });
       return;
     }
 
     const user = phoneData?.userByPhone;
     if (user?.id) {
-      setFoundUser({
-        id: user.id,
-        fullname: user.fullname || '',
-        email: user.email,
-        image: user.image,
-        isShadowUser: user.isShadowUser,
-        isActive: user.isActive,
-        organizationIds: user.organizationIds,
-        personalData: user.personalData,
-        contactData: user.contactData,
+      queueMicrotask(() => {
+        setFoundUser({
+          id: user.id,
+          fullname: user.fullname || '',
+          email: user.email,
+          image: user.image,
+          isShadowUser: user.isShadowUser,
+          isActive: user.isActive,
+          organizationIds: user.organizationIds,
+          personalData: user.personalData,
+          contactData: user.contactData,
+        });
+        setState('found');
+        setWasAutoExpanded(false);
       });
-      setState('found');
-      setWasAutoExpanded(false);
     } else if (phoneData) {
-      setFoundUser(null);
-      setState('form');
-      setWasAutoExpanded(true);
+      queueMicrotask(() => {
+        setFoundUser(null);
+        setState('form');
+        setWasAutoExpanded(true);
+      });
     }
   }, [phoneData, phoneLoading, phoneError, debouncedPhone, mode]);
 

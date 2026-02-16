@@ -80,7 +80,7 @@ export function PayoutScheduleCard({
   className,
 }: PayoutScheduleCardProps) {
   // Fetch Stripe Connect status for balance info
-  const { data, loading, error } = useQuery<GetStripeConnectStatusResponse>(
+  const { data, loading, error: _error } = useQuery<GetStripeConnectStatusResponse>(
     GET_STRIPE_CONNECT_STATUS_QUERY,
     {
       variables: { organizationId: organizationId || "" },

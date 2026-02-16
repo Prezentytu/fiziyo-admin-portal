@@ -10,7 +10,6 @@ import {
   FileText,
   Tag,
   Image as ImageIcon,
-  Video,
   Settings,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";

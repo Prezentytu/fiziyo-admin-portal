@@ -4,6 +4,24 @@
 
 Użyj tego skilla gdy dodajesz nowy moduł lub komponent do projektu i potrzebujesz utworzyć dedykowany plik AGENTS.md z wzorcami specyficznymi dla tego obszaru.
 
+## Kluczowa zasada: Instrukcje, nie dokumentacja
+
+**AGENTS.md to zbiór instrukcji dla agenta, nie dokumentacja produktu.** Każde zdanie mówi agentowi CO robić (tryb rozkazujący), a nie jak coś działa (opis).
+
+### Anti-patterny
+
+- ❌ "Moduł zapewnia listę pacjentów..." (opis) → ✅ "Użyj modułu do wyświetlenia listy pacjentów" (instrukcja)
+- ❌ Akapity opisu → ✅ Listy numerowane z krokami
+- ❌ Kolumny "Opis" / "Cel" w tabelach → ✅ Kolumny "Kiedy używać" / "Kiedy modyfikować"
+- ❌ "Ten komponent służy do..." → ✅ "Użyj tego komponentu gdy..."
+
+### Reguły treści
+
+- Zacznij od czasowników w trybie rozkazującym: "Użyj", "Dodaj", "Utwórz", "Sprawdź"
+- Wymagaj minimum 3-5 reguł MUST dla małych plików, 8+ dla dużych
+- Preferuj listy punktowane i tabele nad akapitami
+- Nie duplikuj treści z głównego AGENTS.md
+
 ## Kiedy używać
 
 - Tworzysz nowy duży moduł (np. nowa sekcja w components/)
@@ -22,7 +40,7 @@ Plik AGENTS.md powinien być w katalogu modułu, np.:
 
 ### 2. Utwórz plik AGENTS.md
 
-Zawartość: 50-100 linii. Nie monolit — tylko wzorce specyficzne dla tego modułu.
+Zawartość: 50-100 linii. Nie monolit — tylko wzorce specyficzne dla tego modułu. Pisz instrukcje, nie opisy.
 
 ### 3. Dodaj wpis do Task Routera
 
@@ -47,17 +65,17 @@ See [AGENTS.md](AGENTS.md)
 
 ## Zakres
 
-{Krótki opis — co ten moduł robi}
+{Użyj tego modułu gdy... — instrukcja, nie opis}
 
 ## Wzorce
 
 ### {Wzorzec 1}
 
-{Opis, przykłady kodu}
+{Użyj gdy... / Dodaj... / Sprawdź... — z przykładami kodu}
 
 ### {Wzorzec 2}
 
-{Opis, przykłady kodu}
+{Użyj gdy... — z przykładami kodu}
 
 ## Referencje
 
@@ -68,8 +86,13 @@ See [AGENTS.md](AGENTS.md)
 ## Konwencje data-testid
 
 Prefiks: `{moduł}-`
-Przykłady: `{moduł}-form-submit-btn`, `{moduł}-list-item-{id}`
+| Kiedy | Format |
+|-------|--------|
+| Formularz submit | `{moduł}-form-submit-btn` |
+| Element listy | `{moduł}-list-item-{id}` |
 ```
+
+- **Instrukcje** — każda linia mówi agentowi CO robić
 
 ## Zasady
 

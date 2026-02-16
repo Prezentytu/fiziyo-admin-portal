@@ -5,7 +5,6 @@ import {
   Dumbbell,
   Timer,
   RotateCcw,
-  ArrowLeftRight,
   Image as ImageIcon,
   Video,
   Plus,
@@ -32,7 +31,7 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { cn } from "@/lib/utils";
-import { getMediaUrl, getMediaUrls } from "@/utils/mediaUrl";
+import { getMediaUrls } from "@/utils/mediaUrl";
 import type { AdminExercise } from "@/graphql/types/adminExercise.types";
 
 interface ExerciseDetailsEditorProps {

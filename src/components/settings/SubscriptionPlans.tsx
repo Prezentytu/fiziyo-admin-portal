@@ -219,7 +219,6 @@ export function SubscriptionPlans({
             billingPeriod === "yearly" && plan.priceYearly > 0
               ? Math.round(plan.priceYearly / 12)
               : plan.price;
-          const yearlyTotal = plan.priceYearly;
           const savings = plan.price * 12 - plan.priceYearly;
 
           return (

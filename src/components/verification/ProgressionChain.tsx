@@ -104,11 +104,13 @@ export function ProgressionChain({
       const rels = relationsData.exerciseRelationships;
       const regressionTarget = rels.regression?.targetExercise || null;
       const progressionTarget = rels.progression?.targetExercise || null;
-      setLocalRegression(regressionTarget);
-      setLocalProgression(progressionTarget);
-      onRelationsChange?.({
-        regression: regressionTarget,
-        progression: progressionTarget,
+      queueMicrotask(() => {
+        setLocalRegression(regressionTarget);
+        setLocalProgression(progressionTarget);
+        onRelationsChange?.({
+          regression: regressionTarget,
+          progression: progressionTarget,
+        });
       });
     }
   }, [relationsData, onRelationsChange]);
@@ -380,7 +382,6 @@ function RelationSlot({
   isLoading = false,
 }: RelationSlotProps) {
   const isRegression = type === "regression";
-  const label = isRegression ? "Łatwiejsza wersja" : "Trudniejsza wersja";
   const emptyLabel = isRegression ? "+ Dodaj łatwiejszą" : "+ Dodaj trudniejszą";
 
   // Ghost slot (empty)

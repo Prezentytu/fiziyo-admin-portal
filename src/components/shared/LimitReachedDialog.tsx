@@ -9,7 +9,6 @@ import {
   Sparkles,
   Users,
   MapPin,
-  X,
 } from 'lucide-react';
 
 import {

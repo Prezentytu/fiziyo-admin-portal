@@ -3,8 +3,6 @@
 import { useMemo } from "react";
 import {
   History,
-  User,
-  Calendar,
   ArrowRight,
   Tag,
   FileText,
@@ -121,7 +119,6 @@ export function ChangesSummary({
     return grouped;
   }, [changes]);
 
-  const changedFieldsCount = Object.keys(changesByField).length;
   const aiAssistedCount = changes.filter((c) => c.isAIAssisted).length;
 
   if (changes.length === 0) {
@@ -193,7 +190,7 @@ export function ChangesSummary({
                 </TooltipTrigger>
                 <TooltipContent>
                   <p className="text-xs">
-                    {fieldChanges.length} {fieldChanges.length === 1 ? "zmiana" : "zmiany"} w polu "{FIELD_LABELS[field] || field}"
+                    {fieldChanges.length} {fieldChanges.length === 1 ? "zmiana" : "zmiany"} w polu &quot;{FIELD_LABELS[field] || field}&quot;
                   </p>
                 </TooltipContent>
               </Tooltip>

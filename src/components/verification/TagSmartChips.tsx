@@ -7,13 +7,11 @@ import {
   X,
   Sparkles,
   Loader2,
-  Search,
   Check,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
 import {
   Popover,
   PopoverContent,
@@ -343,7 +341,7 @@ export function TagSmartChips({
       <div className="flex flex-wrap gap-2">
         {tags.length === 0 && ghostChips.length === 0 && (
           <span className="text-sm text-muted-foreground italic">
-            Brak tagów. Kliknij "Dodaj" lub "Zasugeruj (AI)".
+            Brak tagów. Kliknij &quot;Dodaj&quot; lub &quot;Zasugeruj (AI)&quot;.
           </span>
         )}
 

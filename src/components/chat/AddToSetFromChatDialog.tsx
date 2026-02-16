@@ -74,7 +74,7 @@ export function AddToSetFromChatDialog({
   const [step, setStep] = useState<Step>("select-set");
   const [searchQuery, setSearchQuery] = useState("");
   const [newSetName, setNewSetName] = useState("");
-  const [selectedSetId, setSelectedSetId] = useState<string | null>(null);
+  const [_selectedSetId, setSelectedSetId] = useState<string | null>(null);
 
   // Get organization ID from context (changes when user switches organization)
   const organizationId = currentOrganization?.organizationId;
@@ -266,7 +266,7 @@ export function AddToSetFromChatDialog({
           <DialogHeader>
             <DialogTitle>Ćwiczenie nie znalezione</DialogTitle>
             <DialogDescription>
-              Nie znaleziono ćwiczenia "{exercise.name}" w bazie danych.
+              Nie znaleziono ćwiczenia &quot;{exercise.name}&quot; w bazie danych.
             </DialogDescription>
           </DialogHeader>
 

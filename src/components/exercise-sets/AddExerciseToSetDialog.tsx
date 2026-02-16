@@ -36,7 +36,7 @@ import { cn } from "@/lib/utils";
 import { GET_ORGANIZATION_EXERCISES_QUERY } from "@/graphql/queries/exercises.queries";
 import { ADD_EXERCISE_TO_EXERCISE_SET_MUTATION } from "@/graphql/mutations/exercises.mutations";
 import { GET_EXERCISE_SET_WITH_ASSIGNMENTS_QUERY } from "@/graphql/queries/exerciseSets.queries";
-import { translateExerciseTypeShort, translateExerciseSidePolish } from "@/components/pdf/polishUtils";
+import { translateExerciseTypeShort } from "@/components/pdf/polishUtils";
 
 interface Exercise {
   id: string;

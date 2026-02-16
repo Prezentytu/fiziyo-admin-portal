@@ -35,7 +35,7 @@ export function StripeReturnHandler({
   const stripeReturn = searchParams.get("stripe_return");
 
   // Stripe Connect Status query - with refetch
-  const { refetch, data } = useQuery<GetStripeConnectStatusResponse>(
+  const { refetch, data: _data } = useQuery<GetStripeConnectStatusResponse>(
     GET_STRIPE_CONNECT_STATUS_QUERY,
     {
       variables: { organizationId: organizationId || "" },

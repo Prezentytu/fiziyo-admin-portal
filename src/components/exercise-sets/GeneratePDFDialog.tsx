@@ -5,7 +5,7 @@ import { useQuery } from '@apollo/client/react';
 import { useUser } from '@clerk/nextjs';
 import { pdf } from '@react-pdf/renderer';
 import { QRCodeCanvas } from 'qrcode.react';
-import { FileDown, FileText, Image, Calendar, QrCode, Loader2, Download, Eye, List } from 'lucide-react';
+import { FileDown, Image, Calendar, QrCode, Loader2, Download, Eye, List } from 'lucide-react';
 
 import {
   Dialog,

@@ -1,9 +1,8 @@
 "use client";
 
-import * as React from "react";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useMutation } from "@apollo/client/react";
-import { Loader2, Calendar, Clock } from "lucide-react";
+import { Loader2, Calendar } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { pl } from "date-fns/locale";
@@ -66,7 +65,20 @@ export function EditAssignmentScheduleDialog({
   const [endDate, setEndDate] = useState<Date>(new Date());
   const [frequency, setFrequency] = useState<FrequencyValue>(defaultFrequency);
   const [showCloseConfirm, setShowCloseConfirm] = useState(false);
-  const [hasChanges, setHasChanges] = useState(false);
+
+  const hasChanges = useMemo(() => {
+    if (!open || !assignment) return false;
+
+    const origStartDate = assignment.startDate ? new Date(assignment.startDate) : new Date();
+    const origEndDate = assignment.endDate ? new Date(assignment.endDate) : new Date();
+    const origFreq = frequencyToValue(assignment.frequency);
+
+    return (
+      startDate.getTime() !== origStartDate.getTime() ||
+      endDate.getTime() !== origEndDate.getTime() ||
+      JSON.stringify(frequency) !== JSON.stringify(origFreq)
+    );
+  }, [open, assignment, startDate, endDate, frequency]);
 
   const handleCloseAttempt = useCallback(() => {
     if (hasChanges) {
@@ -78,35 +90,19 @@ export function EditAssignmentScheduleDialog({
 
   const handleConfirmClose = useCallback(() => {
     setShowCloseConfirm(false);
-    setHasChanges(false);
     onOpenChange(false);
   }, [onOpenChange]);
 
   // Initialize state when assignment changes
   useEffect(() => {
     if (assignment && open) {
-      setStartDate(assignment.startDate ? new Date(assignment.startDate) : new Date());
-      setEndDate(assignment.endDate ? new Date(assignment.endDate) : new Date());
-      setFrequency(frequencyToValue(assignment.frequency));
-      setHasChanges(false);
+      queueMicrotask(() => {
+        setStartDate(assignment.startDate ? new Date(assignment.startDate) : new Date());
+        setEndDate(assignment.endDate ? new Date(assignment.endDate) : new Date());
+        setFrequency(frequencyToValue(assignment.frequency));
+      });
     }
   }, [assignment, open]);
-
-  // Track changes
-  useEffect(() => {
-    if (open && assignment) {
-      const origStartDate = assignment.startDate ? new Date(assignment.startDate) : new Date();
-      const origEndDate = assignment.endDate ? new Date(assignment.endDate) : new Date();
-      const origFreq = frequencyToValue(assignment.frequency);
-
-      const changed =
-        startDate.getTime() !== origStartDate.getTime() ||
-        endDate.getTime() !== origEndDate.getTime() ||
-        JSON.stringify(frequency) !== JSON.stringify(origFreq);
-
-      setHasChanges(changed);
-    }
-  }, [open, assignment, startDate, endDate, frequency]);
 
   // Mutation
   const [updateAssignment, { loading }] = useMutation(

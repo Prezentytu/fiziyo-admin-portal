@@ -7,7 +7,6 @@ import {
   FolderKanban,
   Send,
   CheckCircle2,
-  Circle,
   ChevronRight,
   ArrowRight,
   Sparkles,
@@ -53,6 +52,15 @@ interface OnboardingWizardProps {
 }
 
 const STORAGE_KEY = 'fiziyo-onboarding';
+
+interface StoredOnboardingState {
+  completedSteps: string[];
+}
+
+interface InitialOnboardingState {
+  steps: OnboardingStep[];
+  currentStep: number;
+}
 
 const DEFAULT_STEPS: Omit<OnboardingStep, 'completed'>[] = [
   {
@@ -101,6 +109,75 @@ const DEFAULT_STEPS: Omit<OnboardingStep, 'completed'>[] = [
   },
 ];
 
+function getDefaultOnboardingSteps(): OnboardingStep[] {
+  return DEFAULT_STEPS.map(step => ({ ...step, completed: false }));
+}
+
+function readInitialOnboardingState(): InitialOnboardingState {
+  if (typeof window === 'undefined') {
+    return {
+      steps: getDefaultOnboardingSteps(),
+      currentStep: 0,
+    };
+  }
+
+  const saved = localStorage.getItem(STORAGE_KEY);
+  if (!saved) {
+    return {
+      steps: getDefaultOnboardingSteps(),
+      currentStep: 0,
+    };
+  }
+
+  try {
+    const parsed = JSON.parse(saved) as StoredOnboardingState;
+    const stepsWithStatus = DEFAULT_STEPS.map(step => ({
+      ...step,
+      completed: parsed.completedSteps.includes(step.id),
+    }));
+    const firstIncomplete = stepsWithStatus.findIndex(step => !step.completed);
+    return {
+      steps: stepsWithStatus,
+      currentStep: firstIncomplete >= 0 ? firstIncomplete : 0,
+    };
+  } catch {
+    return {
+      steps: getDefaultOnboardingSteps(),
+      currentStep: 0,
+    };
+  }
+}
+
+function readOnboardingMeta() {
+  if (typeof window === 'undefined') {
+    return {
+      shouldAutoShow: false,
+      isNewUser: false,
+    };
+  }
+
+  const saved = localStorage.getItem(STORAGE_KEY);
+  if (!saved) {
+    return {
+      shouldAutoShow: true,
+      isNewUser: true,
+    };
+  }
+
+  try {
+    const parsed = JSON.parse(saved) as StoredOnboardingState;
+    return {
+      shouldAutoShow: false,
+      isNewUser: (parsed.completedSteps?.length ?? 0) < DEFAULT_STEPS.length,
+    };
+  } catch {
+    return {
+      shouldAutoShow: false,
+      isNewUser: false,
+    };
+  }
+}
+
 export function OnboardingWizard({
   open,
   onOpenChange,
@@ -108,34 +185,10 @@ export function OnboardingWizard({
   onComplete,
 }: OnboardingWizardProps) {
   const router = useRouter();
-  const [currentStep, setCurrentStep] = useState(0);
-  const [steps, setSteps] = useState<OnboardingStep[]>([]);
+  const [initialState] = useState<InitialOnboardingState>(() => readInitialOnboardingState());
+  const [currentStep, setCurrentStep] = useState(initialState.currentStep);
+  const [steps, setSteps] = useState<OnboardingStep[]>(initialState.steps);
   const [showCelebration, setShowCelebration] = useState(false);
-
-  // Wczytanie stanu onboardingu
-  useEffect(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved) as { completedSteps: string[] };
-        const stepsWithStatus = DEFAULT_STEPS.map(step => ({
-          ...step,
-          completed: parsed.completedSteps.includes(step.id),
-        }));
-        setSteps(stepsWithStatus);
-
-        // Znajdź pierwszy niezakończony krok
-        const firstIncomplete = stepsWithStatus.findIndex(s => !s.completed);
-        if (firstIncomplete >= 0) {
-          setCurrentStep(firstIncomplete);
-        }
-      } catch {
-        setSteps(DEFAULT_STEPS.map(s => ({ ...s, completed: false })));
-      }
-    } else {
-      setSteps(DEFAULT_STEPS.map(s => ({ ...s, completed: false })));
-    }
-  }, []);
 
   // Zapisanie stanu
   const saveProgress = useCallback((newSteps: OnboardingStep[]) => {
@@ -408,30 +461,19 @@ export function OnboardingWizard({
 
 // Hook do zarządzania stanem onboardingu
 export function useOnboarding() {
+  const [meta] = useState(() => readOnboardingMeta());
   const [showOnboarding, setShowOnboarding] = useState(false);
-  const [isNewUser, setIsNewUser] = useState(false);
+  const [isNewUser] = useState(meta.isNewUser);
 
   useEffect(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (!saved) {
+    if (meta.shouldAutoShow) {
       // Nowy użytkownik - pokaż onboarding po chwili
-      setIsNewUser(true);
       const timer = setTimeout(() => {
         setShowOnboarding(true);
       }, 1500);
       return () => clearTimeout(timer);
-    } else {
-      try {
-        const parsed = JSON.parse(saved);
-        // Sprawdź czy nie ukończono wszystkich kroków
-        if (parsed.completedSteps?.length < DEFAULT_STEPS.length) {
-          setIsNewUser(true);
-        }
-      } catch {
-        // Ignore
-      }
     }
-  }, []);
+  }, [meta.shouldAutoShow]);
 
   const openOnboarding = () => setShowOnboarding(true);
   const closeOnboarding = () => setShowOnboarding(false);

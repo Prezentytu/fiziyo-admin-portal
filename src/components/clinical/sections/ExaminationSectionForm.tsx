@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { FormHint } from '@/components/ui/form-hint';
 import { cn } from '@/lib/utils';
-import type { ExaminationSection, SpecialTest, RangeOfMotionEntry } from '@/types/clinical.types';
+import type { ExaminationSection, RangeOfMotionEntry } from '@/types/clinical.types';
 
 // Predefiniowane testy specjalne
 const COMMON_TESTS = [

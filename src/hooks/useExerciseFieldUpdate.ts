@@ -1,5 +1,5 @@
 import { useCallback, useState, useRef } from "react";
-import { useMutation, useApolloClient } from "@apollo/client/react";
+import { useMutation } from "@apollo/client/react";
 import { toast } from "sonner";
 import {
   UPDATE_EXERCISE_FIELD_MUTATION,
@@ -58,13 +58,10 @@ export function useExerciseFieldUpdate({
   exerciseId,
   onSuccess,
   onError,
-  debounceMs = 0,
+  debounceMs: _debounceMs = 0,
 }: UseExerciseFieldUpdateOptions): UseExerciseFieldUpdateReturn {
-  const client = useApolloClient();
   const [pendingFields, setPendingFields] = useState<Set<string>>(new Set());
   const [error, setError] = useState<Error | null>(null);
-  const debounceRef = useRef<NodeJS.Timeout | null>(null);
-  const pendingUpdatesRef = useRef<Record<string, unknown>>({});
 
   // Single field mutation
   const [updateFieldMutation] = useMutation<{ updateExerciseField: AdminExercise }>(UPDATE_EXERCISE_FIELD_MUTATION, {

@@ -152,7 +152,7 @@ interface AssignmentWizardContentProps extends AssignmentWizardProps {
 // Inner component with all the wizard logic - remounts on each dialog open
 function AssignmentWizardContent({
   open,
-  onOpenChange,
+  onOpenChange: _onOpenChange,
   mode,
   preselectedSet,
   preselectedPatient,
@@ -191,7 +191,7 @@ function AssignmentWizardContent({
   // Nazwa planu dla pacjenta (Assignment name)
   const [planName, setPlanName] = useState<string>("");
   // Szablon - opcjonalny zapis do biblioteki
-  const [saveAsTemplate, setSaveAsTemplate] = useState(false);
+  const [saveAsTemplate, _setSaveAsTemplate] = useState(false);
   const [templateName, setTemplateName] = useState<string>("");
   // Wykluczone ćwiczenia (legacy - pustý Set bo customize step został usunięty)
   const [excludedExercises] = useState<Set<string>>(new Set());
@@ -648,7 +648,7 @@ function AssignmentWizardContent({
 
   // Track animation direction
   const [slideDirection, setSlideDirection] = useState<'left' | 'right'>('right');
-  const [isAnimating, setIsAnimating] = useState(false);
+  const [_isAnimating, _setIsAnimating] = useState(false);
   const animationKey = useRef(0);
 
   const goToStep = (step: WizardStep) => {

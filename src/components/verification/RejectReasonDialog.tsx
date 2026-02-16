@@ -120,7 +120,6 @@ export function RejectReasonDialog({
   const [notes, setNotes] = useState("");
   const [isGeneratingNote, setIsGeneratingNote] = useState(false);
 
-  const selectedReason = REJECTION_REASONS.find((r) => r.value === reason);
   const isValid = reason && notes.trim().length >= 10;
 
   const handleConfirm = () => {

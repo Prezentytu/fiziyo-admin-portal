@@ -3,14 +3,10 @@
 import { useState, useCallback, useMemo, useEffect } from "react";
 import {
   Dumbbell,
-  Timer,
   Gauge,
   User,
   Stethoscope,
   AlertCircle,
-  Hash,
-  Repeat,
-  Hourglass,
   ChevronDown,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -137,9 +133,9 @@ export function VerificationEditorPanel({
   onFieldChange,
   mainTags,
   onMainTagsChange,
-  additionalTags,
-  onAdditionalTagsChange,
-  onRelationsChange,
+  additionalTags: _additionalTags,
+  onAdditionalTagsChange: _onAdditionalTagsChange,
+  onRelationsChange: _onRelationsChange,
   onValidationChange,
   onCompletionChange,
   disabled = false,

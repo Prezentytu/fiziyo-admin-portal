@@ -65,7 +65,7 @@ export function RapidExerciseBuilder({
   templateName = "",
   onTemplateNameChange,
   overrides = new Map(),
-  onOverridesChange,
+  onOverridesChange: _onOverridesChange,
   selectedPatientsCount = 0,
 }: RapidExerciseBuilderProps) {
   const [searchQuery, setSearchQuery] = useState("");

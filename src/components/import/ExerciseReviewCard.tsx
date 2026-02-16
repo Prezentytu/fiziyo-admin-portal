@@ -8,7 +8,6 @@ import {
   X,
   ChevronDown,
   ChevronUp,
-  Clock,
   Repeat,
   Timer,
 } from 'lucide-react';

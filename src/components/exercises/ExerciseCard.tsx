@@ -118,6 +118,10 @@ function renderTags(tags: (string | ExerciseTag)[] | undefined, limit: number = 
   );
 }
 
+function normalizeTagLabel(tag: string | ExerciseTag): string {
+  return isTagObject(tag) ? tag.name : tag;
+}
+
 export function ExerciseCard({
   exercise,
   onView,
@@ -182,10 +186,6 @@ export function ExerciseCard({
   const sets = exercise.defaultSets ?? exercise.sets;
   const reps = exercise.defaultReps ?? exercise.reps;
   const duration = exercise.defaultDuration ?? exercise.duration;
-
-  const hasParams = (sets && sets > 0) ||
-                    (reps && reps > 0) ||
-                    (duration && duration > 0);
 
   // Compact list view
   if (compact) {
@@ -655,13 +655,13 @@ export function ExerciseCard({
           {exercise.type && (
             <span className="text-primary/90 font-bold uppercase tracking-widest">{translateExerciseTypeShort(exercise.type)}</span>
           )}
-          {exercise.mainTags && (exercise.mainTags as any).length > 0 && (
+          {exercise.mainTags && exercise.mainTags.length > 0 && (
             <>
               <span className="w-1 h-1 rounded-full bg-zinc-700" />
               <span className="truncate">
-                {(exercise.mainTags as any)
+                {exercise.mainTags
                   .slice(0, 2)
-                  .map((t: any) => (isTagObject(t) ? t.name : t))
+                  .map(normalizeTagLabel)
                   .join(", ")}
               </span>
             </>

@@ -31,7 +31,7 @@ export function ExerciseVoiceInput({
     state,
     isSupported,
     interimTranscript,
-    finalTranscript,
+    finalTranscript: _finalTranscript,
     error,
     toggleListening,
   } = useVoiceInput({

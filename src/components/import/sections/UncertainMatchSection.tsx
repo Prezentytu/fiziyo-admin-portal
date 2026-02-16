@@ -36,7 +36,7 @@ export function UncertainMatchSection({
   matchSuggestions,
   decisions,
   onDecisionChange,
-  disabled = false,
+  disabled: _disabled = false,
   className,
 }: UncertainMatchSectionProps) {
   if (exercises.length === 0) return null;

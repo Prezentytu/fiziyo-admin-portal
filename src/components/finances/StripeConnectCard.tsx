@@ -45,7 +45,7 @@ export function StripeConnectCard({
   const [isRedirecting, setIsRedirecting] = useState(false);
 
   // Fetch Stripe Connect status
-  const { data, loading, error, refetch } =
+  const { data, loading, error, refetch: _refetch } =
     useQuery<GetStripeConnectStatusResponse>(GET_STRIPE_CONNECT_STATUS_QUERY, {
       variables: { organizationId: organizationId || "" },
       skip: !organizationId,

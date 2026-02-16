@@ -20,7 +20,6 @@ import {
   CheckCircle2,
   Send,
   QrCode,
-  Target,
   User,
 } from 'lucide-react';
 
@@ -64,9 +63,6 @@ import { ExtendSetDialog } from '@/components/patients/ExtendSetDialog';
 import { GeneratePDFDialog } from '@/components/exercise-sets/GeneratePDFDialog';
 import { PatientQRCodeDialog } from '@/components/patients/PatientQRCodeDialog';
 import { EditPatientDialog } from '@/components/patients/EditPatientDialog';
-import { BodyMap } from '@/components/patients/bodymap/index';
-import { FEATURE_FLAGS } from '@/lib/featureFlags';
-
 interface PatientDetailPageProps {
   params: Promise<{ id: string }>;
 }
@@ -410,32 +406,6 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
           </div>
         )}
       </div>
-
-      {/* Pain Body Map Section - Hidden behind feature flag */}
-      {FEATURE_FLAGS.BODY_PAIN_MAP && (
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-base font-semibold text-foreground flex items-center gap-2">
-              <Target className="h-4 w-4 text-warning" />
-              Mapa bólu
-              <Badge variant="outline" className="ml-1 text-xs border-warning/40 text-warning">
-                Profesjonalna
-              </Badge>
-            </h2>
-          </div>
-          <Card className="border-border/40 overflow-hidden">
-            <div className="h-1 bg-gradient-to-r from-warning via-orange-500 to-red-500" />
-            <CardContent className="p-4 sm:p-6">
-              <BodyMap
-                patientId={id}
-                onSave={(session) => {
-                  console.log('Zapisano sesję mapy bólu:', session);
-                }}
-              />
-            </CardContent>
-          </Card>
-        </div>
-      )}
 
       {/* Clinical Documentation Section */}
       {therapistId && organizationId && (

@@ -166,7 +166,7 @@ function ActivityIndicator({ status }: { status: ActivityStatus }) {
 
 export default function DashboardPage() {
   const { user } = useUser();
-  const { currentOrganization, isLoading: orgLoading } = useOrganization();
+  const { currentOrganization } = useOrganization();
   const { canViewBilling } = useRoleAccess();
   const [isAssignWizardOpen, setIsAssignWizardOpen] = useState(false);
   const [isCreateSetWizardOpen, setIsCreateSetWizardOpen] = useState(false);

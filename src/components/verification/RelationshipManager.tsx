@@ -6,7 +6,6 @@ import {
   GitBranch,
   ArrowLeft,
   ArrowRight,
-  Loader2,
   AlertTriangle,
   Info,
   Sparkles,
@@ -36,7 +35,6 @@ import {
 import type {
   AdminExercise,
   ExerciseRelationTarget,
-  DifficultyLevel,
   GetExerciseRelationshipsResponse,
   GetRelationCandidatesResponse,
 } from "@/graphql/types/adminExercise.types";
@@ -114,8 +112,10 @@ export function RelationshipManager({
   useEffect(() => {
     if (relationsData?.exerciseRelationships) {
       const rels = relationsData.exerciseRelationships;
-      setLocalRegression(rels.regression?.targetExercise || null);
-      setLocalProgression(rels.progression?.targetExercise || null);
+      queueMicrotask(() => {
+        setLocalRegression(rels.regression?.targetExercise || null);
+        setLocalProgression(rels.progression?.targetExercise || null);
+      });
     }
   }, [relationsData]);
 
@@ -176,14 +176,16 @@ export function RelationshipManager({
   useEffect(() => {
     if (!localRegression && regressionCandidates?.relationCandidates?.candidates?.[0]) {
       const candidate = regressionCandidates.relationCandidates.candidates[0];
-      setLocalRegression({
-        id: candidate.id,
-        name: candidate.name,
-        thumbnailUrl: candidate.thumbnailUrl,
-        gifUrl: candidate.gifUrl,
-        difficultyLevel: candidate.difficultyLevel,
-        isAISuggested: true,
-        isVerified: false,
+      queueMicrotask(() => {
+        setLocalRegression({
+          id: candidate.id,
+          name: candidate.name,
+          thumbnailUrl: candidate.thumbnailUrl,
+          gifUrl: candidate.gifUrl,
+          difficultyLevel: candidate.difficultyLevel,
+          isAISuggested: true,
+          isVerified: false,
+        });
       });
     }
   }, [regressionCandidates, localRegression]);
@@ -192,14 +194,16 @@ export function RelationshipManager({
   useEffect(() => {
     if (!localProgression && progressionCandidates?.relationCandidates?.candidates?.[0]) {
       const candidate = progressionCandidates.relationCandidates.candidates[0];
-      setLocalProgression({
-        id: candidate.id,
-        name: candidate.name,
-        thumbnailUrl: candidate.thumbnailUrl,
-        gifUrl: candidate.gifUrl,
-        difficultyLevel: candidate.difficultyLevel,
-        isAISuggested: true,
-        isVerified: false,
+      queueMicrotask(() => {
+        setLocalProgression({
+          id: candidate.id,
+          name: candidate.name,
+          thumbnailUrl: candidate.thumbnailUrl,
+          gifUrl: candidate.gifUrl,
+          difficultyLevel: candidate.difficultyLevel,
+          isAISuggested: true,
+          isVerified: false,
+        });
       });
     }
   }, [progressionCandidates, localProgression]);
@@ -358,7 +362,7 @@ export function RelationshipManager({
                 </TooltipTrigger>
                 <TooltipContent className="max-w-[250px]">
                   <p className="text-xs">
-                    Połącz ćwiczenia w logiczne ścieżki. Gdy pacjent zgłosi "za trudne",
+                    Połącz ćwiczenia w logiczne ścieżki. Gdy pacjent zgłosi &quot;za trudne&quot;,
                     aplikacja automatycznie zaproponuje regresję.
                   </p>
                 </TooltipContent>
