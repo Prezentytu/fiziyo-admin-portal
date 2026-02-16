@@ -161,7 +161,7 @@ export default function VerificationDetailPage({ params }: VerificationDetailPag
   const remainingCount = totalPending - (positionInQueue || 0);
 
   // Validation (using existing hook)
-  const { canPublish: legacyCanPublish, errors: validationErrorRules } = useExerciseValidation(
+  const { canPublish: legacyCanPublish, errors: _validationErrorRules } = useExerciseValidation(
     exercise || ({} as AdminExercise),
     { mainTags, additionalTags }
   );

@@ -28,7 +28,6 @@ import {
 } from "@/components/ui/collapsible";
 import { cn } from "@/lib/utils";
 import { ExerciseVisibilitySettings } from "./ExerciseVisibilitySettings";
-import { AutoSyncSettings } from "./AutoSyncSettings";
 import { DataManagementCard } from "./DataManagementCard";
 import {
   UPDATE_ORGANIZATION_NAME_MUTATION,
@@ -47,7 +46,6 @@ interface Organization {
   subscriptionExpiresAt?: string;
   allowPersonalExercises?: boolean;
   sharedExercisesByDefault?: boolean;
-  autoSyncExampleExercises?: boolean;
 }
 
 interface SettingsTabProps {
@@ -412,13 +410,6 @@ export function SettingsTab({
           onSuccess={onRefresh}
         />
 
-        {/* Auto-sync settings */}
-        <AutoSyncSettings
-          organizationId={organization.id}
-          autoSyncEnabled={organization.autoSyncExampleExercises}
-          canEdit={canEdit}
-          onSuccess={onRefresh}
-        />
       </SettingsSection>
 
       {/* Section 2: Data Management */}

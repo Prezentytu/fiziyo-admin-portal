@@ -855,15 +855,6 @@ export function CreateSetWizard({
     []
   );
 
-  const getExerciseParams = useCallback(
-    (exercise: Exercise): ExerciseParams => {
-      const saved = exerciseParams.get(exercise.id);
-      if (saved) return saved;
-      return getDefaultParams(exercise);
-    },
-    [exerciseParams, getDefaultParams]
-  );
-
   const updateExerciseParams = useCallback(
     (instanceId: string, field: keyof ExerciseParams, value: number | string) => {
       setExerciseParams((prev) => {

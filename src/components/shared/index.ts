@@ -16,3 +16,4 @@ export { SmartAccordion } from "./SmartAccordion";
 export { LabeledStepper } from "./LabeledStepper";
 export { ExerciseSetBuilder } from "./ExerciseSetBuilder";
 export type { ExerciseSetBuilderProps, ExerciseInstance, ExerciseParams, BuilderExercise, ExerciseTag } from "./ExerciseSetBuilder";
+export { ErrorBoundary } from "./ErrorBoundary";
