@@ -12,12 +12,3 @@ export function formatRelativeTime(timestamp?: number): string {
     locale: pl,
   });
 }
-
-/**
- * Formatuje datę do formatu lokalnego
- */
-export function formatLocalDate(timestamp?: number): string {
-  if (!timestamp) return 'Brak daty';
-
-  return new Date(timestamp).toLocaleDateString('pl-PL');
-}

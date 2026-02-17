@@ -109,19 +109,3 @@ export function useLimitError() {
     clearError,
   };
 }
-
-/**
- * Helper do sprawdzania czy error jest błędem limitu bez state
- */
-export function isLimitError(error: unknown): boolean {
-  const apolloError = error as ApolloErrorLike;
-  if (!apolloError?.graphQLErrors || !Array.isArray(apolloError.graphQLErrors)) {
-    return false;
-  }
-
-  return apolloError.graphQLErrors.some((e) => {
-    const extensions = e.extensions as GraphQLErrorExtensions | undefined;
-    const code = extensions?.code;
-    return code && LIMIT_ERROR_CODES.includes(code as (typeof LIMIT_ERROR_CODES)[number]);
-  });
-}

@@ -3,8 +3,6 @@
  */
 
 export type AssignmentStatus = 'assigned' | 'active' | 'paused' | 'completed' | 'cancelled';
-export type ActivityStatus = 'active' | 'inactive';
-export type ExerciseSetStatus = 'active' | 'inactive' | 'templates';
 
 /**
  * Translates assignment status to Polish
@@ -21,54 +19,6 @@ export function translateAssignmentStatus(status: AssignmentStatus): string {
       return 'Zakończony';
     case 'cancelled':
       return 'Anulowany';
-    default:
-      return status;
-  }
-}
-
-/**
- * Translates activity status to Polish
- */
-export function translateActivityStatus(status: ActivityStatus): string {
-  switch (status) {
-    case 'active':
-      return 'Aktywny';
-    case 'inactive':
-      return 'Nieaktywny';
-    default:
-      return status;
-  }
-}
-
-/**
- * Translates exercise set status to Polish
- */
-export function translateExerciseSetStatus(status: ExerciseSetStatus): string {
-  switch (status) {
-    case 'active':
-      return 'Aktywne';
-    case 'inactive':
-      return 'Nieaktywne';
-    case 'templates':
-      return 'Szablony';
-    default:
-      return status;
-  }
-}
-
-/**
- * Translates filter status to Polish
- */
-export function translateFilterStatus(status: string): string {
-  switch (status) {
-    case 'active':
-      return 'Aktywnych';
-    case 'inactive':
-      return 'Nieaktywnych';
-    case 'all':
-      return 'Wszystkie';
-    case 'templates':
-      return 'Szablony';
     default:
       return status;
   }

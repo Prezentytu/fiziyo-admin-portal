@@ -66,15 +66,3 @@ export function Logo({ variant = 'default', size = 'md', asLink = false, href = 
 
   return content;
 }
-
-// ========================================
-// Logo Icon Only (for special cases like print)
-// ========================================
-
-export function LogoIcon({ size = 36, className }: { size?: number; className?: string }) {
-  return (
-    <div className={cn('relative shrink-0', className)} style={{ width: size, height: size }}>
-      <Image src="/images/logo.png" alt="FiziYo" fill className="object-contain" priority />
-    </div>
-  );
-}

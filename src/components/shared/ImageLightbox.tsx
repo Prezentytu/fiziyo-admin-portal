@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
-import { X, ChevronLeft, ChevronRight, ZoomIn } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface ImageLightboxProps {
@@ -199,84 +199,5 @@ export function ImageLightbox({
         </DialogPrimitive.Content>
       </DialogPrimitive.Portal>
     </DialogPrimitive.Root>
-  );
-}
-
-// Helper component for clickable image with zoom icon
-interface ClickableImageProps {
-  src: string;
-  alt?: string;
-  className?: string;
-  containerClassName?: string;
-  images?: string[];
-  currentIndex?: number;
-  showZoomIcon?: boolean;
-  onClick?: () => void;
-}
-
-export function ClickableImage({
-  src,
-  alt = '',
-  className,
-  containerClassName,
-  images,
-  currentIndex = 0,
-  showZoomIcon = true,
-  onClick,
-}: ClickableImageProps) {
-  const [lightboxOpen, setLightboxOpen] = useState(false);
-  const [activeIndex, setActiveIndex] = useState(currentIndex);
-
-  const handleClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (onClick) {
-      onClick();
-    } else {
-      setActiveIndex(currentIndex);
-      setLightboxOpen(true);
-    }
-  };
-
-  return (
-    <>
-      <button
-        type="button"
-        onClick={handleClick}
-        className={cn('group relative overflow-hidden cursor-zoom-in', containerClassName)}
-      >
-        <img src={src} alt={alt} className={cn('transition-transform duration-300', className)} />
-        {showZoomIcon && (
-          <div
-            className={cn(
-              'absolute inset-0 flex items-center justify-center',
-              'bg-black/0 group-hover:bg-black/30 transition-colors duration-200'
-            )}
-          >
-            <div
-              className={cn(
-                'flex h-10 w-10 items-center justify-center rounded-full',
-                'bg-black/60 text-white opacity-0 group-hover:opacity-100',
-                'transform scale-90 group-hover:scale-100',
-                'transition-all duration-200'
-              )}
-            >
-              <ZoomIn className="h-5 w-5" />
-            </div>
-          </div>
-        )}
-      </button>
-
-      {!onClick && (
-        <ImageLightbox
-          src={src}
-          alt={alt}
-          open={lightboxOpen}
-          onOpenChange={setLightboxOpen}
-          images={images}
-          currentIndex={activeIndex}
-          onIndexChange={setActiveIndex}
-        />
-      )}
-    </>
   );
 }

@@ -49,10 +49,3 @@ export function getMediaUrls(urls: (string | null | undefined)[]): string[] {
   // Usuń duplikaty zachowując kolejność
   return [...new Set(processed)];
 }
-
-/**
- * Sprawdza czy CDN jest skonfigurowane
- */
-export function isCdnConfigured(): boolean {
-  return !!CDN_BASE_URL;
-}

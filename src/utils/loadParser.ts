@@ -108,24 +108,6 @@ export function getLoadBadgeColor(load: ExerciseLoad | undefined | null): string
 }
 
 /**
- * Zwraca ikonę dla typu obciążenia (jako string - nazwa ikony Lucide).
- */
-export function getLoadIcon(load: ExerciseLoad | undefined | null): string | null {
-  if (!load || !hasLoad(load)) return null;
-
-  switch (load.type) {
-    case 'weight':
-      return 'Dumbbell';
-    case 'band':
-      return 'Activity';
-    case 'bodyweight':
-      return 'User';
-    default:
-      return 'HelpCircle';
-  }
-}
-
-/**
  * Zwraca skrócony opis obciążenia dla badge'a.
  */
 export function getLoadBadgeLabel(load: ExerciseLoad | undefined | null): string {
