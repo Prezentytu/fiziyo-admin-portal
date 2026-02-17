@@ -13,15 +13,8 @@ interface TreatmentPlanSectionFormProps {
   disabled?: boolean;
 }
 
-export function TreatmentPlanSectionForm({
-  data,
-  onChange,
-  disabled = false,
-}: TreatmentPlanSectionFormProps) {
-  const updateField = <K extends keyof TreatmentPlanSection>(
-    field: K,
-    value: TreatmentPlanSection[K]
-  ) => {
+export function TreatmentPlanSectionForm({ data, onChange, disabled = false }: TreatmentPlanSectionFormProps) {
+  const updateField = <K extends keyof TreatmentPlanSection>(field: K, value: TreatmentPlanSection[K]) => {
     onChange({ ...data, [field]: value });
   };
 
@@ -71,9 +64,7 @@ export function TreatmentPlanSectionForm({
           multiSelect
         />
         {(data.interventions?.length ?? 0) > 0 && (
-          <p className="text-xs text-muted-foreground mt-2">
-            Wybrano: {data.interventions?.join(', ')}
-          </p>
+          <p className="text-xs text-muted-foreground mt-2">Wybrano: {data.interventions?.join(', ')}</p>
         )}
       </div>
 
@@ -129,4 +120,3 @@ export function TreatmentPlanSectionForm({
     </div>
   );
 }
-

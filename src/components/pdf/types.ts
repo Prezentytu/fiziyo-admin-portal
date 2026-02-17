@@ -75,5 +75,3 @@ export interface ExerciseSetPDFProps {
   options: PDFOptions;
   qrCodeDataUrl?: string;
 }
-
-

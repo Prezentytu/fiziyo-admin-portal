@@ -1,4 +1,4 @@
-import { gql } from "@apollo/client";
+import { gql } from '@apollo/client';
 
 // ========================================
 // Revenue Share Queries - Dashboard zarobków
@@ -84,18 +84,8 @@ export const GET_MONTHLY_EARNINGS_SUMMARY_QUERY = gql`
  * Query do pobierania historii transakcji Revenue Share
  */
 export const GET_REVENUE_HISTORY_QUERY = gql`
-  query GetRevenueHistory(
-    $organizationId: String!
-    $limit: Int
-    $offset: Int
-    $type: RevenueTransactionType
-  ) {
-    revenueHistory(
-      organizationId: $organizationId
-      limit: $limit
-      offset: $offset
-      type: $type
-    ) {
+  query GetRevenueHistory($organizationId: String!, $limit: Int, $offset: Int, $type: RevenueTransactionType) {
+    revenueHistory(organizationId: $organizationId, limit: $limit, offset: $offset, type: $type) {
       id
       organizationId
       patientSubscriptionId
@@ -127,16 +117,8 @@ export const GET_REVENUE_HISTORY_QUERY = gql`
  * Query do pobierania linków zaproszeniowych pacjentów
  */
 export const GET_PATIENT_INVITE_LINKS_QUERY = gql`
-  query GetPatientInviteLinks(
-    $organizationId: String!
-    $status: String
-    $limit: Int
-  ) {
-    patientInviteLinks(
-      organizationId: $organizationId
-      status: $status
-      limit: $limit
-    ) {
+  query GetPatientInviteLinks($organizationId: String!, $status: String, $limit: Int) {
+    patientInviteLinks(organizationId: $organizationId, status: $status, limit: $limit) {
       id
       token
       organizationId
@@ -164,16 +146,8 @@ export const GET_PATIENT_INVITE_LINKS_QUERY = gql`
  * Query do pobierania subskrypcji pacjentów organizacji
  */
 export const GET_PATIENT_SUBSCRIPTIONS_QUERY = gql`
-  query GetPatientSubscriptions(
-    $organizationId: String!
-    $status: PatientSubscriptionStatus
-    $limit: Int
-  ) {
-    patientSubscriptions(
-      organizationId: $organizationId
-      status: $status
-      limit: $limit
-    ) {
+  query GetPatientSubscriptions($organizationId: String!, $status: PatientSubscriptionStatus, $limit: Int) {
+    patientSubscriptions(organizationId: $organizationId, status: $status, limit: $limit) {
       id
       patientUserId
       attributionOrganizationId

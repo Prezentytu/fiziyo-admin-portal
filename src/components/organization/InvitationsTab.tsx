@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { useQuery, useMutation } from "@apollo/client/react";
-import { format, formatDistanceToNow, isPast } from "date-fns";
-import { pl } from "date-fns/locale";
+import { useState } from 'react';
+import { useQuery, useMutation } from '@apollo/client/react';
+import { format, formatDistanceToNow, isPast } from 'date-fns';
+import { pl } from 'date-fns/locale';
 import {
   Mail,
   Clock,
@@ -17,35 +17,32 @@ import {
   Link2,
   User,
   Loader2,
-} from "lucide-react";
-import { toast } from "sonner";
+} from 'lucide-react';
+import { toast } from 'sonner';
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
-import { EmptyState } from "@/components/shared/EmptyState";
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
+import { EmptyState } from '@/components/shared/EmptyState';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from '@/components/ui/dropdown-menu';
 import {
   GET_ORGANIZATION_INVITATIONS_QUERY,
   GET_ORGANIZATION_INVITATION_STATS_QUERY,
-} from "@/graphql/queries/organizations.queries";
-import {
-  RESEND_INVITATION_MUTATION,
-  REVOKE_INVITATION_MUTATION,
-} from "@/graphql/mutations/organizations.mutations";
+} from '@/graphql/queries/organizations.queries';
+import { RESEND_INVITATION_MUTATION, REVOKE_INVITATION_MUTATION } from '@/graphql/mutations/organizations.mutations';
 import type {
   OrganizationInvitationsResponse,
   OrganizationInvitationStatsResponse,
   OrganizationInvitation,
-} from "@/types/apollo";
-import { cn } from "@/lib/utils";
+} from '@/types/apollo';
+import { cn } from '@/lib/utils';
 
 // ========================================
 // Types
@@ -60,44 +57,38 @@ interface InvitationsTabProps {
 // ========================================
 
 const roleLabels: Record<string, string> = {
-  OWNER: "Właściciel",
-  ADMIN: "Administrator",
-  THERAPIST: "Fizjoterapeuta",
-  MEMBER: "Członek",
-  STAFF: "Personel",
+  OWNER: 'Właściciel',
+  ADMIN: 'Administrator',
+  THERAPIST: 'Fizjoterapeuta',
+  MEMBER: 'Członek',
+  STAFF: 'Personel',
 };
 
-const statusConfig: Record<
-  string,
-  { label: string; color: string; icon: React.ElementType }
-> = {
+const statusConfig: Record<string, { label: string; color: string; icon: React.ElementType }> = {
   pending: {
-    label: "Oczekujące",
-    color: "bg-amber-500/20 text-amber-400 border-amber-500/30",
+    label: 'Oczekujące',
+    color: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
     icon: Clock,
   },
   accepted: {
-    label: "Zaakceptowane",
-    color: "bg-green-500/20 text-green-400 border-green-500/30",
+    label: 'Zaakceptowane',
+    color: 'bg-green-500/20 text-green-400 border-green-500/30',
     icon: Check,
   },
   expired: {
-    label: "Wygasłe",
-    color: "bg-muted text-muted-foreground border-border",
+    label: 'Wygasłe',
+    color: 'bg-muted text-muted-foreground border-border',
     icon: AlertCircle,
   },
   revoked: {
-    label: "Anulowane",
-    color: "bg-red-500/20 text-red-400 border-red-500/30",
+    label: 'Anulowane',
+    color: 'bg-red-500/20 text-red-400 border-red-500/30',
     icon: X,
   },
 };
 
 function getInviteUrl(token: string): string {
-  const baseUrl =
-    typeof window !== "undefined"
-      ? window.location.origin
-      : "https://app.fizjo.pl";
+  const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://app.fizjo.pl';
   return `${baseUrl}/invite?token=${token}`;
 }
 
@@ -105,77 +96,62 @@ function getInviteUrl(token: string): string {
 // Component
 // ========================================
 
-export function InvitationsTab({
-  organizationId,
-}: InvitationsTabProps) {
-  const [filter, setFilter] = useState<string>("all");
+export function InvitationsTab({ organizationId }: InvitationsTabProps) {
+  const [filter, setFilter] = useState<string>('all');
 
   // Fetch invitations
   const {
     data: invitationsData,
     loading: invitationsLoading,
     refetch: refetchInvitations,
-  } = useQuery<OrganizationInvitationsResponse>(
-    GET_ORGANIZATION_INVITATIONS_QUERY,
+  } = useQuery<OrganizationInvitationsResponse>(GET_ORGANIZATION_INVITATIONS_QUERY, {
+    variables: { organizationId },
+    skip: !organizationId,
+    fetchPolicy: 'cache-and-network',
+  });
+
+  // Fetch stats
+  const { data: statsData, loading: statsLoading } = useQuery<OrganizationInvitationStatsResponse>(
+    GET_ORGANIZATION_INVITATION_STATS_QUERY,
     {
       variables: { organizationId },
       skip: !organizationId,
-      fetchPolicy: "cache-and-network",
     }
   );
-
-  // Fetch stats
-  const { data: statsData, loading: statsLoading } =
-    useQuery<OrganizationInvitationStatsResponse>(
-      GET_ORGANIZATION_INVITATION_STATS_QUERY,
-      {
-        variables: { organizationId },
-        skip: !organizationId,
-      }
-    );
 
   // Mutations
-  const [resendInvitation, { loading: resending }] = useMutation(
-    RESEND_INVITATION_MUTATION,
-    {
-      onCompleted: () => {
-        toast.success("Zaproszenie zostało wysłane ponownie");
-        refetchInvitations();
-      },
-      onError: (error) => {
-        toast.error(`Błąd: ${error.message}`);
-      },
-    }
-  );
+  const [resendInvitation, { loading: resending }] = useMutation(RESEND_INVITATION_MUTATION, {
+    onCompleted: () => {
+      toast.success('Zaproszenie zostało wysłane ponownie');
+      refetchInvitations();
+    },
+    onError: (error) => {
+      toast.error(`Błąd: ${error.message}`);
+    },
+  });
 
-  const [revokeInvitation, { loading: revoking }] = useMutation(
-    REVOKE_INVITATION_MUTATION,
-    {
-      onCompleted: () => {
-        toast.success("Zaproszenie zostało anulowane");
-        refetchInvitations();
-      },
-      onError: (error) => {
-        toast.error(`Błąd: ${error.message}`);
-      },
-    }
-  );
+  const [revokeInvitation, { loading: revoking }] = useMutation(REVOKE_INVITATION_MUTATION, {
+    onCompleted: () => {
+      toast.success('Zaproszenie zostało anulowane');
+      refetchInvitations();
+    },
+    onError: (error) => {
+      toast.error(`Błąd: ${error.message}`);
+    },
+  });
 
   const invitations = invitationsData?.organizationInvitations || [];
   const stats = statsData?.organizationInvitationStats;
 
   // Filter invitations
   const filteredInvitations = invitations.filter((inv) => {
-    if (filter === "all") return true;
+    if (filter === 'all') return true;
     // Check for expired pending
-    if (filter === "pending") {
-      return inv.status === "pending" && !isPast(new Date(inv.expiresAt));
+    if (filter === 'pending') {
+      return inv.status === 'pending' && !isPast(new Date(inv.expiresAt));
     }
-    if (filter === "expired") {
-      return (
-        inv.status === "expired" ||
-        (inv.status === "pending" && isPast(new Date(inv.expiresAt)))
-      );
+    if (filter === 'expired') {
+      return inv.status === 'expired' || (inv.status === 'pending' && isPast(new Date(inv.expiresAt)));
     }
     return inv.status === filter;
   });
@@ -183,12 +159,12 @@ export function InvitationsTab({
   // Handlers
   const handleCopyLink = async (invitation: OrganizationInvitation) => {
     if (!invitation.invitationToken) {
-      toast.error("Brak tokenu zaproszenia");
+      toast.error('Brak tokenu zaproszenia');
       return;
     }
     const url = getInviteUrl(invitation.invitationToken);
     await navigator.clipboard.writeText(url);
-    toast.success("Link skopiowany do schowka");
+    toast.success('Link skopiowany do schowka');
   };
 
   const handleResend = async (invitationId: string) => {
@@ -218,24 +194,24 @@ export function InvitationsTab({
           label="Oczekujące"
           count={stats?.pending || 0}
           icon={Clock}
-          isActive={filter === "pending"}
-          onClick={() => setFilter(filter === "pending" ? "all" : "pending")}
+          isActive={filter === 'pending'}
+          onClick={() => setFilter(filter === 'pending' ? 'all' : 'pending')}
           loading={statsLoading}
         />
         <StatCard
           label="Zaakceptowane"
           count={stats?.accepted || 0}
           icon={Check}
-          isActive={filter === "accepted"}
-          onClick={() => setFilter(filter === "accepted" ? "all" : "accepted")}
+          isActive={filter === 'accepted'}
+          onClick={() => setFilter(filter === 'accepted' ? 'all' : 'accepted')}
           loading={statsLoading}
         />
         <StatCard
           label="Wszystkie"
           count={stats?.total || 0}
           icon={Mail}
-          isActive={filter === "all"}
-          onClick={() => setFilter("all")}
+          isActive={filter === 'all'}
+          onClick={() => setFilter('all')}
           loading={statsLoading}
         />
       </div>
@@ -246,7 +222,7 @@ export function InvitationsTab({
           <div className="flex items-center justify-between">
             <CardTitle className="text-base font-medium">
               Zaproszenia
-              {filter !== "all" && (
+              {filter !== 'all' && (
                 <Badge variant="secondary" className="ml-2 text-xs">
                   {statusConfig[filter]?.label || filter}
                 </Badge>
@@ -259,12 +235,7 @@ export function InvitationsTab({
               disabled={invitationsLoading}
               data-testid="org-invitations-refresh-btn"
             >
-              <RefreshCw
-                className={cn(
-                  "h-4 w-4",
-                  invitationsLoading && "animate-spin"
-                )}
-              />
+              <RefreshCw className={cn('h-4 w-4', invitationsLoading && 'animate-spin')} />
             </Button>
           </div>
         </CardHeader>
@@ -274,8 +245,8 @@ export function InvitationsTab({
               icon={Mail}
               title="Brak zaproszeń"
               description={
-                filter === "all"
-                  ? "Wyślij zaproszenie, aby dodać nową osobę do organizacji"
+                filter === 'all'
+                  ? 'Wyślij zaproszenie, aby dodać nową osobę do organizacji'
                   : `Brak zaproszeń o statusie "${statusConfig[filter]?.label || filter}"`
               }
             />
@@ -312,21 +283,12 @@ interface StatCardProps {
   loading?: boolean;
 }
 
-function StatCard({
-  label,
-  count,
-  icon: Icon,
-  isActive,
-  onClick,
-  loading,
-}: StatCardProps) {
+function StatCard({ label, count, icon: Icon, isActive, onClick, loading }: StatCardProps) {
   return (
     <Card
       className={cn(
-        "cursor-pointer transition-all duration-200",
-        isActive
-          ? "border-primary shadow-lg shadow-primary/10"
-          : "border-border/60 hover:border-border hover:shadow-md"
+        'cursor-pointer transition-all duration-200',
+        isActive ? 'border-primary shadow-lg shadow-primary/10' : 'border-border/60 hover:border-border hover:shadow-md'
       )}
       onClick={onClick}
     >
@@ -334,23 +296,14 @@ function StatCard({
         <div className="flex items-center gap-3">
           <div
             className={cn(
-              "flex h-9 w-9 items-center justify-center rounded-lg shrink-0",
-              isActive ? "bg-primary/20" : "bg-surface-light"
+              'flex h-9 w-9 items-center justify-center rounded-lg shrink-0',
+              isActive ? 'bg-primary/20' : 'bg-surface-light'
             )}
           >
-            <Icon
-              className={cn(
-                "h-4 w-4",
-                isActive ? "text-primary" : "text-muted-foreground"
-              )}
-            />
+            <Icon className={cn('h-4 w-4', isActive ? 'text-primary' : 'text-muted-foreground')} />
           </div>
           <div>
-            {loading ? (
-              <Skeleton className="h-6 w-8" />
-            ) : (
-              <p className="text-xl font-bold text-foreground">{count}</p>
-            )}
+            {loading ? <Skeleton className="h-6 w-8" /> : <p className="text-xl font-bold text-foreground">{count}</p>}
             <p className="text-xs text-muted-foreground">{label}</p>
           </div>
         </div>
@@ -367,24 +320,20 @@ interface InvitationRowProps {
   isLoading?: boolean;
 }
 
-function InvitationRow({
-  invitation,
-  onCopyLink,
-  onResend,
-  onRevoke,
-  isLoading,
-}: InvitationRowProps) {
-  const isExpired =
-    invitation.status === "pending" && isPast(new Date(invitation.expiresAt));
-  const effectiveStatus = isExpired ? "expired" : invitation.status;
+function InvitationRow({ invitation, onCopyLink, onResend, onRevoke, isLoading }: InvitationRowProps) {
+  const isExpired = invitation.status === 'pending' && isPast(new Date(invitation.expiresAt));
+  const effectiveStatus = isExpired ? 'expired' : invitation.status;
   const config = statusConfig[effectiveStatus] || statusConfig.pending;
   const StatusIcon = config.icon;
 
-  const isPending = effectiveStatus === "pending";
+  const isPending = effectiveStatus === 'pending';
   const isLink = !invitation.email;
 
   return (
-    <div className="group flex items-center justify-between rounded-lg border border-border/60 bg-surface p-3 transition-all duration-200 hover:bg-surface-light hover:border-border" data-testid={`org-invitation-row-${invitation.id}`}>
+    <div
+      className="group flex items-center justify-between rounded-lg border border-border/60 bg-surface p-3 transition-all duration-200 hover:bg-surface-light hover:border-border"
+      data-testid={`org-invitation-row-${invitation.id}`}
+    >
       <div className="flex items-center gap-3 min-w-0 flex-1">
         {/* Icon */}
         <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-surface-light shrink-0">
@@ -399,24 +348,19 @@ function InvitationRow({
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="font-medium text-sm text-foreground truncate">
-              {isLink ? "Link zaproszenia" : invitation.email}
+              {isLink ? 'Link zaproszenia' : invitation.email}
             </span>
             <Badge variant="outline" className="text-[10px] px-1.5 py-0">
               {roleLabels[invitation.role?.toUpperCase()] || invitation.role}
             </Badge>
-            <Badge
-              className={cn(
-                "gap-1 text-[10px] px-1.5 py-0 border",
-                config.color
-              )}
-            >
+            <Badge className={cn('gap-1 text-[10px] px-1.5 py-0 border', config.color)}>
               <StatusIcon className="h-2.5 w-2.5" />
               {config.label}
             </Badge>
           </div>
           <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
             <span>
-              {format(new Date(invitation.createdAt), "d MMM yyyy, HH:mm", {
+              {format(new Date(invitation.createdAt), 'd MMM yyyy, HH:mm', {
                 locale: pl,
               })}
             </span>
@@ -429,9 +373,9 @@ function InvitationRow({
             {isPending && (
               <>
                 <span>•</span>
-                <span className={isExpired ? "text-red-400" : ""}>
+                <span className={isExpired ? 'text-red-400' : ''}>
                   {isExpired
-                    ? "wygasło"
+                    ? 'wygasło'
                     : `wygasa ${formatDistanceToNow(new Date(invitation.expiresAt), { locale: pl, addSuffix: true })}`}
                 </span>
               </>
@@ -467,11 +411,7 @@ function InvitationRow({
               disabled={isLoading}
               data-testid={`org-invitation-menu-${invitation.id}`}
             >
-              {isLoading ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <MoreHorizontal className="h-4 w-4" />
-              )}
+              {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <MoreHorizontal className="h-4 w-4" />}
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
@@ -488,22 +428,19 @@ function InvitationRow({
                   </DropdownMenuItem>
                 )}
                 <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={onRevoke}
-                  className="text-destructive focus:text-destructive"
-                >
+                <DropdownMenuItem onClick={onRevoke} className="text-destructive focus:text-destructive">
                   <Trash2 className="h-4 w-4 mr-2" />
                   Anuluj zaproszenie
                 </DropdownMenuItem>
               </>
             )}
-            {effectiveStatus === "expired" && (
+            {effectiveStatus === 'expired' && (
               <DropdownMenuItem onClick={onResend}>
                 <RefreshCw className="h-4 w-4 mr-2" />
                 Wyślij ponownie
               </DropdownMenuItem>
             )}
-            {effectiveStatus === "accepted" && (
+            {effectiveStatus === 'accepted' && (
               <DropdownMenuItem disabled>
                 <User className="h-4 w-4 mr-2" />
                 Użytkownik dołączył

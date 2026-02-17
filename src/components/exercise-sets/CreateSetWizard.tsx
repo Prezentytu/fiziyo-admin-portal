@@ -366,12 +366,14 @@ function SortableExerciseCard({
             <div className="flex items-center gap-1 mt-0.5">
               {hasSideSet && (
                 <span className="text-[9px] px-1 py-0.5 rounded bg-zinc-800 text-zinc-500 border border-zinc-700">
-                  {EXERCISE_SIDE_OPTIONS.find(o => o.value === params.exerciseSide)?.label}
+                  {EXERCISE_SIDE_OPTIONS.find((o) => o.value === params.exerciseSide)?.label}
                 </span>
               )}
               {params.loadType && (
                 <span className="text-[9px] px-1 py-0.5 rounded bg-zinc-800 text-zinc-500 border border-zinc-700">
-                  {params.loadValue ? `${params.loadValue}${params.loadUnit || ''}` : LOAD_TYPE_OPTIONS.find(o => o.value === params.loadType)?.label}
+                  {params.loadValue
+                    ? `${params.loadValue}${params.loadUnit || ''}`
+                    : LOAD_TYPE_OPTIONS.find((o) => o.value === params.loadType)?.label}
                 </span>
               )}
               {params.notes && (
@@ -385,11 +387,7 @@ function SortableExerciseCard({
 
         {/* Serie × Reps/Time */}
         <div className="flex items-center gap-1 shrink-0">
-          <InlineNumberInput
-            value={params.sets}
-            onChange={(v) => onUpdateParams('sets', v)}
-            min={1}
-          />
+          <InlineNumberInput value={params.sets} onChange={(v) => onUpdateParams('sets', v)} min={1} />
           <span className="text-zinc-600 text-sm font-medium px-0.5">×</span>
           <InlineNumberInput
             value={isTimeType ? params.duration : params.reps}
@@ -606,7 +604,6 @@ function SortableExerciseCard({
     </div>
   );
 }
-
 
 // ============================================================
 // MAIN COMPONENT - SINGLE PAGE COMPOSER
@@ -843,7 +840,7 @@ export function CreateSetWizard({
       preparationTime: 0,
       executionTime: exercise.defaultExecutionTime ?? 0,
       notes: '',
-      exerciseSide: (exercise.side?.toLowerCase() || exercise.exerciseSide) || 'both',
+      exerciseSide: exercise.side?.toLowerCase() || exercise.exerciseSide || 'both',
       customName: '',
       customDescription: '',
       tempo: '',
@@ -859,7 +856,7 @@ export function CreateSetWizard({
     (instanceId: string, field: keyof ExerciseParams, value: number | string) => {
       setExerciseParams((prev) => {
         const next = new Map(prev);
-        const instance = selectedInstances.find(i => i.instanceId === instanceId);
+        const instance = selectedInstances.find((i) => i.instanceId === instanceId);
         const exercise = exercises.find((e) => e.id === instance?.exerciseId);
 
         const current =
@@ -907,24 +904,21 @@ export function CreateSetWizard({
     [getDefaultParams]
   );
 
-  const removeInstance = useCallback(
-    (instanceId: string) => {
-      setSelectedInstances((prev) => prev.filter((i) => i.instanceId !== instanceId));
-      setExerciseParams((prev) => {
-        const next = new Map(prev);
-        next.delete(instanceId);
-        return next;
-      });
-    },
-    []
-  );
+  const removeInstance = useCallback((instanceId: string) => {
+    setSelectedInstances((prev) => prev.filter((i) => i.instanceId !== instanceId));
+    setExerciseParams((prev) => {
+      const next = new Map(prev);
+      next.delete(instanceId);
+      return next;
+    });
+  }, []);
 
   const handleDragEnd = useCallback((event: DragEndEvent) => {
     const { active, over } = event;
     if (over && active.id !== over.id) {
       setSelectedInstances((items) => {
-        const oldIndex = items.findIndex(i => i.instanceId === active.id);
-        const newIndex = items.findIndex(i => i.instanceId === over.id);
+        const oldIndex = items.findIndex((i) => i.instanceId === active.id);
+        const newIndex = items.findIndex((i) => i.instanceId === over.id);
         return arrayMove(items, oldIndex, newIndex);
       });
     }
@@ -934,7 +928,7 @@ export function CreateSetWizard({
   const handleAISelectExercises = useCallback(
     (exerciseIds: string[]) => {
       for (const id of exerciseIds) {
-        const exercise = exercises.find(e => e.id === id);
+        const exercise = exercises.find((e) => e.id === id);
         if (exercise) {
           addExerciseToSet(exercise);
         }
@@ -954,7 +948,7 @@ export function CreateSetWizard({
         const exercise = exercises.find((ex) => ex.id === si.exerciseId);
         return exercise ? { ...si, exercise } : null;
       })
-      .filter((item): item is { instanceId: string, exerciseId: string, exercise: Exercise } => item !== null);
+      .filter((item): item is { instanceId: string; exerciseId: string; exercise: Exercise } => item !== null);
   }, [exercises, selectedInstances]);
 
   const estimatedTime = useMemo(() => {
@@ -1069,9 +1063,7 @@ export function CreateSetWizard({
               <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/20">
                 <FolderPlus className="h-5 w-5 text-primary" />
               </div>
-              <DialogTitle className="text-lg font-semibold text-foreground">
-                Nowy zestaw ćwiczeń
-              </DialogTitle>
+              <DialogTitle className="text-lg font-semibold text-foreground">Nowy zestaw ćwiczeń</DialogTitle>
             </div>
           </div>
         </DialogHeader>
@@ -1219,7 +1211,7 @@ export function CreateSetWizard({
                             <ExercisePickerItem
                               key={`popular-${exercise.id}`}
                               exercise={exercise}
-                              instanceCount={selectedInstances.filter(si => si.exerciseId === exercise.id).length}
+                              instanceCount={selectedInstances.filter((si) => si.exerciseId === exercise.id).length}
                               onAdd={() => addExerciseToSet(exercise)}
                               onPreview={() => setPreviewExercise(exercise)}
                               getExerciseTags={getExerciseTags}
@@ -1242,16 +1234,16 @@ export function CreateSetWizard({
                         {(() => {
                           // Exclude popular exercises when showing popular section
                           const showPopular = !searchQuery && categoryFilter === 'all' && popularExercises.length > 0;
-                          const popularIds = new Set(popularExercises.map(e => e.id));
+                          const popularIds = new Set(popularExercises.map((e) => e.id));
                           const exercisesToShow = showPopular
-                            ? filteredExercises.filter(e => !popularIds.has(e.id))
+                            ? filteredExercises.filter((e) => !popularIds.has(e.id))
                             : filteredExercises;
 
                           return exercisesToShow.map((exercise) => (
                             <ExercisePickerItem
                               key={exercise.id}
                               exercise={exercise}
-                              instanceCount={selectedInstances.filter(si => si.exerciseId === exercise.id).length}
+                              instanceCount={selectedInstances.filter((si) => si.exerciseId === exercise.id).length}
                               onAdd={() => addExerciseToSet(exercise)}
                               onPreview={() => setPreviewExercise(exercise)}
                               getExerciseTags={getExerciseTags}
@@ -1298,7 +1290,6 @@ export function CreateSetWizard({
               </div>
             </div>
 
-
             {/* Exercise list with inline editing */}
             <div className="flex-1 overflow-y-auto overflow-x-hidden bg-zinc-950/20">
               {selectedInstancesData.length === 0 ? (
@@ -1313,7 +1304,10 @@ export function CreateSetWizard({
                 </div>
               ) : (
                 <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-                  <SortableContext items={selectedInstances.map(i => i.instanceId)} strategy={verticalListSortingStrategy}>
+                  <SortableContext
+                    items={selectedInstances.map((i) => i.instanceId)}
+                    strategy={verticalListSortingStrategy}
+                  >
                     <div className="p-4 space-y-3">
                       {selectedInstancesData.map((data, index) => (
                         <SortableExerciseCard
@@ -1335,10 +1329,12 @@ export function CreateSetWizard({
           </div>
 
           {/* AI PANEL - Slides in from right */}
-          <div className={cn(
-            "absolute inset-y-0 right-0 w-full sm:w-[400px] bg-surface border-l border-border shadow-2xl z-50 flex flex-col transition-transform duration-300 ease-in-out",
-            showAIPanel ? "translate-x-0" : "translate-x-full"
-          )}>
+          <div
+            className={cn(
+              'absolute inset-y-0 right-0 w-full sm:w-[400px] bg-surface border-l border-border shadow-2xl z-50 flex flex-col transition-transform duration-300 ease-in-out',
+              showAIPanel ? 'translate-x-0' : 'translate-x-full'
+            )}
+          >
             <AISetGenerator
               exercises={exercises}
               onSelectExercises={handleAISelectExercises}
@@ -1378,16 +1374,12 @@ export function CreateSetWizard({
             onClick={handleCreateSet}
             disabled={!canCreate || isLoading}
             className={cn(
-              "px-8 bg-primary hover:bg-primary-dark text-primary-foreground font-semibold",
-              "disabled:opacity-50 disabled:cursor-not-allowed"
+              'px-8 bg-primary hover:bg-primary-dark text-primary-foreground font-semibold',
+              'disabled:opacity-50 disabled:cursor-not-allowed'
             )}
             data-testid="set-composer-create-btn"
           >
-            {isLoading ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Check className="h-4 w-4 mr-2" />
-            )}
+            {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4 mr-2" />}
             Utwórz zestaw
           </Button>
         </div>
@@ -1423,9 +1415,7 @@ export function CreateSetWizard({
                   />
                 </div>
               )}
-              {previewExercise.description && (
-                <p className="text-sm text-zinc-400">{previewExercise.description}</p>
-              )}
+              {previewExercise.description && <p className="text-sm text-zinc-400">{previewExercise.description}</p>}
               <div className="grid grid-cols-3 gap-3">
                 {previewExercise.sets && (
                   <div className="rounded-lg bg-zinc-800/50 p-3 text-center">

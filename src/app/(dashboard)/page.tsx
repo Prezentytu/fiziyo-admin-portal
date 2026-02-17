@@ -230,7 +230,9 @@ export default function DashboardPage() {
 
   // Get assignments with activity data
   const allAssignments = (assignmentsData as { patientAssignments?: ExerciseAssignment[] })?.patientAssignments || [];
-  const therapistAssignmentsCount = allAssignments.filter(a => a.exerciseSetId && a.assignedById === therapistId).length;
+  const therapistAssignmentsCount = allAssignments.filter(
+    (a) => a.exerciseSetId && a.assignedById === therapistId
+  ).length;
 
   // Create a map of patient activity (most recent lastCompletedAt per patient)
   const patientActivityMap = useMemo(() => {
@@ -305,7 +307,7 @@ export default function DashboardPage() {
   const todayDate = formatPolishDate(new Date());
 
   // Patients needing attention (warning or inactive)
-  const patientsNeedingAttention = patientsWithActivity.filter(p => p.activityStatus !== 'active');
+  const patientsNeedingAttention = patientsWithActivity.filter((p) => p.activityStatus !== 'active');
   const displayedPatients = patientsWithActivity.slice(0, 5);
 
   // Show skeleton while initial data is loading
@@ -328,7 +330,10 @@ export default function DashboardPage() {
       {/* Header Section - Greeting with date */}
       <div className="flex items-end justify-between">
         <div>
-          <h1 data-testid="dashboard-greeting" className="text-2xl lg:text-3xl font-bold text-foreground tracking-tight">
+          <h1
+            data-testid="dashboard-greeting"
+            className="text-2xl lg:text-3xl font-bold text-foreground tracking-tight"
+          >
             {greeting}, {userName}!
           </h1>
           <p className="text-muted-foreground mt-1">
@@ -337,9 +342,7 @@ export default function DashboardPage() {
               : 'Wszyscy pacjenci są aktywni'}
           </p>
         </div>
-        <p className="text-sm text-muted-foreground hidden sm:block">
-          {todayDate}
-        </p>
+        <p className="text-sm text-muted-foreground hidden sm:block">{todayDate}</p>
       </div>
 
       {/* Getting Started Card - Onboarding for new users */}
@@ -366,12 +369,8 @@ export default function DashboardPage() {
               <Send className="h-5 w-5 text-white" />
             </div>
             <div className="min-w-0 flex-1">
-              <h3 className="text-base font-bold text-white mb-0.5">
-                Przypisz zestaw
-              </h3>
-              <p className="text-xs text-white/70">
-                Dla obecnych pacjentów
-              </p>
+              <h3 className="text-base font-bold text-white mb-0.5">Przypisz zestaw</h3>
+              <p className="text-xs text-white/70">Dla obecnych pacjentów</p>
             </div>
             <ArrowRight className="h-5 w-5 text-white/60 group-hover:text-white group-hover:translate-x-1 transition-all duration-300 shrink-0" />
           </div>
@@ -392,12 +391,8 @@ export default function DashboardPage() {
               <UserPlus className="h-5 w-5 text-white" />
             </div>
             <div className="min-w-0 flex-1">
-              <h3 className="text-base font-bold text-white mb-0.5">
-                Nowy pacjent
-              </h3>
-              <p className="text-xs text-white/70">
-                Dodaj do bazy
-              </p>
+              <h3 className="text-base font-bold text-white mb-0.5">Nowy pacjent</h3>
+              <p className="text-xs text-white/70">Dodaj do bazy</p>
             </div>
             <ArrowRight className="h-5 w-5 text-white/60 group-hover:text-white group-hover:translate-x-1 transition-all duration-300 shrink-0" />
           </div>
@@ -418,9 +413,7 @@ export default function DashboardPage() {
               <h3 className="text-base font-bold text-foreground group-hover:text-primary transition-colors mb-0.5">
                 Utwórz zestaw
               </h3>
-              <p className="text-xs text-muted-foreground">
-                Nowy program
-              </p>
+              <p className="text-xs text-muted-foreground">Nowy program</p>
             </div>
             <ArrowRight className="h-5 w-5 text-muted-foreground/40 group-hover:text-primary group-hover:translate-x-1 transition-all duration-300 shrink-0" />
           </div>
@@ -430,7 +423,10 @@ export default function DashboardPage() {
       {/* Main Content - 8:4 Grid Layout */}
       <div className="grid gap-4 lg:grid-cols-12">
         {/* Activity Feed - Left Column (8 cols) */}
-        <Card data-testid="dashboard-activity-section" className="border-border/40 bg-surface/50 backdrop-blur-sm overflow-hidden lg:col-span-8">
+        <Card
+          data-testid="dashboard-activity-section"
+          className="border-border/40 bg-surface/50 backdrop-blur-sm overflow-hidden lg:col-span-8"
+        >
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
               <CardTitle className="flex items-center gap-3 text-base font-semibold">
@@ -445,7 +441,11 @@ export default function DashboardPage() {
                 )}
               </CardTitle>
               <Link href="/patients" data-testid="dashboard-patients-view-all" className="group">
-                <Button variant="ghost" size="sm" className="h-8 text-xs gap-1 text-muted-foreground hover:text-foreground">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 text-xs gap-1 text-muted-foreground hover:text-foreground"
+                >
                   Wszyscy ({patientsCount})
                   <ChevronRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
                 </Button>
@@ -483,8 +483,8 @@ export default function DashboardPage() {
                         assignment.activityStatus === 'warning'
                           ? 'bg-amber-500/5 hover:bg-amber-500/10'
                           : assignment.activityStatus === 'inactive'
-                          ? 'hover:bg-surface-light'
-                          : 'hover:bg-emerald-500/5'
+                            ? 'hover:bg-surface-light'
+                            : 'hover:bg-emerald-500/5'
                       }`}
                     >
                       <div className="relative shrink-0">
@@ -493,8 +493,8 @@ export default function DashboardPage() {
                             assignment.activityStatus === 'warning'
                               ? 'ring-amber-500/30 group-hover:ring-amber-500/50'
                               : assignment.activityStatus === 'active'
-                              ? 'ring-emerald-500/30 group-hover:ring-emerald-500/50'
-                              : 'ring-border/20 group-hover:ring-primary/30'
+                                ? 'ring-emerald-500/30 group-hover:ring-emerald-500/50'
+                                : 'ring-border/20 group-hover:ring-primary/30'
                           }`}
                         >
                           <AvatarImage src={assignment.patient?.image} />
@@ -522,19 +522,21 @@ export default function DashboardPage() {
                             assignment.activityStatus === 'warning'
                               ? 'text-foreground group-hover:text-amber-500'
                               : assignment.activityStatus === 'active'
-                              ? 'text-foreground group-hover:text-emerald-600'
-                              : 'text-foreground group-hover:text-primary'
+                                ? 'text-foreground group-hover:text-emerald-600'
+                                : 'text-foreground group-hover:text-primary'
                           }`}
                         >
                           {assignment.patient?.fullname || 'Nieznany'}
                         </p>
-                        <p className={`text-xs truncate ${
-                          assignment.activityStatus === 'warning'
-                            ? 'text-amber-600/80'
-                            : assignment.activityStatus === 'active'
-                            ? 'text-emerald-600/80'
-                            : 'text-muted-foreground'
-                        }`}>
+                        <p
+                          className={`text-xs truncate ${
+                            assignment.activityStatus === 'warning'
+                              ? 'text-amber-600/80'
+                              : assignment.activityStatus === 'active'
+                                ? 'text-emerald-600/80'
+                                : 'text-muted-foreground'
+                          }`}
+                        >
                           {assignment.lastActivityText}
                         </p>
                       </div>
@@ -543,8 +545,8 @@ export default function DashboardPage() {
                           assignment.activityStatus === 'warning'
                             ? 'text-amber-500/30 group-hover:text-amber-500'
                             : assignment.activityStatus === 'active'
-                            ? 'text-emerald-500/30 group-hover:text-emerald-500'
-                            : 'text-muted-foreground/30 group-hover:text-primary'
+                              ? 'text-emerald-500/30 group-hover:text-emerald-500'
+                              : 'text-muted-foreground/30 group-hover:text-primary'
                         }`}
                       />
                     </Link>
@@ -557,9 +559,7 @@ export default function DashboardPage() {
                   <UserPlus className="h-7 w-7 text-muted-foreground/50" />
                 </div>
                 <p className="text-sm font-medium text-muted-foreground mb-1">Brak pacjentów</p>
-                <p className="text-xs text-muted-foreground/70 mb-4">
-                  Dodaj pierwszego pacjenta
-                </p>
+                <p className="text-xs text-muted-foreground/70 mb-4">Dodaj pierwszego pacjenta</p>
                 <Button
                   size="sm"
                   className="h-8 text-xs"
@@ -574,7 +574,10 @@ export default function DashboardPage() {
         </Card>
 
         {/* Quick Sets - Right Column (4 cols) */}
-        <Card data-testid="dashboard-sets-section" className="border-border/40 bg-surface/50 backdrop-blur-sm overflow-hidden lg:col-span-4">
+        <Card
+          data-testid="dashboard-sets-section"
+          className="border-border/40 bg-surface/50 backdrop-blur-sm overflow-hidden lg:col-span-4"
+        >
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
               <CardTitle className="flex items-center gap-3 text-base font-semibold">
@@ -584,7 +587,11 @@ export default function DashboardPage() {
                 <span>Szybki wybór</span>
               </CardTitle>
               <Link href="/exercise-sets" data-testid="dashboard-sets-view-all" className="group">
-                <Button variant="ghost" size="sm" className="h-8 text-xs gap-1 text-muted-foreground hover:text-foreground">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 text-xs gap-1 text-muted-foreground hover:text-foreground"
+                >
                   Wszystkie
                   <ChevronRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
                 </Button>
@@ -631,9 +638,7 @@ export default function DashboardPage() {
                         <p className="font-medium text-sm text-foreground group-hover:text-secondary transition-colors truncate">
                           {set.name}
                         </p>
-                        <p className="text-xs text-muted-foreground">
-                          {set.exerciseMappings?.length || 0} ćw.
-                        </p>
+                        <p className="text-xs text-muted-foreground">{set.exerciseMappings?.length || 0} ćw.</p>
                       </div>
                     </Link>
                     {/* Quick Assign Button */}
@@ -656,9 +661,7 @@ export default function DashboardPage() {
                   <Sparkles className="h-7 w-7 text-muted-foreground/50" />
                 </div>
                 <p className="text-sm font-medium text-muted-foreground mb-1">Brak zestawów</p>
-                <p className="text-xs text-muted-foreground/70 mb-4">
-                  Stwórz pierwszy zestaw
-                </p>
+                <p className="text-xs text-muted-foreground/70 mb-4">Stwórz pierwszy zestaw</p>
                 <Button
                   size="sm"
                   variant="secondary"
@@ -675,9 +678,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Billing Status Bar - Only for Owner/Admin (Full Width) */}
-      {canViewBilling && organizationId && (
-        <BillingStatusBar organizationId={organizationId} />
-      )}
+      {canViewBilling && organizationId && <BillingStatusBar organizationId={organizationId} />}
 
       {/* Assignment Wizard */}
       {organizationId && therapistId && (
@@ -690,21 +691,27 @@ export default function DashboardPage() {
           mode={quickAssignSet ? 'from-set' : 'from-patient'}
           organizationId={organizationId}
           therapistId={therapistId}
-          preselectedSet={quickAssignSet ? {
-            id: quickAssignSet.id,
-            name: quickAssignSet.name,
-            description: quickAssignSet.description,
-            exerciseMappings: quickAssignSet.exerciseMappings?.map(m => ({
-              id: m.id,
-              exerciseId: m.exerciseId,
-              exercise: m.exercise ? {
-                id: m.exercise.id,
-                name: m.exercise.name,
-                imageUrl: m.exercise.imageUrl,
-                images: m.exercise.images,
-              } : undefined,
-            })),
-          } : undefined}
+          preselectedSet={
+            quickAssignSet
+              ? {
+                  id: quickAssignSet.id,
+                  name: quickAssignSet.name,
+                  description: quickAssignSet.description,
+                  exerciseMappings: quickAssignSet.exerciseMappings?.map((m) => ({
+                    id: m.id,
+                    exerciseId: m.exerciseId,
+                    exercise: m.exercise
+                      ? {
+                          id: m.exercise.id,
+                          name: m.exercise.name,
+                          imageUrl: m.exercise.imageUrl,
+                          images: m.exercise.images,
+                        }
+                      : undefined,
+                  })),
+                }
+              : undefined
+          }
           onSuccess={() => {
             setIsAssignWizardOpen(false);
             setQuickAssignSet(null);

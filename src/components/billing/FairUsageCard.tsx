@@ -1,13 +1,13 @@
-"use client";
+'use client';
 
-import { useMemo } from "react";
-import { useQuery } from "@apollo/client/react";
-import { Bot, CheckCircle2, AlertTriangle } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
-import { cn } from "@/lib/utils";
-import { GET_AI_CREDITS_STATUS } from "@/graphql/queries/aiCredits.queries";
+import { useMemo } from 'react';
+import { useQuery } from '@apollo/client/react';
+import { Bot, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
+import { cn } from '@/lib/utils';
+import { GET_AI_CREDITS_STATUS } from '@/graphql/queries/aiCredits.queries';
 
 // ========================================
 // Types
@@ -33,14 +33,11 @@ interface AICreditsStatus {
 
 export function FairUsageCard({ organizationId, className }: FairUsageCardProps) {
   // Fetch AI credits status
-  const { data, loading, error } = useQuery<{ aiCreditsStatus: AICreditsStatus }>(
-    GET_AI_CREDITS_STATUS,
-    {
-      variables: { organizationId: organizationId || "" },
-      skip: !organizationId,
-      errorPolicy: "ignore",
-    }
-  );
+  const { data, loading, error } = useQuery<{ aiCreditsStatus: AICreditsStatus }>(GET_AI_CREDITS_STATUS, {
+    variables: { organizationId: organizationId || '' },
+    skip: !organizationId,
+    errorPolicy: 'ignore',
+  });
 
   const credits = data?.aiCreditsStatus;
 
@@ -72,7 +69,7 @@ export function FairUsageCard({ organizationId, className }: FairUsageCardProps)
   if (loading) {
     return (
       <Card
-        className={cn("border-border/40 bg-surface/50 backdrop-blur-sm", className)}
+        className={cn('border-border/40 bg-surface/50 backdrop-blur-sm', className)}
         data-testid="billing-fair-usage-card"
       >
         <CardContent className="p-4">
@@ -92,7 +89,7 @@ export function FairUsageCard({ organizationId, className }: FairUsageCardProps)
   if (error || !usageStatus) {
     return (
       <Card
-        className={cn("border-border/40 bg-surface/50 backdrop-blur-sm", className)}
+        className={cn('border-border/40 bg-surface/50 backdrop-blur-sm', className)}
         data-testid="billing-fair-usage-card"
       >
         <CardContent className="p-4">
@@ -107,9 +104,7 @@ export function FairUsageCard({ organizationId, className }: FairUsageCardProps)
                   Fair Usage
                 </Badge>
               </div>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                Funkcje AI wliczone w cenę licencji
-              </p>
+              <p className="text-xs text-muted-foreground mt-0.5">Funkcje AI wliczone w cenę licencji</p>
             </div>
             <CheckCircle2 className="h-5 w-5 text-primary shrink-0" />
           </div>
@@ -120,40 +115,36 @@ export function FairUsageCard({ organizationId, className }: FairUsageCardProps)
 
   // Determine colors based on status
   const bgColor = usageStatus.isCritical
-    ? "bg-destructive/10"
+    ? 'bg-destructive/10'
     : usageStatus.isWarning
-    ? "bg-warning/10"
-    : "bg-primary/10";
+      ? 'bg-warning/10'
+      : 'bg-primary/10';
 
   const textColor = usageStatus.isCritical
-    ? "text-destructive"
+    ? 'text-destructive'
     : usageStatus.isWarning
-    ? "text-warning"
-    : "text-primary";
+      ? 'text-warning'
+      : 'text-primary';
 
-  const barColor = usageStatus.isCritical
-    ? "bg-destructive"
-    : usageStatus.isWarning
-    ? "bg-warning"
-    : "bg-primary";
+  const barColor = usageStatus.isCritical ? 'bg-destructive' : usageStatus.isWarning ? 'bg-warning' : 'bg-primary';
 
   return (
     <Card
-      className={cn("border-border/40 bg-surface/50 backdrop-blur-sm", className)}
+      className={cn('border-border/40 bg-surface/50 backdrop-blur-sm', className)}
       data-testid="billing-fair-usage-card"
     >
       <CardContent className="p-4">
         <div className="flex items-center gap-3">
           {/* Icon */}
-          <div className={cn("flex h-9 w-9 items-center justify-center rounded-xl shrink-0", bgColor)}>
-            <Bot className={cn("h-4 w-4", textColor)} />
+          <div className={cn('flex h-9 w-9 items-center justify-center rounded-xl shrink-0', bgColor)}>
+            <Bot className={cn('h-4 w-4', textColor)} />
           </div>
 
           {/* Content */}
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1.5">
               <p className="text-sm font-medium text-foreground">Status AI</p>
-              <Badge variant="secondary" className={cn("border-0 text-xs", bgColor, textColor)}>
+              <Badge variant="secondary" className={cn('border-0 text-xs', bgColor, textColor)}>
                 Fair Usage
               </Badge>
             </div>
@@ -162,7 +153,7 @@ export function FairUsageCard({ organizationId, className }: FairUsageCardProps)
             <div className="flex items-center gap-2">
               <div className="flex-1 h-1.5 rounded-full bg-surface overflow-hidden">
                 <div
-                  className={cn("h-full rounded-full transition-all duration-500", barColor)}
+                  className={cn('h-full rounded-full transition-all duration-500', barColor)}
                   style={{ width: `${usageStatus.percent}%` }}
                 />
               </div>
@@ -176,16 +167,16 @@ export function FairUsageCard({ organizationId, className }: FairUsageCardProps)
           {usageStatus.isSafe ? (
             <CheckCircle2 className="h-5 w-5 text-primary shrink-0" />
           ) : (
-            <AlertTriangle className={cn("h-5 w-5 shrink-0", textColor)} />
+            <AlertTriangle className={cn('h-5 w-5 shrink-0', textColor)} />
           )}
         </div>
 
         {/* Warning message if needed */}
         {(usageStatus.isWarning || usageStatus.isCritical) && (
-          <p className={cn("text-xs mt-2 pl-12", textColor)}>
+          <p className={cn('text-xs mt-2 pl-12', textColor)}>
             {usageStatus.isCritical
-              ? "Zbliżasz się do limitu. Rozważ optymalizację."
-              : "Umiarkowane zużycie. Monitoruj użycie."}
+              ? 'Zbliżasz się do limitu. Rozważ optymalizację.'
+              : 'Umiarkowane zużycie. Monitoruj użycie.'}
           </p>
         )}
       </CardContent>

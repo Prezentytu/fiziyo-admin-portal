@@ -1,36 +1,29 @@
-"use client";
+'use client';
 
-import { useEffect } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation } from "@apollo/client/react";
-import { Loader2 } from "lucide-react";
-import { toast } from "sonner";
-import * as z from "zod";
+import { useEffect } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useMutation } from '@apollo/client/react';
+import { Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
+import * as z from 'zod';
 
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { UPDATE_USER_PROFILE_MUTATION } from "@/graphql/mutations/users.mutations";
-import { GET_USER_BY_CLERK_ID_QUERY } from "@/graphql/queries/users.queries";
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { UPDATE_USER_PROFILE_MUTATION } from '@/graphql/mutations/users.mutations';
+import { GET_USER_BY_CLERK_ID_QUERY } from '@/graphql/queries/users.queries';
 
 // ========================================
 // Schema
 // ========================================
 
 const profileFormSchema = z.object({
-  firstName: z.string().min(2, "Imię musi mieć minimum 2 znaki"),
-  lastName: z.string().min(2, "Nazwisko musi mieć minimum 2 znaki"),
+  firstName: z.string().min(2, 'Imię musi mieć minimum 2 znaki'),
+  lastName: z.string().min(2, 'Nazwisko musi mieć minimum 2 znaki'),
   phone: z.string().optional(),
   address: z.string().optional(),
 });
@@ -71,30 +64,28 @@ export function ProfileForm({ user, clerkId, onSuccess }: ProfileFormProps) {
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
     defaultValues: {
-      firstName: "",
-      lastName: "",
-      phone: "",
-      address: "",
+      firstName: '',
+      lastName: '',
+      phone: '',
+      address: '',
     },
   });
 
   // Reset form when user data loads
   useEffect(() => {
     if (user) {
-      const names = user.fullname?.split(" ") || [];
+      const names = user.fullname?.split(' ') || [];
       form.reset({
-        firstName: user.personalData?.firstName || names[0] || "",
-        lastName: user.personalData?.lastName || names.slice(1).join(" ") || "",
-        phone: user.contactData?.phone || "",
-        address: user.contactData?.address || "",
+        firstName: user.personalData?.firstName || names[0] || '',
+        lastName: user.personalData?.lastName || names.slice(1).join(' ') || '',
+        phone: user.contactData?.phone || '',
+        address: user.contactData?.address || '',
       });
     }
   }, [user, form]);
 
   const [updateProfile, { loading }] = useMutation(UPDATE_USER_PROFILE_MUTATION, {
-    refetchQueries: [
-      { query: GET_USER_BY_CLERK_ID_QUERY, variables: { clerkId } },
-    ],
+    refetchQueries: [{ query: GET_USER_BY_CLERK_ID_QUERY, variables: { clerkId } }],
   });
 
   const onSubmit = async (values: ProfileFormValues) => {
@@ -108,24 +99,24 @@ export function ProfileForm({ user, clerkId, onSuccess }: ProfileFormProps) {
           address: values.address || null,
         },
       });
-      toast.success("Profil został zaktualizowany");
+      toast.success('Profil został zaktualizowany');
       onSuccess?.();
     } catch (error) {
-      console.error("Błąd podczas aktualizacji:", error);
-      toast.error("Nie udało się zaktualizować profilu");
+      console.error('Błąd podczas aktualizacji:', error);
+      toast.error('Nie udało się zaktualizować profilu');
     }
   };
 
   const displayName =
     user.fullname ||
-    `${user.personalData?.firstName || ""} ${user.personalData?.lastName || ""}`.trim() ||
+    `${user.personalData?.firstName || ''} ${user.personalData?.lastName || ''}`.trim() ||
     user.email ||
-    "Użytkownik";
+    'Użytkownik';
 
   const initials = displayName
-    .split(" ")
+    .split(' ')
     .map((n) => n[0])
-    .join("")
+    .join('')
     .slice(0, 2)
     .toUpperCase();
 
@@ -137,9 +128,7 @@ export function ProfileForm({ user, clerkId, onSuccess }: ProfileFormProps) {
         {/* Section 1: Profile Photo */}
         <Card className="rounded-xl border border-border/50 bg-card/30">
           <CardHeader className="pb-4">
-            <CardTitle className="text-lg font-semibold tracking-tight">
-              Zdjęcie profilowe
-            </CardTitle>
+            <CardTitle className="text-lg font-semibold tracking-tight">Zdjęcie profilowe</CardTitle>
             <CardDescription className="text-sm text-muted-foreground">
               Widoczne dla innych członków organizacji
             </CardDescription>
@@ -154,14 +143,18 @@ export function ProfileForm({ user, clerkId, onSuccess }: ProfileFormProps) {
               </Avatar>
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
-                  <Button type="button" variant="outline" size="sm" className="rounded-lg border-border/50 hover:border-primary/50 transition-all" disabled>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="rounded-lg border-border/50 hover:border-primary/50 transition-all"
+                    disabled
+                  >
                     Zmień zdjęcie
                   </Button>
                   <span className="text-xs text-muted-foreground">(wkrótce)</span>
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  JPG, PNG lub GIF. Maksymalnie 2MB.
-                </p>
+                <p className="text-xs text-muted-foreground">JPG, PNG lub GIF. Maksymalnie 2MB.</p>
               </div>
             </div>
           </CardContent>
@@ -170,9 +163,7 @@ export function ProfileForm({ user, clerkId, onSuccess }: ProfileFormProps) {
         {/* Section 2: Basic Info */}
         <Card className="rounded-xl border border-border/50 bg-card/30">
           <CardHeader className="pb-4">
-            <CardTitle className="text-lg font-semibold tracking-tight">
-              Informacje podstawowe
-            </CardTitle>
+            <CardTitle className="text-lg font-semibold tracking-tight">Informacje podstawowe</CardTitle>
             <CardDescription className="text-sm text-muted-foreground">
               Twoje imię i nazwisko widoczne w aplikacji
             </CardDescription>
@@ -220,17 +211,13 @@ export function ProfileForm({ user, clerkId, onSuccess }: ProfileFormProps) {
 
             {/* Email - read only */}
             <div className="space-y-2">
-              <Label className="text-sm font-medium">
-                Email
-              </Label>
+              <Label className="text-sm font-medium">Email</Label>
               <Input
-                value={user.email || ""}
+                value={user.email || ''}
                 disabled
                 className="bg-muted text-muted-foreground rounded-lg opacity-70 cursor-not-allowed"
               />
-              <p className="text-xs text-muted-foreground">
-                Email można zmienić w ustawieniach konta Clerk
-              </p>
+              <p className="text-xs text-muted-foreground">Email można zmienić w ustawieniach konta Clerk</p>
             </div>
           </CardContent>
         </Card>
@@ -238,9 +225,7 @@ export function ProfileForm({ user, clerkId, onSuccess }: ProfileFormProps) {
         {/* Section 3: Contact Info */}
         <Card className="rounded-xl border border-border/50 bg-card/30">
           <CardHeader className="pb-4">
-            <CardTitle className="text-lg font-semibold tracking-tight">
-              Dane kontaktowe
-            </CardTitle>
+            <CardTitle className="text-lg font-semibold tracking-tight">Dane kontaktowe</CardTitle>
             <CardDescription className="text-sm text-muted-foreground">
               Opcjonalne informacje kontaktowe
             </CardDescription>
@@ -252,9 +237,7 @@ export function ProfileForm({ user, clerkId, onSuccess }: ProfileFormProps) {
                 name="phone"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-sm font-medium">
-                      Telefon
-                    </FormLabel>
+                    <FormLabel className="text-sm font-medium">Telefon</FormLabel>
                     <FormControl>
                       <Input
                         placeholder="+48 123 456 789"
@@ -273,9 +256,7 @@ export function ProfileForm({ user, clerkId, onSuccess }: ProfileFormProps) {
                 name="address"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-sm font-medium">
-                      Adres
-                    </FormLabel>
+                    <FormLabel className="text-sm font-medium">Adres</FormLabel>
                     <FormControl>
                       <Input
                         placeholder="ul. Przykładowa 123, 00-000 Miasto"

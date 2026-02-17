@@ -3,15 +3,15 @@
  * Odpowiednik SecureStore z aplikacji mobilnej
  */
 
-const BACKEND_JWT_TOKEN_KEY = "BACKEND_JWT_TOKEN";
-const isDev = process.env.NODE_ENV === "development";
+const BACKEND_JWT_TOKEN_KEY = 'BACKEND_JWT_TOKEN';
+const isDev = process.env.NODE_ENV === 'development';
 
 /**
  * Pobiera token JWT backendu z sessionStorage
  * @returns Backend JWT token lub null jeśli brak
  */
 export const getBackendToken = (): string | null => {
-  if (typeof window === "undefined") {
+  if (typeof window === 'undefined') {
     return null;
   }
 
@@ -19,7 +19,7 @@ export const getBackendToken = (): string | null => {
     return sessionStorage.getItem(BACKEND_JWT_TOKEN_KEY);
   } catch (error) {
     if (isDev) {
-      console.error("[TokenCache] Błąd pobierania backend tokenu:", error);
+      console.error('[TokenCache] Błąd pobierania backend tokenu:', error);
     }
     return null;
   }
@@ -30,7 +30,7 @@ export const getBackendToken = (): string | null => {
  * @param token - Backend JWT token do zapisania
  */
 export const saveBackendToken = (token: string): void => {
-  if (typeof window === "undefined") {
+  if (typeof window === 'undefined') {
     return;
   }
 
@@ -38,7 +38,7 @@ export const saveBackendToken = (token: string): void => {
     sessionStorage.setItem(BACKEND_JWT_TOKEN_KEY, token);
   } catch (error) {
     if (isDev) {
-      console.error("[TokenCache] Błąd zapisywania backend tokenu:", error);
+      console.error('[TokenCache] Błąd zapisywania backend tokenu:', error);
     }
     throw error;
   }
@@ -48,7 +48,7 @@ export const saveBackendToken = (token: string): void => {
  * Usuwa token JWT backendu z sessionStorage (np. przy wylogowaniu)
  */
 export const clearBackendToken = (): void => {
-  if (typeof window === "undefined") {
+  if (typeof window === 'undefined') {
     return;
   }
 
@@ -56,7 +56,7 @@ export const clearBackendToken = (): void => {
     sessionStorage.removeItem(BACKEND_JWT_TOKEN_KEY);
   } catch (error) {
     if (isDev) {
-      console.error("[TokenCache] Błąd czyszczenia backend tokenu:", error);
+      console.error('[TokenCache] Błąd czyszczenia backend tokenu:', error);
     }
   }
 };

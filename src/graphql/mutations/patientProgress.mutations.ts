@@ -1,4 +1,4 @@
-import { gql } from "@apollo/client";
+import { gql } from '@apollo/client';
 
 /**
  * Mutacja do oznaczania ćwiczenia jako wykonanego przez pacjenta

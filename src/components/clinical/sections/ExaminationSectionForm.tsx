@@ -20,7 +20,7 @@ const COMMON_TESTS = [
   { name: 'Test Hawkinsa', category: 'bark' },
   { name: 'Test FABER', category: 'biodro' },
   { name: 'Test SLR', category: 'kręgosłup' },
-  { name: 'Test Lasegue\'a', category: 'kręgosłup' },
+  { name: "Test Lasegue'a", category: 'kręgosłup' },
   { name: 'Test Spurlinga', category: 'kręgosłup szyjny' },
 ];
 
@@ -40,19 +40,12 @@ interface ExaminationSectionFormProps {
   disabled?: boolean;
 }
 
-export function ExaminationSectionForm({
-  data,
-  onChange,
-  disabled = false,
-}: ExaminationSectionFormProps) {
+export function ExaminationSectionForm({ data, onChange, disabled = false }: ExaminationSectionFormProps) {
   const [newTestName, setNewTestName] = useState('');
   const [newRomName, setNewRomName] = useState('');
   const [newRomValue, setNewRomValue] = useState('');
 
-  const updateField = <K extends keyof ExaminationSection>(
-    field: K,
-    value: ExaminationSection[K]
-  ) => {
+  const updateField = <K extends keyof ExaminationSection>(field: K, value: ExaminationSection[K]) => {
     onChange({ ...data, [field]: value });
   };
 
@@ -83,7 +76,10 @@ export function ExaminationSectionForm({
 
   const removeTest = (name: string) => {
     const currentTests = data.specialTests || [];
-    updateField('specialTests', currentTests.filter((t) => t.name !== name));
+    updateField(
+      'specialTests',
+      currentTests.filter((t) => t.name !== name)
+    );
   };
 
   // ROM handlers
@@ -105,7 +101,10 @@ export function ExaminationSectionForm({
 
   const removeRom = (index: number) => {
     const currentRom = data.rangeOfMotion || [];
-    updateField('rangeOfMotion', currentRom.filter((_, i) => i !== index));
+    updateField(
+      'rangeOfMotion',
+      currentRom.filter((_, i) => i !== index)
+    );
   };
 
   const isRomAdded = (movement: string): boolean => {
@@ -127,20 +126,21 @@ export function ExaminationSectionForm({
           className="min-h-[100px] text-base"
           disabled={disabled}
         />
-        <FormHint>
-          Opisz postawę statyczną i dynamiczną pacjenta
-        </FormHint>
+        <FormHint>Opisz postawę statyczną i dynamiczną pacjenta</FormHint>
       </div>
 
       {/* Zakres ruchu (ROM) */}
       <div className="space-y-3">
         <Label>Zakres ruchu (ROM)</Label>
-        
+
         {/* Istniejące ROM */}
         {(data.rangeOfMotion?.length ?? 0) > 0 && (
           <div className="space-y-2">
             {data.rangeOfMotion?.map((entry, index) => (
-              <div key={`${entry.movement}-${index}`} className="flex items-center gap-3 p-3 rounded-lg bg-surface border border-border/40">
+              <div
+                key={`${entry.movement}-${index}`}
+                className="flex items-center gap-3 p-3 rounded-lg bg-surface border border-border/40"
+              >
                 <span className="flex-1 text-sm font-medium">{entry.movement}</span>
                 <Input
                   type="number"
@@ -222,7 +222,7 @@ export function ExaminationSectionForm({
       {/* Testy specjalne */}
       <div className="space-y-3">
         <Label>Testy specjalne / diagnostyczne</Label>
-        
+
         {/* Istniejące testy */}
         {(data.specialTests?.length ?? 0) > 0 && (
           <div className="space-y-2">
@@ -262,7 +262,9 @@ export function ExaminationSectionForm({
                     </button>
                     <button
                       type="button"
-                      onClick={() => updateTestResult(test.name!, test.result === 'inconclusive' ? undefined : 'inconclusive')}
+                      onClick={() =>
+                        updateTestResult(test.name!, test.result === 'inconclusive' ? undefined : 'inconclusive')
+                      }
                       disabled={disabled}
                       className={cn(
                         'p-1.5 rounded-lg transition-all',
@@ -386,4 +388,3 @@ export function ExaminationSectionForm({
     </div>
   );
 }
-

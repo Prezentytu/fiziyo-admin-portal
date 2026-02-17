@@ -1,11 +1,11 @@
-"use client";
+'use client';
 
-import { useState, useCallback } from "react";
-import { useMutation } from "@apollo/client/react";
-import { toast } from "sonner";
+import { useState, useCallback } from 'react';
+import { useMutation } from '@apollo/client/react';
+import { toast } from 'sonner';
 
-import { ACTIVATE_PATIENT_PREMIUM_MUTATION } from "@/graphql/mutations/users.mutations";
-import { GET_ORGANIZATION_PATIENTS_QUERY } from "@/graphql/queries/therapists.queries";
+import { ACTIVATE_PATIENT_PREMIUM_MUTATION } from '@/graphql/mutations/users.mutations';
+import { GET_ORGANIZATION_PATIENTS_QUERY } from '@/graphql/queries/therapists.queries';
 
 // ========================================
 // Types
@@ -64,7 +64,7 @@ const shouldShowConfirmation = (orgId: string): boolean => {
 const markConfirmationShown = (orgId: string): void => {
   if (globalThis.window === undefined) return;
   const key = getMonthKey(orgId);
-  localStorage.setItem(key, "true");
+  localStorage.setItem(key, 'true');
 };
 
 /**
@@ -79,12 +79,12 @@ export const isPremiumActive = (premiumActiveUntil: string | null | undefined): 
  * Formatuje datę wygaśnięcia Premium do wyświetlenia
  */
 export const formatPremiumExpiry = (premiumActiveUntil: string | null | undefined): string => {
-  if (!premiumActiveUntil) return "";
+  if (!premiumActiveUntil) return '';
   const date = new Date(premiumActiveUntil);
-  return date.toLocaleDateString("pl-PL", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
+  return date.toLocaleDateString('pl-PL', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
   });
 };
 
@@ -130,31 +130,25 @@ export const getDaysUntilExpiry = (premiumActiveUntil: string | null | undefined
  * />
  * ```
  */
-export function usePatientPremium({
-  organizationId,
-  onSuccess,
-}: UsePatientPremiumOptions): UsePatientPremiumResult {
+export function usePatientPremium({ organizationId, onSuccess }: UsePatientPremiumOptions): UsePatientPremiumResult {
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [activationTarget, setActivationTarget] = useState<ActivationTarget | null>(null);
 
-  const [activateMutation, { loading: isActivating }] = useMutation(
-    ACTIVATE_PATIENT_PREMIUM_MUTATION,
-    {
-      refetchQueries: [
-        {
-          query: GET_ORGANIZATION_PATIENTS_QUERY,
-          variables: { organizationId, filter: "all" },
-        },
-      ],
-      onCompleted: () => {
-        toast.success("Dostęp Premium został aktywowany na 30 dni");
-        onSuccess?.();
+  const [activateMutation, { loading: isActivating }] = useMutation(ACTIVATE_PATIENT_PREMIUM_MUTATION, {
+    refetchQueries: [
+      {
+        query: GET_ORGANIZATION_PATIENTS_QUERY,
+        variables: { organizationId, filter: 'all' },
       },
-      onError: (error) => {
-        toast.error(`Błąd aktywacji: ${error.message}`);
-      },
-    }
-  );
+    ],
+    onCompleted: () => {
+      toast.success('Dostęp Premium został aktywowany na 30 dni');
+      onSuccess?.();
+    },
+    onError: (error) => {
+      toast.error(`Błąd aktywacji: ${error.message}`);
+    },
+  });
 
   /**
    * Wykonaj aktywację Premium

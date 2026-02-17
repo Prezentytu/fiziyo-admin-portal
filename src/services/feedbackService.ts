@@ -8,14 +8,14 @@
  * - Rate limiting na froncie + backendzie
  */
 
-import type { FeedbackData, FeedbackSendResult, FeedbackMetadata } from "@/types/feedback.types";
+import type { FeedbackData, FeedbackSendResult, FeedbackMetadata } from '@/types/feedback.types';
 
 // ============================================================================
 // CONFIG
 // ============================================================================
 
 // Używamy lokalnego Next.js API route - omija CORS i daje fallback na Discord
-const API_FEEDBACK_ENDPOINT = "/api/feedback";
+const API_FEEDBACK_ENDPOINT = '/api/feedback';
 
 // ============================================================================
 // RATE LIMITING
@@ -50,33 +50,33 @@ function updateLastFeedbackTime(): void {
  * Pobiera wersję aplikacji z package.json (ustawiona w build time)
  */
 function getAppVersion(): string {
-  return process.env.NEXT_PUBLIC_APP_VERSION || "1.0.0";
+  return process.env.NEXT_PUBLIC_APP_VERSION || '1.0.0';
 }
 
 /**
  * Pobiera informacje o przeglądarce
  */
 function getBrowserInfo(): { name: string; version: string } {
-  if (typeof globalThis.window === "undefined") {
-    return { name: "SSR", version: "0" };
+  if (typeof globalThis.window === 'undefined') {
+    return { name: 'SSR', version: '0' };
   }
 
   const ua = navigator.userAgent;
-  let name = "Unknown";
-  let version = "0";
+  let name = 'Unknown';
+  let version = '0';
 
-  if (ua.includes("Firefox/")) {
-    name = "Firefox";
-    version = ua.split("Firefox/")[1]?.split(" ")[0] || "0";
-  } else if (ua.includes("Chrome/") && !ua.includes("Edg/")) {
-    name = "Chrome";
-    version = ua.split("Chrome/")[1]?.split(" ")[0] || "0";
-  } else if (ua.includes("Edg/")) {
-    name = "Edge";
-    version = ua.split("Edg/")[1]?.split(" ")[0] || "0";
-  } else if (ua.includes("Safari/") && !ua.includes("Chrome")) {
-    name = "Safari";
-    version = ua.split("Version/")[1]?.split(" ")[0] || "0";
+  if (ua.includes('Firefox/')) {
+    name = 'Firefox';
+    version = ua.split('Firefox/')[1]?.split(' ')[0] || '0';
+  } else if (ua.includes('Chrome/') && !ua.includes('Edg/')) {
+    name = 'Chrome';
+    version = ua.split('Chrome/')[1]?.split(' ')[0] || '0';
+  } else if (ua.includes('Edg/')) {
+    name = 'Edge';
+    version = ua.split('Edg/')[1]?.split(' ')[0] || '0';
+  } else if (ua.includes('Safari/') && !ua.includes('Chrome')) {
+    name = 'Safari';
+    version = ua.split('Version/')[1]?.split(' ')[0] || '0';
   }
 
   return { name, version };
@@ -86,7 +86,7 @@ function getBrowserInfo(): { name: string; version: string } {
  * Pobiera środowisko (prod/dev/staging)
  */
 function getEnvironment(): string {
-  return process.env.NEXT_PUBLIC_ENVIRONMENT || "development";
+  return process.env.NEXT_PUBLIC_ENVIRONMENT || 'development';
 }
 
 /**
@@ -97,12 +97,12 @@ export function createFeedbackMetadata(screenName?: string): FeedbackMetadata {
 
   return {
     appVersion: getAppVersion(),
-    platform: "web",
+    platform: 'web',
     browser: browser.name,
     browserVersion: browser.version,
     timestamp: new Date().toISOString(),
     screenName,
-    url: typeof globalThis.window !== "undefined" ? globalThis.location.href : undefined,
+    url: typeof globalThis.window !== 'undefined' ? globalThis.location.href : undefined,
     environment: getEnvironment(),
   };
 }
@@ -146,7 +146,7 @@ export async function sendFeedbackToDiscord(feedback: FeedbackData): Promise<Fee
         const base64 = await fileToBase64(img.file);
         imagesBase64.push(base64);
       } catch (err) {
-        console.warn("[FeedbackService] Failed to convert image to base64:", err);
+        console.warn('[FeedbackService] Failed to convert image to base64:', err);
       }
     }
 
@@ -162,7 +162,7 @@ export async function sendFeedbackToDiscord(feedback: FeedbackData): Promise<Fee
       userId: feedback.user.userId,
       userEmail: feedback.user.email,
       userName: feedback.user.firstName
-        ? `${feedback.user.firstName} ${feedback.user.lastName || ""}`.trim()
+        ? `${feedback.user.firstName} ${feedback.user.lastName || ''}`.trim()
         : undefined,
       userRole: feedback.user.role,
       organizationId: feedback.user.organizationId,
@@ -171,9 +171,9 @@ export async function sendFeedbackToDiscord(feedback: FeedbackData): Promise<Fee
 
     // Wyślij przez lokalne API route (proxy do backendu z fallback na Discord)
     const response = await fetch(API_FEEDBACK_ENDPOINT, {
-      method: "POST",
+      method: 'POST',
       headers: {
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify(payload),
     });
@@ -182,20 +182,20 @@ export async function sendFeedbackToDiscord(feedback: FeedbackData): Promise<Fee
 
     if (response.ok && result.success) {
       updateLastFeedbackTime();
-      console.log("[FeedbackService] Feedback sent successfully via backend");
+      console.log('[FeedbackService] Feedback sent successfully via backend');
       return { success: true };
     } else {
-      console.error("[FeedbackService] Backend error:", result);
+      console.error('[FeedbackService] Backend error:', result);
       return {
         success: false,
         error: result.message || `Błąd serwera: ${response.status}`,
       };
     }
   } catch (error) {
-    console.error("[FeedbackService] Error sending feedback:", error);
+    console.error('[FeedbackService] Error sending feedback:', error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Nieznany błąd podczas wysyłania",
+      error: error instanceof Error ? error.message : 'Nieznany błąd podczas wysyłania',
     };
   }
 }

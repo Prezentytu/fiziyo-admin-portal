@@ -17,7 +17,10 @@ export default function ErrorPage({ error, reset }: ErrorPageProps) {
   }, [error]);
 
   return (
-    <div className="flex min-h-[60vh] flex-col items-center justify-center gap-6 p-8 text-center" data-testid="common-error-page">
+    <div
+      className="flex min-h-[60vh] flex-col items-center justify-center gap-6 p-8 text-center"
+      data-testid="common-error-page"
+    >
       <div className="flex h-20 w-20 items-center justify-center rounded-full bg-destructive/10">
         <AlertTriangle className="h-10 w-10 text-destructive" />
       </div>

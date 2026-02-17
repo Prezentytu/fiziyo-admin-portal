@@ -1,5 +1,5 @@
-import { GraphQLWsLink } from "@apollo/client/link/subscriptions";
-import { createClient, Client } from "graphql-ws";
+import { GraphQLWsLink } from '@apollo/client/link/subscriptions';
+import { createClient, Client } from 'graphql-ws';
 
 /**
  * Factory do tworzenia WebSocket link dla Apollo Client
@@ -18,8 +18,8 @@ export class WsLinkFactory {
    */
   create(): GraphQLWsLink {
     // Konwertuj HTTP URL na WebSocket URL
-    const httpUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5050";
-    const wsUrl = httpUrl.replace(/^http/, "ws") + "/graphql";
+    const httpUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5050';
+    const wsUrl = httpUrl.replace(/^http/, 'ws') + '/graphql';
 
     this.client = createClient({
       url: wsUrl,
@@ -38,20 +38,18 @@ export class WsLinkFactory {
       retryAttempts: 5,
       retryWait: async (retries) => {
         // Exponential backoff: 1s, 2s, 4s, 8s, 16s
-        await new Promise((resolve) =>
-          setTimeout(resolve, Math.min(1000 * Math.pow(2, retries), 16000))
-        );
+        await new Promise((resolve) => setTimeout(resolve, Math.min(1000 * Math.pow(2, retries), 16000)));
       },
       // Obsługa rozłączenia
       on: {
         connected: () => {
-          console.log("[WsLink] Connected to GraphQL WebSocket");
+          console.log('[WsLink] Connected to GraphQL WebSocket');
         },
         closed: (event) => {
-          console.log("[WsLink] WebSocket closed", event);
+          console.log('[WsLink] WebSocket closed', event);
         },
         error: (error) => {
-          console.error("[WsLink] WebSocket error:", error);
+          console.error('[WsLink] WebSocket error:', error);
         },
       },
       // Lazy connection - połącz tylko gdy potrzebne (subscription)
@@ -78,9 +76,7 @@ export class WsLinkFactory {
  * Helper function do tworzenia WebSocket link
  * Użycie: const wsLink = createWsLink(getToken);
  */
-export function createWsLink(
-  getToken: () => Promise<string | null>
-): GraphQLWsLink {
+export function createWsLink(getToken: () => Promise<string | null>): GraphQLWsLink {
   const factory = new WsLinkFactory(getToken);
   return factory.create();
 }

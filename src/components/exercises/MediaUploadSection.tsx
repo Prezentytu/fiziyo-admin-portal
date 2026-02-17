@@ -1,17 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import {
-  Upload,
-  X,
-  Image as ImageIcon,
-  Video,
-  Film,
-  Link as LinkIcon,
-  ExternalLink,
-  Play,
-  Trash2,
-} from 'lucide-react';
+import { Upload, X, Image as ImageIcon, Video, Film, Link as LinkIcon, ExternalLink, Play, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -173,9 +163,7 @@ export function MediaUploadSection({
             </div>
             <div>
               <p className="font-medium">Przeciągnij zdjęcia lub kliknij</p>
-              <p className="text-sm text-muted-foreground">
-                JPG, PNG, GIF lub WebP do {maxSizeMB}MB
-              </p>
+              <p className="text-sm text-muted-foreground">JPG, PNG, GIF lub WebP do {maxSizeMB}MB</p>
             </div>
           </div>
         </div>
@@ -190,11 +178,7 @@ export function MediaUploadSection({
                 key={`${file.name}-${index}`}
                 className="group relative aspect-video rounded-lg overflow-hidden bg-surface-light border border-border"
               >
-                <img
-                  src={URL.createObjectURL(file)}
-                  alt={file.name}
-                  className="h-full w-full object-cover"
-                />
+                <img src={URL.createObjectURL(file)} alt={file.name} className="h-full w-full object-cover" />
                 <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                   <Button
                     type="button"
@@ -220,9 +204,7 @@ export function MediaUploadSection({
         )}
 
         {files.length > 0 && (
-          <p className="text-xs text-muted-foreground">
-            Pierwsze zdjęcie będzie wyświetlane jako miniatura ćwiczenia
-          </p>
+          <p className="text-xs text-muted-foreground">Pierwsze zdjęcie będzie wyświetlane jako miniatura ćwiczenia</p>
         )}
       </div>
 
@@ -249,11 +231,7 @@ export function MediaUploadSection({
           {videoUrl && isVideoUrlValid && (
             <div className="flex items-center gap-3 p-3 rounded-lg bg-surface-light border border-border">
               {videoThumbnail ? (
-                <img
-                  src={videoThumbnail}
-                  alt="Video thumbnail"
-                  className="w-24 h-16 object-cover rounded"
-                />
+                <img src={videoThumbnail} alt="Video thumbnail" className="w-24 h-16 object-cover rounded" />
               ) : (
                 <div className="w-24 h-16 bg-surface rounded flex items-center justify-center">
                   <Play className="h-6 w-6 text-muted-foreground" />
@@ -318,13 +296,7 @@ export function MediaUploadSection({
                 <p className="text-sm font-medium">Animacja GIF</p>
                 <p className="text-xs text-muted-foreground truncate">{gifUrl}</p>
               </div>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8"
-                onClick={() => onGifUrlChange('')}
-              >
+              <Button type="button" variant="ghost" size="icon" className="h-8 w-8" onClick={() => onGifUrlChange('')}>
                 <X className="h-4 w-4" />
               </Button>
             </div>

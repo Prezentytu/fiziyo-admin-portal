@@ -1,13 +1,13 @@
-import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
+import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
 
 const isPublicRoute = createRouteMatcher([
-  "/login",
-  "/sign-in(.*)",
-  "/sign-up(.*)",
-  "/register(.*)",
-  "/verify",
-  "/reset-password(.*)",
-  "/invite(.*)",
+  '/login',
+  '/sign-in(.*)',
+  '/sign-up(.*)',
+  '/register(.*)',
+  '/verify',
+  '/reset-password(.*)',
+  '/invite(.*)',
 ]);
 
 export default clerkMiddleware(async (auth, req) => {
@@ -18,7 +18,7 @@ export default clerkMiddleware(async (auth, req) => {
 
 export const config = {
   matcher: [
-    "/((?!_next|[^?]*.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)",
-    "/(api|trpc)(.*)",
+    '/((?!_next|[^?]*.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
+    '/(api|trpc)(.*)',
   ],
 };

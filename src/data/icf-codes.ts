@@ -2,12 +2,12 @@
 // Opracowana na podstawie klasyfikacji WHO ICF
 // Kody najczęściej używane w fizjoterapii
 
-export type ICFCategory = 
-  | 'bodyFunction'    // Funkcje ciała (b)
-  | 'bodyStructure'   // Struktury ciała (s)
-  | 'activity'        // Aktywność (d)
-  | 'participation'   // Uczestnictwo (d)
-  | 'environment';    // Czynniki środowiskowe (e)
+export type ICFCategory =
+  | 'bodyFunction' // Funkcje ciała (b)
+  | 'bodyStructure' // Struktury ciała (s)
+  | 'activity' // Aktywność (d)
+  | 'participation' // Uczestnictwo (d)
+  | 'environment'; // Czynniki środowiskowe (e)
 
 export interface ICFCodeData {
   code: string;
@@ -47,7 +47,7 @@ export const ICF_CODES: ICFCodeData[] = [
   // b7: FUNKCJE NERWOWO-MIĘŚNIOWO-SZKIELETOWE
   // (Najważniejsze dla fizjoterapii)
   // ============================================
-  
+
   // b710-b729: Funkcje stawów i kości
   { code: 'b7100', description: 'Ruchomość pojedynczego stawu', category: 'bodyFunction', subcategory: 'b7' },
   { code: 'b7101', description: 'Ruchomość kilku stawów', category: 'bodyFunction', subcategory: 'b7' },
@@ -60,16 +60,26 @@ export const ICF_CODES: ICFCodeData[] = [
   { code: 'b7200', description: 'Ruchomość łopatki', category: 'bodyFunction', subcategory: 'b7' },
   { code: 'b7201', description: 'Ruchomość miednicy', category: 'bodyFunction', subcategory: 'b7' },
   { code: 'b7202', description: 'Ruchomość kości nadgarstka', category: 'bodyFunction', subcategory: 'b7' },
-  
+
   // b730-b749: Funkcje mięśni
-  { code: 'b7300', description: 'Siła izolowanych mięśni i grup mięśniowych', category: 'bodyFunction', subcategory: 'b7' },
+  {
+    code: 'b7300',
+    description: 'Siła izolowanych mięśni i grup mięśniowych',
+    category: 'bodyFunction',
+    subcategory: 'b7',
+  },
   { code: 'b7301', description: 'Siła mięśni jednej kończyny', category: 'bodyFunction', subcategory: 'b7' },
   { code: 'b7302', description: 'Siła mięśni jednej strony ciała', category: 'bodyFunction', subcategory: 'b7' },
   { code: 'b7303', description: 'Siła mięśni dolnej połowy ciała', category: 'bodyFunction', subcategory: 'b7' },
   { code: 'b7304', description: 'Siła mięśni wszystkich kończyn', category: 'bodyFunction', subcategory: 'b7' },
   { code: 'b7305', description: 'Siła mięśni tułowia', category: 'bodyFunction', subcategory: 'b7' },
   { code: 'b7306', description: 'Siła wszystkich mięśni ciała', category: 'bodyFunction', subcategory: 'b7' },
-  { code: 'b7350', description: 'Napięcie izolowanych mięśni i grup mięśniowych', category: 'bodyFunction', subcategory: 'b7' },
+  {
+    code: 'b7350',
+    description: 'Napięcie izolowanych mięśni i grup mięśniowych',
+    category: 'bodyFunction',
+    subcategory: 'b7',
+  },
   { code: 'b7351', description: 'Napięcie mięśni jednej kończyny', category: 'bodyFunction', subcategory: 'b7' },
   { code: 'b7352', description: 'Napięcie mięśni jednej strony ciała', category: 'bodyFunction', subcategory: 'b7' },
   { code: 'b7353', description: 'Napięcie mięśni dolnej połowy ciała', category: 'bodyFunction', subcategory: 'b7' },
@@ -79,7 +89,7 @@ export const ICF_CODES: ICFCodeData[] = [
   { code: 'b7400', description: 'Wytrzymałość izolowanych mięśni', category: 'bodyFunction', subcategory: 'b7' },
   { code: 'b7401', description: 'Wytrzymałość grup mięśniowych', category: 'bodyFunction', subcategory: 'b7' },
   { code: 'b7402', description: 'Wytrzymałość wszystkich mięśni ciała', category: 'bodyFunction', subcategory: 'b7' },
-  
+
   // b750-b789: Funkcje ruchowe
   { code: 'b7500', description: 'Odruch rozciągowy', category: 'bodyFunction', subcategory: 'b7' },
   { code: 'b7501', description: 'Odruchy wywołane ruchem', category: 'bodyFunction', subcategory: 'b7' },
@@ -124,8 +134,18 @@ export const ICF_CODES: ICFCodeData[] = [
   { code: 'b2603', description: 'Czucie siły ruchu', category: 'bodyFunction', subcategory: 'b2' },
 
   // Równowaga
-  { code: 'b2351', description: 'Funkcje przedsionkowe - równowaga ciała', category: 'bodyFunction', subcategory: 'b2' },
-  { code: 'b2352', description: 'Funkcje przedsionkowe - kontrola posturalna', category: 'bodyFunction', subcategory: 'b2' },
+  {
+    code: 'b2351',
+    description: 'Funkcje przedsionkowe - równowaga ciała',
+    category: 'bodyFunction',
+    subcategory: 'b2',
+  },
+  {
+    code: 'b2352',
+    description: 'Funkcje przedsionkowe - kontrola posturalna',
+    category: 'bodyFunction',
+    subcategory: 'b2',
+  },
 
   // ============================================
   // b4: FUNKCJE UKŁADU KRĄŻENIA I ODDECHOWEGO
@@ -229,13 +249,23 @@ export const ICF_CODES: ICFCodeData[] = [
   { code: 'd4154', description: 'Utrzymywanie pozycji stojącej', category: 'activity', subcategory: 'd4' },
   { code: 'd4200', description: 'Przemieszczanie się w pozycji siedzącej', category: 'activity', subcategory: 'd4' },
   { code: 'd4201', description: 'Przemieszczanie się w pozycji leżącej', category: 'activity', subcategory: 'd4' },
-  { code: 'd4210', description: 'Przemieszczanie się ze zginaniem i przekręcaniem', category: 'activity', subcategory: 'd4' },
+  {
+    code: 'd4210',
+    description: 'Przemieszczanie się ze zginaniem i przekręcaniem',
+    category: 'activity',
+    subcategory: 'd4',
+  },
 
   // Przenoszenie
   { code: 'd4300', description: 'Podnoszenie przedmiotów', category: 'activity', subcategory: 'd4' },
   { code: 'd4301', description: 'Przenoszenie przedmiotów w rękach', category: 'activity', subcategory: 'd4' },
   { code: 'd4302', description: 'Przenoszenie przedmiotów w ramionach', category: 'activity', subcategory: 'd4' },
-  { code: 'd4303', description: 'Przenoszenie przedmiotów na barkach, biodrze i plecach', category: 'activity', subcategory: 'd4' },
+  {
+    code: 'd4303',
+    description: 'Przenoszenie przedmiotów na barkach, biodrze i plecach',
+    category: 'activity',
+    subcategory: 'd4',
+  },
   { code: 'd4304', description: 'Przenoszenie przedmiotów na głowie', category: 'activity', subcategory: 'd4' },
   { code: 'd4305', description: 'Odkładanie przedmiotów', category: 'activity', subcategory: 'd4' },
   { code: 'd4350', description: 'Popychanie nogami', category: 'activity', subcategory: 'd4' },
@@ -256,8 +286,18 @@ export const ICF_CODES: ICFCodeData[] = [
   { code: 'd4553', description: 'Skakanie', category: 'activity', subcategory: 'd4' },
   { code: 'd4554', description: 'Pływanie', category: 'activity', subcategory: 'd4' },
   { code: 'd4600', description: 'Poruszanie się wewnątrz domu', category: 'activity', subcategory: 'd4' },
-  { code: 'd4601', description: 'Poruszanie się wewnątrz budynków innych niż dom', category: 'activity', subcategory: 'd4' },
-  { code: 'd4602', description: 'Poruszanie się poza domem i innymi budynkami', category: 'activity', subcategory: 'd4' },
+  {
+    code: 'd4601',
+    description: 'Poruszanie się wewnątrz budynków innych niż dom',
+    category: 'activity',
+    subcategory: 'd4',
+  },
+  {
+    code: 'd4602',
+    description: 'Poruszanie się poza domem i innymi budynkami',
+    category: 'activity',
+    subcategory: 'd4',
+  },
 
   // ============================================
   // d5: SAMOOBSŁUGA
@@ -291,7 +331,12 @@ export const ICF_CODES: ICFCodeData[] = [
   { code: 'd8450', description: 'Szukanie zatrudnienia', category: 'participation', subcategory: 'd8' },
   { code: 'd8451', description: 'Utrzymanie zatrudnienia', category: 'participation', subcategory: 'd8' },
   { code: 'd8500', description: 'Samozatrudnienie', category: 'participation', subcategory: 'd8' },
-  { code: 'd8501', description: 'Zatrudnienie w niepełnym wymiarze godzin', category: 'participation', subcategory: 'd8' },
+  {
+    code: 'd8501',
+    description: 'Zatrudnienie w niepełnym wymiarze godzin',
+    category: 'participation',
+    subcategory: 'd8',
+  },
   { code: 'd8502', description: 'Zatrudnienie w pełnym wymiarze godzin', category: 'participation', subcategory: 'd8' },
 
   // ============================================
@@ -307,10 +352,31 @@ export const ICF_CODES: ICFCodeData[] = [
   // ============================================
   { code: 'e1100', description: 'Żywność', category: 'environment', subcategory: 'e1' },
   { code: 'e1101', description: 'Leki', category: 'environment', subcategory: 'e1' },
-  { code: 'e1150', description: 'Ogólne produkty i technologie do użytku osobistego w codziennym życiu', category: 'environment', subcategory: 'e1' },
-  { code: 'e1151', description: 'Produkty i technologie wspomagające do użytku osobistego w codziennym życiu', category: 'environment', subcategory: 'e1' },
-  { code: 'e1200', description: 'Ogólne produkty i technologie do poruszania się i transportu osobistego w pomieszczeniach i na zewnątrz', category: 'environment', subcategory: 'e1' },
-  { code: 'e1201', description: 'Produkty i technologie wspomagające do poruszania się i transportu osobistego', category: 'environment', subcategory: 'e1' },
+  {
+    code: 'e1150',
+    description: 'Ogólne produkty i technologie do użytku osobistego w codziennym życiu',
+    category: 'environment',
+    subcategory: 'e1',
+  },
+  {
+    code: 'e1151',
+    description: 'Produkty i technologie wspomagające do użytku osobistego w codziennym życiu',
+    category: 'environment',
+    subcategory: 'e1',
+  },
+  {
+    code: 'e1200',
+    description:
+      'Ogólne produkty i technologie do poruszania się i transportu osobistego w pomieszczeniach i na zewnątrz',
+    category: 'environment',
+    subcategory: 'e1',
+  },
+  {
+    code: 'e1201',
+    description: 'Produkty i technologie wspomagające do poruszania się i transportu osobistego',
+    category: 'environment',
+    subcategory: 'e1',
+  },
 
   // ============================================
   // e3: WSPARCIE I RELACJE
@@ -318,7 +384,12 @@ export const ICF_CODES: ICFCodeData[] = [
   { code: 'e310', description: 'Najbliższa rodzina', category: 'environment', subcategory: 'e3' },
   { code: 'e315', description: 'Dalsza rodzina', category: 'environment', subcategory: 'e3' },
   { code: 'e320', description: 'Przyjaciele', category: 'environment', subcategory: 'e3' },
-  { code: 'e325', description: 'Znajomi, rówieśnicy, koledzy, sąsiedzi i członkowie społeczności', category: 'environment', subcategory: 'e3' },
+  {
+    code: 'e325',
+    description: 'Znajomi, rówieśnicy, koledzy, sąsiedzi i członkowie społeczności',
+    category: 'environment',
+    subcategory: 'e3',
+  },
   { code: 'e340', description: 'Opiekunowie i asystenci osobiści', category: 'environment', subcategory: 'e3' },
   { code: 'e355', description: 'Pracownicy służby zdrowia', category: 'environment', subcategory: 'e3' },
 
@@ -336,9 +407,7 @@ export const ICF_CODES: ICFCodeData[] = [
 export function searchICFCodes(query: string, limit = 20): ICFCodeData[] {
   const lowerQuery = query.toLowerCase();
   return ICF_CODES.filter(
-    (code) =>
-      code.code.toLowerCase().includes(lowerQuery) ||
-      code.description.toLowerCase().includes(lowerQuery)
+    (code) => code.code.toLowerCase().includes(lowerQuery) || code.description.toLowerCase().includes(lowerQuery)
   ).slice(0, limit);
 }
 
@@ -365,7 +434,7 @@ export const POPULAR_ICF_CODES = [
   'b28016', // Ból stawów
   'b4550', // Ogólna wytrzymałość fizyczna
   'b2600', // Czucie ułożenia ciała
-  
+
   // Struktury
   's75011', // Staw kolanowy
   's75010', // Staw biodrowy
@@ -373,7 +442,7 @@ export const POPULAR_ICF_CODES = [
   's7602', // Kręgi lędźwiowe
   's75030', // Więzadła kolana
   's76102', // Krążki międzykręgowe lędźwiowe
-  
+
   // Aktywność i uczestnictwo
   'd4500', // Chodzenie na krótkie dystanse
   'd4154', // Utrzymywanie pozycji stojącej
@@ -401,4 +470,3 @@ export const ICF_CATEGORY_COLORS: Record<ICFCategory, string> = {
   participation: 'bg-teal-500/20 text-teal-500 border-teal-500/30',
   environment: 'bg-orange-500/20 text-orange-500 border-orange-500/30',
 };
-

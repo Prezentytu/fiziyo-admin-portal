@@ -106,9 +106,9 @@ export interface ExerciseParams {
   loadText?: string;
   // Structured load (alternative to individual load fields)
   load?: {
-    type: "weight" | "band" | "bodyweight" | "other";
+    type: 'weight' | 'band' | 'bodyweight' | 'other';
     value?: number;
-    unit?: "kg" | "lbs" | "level";
+    unit?: 'kg' | 'lbs' | 'level';
     text: string;
   };
 }
@@ -119,31 +119,31 @@ export interface ExerciseSetBuilderProps {
   onNameChange: (name: string) => void;
   namePlaceholder?: string;
   nameLabel?: string;
-  
+
   // Exercises state (instances + params)
   selectedInstances: ExerciseInstance[];
   onSelectedInstancesChange: (instances: ExerciseInstance[]) => void;
   exerciseParams: Map<string, ExerciseParams>;
   onExerciseParamsChange: (params: Map<string, ExerciseParams>) => void;
-  
+
   // Available exercises
   availableExercises: BuilderExercise[];
   loadingExercises?: boolean;
-  
+
   // Tags for filtering
   tags?: ExerciseTag[];
-  
+
   // Exercise popularity for "Popular" section
   exercisePopularity?: Record<string, number>;
-  
+
   // AI integration
   showAI?: boolean;
   onAIClick?: () => void;
   aiButtonLabel?: string;
-  
+
   // Preview exercise callback
   onPreviewExercise?: (exercise: BuilderExercise) => void;
-  
+
   // Test IDs prefix
   testIdPrefix?: string;
 }
@@ -340,18 +340,18 @@ function SortableExerciseCard({
             <div className="flex items-center gap-1 mt-0.5">
               {hasSideSet && (
                 <span className="text-[9px] px-1.5 py-0.5 rounded bg-surface text-muted-foreground">
-                  {EXERCISE_SIDE_OPTIONS.find(o => o.value === params.exerciseSide)?.label}
+                  {EXERCISE_SIDE_OPTIONS.find((o) => o.value === params.exerciseSide)?.label}
                 </span>
               )}
               {params.loadType && (
                 <span className="text-[9px] px-1.5 py-0.5 rounded bg-surface text-muted-foreground">
-                  {params.loadValue ? `${params.loadValue}${params.loadUnit || ''}` : LOAD_TYPE_OPTIONS.find(o => o.value === params.loadType)?.label}
+                  {params.loadValue
+                    ? `${params.loadValue}${params.loadUnit || ''}`
+                    : LOAD_TYPE_OPTIONS.find((o) => o.value === params.loadType)?.label}
                 </span>
               )}
               {params.notes && (
-                <span className="text-[9px] px-1.5 py-0.5 rounded bg-surface text-muted-foreground">
-                  Notatka
-                </span>
+                <span className="text-[9px] px-1.5 py-0.5 rounded bg-surface text-muted-foreground">Notatka</span>
               )}
             </div>
           )}
@@ -359,18 +359,13 @@ function SortableExerciseCard({
 
         {/* Serie × Reps/Time - Stepper Controls */}
         <div className="flex items-center gap-2 shrink-0">
-          <LabeledStepper
-            value={params.sets ?? 3}
-            onChange={(v) => onUpdateParams('sets', v)}
-            min={1}
-            label="Serie"
-          />
+          <LabeledStepper value={params.sets ?? 3} onChange={(v) => onUpdateParams('sets', v)} min={1} label="Serie" />
           <LabeledStepper
             value={isTimeType ? (params.duration ?? 30) : (params.reps ?? 10)}
             onChange={(v) => onUpdateParams(isTimeType ? 'duration' : 'reps', v)}
             min={1}
-            label={isTimeType ? "Czas serii" : "Powt."}
-            suffix={isTimeType ? "s" : undefined}
+            label={isTimeType ? 'Czas serii' : 'Powt.'}
+            suffix={isTimeType ? 's' : undefined}
           />
           {(params.executionTime ?? 0) > 0 && (
             <LabeledStepper
@@ -708,7 +703,7 @@ export function ExerciseSetBuilder({
       preparationTime: 0,
       executionTime: exercise.defaultExecutionTime ?? 0,
       notes: '',
-      exerciseSide: (exercise.side?.toLowerCase() || exercise.exerciseSide) || 'both',
+      exerciseSide: exercise.side?.toLowerCase() || exercise.exerciseSide || 'both',
       customName: '',
       customDescription: '',
       tempo: '',
@@ -723,7 +718,7 @@ export function ExerciseSetBuilder({
   const updateExerciseParams = useCallback(
     (instanceId: string, field: keyof ExerciseParams, value: number | string) => {
       const next = new Map(exerciseParams);
-      const instance = selectedInstances.find(i => i.instanceId === instanceId);
+      const instance = selectedInstances.find((i) => i.instanceId === instanceId);
       const exercise = availableExercises.find((e) => e.id === instance?.exerciseId);
 
       const current =
@@ -778,14 +773,17 @@ export function ExerciseSetBuilder({
     [selectedInstances, exerciseParams, onSelectedInstancesChange, onExerciseParamsChange]
   );
 
-  const handleDragEnd = useCallback((event: DragEndEvent) => {
-    const { active, over } = event;
-    if (over && active.id !== over.id) {
-      const oldIndex = selectedInstances.findIndex(i => i.instanceId === active.id);
-      const newIndex = selectedInstances.findIndex(i => i.instanceId === over.id);
-      onSelectedInstancesChange(arrayMove(selectedInstances, oldIndex, newIndex));
-    }
-  }, [selectedInstances, onSelectedInstancesChange]);
+  const handleDragEnd = useCallback(
+    (event: DragEndEvent) => {
+      const { active, over } = event;
+      if (over && active.id !== over.id) {
+        const oldIndex = selectedInstances.findIndex((i) => i.instanceId === active.id);
+        const newIndex = selectedInstances.findIndex((i) => i.instanceId === over.id);
+        onSelectedInstancesChange(arrayMove(selectedInstances, oldIndex, newIndex));
+      }
+    },
+    [selectedInstances, onSelectedInstancesChange]
+  );
 
   // Resolved instances with exercise data
   const selectedInstancesData = useMemo(() => {
@@ -794,7 +792,7 @@ export function ExerciseSetBuilder({
         const exercise = availableExercises.find((ex) => ex.id === si.exerciseId);
         return exercise ? { ...si, exercise } : null;
       })
-      .filter((item): item is { instanceId: string, exerciseId: string, exercise: BuilderExercise } => item !== null);
+      .filter((item): item is { instanceId: string; exerciseId: string; exercise: BuilderExercise } => item !== null);
   }, [availableExercises, selectedInstances]);
 
   // Estimated time calculation
@@ -804,7 +802,7 @@ export function ExerciseSetBuilder({
     for (const { instanceId, exercise } of selectedInstancesData) {
       const params = exerciseParams.get(instanceId) || getDefaultParams(exercise);
       const isTimeType = exercise.type === 'time';
-      
+
       // Use defaults for undefined values
       const sets = params.sets ?? 3;
       const reps = params.reps ?? 10;
@@ -933,7 +931,7 @@ export function ExerciseSetBuilder({
                           <ExercisePickerItem
                             key={`popular-${exercise.id}`}
                             exercise={exercise}
-                            instanceCount={selectedInstances.filter(si => si.exerciseId === exercise.id).length}
+                            instanceCount={selectedInstances.filter((si) => si.exerciseId === exercise.id).length}
                             onAdd={() => addExerciseToSet(exercise)}
                             onPreview={() => onPreviewExercise?.(exercise)}
                             getExerciseTags={getExerciseTags}
@@ -954,16 +952,16 @@ export function ExerciseSetBuilder({
                     <div className="grid gap-2">
                       {(() => {
                         const showPopular = !searchQuery && categoryFilter === 'all' && popularExercises.length > 0;
-                        const popularIds = new Set(popularExercises.map(e => e.id));
+                        const popularIds = new Set(popularExercises.map((e) => e.id));
                         const exercisesToShow = showPopular
-                          ? filteredExercises.filter(e => !popularIds.has(e.id))
+                          ? filteredExercises.filter((e) => !popularIds.has(e.id))
                           : filteredExercises;
 
                         return exercisesToShow.map((exercise) => (
                           <ExercisePickerItem
                             key={exercise.id}
                             exercise={exercise}
-                            instanceCount={selectedInstances.filter(si => si.exerciseId === exercise.id).length}
+                            instanceCount={selectedInstances.filter((si) => si.exerciseId === exercise.id).length}
                             onAdd={() => addExerciseToSet(exercise)}
                             onPreview={() => onPreviewExercise?.(exercise)}
                             getExerciseTags={getExerciseTags}
@@ -1027,7 +1025,10 @@ export function ExerciseSetBuilder({
               </div>
             ) : (
               <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-                <SortableContext items={selectedInstances.map(i => i.instanceId)} strategy={verticalListSortingStrategy}>
+                <SortableContext
+                  items={selectedInstances.map((i) => i.instanceId)}
+                  strategy={verticalListSortingStrategy}
+                >
                   <div className="p-4 space-y-3">
                     {selectedInstancesData.map((data, index) => (
                       <SortableExerciseCard

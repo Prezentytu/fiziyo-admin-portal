@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { useMemo } from "react";
+import { useMemo } from 'react';
 import {
   Shield,
   CheckCircle2,
@@ -11,26 +11,21 @@ import {
   Tag,
   Image as ImageIcon,
   Settings,
-} from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { cn } from "@/lib/utils";
-import type { AdminExercise } from "@/graphql/types/adminExercise.types";
+} from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { cn } from '@/lib/utils';
+import type { AdminExercise } from '@/graphql/types/adminExercise.types';
 
 // Validation rule types
 export interface ValidationRule {
   id: string;
   label: string;
   description: string;
-  severity: "error" | "warning" | "info";
-  category: "content" | "media" | "tags" | "parameters";
+  severity: 'error' | 'warning' | 'info';
+  category: 'content' | 'media' | 'tags' | 'parameters';
   check: (exercise: AdminExercise) => boolean;
   autoDetect?: boolean;
 }
@@ -59,27 +54,27 @@ interface PublishGuardrailsProps {
   /** Dodatkowe klasy CSS */
   className?: string;
   /** data-testid */
-  "data-testid"?: string;
+  'data-testid'?: string;
 }
 
 // Default validation rules
 const DEFAULT_RULES: ValidationRule[] = [
   // Content rules
   {
-    id: "name-required",
-    label: "Nazwa ćwiczenia",
-    description: "Ćwiczenie musi mieć nazwę",
-    severity: "error",
-    category: "content",
+    id: 'name-required',
+    label: 'Nazwa ćwiczenia',
+    description: 'Ćwiczenie musi mieć nazwę',
+    severity: 'error',
+    category: 'content',
     check: (e) => !!(e.name && e.name.trim().length > 0),
     autoDetect: true,
   },
   {
-    id: "patient-description-required",
-    label: "Opis dla pacjenta",
-    description: "Opis dla pacjenta musi mieć min. 50 znaków",
-    severity: "error",
-    category: "content",
+    id: 'patient-description-required',
+    label: 'Opis dla pacjenta',
+    description: 'Opis dla pacjenta musi mieć min. 50 znaków',
+    severity: 'error',
+    category: 'content',
     check: (e) => {
       const desc = e.patientDescription || e.description;
       return !!(desc && desc.length >= 50);
@@ -87,11 +82,11 @@ const DEFAULT_RULES: ValidationRule[] = [
     autoDetect: true,
   },
   {
-    id: "description-quality",
-    label: "Jakość opisu",
-    description: "Opis powinien mieć min. 100 znaków dla lepszego zrozumienia",
-    severity: "warning",
-    category: "content",
+    id: 'description-quality',
+    label: 'Jakość opisu',
+    description: 'Opis powinien mieć min. 100 znaków dla lepszego zrozumienia',
+    severity: 'warning',
+    category: 'content',
     check: (e) => {
       const desc = e.patientDescription || e.description;
       return !!(desc && desc.length >= 100);
@@ -99,55 +94,53 @@ const DEFAULT_RULES: ValidationRule[] = [
     autoDetect: true,
   },
   {
-    id: "clinical-description",
-    label: "Opis kliniczny",
-    description: "Zalecany opis kliniczny dla profesjonalistów (min. 20 znaków)",
-    severity: "info",
-    category: "content",
+    id: 'clinical-description',
+    label: 'Opis kliniczny',
+    description: 'Zalecany opis kliniczny dla profesjonalistów (min. 20 znaków)',
+    severity: 'info',
+    category: 'content',
     check: (e) => !!(e.clinicalDescription && e.clinicalDescription.length >= 20),
     autoDetect: true,
   },
 
   // Media rules
   {
-    id: "has-media",
-    label: "Media wizualne",
-    description: "Ćwiczenie musi mieć zdjęcie, GIF lub wideo",
-    severity: "error",
-    category: "media",
-    check: (e) =>
-      !!(e.videoUrl || e.gifUrl || e.imageUrl || (e.images && e.images.length > 0)),
+    id: 'has-media',
+    label: 'Media wizualne',
+    description: 'Ćwiczenie musi mieć zdjęcie, GIF lub wideo',
+    severity: 'error',
+    category: 'media',
+    check: (e) => !!(e.videoUrl || e.gifUrl || e.imageUrl || (e.images && e.images.length > 0)),
     autoDetect: true,
   },
   {
-    id: "has-video-or-gif",
-    label: "Animacja lub wideo",
-    description: "Zalecane jest dodanie GIF lub wideo pokazującego ruch",
-    severity: "warning",
-    category: "media",
+    id: 'has-video-or-gif',
+    label: 'Animacja lub wideo',
+    description: 'Zalecane jest dodanie GIF lub wideo pokazującego ruch',
+    severity: 'warning',
+    category: 'media',
     check: (e) => !!(e.videoUrl || e.gifUrl),
     autoDetect: true,
   },
 
   // Tags rules
   {
-    id: "has-main-tags",
-    label: "Tagi główne",
-    description: "Ćwiczenie musi mieć min. 1 tag główny",
-    severity: "error",
-    category: "tags",
+    id: 'has-main-tags',
+    label: 'Tagi główne',
+    description: 'Ćwiczenie musi mieć min. 1 tag główny',
+    severity: 'error',
+    category: 'tags',
     check: (e) => !!(e.mainTags && e.mainTags.length > 0),
     autoDetect: true,
   },
   {
-    id: "has-multiple-tags",
-    label: "Kompletne tagowanie",
-    description: "Zalecane min. 3 tagi dla lepszego wyszukiwania",
-    severity: "warning",
-    category: "tags",
+    id: 'has-multiple-tags',
+    label: 'Kompletne tagowanie',
+    description: 'Zalecane min. 3 tagi dla lepszego wyszukiwania',
+    severity: 'warning',
+    category: 'tags',
     check: (e) => {
-      const totalTags =
-        (e.mainTags?.length || 0) + (e.additionalTags?.length || 0);
+      const totalTags = (e.mainTags?.length || 0) + (e.additionalTags?.length || 0);
       return totalTags >= 3;
     },
     autoDetect: true,
@@ -155,47 +148,47 @@ const DEFAULT_RULES: ValidationRule[] = [
 
   // Parameters rules
   {
-    id: "has-type",
-    label: "Typ ćwiczenia",
-    description: "Ćwiczenie musi mieć określony typ (powtórzenia/czas/izometryczne)",
-    severity: "error",
-    category: "parameters",
-    check: (e) => !!(e.type && e.type !== ""),
+    id: 'has-type',
+    label: 'Typ ćwiczenia',
+    description: 'Ćwiczenie musi mieć określony typ (powtórzenia/czas/izometryczne)',
+    severity: 'error',
+    category: 'parameters',
+    check: (e) => !!(e.type && e.type !== ''),
     autoDetect: true,
   },
   {
-    id: "has-difficulty-level",
-    label: "Poziom trudności",
-    description: "Ćwiczenie musi mieć określony poziom trudności",
-    severity: "error",
-    category: "parameters",
-    check: (e) => !!(e.difficultyLevel && e.difficultyLevel !== ""),
+    id: 'has-difficulty-level',
+    label: 'Poziom trudności',
+    description: 'Ćwiczenie musi mieć określony poziom trudności',
+    severity: 'error',
+    category: 'parameters',
+    check: (e) => !!(e.difficultyLevel && e.difficultyLevel !== ''),
     autoDetect: true,
   },
   {
-    id: "has-parameters",
-    label: "Parametry domyślne",
-    description: "Ćwiczenie powinno mieć serie, powtórzenia lub czas",
-    severity: "warning",
-    category: "parameters",
+    id: 'has-parameters',
+    label: 'Parametry domyślne',
+    description: 'Ćwiczenie powinno mieć serie, powtórzenia lub czas',
+    severity: 'warning',
+    category: 'parameters',
     check: (e) => !!(e.defaultSets || e.defaultReps || e.defaultDuration),
     autoDetect: true,
   },
   {
-    id: "has-tempo",
-    label: "Tempo ćwiczenia",
-    description: "Zalecane jest określenie tempa (np. 2-0-2)",
-    severity: "info",
-    category: "parameters",
-    check: (e) => !!(e.tempo && e.tempo.trim() !== ""),
+    id: 'has-tempo',
+    label: 'Tempo ćwiczenia',
+    description: 'Zalecane jest określenie tempa (np. 2-0-2)',
+    severity: 'info',
+    category: 'parameters',
+    check: (e) => !!(e.tempo && e.tempo.trim() !== ''),
     autoDetect: true,
   },
   {
-    id: "has-rest-times",
-    label: "Czasy przerw",
-    description: "Zalecane określenie przerw między seriami",
-    severity: "info",
-    category: "parameters",
+    id: 'has-rest-times',
+    label: 'Czasy przerw',
+    description: 'Zalecane określenie przerw między seriami',
+    severity: 'info',
+    category: 'parameters',
     check: (e) => !!(e.defaultRestBetweenSets && e.defaultRestBetweenSets > 0),
     autoDetect: true,
   },
@@ -214,7 +207,7 @@ export function PublishGuardrails({
   currentValues,
   onValidationChange,
   className,
-  "data-testid": testId,
+  'data-testid': testId,
 }: PublishGuardrailsProps) {
   // Merge current values with exercise data
   const mergedExercise = useMemo(
@@ -233,9 +226,7 @@ export function PublishGuardrails({
     }));
 
     // Notify parent
-    const hasErrors = results.some(
-      (r) => !r.passed && r.rule.severity === "error"
-    );
+    const hasErrors = results.some((r) => !r.passed && r.rule.severity === 'error');
     onValidationChange?.(!hasErrors, results);
 
     return results;
@@ -259,12 +250,8 @@ export function PublishGuardrails({
 
   // Calculate stats
   const stats = useMemo(() => {
-    const errors = validationResults.filter(
-      (r) => !r.passed && r.rule.severity === "error"
-    ).length;
-    const warnings = validationResults.filter(
-      (r) => !r.passed && r.rule.severity === "warning"
-    ).length;
+    const errors = validationResults.filter((r) => !r.passed && r.rule.severity === 'error').length;
+    const warnings = validationResults.filter((r) => !r.passed && r.rule.severity === 'warning').length;
     const passed = validationResults.filter((r) => r.passed).length;
     const total = validationResults.length;
     const score = Math.round((passed / total) * 100);
@@ -283,44 +270,33 @@ export function PublishGuardrails({
   };
 
   const categoryLabels: Record<string, string> = {
-    content: "Treść",
-    media: "Media",
-    tags: "Tagi",
-    parameters: "Parametry",
+    content: 'Treść',
+    media: 'Media',
+    tags: 'Tagi',
+    parameters: 'Parametry',
   };
 
   return (
-    <Card className={cn("border-border/60", className)} data-testid={testId}>
+    <Card className={cn('border-border/60', className)} data-testid={testId}>
       <CardHeader className="pb-2">
         <CardTitle className="text-sm font-medium flex items-center justify-between">
           <span className="flex items-center gap-2">
-            <Shield
-              className={cn(
-                "h-4 w-4",
-                canPublish ? "text-emerald-500" : "text-destructive"
-              )}
-            />
+            <Shield className={cn('h-4 w-4', canPublish ? 'text-emerald-500' : 'text-destructive')} />
             Gotowość do publikacji
           </span>
           <div className="flex items-center gap-2">
             {stats.errors > 0 && (
               <Badge variant="destructive" className="text-[10px]">
-                {stats.errors} {stats.errors === 1 ? "błąd" : "błędów"}
+                {stats.errors} {stats.errors === 1 ? 'błąd' : 'błędów'}
               </Badge>
             )}
             {stats.warnings > 0 && (
-              <Badge
-                variant="outline"
-                className="text-[10px] border-amber-500/40 text-amber-600"
-              >
-                {stats.warnings} {stats.warnings === 1 ? "ostrzeżenie" : "ostrzeżeń"}
+              <Badge variant="outline" className="text-[10px] border-amber-500/40 text-amber-600">
+                {stats.warnings} {stats.warnings === 1 ? 'ostrzeżenie' : 'ostrzeżeń'}
               </Badge>
             )}
             {canPublish && stats.warnings === 0 && (
-              <Badge
-                variant="outline"
-                className="text-[10px] border-emerald-500/40 text-emerald-600"
-              >
+              <Badge variant="outline" className="text-[10px] border-emerald-500/40 text-emerald-600">
                 <CheckCircle2 className="h-3 w-3 mr-1" />
                 Gotowe
               </Badge>
@@ -337,12 +313,8 @@ export function PublishGuardrails({
             </span>
             <span
               className={cn(
-                "font-medium",
-                stats.score === 100
-                  ? "text-emerald-500"
-                  : stats.score >= 70
-                  ? "text-amber-500"
-                  : "text-destructive"
+                'font-medium',
+                stats.score === 100 ? 'text-emerald-500' : stats.score >= 70 ? 'text-amber-500' : 'text-destructive'
               )}
             >
               {stats.score}%
@@ -351,12 +323,12 @@ export function PublishGuardrails({
           <Progress
             value={stats.score}
             className={cn(
-              "h-2",
+              'h-2',
               stats.score === 100
-                ? "[&>div]:bg-emerald-500"
+                ? '[&>div]:bg-emerald-500'
                 : stats.score >= 70
-                ? "[&>div]:bg-amber-500"
-                : "[&>div]:bg-destructive"
+                  ? '[&>div]:bg-amber-500'
+                  : '[&>div]:bg-destructive'
             )}
           />
         </div>
@@ -364,30 +336,18 @@ export function PublishGuardrails({
         {/* Validation results by category */}
         <div className="space-y-3">
           {Object.entries(groupedResults).map(([category, results]) => {
-            const categoryErrors = results.filter(
-              (r) => !r.passed && r.rule.severity === "error"
-            ).length;
-            const categoryWarnings = results.filter(
-              (r) => !r.passed && r.rule.severity === "warning"
-            ).length;
+            const categoryErrors = results.filter((r) => !r.passed && r.rule.severity === 'error').length;
+            const categoryWarnings = results.filter((r) => !r.passed && r.rule.severity === 'warning').length;
             const allPassed = categoryErrors === 0 && categoryWarnings === 0;
 
             return (
               <div key={category} className="space-y-1.5">
                 <div className="flex items-center gap-2 text-xs">
-                  <span
-                    className={cn(
-                      allPassed ? "text-emerald-500" : "text-muted-foreground"
-                    )}
-                  >
+                  <span className={cn(allPassed ? 'text-emerald-500' : 'text-muted-foreground')}>
                     {categoryIcons[category]}
                   </span>
-                  <span className="font-medium">
-                    {categoryLabels[category]}
-                  </span>
-                  {allPassed && (
-                    <CheckCircle2 className="h-3 w-3 text-emerald-500" />
-                  )}
+                  <span className="font-medium">{categoryLabels[category]}</span>
+                  {allPassed && <CheckCircle2 className="h-3 w-3 text-emerald-500" />}
                 </div>
                 <div className="pl-6 space-y-1">
                   {results.map((result) => (
@@ -405,16 +365,14 @@ export function PublishGuardrails({
             <CheckCircle2 className="h-4 w-4 shrink-0" />
             <span>
               {stats.warnings > 0
-                ? "Ćwiczenie może zostać opublikowane, ale rozważ poprawienie ostrzeżeń."
-                : "Ćwiczenie spełnia wszystkie wymagania i jest gotowe do publikacji."}
+                ? 'Ćwiczenie może zostać opublikowane, ale rozważ poprawienie ostrzeżeń.'
+                : 'Ćwiczenie spełnia wszystkie wymagania i jest gotowe do publikacji.'}
             </span>
           </div>
         ) : (
           <div className="flex items-center gap-2 p-2 rounded-md bg-destructive/10 text-destructive text-xs">
             <XCircle className="h-4 w-4 shrink-0" />
-            <span>
-              Ćwiczenie nie może zostać opublikowane. Popraw błędy oznaczone na czerwono.
-            </span>
+            <span>Ćwiczenie nie może zostać opublikowane. Popraw błędy oznaczone na czerwono.</span>
           </div>
         )}
       </CardContent>
@@ -430,9 +388,9 @@ function ValidationItem({ result }: { result: ValidationResult }) {
 
   const icon = passed ? (
     <CheckCircle2 className="h-3 w-3 text-emerald-500" />
-  ) : rule.severity === "error" ? (
+  ) : rule.severity === 'error' ? (
     <XCircle className="h-3 w-3 text-destructive" />
-  ) : rule.severity === "warning" ? (
+  ) : rule.severity === 'warning' ? (
     <AlertTriangle className="h-3 w-3 text-amber-500" />
   ) : (
     <Info className="h-3 w-3 text-blue-500" />
@@ -444,20 +402,18 @@ function ValidationItem({ result }: { result: ValidationResult }) {
         <TooltipTrigger asChild>
           <div
             className={cn(
-              "flex items-center gap-2 text-xs py-0.5 cursor-help",
+              'flex items-center gap-2 text-xs py-0.5 cursor-help',
               passed
-                ? "text-muted-foreground"
-                : rule.severity === "error"
-                ? "text-destructive"
-                : rule.severity === "warning"
-                ? "text-amber-600"
-                : "text-blue-600"
+                ? 'text-muted-foreground'
+                : rule.severity === 'error'
+                  ? 'text-destructive'
+                  : rule.severity === 'warning'
+                    ? 'text-amber-600'
+                    : 'text-blue-600'
             )}
           >
             {icon}
-            <span className={cn(passed && "line-through opacity-60")}>
-              {rule.label}
-            </span>
+            <span className={cn(passed && 'line-through opacity-60')}>{rule.label}</span>
           </div>
         </TooltipTrigger>
         <TooltipContent>
@@ -471,10 +427,7 @@ function ValidationItem({ result }: { result: ValidationResult }) {
 /**
  * Hook do walidacji ćwiczenia
  */
-export function useExerciseValidation(
-  exercise: AdminExercise | null,
-  currentValues?: Record<string, unknown>
-) {
+export function useExerciseValidation(exercise: AdminExercise | null, currentValues?: Record<string, unknown>) {
   return useMemo(() => {
     if (!exercise) {
       return {
@@ -493,12 +446,8 @@ export function useExerciseValidation(
       passed: rule.check(merged),
     }));
 
-    const errors = results.filter(
-      (r) => !r.passed && r.rule.severity === "error"
-    );
-    const warnings = results.filter(
-      (r) => !r.passed && r.rule.severity === "warning"
-    );
+    const errors = results.filter((r) => !r.passed && r.rule.severity === 'error');
+    const warnings = results.filter((r) => !r.passed && r.rule.severity === 'warning');
     const passed = results.filter((r) => r.passed).length;
     const score = Math.round((passed / results.length) * 100);
 

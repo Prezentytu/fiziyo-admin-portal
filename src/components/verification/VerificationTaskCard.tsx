@@ -1,15 +1,15 @@
-"use client";
+'use client';
 
-import { useState, useRef } from "react";
-import Link from "next/link";
-import { Clock, User, AlertCircle, ChevronRight, Undo2, Play, Building2 } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { ImagePlaceholder } from "@/components/shared/ImagePlaceholder";
-import { cn } from "@/lib/utils";
-import { getMediaUrl } from "@/utils/mediaUrl";
-import type { AdminExercise, ContentStatus } from "@/graphql/types/adminExercise.types";
+import { useState, useRef } from 'react';
+import Link from 'next/link';
+import { Clock, User, AlertCircle, ChevronRight, Undo2, Play, Building2 } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { ImagePlaceholder } from '@/components/shared/ImagePlaceholder';
+import { cn } from '@/lib/utils';
+import { getMediaUrl } from '@/utils/mediaUrl';
+import type { AdminExercise, ContentStatus } from '@/graphql/types/adminExercise.types';
 
 interface VerificationTaskCardProps {
   exercise: AdminExercise;
@@ -20,40 +20,56 @@ interface VerificationTaskCardProps {
 
 function getStatusBadge(status: ContentStatus) {
   switch (status) {
-    case "PENDING_REVIEW":
-      return { label: "Oczekuje", variant: "warning" as const, className: "bg-amber-500/10 text-amber-600 border-amber-500/20" };
-    case "CHANGES_REQUESTED":
-      return { label: "Do poprawy", variant: "destructive" as const, className: "bg-orange-500/10 text-orange-600 border-orange-500/20" };
-    case "APPROVED":
-      return { label: "Zatwierdzony", variant: "success" as const, className: "bg-emerald-500/10 text-emerald-600 border-emerald-500/20" };
-    case "PUBLISHED":
-      return { label: "Opublikowany", variant: "default" as const, className: "bg-primary/10 text-primary border-primary/20" };
+    case 'PENDING_REVIEW':
+      return {
+        label: 'Oczekuje',
+        variant: 'warning' as const,
+        className: 'bg-amber-500/10 text-amber-600 border-amber-500/20',
+      };
+    case 'CHANGES_REQUESTED':
+      return {
+        label: 'Do poprawy',
+        variant: 'destructive' as const,
+        className: 'bg-orange-500/10 text-orange-600 border-orange-500/20',
+      };
+    case 'APPROVED':
+      return {
+        label: 'Zatwierdzony',
+        variant: 'success' as const,
+        className: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20',
+      };
+    case 'PUBLISHED':
+      return {
+        label: 'Opublikowany',
+        variant: 'default' as const,
+        className: 'bg-primary/10 text-primary border-primary/20',
+      };
     default:
-      return { label: "Szkic", variant: "secondary" as const, className: "bg-muted text-muted-foreground" };
+      return { label: 'Szkic', variant: 'secondary' as const, className: 'bg-muted text-muted-foreground' };
   }
 }
 
 function getQualityIndicators(exercise: AdminExercise) {
-  const indicators: { label: string; type: "warning" | "info" }[] = [];
+  const indicators: { label: string; type: 'warning' | 'info' }[] = [];
 
   if (!exercise.videoUrl && !exercise.gifUrl) {
-    indicators.push({ label: "Brak wideo", type: "warning" });
+    indicators.push({ label: 'Brak wideo', type: 'warning' });
   }
   if (!exercise.imageUrl && (!exercise.images || exercise.images.length === 0)) {
-    indicators.push({ label: "Brak obrazu", type: "warning" });
+    indicators.push({ label: 'Brak obrazu', type: 'warning' });
   }
   if (!exercise.description || exercise.description.length < 50) {
-    indicators.push({ label: "Krótki opis", type: "warning" });
+    indicators.push({ label: 'Krótki opis', type: 'warning' });
   }
   if (!exercise.mainTags || exercise.mainTags.length === 0) {
-    indicators.push({ label: "Brak tagów", type: "warning" });
+    indicators.push({ label: 'Brak tagów', type: 'warning' });
   }
 
   return indicators;
 }
 
 function formatRelativeTime(dateString?: string): string {
-  if (!dateString) return "";
+  if (!dateString) return '';
 
   const date = new Date(dateString);
   const now = new Date();
@@ -61,19 +77,14 @@ function formatRelativeTime(dateString?: string): string {
   const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
   const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 
-  if (diffHours < 1) return "przed chwilą";
+  if (diffHours < 1) return 'przed chwilą';
   if (diffHours < 24) return `${diffHours} godz. temu`;
-  if (diffDays === 1) return "wczoraj";
+  if (diffDays === 1) return 'wczoraj';
   if (diffDays < 7) return `${diffDays} dni temu`;
   return `${Math.floor(diffDays / 7)} tyg. temu`;
 }
 
-export function VerificationTaskCard({
-  exercise,
-  className,
-  onUnpublish,
-  isUnpublishing,
-}: VerificationTaskCardProps) {
+export function VerificationTaskCard({ exercise, className, onUnpublish, isUnpublishing }: VerificationTaskCardProps) {
   const [isHovered, setIsHovered] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
 
@@ -84,7 +95,7 @@ export function VerificationTaskCard({
 
   const statusBadge = getStatusBadge(exercise.status);
   const qualityIndicators = getQualityIndicators(exercise);
-  const hasWarnings = qualityIndicators.some(i => i.type === "warning");
+  const hasWarnings = qualityIndicators.some((i) => i.type === 'warning');
 
   const handleUnpublish = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -117,9 +128,9 @@ export function VerificationTaskCard({
       <Card
         data-testid={`verification-card-${exercise.id}`}
         className={cn(
-          "group relative overflow-hidden transition-all duration-300 cursor-pointer",
-          "hover:-translate-y-1 hover:border-primary/40 hover:shadow-xl hover:shadow-primary/10",
-          hasWarnings && "border-amber-500/30",
+          'group relative overflow-hidden transition-all duration-300 cursor-pointer',
+          'hover:-translate-y-1 hover:border-primary/40 hover:shadow-xl hover:shadow-primary/10',
+          hasWarnings && 'border-amber-500/30',
           className
         )}
         onMouseEnter={handleMouseEnter}
@@ -133,8 +144,8 @@ export function VerificationTaskCard({
               <>
                 <div
                   className={cn(
-                    "absolute inset-0 bg-cover bg-center blur-xl opacity-40 scale-110 transition-opacity duration-300",
-                    isHovered && hasVideoPreview && "opacity-0"
+                    'absolute inset-0 bg-cover bg-center blur-xl opacity-40 scale-110 transition-opacity duration-300',
+                    isHovered && hasVideoPreview && 'opacity-0'
                   )}
                   style={{ backgroundImage: `url(${imageUrl})` }}
                 />
@@ -143,9 +154,9 @@ export function VerificationTaskCard({
                   alt={exercise.name}
                   loading="lazy"
                   className={cn(
-                    "relative h-full w-full object-contain transition-all duration-500",
-                    "group-hover:scale-[1.03]",
-                    isHovered && hasVideoPreview && "opacity-0"
+                    'relative h-full w-full object-contain transition-all duration-500',
+                    'group-hover:scale-[1.03]',
+                    isHovered && hasVideoPreview && 'opacity-0'
                   )}
                 />
               </>
@@ -157,8 +168,8 @@ export function VerificationTaskCard({
                 src={gifUrl}
                 alt={`${exercise.name} preview`}
                 className={cn(
-                  "absolute inset-0 h-full w-full object-contain transition-opacity duration-300",
-                  isHovered ? "opacity-100" : "opacity-0"
+                  'absolute inset-0 h-full w-full object-contain transition-opacity duration-300',
+                  isHovered ? 'opacity-100' : 'opacity-0'
                 )}
               />
             )}
@@ -172,32 +183,26 @@ export function VerificationTaskCard({
                 loop
                 playsInline
                 className={cn(
-                  "absolute inset-0 h-full w-full object-contain transition-opacity duration-300",
-                  isHovered ? "opacity-100" : "opacity-0"
+                  'absolute inset-0 h-full w-full object-contain transition-opacity duration-300',
+                  isHovered ? 'opacity-100' : 'opacity-0'
                 )}
               />
             )}
 
             {/* No image fallback */}
-            {!imageUrl && (
-              <ImagePlaceholder type="exercise" className="h-full" iconClassName="h-12 w-12" />
-            )}
+            {!imageUrl && <ImagePlaceholder type="exercise" className="h-full" iconClassName="h-12 w-12" />}
 
             {/* Video indicator badge */}
             {hasVideoPreview && !isHovered && (
               <div className="absolute bottom-3 left-3 flex items-center gap-1 px-2 py-1 rounded-md bg-black/60 backdrop-blur-sm">
                 <Play className="h-3 w-3 text-white fill-white" />
-                <span className="text-[10px] text-white font-medium">
-                  {gifUrl ? "GIF" : "Wideo"}
-                </span>
+                <span className="text-[10px] text-white font-medium">{gifUrl ? 'GIF' : 'Wideo'}</span>
               </div>
             )}
 
             {/* Status badge overlay */}
             <div className="absolute top-3 left-3">
-              <Badge className={cn("border", statusBadge.className)}>
-                {statusBadge.label}
-              </Badge>
+              <Badge className={cn('border', statusBadge.className)}>{statusBadge.label}</Badge>
             </div>
 
             {/* Quality warnings overlay */}
@@ -208,10 +213,10 @@ export function VerificationTaskCard({
                     key={idx}
                     variant="outline"
                     className={cn(
-                      "text-[10px] px-2 py-0.5 backdrop-blur-sm",
-                      indicator.type === "warning"
-                        ? "bg-amber-500/80 text-white border-amber-600"
-                        : "bg-info/80 text-white border-info"
+                      'text-[10px] px-2 py-0.5 backdrop-blur-sm',
+                      indicator.type === 'warning'
+                        ? 'bg-amber-500/80 text-white border-amber-600'
+                        : 'bg-info/80 text-white border-info'
                     )}
                   >
                     <AlertCircle className="h-3 w-3 mr-1" />
@@ -234,9 +239,7 @@ export function VerificationTaskCard({
                 {exercise.name}
               </h3>
               {exercise.description && (
-                <p className="text-xs text-muted-foreground line-clamp-2 mt-1">
-                  {exercise.description}
-                </p>
+                <p className="text-xs text-muted-foreground line-clamp-2 mt-1">{exercise.description}</p>
               )}
             </div>
 

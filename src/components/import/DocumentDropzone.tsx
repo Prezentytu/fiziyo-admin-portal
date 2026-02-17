@@ -17,20 +17,13 @@ interface DocumentDropzoneProps {
  * Dropzone do uploadu dokumentów - prosty, czytelny
  * Duża strefa, wyraźna ikona, jasne instrukcje
  */
-export function DocumentDropzone({
-  file,
-  onFileSelect,
-  disabled = false,
-  className,
-}: DocumentDropzoneProps) {
+export function DocumentDropzone({ file, onFileSelect, disabled = false, className }: DocumentDropzoneProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const validateFile = useCallback((f: File): string | null => {
     if (!documentImportService.isFormatSupported(f)) {
-      return `Nieobsługiwany format. Obsługiwane: ${documentImportService
-        .getSupportedFormats()
-        .join(', ')}`;
+      return `Nieobsługiwany format. Obsługiwane: ${documentImportService.getSupportedFormats().join(', ')}`;
     }
     if (!documentImportService.isFileSizeValid(f)) {
       return `Plik za duży. Maksymalny rozmiar: ${documentImportService.getMaxFileSizeMB()}MB`;
@@ -114,12 +107,7 @@ export function DocumentDropzone({
     const FileIcon = getFileIcon(file);
 
     return (
-      <div
-        className={cn(
-          'rounded-2xl border-2 border-primary/40 bg-primary/5 p-6',
-          className
-        )}
-      >
+      <div className={cn('rounded-2xl border-2 border-primary/40 bg-primary/5 p-6', className)}>
         <div className="flex items-center gap-4">
           {/* Duża ikona pliku */}
           <div className="flex h-16 w-16 items-center justify-center rounded-xl bg-primary/20">
@@ -128,23 +116,13 @@ export function DocumentDropzone({
 
           {/* Informacje o pliku */}
           <div className="min-w-0 flex-1">
-            <p className="text-lg font-medium text-foreground truncate">
-              {file.name}
-            </p>
-            <p className="text-sm text-muted-foreground mt-1">
-              {formatFileSize(file.size)}
-            </p>
+            <p className="text-lg font-medium text-foreground truncate">{file.name}</p>
+            <p className="text-sm text-muted-foreground mt-1">{formatFileSize(file.size)}</p>
           </div>
 
           {/* Przyciski */}
           <div className="flex gap-2 shrink-0">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleRemove}
-              disabled={disabled}
-              className="gap-2"
-            >
+            <Button variant="outline" size="sm" onClick={handleRemove} disabled={disabled} className="gap-2">
               <RefreshCw className="h-4 w-4" />
               Zmień plik
             </Button>
@@ -208,9 +186,7 @@ export function DocumentDropzone({
         <p className="mb-2 text-center text-lg font-medium text-foreground">
           {isDragging ? 'Upuść plik tutaj' : 'Przeciągnij plik tutaj'}
         </p>
-        <p className="text-center text-base text-muted-foreground mb-4">
-          lub kliknij aby wybrać z komputera
-        </p>
+        <p className="text-center text-base text-muted-foreground mb-4">lub kliknij aby wybrać z komputera</p>
 
         {/* Obsługiwane formaty */}
         <p className="text-center text-sm text-muted-foreground">

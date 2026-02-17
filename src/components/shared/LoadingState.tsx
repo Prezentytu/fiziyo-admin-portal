@@ -1,20 +1,16 @@
-import { Skeleton } from "@/components/ui/skeleton";
-import { cn } from "@/lib/utils";
+import { Skeleton } from '@/components/ui/skeleton';
+import { cn } from '@/lib/utils';
 
 interface LoadingStateProps {
   className?: string;
   count?: number;
-  type?: "card" | "row" | "text" | "exercise" | "exercise-row";
+  type?: 'card' | 'row' | 'text' | 'exercise' | 'exercise-row';
 }
 
-export function LoadingState({
-  className,
-  count = 3,
-  type = "card",
-}: LoadingStateProps) {
-  if (type === "text") {
+export function LoadingState({ className, count = 3, type = 'card' }: LoadingStateProps) {
+  if (type === 'text') {
     return (
-      <div className={cn("space-y-2", className)}>
+      <div className={cn('space-y-2', className)}>
         {Array.from({ length: count }).map((_, i) => (
           <Skeleton key={i} className="h-4 w-full" />
         ))}
@@ -22,9 +18,9 @@ export function LoadingState({
     );
   }
 
-  if (type === "row") {
+  if (type === 'row') {
     return (
-      <div className={cn("space-y-4", className)}>
+      <div className={cn('space-y-4', className)}>
         {Array.from({ length: count }).map((_, i) => (
           <div key={i} className="flex items-center space-x-4">
             <Skeleton className="h-12 w-12 rounded-full" />
@@ -39,14 +35,11 @@ export function LoadingState({
   }
 
   // Exercise card skeleton - matches ExerciseCard grid view
-  if (type === "exercise") {
+  if (type === 'exercise') {
     return (
       <>
         {Array.from({ length: count }).map((_, i) => (
-          <div
-            key={i}
-            className="flex flex-col rounded-xl border border-border/60 bg-surface overflow-hidden"
-          >
+          <div key={i} className="flex flex-col rounded-xl border border-border/60 bg-surface overflow-hidden">
             {/* Image section with badge overlay */}
             <div className="relative aspect-[16/10] bg-surface-light">
               <Skeleton className="absolute inset-0" />
@@ -89,14 +82,11 @@ export function LoadingState({
   }
 
   // Exercise row skeleton - matches ExerciseCard compact view
-  if (type === "exercise-row") {
+  if (type === 'exercise-row') {
     return (
       <>
         {Array.from({ length: count }).map((_, i) => (
-          <div
-            key={i}
-            className="flex items-center gap-4 rounded-xl border border-border/60 bg-surface p-3"
-          >
+          <div key={i} className="flex items-center gap-4 rounded-xl border border-border/60 bg-surface p-3">
             {/* Thumbnail */}
             <Skeleton className="h-14 w-14 flex-shrink-0 rounded-lg" />
 
@@ -125,12 +115,9 @@ export function LoadingState({
   }
 
   return (
-    <div className={cn("grid gap-4 md:grid-cols-2 lg:grid-cols-3", className)}>
+    <div className={cn('grid gap-4 md:grid-cols-2 lg:grid-cols-3', className)}>
       {Array.from({ length: count }).map((_, i) => (
-        <div
-          key={i}
-          className="rounded-lg border border-border bg-surface p-4 space-y-3"
-        >
+        <div key={i} className="rounded-lg border border-border bg-surface p-4 space-y-3">
           <Skeleton className="h-5 w-2/3" />
           <Skeleton className="h-4 w-full" />
           <Skeleton className="h-4 w-4/5" />

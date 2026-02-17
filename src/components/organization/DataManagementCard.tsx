@@ -1,26 +1,12 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import {
-  Database,
-  Download,
-  Trash2,
-  Loader2,
-  CheckCircle2,
-  AlertTriangle,
-  Package,
-} from "lucide-react";
+import { useState } from 'react';
+import { Database, Download, Trash2, Loader2, CheckCircle2, AlertTriangle, Package } from 'lucide-react';
 
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   Dialog,
   DialogContent,
@@ -28,8 +14,8 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { useDataManagement } from "@/hooks/useDataManagement";
+} from '@/components/ui/dialog';
+import { useDataManagement } from '@/hooks/useDataManagement';
 
 interface DataManagementCardProps {
   organizationId: string;
@@ -41,26 +27,16 @@ interface DataManagementCardProps {
  * Karta zarządzania danymi organizacji - import przykładowych zestawów i usuwanie danych.
  * Wyświetlana w zakładce Ustawienia organizacji.
  */
-export function DataManagementCard({
-  organizationId,
-  canEdit = false,
-  onRefresh,
-}: DataManagementCardProps) {
+export function DataManagementCard({ organizationId, canEdit = false, onRefresh }: DataManagementCardProps) {
   const [isClearDialogOpen, setIsClearDialogOpen] = useState(false);
-  const [clearPassword, setClearPassword] = useState("");
+  const [clearPassword, setClearPassword] = useState('');
 
-  const {
-    hasImportedExamples,
-    isImporting,
-    isClearing,
-    importExampleSets,
-    clearAllData,
-  } = useDataManagement({
+  const { hasImportedExamples, isImporting, isClearing, importExampleSets, clearAllData } = useDataManagement({
     organizationId,
     onImportSuccess: onRefresh,
     onClearSuccess: () => {
       setIsClearDialogOpen(false);
-      setClearPassword("");
+      setClearPassword('');
       onRefresh?.();
     },
   });
@@ -69,13 +45,13 @@ export function DataManagementCard({
     const success = await clearAllData(clearPassword);
     if (success) {
       setIsClearDialogOpen(false);
-      setClearPassword("");
+      setClearPassword('');
     }
   };
 
   const handleCloseClearDialog = () => {
     setIsClearDialogOpen(false);
-    setClearPassword("");
+    setClearPassword('');
   };
 
   if (!canEdit) {
@@ -101,9 +77,8 @@ export function DataManagementCard({
         </CardHeader>
         <CardContent className="space-y-4">
           <p className="text-sm text-muted-foreground leading-relaxed">
-            Importuj przykładowe zestawy ćwiczeń dla różnych schorzeń i
-            przypadków. Obejmuje gotowe programy rehabilitacyjne z ćwiczeniami,
-            kategoriami i tagami.
+            Importuj przykładowe zestawy ćwiczeń dla różnych schorzeń i przypadków. Obejmuje gotowe programy
+            rehabilitacyjne z ćwiczeniami, kategoriami i tagami.
           </p>
 
           <div className="flex items-center gap-4 pt-2">
@@ -119,11 +94,7 @@ export function DataManagementCard({
               ) : (
                 <Download className="h-4 w-4" />
               )}
-              {isImporting
-                ? "Importowanie..."
-                : hasImportedExamples
-                  ? "Zaimportowano"
-                  : "Importuj przykładowe zestawy"}
+              {isImporting ? 'Importowanie...' : hasImportedExamples ? 'Zaimportowano' : 'Importuj przykładowe zestawy'}
             </Button>
 
             {hasImportedExamples && (
@@ -159,13 +130,14 @@ export function DataManagementCard({
                 <Database className="h-5 w-5 text-destructive" />
               </div>
               <div className="flex-1 space-y-2">
-                <h4 className="font-bold text-foreground">
-                  Usuń wszystkie dane
-                </h4>
+                <h4 className="font-bold text-foreground">Usuń wszystkie dane</h4>
                 <p className="text-sm text-muted-foreground leading-relaxed">
-                  Ta operacja nieodwracalnie usunie <strong className="text-destructive font-bold uppercase text-[10px] tracking-widest bg-destructive/10 px-1.5 py-0.5 rounded ml-1">Wszystkie dane</strong>: ćwiczenia,
-                  zestawy, tagi i kategorie z Twojej organizacji. Przypisania
-                  pacjentów również zostaną usunięte.
+                  Ta operacja nieodwracalnie usunie{' '}
+                  <strong className="text-destructive font-bold uppercase text-[10px] tracking-widest bg-destructive/10 px-1.5 py-0.5 rounded ml-1">
+                    Wszystkie dane
+                  </strong>
+                  : ćwiczenia, zestawy, tagi i kategorie z Twojej organizacji. Przypisania pacjentów również zostaną
+                  usunięte.
                 </p>
                 <div className="pt-2">
                   <Button
@@ -193,22 +165,19 @@ export function DataManagementCard({
               Potwierdź usunięcie wszystkich danych
             </DialogTitle>
             <DialogDescription>
-              Ta operacja jest <strong>nieodwracalna</strong>. Wszystkie
-              ćwiczenia, zestawy, tagi i kategorie zostaną trwale usunięte.
+              Ta operacja jest <strong>nieodwracalna</strong>. Wszystkie ćwiczenia, zestawy, tagi i kategorie zostaną
+              trwale usunięte.
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 py-4">
             <div className="rounded-lg bg-destructive/10 p-3 text-sm text-destructive">
-              <strong>UWAGA:</strong> Ta operacja usunie wszystkie dane
-              związane z ćwiczeniami w Twojej organizacji. Upewnij się, że
-              masz kopię zapasową, jeśli jest potrzebna.
+              <strong>UWAGA:</strong> Ta operacja usunie wszystkie dane związane z ćwiczeniami w Twojej organizacji.
+              Upewnij się, że masz kopię zapasową, jeśli jest potrzebna.
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="confirm-password">
-                Wprowadź hasło aby potwierdzić
-              </Label>
+              <Label htmlFor="confirm-password">Wprowadź hasło aby potwierdzić</Label>
               <Input
                 id="confirm-password"
                 type="password"
@@ -230,12 +199,8 @@ export function DataManagementCard({
               disabled={isClearing || !clearPassword}
               className="gap-2"
             >
-              {isClearing ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Trash2 className="h-4 w-4" />
-              )}
-              {isClearing ? "Usuwanie..." : "Usuń wszystko"}
+              {isClearing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+              {isClearing ? 'Usuwanie...' : 'Usuń wszystko'}
             </Button>
           </DialogFooter>
         </DialogContent>

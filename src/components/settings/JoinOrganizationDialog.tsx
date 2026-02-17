@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import { useState, useEffect, useCallback } from "react";
-import { useLazyQuery, useMutation } from "@apollo/client/react";
+import { useState, useEffect, useCallback } from 'react';
+import { useLazyQuery, useMutation } from '@apollo/client/react';
 import {
   Building2,
   Loader2,
@@ -12,25 +12,19 @@ import {
   AlertTriangle,
   UserPlus,
   ArrowRight,
-} from "lucide-react";
-import { toast } from "sonner";
+} from 'lucide-react';
+import { toast } from 'sonner';
 
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Card, CardContent } from "@/components/ui/card";
-import { GET_INVITATION_BY_TOKEN_QUERY } from "@/graphql/queries/organizations.queries";
-import { ACCEPT_INVITATION_MUTATION } from "@/graphql/mutations/organizations.mutations";
-import type { OrganizationInvitation } from "@/types/apollo";
-import { cn } from "@/lib/utils";
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Card, CardContent } from '@/components/ui/card';
+import { GET_INVITATION_BY_TOKEN_QUERY } from '@/graphql/queries/organizations.queries';
+import { ACCEPT_INVITATION_MUTATION } from '@/graphql/mutations/organizations.mutations';
+import type { OrganizationInvitation } from '@/types/apollo';
+import { cn } from '@/lib/utils';
 
 // ========================================
 // Types
@@ -46,14 +40,7 @@ interface GetInvitationByTokenResponse {
   invitationByToken: OrganizationInvitation | null;
 }
 
-type ValidationState =
-  | "idle"
-  | "validating"
-  | "valid"
-  | "expired"
-  | "not_found"
-  | "already_used"
-  | "revoked";
+type ValidationState = 'idle' | 'validating' | 'valid' | 'expired' | 'not_found' | 'already_used' | 'revoked';
 
 // ========================================
 // Helpers
@@ -67,7 +54,7 @@ function extractToken(input: string): string | null {
   // Try parsing as URL
   try {
     const url = new URL(trimmed);
-    return url.searchParams.get("token");
+    return url.searchParams.get('token');
   } catch {
     // Not a URL - treat as raw token
     // Validation: token should be at least 20 chars, alphanumeric with dashes/underscores
@@ -80,11 +67,11 @@ function extractToken(input: string): string | null {
 
 function getRoleLabel(role: string): string {
   const labels: Record<string, string> = {
-    OWNER: "Właściciel",
-    ADMIN: "Administrator",
-    THERAPIST: "Fizjoterapeuta",
-    MEMBER: "Członek",
-    STAFF: "Personel",
+    OWNER: 'Właściciel',
+    ADMIN: 'Administrator',
+    THERAPIST: 'Fizjoterapeuta',
+    MEMBER: 'Członek',
+    STAFF: 'Personel',
   };
   return labels[role?.toUpperCase()] || role;
 }
@@ -93,28 +80,22 @@ function getRoleLabel(role: string): string {
 // Component
 // ========================================
 
-export function JoinOrganizationDialog({
-  open,
-  onOpenChange,
-  onSuccess,
-}: JoinOrganizationDialogProps) {
-  const [inputValue, setInputValue] = useState("");
-  const [validationState, setValidationState] = useState<ValidationState>("idle");
+export function JoinOrganizationDialog({ open, onOpenChange, onSuccess }: JoinOrganizationDialogProps) {
+  const [inputValue, setInputValue] = useState('');
+  const [validationState, setValidationState] = useState<ValidationState>('idle');
   const [isAccepting, setIsAccepting] = useState(false);
 
   // Query for validating token
-  const [validateToken, { data: inviteData, loading: validating }] =
-    useLazyQuery<GetInvitationByTokenResponse>(GET_INVITATION_BY_TOKEN_QUERY, {
-      fetchPolicy: "network-only",
-    });
+  const [validateToken, { data: inviteData, loading: validating }] = useLazyQuery<GetInvitationByTokenResponse>(
+    GET_INVITATION_BY_TOKEN_QUERY,
+    {
+      fetchPolicy: 'network-only',
+    }
+  );
 
   // Accept mutation
   const [acceptInvitation] = useMutation(ACCEPT_INVITATION_MUTATION, {
-    refetchQueries: [
-      "GetUserOrganizations",
-      "GetOrganizationInvitations",
-      "GetOrganizationInvitationStats",
-    ],
+    refetchQueries: ['GetUserOrganizations', 'GetOrganizationInvitations', 'GetOrganizationInvitationStats'],
     awaitRefetchQueries: false,
   });
 
@@ -125,11 +106,11 @@ export function JoinOrganizationDialog({
     const token = extractToken(inputValue);
 
     if (!token) {
-      setValidationState("idle");
+      setValidationState('idle');
       return;
     }
 
-    setValidationState("validating");
+    setValidationState('validating');
 
     const timeoutId = setTimeout(() => {
       validateToken({ variables: { token } });
@@ -141,41 +122,41 @@ export function JoinOrganizationDialog({
   // Update validation state based on query result
   useEffect(() => {
     if (validating) {
-      setValidationState("validating");
+      setValidationState('validating');
       return;
     }
 
     const token = extractToken(inputValue);
     if (!token) {
-      setValidationState("idle");
+      setValidationState('idle');
       return;
     }
 
     if (!invitation) {
-      setValidationState("not_found");
+      setValidationState('not_found');
       return;
     }
 
     const isExpired = new Date(invitation.expiresAt) < new Date();
 
     if (isExpired) {
-      setValidationState("expired");
-    } else if (invitation.status === "accepted") {
-      setValidationState("already_used");
-    } else if (invitation.status === "revoked") {
-      setValidationState("revoked");
-    } else if (invitation.status === "pending") {
-      setValidationState("valid");
+      setValidationState('expired');
+    } else if (invitation.status === 'accepted') {
+      setValidationState('already_used');
+    } else if (invitation.status === 'revoked') {
+      setValidationState('revoked');
+    } else if (invitation.status === 'pending') {
+      setValidationState('valid');
     } else {
-      setValidationState("not_found");
+      setValidationState('not_found');
     }
   }, [invitation, validating, inputValue]);
 
   // Reset state when dialog closes
   useEffect(() => {
     if (!open) {
-      setInputValue("");
-      setValidationState("idle");
+      setInputValue('');
+      setValidationState('idle');
       setIsAccepting(false);
     }
   }, [open]);
@@ -183,7 +164,7 @@ export function JoinOrganizationDialog({
   // Handle accept
   const handleAccept = useCallback(async () => {
     const token = extractToken(inputValue);
-    if (!token || validationState !== "valid") return;
+    if (!token || validationState !== 'valid') return;
 
     setIsAccepting(true);
 
@@ -192,12 +173,11 @@ export function JoinOrganizationDialog({
         variables: { invitationToken: token },
       });
 
-      toast.success("Dołączyłeś do organizacji!");
+      toast.success('Dołączyłeś do organizacji!');
       onOpenChange(false);
       onSuccess?.();
     } catch (error: unknown) {
-      const errorMessage =
-        error instanceof Error ? error.message : "Nieznany błąd";
+      const errorMessage = error instanceof Error ? error.message : 'Nieznany błąd';
       toast.error(`Błąd: ${errorMessage}`);
       setIsAccepting(false);
     }
@@ -211,9 +191,7 @@ export function JoinOrganizationDialog({
             <UserPlus className="h-5 w-5 text-primary" />
             Dołącz do organizacji
           </DialogTitle>
-          <DialogDescription>
-            Wklej link zaproszenia otrzymany od właściciela gabinetu
-          </DialogDescription>
+          <DialogDescription>Wklej link zaproszenia otrzymany od właściciela gabinetu</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
@@ -229,26 +207,24 @@ export function JoinOrganizationDialog({
                 autoFocus
                 data-testid="settings-join-org-token-input"
               />
-              {validationState === "validating" && (
+              {validationState === 'validating' && (
                 <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground animate-spin" />
               )}
-              {validationState === "valid" && (
+              {validationState === 'valid' && (
                 <CheckCircle className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-primary" />
               )}
-              {(validationState === "expired" ||
-                validationState === "not_found" ||
-                validationState === "already_used" ||
-                validationState === "revoked") && (
+              {(validationState === 'expired' ||
+                validationState === 'not_found' ||
+                validationState === 'already_used' ||
+                validationState === 'revoked') && (
                 <XCircle className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-destructive" />
               )}
             </div>
-            <p className="text-xs text-muted-foreground">
-              Możesz wkleić pełny link lub sam token zaproszenia
-            </p>
+            <p className="text-xs text-muted-foreground">Możesz wkleić pełny link lub sam token zaproszenia</p>
           </div>
 
           {/* Validation states */}
-          {validationState === "expired" && (
+          {validationState === 'expired' && (
             <Card className="border-amber-500/30 bg-amber-500/5">
               <CardContent className="flex items-center gap-3 p-4">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-amber-500/20">
@@ -256,15 +232,13 @@ export function JoinOrganizationDialog({
                 </div>
                 <div>
                   <p className="font-medium text-foreground">Zaproszenie wygasło</p>
-                  <p className="text-sm text-muted-foreground">
-                    Poproś o nowy link zaproszenia
-                  </p>
+                  <p className="text-sm text-muted-foreground">Poproś o nowy link zaproszenia</p>
                 </div>
               </CardContent>
             </Card>
           )}
 
-          {validationState === "not_found" && inputValue.trim() && (
+          {validationState === 'not_found' && inputValue.trim() && (
             <Card className="border-destructive/30 bg-destructive/5">
               <CardContent className="flex items-center gap-3 p-4">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-destructive/20">
@@ -272,15 +246,13 @@ export function JoinOrganizationDialog({
                 </div>
                 <div>
                   <p className="font-medium text-foreground">Nie znaleziono zaproszenia</p>
-                  <p className="text-sm text-muted-foreground">
-                    Sprawdź poprawność linku lub tokena
-                  </p>
+                  <p className="text-sm text-muted-foreground">Sprawdź poprawność linku lub tokena</p>
                 </div>
               </CardContent>
             </Card>
           )}
 
-          {validationState === "already_used" && (
+          {validationState === 'already_used' && (
             <Card className="border-border/60 bg-surface-light">
               <CardContent className="flex items-center gap-3 p-4">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/20">
@@ -288,15 +260,13 @@ export function JoinOrganizationDialog({
                 </div>
                 <div>
                   <p className="font-medium text-foreground">Zaproszenie już wykorzystane</p>
-                  <p className="text-sm text-muted-foreground">
-                    To zaproszenie zostało już zaakceptowane
-                  </p>
+                  <p className="text-sm text-muted-foreground">To zaproszenie zostało już zaakceptowane</p>
                 </div>
               </CardContent>
             </Card>
           )}
 
-          {validationState === "revoked" && (
+          {validationState === 'revoked' && (
             <Card className="border-destructive/30 bg-destructive/5">
               <CardContent className="flex items-center gap-3 p-4">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-destructive/20">
@@ -304,16 +274,14 @@ export function JoinOrganizationDialog({
                 </div>
                 <div>
                   <p className="font-medium text-foreground">Zaproszenie anulowane</p>
-                  <p className="text-sm text-muted-foreground">
-                    To zaproszenie zostało wycofane przez administratora
-                  </p>
+                  <p className="text-sm text-muted-foreground">To zaproszenie zostało wycofane przez administratora</p>
                 </div>
               </CardContent>
             </Card>
           )}
 
           {/* Valid invitation preview */}
-          {validationState === "valid" && invitation && (
+          {validationState === 'valid' && invitation && (
             <Card className="border-primary/30 bg-primary/5 overflow-hidden">
               <div className="h-1 bg-gradient-to-r from-primary via-emerald-500 to-primary" />
               <CardContent className="p-4 space-y-4">
@@ -321,10 +289,7 @@ export function JoinOrganizationDialog({
                 <div className="flex items-center gap-4">
                   {invitation.organization?.logoUrl ? (
                     <Avatar className="h-14 w-14 ring-2 ring-primary/20">
-                      <AvatarImage
-                        src={invitation.organization.logoUrl}
-                        alt={invitation.organization.name}
-                      />
+                      <AvatarImage src={invitation.organization.logoUrl} alt={invitation.organization.name} />
                       <AvatarFallback className="bg-gradient-to-br from-primary to-primary-dark text-primary-foreground font-bold">
                         {invitation.organization.name?.slice(0, 2).toUpperCase()}
                       </AvatarFallback>
@@ -336,7 +301,7 @@ export function JoinOrganizationDialog({
                   )}
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-lg text-foreground truncate">
-                      {invitation.organization?.name || "Organizacja"}
+                      {invitation.organization?.name || 'Organizacja'}
                     </p>
                     <div className="flex items-center gap-2 mt-1">
                       <span className="text-sm text-muted-foreground">Dołączysz jako:</span>
@@ -351,18 +316,13 @@ export function JoinOrganizationDialog({
                 {invitation.invitedBy && (
                   <div className="flex items-center gap-3 rounded-lg bg-surface p-3 border border-border/60">
                     <Avatar className="h-10 w-10">
-                      <AvatarImage
-                        src={invitation.invitedBy.image ?? undefined}
-                        alt={invitation.invitedBy.fullname}
-                      />
+                      <AvatarImage src={invitation.invitedBy.image ?? undefined} alt={invitation.invitedBy.fullname} />
                       <AvatarFallback className="bg-primary/20 text-primary text-sm font-medium">
                         {invitation.invitedBy.fullname?.slice(0, 2).toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium text-foreground truncate">
-                        {invitation.invitedBy.fullname}
-                      </p>
+                      <p className="text-sm font-medium text-foreground truncate">{invitation.invitedBy.fullname}</p>
                       <p className="text-xs text-muted-foreground">zaprosił(a) Cię</p>
                     </div>
                   </div>
@@ -371,9 +331,7 @@ export function JoinOrganizationDialog({
                 {/* Message */}
                 {invitation.message && (
                   <div className="rounded-lg bg-surface p-3 border border-border/60">
-                    <p className="text-sm text-muted-foreground italic">
-                      &ldquo;{invitation.message}&rdquo;
-                    </p>
+                    <p className="text-sm text-muted-foreground italic">&ldquo;{invitation.message}&rdquo;</p>
                   </div>
                 )}
               </CardContent>
@@ -392,11 +350,11 @@ export function JoinOrganizationDialog({
             </Button>
             <Button
               onClick={handleAccept}
-              disabled={validationState !== "valid" || isAccepting}
+              disabled={validationState !== 'valid' || isAccepting}
               className={cn(
-                "gap-2",
-                validationState === "valid" &&
-                  "bg-gradient-to-r from-primary to-emerald-600 hover:from-primary-dark hover:to-emerald-700"
+                'gap-2',
+                validationState === 'valid' &&
+                  'bg-gradient-to-r from-primary to-emerald-600 hover:from-primary-dark hover:to-emerald-700'
               )}
               data-testid="settings-join-org-submit-btn"
             >

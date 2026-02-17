@@ -1,19 +1,19 @@
-"use client";
+'use client';
 
-import { useState, useMemo } from "react";
-import { Users, UserPlus, Search, X, Crown, ShieldCheck, User } from "lucide-react";
+import { useState, useMemo } from 'react';
+import { Users, UserPlus, Search, X, Crown, ShieldCheck, User } from 'lucide-react';
 
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
-import { EmptyState } from "@/components/shared/EmptyState";
-import { MemberCard, OrganizationMember } from "./MemberCard";
-import { SubscriptionBanner } from "@/components/subscription/SubscriptionBanner";
-import { matchesSearchQuery } from "@/utils/textUtils";
-import { cn } from "@/lib/utils";
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
+import { EmptyState } from '@/components/shared/EmptyState';
+import { MemberCard, OrganizationMember } from './MemberCard';
+import { SubscriptionBanner } from '@/components/subscription/SubscriptionBanner';
+import { matchesSearchQuery } from '@/utils/textUtils';
+import { cn } from '@/lib/utils';
 
-type RoleFilter = "all" | "admin" | "therapist";
+type RoleFilter = 'all' | 'admin' | 'therapist';
 
 interface SubscriptionLimits {
   maxTherapists?: number;
@@ -44,14 +44,14 @@ interface TeamSectionProps {
 }
 
 const roleConfig = {
-  owner: { label: "Właściciel", icon: Crown, color: "text-amber-500", priority: 0 },
-  admin: { label: "Administratorzy", icon: ShieldCheck, color: "text-blue-500", priority: 1 },
-  therapist: { label: "Fizjoterapeuci", icon: User, color: "text-primary", priority: 2 },
-  member: { label: "Członkowie", icon: User, color: "text-muted-foreground", priority: 3 },
+  owner: { label: 'Właściciel', icon: Crown, color: 'text-amber-500', priority: 0 },
+  admin: { label: 'Administratorzy', icon: ShieldCheck, color: 'text-blue-500', priority: 1 },
+  therapist: { label: 'Fizjoterapeuci', icon: User, color: 'text-primary', priority: 2 },
+  member: { label: 'Członkowie', icon: User, color: 'text-muted-foreground', priority: 3 },
 };
 
 // Filter out patients - only show staff members
-const STAFF_ROLES = new Set(["owner", "admin", "therapist", "member"]);
+const STAFF_ROLES = new Set(['owner', 'admin', 'therapist', 'member']);
 
 export function TeamSection({
   members,
@@ -64,11 +64,11 @@ export function TeamSection({
   onRefresh,
   limits,
   currentUsage,
-  planName = "Free",
+  planName = 'Free',
   therapistPatientCounts,
 }: TeamSectionProps) {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [roleFilter, setRoleFilter] = useState<RoleFilter>("all");
+  const [searchQuery, setSearchQuery] = useState('');
+  const [roleFilter, setRoleFilter] = useState<RoleFilter>('all');
 
   // Pre-emptive limit check for therapists
   const maxTherapists = limits?.maxTherapists;
@@ -77,33 +77,28 @@ export function TeamSection({
 
   // Filter to staff only (exclude patients)
   const staffMembers = useMemo(() => {
-    return members.filter((m) =>
-      STAFF_ROLES.has(m.role.toLowerCase())
-    );
+    return members.filter((m) => STAFF_ROLES.has(m.role.toLowerCase()));
   }, [members]);
 
   // Apply search and role filter
   const filteredMembers = useMemo(() => {
     return staffMembers.filter((member) => {
       // Role filter
-      if (roleFilter !== "all") {
+      if (roleFilter !== 'all') {
         const memberRole = member.role.toLowerCase();
-        if (roleFilter === "admin" && memberRole !== "owner" && memberRole !== "admin") {
+        if (roleFilter === 'admin' && memberRole !== 'owner' && memberRole !== 'admin') {
           return false;
         }
-        if (roleFilter === "therapist" && memberRole !== "therapist") {
+        if (roleFilter === 'therapist' && memberRole !== 'therapist') {
           return false;
         }
       }
 
       // Search filter
       if (searchQuery) {
-        const fullName = member.user?.fullname || "";
-        const email = member.user?.email || "";
-        return (
-          matchesSearchQuery(fullName, searchQuery) ||
-          matchesSearchQuery(email, searchQuery)
-        );
+        const fullName = member.user?.fullname || '';
+        const email = member.user?.email || '';
+        return matchesSearchQuery(fullName, searchQuery) || matchesSearchQuery(email, searchQuery);
       }
 
       return true;
@@ -129,7 +124,7 @@ export function TeamSection({
     return groups;
   }, [filteredMembers]);
 
-  const hasActiveFilters = searchQuery || roleFilter !== "all";
+  const hasActiveFilters = searchQuery || roleFilter !== 'all';
 
   if (isLoading) {
     return (
@@ -163,12 +158,16 @@ export function TeamSection({
           <div>
             <h2 className="text-xl font-bold tracking-tight text-foreground">Twój Zespół</h2>
             <p className="text-sm text-muted-foreground">
-              {staffMembers.length} {staffMembers.length === 1 ? "osoba" : "osób"} w organizacji
+              {staffMembers.length} {staffMembers.length === 1 ? 'osoba' : 'osób'} w organizacji
             </p>
           </div>
         </div>
         {canInvite && !isAtTherapistLimit && (
-          <Button onClick={onInviteClick} className="gap-2 bg-primary text-white font-bold h-11 px-8 rounded-xl shadow-lg shadow-primary/20 transition-all hover:bg-primary/90" data-testid="org-team-invite-btn">
+          <Button
+            onClick={onInviteClick}
+            className="gap-2 bg-primary text-white font-bold h-11 px-8 rounded-xl shadow-lg shadow-primary/20 transition-all hover:bg-primary/90"
+            data-testid="org-team-invite-btn"
+          >
             <UserPlus className="h-4 w-4" />
             Zaproś do zespołu
           </Button>
@@ -189,21 +188,21 @@ export function TeamSection({
       {/* Filters and Search */}
       <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
         <div className="flex items-center gap-2 p-1 rounded-xl bg-accent/30 border border-border/40 w-full md:w-auto overflow-x-auto">
-          {(["all", "admin", "therapist"] as RoleFilter[]).map((filter) => (
+          {(['all', 'admin', 'therapist'] as RoleFilter[]).map((filter) => (
             <button
               key={filter}
               onClick={() => setRoleFilter(filter)}
               className={cn(
-                "px-4 py-1.5 text-xs font-medium rounded-lg transition-all whitespace-nowrap",
+                'px-4 py-1.5 text-xs font-medium rounded-lg transition-all whitespace-nowrap',
                 roleFilter === filter
-                  ? "bg-background text-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground hover:bg-background/50"
+                  ? 'bg-background text-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-background/50'
               )}
               data-testid={`org-team-filter-${filter}`}
             >
-              {filter === "all" && "Wszyscy"}
-              {filter === "admin" && "Administratorzy"}
-              {filter === "therapist" && "Fizjoterapeuci"}
+              {filter === 'all' && 'Wszyscy'}
+              {filter === 'admin' && 'Administratorzy'}
+              {filter === 'therapist' && 'Fizjoterapeuci'}
             </button>
           ))}
         </div>
@@ -220,7 +219,7 @@ export function TeamSection({
           {searchQuery && (
             <button
               className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-              onClick={() => setSearchQuery("")}
+              onClick={() => setSearchQuery('')}
             >
               <X className="h-4 w-4" />
             </button>
@@ -232,15 +231,14 @@ export function TeamSection({
       {hasActiveFilters && (
         <div className="flex items-center gap-2">
           <span className="text-sm text-muted-foreground">
-            Znaleziono{" "}
-            <span className="font-semibold text-foreground">{filteredMembers.length}</span> pracownik(ów)
+            Znaleziono <span className="font-semibold text-foreground">{filteredMembers.length}</span> pracownik(ów)
           </span>
           <Button
             variant="ghost"
             size="sm"
             onClick={() => {
-              setSearchQuery("");
-              setRoleFilter("all");
+              setSearchQuery('');
+              setRoleFilter('all');
             }}
             className="h-7 text-xs hover:bg-accent/50 rounded-lg text-primary"
           >
@@ -253,18 +251,14 @@ export function TeamSection({
       {filteredMembers.length === 0 ? (
         <EmptyState
           icon={Users}
-          title={hasActiveFilters ? "Nie znaleziono osób" : "Brak członków zespołu"}
-          description={
-            hasActiveFilters
-              ? "Spróbuj zmienić kryteria wyszukiwania"
-              : "Zaproś pierwszą osobę do zespołu"
-          }
-          actionLabel={!hasActiveFilters && canInvite && !isAtTherapistLimit ? "Zaproś do zespołu" : undefined}
+          title={hasActiveFilters ? 'Nie znaleziono osób' : 'Brak członków zespołu'}
+          description={hasActiveFilters ? 'Spróbuj zmienić kryteria wyszukiwania' : 'Zaproś pierwszą osobę do zespołu'}
+          actionLabel={!hasActiveFilters && canInvite && !isAtTherapistLimit ? 'Zaproś do zespołu' : undefined}
           onAction={!hasActiveFilters && canInvite && !isAtTherapistLimit ? onInviteClick : undefined}
         />
       ) : (
         <div className="space-y-6">
-          {(["owner", "admin", "therapist", "member"] as const).map((role) => {
+          {(['owner', 'admin', 'therapist', 'member'] as const).map((role) => {
             const roleMembers = groupedMembers[role];
             if (roleMembers.length === 0) return null;
 
@@ -274,10 +268,8 @@ export function TeamSection({
             return (
               <div key={role} className="space-y-3">
                 <div className="flex items-center gap-2 px-1">
-                  <Icon className={cn("h-4 w-4", config.color)} />
-                  <span className="text-sm font-medium text-muted-foreground">
-                    {config.label}
-                  </span>
+                  <Icon className={cn('h-4 w-4', config.color)} />
+                  <span className="text-sm font-medium text-muted-foreground">{config.label}</span>
                   <Badge variant="secondary" className="h-5 px-1.5 text-xs">
                     {roleMembers.length}
                   </Badge>

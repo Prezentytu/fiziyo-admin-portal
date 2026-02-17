@@ -1,31 +1,31 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { useQuery } from "@apollo/client/react";
-import { useUser } from "@clerk/nextjs";
-import { User, Building2, Eye, Settings } from "lucide-react";
+import { useState } from 'react';
+import { useQuery } from '@apollo/client/react';
+import { useUser } from '@clerk/nextjs';
+import { User, Building2, Eye, Settings } from 'lucide-react';
 
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent } from "@/components/ui/card";
-import { LoadingState } from "@/components/shared/LoadingState";
-import { EmptyState } from "@/components/shared/EmptyState";
-import { ProfileForm, UserProfile } from "@/components/settings/ProfileForm";
-import { OrganizationsList, UserOrganization } from "@/components/settings/OrganizationsList";
-import { AccessibilitySettings } from "@/components/settings/AccessibilitySettings";
-import { SettingsTab } from "@/components/organization/SettingsTab";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Card, CardContent } from '@/components/ui/card';
+import { LoadingState } from '@/components/shared/LoadingState';
+import { EmptyState } from '@/components/shared/EmptyState';
+import { ProfileForm, UserProfile } from '@/components/settings/ProfileForm';
+import { OrganizationsList, UserOrganization } from '@/components/settings/OrganizationsList';
+import { AccessibilitySettings } from '@/components/settings/AccessibilitySettings';
+import { SettingsTab } from '@/components/organization/SettingsTab';
 
-import { GET_USER_BY_CLERK_ID_QUERY, GET_USER_ORGANIZATIONS_QUERY } from "@/graphql/queries/users.queries";
-import { GET_ORGANIZATION_BY_ID_QUERY } from "@/graphql/queries/organizations.queries";
-import { useOrganization } from "@/contexts/OrganizationContext";
-import { useRoleAccess } from "@/hooks/useRoleAccess";
-import type { UserByClerkIdResponse, UserOrganizationsResponse, OrganizationByIdResponse } from "@/types/apollo";
+import { GET_USER_BY_CLERK_ID_QUERY, GET_USER_ORGANIZATIONS_QUERY } from '@/graphql/queries/users.queries';
+import { GET_ORGANIZATION_BY_ID_QUERY } from '@/graphql/queries/organizations.queries';
+import { useOrganization } from '@/contexts/OrganizationContext';
+import { useRoleAccess } from '@/hooks/useRoleAccess';
+import type { UserByClerkIdResponse, UserOrganizationsResponse, OrganizationByIdResponse } from '@/types/apollo';
 
 export default function SettingsPage() {
   const { user: clerkUser } = useUser();
   const { currentOrganization } = useOrganization();
   const { canManageOrganization } = useRoleAccess();
   const organizationId = currentOrganization?.organizationId;
-  const [activeTab, setActiveTab] = useState("profile");
+  const [activeTab, setActiveTab] = useState('profile');
 
   // Get user data
   const {
@@ -38,7 +38,11 @@ export default function SettingsPage() {
   });
 
   // Get user organizations
-  const { data: orgsData, loading: orgsLoading, refetch: refetchOrganizations } = useQuery(GET_USER_ORGANIZATIONS_QUERY, {
+  const {
+    data: orgsData,
+    loading: orgsLoading,
+    refetch: refetchOrganizations,
+  } = useQuery(GET_USER_ORGANIZATIONS_QUERY, {
     skip: !clerkUser?.id,
   });
 
@@ -105,11 +109,18 @@ export default function SettingsPage() {
 
   return (
     <div className="flex h-[calc(100vh-64px)] -m-4 lg:-m-6 overflow-hidden bg-background">
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="flex w-full overflow-hidden" orientation="vertical">
+      <Tabs
+        value={activeTab}
+        onValueChange={setActiveTab}
+        className="flex w-full overflow-hidden"
+        orientation="vertical"
+      >
         {/* Inner Sidebar */}
         <div className="w-64 border-r border-border/40 bg-transparent flex flex-col shrink-0">
           <div className="p-6">
-            <h1 className="text-xl font-bold text-foreground mb-6" data-testid="settings-page-title">Ustawienia</h1>
+            <h1 className="text-xl font-bold text-foreground mb-6" data-testid="settings-page-title">
+              Ustawienia
+            </h1>
 
             <TabsList className="flex flex-col h-auto bg-transparent p-0 items-stretch gap-1">
               <TabsTrigger
@@ -158,7 +169,7 @@ export default function SettingsPage() {
         <div className="flex-1 overflow-y-auto bg-background/30">
           <div className="max-w-4xl mx-auto p-8 lg:p-12 pb-24">
             <TabsContent value="profile" className="mt-0 outline-none">
-              <ProfileForm user={userProfile} clerkId={clerkUser?.id || ""} onSuccess={() => refetchUser()} />
+              <ProfileForm user={userProfile} clerkId={clerkUser?.id || ''} onSuccess={() => refetchUser()} />
             </TabsContent>
 
             {canManageOrganization && (
@@ -194,7 +205,7 @@ export default function SettingsPage() {
                   organizations={organizations as UserOrganization[]}
                   defaultOrganizationId={userByClerkId.organizationIds?.[0]}
                   onOrganizationsChange={() => refetchOrganizations()}
-                  onNavigateToOrganization={() => setActiveTab("organization")}
+                  onNavigateToOrganization={() => setActiveTab('organization')}
                 />
               )}
             </TabsContent>

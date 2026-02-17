@@ -84,12 +84,15 @@ export default function ImportPage() {
   const showNotesWarning = stats.notesToCreate > 0 && !selectedPatientId;
 
   // Handler kliknięcia w krok (nawigacja wstecz)
-  const handleStepClick = useCallback((stepId: StepId, index: number) => {
-    // Można klikać tylko w ukończone kroki
-    if (index < currentStepIndex && goToStep) {
-      goToStep(stepId);
-    }
-  }, [currentStepIndex, goToStep]);
+  const handleStepClick = useCallback(
+    (stepId: StepId, index: number) => {
+      // Można klikać tylko w ukończone kroki
+      if (index < currentStepIndex && goToStep) {
+        goToStep(stepId);
+      }
+    },
+    [currentStepIndex, goToStep]
+  );
 
   return (
     <div className="min-h-screen" data-testid="import-page">
@@ -100,10 +103,10 @@ export default function ImportPage() {
             <Sparkles className="h-7 w-7 text-primary" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-foreground" data-testid="import-page-title">Import dokumentów</h1>
-            <p className="text-muted-foreground">
-              Wyciągnij ćwiczenia, zestawy i notatki z dokumentów PDF lub Excel
-            </p>
+            <h1 className="text-2xl font-bold text-foreground" data-testid="import-page-title">
+              Import dokumentów
+            </h1>
+            <p className="text-muted-foreground">Wyciągnij ćwiczenia, zestawy i notatki z dokumentów PDF lub Excel</p>
           </div>
         </div>
       </div>
@@ -122,7 +125,8 @@ export default function ImportPage() {
                 key={s.id}
                 className={cn(
                   'flex flex-1 items-center',
-                  index < stepConfig.length - 1 && 'after:mx-3 after:h-0.5 after:flex-1 after:transition-colors after:duration-200',
+                  index < stepConfig.length - 1 &&
+                    'after:mx-3 after:h-0.5 after:flex-1 after:transition-colors after:duration-200',
                   index < stepConfig.length - 1 && (isCompleted ? 'after:bg-primary' : 'after:bg-border')
                 )}
               >
@@ -144,26 +148,18 @@ export default function ImportPage() {
                       isActive
                         ? 'bg-primary text-white'
                         : isCompleted
-                        ? 'bg-primary text-white'
-                        : 'bg-surface-light text-muted-foreground'
+                          ? 'bg-primary text-white'
+                          : 'bg-surface-light text-muted-foreground'
                     )}
                   >
-                    {isCompleted ? (
-                      <Check className="h-5 w-5" />
-                    ) : (
-                      <Icon className="h-5 w-5" />
-                    )}
+                    {isCompleted ? <Check className="h-5 w-5" /> : <Icon className="h-5 w-5" />}
                   </div>
 
                   {/* Etykieta - zawsze widoczna */}
                   <span
                     className={cn(
                       'text-sm font-medium transition-colors duration-200 hidden sm:block',
-                      isActive
-                        ? 'text-foreground'
-                        : isCompleted
-                        ? 'text-foreground'
-                        : 'text-muted-foreground'
+                      isActive ? 'text-foreground' : isCompleted ? 'text-foreground' : 'text-muted-foreground'
                     )}
                   >
                     {s.label}
@@ -193,19 +189,13 @@ export default function ImportPage() {
             <Card>
               <CardContent className="p-8">
                 <div className="text-center mb-8">
-                  <h2 className="text-xl font-bold text-foreground mb-2">
-                    Wybierz dokument do analizy
-                  </h2>
+                  <h2 className="text-xl font-bold text-foreground mb-2">Wybierz dokument do analizy</h2>
                   <p className="text-muted-foreground">
                     AI przeanalizuje plik i znajdzie ćwiczenia, zestawy oraz notatki
                   </p>
                 </div>
 
-                <DocumentDropzone
-                  file={file}
-                  onFileSelect={setFile}
-                  disabled={isAnalyzing}
-                />
+                <DocumentDropzone file={file} onFileSelect={setFile} disabled={isAnalyzing} />
               </CardContent>
             </Card>
           </div>
@@ -251,12 +241,11 @@ export default function ImportPage() {
                 <CardContent className="flex items-start gap-4 p-5">
                   <AlertTriangle className="h-6 w-6 text-warning shrink-0 mt-0.5" />
                   <div>
-                    <p className="font-semibold text-foreground">
-                      Notatki nie zostaną zaimportowane
-                    </p>
+                    <p className="font-semibold text-foreground">Notatki nie zostaną zaimportowane</p>
                     <p className="text-sm text-muted-foreground mt-1">
-                      Wybierz pacjenta powyżej, aby zaimportować {stats.notesToCreate} {stats.notesToCreate === 1 ? 'notatkę' : 'notatki'}.
-                      Ćwiczenia i zestawy zostaną zaimportowane normalnie.
+                      Wybierz pacjenta powyżej, aby zaimportować {stats.notesToCreate}{' '}
+                      {stats.notesToCreate === 1 ? 'notatkę' : 'notatki'}. Ćwiczenia i zestawy zostaną zaimportowane
+                      normalnie.
                     </p>
                   </div>
                 </CardContent>
@@ -318,20 +307,15 @@ export default function ImportPage() {
             )}
 
             {/* Empty state */}
-            {analysisResult.exerciseSets.length === 0 &&
-              analysisResult.clinicalNotes.length === 0 && (
-                <Card>
-                  <CardContent className="py-16 text-center">
-                    <Layers className="mx-auto mb-4 h-16 w-16 text-muted-foreground/30" />
-                    <p className="text-lg text-muted-foreground">
-                      Nie znaleziono zestawów ani notatek
-                    </p>
-                    <p className="text-sm text-muted-foreground mt-2">
-                      Możesz kontynuować z samymi ćwiczeniami
-                    </p>
-                  </CardContent>
-                </Card>
-              )}
+            {analysisResult.exerciseSets.length === 0 && analysisResult.clinicalNotes.length === 0 && (
+              <Card>
+                <CardContent className="py-16 text-center">
+                  <Layers className="mx-auto mb-4 h-16 w-16 text-muted-foreground/30" />
+                  <p className="text-lg text-muted-foreground">Nie znaleziono zestawów ani notatek</p>
+                  <p className="text-sm text-muted-foreground mt-2">Możesz kontynuować z samymi ćwiczeniami</p>
+                </CardContent>
+              </Card>
+            )}
           </div>
         )}
 
@@ -370,11 +354,7 @@ export default function ImportPage() {
                 className="gap-2 h-12 px-8 bg-primary hover:bg-primary-dark"
                 data-testid="import-analyze-btn"
               >
-                {isAnalyzing ? (
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                ) : (
-                  <Sparkles className="h-5 w-5" />
-                )}
+                {isAnalyzing ? <Loader2 className="h-5 w-5 animate-spin" /> : <Sparkles className="h-5 w-5" />}
                 Analizuj dokument
               </Button>
             )}
@@ -387,11 +367,7 @@ export default function ImportPage() {
                 className="gap-2 h-12 px-8 bg-primary hover:bg-primary-dark"
                 data-testid="import-execute-btn"
               >
-                {isImporting ? (
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                ) : (
-                  <CheckCircle className="h-5 w-5" />
-                )}
+                {isImporting ? <Loader2 className="h-5 w-5 animate-spin" /> : <CheckCircle className="h-5 w-5" />}
                 Importuj dane
               </Button>
             )}

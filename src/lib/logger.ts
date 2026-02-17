@@ -59,8 +59,7 @@ function createNoopLogger(): AppLogger {
   return { debug: noop, info: noop, warn: noop, error: noop };
 }
 
-export const logger: AppLogger =
-  process.env.NODE_ENV === 'production' ? createNoopLogger() : createConsoleLogger();
+export const logger: AppLogger = process.env.NODE_ENV === 'production' ? createNoopLogger() : createConsoleLogger();
 
 export function createModuleLogger(module: string): AppLogger {
   return {

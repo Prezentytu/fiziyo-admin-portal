@@ -80,12 +80,8 @@ export function ImportProgress({ className }: ImportProgressProps) {
 
       {/* Główny komunikat */}
       <div className="mb-8 text-center">
-        <h2 className="mb-2 text-2xl font-bold text-foreground">
-          Analizuję Twój dokument...
-        </h2>
-        <p className="text-muted-foreground">
-          To może potrwać do minuty – proszę, nie zamykaj strony
-        </p>
+        <h2 className="mb-2 text-2xl font-bold text-foreground">Analizuję Twój dokument...</h2>
+        <p className="text-muted-foreground">To może potrwać do minuty – proszę, nie zamykaj strony</p>
       </div>
 
       {/* 3 kroki - bez paska postępu, z animacją */}
@@ -112,8 +108,8 @@ export function ImportProgress({ className }: ImportProgressProps) {
                   isComplete
                     ? 'bg-primary text-white'
                     : isActive
-                    ? 'bg-primary/20 text-primary'
-                    : 'bg-surface-light text-muted-foreground'
+                      ? 'bg-primary/20 text-primary'
+                      : 'bg-surface-light text-muted-foreground'
                 )}
               >
                 {isComplete ? (
@@ -133,23 +129,17 @@ export function ImportProgress({ className }: ImportProgressProps) {
                     isActive
                       ? 'font-semibold text-foreground'
                       : isComplete
-                      ? 'font-medium text-foreground'
-                      : 'text-muted-foreground'
+                        ? 'font-medium text-foreground'
+                        : 'text-muted-foreground'
                   )}
                 >
                   {step.label}
                 </span>
-                {isActive && (
-                  <p className="text-sm text-muted-foreground mt-0.5 truncate">
-                    {step.description}
-                  </p>
-                )}
+                {isActive && <p className="text-sm text-muted-foreground mt-0.5 truncate">{step.description}</p>}
               </div>
 
               {/* Status indicator */}
-              {isComplete && (
-                <Check className="h-5 w-5 text-primary shrink-0" />
-              )}
+              {isComplete && <Check className="h-5 w-5 text-primary shrink-0" />}
             </div>
           );
         })}
@@ -158,21 +148,14 @@ export function ImportProgress({ className }: ImportProgressProps) {
       {/* Rotujący tip - informacyjny, żeby użytkownik wiedział co się dzieje */}
       <div className="w-full max-w-md">
         <div className="rounded-xl bg-surface-light/50 px-6 py-4 text-center">
-          <p
-            className="text-sm text-muted-foreground transition-opacity duration-500"
-            key={currentTipIndex}
-          >
+          <p className="text-sm text-muted-foreground transition-opacity duration-500" key={currentTipIndex}>
             {tips[currentTipIndex]}
           </p>
         </div>
       </div>
 
       {/* Licznik czasu - dla przejrzystości */}
-      {elapsedSeconds > 10 && (
-        <p className="mt-6 text-xs text-muted-foreground/60">
-          Czas analizy: {elapsedSeconds}s
-        </p>
-      )}
+      {elapsedSeconds > 10 && <p className="mt-6 text-xs text-muted-foreground/60">Czas analizy: {elapsedSeconds}s</p>}
     </div>
   );
 }

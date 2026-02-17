@@ -95,6 +95,3 @@ export function getStatusColorClass(status: string): string {
       return 'bg-gray-500/20 text-gray-700 border-gray-500/30';
   }
 }
-
-
-

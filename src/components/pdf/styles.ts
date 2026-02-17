@@ -6,21 +6,21 @@ import './registerFonts';
 // Kolory - CLEAN MEDICAL: Flat Design, Economy of Ink
 const colors = {
   // Podstawowe
-  text: '#18181b',           // zinc-900
-  textMuted: '#52525b',      // zinc-600
-  textLight: '#a1a1aa',      // zinc-400
+  text: '#18181b', // zinc-900
+  textMuted: '#52525b', // zinc-600
+  textLight: '#a1a1aa', // zinc-400
 
   // Tła - minimalne!
   background: '#ffffff',
-  surface: '#fafafa',        // zinc-50
+  surface: '#fafafa', // zinc-50
 
   // Ramki
-  border: '#e4e4e7',         // zinc-200
-  borderLight: '#f4f4f5',    // zinc-100
-  borderDark: '#18181b',     // zinc-900
+  border: '#e4e4e7', // zinc-200
+  borderLight: '#f4f4f5', // zinc-100
+  borderDark: '#18181b', // zinc-900
 
   // Akcenty - tylko tekst!
-  accent: '#047857',         // emerald-700
+  accent: '#047857', // emerald-700
 
   // Ostrzeżenia
   warning: '#fef9c3',

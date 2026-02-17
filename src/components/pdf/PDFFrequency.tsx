@@ -24,14 +24,10 @@ const DAYS = [
  * - Jeśli brak wybranych dni -> pokaż "Codziennie / Wg uznania" (bez pustych kółek!)
  */
 export function PDFFrequency({ frequency }: PDFFrequencyProps) {
-  const timesPerDayText = frequency.timesPerDay
-    ? `${formatTimes(frequency.timesPerDay)} dziennie`
-    : null;
+  const timesPerDayText = frequency.timesPerDay ? `${formatTimes(frequency.timesPerDay)} dziennie` : null;
 
   // Sprawdź czy są wybrane konkretne dni
-  const selectedDays = DAYS.filter(
-    (day) => frequency[day.key as keyof PDFFrequencyType] === true
-  );
+  const selectedDays = DAYS.filter((day) => frequency[day.key as keyof PDFFrequencyType] === true);
   const hasSpecificDays = selectedDays.length > 0 && selectedDays.length < 7;
   const isEveryDay = selectedDays.length === 7;
 
@@ -61,17 +57,9 @@ export function PDFFrequency({ frequency }: PDFFrequencyProps) {
                 return (
                   <View
                     key={day.key}
-                    style={[
-                      pdfStyles.dayBox,
-                      isActive ? pdfStyles.dayBoxActive : pdfStyles.dayBoxInactive,
-                    ]}
+                    style={[pdfStyles.dayBox, isActive ? pdfStyles.dayBoxActive : pdfStyles.dayBoxInactive]}
                   >
-                    <Text
-                      style={[
-                        pdfStyles.dayText,
-                        isActive ? pdfStyles.dayTextActive : pdfStyles.dayTextInactive,
-                      ]}
-                    >
+                    <Text style={[pdfStyles.dayText, isActive ? pdfStyles.dayTextActive : pdfStyles.dayTextInactive]}>
                       {day.label}
                     </Text>
                   </View>
@@ -83,19 +71,20 @@ export function PDFFrequency({ frequency }: PDFFrequencyProps) {
           // Brak konkretnych dni lub wszystkie dni - elegancki napis
           <View style={pdfStyles.frequencyItem}>
             <Text style={pdfStyles.frequencyLabel}>Dni treningowe: </Text>
-            <Text style={pdfStyles.frequencyValueAccent}>
-              {isEveryDay ? 'Codziennie' : 'Codziennie / Wg uznania'}
-            </Text>
+            <Text style={pdfStyles.frequencyValueAccent}>{isEveryDay ? 'Codziennie' : 'Codziennie / Wg uznania'}</Text>
           </View>
         )}
 
         {/* Przerwa między sesjami - tylko jeśli sensowna wartość */}
-        {frequency.breakBetweenSets && frequency.breakBetweenSets > 0 && frequency.timesPerDay && frequency.timesPerDay > 1 && (
-          <View style={pdfStyles.frequencyItem}>
-            <Text style={pdfStyles.frequencyLabel}>Min. przerwa między sesjami: </Text>
-            <Text style={pdfStyles.frequencyValue}>{frequency.breakBetweenSets}h</Text>
-          </View>
-        )}
+        {frequency.breakBetweenSets &&
+          frequency.breakBetweenSets > 0 &&
+          frequency.timesPerDay &&
+          frequency.timesPerDay > 1 && (
+            <View style={pdfStyles.frequencyItem}>
+              <Text style={pdfStyles.frequencyLabel}>Min. przerwa między sesjami: </Text>
+              <Text style={pdfStyles.frequencyValue}>{frequency.breakBetweenSets}h</Text>
+            </View>
+          )}
       </View>
     </View>
   );

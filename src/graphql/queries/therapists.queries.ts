@@ -1,4 +1,4 @@
-import { gql } from "@apollo/client";
+import { gql } from '@apollo/client';
 
 /**
  * Query do pobierania pacjentów przypisanych do fizjoterapeuty
@@ -55,9 +55,7 @@ export const GET_THERAPIST_PATIENTS_QUERY = gql`
  */
 export const GET_ALL_THERAPIST_PATIENTS_QUERY = gql`
   query GetAllTherapistPatients($therapistId: String!, $organizationId: String!) {
-    therapistPatients(
-      where: { therapistId: { eq: $therapistId }, organizationId: { eq: $organizationId } }
-    ) {
+    therapistPatients(where: { therapistId: { eq: $therapistId }, organizationId: { eq: $organizationId } }) {
       id
       therapistId
       patientId

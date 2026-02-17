@@ -333,7 +333,12 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
     <div className="space-y-6">
       {/* Compact Header */}
       <div className="flex items-center justify-between">
-        <Button variant="ghost" onClick={() => router.push('/exercise-sets')} className="gap-2" data-testid="set-detail-back-btn">
+        <Button
+          variant="ghost"
+          onClick={() => router.push('/exercise-sets')}
+          className="gap-2"
+          data-testid="set-detail-back-btn"
+        >
           <ArrowLeft className="h-4 w-4" />
           Powrót do zestawów
         </Button>
@@ -370,10 +375,10 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
 
       {/* Hero Section: Title + Description */}
       <div className="space-y-2">
-        <h1 className="text-2xl font-bold text-foreground" data-testid="set-detail-name">{exerciseSet.name}</h1>
-        {exerciseSet.description && (
-          <p className="text-muted-foreground">{exerciseSet.description}</p>
-        )}
+        <h1 className="text-2xl font-bold text-foreground" data-testid="set-detail-name">
+          {exerciseSet.name}
+        </h1>
+        {exerciseSet.description && <p className="text-muted-foreground">{exerciseSet.description}</p>}
       </div>
 
       {/* Hero Action + Quick Stats */}
@@ -392,12 +397,8 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
               <UserPlus className="h-5 w-5 text-white" />
             </div>
             <div className="min-w-0 flex-1">
-              <h3 className="text-base font-bold text-white">
-                Przypisz pacjenta
-              </h3>
-              <p className="text-sm text-white/70">
-                Dodaj do programu
-              </p>
+              <h3 className="text-base font-bold text-white">Przypisz pacjenta</h3>
+              <p className="text-sm text-white/70">Dodaj do programu</p>
             </div>
             <Plus className="h-5 w-5 text-white/60 group-hover:text-white transition-colors shrink-0" />
           </div>
@@ -432,9 +433,7 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
               </span>
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              {exerciseSet?.frequency?.timesPerDay
-                ? `${exerciseSet.frequency.timesPerDay}x/dzień`
-                : 'tygodniowo'}
+              {exerciseSet?.frequency?.timesPerDay ? `${exerciseSet.frequency.timesPerDay}x/dzień` : 'tygodniowo'}
             </p>
           </div>
         </div>
@@ -498,7 +497,9 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
                     {/* Info */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <p className="font-semibold truncate">{mapping.customName || mapping.exercise?.name || 'Nieznane ćwiczenie'}</p>
+                        <p className="font-semibold truncate">
+                          {mapping.customName || mapping.exercise?.name || 'Nieznane ćwiczenie'}
+                        </p>
                         {mapping.customName && (
                           <Badge variant="outline" className="text-[10px] shrink-0 border-primary/30 text-primary">
                             zmieniona
@@ -652,9 +653,7 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
                         </div>
                       )}
                       {assignment.completionCount !== undefined && assignment.completionCount > 0 && (
-                        <p className="text-xs text-muted-foreground mt-1">
-                          Wykonano: {assignment.completionCount}x
-                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">Wykonano: {assignment.completionCount}x</p>
                       )}
                     </div>
                     <DropdownMenu>
@@ -777,34 +776,38 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
           open={isAssignDialogOpen}
           onOpenChange={setIsAssignDialogOpen}
           mode="from-set"
-          preselectedSet={{
-            id: exerciseSet.id,
-            name: exerciseSet.name,
-            description: exerciseSet.description,
-            exerciseMappings: exerciseSet.exerciseMappings?.map((m) => ({
-              id: m.id,
-              exerciseId: m.exerciseId,
-              order: m.order,
-              sets: m.sets,
-              reps: m.reps,
-              duration: m.duration,
-              restSets: m.restSets,
-              restReps: m.restReps,
-              notes: m.notes,
-              exercise: m.exercise ? {
-                id: m.exercise.id,
-                name: m.exercise.name,
-                description: m.exercise.patientDescription || m.exercise.description,
-                patientDescription: m.exercise.patientDescription,
-                type: m.exercise.type,
-                imageUrl: m.exercise.thumbnailUrl || m.exercise.imageUrl,
-                thumbnailUrl: m.exercise.thumbnailUrl,
-                images: m.exercise.images,
-                side: m.exercise.side,
-                exerciseSide: m.exercise.side?.toLowerCase() || m.exercise.exerciseSide,
-              } : undefined,
-            })),
-          } as AssignmentExerciseSet}
+          preselectedSet={
+            {
+              id: exerciseSet.id,
+              name: exerciseSet.name,
+              description: exerciseSet.description,
+              exerciseMappings: exerciseSet.exerciseMappings?.map((m) => ({
+                id: m.id,
+                exerciseId: m.exerciseId,
+                order: m.order,
+                sets: m.sets,
+                reps: m.reps,
+                duration: m.duration,
+                restSets: m.restSets,
+                restReps: m.restReps,
+                notes: m.notes,
+                exercise: m.exercise
+                  ? {
+                      id: m.exercise.id,
+                      name: m.exercise.name,
+                      description: m.exercise.patientDescription || m.exercise.description,
+                      patientDescription: m.exercise.patientDescription,
+                      type: m.exercise.type,
+                      imageUrl: m.exercise.thumbnailUrl || m.exercise.imageUrl,
+                      thumbnailUrl: m.exercise.thumbnailUrl,
+                      images: m.exercise.images,
+                      side: m.exercise.side,
+                      exerciseSide: m.exercise.side?.toLowerCase() || m.exercise.exerciseSide,
+                    }
+                  : undefined,
+              })),
+            } as AssignmentExerciseSet
+          }
           organizationId={organizationId}
           therapistId={therapistId}
           onSuccess={() => refetch()}

@@ -158,15 +158,3 @@ export function PatientQuickStats({
     </div>
   );
 }
-
-
-
-
-
-
-
-
-
-
-
-

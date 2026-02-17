@@ -1,28 +1,15 @@
-"use client";
+'use client';
 
-import { useState, useCallback, useRef, useEffect } from "react";
-import {
-  FileText,
-  Sparkles,
-  Loader2,
-  Pencil,
-  Check,
-  X,
-  Copy,
-} from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Textarea } from "@/components/ui/textarea";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { cn } from "@/lib/utils";
-import { toast } from "sonner";
+import { useState, useCallback, useRef, useEffect } from 'react';
+import { FileText, Sparkles, Loader2, Pencil, Check, X, Copy } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Textarea } from '@/components/ui/textarea';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 
 interface InlineDescriptionProps {
   /** ID ćwiczenia (dla AI cache) */
@@ -48,11 +35,11 @@ interface InlineDescriptionProps {
   /** Dodatkowe klasy CSS */
   className?: string;
   /** data-testid */
-  "data-testid"?: string;
+  'data-testid'?: string;
 }
 
-type DescriptionStatus = "idle" | "hover" | "editing" | "saving" | "error" | "success";
-type AIStatus = "idle" | "loading" | "loaded" | "error";
+type DescriptionStatus = 'idle' | 'hover' | 'editing' | 'saving' | 'error' | 'success';
+type AIStatus = 'idle' | 'loading' | 'loaded' | 'error';
 
 /**
  * InlineDescription - Opis z ON-DEMAND AI Rephrase
@@ -71,28 +58,28 @@ export function InlineDescription({
   exerciseName,
   value,
   onCommit,
-  label = "Opis dla pacjenta",
-  placeholder = "Wpisz opis ćwiczenia zrozumiały dla pacjenta...",
+  label = 'Opis dla pacjenta',
+  placeholder = 'Wpisz opis ćwiczenia zrozumiały dla pacjenta...',
   minLength = 50,
   maxLength = 2000,
   rows = 4,
   disabled = false,
   className,
-  "data-testid": testId,
+  'data-testid': testId,
 }: InlineDescriptionProps) {
-  const [status, setStatus] = useState<DescriptionStatus>("idle");
+  const [status, setStatus] = useState<DescriptionStatus>('idle');
   const [editValue, setEditValue] = useState(value);
   const [originalValue, setOriginalValue] = useState(value);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // AI state
-  const [aiStatus, setAiStatus] = useState<AIStatus>("idle");
+  const [aiStatus, setAiStatus] = useState<AIStatus>('idle');
   const [aiSuggestion, setAiSuggestion] = useState<string | null>(null);
   const [aiChanges, setAiChanges] = useState<string[]>([]);
 
   // Sync with external value
   useEffect(() => {
-    if (status === "idle") {
+    if (status === 'idle') {
       setEditValue(value);
       setOriginalValue(value);
     }
@@ -100,7 +87,7 @@ export function InlineDescription({
 
   const handleStartEdit = useCallback(() => {
     if (disabled) return;
-    setStatus("editing");
+    setStatus('editing');
     setEditValue(value);
     setOriginalValue(value);
     setTimeout(() => textareaRef.current?.focus(), 0);
@@ -108,21 +95,21 @@ export function InlineDescription({
 
   const handleCommit = useCallback(async () => {
     if (editValue === originalValue) {
-      setStatus("idle");
+      setStatus('idle');
       return;
     }
 
-    setStatus("saving");
+    setStatus('saving');
 
     try {
       await onCommit(editValue);
-      setStatus("success");
+      setStatus('success');
       setOriginalValue(editValue);
-      setTimeout(() => setStatus("idle"), 500);
+      setTimeout(() => setStatus('idle'), 500);
     } catch (error) {
-      console.error("InlineDescription commit error:", error);
-      setStatus("error");
-      setTimeout(() => setStatus("idle"), 2000);
+      console.error('InlineDescription commit error:', error);
+      setStatus('error');
+      setTimeout(() => setStatus('idle'), 2000);
     }
   }, [editValue, originalValue, onCommit]);
 
@@ -130,19 +117,19 @@ export function InlineDescription({
     setEditValue(originalValue);
     setAiSuggestion(null);
     setAiChanges([]);
-    setAiStatus("idle");
-    setStatus("idle");
+    setAiStatus('idle');
+    setStatus('idle');
   }, [originalValue]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
       // Ctrl+Enter = zapisz
-      if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+      if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
         e.preventDefault();
         handleCommit();
       }
       // Escape = anuluj
-      if (e.key === "Escape") {
+      if (e.key === 'Escape') {
         e.preventDefault();
         handleCancel();
       }
@@ -153,40 +140,37 @@ export function InlineDescription({
   // ON-DEMAND: Koszt generowany TYLKO gdy user kliknie przycisk
   const handleRequestAIRephrase = useCallback(async () => {
     if (!editValue.trim()) {
-      toast.error("Wpisz opis przed użyciem AI");
+      toast.error('Wpisz opis przed użyciem AI');
       return;
     }
 
-    setAiStatus("loading");
+    setAiStatus('loading');
 
     try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/ai/verification/rephrase/${exerciseId}`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            exerciseName,
-            currentDescription: editValue,
-          }),
-        }
-      );
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/ai/verification/rephrase/${exerciseId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          exerciseName,
+          currentDescription: editValue,
+        }),
+      });
 
       if (!response.ok) {
-        throw new Error("Nie udało się przepisać opisu");
+        throw new Error('Nie udało się przepisać opisu');
       }
 
       const data = await response.json();
       setAiSuggestion(data.rewrittenDescription);
       setAiChanges(data.changes || []);
-      setAiStatus("loaded");
+      setAiStatus('loaded');
     } catch (error) {
-      console.error("AI rephrase error:", error);
-      setAiStatus("error");
-      toast.error("Nie udało się przepisać opisu przez AI");
-      setTimeout(() => setAiStatus("idle"), 3000);
+      console.error('AI rephrase error:', error);
+      setAiStatus('error');
+      toast.error('Nie udało się przepisać opisu przez AI');
+      setTimeout(() => setAiStatus('idle'), 3000);
     }
   }, [exerciseId, exerciseName, editValue]);
 
@@ -196,8 +180,8 @@ export function InlineDescription({
       setEditValue(aiSuggestion);
       setAiSuggestion(null);
       setAiChanges([]);
-      setAiStatus("idle");
-      toast.success("Zaakceptowano sugestię AI");
+      setAiStatus('idle');
+      toast.success('Zaakceptowano sugestię AI');
     }
   }, [aiSuggestion]);
 
@@ -205,16 +189,16 @@ export function InlineDescription({
   const handleRejectAISuggestion = useCallback(() => {
     setAiSuggestion(null);
     setAiChanges([]);
-    setAiStatus("idle");
+    setAiStatus('idle');
   }, []);
 
   // Kopiuj do schowka
   const handleCopy = useCallback(async (text: string) => {
     try {
       await navigator.clipboard.writeText(text);
-      toast.success("Skopiowano do schowka");
+      toast.success('Skopiowano do schowka');
     } catch {
-      toast.error("Nie udało się skopiować");
+      toast.error('Nie udało się skopiować');
     }
   }, []);
 
@@ -225,9 +209,9 @@ export function InlineDescription({
   const isTooLong = charCount > maxLength;
 
   // Editing mode
-  if (status === "editing" || status === "saving") {
+  if (status === 'editing' || status === 'saving') {
     return (
-      <Card className={cn("border-border/60", className)} data-testid={testId}>
+      <Card className={cn('border-border/60', className)} data-testid={testId}>
         <CardHeader className="pb-2">
           <CardTitle className="text-base font-semibold flex items-center justify-between">
             <span className="flex items-center gap-2">
@@ -241,10 +225,10 @@ export function InlineDescription({
                 size="sm"
                 className="h-7 text-amber-600 hover:text-amber-700 hover:bg-amber-500/10"
                 onClick={handleRequestAIRephrase}
-                disabled={disabled || aiStatus === "loading" || !editValue.trim()}
+                disabled={disabled || aiStatus === 'loading' || !editValue.trim()}
                 data-testid={`${testId}-ai-btn`}
               >
-                {aiStatus === "loading" ? (
+                {aiStatus === 'loading' ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-1 animate-spin" />
                     Przetwarzam...
@@ -269,16 +253,16 @@ export function InlineDescription({
               onKeyDown={handleKeyDown}
               placeholder={placeholder}
               rows={rows}
-              disabled={status === "saving"}
+              disabled={status === 'saving'}
               className={cn(
-                "resize-none transition-all",
-                status === "saving" && "opacity-70",
-                isTooShort && "border-amber-500/50",
-                isTooLong && "border-destructive/50"
+                'resize-none transition-all',
+                status === 'saving' && 'opacity-70',
+                isTooShort && 'border-amber-500/50',
+                isTooLong && 'border-destructive/50'
               )}
               data-testid={`${testId}-textarea`}
             />
-            {status === "saving" && (
+            {status === 'saving' && (
               <div className="absolute right-3 top-3">
                 <Loader2 className="h-4 w-4 animate-spin text-primary" />
               </div>
@@ -305,11 +289,9 @@ export function InlineDescription({
                 </span>
               )}
             </div>
-            <span className={cn(
-              "text-muted-foreground",
-              isTooShort && "text-amber-600",
-              isTooLong && "text-destructive"
-            )}>
+            <span
+              className={cn('text-muted-foreground', isTooShort && 'text-amber-600', isTooLong && 'text-destructive')}
+            >
               {charCount}/{maxLength}
             </span>
           </div>
@@ -341,9 +323,7 @@ export function InlineDescription({
                 </div>
               </div>
 
-              <p className="text-sm text-foreground whitespace-pre-wrap">
-                {aiSuggestion}
-              </p>
+              <p className="text-sm text-foreground whitespace-pre-wrap">{aiSuggestion}</p>
 
               {aiChanges.length > 0 && (
                 <div className="space-y-1">
@@ -382,29 +362,21 @@ export function InlineDescription({
           {/* Action buttons */}
           <div className="flex items-center justify-between pt-2 border-t border-border/40">
             <span className="text-xs text-muted-foreground">
-              <kbd className="px-1 py-0.5 bg-muted rounded text-[10px]">Ctrl</kbd>
-              +
-              <kbd className="px-1 py-0.5 bg-muted rounded text-[10px]">Enter</kbd>
-              {" "}aby zapisać,{" "}
-              <kbd className="px-1 py-0.5 bg-muted rounded text-[10px]">Esc</kbd>
-              {" "}aby anulować
+              <kbd className="px-1 py-0.5 bg-muted rounded text-[10px]">Ctrl</kbd>+
+              <kbd className="px-1 py-0.5 bg-muted rounded text-[10px]">Enter</kbd> aby zapisać,{' '}
+              <kbd className="px-1 py-0.5 bg-muted rounded text-[10px]">Esc</kbd> aby anulować
             </span>
             <div className="flex gap-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleCancel}
-                disabled={status === "saving"}
-              >
+              <Button variant="ghost" size="sm" onClick={handleCancel} disabled={status === 'saving'}>
                 Anuluj
               </Button>
               <Button
                 size="sm"
                 onClick={handleCommit}
-                disabled={status === "saving" || !isValid}
+                disabled={status === 'saving' || !isValid}
                 data-testid={`${testId}-save-btn`}
               >
-                {status === "saving" ? (
+                {status === 'saving' ? (
                   <Loader2 className="h-4 w-4 mr-1 animate-spin" />
                 ) : (
                   <Check className="h-4 w-4 mr-1" />
@@ -422,16 +394,16 @@ export function InlineDescription({
   return (
     <Card
       className={cn(
-        "border-border/60 cursor-pointer transition-all group",
-        status === "hover" && "border-primary/40 shadow-md",
-        status === "success" && "border-emerald-500/50",
-        status === "error" && "border-destructive/50",
-        disabled && "opacity-50 cursor-not-allowed",
+        'border-border/60 cursor-pointer transition-all group',
+        status === 'hover' && 'border-primary/40 shadow-md',
+        status === 'success' && 'border-emerald-500/50',
+        status === 'error' && 'border-destructive/50',
+        disabled && 'opacity-50 cursor-not-allowed',
         className
       )}
       onClick={handleStartEdit}
-      onMouseEnter={() => !disabled && setStatus("hover")}
-      onMouseLeave={() => status === "hover" && setStatus("idle")}
+      onMouseEnter={() => !disabled && setStatus('hover')}
+      onMouseLeave={() => status === 'hover' && setStatus('idle')}
       data-testid={testId}
     >
       <CardHeader className="pb-2">
@@ -442,21 +414,17 @@ export function InlineDescription({
           </span>
           <Pencil
             className={cn(
-              "h-4 w-4 text-muted-foreground transition-opacity",
-              status === "hover" ? "opacity-100" : "opacity-0"
+              'h-4 w-4 text-muted-foreground transition-opacity',
+              status === 'hover' ? 'opacity-100' : 'opacity-0'
             )}
           />
         </CardTitle>
       </CardHeader>
       <CardContent>
         {value ? (
-          <p className="text-sm text-foreground whitespace-pre-wrap line-clamp-6">
-            {value}
-          </p>
+          <p className="text-sm text-foreground whitespace-pre-wrap line-clamp-6">{value}</p>
         ) : (
-          <p className="text-sm text-muted-foreground italic">
-            {placeholder}
-          </p>
+          <p className="text-sm text-muted-foreground italic">{placeholder}</p>
         )}
 
         {/* Validation badge */}

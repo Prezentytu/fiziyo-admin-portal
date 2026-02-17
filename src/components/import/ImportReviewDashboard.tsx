@@ -8,11 +8,7 @@ import { ConfidentMatchSection } from './sections/ConfidentMatchSection';
 import { NewExercisesSection } from './sections/NewExercisesSection';
 import { UncertainMatchSection } from './sections/UncertainMatchSection';
 import { ImportStickyFooter } from './ImportStickyFooter';
-import type {
-  ExtractedExercise,
-  MatchSuggestion,
-  ExerciseDecision,
-} from '@/types/import.types';
+import type { ExtractedExercise, MatchSuggestion, ExerciseDecision } from '@/types/import.types';
 
 /** Confidence threshold for "confident" matches */
 const CONFIDENT_THRESHOLD = 0.7;
@@ -117,9 +113,7 @@ export function ImportReviewDashboard({
       <Card>
         <CardContent className="py-16 text-center">
           <Dumbbell className="mx-auto mb-4 h-16 w-16 text-muted-foreground/30" />
-          <p className="text-lg text-muted-foreground">
-            Nie znaleziono ćwiczeń w dokumencie
-          </p>
+          <p className="text-lg text-muted-foreground">Nie znaleziono ćwiczeń w dokumencie</p>
         </CardContent>
       </Card>
     );

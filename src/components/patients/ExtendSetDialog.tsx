@@ -17,13 +17,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 import { ASSIGN_EXERCISE_SET_TO_PATIENT_MUTATION } from '@/graphql/mutations/exercises.mutations';
 import { GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY } from '@/graphql/queries/patientAssignments.queries';
@@ -210,15 +204,11 @@ export function ExtendSetDialog({
             <div className="grid grid-cols-2 gap-2 text-sm">
               <div>
                 <span className="text-muted-foreground">Od:</span>{' '}
-                <span className="font-medium">
-                  {format(newStartDate, 'd MMM yyyy', { locale: pl })}
-                </span>
+                <span className="font-medium">{format(newStartDate, 'd MMM yyyy', { locale: pl })}</span>
               </div>
               <div>
                 <span className="text-muted-foreground">Do:</span>{' '}
-                <span className="font-medium">
-                  {format(newEndDate, 'd MMM yyyy', { locale: pl })}
-                </span>
+                <span className="font-medium">{format(newEndDate, 'd MMM yyyy', { locale: pl })}</span>
               </div>
             </div>
           </div>

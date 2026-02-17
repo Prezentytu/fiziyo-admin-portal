@@ -11,26 +11,9 @@ interface FormHintProps {
 
 export function FormHint({ children, className, showIcon = false }: FormHintProps) {
   return (
-    <p
-      className={cn(
-        'text-xs text-muted-foreground mt-1.5 flex items-start gap-1.5',
-        className
-      )}
-    >
+    <p className={cn('text-xs text-muted-foreground mt-1.5 flex items-start gap-1.5', className)}>
       {showIcon && <Info className="h-3 w-3 shrink-0 mt-0.5" />}
       <span>{children}</span>
     </p>
   );
 }
-
-
-
-
-
-
-
-
-
-
-
-

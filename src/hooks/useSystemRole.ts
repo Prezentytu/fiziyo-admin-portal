@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import { useMemo } from "react";
-import { useUser } from "@clerk/nextjs";
-import { useQuery } from "@apollo/client/react";
-import { GET_USER_BY_CLERK_ID_QUERY } from "@/graphql/queries/users.queries";
-import type { UserByClerkIdResponse } from "@/types/apollo";
+import { useMemo } from 'react';
+import { useUser } from '@clerk/nextjs';
+import { useQuery } from '@apollo/client/react';
+import { GET_USER_BY_CLERK_ID_QUERY } from '@/graphql/queries/users.queries';
+import type { UserByClerkIdResponse } from '@/types/apollo';
 
 // ========================================
 // Types
@@ -14,7 +14,7 @@ import type { UserByClerkIdResponse } from "@/types/apollo";
  * System-level roles (global, not per-organization)
  * Matches backend SystemRole enum (case-insensitive)
  */
-export type SystemRole = "SiteSuperAdmin" | "SiteAdmin" | "ContentManager";
+export type SystemRole = 'SiteSuperAdmin' | 'SiteAdmin' | 'ContentManager';
 
 export interface SystemRoleResult {
   /** Current user's system role (global) */
@@ -58,13 +58,10 @@ export interface SystemRoleResult {
 export function useSystemRole(): SystemRoleResult {
   const { user: clerkUser, isLoaded: clerkLoaded } = useUser();
 
-  const { data, loading: queryLoading } = useQuery<UserByClerkIdResponse>(
-    GET_USER_BY_CLERK_ID_QUERY,
-    {
-      variables: { clerkId: clerkUser?.id },
-      skip: !clerkUser?.id,
-    }
-  );
+  const { data, loading: queryLoading } = useQuery<UserByClerkIdResponse>(GET_USER_BY_CLERK_ID_QUERY, {
+    variables: { clerkId: clerkUser?.id },
+    skip: !clerkUser?.id,
+  });
 
   const isLoading = !clerkLoaded || queryLoading;
 
@@ -75,15 +72,15 @@ export function useSystemRole(): SystemRoleResult {
     // Backend returns SCREAMING_SNAKE_CASE (e.g., "CONTENT_MANAGER")
     let systemRole: SystemRole | null = null;
     if (rawRole) {
-      const normalizedRole = rawRole.toLowerCase().replace(/_/g, "");
-      if (normalizedRole === "sitesuperadmin") systemRole = "SiteSuperAdmin";
-      else if (normalizedRole === "siteadmin") systemRole = "SiteAdmin";
-      else if (normalizedRole === "contentmanager") systemRole = "ContentManager";
+      const normalizedRole = rawRole.toLowerCase().replace(/_/g, '');
+      if (normalizedRole === 'sitesuperadmin') systemRole = 'SiteSuperAdmin';
+      else if (normalizedRole === 'siteadmin') systemRole = 'SiteAdmin';
+      else if (normalizedRole === 'contentmanager') systemRole = 'ContentManager';
     }
 
-    const isSiteSuperAdmin = systemRole === "SiteSuperAdmin";
-    const isSiteAdmin = systemRole === "SiteAdmin";
-    const isContentManager = systemRole === "ContentManager";
+    const isSiteSuperAdmin = systemRole === 'SiteSuperAdmin';
+    const isSiteAdmin = systemRole === 'SiteAdmin';
+    const isContentManager = systemRole === 'ContentManager';
 
     // Permission checks based on backend PermissionService logic:
     // - SiteSuperAdmin has all permissions

@@ -1,26 +1,15 @@
-"use client";
+'use client';
 
-import { useState, useCallback, useMemo, useEffect } from "react";
-import { useSignUp } from "@clerk/nextjs";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
-import {
-  ArrowLeft,
-  ArrowRight,
-  Loader2,
-  Mail,
-  Lock,
-  User,
-  Building2,
-  Check,
-  Pencil,
-  Sparkles,
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { PhoneInput } from "@/components/ui/phone-input";
-import { Label } from "@/components/ui/label";
-import { cn } from "@/lib/utils";
+import { useState, useCallback, useMemo, useEffect } from 'react';
+import { useSignUp } from '@clerk/nextjs';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { ArrowLeft, ArrowRight, Loader2, Mail, Lock, User, Building2, Check, Pencil, Sparkles } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { PhoneInput } from '@/components/ui/phone-input';
+import { Label } from '@/components/ui/label';
+import { cn } from '@/lib/utils';
 
 interface FormData {
   email: string;
@@ -34,9 +23,9 @@ interface FormData {
 }
 
 const STEPS = [
-  { id: 1, name: "Email" },
-  { id: 2, name: "Hasło" },
-  { id: 3, name: "Dane" },
+  { id: 1, name: 'Email' },
+  { id: 2, name: 'Hasło' },
+  { id: 3, name: 'Dane' },
 ];
 
 function StepIndicator({ currentStep }: { currentStep: number }) {
@@ -46,22 +35,19 @@ function StepIndicator({ currentStep }: { currentStep: number }) {
         <div key={step.id} className="flex items-center">
           <div
             className={cn(
-              "flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium transition-all",
+              'flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium transition-all',
               currentStep > step.id
-                ? "bg-primary text-primary-foreground"
+                ? 'bg-primary text-primary-foreground'
                 : currentStep === step.id
-                ? "bg-primary text-primary-foreground"
-                : "bg-surface-light text-muted-foreground"
+                  ? 'bg-primary text-primary-foreground'
+                  : 'bg-surface-light text-muted-foreground'
             )}
           >
             {currentStep > step.id ? <Check className="h-4 w-4" /> : step.id}
           </div>
           {index < STEPS.length - 1 && (
             <div
-              className={cn(
-                "mx-2 h-0.5 w-8 transition-colors",
-                currentStep > step.id ? "bg-primary" : "bg-border"
-              )}
+              className={cn('mx-2 h-0.5 w-8 transition-colors', currentStep > step.id ? 'bg-primary' : 'bg-border')}
             />
           )}
         </div>
@@ -71,7 +57,7 @@ function StepIndicator({ currentStep }: { currentStep: number }) {
 }
 
 function generatePracticeName(firstName: string, lastName: string): string {
-  if (!firstName.trim() || !lastName.trim()) return "";
+  if (!firstName.trim() || !lastName.trim()) return '';
   return `${firstName.trim()} ${lastName.trim()} - Fizjoterapia`;
 }
 
@@ -111,17 +97,17 @@ export default function RegisterPage() {
 
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState<FormData>({
-    email: "",
-    password: "",
-    confirmPassword: "",
-    firstName: "",
-    lastName: "",
-    phone: "",
-    companyName: "",
+    email: '',
+    password: '',
+    confirmPassword: '',
+    firstName: '',
+    lastName: '',
+    phone: '',
+    companyName: '',
     companyNameEdited: false,
   });
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState('');
   const [showNameEditor, setShowNameEditor] = useState(false);
 
   const generatedName = useMemo(
@@ -135,13 +121,10 @@ export default function RegisterPage() {
     }
   }, [generatedName, formData.companyNameEdited]);
 
-  const handleInputChange = useCallback(
-    (field: keyof FormData, value: string) => {
-      setFormData((prev) => ({ ...prev, [field]: value }));
-      setError("");
-    },
-    []
-  );
+  const handleInputChange = useCallback((field: keyof FormData, value: string) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+    setError('');
+  }, []);
 
   const handleCompanyNameChange = useCallback((value: string) => {
     setFormData((prev) => ({
@@ -149,17 +132,17 @@ export default function RegisterPage() {
       companyName: value,
       companyNameEdited: true,
     }));
-    setError("");
+    setError('');
   }, []);
 
   const validateStep1 = useCallback((): boolean => {
     if (!formData.email.trim()) {
-      setError("Podaj adres email");
+      setError('Podaj adres email');
       return false;
     }
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(formData.email)) {
-      setError("Podaj poprawny adres email");
+      setError('Podaj poprawny adres email');
       return false;
     }
     return true;
@@ -167,15 +150,15 @@ export default function RegisterPage() {
 
   const validateStep2 = useCallback((): boolean => {
     if (!formData.password) {
-      setError("Podaj hasło");
+      setError('Podaj hasło');
       return false;
     }
     if (formData.password.length < 8) {
-      setError("Hasło musi mieć minimum 8 znaków");
+      setError('Hasło musi mieć minimum 8 znaków');
       return false;
     }
     if (formData.password !== formData.confirmPassword) {
-      setError("Hasła nie są identyczne");
+      setError('Hasła nie są identyczne');
       return false;
     }
     return true;
@@ -183,11 +166,11 @@ export default function RegisterPage() {
 
   const validateStep3 = useCallback((): boolean => {
     if (!formData.firstName.trim()) {
-      setError("Podaj swoje imię");
+      setError('Podaj swoje imię');
       return false;
     }
     if (!formData.lastName.trim()) {
-      setError("Podaj swoje nazwisko");
+      setError('Podaj swoje nazwisko');
       return false;
     }
     return true;
@@ -196,17 +179,17 @@ export default function RegisterPage() {
   const handleNextStep = useCallback(() => {
     if (currentStep === 1 && validateStep1()) {
       setCurrentStep(2);
-      setError("");
+      setError('');
     } else if (currentStep === 2 && validateStep2()) {
       setCurrentStep(3);
-      setError("");
+      setError('');
     }
   }, [currentStep, validateStep1, validateStep2]);
 
   const handlePrevStep = useCallback(() => {
     if (currentStep > 1) {
       setCurrentStep((prev) => prev - 1);
-      setError("");
+      setError('');
     }
   }, [currentStep]);
 
@@ -215,13 +198,13 @@ export default function RegisterPage() {
     if (!validateStep3()) return;
 
     if (!isLoaded || !signUp) {
-      setError("System rejestracji niedostępny. Spróbuj ponownie później.");
+      setError('System rejestracji niedostępny. Spróbuj ponownie później.');
       return;
     }
 
     try {
       setLoading(true);
-      setError("");
+      setError('');
 
       await signUp.create({
         emailAddress: formData.email,
@@ -239,19 +222,18 @@ export default function RegisterPage() {
           },
         });
       } catch (updateError) {
-        console.error("Error setting metadata:", updateError);
+        console.error('Error setting metadata:', updateError);
       }
 
-      await signUp.prepareEmailAddressVerification({ strategy: "email_code" });
-      router.push("/verify");
+      await signUp.prepareEmailAddressVerification({ strategy: 'email_code' });
+      router.push('/verify');
     } catch (err) {
-      console.error("Registration error:", err);
+      console.error('Registration error:', err);
       const error = err as {
         errors?: Array<{ message?: string }>;
         message?: string;
       };
-      const errorMessage =
-        error?.errors?.[0]?.message || error?.message || "Nieznany błąd";
+      const errorMessage = error?.errors?.[0]?.message || error?.message || 'Nieznany błąd';
       setError(`Błąd rejestracji: ${errorMessage}`);
     } finally {
       setLoading(false);
@@ -286,12 +268,8 @@ export default function RegisterPage() {
           <Sparkles className="h-4 w-4" />
           Darmowe konto
         </div>
-        <h1 className="text-2xl font-bold tracking-tight text-foreground">
-          Utwórz konto fizjoterapeuty
-        </h1>
-        <p className="text-sm text-muted-foreground">
-          Zacznij bezpłatnie. Rozszerz plan gdy będziesz gotowy.
-        </p>
+        <h1 className="text-2xl font-bold tracking-tight text-foreground">Utwórz konto fizjoterapeuty</h1>
+        <p className="text-sm text-muted-foreground">Zacznij bezpłatnie. Rozszerz plan gdy będziesz gotowy.</p>
       </div>
 
       {/* Step indicator */}
@@ -322,7 +300,7 @@ export default function RegisterPage() {
                   type="email"
                   placeholder="jan@fizjoterapia.pl"
                   value={formData.email}
-                  onChange={(e) => handleInputChange("email", e.target.value)}
+                  onChange={(e) => handleInputChange('email', e.target.value)}
                   className="h-11 pl-10"
                   autoComplete="email"
                   autoFocus
@@ -345,9 +323,7 @@ export default function RegisterPage() {
                   type="password"
                   placeholder="Minimum 8 znaków"
                   value={formData.password}
-                  onChange={(e) =>
-                    handleInputChange("password", e.target.value)
-                  }
+                  onChange={(e) => handleInputChange('password', e.target.value)}
                   className="h-11 pl-10"
                   autoComplete="new-password"
                   autoFocus
@@ -365,9 +341,7 @@ export default function RegisterPage() {
                   type="password"
                   placeholder="Powtórz hasło"
                   value={formData.confirmPassword}
-                  onChange={(e) =>
-                    handleInputChange("confirmPassword", e.target.value)
-                  }
+                  onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
                   className="h-11 pl-10"
                   autoComplete="new-password"
                   data-testid="auth-register-password-confirm-input"
@@ -390,9 +364,7 @@ export default function RegisterPage() {
                     type="text"
                     placeholder="Jan"
                     value={formData.firstName}
-                    onChange={(e) =>
-                      handleInputChange("firstName", e.target.value)
-                    }
+                    onChange={(e) => handleInputChange('firstName', e.target.value)}
                     className="h-11 pl-10"
                     autoComplete="given-name"
                     autoFocus
@@ -410,9 +382,7 @@ export default function RegisterPage() {
                     type="text"
                     placeholder="Kowalski"
                     value={formData.lastName}
-                    onChange={(e) =>
-                      handleInputChange("lastName", e.target.value)
-                    }
+                    onChange={(e) => handleInputChange('lastName', e.target.value)}
                     className="h-11 pl-10"
                     autoComplete="family-name"
                     data-testid="auth-register-lastname-input"
@@ -427,7 +397,7 @@ export default function RegisterPage() {
                 id="phone"
                 placeholder="123 456 789"
                 value={formData.phone}
-                onChange={(value) => handleInputChange("phone", value)}
+                onChange={(value) => handleInputChange('phone', value)}
                 className="h-11"
                 data-testid="auth-register-phone-input"
               />
@@ -463,10 +433,8 @@ export default function RegisterPage() {
             <div className="flex items-start gap-3 rounded-xl border border-primary/20 bg-primary/5 p-3">
               <Check className="mt-0.5 h-4 w-4 flex-shrink-0 text-primary" />
               <div className="text-xs text-muted-foreground">
-                <span className="font-medium text-foreground">
-                  Plan Free zawiera:
-                </span>{" "}
-                10 pacjentów, 30 ćwiczeń, 15 zestawów. Upgrade w każdej chwili!
+                <span className="font-medium text-foreground">Plan Free zawiera:</span> 10 pacjentów, 30 ćwiczeń, 15
+                zestawów. Upgrade w każdej chwili!
               </div>
             </div>
           </div>
@@ -488,7 +456,7 @@ export default function RegisterPage() {
             type="submit"
             disabled={loading}
             className="h-11 w-full rounded-xl text-base font-semibold"
-            data-testid={currentStep < 3 ? "auth-register-next-btn" : "auth-register-submit-btn"}
+            data-testid={currentStep < 3 ? 'auth-register-next-btn' : 'auth-register-submit-btn'}
           >
             {loading ? (
               <Loader2 className="h-5 w-5 animate-spin" />
@@ -498,7 +466,7 @@ export default function RegisterPage() {
                 <ArrowRight className="ml-2 h-4 w-4" />
               </>
             ) : (
-              "Załóż darmowe konto"
+              'Załóż darmowe konto'
             )}
           </Button>
         </div>
@@ -506,7 +474,7 @@ export default function RegisterPage() {
 
       {/* Login link */}
       <p className="text-center text-sm text-muted-foreground">
-        Masz już konto?{" "}
+        Masz już konto?{' '}
         <Link
           href="/sign-in"
           data-testid="auth-register-login-link"

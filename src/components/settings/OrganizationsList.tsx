@@ -1,15 +1,15 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { Building2, Shield, ShieldCheck, User, Star, UserPlus, ArrowRight, Check, Loader2 } from "lucide-react";
-import { format } from "date-fns";
-import { pl } from "date-fns/locale";
+import { useState } from 'react';
+import { Building2, Shield, ShieldCheck, User, Star, UserPlus, ArrowRight, Check, Loader2 } from 'lucide-react';
+import { format } from 'date-fns';
+import { pl } from 'date-fns/locale';
 
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { JoinOrganizationDialog } from "@/components/settings/JoinOrganizationDialog";
-import { useOrganization } from "@/contexts/OrganizationContext";
-import { cn } from "@/lib/utils";
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { JoinOrganizationDialog } from '@/components/settings/JoinOrganizationDialog';
+import { useOrganization } from '@/contexts/OrganizationContext';
+import { cn } from '@/lib/utils';
 
 export interface UserOrganization {
   organizationId: string;
@@ -27,11 +27,11 @@ interface OrganizationsListProps {
 }
 
 const roleLabels: Record<string, string> = {
-  OWNER: "Właściciel",
-  ADMIN: "Administrator",
-  THERAPIST: "Fizjoterapeuta",
-  MEMBER: "Członek",
-  STAFF: "Personel",
+  OWNER: 'Właściciel',
+  ADMIN: 'Administrator',
+  THERAPIST: 'Fizjoterapeuta',
+  MEMBER: 'Członek',
+  STAFF: 'Personel',
 };
 
 const roleIcons: Record<string, React.ReactNode> = {
@@ -91,17 +91,11 @@ export function OrganizationsList({
             <div className="mx-auto h-10 w-10 rounded-full bg-surface-light flex items-center justify-center mb-3">
               <Building2 className="h-5 w-5 text-muted-foreground" />
             </div>
-            <p className="text-sm text-muted-foreground">
-              Nie należysz jeszcze do żadnej organizacji
-            </p>
+            <p className="text-sm text-muted-foreground">Nie należysz jeszcze do żadnej organizacji</p>
           </CardContent>
         </Card>
 
-        <JoinOrganizationDialog
-          open={showJoinDialog}
-          onOpenChange={setShowJoinDialog}
-          onSuccess={handleJoinSuccess}
-        />
+        <JoinOrganizationDialog open={showJoinDialog} onOpenChange={setShowJoinDialog} onSuccess={handleJoinSuccess} />
       </div>
     );
   }
@@ -140,7 +134,7 @@ export function OrganizationsList({
             <div>
               <p className="text-2xl font-bold text-foreground tabular-nums">{organizations.length}</p>
               <p className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground mt-0.5">
-                {organizations.length === 1 ? "Organizacja" : "Organizacje"}
+                {organizations.length === 1 ? 'Organizacja' : 'Organizacje'}
               </p>
             </div>
           </CardContent>
@@ -154,7 +148,7 @@ export function OrganizationsList({
             {organizations.map((org) => {
               const isDefault = org.organizationId === defaultOrganizationId;
               const isActive = org.organizationId === currentOrganization?.organizationId;
-              const roleKey = org.role?.toUpperCase() || "MEMBER";
+              const roleKey = org.role?.toUpperCase() || 'MEMBER';
 
               return (
                 <button
@@ -162,10 +156,10 @@ export function OrganizationsList({
                   onClick={() => handleOrganizationClick(org.organizationId, isActive)}
                   disabled={isSwitching}
                   className={cn(
-                    "flex w-full items-center justify-between rounded-xl border p-4 transition-all duration-200 text-left cursor-pointer",
+                    'flex w-full items-center justify-between rounded-xl border p-4 transition-all duration-200 text-left cursor-pointer',
                     isActive
-                      ? "border-primary/50 bg-primary/5 ring-1 ring-primary/20"
-                      : "border-border/50 bg-background/50 hover:bg-background hover:border-primary/30"
+                      ? 'border-primary/50 bg-primary/5 ring-1 ring-primary/20'
+                      : 'border-border/50 bg-background/50 hover:bg-background hover:border-primary/30'
                   )}
                   data-testid={`settings-org-item-${org.organizationId}`}
                 >
@@ -174,7 +168,7 @@ export function OrganizationsList({
                     {org.logoUrl ? (
                       <img
                         src={org.logoUrl}
-                        alt={org.organizationName || "Organizacja"}
+                        alt={org.organizationName || 'Organizacja'}
                         className="h-9 w-9 rounded-lg object-cover shrink-0"
                       />
                     ) : (
@@ -185,10 +179,13 @@ export function OrganizationsList({
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
                         <span className="font-medium text-sm text-foreground truncate">
-                          {org.organizationName || "Nieznana organizacja"}
+                          {org.organizationName || 'Nieznana organizacja'}
                         </span>
                         {isActive && (
-                          <Badge variant="default" className="gap-1 text-[10px] px-1.5 py-0 bg-primary/20 text-primary border-0">
+                          <Badge
+                            variant="default"
+                            className="gap-1 text-[10px] px-1.5 py-0 bg-primary/20 text-primary border-0"
+                          >
                             <Check className="h-2.5 w-2.5" />
                             Aktywna
                           </Badge>
@@ -202,7 +199,7 @@ export function OrganizationsList({
                       </div>
                       {org.joinedAt && (
                         <p className="text-xs text-muted-foreground text-left">
-                          {format(new Date(org.joinedAt), "d MMM yyyy", {
+                          {format(new Date(org.joinedAt), 'd MMM yyyy', {
                             locale: pl,
                           })}
                         </p>
@@ -214,9 +211,7 @@ export function OrganizationsList({
                       {roleIcons[roleKey]}
                       {roleLabels[roleKey] || org.role}
                     </Badge>
-                    {isSwitching && !isActive && (
-                      <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
-                    )}
+                    {isSwitching && !isActive && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />}
                   </div>
                 </button>
               );
@@ -225,11 +220,7 @@ export function OrganizationsList({
         </CardContent>
       </Card>
 
-      <JoinOrganizationDialog
-        open={showJoinDialog}
-        onOpenChange={setShowJoinDialog}
-        onSuccess={handleJoinSuccess}
-      />
+      <JoinOrganizationDialog open={showJoinDialog} onOpenChange={setShowJoinDialog} onSuccess={handleJoinSuccess} />
     </div>
   );
 }

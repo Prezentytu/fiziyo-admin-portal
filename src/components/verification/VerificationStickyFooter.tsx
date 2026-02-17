@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import { XCircle, SkipForward, CheckCircle2, Loader2, Keyboard } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { cn } from "@/lib/utils";
+import { XCircle, SkipForward, CheckCircle2, Loader2, Keyboard } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { cn } from '@/lib/utils';
 
 interface VerificationStickyFooterProps {
   onReject: () => void;
@@ -32,9 +32,9 @@ export function VerificationStickyFooter({
     <TooltipProvider>
       <div
         className={cn(
-          "sticky bottom-0 z-40",
-          "bg-background/95 backdrop-blur-md border-t border-border/60",
-          "px-4 py-3 sm:py-4 lg:px-8",
+          'sticky bottom-0 z-40',
+          'bg-background/95 backdrop-blur-md border-t border-border/60',
+          'px-4 py-3 sm:py-4 lg:px-8',
           className
         )}
       >
@@ -50,11 +50,7 @@ export function VerificationStickyFooter({
                 className="gap-2 border-destructive/30 text-destructive hover:bg-destructive/10 hover:border-destructive/50"
                 data-testid="verification-reject-btn"
               >
-                {isRejectLoading ? (
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                ) : (
-                  <XCircle className="h-5 w-5" />
-                )}
+                {isRejectLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <XCircle className="h-5 w-5" />}
                 <span className="hidden sm:inline">Odrzuć</span>
               </Button>
             </TooltipTrigger>
@@ -98,11 +94,15 @@ export function VerificationStickyFooter({
                 <p className="font-semibold mb-2">Skróty klawiszowe</p>
                 <div className="flex items-center justify-between gap-4">
                   <span>Zatwierdź</span>
-                  <kbd className="px-1.5 py-0.5 text-[10px] bg-muted rounded border border-border font-mono">Ctrl+↵</kbd>
+                  <kbd className="px-1.5 py-0.5 text-[10px] bg-muted rounded border border-border font-mono">
+                    Ctrl+↵
+                  </kbd>
                 </div>
                 <div className="flex items-center justify-between gap-4">
                   <span>Odrzuć</span>
-                  <kbd className="px-1.5 py-0.5 text-[10px] bg-muted rounded border border-border font-mono">Ctrl+⌫</kbd>
+                  <kbd className="px-1.5 py-0.5 text-[10px] bg-muted rounded border border-border font-mono">
+                    Ctrl+⌫
+                  </kbd>
                 </div>
                 <div className="flex items-center justify-between gap-4">
                   <span>Pomiń</span>
@@ -120,17 +120,13 @@ export function VerificationStickyFooter({
                 onClick={onApprove}
                 disabled={anyLoading || !canApprove}
                 className={cn(
-                  "gap-2 px-6 font-bold shadow-lg transition-all",
-                  "bg-gradient-to-r from-primary to-emerald-600 hover:from-primary/90 hover:to-emerald-600/90",
-                  "hover:shadow-xl hover:shadow-primary/20 hover:scale-[1.02]"
+                  'gap-2 px-6 font-bold shadow-lg transition-all',
+                  'bg-gradient-to-r from-primary to-emerald-600 hover:from-primary/90 hover:to-emerald-600/90',
+                  'hover:shadow-xl hover:shadow-primary/20 hover:scale-[1.02]'
                 )}
                 data-testid="verification-approve-btn"
               >
-                {isApproveLoading ? (
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                ) : (
-                  <CheckCircle2 className="h-5 w-5" />
-                )}
+                {isApproveLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <CheckCircle2 className="h-5 w-5" />}
                 <span className="hidden sm:inline">Certyfikuj jako Standard FiziYo</span>
                 <span className="sm:hidden">Zatwierdź</span>
               </Button>

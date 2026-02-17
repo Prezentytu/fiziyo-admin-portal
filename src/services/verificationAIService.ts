@@ -13,7 +13,7 @@
  * - Przy ponownym żądaniu zwracane z cache ($0)
  */
 
-import { getAuthHeaders } from "@/lib/tokenCache";
+import { getAuthHeaders } from '@/lib/tokenCache';
 
 // Types
 export interface TagSuggestions {
@@ -40,7 +40,7 @@ export interface ValidationResult {
 
 export interface ValidationIssue {
   field: string;
-  severity: "error" | "warning" | "info";
+  severity: 'error' | 'warning' | 'info';
   message: string;
   suggestion?: string;
 }
@@ -49,7 +49,7 @@ export interface ValidationIssue {
 interface SuggestTagsRequest {
   exerciseName: string;
   exerciseDescription?: string;
-  tagType?: "main" | "additional";
+  tagType?: 'main' | 'additional';
   existingTags?: string[];
 }
 
@@ -80,7 +80,7 @@ class VerificationAIService {
   private baseUrl: string;
 
   constructor() {
-    this.baseUrl = process.env.NEXT_PUBLIC_API_URL || "";
+    this.baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
   }
 
   /**
@@ -89,7 +89,7 @@ class VerificationAIService {
   private async getHeaders(): Promise<HeadersInit> {
     const authHeaders = await getAuthHeaders();
     return {
-      "Content-Type": "application/json",
+      'Content-Type': 'application/json',
       ...authHeaders,
     };
   }
@@ -97,24 +97,18 @@ class VerificationAIService {
   /**
    * Wykonaj request do API
    */
-  private async request<T>(
-    endpoint: string,
-    body: unknown,
-    method: "POST" | "GET" = "POST"
-  ): Promise<T> {
+  private async request<T>(endpoint: string, body: unknown, method: 'POST' | 'GET' = 'POST'): Promise<T> {
     const headers = await this.getHeaders();
 
     const response = await fetch(`${this.baseUrl}${endpoint}`, {
       method,
       headers,
-      body: method === "POST" ? JSON.stringify(body) : undefined,
+      body: method === 'POST' ? JSON.stringify(body) : undefined,
     });
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw new Error(
-        errorData.message || `Request failed with status ${response.status}`
-      );
+      throw new Error(errorData.message || `Request failed with status ${response.status}`);
     }
 
     return response.json();
@@ -128,14 +122,8 @@ class VerificationAIService {
    * @param exerciseId - ID ćwiczenia (dla cache)
    * @param request - Dane do analizy
    */
-  async suggestTags(
-    exerciseId: string,
-    request: SuggestTagsRequest
-  ): Promise<TagSuggestions> {
-    return this.request<TagSuggestions>(
-      `/api/ai/verification/suggest-tags/${exerciseId}`,
-      request
-    );
+  async suggestTags(exerciseId: string, request: SuggestTagsRequest): Promise<TagSuggestions> {
+    return this.request<TagSuggestions>(`/api/ai/verification/suggest-tags/${exerciseId}`, request);
   }
 
   /**
@@ -146,14 +134,8 @@ class VerificationAIService {
    * @param exerciseId - ID ćwiczenia (dla cache)
    * @param request - Dane do przepisania
    */
-  async rephraseDescription(
-    exerciseId: string,
-    request: RephraseRequest
-  ): Promise<RephraseResult> {
-    return this.request<RephraseResult>(
-      `/api/ai/verification/rephrase/${exerciseId}`,
-      request
-    );
+  async rephraseDescription(exerciseId: string, request: RephraseRequest): Promise<RephraseResult> {
+    return this.request<RephraseResult>(`/api/ai/verification/rephrase/${exerciseId}`, request);
   }
 
   /**
@@ -164,14 +146,8 @@ class VerificationAIService {
    * @param exerciseId - ID ćwiczenia (dla cache)
    * @param request - Dane do walidacji
    */
-  async validateExercise(
-    exerciseId: string,
-    request: ValidateRequest
-  ): Promise<ValidationResult> {
-    return this.request<ValidationResult>(
-      `/api/ai/verification/validate/${exerciseId}`,
-      request
-    );
+  async validateExercise(exerciseId: string, request: ValidateRequest): Promise<ValidationResult> {
+    return this.request<ValidationResult>(`/api/ai/verification/validate/${exerciseId}`, request);
   }
 
   /**
@@ -184,12 +160,12 @@ class VerificationAIService {
    */
   async checkCache(
     exerciseId: string,
-    type: "tags" | "rephrase" | "validate"
+    type: 'tags' | 'rephrase' | 'validate'
   ): Promise<{ cached: boolean; expiresAt?: string }> {
     return this.request<{ cached: boolean; expiresAt?: string }>(
       `/api/ai/verification/cache-status/${exerciseId}/${type}`,
       {},
-      "GET"
+      'GET'
     );
   }
 
@@ -199,21 +175,18 @@ class VerificationAIService {
    * @param exerciseId - ID ćwiczenia
    * @param type - Typ sugestii (opcjonalnie, jeśli brak - wszystkie)
    */
-  async clearCache(
-    exerciseId: string,
-    type?: "tags" | "rephrase" | "validate"
-  ): Promise<{ success: boolean }> {
+  async clearCache(exerciseId: string, type?: 'tags' | 'rephrase' | 'validate'): Promise<{ success: boolean }> {
     const endpoint = type
       ? `/api/ai/verification/cache/${exerciseId}/${type}`
       : `/api/ai/verification/cache/${exerciseId}`;
 
     const response = await fetch(`${this.baseUrl}${endpoint}`, {
-      method: "DELETE",
+      method: 'DELETE',
       headers: await this.getHeaders(),
     });
 
     if (!response.ok) {
-      throw new Error("Failed to clear cache");
+      throw new Error('Failed to clear cache');
     }
 
     return response.json();
@@ -237,9 +210,7 @@ export function useSuggestTags() {
  */
 export function useRephraseDescription() {
   return {
-    rephraseDescription: verificationAIService.rephraseDescription.bind(
-      verificationAIService
-    ),
+    rephraseDescription: verificationAIService.rephraseDescription.bind(verificationAIService),
   };
 }
 
@@ -248,8 +219,6 @@ export function useRephraseDescription() {
  */
 export function useValidateExercise() {
   return {
-    validateExercise: verificationAIService.validateExercise.bind(
-      verificationAIService
-    ),
+    validateExercise: verificationAIService.validateExercise.bind(verificationAIService),
   };
 }

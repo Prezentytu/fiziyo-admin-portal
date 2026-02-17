@@ -1,10 +1,6 @@
-import { useSubscription, useApolloClient } from "@apollo/client/react";
-import { useCallback } from "react";
-import {
-  ON_CLINIC_CREATED,
-  ON_CLINIC_UPDATED,
-  ON_CLINIC_DELETED,
-} from "@/graphql/subscriptions";
+import { useSubscription, useApolloClient } from '@apollo/client/react';
+import { useCallback } from 'react';
+import { ON_CLINIC_CREATED, ON_CLINIC_UPDATED, ON_CLINIC_DELETED } from '@/graphql/subscriptions';
 
 interface UseRealtimeClinicsOptions {
   /** ID organizacji do subskrypcji */
@@ -40,7 +36,7 @@ export function useRealtimeClinics({
   const refetch = useCallback(() => {
     if (!organizationId) return;
     client.refetchQueries({
-      include: ["GetOrganizationClinics"],
+      include: ['GetOrganizationClinics'],
     });
   }, [client, organizationId]);
 
@@ -80,7 +76,7 @@ export function useRealtimeClinics({
 
       // Usuń z cache
       client.cache.evict({
-        id: client.cache.identify({ __typename: "Clinic", id: clinicId }),
+        id: client.cache.identify({ __typename: 'Clinic', id: clinicId }),
       });
       client.cache.gc();
 

@@ -1,26 +1,26 @@
-"use client";
+'use client';
 
-import { useQuery } from "@apollo/client/react";
-import { Activity } from "lucide-react";
+import { useQuery } from '@apollo/client/react';
+import { Activity } from 'lucide-react';
 
-import { Card, CardContent } from "@/components/ui/card";
-import { LoadingState } from "@/components/shared/LoadingState";
-import { EmptyState } from "@/components/shared/EmptyState";
+import { Card, CardContent } from '@/components/ui/card';
+import { LoadingState } from '@/components/shared/LoadingState';
+import { EmptyState } from '@/components/shared/EmptyState';
 
-import { TherapyStatusCard } from "./TherapyStatusCard";
-import { FeelingsHeatmap } from "./FeelingsHeatmap";
-import { EventJournal } from "./EventJournal";
-import { NextStepCard } from "./NextStepCard";
+import { TherapyStatusCard } from './TherapyStatusCard';
+import { FeelingsHeatmap } from './FeelingsHeatmap';
+import { EventJournal } from './EventJournal';
+import { NextStepCard } from './NextStepCard';
 
-import { GET_EXERCISE_PROGRESS_BY_USER_QUERY } from "@/graphql/queries/exerciseProgress.queries";
-import { GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY } from "@/graphql/queries/patientAssignments.queries";
+import { GET_EXERCISE_PROGRESS_BY_USER_QUERY } from '@/graphql/queries/exerciseProgress.queries';
+import { GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY } from '@/graphql/queries/patientAssignments.queries';
 import {
   calculateTherapyStatus,
   generateHeatmapData,
   formatRelativeDate,
   type ExerciseProgressData,
   type PatientAssignmentData,
-} from "@/lib/therapyStatus";
+} from '@/lib/therapyStatus';
 
 interface ActivityReportProps {
   patientId: string;
@@ -45,7 +45,7 @@ interface PatientAssignmentsQueryItem {
   startDate?: string | null;
   endDate?: string | null;
   status?: string | null;
-  frequency?: PatientAssignmentData["frequency"];
+  frequency?: PatientAssignmentData['frequency'];
 }
 
 interface ExerciseProgressQueryResponse {
@@ -65,45 +65,39 @@ export function ActivityReport({
   onCall,
 }: ActivityReportProps) {
   // Get exercise progress
-  const { data: progressData, loading: progressLoading } = useQuery(
-    GET_EXERCISE_PROGRESS_BY_USER_QUERY,
-    {
-      variables: { userId: patientId },
-    }
-  );
+  const { data: progressData, loading: progressLoading } = useQuery(GET_EXERCISE_PROGRESS_BY_USER_QUERY, {
+    variables: { userId: patientId },
+  });
 
   // Get patient assignments for context
-  const { data: assignmentsData, loading: assignmentsLoading } = useQuery(
-    GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY,
-    {
-      variables: { userId: patientId },
-    }
-  );
+  const { data: assignmentsData, loading: assignmentsLoading } = useQuery(GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY, {
+    variables: { userId: patientId },
+  });
 
   const isLoading = progressLoading || assignmentsLoading;
 
   // Map to ExerciseProgressData type with all needed fields
-  const exerciseProgress: ExerciseProgressData[] =
-    ((progressData as ExerciseProgressQueryResponse | undefined)?.exerciseProgress || []).map((progress) => ({
-      id: progress.id,
-      completedAt: progress.completedAt,
-      status: progress.status,
-      painLevel: progress.painLevel,
-      difficultyLevel: progress.difficultyLevel,
-      patientNotes: progress.patientNotes,
-    }));
+  const exerciseProgress: ExerciseProgressData[] = (
+    (progressData as ExerciseProgressQueryResponse | undefined)?.exerciseProgress || []
+  ).map((progress) => ({
+    id: progress.id,
+    completedAt: progress.completedAt,
+    status: progress.status,
+    painLevel: progress.painLevel,
+    difficultyLevel: progress.difficultyLevel,
+    patientNotes: progress.patientNotes,
+  }));
 
-  const rawAssignments =
-    (assignmentsData as PatientAssignmentsQueryResponse | undefined)?.patientAssignments || [];
+  const rawAssignments = (assignmentsData as PatientAssignmentsQueryResponse | undefined)?.patientAssignments || [];
 
   // Map to PatientAssignmentData for therapy status calculation
   const assignmentsForStatus: PatientAssignmentData[] = rawAssignments.map((assignment) => ({
-      id: assignment.id,
-      startDate: assignment.startDate,
-      endDate: assignment.endDate,
-      status: assignment.status,
-      frequency: assignment.frequency,
-    }));
+    id: assignment.id,
+    startDate: assignment.startDate,
+    endDate: assignment.endDate,
+    status: assignment.status,
+    frequency: assignment.frequency,
+  }));
 
   // Calculate therapy status (with assignments for proper schedule awareness)
   const therapyStatus = calculateTherapyStatus(exerciseProgress, assignmentsForStatus);
@@ -113,12 +107,10 @@ export function ActivityReport({
 
   // Get last activity label
   const lastActivity = exerciseProgress
-    .filter(p => p.completedAt && p.status === 'completed')
+    .filter((p) => p.completedAt && p.status === 'completed')
     .sort((a, b) => new Date(b.completedAt!).getTime() - new Date(a.completedAt!).getTime())[0];
-  
-  const lastActivityLabel = lastActivity?.completedAt 
-    ? formatRelativeDate(lastActivity.completedAt)
-    : undefined;
+
+  const lastActivityLabel = lastActivity?.completedAt ? formatRelativeDate(lastActivity.completedAt) : undefined;
 
   if (isLoading) {
     return <LoadingState type="text" count={3} />;

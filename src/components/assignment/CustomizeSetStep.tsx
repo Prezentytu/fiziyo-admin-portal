@@ -1,44 +1,50 @@
-"use client";
+'use client';
 
-import { useMemo } from "react";
-import { useQuery } from "@apollo/client/react";
-import { ExerciseSetBuilder, type ExerciseInstance, type ExerciseParams, type BuilderExercise, type ExerciseTag } from "@/components/shared/ExerciseSetBuilder";
-import { GET_EXERCISE_TAGS_BY_ORGANIZATION_QUERY } from "@/graphql/queries/exerciseTags.queries";
-import { GET_TAG_CATEGORIES_BY_ORGANIZATION_QUERY } from "@/graphql/queries/tagCategories.queries";
-import { GET_ORGANIZATION_EXERCISE_SETS_QUERY } from "@/graphql/queries/exerciseSets.queries";
-import { createTagsMap, mapExercisesWithTags } from "@/utils/tagUtils";
-import type { ExerciseTagsResponse, TagCategoriesResponse, OrganizationExerciseSetsResponse } from "@/types/apollo";
-import type { Exercise } from "./types";
+import { useMemo } from 'react';
+import { useQuery } from '@apollo/client/react';
+import {
+  ExerciseSetBuilder,
+  type ExerciseInstance,
+  type ExerciseParams,
+  type BuilderExercise,
+  type ExerciseTag,
+} from '@/components/shared/ExerciseSetBuilder';
+import { GET_EXERCISE_TAGS_BY_ORGANIZATION_QUERY } from '@/graphql/queries/exerciseTags.queries';
+import { GET_TAG_CATEGORIES_BY_ORGANIZATION_QUERY } from '@/graphql/queries/tagCategories.queries';
+import { GET_ORGANIZATION_EXERCISE_SETS_QUERY } from '@/graphql/queries/exerciseSets.queries';
+import { createTagsMap, mapExercisesWithTags } from '@/utils/tagUtils';
+import type { ExerciseTagsResponse, TagCategoriesResponse, OrganizationExerciseSetsResponse } from '@/types/apollo';
+import type { Exercise } from './types';
 
 interface CustomizeSetStepProps {
   // Set name
   planName: string;
   onPlanNameChange: (name: string) => void;
-  
+
   // Mode: creating new set vs customizing existing
   isCreatingNew: boolean;
   sourceSetName?: string;
-  
+
   // Exercises state
   selectedInstances: ExerciseInstance[];
   onSelectedInstancesChange: (instances: ExerciseInstance[]) => void;
   exerciseParams: Map<string, ExerciseParams>;
   onExerciseParamsChange: (params: Map<string, ExerciseParams>) => void;
-  
+
   // Available exercises from parent
   availableExercises: Exercise[];
   loadingExercises?: boolean;
-  
+
   // Organization context
   organizationId: string;
-  
+
   // Patient context (for AI)
   patientName?: string;
-  
+
   // AI panel control
   showAI?: boolean;
   onAIClick?: () => void;
-  
+
   // Preview exercise callback
   onPreviewExercise?: (exercise: BuilderExercise) => void;
 }
@@ -111,16 +117,16 @@ export function CustomizeSetStep({
   }, [tags]);
 
   // Dynamic labels based on mode
-  const nameLabel = isCreatingNew ? "Nazwa nowego zestawu" : "Nazwa planu dla pacjenta";
+  const nameLabel = isCreatingNew ? 'Nazwa nowego zestawu' : 'Nazwa planu dla pacjenta';
   const namePlaceholder = isCreatingNew
-    ? "np. Rehabilitacja kolana - tydzień 1"
+    ? 'np. Rehabilitacja kolana - tydzień 1'
     : patientName
       ? `Plan dla ${patientName}`
       : sourceSetName
         ? `${sourceSetName} (kopia)`
-        : "np. Rehabilitacja kolana - tydzień 1";
-  
-  const testIdPrefix = isCreatingNew ? "create-set" : "customize-set";
+        : 'np. Rehabilitacja kolana - tydzień 1';
+
+  const testIdPrefix = isCreatingNew ? 'create-set' : 'customize-set';
 
   return (
     <div className="h-full flex flex-col" data-testid={`${testIdPrefix}-step`}>

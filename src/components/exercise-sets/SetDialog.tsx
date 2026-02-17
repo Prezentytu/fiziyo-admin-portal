@@ -1,25 +1,16 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { useState, useCallback } from "react";
-import { useMutation } from "@apollo/client/react";
-import { toast } from "sonner";
+import * as React from 'react';
+import { useState, useCallback } from 'react';
+import { useMutation } from '@apollo/client/react';
+import { toast } from 'sonner';
 
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
-import { SetForm, SetFormValues } from "./SetForm";
-import {
-  CREATE_EXERCISE_SET_MUTATION,
-  UPDATE_EXERCISE_SET_MUTATION,
-} from "@/graphql/mutations/exercises.mutations";
-import { GET_ORGANIZATION_EXERCISE_SETS_QUERY } from "@/graphql/queries/exerciseSets.queries";
-import type { ExerciseSet } from "./SetCard";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
+import { SetForm, SetFormValues } from './SetForm';
+import { CREATE_EXERCISE_SET_MUTATION, UPDATE_EXERCISE_SET_MUTATION } from '@/graphql/mutations/exercises.mutations';
+import { GET_ORGANIZATION_EXERCISE_SETS_QUERY } from '@/graphql/queries/exerciseSets.queries';
+import type { ExerciseSet } from './SetCard';
 
 interface SetDialogProps {
   open: boolean;
@@ -29,13 +20,7 @@ interface SetDialogProps {
   onSuccess?: () => void;
 }
 
-export function SetDialog({
-  open,
-  onOpenChange,
-  set,
-  organizationId,
-  onSuccess,
-}: SetDialogProps) {
+export function SetDialog({ open, onOpenChange, set, organizationId, onSuccess }: SetDialogProps) {
   const isEditing = !!set;
   const [showCloseConfirm, setShowCloseConfirm] = useState(false);
   const [formIsDirty, setFormIsDirty] = useState(false);
@@ -62,15 +47,11 @@ export function SetDialog({
   }, [open]);
 
   const [createSet, { loading: creating }] = useMutation(CREATE_EXERCISE_SET_MUTATION, {
-    refetchQueries: [
-      { query: GET_ORGANIZATION_EXERCISE_SETS_QUERY, variables: { organizationId } },
-    ],
+    refetchQueries: [{ query: GET_ORGANIZATION_EXERCISE_SETS_QUERY, variables: { organizationId } }],
   });
 
   const [updateSet, { loading: updating }] = useMutation(UPDATE_EXERCISE_SET_MUTATION, {
-    refetchQueries: [
-      { query: GET_ORGANIZATION_EXERCISE_SETS_QUERY, variables: { organizationId } },
-    ],
+    refetchQueries: [{ query: GET_ORGANIZATION_EXERCISE_SETS_QUERY, variables: { organizationId } }],
   });
 
   const handleSubmit = async (values: SetFormValues) => {
@@ -83,7 +64,7 @@ export function SetDialog({
             description: values.description || null,
           },
         });
-        toast.success("Zestaw został zaktualizowany");
+        toast.success('Zestaw został zaktualizowany');
       } else {
         await createSet({
           variables: {
@@ -92,24 +73,20 @@ export function SetDialog({
             description: values.description || null,
           },
         });
-        toast.success("Zestaw został utworzony");
+        toast.success('Zestaw został utworzony');
       }
       onOpenChange(false);
       onSuccess?.();
     } catch (error) {
-      console.error("Błąd podczas zapisywania zestawu:", error);
-      toast.error(
-        isEditing
-          ? "Nie udało się zaktualizować zestawu"
-          : "Nie udało się utworzyć zestawu"
-      );
+      console.error('Błąd podczas zapisywania zestawu:', error);
+      toast.error(isEditing ? 'Nie udało się zaktualizować zestawu' : 'Nie udało się utworzyć zestawu');
     }
   };
 
   const defaultValues = set
     ? {
         name: set.name,
-        description: set.description || "",
+        description: set.description || '',
       }
     : undefined;
 
@@ -125,12 +102,10 @@ export function SetDialog({
       >
         <DialogHeader>
           <DialogTitle data-testid="set-dialog-title">
-            {isEditing ? "Edytuj zestaw" : "Nowy zestaw ćwiczeń"}
+            {isEditing ? 'Edytuj zestaw' : 'Nowy zestaw ćwiczeń'}
           </DialogTitle>
           <DialogDescription>
-            {isEditing
-              ? "Zmień właściwości zestawu"
-              : "Utwórz nowy zestaw ćwiczeń dla pacjentów"}
+            {isEditing ? 'Zmień właściwości zestawu' : 'Utwórz nowy zestaw ćwiczeń dla pacjentów'}
           </DialogDescription>
         </DialogHeader>
         <SetForm
@@ -138,7 +113,7 @@ export function SetDialog({
           onSubmit={handleSubmit}
           onCancel={handleCloseAttempt}
           isLoading={creating || updating}
-          submitLabel={isEditing ? "Zapisz zmiany" : "Utwórz zestaw"}
+          submitLabel={isEditing ? 'Zapisz zmiany' : 'Utwórz zestaw'}
           onDirtyChange={setFormIsDirty}
         />
       </DialogContent>

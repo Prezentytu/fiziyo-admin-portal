@@ -64,32 +64,38 @@ const QUICK_PROMPTS = [
   {
     id: 'acl',
     label: 'Rehabilitacja ACL',
-    prompt: 'Rehabilitacja po rekonstrukcji ACL - faza 2 (podostra). Cel: przywrócenie zakresu ruchu i wzmocnienie mięśnia czworogłowego. Pacjent chodzi bez kul.',
+    prompt:
+      'Rehabilitacja po rekonstrukcji ACL - faza 2 (podostra). Cel: przywrócenie zakresu ruchu i wzmocnienie mięśnia czworogłowego. Pacjent chodzi bez kul.',
   },
   {
     id: 'lbp',
     label: 'Ból lędźwiowy',
-    prompt: 'Ból dolnego odcinka kręgosłupa - faza przewlekła. Pacjent pracuje siedząco 8h. Cel: stabilizacja głęboka, redukcja napięcia mięśni przykręgosłupowych, edukacja posturalna.',
+    prompt:
+      'Ból dolnego odcinka kręgosłupa - faza przewlekła. Pacjent pracuje siedząco 8h. Cel: stabilizacja głęboka, redukcja napięcia mięśni przykręgosłupowych, edukacja posturalna.',
   },
   {
     id: 'shoulder',
     label: 'Bark - rotatory',
-    prompt: 'Dysfunkcja stożka rotatorów - faza podostra. Cel: przywrócenie mobilności barku, wzmocnienie rotatorów zewnętrznych, stabilizacja łopatki. Bez bólu w spoczynku.',
+    prompt:
+      'Dysfunkcja stożka rotatorów - faza podostra. Cel: przywrócenie mobilności barku, wzmocnienie rotatorów zewnętrznych, stabilizacja łopatki. Bez bólu w spoczynku.',
   },
-  { 
-    id: 'knee', 
-    label: 'Kolano - stabilizacja', 
-    prompt: 'Niestabilność kolana po skręceniu - faza przewlekła. Cel: wzmocnienie VMO i mięśni stabilizujących, propriocepcja, przygotowanie do powrotu do sportu.',
+  {
+    id: 'knee',
+    label: 'Kolano - stabilizacja',
+    prompt:
+      'Niestabilność kolana po skręceniu - faza przewlekła. Cel: wzmocnienie VMO i mięśni stabilizujących, propriocepcja, przygotowanie do powrotu do sportu.',
   },
-  { 
-    id: 'core', 
-    label: 'Core - początkujący', 
-    prompt: 'Trening stabilizacji centralnej dla początkującego pacjenta. Cel: nauka aktywacji mięśni głębokich, poprawa kontroli miednicy. Bez dolegliwości bólowych.',
+  {
+    id: 'core',
+    label: 'Core - początkujący',
+    prompt:
+      'Trening stabilizacji centralnej dla początkującego pacjenta. Cel: nauka aktywacji mięśni głębokich, poprawa kontroli miednicy. Bez dolegliwości bólowych.',
   },
-  { 
-    id: 'posture', 
-    label: 'Postawa - biurowa', 
-    prompt: 'Korekta postawy przy pracy biurowej - profilaktyka. Cel: mobilizacja odcinka piersiowego, rozciąganie mięśni piersiowych, wzmocnienie stabilizatorów łopatki.',
+  {
+    id: 'posture',
+    label: 'Postawa - biurowa',
+    prompt:
+      'Korekta postawy przy pracy biurowej - profilaktyka. Cel: mobilizacja odcinka piersiowego, rozciąganie mięśni piersiowych, wzmocnienie stabilizatorów łopatki.',
   },
 ];
 
@@ -100,13 +106,12 @@ function findExerciseByName(matchedName: string | null, dbExercises: Exercise[])
   const lowerName = matchedName.toLowerCase().trim();
 
   // Try exact match first
-  const exactMatch = dbExercises.find(e => e.name.toLowerCase().trim() === lowerName);
+  const exactMatch = dbExercises.find((e) => e.name.toLowerCase().trim() === lowerName);
   if (exactMatch) return exactMatch;
 
   // Try partial match
-  const partialMatch = dbExercises.find(e =>
-    e.name.toLowerCase().includes(lowerName) ||
-    lowerName.includes(e.name.toLowerCase())
+  const partialMatch = dbExercises.find(
+    (e) => e.name.toLowerCase().includes(lowerName) || lowerName.includes(e.name.toLowerCase())
   );
 
   return partialMatch || null;
@@ -129,7 +134,7 @@ export function AISetGenerator({
   const [error, setError] = useState<string | null>(null);
 
   // Get exercise names for AI matching
-  const exerciseNames = useMemo(() => exercises.map(e => e.name), [exercises]);
+  const exerciseNames = useMemo(() => exercises.map((e) => e.name), [exercises]);
 
   const handleGenerate = useCallback(
     async (customPrompt?: string) => {
@@ -146,18 +151,14 @@ export function AISetGenerator({
 
       try {
         // Use new AI service with structured JSON response
-        const response = await aiService.generateExerciseSet(
-          promptToUse,
-          patientContext,
-          exerciseNames
-        );
+        const response = await aiService.generateExerciseSet(promptToUse, patientContext, exerciseNames);
 
         if (!response || response.exercises.length === 0) {
           throw new Error('Nie udało się wygenerować ćwiczeń');
         }
 
         // Map AI exercises to matches with database exercises
-        const matches: GeneratedExerciseMatch[] = response.exercises.map(aiEx => ({
+        const matches: GeneratedExerciseMatch[] = response.exercises.map((aiEx) => ({
           aiExercise: aiEx,
           matchedExercise: findExerciseByName(aiEx.matchedExerciseName, exercises),
         }));
@@ -398,8 +399,8 @@ export function AISetGenerator({
                       onClick={() => toggleMatch(index)}
                       className={cn(
                         'w-full flex items-start gap-3 p-3 rounded-xl text-left transition-all border',
-                        isSelected 
-                          ? 'bg-primary/10 border-primary/30' 
+                        isSelected
+                          ? 'bg-primary/10 border-primary/30'
                           : 'bg-surface-light border-border hover:bg-surface-hover'
                       )}
                     >
@@ -423,7 +424,10 @@ export function AISetGenerator({
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between gap-2">
                           <p className="font-medium text-sm leading-tight mb-1">{match.matchedExercise.name}</p>
-                          <Badge variant="secondary" className="text-[9px] px-1.5 h-4 shrink-0 bg-primary/10 text-primary border-none hidden sm:flex">
+                          <Badge
+                            variant="secondary"
+                            className="text-[9px] px-1.5 h-4 shrink-0 bg-primary/10 text-primary border-none hidden sm:flex"
+                          >
                             Dopasowane
                           </Badge>
                         </div>
@@ -432,7 +436,10 @@ export function AISetGenerator({
                             {match.aiExercise.reasoning}
                           </p>
                         )}
-                        <Badge variant="secondary" className="text-[9px] px-1.5 h-4 mt-2 shrink-0 bg-primary/10 text-primary border-none flex sm:hidden w-fit">
+                        <Badge
+                          variant="secondary"
+                          className="text-[9px] px-1.5 h-4 mt-2 shrink-0 bg-primary/10 text-primary border-none flex sm:hidden w-fit"
+                        >
                           Dopasowane
                         </Badge>
                       </div>
@@ -481,12 +488,7 @@ export function AISetGenerator({
       {/* Footer */}
       <div className="px-5 py-4 border-t border-zinc-800 bg-zinc-900/30">
         <div className="flex gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onCancel}
-            className="flex-1 border-zinc-700 hover:bg-zinc-800"
-          >
+          <Button variant="outline" size="sm" onClick={onCancel} className="flex-1 border-zinc-700 hover:bg-zinc-800">
             Zamknij
           </Button>
           {generatedMatches.length > 0 && (

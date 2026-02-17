@@ -174,9 +174,7 @@ export function ImageLightbox({
                   }}
                   className={cn(
                     'h-2 w-2 rounded-full transition-all',
-                    index === activeIndex
-                      ? 'bg-white w-4'
-                      : 'bg-white/40 hover:bg-white/60'
+                    index === activeIndex ? 'bg-white w-4' : 'bg-white/40 hover:bg-white/60'
                   )}
                   aria-label={`Przejdź do zdjęcia ${index + 1}`}
                 />
@@ -192,9 +190,7 @@ export function ImageLightbox({
           )}
 
           {/* Hidden title for accessibility */}
-          <DialogPrimitive.Title className="sr-only">
-            Podgląd zdjęcia{alt ? `: ${alt}` : ''}
-          </DialogPrimitive.Title>
+          <DialogPrimitive.Title className="sr-only">Podgląd zdjęcia{alt ? `: ${alt}` : ''}</DialogPrimitive.Title>
           <DialogPrimitive.Description className="sr-only">
             {hasMultiple
               ? `Zdjęcie ${activeIndex + 1} z ${allImages.length}. Użyj strzałek do nawigacji.`
@@ -246,16 +242,9 @@ export function ClickableImage({
       <button
         type="button"
         onClick={handleClick}
-        className={cn(
-          'group relative overflow-hidden cursor-zoom-in',
-          containerClassName
-        )}
+        className={cn('group relative overflow-hidden cursor-zoom-in', containerClassName)}
       >
-        <img
-          src={src}
-          alt={alt}
-          className={cn('transition-transform duration-300', className)}
-        />
+        <img src={src} alt={alt} className={cn('transition-transform duration-300', className)} />
         {showZoomIcon && (
           <div
             className={cn(

@@ -1,5 +1,5 @@
-import { useState, useCallback, useRef } from "react";
-import { toast } from "sonner";
+import { useState, useCallback, useRef } from 'react';
+import { toast } from 'sonner';
 
 interface UseOptimisticUpdateOptions<T> {
   /** Funkcja wykonująca rzeczywistą aktualizację (np. mutation) */
@@ -18,7 +18,7 @@ interface UseOptimisticUpdateReturn<T> {
   /** Aktualna wartość (optimistic lub rzeczywista) */
   value: T | null;
   /** Status operacji */
-  status: "idle" | "pending" | "error";
+  status: 'idle' | 'pending' | 'error';
   /** Czy trwa zapisywanie */
   isPending: boolean;
   /** Czy wystąpił błąd */
@@ -62,7 +62,7 @@ export function useOptimisticUpdate<T>({
   showErrorToast = true,
 }: UseOptimisticUpdateOptions<T>): UseOptimisticUpdateReturn<T> {
   const [optimisticValue, setOptimisticValue] = useState<T | null>(null);
-  const [status, setStatus] = useState<"idle" | "pending" | "error">("idle");
+  const [status, setStatus] = useState<'idle' | 'pending' | 'error'>('idle');
   const [error, setError] = useState<Error | null>(null);
 
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
@@ -80,20 +80,20 @@ export function useOptimisticUpdate<T>({
 
       // Optimistic update - natychmiast pokazuj nową wartość
       setOptimisticValue(newValue);
-      setStatus("pending");
+      setStatus('pending');
       setError(null);
 
       const executeCommit = async () => {
         try {
           await onCommit(newValue);
-          setStatus("idle");
+          setStatus('idle');
           onSuccess?.(newValue);
         } catch (err) {
           const error = err instanceof Error ? err : new Error(String(err));
 
           // Rollback
           setOptimisticValue(previousValueRef.current);
-          setStatus("error");
+          setStatus('error');
           setError(error);
 
           if (showErrorToast) {
@@ -104,7 +104,7 @@ export function useOptimisticUpdate<T>({
 
           // Reset error status after delay
           setTimeout(() => {
-            setStatus("idle");
+            setStatus('idle');
             setError(null);
           }, 3000);
         }
@@ -124,15 +124,15 @@ export function useOptimisticUpdate<T>({
       clearTimeout(debounceRef.current);
     }
     setOptimisticValue(null);
-    setStatus("idle");
+    setStatus('idle');
     setError(null);
   }, []);
 
   return {
     value: optimisticValue,
     status,
-    isPending: status === "pending",
-    isError: status === "error",
+    isPending: status === 'pending',
+    isError: status === 'error',
     error,
     commit,
     reset,
@@ -154,7 +154,7 @@ export function useBatchOptimisticUpdate<T extends Record<string, unknown>>({
   debounceMs = 300,
 }: UseBatchOptimisticUpdateOptions<T>) {
   const [pendingChanges, setPendingChanges] = useState<Partial<T>>({});
-  const [status, setStatus] = useState<"idle" | "pending" | "error">("idle");
+  const [status, setStatus] = useState<'idle' | 'pending' | 'error'>('idle');
   const debounceRef = useRef<NodeJS.Timeout | null>(null);
 
   const updateField = useCallback(
@@ -167,23 +167,23 @@ export function useBatchOptimisticUpdate<T extends Record<string, unknown>>({
       // Accumulate changes
       const newChanges = { ...pendingChanges, [field]: value };
       setPendingChanges(newChanges);
-      setStatus("pending");
+      setStatus('pending');
 
       // Debounce the commit
       debounceRef.current = setTimeout(async () => {
         try {
           await onCommit(newChanges);
           setPendingChanges({});
-          setStatus("idle");
+          setStatus('idle');
         } catch (err) {
           const error = err instanceof Error ? err : new Error(String(err));
-          setStatus("error");
+          setStatus('error');
           onRollback?.(error, newChanges);
 
           // Reset after delay
           setTimeout(() => {
             setPendingChanges({});
-            setStatus("idle");
+            setStatus('idle');
           }, 3000);
         }
       }, debounceMs);
@@ -201,10 +201,10 @@ export function useBatchOptimisticUpdate<T extends Record<string, unknown>>({
     try {
       await onCommit(pendingChanges);
       setPendingChanges({});
-      setStatus("idle");
+      setStatus('idle');
     } catch (err) {
       const error = err instanceof Error ? err : new Error(String(err));
-      setStatus("error");
+      setStatus('error');
       onRollback?.(error, pendingChanges);
     }
   }, [pendingChanges, onCommit, onRollback]);
@@ -212,7 +212,7 @@ export function useBatchOptimisticUpdate<T extends Record<string, unknown>>({
   return {
     pendingChanges,
     status,
-    isPending: status === "pending",
+    isPending: status === 'pending',
     hasPendingChanges: Object.keys(pendingChanges).length > 0,
     updateField,
     flush,

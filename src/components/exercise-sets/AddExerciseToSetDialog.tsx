@@ -1,42 +1,26 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { useState, useMemo, useCallback } from "react";
-import { useQuery, useMutation } from "@apollo/client/react";
-import {
-  Search,
-  Loader2,
-  Dumbbell,
-  Check,
-  ArrowLeft,
-  ArrowRight,
-  X,
-  Plus,
-  Minus,
-} from "lucide-react";
-import { toast } from "sonner";
+import * as React from 'react';
+import { useState, useMemo, useCallback } from 'react';
+import { useQuery, useMutation } from '@apollo/client/react';
+import { Search, Loader2, Dumbbell, Check, ArrowLeft, ArrowRight, X, Plus, Minus } from 'lucide-react';
+import { toast } from 'sonner';
 
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { ImagePlaceholder } from "@/components/shared/ImagePlaceholder";
-import { getMediaUrl } from "@/utils/mediaUrl";
-import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
-import { cn } from "@/lib/utils";
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { ImagePlaceholder } from '@/components/shared/ImagePlaceholder';
+import { getMediaUrl } from '@/utils/mediaUrl';
+import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
+import { cn } from '@/lib/utils';
 
-import { GET_ORGANIZATION_EXERCISES_QUERY } from "@/graphql/queries/exercises.queries";
-import { ADD_EXERCISE_TO_EXERCISE_SET_MUTATION } from "@/graphql/mutations/exercises.mutations";
-import { GET_EXERCISE_SET_WITH_ASSIGNMENTS_QUERY } from "@/graphql/queries/exerciseSets.queries";
-import { translateExerciseTypeShort } from "@/components/pdf/polishUtils";
+import { GET_ORGANIZATION_EXERCISES_QUERY } from '@/graphql/queries/exercises.queries';
+import { ADD_EXERCISE_TO_EXERCISE_SET_MUTATION } from '@/graphql/mutations/exercises.mutations';
+import { GET_EXERCISE_SET_WITH_ASSIGNMENTS_QUERY } from '@/graphql/queries/exerciseSets.queries';
+import { translateExerciseTypeShort } from '@/components/pdf/polishUtils';
 
 interface Exercise {
   id: string;
@@ -76,14 +60,14 @@ interface AddExerciseToSetDialogProps {
 }
 
 const translateSide = (side?: string) => {
-  if (!side) return "";
+  if (!side) return '';
   const normalizedSide = side.toLowerCase();
   const sides: Record<string, string> = {
-    left: "lewa",
-    right: "prawa",
-    both: "obie",
-    alternating: "naprzemiennie",
-    none: "",
+    left: 'lewa',
+    right: 'prawa',
+    both: 'obie',
+    alternating: 'naprzemiennie',
+    none: '',
   };
   return sides[normalizedSide] || side;
 };
@@ -97,13 +81,9 @@ export function AddExerciseToSetDialog({
   onSuccess,
 }: AddExerciseToSetDialogProps) {
   const [step, setStep] = useState<1 | 2>(1);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedExercises, setSelectedExercises] = useState<Set<string>>(
-    new Set()
-  );
-  const [exerciseParams, setExerciseParams] = useState<
-    Map<string, ExerciseParams>
-  >(new Map());
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedExercises, setSelectedExercises] = useState<Set<string>>(new Set());
+  const [exerciseParams, setExerciseParams] = useState<Map<string, ExerciseParams>>(new Map());
   const [showCloseConfirm, setShowCloseConfirm] = useState(false);
 
   // Check if there are unsaved changes
@@ -126,7 +106,7 @@ export function AddExerciseToSetDialog({
   React.useEffect(() => {
     if (open) {
       setStep(1);
-      setSearchQuery("");
+      setSearchQuery('');
       setSelectedExercises(new Set());
       setExerciseParams(new Map());
       setShowCloseConfirm(false);
@@ -140,14 +120,10 @@ export function AddExerciseToSetDialog({
   });
 
   // Add exercise mutation
-  const [addExercise, { loading: adding }] = useMutation(
-    ADD_EXERCISE_TO_EXERCISE_SET_MUTATION
-  );
+  const [addExercise, { loading: adding }] = useMutation(ADD_EXERCISE_TO_EXERCISE_SET_MUTATION);
 
   const exercises: Exercise[] = useMemo(() => {
-    const allExercises =
-      (data as { organizationExercises?: Exercise[] })?.organizationExercises ||
-      [];
+    const allExercises = (data as { organizationExercises?: Exercise[] })?.organizationExercises || [];
     // Filter out already added exercises
     return allExercises.filter((ex) => !existingExerciseIds.includes(ex.id));
   }, [data, existingExerciseIds]);
@@ -190,11 +166,7 @@ export function AddExerciseToSetDialog({
     setExerciseParams(params);
   };
 
-  const updateParam = (
-    exerciseId: string,
-    field: keyof ExerciseParams,
-    value: number
-  ) => {
+  const updateParam = (exerciseId: string, field: keyof ExerciseParams, value: number) => {
     const newParams = new Map(exerciseParams);
     const current = newParams.get(exerciseId);
     if (current) {
@@ -205,7 +177,7 @@ export function AddExerciseToSetDialog({
 
   const handleNextStep = () => {
     if (selectedExercises.size === 0) {
-      toast.error("Wybierz przynajmniej jedno ćwiczenie");
+      toast.error('Wybierz przynajmniej jedno ćwiczenie');
       return;
     }
     initializeParams();
@@ -237,15 +209,13 @@ export function AddExerciseToSetDialog({
       }
 
       toast.success(
-        `Dodano ${exercisesToAdd.length} ${
-          exercisesToAdd.length === 1 ? "ćwiczenie" : "ćwiczeń"
-        } do zestawu`
+        `Dodano ${exercisesToAdd.length} ${exercisesToAdd.length === 1 ? 'ćwiczenie' : 'ćwiczeń'} do zestawu`
       );
       onOpenChange(false);
       onSuccess?.();
     } catch (error) {
-      console.error("Błąd podczas dodawania ćwiczeń:", error);
-      toast.error("Nie udało się dodać ćwiczeń do zestawu");
+      console.error('Błąd podczas dodawania ćwiczeń:', error);
+      toast.error('Nie udało się dodać ćwiczeń do zestawu');
     }
   };
 
@@ -267,23 +237,16 @@ export function AddExerciseToSetDialog({
         <DialogHeader>
           <div className="flex items-center gap-3">
             {step === 2 && (
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8"
-                onClick={() => setStep(1)}
-              >
+              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setStep(1)}>
                 <ArrowLeft className="h-4 w-4" />
               </Button>
             )}
             <div>
-              <DialogTitle>
-                {step === 1 ? "Dodaj ćwiczenia" : "Ustaw parametry"}
-              </DialogTitle>
+              <DialogTitle>{step === 1 ? 'Dodaj ćwiczenia' : 'Ustaw parametry'}</DialogTitle>
               <DialogDescription>
                 {step === 1
-                  ? "Wybierz ćwiczenia, które chcesz dodać do zestawu"
-                  : "Ustaw serie, powtórzenia i czas dla wybranych ćwiczeń"}
+                  ? 'Wybierz ćwiczenia, które chcesz dodać do zestawu'
+                  : 'Ustaw serie, powtórzenia i czas dla wybranych ćwiczeń'}
               </DialogDescription>
             </div>
           </div>
@@ -293,26 +256,17 @@ export function AddExerciseToSetDialog({
         <div className="flex items-center justify-center gap-2 py-2">
           <div
             className={cn(
-              "flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium transition-all",
-              step >= 1
-                ? "bg-primary text-primary-foreground"
-                : "bg-surface-light text-muted-foreground"
+              'flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium transition-all',
+              step >= 1 ? 'bg-primary text-primary-foreground' : 'bg-surface-light text-muted-foreground'
             )}
           >
-            {step > 1 ? <Check className="h-4 w-4" /> : "1"}
+            {step > 1 ? <Check className="h-4 w-4" /> : '1'}
           </div>
+          <div className={cn('h-0.5 w-12 transition-colors', step > 1 ? 'bg-primary' : 'bg-border')} />
           <div
             className={cn(
-              "h-0.5 w-12 transition-colors",
-              step > 1 ? "bg-primary" : "bg-border"
-            )}
-          />
-          <div
-            className={cn(
-              "flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium transition-all",
-              step >= 2
-                ? "bg-primary text-primary-foreground"
-                : "bg-surface-light text-muted-foreground"
+              'flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium transition-all',
+              step >= 2 ? 'bg-primary text-primary-foreground' : 'bg-surface-light text-muted-foreground'
             )}
           >
             2
@@ -338,11 +292,8 @@ export function AddExerciseToSetDialog({
             {selectedExercises.size > 0 && (
               <div className="flex items-center justify-between rounded-xl border border-primary/20 bg-primary/5 px-4 py-2">
                 <span className="text-sm text-muted-foreground">
-                  Wybrano{" "}
-                  <span className="font-semibold text-foreground">
-                    {selectedExercises.size}
-                  </span>{" "}
-                  {selectedExercises.size === 1 ? "ćwiczenie" : "ćwiczeń"}
+                  Wybrano <span className="font-semibold text-foreground">{selectedExercises.size}</span>{' '}
+                  {selectedExercises.size === 1 ? 'ćwiczenie' : 'ćwiczeń'}
                 </span>
                 <Button
                   variant="ghost"
@@ -367,9 +318,7 @@ export function AddExerciseToSetDialog({
                     <Dumbbell className="h-8 w-8 text-muted-foreground" />
                   </div>
                   <p className="text-muted-foreground">
-                    {searchQuery
-                      ? "Nie znaleziono ćwiczeń"
-                      : "Brak dostępnych ćwiczeń do dodania"}
+                    {searchQuery ? 'Nie znaleziono ćwiczeń' : 'Brak dostępnych ćwiczeń do dodania'}
                   </p>
                 </div>
               ) : (
@@ -382,20 +331,18 @@ export function AddExerciseToSetDialog({
                       <div
                         key={exercise.id}
                         className={cn(
-                          "flex items-center gap-4 rounded-xl border p-3 cursor-pointer transition-all",
+                          'flex items-center gap-4 rounded-xl border p-3 cursor-pointer transition-all',
                           isSelected
-                            ? "border-primary bg-primary/5"
-                            : "border-border hover:border-border-light hover:bg-surface-light"
+                            ? 'border-primary bg-primary/5'
+                            : 'border-border hover:border-border-light hover:bg-surface-light'
                         )}
                         onClick={() => toggleExercise(exercise.id)}
                       >
                         {/* Checkbox indicator */}
                         <div
                           className={cn(
-                            "flex h-6 w-6 items-center justify-center rounded-md border-2 transition-all flex-shrink-0",
-                            isSelected
-                              ? "border-primary bg-primary text-primary-foreground"
-                              : "border-border"
+                            'flex h-6 w-6 items-center justify-center rounded-md border-2 transition-all flex-shrink-0',
+                            isSelected ? 'border-primary bg-primary text-primary-foreground' : 'border-border'
                           )}
                         >
                           {isSelected && <Check className="h-4 w-4" />}
@@ -404,24 +351,15 @@ export function AddExerciseToSetDialog({
                         {/* Image */}
                         <div className="h-14 w-14 rounded-lg overflow-hidden flex-shrink-0">
                           {imageUrl ? (
-                            <img
-                              src={imageUrl}
-                              alt={exercise.name}
-                              className="h-full w-full object-cover"
-                            />
+                            <img src={imageUrl} alt={exercise.name} className="h-full w-full object-cover" />
                           ) : (
-                            <ImagePlaceholder
-                              type="exercise"
-                              iconClassName="h-5 w-5"
-                            />
+                            <ImagePlaceholder type="exercise" iconClassName="h-5 w-5" />
                           )}
                         </div>
 
                         {/* Info */}
                         <div className="flex-1 min-w-0">
-                          <p className="font-medium truncate">
-                            {exercise.name}
-                          </p>
+                          <p className="font-medium truncate">{exercise.name}</p>
                           <div className="flex items-center gap-2 mt-1">
                             {exercise.type && (
                               <Badge variant="secondary" className="text-xs">
@@ -429,8 +367,8 @@ export function AddExerciseToSetDialog({
                               </Badge>
                             )}
                             {(exercise.side || exercise.exerciseSide) &&
-                              (exercise.side || exercise.exerciseSide) !== "none" &&
-                              (exercise.side || exercise.exerciseSide)?.toLowerCase() !== "none" && (
+                              (exercise.side || exercise.exerciseSide) !== 'none' &&
+                              (exercise.side || exercise.exerciseSide)?.toLowerCase() !== 'none' && (
                                 <Badge variant="outline" className="text-xs">
                                   {translateSide(exercise.side || exercise.exerciseSide)}
                                 </Badge>
@@ -472,30 +410,18 @@ export function AddExerciseToSetDialog({
                   const imageUrl = getExerciseImage(exercise);
 
                   return (
-                    <div
-                      key={exercise.id}
-                      className="rounded-xl border border-border bg-surface p-4 space-y-4"
-                    >
+                    <div key={exercise.id} className="rounded-xl border border-border bg-surface p-4 space-y-4">
                       {/* Exercise header */}
                       <div className="flex items-center gap-4">
                         <div className="h-12 w-12 rounded-lg overflow-hidden flex-shrink-0">
                           {imageUrl ? (
-                            <img
-                              src={imageUrl}
-                              alt={exercise.name}
-                              className="h-full w-full object-cover"
-                            />
+                            <img src={imageUrl} alt={exercise.name} className="h-full w-full object-cover" />
                           ) : (
-                            <ImagePlaceholder
-                              type="exercise"
-                              iconClassName="h-4 w-4"
-                            />
+                            <ImagePlaceholder type="exercise" iconClassName="h-4 w-4" />
                           )}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="font-semibold truncate">
-                            {exercise.name}
-                          </p>
+                          <p className="font-semibold truncate">{exercise.name}</p>
                           {exercise.type && (
                             <Badge variant="secondary" className="text-xs mt-1">
                               {translateExerciseTypeShort(exercise.type)}
@@ -521,47 +447,27 @@ export function AddExerciseToSetDialog({
                       <div className="grid grid-cols-3 gap-4">
                         {/* Sets */}
                         <div className="space-y-2">
-                          <Label className="text-xs text-muted-foreground">
-                            Serie
-                          </Label>
+                          <Label className="text-xs text-muted-foreground">Serie</Label>
                           <div className="flex items-center gap-1">
                             <Button
                               variant="outline"
                               size="icon"
                               className="h-9 w-9"
-                              onClick={() =>
-                                updateParam(
-                                  exercise.id,
-                                  "sets",
-                                  (params?.sets || 0) - 1
-                                )
-                              }
+                              onClick={() => updateParam(exercise.id, 'sets', (params?.sets || 0) - 1)}
                             >
                               <Minus className="h-3 w-3" />
                             </Button>
                             <Input
                               type="number"
                               value={params?.sets || 0}
-                              onChange={(e) =>
-                                updateParam(
-                                  exercise.id,
-                                  "sets",
-                                  parseInt(e.target.value) || 0
-                                )
-                              }
+                              onChange={(e) => updateParam(exercise.id, 'sets', parseInt(e.target.value) || 0)}
                               className="h-9 text-center"
                             />
                             <Button
                               variant="outline"
                               size="icon"
                               className="h-9 w-9"
-                              onClick={() =>
-                                updateParam(
-                                  exercise.id,
-                                  "sets",
-                                  (params?.sets || 0) + 1
-                                )
-                              }
+                              onClick={() => updateParam(exercise.id, 'sets', (params?.sets || 0) + 1)}
                             >
                               <Plus className="h-3 w-3" />
                             </Button>
@@ -570,47 +476,27 @@ export function AddExerciseToSetDialog({
 
                         {/* Reps */}
                         <div className="space-y-2">
-                          <Label className="text-xs text-muted-foreground">
-                            Powtórzenia
-                          </Label>
+                          <Label className="text-xs text-muted-foreground">Powtórzenia</Label>
                           <div className="flex items-center gap-1">
                             <Button
                               variant="outline"
                               size="icon"
                               className="h-9 w-9"
-                              onClick={() =>
-                                updateParam(
-                                  exercise.id,
-                                  "reps",
-                                  (params?.reps || 0) - 1
-                                )
-                              }
+                              onClick={() => updateParam(exercise.id, 'reps', (params?.reps || 0) - 1)}
                             >
                               <Minus className="h-3 w-3" />
                             </Button>
                             <Input
                               type="number"
                               value={params?.reps || 0}
-                              onChange={(e) =>
-                                updateParam(
-                                  exercise.id,
-                                  "reps",
-                                  parseInt(e.target.value) || 0
-                                )
-                              }
+                              onChange={(e) => updateParam(exercise.id, 'reps', parseInt(e.target.value) || 0)}
                               className="h-9 text-center"
                             />
                             <Button
                               variant="outline"
                               size="icon"
                               className="h-9 w-9"
-                              onClick={() =>
-                                updateParam(
-                                  exercise.id,
-                                  "reps",
-                                  (params?.reps || 0) + 1
-                                )
-                              }
+                              onClick={() => updateParam(exercise.id, 'reps', (params?.reps || 0) + 1)}
                             >
                               <Plus className="h-3 w-3" />
                             </Button>
@@ -619,47 +505,27 @@ export function AddExerciseToSetDialog({
 
                         {/* Duration */}
                         <div className="space-y-2">
-                          <Label className="text-xs text-muted-foreground">
-                            Czas (s)
-                          </Label>
+                          <Label className="text-xs text-muted-foreground">Czas (s)</Label>
                           <div className="flex items-center gap-1">
                             <Button
                               variant="outline"
                               size="icon"
                               className="h-9 w-9"
-                              onClick={() =>
-                                updateParam(
-                                  exercise.id,
-                                  "duration",
-                                  (params?.duration || 0) - 5
-                                )
-                              }
+                              onClick={() => updateParam(exercise.id, 'duration', (params?.duration || 0) - 5)}
                             >
                               <Minus className="h-3 w-3" />
                             </Button>
                             <Input
                               type="number"
                               value={params?.duration || 0}
-                              onChange={(e) =>
-                                updateParam(
-                                  exercise.id,
-                                  "duration",
-                                  parseInt(e.target.value) || 0
-                                )
-                              }
+                              onChange={(e) => updateParam(exercise.id, 'duration', parseInt(e.target.value) || 0)}
                               className="h-9 text-center"
                             />
                             <Button
                               variant="outline"
                               size="icon"
                               className="h-9 w-9"
-                              onClick={() =>
-                                updateParam(
-                                  exercise.id,
-                                  "duration",
-                                  (params?.duration || 0) + 5
-                                )
-                              }
+                              onClick={() => updateParam(exercise.id, 'duration', (params?.duration || 0) + 5)}
                             >
                               <Plus className="h-3 w-3" />
                             </Button>
@@ -683,13 +549,8 @@ export function AddExerciseToSetDialog({
                 className="rounded-xl font-semibold"
                 data-testid="set-add-exercise-submit-btn"
               >
-                {adding ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                  <Plus className="mr-2 h-4 w-4" />
-                )}
-                Dodaj {selectedExercises.size}{" "}
-                {selectedExercises.size === 1 ? "ćwiczenie" : "ćwiczeń"}
+                {adding ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Plus className="mr-2 h-4 w-4" />}
+                Dodaj {selectedExercises.size} {selectedExercises.size === 1 ? 'ćwiczenie' : 'ćwiczeń'}
               </Button>
             </div>
           </div>

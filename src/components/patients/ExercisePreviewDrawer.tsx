@@ -1,21 +1,16 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { Play, Clock, Dumbbell, Info, ArrowLeftRight, ChevronLeft, ChevronRight, ImageIcon } from "lucide-react";
+import { useState } from 'react';
+import { Play, Clock, Dumbbell, Info, ArrowLeftRight, ChevronLeft, ChevronRight, ImageIcon } from 'lucide-react';
 
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Separator } from "@/components/ui/separator";
-import { ImagePlaceholder } from "@/components/shared/ImagePlaceholder";
-import { getMediaUrl } from "@/utils/mediaUrl";
-import type { ExerciseMapping, ExerciseOverride } from "./PatientAssignmentCard";
-import { translateExerciseTypeShort, translateExerciseSidePolish } from "@/components/pdf/polishUtils";
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Separator } from '@/components/ui/separator';
+import { ImagePlaceholder } from '@/components/shared/ImagePlaceholder';
+import { getMediaUrl } from '@/utils/mediaUrl';
+import type { ExerciseMapping, ExerciseOverride } from './PatientAssignmentCard';
+import { translateExerciseTypeShort, translateExerciseSidePolish } from '@/components/pdf/polishUtils';
 
 interface ExercisePreviewDrawerProps {
   open: boolean;
@@ -25,14 +20,7 @@ interface ExercisePreviewDrawerProps {
   onEdit?: () => void;
 }
 
-
-export function ExercisePreviewDrawer({
-  open,
-  onOpenChange,
-  mapping,
-  override,
-  onEdit,
-}: ExercisePreviewDrawerProps) {
+export function ExercisePreviewDrawer({ open, onOpenChange, mapping, override, onEdit }: ExercisePreviewDrawerProps) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   if (!mapping) return null;
@@ -83,25 +71,20 @@ export function ExercisePreviewDrawer({
   const effectiveDescription = override?.customDescription ?? mapping.customDescription ?? exercise?.description;
   const effectiveSide = override?.exerciseSide ?? exercise?.exerciseSide;
 
-  const hasOverride = override && (
-    override.sets !== undefined ||
-    override.reps !== undefined ||
-    override.duration !== undefined ||
-    override.customName ||
-    override.customImages?.length
-  );
+  const hasOverride =
+    override &&
+    (override.sets !== undefined ||
+      override.reps !== undefined ||
+      override.duration !== undefined ||
+      override.customName ||
+      override.customImages?.length);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent
-        className="max-w-2xl p-0 flex flex-col"
-        data-testid="exercise-preview-dialog"
-      >
+      <DialogContent className="max-w-2xl p-0 flex flex-col" data-testid="exercise-preview-dialog">
         <DialogHeader className="px-6 pt-6 pb-4 border-b border-border">
           <div className="flex items-center gap-3">
-            <DialogTitle className="text-lg">
-              {effectiveName || "Nieznane ćwiczenie"}
-            </DialogTitle>
+            <DialogTitle className="text-lg">{effectiveName || 'Nieznane ćwiczenie'}</DialogTitle>
             {exercise?.type && (
               <Badge variant="secondary" className="text-xs">
                 {translateExerciseTypeShort(exercise.type)}
@@ -132,7 +115,7 @@ export function ExercisePreviewDrawer({
                 <>
                   <img
                     src={currentImage.url}
-                    alt={effectiveName || "Ćwiczenie"}
+                    alt={effectiveName || 'Ćwiczenie'}
                     className="w-full h-full object-contain"
                   />
                   {currentImage.isCustom && (
@@ -197,9 +180,7 @@ export function ExercisePreviewDrawer({
 
             {/* Parameters */}
             <div className="space-y-3">
-              <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
-                Parametry
-              </h3>
+              <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Parametry</h3>
               <div className="grid grid-cols-3 gap-3">
                 {effectiveSets && (
                   <div className="rounded-xl border border-border/40 bg-surface/30 p-4 text-center">
@@ -226,7 +207,7 @@ export function ExercisePreviewDrawer({
             </div>
 
             {/* Additional info */}
-            {(translateExerciseSidePolish(effectiveSide)) && (
+            {translateExerciseSidePolish(effectiveSide) && (
               <div className="flex items-center gap-3 p-3 rounded-xl bg-surface-light/50 border border-border/40">
                 <ArrowLeftRight className="h-5 w-5 text-muted-foreground shrink-0" />
                 <div>
@@ -245,9 +226,7 @@ export function ExercisePreviewDrawer({
                     <Info className="h-4 w-4" />
                     Opis
                   </h3>
-                  <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">
-                    {effectiveDescription}
-                  </p>
+                  <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">{effectiveDescription}</p>
                 </div>
               </>
             )}
@@ -261,9 +240,7 @@ export function ExercisePreviewDrawer({
                     Notatki dla pacjenta
                   </h3>
                   <div className="rounded-xl bg-primary/5 border border-primary/20 p-4">
-                    <p className="text-sm text-foreground whitespace-pre-wrap">
-                      {override?.notes || mapping.notes}
-                    </p>
+                    <p className="text-sm text-foreground whitespace-pre-wrap">{override?.notes || mapping.notes}</p>
                   </div>
                 </div>
               </>
@@ -275,8 +252,8 @@ export function ExercisePreviewDrawer({
                 <Separator />
                 <div className="rounded-xl bg-info/5 border border-info/20 p-4">
                   <p className="text-xs text-muted-foreground">
-                    <strong className="text-info">Uwaga:</strong> To ćwiczenie ma zmodyfikowane parametry
-                    specjalnie dla tego pacjenta. Oryginalne wartości z zestawu mogą być inne.
+                    <strong className="text-info">Uwaga:</strong> To ćwiczenie ma zmodyfikowane parametry specjalnie dla
+                    tego pacjenta. Oryginalne wartości z zestawu mogą być inne.
                   </p>
                 </div>
               </>

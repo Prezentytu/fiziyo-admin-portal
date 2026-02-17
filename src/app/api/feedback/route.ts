@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse } from 'next/server';
 
 /**
  * API Route do wysyłania feedbacku na Discord
@@ -6,7 +6,7 @@ import { NextRequest, NextResponse } from "next/server";
  * Fallback: jeśli backend nie odpowiada, wysyła bezpośrednio na Discord
  */
 
-const BACKEND_API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+const BACKEND_API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 const DISCORD_WEBHOOK_URL = process.env.NEXT_PUBLIC_DISCORD_WEBHOOK_URL;
 
 interface FeedbackRequest {
@@ -30,14 +30,14 @@ export async function POST(request: NextRequest) {
     const body: FeedbackRequest = await request.json();
 
     if (!body.description) {
-      return NextResponse.json({ success: false, message: "Opis jest wymagany" }, { status: 400 });
+      return NextResponse.json({ success: false, message: 'Opis jest wymagany' }, { status: 400 });
     }
 
     // Próbuj wysłać przez backend
     try {
       const backendResponse = await fetch(`${BACKEND_API_URL}/api/feedback`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       });
 
@@ -46,25 +46,25 @@ export async function POST(request: NextRequest) {
         return NextResponse.json(result);
       }
     } catch (backendError) {
-      console.warn("[API/feedback] Backend unavailable, falling back to direct Discord:", backendError);
+      console.warn('[API/feedback] Backend unavailable, falling back to direct Discord:', backendError);
     }
 
     // Fallback: wyślij bezpośrednio na Discord
     if (!DISCORD_WEBHOOK_URL) {
-      console.error("[API/feedback] No Discord webhook URL configured");
-      return NextResponse.json({ success: false, message: "Serwer feedbacku niedostępny" }, { status: 503 });
+      console.error('[API/feedback] No Discord webhook URL configured');
+      return NextResponse.json({ success: false, message: 'Serwer feedbacku niedostępny' }, { status: 503 });
     }
 
     const embed = buildDiscordEmbed(body);
     const discordPayload = {
-      username: "FiziYo Feedback Bot",
-      avatar_url: "https://i.imgur.com/4M34hi2.png",
+      username: 'FiziYo Feedback Bot',
+      avatar_url: 'https://i.imgur.com/4M34hi2.png',
       embeds: [embed],
     };
 
     const discordResponse = await fetch(DISCORD_WEBHOOK_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(discordPayload),
     });
 
@@ -74,15 +74,15 @@ export async function POST(request: NextRequest) {
         await sendImagesToDiscord(DISCORD_WEBHOOK_URL, body.userEmail, body.images);
       }
 
-      return NextResponse.json({ success: true, message: "Feedback wysłany pomyślnie" });
+      return NextResponse.json({ success: true, message: 'Feedback wysłany pomyślnie' });
     }
 
     const errorText = await discordResponse.text();
-    console.error("[API/feedback] Discord error:", discordResponse.status, errorText);
+    console.error('[API/feedback] Discord error:', discordResponse.status, errorText);
     return NextResponse.json({ success: false, message: `Błąd Discord: ${discordResponse.status}` }, { status: 500 });
   } catch (error) {
-    console.error("[API/feedback] Error:", error);
-    return NextResponse.json({ success: false, message: "Wystąpił błąd podczas wysyłania feedbacku" }, { status: 500 });
+    console.error('[API/feedback] Error:', error);
+    return NextResponse.json({ success: false, message: 'Wystąpił błąd podczas wysyłania feedbacku' }, { status: 500 });
   }
 }
 
@@ -92,41 +92,41 @@ export async function POST(request: NextRequest) {
 
 function buildDiscordEmbed(feedback: FeedbackRequest) {
   const typeConfig: Record<string, { emoji: string; label: string; color: number }> = {
-    bug: { emoji: "🐛", label: "BŁĄD", color: 15158332 },        // czerwony
-    suggestion: { emoji: "💡", label: "SUGESTIA", color: 3447003 }, // niebieski
-    question: { emoji: "❓", label: "PYTANIE", color: 5814783 },    // fioletowy
+    bug: { emoji: '🐛', label: 'BŁĄD', color: 15158332 }, // czerwony
+    suggestion: { emoji: '💡', label: 'SUGESTIA', color: 3447003 }, // niebieski
+    question: { emoji: '❓', label: 'PYTANIE', color: 5814783 }, // fioletowy
   };
 
   const config = typeConfig[feedback.type?.toLowerCase()] || typeConfig.bug;
 
   const env = feedback.environment?.toLowerCase();
-  let envBadge = "🔵 DEV";
-  if (env === "production") envBadge = "🟢 PROD";
-  else if (env === "staging") envBadge = "🟡 STAGING";
+  let envBadge = '🔵 DEV';
+  if (env === 'production') envBadge = '🟢 PROD';
+  else if (env === 'staging') envBadge = '🟡 STAGING';
 
   const roleDisplay: Record<string, string> = {
-    patient: "🩺 Pacjent",
-    physio: "💪 Fizjoterapeuta",
-    therapist: "💪 Fizjoterapeuta",
-    company: "🏢 Właściciel",
-    owner: "🏢 Właściciel",
-    admin: "👑 Administrator",
+    patient: '🩺 Pacjent',
+    physio: '💪 Fizjoterapeuta',
+    therapist: '💪 Fizjoterapeuta',
+    company: '🏢 Właściciel',
+    owner: '🏢 Właściciel',
+    admin: '👑 Administrator',
   };
 
   const fields = [
-    { name: "🌍 Środowisko", value: envBadge, inline: true },
-    { name: "👤 Użytkownik", value: feedback.userEmail, inline: true },
-    { name: "👔 Rola", value: roleDisplay[feedback.userRole || ""] || feedback.userRole || "Nieznany", inline: true },
-    { name: "📝 Opis", value: sanitizeText(feedback.description), inline: false },
+    { name: '🌍 Środowisko', value: envBadge, inline: true },
+    { name: '👤 Użytkownik', value: feedback.userEmail, inline: true },
+    { name: '👔 Rola', value: roleDisplay[feedback.userRole || ''] || feedback.userRole || 'Nieznany', inline: true },
+    { name: '📝 Opis', value: sanitizeText(feedback.description), inline: false },
   ];
 
   if (feedback.organizationId) {
-    fields.push({ name: "🏢 Organizacja", value: `\`${feedback.organizationId}\``, inline: true });
+    fields.push({ name: '🏢 Organizacja', value: `\`${feedback.organizationId}\``, inline: true });
   }
 
   const details = [
-    `• Wersja: ${feedback.appVersion || "unknown"}`,
-    `• Przeglądarka: ${feedback.browser || "unknown"}`,
+    `• Wersja: ${feedback.appVersion || 'unknown'}`,
+    `• Przeglądarka: ${feedback.browser || 'unknown'}`,
     `• User ID: \`${feedback.userId}\``,
   ];
 
@@ -136,25 +136,25 @@ function buildDiscordEmbed(feedback: FeedbackRequest) {
     details.push(`• Załączniki: ${feedback.images.length} zdjęć`);
   }
 
-  fields.push({ name: "🌐 Szczegóły", value: details.join("\n"), inline: false });
+  fields.push({ name: '🌐 Szczegóły', value: details.join('\n'), inline: false });
 
   return {
     title: `${config.emoji} [${config.label}] ${envBadge}`,
-    description: `Zgłoszenie od **${feedback.userName || "użytkownika"}**`,
+    description: `Zgłoszenie od **${feedback.userName || 'użytkownika'}**`,
     color: config.color,
     fields,
-    footer: { text: "FiziYo Admin Portal" },
+    footer: { text: 'FiziYo Admin Portal' },
     timestamp: new Date().toISOString(),
   };
 }
 
 function sanitizeText(text: string): string {
-  if (!text) return "Brak opisu";
+  if (!text) return 'Brak opisu';
   return text
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll("@everyone", "@\u200beveryone")
-    .replaceAll("@here", "@\u200bhere")
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('@everyone', '@\u200beveryone')
+    .replaceAll('@here', '@\u200bhere')
     .substring(0, 4000);
 }
 
@@ -162,26 +162,26 @@ async function sendImagesToDiscord(webhookUrl: string, userEmail: string, images
   for (let i = 0; i < imagesBase64.length; i++) {
     try {
       const imageBase64 = imagesBase64[i];
-      const parts = imageBase64.split(",");
+      const parts = imageBase64.split(',');
       if (parts.length !== 2) continue;
 
-      const mimeType = parts[0].replace("data:", "").replace(";base64", "");
+      const mimeType = parts[0].replace('data:', '').replace(';base64', '');
       const base64Data = parts[1];
-      const imageBuffer = Buffer.from(base64Data, "base64");
+      const imageBuffer = Buffer.from(base64Data, 'base64');
 
-      let extension = "jpg";
-      if (mimeType === "image/png") extension = "png";
-      else if (mimeType === "image/gif") extension = "gif";
+      let extension = 'jpg';
+      if (mimeType === 'image/png') extension = 'png';
+      else if (mimeType === 'image/gif') extension = 'gif';
       const fileName = `feedback_${i + 1}.${extension}`;
 
       const formData = new FormData();
-      formData.append("file", new Blob([imageBuffer], { type: mimeType }), fileName);
+      formData.append('file', new Blob([imageBuffer], { type: mimeType }), fileName);
       formData.append(
-        "payload_json",
+        'payload_json',
         JSON.stringify({ content: `📷 Załącznik ${i + 1}/${imagesBase64.length} od \`${userEmail}\`` })
       );
 
-      await fetch(webhookUrl, { method: "POST", body: formData });
+      await fetch(webhookUrl, { method: 'POST', body: formData });
 
       if (i < imagesBase64.length - 1) {
         await new Promise((resolve) => setTimeout(resolve, 500));

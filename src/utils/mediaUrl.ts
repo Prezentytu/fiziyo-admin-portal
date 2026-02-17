@@ -6,7 +6,7 @@
  * - Dev: https://fiziyo-images-dev-bwg5chc5cwbvbngb.z03.azurefd.net
  * - Prod: https://images.fiziyo.com
  */
-const CDN_BASE_URL = process.env.NEXT_PUBLIC_CDN_URL || "";
+const CDN_BASE_URL = process.env.NEXT_PUBLIC_CDN_URL || '';
 
 /**
  * Konwertuje URL mediów na pełny URL CDN
@@ -21,18 +21,18 @@ export function getMediaUrl(relativeOrFullUrl: string | null | undefined): strin
   if (!relativeOrFullUrl) return null;
 
   // Pełny URL - zwróć bez zmian
-  if (relativeOrFullUrl.startsWith("http://") || relativeOrFullUrl.startsWith("https://")) {
+  if (relativeOrFullUrl.startsWith('http://') || relativeOrFullUrl.startsWith('https://')) {
     return relativeOrFullUrl;
   }
 
   // Data URL (base64) - zwróć bez zmian
-  if (relativeOrFullUrl.startsWith("data:")) {
+  if (relativeOrFullUrl.startsWith('data:')) {
     return relativeOrFullUrl;
   }
 
   // Ścieżka relatywna - użyj CDN
   if (CDN_BASE_URL) {
-    const cleanPath = relativeOrFullUrl.replace(/^\//, "");
+    const cleanPath = relativeOrFullUrl.replace(/^\//, '');
     return `${CDN_BASE_URL}/${cleanPath}`;
   }
 
@@ -44,9 +44,7 @@ export function getMediaUrl(relativeOrFullUrl: string | null | undefined): strin
  * Konwertuje tablicę URL-ów mediów i usuwa duplikaty
  */
 export function getMediaUrls(urls: (string | null | undefined)[]): string[] {
-  const processed = urls
-    .map((url) => getMediaUrl(url))
-    .filter((url): url is string => url !== null);
+  const processed = urls.map((url) => getMediaUrl(url)).filter((url): url is string => url !== null);
 
   // Usuń duplikaty zachowując kolejność
   return [...new Set(processed)];

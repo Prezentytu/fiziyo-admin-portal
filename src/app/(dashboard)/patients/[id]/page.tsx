@@ -35,11 +35,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from '@/components/ui/collapsible';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { LoadingState } from '@/components/shared/LoadingState';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { ActivityReport } from '@/components/patients/ActivityReport';
@@ -92,7 +88,10 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
   } | null>(null);
   const [pdfAssignment, setPdfAssignment] = useState<PatientAssignment | null>(null);
   const [addExerciseAssignment, setAddExerciseAssignment] = useState<PatientAssignment | null>(null);
-  const [previewExercise, setPreviewExercise] = useState<{ mapping: ExerciseMapping; override?: ExerciseOverride } | null>(null);
+  const [previewExercise, setPreviewExercise] = useState<{
+    mapping: ExerciseMapping;
+    override?: ExerciseOverride;
+  } | null>(null);
   const [extendingAssignment, setExtendingAssignment] = useState<PatientAssignment | null>(null);
 
   // Get organization ID from context (changes when user switches organization)
@@ -244,7 +243,9 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
             <AvatarFallback
               className={cn(
                 'text-lg font-semibold',
-                patient.isShadowUser ? 'bg-muted-foreground/60 text-white' : 'bg-gradient-to-br from-primary to-primary-dark text-white'
+                patient.isShadowUser
+                  ? 'bg-muted-foreground/60 text-white'
+                  : 'bg-gradient-to-br from-primary to-primary-dark text-white'
               )}
             >
               {initials}
@@ -258,7 +259,9 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <h1 className="text-xl font-bold text-foreground truncate" data-testid="patient-detail-name">{displayName}</h1>
+            <h1 className="text-xl font-bold text-foreground truncate" data-testid="patient-detail-name">
+              {displayName}
+            </h1>
             {patient.isShadowUser && (
               <Badge variant="secondary" className="text-[10px] shrink-0">
                 Tymczasowe
@@ -305,12 +308,8 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
               <Send className="h-5 w-5 text-white" />
             </div>
             <div className="min-w-0 flex-1">
-              <h3 className="text-base font-bold text-white">
-                Przypisz zestaw
-              </h3>
-              <p className="text-sm text-white/70">
-                Program ćwiczeń
-              </p>
+              <h3 className="text-base font-bold text-white">Przypisz zestaw</h3>
+              <p className="text-sm text-white/70">Program ćwiczeń</p>
             </div>
             <Plus className="h-5 w-5 text-white/60 group-hover:text-white transition-colors shrink-0" />
           </div>
@@ -330,12 +329,8 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
               <QrCode className="h-5 w-5 text-white" />
             </div>
             <div className="min-w-0 flex-1">
-              <h3 className="text-base font-bold text-white">
-                QR kod
-              </h3>
-              <p className="text-sm text-white/70">
-                Połącz z aplikacją
-              </p>
+              <h3 className="text-base font-bold text-white">QR kod</h3>
+              <p className="text-sm text-white/70">Połącz z aplikacją</p>
             </div>
           </div>
         </button>
@@ -447,13 +442,15 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
           open={isAssignDialogOpen}
           onOpenChange={setIsAssignDialogOpen}
           mode="from-patient"
-          preselectedPatient={{
-            id: patient.id,
-            name: displayName,
-            email: patient.email,
-            image: patient.image,
-            isShadowUser: patient.isShadowUser,
-          } as AssignmentPatient}
+          preselectedPatient={
+            {
+              id: patient.id,
+              name: displayName,
+              email: patient.email,
+              image: patient.image,
+              isShadowUser: patient.isShadowUser,
+            } as AssignmentPatient
+          }
           organizationId={organizationId}
           therapistId={therapistId}
           onSuccess={() => refetchAssignments()}
@@ -562,11 +559,7 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
       )}
 
       {/* Edit Patient Dialog */}
-      <EditPatientDialog
-        open={isEditPatientOpen}
-        onOpenChange={setIsEditPatientOpen}
-        patient={patient}
-      />
+      <EditPatientDialog open={isEditPatientOpen} onOpenChange={setIsEditPatientOpen} patient={patient} />
     </div>
   );
 }

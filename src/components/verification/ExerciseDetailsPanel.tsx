@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { useState, useCallback } from "react";
+import { useState, useCallback } from 'react';
 import {
   Dumbbell,
   Timer,
@@ -13,36 +13,32 @@ import {
   ChevronDown,
   ChevronUp,
   Layers,
-} from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
-import { cn } from "@/lib/utils";
-import { getMediaUrls } from "@/utils/mediaUrl";
-import { InlineEditField, InlineEditSelect } from "./InlineEditField";
-import { ClickableStat, ClickableStatGroup } from "./ClickableStat";
-import type { AdminExercise } from "@/graphql/types/adminExercise.types";
+} from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { cn } from '@/lib/utils';
+import { getMediaUrls } from '@/utils/mediaUrl';
+import { InlineEditField, InlineEditSelect } from './InlineEditField';
+import { ClickableStat, ClickableStatGroup } from './ClickableStat';
+import type { AdminExercise } from '@/graphql/types/adminExercise.types';
 
 // Types & Options
 const EXERCISE_TYPES = [
-  { value: "reps", label: "Powtórzenia", icon: <RotateCcw className="h-4 w-4" /> },
-  { value: "time", label: "Czasowe", icon: <Timer className="h-4 w-4" /> },
-  { value: "hold", label: "Izometryczne", icon: <Dumbbell className="h-4 w-4" /> },
+  { value: 'reps', label: 'Powtórzenia', icon: <RotateCcw className="h-4 w-4" /> },
+  { value: 'time', label: 'Czasowe', icon: <Timer className="h-4 w-4" /> },
+  { value: 'hold', label: 'Izometryczne', icon: <Dumbbell className="h-4 w-4" /> },
 ];
 
 const EXERCISE_SIDES = [
-  { value: "none", label: "Brak strony", icon: <span className="w-4" /> },
-  { value: "left", label: "Lewa strona", icon: <ArrowLeftRight className="h-4 w-4" /> },
-  { value: "right", label: "Prawa strona", icon: <ArrowLeftRight className="h-4 w-4 rotate-180" /> },
-  { value: "both", label: "Obie strony", icon: <ArrowLeftRight className="h-4 w-4" /> },
-  { value: "alternating", label: "Naprzemiennie", icon: <ArrowLeftRight className="h-4 w-4" /> },
+  { value: 'none', label: 'Brak strony', icon: <span className="w-4" /> },
+  { value: 'left', label: 'Lewa strona', icon: <ArrowLeftRight className="h-4 w-4" /> },
+  { value: 'right', label: 'Prawa strona', icon: <ArrowLeftRight className="h-4 w-4 rotate-180" /> },
+  { value: 'both', label: 'Obie strony', icon: <ArrowLeftRight className="h-4 w-4" /> },
+  { value: 'alternating', label: 'Naprzemiennie', icon: <ArrowLeftRight className="h-4 w-4" /> },
 ];
 
 interface ExerciseDetailsPanelProps {
@@ -55,7 +51,7 @@ interface ExerciseDetailsPanelProps {
   /** Czy komponent jest disabled */
   disabled?: boolean;
   /** data-testid */
-  "data-testid"?: string;
+  'data-testid'?: string;
 }
 
 /**
@@ -77,16 +73,12 @@ export function ExerciseDetailsPanel({
   onFieldChange,
   className,
   disabled = false,
-  "data-testid": testId,
+  'data-testid': testId,
 }: ExerciseDetailsPanelProps) {
   const [isMediaOpen, setIsMediaOpen] = useState(false);
   const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
 
-  const allImages = getMediaUrls([
-    exercise.thumbnailUrl,
-    exercise.imageUrl,
-    ...(exercise.images || []),
-  ]);
+  const allImages = getMediaUrls([exercise.thumbnailUrl, exercise.imageUrl, ...(exercise.images || [])]);
 
   // Generic field change handler
   const handleFieldCommit = useCallback(
@@ -97,7 +89,7 @@ export function ExerciseDetailsPanel({
   );
 
   return (
-    <Card className={cn("border-border/60", className)} data-testid={testId}>
+    <Card className={cn('border-border/60', className)} data-testid={testId}>
       <CardHeader className="pb-2">
         <CardTitle className="text-base font-semibold flex items-center gap-2">
           <Layers className="h-5 w-5 text-primary" />
@@ -110,7 +102,7 @@ export function ExerciseDetailsPanel({
           <Label className="text-xs text-muted-foreground">Nazwa ćwiczenia</Label>
           <InlineEditField
             value={exercise.name}
-            onCommit={handleFieldCommit("name")}
+            onCommit={handleFieldCommit('name')}
             type="text"
             placeholder="Wpisz nazwę ćwiczenia..."
             disabled={disabled}
@@ -124,8 +116,8 @@ export function ExerciseDetailsPanel({
           <div className="space-y-1">
             <Label className="text-xs text-muted-foreground">Typ ćwiczenia</Label>
             <InlineEditSelect
-              value={exercise.type || "reps"}
-              onCommit={handleFieldCommit("type")}
+              value={exercise.type || 'reps'}
+              onCommit={handleFieldCommit('type')}
               options={EXERCISE_TYPES}
               placeholder="Wybierz typ"
               disabled={disabled}
@@ -136,8 +128,8 @@ export function ExerciseDetailsPanel({
           <div className="space-y-1">
             <Label className="text-xs text-muted-foreground">Strona ciała</Label>
             <InlineEditSelect
-              value={exercise.side || "none"}
-              onCommit={handleFieldCommit("side")}
+              value={exercise.side || 'none'}
+              onCommit={handleFieldCommit('side')}
               options={EXERCISE_SIDES}
               placeholder="Wybierz stronę"
               disabled={disabled}
@@ -158,7 +150,7 @@ export function ExerciseDetailsPanel({
               label="Serie"
               min={0}
               max={20}
-              onCommit={handleFieldCommit("defaultSets")}
+              onCommit={handleFieldCommit('defaultSets')}
               disabled={disabled}
               data-testid="verification-details-sets"
             />
@@ -167,7 +159,7 @@ export function ExerciseDetailsPanel({
               label="Powtórzenia"
               min={0}
               max={100}
-              onCommit={handleFieldCommit("defaultReps")}
+              onCommit={handleFieldCommit('defaultReps')}
               disabled={disabled}
               data-testid="verification-details-reps"
             />
@@ -178,7 +170,7 @@ export function ExerciseDetailsPanel({
               min={0}
               max={600}
               step={5}
-              onCommit={handleFieldCommit("defaultDuration")}
+              onCommit={handleFieldCommit('defaultDuration')}
               icon={<Timer className="h-4 w-4" />}
               disabled={disabled}
               data-testid="verification-details-duration"
@@ -189,16 +181,17 @@ export function ExerciseDetailsPanel({
         {/* MEDIA - Collapsible preview */}
         <Collapsible open={isMediaOpen} onOpenChange={setIsMediaOpen}>
           <CollapsibleTrigger asChild>
-            <Button variant="outline" className="w-full justify-between" data-testid="verification-details-media-toggle">
+            <Button
+              variant="outline"
+              className="w-full justify-between"
+              data-testid="verification-details-media-toggle"
+            >
               <span className="flex items-center gap-2">
                 <ImageIcon className="h-4 w-4" />
-                Media ({allImages.length} zdjęć{exercise.videoUrl ? " + wideo" : ""}{exercise.gifUrl ? " + GIF" : ""})
+                Media ({allImages.length} zdjęć{exercise.videoUrl ? ' + wideo' : ''}
+                {exercise.gifUrl ? ' + GIF' : ''})
               </span>
-              {isMediaOpen ? (
-                <ChevronUp className="h-4 w-4" />
-              ) : (
-                <ChevronDown className="h-4 w-4" />
-              )}
+              {isMediaOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
             </Button>
           </CollapsibleTrigger>
           <CollapsibleContent className="pt-4">
@@ -211,22 +204,13 @@ export function ExerciseDetailsPanel({
                       key={`${img}-${idx}`}
                       className="relative aspect-square rounded-lg overflow-hidden border border-border/60 group"
                     >
-                      <img
-                        src={img}
-                        alt={`Zdjęcie ${idx + 1}`}
-                        className="w-full h-full object-cover"
-                        loading="lazy"
-                      />
+                      <img src={img} alt={`Zdjęcie ${idx + 1}`} className="w-full h-full object-cover" loading="lazy" />
                       <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                         <Button size="icon" variant="ghost" className="h-8 w-8 text-white">
                           <X className="h-4 w-4" />
                         </Button>
                       </div>
-                      {idx === 0 && (
-                        <Badge className="absolute top-1 left-1 text-[10px] px-1.5 py-0">
-                          Główne
-                        </Badge>
-                      )}
+                      {idx === 0 && <Badge className="absolute top-1 left-1 text-[10px] px-1.5 py-0">Główne</Badge>}
                     </div>
                   ))}
                   <button className="aspect-square rounded-lg border-2 border-dashed border-border/60 flex flex-col items-center justify-center gap-1 text-muted-foreground hover:border-primary hover:text-primary transition-colors">
@@ -246,10 +230,10 @@ export function ExerciseDetailsPanel({
                   <Input
                     type="url"
                     placeholder="https://youtube.com/..."
-                    defaultValue={exercise.videoUrl || ""}
+                    defaultValue={exercise.videoUrl || ''}
                     className="text-xs"
                     disabled={disabled}
-                    onBlur={(e) => onFieldChange("videoUrl", e.target.value || null)}
+                    onBlur={(e) => onFieldChange('videoUrl', e.target.value || null)}
                   />
                 </div>
                 <div className="space-y-1">
@@ -260,10 +244,10 @@ export function ExerciseDetailsPanel({
                   <Input
                     type="url"
                     placeholder="https://..."
-                    defaultValue={exercise.gifUrl || ""}
+                    defaultValue={exercise.gifUrl || ''}
                     className="text-xs"
                     disabled={disabled}
-                    onBlur={(e) => onFieldChange("gifUrl", e.target.value || null)}
+                    onBlur={(e) => onFieldChange('gifUrl', e.target.value || null)}
                   />
                 </div>
               </div>
@@ -274,16 +258,16 @@ export function ExerciseDetailsPanel({
         {/* ADVANCED - Collapsible options */}
         <Collapsible open={isAdvancedOpen} onOpenChange={setIsAdvancedOpen}>
           <CollapsibleTrigger asChild>
-            <Button variant="outline" className="w-full justify-between" data-testid="verification-details-advanced-toggle">
+            <Button
+              variant="outline"
+              className="w-full justify-between"
+              data-testid="verification-details-advanced-toggle"
+            >
               <span className="flex items-center gap-2">
                 <Timer className="h-4 w-4" />
                 Ustawienia zaawansowane
               </span>
-              {isAdvancedOpen ? (
-                <ChevronUp className="h-4 w-4" />
-              ) : (
-                <ChevronDown className="h-4 w-4" />
-              )}
+              {isAdvancedOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
             </Button>
           </CollapsibleTrigger>
           <CollapsibleContent className="pt-4 space-y-4">
@@ -292,7 +276,7 @@ export function ExerciseDetailsPanel({
                 <Label className="text-xs text-muted-foreground">Przerwa między seriami (s)</Label>
                 <InlineEditField
                   value={exercise.defaultRestBetweenSets ?? null}
-                  onCommit={handleFieldCommit("defaultRestBetweenSets")}
+                  onCommit={handleFieldCommit('defaultRestBetweenSets')}
                   type="number"
                   placeholder="60"
                   min={0}
@@ -304,8 +288,8 @@ export function ExerciseDetailsPanel({
               <div className="space-y-1">
                 <Label className="text-xs text-muted-foreground">Tempo (np. 2-1-2)</Label>
                 <InlineEditField
-                  value={exercise.tempo || ""}
-                  onCommit={handleFieldCommit("tempo")}
+                  value={exercise.tempo || ''}
+                  onCommit={handleFieldCommit('tempo')}
                   type="text"
                   placeholder="2-1-2"
                   disabled={disabled}
@@ -317,8 +301,8 @@ export function ExerciseDetailsPanel({
             <div className="space-y-1">
               <Label className="text-xs text-muted-foreground">Podpowiedź głosowa (audio cue)</Label>
               <InlineEditField
-                value={exercise.audioCue || ""}
-                onCommit={handleFieldCommit("audioCue")}
+                value={exercise.audioCue || ''}
+                onCommit={handleFieldCommit('audioCue')}
                 type="text"
                 placeholder="Wdech przy opuszczaniu, wydech przy unoszeniu..."
                 disabled={disabled}

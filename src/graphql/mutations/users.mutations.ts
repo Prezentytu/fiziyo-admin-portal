@@ -1,4 +1,4 @@
-import { gql } from "@apollo/client";
+import { gql } from '@apollo/client';
 
 /**
  * Mutacja do tworzenia nowego użytkownika
@@ -344,13 +344,7 @@ export const UPDATE_SHADOW_PATIENT_MUTATION = gql`
     $lastName: String
     $phone: String
   ) {
-    updateShadowPatient(
-      userId: $userId
-      email: $email
-      firstName: $firstName
-      lastName: $lastName
-      phone: $phone
-    ) {
+    updateShadowPatient(userId: $userId, email: $email, firstName: $firstName, lastName: $lastName, phone: $phone) {
       id
       fullname
       email
@@ -373,16 +367,8 @@ export const UPDATE_SHADOW_PATIENT_MUTATION = gql`
  * Model Pay-as-you-go: Gabinet płaci za każdego aktywnego pacjenta w cyklu rozliczeniowym
  */
 export const ACTIVATE_PATIENT_PREMIUM_MUTATION = gql`
-  mutation ActivatePatientPremium(
-    $patientId: String!
-    $organizationId: String!
-    $durationDays: Int = 30
-  ) {
-    activatePatientPremium(
-      patientId: $patientId
-      organizationId: $organizationId
-      durationDays: $durationDays
-    ) {
+  mutation ActivatePatientPremium($patientId: String!, $organizationId: String!, $durationDays: Int = 30) {
+    activatePatientPremium(patientId: $patientId, organizationId: $organizationId, durationDays: $durationDays) {
       success
       patientId
       premiumValidUntil

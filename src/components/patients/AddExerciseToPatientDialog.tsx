@@ -1,41 +1,27 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { useState, useMemo, useCallback } from "react";
-import { useQuery, useMutation } from "@apollo/client/react";
-import {
-  Search,
-  Plus,
-  Minus,
-  Loader2,
-  Dumbbell,
-  Clock,
-  X,
-} from "lucide-react";
-import { toast } from "sonner";
+import * as React from 'react';
+import { useState, useMemo, useCallback } from 'react';
+import { useQuery, useMutation } from '@apollo/client/react';
+import { Search, Plus, Minus, Loader2, Dumbbell, Clock, X } from 'lucide-react';
+import { toast } from 'sonner';
 
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { ImagePlaceholder } from "@/components/shared/ImagePlaceholder";
-import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
-import { cn } from "@/lib/utils";
-import { getMediaUrl } from "@/utils/mediaUrl";
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { ImagePlaceholder } from '@/components/shared/ImagePlaceholder';
+import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
+import { cn } from '@/lib/utils';
+import { getMediaUrl } from '@/utils/mediaUrl';
 
-import { GET_AVAILABLE_EXERCISES_QUERY } from "@/graphql/queries/exercises.queries";
-import { UPDATE_PATIENT_EXERCISE_OVERRIDES_MUTATION } from "@/graphql/mutations/exercises.mutations";
-import { GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY } from "@/graphql/queries/patientAssignments.queries";
-import type { PatientAssignment, ExerciseOverride } from "./PatientAssignmentCard";
-import { translateExerciseTypeShort } from "@/components/pdf/polishUtils";
+import { GET_AVAILABLE_EXERCISES_QUERY } from '@/graphql/queries/exercises.queries';
+import { UPDATE_PATIENT_EXERCISE_OVERRIDES_MUTATION } from '@/graphql/mutations/exercises.mutations';
+import { GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY } from '@/graphql/queries/patientAssignments.queries';
+import type { PatientAssignment, ExerciseOverride } from './PatientAssignmentCard';
+import { translateExerciseTypeShort } from '@/components/pdf/polishUtils';
 
 // Types
 interface Exercise {
@@ -144,25 +130,20 @@ function AddExerciseToPatientDialogContent({
   onHasChanges,
 }: AddExerciseToPatientDialogContentProps) {
   // State
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState('');
   const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(null);
   const [sets, setSets] = useState(3);
   const [reps, setReps] = useState(10);
   const [duration, setDuration] = useState(30);
 
   // Get exercises from organization
-  const { data: exercisesData, loading: loadingExercises } = useQuery(
-    GET_AVAILABLE_EXERCISES_QUERY,
-    {
-      variables: { organizationId },
-      skip: !organizationId,
-    }
-  );
+  const { data: exercisesData, loading: loadingExercises } = useQuery(GET_AVAILABLE_EXERCISES_QUERY, {
+    variables: { organizationId },
+    skip: !organizationId,
+  });
 
   // Mutation
-  const [updateOverrides, { loading: saving }] = useMutation(
-    UPDATE_PATIENT_EXERCISE_OVERRIDES_MUTATION
-  );
+  const [updateOverrides, { loading: saving }] = useMutation(UPDATE_PATIENT_EXERCISE_OVERRIDES_MUTATION);
 
   // Get existing exercise IDs in the assignment to filter them out
   const existingExerciseIds = useMemo(() => {
@@ -185,11 +166,7 @@ function AddExerciseToPatientDialogContent({
     if (!searchQuery.trim()) return filtered;
 
     const query = searchQuery.toLowerCase();
-    return filtered.filter(
-      (e) =>
-        e.name.toLowerCase().includes(query) ||
-        e.description?.toLowerCase().includes(query)
-    );
+    return filtered.filter((e) => e.name.toLowerCase().includes(query) || e.description?.toLowerCase().includes(query));
   }, [exercisesData, existingExerciseIds, searchQuery]);
 
   // Track changes
@@ -227,8 +204,8 @@ function AddExerciseToPatientDialogContent({
       const newOverride = {
         exerciseId: selectedExercise.id,
         sets,
-        reps: selectedExercise.type === "reps" ? reps : undefined,
-        duration: selectedExercise.type === "time" ? duration : undefined,
+        reps: selectedExercise.type === 'reps' ? reps : undefined,
+        duration: selectedExercise.type === 'time' ? duration : undefined,
         isPatientAdded: true,
       };
 
@@ -254,12 +231,12 @@ function AddExerciseToPatientDialogContent({
       onOpenChange(false);
       onSuccess?.();
     } catch (error) {
-      console.error("Błąd dodawania ćwiczenia:", error);
-      toast.error("Nie udało się dodać ćwiczenia");
+      console.error('Błąd dodawania ćwiczenia:', error);
+      toast.error('Nie udało się dodać ćwiczenia');
     }
   };
 
-  const setName = assignment.exerciseSet?.name || "Nieznany zestaw";
+  const setName = assignment.exerciseSet?.name || 'Nieznany zestaw';
 
   return (
     <DialogContent
@@ -276,9 +253,7 @@ function AddExerciseToPatientDialogContent({
           <Dumbbell className="h-5 w-5 text-primary" />
           Dodaj ćwiczenie
         </DialogTitle>
-        <DialogDescription>
-          Dodaj ćwiczenie do zestawu &quot;{setName}&quot; tylko dla tego pacjenta
-        </DialogDescription>
+        <DialogDescription>Dodaj ćwiczenie do zestawu &quot;{setName}&quot; tylko dla tego pacjenta</DialogDescription>
       </DialogHeader>
 
       <div className="flex-1 overflow-hidden flex flex-col">
@@ -305,7 +280,7 @@ function AddExerciseToPatientDialogContent({
                 <div className="h-20 w-20 rounded-xl overflow-hidden shrink-0 bg-surface-light">
                   {getMediaUrl(selectedExercise.imageUrl || selectedExercise.images?.[0]) ? (
                     <img
-                      src={getMediaUrl(selectedExercise.imageUrl || selectedExercise.images?.[0]) || ""}
+                      src={getMediaUrl(selectedExercise.imageUrl || selectedExercise.images?.[0]) || ''}
                       alt={selectedExercise.name}
                       className="h-full w-full object-cover"
                     />
@@ -323,9 +298,7 @@ function AddExerciseToPatientDialogContent({
                     )}
                   </div>
                   {selectedExercise.description && (
-                    <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
-                      {selectedExercise.description}
-                    </p>
+                    <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{selectedExercise.description}</p>
                   )}
                 </div>
                 <Button
@@ -378,7 +351,7 @@ function AddExerciseToPatientDialogContent({
                   </div>
 
                   {/* Reps or Duration based on type */}
-                  {selectedExercise.type === "time" ? (
+                  {selectedExercise.type === 'time' ? (
                     <div className="space-y-2">
                       <Label className="text-sm flex items-center gap-2">
                         <Clock className="h-4 w-4 text-muted-foreground" />
@@ -451,8 +424,8 @@ function AddExerciseToPatientDialogContent({
               {/* Info note */}
               <div className="rounded-xl bg-info/5 border border-info/20 p-3">
                 <p className="text-xs text-muted-foreground">
-                  To ćwiczenie zostanie dodane <strong>tylko dla tego pacjenta</strong>.
-                  Oryginalny zestaw nie zostanie zmodyfikowany.
+                  To ćwiczenie zostanie dodane <strong>tylko dla tego pacjenta</strong>. Oryginalny zestaw nie zostanie
+                  zmodyfikowany.
                 </p>
               </div>
             </div>
@@ -469,9 +442,7 @@ function AddExerciseToPatientDialogContent({
                 <div className="flex flex-col items-center justify-center py-12 text-center">
                   <Dumbbell className="h-12 w-12 text-muted-foreground/50 mb-4" />
                   <p className="text-muted-foreground">
-                    {searchQuery
-                      ? "Nie znaleziono ćwiczeń"
-                      : "Brak dostępnych ćwiczeń"}
+                    {searchQuery ? 'Nie znaleziono ćwiczeń' : 'Brak dostępnych ćwiczeń'}
                   </p>
                 </div>
               ) : (
@@ -484,18 +455,14 @@ function AddExerciseToPatientDialogContent({
                         type="button"
                         onClick={() => handleSelectExercise(exercise)}
                         className={cn(
-                          "flex items-start gap-3 p-3 rounded-xl border text-left transition-all",
-                          "border-border/40 bg-surface/30 hover:bg-surface-light hover:border-primary/30"
+                          'flex items-start gap-3 p-3 rounded-xl border text-left transition-all',
+                          'border-border/40 bg-surface/30 hover:bg-surface-light hover:border-primary/30'
                         )}
                         data-testid={`add-exercise-item-${exercise.id}`}
                       >
                         <div className="h-14 w-14 rounded-lg overflow-hidden shrink-0 bg-surface-light">
                           {imageUrl ? (
-                            <img
-                              src={imageUrl}
-                              alt={exercise.name}
-                              className="h-full w-full object-cover"
-                            />
+                            <img src={imageUrl} alt={exercise.name} className="h-full w-full object-cover" />
                           ) : (
                             <ImagePlaceholder type="exercise" iconClassName="h-5 w-5" />
                           )}

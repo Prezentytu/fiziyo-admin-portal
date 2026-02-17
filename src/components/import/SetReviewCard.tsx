@@ -68,8 +68,8 @@ export function SetReviewCard({
               decision.action === 'create' && hasActiveExercises
                 ? 'bg-primary/20'
                 : !hasActiveExercises
-                ? 'bg-warning/20'
-                : 'bg-surface-light'
+                  ? 'bg-warning/20'
+                  : 'bg-surface-light'
             )}
           >
             <Layers
@@ -78,8 +78,8 @@ export function SetReviewCard({
                 decision.action === 'create' && hasActiveExercises
                   ? 'text-primary'
                   : !hasActiveExercises
-                  ? 'text-warning'
-                  : 'text-muted-foreground'
+                    ? 'text-warning'
+                    : 'text-muted-foreground'
               )}
             />
           </div>
@@ -87,9 +87,7 @@ export function SetReviewCard({
           <div className="min-w-0 flex-1">
             {/* Nazwa zestawu - większa */}
             <div className="flex items-center gap-2 flex-wrap">
-              <h3 className="text-base font-semibold text-foreground">
-                {decision.editedName || exerciseSet.name}
-              </h3>
+              <h3 className="text-base font-semibold text-foreground">{decision.editedName || exerciseSet.name}</h3>
               <Badge variant="secondary" className="text-xs">
                 {activeExercises.length} z {setExercises.length} ćwiczeń
               </Badge>
@@ -118,17 +116,8 @@ export function SetReviewCard({
           </div>
 
           {/* Przycisk rozwijania */}
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setIsExpanded(!isExpanded)}
-            className="shrink-0 h-10 w-10"
-          >
-            {isExpanded ? (
-              <ChevronUp className="h-5 w-5" />
-            ) : (
-              <ChevronDown className="h-5 w-5" />
-            )}
+          <Button variant="ghost" size="icon" onClick={() => setIsExpanded(!isExpanded)} className="shrink-0 h-10 w-10">
+            {isExpanded ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
           </Button>
         </div>
 
@@ -153,10 +142,7 @@ export function SetReviewCard({
             variant={decision.action === 'skip' ? 'secondary' : 'outline'}
             size="sm"
             onClick={() => onDecisionChange({ action: 'skip' })}
-            className={cn(
-              'gap-2 h-9 px-4',
-              decision.action === 'skip' && 'bg-muted text-muted-foreground'
-            )}
+            className={cn('gap-2 h-9 px-4', decision.action === 'skip' && 'bg-muted text-muted-foreground')}
             data-testid={`import-set-card-${exerciseSet.tempId}-skip-btn`}
           >
             <X className="h-4 w-4" />
@@ -167,9 +153,7 @@ export function SetReviewCard({
         {/* Expanded: lista ćwiczeń */}
         {isExpanded && (
           <div className="mt-4 space-y-3 border-t border-border/60 pt-4">
-            <p className="text-sm font-medium text-foreground">
-              Ćwiczenia w zestawie:
-            </p>
+            <p className="text-sm font-medium text-foreground">Ćwiczenia w zestawie:</p>
             <div className="space-y-2">
               {setExercises.map((exercise, index) => {
                 const exDecision = exerciseDecisions[exercise.tempId];
@@ -201,9 +185,7 @@ export function SetReviewCard({
                       </Badge>
                     )}
                     {exDecision?.action === 'create' && (
-                      <Badge className="shrink-0 bg-primary/20 text-primary text-xs border-0">
-                        Nowe ćwiczenie
-                      </Badge>
+                      <Badge className="shrink-0 bg-primary/20 text-primary text-xs border-0">Nowe ćwiczenie</Badge>
                     )}
                     {exDecision?.action === 'skip' && (
                       <Badge variant="secondary" className="shrink-0 text-xs">

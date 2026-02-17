@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import { AlertTriangle, Clock, MessageSquare } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
-import { formatDistanceToNow } from "date-fns";
-import { pl } from "date-fns/locale";
+import { AlertTriangle, Clock, MessageSquare } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+import { formatDistanceToNow } from 'date-fns';
+import { pl } from 'date-fns/locale';
 
 interface FeedbackBannerProps {
   /** Reviewer's notes/comments */
@@ -19,21 +19,16 @@ interface FeedbackBannerProps {
 
 /**
  * FeedbackBanner - Displays verifier feedback for rejected exercises
- * 
+ *
  * Shows:
  * - Warning icon and header
  * - Reviewer's comments
  * - Relative time since rejection
  * - Optional acknowledge button
- * 
+ *
  * Styling: Linear-style amber/orange warning
  */
-export function FeedbackBanner({
-  adminReviewNotes,
-  updatedAt,
-  onAcknowledge,
-  className,
-}: FeedbackBannerProps) {
+export function FeedbackBanner({ adminReviewNotes, updatedAt, onAcknowledge, className }: FeedbackBannerProps) {
   // Format relative time
   const relativeTime = updatedAt
     ? formatDistanceToNow(new Date(updatedAt), {
@@ -44,11 +39,7 @@ export function FeedbackBanner({
 
   return (
     <div
-      className={cn(
-        "rounded-lg border p-4 mb-6",
-        "bg-amber-500/10 border-amber-500/20",
-        className
-      )}
+      className={cn('rounded-lg border p-4 mb-6', 'bg-amber-500/10 border-amber-500/20', className)}
       data-testid="feedback-banner"
     >
       <div className="flex items-start gap-3">
@@ -74,9 +65,7 @@ export function FeedbackBanner({
           </div>
 
           {/* Review notes */}
-          <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">
-            {adminReviewNotes}
-          </p>
+          <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">{adminReviewNotes}</p>
 
           {/* Action */}
           {onAcknowledge && (

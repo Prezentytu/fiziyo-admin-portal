@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import { Check } from "lucide-react";
-import { cn } from "@/lib/utils";
-import type { WizardStep, WizardStepConfig } from "./types";
+import { Check } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import type { WizardStep, WizardStepConfig } from './types';
 
 interface WizardStepIndicatorProps {
   steps: WizardStepConfig[];
@@ -21,9 +21,7 @@ export function WizardStepIndicator({
 }: WizardStepIndicatorProps) {
   const currentIndex = steps.findIndex((s) => s.id === currentStep);
   // Progress should fill to current dot position (same formula as dot positions)
-  const progressPercent = steps.length > 1
-    ? (currentIndex / (steps.length - 1)) * 100
-    : 100;
+  const progressPercent = steps.length > 1 ? (currentIndex / (steps.length - 1)) * 100 : 100;
   const currentStepConfig = steps.find((s) => s.id === currentStep);
 
   return (
@@ -55,8 +53,8 @@ export function WizardStepIndicator({
                 onClick={() => canClick && onStepClick?.(step.id)}
                 disabled={!canClick}
                 className={cn(
-                  "absolute flex items-center justify-center transition-all duration-300",
-                  canClick && "cursor-pointer"
+                  'absolute flex items-center justify-center transition-all duration-300',
+                  canClick && 'cursor-pointer'
                 )}
                 style={{
                   left: `${dotPosition}%`,
@@ -67,19 +65,16 @@ export function WizardStepIndicator({
                 {/* Dot */}
                 <div
                   className={cn(
-                    "flex items-center justify-center rounded-full transition-all duration-300",
-                    isCurrent && "h-7 w-7 bg-primary text-primary-foreground shadow-lg shadow-primary/40 ring-4 ring-primary/20",
-                    isCompleted && !isCurrent && "h-5 w-5 bg-primary text-primary-foreground",
-                    !isCurrent && !isCompleted && "h-4 w-4 bg-surface-light border-2 border-border",
-                    canClick && !isCurrent && "hover:scale-125 hover:border-primary"
+                    'flex items-center justify-center rounded-full transition-all duration-300',
+                    isCurrent &&
+                      'h-7 w-7 bg-primary text-primary-foreground shadow-lg shadow-primary/40 ring-4 ring-primary/20',
+                    isCompleted && !isCurrent && 'h-5 w-5 bg-primary text-primary-foreground',
+                    !isCurrent && !isCompleted && 'h-4 w-4 bg-surface-light border-2 border-border',
+                    canClick && !isCurrent && 'hover:scale-125 hover:border-primary'
                   )}
                 >
-                  {isCompleted && !isCurrent && (
-                    <Check className="h-3 w-3" />
-                  )}
-                  {isCurrent && (
-                    <span className="text-xs font-bold">{index + 1}</span>
-                  )}
+                  {isCompleted && !isCurrent && <Check className="h-3 w-3" />}
+                  {isCurrent && <span className="text-xs font-bold">{index + 1}</span>}
                 </div>
               </button>
             );
@@ -94,9 +89,7 @@ export function WizardStepIndicator({
             Krok {currentIndex + 1} z {steps.length}
           </span>
           <span className="text-muted-foreground/40">•</span>
-          <span className="text-sm font-semibold text-foreground">
-            {currentStepConfig?.label}
-          </span>
+          <span className="text-sm font-semibold text-foreground">{currentStepConfig?.label}</span>
         </div>
 
         {/* Mobile: show description */}

@@ -77,11 +77,7 @@ export function ImportStickyFooter({
               </span>
             )}
 
-            {skipCount > 0 && (
-              <span className="text-muted-foreground">
-                ({skipCount} pominiętych)
-              </span>
-            )}
+            {skipCount > 0 && <span className="text-muted-foreground">({skipCount} pominiętych)</span>}
           </div>
 
           {/* Right side: checkbox + button */}
@@ -114,11 +110,7 @@ export function ImportStickyFooter({
               className="gap-2 h-11 px-8 bg-primary hover:bg-primary-dark"
               data-testid="import-footer-action-btn"
             >
-              {isLoading ? (
-                <Loader2 className="h-5 w-5 animate-spin" />
-              ) : (
-                <ArrowRight className="h-5 w-5" />
-              )}
+              {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <ArrowRight className="h-5 w-5" />}
               {actionLabel}
             </Button>
           </div>

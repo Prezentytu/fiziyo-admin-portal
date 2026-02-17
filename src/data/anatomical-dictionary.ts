@@ -19,34 +19,34 @@
 
 export const BODY_PARTS = [
   // Górna część ciała
-  "Głowa i szyja",
-  "Barki",
-  "Ramiona",
-  "Przedramiona",
-  "Nadgarstki i dłonie",
-  "Klatka piersiowa",
-  "Plecy górne",
-  "Plecy dolne",
+  'Głowa i szyja',
+  'Barki',
+  'Ramiona',
+  'Przedramiona',
+  'Nadgarstki i dłonie',
+  'Klatka piersiowa',
+  'Plecy górne',
+  'Plecy dolne',
 
   // Tułów
-  "Brzuch",
-  "Core (mięśnie głębokie)",
-  "Kręgosłup",
-  "Miednica",
+  'Brzuch',
+  'Core (mięśnie głębokie)',
+  'Kręgosłup',
+  'Miednica',
 
   // Dolna część ciała
-  "Biodra",
-  "Uda",
-  "Kolana",
-  "Podudzia",
-  "Kostki",
-  "Stopy",
+  'Biodra',
+  'Uda',
+  'Kolana',
+  'Podudzia',
+  'Kostki',
+  'Stopy',
 
   // Ogólne
-  "Całe ciało",
+  'Całe ciało',
 ] as const;
 
-export type BodyPart = typeof BODY_PARTS[number];
+export type BodyPart = (typeof BODY_PARTS)[number];
 
 // ============================================
 // MIĘŚNIE
@@ -54,155 +54,155 @@ export type BodyPart = typeof BODY_PARTS[number];
 
 export const MUSCLES = [
   // Szyja
-  "Mięsień mostkowo-obojczykowo-sutkowy",
-  "Mięśnie karku",
-  "Mięśnie głębokie szyi",
+  'Mięsień mostkowo-obojczykowo-sutkowy',
+  'Mięśnie karku',
+  'Mięśnie głębokie szyi',
 
   // Barki
-  "Mięsień naramienny (deltoid)",
-  "Mięsień naramienny - przedni",
-  "Mięsień naramienny - środkowy",
-  "Mięsień naramienny - tylny",
-  "Mięsień czworoboczny (trapezius)",
-  "Mięsień czworoboczny - górna część",
-  "Mięsień czworoboczny - środkowa część",
-  "Mięsień czworoboczny - dolna część",
-  "Rotatory barku",
-  "Mięsień nadgrzebieniowy",
-  "Mięsień podgrzebieniowy",
-  "Mięsień podłopatkowy",
-  "Mięsień obły mniejszy",
+  'Mięsień naramienny (deltoid)',
+  'Mięsień naramienny - przedni',
+  'Mięsień naramienny - środkowy',
+  'Mięsień naramienny - tylny',
+  'Mięsień czworoboczny (trapezius)',
+  'Mięsień czworoboczny - górna część',
+  'Mięsień czworoboczny - środkowa część',
+  'Mięsień czworoboczny - dolna część',
+  'Rotatory barku',
+  'Mięsień nadgrzebieniowy',
+  'Mięsień podgrzebieniowy',
+  'Mięsień podłopatkowy',
+  'Mięsień obły mniejszy',
 
   // Ramiona
-  "Mięsień dwugłowy ramienia (biceps)",
-  "Mięsień trójgłowy ramienia (triceps)",
-  "Mięsień ramienny",
-  "Mięsień ramienno-promieniowy",
+  'Mięsień dwugłowy ramienia (biceps)',
+  'Mięsień trójgłowy ramienia (triceps)',
+  'Mięsień ramienny',
+  'Mięsień ramienno-promieniowy',
 
   // Przedramiona
-  "Zginacze nadgarstka",
-  "Prostowniki nadgarstka",
-  "Mięśnie przedramienia",
+  'Zginacze nadgarstka',
+  'Prostowniki nadgarstka',
+  'Mięśnie przedramienia',
 
   // Klatka piersiowa
-  "Mięsień piersiowy większy (pectoralis major)",
-  "Mięsień piersiowy mniejszy",
-  "Mięsień zębaty przedni",
+  'Mięsień piersiowy większy (pectoralis major)',
+  'Mięsień piersiowy mniejszy',
+  'Mięsień zębaty przedni',
 
   // Plecy
-  "Mięsień najszerszy grzbietu (latissimus dorsi)",
-  "Mięsień równoległoboczny (rhomboideus)",
-  "Mięsień prostownik grzbietu (erector spinae)",
-  "Mięśnie przykręgosłupowe",
-  "Mięsień wielodzielny",
+  'Mięsień najszerszy grzbietu (latissimus dorsi)',
+  'Mięsień równoległoboczny (rhomboideus)',
+  'Mięsień prostownik grzbietu (erector spinae)',
+  'Mięśnie przykręgosłupowe',
+  'Mięsień wielodzielny',
 
   // Core / Brzuch
-  "Mięsień prosty brzucha (rectus abdominis)",
-  "Mięśnie skośne brzucha",
-  "Mięsień skośny zewnętrzny",
-  "Mięsień skośny wewnętrzny",
-  "Mięsień poprzeczny brzucha",
-  "Przepona",
-  "Mięśnie dna miednicy",
+  'Mięsień prosty brzucha (rectus abdominis)',
+  'Mięśnie skośne brzucha',
+  'Mięsień skośny zewnętrzny',
+  'Mięsień skośny wewnętrzny',
+  'Mięsień poprzeczny brzucha',
+  'Przepona',
+  'Mięśnie dna miednicy',
 
   // Biodra / Pośladki
-  "Mięsień pośladkowy wielki (gluteus maximus)",
-  "Mięsień pośladkowy średni (gluteus medius)",
-  "Mięsień pośladkowy mały",
-  "Mięsień gruszkowaty (piriformis)",
-  "Mięsień biodrowo-lędźwiowy (iliopsoas)",
-  "Zginacze biodra",
-  "Rotatory zewnętrzne biodra",
-  "Mięsień naprężacz powięzi szerokiej (TFL)",
+  'Mięsień pośladkowy wielki (gluteus maximus)',
+  'Mięsień pośladkowy średni (gluteus medius)',
+  'Mięsień pośladkowy mały',
+  'Mięsień gruszkowaty (piriformis)',
+  'Mięsień biodrowo-lędźwiowy (iliopsoas)',
+  'Zginacze biodra',
+  'Rotatory zewnętrzne biodra',
+  'Mięsień naprężacz powięzi szerokiej (TFL)',
 
   // Uda - przód
-  "Mięsień czworogłowy uda (quadriceps)",
-  "Mięsień prosty uda",
-  "Mięsień obszerny boczny",
-  "Mięsień obszerny przyśrodkowy",
-  "Mięsień obszerny pośredni",
+  'Mięsień czworogłowy uda (quadriceps)',
+  'Mięsień prosty uda',
+  'Mięsień obszerny boczny',
+  'Mięsień obszerny przyśrodkowy',
+  'Mięsień obszerny pośredni',
 
   // Uda - tył
-  "Mięśnie kulszowo-goleniowe (hamstrings)",
-  "Mięsień dwugłowy uda",
-  "Mięsień półścięgnisty",
-  "Mięsień półbłoniasty",
+  'Mięśnie kulszowo-goleniowe (hamstrings)',
+  'Mięsień dwugłowy uda',
+  'Mięsień półścięgnisty',
+  'Mięsień półbłoniasty',
 
   // Uda - wewnętrzna
-  "Przywodziciele (adductors)",
-  "Mięsień przywodziciel wielki",
-  "Mięsień przywodziciel długi",
-  "Mięsień smukły (gracilis)",
+  'Przywodziciele (adductors)',
+  'Mięsień przywodziciel wielki',
+  'Mięsień przywodziciel długi',
+  'Mięsień smukły (gracilis)',
 
   // Uda - zewnętrzna
-  "Odwodziciele (abductors)",
-  "Pasmo biodrowo-piszczelowe (IT band)",
+  'Odwodziciele (abductors)',
+  'Pasmo biodrowo-piszczelowe (IT band)',
 
   // Podudzia
-  "Mięsień brzuchaty łydki (gastrocnemius)",
-  "Mięsień płaszczkowaty (soleus)",
-  "Mięsień piszczelowy przedni",
-  "Mięśnie strzałkowe",
+  'Mięsień brzuchaty łydki (gastrocnemius)',
+  'Mięsień płaszczkowaty (soleus)',
+  'Mięsień piszczelowy przedni',
+  'Mięśnie strzałkowe',
 
   // Stopy
-  "Mięśnie wewnętrzne stopy",
-  "Mięśnie podeszwy stopy",
+  'Mięśnie wewnętrzne stopy',
+  'Mięśnie podeszwy stopy',
 ] as const;
 
-export type Muscle = typeof MUSCLES[number];
+export type Muscle = (typeof MUSCLES)[number];
 
 // ============================================
 // STAWY
 // ============================================
 
 export const JOINTS = [
-  "Staw barkowy",
-  "Staw łokciowy",
-  "Staw nadgarstkowy",
-  "Stawy palców ręki",
-  "Kręgosłup szyjny",
-  "Kręgosłup piersiowy",
-  "Kręgosłup lędźwiowy",
-  "Staw krzyżowo-biodrowy (SI)",
-  "Staw biodrowy",
-  "Staw kolanowy",
-  "Staw skokowy",
-  "Stawy stopy",
+  'Staw barkowy',
+  'Staw łokciowy',
+  'Staw nadgarstkowy',
+  'Stawy palców ręki',
+  'Kręgosłup szyjny',
+  'Kręgosłup piersiowy',
+  'Kręgosłup lędźwiowy',
+  'Staw krzyżowo-biodrowy (SI)',
+  'Staw biodrowy',
+  'Staw kolanowy',
+  'Staw skokowy',
+  'Stawy stopy',
 ] as const;
 
-export type Joint = typeof JOINTS[number];
+export type Joint = (typeof JOINTS)[number];
 
 // ============================================
 // SPRZĘT
 // ============================================
 
 export const EQUIPMENT = [
-  "Bez sprzętu",
-  "Mata",
-  "Piłka gimnastyczna",
-  "Piłka do masażu",
-  "Roller (wałek)",
-  "Guma oporowa",
-  "Taśma oporowa (loop)",
-  "Hantle",
-  "Kettlebell",
-  "Sztanga",
-  "TRX / taśmy suspensyjne",
-  "Ławka",
-  "Stoper / podwyższenie",
-  "Ściana",
-  "Krzesło",
-  "Drążek",
-  "Bosu",
-  "Balance board",
-  "Klocki do jogi",
-  "Pasek do jogi",
-  "Elastyczna opaska",
-  "Ciężarki na kostki",
-  "Ekspander",
+  'Bez sprzętu',
+  'Mata',
+  'Piłka gimnastyczna',
+  'Piłka do masażu',
+  'Roller (wałek)',
+  'Guma oporowa',
+  'Taśma oporowa (loop)',
+  'Hantle',
+  'Kettlebell',
+  'Sztanga',
+  'TRX / taśmy suspensyjne',
+  'Ławka',
+  'Stoper / podwyższenie',
+  'Ściana',
+  'Krzesło',
+  'Drążek',
+  'Bosu',
+  'Balance board',
+  'Klocki do jogi',
+  'Pasek do jogi',
+  'Elastyczna opaska',
+  'Ciężarki na kostki',
+  'Ekspander',
 ] as const;
 
-export type Equipment = typeof EQUIPMENT[number];
+export type Equipment = (typeof EQUIPMENT)[number];
 
 // ============================================
 // CELE ĆWICZENIA
@@ -210,42 +210,37 @@ export type Equipment = typeof EQUIPMENT[number];
 
 export const EXERCISE_GOALS = [
   // Typ ćwiczenia
-  "Rozciąganie",
-  "Wzmacnianie",
-  "Mobilizacja",
-  "Stabilizacja",
-  "Oddychanie",
-  "Relaksacja",
-  "Koordynacja",
-  "Równowaga",
-  "Propriocepcja",
+  'Rozciąganie',
+  'Wzmacnianie',
+  'Mobilizacja',
+  'Stabilizacja',
+  'Oddychanie',
+  'Relaksacja',
+  'Koordynacja',
+  'Równowaga',
+  'Propriocepcja',
 
   // Specyficzne cele
-  "Rozgrzewka",
-  "Rozluźnienie",
-  "Prewencja urazów",
-  "Rehabilitacja pourazowa",
-  "Poprawa postawy",
-  "Redukcja bólu",
-  "Zwiększenie zakresu ruchu",
-  "Budowanie siły",
-  "Wytrzymałość mięśniowa",
+  'Rozgrzewka',
+  'Rozluźnienie',
+  'Prewencja urazów',
+  'Rehabilitacja pourazowa',
+  'Poprawa postawy',
+  'Redukcja bólu',
+  'Zwiększenie zakresu ruchu',
+  'Budowanie siły',
+  'Wytrzymałość mięśniowa',
 ] as const;
 
-export type ExerciseGoal = typeof EXERCISE_GOALS[number];
+export type ExerciseGoal = (typeof EXERCISE_GOALS)[number];
 
 // ============================================
 // POZIOMY TRUDNOŚCI
 // ============================================
 
-export const DIFFICULTY_LEVELS = [
-  "Początkujący",
-  "Średniozaawansowany",
-  "Zaawansowany",
-  "Ekspert",
-] as const;
+export const DIFFICULTY_LEVELS = ['Początkujący', 'Średniozaawansowany', 'Zaawansowany', 'Ekspert'] as const;
 
-export type DifficultyLevel = typeof DIFFICULTY_LEVELS[number];
+export type DifficultyLevel = (typeof DIFFICULTY_LEVELS)[number];
 
 // ============================================
 // TAGI GŁÓWNE (połączenie najważniejszych)
@@ -255,35 +250,24 @@ export type DifficultyLevel = typeof DIFFICULTY_LEVELS[number];
  * Główne tagi - używane do kategoryzacji ćwiczeń
  * Połączenie: partie ciała + cele + trudność
  */
-export const MAIN_TAGS = [
-  ...BODY_PARTS,
-  ...EXERCISE_GOALS,
-  ...DIFFICULTY_LEVELS,
-] as const;
+export const MAIN_TAGS = [...BODY_PARTS, ...EXERCISE_GOALS, ...DIFFICULTY_LEVELS] as const;
 
-export type MainTag = typeof MAIN_TAGS[number];
+export type MainTag = (typeof MAIN_TAGS)[number];
 
 /**
  * Tagi dodatkowe - bardziej szczegółowe
  * Połączenie: mięśnie + stawy + sprzęt
  */
-export const ADDITIONAL_TAGS = [
-  ...MUSCLES,
-  ...JOINTS,
-  ...EQUIPMENT,
-] as const;
+export const ADDITIONAL_TAGS = [...MUSCLES, ...JOINTS, ...EQUIPMENT] as const;
 
-export type AdditionalTag = typeof ADDITIONAL_TAGS[number];
+export type AdditionalTag = (typeof ADDITIONAL_TAGS)[number];
 
 /**
  * Wszystkie tagi - pełny słownik
  */
-export const ALL_TAGS = [
-  ...MAIN_TAGS,
-  ...ADDITIONAL_TAGS,
-] as const;
+export const ALL_TAGS = [...MAIN_TAGS, ...ADDITIONAL_TAGS] as const;
 
-export type AnyTag = typeof ALL_TAGS[number];
+export type AnyTag = (typeof ALL_TAGS)[number];
 
 // ============================================
 // HELPER FUNCTIONS
@@ -321,12 +305,12 @@ export function filterValidTags(tags: string[]): string[] {
  * Zwraca kategorię tagu
  */
 export function getTagCategory(tag: string): string | null {
-  if (BODY_PARTS.includes(tag as BodyPart)) return "Partie ciała";
-  if (MUSCLES.includes(tag as Muscle)) return "Mięśnie";
-  if (JOINTS.includes(tag as Joint)) return "Stawy";
-  if (EQUIPMENT.includes(tag as Equipment)) return "Sprzęt";
-  if (EXERCISE_GOALS.includes(tag as ExerciseGoal)) return "Cele";
-  if (DIFFICULTY_LEVELS.includes(tag as DifficultyLevel)) return "Trudność";
+  if (BODY_PARTS.includes(tag as BodyPart)) return 'Partie ciała';
+  if (MUSCLES.includes(tag as Muscle)) return 'Mięśnie';
+  if (JOINTS.includes(tag as Joint)) return 'Stawy';
+  if (EQUIPMENT.includes(tag as Equipment)) return 'Sprzęt';
+  if (EXERCISE_GOALS.includes(tag as ExerciseGoal)) return 'Cele';
+  if (DIFFICULTY_LEVELS.includes(tag as DifficultyLevel)) return 'Trudność';
   return null;
 }
 
@@ -335,13 +319,13 @@ export function getTagCategory(tag: string): string | null {
  */
 export function groupTagsByCategory(tags: string[]): Record<string, string[]> {
   const groups: Record<string, string[]> = {
-    "Partie ciała": [],
-    "Mięśnie": [],
-    "Stawy": [],
-    "Sprzęt": [],
-    "Cele": [],
-    "Trudność": [],
-    "Inne": [],
+    'Partie ciała': [],
+    Mięśnie: [],
+    Stawy: [],
+    Sprzęt: [],
+    Cele: [],
+    Trudność: [],
+    Inne: [],
   };
 
   for (const tag of tags) {
@@ -349,7 +333,7 @@ export function groupTagsByCategory(tags: string[]): Record<string, string[]> {
     if (category) {
       groups[category].push(tag);
     } else {
-      groups["Inne"].push(tag);
+      groups['Inne'].push(tag);
     }
   }
 
@@ -362,20 +346,20 @@ export function groupTagsByCategory(tags: string[]): Record<string, string[]> {
 export function getTagCategoryColor(tag: string): string {
   const category = getTagCategory(tag);
   switch (category) {
-    case "Partie ciała":
-      return "bg-blue-500/10 text-blue-600 border-blue-500/20";
-    case "Mięśnie":
-      return "bg-purple-500/10 text-purple-600 border-purple-500/20";
-    case "Stawy":
-      return "bg-cyan-500/10 text-cyan-600 border-cyan-500/20";
-    case "Sprzęt":
-      return "bg-zinc-500/10 text-zinc-600 border-zinc-500/20";
-    case "Cele":
-      return "bg-emerald-500/10 text-emerald-600 border-emerald-500/20";
-    case "Trudność":
-      return "bg-amber-500/10 text-amber-600 border-amber-500/20";
+    case 'Partie ciała':
+      return 'bg-blue-500/10 text-blue-600 border-blue-500/20';
+    case 'Mięśnie':
+      return 'bg-purple-500/10 text-purple-600 border-purple-500/20';
+    case 'Stawy':
+      return 'bg-cyan-500/10 text-cyan-600 border-cyan-500/20';
+    case 'Sprzęt':
+      return 'bg-zinc-500/10 text-zinc-600 border-zinc-500/20';
+    case 'Cele':
+      return 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20';
+    case 'Trudność':
+      return 'bg-amber-500/10 text-amber-600 border-amber-500/20';
     default:
-      return "bg-muted text-muted-foreground border-border";
+      return 'bg-muted text-muted-foreground border-border';
   }
 }
 
@@ -386,9 +370,7 @@ export function searchTags(query: string, source: readonly string[] = ALL_TAGS):
   const normalizedQuery = query.toLowerCase().trim();
   if (!normalizedQuery) return [...source];
 
-  return source.filter((tag) =>
-    tag.toLowerCase().includes(normalizedQuery)
-  );
+  return source.filter((tag) => tag.toLowerCase().includes(normalizedQuery));
 }
 
 /**
@@ -399,43 +381,39 @@ export function getSuggestedTags(selectedTags: string[]): string[] {
   const suggestions: string[] = [];
 
   for (const tag of selectedTags) {
-    if (tag.includes("Biodra") || tag.includes("Pośladki")) {
+    if (tag.includes('Biodra') || tag.includes('Pośladki')) {
       suggestions.push(
-        "Mięsień pośladkowy wielki (gluteus maximus)",
-        "Mięsień pośladkowy średni (gluteus medius)",
-        "Mięsień gruszkowaty (piriformis)"
+        'Mięsień pośladkowy wielki (gluteus maximus)',
+        'Mięsień pośladkowy średni (gluteus medius)',
+        'Mięsień gruszkowaty (piriformis)'
       );
     }
-    if (tag.includes("Uda")) {
+    if (tag.includes('Uda')) {
       suggestions.push(
-        "Mięsień czworogłowy uda (quadriceps)",
-        "Mięśnie kulszowo-goleniowe (hamstrings)",
-        "Przywodziciele (adductors)"
+        'Mięsień czworogłowy uda (quadriceps)',
+        'Mięśnie kulszowo-goleniowe (hamstrings)',
+        'Przywodziciele (adductors)'
       );
     }
-    if (tag.includes("Plecy")) {
+    if (tag.includes('Plecy')) {
       suggestions.push(
-        "Mięsień najszerszy grzbietu (latissimus dorsi)",
-        "Mięsień prostownik grzbietu (erector spinae)",
-        "Mięśnie przykręgosłupowe"
+        'Mięsień najszerszy grzbietu (latissimus dorsi)',
+        'Mięsień prostownik grzbietu (erector spinae)',
+        'Mięśnie przykręgosłupowe'
       );
     }
-    if (tag.includes("Core") || tag.includes("Brzuch")) {
+    if (tag.includes('Core') || tag.includes('Brzuch')) {
       suggestions.push(
-        "Mięsień prosty brzucha (rectus abdominis)",
-        "Mięśnie skośne brzucha",
-        "Mięsień poprzeczny brzucha"
+        'Mięsień prosty brzucha (rectus abdominis)',
+        'Mięśnie skośne brzucha',
+        'Mięsień poprzeczny brzucha'
       );
     }
-    if (tag.includes("Barki")) {
-      suggestions.push(
-        "Mięsień naramienny (deltoid)",
-        "Mięsień czworoboczny (trapezius)",
-        "Rotatory barku"
-      );
+    if (tag.includes('Barki')) {
+      suggestions.push('Mięsień naramienny (deltoid)', 'Mięsień czworoboczny (trapezius)', 'Rotatory barku');
     }
   }
 
   // Usuń duplikaty i już wybrane
-  return [...new Set(suggestions)].filter(s => !selectedTags.includes(s));
+  return [...new Set(suggestions)].filter((s) => !selectedTags.includes(s));
 }

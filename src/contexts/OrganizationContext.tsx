@@ -1,27 +1,13 @@
-"use client";
+'use client';
 
-import {
-  createContext,
-  useContext,
-  useState,
-  useCallback,
-  useEffect,
-  useMemo,
-} from "react";
-import { useQuery, useMutation, useApolloClient } from "@apollo/client/react";
-import { toast } from "sonner";
-import { GET_USER_ORGANIZATIONS_QUERY } from "@/graphql/queries/users.queries";
-import { SET_DEFAULT_ORGANIZATION_MUTATION } from "@/graphql/mutations/users.mutations";
-import { tokenExchangeService } from "@/services/tokenExchangeService";
-import {
-  getBackendToken,
-  saveBackendToken,
-  clearBackendToken,
-} from "@/lib/tokenCache";
-import type {
-  UserOrganizationWithRole,
-  UserOrganizationsResponse,
-} from "@/types/apollo";
+import { createContext, useContext, useState, useCallback, useEffect, useMemo } from 'react';
+import { useQuery, useMutation, useApolloClient } from '@apollo/client/react';
+import { toast } from 'sonner';
+import { GET_USER_ORGANIZATIONS_QUERY } from '@/graphql/queries/users.queries';
+import { SET_DEFAULT_ORGANIZATION_MUTATION } from '@/graphql/mutations/users.mutations';
+import { tokenExchangeService } from '@/services/tokenExchangeService';
+import { getBackendToken, saveBackendToken, clearBackendToken } from '@/lib/tokenCache';
+import type { UserOrganizationWithRole, UserOrganizationsResponse } from '@/types/apollo';
 
 // ========================================
 // Types
@@ -44,18 +30,16 @@ interface OrganizationContextValue {
   hasMultipleOrganizations: boolean;
 }
 
-const OrganizationContext = createContext<OrganizationContextValue | null>(
-  null
-);
+const OrganizationContext = createContext<OrganizationContextValue | null>(null);
 
 // ========================================
 // Local Storage Keys
 // ========================================
 
-const LAST_ORG_KEY = "fizyo_last_organization_id";
+const LAST_ORG_KEY = 'fizyo_last_organization_id';
 
 function getLastOrganizationId(): string | null {
-  if (typeof window === "undefined") return null;
+  if (typeof window === 'undefined') return null;
   try {
     return localStorage.getItem(LAST_ORG_KEY);
   } catch {
@@ -64,7 +48,7 @@ function getLastOrganizationId(): string | null {
 }
 
 function setLastOrganizationId(orgId: string): void {
-  if (typeof window === "undefined") return;
+  if (typeof window === 'undefined') return;
   try {
     localStorage.setItem(LAST_ORG_KEY, orgId);
   } catch {
@@ -92,23 +76,20 @@ export function OrganizationProvider({ children }: OrganizationProviderProps) {
     error: queryError,
     refetch,
   } = useQuery<UserOrganizationsResponse>(GET_USER_ORGANIZATIONS_QUERY, {
-    fetchPolicy: "cache-and-network",
+    fetchPolicy: 'cache-and-network',
   });
 
   // Log query errors
   useEffect(() => {
     if (queryError) {
-      console.error("[OrganizationContext] Error fetching organizations:", queryError);
+      console.error('[OrganizationContext] Error fetching organizations:', queryError);
     }
   }, [queryError]);
 
   // Mutation to set default organization
   const [setDefaultOrganization] = useMutation(SET_DEFAULT_ORGANIZATION_MUTATION);
 
-  const organizations = useMemo(
-    () => data?.userOrganizations || [],
-    [data?.userOrganizations]
-  );
+  const organizations = useMemo(() => data?.userOrganizations || [], [data?.userOrganizations]);
 
   const hasMultipleOrganizations = organizations.length > 1;
 
@@ -120,7 +101,7 @@ export function OrganizationProvider({ children }: OrganizationProviderProps) {
     const cachedToken = getBackendToken();
     if (cachedToken) {
       try {
-        const payload = JSON.parse(atob(cachedToken.split(".")[1]));
+        const payload = JSON.parse(atob(cachedToken.split('.')[1]));
         const tokenOrgId = payload.organization_id || payload.OrganizationId;
         if (tokenOrgId && organizations.some((o) => o.organizationId === tokenOrgId)) {
           setCurrentOrgId(tokenOrgId);
@@ -158,11 +139,9 @@ export function OrganizationProvider({ children }: OrganizationProviderProps) {
       if (organizationId === currentOrgId) return;
 
       // Find the target organization
-      const targetOrg = organizations.find(
-        (o) => o.organizationId === organizationId
-      );
+      const targetOrg = organizations.find((o) => o.organizationId === organizationId);
       if (!targetOrg) {
-        toast.error("Nie znaleziono organizacji");
+        toast.error('Nie znaleziono organizacji');
         return;
       }
 
@@ -172,14 +151,11 @@ export function OrganizationProvider({ children }: OrganizationProviderProps) {
         // Get current token
         const currentToken = getBackendToken();
         if (!currentToken) {
-          throw new Error("Brak tokenu autoryzacji");
+          throw new Error('Brak tokenu autoryzacji');
         }
 
         // Exchange token for new organization
-        const response = await tokenExchangeService.changeOrganization(
-          currentToken,
-          organizationId
-        );
+        const response = await tokenExchangeService.changeOrganization(currentToken, organizationId);
 
         // Save new token
         saveBackendToken(response.access_token);
@@ -188,7 +164,7 @@ export function OrganizationProvider({ children }: OrganizationProviderProps) {
         setDefaultOrganization({
           variables: { organizationId },
         }).catch((err) => {
-          console.warn("[OrganizationContext] Failed to update default org:", err);
+          console.warn('[OrganizationContext] Failed to update default org:', err);
         });
 
         // Update local state
@@ -204,17 +180,13 @@ export function OrganizationProvider({ children }: OrganizationProviderProps) {
           duration: 3000,
         });
       } catch (error) {
-        console.error("[OrganizationContext] Switch failed:", error);
-        toast.error("Nie udało się przełączyć organizacji", {
-          description:
-            error instanceof Error ? error.message : "Spróbuj ponownie",
+        console.error('[OrganizationContext] Switch failed:', error);
+        toast.error('Nie udało się przełączyć organizacji', {
+          description: error instanceof Error ? error.message : 'Spróbuj ponownie',
         });
 
         // Clear token on auth errors
-        if (
-          error instanceof Error &&
-          (error.message.includes("401") || error.message.includes("403"))
-        ) {
+        if (error instanceof Error && (error.message.includes('401') || error.message.includes('403'))) {
           clearBackendToken();
         }
       } finally {
@@ -249,11 +221,7 @@ export function OrganizationProvider({ children }: OrganizationProviderProps) {
     ]
   );
 
-  return (
-    <OrganizationContext.Provider value={value}>
-      {children}
-    </OrganizationContext.Provider>
-  );
+  return <OrganizationContext.Provider value={value}>{children}</OrganizationContext.Provider>;
 }
 
 // ========================================
@@ -263,9 +231,7 @@ export function OrganizationProvider({ children }: OrganizationProviderProps) {
 export function useOrganization() {
   const context = useContext(OrganizationContext);
   if (!context) {
-    throw new Error(
-      "useOrganization must be used within an OrganizationProvider"
-    );
+    throw new Error('useOrganization must be used within an OrganizationProvider');
   }
   return context;
 }
@@ -276,16 +242,16 @@ export function useOrganization() {
 
 function getRoleLabel(role: string): string {
   const roleLabels: Record<string, string> = {
-    OWNER: "Właściciel",
-    owner: "Właściciel",
-    ADMIN: "Administrator",
-    admin: "Administrator",
-    THERAPIST: "Fizjoterapeuta",
-    therapist: "Fizjoterapeuta",
-    MEMBER: "Członek",
-    member: "Członek",
-    STAFF: "Personel",
-    staff: "Personel",
+    OWNER: 'Właściciel',
+    owner: 'Właściciel',
+    ADMIN: 'Administrator',
+    admin: 'Administrator',
+    THERAPIST: 'Fizjoterapeuta',
+    therapist: 'Fizjoterapeuta',
+    MEMBER: 'Członek',
+    member: 'Członek',
+    STAFF: 'Personel',
+    staff: 'Personel',
   };
   return roleLabels[role] || role;
 }

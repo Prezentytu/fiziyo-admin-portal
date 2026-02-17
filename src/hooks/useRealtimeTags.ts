@@ -1,10 +1,6 @@
-import { useSubscription, useApolloClient } from "@apollo/client/react";
-import { useCallback } from "react";
-import {
-  ON_TAG_CREATED,
-  ON_TAG_UPDATED,
-  ON_TAG_DELETED,
-} from "@/graphql/subscriptions";
+import { useSubscription, useApolloClient } from '@apollo/client/react';
+import { useCallback } from 'react';
+import { ON_TAG_CREATED, ON_TAG_UPDATED, ON_TAG_DELETED } from '@/graphql/subscriptions';
 
 interface UseRealtimeTagsOptions {
   /** ID organizacji do subskrypcji */
@@ -40,7 +36,7 @@ export function useRealtimeTags({
   const refetch = useCallback(() => {
     if (!organizationId) return;
     client.refetchQueries({
-      include: ["GetOrganizationTags"],
+      include: ['GetOrganizationTags'],
     });
   }, [client, organizationId]);
 
@@ -80,7 +76,7 @@ export function useRealtimeTags({
 
       // Usuń z cache
       client.cache.evict({
-        id: client.cache.identify({ __typename: "ExerciseTag", id: tagId }),
+        id: client.cache.identify({ __typename: 'ExerciseTag', id: tagId }),
       });
       client.cache.gc();
 

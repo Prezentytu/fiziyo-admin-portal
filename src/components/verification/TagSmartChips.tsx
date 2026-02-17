@@ -1,22 +1,11 @@
-"use client";
+'use client';
 
-import { useState, useCallback, useMemo } from "react";
-import {
-  Tag,
-  Plus,
-  X,
-  Sparkles,
-  Loader2,
-  Check,
-} from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { useState, useCallback, useMemo } from 'react';
+import { Tag, Plus, X, Sparkles, Loader2, Check } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import {
   Command,
   CommandEmpty,
@@ -25,9 +14,9 @@ import {
   CommandItem,
   CommandList,
   CommandSeparator,
-} from "@/components/ui/command";
-import { cn } from "@/lib/utils";
-import { toast } from "sonner";
+} from '@/components/ui/command';
+import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 import {
   MAIN_TAGS,
   ADDITIONAL_TAGS,
@@ -35,7 +24,7 @@ import {
   getTagCategory,
   searchTags,
   getSuggestedTags,
-} from "@/data/anatomical-dictionary";
+} from '@/data/anatomical-dictionary';
 
 interface TagSmartChipsProps {
   /** ID ćwiczenia (dla AI cache) */
@@ -49,7 +38,7 @@ interface TagSmartChipsProps {
   /** Callback przy zmianie tagów */
   onTagsChange: (tags: string[]) => Promise<void>;
   /** Typ tagów: main lub additional */
-  tagType: "main" | "additional";
+  tagType: 'main' | 'additional';
   /** Etykieta */
   label: string;
   /** Czy wyłączony */
@@ -57,10 +46,10 @@ interface TagSmartChipsProps {
   /** Dodatkowe klasy CSS */
   className?: string;
   /** data-testid */
-  "data-testid"?: string;
+  'data-testid'?: string;
 }
 
-type AIStatus = "idle" | "loading" | "loaded" | "error";
+type AIStatus = 'idle' | 'loading' | 'loaded' | 'error';
 
 /**
  * TagSmartChips - Tagi z ON-DEMAND AI suggestions
@@ -84,26 +73,20 @@ export function TagSmartChips({
   label,
   disabled = false,
   className,
-  "data-testid": testId,
+  'data-testid': testId,
 }: TagSmartChipsProps) {
   const [isComboboxOpen, setIsComboboxOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState('');
 
   // AI suggestions state - ładowane TYLKO gdy user kliknie
   const [aiSuggestions, setAiSuggestions] = useState<string[] | null>(null);
-  const [aiStatus, setAiStatus] = useState<AIStatus>("idle");
+  const [aiStatus, setAiStatus] = useState<AIStatus>('idle');
 
   // Słownik tagów zależny od typu
-  const dictionary = useMemo(
-    () => (tagType === "main" ? [...MAIN_TAGS] : [...ADDITIONAL_TAGS]),
-    [tagType]
-  );
+  const dictionary = useMemo(() => (tagType === 'main' ? [...MAIN_TAGS] : [...ADDITIONAL_TAGS]), [tagType]);
 
   // Filtrowane tagi do wyboru (bez już wybranych)
-  const availableTags = useMemo(
-    () => dictionary.filter((tag) => !tags.includes(tag)),
-    [dictionary, tags]
-  );
+  const availableTags = useMemo(() => dictionary.filter((tag) => !tags.includes(tag)), [dictionary, tags]);
 
   // Wyszukiwanie w słowniku
   const filteredTags = useMemo(
@@ -113,28 +96,28 @@ export function TagSmartChips({
 
   // Sugestie na podstawie wybranych tagów (lokalne, bez AI)
   const localSuggestions = useMemo(
-    () => getSuggestedTags(tags).filter((s) => !tags.includes(s)).slice(0, 3),
+    () =>
+      getSuggestedTags(tags)
+        .filter((s) => !tags.includes(s))
+        .slice(0, 3),
     [tags]
   );
 
   // Ghost chips = sugestie AI które nie są jeszcze dodane
-  const ghostChips = useMemo(
-    () => aiSuggestions?.filter((s) => !tags.includes(s)) || [],
-    [aiSuggestions, tags]
-  );
+  const ghostChips = useMemo(() => aiSuggestions?.filter((s) => !tags.includes(s)) || [], [aiSuggestions, tags]);
 
   // ON-DEMAND: Koszt generowany TYLKO gdy user kliknie przycisk
   const handleRequestAISuggestions = useCallback(async () => {
-    setAiStatus("loading");
+    setAiStatus('loading');
 
     try {
       // Wywołanie API on-demand
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/api/ai/verification/suggest-tags/${exerciseId}`,
         {
-          method: "POST",
+          method: 'POST',
           headers: {
-            "Content-Type": "application/json",
+            'Content-Type': 'application/json',
             // Auth headers będą dodane przez interceptor
           },
           body: JSON.stringify({
@@ -147,27 +130,25 @@ export function TagSmartChips({
       );
 
       if (!response.ok) {
-        throw new Error("Nie udało się wygenerować sugestii");
+        throw new Error('Nie udało się wygenerować sugestii');
       }
 
       const data = await response.json();
-      const suggestions = tagType === "main"
-        ? data.mainTags || []
-        : data.additionalTags || [];
+      const suggestions = tagType === 'main' ? data.mainTags || [] : data.additionalTags || [];
 
       setAiSuggestions(suggestions);
-      setAiStatus("loaded");
+      setAiStatus('loaded');
 
       if (suggestions.length === 0) {
-        toast.info("AI nie ma dodatkowych sugestii dla tego ćwiczenia");
+        toast.info('AI nie ma dodatkowych sugestii dla tego ćwiczenia');
       }
     } catch (error) {
-      console.error("AI suggestions error:", error);
-      setAiStatus("error");
-      toast.error("Nie udało się wygenerować sugestii AI");
+      console.error('AI suggestions error:', error);
+      setAiStatus('error');
+      toast.error('Nie udało się wygenerować sugestii AI');
 
       // Reset po błędzie
-      setTimeout(() => setAiStatus("idle"), 3000);
+      setTimeout(() => setAiStatus('idle'), 3000);
     }
   }, [exerciseId, exerciseName, exerciseDescription, tagType, tags]);
 
@@ -179,8 +160,8 @@ export function TagSmartChips({
       try {
         await onTagsChange([...tags, tag]);
       } catch (error) {
-        console.error("Add tag error:", error);
-        toast.error("Nie udało się dodać tagu");
+        console.error('Add tag error:', error);
+        toast.error('Nie udało się dodać tagu');
       }
     },
     [tags, onTagsChange]
@@ -192,8 +173,8 @@ export function TagSmartChips({
       try {
         await onTagsChange(tags.filter((t) => t !== tag));
       } catch (error) {
-        console.error("Remove tag error:", error);
-        toast.error("Nie udało się usunąć tagu");
+        console.error('Remove tag error:', error);
+        toast.error('Nie udało się usunąć tagu');
       }
     },
     [tags, onTagsChange]
@@ -204,7 +185,7 @@ export function TagSmartChips({
     const groups: Record<string, string[]> = {};
 
     for (const tag of filteredTags) {
-      const category = getTagCategory(tag) || "Inne";
+      const category = getTagCategory(tag) || 'Inne';
       if (!groups[category]) {
         groups[category] = [];
       }
@@ -215,7 +196,7 @@ export function TagSmartChips({
   }, [filteredTags]);
 
   return (
-    <div className={cn("space-y-3", className)} data-testid={testId}>
+    <div className={cn('space-y-3', className)} data-testid={testId}>
       {/* Header z label i przyciskami */}
       <div className="flex items-center justify-between">
         <Label className="flex items-center gap-2 text-sm font-medium">
@@ -230,16 +211,16 @@ export function TagSmartChips({
 
         <div className="flex gap-2">
           {/* Przycisk AI - KOSZT tylko gdy kliknięty */}
-          {aiStatus !== "loaded" && (
+          {aiStatus !== 'loaded' && (
             <Button
               variant="ghost"
               size="sm"
               className="h-7 text-amber-600 hover:text-amber-700 hover:bg-amber-500/10"
               onClick={handleRequestAISuggestions}
-              disabled={disabled || aiStatus === "loading"}
+              disabled={disabled || aiStatus === 'loading'}
               data-testid={`${testId}-ai-btn`}
             >
-              {aiStatus === "loading" ? (
+              {aiStatus === 'loading' ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-1 animate-spin" />
                   Generuję...
@@ -256,24 +237,14 @@ export function TagSmartChips({
           {/* Przycisk dodawania ze słownika */}
           <Popover open={isComboboxOpen} onOpenChange={setIsComboboxOpen}>
             <PopoverTrigger asChild>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-7"
-                disabled={disabled}
-                data-testid={`${testId}-add-btn`}
-              >
+              <Button variant="ghost" size="sm" className="h-7" disabled={disabled} data-testid={`${testId}-add-btn`}>
                 <Plus className="h-4 w-4 mr-1" />
                 Dodaj
               </Button>
             </PopoverTrigger>
             <PopoverContent className="w-80 p-0" align="end">
               <Command>
-                <CommandInput
-                  placeholder="Szukaj tagu..."
-                  value={searchQuery}
-                  onValueChange={setSearchQuery}
-                />
+                <CommandInput placeholder="Szukaj tagu..." value={searchQuery} onValueChange={setSearchQuery} />
                 <CommandList className="max-h-[300px]">
                   <CommandEmpty>Nie znaleziono tagów</CommandEmpty>
 
@@ -287,17 +258,14 @@ export function TagSmartChips({
                             onSelect={() => {
                               handleAddTag(tag);
                               setIsComboboxOpen(false);
-                              setSearchQuery("");
+                              setSearchQuery('');
                             }}
                             className="flex items-center justify-between"
                           >
                             <span className="truncate">{tag}</span>
                             <Badge
                               variant="outline"
-                              className={cn(
-                                "text-[10px] ml-2 shrink-0",
-                                getTagCategoryColor(tag)
-                              )}
+                              className={cn('text-[10px] ml-2 shrink-0', getTagCategoryColor(tag))}
                             >
                               {getTagCategory(tag)}
                             </Badge>
@@ -317,7 +285,7 @@ export function TagSmartChips({
                           onSelect={() => {
                             handleAddTag(tag);
                             setIsComboboxOpen(false);
-                            setSearchQuery("");
+                            setSearchQuery('');
                           }}
                         >
                           {tag}
@@ -346,20 +314,13 @@ export function TagSmartChips({
         )}
 
         {tags.map((tag) => (
-          <Badge
-            key={tag}
-            variant="secondary"
-            className={cn(
-              "pr-1 gap-1.5 transition-all",
-              getTagCategoryColor(tag)
-            )}
-          >
+          <Badge key={tag} variant="secondary" className={cn('pr-1 gap-1.5 transition-all', getTagCategoryColor(tag))}>
             {tag}
             <button
               onClick={() => handleRemoveTag(tag)}
               disabled={disabled}
               className="ml-1 h-4 w-4 rounded-full hover:bg-destructive/20 flex items-center justify-center"
-              data-testid={`${testId}-remove-${tag.replace(/\s+/g, "-").toLowerCase()}`}
+              data-testid={`${testId}-remove-${tag.replace(/\s+/g, '-').toLowerCase()}`}
             >
               <X className="h-3 w-3" />
             </button>
@@ -373,14 +334,14 @@ export function TagSmartChips({
             onClick={() => handleAddTag(tag)}
             disabled={disabled}
             className={cn(
-              "inline-flex items-center gap-1 px-2 py-0.5 rounded-full",
-              "border-2 border-dashed border-amber-500/40",
-              "text-amber-600 text-sm",
-              "hover:bg-amber-500/10 hover:border-amber-500/60",
-              "transition-colors cursor-pointer",
-              disabled && "opacity-50 cursor-not-allowed"
+              'inline-flex items-center gap-1 px-2 py-0.5 rounded-full',
+              'border-2 border-dashed border-amber-500/40',
+              'text-amber-600 text-sm',
+              'hover:bg-amber-500/10 hover:border-amber-500/60',
+              'transition-colors cursor-pointer',
+              disabled && 'opacity-50 cursor-not-allowed'
             )}
-            data-testid={`${testId}-ghost-${tag.replace(/\s+/g, "-").toLowerCase()}`}
+            data-testid={`${testId}-ghost-${tag.replace(/\s+/g, '-').toLowerCase()}`}
           >
             <Sparkles className="h-3 w-3" />
             {tag}
@@ -390,14 +351,14 @@ export function TagSmartChips({
       </div>
 
       {/* Info o cache AI */}
-      {aiStatus === "loaded" && (
+      {aiStatus === 'loaded' && (
         <p className="text-xs text-muted-foreground flex items-center gap-1">
           <Sparkles className="h-3 w-3 text-amber-500" />
           Sugestie AI zapisane - następnym razem załadują się natychmiast
         </p>
       )}
 
-      {aiStatus === "error" && (
+      {aiStatus === 'error' && (
         <p className="text-xs text-destructive flex items-center gap-1">
           <X className="h-3 w-3" />
           Błąd generowania sugestii. Spróbuj ponownie.
@@ -416,13 +377,9 @@ interface TagSmartChipsReadOnlyProps {
   className?: string;
 }
 
-export function TagSmartChipsReadOnly({
-  tags,
-  label,
-  className,
-}: TagSmartChipsReadOnlyProps) {
+export function TagSmartChipsReadOnly({ tags, label, className }: TagSmartChipsReadOnlyProps) {
   return (
-    <div className={cn("space-y-2", className)}>
+    <div className={cn('space-y-2', className)}>
       {label && (
         <Label className="flex items-center gap-2 text-sm font-medium">
           <Tag className="h-4 w-4 text-primary" />
@@ -434,11 +391,7 @@ export function TagSmartChipsReadOnly({
           <span className="text-sm text-muted-foreground italic">Brak tagów</span>
         ) : (
           tags.map((tag) => (
-            <Badge
-              key={tag}
-              variant="secondary"
-              className={cn("transition-all", getTagCategoryColor(tag))}
-            >
+            <Badge key={tag} variant="secondary" className={cn('transition-all', getTagCategoryColor(tag))}>
               {tag}
             </Badge>
           ))

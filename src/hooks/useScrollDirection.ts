@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback } from 'react';
 
 interface UseScrollDirectionOptions {
   /** Minimum scroll delta to trigger visibility change (default: 10px) */
@@ -16,7 +16,7 @@ interface UseScrollDirectionOptions {
  */
 export function useScrollDirection({
   threshold = 10,
-  scrollContainerSelector = "main",
+  scrollContainerSelector = 'main',
 }: UseScrollDirectionOptions = {}): boolean {
   const [isVisible, setIsVisible] = useState(true);
   const lastScrollY = useRef(0);
@@ -70,10 +70,10 @@ export function useScrollDirection({
     // Initialize last scroll position
     lastScrollY.current = scrollContainer.scrollTop;
 
-    scrollContainer.addEventListener("scroll", handleScroll, { passive: true });
+    scrollContainer.addEventListener('scroll', handleScroll, { passive: true });
 
     return () => {
-      scrollContainer.removeEventListener("scroll", handleScroll);
+      scrollContainer.removeEventListener('scroll', handleScroll);
     };
   }, [scrollContainerSelector, updateVisibility]);
 

@@ -52,19 +52,9 @@ interface SectionSummaryProps {
   disabled?: boolean;
 }
 
-function SectionSummary({
-  title,
-  icon,
-  onEdit,
-  isEmpty,
-  children,
-  disabled,
-}: SectionSummaryProps) {
+function SectionSummary({ title, icon, onEdit, isEmpty, children, disabled }: SectionSummaryProps) {
   return (
-    <Card className={cn(
-      'border-border/40 transition-all',
-      isEmpty && 'border-warning/30 bg-warning/5'
-    )}>
+    <Card className={cn('border-border/40 transition-all', isEmpty && 'border-warning/30 bg-warning/5')}>
       <CardHeader className="pb-2">
         <div className="flex items-center justify-between">
           <CardTitle className="text-sm font-medium flex items-center gap-2">
@@ -84,12 +74,7 @@ function SectionSummary({
             )}
           </CardTitle>
           {!disabled && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onEdit}
-              className="h-7 text-xs gap-1"
-            >
+            <Button variant="ghost" size="sm" onClick={onEdit} className="h-7 text-xs gap-1">
               <Pencil className="h-3 w-3" />
               Edytuj
             </Button>
@@ -98,13 +83,9 @@ function SectionSummary({
       </CardHeader>
       <CardContent className="pt-0">
         {isEmpty ? (
-          <p className="text-sm text-muted-foreground italic">
-            Brak danych - kliknij &quot;Edytuj&quot; aby uzupełnić
-          </p>
+          <p className="text-sm text-muted-foreground italic">Brak danych - kliknij &quot;Edytuj&quot; aby uzupełnić</p>
         ) : (
-          <div className="text-sm text-foreground space-y-1">
-            {children}
-          </div>
+          <div className="text-sm text-foreground space-y-1">{children}</div>
         )}
       </CardContent>
     </Card>
@@ -117,16 +98,24 @@ function InterviewSummary({ data }: { data?: InterviewSection }) {
   return (
     <>
       {data.mainComplaint && (
-        <p><strong>Dolegliwość:</strong> {data.mainComplaint}</p>
+        <p>
+          <strong>Dolegliwość:</strong> {data.mainComplaint}
+        </p>
       )}
       {data.painLocation && data.painLocation.length > 0 && (
-        <p><strong>Lokalizacja:</strong> {data.painLocation.join(', ')}</p>
+        <p>
+          <strong>Lokalizacja:</strong> {data.painLocation.join(', ')}
+        </p>
       )}
       {data.painIntensity !== undefined && data.painIntensity !== null && (
-        <p><strong>Intensywność bólu:</strong> {data.painIntensity}/10</p>
+        <p>
+          <strong>Intensywność bólu:</strong> {data.painIntensity}/10
+        </p>
       )}
       {data.painDuration && (
-        <p><strong>Czas trwania:</strong> {data.painDuration}</p>
+        <p>
+          <strong>Czas trwania:</strong> {data.painDuration}
+        </p>
       )}
     </>
   );
@@ -138,16 +127,20 @@ function ExaminationSummary({ data }: { data?: ExaminationSection }) {
   return (
     <>
       {data.posture && (
-        <p><strong>Postawa:</strong> {data.posture}</p>
+        <p>
+          <strong>Postawa:</strong> {data.posture}
+        </p>
       )}
       {data.specialTests && data.specialTests.length > 0 && (
         <p>
           <strong>Testy specjalne:</strong>{' '}
-          {data.specialTests.map(t => `${t.name} (${t.result || 'brak wyniku'})`).join(', ')}
+          {data.specialTests.map((t) => `${t.name} (${t.result || 'brak wyniku'})`).join(', ')}
         </p>
       )}
       {data.muscleStrength && (
-        <p><strong>Siła mięśniowa:</strong> {data.muscleStrength}</p>
+        <p>
+          <strong>Siła mięśniowa:</strong> {data.muscleStrength}
+        </p>
       )}
     </>
   );
@@ -160,12 +153,13 @@ function DiagnosisSummary({ data }: { data?: DiagnosisSection }) {
     <>
       {data.icd10Codes && data.icd10Codes.length > 0 && (
         <p>
-          <strong>ICD-10:</strong>{' '}
-          {data.icd10Codes.map(c => `${c.code} - ${c.description}`).join('; ')}
+          <strong>ICD-10:</strong> {data.icd10Codes.map((c) => `${c.code} - ${c.description}`).join('; ')}
         </p>
       )}
       {data.clinicalReasoning && (
-        <p><strong>Rozumowanie:</strong> {data.clinicalReasoning}</p>
+        <p>
+          <strong>Rozumowanie:</strong> {data.clinicalReasoning}
+        </p>
       )}
     </>
   );
@@ -177,13 +171,19 @@ function TreatmentPlanSummary({ data }: { data?: TreatmentPlanSection }) {
   return (
     <>
       {data.shortTermGoals && (
-        <p><strong>Cele krótkoterminowe:</strong> {data.shortTermGoals}</p>
+        <p>
+          <strong>Cele krótkoterminowe:</strong> {data.shortTermGoals}
+        </p>
       )}
       {data.longTermGoals && (
-        <p><strong>Cele długoterminowe:</strong> {data.longTermGoals}</p>
+        <p>
+          <strong>Cele długoterminowe:</strong> {data.longTermGoals}
+        </p>
       )}
       {data.interventions && data.interventions.length > 0 && (
-        <p><strong>Interwencje:</strong> {data.interventions.join(', ')}</p>
+        <p>
+          <strong>Interwencje:</strong> {data.interventions.join(', ')}
+        </p>
       )}
     </>
   );
@@ -195,31 +195,30 @@ function VisitProgressSummary({ data }: { data?: VisitProgressSection }) {
   return (
     <>
       {data.techniques && (
-        <p><strong>Zastosowane techniki:</strong> {data.techniques}</p>
+        <p>
+          <strong>Zastosowane techniki:</strong> {data.techniques}
+        </p>
       )}
       {data.patientResponse && (
-        <p><strong>Reakcja pacjenta:</strong> {data.patientResponse}</p>
+        <p>
+          <strong>Reakcja pacjenta:</strong> {data.patientResponse}
+        </p>
       )}
       {data.currentPainLevel !== undefined && data.currentPainLevel !== null && (
-        <p><strong>Aktualny poziom bólu:</strong> {data.currentPainLevel}/10</p>
+        <p>
+          <strong>Aktualny poziom bólu:</strong> {data.currentPainLevel}/10
+        </p>
       )}
     </>
   );
 }
 
-export function SummaryStep({
-  visitType,
-  visitDate,
-  title,
-  sections,
-  onEditStep,
-  disabled = false,
-}: SummaryStepProps) {
+export function SummaryStep({ visitType, visitDate, title, sections, onEditStep, disabled = false }: SummaryStepProps) {
   const hasInterview = !!(sections.interview?.mainComplaint || sections.interview?.painLocation?.length);
   const hasExamination = !!(sections.examination?.posture || sections.examination?.specialTests?.length);
-  const hasDiagnosis = !!(sections.diagnosis?.icd10Codes?.length);
+  const hasDiagnosis = !!sections.diagnosis?.icd10Codes?.length;
   const hasTreatmentPlan = !!(sections.treatmentPlan?.shortTermGoals || sections.treatmentPlan?.interventions?.length);
-  const hasVisitProgress = !!(sections.visitProgress?.techniques);
+  const hasVisitProgress = !!sections.visitProgress?.techniques;
 
   const showVisitProgress = visitType === 'FOLLOWUP' || visitType === 'DISCHARGE';
 
@@ -322,4 +321,3 @@ export function SummaryStep({
     </div>
   );
 }
-

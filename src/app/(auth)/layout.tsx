@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import { useAuth } from "@clerk/nextjs";
-import { useRouter, usePathname } from "next/navigation";
-import { useEffect } from "react";
-import Image from "next/image";
-import { Logo } from "@/components/shared/Logo";
+import { useAuth } from '@clerk/nextjs';
+import { useRouter, usePathname } from 'next/navigation';
+import { useEffect } from 'react';
+import Image from 'next/image';
+import { Logo } from '@/components/shared/Logo';
 
 interface AuthLayoutProps {
   children: React.ReactNode;
@@ -16,11 +16,11 @@ export default function AuthLayout({ children }: AuthLayoutProps) {
   const pathname = usePathname();
 
   // Don't redirect if user is on invite page - they need to accept the invitation
-  const isInvitePage = pathname?.startsWith("/invite");
+  const isInvitePage = pathname?.startsWith('/invite');
 
   useEffect(() => {
     if (isLoaded && isSignedIn && !isInvitePage) {
-      router.replace("/");
+      router.replace('/');
     }
   }, [isLoaded, isSignedIn, router, isInvitePage]);
 
@@ -66,12 +66,9 @@ export default function AuthLayout({ children }: AuthLayoutProps) {
 
         {/* Tagline */}
         <div className="space-y-2">
-          <h2 className="text-2xl font-semibold text-foreground">
-            Zarządzaj praktyką fizjoterapeutyczną
-          </h2>
+          <h2 className="text-2xl font-semibold text-foreground">Zarządzaj praktyką fizjoterapeutyczną</h2>
           <p className="text-muted-foreground">
-            Twórz ćwiczenia, zarządzaj pacjentami i monitoruj postępy — wszystko
-            w jednym miejscu.
+            Twórz ćwiczenia, zarządzaj pacjentami i monitoruj postępy — wszystko w jednym miejscu.
           </p>
         </div>
       </div>

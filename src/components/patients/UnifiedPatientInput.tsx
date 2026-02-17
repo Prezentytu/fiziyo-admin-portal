@@ -7,18 +7,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { toast } from 'sonner';
-import {
-  Search,
-  Mail,
-  Phone,
-  Loader2,
-  UserPlus,
-  UserCheck,
-  ChevronDown,
-  ChevronUp,
-  Pencil,
-  X,
-} from 'lucide-react';
+import { Search, Mail, Phone, Loader2, UserPlus, UserCheck, ChevronDown, ChevronUp, Pencil, X } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -68,7 +57,13 @@ export interface UnifiedPatientInputProps {
   readonly organizationId: string;
   readonly therapistId: string;
   readonly clinicId?: string;
-  readonly onSuccess: (patient: { id: string; fullname: string; email?: string; firstName?: string; lastName?: string }) => void;
+  readonly onSuccess: (patient: {
+    id: string;
+    fullname: string;
+    email?: string;
+    firstName?: string;
+    lastName?: string;
+  }) => void;
   readonly onCreateNewPatient: (values: PatientFormValues) => Promise<void>;
   readonly onCancel: () => void;
   readonly onDirtyChange?: (isDirty: boolean) => void;
@@ -210,20 +205,14 @@ export function UnifiedPatientInput({
   );
 
   // Query: search by email
-  const {
-    data: emailData,
-    loading: emailLoading,
-  } = useQuery<FindUserByEmailData>(FIND_USER_BY_EMAIL_QUERY, {
+  const { data: emailData, loading: emailLoading } = useQuery<FindUserByEmailData>(FIND_USER_BY_EMAIL_QUERY, {
     variables: { email: debouncedContact },
     skip: contactType !== 'email' || !isValidEmail(debouncedContact),
     fetchPolicy: 'network-only',
   });
 
   // Query: search by phone
-  const {
-    data: phoneData,
-    loading: phoneLoading,
-  } = useQuery<FindUserByPhoneData>(FIND_USER_BY_PHONE_QUERY, {
+  const { data: phoneData, loading: phoneLoading } = useQuery<FindUserByPhoneData>(FIND_USER_BY_PHONE_QUERY, {
     variables: { phone: `+48${getCleanPhone(debouncedContact)}` },
     skip: contactType !== 'phone' || !isValidPhone(debouncedContact),
     fetchPolicy: 'network-only',
@@ -319,8 +308,9 @@ export function UnifiedPatientInput({
   // Reset view state when contact changes
   useEffect(() => {
     if (viewState !== 'search' && !isSearching) {
-      const isValid = (contactType === 'email' && isValidEmail(contactValue)) ||
-                      (contactType === 'phone' && isValidPhone(contactValue));
+      const isValid =
+        (contactType === 'email' && isValidEmail(contactValue)) ||
+        (contactType === 'phone' && isValidPhone(contactValue));
       if (!isValid) {
         setViewState('search');
         setFoundUser(null);
@@ -414,17 +404,20 @@ export function UnifiedPatientInput({
     }
   }, [foundUser, addDirectMember, assignPatient, therapistId, organizationId, clinicId, onSuccess]);
 
-  const handleSubmitNewPatient = useCallback(async (values: z.infer<typeof patientFormSchema>) => {
-    const patientData: PatientFormValues = {
-      firstName: values.firstName,
-      lastName: values.lastName,
-      contextLabel: values.contextLabel || undefined,
-      ...(contactType === 'email' ? { email: contactValue } : {}),
-      ...(contactType === 'phone' ? { phone: getCleanPhone(contactValue) } : {}),
-    };
+  const handleSubmitNewPatient = useCallback(
+    async (values: z.infer<typeof patientFormSchema>) => {
+      const patientData: PatientFormValues = {
+        firstName: values.firstName,
+        lastName: values.lastName,
+        contextLabel: values.contextLabel || undefined,
+        ...(contactType === 'email' ? { email: contactValue } : {}),
+        ...(contactType === 'phone' ? { phone: getCleanPhone(contactValue) } : {}),
+      };
 
-    await onCreateNewPatient(patientData);
-  }, [contactType, contactValue, onCreateNewPatient]);
+      await onCreateNewPatient(patientData);
+    },
+    [contactType, contactValue, onCreateNewPatient]
+  );
 
   const handleEditContact = useCallback(() => {
     setViewState('search');
@@ -450,7 +443,10 @@ export function UnifiedPatientInput({
   }, []);
 
   const handleRemoveTag = useCallback((tag: string, currentValue: string, onChange: (value: string) => void) => {
-    const parts = currentValue.split(',').map(p => p.trim()).filter(p => p.toLowerCase() !== tag.toLowerCase());
+    const parts = currentValue
+      .split(',')
+      .map((p) => p.trim())
+      .filter((p) => p.toLowerCase() !== tag.toLowerCase());
     onChange(parts.join(', '));
   }, []);
 
@@ -462,32 +458,43 @@ export function UnifiedPatientInput({
   // KEYBOARD NAVIGATION
   // ============================================
 
-  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
-    const key = e.key;
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      const key = e.key;
 
-    // Escape key handling for all states
-    if (key === 'Escape') {
-      e.preventDefault();
-      if (viewState === 'found') {
-        handleBackToSearch();
-      } else if (viewState === 'search') {
-        onCancel();
-      } else if (viewState === 'form') {
-        handleEditContact();
+      // Escape key handling for all states
+      if (key === 'Escape') {
+        e.preventDefault();
+        if (viewState === 'found') {
+          handleBackToSearch();
+        } else if (viewState === 'search') {
+          onCancel();
+        } else if (viewState === 'form') {
+          handleEditContact();
+        }
+        return;
       }
-      return;
-    }
 
-    // Enter key in found state
-    if (key === 'Enter' && viewState === 'found' && foundUser) {
-      e.preventDefault();
-      if (isAlreadyAssignedToTherapist) {
-        globalThis.location.href = `/patients/${foundUser.id}`;
-      } else {
-        handleAddExistingPatient();
+      // Enter key in found state
+      if (key === 'Enter' && viewState === 'found' && foundUser) {
+        e.preventDefault();
+        if (isAlreadyAssignedToTherapist) {
+          globalThis.location.href = `/patients/${foundUser.id}`;
+        } else {
+          handleAddExistingPatient();
+        }
       }
-    }
-  }, [viewState, foundUser, isAlreadyAssignedToTherapist, handleAddExistingPatient, handleBackToSearch, onCancel, handleEditContact]);
+    },
+    [
+      viewState,
+      foundUser,
+      isAlreadyAssignedToTherapist,
+      handleAddExistingPatient,
+      handleBackToSearch,
+      onCancel,
+      handleEditContact,
+    ]
+  );
 
   // ============================================
   // RENDER
@@ -497,11 +504,7 @@ export function UnifiedPatientInput({
   const ContactIcon = contactType === 'email' ? Mail : contactType === 'phone' ? Phone : Search;
 
   return (
-    <div
-      ref={containerRef}
-      className="space-y-6"
-      onKeyDown={handleKeyDown}
-    >
+    <div ref={containerRef} className="space-y-6" onKeyDown={handleKeyDown}>
       {/* SEARCH STATE */}
       {viewState === 'search' && (
         <div className="animate-in fade-in duration-200">
@@ -515,22 +518,22 @@ export function UnifiedPatientInput({
                 value={contactValue}
                 onChange={(e) => handleContactChange(e.target.value)}
                 className={cn(
-                  "h-14 text-lg pr-14 transition-all duration-200",
-                  "focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                  'h-14 text-lg pr-14 transition-all duration-200',
+                  'focus:ring-2 focus:ring-primary/20 focus:border-primary'
                 )}
                 autoFocus
                 autoComplete="off"
                 data-testid="patient-unified-input"
               />
               <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
-                {isSearching && (
-                  <Loader2 className="h-6 w-6 text-primary animate-spin" />
-                )}
+                {isSearching && <Loader2 className="h-6 w-6 text-primary animate-spin" />}
                 {!isSearching && (
-                  <ContactIcon className={cn(
-                    "h-6 w-6 transition-colors duration-200",
-                    contactType !== 'unknown' ? "text-primary" : "text-muted-foreground/50"
-                  )} />
+                  <ContactIcon
+                    className={cn(
+                      'h-6 w-6 transition-colors duration-200',
+                      contactType !== 'unknown' ? 'text-primary' : 'text-muted-foreground/50'
+                    )}
+                  />
                 )}
               </div>
             </div>
@@ -546,12 +549,7 @@ export function UnifiedPatientInput({
 
           {/* Cancel button */}
           <div className="flex justify-end pt-6 border-t border-border mt-8">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={onCancel}
-              data-testid="patient-unified-cancel-btn"
-            >
+            <Button type="button" variant="outline" onClick={onCancel} data-testid="patient-unified-cancel-btn">
               Anuluj
             </Button>
           </div>
@@ -562,16 +560,19 @@ export function UnifiedPatientInput({
       {viewState === 'found' && foundUser && (
         <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
           {/* Found user card */}
-          <div className={cn(
-            "p-4 rounded-xl border",
-            isAlreadyAssignedToTherapist
-              ? "border-warning/30 bg-warning/5"
-              : "border-primary/30 bg-primary/5"
-          )} data-testid="patient-unified-found-card">
+          <div
+            className={cn(
+              'p-4 rounded-xl border',
+              isAlreadyAssignedToTherapist ? 'border-warning/30 bg-warning/5' : 'border-primary/30 bg-primary/5'
+            )}
+            data-testid="patient-unified-found-card"
+          >
             {/* Status badge */}
             <div className="flex items-center gap-2 mb-4">
-              <UserCheck className={cn("h-4 w-4", isAlreadyAssignedToTherapist ? "text-warning" : "text-primary")} />
-              <span className={cn("text-sm font-medium", isAlreadyAssignedToTherapist ? "text-warning" : "text-primary")}>
+              <UserCheck className={cn('h-4 w-4', isAlreadyAssignedToTherapist ? 'text-warning' : 'text-primary')} />
+              <span
+                className={cn('text-sm font-medium', isAlreadyAssignedToTherapist ? 'text-warning' : 'text-primary')}
+              >
                 {isAlreadyAssignedToTherapist && 'Pacjent jest już na Twojej liście'}
                 {!isAlreadyAssignedToTherapist && isAlreadyInOrg && 'Pacjent już w organizacji'}
                 {!isAlreadyAssignedToTherapist && !isAlreadyInOrg && 'Znaleziono pacjenta w systemie'}
@@ -582,17 +583,12 @@ export function UnifiedPatientInput({
             <div className="flex items-center gap-4">
               <Avatar className="h-14 w-14 ring-2 ring-primary/20">
                 <AvatarImage src={foundUser.image} />
-                <AvatarFallback
-                  className="text-lg font-medium text-white"
-                  style={{ background: foundGradient }}
-                >
+                <AvatarFallback className="text-lg font-medium text-white" style={{ background: foundGradient }}>
                   {foundInitials}
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1 min-w-0">
-                <p className="font-semibold text-foreground truncate">
-                  {foundUser.fullname}
-                </p>
+                <p className="font-semibold text-foreground truncate">{foundUser.fullname}</p>
                 {foundUser.email && (
                   <p className="text-sm text-muted-foreground truncate flex items-center gap-1">
                     <Mail className="h-3 w-3" />
@@ -613,7 +609,9 @@ export function UnifiedPatientInput({
               {isAlreadyAssignedToTherapist ? (
                 <Button
                   variant="outline"
-                  onClick={() => { globalThis.location.href = `/patients/${foundUser.id}`; }}
+                  onClick={() => {
+                    globalThis.location.href = `/patients/${foundUser.id}`;
+                  }}
                   className="flex-1 h-11"
                   data-testid="patient-unified-go-to-profile-btn"
                 >
@@ -656,22 +654,17 @@ export function UnifiedPatientInput({
           <div className="mb-6">
             <div className="flex items-center justify-between p-4 rounded-xl bg-surface-light border border-border/60">
               <div className="flex items-center gap-2">
-                <div className={cn(
-                  "flex h-8 w-8 items-center justify-center rounded-lg",
-                  contactType === 'email' ? "bg-info/10" : "bg-primary/10"
-                )}>
-                  <ContactIcon className={cn(
-                    "h-4 w-4",
-                    contactType === 'email' ? "text-info" : "text-primary"
-                  )} />
+                <div
+                  className={cn(
+                    'flex h-8 w-8 items-center justify-center rounded-lg',
+                    contactType === 'email' ? 'bg-info/10' : 'bg-primary/10'
+                  )}
+                >
+                  <ContactIcon className={cn('h-4 w-4', contactType === 'email' ? 'text-info' : 'text-primary')} />
                 </div>
                 <div>
-                  <p className="text-xs text-muted-foreground">
-                    {contactType === 'email' ? 'Email' : 'Telefon'}
-                  </p>
-                  <p className="text-sm font-medium text-foreground">
-                    {formattedContact}
-                  </p>
+                  <p className="text-xs text-muted-foreground">{contactType === 'email' ? 'Email' : 'Telefon'}</p>
+                  <p className="text-sm font-medium text-foreground">{formattedContact}</p>
                 </div>
               </div>
               <Button
@@ -802,10 +795,10 @@ export function UnifiedPatientInput({
                                           }
                                         }}
                                         className={cn(
-                                          "inline-flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-full transition-all duration-200",
+                                          'inline-flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-full transition-all duration-200',
                                           isAdded
-                                            ? "bg-primary text-primary-foreground shadow-sm shadow-primary/20"
-                                            : "bg-surface-light text-muted-foreground hover:bg-primary/10 hover:text-primary"
+                                            ? 'bg-primary text-primary-foreground shadow-sm shadow-primary/20'
+                                            : 'bg-surface-light text-muted-foreground hover:bg-primary/10 hover:text-primary'
                                         )}
                                       >
                                         {tag}

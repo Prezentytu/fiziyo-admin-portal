@@ -1,11 +1,11 @@
-import { useCallback, useState, useRef } from "react";
-import { useMutation } from "@apollo/client/react";
-import { toast } from "sonner";
+import { useCallback, useState, useRef } from 'react';
+import { useMutation } from '@apollo/client/react';
+import { toast } from 'sonner';
 import {
   UPDATE_EXERCISE_FIELD_MUTATION,
   BATCH_UPDATE_EXERCISE_FIELDS_MUTATION,
-} from "@/graphql/mutations/adminExercises.mutations";
-import type { AdminExercise } from "@/graphql/types/adminExercise.types";
+} from '@/graphql/mutations/adminExercises.mutations';
+import type { AdminExercise } from '@/graphql/types/adminExercise.types';
 
 interface UseExerciseFieldUpdateOptions {
   /** ID ćwiczenia */
@@ -72,16 +72,19 @@ export function useExerciseFieldUpdate({
   });
 
   // Batch update mutation
-  const [batchUpdateMutation] = useMutation<{ batchUpdateExerciseFields: AdminExercise }>(BATCH_UPDATE_EXERCISE_FIELDS_MUTATION, {
-    onError: (err) => {
-      setError(err);
-      toast.error(`Nie udało się zapisać zmian: ${err.message}`);
-    },
-  });
+  const [batchUpdateMutation] = useMutation<{ batchUpdateExerciseFields: AdminExercise }>(
+    BATCH_UPDATE_EXERCISE_FIELDS_MUTATION,
+    {
+      onError: (err) => {
+        setError(err);
+        toast.error(`Nie udało się zapisać zmian: ${err.message}`);
+      },
+    }
+  );
 
   // Update single field with optimistic response
   const updateField = useCallback(
-    async <T,>(field: string, value: T) => {
+    async <T>(field: string, value: T) => {
       setPendingFields((prev) => new Set(prev).add(field));
       setError(null);
 
@@ -94,7 +97,7 @@ export function useExerciseFieldUpdate({
           },
           optimisticResponse: {
             updateExerciseField: {
-              __typename: "AdminExercise",
+              __typename: 'AdminExercise',
               id: exerciseId,
               [field]: value,
             } as unknown as AdminExercise,
@@ -103,7 +106,7 @@ export function useExerciseFieldUpdate({
             if (data?.updateExerciseField) {
               // Update cache with new value
               cache.modify({
-                id: cache.identify({ __typename: "AdminExercise", id: exerciseId }),
+                id: cache.identify({ __typename: 'AdminExercise', id: exerciseId }),
                 fields: {
                   [field]: () => value as never,
                 },
@@ -148,7 +151,7 @@ export function useExerciseFieldUpdate({
           },
           optimisticResponse: {
             batchUpdateExerciseFields: {
-              __typename: "AdminExercise",
+              __typename: 'AdminExercise',
               id: exerciseId,
               ...updates,
             } as unknown as AdminExercise,
@@ -157,12 +160,9 @@ export function useExerciseFieldUpdate({
             if (data?.batchUpdateExerciseFields) {
               // Update cache with all new values
               cache.modify({
-                id: cache.identify({ __typename: "AdminExercise", id: exerciseId }),
+                id: cache.identify({ __typename: 'AdminExercise', id: exerciseId }),
                 fields: Object.fromEntries(
-                  Object.entries(updates).map(([field, value]) => [
-                    field,
-                    () => value as never,
-                  ])
+                  Object.entries(updates).map(([field, value]) => [field, () => value as never])
                 ),
               });
             }
@@ -218,7 +218,7 @@ export function useDebouncedExerciseUpdate({
 
   // Queue a field update
   const queueUpdate = useCallback(
-    <T,>(field: string, value: T) => {
+    <T>(field: string, value: T) => {
       // Clear existing timeout
       if (debounceRef.current) {
         clearTimeout(debounceRef.current);
@@ -246,7 +246,7 @@ export function useDebouncedExerciseUpdate({
         } catch (err) {
           const error = err instanceof Error ? err : new Error(String(err));
           Object.keys(changes).forEach((f) => onError?.(f, error));
-          toast.error("Nie udało się zapisać zmian");
+          toast.error('Nie udało się zapisać zmian');
         } finally {
           setIsSaving(false);
         }
@@ -277,7 +277,7 @@ export function useDebouncedExerciseUpdate({
     } catch (err) {
       const error = err instanceof Error ? err : new Error(String(err));
       Object.keys(pendingChanges).forEach((f) => onError?.(f, error));
-      toast.error("Nie udało się zapisać zmian");
+      toast.error('Nie udało się zapisać zmian');
     } finally {
       setIsSaving(false);
     }

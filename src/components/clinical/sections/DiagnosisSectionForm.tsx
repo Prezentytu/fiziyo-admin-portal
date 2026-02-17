@@ -11,7 +11,12 @@ import type { DiagnosisSection, ICD10Code, ICFCode } from '@/types/clinical.type
 
 // Import pełnych baz danych kodów
 import { ICD10_CODES, POPULAR_ICD10_CODES as POPULAR_ICD10_CODE_STRINGS, searchICD10Codes } from '@/data/icd10-codes';
-import { ICF_CODES, POPULAR_ICF_CODES as POPULAR_ICF_CODE_STRINGS, searchICFCodes, ICF_CATEGORY_COLORS } from '@/data/icf-codes';
+import {
+  ICF_CODES,
+  POPULAR_ICF_CODES as POPULAR_ICF_CODE_STRINGS,
+  searchICFCodes,
+  ICF_CATEGORY_COLORS,
+} from '@/data/icf-codes';
 
 interface DiagnosisSectionFormProps {
   data: DiagnosisSection;
@@ -19,18 +24,11 @@ interface DiagnosisSectionFormProps {
   disabled?: boolean;
 }
 
-export function DiagnosisSectionForm({
-  data,
-  onChange,
-  disabled = false,
-}: DiagnosisSectionFormProps) {
+export function DiagnosisSectionForm({ data, onChange, disabled = false }: DiagnosisSectionFormProps) {
   const [icd10Search, setIcd10Search] = useState('');
   const [icfSearch, setIcfSearch] = useState('');
 
-  const updateField = <K extends keyof DiagnosisSection>(
-    field: K,
-    value: DiagnosisSection[K]
-  ) => {
+  const updateField = <K extends keyof DiagnosisSection>(field: K, value: DiagnosisSection[K]) => {
     onChange({ ...data, [field]: value });
   };
 
@@ -47,7 +45,10 @@ export function DiagnosisSectionForm({
 
   const removeIcd10Code = (code: string) => {
     const currentCodes = data.icd10Codes || [];
-    updateField('icd10Codes', currentCodes.filter((c) => c.code !== code));
+    updateField(
+      'icd10Codes',
+      currentCodes.filter((c) => c.code !== code)
+    );
   };
 
   const setPrimaryIcd10 = (code: string) => {
@@ -69,38 +70,45 @@ export function DiagnosisSectionForm({
 
   const removeIcfCode = (code: string) => {
     const currentCodes = data.icfCodes || [];
-    updateField('icfCodes', currentCodes.filter((c) => c.code !== code));
+    updateField(
+      'icfCodes',
+      currentCodes.filter((c) => c.code !== code)
+    );
   };
 
   // Filtrowanie kodów z pełnej bazy danych
   const filteredIcd10 = useMemo(() => {
     if (icd10Search && icd10Search.length >= 2) {
-      return searchICD10Codes(icd10Search, 15).map(c => ({
+      return searchICD10Codes(icd10Search, 15).map((c) => ({
         code: c.code,
         description: c.description,
         isPrimary: false,
       }));
     }
     // Pokaż popularne kody gdy nie ma wyszukiwania
-    return POPULAR_ICD10_CODE_STRINGS.slice(0, 8).map(code => {
-      const found = ICD10_CODES.find(c => c.code === code);
-      return found ? { code: found.code, description: found.description, isPrimary: false } : null;
-    }).filter(Boolean) as ICD10Code[];
+    return POPULAR_ICD10_CODE_STRINGS.slice(0, 8)
+      .map((code) => {
+        const found = ICD10_CODES.find((c) => c.code === code);
+        return found ? { code: found.code, description: found.description, isPrimary: false } : null;
+      })
+      .filter(Boolean) as ICD10Code[];
   }, [icd10Search]);
 
   const filteredIcf = useMemo(() => {
     if (icfSearch && icfSearch.length >= 2) {
-      return searchICFCodes(icfSearch, 15).map(c => ({
+      return searchICFCodes(icfSearch, 15).map((c) => ({
         code: c.code,
         description: c.description,
         category: c.category,
       }));
     }
     // Pokaż popularne kody gdy nie ma wyszukiwania
-    return POPULAR_ICF_CODE_STRINGS.slice(0, 8).map(code => {
-      const found = ICF_CODES.find(c => c.code === code);
-      return found ? { code: found.code, description: found.description, category: found.category } : null;
-    }).filter(Boolean) as ICFCode[];
+    return POPULAR_ICF_CODE_STRINGS.slice(0, 8)
+      .map((code) => {
+        const found = ICF_CODES.find((c) => c.code === code);
+        return found ? { code: found.code, description: found.description, category: found.category } : null;
+      })
+      .filter(Boolean) as ICFCode[];
   }, [icfSearch]);
 
   return (
@@ -116,10 +124,7 @@ export function DiagnosisSectionForm({
               <Badge
                 key={code.code}
                 variant={code.isPrimary ? 'default' : 'secondary'}
-                className={cn(
-                  'pl-2 pr-1 py-1.5 gap-1.5',
-                  code.isPrimary && 'bg-primary'
-                )}
+                className={cn('pl-2 pr-1 py-1.5 gap-1.5', code.isPrimary && 'bg-primary')}
               >
                 {code.isPrimary && <Star className="h-3 w-3 fill-current" />}
                 <span className="font-mono font-semibold">{code.code}</span>
@@ -167,9 +172,7 @@ export function DiagnosisSectionForm({
           </p>
         )}
         {(!icd10Search || icd10Search.length < 2) && (
-          <p className="text-xs text-muted-foreground">
-            Popularne kody ICD-10 w fizjoterapii:
-          </p>
+          <p className="text-xs text-muted-foreground">Popularne kody ICD-10 w fizjoterapii:</p>
         )}
 
         {/* Sugestie */}
@@ -208,11 +211,7 @@ export function DiagnosisSectionForm({
             {data.icfCodes?.map((code) => {
               const colorClass = code.category ? ICF_CATEGORY_COLORS[code.category] : '';
               return (
-                <Badge
-                  key={code.code}
-                  variant="outline"
-                  className={cn('pl-2 pr-1 py-1.5 gap-1.5', colorClass)}
-                >
+                <Badge key={code.code} variant="outline" className={cn('pl-2 pr-1 py-1.5 gap-1.5', colorClass)}>
                   <span className="font-mono font-semibold">{code.code}</span>
                   <span className="text-xs opacity-80">- {code.description}</span>
                   {!disabled && (

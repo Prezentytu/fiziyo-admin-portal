@@ -1,17 +1,17 @@
-"use client";
+'use client';
 
-import { useState, useCallback, useEffect } from "react";
-import { chatService } from "@/services/chatService";
+import { useState, useCallback, useEffect } from 'react';
+import { chatService } from '@/services/chatService';
 import type {
   ChatMessageType,
   ParsedExercise,
   SerializableChatSession,
   SerializableChatMessage,
-} from "@/types/chat.types";
+} from '@/types/chat.types';
 
-const SESSION_ID_KEY = "AI_CHAT_SESSION_ID";
-const SESSIONS_KEY = "AI_CHAT_SESSIONS";
-const CURRENT_SESSION_KEY = "AI_CHAT_CURRENT_SESSION";
+const SESSION_ID_KEY = 'AI_CHAT_SESSION_ID';
+const SESSIONS_KEY = 'AI_CHAT_SESSIONS';
+const CURRENT_SESSION_KEY = 'AI_CHAT_CURRENT_SESSION';
 const MAX_SESSIONS = 20;
 
 /**
@@ -43,7 +43,7 @@ export function parseExercisesFromHtml(html: string): ParsedExercise[] {
 
     // Wyciągnij nazwę
     const nameMatch = /<h2>(.*?)<\/h2>/i.exec(block);
-    const name = nameMatch ? nameMatch[1].trim() : "";
+    const name = nameMatch ? nameMatch[1].trim() : '';
 
     // Wyciągnij tagi
     const tagRegex = /<li class="tag">(.*?)<\/li>/gi;
@@ -55,16 +55,13 @@ export function parseExercisesFromHtml(html: string): ParsedExercise[] {
 
     // Wyciągnij opis
     const descMatch = /<p>(.*?)<\/p>/i.exec(block);
-    const description = descMatch ? descMatch[1].trim() : "";
+    const description = descMatch ? descMatch[1].trim() : '';
 
     // Wyciągnij parametry
     const prepTimeMatch = /Czas przygotowania:.*?<b>(.*?)<\/b>/i.exec(block);
     const repsMatch = /Liczba powtórzeń:.*?<b>(.*?)<\/b>/i.exec(block);
-    const restRepsMatch =
-      /odpoczynku między powtórzeniami:.*?<b>(.*?)<\/b>/i.exec(block);
-    const restSetsMatch = /odpoczynku między seriami:.*?<b>(.*?)<\/b>/i.exec(
-      block
-    );
+    const restRepsMatch = /odpoczynku między powtórzeniami:.*?<b>(.*?)<\/b>/i.exec(block);
+    const restSetsMatch = /odpoczynku między seriami:.*?<b>(.*?)<\/b>/i.exec(block);
     const setsMatch = /Liczba serii:.*?<b>(.*?)<\/b>/i.exec(block);
 
     if (name) {
@@ -89,11 +86,11 @@ export function parseExercisesFromHtml(html: string): ParsedExercise[] {
  */
 export function stripExerciseBlocks(html: string): string {
   // Usuń bloki exercise
-  let text = html.replace(/<div class="exercise">[\s\S]*?<\/div>/gi, "");
+  let text = html.replace(/<div class="exercise">[\s\S]*?<\/div>/gi, '');
   // Usuń pozostałe tagi HTML
-  text = text.replace(/<[^>]*>/g, "");
+  text = text.replace(/<[^>]*>/g, '');
   // Wyczyść wielokrotne spacje i nowe linie
-  text = text.replace(/\s+/g, " ").trim();
+  text = text.replace(/\s+/g, ' ').trim();
   return text;
 }
 
@@ -103,10 +100,7 @@ export function stripExerciseBlocks(html: string): string {
 function serializeMessage(msg: ChatMessageType): SerializableChatMessage {
   return {
     ...msg,
-    timestamp:
-      msg.timestamp instanceof Date
-        ? msg.timestamp.toISOString()
-        : msg.timestamp,
+    timestamp: msg.timestamp instanceof Date ? msg.timestamp.toISOString() : msg.timestamp,
   };
 }
 
@@ -124,7 +118,7 @@ function deserializeMessage(msg: SerializableChatMessage): ChatMessageType {
  * Ładuje sesje z localStorage
  */
 function loadSessions(): SerializableChatSession[] {
-  if (typeof window === "undefined") return [];
+  if (typeof window === 'undefined') return [];
   try {
     const data = localStorage.getItem(SESSIONS_KEY);
     return data ? JSON.parse(data) : [];
@@ -137,13 +131,13 @@ function loadSessions(): SerializableChatSession[] {
  * Zapisuje sesje do localStorage
  */
 function saveSessions(sessions: SerializableChatSession[]): void {
-  if (typeof window === "undefined") return;
+  if (typeof window === 'undefined') return;
   try {
     // Ogranicz do MAX_SESSIONS
     const limitedSessions = sessions.slice(0, MAX_SESSIONS);
     localStorage.setItem(SESSIONS_KEY, JSON.stringify(limitedSessions));
   } catch (e) {
-    console.error("Failed to save chat sessions:", e);
+    console.error('Failed to save chat sessions:', e);
   }
 }
 
@@ -151,7 +145,7 @@ function saveSessions(sessions: SerializableChatSession[]): void {
  * Pobiera ID bieżącej sesji z localStorage
  */
 function getCurrentSessionId(): string | null {
-  if (typeof window === "undefined") return null;
+  if (typeof window === 'undefined') return null;
   return localStorage.getItem(CURRENT_SESSION_KEY);
 }
 
@@ -159,7 +153,7 @@ function getCurrentSessionId(): string | null {
  * Zapisuje ID bieżącej sesji do localStorage
  */
 function setCurrentSessionId(id: string | null): void {
-  if (typeof window === "undefined") return;
+  if (typeof window === 'undefined') return;
   if (id) {
     localStorage.setItem(CURRENT_SESSION_KEY, id);
   } else {
@@ -192,13 +186,11 @@ export function useChat(): UseChatReturn {
   const [error, setError] = useState<string | null>(null);
   const [sessionId, setSessionId] = useState<string | null>(null); // Backend session ID
   const [sessions, setSessions] = useState<SerializableChatSession[]>([]);
-  const [currentLocalSessionId, setCurrentLocalSessionId] = useState<
-    string | null
-  >(null);
+  const [currentLocalSessionId, setCurrentLocalSessionId] = useState<string | null>(null);
 
   // Załaduj sesje z localStorage przy mount
   useEffect(() => {
-    if (typeof window !== "undefined") {
+    if (typeof window !== 'undefined') {
       const loadedSessions = loadSessions();
       setSessions(loadedSessions);
 
@@ -211,9 +203,7 @@ export function useChat(): UseChatReturn {
       // Pobierz lokalną sesję
       const savedLocalSessionId = getCurrentSessionId();
       if (savedLocalSessionId) {
-        const session = loadedSessions.find(
-          (s) => s.id === savedLocalSessionId
-        );
+        const session = loadedSessions.find((s) => s.id === savedLocalSessionId);
         if (session) {
           setCurrentLocalSessionId(savedLocalSessionId);
           setMessages(session.messages.map(deserializeMessage));
@@ -224,14 +214,14 @@ export function useChat(): UseChatReturn {
 
   // Zapisz sessionId do sessionStorage gdy się zmieni
   useEffect(() => {
-    if (typeof window !== "undefined" && sessionId) {
+    if (typeof window !== 'undefined' && sessionId) {
       sessionStorage.setItem(SESSION_ID_KEY, sessionId);
     }
   }, [sessionId]);
 
   // Zapisz bieżącą sesję do localStorage gdy messages się zmienią
   useEffect(() => {
-    if (typeof window === "undefined" || messages.length === 0) return;
+    if (typeof window === 'undefined' || messages.length === 0) return;
 
     const now = new Date().toISOString();
     const serializedMessages = messages.map(serializeMessage);
@@ -241,9 +231,7 @@ export function useChat(): UseChatReturn {
 
       if (currentLocalSessionId) {
         // Aktualizuj istniejącą sesję
-        const existingIndex = prevSessions.findIndex(
-          (s) => s.id === currentLocalSessionId
-        );
+        const existingIndex = prevSessions.findIndex((s) => s.id === currentLocalSessionId);
         if (existingIndex >= 0) {
           updatedSessions = [...prevSessions];
           updatedSessions[existingIndex] = {
@@ -253,11 +241,10 @@ export function useChat(): UseChatReturn {
           };
         } else {
           // Sesja nie istnieje, utwórz nową
-          const firstUserMessage = messages.find((m) => m.role === "user");
+          const firstUserMessage = messages.find((m) => m.role === 'user');
           const title = firstUserMessage
-            ? firstUserMessage.content.slice(0, 50) +
-              (firstUserMessage.content.length > 50 ? "..." : "")
-            : "Nowa rozmowa";
+            ? firstUserMessage.content.slice(0, 50) + (firstUserMessage.content.length > 50 ? '...' : '')
+            : 'Nowa rozmowa';
 
           const newSession: SerializableChatSession = {
             id: currentLocalSessionId,
@@ -274,11 +261,10 @@ export function useChat(): UseChatReturn {
         setCurrentLocalSessionId(newLocalId);
         setCurrentSessionId(newLocalId);
 
-        const firstUserMessage = messages.find((m) => m.role === "user");
+        const firstUserMessage = messages.find((m) => m.role === 'user');
         const title = firstUserMessage
-          ? firstUserMessage.content.slice(0, 50) +
-            (firstUserMessage.content.length > 50 ? "..." : "")
-          : "Nowa rozmowa";
+          ? firstUserMessage.content.slice(0, 50) + (firstUserMessage.content.length > 50 ? '...' : '')
+          : 'Nowa rozmowa';
 
         const newSession: SerializableChatSession = {
           id: newLocalId,
@@ -291,10 +277,7 @@ export function useChat(): UseChatReturn {
       }
 
       // Sortuj po updatedAt (najnowsze pierwsze)
-      updatedSessions.sort(
-        (a, b) =>
-          new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
-      );
+      updatedSessions.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
 
       // Zapisz do localStorage
       saveSessions(updatedSessions);
@@ -315,7 +298,7 @@ export function useChat(): UseChatReturn {
       // Dodaj wiadomość użytkownika
       const userMessage: ChatMessageType = {
         id: generateMessageId(),
-        role: "user",
+        role: 'user',
         content: content.trim(),
         timestamp: new Date(),
       };
@@ -324,10 +307,7 @@ export function useChat(): UseChatReturn {
       setIsLoading(true);
 
       try {
-        const response = await chatService.sendMessage(
-          content.trim(),
-          sessionId || undefined
-        );
+        const response = await chatService.sendMessage(content.trim(), sessionId || undefined);
 
         // Zapisz sessionId jeśli nowe
         if (response.sessionId && response.sessionId !== sessionId) {
@@ -335,28 +315,25 @@ export function useChat(): UseChatReturn {
         }
 
         // Wyciągnij odpowiedź
-        const aiContent =
-          response.response?.response ||
-          "Przepraszam, nie udało się uzyskać odpowiedzi.";
+        const aiContent = response.response?.response || 'Przepraszam, nie udało się uzyskać odpowiedzi.';
 
         // Dodaj odpowiedź AI
         const aiMessage: ChatMessageType = {
           id: generateMessageId(),
-          role: "assistant",
+          role: 'assistant',
           content: aiContent,
           timestamp: new Date(),
         };
 
         setMessages((prev) => [...prev, aiMessage]);
       } catch (err) {
-        const errorMessage =
-          err instanceof Error ? err.message : "Wystąpił nieoczekiwany błąd";
+        const errorMessage = err instanceof Error ? err.message : 'Wystąpił nieoczekiwany błąd';
         setError(errorMessage);
 
         // Dodaj wiadomość o błędzie jako odpowiedź AI
         const errorAiMessage: ChatMessageType = {
           id: generateMessageId(),
-          role: "assistant",
+          role: 'assistant',
           content: `Przepraszam, wystąpił problem: ${errorMessage}`,
           timestamp: new Date(),
         };
@@ -377,7 +354,7 @@ export function useChat(): UseChatReturn {
     setSessionId(null);
     setCurrentLocalSessionId(null);
     setError(null);
-    if (typeof window !== "undefined") {
+    if (typeof window !== 'undefined') {
       sessionStorage.removeItem(SESSION_ID_KEY);
       setCurrentSessionId(null);
     }
@@ -429,7 +406,7 @@ export function useChat(): UseChatReturn {
     setSessionId(null);
     setCurrentLocalSessionId(null);
     setError(null);
-    if (typeof window !== "undefined") {
+    if (typeof window !== 'undefined') {
       sessionStorage.removeItem(SESSION_ID_KEY);
       setCurrentSessionId(null);
     }

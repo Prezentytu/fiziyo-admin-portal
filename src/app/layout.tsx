@@ -1,13 +1,13 @@
-import type { Metadata } from "next";
-import { ClerkProvider } from "@clerk/nextjs";
-import { ApolloWrapper } from "@/lib/apollo/provider";
-import { Toaster } from "@/components/ui/sonner";
-import { AccessibilityProvider } from "@/contexts/AccessibilityContext";
-import "./globals.css";
+import type { Metadata } from 'next';
+import { ClerkProvider } from '@clerk/nextjs';
+import { ApolloWrapper } from '@/lib/apollo/provider';
+import { Toaster } from '@/components/ui/sonner';
+import { AccessibilityProvider } from '@/contexts/AccessibilityContext';
+import './globals.css';
 
 export const metadata: Metadata = {
-  title: "FiziYo Admin",
-  description: "Panel administracyjny dla fizjoterapeutów",
+  title: 'FiziYo Admin',
+  description: 'Panel administracyjny dla fizjoterapeutów',
 };
 
 // Inline script to apply accessibility preferences before React hydration (prevents FOUC)

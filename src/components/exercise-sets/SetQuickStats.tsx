@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import { Card, CardContent } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Badge } from "@/components/ui/badge";
-import { FolderKanban, Users, Sparkles } from "lucide-react";
+import { Card, CardContent } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Badge } from '@/components/ui/badge';
+import { FolderKanban, Users, Sparkles } from 'lucide-react';
 
 interface SetQuickStatsProps {
   totalSets: number;
@@ -52,12 +52,8 @@ export function SetQuickStats({
           <div className="flex items-center justify-between mb-4">
             <div>
               <p className="text-sm font-medium text-muted-foreground">Aktywne zestawy</p>
-              <div className="text-3xl font-bold text-foreground mt-1">
-                {activeSets}
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                z {totalSets} wszystkich
-              </p>
+              <div className="text-3xl font-bold text-foreground mt-1">{activeSets}</div>
+              <p className="text-xs text-muted-foreground mt-1">z {totalSets} wszystkich</p>
             </div>
             <div className="h-14 w-14 rounded-xl bg-secondary/10 flex items-center justify-center">
               <FolderKanban className="h-7 w-7 text-secondary" />
@@ -77,12 +73,8 @@ export function SetQuickStats({
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-muted-foreground">Szablony</p>
-              <div className="text-2xl font-bold text-foreground mt-1">
-                {templateSets}
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                gotowych wzorców
-              </p>
+              <div className="text-2xl font-bold text-foreground mt-1">{templateSets}</div>
+              <p className="text-xs text-muted-foreground mt-1">gotowych wzorców</p>
             </div>
             <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center">
               <Sparkles className="h-6 w-6 text-primary" />
@@ -97,12 +89,8 @@ export function SetQuickStats({
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-muted-foreground">Przypisania</p>
-              <div className="text-2xl font-bold text-foreground mt-1">
-                {totalAssignments}
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                do pacjentów
-              </p>
+              <div className="text-2xl font-bold text-foreground mt-1">{totalAssignments}</div>
+              <p className="text-xs text-muted-foreground mt-1">do pacjentów</p>
             </div>
             <div className="h-12 w-12 rounded-xl bg-info/10 flex items-center justify-center">
               <Users className="h-6 w-6 text-info" />

@@ -2,13 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Users, UserCheck, UserX } from 'lucide-react';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
 
 export type PatientFilterType = 'all' | 'my' | 'unassigned';
@@ -90,17 +84,11 @@ export function PatientFilter({ value, onChange, counts, className }: PatientFil
           const OptionIcon = option.icon;
           const count = counts?.[option.value];
           return (
-            <SelectItem
-              key={option.value}
-              value={option.value}
-              data-testid={`patient-filter-option-${option.value}`}
-            >
+            <SelectItem key={option.value} value={option.value} data-testid={`patient-filter-option-${option.value}`}>
               <div className="flex items-center gap-2">
                 <OptionIcon className="h-4 w-4 text-muted-foreground" />
                 <span>{option.label}</span>
-                {count !== undefined && (
-                  <span className="ml-auto text-xs text-muted-foreground">({count})</span>
-                )}
+                {count !== undefined && <span className="ml-auto text-xs text-muted-foreground">({count})</span>}
               </div>
             </SelectItem>
           );

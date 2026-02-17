@@ -161,7 +161,10 @@ export function PatientCard({
               </DropdownMenuItem>
             )}
             {onAssignSet && (
-              <DropdownMenuItem onClick={() => onAssignSet(patient)} data-testid={`patient-card-${patient.id}-assign-btn`}>
+              <DropdownMenuItem
+                onClick={() => onAssignSet(patient)}
+                data-testid={`patient-card-${patient.id}-assign-btn`}
+              >
                 <FolderKanban className="mr-2 h-4 w-4" />
                 Przypisz zestaw
               </DropdownMenuItem>
@@ -169,7 +172,11 @@ export function PatientCard({
             {onDelete && (
               <>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => onDelete(patient)} className="text-destructive focus:text-destructive" data-testid={`patient-card-${patient.id}-delete-btn`}>
+                <DropdownMenuItem
+                  onClick={() => onDelete(patient)}
+                  className="text-destructive focus:text-destructive"
+                  data-testid={`patient-card-${patient.id}-delete-btn`}
+                >
                   <Trash2 className="mr-2 h-4 w-4" />
                   Usuń
                 </DropdownMenuItem>
@@ -255,7 +262,10 @@ export function PatientCard({
                 </DropdownMenuItem>
               )}
               {onAssignSet && (
-                <DropdownMenuItem onClick={() => onAssignSet(patient)} data-testid={`patient-card-${patient.id}-assign-btn`}>
+                <DropdownMenuItem
+                  onClick={() => onAssignSet(patient)}
+                  data-testid={`patient-card-${patient.id}-assign-btn`}
+                >
                   <FolderKanban className="mr-2 h-4 w-4" />
                   Przypisz zestaw
                 </DropdownMenuItem>

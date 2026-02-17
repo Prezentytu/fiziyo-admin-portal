@@ -1,43 +1,30 @@
-"use client";
+'use client';
 
-import { useState, useCallback, useMemo, useEffect } from "react";
-import { useQuery, useMutation } from "@apollo/client/react";
-import {
-  GitBranch,
-  ArrowLeft,
-  ArrowRight,
-  AlertTriangle,
-  Info,
-  Sparkles,
-  RefreshCw,
-} from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { cn } from "@/lib/utils";
-import { toast } from "sonner";
-import { RelationSlot } from "./RelationSlot";
-import { ExerciseSearchPopover } from "./ExerciseSearchPopover";
+import { useState, useCallback, useMemo, useEffect } from 'react';
+import { useQuery, useMutation } from '@apollo/client/react';
+import { GitBranch, ArrowLeft, ArrowRight, AlertTriangle, Info, Sparkles, RefreshCw } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
+import { RelationSlot } from './RelationSlot';
+import { ExerciseSearchPopover } from './ExerciseSearchPopover';
 import {
   GET_EXERCISE_RELATIONSHIPS_QUERY,
   GET_RELATION_CANDIDATES_QUERY,
-} from "@/graphql/queries/adminExercises.queries";
+} from '@/graphql/queries/adminExercises.queries';
 import {
   SET_EXERCISE_RELATION_MUTATION,
   REMOVE_EXERCISE_RELATION_MUTATION,
-} from "@/graphql/mutations/adminExercises.mutations";
+} from '@/graphql/mutations/adminExercises.mutations';
 import type {
   AdminExercise,
   ExerciseRelationTarget,
   GetExerciseRelationshipsResponse,
   GetRelationCandidatesResponse,
-} from "@/graphql/types/adminExercise.types";
+} from '@/graphql/types/adminExercise.types';
 
 // Difficulty level order for validation
 const DIFFICULTY_ORDER: Record<string, number> = {
@@ -66,7 +53,7 @@ interface RelationshipManagerProps {
   /** Dodatkowe klasy CSS */
   className?: string;
   /** data-testid */
-  "data-testid"?: string;
+  'data-testid'?: string;
 }
 
 /**
@@ -90,7 +77,7 @@ export function RelationshipManager({
   onRelationsChange,
   disabled = false,
   className,
-  "data-testid": testId,
+  'data-testid': testId,
 }: RelationshipManagerProps) {
   // Local state - now using ExerciseRelationTarget directly (flat structure)
   const [localRegression, setLocalRegression] = useState<ExerciseRelationTarget | null>(null);
@@ -99,14 +86,16 @@ export function RelationshipManager({
   const [isProgressionSearchOpen, setIsProgressionSearchOpen] = useState(false);
 
   // Fetch existing relationships
-  const { data: relationsData, loading: relationsLoading, error: relationsError, refetch } = useQuery<GetExerciseRelationshipsResponse>(
-    GET_EXERCISE_RELATIONSHIPS_QUERY,
-    {
-      variables: { exerciseId: exercise.id },
-      skip: !exercise.id,
-      fetchPolicy: "cache-and-network",
-    }
-  );
+  const {
+    data: relationsData,
+    loading: relationsLoading,
+    error: relationsError,
+    refetch,
+  } = useQuery<GetExerciseRelationshipsResponse>(GET_EXERCISE_RELATIONSHIPS_QUERY, {
+    variables: { exerciseId: exercise.id },
+    skip: !exercise.id,
+    fetchPolicy: 'cache-and-network',
+  });
 
   // Handle relationships data
   useEffect(() => {
@@ -122,7 +111,7 @@ export function RelationshipManager({
   // Log errors
   useEffect(() => {
     if (relationsError) {
-      console.error("Error fetching relationships:", relationsError);
+      console.error('Error fetching relationships:', relationsError);
     }
   }, [relationsError]);
 
@@ -132,45 +121,37 @@ export function RelationshipManager({
     {
       variables: {
         exerciseId: exercise.id,
-        relationType: "REGRESSION",
+        relationType: 'REGRESSION',
         limit: 3,
       },
       skip: !exercise.id || !!localRegression,
-      fetchPolicy: "cache-first",
+      fetchPolicy: 'cache-first',
     }
   );
 
-  const { data: progressionCandidates, loading: progressionCandidatesLoading } = useQuery<GetRelationCandidatesResponse>(
-    GET_RELATION_CANDIDATES_QUERY,
-    {
+  const { data: progressionCandidates, loading: progressionCandidatesLoading } =
+    useQuery<GetRelationCandidatesResponse>(GET_RELATION_CANDIDATES_QUERY, {
       variables: {
         exerciseId: exercise.id,
-        relationType: "PROGRESSION",
+        relationType: 'PROGRESSION',
         limit: 3,
       },
       skip: !exercise.id || !!localProgression,
-      fetchPolicy: "cache-first",
-    }
-  );
+      fetchPolicy: 'cache-first',
+    });
 
   // Mutations
-  const [setRelation, { loading: setRelationLoading }] = useMutation(
-    SET_EXERCISE_RELATION_MUTATION,
-    {
-      onError: (error) => {
-        toast.error(`Nie udało się ustawić relacji: ${error.message}`);
-      },
-    }
-  );
+  const [setRelation, { loading: setRelationLoading }] = useMutation(SET_EXERCISE_RELATION_MUTATION, {
+    onError: (error) => {
+      toast.error(`Nie udało się ustawić relacji: ${error.message}`);
+    },
+  });
 
-  const [removeRelation, { loading: removeRelationLoading }] = useMutation(
-    REMOVE_EXERCISE_RELATION_MUTATION,
-    {
-      onError: (error) => {
-        toast.error(`Nie udało się usunąć relacji: ${error.message}`);
-      },
-    }
-  );
+  const [removeRelation, { loading: removeRelationLoading }] = useMutation(REMOVE_EXERCISE_RELATION_MUTATION, {
+    onError: (error) => {
+      toast.error(`Nie udało się usunąć relacji: ${error.message}`);
+    },
+  });
 
   // Auto-fill first AI suggestion for empty regression slot
   useEffect(() => {
@@ -225,7 +206,7 @@ export function RelationshipManager({
     const regressionLevel = DIFFICULTY_ORDER[localRegression.difficultyLevel] || 3;
 
     if (regressionLevel >= currentLevel) {
-      return "Regresja powinna być łatwiejsza";
+      return 'Regresja powinna być łatwiejsza';
     }
     return null;
   }, [localRegression, exercise.difficultyLevel]);
@@ -238,7 +219,7 @@ export function RelationshipManager({
     const progressionLevel = DIFFICULTY_ORDER[localProgression.difficultyLevel] || 3;
 
     if (progressionLevel <= currentLevel) {
-      return "Progresja powinna być trudniejsza";
+      return 'Progresja powinna być trudniejsza';
     }
     return null;
   }, [localProgression, exercise.difficultyLevel]);
@@ -259,10 +240,10 @@ export function RelationshipManager({
           variables: {
             sourceExerciseId: exercise.id,
             targetExerciseId: target.id,
-            relationType: "REGRESSION",
+            relationType: 'REGRESSION',
           },
         });
-        toast.success("Regresja ustawiona");
+        toast.success('Regresja ustawiona');
       } catch {
         // Rollback on error
         setLocalRegression(previousValue);
@@ -286,10 +267,10 @@ export function RelationshipManager({
           variables: {
             sourceExerciseId: exercise.id,
             targetExerciseId: target.id,
-            relationType: "PROGRESSION",
+            relationType: 'PROGRESSION',
           },
         });
-        toast.success("Progresja ustawiona");
+        toast.success('Progresja ustawiona');
       } catch {
         // Rollback on error
         setLocalProgression(previousValue);
@@ -306,10 +287,10 @@ export function RelationshipManager({
       await removeRelation({
         variables: {
           sourceExerciseId: exercise.id,
-          relationType: "REGRESSION",
+          relationType: 'REGRESSION',
         },
       });
-      toast.success("Regresja usunięta");
+      toast.success('Regresja usunięta');
     } catch {
       // Rollback on error
       setLocalRegression(previousValue);
@@ -324,10 +305,10 @@ export function RelationshipManager({
       await removeRelation({
         variables: {
           sourceExerciseId: exercise.id,
-          relationType: "PROGRESSION",
+          relationType: 'PROGRESSION',
         },
       });
-      toast.success("Progresja usunięta");
+      toast.success('Progresja usunięta');
     } catch {
       // Rollback on error
       setLocalProgression(previousValue);
@@ -337,7 +318,7 @@ export function RelationshipManager({
   const isLoading = relationsLoading || setRelationLoading || removeRelationLoading;
 
   return (
-    <Card className={cn("border-border/60", className)} data-testid={testId}>
+    <Card className={cn('border-border/60', className)} data-testid={testId}>
       <CardHeader className="pb-2">
         <CardTitle className="text-sm font-medium flex items-center justify-between">
           <span className="flex items-center gap-2">
@@ -362,20 +343,14 @@ export function RelationshipManager({
                 </TooltipTrigger>
                 <TooltipContent className="max-w-[250px]">
                   <p className="text-xs">
-                    Połącz ćwiczenia w logiczne ścieżki. Gdy pacjent zgłosi &quot;za trudne&quot;,
-                    aplikacja automatycznie zaproponuje regresję.
+                    Połącz ćwiczenia w logiczne ścieżki. Gdy pacjent zgłosi &quot;za trudne&quot;, aplikacja
+                    automatycznie zaproponuje regresję.
                   </p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-6 w-6"
-              onClick={() => refetch()}
-              disabled={isLoading}
-            >
-              <RefreshCw className={cn("h-3 w-3", isLoading && "animate-spin")} />
+            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => refetch()} disabled={isLoading}>
+              <RefreshCw className={cn('h-3 w-3', isLoading && 'animate-spin')} />
             </Button>
           </div>
         </CardTitle>

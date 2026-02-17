@@ -21,11 +21,7 @@ import { useRouter } from 'next/navigation';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import {
-  Dialog,
-  DialogContent,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -110,7 +106,7 @@ const DEFAULT_STEPS: Omit<OnboardingStep, 'completed'>[] = [
 ];
 
 function getDefaultOnboardingSteps(): OnboardingStep[] {
-  return DEFAULT_STEPS.map(step => ({ ...step, completed: false }));
+  return DEFAULT_STEPS.map((step) => ({ ...step, completed: false }));
 }
 
 function readInitialOnboardingState(): InitialOnboardingState {
@@ -131,11 +127,11 @@ function readInitialOnboardingState(): InitialOnboardingState {
 
   try {
     const parsed = JSON.parse(saved) as StoredOnboardingState;
-    const stepsWithStatus = DEFAULT_STEPS.map(step => ({
+    const stepsWithStatus = DEFAULT_STEPS.map((step) => ({
       ...step,
       completed: parsed.completedSteps.includes(step.id),
     }));
-    const firstIncomplete = stepsWithStatus.findIndex(step => !step.completed);
+    const firstIncomplete = stepsWithStatus.findIndex((step) => !step.completed);
     return {
       steps: stepsWithStatus,
       currentStep: firstIncomplete >= 0 ? firstIncomplete : 0,
@@ -178,12 +174,7 @@ function readOnboardingMeta() {
   }
 }
 
-export function OnboardingWizard({
-  open,
-  onOpenChange,
-  userName = 'Użytkowniku',
-  onComplete,
-}: OnboardingWizardProps) {
+export function OnboardingWizard({ open, onOpenChange, userName = 'Użytkowniku', onComplete }: OnboardingWizardProps) {
   const router = useRouter();
   const [initialState] = useState<InitialOnboardingState>(() => readInitialOnboardingState());
   const [currentStep, setCurrentStep] = useState(initialState.currentStep);
@@ -192,24 +183,22 @@ export function OnboardingWizard({
 
   // Zapisanie stanu
   const saveProgress = useCallback((newSteps: OnboardingStep[]) => {
-    const completedSteps = newSteps.filter(s => s.completed).map(s => s.id);
+    const completedSteps = newSteps.filter((s) => s.completed).map((s) => s.id);
     localStorage.setItem(STORAGE_KEY, JSON.stringify({ completedSteps }));
   }, []);
 
   // Oznacz krok jako zakończony
   const markStepCompleted = (stepId: string) => {
-    const newSteps = steps.map(step =>
-      step.id === stepId ? { ...step, completed: true } : step
-    );
+    const newSteps = steps.map((step) => (step.id === stepId ? { ...step, completed: true } : step));
     setSteps(newSteps);
     saveProgress(newSteps);
 
     // Sprawdź czy wszystko zakończone
-    if (newSteps.every(s => s.completed)) {
+    if (newSteps.every((s) => s.completed)) {
       setShowCelebration(true);
     } else {
       // Przejdź do następnego kroku
-      const nextIncomplete = newSteps.findIndex(s => !s.completed);
+      const nextIncomplete = newSteps.findIndex((s) => !s.completed);
       if (nextIncomplete >= 0) {
         setCurrentStep(nextIncomplete);
       }
@@ -229,7 +218,9 @@ export function OnboardingWizard({
 
   // Pomiń onboarding
   const handleSkip = () => {
-    const confirmed = window.confirm('Czy na pewno chcesz pominąć tutorial? Możesz do niego wrócić później w ustawieniach.');
+    const confirmed = window.confirm(
+      'Czy na pewno chcesz pominąć tutorial? Możesz do niego wrócić później w ustawieniach.'
+    );
     if (confirmed) {
       onOpenChange(false);
       onComplete?.();
@@ -247,12 +238,12 @@ export function OnboardingWizard({
   // Reset onboardingu
   const handleReset = () => {
     localStorage.removeItem(STORAGE_KEY);
-    setSteps(DEFAULT_STEPS.map(s => ({ ...s, completed: false })));
+    setSteps(DEFAULT_STEPS.map((s) => ({ ...s, completed: false })));
     setCurrentStep(0);
     setShowCelebration(false);
   };
 
-  const completedCount = steps.filter(s => s.completed).length;
+  const completedCount = steps.filter((s) => s.completed).length;
   const progress = (completedCount / steps.length) * 100;
   const currentStepData = steps[currentStep];
 
@@ -273,9 +264,7 @@ export function OnboardingWizard({
               <PartyPopper className="h-10 w-10 text-white" />
             </div>
             <div className="space-y-2">
-              <h2 className="text-2xl font-bold text-foreground">
-                Gratulacje, {userName}! 🎉
-              </h2>
+              <h2 className="text-2xl font-bold text-foreground">Gratulacje, {userName}! 🎉</h2>
               <p className="text-muted-foreground">
                 Ukończyłeś wszystkie kroki wprowadzenia. Twoje konto jest w pełni skonfigurowane.
               </p>
@@ -285,7 +274,12 @@ export function OnboardingWizard({
                 <Rocket className="h-5 w-5" />
                 Rozpocznij pracę
               </Button>
-              <Button variant="ghost" onClick={handleReset} className="text-muted-foreground" data-testid="onboarding-reset-btn">
+              <Button
+                variant="ghost"
+                onClick={handleReset}
+                className="text-muted-foreground"
+                data-testid="onboarding-reset-btn"
+              >
                 Powtórz tutorial
               </Button>
             </div>
@@ -307,12 +301,8 @@ export function OnboardingWizard({
                   <Sparkles className="h-7 w-7 text-white" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold text-foreground">
-                    Witaj, {userName}!
-                  </h2>
-                  <p className="text-sm text-muted-foreground">
-                    Kilka kroków, aby w pełni skonfigurować Twoje konto
-                  </p>
+                  <h2 className="text-xl font-bold text-foreground">Witaj, {userName}!</h2>
+                  <p className="text-sm text-muted-foreground">Kilka kroków, aby w pełni skonfigurować Twoje konto</p>
                 </div>
               </div>
 
@@ -320,7 +310,9 @@ export function OnboardingWizard({
               <div className="mt-5 space-y-2">
                 <div className="flex items-center justify-between text-xs">
                   <span className="text-muted-foreground">Postęp</span>
-                  <span className="font-medium text-foreground">{completedCount} z {steps.length}</span>
+                  <span className="font-medium text-foreground">
+                    {completedCount} z {steps.length}
+                  </span>
                 </div>
                 <Progress value={progress} className="h-2" />
               </div>
@@ -348,30 +340,28 @@ export function OnboardingWizard({
                       )}
                     >
                       {/* Status indicator */}
-                      <div className={cn(
-                        'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-colors',
-                        isCompleted
-                          ? 'bg-primary text-white'
-                          : isActive
-                            ? 'bg-primary/20 text-primary'
-                            : 'bg-surface-light text-muted-foreground'
-                      )}>
-                        {isCompleted ? (
-                          <CheckCircle2 className="h-5 w-5" />
-                        ) : (
-                          <Icon className="h-5 w-5" />
+                      <div
+                        className={cn(
+                          'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-colors',
+                          isCompleted
+                            ? 'bg-primary text-white'
+                            : isActive
+                              ? 'bg-primary/20 text-primary'
+                              : 'bg-surface-light text-muted-foreground'
                         )}
+                      >
+                        {isCompleted ? <CheckCircle2 className="h-5 w-5" /> : <Icon className="h-5 w-5" />}
                       </div>
 
                       {/* Content */}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
-                          <span className={cn(
-                            'font-medium text-sm',
-                            isCompleted
-                              ? 'text-muted-foreground line-through'
-                              : 'text-foreground'
-                          )}>
+                          <span
+                            className={cn(
+                              'font-medium text-sm',
+                              isCompleted ? 'text-muted-foreground line-through' : 'text-foreground'
+                            )}
+                          >
                             {step.title}
                           </span>
                           {isActive && !isCompleted && (
@@ -380,17 +370,17 @@ export function OnboardingWizard({
                             </span>
                           )}
                         </div>
-                        <p className="text-xs text-muted-foreground line-clamp-1">
-                          {step.description}
-                        </p>
+                        <p className="text-xs text-muted-foreground line-clamp-1">{step.description}</p>
                       </div>
 
                       {/* Arrow */}
                       {!isCompleted && (
-                        <ChevronRight className={cn(
-                          'h-5 w-5 shrink-0 transition-colors',
-                          isActive ? 'text-primary' : 'text-muted-foreground/50'
-                        )} />
+                        <ChevronRight
+                          className={cn(
+                            'h-5 w-5 shrink-0 transition-colors',
+                            isActive ? 'text-primary' : 'text-muted-foreground/50'
+                          )}
+                        />
                       )}
                     </button>
                   );
@@ -406,12 +396,8 @@ export function OnboardingWizard({
                         <currentStepData.icon className="h-5 w-5 text-primary" />
                       </div>
                       <div>
-                        <h3 className="font-semibold text-foreground">
-                          {currentStepData.title}
-                        </h3>
-                        <p className="text-sm text-muted-foreground mt-1">
-                          {currentStepData.description}
-                        </p>
+                        <h3 className="font-semibold text-foreground">{currentStepData.title}</h3>
+                        <p className="text-sm text-muted-foreground mt-1">{currentStepData.description}</p>
                       </div>
                     </div>
 
@@ -419,9 +405,7 @@ export function OnboardingWizard({
                     {currentStepData.tip && (
                       <div className="flex items-start gap-2 p-3 rounded-lg bg-info/10 border border-info/20">
                         <Lightbulb className="h-4 w-4 text-info shrink-0 mt-0.5" />
-                        <p className="text-xs text-info">
-                          {currentStepData.tip}
-                        </p>
+                        <p className="text-xs text-info">{currentStepData.tip}</p>
                       </div>
                     )}
 

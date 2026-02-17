@@ -187,12 +187,7 @@ export interface DocumentImportResult {
 /**
  * Kroki wizarda importu
  */
-export type ImportWizardStep =
-  | 'upload'
-  | 'processing'
-  | 'review-exercises'
-  | 'review-sets'
-  | 'summary';
+export type ImportWizardStep = 'upload' | 'processing' | 'review-exercises' | 'review-sets' | 'summary';
 
 /**
  * Decyzja użytkownika dla ćwiczenia

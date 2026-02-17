@@ -3,16 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
-import {
-  Users,
-  FolderKanban,
-  Send,
-  CheckCircle2,
-  ChevronRight,
-  X,
-  Check,
-  ArrowRight,
-} from 'lucide-react';
+import { Users, FolderKanban, Send, CheckCircle2, ChevronRight, X, Check, ArrowRight } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -54,10 +45,12 @@ export function GettingStartedCard({
   // Sprawdź czy onboarding został ukryty (z Clerk metadata)
   useEffect(() => {
     if (user) {
-      const metadata = user.unsafeMetadata as {
-        onboardingDismissed?: boolean;
-        onboardingCompletedAt?: string;
-      } | undefined;
+      const metadata = user.unsafeMetadata as
+        | {
+            onboardingDismissed?: boolean;
+            onboardingCompletedAt?: string;
+          }
+        | undefined;
 
       if (metadata?.onboardingDismissed) {
         setIsDismissed(true);
@@ -97,7 +90,7 @@ export function GettingStartedCard({
     },
   ];
 
-  const completedCount = steps.filter(s => s.completed).length;
+  const completedCount = steps.filter((s) => s.completed).length;
   const progress = (completedCount / steps.length) * 100;
   const allCompleted = completedCount === steps.length;
 
@@ -207,9 +200,7 @@ export function GettingStartedCard({
 
             {/* Content */}
             <div className="flex-1 min-w-0">
-              <h3 className="text-base font-semibold text-foreground">
-                Konto skonfigurowane
-              </h3>
+              <h3 className="text-base font-semibold text-foreground">Konto skonfigurowane</h3>
               <p className="text-sm text-muted-foreground">
                 Wszystko gotowe. Możesz teraz w pełni korzystać z aplikacji.
               </p>
@@ -256,12 +247,8 @@ export function GettingStartedCard({
               <CheckCircle2 className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <h3 className="text-base font-semibold text-foreground">
-                Rozpocznij pracę
-              </h3>
-              <p className="text-sm text-muted-foreground">
-                3 kroki do pełnej konfiguracji
-              </p>
+              <h3 className="text-base font-semibold text-foreground">Rozpocznij pracę</h3>
+              <p className="text-sm text-muted-foreground">3 kroki do pełnej konfiguracji</p>
             </div>
           </div>
           <button
@@ -278,7 +265,9 @@ export function GettingStartedCard({
         <div className="mb-5">
           <div className="flex items-center justify-between text-xs mb-2">
             <span className="text-muted-foreground">Postęp</span>
-            <span className="font-medium text-primary">{completedCount} z {steps.length}</span>
+            <span className="font-medium text-primary">
+              {completedCount} z {steps.length}
+            </span>
           </div>
           <Progress value={progress} className="h-2" />
         </div>
@@ -288,7 +277,7 @@ export function GettingStartedCard({
           {steps.map((step, index) => {
             const Icon = step.icon;
             const isCompleted = step.completed;
-            const isNext = !isCompleted && steps.slice(0, index).every(s => s.completed);
+            const isNext = !isCompleted && steps.slice(0, index).every((s) => s.completed);
 
             return (
               <button
@@ -306,40 +295,40 @@ export function GettingStartedCard({
                 )}
               >
                 {/* Status icon */}
-                <div className={cn(
-                  'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-colors',
-                  isCompleted
-                    ? 'bg-primary text-white'
-                    : isNext
-                      ? 'bg-primary/20 text-primary'
-                      : 'bg-surface-light text-muted-foreground'
-                )}>
-                  {isCompleted ? (
-                    <CheckCircle2 className="h-4 w-4" />
-                  ) : (
-                    <Icon className="h-4 w-4" />
+                <div
+                  className={cn(
+                    'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-colors',
+                    isCompleted
+                      ? 'bg-primary text-white'
+                      : isNext
+                        ? 'bg-primary/20 text-primary'
+                        : 'bg-surface-light text-muted-foreground'
                   )}
+                >
+                  {isCompleted ? <CheckCircle2 className="h-4 w-4" /> : <Icon className="h-4 w-4" />}
                 </div>
 
                 {/* Content */}
                 <div className="flex-1 min-w-0">
-                  <span className={cn(
-                    'text-sm font-medium block',
-                    isCompleted ? 'text-muted-foreground line-through' : 'text-foreground'
-                  )}>
+                  <span
+                    className={cn(
+                      'text-sm font-medium block',
+                      isCompleted ? 'text-muted-foreground line-through' : 'text-foreground'
+                    )}
+                  >
                     {step.title}
                   </span>
-                  <span className="text-xs text-muted-foreground">
-                    {step.description}
-                  </span>
+                  <span className="text-xs text-muted-foreground">{step.description}</span>
                 </div>
 
                 {/* Arrow */}
                 {!isCompleted && (
-                  <ChevronRight className={cn(
-                    'h-4 w-4 shrink-0 transition-colors',
-                    isNext ? 'text-primary' : 'text-muted-foreground/50'
-                  )} />
+                  <ChevronRight
+                    className={cn(
+                      'h-4 w-4 shrink-0 transition-colors',
+                      isNext ? 'text-primary' : 'text-muted-foreground/50'
+                    )}
+                  />
                 )}
               </button>
             );
@@ -350,9 +339,7 @@ export function GettingStartedCard({
         {completedCount === 2 && (
           <div className="mt-4 flex items-center gap-2 p-3 rounded-lg bg-primary/5 border border-primary/20">
             <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />
-            <p className="text-xs text-muted-foreground">
-              Ostatni krok do pełnej konfiguracji
-            </p>
+            <p className="text-xs text-muted-foreground">Ostatni krok do pełnej konfiguracji</p>
           </div>
         )}
       </div>

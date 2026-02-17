@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { useQuery, useMutation } from "@apollo/client/react";
-import { format, formatDistanceToNow, isPast } from "date-fns";
-import { pl } from "date-fns/locale";
+import { useState } from 'react';
+import { useQuery, useMutation } from '@apollo/client/react';
+import { format, formatDistanceToNow, isPast } from 'date-fns';
+import { pl } from 'date-fns/locale';
 import {
   Mail,
   Clock,
@@ -18,39 +18,26 @@ import {
   User,
   Loader2,
   UserPlus,
-} from "lucide-react";
-import { toast } from "sonner";
+} from 'lucide-react';
+import { toast } from 'sonner';
 
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
-import { EmptyState } from "@/components/shared/EmptyState";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
+import { EmptyState } from '@/components/shared/EmptyState';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  GET_ORGANIZATION_INVITATIONS_QUERY,
-} from "@/graphql/queries/organizations.queries";
-import {
-  RESEND_INVITATION_MUTATION,
-  REVOKE_INVITATION_MUTATION,
-} from "@/graphql/mutations/organizations.mutations";
-import type {
-  OrganizationInvitationsResponse,
-  OrganizationInvitation,
-} from "@/types/apollo";
-import { cn } from "@/lib/utils";
+} from '@/components/ui/dropdown-menu';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { GET_ORGANIZATION_INVITATIONS_QUERY } from '@/graphql/queries/organizations.queries';
+import { RESEND_INVITATION_MUTATION, REVOKE_INVITATION_MUTATION } from '@/graphql/mutations/organizations.mutations';
+import type { OrganizationInvitationsResponse, OrganizationInvitation } from '@/types/apollo';
+import { cn } from '@/lib/utils';
 
 // ========================================
 // Types
@@ -68,44 +55,38 @@ interface InvitationsModalProps {
 // ========================================
 
 const roleLabels: Record<string, string> = {
-  OWNER: "Właściciel",
-  ADMIN: "Administrator",
-  THERAPIST: "Fizjoterapeuta",
-  MEMBER: "Członek",
-  STAFF: "Personel",
+  OWNER: 'Właściciel',
+  ADMIN: 'Administrator',
+  THERAPIST: 'Fizjoterapeuta',
+  MEMBER: 'Członek',
+  STAFF: 'Personel',
 };
 
-const statusConfig: Record<
-  string,
-  { label: string; color: string; icon: React.ElementType }
-> = {
+const statusConfig: Record<string, { label: string; color: string; icon: React.ElementType }> = {
   pending: {
-    label: "Oczekujące",
-    color: "bg-amber-500/20 text-amber-400 border-amber-500/30",
+    label: 'Oczekujące',
+    color: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
     icon: Clock,
   },
   accepted: {
-    label: "Zaakceptowane",
-    color: "bg-green-500/20 text-green-400 border-green-500/30",
+    label: 'Zaakceptowane',
+    color: 'bg-green-500/20 text-green-400 border-green-500/30',
     icon: Check,
   },
   expired: {
-    label: "Wygasłe",
-    color: "bg-muted text-muted-foreground border-border",
+    label: 'Wygasłe',
+    color: 'bg-muted text-muted-foreground border-border',
     icon: AlertCircle,
   },
   revoked: {
-    label: "Anulowane",
-    color: "bg-red-500/20 text-red-400 border-red-500/30",
+    label: 'Anulowane',
+    color: 'bg-red-500/20 text-red-400 border-red-500/30',
     icon: X,
   },
 };
 
 function getInviteUrl(token: string): string {
-  const baseUrl =
-    typeof window !== "undefined"
-      ? window.location.origin
-      : "https://app.fizjo.pl";
+  const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://app.fizjo.pl';
   return `${baseUrl}/invite?token=${token}`;
 }
 
@@ -113,73 +94,59 @@ function getInviteUrl(token: string): string {
 // Component
 // ========================================
 
-export function InvitationsModal({
-  open,
-  onOpenChange,
-  organizationId,
-  onInviteClick,
-}: InvitationsModalProps) {
-  const [activeTab, setActiveTab] = useState<"pending" | "all">("pending");
+export function InvitationsModal({ open, onOpenChange, organizationId, onInviteClick }: InvitationsModalProps) {
+  const [activeTab, setActiveTab] = useState<'pending' | 'all'>('pending');
 
   // Fetch invitations
   const {
     data: invitationsData,
     loading: invitationsLoading,
     refetch: refetchInvitations,
-  } = useQuery<OrganizationInvitationsResponse>(
-    GET_ORGANIZATION_INVITATIONS_QUERY,
-    {
-      variables: { organizationId },
-      skip: !organizationId || !open,
-      fetchPolicy: "cache-and-network",
-    }
-  );
+  } = useQuery<OrganizationInvitationsResponse>(GET_ORGANIZATION_INVITATIONS_QUERY, {
+    variables: { organizationId },
+    skip: !organizationId || !open,
+    fetchPolicy: 'cache-and-network',
+  });
 
   // Mutations
-  const [resendInvitation, { loading: resending }] = useMutation(
-    RESEND_INVITATION_MUTATION,
-    {
-      onCompleted: () => {
-        toast.success("Zaproszenie zostało wysłane ponownie");
-        refetchInvitations();
-      },
-      onError: (error) => {
-        toast.error(`Błąd: ${error.message}`);
-      },
-    }
-  );
+  const [resendInvitation, { loading: resending }] = useMutation(RESEND_INVITATION_MUTATION, {
+    onCompleted: () => {
+      toast.success('Zaproszenie zostało wysłane ponownie');
+      refetchInvitations();
+    },
+    onError: (error) => {
+      toast.error(`Błąd: ${error.message}`);
+    },
+  });
 
-  const [revokeInvitation, { loading: revoking }] = useMutation(
-    REVOKE_INVITATION_MUTATION,
-    {
-      onCompleted: () => {
-        toast.success("Zaproszenie zostało anulowane");
-        refetchInvitations();
-      },
-      onError: (error) => {
-        toast.error(`Błąd: ${error.message}`);
-      },
-    }
-  );
+  const [revokeInvitation, { loading: revoking }] = useMutation(REVOKE_INVITATION_MUTATION, {
+    onCompleted: () => {
+      toast.success('Zaproszenie zostało anulowane');
+      refetchInvitations();
+    },
+    onError: (error) => {
+      toast.error(`Błąd: ${error.message}`);
+    },
+  });
 
   const invitations = invitationsData?.organizationInvitations || [];
 
   // Filter invitations
   const pendingInvitations = invitations.filter((inv) => {
-    return inv.status === "pending" && !isPast(new Date(inv.expiresAt));
+    return inv.status === 'pending' && !isPast(new Date(inv.expiresAt));
   });
 
-  const displayedInvitations = activeTab === "pending" ? pendingInvitations : invitations;
+  const displayedInvitations = activeTab === 'pending' ? pendingInvitations : invitations;
 
   // Handlers
   const handleCopyLink = async (invitation: OrganizationInvitation) => {
     if (!invitation.invitationToken) {
-      toast.error("Brak tokenu zaproszenia");
+      toast.error('Brak tokenu zaproszenia');
       return;
     }
     const url = getInviteUrl(invitation.invitationToken);
     await navigator.clipboard.writeText(url);
-    toast.success("Link skopiowany do schowka");
+    toast.success('Link skopiowany do schowka');
   };
 
   const handleResend = async (invitationId: string) => {
@@ -211,12 +178,7 @@ export function InvitationsModal({
                 </Badge>
               )}
             </DialogTitle>
-            <Button
-              size="sm"
-              className="gap-2"
-              onClick={handleNewInvite}
-              data-testid="invitations-modal-new-btn"
-            >
+            <Button size="sm" className="gap-2" onClick={handleNewInvite} data-testid="invitations-modal-new-btn">
               <UserPlus className="h-4 w-4" />
               Nowe zaproszenie
             </Button>
@@ -225,7 +187,11 @@ export function InvitationsModal({
 
         <div className="flex-1 overflow-hidden flex flex-col pt-4">
           {/* Tabs */}
-          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "pending" | "all")} className="flex flex-col flex-1 overflow-hidden">
+          <Tabs
+            value={activeTab}
+            onValueChange={(v) => setActiveTab(v as 'pending' | 'all')}
+            className="flex flex-col flex-1 overflow-hidden"
+          >
             <div className="flex items-center justify-between mb-4">
               <TabsList className="h-8">
                 <TabsTrigger value="pending" className="text-xs h-7 px-3">
@@ -243,12 +209,7 @@ export function InvitationsModal({
                 className="h-8"
                 data-testid="invitations-modal-refresh-btn"
               >
-                <RefreshCw
-                  className={cn(
-                    "h-4 w-4",
-                    invitationsLoading && "animate-spin"
-                  )}
-                />
+                <RefreshCw className={cn('h-4 w-4', invitationsLoading && 'animate-spin')} />
               </Button>
             </div>
 
@@ -262,11 +223,11 @@ export function InvitationsModal({
               ) : displayedInvitations.length === 0 ? (
                 <EmptyState
                   icon={Mail}
-                  title={activeTab === "pending" ? "Brak oczekujących zaproszeń" : "Brak zaproszeń"}
+                  title={activeTab === 'pending' ? 'Brak oczekujących zaproszeń' : 'Brak zaproszeń'}
                   description={
-                    activeTab === "pending"
-                      ? "Wszystkie zaproszenia zostały zaakceptowane"
-                      : "Wyślij zaproszenie, aby dodać nową osobę do zespołu"
+                    activeTab === 'pending'
+                      ? 'Wszystkie zaproszenia zostały zaakceptowane'
+                      : 'Wyślij zaproszenie, aby dodać nową osobę do zespołu'
                   }
                   actionLabel="Wyślij zaproszenie"
                   onAction={handleNewInvite}
@@ -305,20 +266,13 @@ interface InvitationRowProps {
   isLoading?: boolean;
 }
 
-function InvitationRow({
-  invitation,
-  onCopyLink,
-  onResend,
-  onRevoke,
-  isLoading,
-}: InvitationRowProps) {
-  const isExpired =
-    invitation.status === "pending" && isPast(new Date(invitation.expiresAt));
-  const effectiveStatus = isExpired ? "expired" : invitation.status;
+function InvitationRow({ invitation, onCopyLink, onResend, onRevoke, isLoading }: InvitationRowProps) {
+  const isExpired = invitation.status === 'pending' && isPast(new Date(invitation.expiresAt));
+  const effectiveStatus = isExpired ? 'expired' : invitation.status;
   const config = statusConfig[effectiveStatus] || statusConfig.pending;
   const StatusIcon = config.icon;
 
-  const isPending = effectiveStatus === "pending";
+  const isPending = effectiveStatus === 'pending';
   const isLink = !invitation.email;
 
   return (
@@ -340,33 +294,28 @@ function InvitationRow({
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="font-medium text-sm text-foreground truncate">
-              {isLink ? "Link zaproszenia" : invitation.email}
+              {isLink ? 'Link zaproszenia' : invitation.email}
             </span>
             <Badge variant="outline" className="text-[10px] px-1.5 py-0">
               {roleLabels[invitation.role?.toUpperCase()] || invitation.role}
             </Badge>
-            <Badge
-              className={cn(
-                "gap-1 text-[10px] px-1.5 py-0 border",
-                config.color
-              )}
-            >
+            <Badge className={cn('gap-1 text-[10px] px-1.5 py-0 border', config.color)}>
               <StatusIcon className="h-2.5 w-2.5" />
               {config.label}
             </Badge>
           </div>
           <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
             <span>
-              {format(new Date(invitation.createdAt), "d MMM yyyy", {
+              {format(new Date(invitation.createdAt), 'd MMM yyyy', {
                 locale: pl,
               })}
             </span>
             {isPending && (
               <>
                 <span>•</span>
-                <span className={isExpired ? "text-red-400" : ""}>
+                <span className={isExpired ? 'text-red-400' : ''}>
                   {isExpired
-                    ? "wygasło"
+                    ? 'wygasło'
                     : `wygasa ${formatDistanceToNow(new Date(invitation.expiresAt), { locale: pl, addSuffix: true })}`}
                 </span>
               </>
@@ -402,11 +351,7 @@ function InvitationRow({
               disabled={isLoading}
               data-testid={`invitations-modal-menu-${invitation.id}`}
             >
-              {isLoading ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <MoreHorizontal className="h-4 w-4" />
-              )}
+              {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <MoreHorizontal className="h-4 w-4" />}
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
@@ -423,22 +368,19 @@ function InvitationRow({
                   </DropdownMenuItem>
                 )}
                 <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={onRevoke}
-                  className="text-destructive focus:text-destructive"
-                >
+                <DropdownMenuItem onClick={onRevoke} className="text-destructive focus:text-destructive">
                   <Trash2 className="h-4 w-4 mr-2" />
                   Anuluj zaproszenie
                 </DropdownMenuItem>
               </>
             )}
-            {effectiveStatus === "expired" && (
+            {effectiveStatus === 'expired' && (
               <DropdownMenuItem onClick={onResend}>
                 <RefreshCw className="h-4 w-4 mr-2" />
                 Wyślij ponownie
               </DropdownMenuItem>
             )}
-            {effectiveStatus === "accepted" && (
+            {effectiveStatus === 'accepted' && (
               <DropdownMenuItem disabled>
                 <User className="h-4 w-4 mr-2" />
                 Użytkownik dołączył

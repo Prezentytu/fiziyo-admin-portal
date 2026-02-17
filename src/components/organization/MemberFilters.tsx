@@ -1,13 +1,13 @@
-"use client";
+'use client';
 
-import { Search, X } from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
+import { Search, X } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
 
 // Note: "patient" role is excluded - patients have their own page at /patients
-export type RoleFilter = "all" | "admin" | "therapist";
+export type RoleFilter = 'all' | 'admin' | 'therapist';
 
 interface MemberFiltersProps {
   searchQuery: string;
@@ -19,9 +19,9 @@ interface MemberFiltersProps {
 }
 
 const roleFilterOptions: { value: RoleFilter; label: string }[] = [
-  { value: "all", label: "Wszyscy" },
-  { value: "admin", label: "Administratorzy" },
-  { value: "therapist", label: "Fizjoterapeuci" },
+  { value: 'all', label: 'Wszyscy' },
+  { value: 'admin', label: 'Administratorzy' },
+  { value: 'therapist', label: 'Fizjoterapeuci' },
 ];
 
 export function MemberFilters({
@@ -32,11 +32,11 @@ export function MemberFilters({
   resultCount,
   totalCount,
 }: MemberFiltersProps) {
-  const hasActiveFilters = searchQuery || roleFilter !== "all";
+  const hasActiveFilters = searchQuery || roleFilter !== 'all';
 
   const clearFilters = () => {
-    onSearchChange("");
-    onRoleFilterChange("all");
+    onSearchChange('');
+    onRoleFilterChange('all');
   };
 
   return (
@@ -58,7 +58,7 @@ export function MemberFilters({
               variant="ghost"
               size="icon"
               className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8"
-              onClick={() => onSearchChange("")}
+              onClick={() => onSearchChange('')}
             >
               <X className="h-4 w-4" />
             </Button>
@@ -70,14 +70,12 @@ export function MemberFilters({
           {roleFilterOptions.map((option) => (
             <Button
               key={option.value}
-              variant={roleFilter === option.value ? "default" : "outline"}
+              variant={roleFilter === option.value ? 'default' : 'outline'}
               size="sm"
               onClick={() => onRoleFilterChange(option.value)}
               className={cn(
-                "h-9 transition-all",
-                roleFilter === option.value
-                  ? "shadow-lg shadow-primary/20"
-                  : "border-border/60 hover:border-border"
+                'h-9 transition-all',
+                roleFilter === option.value ? 'shadow-lg shadow-primary/20' : 'border-border/60 hover:border-border'
               )}
               data-testid={`org-members-filter-${option.value}`}
             >
@@ -93,24 +91,19 @@ export function MemberFilters({
           <span className="text-sm text-muted-foreground">
             {hasActiveFilters ? (
               <>
-                Znaleziono{" "}
-                <span className="font-medium text-foreground">{resultCount}</span> z{" "}
+                Znaleziono <span className="font-medium text-foreground">{resultCount}</span> z{' '}
                 <span className="font-medium text-foreground">{totalCount}</span> członków
               </>
             ) : (
               <>
-                Łącznie{" "}
-                <span className="font-medium text-foreground">{totalCount}</span> członków
+                Łącznie <span className="font-medium text-foreground">{totalCount}</span> członków
               </>
             )}
           </span>
           {hasActiveFilters && (
             <Badge variant="secondary" className="gap-1.5">
               Aktywne filtry
-              <button
-                onClick={clearFilters}
-                className="ml-1 hover:text-foreground transition-colors"
-              >
+              <button onClick={clearFilters} className="ml-1 hover:text-foreground transition-colors">
                 <X className="h-3 w-3" />
               </button>
             </Badge>

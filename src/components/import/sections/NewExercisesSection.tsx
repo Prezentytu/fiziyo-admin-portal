@@ -3,10 +3,7 @@
 import { Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { NewExerciseCard } from '../cards/NewExerciseCard';
-import type {
-  ExtractedExercise,
-  ExerciseDecision,
-} from '@/types/import.types';
+import type { ExtractedExercise, ExerciseDecision } from '@/types/import.types';
 
 interface NewExercisesSectionProps {
   /** Exercises without matches (new ones) */
@@ -37,9 +34,7 @@ export function NewExercisesSection({
   if (exercises.length === 0) return null;
 
   // Count how many will be created
-  const createCount = exercises.filter(
-    (e) => decisions[e.tempId]?.action === 'create'
-  ).length;
+  const createCount = exercises.filter((e) => decisions[e.tempId]?.action === 'create').length;
 
   return (
     <div className={cn('space-y-4', className)} data-testid="import-new-section">
@@ -49,12 +44,8 @@ export function NewExercisesSection({
           <Plus className="h-5 w-5 text-blue-500" />
         </div>
         <div>
-          <h3 className="font-semibold text-foreground">
-            Nowe ćwiczenia ({exercises.length})
-          </h3>
-          <p className="text-xs text-muted-foreground">
-            {createCount} do utworzenia w bazie
-          </p>
+          <h3 className="font-semibold text-foreground">Nowe ćwiczenia ({exercises.length})</h3>
+          <p className="text-xs text-muted-foreground">{createCount} do utworzenia w bazie</p>
         </div>
       </div>
 

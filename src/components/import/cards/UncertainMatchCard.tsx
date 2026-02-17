@@ -3,17 +3,9 @@
 import { AlertTriangle, Dumbbell, Repeat, Timer, HelpCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { ExerciseActionSelect } from '../ExerciseActionSelect';
-import type {
-  ExtractedExercise,
-  MatchSuggestion,
-  ExerciseDecision,
-} from '@/types/import.types';
+import type { ExtractedExercise, MatchSuggestion, ExerciseDecision } from '@/types/import.types';
 
 interface UncertainMatchCardProps {
   /** The extracted exercise from PDF */
@@ -41,14 +33,9 @@ export function UncertainMatchCard({
   className,
 }: UncertainMatchCardProps) {
   const isSkipped = decision.action === 'skip';
-  const selectedMatch = matchSuggestions.find(
-    (m) => m.existingExerciseId === decision.reuseExerciseId
-  );
+  const selectedMatch = matchSuggestions.find((m) => m.existingExerciseId === decision.reuseExerciseId);
 
-  const handleActionChange = (
-    action: 'create' | 'reuse' | 'skip',
-    reuseExerciseId?: string
-  ) => {
+  const handleActionChange = (action: 'create' | 'reuse' | 'skip', reuseExerciseId?: string) => {
     onDecisionChange({
       action,
       reuseExerciseId,
@@ -93,12 +80,7 @@ export function UncertainMatchCard({
               isSkipped ? 'bg-muted' : 'bg-yellow-500/20'
             )}
           >
-            <AlertTriangle
-              className={cn(
-                'h-5 w-5',
-                isSkipped ? 'text-muted-foreground' : 'text-yellow-500'
-              )}
-            />
+            <AlertTriangle className={cn('h-5 w-5', isSkipped ? 'text-muted-foreground' : 'text-yellow-500')} />
           </div>
 
           {/* Title with hover preview */}
@@ -116,12 +98,8 @@ export function UncertainMatchCard({
                   </h3>
                 </TooltipTrigger>
                 <TooltipContent side="top" className="max-w-sm">
-                  <p className="text-xs text-muted-foreground mb-1">
-                    Oryginalny tekst z PDF:
-                  </p>
-                  <p className="text-sm italic">
-                    &quot;{exercise.originalText || exercise.name}&quot;
-                  </p>
+                  <p className="text-xs text-muted-foreground mb-1">Oryginalny tekst z PDF:</p>
+                  <p className="text-sm italic">&quot;{exercise.originalText || exercise.name}&quot;</p>
                 </TooltipContent>
               </Tooltip>
               <HelpCircle className="h-4 w-4 text-yellow-500 shrink-0" />
@@ -153,9 +131,7 @@ export function UncertainMatchCard({
 
         {/* Suggestions section */}
         <div className="mt-4">
-          <p className="text-sm font-medium text-yellow-600 mb-2">
-            Czy chodziło Ci o jedno z tych ćwiczeń?
-          </p>
+          <p className="text-sm font-medium text-yellow-600 mb-2">Czy chodziło Ci o jedno z tych ćwiczeń?</p>
           <div className="space-y-2">
             {matchSuggestions.slice(0, 3).map((match) => (
               <button
@@ -186,12 +162,8 @@ export function UncertainMatchCard({
 
                 {/* Match info */}
                 <div className="min-w-0 flex-1">
-                  <p className="font-medium text-foreground truncate">
-                    {match.existingExerciseName}
-                  </p>
-                  <p className="text-xs text-muted-foreground truncate">
-                    {match.matchReason}
-                  </p>
+                  <p className="font-medium text-foreground truncate">{match.existingExerciseName}</p>
+                  <p className="text-xs text-muted-foreground truncate">{match.matchReason}</p>
                 </div>
 
                 {/* Confidence badge */}

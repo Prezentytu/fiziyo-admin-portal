@@ -46,9 +46,7 @@ export default function GlobalError({ error, reset }: GlobalErrorProps) {
           </div>
 
           <div>
-            <h1 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '0.5rem' }}>
-              Krytyczny błąd aplikacji
-            </h1>
+            <h1 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '0.5rem' }}>Krytyczny błąd aplikacji</h1>
             <p style={{ color: '#9ca3af', maxWidth: 400, margin: '0 auto' }}>
               Przepraszamy, wystąpił nieoczekiwany błąd. Spróbuj odświeżyć stronę.
             </p>

@@ -1,12 +1,8 @@
-import { IAuthTokenProvider } from "../links/authLink";
-import { tokenExchangeService } from "@/services/tokenExchangeService";
-import {
-  getBackendToken,
-  saveBackendToken,
-  clearBackendToken,
-} from "@/lib/tokenCache";
+import { IAuthTokenProvider } from '../links/authLink';
+import { tokenExchangeService } from '@/services/tokenExchangeService';
+import { getBackendToken, saveBackendToken, clearBackendToken } from '@/lib/tokenCache';
 
-const isDev = process.env.NODE_ENV === "development";
+const isDev = process.env.NODE_ENV === 'development';
 
 /**
  * Provider tokenów dla backendu (wersja Web/Next.js)
@@ -43,17 +39,14 @@ export class BackendAuthTokenProvider implements IAuthTokenProvider {
    */
   private decodeTokenPayload(token: string): Record<string, unknown> | null {
     try {
-      const parts = token.split(".");
+      const parts = token.split('.');
       if (parts.length !== 3) {
         return null;
       }
       return JSON.parse(atob(parts[1]));
     } catch (error) {
       if (isDev) {
-        console.error(
-          "[BackendAuthTokenProvider] Błąd dekodowania tokena:",
-          error
-        );
+        console.error('[BackendAuthTokenProvider] Błąd dekodowania tokena:', error);
       }
       return null;
     }
@@ -87,12 +80,7 @@ export class BackendAuthTokenProvider implements IAuthTokenProvider {
     if (!payload) return null;
 
     // Backend token ma clerk_id, Clerk token ma sub (który jest ClerkId)
-    return (
-      (payload.clerk_id as string) ||
-      (payload.ClerkId as string) ||
-      (payload.sub as string) ||
-      null
-    );
+    return (payload.clerk_id as string) || (payload.ClerkId as string) || (payload.sub as string) || null;
   }
 
   /**
@@ -101,18 +89,13 @@ export class BackendAuthTokenProvider implements IAuthTokenProvider {
    * @param clerkToken - Aktualny Clerk JWT
    * @returns true jeśli tokeny należą do tego samego użytkownika
    */
-  private isTokenForCurrentUser(
-    cachedToken: string,
-    clerkToken: string
-  ): boolean {
+  private isTokenForCurrentUser(cachedToken: string, clerkToken: string): boolean {
     const cachedClerkId = this.getClerkIdFromToken(cachedToken);
     const currentClerkId = this.getClerkIdFromToken(clerkToken);
 
     if (!cachedClerkId || !currentClerkId) {
       if (isDev) {
-        console.warn(
-          "[BackendAuthTokenProvider] Nie można porównać ClerkId - wymuszam refresh"
-        );
+        console.warn('[BackendAuthTokenProvider] Nie można porównać ClerkId - wymuszam refresh');
       }
       return false;
     }
@@ -120,7 +103,7 @@ export class BackendAuthTokenProvider implements IAuthTokenProvider {
     const isSameUser = cachedClerkId === currentClerkId;
 
     if (!isSameUser && isDev) {
-      console.log("[BackendAuthTokenProvider] Zmiana użytkownika wykryta");
+      console.log('[BackendAuthTokenProvider] Zmiana użytkownika wykryta');
     }
 
     return isSameUser;
@@ -145,10 +128,7 @@ export class BackendAuthTokenProvider implements IAuthTokenProvider {
       const cachedToken = getBackendToken();
       if (cachedToken) {
         // KRYTYCZNE: Sprawdź czy cached token należy do AKTUALNEGO użytkownika
-        const isForCurrentUser = this.isTokenForCurrentUser(
-          cachedToken,
-          clerkToken
-        );
+        const isForCurrentUser = this.isTokenForCurrentUser(cachedToken, clerkToken);
 
         if (!isForCurrentUser) {
           clearBackendToken();
@@ -168,7 +148,7 @@ export class BackendAuthTokenProvider implements IAuthTokenProvider {
       return backendToken;
     } catch (error) {
       if (isDev) {
-        console.error("[BackendAuthTokenProvider] Krytyczny błąd:", error);
+        console.error('[BackendAuthTokenProvider] Krytyczny błąd:', error);
       }
       // NIE zwracaj Clerk token - backend go nie akceptuje!
       return null;
@@ -224,7 +204,7 @@ export class BackendAuthTokenProvider implements IAuthTokenProvider {
       return null;
     } catch (error) {
       if (isDev) {
-        console.error("[BackendAuthTokenProvider] Błąd wymiany tokenu:", error);
+        console.error('[BackendAuthTokenProvider] Błąd wymiany tokenu:', error);
       }
 
       // Wyczyść cache jeśli błąd (może być invalid token)
@@ -238,24 +218,17 @@ export class BackendAuthTokenProvider implements IAuthTokenProvider {
    * Wymiana tokenu z retry logic
    * Próbuje 2 razy (initial + 1 retry) przy network errors
    */
-  private async exchangeWithRetry(
-    clerkToken: string,
-    retryCount: number = 0
-  ): Promise<string | null> {
+  private async exchangeWithRetry(clerkToken: string, retryCount: number = 0): Promise<string | null> {
     const MAX_RETRIES = 1;
 
     try {
-      const response = await tokenExchangeService.exchangeClerkToken(
-        clerkToken
-      );
+      const response = await tokenExchangeService.exchangeClerkToken(clerkToken);
       return response.access_token;
     } catch (error: unknown) {
-      const errorMessage =
-        error instanceof Error ? error.message : String(error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
 
       // Sprawdź czy to network error i czy możemy retry
-      const isNetworkError =
-        errorMessage.includes("fetch") || errorMessage.includes("network");
+      const isNetworkError = errorMessage.includes('fetch') || errorMessage.includes('network');
       const canRetry = retryCount < MAX_RETRIES && isNetworkError;
 
       if (canRetry) {
@@ -264,7 +237,7 @@ export class BackendAuthTokenProvider implements IAuthTokenProvider {
       }
 
       // 401 = token invalid/expired - wyczyść cache
-      if (errorMessage.includes("401")) {
+      if (errorMessage.includes('401')) {
         clearBackendToken();
       }
 
@@ -288,20 +261,3 @@ export class BackendAuthTokenProvider implements IAuthTokenProvider {
     clearBackendToken();
   }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

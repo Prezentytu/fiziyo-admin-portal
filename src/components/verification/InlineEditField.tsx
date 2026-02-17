@@ -1,24 +1,18 @@
-"use client";
+'use client';
 
-import { useState, useRef, useCallback, useEffect } from "react";
-import { Pencil, Loader2, Check, X } from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { cn } from "@/lib/utils";
+import { useState, useRef, useCallback, useEffect } from 'react';
+import { Pencil, Loader2, Check, X } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { cn } from '@/lib/utils';
 
-type FieldStatus = "idle" | "hover" | "editing" | "saving" | "error" | "success";
+type FieldStatus = 'idle' | 'hover' | 'editing' | 'saving' | 'error' | 'success';
 
 interface InlineEditFieldProps {
   value: string | number | null;
   onCommit: (newValue: string | number | null) => Promise<void>;
-  type?: "text" | "number" | "textarea" | "select";
+  type?: 'text' | 'number' | 'textarea' | 'select';
   options?: { value: string; label: string }[];
   placeholder?: string;
   className?: string;
@@ -28,12 +22,12 @@ interface InlineEditFieldProps {
   rows?: number;
   disabled?: boolean;
   /** Ghost variant - looks like text, shows border on hover/focus */
-  variant?: "default" | "ghost";
+  variant?: 'default' | 'ghost';
   /** Compact size for dense layouts */
-  size?: "default" | "compact";
+  size?: 'default' | 'compact';
   /** Allow multiline text display (no truncate) */
   multiline?: boolean;
-  "data-testid"?: string;
+  'data-testid'?: string;
 }
 
 /**
@@ -52,7 +46,7 @@ interface InlineEditFieldProps {
 export function InlineEditField({
   value,
   onCommit,
-  type = "text",
+  type = 'text',
   options,
   placeholder,
   displayFormat,
@@ -61,14 +55,14 @@ export function InlineEditField({
   max,
   rows = 3,
   disabled = false,
-  variant = "default",
-  size = "default",
+  variant = 'default',
+  size = 'default',
   multiline = false,
-  "data-testid": testId,
+  'data-testid': testId,
 }: InlineEditFieldProps) {
-  const isGhost = variant === "ghost";
-  const isCompact = size === "compact";
-  const [status, setStatus] = useState<FieldStatus>("idle");
+  const isGhost = variant === 'ghost';
+  const isCompact = size === 'compact';
+  const [status, setStatus] = useState<FieldStatus>('idle');
   const [editValue, setEditValue] = useState<string | number | null>(value);
   const [originalValue, setOriginalValue] = useState<string | number | null>(value);
   const inputRef = useRef<HTMLInputElement | HTMLTextAreaElement>(null);
@@ -76,7 +70,7 @@ export function InlineEditField({
 
   // Sync with external value changes
   useEffect(() => {
-    if (status === "idle") {
+    if (status === 'idle') {
       queueMicrotask(() => {
         setEditValue(value);
         setOriginalValue(value);
@@ -86,7 +80,7 @@ export function InlineEditField({
 
   const handleStartEdit = useCallback(() => {
     if (disabled) return;
-    setStatus("editing");
+    setStatus('editing');
     setEditValue(value);
     setOriginalValue(value);
     // Focus input after render
@@ -96,45 +90,45 @@ export function InlineEditField({
   const handleCommit = useCallback(async () => {
     // No change - just close
     if (editValue === originalValue) {
-      setStatus("idle");
+      setStatus('idle');
       return;
     }
 
     // Optimistic update - show saving state briefly
-    setStatus("saving");
+    setStatus('saving');
 
     try {
       await onCommit(editValue);
-      setStatus("success");
+      setStatus('success');
       // Show success briefly then idle
-      setTimeout(() => setStatus("idle"), 500);
+      setTimeout(() => setStatus('idle'), 500);
     } catch (error) {
-      console.error("InlineEditField commit error:", error);
+      console.error('InlineEditField commit error:', error);
       // Rollback on error
       setEditValue(originalValue);
-      setStatus("error");
+      setStatus('error');
       // Show error briefly then idle
-      setTimeout(() => setStatus("idle"), 2000);
+      setTimeout(() => setStatus('idle'), 2000);
     }
   }, [editValue, originalValue, onCommit]);
 
   const handleCancel = useCallback(() => {
     setEditValue(originalValue);
-    setStatus("idle");
+    setStatus('idle');
   }, [originalValue]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
-      if (e.key === "Enter" && type !== "textarea") {
+      if (e.key === 'Enter' && type !== 'textarea') {
         e.preventDefault();
         handleCommit();
       }
-      if (e.key === "Escape") {
+      if (e.key === 'Escape') {
         e.preventDefault();
         handleCancel();
       }
       // Ctrl+Enter for textarea
-      if (e.key === "Enter" && e.ctrlKey && type === "textarea") {
+      if (e.key === 'Enter' && e.ctrlKey && type === 'textarea') {
         e.preventDefault();
         handleCommit();
       }
@@ -156,59 +150,53 @@ export function InlineEditField({
   const handleSelectChange = useCallback(
     async (newValue: string) => {
       setEditValue(newValue);
-      setStatus("saving");
+      setStatus('saving');
       try {
         await onCommit(newValue);
-        setStatus("success");
-        setTimeout(() => setStatus("idle"), 500);
+        setStatus('success');
+        setTimeout(() => setStatus('idle'), 500);
       } catch (error) {
-        console.error("InlineEditField select commit error:", error);
+        console.error('InlineEditField select commit error:', error);
         setEditValue(originalValue);
-        setStatus("error");
-        setTimeout(() => setStatus("idle"), 2000);
+        setStatus('error');
+        setTimeout(() => setStatus('idle'), 2000);
       }
     },
     [onCommit, originalValue]
   );
 
   // Editing mode
-  if (status === "editing" || status === "saving") {
+  if (status === 'editing' || status === 'saving') {
     // Extract font-related classes from className to apply to input
-    const fontClasses = className?.split(" ").filter(c => 
-      c.startsWith("text-") || c.startsWith("font-") || c === "break-words"
-    ).join(" ") || "";
+    const fontClasses =
+      className
+        ?.split(' ')
+        .filter((c) => c.startsWith('text-') || c.startsWith('font-') || c === 'break-words')
+        .join(' ') || '';
 
     return (
-      <div ref={containerRef} className={cn("relative w-full max-w-full overflow-hidden")} data-testid={testId}>
-        {(type === "textarea" || multiline) ? (
+      <div ref={containerRef} className={cn('relative w-full max-w-full overflow-hidden')} data-testid={testId}>
+        {type === 'textarea' || multiline ? (
           <Textarea
             ref={inputRef as React.RefObject<HTMLTextAreaElement>}
-            value={editValue ?? ""}
+            value={editValue ?? ''}
             onChange={(e) => setEditValue(e.target.value)}
             onBlur={handleBlur}
             onKeyDown={handleKeyDown}
             placeholder={placeholder}
             rows={multiline ? 3 : rows}
-            disabled={status === "saving"}
+            disabled={status === 'saving'}
             className={cn(
-              "transition-all resize-none w-full",
-              status === "saving" && "opacity-70",
-              isGhost && "border-border/60 bg-transparent focus:bg-surface-light/30 focus:border-primary/50",
-              isCompact && "text-sm py-1.5",
+              'transition-all resize-none w-full',
+              status === 'saving' && 'opacity-70',
+              isGhost && 'border-border/60 bg-transparent focus:bg-surface-light/30 focus:border-primary/50',
+              isCompact && 'text-sm py-1.5',
               fontClasses
             )}
           />
-        ) : type === "select" && options ? (
-          <Select
-            value={String(editValue ?? "")}
-            onValueChange={handleSelectChange}
-            disabled={status === "saving"}
-          >
-            <SelectTrigger className={cn(
-              "w-full",
-              status === "saving" && "opacity-70",
-              isCompact && "h-8 text-sm"
-            )}>
+        ) : type === 'select' && options ? (
+          <Select value={String(editValue ?? '')} onValueChange={handleSelectChange} disabled={status === 'saving'}>
+            <SelectTrigger className={cn('w-full', status === 'saving' && 'opacity-70', isCompact && 'h-8 text-sm')}>
               <SelectValue placeholder={placeholder} />
             </SelectTrigger>
             <SelectContent>
@@ -222,33 +210,27 @@ export function InlineEditField({
         ) : (
           <Input
             ref={inputRef as React.RefObject<HTMLInputElement>}
-            type={type === "number" ? "number" : "text"}
-            value={editValue ?? ""}
+            type={type === 'number' ? 'number' : 'text'}
+            value={editValue ?? ''}
             onChange={(e) =>
-              setEditValue(
-                type === "number"
-                  ? e.target.value === ""
-                    ? null
-                    : Number(e.target.value)
-                  : e.target.value
-              )
+              setEditValue(type === 'number' ? (e.target.value === '' ? null : Number(e.target.value)) : e.target.value)
             }
             onBlur={handleBlur}
             onKeyDown={handleKeyDown}
             placeholder={placeholder}
             min={min}
             max={max}
-            disabled={status === "saving"}
+            disabled={status === 'saving'}
             className={cn(
-              "transition-all h-auto w-full px-2 py-1.5",
-              status === "saving" && "opacity-70",
-              isGhost && "border-border/60 bg-transparent focus:bg-surface-light/30 focus:border-primary/50",
-              isCompact && "h-8 text-sm",
+              'transition-all h-auto w-full px-2 py-1.5',
+              status === 'saving' && 'opacity-70',
+              isGhost && 'border-border/60 bg-transparent focus:bg-surface-light/30 focus:border-primary/50',
+              isCompact && 'h-8 text-sm',
               fontClasses
             )}
           />
         )}
-        {status === "saving" && (
+        {status === 'saving' && (
           <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none">
             <Loader2 className="h-4 w-4 animate-spin text-primary" />
           </div>
@@ -258,63 +240,55 @@ export function InlineEditField({
   }
 
   // Read mode
-  const displayValue = displayFormat
-    ? displayFormat(value)
-    : value ?? placeholder ?? "Kliknij aby edytować";
+  const displayValue = displayFormat ? displayFormat(value) : (value ?? placeholder ?? 'Kliknij aby edytować');
 
-  const isEmpty = value === null || value === "" || value === undefined;
+  const isEmpty = value === null || value === '' || value === undefined;
 
   return (
     <button
       type="button"
       onClick={handleStartEdit}
-      onMouseEnter={() => !disabled && setStatus("hover")}
-      onMouseLeave={() => status === "hover" && setStatus("idle")}
+      onMouseEnter={() => !disabled && setStatus('hover')}
+      onMouseLeave={() => status === 'hover' && setStatus('idle')}
       disabled={disabled}
       className={cn(
-        "group flex items-center gap-2 rounded-md transition-all text-left w-full",
+        'group flex items-center gap-2 rounded-md transition-all text-left w-full',
         // Size variants
-        isCompact ? "px-1.5 py-1 min-h-[1.75rem] text-sm" : "px-2 py-1.5 min-h-[2.25rem]",
+        isCompact ? 'px-1.5 py-1 min-h-[1.75rem] text-sm' : 'px-2 py-1.5 min-h-[2.25rem]',
         // Ghost variant - no background by default
         isGhost
           ? cn(
-              "border border-transparent",
-              status === "hover" && "border-border/60 bg-surface-light/50",
-              status === "idle" && "hover:border-border/40"
+              'border border-transparent',
+              status === 'hover' && 'border-border/60 bg-surface-light/50',
+              status === 'idle' && 'hover:border-border/40'
             )
-          : cn(
-              status === "hover" && "bg-surface-light"
-            ),
+          : cn(status === 'hover' && 'bg-surface-light'),
         // Status colors
-        status === "error" && "bg-destructive/10 text-destructive",
-        status === "success" && "bg-emerald-500/10",
-        disabled && "opacity-50 cursor-not-allowed",
+        status === 'error' && 'bg-destructive/10 text-destructive',
+        status === 'success' && 'bg-emerald-500/10',
+        disabled && 'opacity-50 cursor-not-allowed',
         className
       )}
       data-testid={testId}
     >
       <span
         className={cn(
-          "flex-1 min-w-0",
-          multiline ? "whitespace-pre-wrap break-words" : "truncate",
-          isEmpty && "text-muted-foreground italic"
+          'flex-1 min-w-0',
+          multiline ? 'whitespace-pre-wrap break-words' : 'truncate',
+          isEmpty && 'text-muted-foreground italic'
         )}
       >
         {displayValue}
       </span>
 
       {/* Status indicators */}
-      {status === "success" && (
-        <Check className="h-4 w-4 text-emerald-500 shrink-0" />
-      )}
-      {status === "error" && (
-        <X className="h-4 w-4 text-destructive shrink-0" />
-      )}
-      {(status === "idle" || status === "hover") && !disabled && (
+      {status === 'success' && <Check className="h-4 w-4 text-emerald-500 shrink-0" />}
+      {status === 'error' && <X className="h-4 w-4 text-destructive shrink-0" />}
+      {(status === 'idle' || status === 'hover') && !disabled && (
         <Pencil
           className={cn(
-            "h-3 w-3 text-muted-foreground transition-opacity shrink-0",
-            status === "hover" ? "opacity-100" : "opacity-0"
+            'h-3 w-3 text-muted-foreground transition-opacity shrink-0',
+            status === 'hover' ? 'opacity-100' : 'opacity-0'
           )}
         />
       )}
@@ -334,10 +308,10 @@ interface InlineEditSelectProps {
   className?: string;
   disabled?: boolean;
   /** Ghost variant - minimal border, shows on hover/focus */
-  variant?: "default" | "ghost";
+  variant?: 'default' | 'ghost';
   /** Compact size for dense layouts */
-  size?: "default" | "compact";
-  "data-testid"?: string;
+  size?: 'default' | 'compact';
+  'data-testid'?: string;
 }
 
 export function InlineEditSelect({
@@ -347,17 +321,17 @@ export function InlineEditSelect({
   placeholder,
   className,
   disabled = false,
-  variant = "default",
-  size = "default",
-  "data-testid": testId,
+  variant = 'default',
+  size = 'default',
+  'data-testid': testId,
 }: InlineEditSelectProps) {
-  const [status, setStatus] = useState<"idle" | "saving" | "error" | "success">("idle");
+  const [status, setStatus] = useState<'idle' | 'saving' | 'error' | 'success'>('idle');
   const [optimisticValue, setOptimisticValue] = useState(value);
-  const isGhost = variant === "ghost";
-  const isCompact = size === "compact";
+  const isGhost = variant === 'ghost';
+  const isCompact = size === 'compact';
 
   useEffect(() => {
-    if (status === "idle") {
+    if (status === 'idle') {
       queueMicrotask(() => {
         setOptimisticValue(value);
       });
@@ -367,18 +341,18 @@ export function InlineEditSelect({
   const handleChange = async (newValue: string) => {
     // Optimistic update
     setOptimisticValue(newValue);
-    setStatus("saving");
+    setStatus('saving');
 
     try {
       await onCommit(newValue);
-      setStatus("success");
-      setTimeout(() => setStatus("idle"), 500);
+      setStatus('success');
+      setTimeout(() => setStatus('idle'), 500);
     } catch (error) {
-      console.error("InlineEditSelect commit error:", error);
+      console.error('InlineEditSelect commit error:', error);
       // Rollback
       setOptimisticValue(value);
-      setStatus("error");
-      setTimeout(() => setStatus("idle"), 2000);
+      setStatus('error');
+      setTimeout(() => setStatus('idle'), 2000);
     }
   };
 
@@ -386,22 +360,19 @@ export function InlineEditSelect({
 
   return (
     <div className="relative" data-testid={testId}>
-      <Select
-        value={optimisticValue}
-        onValueChange={handleChange}
-        disabled={disabled || status === "saving"}
-      >
+      <Select value={optimisticValue} onValueChange={handleChange} disabled={disabled || status === 'saving'}>
         <SelectTrigger
           className={cn(
-            "transition-all",
+            'transition-all',
             // Size
-            isCompact && "h-8 text-sm px-2",
+            isCompact && 'h-8 text-sm px-2',
             // Ghost variant
-            isGhost && "border-transparent bg-transparent hover:border-border/60 hover:bg-surface-light/50 focus:border-primary focus:bg-surface",
+            isGhost &&
+              'border-transparent bg-transparent hover:border-border/60 hover:bg-surface-light/50 focus:border-primary focus:bg-surface',
             // Status
-            status === "saving" && "opacity-70",
-            status === "success" && "border-emerald-500/50",
-            status === "error" && "border-destructive/50",
+            status === 'saving' && 'opacity-70',
+            status === 'success' && 'border-emerald-500/50',
+            status === 'error' && 'border-destructive/50',
             className
           )}
         >
@@ -425,7 +396,7 @@ export function InlineEditSelect({
           ))}
         </SelectContent>
       </Select>
-      {status === "saving" && (
+      {status === 'saving' && (
         <div className="absolute right-8 top-1/2 -translate-y-1/2 pointer-events-none">
           <Loader2 className="h-4 w-4 animate-spin text-primary" />
         </div>

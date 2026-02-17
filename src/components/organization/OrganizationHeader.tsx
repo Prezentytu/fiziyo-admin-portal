@@ -306,15 +306,3 @@ export function OrganizationHeader({
     </div>
   );
 }
-
-
-
-
-
-
-
-
-
-
-
-

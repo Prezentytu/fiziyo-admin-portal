@@ -1,16 +1,16 @@
-"use client";
+'use client';
 
-import { useMemo, useState } from "react";
-import { useQuery } from "@apollo/client/react";
-import { Users, UserPlus, ChevronRight, TrendingUp } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
-import { GET_CURRENT_BILLING_STATUS_QUERY } from "@/graphql/queries/billing.queries";
-import type { GetCurrentBillingStatusResponse } from "@/types/apollo";
+import { useMemo, useState } from 'react';
+import { useQuery } from '@apollo/client/react';
+import { Users, UserPlus, ChevronRight, TrendingUp } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
+import { GET_CURRENT_BILLING_STATUS_QUERY } from '@/graphql/queries/billing.queries';
+import type { GetCurrentBillingStatusResponse } from '@/types/apollo';
 
 // ========================================
 // Types
@@ -26,14 +26,14 @@ interface TherapistBillingTableProps {
 // ========================================
 
 function formatCurrency(amount: number): string {
-  return `${amount.toLocaleString("pl-PL")} PLN`;
+  return `${amount.toLocaleString('pl-PL')} PLN`;
 }
 
 function getInitials(name?: string): string {
-  if (!name) return "?";
-  const parts = name.trim().split(" ");
+  if (!name) return '?';
+  const parts = name.trim().split(' ');
   if (parts.length >= 2) {
-    return `${parts[0][0]}${parts.at(-1)?.[0] || ""}`.toUpperCase();
+    return `${parts[0][0]}${parts.at(-1)?.[0] || ''}`.toUpperCase();
   }
   return name.substring(0, 2).toUpperCase();
 }
@@ -42,21 +42,15 @@ function getInitials(name?: string): string {
 // Component
 // ========================================
 
-export function TherapistBillingTable({
-  organizationId,
-  className,
-}: TherapistBillingTableProps) {
+export function TherapistBillingTable({ organizationId, className }: TherapistBillingTableProps) {
   const [hoveredId, setHoveredId] = useState<string | null>(null);
 
   // Fetch billing status
-  const { data, loading, error } = useQuery<GetCurrentBillingStatusResponse>(
-    GET_CURRENT_BILLING_STATUS_QUERY,
-    {
-      variables: { organizationId: organizationId || "" },
-      skip: !organizationId,
-      errorPolicy: "all",
-    }
-  );
+  const { data, loading, error } = useQuery<GetCurrentBillingStatusResponse>(GET_CURRENT_BILLING_STATUS_QUERY, {
+    variables: { organizationId: organizationId || '' },
+    skip: !organizationId,
+    errorPolicy: 'all',
+  });
 
   const billingStatus = data?.currentBillingStatus;
 
@@ -66,9 +60,7 @@ export function TherapistBillingTable({
       return { therapists: [], totalPatients: 0, totalAmount: 0 };
     }
 
-    const sorted = [...billingStatus.therapistBreakdown].sort(
-      (a, b) => b.activePatientsCount - a.activePatientsCount
-    );
+    const sorted = [...billingStatus.therapistBreakdown].sort((a, b) => b.activePatientsCount - a.activePatientsCount);
 
     const total = sorted.reduce((sum, t) => sum + t.activePatientsCount, 0);
     const amount = sorted.reduce((sum, t) => sum + t.estimatedAmount, 0);
@@ -80,7 +72,7 @@ export function TherapistBillingTable({
   if (loading) {
     return (
       <Card
-        className={cn("border-border/40 bg-surface/50 backdrop-blur-sm overflow-hidden", className)}
+        className={cn('border-border/40 bg-surface/50 backdrop-blur-sm overflow-hidden', className)}
         data-testid="billing-therapist-table"
       >
         <CardHeader className="pb-3">
@@ -109,7 +101,7 @@ export function TherapistBillingTable({
   if (error || !billingStatus) {
     return (
       <Card
-        className={cn("border-border/40 bg-surface/50 backdrop-blur-sm overflow-hidden", className)}
+        className={cn('border-border/40 bg-surface/50 backdrop-blur-sm overflow-hidden', className)}
         data-testid="billing-therapist-table"
       >
         <CardHeader className="pb-3">
@@ -121,9 +113,7 @@ export function TherapistBillingTable({
           </CardTitle>
         </CardHeader>
         <CardContent className="pt-0">
-          <p className="text-sm text-muted-foreground text-center py-4">
-            Nie udało się pobrać danych
-          </p>
+          <p className="text-sm text-muted-foreground text-center py-4">Nie udało się pobrać danych</p>
         </CardContent>
       </Card>
     );
@@ -133,7 +123,7 @@ export function TherapistBillingTable({
   if (therapists.length === 0) {
     return (
       <Card
-        className={cn("border-border/40 bg-surface/50 backdrop-blur-sm overflow-hidden", className)}
+        className={cn('border-border/40 bg-surface/50 backdrop-blur-sm overflow-hidden', className)}
         data-testid="billing-therapist-table"
       >
         <CardHeader className="pb-3">
@@ -149,9 +139,7 @@ export function TherapistBillingTable({
             <div className="h-14 w-14 rounded-2xl bg-surface-light flex items-center justify-center mb-3">
               <Users className="h-7 w-7 text-muted-foreground/50" />
             </div>
-            <p className="text-sm font-medium text-muted-foreground mb-1">
-              Brak danych o zespole
-            </p>
+            <p className="text-sm font-medium text-muted-foreground mb-1">Brak danych o zespole</p>
             <p className="text-xs text-muted-foreground/70 mb-4 max-w-xs">
               Zaproś terapeutów do organizacji, aby śledzić ich wyniki i efektywność
             </p>
@@ -167,7 +155,7 @@ export function TherapistBillingTable({
 
   return (
     <Card
-      className={cn("border-border/40 bg-surface/50 backdrop-blur-sm overflow-hidden", className)}
+      className={cn('border-border/40 bg-surface/50 backdrop-blur-sm overflow-hidden', className)}
       data-testid="billing-therapist-table"
     >
       <CardHeader className="pb-3">
@@ -182,10 +170,7 @@ export function TherapistBillingTable({
             </Badge>
           </CardTitle>
 
-          <Badge
-            variant="secondary"
-            className="bg-primary/10 text-primary border-0 font-semibold"
-          >
+          <Badge variant="secondary" className="bg-primary/10 text-primary border-0 font-semibold">
             Suma: {formatCurrency(totalAmount)}
           </Badge>
         </div>
@@ -194,17 +179,16 @@ export function TherapistBillingTable({
       <CardContent className="pt-0">
         <div className="space-y-1">
           {therapists.map((therapist) => {
-            const sharePercent = totalPatients > 0
-              ? Math.round((therapist.activePatientsCount / totalPatients) * 100)
-              : 0;
+            const sharePercent =
+              totalPatients > 0 ? Math.round((therapist.activePatientsCount / totalPatients) * 100) : 0;
             const isHovered = hoveredId === therapist.therapistId;
 
             return (
               <div
                 key={therapist.therapistId}
                 className={cn(
-                  "group flex items-center gap-3 p-3 rounded-xl transition-all duration-200",
-                  isHovered ? "bg-emerald-500/5" : "hover:bg-surface-light"
+                  'group flex items-center gap-3 p-3 rounded-xl transition-all duration-200',
+                  isHovered ? 'bg-emerald-500/5' : 'hover:bg-surface-light'
                 )}
                 onMouseEnter={() => setHoveredId(therapist.therapistId)}
                 onMouseLeave={() => setHoveredId(null)}
@@ -214,10 +198,8 @@ export function TherapistBillingTable({
                 <div className="relative shrink-0">
                   <Avatar
                     className={cn(
-                      "h-10 w-10 ring-2 transition-all",
-                      isHovered
-                        ? "ring-emerald-500/50"
-                        : "ring-border/20 group-hover:ring-primary/30"
+                      'h-10 w-10 ring-2 transition-all',
+                      isHovered ? 'ring-emerald-500/50' : 'ring-border/20 group-hover:ring-primary/30'
                     )}
                   >
                     <AvatarImage src={therapist.therapistImage} />
@@ -232,13 +214,11 @@ export function TherapistBillingTable({
                   <div className="flex items-center justify-between mb-1.5">
                     <p
                       className={cn(
-                        "font-medium text-sm truncate transition-colors",
-                        isHovered
-                          ? "text-emerald-500"
-                          : "text-foreground group-hover:text-primary"
+                        'font-medium text-sm truncate transition-colors',
+                        isHovered ? 'text-emerald-500' : 'text-foreground group-hover:text-primary'
                       )}
                     >
-                      {therapist.therapistName || "Nieznany"}
+                      {therapist.therapistName || 'Nieznany'}
                     </p>
                     <span className="text-xs text-muted-foreground tabular-nums ml-2">
                       {therapist.activePatientsCount} pac.
@@ -250,16 +230,16 @@ export function TherapistBillingTable({
                     <div className="flex-1 h-2 rounded-full bg-surface overflow-hidden">
                       <div
                         className={cn(
-                          "h-full rounded-full transition-all duration-500",
-                          isHovered ? "bg-emerald-500" : "bg-primary"
+                          'h-full rounded-full transition-all duration-500',
+                          isHovered ? 'bg-emerald-500' : 'bg-primary'
                         )}
                         style={{ width: `${sharePercent}%` }}
                       />
                     </div>
                     <span
                       className={cn(
-                        "text-xs font-medium tabular-nums w-8 text-right",
-                        isHovered ? "text-emerald-500" : "text-muted-foreground"
+                        'text-xs font-medium tabular-nums w-8 text-right',
+                        isHovered ? 'text-emerald-500' : 'text-muted-foreground'
                       )}
                     >
                       {sharePercent}%
@@ -271,8 +251,8 @@ export function TherapistBillingTable({
                 <div className="shrink-0 text-right">
                   <p
                     className={cn(
-                      "text-sm font-semibold tabular-nums transition-colors",
-                      isHovered ? "text-emerald-400" : "text-primary"
+                      'text-sm font-semibold tabular-nums transition-colors',
+                      isHovered ? 'text-emerald-400' : 'text-primary'
                     )}
                   >
                     {formatCurrency(therapist.estimatedAmount)}
@@ -282,10 +262,10 @@ export function TherapistBillingTable({
                 {/* Chevron */}
                 <ChevronRight
                   className={cn(
-                    "h-4 w-4 transition-all shrink-0",
+                    'h-4 w-4 transition-all shrink-0',
                     isHovered
-                      ? "text-emerald-500 translate-x-0.5"
-                      : "text-muted-foreground/30 group-hover:text-primary group-hover:translate-x-0.5"
+                      ? 'text-emerald-500 translate-x-0.5'
+                      : 'text-muted-foreground/30 group-hover:text-primary group-hover:translate-x-0.5'
                   )}
                 />
               </div>

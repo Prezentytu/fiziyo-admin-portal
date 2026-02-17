@@ -1,16 +1,11 @@
-"use client";
+'use client';
 
-import { Sparkles, Unlock, QrCode } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { cn } from "@/lib/utils";
-import { isPremiumActive, formatPremiumExpiry, getDaysUntilExpiry } from "@/hooks/usePatientPremium";
+import { Sparkles, Unlock, QrCode } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { cn } from '@/lib/utils';
+import { isPremiumActive, formatPremiumExpiry, getDaysUntilExpiry } from '@/hooks/usePatientPremium';
 
 // ========================================
 // Types
@@ -32,7 +27,7 @@ interface PremiumStatusBadgeProps {
   /** Czy pokazać przycisk akcji */
   showActivateButton?: boolean;
   /** Rozmiar badge'a */
-  size?: "sm" | "default";
+  size?: 'sm' | 'default';
   /** Dodatkowe klasy CSS */
   className?: string;
 }
@@ -56,7 +51,7 @@ export function PremiumStatusBadge({
   isShadowUser = false,
   isActivating = false,
   showActivateButton = true,
-  size = "default",
+  size = 'default',
   className,
 }: PremiumStatusBadgeProps) {
   const isActive = isPremiumActive(premiumActiveUntil);
@@ -70,8 +65,8 @@ export function PremiumStatusBadge({
         variant="outline"
         size="sm"
         className={cn(
-          "gap-1.5 hover:bg-info/10 hover:text-info hover:border-info/30",
-          size === "sm" && "h-7 px-2 text-xs"
+          'gap-1.5 hover:bg-info/10 hover:text-info hover:border-info/30',
+          size === 'sm' && 'h-7 px-2 text-xs'
         )}
         onClick={(e) => {
           e.stopPropagation();
@@ -79,7 +74,7 @@ export function PremiumStatusBadge({
         }}
         data-testid={`patient-premium-qr-btn-${patientId}`}
       >
-        <QrCode className={cn("h-3.5 w-3.5", size === "sm" && "h-3 w-3")} />
+        <QrCode className={cn('h-3.5 w-3.5', size === 'sm' && 'h-3 w-3')} />
         Generuj QR
       </Button>
     );
@@ -87,7 +82,7 @@ export function PremiumStatusBadge({
 
   // Active Premium - show badge with days left, extend on hover
   if (isActive) {
-    const daysText = daysLeft === 1 ? "1 dzień" : `${daysLeft} dni`;
+    const daysText = daysLeft === 1 ? '1 dzień' : `${daysLeft} dni`;
 
     return (
       <TooltipProvider>
@@ -98,9 +93,9 @@ export function PremiumStatusBadge({
               <Badge
                 variant="success"
                 className={cn(
-                  "gap-1 shrink-0 cursor-pointer transition-all",
-                  size === "sm" && "text-[10px] px-1.5 py-0",
-                  showActivateButton && onActivate && "group-hover/premium:opacity-0",
+                  'gap-1 shrink-0 cursor-pointer transition-all',
+                  size === 'sm' && 'text-[10px] px-1.5 py-0',
+                  showActivateButton && onActivate && 'group-hover/premium:opacity-0',
                   className
                 )}
                 data-testid={`patient-premium-badge-${patientId}`}
@@ -111,7 +106,7 @@ export function PremiumStatusBadge({
                   }
                 }}
               >
-                <Sparkles className={cn("h-3 w-3", size === "sm" && "h-2.5 w-2.5")} />
+                <Sparkles className={cn('h-3 w-3', size === 'sm' && 'h-2.5 w-2.5')} />
                 Premium ({daysText})
               </Badge>
 
@@ -121,8 +116,8 @@ export function PremiumStatusBadge({
                   variant="default"
                   size="sm"
                   className={cn(
-                    "absolute inset-0 opacity-0 group-hover/premium:opacity-100 transition-opacity gap-1",
-                    size === "sm" && "h-auto px-1.5 py-0 text-[10px]"
+                    'absolute inset-0 opacity-0 group-hover/premium:opacity-100 transition-opacity gap-1',
+                    size === 'sm' && 'h-auto px-1.5 py-0 text-[10px]'
                   )}
                   onClick={(e) => {
                     e.stopPropagation();
@@ -131,8 +126,8 @@ export function PremiumStatusBadge({
                   disabled={isActivating}
                   data-testid={`patient-premium-extend-btn-${patientId}`}
                 >
-                  <Sparkles className={cn("h-3 w-3", size === "sm" && "h-2.5 w-2.5")} />
-                  {isActivating ? "..." : "Przedłuż"}
+                  <Sparkles className={cn('h-3 w-3', size === 'sm' && 'h-2.5 w-2.5')} />
+                  {isActivating ? '...' : 'Przedłuż'}
                 </Button>
               )}
             </div>
@@ -151,14 +146,10 @@ export function PremiumStatusBadge({
     return (
       <Badge
         variant="secondary"
-        className={cn(
-          "gap-1 shrink-0 cursor-default",
-          size === "sm" && "text-[10px] px-1.5 py-0",
-          className
-        )}
+        className={cn('gap-1 shrink-0 cursor-default', size === 'sm' && 'text-[10px] px-1.5 py-0', className)}
         data-testid={`patient-premium-badge-${patientId}`}
       >
-        <Sparkles className={cn("h-3 w-3", size === "sm" && "h-2.5 w-2.5")} />
+        <Sparkles className={cn('h-3 w-3', size === 'sm' && 'h-2.5 w-2.5')} />
         Brak dostępu
       </Badge>
     );
@@ -170,8 +161,8 @@ export function PremiumStatusBadge({
       variant="outline"
       size="sm"
       className={cn(
-        "gap-1.5 hover:bg-primary/10 hover:text-primary hover:border-primary/30",
-        size === "sm" && "h-7 px-2 text-xs"
+        'gap-1.5 hover:bg-primary/10 hover:text-primary hover:border-primary/30',
+        size === 'sm' && 'h-7 px-2 text-xs'
       )}
       onClick={(e) => {
         e.stopPropagation();
@@ -180,8 +171,8 @@ export function PremiumStatusBadge({
       disabled={isActivating}
       data-testid={`patient-premium-activate-btn-${patientId}`}
     >
-      <Unlock className={cn("h-3.5 w-3.5", size === "sm" && "h-3 w-3")} />
-      {isActivating ? "Aktywacja..." : "Odblokuj dostęp"}
+      <Unlock className={cn('h-3.5 w-3.5', size === 'sm' && 'h-3 w-3')} />
+      {isActivating ? 'Aktywacja...' : 'Odblokuj dostęp'}
     </Button>
   );
 }

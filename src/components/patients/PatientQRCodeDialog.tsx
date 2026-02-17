@@ -5,32 +5,11 @@ import { useQuery } from '@apollo/client/react';
 import { useUser } from '@clerk/nextjs';
 import { QRCodeSVG, QRCodeCanvas } from 'qrcode.react';
 import { pdf } from '@react-pdf/renderer';
-import {
-  Download,
-  Printer,
-  Copy,
-  Check,
-  Smartphone,
-  Share2,
-  User,
-  FilePlus,
-} from 'lucide-react';
+import { Download, Printer, Copy, Check, Smartphone, Share2, User, FilePlus } from 'lucide-react';
 
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 
 import { ExerciseSetPDF } from '@/components/pdf';
@@ -192,9 +171,7 @@ function DocumentPreview({ exerciseCount = 0 }: Readonly<{ exerciseCount?: numbe
 
       {/* Hover overlay */}
       <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
-        <div className="bg-white/95 px-2 py-1 rounded text-[9px] font-bold text-foreground shadow-sm">
-          Podgląd
-        </div>
+        <div className="bg-white/95 px-2 py-1 rounded text-[9px] font-bold text-foreground shadow-sm">Podgląd</div>
       </div>
     </div>
   );
@@ -241,13 +218,10 @@ export function PatientQRCodeDialog({
   });
 
   // ==================== KLUCZOWE: Pobierz przypisania pacjenta ====================
-  const { data: assignmentsData, loading: loadingAssignments } = useQuery(
-    GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY,
-    {
-      variables: { userId: patient?.id },
-      skip: !patient?.id || !open,
-    }
-  );
+  const { data: assignmentsData, loading: loadingAssignments } = useQuery(GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY, {
+    variables: { userId: patient?.id },
+    skip: !patient?.id || !open,
+  });
 
   const organization = (orgData as OrganizationByIdResponse)?.organizationById;
   const therapistUser = (userData as UserByClerkIdResponse)?.userByClerkId;
@@ -268,20 +242,22 @@ export function PatientQRCodeDialog({
 
     // 2. KLUCZOWE: Użyj danych z GraphQL (fetchedAssignments)
     if (fetchedAssignments && fetchedAssignments.length > 0) {
-      return fetchedAssignments
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        .filter((a: any) => a.exerciseSet)
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        .map((a: any) => ({
-          id: a.exerciseSet.id,
-          name: a.exerciseSet.name,
-          description: a.exerciseSet.description,
-          exerciseMappings: a.exerciseSet.exerciseMappings,
-          createdAt: a.assignedAt || a.exerciseSet.creationTime,
-          validUntil: a.endDate,
-          status: a.status === 'active' ? 'active' : undefined,
-          frequency: a.frequency,
-        }));
+      return (
+        fetchedAssignments
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          .filter((a: any) => a.exerciseSet)
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          .map((a: any) => ({
+            id: a.exerciseSet.id,
+            name: a.exerciseSet.name,
+            description: a.exerciseSet.description,
+            exerciseMappings: a.exerciseSet.exerciseMappings,
+            createdAt: a.assignedAt || a.exerciseSet.creationTime,
+            validUntil: a.endDate,
+            status: a.status === 'active' ? 'active' : undefined,
+            frequency: a.frequency,
+          }))
+      );
     }
 
     if (!patient) return [];
@@ -304,8 +280,8 @@ export function PatientQRCodeDialog({
     // 6. Sprawdź patient.assignments (zagnieżdżone w assignment)
     if (patient.assignments && patient.assignments.length > 0) {
       return patient.assignments
-        .filter(a => a.exerciseSet)
-        .map(a => ({
+        .filter((a) => a.exerciseSet)
+        .map((a) => ({
           ...a.exerciseSet!,
           validUntil: a.validUntil,
           createdAt: a.createdAt || a.exerciseSet?.createdAt,
@@ -316,8 +292,8 @@ export function PatientQRCodeDialog({
   }, [propPlans, fetchedAssignments, patient]);
 
   // Filtruj aktywne plany
-  const activePlans = useMemo(() =>
-    discoveredPlans.filter(p => p.status === 'active' || !p.status),
+  const activePlans = useMemo(
+    () => discoveredPlans.filter((p) => p.status === 'active' || !p.status),
     [discoveredPlans]
   );
 
@@ -340,7 +316,7 @@ export function PatientQRCodeDialog({
     }
   }, [open]);
 
-  const selectedPlan = discoveredPlans.find(p => p.id === selectedPlanId);
+  const selectedPlan = discoveredPlans.find((p) => p.id === selectedPlanId);
 
   // Generuj QR code data URL dla PDF
   const getQRCodeDataUrl = useCallback((): string | undefined => {
@@ -433,7 +409,8 @@ export function PatientQRCodeDialog({
         name: mapping.exercise?.name || 'Nieznane ćwiczenie',
         description: mapping.exercise?.patientDescription || mapping.exercise?.description,
         type: mapping.exercise?.type?.toLowerCase() as PDFExercise['type'],
-        exerciseSide: (mapping.exercise?.side?.toLowerCase() || mapping.exercise?.exerciseSide) as PDFExercise['exerciseSide'],
+        exerciseSide: (mapping.exercise?.side?.toLowerCase() ||
+          mapping.exercise?.exerciseSide) as PDFExercise['exerciseSide'],
         imageUrl: mapping.exercise?.thumbnailUrl || mapping.exercise?.imageUrl,
         images: mapping.exercise?.images,
         notes: mapping.notes || mapping.exercise?.notes,
@@ -565,9 +542,7 @@ export function PatientQRCodeDialog({
             </div>
             <div>
               <DialogTitle className="text-lg">Dostęp: {patient.name}</DialogTitle>
-              <DialogDescription>
-                Zarządzaj dostępem pacjenta do aplikacji i wydrukami
-              </DialogDescription>
+              <DialogDescription>Zarządzaj dostępem pacjenta do aplikacji i wydrukami</DialogDescription>
             </div>
           </div>
         </DialogHeader>
@@ -575,10 +550,8 @@ export function PatientQRCodeDialog({
         <div className="pt-4">
           {/* BODY: DWIE ŚCIEŻKI - Clean & Center (Bez linii, symetryczne) */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-
             {/* ==================== LEWA: APP (Zawsze aktywna) ==================== */}
             <div className="flex flex-col p-5 rounded-xl border border-border/60 bg-surface/50 min-h-[320px] hover:border-border transition-colors">
-
               {/* Treść główna - CENTRUM */}
               <div className="flex-1 flex flex-col items-center justify-center">
                 <div
@@ -628,11 +601,7 @@ export function PatientQRCodeDialog({
                   className="w-full gap-2"
                   data-testid="patient-qr-copy-btn"
                 >
-                  {copied ? (
-                    <Check className="h-3.5 w-3.5 text-primary" />
-                  ) : (
-                    <Copy className="h-3.5 w-3.5" />
-                  )}
+                  {copied ? <Check className="h-3.5 w-3.5 text-primary" /> : <Copy className="h-3.5 w-3.5" />}
                   {copied ? 'Skopiowano!' : 'Kopiuj link'}
                 </Button>
               </div>
@@ -640,7 +609,6 @@ export function PatientQRCodeDialog({
 
             {/* ==================== PRAWA: WYDRUK (Kontekstowa) ==================== */}
             <div className="flex flex-col p-5 rounded-xl border border-border/60 bg-surface/50 min-h-[320px] hover:border-border transition-colors">
-
               {loadingAssignments ? (
                 /* ===== LOADING STATE ===== */
                 <div className="flex-1 flex flex-col items-center justify-center text-center">
@@ -655,10 +623,7 @@ export function PatientQRCodeDialog({
                   {/* 1. SELECTOR - subtelny na górze (bez linii!) */}
                   {hasMultiplePlans && (
                     <div className="mb-2">
-                      <Select
-                        value={selectedPlanId}
-                        onValueChange={setSelectedPlanId}
-                      >
+                      <Select value={selectedPlanId} onValueChange={setSelectedPlanId}>
                         <SelectTrigger
                           className="w-full bg-muted/30 border-border/50 text-xs"
                           data-testid="patient-qr-plan-select"
@@ -729,9 +694,7 @@ export function PatientQRCodeDialog({
                       <FilePlus className="w-7 h-7 text-muted-foreground/40" />
                     </div>
 
-                    <h3 className="text-sm font-bold text-muted-foreground mb-1">
-                      Brak aktywnego planu
-                    </h3>
+                    <h3 className="text-sm font-bold text-muted-foreground mb-1">Brak aktywnego planu</h3>
                     <p className="text-xs text-muted-foreground max-w-[180px]">
                       Przypisz zestaw ćwiczeń, aby wygenerować kartę.
                     </p>
@@ -774,20 +737,12 @@ export function PatientQRCodeDialog({
 
         {/* Ukryty QR Code Canvas do generowania obrazu dla PDF */}
         <div ref={qrCanvasRef} className="hidden">
-          <QRCodeCanvas
-            value={`https://app.fiziyo.pl/sets/${selectedPlan?.id || ''}`}
-            size={200}
-            level="M"
-          />
+          <QRCodeCanvas value={`https://app.fiziyo.pl/sets/${selectedPlan?.id || ''}`} size={200} level="M" />
         </div>
 
         {/* Footer */}
         <div className="flex justify-end pt-4 border-t border-border">
-          <Button
-            variant="ghost"
-            onClick={() => onOpenChange(false)}
-            data-testid="patient-qr-close-btn"
-          >
+          <Button variant="ghost" onClick={() => onOpenChange(false)} data-testid="patient-qr-close-btn">
             Zamknij
           </Button>
         </div>

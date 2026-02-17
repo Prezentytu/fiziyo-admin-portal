@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { useState } from "react";
-import { useMutation } from "@apollo/client/react";
+import * as React from 'react';
+import { useState } from 'react';
+import { useMutation } from '@apollo/client/react';
 import {
   ChevronDown,
   ChevronRight,
@@ -21,45 +21,36 @@ import {
   Settings2,
   FileDown,
   X,
-} from "lucide-react";
-import { toast } from "sonner";
-import { format } from "date-fns";
-import { pl } from "date-fns/locale";
+} from 'lucide-react';
+import { toast } from 'sonner';
+import { format } from 'date-fns';
+import { pl } from 'date-fns/locale';
 
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { ImagePlaceholder } from "@/components/shared/ImagePlaceholder";
-import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
-import { cn } from "@/lib/utils";
-import { translateAssignmentStatus, type AssignmentStatus } from "@/utils/statusUtils";
-import { getMediaUrl } from "@/utils/mediaUrl";
-import { translateExerciseTypeShort } from "@/components/pdf/polishUtils";
+} from '@/components/ui/dropdown-menu';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { ImagePlaceholder } from '@/components/shared/ImagePlaceholder';
+import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
+import { cn } from '@/lib/utils';
+import { translateAssignmentStatus, type AssignmentStatus } from '@/utils/statusUtils';
+import { getMediaUrl } from '@/utils/mediaUrl';
+import { translateExerciseTypeShort } from '@/components/pdf/polishUtils';
 
 import {
   UPDATE_EXERCISE_SET_ASSIGNMENT_MUTATION,
   UPDATE_PATIENT_EXERCISE_OVERRIDES_MUTATION,
   REMOVE_EXERCISE_SET_ASSIGNMENT_MUTATION,
-} from "@/graphql/mutations/exercises.mutations";
-import { GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY } from "@/graphql/queries/patientAssignments.queries";
+} from '@/graphql/mutations/exercises.mutations';
+import { GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY } from '@/graphql/queries/patientAssignments.queries';
 
 // Types
 export interface Frequency {
@@ -166,38 +157,38 @@ interface PatientAssignmentCardProps {
 // Helper functions
 
 const getActiveDays = (frequency?: Frequency): string => {
-  if (!frequency) return "Brak harmonogramu";
+  if (!frequency) return 'Brak harmonogramu';
 
   const days: string[] = [];
-  if (frequency.monday) days.push("Pn");
-  if (frequency.tuesday) days.push("Wt");
-  if (frequency.wednesday) days.push("Śr");
-  if (frequency.thursday) days.push("Cz");
-  if (frequency.friday) days.push("Pt");
-  if (frequency.saturday) days.push("So");
-  if (frequency.sunday) days.push("Nd");
+  if (frequency.monday) days.push('Pn');
+  if (frequency.tuesday) days.push('Wt');
+  if (frequency.wednesday) days.push('Śr');
+  if (frequency.thursday) days.push('Cz');
+  if (frequency.friday) days.push('Pt');
+  if (frequency.saturday) days.push('So');
+  if (frequency.sunday) days.push('Nd');
 
-  if (days.length === 7) return "Codziennie";
-  if (days.length === 5 && !frequency.saturday && !frequency.sunday) return "Pn-Pt";
-  if (days.length === 0) return "Brak dni";
+  if (days.length === 7) return 'Codziennie';
+  if (days.length === 5 && !frequency.saturday && !frequency.sunday) return 'Pn-Pt';
+  if (days.length === 0) return 'Brak dni';
 
-  return days.join(", ");
+  return days.join(', ');
 };
 
-const getStatusVariant = (status?: string): "success" | "secondary" | "warning" | "destructive" | "default" => {
+const getStatusVariant = (status?: string): 'success' | 'secondary' | 'warning' | 'destructive' | 'default' => {
   switch (status) {
-    case "assigned":
-      return "default";
-    case "active":
-      return "success";
-    case "paused":
-      return "warning";
-    case "completed":
-      return "secondary";
-    case "cancelled":
-      return "destructive";
+    case 'assigned':
+      return 'default';
+    case 'active':
+      return 'success';
+    case 'paused':
+      return 'warning';
+    case 'completed':
+      return 'secondary';
+    case 'cancelled':
+      return 'destructive';
     default:
-      return "secondary";
+      return 'secondary';
   }
 };
 
@@ -215,7 +206,7 @@ export function PatientAssignmentCard({
   const [isExpanded, setIsExpanded] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [removingExerciseId, setRemovingExerciseId] = useState<string | null>(null);
-  const [removingExerciseName, setRemovingExerciseName] = useState<string>("");
+  const [removingExerciseName, setRemovingExerciseName] = useState<string>('');
 
   // Parse exercise overrides
   const exerciseOverrides: Record<string, ExerciseOverride> = React.useMemo(() => {
@@ -228,32 +219,26 @@ export function PatientAssignmentCard({
   }, [assignment.exerciseOverrides]);
 
   // Mutations
-  const [updateAssignment, { loading: updating }] = useMutation(
-    UPDATE_EXERCISE_SET_ASSIGNMENT_MUTATION
-  );
+  const [updateAssignment, { loading: updating }] = useMutation(UPDATE_EXERCISE_SET_ASSIGNMENT_MUTATION);
 
-  const [updateOverrides] = useMutation(
-    UPDATE_PATIENT_EXERCISE_OVERRIDES_MUTATION
-  );
+  const [updateOverrides] = useMutation(UPDATE_PATIENT_EXERCISE_OVERRIDES_MUTATION);
 
-  const [removeAssignment, { loading: removing }] = useMutation(
-    REMOVE_EXERCISE_SET_ASSIGNMENT_MUTATION
-  );
+  const [removeAssignment, { loading: removing }] = useMutation(REMOVE_EXERCISE_SET_ASSIGNMENT_MUTATION);
 
   const exerciseSet = assignment.exerciseSet;
   const exercises = exerciseSet?.exerciseMappings || [];
   const assignmentStatus: AssignmentStatus = React.useMemo(() => {
     const status = assignment.status;
     if (
-      status === "assigned" ||
-      status === "active" ||
-      status === "paused" ||
-      status === "completed" ||
-      status === "cancelled"
+      status === 'assigned' ||
+      status === 'active' ||
+      status === 'paused' ||
+      status === 'completed' ||
+      status === 'cancelled'
     ) {
       return status;
     }
-    return "assigned";
+    return 'assigned';
   }, [assignment.status]);
 
   const visibleExercises = exercises.filter((m) => {
@@ -263,22 +248,20 @@ export function PatientAssignmentCard({
 
   // Handlers
   const handleToggleStatus = async () => {
-    const newStatus = assignment.status === "active" ? "paused" : "active";
+    const newStatus = assignment.status === 'active' ? 'paused' : 'active';
     try {
       await updateAssignment({
         variables: {
           assignmentId: assignment.id,
           status: newStatus,
         },
-        refetchQueries: [
-          { query: GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY, variables: { userId: patientId } },
-        ],
+        refetchQueries: [{ query: GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY, variables: { userId: patientId } }],
       });
-      toast.success(newStatus === "active" ? "Zestaw wznowiony" : "Zestaw wstrzymany");
+      toast.success(newStatus === 'active' ? 'Zestaw wznowiony' : 'Zestaw wstrzymany');
       onRefresh?.();
     } catch (error) {
-      console.error("Błąd zmiany statusu:", error);
-      toast.error("Nie udało się zmienić statusu");
+      console.error('Błąd zmiany statusu:', error);
+      toast.error('Nie udało się zmienić statusu');
     }
   };
 
@@ -298,15 +281,13 @@ export function PatientAssignmentCard({
           assignmentId: assignment.id,
           exerciseOverrides: JSON.stringify(newOverrides),
         },
-        refetchQueries: [
-          { query: GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY, variables: { userId: patientId } },
-        ],
+        refetchQueries: [{ query: GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY, variables: { userId: patientId } }],
       });
-      toast.success(currentOverride.hidden ? "Ćwiczenie pokazane" : "Ćwiczenie ukryte");
+      toast.success(currentOverride.hidden ? 'Ćwiczenie pokazane' : 'Ćwiczenie ukryte');
       onRefresh?.();
     } catch (error) {
-      console.error("Błąd zmiany widoczności:", error);
-      toast.error("Nie udało się zmienić widoczności ćwiczenia");
+      console.error('Błąd zmiany widoczności:', error);
+      toast.error('Nie udało się zmienić widoczności ćwiczenia');
     }
   };
 
@@ -328,17 +309,15 @@ export function PatientAssignmentCard({
           assignmentId: assignment.id,
           exerciseOverrides: JSON.stringify(newOverrides),
         },
-        refetchQueries: [
-          { query: GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY, variables: { userId: patientId } },
-        ],
+        refetchQueries: [{ query: GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY, variables: { userId: patientId } }],
       });
-      toast.success("Ćwiczenie usunięte z zestawu pacjenta");
+      toast.success('Ćwiczenie usunięte z zestawu pacjenta');
       setRemovingExerciseId(null);
-      setRemovingExerciseName("");
+      setRemovingExerciseName('');
       onRefresh?.();
     } catch (error) {
-      console.error("Błąd usuwania ćwiczenia:", error);
-      toast.error("Nie udało się usunąć ćwiczenia");
+      console.error('Błąd usuwania ćwiczenia:', error);
+      toast.error('Nie udało się usunąć ćwiczenia');
     }
   };
 
@@ -355,16 +334,14 @@ export function PatientAssignmentCard({
           exerciseSetId: exerciseSet.id,
           patientId,
         },
-        refetchQueries: [
-          { query: GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY, variables: { userId: patientId } },
-        ],
+        refetchQueries: [{ query: GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY, variables: { userId: patientId } }],
       });
-      toast.success("Przypisanie zostało usunięte");
+      toast.success('Przypisanie zostało usunięte');
       setIsDeleteDialogOpen(false);
       onRefresh?.();
     } catch (error) {
-      console.error("Błąd usuwania:", error);
-      toast.error("Nie udało się usunąć przypisania");
+      console.error('Błąd usuwania:', error);
+      toast.error('Nie udało się usunąć przypisania');
     }
   };
 
@@ -384,30 +361,29 @@ export function PatientAssignmentCard({
   return (
     <>
       <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
-        <Card className={cn(
-          "transition-all duration-200 border-border/60 overflow-hidden",
-          isExpanded && "ring-1 ring-primary/20 border-primary/30"
-        )} data-testid={`patient-assignment-${assignment.id}`}>
+        <Card
+          className={cn(
+            'transition-all duration-200 border-border/60 overflow-hidden',
+            isExpanded && 'ring-1 ring-primary/20 border-primary/30'
+          )}
+          data-testid={`patient-assignment-${assignment.id}`}
+        >
           {/* Header - always visible */}
           <CollapsibleTrigger asChild>
             <div className="flex items-center gap-4 p-4 cursor-pointer hover:bg-surface-light/50 transition-colors">
               {/* Expand icon */}
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-surface-light text-muted-foreground">
-                {isExpanded ? (
-                  <ChevronDown className="h-4 w-4" />
-                ) : (
-                  <ChevronRight className="h-4 w-4" />
-                )}
+                {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
               </div>
 
               {/* Set thumbnail */}
               <div className="h-12 w-12 rounded-lg overflow-hidden shrink-0 bg-surface-light">
                 {getMediaUrl(exercises[0]?.exercise?.imageUrl || exercises[0]?.exercise?.images?.[0]) ? (
-<img
-                                    src={getMediaUrl(exercises[0]?.exercise?.imageUrl || exercises[0]?.exercise?.images?.[0]) || ""}
-                                    alt=""
-                                    className="h-full w-full object-contain"
-                                  />
+                  <img
+                    src={getMediaUrl(exercises[0]?.exercise?.imageUrl || exercises[0]?.exercise?.images?.[0]) || ''}
+                    alt=""
+                    className="h-full w-full object-contain"
+                  />
                 ) : (
                   <ImagePlaceholder type="set" iconClassName="h-5 w-5" />
                 )}
@@ -416,9 +392,7 @@ export function PatientAssignmentCard({
               {/* Info */}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  <p className="font-semibold truncate">
-                    {exerciseSet?.name || "Nieznany zestaw"}
-                  </p>
+                  <p className="font-semibold truncate">{exerciseSet?.name || 'Nieznany zestaw'}</p>
                   <Badge variant={getStatusVariant(assignment.status)} className="text-[10px] shrink-0">
                     {translateAssignmentStatus(assignmentStatus)}
                   </Badge>
@@ -445,26 +419,40 @@ export function PatientAssignmentCard({
               <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-8 w-8" data-testid={`patient-assignment-${assignment.id}-menu-trigger`}>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8"
+                      data-testid={`patient-assignment-${assignment.id}-menu-trigger`}
+                    >
                       <MoreHorizontal className="h-4 w-4" />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => onGeneratePDF?.(assignment)} data-testid={`patient-assignment-${assignment.id}-pdf-btn`}>
+                    <DropdownMenuItem
+                      onClick={() => onGeneratePDF?.(assignment)}
+                      data-testid={`patient-assignment-${assignment.id}-pdf-btn`}
+                    >
                       <FileDown className="mr-2 h-4 w-4" />
                       Pobierz PDF
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => onEditSchedule?.(assignment)} data-testid={`patient-assignment-${assignment.id}-edit-btn`}>
+                    <DropdownMenuItem
+                      onClick={() => onEditSchedule?.(assignment)}
+                      data-testid={`patient-assignment-${assignment.id}-edit-btn`}
+                    >
                       <Calendar className="mr-2 h-4 w-4" />
                       Edytuj harmonogram
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => onExtend?.(assignment)} data-testid={`patient-assignment-${assignment.id}-extend-btn`}>
+                    <DropdownMenuItem
+                      onClick={() => onExtend?.(assignment)}
+                      data-testid={`patient-assignment-${assignment.id}-extend-btn`}
+                    >
                       <CalendarPlus className="mr-2 h-4 w-4" />
                       Przedłuż zestaw
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={handleToggleStatus} disabled={updating}>
-                      {assignment.status === "active" ? (
+                      {assignment.status === 'active' ? (
                         <>
                           <Pause className="mr-2 h-4 w-4" />
                           Wstrzymaj
@@ -498,15 +486,13 @@ export function PatientAssignmentCard({
               <div className="mb-4 p-3 rounded-xl bg-surface-light/50 border border-border/40">
                 <div className="flex items-center justify-between">
                   <div className="space-y-1">
-                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      Harmonogram
-                    </p>
+                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Harmonogram</p>
                     <p className="text-sm">
                       {assignment.startDate && (
                         <>
-                          {format(new Date(assignment.startDate), "d MMM yyyy", { locale: pl })}
+                          {format(new Date(assignment.startDate), 'd MMM yyyy', { locale: pl })}
                           {assignment.endDate && (
-                            <> — {format(new Date(assignment.endDate), "d MMM yyyy", { locale: pl })}</>
+                            <> — {format(new Date(assignment.endDate), 'd MMM yyyy', { locale: pl })}</>
                           )}
                         </>
                       )}
@@ -521,12 +507,7 @@ export function PatientAssignmentCard({
                       )}
                     </p>
                   </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => onEditSchedule?.(assignment)}
-                    className="shrink-0"
-                  >
+                  <Button variant="outline" size="sm" onClick={() => onEditSchedule?.(assignment)} className="shrink-0">
                     <Settings2 className="mr-2 h-4 w-4" />
                     Edytuj
                   </Button>
@@ -537,7 +518,8 @@ export function PatientAssignmentCard({
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                    Ćwiczenia ({visibleExercises.length}{exercises.length !== visibleExercises.length ? `/${exercises.length}` : ""})
+                    Ćwiczenia ({visibleExercises.length}
+                    {exercises.length !== visibleExercises.length ? `/${exercises.length}` : ''})
                   </p>
                   <Button
                     variant="outline"
@@ -559,16 +541,18 @@ export function PatientAssignmentCard({
                       .map((mapping) => {
                         const params = getEffectiveParams(mapping);
                         // Use first custom image if available, otherwise original
-                        const imageUrl = params.customImages?.[0] || getMediaUrl(mapping.exercise?.imageUrl || mapping.exercise?.images?.[0]);
+                        const imageUrl =
+                          params.customImages?.[0] ||
+                          getMediaUrl(mapping.exercise?.imageUrl || mapping.exercise?.images?.[0]);
                         const hasCustomImages = params.customImages && params.customImages.length > 0;
-                        const hasOverride = exerciseOverrides[mapping.id] && (
-                          exerciseOverrides[mapping.id].sets !== undefined ||
-                          exerciseOverrides[mapping.id].reps !== undefined ||
-                          exerciseOverrides[mapping.id].duration !== undefined ||
-                          exerciseOverrides[mapping.id].customName ||
-                          exerciseOverrides[mapping.id].customImages?.length
-                        );
-                        const exerciseName = params.customName || mapping.exercise?.name || "Nieznane";
+                        const hasOverride =
+                          exerciseOverrides[mapping.id] &&
+                          (exerciseOverrides[mapping.id].sets !== undefined ||
+                            exerciseOverrides[mapping.id].reps !== undefined ||
+                            exerciseOverrides[mapping.id].duration !== undefined ||
+                            exerciseOverrides[mapping.id].customName ||
+                            exerciseOverrides[mapping.id].customImages?.length);
+                        const exerciseName = params.customName || mapping.exercise?.name || 'Nieznane';
 
                         return (
                           <div
@@ -583,11 +567,7 @@ export function PatientAssignmentCard({
                               onClick={() => onPreviewExercise?.(mapping, exerciseOverrides[mapping.id])}
                             >
                               {imageUrl ? (
-                                <img
-                                  src={imageUrl}
-                                  alt={exerciseName}
-                                  className="h-full w-full object-contain"
-                                />
+                                <img src={imageUrl} alt={exerciseName} className="h-full w-full object-contain" />
                               ) : (
                                 <ImagePlaceholder type="exercise" iconClassName="h-6 w-6" />
                               )}
@@ -609,7 +589,10 @@ export function PatientAssignmentCard({
                                   {exerciseName}
                                 </button>
                                 {hasOverride && (
-                                  <span className="h-2 w-2 rounded-full bg-primary shrink-0" title="Zmodyfikowane dla pacjenta" />
+                                  <span
+                                    className="h-2 w-2 rounded-full bg-primary shrink-0"
+                                    title="Zmodyfikowane dla pacjenta"
+                                  />
                                 )}
                               </div>
                               <div className="flex items-center gap-3 text-sm text-muted-foreground">
@@ -716,12 +699,12 @@ export function PatientAssignmentCard({
               </div>
 
               {/* Stats */}
-              {(assignment.completionCount !== undefined && assignment.completionCount > 0) && (
+              {assignment.completionCount !== undefined && assignment.completionCount > 0 && (
                 <div className="mt-4 pt-3 border-t border-border/40">
                   <p className="text-xs text-muted-foreground">
                     Wykonano: <span className="font-medium text-foreground">{assignment.completionCount}</span> razy
                     {assignment.lastCompletedAt && (
-                      <> • Ostatnio: {format(new Date(assignment.lastCompletedAt), "d MMM", { locale: pl })}</>
+                      <> • Ostatnio: {format(new Date(assignment.lastCompletedAt), 'd MMM', { locale: pl })}</>
                     )}
                   </p>
                 </div>
@@ -749,7 +732,7 @@ export function PatientAssignmentCard({
         onOpenChange={(open) => {
           if (!open) {
             setRemovingExerciseId(null);
-            setRemovingExerciseName("");
+            setRemovingExerciseName('');
           }
         }}
         title="Usuń ćwiczenie z zestawu"

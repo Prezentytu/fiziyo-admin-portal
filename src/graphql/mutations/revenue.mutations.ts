@@ -1,4 +1,4 @@
-import { gql } from "@apollo/client";
+import { gql } from '@apollo/client';
 
 // ========================================
 // Revenue Share Mutations - Stripe Connect & Patient Invites
@@ -99,16 +99,8 @@ export const REDEEM_PARTNERSHIP_CODE_MUTATION = gql`
  * Mutation do anulowania subskrypcji pacjenta
  */
 export const CANCEL_PATIENT_SUBSCRIPTION_MUTATION = gql`
-  mutation CancelPatientSubscription(
-    $subscriptionId: String!
-    $immediately: Boolean
-    $reason: String
-  ) {
-    cancelPatientSubscription(
-      subscriptionId: $subscriptionId
-      immediately: $immediately
-      reason: $reason
-    ) {
+  mutation CancelPatientSubscription($subscriptionId: String!, $immediately: Boolean, $reason: String) {
+    cancelPatientSubscription(subscriptionId: $subscriptionId, immediately: $immediately, reason: $reason) {
       success
       message
     }
@@ -119,14 +111,8 @@ export const CANCEL_PATIENT_SUBSCRIPTION_MUTATION = gql`
  * Mutation do ustawienia prowizji organizacji (Site Admin)
  */
 export const SET_ORGANIZATION_COMMISSION_RATE_MUTATION = gql`
-  mutation SetOrganizationCommissionRate(
-    $organizationId: String!
-    $commissionRate: Decimal
-  ) {
-    setOrganizationCommissionRate(
-      organizationId: $organizationId
-      commissionRate: $commissionRate
-    ) {
+  mutation SetOrganizationCommissionRate($organizationId: String!, $commissionRate: Decimal) {
+    setOrganizationCommissionRate(organizationId: $organizationId, commissionRate: $commissionRate) {
       success
       organizationId
       commissionRate

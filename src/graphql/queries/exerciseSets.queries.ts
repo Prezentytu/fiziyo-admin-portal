@@ -1,4 +1,4 @@
-import { gql } from "@apollo/client";
+import { gql } from '@apollo/client';
 
 // Fragment dla podstawowych danych zestawu ćwiczeń
 export const EXERCISE_SET_BASIC_FRAGMENT = gql`

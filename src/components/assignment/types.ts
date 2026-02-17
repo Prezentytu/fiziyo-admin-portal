@@ -6,11 +6,11 @@
  */
 export interface ExerciseLoad {
   /** Typ obciążenia: weight (ciężar), band (guma), bodyweight (własna waga), other (inne) */
-  type: "weight" | "band" | "bodyweight" | "other";
+  type: 'weight' | 'band' | 'bodyweight' | 'other';
   /** Wartość liczbowa (dla wykresów postępów, np. 5, 10, 15) */
   value?: number;
   /** Jednostka: kg, lbs, level */
-  unit?: "kg" | "lbs" | "level";
+  unit?: 'kg' | 'lbs' | 'level';
   /** Tekst wyświetlany użytkownikowi (np. "5 kg", "Guma czerwona") */
   text: string;
 }
@@ -63,8 +63,19 @@ export interface Exercise {
   clinicalDescription?: string;
   notes?: string;
   // Parametry wykonania
-  type?: "REPS" | "TIME" | "reps" | "time" | string;
-  side?: "LEFT" | "RIGHT" | "BOTH" | "ALTERNATING" | "NONE" | "left" | "right" | "both" | "alternating" | "none" | string;
+  type?: 'REPS' | 'TIME' | 'reps' | 'time' | string;
+  side?:
+    | 'LEFT'
+    | 'RIGHT'
+    | 'BOTH'
+    | 'ALTERNATING'
+    | 'NONE'
+    | 'left'
+    | 'right'
+    | 'both'
+    | 'alternating'
+    | 'none'
+    | string;
   defaultSets?: number;
   defaultReps?: number;
   defaultDuration?: number;
@@ -87,7 +98,7 @@ export interface Exercise {
 
   // Legacy aliasy (dla kompatybilności wstecznej)
   description?: string;
-  exerciseSide?: "left" | "right" | "both" | "alternating" | "none" | string;
+  exerciseSide?: 'left' | 'right' | 'both' | 'alternating' | 'none' | string;
   executionTime?: number;
   sets?: number;
   reps?: number;
@@ -211,7 +222,7 @@ export interface AssignmentWizardState {
 
 // Step definitions
 // Flow: select-set -> customize-set -> select-patients -> schedule -> summary
-export type WizardStep = "select-set" | "customize-set" | "select-patients" | "schedule" | "summary";
+export type WizardStep = 'select-set' | 'customize-set' | 'select-patients' | 'schedule' | 'summary';
 
 export interface WizardStepConfig {
   id: WizardStep;
@@ -221,7 +232,7 @@ export interface WizardStepConfig {
 
 // Dynamic steps based on mode and preselected values
 export function getWizardSteps(
-  mode: "from-set" | "from-patient",
+  mode: 'from-set' | 'from-patient',
   hasPreselectedSet: boolean,
   hasPreselectedPatient: boolean,
   isCreatingNewSet: boolean = false
@@ -230,43 +241,43 @@ export function getWizardSteps(
 
   // Step 1: Select set (if not preselected in from-patient mode)
   // When creating new set, we still show select-set first (user clicks "Stwórz nowy")
-  if (mode === "from-patient" && !hasPreselectedSet) {
+  if (mode === 'from-patient' && !hasPreselectedSet) {
     steps.push({
-      id: "select-set",
-      label: "Zestaw",
-      description: "Wybierz zestaw ćw.",
+      id: 'select-set',
+      label: 'Zestaw',
+      description: 'Wybierz zestaw ćw.',
     });
   }
 
   // Step 2: Customize set (ALWAYS after selecting/creating a set)
   // This is where user can personalize exercises (add, remove, edit parameters)
   steps.push({
-    id: "customize-set",
-    label: isCreatingNewSet ? "Nowy zestaw" : "Personalizacja",
-    description: isCreatingNewSet ? "Utwórz zestaw ćw." : "Dostosuj ćwiczenia",
+    id: 'customize-set',
+    label: isCreatingNewSet ? 'Nowy zestaw' : 'Personalizacja',
+    description: isCreatingNewSet ? 'Utwórz zestaw ćw.' : 'Dostosuj ćwiczenia',
   });
 
   // Step 3: Select patients (if not preselected)
   if (!hasPreselectedPatient) {
     steps.push({
-      id: "select-patients",
-      label: "Pacjenci",
-      description: "Wybierz pacjentów",
+      id: 'select-patients',
+      label: 'Pacjenci',
+      description: 'Wybierz pacjentów',
     });
   }
 
   // Step 4: Schedule
   steps.push({
-    id: "schedule",
-    label: "Harmonogram",
-    description: "Ustal częstotliwość",
+    id: 'schedule',
+    label: 'Harmonogram',
+    description: 'Ustal częstotliwość',
   });
 
   // Step 5: Summary
   steps.push({
-    id: "summary",
-    label: "Podsumowanie",
-    description: "Potwierdź",
+    id: 'summary',
+    label: 'Podsumowanie',
+    description: 'Potwierdź',
   });
 
   return steps;
@@ -292,7 +303,7 @@ export interface AssignedPatientInfo {
 export interface AssignmentWizardProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  mode: "from-set" | "from-patient";
+  mode: 'from-set' | 'from-patient';
   preselectedSet?: ExerciseSet;
   preselectedPatient?: Patient;
   organizationId: string;

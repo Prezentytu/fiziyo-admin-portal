@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { cn } from "@/lib/utils";
+import * as React from 'react';
+import { cn } from '@/lib/utils';
 
 interface CleanInputProps {
   value: number | string | undefined;
@@ -23,23 +23,13 @@ interface CleanInputProps {
  */
 const CleanInput = React.forwardRef<HTMLInputElement, CleanInputProps>(
   (
-    {
-      value,
-      onChange,
-      label,
-      suffix = "",
-      placeholder = "-",
-      disabled = false,
-      className,
-      min = 0,
-      max = 999,
-    },
+    { value, onChange, label, suffix = '', placeholder = '-', disabled = false, className, min = 0, max = 999 },
     ref
   ) => {
     const handleChange = React.useCallback(
       (e: React.ChangeEvent<HTMLInputElement>) => {
         const val = e.target.value;
-        if (val === "" || val === "-") {
+        if (val === '' || val === '-') {
           onChange(undefined);
           return;
         }
@@ -52,10 +42,10 @@ const CleanInput = React.forwardRef<HTMLInputElement, CleanInputProps>(
       [min, max, onChange]
     );
 
-    const displayValue = value === undefined || value === null ? "" : String(value);
+    const displayValue = value === undefined || value === null ? '' : String(value);
 
     return (
-      <div className={cn("flex flex-col items-center group", className)}>
+      <div className={cn('flex flex-col items-center group', className)}>
         <div className="relative flex items-center justify-center">
           <input
             ref={ref}
@@ -63,20 +53,20 @@ const CleanInput = React.forwardRef<HTMLInputElement, CleanInputProps>(
             inputMode="numeric"
             pattern="[0-9]*"
             className={cn(
-              "w-14 bg-transparent text-center font-bold text-xl text-foreground",
-              "placeholder-muted-foreground/30 outline-none",
-              "border-b-2 border-transparent",
-              "hover:border-border/50 focus:border-primary",
-              "transition-colors duration-200 pb-0.5",
-              "tabular-nums",
-              "[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none",
-              disabled && "opacity-40 cursor-not-allowed pointer-events-none"
+              'w-14 bg-transparent text-center font-bold text-xl text-foreground',
+              'placeholder-muted-foreground/30 outline-none',
+              'border-b-2 border-transparent',
+              'hover:border-border/50 focus:border-primary',
+              'transition-colors duration-200 pb-0.5',
+              'tabular-nums',
+              '[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none',
+              disabled && 'opacity-40 cursor-not-allowed pointer-events-none'
             )}
             value={displayValue}
             onChange={handleChange}
             placeholder={placeholder}
             disabled={disabled}
-            data-testid={`clean-input-${label.toLowerCase().replaceAll(/[^a-z]/g, "")}`}
+            data-testid={`clean-input-${label.toLowerCase().replaceAll(/[^a-z]/g, '')}`}
           />
           {suffix && displayValue && (
             <span className="absolute -right-1 top-1/2 -translate-y-[55%] text-[10px] text-muted-foreground/60 font-medium pointer-events-none">
@@ -92,7 +82,7 @@ const CleanInput = React.forwardRef<HTMLInputElement, CleanInputProps>(
   }
 );
 
-CleanInput.displayName = "CleanInput";
+CleanInput.displayName = 'CleanInput';
 
 export { CleanInput };
 export type { CleanInputProps };

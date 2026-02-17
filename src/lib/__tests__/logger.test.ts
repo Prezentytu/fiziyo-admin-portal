@@ -21,10 +21,7 @@ describe('createModuleLogger', () => {
 
     moduleLogger.info('login attempt', { userId: '123' });
 
-    expect(infoSpy).toHaveBeenCalledWith(
-      '[Auth] login attempt',
-      expect.objectContaining({ userId: '123' }),
-    );
+    expect(infoSpy).toHaveBeenCalledWith('[Auth] login attempt', expect.objectContaining({ userId: '123' }));
   });
 
   it('logs errors with formatted message', () => {

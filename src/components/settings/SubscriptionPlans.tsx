@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { useState } from "react";
+import { useState } from 'react';
 import {
   User,
   Users,
@@ -14,12 +14,12 @@ import {
   Crown,
   Check,
   Briefcase,
-} from "lucide-react";
+} from 'lucide-react';
 
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
 
 interface Plan {
   id: string;
@@ -42,13 +42,13 @@ interface Plan {
 
 const plans: Plan[] = [
   {
-    id: "starter",
-    name: "Starter",
-    description: "Darmowy plan na start",
+    id: 'starter',
+    name: 'Starter',
+    description: 'Darmowy plan na start',
     price: 0,
     priceYearly: 0,
     icon: <User className="h-5 w-5" />,
-    color: "from-slate-500 to-slate-600",
+    color: 'from-slate-500 to-slate-600',
     limits: {
       patients: 5,
       therapists: 1,
@@ -56,16 +56,16 @@ const plans: Plan[] = [
       exercises: 30,
       aiCredits: 50,
     },
-    features: ["Podstawowe funkcje", "Wsparcie email 48h"],
+    features: ['Podstawowe funkcje', 'Wsparcie email 48h'],
   },
   {
-    id: "solo",
-    name: "Solo",
-    description: "Dla pojedynczego fizjoterapeuty",
+    id: 'solo',
+    name: 'Solo',
+    description: 'Dla pojedynczego fizjoterapeuty',
     price: 99,
     priceYearly: 990,
     icon: <Briefcase className="h-5 w-5" />,
-    color: "from-blue-500 to-blue-600",
+    color: 'from-blue-500 to-blue-600',
     limits: {
       patients: 50,
       therapists: 1,
@@ -73,16 +73,16 @@ const plans: Plan[] = [
       exercises: null,
       aiCredits: 200,
     },
-    features: ["Bez limitu ćwiczeń", "QR kody", "Raporty PDF", "Wsparcie 24h"],
+    features: ['Bez limitu ćwiczeń', 'QR kody', 'Raporty PDF', 'Wsparcie 24h'],
   },
   {
-    id: "pro",
-    name: "Pro",
-    description: "Dla małego gabinetu",
+    id: 'pro',
+    name: 'Pro',
+    description: 'Dla małego gabinetu',
     price: 219,
     priceYearly: 2190,
     icon: <Users className="h-5 w-5" />,
-    color: "from-primary to-emerald-600",
+    color: 'from-primary to-emerald-600',
     popular: true,
     limits: {
       patients: 200,
@@ -91,16 +91,16 @@ const plans: Plan[] = [
       exercises: null,
       aiCredits: 500,
     },
-    features: ["Wszystko z Solo", "Wieloosobowy zespół", "Wiele gabinetów", "Priorytetowe wsparcie"],
+    features: ['Wszystko z Solo', 'Wieloosobowy zespół', 'Wiele gabinetów', 'Priorytetowe wsparcie'],
   },
   {
-    id: "business",
-    name: "Business",
-    description: "Dla dużych klinik",
+    id: 'business',
+    name: 'Business',
+    description: 'Dla dużych klinik',
     price: 399,
     priceYearly: 3990,
     icon: <Building2 className="h-5 w-5" />,
-    color: "from-amber-500 to-orange-600",
+    color: 'from-amber-500 to-orange-600',
     limits: {
       patients: 500,
       therapists: 20,
@@ -108,7 +108,7 @@ const plans: Plan[] = [
       exercises: null,
       aiCredits: 2000,
     },
-    features: ["Wszystko z Pro", "Własny branding", "API access", "Dedykowany opiekun"],
+    features: ['Wszystko z Pro', 'Własny branding', 'API access', 'Dedykowany opiekun'],
   },
 ];
 
@@ -128,15 +128,15 @@ interface SubscriptionPlansProps {
 
 export function SubscriptionPlans({
   currentPlan = {
-    id: "starter",
-    name: "Starter",
+    id: 'starter',
+    name: 'Starter',
     usedPatients: 2,
     usedTherapists: 1,
     usedClinics: 1,
   },
   onUpgrade,
 }: SubscriptionPlansProps) {
-  const [billingPeriod, setBillingPeriod] = useState<"monthly" | "yearly">("monthly");
+  const [billingPeriod, setBillingPeriod] = useState<'monthly' | 'yearly'>('monthly');
 
   const currentPlanData = plans.find((p) => p.id === currentPlan.id) || plans[0];
 
@@ -147,7 +147,7 @@ export function SubscriptionPlans({
         <div className="flex items-center gap-3">
           <div
             className={cn(
-              "flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br text-white",
+              'flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br text-white',
               currentPlanData.color
             )}
           >
@@ -155,19 +155,15 @@ export function SubscriptionPlans({
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="font-semibold text-foreground text-sm">
-                Plan: {currentPlan.name}
-              </span>
+              <span className="font-semibold text-foreground text-sm">Plan: {currentPlan.name}</span>
               {currentPlan.renewalDate && (
-                <span className="text-xs text-muted-foreground">
-                  · Odnawia się {currentPlan.renewalDate}
-                </span>
+                <span className="text-xs text-muted-foreground">· Odnawia się {currentPlan.renewalDate}</span>
               )}
             </div>
             <div className="flex items-center gap-3 text-xs text-muted-foreground">
               <span className="flex items-center gap-1">
                 <User className="h-3 w-3" />
-                {currentPlan.usedPatients}/{currentPlanData.limits.patients ?? "∞"} pacjentów
+                {currentPlan.usedPatients}/{currentPlanData.limits.patients ?? '∞'} pacjentów
               </span>
               <span className="flex items-center gap-1">
                 <Users className="h-3 w-3" />
@@ -184,23 +180,23 @@ export function SubscriptionPlans({
         {/* Billing Toggle */}
         <div className="flex items-center gap-1 rounded-lg bg-surface p-1">
           <button
-            onClick={() => setBillingPeriod("monthly")}
+            onClick={() => setBillingPeriod('monthly')}
             className={cn(
-              "px-3 py-1.5 rounded-md text-xs font-medium transition-all",
-              billingPeriod === "monthly"
-                ? "bg-primary text-primary-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground"
+              'px-3 py-1.5 rounded-md text-xs font-medium transition-all',
+              billingPeriod === 'monthly'
+                ? 'bg-primary text-primary-foreground shadow-sm'
+                : 'text-muted-foreground hover:text-foreground'
             )}
           >
             Miesięcznie
           </button>
           <button
-            onClick={() => setBillingPeriod("yearly")}
+            onClick={() => setBillingPeriod('yearly')}
             className={cn(
-              "px-3 py-1.5 rounded-md text-xs font-medium transition-all flex items-center gap-1.5",
-              billingPeriod === "yearly"
-                ? "bg-primary text-primary-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground"
+              'px-3 py-1.5 rounded-md text-xs font-medium transition-all flex items-center gap-1.5',
+              billingPeriod === 'yearly'
+                ? 'bg-primary text-primary-foreground shadow-sm'
+                : 'text-muted-foreground hover:text-foreground'
             )}
           >
             Rocznie
@@ -216,20 +212,18 @@ export function SubscriptionPlans({
         {plans.map((plan) => {
           const isCurrent = plan.id === currentPlan.id;
           const monthlyEquivalent =
-            billingPeriod === "yearly" && plan.priceYearly > 0
-              ? Math.round(plan.priceYearly / 12)
-              : plan.price;
+            billingPeriod === 'yearly' && plan.priceYearly > 0 ? Math.round(plan.priceYearly / 12) : plan.price;
           const savings = plan.price * 12 - plan.priceYearly;
 
           return (
             <Card
               key={plan.id}
               className={cn(
-                "relative overflow-hidden transition-all duration-300 rounded-xl",
+                'relative overflow-hidden transition-all duration-300 rounded-xl',
                 plan.popular
-                  ? "border-primary/50 bg-primary/5 shadow-xl shadow-primary/10 ring-1 ring-primary/20"
-                  : "border-border/50 bg-card/30 hover:border-primary/30",
-                isCurrent && !plan.popular && "border-primary/50 ring-1 ring-primary/20"
+                  ? 'border-primary/50 bg-primary/5 shadow-xl shadow-primary/10 ring-1 ring-primary/20'
+                  : 'border-border/50 bg-card/30 hover:border-primary/30',
+                isCurrent && !plan.popular && 'border-primary/50 ring-1 ring-primary/20'
               )}
             >
               {/* Popular badge */}
@@ -247,7 +241,7 @@ export function SubscriptionPlans({
                 <div className="flex items-center gap-3 mb-4">
                   <div
                     className={cn(
-                      "flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br text-white shadow-lg",
+                      'flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br text-white shadow-lg',
                       plan.color
                     )}
                   >
@@ -266,14 +260,12 @@ export function SubscriptionPlans({
                       <span className="text-3xl font-bold text-foreground">Darmowy</span>
                     ) : (
                       <>
-                        <span className="text-3xl font-bold text-foreground">
-                          {monthlyEquivalent}
-                        </span>
+                        <span className="text-3xl font-bold text-foreground">{monthlyEquivalent}</span>
                         <span className="text-sm font-medium text-muted-foreground">zł/mies.</span>
                       </>
                     )}
                   </div>
-                  {billingPeriod === "yearly" && plan.price > 0 && (
+                  {billingPeriod === 'yearly' && plan.price > 0 && (
                     <p className="text-[11px] font-bold uppercase tracking-wider text-primary mt-1">
                       Oszczędzasz {savings} zł rocznie
                     </p>
@@ -284,9 +276,7 @@ export function SubscriptionPlans({
                 <div className="space-y-3 mb-6">
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-muted-foreground">Pacjenci</span>
-                    <span className="font-bold text-foreground tabular-nums">
-                      {plan.limits.patients ?? "∞"}
-                    </span>
+                    <span className="font-bold text-foreground tabular-nums">{plan.limits.patients ?? '∞'}</span>
                   </div>
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-muted-foreground">Terapeuci</span>
@@ -319,22 +309,26 @@ export function SubscriptionPlans({
 
                 {/* CTA Button */}
                 {isCurrent ? (
-                  <Button variant="outline" className="w-full rounded-xl border-primary/20 bg-primary/5 text-primary font-bold h-11" disabled>
+                  <Button
+                    variant="outline"
+                    className="w-full rounded-xl border-primary/20 bg-primary/5 text-primary font-bold h-11"
+                    disabled
+                  >
                     <Shield className="mr-2 h-4 w-4" />
                     Twój plan
                   </Button>
                 ) : (
                   <Button
                     className={cn(
-                      "w-full rounded-xl font-bold h-11 shadow-lg transition-all",
+                      'w-full rounded-xl font-bold h-11 shadow-lg transition-all',
                       plan.popular
-                        ? "bg-primary text-white hover:bg-primary/90 shadow-primary/20"
-                        : "bg-foreground text-background hover:opacity-90 shadow-black/10"
+                        ? 'bg-primary text-white hover:bg-primary/90 shadow-primary/20'
+                        : 'bg-foreground text-background hover:opacity-90 shadow-black/10'
                     )}
                     onClick={() => onUpgrade?.(plan.id)}
                   >
                     <Rocket className="mr-2 h-4 w-4" />
-                    {plan.price === 0 ? "Aktywuj" : "Wybierz plan"}
+                    {plan.price === 0 ? 'Aktywuj' : 'Wybierz plan'}
                   </Button>
                 )}
               </CardContent>
@@ -366,7 +360,7 @@ export function SubscriptionPlans({
           variant="ghost"
           size="sm"
           className="text-xs text-muted-foreground hover:text-foreground"
-          onClick={() => window.open("mailto:kontakt@fiziyo.pl?subject=Enterprise", "_blank")}
+          onClick={() => window.open('mailto:kontakt@fiziyo.pl?subject=Enterprise', '_blank')}
         >
           <Crown className="mr-1.5 h-3.5 w-3.5" />
           Enterprise? Skontaktuj się

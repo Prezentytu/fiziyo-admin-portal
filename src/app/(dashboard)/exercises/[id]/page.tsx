@@ -51,15 +51,15 @@ import { cn } from '@/lib/utils';
 import { GET_EXERCISE_BY_ID_QUERY, GET_ORGANIZATION_EXERCISES_QUERY } from '@/graphql/queries/exercises.queries';
 import { GET_EXERCISE_TAGS_BY_ORGANIZATION_QUERY } from '@/graphql/queries/exerciseTags.queries';
 import { GET_TAG_CATEGORIES_BY_ORGANIZATION_QUERY } from '@/graphql/queries/tagCategories.queries';
-import { DELETE_EXERCISE_MUTATION, SUBMIT_TO_GLOBAL_REVIEW_MUTATION, RESUBMIT_FROM_ORIGINAL_MUTATION } from '@/graphql/mutations/exercises.mutations';
+import {
+  DELETE_EXERCISE_MUTATION,
+  SUBMIT_TO_GLOBAL_REVIEW_MUTATION,
+  RESUBMIT_FROM_ORIGINAL_MUTATION,
+} from '@/graphql/mutations/exercises.mutations';
 import { createTagsMap, mapExerciseTagsToObjects } from '@/utils/tagUtils';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { useExerciseBuilder } from '@/contexts/ExerciseBuilderContext';
-import type {
-  ExerciseByIdResponse,
-  ExerciseTagsResponse,
-  TagCategoriesResponse,
-} from '@/types/apollo';
+import type { ExerciseByIdResponse, ExerciseTagsResponse, TagCategoriesResponse } from '@/types/apollo';
 import { translateExerciseTypeShort, translateExerciseSidePolish } from '@/components/pdf/polishUtils';
 
 interface ExerciseDetailPageProps {
@@ -122,16 +122,12 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
 
   // Submit to global review mutation
   const [submitToGlobalReview, { loading: submittingToGlobal }] = useMutation(SUBMIT_TO_GLOBAL_REVIEW_MUTATION, {
-    refetchQueries: [
-      { query: GET_EXERCISE_BY_ID_QUERY, variables: { id } },
-    ],
+    refetchQueries: [{ query: GET_EXERCISE_BY_ID_QUERY, variables: { id } }],
   });
 
   // Resubmit after changes mutation
   const [resubmitFromOriginal, { loading: resubmitting }] = useMutation(RESUBMIT_FROM_ORIGINAL_MUTATION, {
-    refetchQueries: [
-      { query: GET_EXERCISE_BY_ID_QUERY, variables: { id } },
-    ],
+    refetchQueries: [{ query: GET_EXERCISE_BY_ID_QUERY, variables: { id } }],
   });
 
   const rawExercise = (data as ExerciseByIdResponse)?.exerciseById;
@@ -229,10 +225,28 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
   const metrics = [
     { id: 'sets', label: 'Serie', value: exercise.sets, icon: Repeat, color: 'text-primary' },
     { id: 'reps', label: 'Powtórzenia', value: exercise.reps, icon: Dumbbell, color: 'text-secondary' },
-    { id: 'duration', label: 'Czas', value: exercise.duration ? `${exercise.duration}s` : null, icon: Clock, color: 'text-info' },
-    { id: 'rest', label: 'Przerwa', value: exercise.restSets ? `${exercise.restSets}s` : null, icon: Timer, color: 'text-orange-500' },
-    { id: 'prep', label: 'Przygotowanie', value: exercise.preparationTime ? `${exercise.preparationTime}s` : null, icon: Clock, color: 'text-emerald-500' },
-  ].filter(m => m.value);
+    {
+      id: 'duration',
+      label: 'Czas',
+      value: exercise.duration ? `${exercise.duration}s` : null,
+      icon: Clock,
+      color: 'text-info',
+    },
+    {
+      id: 'rest',
+      label: 'Przerwa',
+      value: exercise.restSets ? `${exercise.restSets}s` : null,
+      icon: Timer,
+      color: 'text-orange-500',
+    },
+    {
+      id: 'prep',
+      label: 'Przygotowanie',
+      value: exercise.preparationTime ? `${exercise.preparationTime}s` : null,
+      icon: Clock,
+      color: 'text-emerald-500',
+    },
+  ].filter((m) => m.value);
 
   return (
     <div className="space-y-6">
@@ -294,7 +308,7 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
                   className="text-primary focus:text-primary"
                   data-testid="exercise-detail-resubmit-btn"
                 >
-                  <RefreshCw className={cn("mr-2 h-4 w-4", resubmitting && "animate-spin")} />
+                  <RefreshCw className={cn('mr-2 h-4 w-4', resubmitting && 'animate-spin')} />
                   Zgłoś ponownie do weryfikacji
                 </DropdownMenuItem>
               </>
@@ -326,25 +340,36 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
           </Badge>
           {/* Verification Status Badges */}
           {isGlobalExercise && (
-            <Badge variant="outline" className="text-[10px] uppercase font-bold tracking-wider bg-violet-500/10 text-violet-600 border-violet-500/20">
+            <Badge
+              variant="outline"
+              className="text-[10px] uppercase font-bold tracking-wider bg-violet-500/10 text-violet-600 border-violet-500/20"
+            >
               <Sparkles className="mr-1 h-3 w-3" />
               FiziYo
             </Badge>
           )}
           {isSubmittedToGlobal && !isPendingReview && !isChangesRequested && !isGlobalExercise && (
-            <Badge variant="outline" className="text-[10px] uppercase font-bold tracking-wider bg-blue-500/10 text-blue-600 border-blue-500/20">
-              <Globe className="mr-1 h-3 w-3" />
-              W FiziYo
+            <Badge
+              variant="outline"
+              className="text-[10px] uppercase font-bold tracking-wider bg-blue-500/10 text-blue-600 border-blue-500/20"
+            >
+              <Globe className="mr-1 h-3 w-3" />W FiziYo
             </Badge>
           )}
           {isPendingReview && (
-            <Badge variant="outline" className="text-[10px] uppercase font-bold tracking-wider bg-amber-500/10 text-amber-600 border-amber-500/20">
+            <Badge
+              variant="outline"
+              className="text-[10px] uppercase font-bold tracking-wider bg-amber-500/10 text-amber-600 border-amber-500/20"
+            >
               <Clock className="mr-1 h-3 w-3" />
               Weryfikacja
             </Badge>
           )}
           {isChangesRequested && (
-            <Badge variant="outline" className="text-[10px] uppercase font-bold tracking-wider bg-orange-500/10 text-orange-600 border-orange-500/20">
+            <Badge
+              variant="outline"
+              className="text-[10px] uppercase font-bold tracking-wider bg-orange-500/10 text-orange-600 border-orange-500/20"
+            >
               <AlertCircle className="mr-1 h-3 w-3" />
               Do poprawy
             </Badge>
@@ -355,22 +380,22 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
         </h1>
         {hasTags && (
           <div className="flex flex-wrap gap-2 pt-1">
-            {exercise.mainTags?.map((tag) => (
+            {exercise.mainTags?.map((tag) =>
               isTagObject(tag) ? (
-                <ColorBadge
-                  key={tag.id}
-                  color={tag.color}
-                  className="text-[10px] uppercase font-medium tracking-wider"
-                >
+                <ColorBadge key={tag.id} color={tag.color} className="text-[10px] uppercase font-medium tracking-wider">
                   {tag.name}
                 </ColorBadge>
               ) : (
-                <Badge key={tag} variant="outline" className="text-[10px] uppercase font-medium tracking-wider opacity-60">
+                <Badge
+                  key={tag}
+                  variant="outline"
+                  className="text-[10px] uppercase font-medium tracking-wider opacity-60"
+                >
                   {tag}
                 </Badge>
               )
-            ))}
-            {exercise.additionalTags?.map((tag) => (
+            )}
+            {exercise.additionalTags?.map((tag) =>
               isTagObject(tag) ? (
                 <ColorBadge
                   key={tag.id}
@@ -380,21 +405,22 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
                   {tag.name}
                 </ColorBadge>
               ) : (
-                <Badge key={tag} variant="outline" className="text-[10px] uppercase font-medium tracking-wider opacity-40">
+                <Badge
+                  key={tag}
+                  variant="outline"
+                  className="text-[10px] uppercase font-medium tracking-wider opacity-40"
+                >
                   {tag}
                 </Badge>
               )
-            ))}
+            )}
           </div>
         )}
       </div>
 
       {/* Feedback Banner for CHANGES_REQUESTED */}
       {isChangesRequested && exercise.adminReviewNotes && (
-        <FeedbackBanner
-          adminReviewNotes={exercise.adminReviewNotes}
-          updatedAt={exercise.updatedAt}
-        />
+        <FeedbackBanner adminReviewNotes={exercise.adminReviewNotes} updatedAt={exercise.updatedAt} />
       )}
 
       {/* Hero Action + Quick Stats */}
@@ -413,32 +439,28 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
               <FolderPlus className="h-5 w-5 text-white" />
             </div>
             <div className="min-w-0 flex-1">
-              <h3 className="text-base font-bold text-white">
-                Dodaj do zestawu
-              </h3>
-              <p className="text-sm text-white/70">
-                Użyj w programie
-              </p>
+              <h3 className="text-base font-bold text-white">Dodaj do zestawu</h3>
+              <p className="text-sm text-white/70">Użyj w programie</p>
             </div>
             <Plus className="h-5 w-5 text-white/60 group-hover:text-white transition-colors shrink-0" />
           </div>
         </button>
 
         {/* Quick Stats */}
-        <div className={cn(
-          "grid gap-3 sm:col-span-1 lg:col-span-8",
-          metrics.length <= 3 ? "grid-cols-3" : "grid-cols-3 sm:grid-cols-5"
-        )}>
+        <div
+          className={cn(
+            'grid gap-3 sm:col-span-1 lg:col-span-8',
+            metrics.length <= 3 ? 'grid-cols-3' : 'grid-cols-3 sm:grid-cols-5'
+          )}
+        >
           {metrics.slice(0, 5).map((metric) => (
             <div
               key={metric.id}
               className="rounded-2xl border border-border/40 bg-surface/50 p-4 flex flex-col items-center justify-center text-center"
             >
               <div className="flex items-center gap-2">
-                <metric.icon className={cn("h-4 w-4", metric.color)} />
-                <span className="text-2xl font-bold text-foreground tabular-nums">
-                  {metric.value}
-                </span>
+                <metric.icon className={cn('h-4 w-4', metric.color)} />
+                <span className="text-2xl font-bold text-foreground tabular-nums">{metric.value}</span>
               </div>
               <p className="text-xs text-muted-foreground mt-1">{metric.label}</p>
             </div>
@@ -470,11 +492,7 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
                 className="relative aspect-video w-full bg-black/5 dark:bg-black/20 cursor-pointer"
                 onClick={() => setLightboxOpen(true)}
               >
-                <img
-                  src={currentImage}
-                  alt={exercise.name}
-                  className="w-full h-full object-contain"
-                />
+                <img src={currentImage} alt={exercise.name} className="w-full h-full object-contain" />
                 <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/20">
                   <div className="flex h-14 w-14 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-sm">
                     <ZoomIn className="h-6 w-6" />
@@ -528,9 +546,7 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
             Opis ćwiczenia
           </h2>
           <div className="rounded-2xl border border-border/40 bg-surface/50 p-6">
-            <p className="text-muted-foreground whitespace-pre-wrap leading-relaxed">
-              {exercise.description}
-            </p>
+            <p className="text-muted-foreground whitespace-pre-wrap leading-relaxed">{exercise.description}</p>
           </div>
         </div>
       )}
@@ -575,11 +591,7 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
       />
 
       {/* Add to Set Dialog with AI */}
-      <AddExerciseToSetsDialog
-        open={isAddToSetDialogOpen}
-        onOpenChange={setIsAddToSetDialogOpen}
-        exercise={exercise}
-      />
+      <AddExerciseToSetsDialog open={isAddToSetDialogOpen} onOpenChange={setIsAddToSetDialogOpen} exercise={exercise} />
 
       {/* Image Lightbox */}
       {currentImage && (

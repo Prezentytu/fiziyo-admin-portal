@@ -1,4 +1,4 @@
-import { gql } from "@apollo/client";
+import { gql } from '@apollo/client';
 
 // Fragment dla podstawowych danych mapowania
 export const EXERCISE_SET_MAPPING_BASIC_FRAGMENT = gql`

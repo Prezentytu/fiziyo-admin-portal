@@ -1,14 +1,14 @@
-"use client";
+'use client';
 
-import { Suspense, useState } from "react";
-import { useQuery } from "@apollo/client/react";
-import { Wallet, Lock, BarChart3, History, Settings } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Skeleton } from "@/components/ui/skeleton";
-import { LoadingState } from "@/components/shared/LoadingState";
-import { AccessGuard } from "@/components/shared/AccessGuard";
-import { useOrganization } from "@/contexts/OrganizationContext";
+import { Suspense, useState } from 'react';
+import { useQuery } from '@apollo/client/react';
+import { Wallet, Lock, BarChart3, History, Settings } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Skeleton } from '@/components/ui/skeleton';
+import { LoadingState } from '@/components/shared/LoadingState';
+import { AccessGuard } from '@/components/shared/AccessGuard';
+import { useOrganization } from '@/contexts/OrganizationContext';
 import {
   WalletCard,
   GamificationProgress,
@@ -20,19 +20,15 @@ import {
   PayoutScheduleCard,
   StripeConnectCard,
   PatientInviteDialog,
-} from "@/components/finances";
-import { GET_ORGANIZATION_EARNINGS_QUERY } from "@/graphql/queries";
-import type { GetOrganizationEarningsResponse } from "@/types/apollo";
+} from '@/components/finances';
+import { GET_ORGANIZATION_EARNINGS_QUERY } from '@/graphql/queries';
+import type { GetOrganizationEarningsResponse } from '@/types/apollo';
 
 // ========================================
 // Empty State Component (Blurred Teaser)
 // ========================================
 
-function EmptyStateTeaser({
-  onInvite,
-}: {
-  onInvite: () => void;
-}) {
+function EmptyStateTeaser({ onInvite }: { onInvite: () => void }) {
   return (
     <div className="relative rounded-xl overflow-hidden">
       {/* Blurred example chart */}
@@ -56,16 +52,11 @@ function EmptyStateTeaser({
         <div className="p-4 rounded-full bg-zinc-800/80 mb-4">
           <Lock className="h-10 w-10 text-zinc-500" />
         </div>
-        <p className="text-lg font-medium text-white mb-1">
-          Odblokuj statystyki
-        </p>
+        <p className="text-lg font-medium text-white mb-1">Odblokuj statystyki</p>
         <p className="text-sm text-zinc-400 mb-4 text-center max-w-xs">
           Zaproś pierwszego pacjenta Premium, aby zobaczyć swoje zarobki
         </p>
-        <Button
-          onClick={onInvite}
-          className="gap-2 bg-emerald-500 hover:bg-emerald-600"
-        >
+        <Button onClick={onInvite} className="gap-2 bg-emerald-500 hover:bg-emerald-600">
           Zaproś teraz
         </Button>
       </div>
@@ -83,12 +74,14 @@ export default function FinancesPage() {
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
 
   // Fetch earnings to check if user has any data
-  const { data: earningsData, loading: earningsLoading } =
-    useQuery<GetOrganizationEarningsResponse>(GET_ORGANIZATION_EARNINGS_QUERY, {
-      variables: { organizationId: organizationId || "" },
+  const { data: earningsData, loading: earningsLoading } = useQuery<GetOrganizationEarningsResponse>(
+    GET_ORGANIZATION_EARNINGS_QUERY,
+    {
+      variables: { organizationId: organizationId || '' },
       skip: !organizationId,
-      errorPolicy: "all",
-    });
+      errorPolicy: 'all',
+    }
+  );
 
   const hasEarnings = (earningsData?.organizationEarnings?.totalEarnings || 0) > 0;
   const hasSubscribers = (earningsData?.organizationEarnings?.activeSubscribers || 0) > 0;
@@ -123,9 +116,7 @@ export default function FinancesPage() {
           </div>
           <div>
             <h1 className="text-2xl font-bold text-white">Twoje Finanse</h1>
-            <p className="text-sm text-zinc-400">
-              Zarobki z subskrypcji pacjentów Premium
-            </p>
+            <p className="text-sm text-zinc-400">Zarobki z subskrypcji pacjentów Premium</p>
           </div>
         </div>
 
@@ -207,11 +198,7 @@ export default function FinancesPage() {
       </div>
 
       {/* Invite Dialog */}
-      <PatientInviteDialog
-        open={inviteDialogOpen}
-        onOpenChange={setInviteDialogOpen}
-        organizationId={organizationId}
-      />
+      <PatientInviteDialog open={inviteDialogOpen} onOpenChange={setInviteDialogOpen} organizationId={organizationId} />
     </AccessGuard>
   );
 }

@@ -22,13 +22,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { StepperHeader, Step } from './StepperHeader';
 import { StepperFooter } from './StepperFooter';
 import { SummaryStep } from './steps/SummaryStep';
@@ -50,11 +44,7 @@ import {
   GET_CLINICAL_NOTE_BY_ID_QUERY,
 } from '@/graphql/queries/clinicalNotes.queries';
 
-import type {
-  ClinicalNote,
-  ClinicalNoteSections,
-  VisitType,
-} from '@/types/clinical.types';
+import type { ClinicalNote, ClinicalNoteSections, VisitType } from '@/types/clinical.types';
 
 // Mutation response types
 interface CreateClinicalNoteResponse {
@@ -165,9 +155,7 @@ export function ClinicalNoteEditor({
   // Form state
   const [visitType, setVisitType] = useState<VisitType>(existingNote?.visitType || 'INITIAL');
   const [visitDate, setVisitDate] = useState(
-    existingNote?.visitDate
-      ? format(new Date(existingNote.visitDate), 'yyyy-MM-dd')
-      : format(new Date(), 'yyyy-MM-dd')
+    existingNote?.visitDate ? format(new Date(existingNote.visitDate), 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd')
   );
   const [title, setTitle] = useState(existingNote?.title || '');
   const [sections, setSections] = useState<ClinicalNoteSections>(existingNote?.sections || {});
@@ -182,7 +170,7 @@ export function ClinicalNoteEditor({
   const noteIdRef = useRef<string | null>(null);
 
   // Get steps based on visit type
-  const steps = (visitType === 'FOLLOWUP' || visitType === 'DISCHARGE') ? FOLLOWUP_STEPS : BASE_STEPS;
+  const steps = visitType === 'FOLLOWUP' || visitType === 'DISCHARGE' ? FOLLOWUP_STEPS : BASE_STEPS;
   const totalSteps = steps.length;
 
   // Sync state when note data changes
@@ -192,9 +180,7 @@ export function ClinicalNoteEditor({
     queueMicrotask(() => {
       setVisitType(noteData?.visitType || 'INITIAL');
       setVisitDate(
-        noteData?.visitDate
-          ? format(new Date(noteData.visitDate), 'yyyy-MM-dd')
-          : format(new Date(), 'yyyy-MM-dd')
+        noteData?.visitDate ? format(new Date(noteData.visitDate), 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd')
       );
       setTitle(noteData?.title || '');
       setSections(noteData?.sections || {});
@@ -205,9 +191,11 @@ export function ClinicalNoteEditor({
       const completed = new Set<number>();
       completed.add(0); // Basic info always completed if we have data
       if (noteData?.sections?.interview?.mainComplaint) completed.add(1);
-      if (noteData?.sections?.examination?.posture || noteData?.sections?.examination?.specialTests?.length) completed.add(2);
+      if (noteData?.sections?.examination?.posture || noteData?.sections?.examination?.specialTests?.length)
+        completed.add(2);
       if (noteData?.sections?.diagnosis?.icd10Codes?.length) completed.add(3);
-      if (noteData?.sections?.treatmentPlan?.shortTermGoals || noteData?.sections?.treatmentPlan?.interventions?.length) completed.add(4);
+      if (noteData?.sections?.treatmentPlan?.shortTermGoals || noteData?.sections?.treatmentPlan?.interventions?.length)
+        completed.add(4);
       setCompletedSteps(completed);
     });
   }, [noteData, loadingFullNote, existingNote?.id]);
@@ -266,17 +254,7 @@ export function ClinicalNoteEditor({
       console.error('Auto-save failed:', error);
       setSaveStatus('error');
     }
-  }, [
-    isSigned,
-    sections,
-    updateNote,
-    visitType,
-    visitDate,
-    title,
-    createNote,
-    patientId,
-    organizationId,
-  ]);
+  }, [isSigned, sections, updateNote, visitType, visitDate, title, createNote, patientId, organizationId]);
 
   // Auto-save effect
   useEffect(() => {
@@ -300,13 +278,13 @@ export function ClinicalNoteEditor({
   }, [isDirty, isSigned, performAutoSave]);
 
   // Section update handlers
-  const updateSection = useCallback(<K extends keyof ClinicalNoteSections>(
-    sectionKey: K,
-    value: ClinicalNoteSections[K]
-  ) => {
-    setSections((prev) => ({ ...prev, [sectionKey]: value }));
-    setIsDirty(true);
-  }, []);
+  const updateSection = useCallback(
+    <K extends keyof ClinicalNoteSections>(sectionKey: K, value: ClinicalNoteSections[K]) => {
+      setSections((prev) => ({ ...prev, [sectionKey]: value }));
+      setIsDirty(true);
+    },
+    []
+  );
 
   // Handle form field changes with dirty tracking
   const handleVisitTypeChange = (value: VisitType) => {
@@ -388,9 +366,7 @@ export function ClinicalNoteEditor({
             title: title || null,
             sections: sectionInput,
           },
-          refetchQueries: [
-            { query: GET_PATIENT_CLINICAL_NOTES_QUERY, variables: { patientId, organizationId } },
-          ],
+          refetchQueries: [{ query: GET_PATIENT_CLINICAL_NOTES_QUERY, variables: { patientId, organizationId } }],
         });
         const response = data as UpdateClinicalNoteResponse;
         result = response.updateClinicalNote;
@@ -405,9 +381,7 @@ export function ClinicalNoteEditor({
             title: title || null,
             sections: sectionInput,
           },
-          refetchQueries: [
-            { query: GET_PATIENT_CLINICAL_NOTES_QUERY, variables: { patientId, organizationId } },
-          ],
+          refetchQueries: [{ query: GET_PATIENT_CLINICAL_NOTES_QUERY, variables: { patientId, organizationId } }],
         });
         const response = data as CreateClinicalNoteResponse;
         result = response.createClinicalNote;
@@ -418,9 +392,7 @@ export function ClinicalNoteEditor({
       if (shouldSign && result) {
         await signNote({
           variables: { id: result.id },
-          refetchQueries: [
-            { query: GET_PATIENT_CLINICAL_NOTES_QUERY, variables: { patientId, organizationId } },
-          ],
+          refetchQueries: [{ query: GET_PATIENT_CLINICAL_NOTES_QUERY, variables: { patientId, organizationId } }],
         });
         toast.success('Notatka została podpisana');
       }
@@ -467,9 +439,7 @@ export function ClinicalNoteEditor({
           <div className="space-y-6">
             <div className="text-center mb-6">
               <h3 className="text-lg font-semibold mb-2">Informacje podstawowe</h3>
-              <p className="text-sm text-muted-foreground">
-                Wybierz typ wizyty i datę
-              </p>
+              <p className="text-sm text-muted-foreground">Wybierz typ wizyty i datę</p>
             </div>
 
             <div className="max-w-md mx-auto space-y-4">
@@ -551,9 +521,7 @@ export function ClinicalNoteEditor({
           <div className="space-y-4">
             <div className="text-center mb-4">
               <h3 className="text-lg font-semibold mb-1">Wywiad (badanie podmiotowe)</h3>
-              <p className="text-sm text-muted-foreground">
-                Opisz dolegliwości i historię pacjenta
-              </p>
+              <p className="text-sm text-muted-foreground">Opisz dolegliwości i historię pacjenta</p>
             </div>
             <InterviewSectionForm
               data={sections.interview || {}}
@@ -568,9 +536,7 @@ export function ClinicalNoteEditor({
           <div className="space-y-4">
             <div className="text-center mb-4">
               <h3 className="text-lg font-semibold mb-1">Badanie przedmiotowe</h3>
-              <p className="text-sm text-muted-foreground">
-                Wyniki badania fizycznego
-              </p>
+              <p className="text-sm text-muted-foreground">Wyniki badania fizycznego</p>
             </div>
             <ExaminationSectionForm
               data={sections.examination || {}}
@@ -585,9 +551,7 @@ export function ClinicalNoteEditor({
           <div className="space-y-4">
             <div className="text-center mb-4">
               <h3 className="text-lg font-semibold mb-1">Rozpoznanie</h3>
-              <p className="text-sm text-muted-foreground">
-                Kody ICD-10, ICF i rozumowanie
-              </p>
+              <p className="text-sm text-muted-foreground">Kody ICD-10, ICF i rozumowanie</p>
             </div>
             <DiagnosisSectionForm
               data={sections.diagnosis || {}}
@@ -602,9 +566,7 @@ export function ClinicalNoteEditor({
           <div className="space-y-4">
             <div className="text-center mb-4">
               <h3 className="text-lg font-semibold mb-1">Plan terapii</h3>
-              <p className="text-sm text-muted-foreground">
-                Cele i planowane interwencje
-              </p>
+              <p className="text-sm text-muted-foreground">Cele i planowane interwencje</p>
             </div>
             <TreatmentPlanSectionForm
               data={sections.treatmentPlan || {}}
@@ -619,9 +581,7 @@ export function ClinicalNoteEditor({
           <div className="space-y-4">
             <div className="text-center mb-4">
               <h3 className="text-lg font-semibold mb-1">Przebieg wizyty</h3>
-              <p className="text-sm text-muted-foreground">
-                Opis wykonanych zabiegów i reakcji pacjenta
-              </p>
+              <p className="text-sm text-muted-foreground">Opis wykonanych zabiegów i reakcji pacjenta</p>
             </div>
             <VisitProgressSectionForm
               data={sections.visitProgress || {}}
@@ -636,9 +596,7 @@ export function ClinicalNoteEditor({
           <div className="space-y-4">
             <div className="text-center mb-4">
               <h3 className="text-lg font-semibold mb-1">Podsumowanie</h3>
-              <p className="text-sm text-muted-foreground">
-                Sprawdź dokumentację przed podpisaniem
-              </p>
+              <p className="text-sm text-muted-foreground">Sprawdź dokumentację przed podpisaniem</p>
             </div>
             <SummaryStep
               visitType={visitType}
@@ -693,9 +651,7 @@ export function ClinicalNoteEditor({
       </div>
 
       {/* Step content - scrollable area */}
-      <div className="flex-1 overflow-y-auto px-6 pb-4">
-        {renderStepContent()}
-      </div>
+      <div className="flex-1 overflow-y-auto px-6 pb-4">{renderStepContent()}</div>
 
       {/* Stepper footer - sticky at bottom */}
       <StepperFooter

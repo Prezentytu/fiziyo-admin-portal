@@ -1,25 +1,13 @@
-"use client";
+'use client';
 
-import { useState, useRef, useEffect, useCallback } from "react";
-import {
-  User,
-  Stethoscope,
-  Sparkles,
-  Loader2,
-  Check,
-  Zap,
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { cn } from "@/lib/utils";
-import { toast } from "sonner";
+import { useState, useRef, useEffect, useCallback } from 'react';
+import { User, Stethoscope, Sparkles, Loader2, Check, Zap } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 
 interface DualDescriptionTabsProps {
   /** Opis dla pacjenta */
@@ -39,7 +27,7 @@ interface DualDescriptionTabsProps {
   /** Dodatkowe klasy CSS */
   className?: string;
   /** data-testid */
-  "data-testid"?: string;
+  'data-testid'?: string;
 }
 
 /**
@@ -62,19 +50,19 @@ export function DualDescriptionTabs({
   onValidityChange,
   disabled = false,
   className,
-  "data-testid": testId,
+  'data-testid': testId,
 }: DualDescriptionTabsProps) {
-  const [activeTab, setActiveTab] = useState<"patient" | "clinical">("patient");
+  const [activeTab, setActiveTab] = useState<'patient' | 'clinical'>('patient');
   const [touchedFields, setTouchedFields] = useState<Set<string>>(new Set());
 
   // Patient description state
-  const [patientValue, setPatientValue] = useState(patientDescription || "");
+  const [patientValue, setPatientValue] = useState(patientDescription || '');
   const [isPatientEditing, setIsPatientEditing] = useState(false);
   const [isPatientSaving, setIsPatientSaving] = useState(false);
   const patientRef = useRef<HTMLTextAreaElement>(null);
 
   // Clinical description state
-  const [clinicalValue, setClinicalValue] = useState(clinicalDescription || "");
+  const [clinicalValue, setClinicalValue] = useState(clinicalDescription || '');
   const [isClinicalEditing, setIsClinicalEditing] = useState(false);
   const [isClinicalSaving, setIsClinicalSaving] = useState(false);
   const clinicalRef = useRef<HTMLTextAreaElement>(null);
@@ -85,18 +73,17 @@ export function DualDescriptionTabs({
   // Sync with external values
   useEffect(() => {
     if (!isPatientEditing) {
-      setPatientValue(patientDescription || "");
+      setPatientValue(patientDescription || '');
     }
   }, [patientDescription, isPatientEditing]);
 
   useEffect(() => {
     if (!isClinicalEditing) {
-      setClinicalValue(clinicalDescription || "");
+      setClinicalValue(clinicalDescription || '');
     }
   }, [clinicalDescription, isClinicalEditing]);
 
-  const isAiSuggested = (field: string) =>
-    aiSuggestedFields.has(field) && !touchedFields.has(field);
+  const isAiSuggested = (field: string) => aiSuggestedFields.has(field) && !touchedFields.has(field);
 
   const handleFieldFocus = useCallback(
     (field: string) => {
@@ -112,30 +99,30 @@ export function DualDescriptionTabs({
   const handlePatientEdit = () => {
     if (disabled) return;
     setIsPatientEditing(true);
-    handleFieldFocus("patientDescription");
+    handleFieldFocus('patientDescription');
     setTimeout(() => patientRef.current?.focus(), 0);
   };
 
   const handlePatientSave = async () => {
-    if (patientValue === (patientDescription || "")) {
+    if (patientValue === (patientDescription || '')) {
       setIsPatientEditing(false);
       return;
     }
 
     setIsPatientSaving(true);
     try {
-      await onFieldChange("patientDescription", patientValue || null);
+      await onFieldChange('patientDescription', patientValue || null);
       setIsPatientEditing(false);
-      toast.success("Opis pacjenta zapisany");
+      toast.success('Opis pacjenta zapisany');
     } catch {
-      toast.error("Nie udało się zapisać opisu");
+      toast.error('Nie udało się zapisać opisu');
     } finally {
       setIsPatientSaving(false);
     }
   };
 
   const handlePatientCancel = () => {
-    setPatientValue(patientDescription || "");
+    setPatientValue(patientDescription || '');
     setIsPatientEditing(false);
   };
 
@@ -143,37 +130,37 @@ export function DualDescriptionTabs({
   const handleClinicalEdit = () => {
     if (disabled) return;
     setIsClinicalEditing(true);
-    handleFieldFocus("clinicalDescription");
+    handleFieldFocus('clinicalDescription');
     setTimeout(() => clinicalRef.current?.focus(), 0);
   };
 
   const handleClinicalSave = async () => {
-    if (clinicalValue === (clinicalDescription || "")) {
+    if (clinicalValue === (clinicalDescription || '')) {
       setIsClinicalEditing(false);
       return;
     }
 
     setIsClinicalSaving(true);
     try {
-      await onFieldChange("clinicalDescription", clinicalValue || null);
+      await onFieldChange('clinicalDescription', clinicalValue || null);
       setIsClinicalEditing(false);
-      toast.success("Opis kliniczny zapisany");
+      toast.success('Opis kliniczny zapisany');
     } catch {
-      toast.error("Nie udało się zapisać opisu");
+      toast.error('Nie udało się zapisać opisu');
     } finally {
       setIsClinicalSaving(false);
     }
   };
 
   const handleClinicalCancel = () => {
-    setClinicalValue(clinicalDescription || "");
+    setClinicalValue(clinicalDescription || '');
     setIsClinicalEditing(false);
   };
 
   // AI: Translate clinical to patient
   const handleTranslateToPatient = async () => {
     if (!clinicalValue.trim()) {
-      toast.error("Najpierw wypełnij opis kliniczny");
+      toast.error('Najpierw wypełnij opis kliniczny');
       return;
     }
 
@@ -182,21 +169,21 @@ export function DualDescriptionTabs({
       // TODO: Podpiąć prawdziwy endpoint AI
       // Na razie mockup - prosty placeholder
       const simplifiedText = `[Tłumaczenie AI]\n\n${clinicalValue
-        .replace(/m\.\s*/g, "mięsień ")
-        .replace(/ćw\.\s*/g, "ćwiczenie ")
-        .replace(/aktywacja/gi, "napięcie")
-        .replace(/stabilizacja/gi, "utrzymanie")
+        .replace(/m\.\s*/g, 'mięsień ')
+        .replace(/ćw\.\s*/g, 'ćwiczenie ')
+        .replace(/aktywacja/gi, 'napięcie')
+        .replace(/stabilizacja/gi, 'utrzymanie')
         .substring(0, 500)}...`;
 
       setPatientValue(simplifiedText);
-      setActiveTab("patient");
+      setActiveTab('patient');
       setIsPatientEditing(true);
 
-      toast.success("Wygenerowano uproszczony opis", {
-        description: "Sprawdź i dostosuj tekst przed zapisaniem",
+      toast.success('Wygenerowano uproszczony opis', {
+        description: 'Sprawdź i dostosuj tekst przed zapisaniem',
       });
     } catch {
-      toast.error("Nie udało się przetłumaczyć opisu");
+      toast.error('Nie udało się przetłumaczyć opisu');
     } finally {
       setIsTranslating(false);
     }
@@ -215,13 +202,10 @@ export function DualDescriptionTabs({
 
   return (
     <TooltipProvider>
-      <div
-        className={cn("flex flex-col", className)}
-        data-testid={testId}
-      >
+      <div className={cn('flex flex-col', className)} data-testid={testId}>
         <Tabs
           value={activeTab}
-          onValueChange={(v) => setActiveTab(v as "patient" | "clinical")}
+          onValueChange={(v) => setActiveTab(v as 'patient' | 'clinical')}
           className="flex flex-col flex-1"
         >
           {/* Tab Header with Actions */}
@@ -234,9 +218,7 @@ export function DualDescriptionTabs({
               >
                 <User className="h-3.5 w-3.5" />
                 Pacjent
-                {isAiSuggested("patientDescription") && (
-                  <Zap className="h-3 w-3 text-purple-400" />
-                )}
+                {isAiSuggested('patientDescription') && <Zap className="h-3 w-3 text-purple-400" />}
               </TabsTrigger>
               <TabsTrigger
                 value="clinical"
@@ -245,15 +227,13 @@ export function DualDescriptionTabs({
               >
                 <Stethoscope className="h-3.5 w-3.5" />
                 Kliniczny
-                {isAiSuggested("clinicalDescription") && (
-                  <Zap className="h-3 w-3 text-purple-400" />
-                )}
+                {isAiSuggested('clinicalDescription') && <Zap className="h-3 w-3 text-purple-400" />}
               </TabsTrigger>
             </TabsList>
 
             {/* AI Actions */}
             <div className="flex items-center gap-2">
-              {activeTab === "patient" && clinicalValue.trim() && (
+              {activeTab === 'patient' && clinicalValue.trim() && (
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
@@ -283,10 +263,7 @@ export function DualDescriptionTabs({
           {/* Patient Tab */}
           <TabsContent
             value="patient"
-            className={cn(
-              "flex-1 mt-0",
-              isAiSuggested("patientDescription") && "ai-suggested rounded-lg"
-            )}
+            className={cn('flex-1 mt-0', isAiSuggested('patientDescription') && 'ai-suggested rounded-lg')}
           >
             {isPatientEditing ? (
               <div className="flex flex-col h-full">
@@ -295,31 +272,22 @@ export function DualDescriptionTabs({
                   value={patientValue}
                   onChange={(e) => setPatientValue(e.target.value)}
                   onKeyDown={(e) => {
-                    if (e.key === "Escape") handlePatientCancel();
-                    if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) handlePatientSave();
+                    if (e.key === 'Escape') handlePatientCancel();
+                    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) handlePatientSave();
                   }}
                   placeholder="Wpisz opis ćwiczenia zrozumiały dla pacjenta..."
                   disabled={isPatientSaving}
                   className={cn(
-                    "flex-1 min-h-[200px] resize-none text-base leading-relaxed border-primary bg-surface",
-                    isPatientSaving && "opacity-70"
+                    'flex-1 min-h-[200px] resize-none text-base leading-relaxed border-primary bg-surface',
+                    isPatientSaving && 'opacity-70'
                   )}
                   data-testid="dual-desc-patient-textarea"
                 />
                 <div className="flex items-center justify-end gap-2 mt-3">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handlePatientCancel}
-                    disabled={isPatientSaving}
-                  >
+                  <Button variant="ghost" size="sm" onClick={handlePatientCancel} disabled={isPatientSaving}>
                     Anuluj
                   </Button>
-                  <Button
-                    size="sm"
-                    onClick={handlePatientSave}
-                    disabled={isPatientSaving}
-                  >
+                  <Button size="sm" onClick={handlePatientSave} disabled={isPatientSaving}>
                     {isPatientSaving ? (
                       <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                     ) : (
@@ -334,9 +302,9 @@ export function DualDescriptionTabs({
                 onClick={handlePatientEdit}
                 disabled={disabled}
                 className={cn(
-                  "w-full text-left p-4 rounded-lg border transition-colors min-h-[140px]",
-                  "hover:border-primary/40 hover:bg-surface-light/50",
-                  patientValue ? "border-transparent" : "border-dashed border-border/40"
+                  'w-full text-left p-4 rounded-lg border transition-colors min-h-[140px]',
+                  'hover:border-primary/40 hover:bg-surface-light/50',
+                  patientValue ? 'border-transparent' : 'border-dashed border-border/40'
                 )}
                 data-testid="dual-desc-patient-display"
               >
@@ -355,10 +323,7 @@ export function DualDescriptionTabs({
           {/* Clinical Tab */}
           <TabsContent
             value="clinical"
-            className={cn(
-              "flex-1 mt-0",
-              isAiSuggested("clinicalDescription") && "ai-suggested rounded-lg"
-            )}
+            className={cn('flex-1 mt-0', isAiSuggested('clinicalDescription') && 'ai-suggested rounded-lg')}
           >
             {isClinicalEditing ? (
               <div className="flex flex-col h-full">
@@ -367,31 +332,22 @@ export function DualDescriptionTabs({
                   value={clinicalValue}
                   onChange={(e) => setClinicalValue(e.target.value)}
                   onKeyDown={(e) => {
-                    if (e.key === "Escape") handleClinicalCancel();
-                    if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) handleClinicalSave();
+                    if (e.key === 'Escape') handleClinicalCancel();
+                    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) handleClinicalSave();
                   }}
                   placeholder="Opis kliniczny: biomechanika, mięśnie aktywowane, wskazania medyczne..."
                   disabled={isClinicalSaving}
                   className={cn(
-                    "flex-1 min-h-[200px] resize-none text-base leading-relaxed border-primary bg-surface",
-                    isClinicalSaving && "opacity-70"
+                    'flex-1 min-h-[200px] resize-none text-base leading-relaxed border-primary bg-surface',
+                    isClinicalSaving && 'opacity-70'
                   )}
                   data-testid="dual-desc-clinical-textarea"
                 />
                 <div className="flex items-center justify-end gap-2 mt-3">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleClinicalCancel}
-                    disabled={isClinicalSaving}
-                  >
+                  <Button variant="ghost" size="sm" onClick={handleClinicalCancel} disabled={isClinicalSaving}>
                     Anuluj
                   </Button>
-                  <Button
-                    size="sm"
-                    onClick={handleClinicalSave}
-                    disabled={isClinicalSaving}
-                  >
+                  <Button size="sm" onClick={handleClinicalSave} disabled={isClinicalSaving}>
                     {isClinicalSaving ? (
                       <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                     ) : (
@@ -406,9 +362,9 @@ export function DualDescriptionTabs({
                 onClick={handleClinicalEdit}
                 disabled={disabled}
                 className={cn(
-                  "w-full text-left p-4 rounded-lg border transition-colors min-h-[200px]",
-                  "hover:border-primary/40 hover:bg-surface-light/50",
-                  clinicalValue ? "border-transparent" : "border-dashed border-border/40"
+                  'w-full text-left p-4 rounded-lg border transition-colors min-h-[200px]',
+                  'hover:border-primary/40 hover:bg-surface-light/50',
+                  clinicalValue ? 'border-transparent' : 'border-dashed border-border/40'
                 )}
                 data-testid="dual-desc-clinical-display"
               >

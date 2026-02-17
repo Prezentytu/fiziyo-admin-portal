@@ -1,4 +1,4 @@
-import { gql } from "@apollo/client";
+import { gql } from '@apollo/client';
 
 // ========================================
 // Billing Queries - Pay-as-you-go Model

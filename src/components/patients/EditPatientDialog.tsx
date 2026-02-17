@@ -46,12 +46,7 @@ function getPatientFormValues(patient: Patient | null) {
   };
 }
 
-export function EditPatientDialog({
-  open,
-  onOpenChange,
-  patient,
-  onSuccess,
-}: Readonly<EditPatientDialogProps>) {
+export function EditPatientDialog({ open, onOpenChange, patient, onSuccess }: Readonly<EditPatientDialogProps>) {
   // Track last synced patient ID to reset form only when patient changes
   const [lastSyncedPatientId, setLastSyncedPatientId] = useState<string | null>(null);
 
@@ -84,9 +79,7 @@ export function EditPatientDialog({
 
   // Mutation
   const [updatePatient, { loading }] = useMutation(UPDATE_SHADOW_PATIENT_MUTATION, {
-    refetchQueries: [
-      { query: GET_USER_BY_ID_QUERY, variables: { id: patient?.id } },
-    ],
+    refetchQueries: [{ query: GET_USER_BY_ID_QUERY, variables: { id: patient?.id } }],
     awaitRefetchQueries: true,
   });
 
@@ -155,7 +148,8 @@ export function EditPatientDialog({
               Edytuj dane pacjenta
             </DialogTitle>
             <DialogDescription>
-              Zmień dane dla pacjenta {patient.fullname || `${patient.personalData?.firstName} ${patient.personalData?.lastName}`}
+              Zmień dane dla pacjenta{' '}
+              {patient.fullname || `${patient.personalData?.firstName} ${patient.personalData?.lastName}`}
             </DialogDescription>
           </DialogHeader>
 
@@ -241,7 +235,12 @@ export function EditPatientDialog({
 
             {/* Actions */}
             <div className="flex justify-end gap-3 pt-2">
-              <Button variant="outline" onClick={handleCloseAttempt} disabled={loading} data-testid="edit-patient-cancel-btn">
+              <Button
+                variant="outline"
+                onClick={handleCloseAttempt}
+                disabled={loading}
+                data-testid="edit-patient-cancel-btn"
+              >
                 Anuluj
               </Button>
               <Button

@@ -63,39 +63,39 @@ export function PatientNotes({
   };
 
   // Handle AI action
-  const handleAIAction = useCallback(async (action: ClinicalNoteAction) => {
-    if (isAILoading) return;
+  const handleAIAction = useCallback(
+    async (action: ClinicalNoteAction) => {
+      if (isAILoading) return;
 
-    setIsAILoading(true);
-    setAiKeyPoints([]);
+      setIsAILoading(true);
+      setAiKeyPoints([]);
 
-    try {
-      const result = await aiService.assistClinicalNote(
-        editedNotes,
-        action,
-        patientContext,
-        exerciseSetContext
-      );
+      try {
+        const result = await aiService.assistClinicalNote(editedNotes, action, patientContext, exerciseSetContext);
 
-      if (result) {
-        setEditedNotes(result.suggestedNote);
-        if (result.keyPoints.length > 0) {
-          setAiKeyPoints(result.keyPoints);
+        if (result) {
+          setEditedNotes(result.suggestedNote);
+          if (result.keyPoints.length > 0) {
+            setAiKeyPoints(result.keyPoints);
+          }
+          toast.success(
+            action === 'expand'
+              ? 'Notatka rozwinięta'
+              : action === 'summarize'
+                ? 'Notatka podsumowana'
+                : 'Sugestie dodane'
+          );
+        } else {
+          toast.error('Nie udało się uzyskać sugestii AI');
         }
-        toast.success(
-          action === 'expand' ? 'Notatka rozwinięta' :
-          action === 'summarize' ? 'Notatka podsumowana' :
-          'Sugestie dodane'
-        );
-      } else {
-        toast.error('Nie udało się uzyskać sugestii AI');
+      } catch {
+        toast.error('Błąd AI - spróbuj ponownie');
+      } finally {
+        setIsAILoading(false);
       }
-    } catch {
-      toast.error('Błąd AI - spróbuj ponownie');
-    } finally {
-      setIsAILoading(false);
-    }
-  }, [editedNotes, patientContext, exerciseSetContext, isAILoading]);
+    },
+    [editedNotes, patientContext, exerciseSetContext, isAILoading]
+  );
 
   const [updateNotes, { loading }] = useMutation(UPDATE_PATIENT_NOTES_MUTATION, {
     refetchQueries: [{ query: GET_ALL_THERAPIST_PATIENTS_QUERY, variables: { therapistId, organizationId } }],
@@ -135,7 +135,13 @@ export function PatientNotes({
             Notatki
           </CardTitle>
           {!isEditing && (
-            <Button variant="ghost" size="sm" onClick={startEditing} className="h-8 text-xs gap-1.5" data-testid="patient-notes-add-btn">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={startEditing}
+              className="h-8 text-xs gap-1.5"
+              data-testid="patient-notes-add-btn"
+            >
               {hasNotes ? (
                 <>
                   <Pencil className="h-3.5 w-3.5" />
@@ -177,19 +183,12 @@ export function PatientNotes({
                     key={action.id}
                     variant="outline"
                     size="sm"
-                    className={cn(
-                      "h-7 text-xs gap-1",
-                      isAILoading && "opacity-50"
-                    )}
+                    className={cn('h-7 text-xs gap-1', isAILoading && 'opacity-50')}
                     onClick={() => handleAIAction(action.id)}
                     disabled={isAILoading || editedNotes.trim().length < 5}
                     title={action.description}
                   >
-                    {isAILoading ? (
-                      <Loader2 className="h-3 w-3 animate-spin" />
-                    ) : (
-                      <Icon className="h-3 w-3" />
-                    )}
+                    {isAILoading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Icon className="h-3 w-3" />}
                     {action.label}
                   </Button>
                 );
@@ -220,7 +219,12 @@ export function PatientNotes({
                   <X className="mr-1 h-3.5 w-3.5" />
                   Anuluj
                 </Button>
-                <Button size="sm" onClick={handleSave} disabled={loading || isAILoading} data-testid="patient-notes-save-btn">
+                <Button
+                  size="sm"
+                  onClick={handleSave}
+                  disabled={loading || isAILoading}
+                  data-testid="patient-notes-save-btn"
+                >
                   {loading ? (
                     <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />
                   ) : (

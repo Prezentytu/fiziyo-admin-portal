@@ -1,35 +1,21 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
-import { Loader2 } from "lucide-react";
+import * as React from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import { Loader2 } from 'lucide-react';
 
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 const exerciseFormSchema = z.object({
-  name: z.string().min(2, "Nazwa musi mieć min. 2 znaki").max(100, "Nazwa może mieć max. 100 znaków"),
+  name: z.string().min(2, 'Nazwa musi mieć min. 2 znaki').max(100, 'Nazwa może mieć max. 100 znaków'),
   description: z.string().optional(),
-  type: z.enum(["reps", "time"]),
+  type: z.enum(['reps', 'time']),
   sets: z.number().min(0).max(100).optional().nullable(),
   reps: z.number().min(0).max(1000).optional().nullable(),
   duration: z.number().min(0).max(3600).optional().nullable(),
@@ -37,8 +23,8 @@ const exerciseFormSchema = z.object({
   restReps: z.number().min(0).max(300).optional().nullable(),
   preparationTime: z.number().min(0).max(300).optional().nullable(),
   executionTime: z.number().min(0).max(300).optional().nullable(),
-  exerciseSide: z.enum(["none", "left", "right", "both"]).optional(),
-  videoUrl: z.string().url("Podaj prawidłowy URL").optional().or(z.literal("")),
+  exerciseSide: z.enum(['none', 'left', 'right', 'both']).optional(),
+  videoUrl: z.string().url('Podaj prawidłowy URL').optional().or(z.literal('')),
   notes: z.string().optional(),
 });
 
@@ -60,16 +46,16 @@ export function ExerciseForm({
   onSubmit,
   onCancel,
   isLoading = false,
-  submitLabel = "Zapisz",
+  submitLabel = 'Zapisz',
   onDirtyChange,
   secondaryAction,
 }: ExerciseFormProps) {
   const form = useForm<ExerciseFormValues>({
     resolver: zodResolver(exerciseFormSchema),
     defaultValues: {
-      name: "",
-      description: "",
-      type: "reps",
+      name: '',
+      description: '',
+      type: 'reps',
       sets: 3,
       reps: 10,
       duration: null,
@@ -77,14 +63,14 @@ export function ExerciseForm({
       restReps: 30,
       preparationTime: 5,
       executionTime: null,
-      exerciseSide: "none",
-      videoUrl: "",
-      notes: "",
+      exerciseSide: 'none',
+      videoUrl: '',
+      notes: '',
       ...defaultValues,
     },
   });
 
-  const watchType = form.watch("type");
+  const watchType = form.watch('type');
   const isDirty = form.formState.isDirty;
 
   // Notify parent about dirty state
@@ -96,7 +82,7 @@ export function ExerciseForm({
     try {
       await onSubmit(values);
     } catch (error) {
-      console.error("Błąd podczas zapisywania:", error);
+      console.error('Błąd podczas zapisywania:', error);
     }
   };
 
@@ -150,8 +136,12 @@ export function ExerciseForm({
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="reps" data-testid="exercise-form-type-option-reps">Powtórzenia</SelectItem>
-                    <SelectItem value="time" data-testid="exercise-form-type-option-time">Czasowe</SelectItem>
+                    <SelectItem value="reps" data-testid="exercise-form-type-option-reps">
+                      Powtórzenia
+                    </SelectItem>
+                    <SelectItem value="time" data-testid="exercise-form-type-option-time">
+                      Czasowe
+                    </SelectItem>
                   </SelectContent>
                 </Select>
                 <FormMessage />
@@ -196,7 +186,7 @@ export function ExerciseForm({
                     type="number"
                     min="0"
                     max="100"
-                    value={field.value ?? ""}
+                    value={field.value ?? ''}
                     onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : null)}
                   />
                 </FormControl>
@@ -205,7 +195,7 @@ export function ExerciseForm({
             )}
           />
 
-          {watchType === "reps" && (
+          {watchType === 'reps' && (
             <FormField
               control={form.control}
               name="reps"
@@ -217,7 +207,7 @@ export function ExerciseForm({
                       type="number"
                       min="0"
                       max="1000"
-                      value={field.value ?? ""}
+                      value={field.value ?? ''}
                       onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : null)}
                     />
                   </FormControl>
@@ -227,7 +217,7 @@ export function ExerciseForm({
             />
           )}
 
-          {watchType === "time" && (
+          {watchType === 'time' && (
             <FormField
               control={form.control}
               name="duration"
@@ -239,7 +229,7 @@ export function ExerciseForm({
                       type="number"
                       min="0"
                       max="3600"
-                      value={field.value ?? ""}
+                      value={field.value ?? ''}
                       onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : null)}
                     />
                   </FormControl>
@@ -262,7 +252,7 @@ export function ExerciseForm({
                     type="number"
                     min="0"
                     max="300"
-                    value={field.value ?? ""}
+                    value={field.value ?? ''}
                     onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : null)}
                   />
                 </FormControl>
@@ -283,7 +273,7 @@ export function ExerciseForm({
                     type="number"
                     min="0"
                     max="300"
-                    value={field.value ?? ""}
+                    value={field.value ?? ''}
                     onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : null)}
                   />
                 </FormControl>
@@ -306,7 +296,7 @@ export function ExerciseForm({
                     type="number"
                     min="0"
                     max="300"
-                    value={field.value ?? ""}
+                    value={field.value ?? ''}
                     onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : null)}
                   />
                 </FormControl>
@@ -326,7 +316,7 @@ export function ExerciseForm({
                     type="number"
                     min="0"
                     max="300"
-                    value={field.value ?? ""}
+                    value={field.value ?? ''}
                     onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : null)}
                   />
                 </FormControl>
@@ -358,11 +348,7 @@ export function ExerciseForm({
             <FormItem>
               <FormLabel>Notatki</FormLabel>
               <FormControl>
-                <Textarea
-                  placeholder="Dodatkowe uwagi dla fizjoterapeuty..."
-                  className="min-h-[80px]"
-                  {...field}
-                />
+                <Textarea placeholder="Dodatkowe uwagi dla fizjoterapeuty..." className="min-h-[80px]" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>

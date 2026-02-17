@@ -3,12 +3,7 @@
 import { useMemo } from 'react';
 import { Check, AlertCircle, FileEdit } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface CompletionBarProps {
   /** Completion percentage (0-100) */
@@ -104,31 +99,21 @@ export function CompletionBar({
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
-          <div
-            className={cn('w-full', className)}
-            data-testid="common-completion-bar"
-          >
+          <div className={cn('w-full', className)} data-testid="common-completion-bar">
             {/* Status text row */}
             <div className="flex items-center justify-between mb-1.5">
               <div className="flex items-center gap-1.5">
                 <StatusIcon className={cn('h-3.5 w-3.5', statusInfo.textClass)} />
-                <span className={cn('text-xs font-medium', statusInfo.textClass)}>
-                  {statusInfo.text}
-                </span>
+                <span className={cn('text-xs font-medium', statusInfo.textClass)}>{statusInfo.text}</span>
               </div>
-              <span className="text-xs text-muted-foreground font-medium">
-                {percentage}%
-              </span>
+              <span className="text-xs text-muted-foreground font-medium">{percentage}%</span>
             </div>
 
             {/* Progress bar container */}
             <div className="relative h-1.5 w-full rounded-full bg-surface-light overflow-hidden">
               {/* Animated progress indicator */}
               <div
-                className={cn(
-                  'h-full rounded-full transition-all duration-500 ease-out',
-                  barColorClass
-                )}
+                className={cn('h-full rounded-full transition-all duration-500 ease-out', barColorClass)}
                 style={{ width: `${percentage}%` }}
               />
 
@@ -178,11 +163,7 @@ export function CompletionBar({
             )}
           </div>
         </TooltipTrigger>
-        <TooltipContent
-          side="bottom"
-          className="max-w-xs text-xs"
-          data-testid="common-completion-bar-tooltip"
-        >
+        <TooltipContent side="bottom" className="max-w-xs text-xs" data-testid="common-completion-bar-tooltip">
           {tooltipContent}
         </TooltipContent>
       </Tooltip>

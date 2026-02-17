@@ -1,38 +1,35 @@
-"use client";
+'use client';
 
-import { use, useState, useCallback, useEffect, useMemo } from "react";
-import { useQuery, useMutation } from "@apollo/client/react";
-import { useRouter } from "next/navigation";
-import { ArrowLeft, FileText } from "lucide-react";
-import { toast } from "sonner";
+import { use, useState, useCallback, useEffect, useMemo } from 'react';
+import { useQuery, useMutation } from '@apollo/client/react';
+import { useRouter } from 'next/navigation';
+import { ArrowLeft, FileText } from 'lucide-react';
+import { toast } from 'sonner';
 
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
-import { EmptyState } from "@/components/shared/EmptyState";
-import { MasterVideoPlayer } from "@/components/verification/MasterVideoPlayer";
-import { RejectReasonDialog } from "@/components/verification/RejectReasonDialog";
-import { ApproveDialog } from "@/components/verification/ApproveDialog";
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
+import { EmptyState } from '@/components/shared/EmptyState';
+import { MasterVideoPlayer } from '@/components/verification/MasterVideoPlayer';
+import { RejectReasonDialog } from '@/components/verification/RejectReasonDialog';
+import { ApproveDialog } from '@/components/verification/ApproveDialog';
 
 // Clinical Operator UI Components - 3-Column Layout
-import { VerificationEditorPanel } from "@/components/verification/VerificationEditorPanel";
-import { VerdictPanel } from "@/components/verification/VerdictPanel";
-import { useExerciseValidation } from "@/components/verification/PublishGuardrails";
+import { VerificationEditorPanel } from '@/components/verification/VerificationEditorPanel';
+import { VerdictPanel } from '@/components/verification/VerdictPanel';
+import { useExerciseValidation } from '@/components/verification/PublishGuardrails';
 
-import { useSystemRole } from "@/hooks/useSystemRole";
-import { useVerificationHotkeys } from "@/hooks/useVerificationHotkeys";
+import { useSystemRole } from '@/hooks/useSystemRole';
+import { useVerificationHotkeys } from '@/hooks/useVerificationHotkeys';
 
-import { GET_EXERCISE_BY_ID_QUERY } from "@/graphql/queries/exercises.queries";
-import {
-  GET_PENDING_EXERCISES_QUERY,
-  GET_VERIFICATION_STATS_QUERY,
-} from "@/graphql/queries/adminExercises.queries";
+import { GET_EXERCISE_BY_ID_QUERY } from '@/graphql/queries/exercises.queries';
+import { GET_PENDING_EXERCISES_QUERY, GET_VERIFICATION_STATS_QUERY } from '@/graphql/queries/adminExercises.queries';
 import {
   APPROVE_EXERCISE_MUTATION,
   REJECT_EXERCISE_MUTATION,
   UPDATE_EXERCISE_FIELD_MUTATION,
-} from "@/graphql/mutations/adminExercises.mutations";
-import type { ExerciseByIdResponse } from "@/types/apollo";
+} from '@/graphql/mutations/adminExercises.mutations';
+import type { ExerciseByIdResponse } from '@/types/apollo';
 import type {
   AdminExercise,
   RejectionReason,
@@ -41,7 +38,7 @@ import type {
   GetPendingReviewExercisesResponse,
   GetVerificationStatsResponse,
   ExerciseRelationTarget,
-} from "@/graphql/types/adminExercise.types";
+} from '@/graphql/types/adminExercise.types';
 
 interface VerificationDetailPageProps {
   params: Promise<{ id: string }>;
@@ -70,7 +67,7 @@ export default function VerificationDetailPage({ params }: VerificationDetailPag
   // Dialog states
   const [isRejectDialogOpen, setIsRejectDialogOpen] = useState(false);
   const [isApproveDialogOpen, setIsApproveDialogOpen] = useState(false);
-  
+
   // Transition state - stays true after approval until redirect completes
   const [isTransitioning, setIsTransitioning] = useState(false);
 
@@ -82,7 +79,7 @@ export default function VerificationDetailPage({ params }: VerificationDetailPag
   });
 
   // Comment for author (for VerdictPanel)
-  const [authorComment, setAuthorComment] = useState("");
+  const [authorComment, setAuthorComment] = useState('');
 
   // Clinical safety checkbox (legacy - derived from checklist)
   const clinicalCheckboxChecked = Object.values(safetyChecklist).every(Boolean);
@@ -137,7 +134,7 @@ export default function VerificationDetailPage({ params }: VerificationDetailPag
         techniqueSafe: false,
         noContraindications: false,
       });
-      setAuthorComment("");
+      setAuthorComment('');
     }
   }, [data?.exerciseById]);
 
@@ -195,25 +192,13 @@ export default function VerificationDetailPage({ params }: VerificationDetailPag
   // MUTATIONS
   // ============================================
 
-  const [approveExercise, { loading: approving }] = useMutation<ApproveExerciseResponse>(
-    APPROVE_EXERCISE_MUTATION,
-    {
-      refetchQueries: [
-        { query: GET_PENDING_EXERCISES_QUERY },
-        { query: GET_VERIFICATION_STATS_QUERY },
-      ],
-    }
-  );
+  const [approveExercise, { loading: approving }] = useMutation<ApproveExerciseResponse>(APPROVE_EXERCISE_MUTATION, {
+    refetchQueries: [{ query: GET_PENDING_EXERCISES_QUERY }, { query: GET_VERIFICATION_STATS_QUERY }],
+  });
 
-  const [rejectExercise, { loading: rejecting }] = useMutation<RejectExerciseResponse>(
-    REJECT_EXERCISE_MUTATION,
-    {
-      refetchQueries: [
-        { query: GET_PENDING_EXERCISES_QUERY },
-        { query: GET_VERIFICATION_STATS_QUERY },
-      ],
-    }
-  );
+  const [rejectExercise, { loading: rejecting }] = useMutation<RejectExerciseResponse>(REJECT_EXERCISE_MUTATION, {
+    refetchQueries: [{ query: GET_PENDING_EXERCISES_QUERY }, { query: GET_VERIFICATION_STATS_QUERY }],
+  });
 
   const [updateExerciseField] = useMutation(UPDATE_EXERCISE_FIELD_MUTATION, {
     onCompleted: () => {
@@ -236,11 +221,8 @@ export default function VerificationDetailPage({ params }: VerificationDetailPag
       setIsSavingDraft(true);
       try {
         // Convert value to string for backend (expects string?)
-        const stringValue = value === null || value === undefined 
-          ? null 
-          : typeof value === 'string' 
-            ? value 
-            : JSON.stringify(value);
+        const stringValue =
+          value === null || value === undefined ? null : typeof value === 'string' ? value : JSON.stringify(value);
 
         await updateExerciseField({
           variables: {
@@ -262,7 +244,7 @@ export default function VerificationDetailPage({ params }: VerificationDetailPag
   const handleMainTagsChange = useCallback(
     async (newTags: string[]) => {
       setMainTags(newTags);
-      await handleFieldUpdate("mainTags", newTags);
+      await handleFieldUpdate('mainTags', newTags);
     },
     [handleFieldUpdate]
   );
@@ -270,7 +252,7 @@ export default function VerificationDetailPage({ params }: VerificationDetailPag
   const handleAdditionalTagsChange = useCallback(
     async (newTags: string[]) => {
       setAdditionalTags(newTags);
-      await handleFieldUpdate("additionalTags", newTags);
+      await handleFieldUpdate('additionalTags', newTags);
     },
     [handleFieldUpdate]
   );
@@ -299,24 +281,21 @@ export default function VerificationDetailPage({ params }: VerificationDetailPag
   );
 
   // Validation change handler (from new Clean Cockpit validation layer)
-  const handleValidationChange = useCallback(
-    (_isValid: boolean, fields: string[]) => {
-      setMissingFields(fields);
-    },
-    []
-  );
+  const handleValidationChange = useCallback((_isValid: boolean, fields: string[]) => {
+    setMissingFields(fields);
+  }, []);
 
   // Approve handler
   const handleApprove = useCallback(
     async (notes: string | null) => {
       // Lock UI immediately to prevent flash of unwanted state
       setIsTransitioning(true);
-      
+
       try {
         await approveExercise({
           variables: { exerciseId: id, reviewNotes: notes },
         });
-        toast.success("Ćwiczenie zostało zatwierdzone i opublikowane!");
+        toast.success('Ćwiczenie zostało zatwierdzone i opublikowane!');
         setIsApproveDialogOpen(false);
 
         // Auto-advance to next exercise or go back to list
@@ -325,11 +304,11 @@ export default function VerificationDetailPage({ params }: VerificationDetailPag
         if (nextId) {
           router.push(`/verification/${nextId}`);
         } else {
-          router.push("/verification");
+          router.push('/verification');
         }
       } catch (err) {
-        console.error("Błąd zatwierdzania:", err);
-        toast.error("Nie udało się zatwierdzić ćwiczenia");
+        console.error('Błąd zatwierdzania:', err);
+        toast.error('Nie udało się zatwierdzić ćwiczenia');
         setIsTransitioning(false); // Unlock on error
       }
     },
@@ -339,11 +318,11 @@ export default function VerificationDetailPage({ params }: VerificationDetailPag
   // Approve & Next (with checkbox validation)
   const handleApproveAndNext = useCallback(() => {
     if (!clinicalCheckboxChecked) {
-      toast.error("Zaznacz checkbox potwierdzający poprawność kliniczną");
+      toast.error('Zaznacz checkbox potwierdzający poprawność kliniczną');
       return;
     }
     if (!canPublish) {
-      toast.error("Popraw błędy walidacji przed zatwierdzeniem");
+      toast.error('Popraw błędy walidacji przed zatwierdzeniem');
       return;
     }
     setIsApproveDialogOpen(true);
@@ -356,7 +335,7 @@ export default function VerificationDetailPage({ params }: VerificationDetailPag
         await rejectExercise({
           variables: { exerciseId: id, rejectionReason: reason, notes: notesText },
         });
-        toast.success("Ćwiczenie zostało odrzucone z uwagami");
+        toast.success('Ćwiczenie zostało odrzucone z uwagami');
         setIsRejectDialogOpen(false);
 
         // Auto-advance to next exercise or go back to list
@@ -364,11 +343,11 @@ export default function VerificationDetailPage({ params }: VerificationDetailPag
         if (nextId) {
           router.push(`/verification/${nextId}`);
         } else {
-          router.push("/verification");
+          router.push('/verification');
         }
       } catch (err) {
-        console.error("Błąd odrzucania:", err);
-        toast.error("Nie udało się odrzucić ćwiczenia");
+        console.error('Błąd odrzucania:', err);
+        toast.error('Nie udało się odrzucić ćwiczenia');
       }
     },
     [rejectExercise, id, router, getNextExerciseId]
@@ -380,13 +359,13 @@ export default function VerificationDetailPage({ params }: VerificationDetailPag
     if (nextId) {
       router.push(`/verification/${nextId}`);
     } else {
-      router.push("/verification");
+      router.push('/verification');
     }
   }, [router, getNextExerciseId]);
 
   // Save draft handler
   const handleSaveDraft = useCallback(() => {
-    toast.success("Szkic zapisany");
+    toast.success('Szkic zapisany');
     setLastSavedTime(new Date());
   }, []);
 
@@ -403,7 +382,7 @@ export default function VerificationDetailPage({ params }: VerificationDetailPag
   // Handle request changes (send back to author)
   const handleRequestChanges = useCallback(async () => {
     if (!authorComment.trim()) {
-      toast.error("Wpisz komentarz dla autora");
+      toast.error('Wpisz komentarz dla autora');
       return;
     }
     setIsRejectDialogOpen(true);
@@ -431,11 +410,7 @@ export default function VerificationDetailPage({ params }: VerificationDetailPag
   if (!roleLoading && !canReviewExercises) {
     return (
       <div className="flex h-full items-center justify-center">
-        <EmptyState
-          icon={FileText}
-          title="Brak dostępu"
-          description="Nie masz uprawnień do weryfikacji ćwiczeń."
-        />
+        <EmptyState icon={FileText} title="Brak dostępu" description="Nie masz uprawnień do weryfikacji ćwiczeń." />
       </div>
     );
   }
@@ -482,9 +457,9 @@ export default function VerificationDetailPage({ params }: VerificationDetailPag
         <EmptyState
           icon={FileText}
           title="Nie znaleziono"
-          description={error ? `Błąd: ${error.message}` : "Ćwiczenie nie istnieje."}
+          description={error ? `Błąd: ${error.message}` : 'Ćwiczenie nie istnieje.'}
           actionLabel="Wróć do listy"
-          onAction={() => router.push("/verification")}
+          onAction={() => router.push('/verification')}
         />
       </div>
     );
@@ -498,7 +473,6 @@ export default function VerificationDetailPage({ params }: VerificationDetailPag
     <div className="h-[calc(100vh-4rem)] flex flex-col -m-6">
       {/* Main content area - 3 column layout 40/35/25 */}
       <div className="flex-1 flex flex-col lg:flex-row min-h-0">
-
         {/* LEFT COLUMN: Media Player (40% on desktop) */}
         <div className="h-[30vh] lg:h-auto lg:w-[40%] bg-zinc-950 border-b lg:border-b-0 lg:border-r border-border/20 flex flex-col min-h-0">
           {/* Compact Header: Back + Progress */}
@@ -506,7 +480,7 @@ export default function VerificationDetailPage({ params }: VerificationDetailPag
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => router.push("/verification")}
+              onClick={() => router.push('/verification')}
               className="text-zinc-400 hover:text-white -ml-2 h-8 px-3"
               data-testid="verification-back-btn"
             >

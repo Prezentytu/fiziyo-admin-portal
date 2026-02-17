@@ -1,4 +1,4 @@
-import { useEffect, useCallback, useRef } from "react";
+import { useEffect, useCallback, useRef } from 'react';
 
 interface UseVerificationHotkeysOptions {
   /** Callback: Zatwierdź i przejdź do następnego (CMD/CTRL + Enter) */
@@ -76,7 +76,7 @@ export function useVerificationHotkeys({
     const key = e.key.toLowerCase();
 
     // CMD/CTRL + Enter → Zatwierdź i Następne
-    if (isMod && key === "enter") {
+    if (isMod && key === 'enter') {
       e.preventDefault();
       // Nawet jeśli canApprove=false, callback może obsłużyć logikę (np. wyświetlić toast)
       if (!isEditingRef.current) {
@@ -86,21 +86,21 @@ export function useVerificationHotkeys({
     }
 
     // CMD/CTRL + S → Zapisz draft
-    if (isMod && key === "s") {
+    if (isMod && key === 's') {
       e.preventDefault();
       onSaveDraftRef.current?.();
       return;
     }
 
     // CMD/CTRL + D → Toggle checkbox bezpieczeństwa
-    if (isMod && key === "d") {
+    if (isMod && key === 'd') {
       e.preventDefault();
       onToggleClinicalCheckboxRef.current?.();
       return;
     }
 
     // CMD/CTRL + Backspace → Odrzuć
-    if (isMod && key === "backspace") {
+    if (isMod && key === 'backspace') {
       e.preventDefault();
       if (!isEditingRef.current) {
         onRejectRef.current();
@@ -109,7 +109,7 @@ export function useVerificationHotkeys({
     }
 
     // Escape → Pomiń (tylko gdy nie ma edycji)
-    if (key === "escape" && !isMod && !isShift) {
+    if (key === 'escape' && !isMod && !isShift) {
       // Nie preventDefault - pozwól na native behavior dla zamykania modali
       if (!isEditingRef.current) {
         onSkipRef.current?.();
@@ -119,8 +119,8 @@ export function useVerificationHotkeys({
   }, []);
 
   useEffect(() => {
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
   }, [handleKeyDown]);
 }
 
@@ -134,9 +134,9 @@ export function useIsEditingDetection(): boolean {
     if (!activeElement) return false;
 
     const tagName = activeElement.tagName.toLowerCase();
-    const isInput = tagName === "input" || tagName === "textarea";
-    const isContentEditable = activeElement.getAttribute("contenteditable") === "true";
-    const isSelect = tagName === "select";
+    const isInput = tagName === 'input' || tagName === 'textarea';
+    const isContentEditable = activeElement.getAttribute('contenteditable') === 'true';
+    const isSelect = tagName === 'select';
 
     return isInput || isContentEditable || isSelect;
   }, []);
@@ -149,16 +149,16 @@ export function useIsEditingDetection(): boolean {
  * Clinical Operator UI - Extended shortcuts
  */
 export function KeyboardShortcutsHint() {
-  const isMac = typeof navigator !== "undefined" && navigator.platform.includes("Mac");
-  const modKey = isMac ? "⌘" : "Ctrl";
+  const isMac = typeof navigator !== 'undefined' && navigator.platform.includes('Mac');
+  const modKey = isMac ? '⌘' : 'Ctrl';
 
   const shortcuts = [
-    { keys: `${modKey}+↵`, label: "Zatwierdź i Następne", primary: true },
-    { keys: `${modKey}+D`, label: "Toggle checkbox", primary: false },
-    { keys: `${modKey}+⌫`, label: "Odrzuć", primary: false },
-    { keys: `${modKey}+S`, label: "Zapisz draft", primary: false },
-    { keys: "Esc", label: "Pomiń", primary: false },
-    { keys: "Tab", label: "Następne pole", primary: false },
+    { keys: `${modKey}+↵`, label: 'Zatwierdź i Następne', primary: true },
+    { keys: `${modKey}+D`, label: 'Toggle checkbox', primary: false },
+    { keys: `${modKey}+⌫`, label: 'Odrzuć', primary: false },
+    { keys: `${modKey}+S`, label: 'Zapisz draft', primary: false },
+    { keys: 'Esc', label: 'Pomiń', primary: false },
+    { keys: 'Tab', label: 'Następne pole', primary: false },
   ];
 
   return (
@@ -166,14 +166,12 @@ export function KeyboardShortcutsHint() {
       <p className="font-semibold mb-2">Skróty klawiszowe</p>
       {shortcuts.map(({ keys, label, primary }) => (
         <div key={keys} className="flex items-center justify-between gap-4">
-          <span className={primary ? "text-foreground font-medium" : "text-muted-foreground"}>
-            {label}
-          </span>
-          <kbd className={`px-1.5 py-0.5 text-[10px] rounded border font-mono ${
-            primary
-              ? "bg-primary/20 border-primary/30 text-primary"
-              : "bg-muted border-border"
-          }`}>
+          <span className={primary ? 'text-foreground font-medium' : 'text-muted-foreground'}>{label}</span>
+          <kbd
+            className={`px-1.5 py-0.5 text-[10px] rounded border font-mono ${
+              primary ? 'bg-primary/20 border-primary/30 text-primary' : 'bg-muted border-border'
+            }`}
+          >
             {keys}
           </kbd>
         </div>
@@ -186,16 +184,16 @@ export function KeyboardShortcutsHint() {
  * Formatuje skrót klawiszowy dla wyświetlania
  */
 export function formatShortcut(shortcut: string): string {
-  const isMac = typeof navigator !== "undefined" && navigator.platform.includes("Mac");
+  const isMac = typeof navigator !== 'undefined' && navigator.platform.includes('Mac');
 
   return shortcut
-    .replace(/mod/gi, isMac ? "⌘" : "Ctrl")
-    .replace(/ctrl/gi, isMac ? "⌘" : "Ctrl")
-    .replace(/cmd/gi, "⌘")
-    .replace(/alt/gi, isMac ? "⌥" : "Alt")
-    .replace(/shift/gi, "⇧")
-    .replace(/enter/gi, "↵")
-    .replace(/backspace/gi, "⌫")
-    .replace(/escape/gi, "Esc")
-    .replace(/\+/g, " + ");
+    .replace(/mod/gi, isMac ? '⌘' : 'Ctrl')
+    .replace(/ctrl/gi, isMac ? '⌘' : 'Ctrl')
+    .replace(/cmd/gi, '⌘')
+    .replace(/alt/gi, isMac ? '⌥' : 'Alt')
+    .replace(/shift/gi, '⇧')
+    .replace(/enter/gi, '↵')
+    .replace(/backspace/gi, '⌫')
+    .replace(/escape/gi, 'Esc')
+    .replace(/\+/g, ' + ');
 }

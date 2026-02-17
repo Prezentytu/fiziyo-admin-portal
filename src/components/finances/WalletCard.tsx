@@ -1,15 +1,15 @@
-"use client";
+'use client';
 
-import { useMemo } from "react";
-import { useQuery } from "@apollo/client/react";
-import CountUp from "react-countup";
-import { Wallet, TrendingUp, Clock, CheckCircle, Sparkles, Users } from "lucide-react";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Badge } from "@/components/ui/badge";
-import { Logo } from "@/components/shared/Logo";
-import { GET_ORGANIZATION_EARNINGS_QUERY, GET_CURRENT_BILLING_STATUS_QUERY } from "@/graphql/queries";
-import type { GetOrganizationEarningsResponse, GetCurrentBillingStatusResponse } from "@/types/apollo";
-import { cn } from "@/lib/utils";
+import { useMemo } from 'react';
+import { useQuery } from '@apollo/client/react';
+import CountUp from 'react-countup';
+import { Wallet, TrendingUp, Clock, CheckCircle, Sparkles, Users } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Badge } from '@/components/ui/badge';
+import { Logo } from '@/components/shared/Logo';
+import { GET_ORGANIZATION_EARNINGS_QUERY, GET_CURRENT_BILLING_STATUS_QUERY } from '@/graphql/queries';
+import type { GetOrganizationEarningsResponse, GetCurrentBillingStatusResponse } from '@/types/apollo';
+import { cn } from '@/lib/utils';
 
 // ========================================
 // Types
@@ -26,20 +26,17 @@ interface WalletCardProps {
 
 export function WalletCard({ organizationId, className }: WalletCardProps) {
   // Fetch earnings data (Revenue Share)
-  const { data, loading, error } = useQuery<GetOrganizationEarningsResponse>(
-    GET_ORGANIZATION_EARNINGS_QUERY,
-    {
-      variables: { organizationId: organizationId || "" },
-      skip: !organizationId,
-      errorPolicy: "all",
-    }
-  );
+  const { data, loading, error } = useQuery<GetOrganizationEarningsResponse>(GET_ORGANIZATION_EARNINGS_QUERY, {
+    variables: { organizationId: organizationId || '' },
+    skip: !organizationId,
+    errorPolicy: 'all',
+  });
 
   // Fetch billing status (Pay-as-you-go / Pilot Mode)
   const { data: billingData } = useQuery<GetCurrentBillingStatusResponse>(GET_CURRENT_BILLING_STATUS_QUERY, {
-    variables: { organizationId: organizationId || "" },
+    variables: { organizationId: organizationId || '' },
     skip: !organizationId,
-    errorPolicy: "all",
+    errorPolicy: 'all',
   });
 
   const earnings = data?.organizationEarnings;
@@ -87,9 +84,9 @@ export function WalletCard({ organizationId, className }: WalletCardProps) {
     return (
       <div
         className={cn(
-          "relative overflow-hidden rounded-xl border border-white/10",
-          "bg-gradient-to-br from-emerald-900 via-zinc-900 to-black",
-          "p-6 h-full min-h-[200px]",
+          'relative overflow-hidden rounded-xl border border-white/10',
+          'bg-gradient-to-br from-emerald-900 via-zinc-900 to-black',
+          'p-6 h-full min-h-[200px]',
           className
         )}
       >
@@ -107,9 +104,9 @@ export function WalletCard({ organizationId, className }: WalletCardProps) {
     return (
       <div
         className={cn(
-          "relative overflow-hidden rounded-xl border border-white/10",
-          "bg-gradient-to-br from-zinc-900 via-zinc-900 to-black",
-          "p-6 h-full min-h-[200px] flex items-center justify-center",
+          'relative overflow-hidden rounded-xl border border-white/10',
+          'bg-gradient-to-br from-zinc-900 via-zinc-900 to-black',
+          'p-6 h-full min-h-[200px] flex items-center justify-center',
           className
         )}
       >
@@ -123,16 +120,16 @@ export function WalletCard({ organizationId, className }: WalletCardProps) {
 
   // Determine status
   const isReady = displayData.stripeOnboardingComplete;
-  const statusText = isReady ? "Gotowe do wypłaty" : "Skonfiguruj wypłaty";
+  const statusText = isReady ? 'Gotowe do wypłaty' : 'Skonfiguruj wypłaty';
   const StatusIcon = isReady ? CheckCircle : Clock;
 
   return (
     <div
       className={cn(
-        "relative overflow-hidden rounded-xl border border-white/10",
-        "bg-gradient-to-br from-emerald-900 via-zinc-900 to-black",
-        "shadow-2xl transition-transform duration-300 hover:scale-[1.01]",
-        "h-full min-h-[200px]",
+        'relative overflow-hidden rounded-xl border border-white/10',
+        'bg-gradient-to-br from-emerald-900 via-zinc-900 to-black',
+        'shadow-2xl transition-transform duration-300 hover:scale-[1.01]',
+        'h-full min-h-[200px]',
         className
       )}
     >
@@ -156,9 +153,7 @@ export function WalletCard({ organizationId, className }: WalletCardProps) {
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <Wallet className="h-5 w-5 text-emerald-400" />
-            <span className="text-sm font-medium text-zinc-400">
-              Dostępne środki
-            </span>
+            <span className="text-sm font-medium text-zinc-400">Dostępne środki</span>
           </div>
           {displayData.isPilotMode && (
             <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/30 gap-1">
@@ -224,28 +219,16 @@ export function WalletCard({ organizationId, className }: WalletCardProps) {
         {/* Footer - Status */}
         <div className="flex items-center justify-between mt-4 pt-4 border-t border-white/5">
           <div className="flex items-center gap-2">
-            <div
-              className={cn(
-                "h-2 w-2 rounded-full",
-                isReady ? "bg-emerald-500 animate-pulse" : "bg-amber-500"
-              )}
-            />
+            <div className={cn('h-2 w-2 rounded-full', isReady ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500')} />
             <span className="text-sm text-zinc-400">{statusText}</span>
-            <StatusIcon
-              className={cn(
-                "h-4 w-4",
-                isReady ? "text-emerald-400" : "text-amber-400"
-              )}
-            />
+            <StatusIcon className={cn('h-4 w-4', isReady ? 'text-emerald-400' : 'text-amber-400')} />
           </div>
 
           {/* Active Premium patients count */}
           <div className="flex items-center gap-1.5 text-xs">
             <Users className="h-3.5 w-3.5 text-emerald-400" />
-            <span className={cn(
-              displayData.premiumPatients > 0 ? "text-emerald-400 font-medium" : "text-zinc-500"
-            )}>
-              {displayData.premiumPatients} {displayData.premiumPatients === 1 ? "pacjent" : "pacjentów"} Premium
+            <span className={cn(displayData.premiumPatients > 0 ? 'text-emerald-400 font-medium' : 'text-zinc-500')}>
+              {displayData.premiumPatients} {displayData.premiumPatients === 1 ? 'pacjent' : 'pacjentów'} Premium
             </span>
           </div>
         </div>

@@ -1,12 +1,12 @@
-"use client";
+'use client';
 
-import { useQuery } from "@apollo/client/react";
-import Link from "next/link";
-import { Wallet, ChevronRight, Sparkles } from "lucide-react";
-import { Skeleton } from "@/components/ui/skeleton";
-import { cn } from "@/lib/utils";
-import { GET_CURRENT_BILLING_STATUS_QUERY } from "@/graphql/queries/billing.queries";
-import type { GetCurrentBillingStatusResponse } from "@/types/apollo";
+import { useQuery } from '@apollo/client/react';
+import Link from 'next/link';
+import { Wallet, ChevronRight, Sparkles } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
+import { cn } from '@/lib/utils';
+import { GET_CURRENT_BILLING_STATUS_QUERY } from '@/graphql/queries/billing.queries';
+import type { GetCurrentBillingStatusResponse } from '@/types/apollo';
 
 // ========================================
 // Types
@@ -26,19 +26,13 @@ interface BillingKpiCardProps {
  * Wyświetla: kwotę należności + liczbę aktywnych pacjentów Premium.
  * Zielona kwota = sukces, szara = brak aktywności.
  */
-export function BillingKpiCard({
-  organizationId,
-  className,
-}: BillingKpiCardProps) {
+export function BillingKpiCard({ organizationId, className }: BillingKpiCardProps) {
   // Fetch billing status
-  const { data, loading, error } = useQuery<GetCurrentBillingStatusResponse>(
-    GET_CURRENT_BILLING_STATUS_QUERY,
-    {
-      variables: { organizationId: organizationId || "" },
-      skip: !organizationId,
-      errorPolicy: "all",
-    }
-  );
+  const { data, loading, error } = useQuery<GetCurrentBillingStatusResponse>(GET_CURRENT_BILLING_STATUS_QUERY, {
+    variables: { organizationId: organizationId || '' },
+    skip: !organizationId,
+    errorPolicy: 'all',
+  });
 
   const billingStatus = data?.currentBillingStatus;
 
@@ -47,7 +41,7 @@ export function BillingKpiCard({
     return (
       <div
         className={cn(
-          "group relative overflow-hidden rounded-2xl border border-border/60 bg-surface p-5 lg:col-span-3",
+          'group relative overflow-hidden rounded-2xl border border-border/60 bg-surface p-5 lg:col-span-3',
           className
         )}
       >
@@ -69,17 +63,17 @@ export function BillingKpiCard({
 
   const { estimatedTotal, activePatientsInMonth, currency } = billingStatus;
   const hasActivity = activePatientsInMonth > 0;
-  const formattedAmount = `${estimatedTotal.toLocaleString("pl-PL")} ${currency}`;
+  const formattedAmount = `${estimatedTotal.toLocaleString('pl-PL')} ${currency}`;
 
   return (
     <Link
       href="/billing"
       data-testid="dashboard-billing-kpi-card"
       className={cn(
-        "group relative overflow-hidden rounded-2xl border border-border/60 bg-surface p-5",
-        "text-left transition-all duration-300",
-        "hover:border-primary/40 hover:bg-surface-light hover:shadow-lg",
-        "cursor-pointer lg:col-span-3 flex items-center",
+        'group relative overflow-hidden rounded-2xl border border-border/60 bg-surface p-5',
+        'text-left transition-all duration-300',
+        'hover:border-primary/40 hover:bg-surface-light hover:shadow-lg',
+        'cursor-pointer lg:col-span-3 flex items-center',
         className
       )}
     >
@@ -87,19 +81,14 @@ export function BillingKpiCard({
         {/* Icon */}
         <div
           className={cn(
-            "flex h-10 w-10 items-center justify-center rounded-xl shrink-0 transition-all duration-300",
+            'flex h-10 w-10 items-center justify-center rounded-xl shrink-0 transition-all duration-300',
             hasActivity
-              ? "bg-emerald-500/10 group-hover:bg-emerald-500/20"
-              : "bg-muted-foreground/10 group-hover:bg-muted-foreground/20",
-            "group-hover:scale-110"
+              ? 'bg-emerald-500/10 group-hover:bg-emerald-500/20'
+              : 'bg-muted-foreground/10 group-hover:bg-muted-foreground/20',
+            'group-hover:scale-110'
           )}
         >
-          <Wallet
-            className={cn(
-              "h-5 w-5",
-              hasActivity ? "text-emerald-500" : "text-muted-foreground"
-            )}
-          />
+          <Wallet className={cn('h-5 w-5', hasActivity ? 'text-emerald-500' : 'text-muted-foreground')} />
         </div>
 
         {/* Content */}
@@ -107,10 +96,10 @@ export function BillingKpiCard({
           {/* Kwota - zielona gdy > 0, szara gdy 0 */}
           <p
             className={cn(
-              "text-lg font-bold tabular-nums transition-colors",
+              'text-lg font-bold tabular-nums transition-colors',
               hasActivity
-                ? "text-emerald-500 group-hover:text-emerald-400"
-                : "text-muted-foreground group-hover:text-foreground"
+                ? 'text-emerald-500 group-hover:text-emerald-400'
+                : 'text-muted-foreground group-hover:text-foreground'
             )}
           >
             {formattedAmount}
@@ -118,9 +107,7 @@ export function BillingKpiCard({
 
           {/* Etykieta - dynamiczna */}
           {hasActivity ? (
-            <p className="text-xs text-muted-foreground">
-              {activePatientsInMonth} aktywnych Premium
-            </p>
+            <p className="text-xs text-muted-foreground">{activePatientsInMonth} aktywnych Premium</p>
           ) : (
             <p className="text-xs text-muted-foreground flex items-center gap-1">
               <Sparkles className="h-3 w-3" />
@@ -132,10 +119,10 @@ export function BillingKpiCard({
         {/* Arrow */}
         <ChevronRight
           className={cn(
-            "h-4 w-4 transition-all group-hover:translate-x-0.5 shrink-0",
+            'h-4 w-4 transition-all group-hover:translate-x-0.5 shrink-0',
             hasActivity
-              ? "text-emerald-500/30 group-hover:text-emerald-500"
-              : "text-muted-foreground/30 group-hover:text-muted-foreground"
+              ? 'text-emerald-500/30 group-hover:text-emerald-500'
+              : 'text-muted-foreground/30 group-hover:text-muted-foreground'
           )}
         />
       </div>

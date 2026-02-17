@@ -1,24 +1,12 @@
-"use client";
+'use client';
 
-import { useMemo } from "react";
-import {
-  History,
-  ArrowRight,
-  Tag,
-  FileText,
-  Settings,
-  Sparkles,
-} from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { cn } from "@/lib/utils";
+import { useMemo } from 'react';
+import { History, ArrowRight, Tag, FileText, Settings, Sparkles } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { cn } from '@/lib/utils';
 
 // Types
 export interface FieldChange {
@@ -46,27 +34,27 @@ interface ChangesSummaryProps {
   /** Dodatkowe klasy CSS */
   className?: string;
   /** data-testid */
-  "data-testid"?: string;
+  'data-testid'?: string;
 }
 
 // Field name translations
 const FIELD_LABELS: Record<string, string> = {
-  name: "Nazwa",
-  description: "Opis",
-  type: "Typ",
-  exerciseSide: "Strona",
-  sets: "Serie",
-  reps: "Powtórzenia",
-  duration: "Czas",
-  restBetweenSets: "Przerwa",
-  tempo: "Tempo",
-  audioCue: "Podpowiedź głosowa",
-  mainTags: "Tagi główne",
-  additionalTags: "Tagi dodatkowe",
-  videoUrl: "URL wideo",
-  gifUrl: "URL GIF",
-  images: "Zdjęcia",
-  notes: "Notatki",
+  name: 'Nazwa',
+  description: 'Opis',
+  type: 'Typ',
+  exerciseSide: 'Strona',
+  sets: 'Serie',
+  reps: 'Powtórzenia',
+  duration: 'Czas',
+  restBetweenSets: 'Przerwa',
+  tempo: 'Tempo',
+  audioCue: 'Podpowiedź głosowa',
+  mainTags: 'Tagi główne',
+  additionalTags: 'Tagi dodatkowe',
+  videoUrl: 'URL wideo',
+  gifUrl: 'URL GIF',
+  images: 'Zdjęcia',
+  notes: 'Notatki',
 };
 
 // Field icons
@@ -96,7 +84,7 @@ export function ChangesSummary({
   maxVisible = 10,
   showDetails = true,
   className,
-  "data-testid": testId,
+  'data-testid': testId,
 }: ChangesSummaryProps) {
   // Sort changes by timestamp (newest first)
   const sortedChanges = useMemo(
@@ -123,7 +111,7 @@ export function ChangesSummary({
 
   if (changes.length === 0) {
     return (
-      <Card className={cn("border-border/60", className)} data-testid={testId}>
+      <Card className={cn('border-border/60', className)} data-testid={testId}>
         <CardHeader className="pb-2">
           <CardTitle className="text-sm font-medium flex items-center gap-2 text-muted-foreground">
             <History className="h-4 w-4" />
@@ -131,16 +119,14 @@ export function ChangesSummary({
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-muted-foreground italic">
-            Brak zmian. Dane oryginalne.
-          </p>
+          <p className="text-sm text-muted-foreground italic">Brak zmian. Dane oryginalne.</p>
         </CardContent>
       </Card>
     );
   }
 
   return (
-    <Card className={cn("border-border/60", className)} data-testid={testId}>
+    <Card className={cn('border-border/60', className)} data-testid={testId}>
       <CardHeader className="pb-2">
         <CardTitle className="text-sm font-medium flex items-center justify-between">
           <span className="flex items-center gap-2">
@@ -149,13 +135,10 @@ export function ChangesSummary({
           </span>
           <div className="flex items-center gap-2">
             <Badge variant="secondary" className="text-[10px]">
-              {changes.length} {changes.length === 1 ? "zmiana" : "zmian"}
+              {changes.length} {changes.length === 1 ? 'zmiana' : 'zmian'}
             </Badge>
             {aiAssistedCount > 0 && (
-              <Badge
-                variant="outline"
-                className="text-[10px] border-amber-500/40 text-amber-600"
-              >
+              <Badge variant="outline" className="text-[10px] border-amber-500/40 text-amber-600">
                 <Sparkles className="h-3 w-3 mr-1" />
                 {aiAssistedCount} AI
               </Badge>
@@ -173,24 +156,21 @@ export function ChangesSummary({
                   <Badge
                     variant="outline"
                     className={cn(
-                      "text-[10px] cursor-help",
+                      'text-[10px] cursor-help',
                       fieldChanges.some((c) => c.isAIAssisted)
-                        ? "border-amber-500/40 text-amber-600"
-                        : "border-primary/40 text-primary"
+                        ? 'border-amber-500/40 text-amber-600'
+                        : 'border-primary/40 text-primary'
                     )}
                   >
                     {FIELD_ICONS[field] || <Settings className="h-3 w-3" />}
-                    <span className="ml-1">
-                      {FIELD_LABELS[field] || field}
-                    </span>
-                    {fieldChanges.length > 1 && (
-                      <span className="ml-1 opacity-60">×{fieldChanges.length}</span>
-                    )}
+                    <span className="ml-1">{FIELD_LABELS[field] || field}</span>
+                    {fieldChanges.length > 1 && <span className="ml-1 opacity-60">×{fieldChanges.length}</span>}
                   </Badge>
                 </TooltipTrigger>
                 <TooltipContent>
                   <p className="text-xs">
-                    {fieldChanges.length} {fieldChanges.length === 1 ? "zmiana" : "zmiany"} w polu &quot;{FIELD_LABELS[field] || field}&quot;
+                    {fieldChanges.length} {fieldChanges.length === 1 ? 'zmiana' : 'zmiany'} w polu &quot;
+                    {FIELD_LABELS[field] || field}&quot;
                   </p>
                 </TooltipContent>
               </Tooltip>
@@ -206,9 +186,7 @@ export function ChangesSummary({
                 <ChangeItem key={`${change.field}-${idx}`} change={change} />
               ))}
               {hiddenCount > 0 && (
-                <p className="text-xs text-muted-foreground text-center py-2">
-                  +{hiddenCount} więcej zmian
-                </p>
+                <p className="text-xs text-muted-foreground text-center py-2">+{hiddenCount} więcej zmian</p>
               )}
             </div>
           </ScrollArea>
@@ -222,18 +200,18 @@ export function ChangesSummary({
  * Single change item
  */
 function ChangeItem({ change }: { change: FieldChange }) {
-  const formattedTime = change.timestamp.toLocaleTimeString("pl-PL", {
-    hour: "2-digit",
-    minute: "2-digit",
+  const formattedTime = change.timestamp.toLocaleTimeString('pl-PL', {
+    hour: '2-digit',
+    minute: '2-digit',
   });
 
   const formatValue = (value: unknown): string => {
-    if (value === null || value === undefined) return "—";
+    if (value === null || value === undefined) return '—';
     if (Array.isArray(value)) {
-      if (value.length === 0) return "—";
-      return value.join(", ");
+      if (value.length === 0) return '—';
+      return value.join(', ');
     }
-    if (typeof value === "object") return JSON.stringify(value);
+    if (typeof value === 'object') return JSON.stringify(value);
     return String(value);
   };
 
@@ -241,8 +219,7 @@ function ChangeItem({ change }: { change: FieldChange }) {
   const newFormatted = formatValue(change.newValue);
 
   // Truncate long values
-  const truncate = (str: string, max: number = 30) =>
-    str.length > max ? `${str.slice(0, max)}...` : str;
+  const truncate = (str: string, max: number = 30) => (str.length > max ? `${str.slice(0, max)}...` : str);
 
   return (
     <div className="flex items-start gap-2 text-xs p-2 rounded-md bg-muted/30">
@@ -258,14 +235,9 @@ function ChangeItem({ change }: { change: FieldChange }) {
       {/* Content */}
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-1.5 mb-0.5">
-          <span className="font-medium">
-            {FIELD_LABELS[change.field] || change.field}
-          </span>
+          <span className="font-medium">{FIELD_LABELS[change.field] || change.field}</span>
           {change.isAIAssisted && (
-            <Badge
-              variant="outline"
-              className="text-[8px] px-1 py-0 border-amber-500/40 text-amber-600"
-            >
+            <Badge variant="outline" className="text-[8px] px-1 py-0 border-amber-500/40 text-amber-600">
               AI
             </Badge>
           )}
@@ -282,9 +254,7 @@ function ChangeItem({ change }: { change: FieldChange }) {
       </div>
 
       {/* Time */}
-      <div className="text-[10px] text-muted-foreground shrink-0">
-        {formattedTime}
-      </div>
+      <div className="text-[10px] text-muted-foreground shrink-0">{formattedTime}</div>
     </div>
   );
 }
@@ -297,24 +267,18 @@ interface ChangesSummaryCompactProps {
   className?: string;
 }
 
-export function ChangesSummaryCompact({
-  changes,
-  className,
-}: ChangesSummaryCompactProps) {
+export function ChangesSummaryCompact({ changes, className }: ChangesSummaryCompactProps) {
   if (changes.length === 0) return null;
 
   const aiCount = changes.filter((c) => c.isAIAssisted).length;
 
   return (
-    <div className={cn("flex items-center gap-2 text-xs", className)}>
+    <div className={cn('flex items-center gap-2 text-xs', className)}>
       <Badge variant="secondary" className="text-[10px]">
-        {changes.length} {changes.length === 1 ? "zmiana" : "zmian"}
+        {changes.length} {changes.length === 1 ? 'zmiana' : 'zmian'}
       </Badge>
       {aiCount > 0 && (
-        <Badge
-          variant="outline"
-          className="text-[10px] border-amber-500/40 text-amber-600"
-        >
+        <Badge variant="outline" className="text-[10px] border-amber-500/40 text-amber-600">
           <Sparkles className="h-3 w-3 mr-1" />
           {aiCount} AI
         </Badge>
@@ -330,11 +294,7 @@ export function useChangeTracking(initialValues: Record<string, unknown>) {
   const changesRef = { current: [] as FieldChange[] };
   const initialRef = { current: initialValues };
 
-  const trackChange = (
-    field: string,
-    newValue: unknown,
-    isAIAssisted = false
-  ) => {
+  const trackChange = (field: string, newValue: unknown, isAIAssisted = false) => {
     const oldValue = initialRef.current[field];
 
     // Don't track if value hasn't changed

@@ -1,20 +1,15 @@
-"use client";
+'use client';
 
-import { useMemo } from "react";
-import { useQuery } from "@apollo/client/react";
-import { CreditCard, Users, Tag, FileText, Calendar } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { cn } from "@/lib/utils";
-import { GET_CURRENT_BILLING_STATUS_QUERY } from "@/graphql/queries/billing.queries";
-import type { GetCurrentBillingStatusResponse } from "@/types/apollo";
+import { useMemo } from 'react';
+import { useQuery } from '@apollo/client/react';
+import { CreditCard, Users, Tag, FileText, Calendar } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { cn } from '@/lib/utils';
+import { GET_CURRENT_BILLING_STATUS_QUERY } from '@/graphql/queries/billing.queries';
+import type { GetCurrentBillingStatusResponse } from '@/types/apollo';
 
 // ========================================
 // Types
@@ -31,14 +26,24 @@ interface BillingHeroCardProps {
 
 function formatPolishMonthYear(month: number, year: number): string {
   const months = [
-    "Styczeń", "Luty", "Marzec", "Kwiecień", "Maj", "Czerwiec",
-    "Lipiec", "Sierpień", "Wrzesień", "Październik", "Listopad", "Grudzień"
+    'Styczeń',
+    'Luty',
+    'Marzec',
+    'Kwiecień',
+    'Maj',
+    'Czerwiec',
+    'Lipiec',
+    'Sierpień',
+    'Wrzesień',
+    'Październik',
+    'Listopad',
+    'Grudzień',
   ];
   return `${months[month - 1]} ${year}`;
 }
 
 function formatCurrency(amount: number): string {
-  return amount.toLocaleString("pl-PL", {
+  return amount.toLocaleString('pl-PL', {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   });
@@ -50,14 +55,11 @@ function formatCurrency(amount: number): string {
 
 export function BillingHeroCard({ organizationId, className }: BillingHeroCardProps) {
   // Fetch billing status
-  const { data, loading, error } = useQuery<GetCurrentBillingStatusResponse>(
-    GET_CURRENT_BILLING_STATUS_QUERY,
-    {
-      variables: { organizationId: organizationId || "" },
-      skip: !organizationId,
-      errorPolicy: "all",
-    }
-  );
+  const { data, loading, error } = useQuery<GetCurrentBillingStatusResponse>(GET_CURRENT_BILLING_STATUS_QUERY, {
+    variables: { organizationId: organizationId || '' },
+    skip: !organizationId,
+    errorPolicy: 'all',
+  });
 
   const billingStatus = data?.currentBillingStatus;
 
@@ -65,14 +67,7 @@ export function BillingHeroCard({ organizationId, className }: BillingHeroCardPr
   const displayData = useMemo(() => {
     if (!billingStatus) return null;
 
-    const {
-      activePatientsInMonth,
-      pricePerPatient,
-      estimatedTotal,
-      currency,
-      month,
-      year,
-    } = billingStatus;
+    const { activePatientsInMonth, pricePerPatient, estimatedTotal, currency, month, year } = billingStatus;
 
     return {
       activePatients: activePatientsInMonth,
@@ -89,7 +84,7 @@ export function BillingHeroCard({ organizationId, className }: BillingHeroCardPr
     return (
       <div
         className={cn(
-          "relative overflow-hidden rounded-2xl bg-gradient-to-br from-zinc-900 via-zinc-900 to-zinc-950 border border-zinc-800 p-6",
+          'relative overflow-hidden rounded-2xl bg-gradient-to-br from-zinc-900 via-zinc-900 to-zinc-950 border border-zinc-800 p-6',
           className
         )}
         data-testid="billing-hero-card"
@@ -114,7 +109,7 @@ export function BillingHeroCard({ organizationId, className }: BillingHeroCardPr
     return (
       <div
         className={cn(
-          "relative overflow-hidden rounded-2xl bg-gradient-to-br from-zinc-900 via-zinc-900 to-zinc-950 border border-zinc-800 p-6",
+          'relative overflow-hidden rounded-2xl bg-gradient-to-br from-zinc-900 via-zinc-900 to-zinc-950 border border-zinc-800 p-6',
           className
         )}
         data-testid="billing-hero-card"
@@ -123,12 +118,8 @@ export function BillingHeroCard({ organizationId, className }: BillingHeroCardPr
           <div className="h-12 w-12 rounded-xl bg-zinc-800 flex items-center justify-center mb-3">
             <CreditCard className="h-6 w-6 text-zinc-500" />
           </div>
-          <p className="text-sm font-medium text-zinc-400">
-            Nie udało się pobrać danych rozliczeniowych
-          </p>
-          <p className="text-xs text-zinc-500 mt-1">
-            {error?.message || "Spróbuj ponownie później"}
-          </p>
+          <p className="text-sm font-medium text-zinc-400">Nie udało się pobrać danych rozliczeniowych</p>
+          <p className="text-xs text-zinc-500 mt-1">{error?.message || 'Spróbuj ponownie później'}</p>
         </div>
       </div>
     );
@@ -137,7 +128,7 @@ export function BillingHeroCard({ organizationId, className }: BillingHeroCardPr
   return (
     <div
       className={cn(
-        "group relative overflow-hidden rounded-2xl bg-gradient-to-br from-zinc-900 via-zinc-900 to-zinc-950 border border-zinc-800 p-6 transition-all duration-300 hover:shadow-xl hover:shadow-primary/10",
+        'group relative overflow-hidden rounded-2xl bg-gradient-to-br from-zinc-900 via-zinc-900 to-zinc-950 border border-zinc-800 p-6 transition-all duration-300 hover:shadow-xl hover:shadow-primary/10',
         className
       )}
       data-testid="billing-hero-card"
@@ -157,9 +148,7 @@ export function BillingHeroCard({ organizationId, className }: BillingHeroCardPr
               <CreditCard className="h-5 w-5 text-primary" />
             </div>
             <div className="flex items-center gap-2">
-              <h2 className="text-sm font-medium text-zinc-400">
-                Bieżące Rozliczenie
-              </h2>
+              <h2 className="text-sm font-medium text-zinc-400">Bieżące Rozliczenie</h2>
               <Badge variant="secondary" className="gap-1.5 bg-zinc-800 text-zinc-300 border-0">
                 <Calendar className="h-3 w-3" />
                 {displayData.period}
@@ -176,23 +165,22 @@ export function BillingHeroCard({ organizationId, className }: BillingHeroCardPr
                     data-testid="billing-hero-amount"
                   >
                     {displayData.formattedAmount}
-                    <span className="text-xl sm:text-2xl text-zinc-400 ml-2">
-                      {displayData.currency}
-                    </span>
+                    <span className="text-xl sm:text-2xl text-zinc-400 ml-2">{displayData.currency}</span>
                   </p>
                 </div>
               </TooltipTrigger>
               <TooltipContent side="bottom" className="max-w-xs">
                 <p className="text-sm">
-                  Należność jest estymowana i może się zmienić do końca miesiąca
-                  w zależności od liczby aktywowanych licencji Premium.
+                  Należność jest estymowana i może się zmienić do końca miesiąca w zależności od liczby aktywowanych
+                  licencji Premium.
                 </p>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
 
           <p className="text-sm text-zinc-500">
-            Należność netto • Faktura 01.{String(billingStatus?.month || 1).padStart(2, '0')}.{(billingStatus?.year || 2026) + (billingStatus?.month === 12 ? 1 : 0)}
+            Należność netto • Faktura 01.{String(billingStatus?.month || 1).padStart(2, '0')}.
+            {(billingStatus?.year || 2026) + (billingStatus?.month === 12 ? 1 : 0)}
           </p>
         </div>
 
@@ -204,10 +192,7 @@ export function BillingHeroCard({ organizationId, className }: BillingHeroCardPr
               <Users className="h-4 w-4 text-info" />
             </div>
             <div>
-              <p
-                className="text-xl font-bold text-white tabular-nums"
-                data-testid="billing-hero-patients"
-              >
+              <p className="text-xl font-bold text-white tabular-nums" data-testid="billing-hero-patients">
                 {displayData.activePatients}
               </p>
               <p className="text-xs text-zinc-400">Aktywnych Pacjentów</p>

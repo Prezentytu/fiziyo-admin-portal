@@ -254,12 +254,12 @@ function EditExerciseInSetDialogContent({
                     </Badge>
                   )}
                   {(exercise?.side || exercise?.exerciseSide) &&
-                   (exercise?.side || exercise?.exerciseSide) !== 'none' &&
-                   (exercise?.side || exercise?.exerciseSide)?.toLowerCase() !== 'none' && (
-                    <Badge variant="outline" className="text-[10px]">
-                      {translateSide(exercise?.side || exercise?.exerciseSide)}
-                    </Badge>
-                  )}
+                    (exercise?.side || exercise?.exerciseSide) !== 'none' &&
+                    (exercise?.side || exercise?.exerciseSide)?.toLowerCase() !== 'none' && (
+                      <Badge variant="outline" className="text-[10px]">
+                        {translateSide(exercise?.side || exercise?.exerciseSide)}
+                      </Badge>
+                    )}
                 </div>
               </div>
             </div>
@@ -433,7 +433,12 @@ function EditExerciseInSetDialogContent({
         <Button variant="outline" onClick={onCloseAttempt} className="rounded-xl">
           Anuluj
         </Button>
-        <Button onClick={handleSave} disabled={loading} className="rounded-xl font-semibold" data-testid="set-edit-exercise-submit-btn">
+        <Button
+          onClick={handleSave}
+          disabled={loading}
+          className="rounded-xl font-semibold"
+          data-testid="set-edit-exercise-submit-btn"
+        >
           {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           Zapisz
         </Button>

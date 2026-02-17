@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { useState, useMemo, useRef, useCallback } from "react";
+import { useState, useMemo, useRef, useCallback } from 'react';
 import {
   DndContext,
   closestCenter,
@@ -9,28 +9,28 @@ import {
   useSensor,
   useSensors,
   type DragEndEvent,
-} from "@dnd-kit/core";
+} from '@dnd-kit/core';
 import {
   arrayMove,
   SortableContext,
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
-} from "@dnd-kit/sortable";
-import { restrictToVerticalAxis, restrictToParentElement } from "@dnd-kit/modifiers";
-import { Search, Dumbbell, Clock, Pencil } from "lucide-react";
-import { toast } from "sonner";
+} from '@dnd-kit/sortable';
+import { restrictToVerticalAxis, restrictToParentElement } from '@dnd-kit/modifiers';
+import { Search, Dumbbell, Clock, Pencil } from 'lucide-react';
+import { toast } from 'sonner';
 
-import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Badge } from "@/components/ui/badge";
-import { Switch } from "@/components/ui/switch";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { cn } from "@/lib/utils";
-import { getMediaUrl } from "@/utils/mediaUrl";
-import type { Exercise, ExerciseOverride, LocalExerciseMapping } from "./types";
-import { createLocalMapping } from "./types";
-import { ExerciseRow } from "./ExerciseRow";
-import { calculateEstimatedTime } from "@/utils/exerciseTime";
+import { Input } from '@/components/ui/input';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
+import { TooltipProvider } from '@/components/ui/tooltip';
+import { cn } from '@/lib/utils';
+import { getMediaUrl } from '@/utils/mediaUrl';
+import type { Exercise, ExerciseOverride, LocalExerciseMapping } from './types';
+import { createLocalMapping } from './types';
+import { ExerciseRow } from './ExerciseRow';
+import { calculateEstimatedTime } from '@/utils/exerciseTime';
 
 interface RapidExerciseBuilderProps {
   exercises: LocalExerciseMapping[];
@@ -62,13 +62,13 @@ export function RapidExerciseBuilder({
   availableExercises,
   saveAsTemplate = false,
   onSaveAsTemplateChange,
-  templateName = "",
+  templateName = '',
   onTemplateNameChange,
   overrides = new Map(),
   onOverridesChange: _onOverridesChange,
   selectedPatientsCount = 0,
 }: RapidExerciseBuilderProps) {
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -91,22 +91,25 @@ export function RapidExerciseBuilder({
   );
 
   // Handle drag end
-  const handleDragEnd = useCallback((event: DragEndEvent) => {
-    const { active, over } = event;
+  const handleDragEnd = useCallback(
+    (event: DragEndEvent) => {
+      const { active, over } = event;
 
-    if (over && active.id !== over.id) {
-      const oldIndex = exercises.findIndex((e) => e.id === active.id);
-      const newIndex = exercises.findIndex((e) => e.id === over.id);
+      if (over && active.id !== over.id) {
+        const oldIndex = exercises.findIndex((e) => e.id === active.id);
+        const newIndex = exercises.findIndex((e) => e.id === over.id);
 
-      const newExercises = arrayMove(exercises, oldIndex, newIndex);
-      onExercisesChange(newExercises);
-    }
-  }, [exercises, onExercisesChange]);
+        const newExercises = arrayMove(exercises, oldIndex, newIndex);
+        onExercisesChange(newExercises);
+      }
+    },
+    [exercises, onExercisesChange]
+  );
 
   // Handle exercise field change - update localExercises directly (ghost copy)
   const handleOverrideChange = (mappingId: string, updates: Partial<ExerciseOverride>) => {
     // Update localExercises directly - this is the source of truth for the wizard
-    const newExercises = exercises.map(ex => {
+    const newExercises = exercises.map((ex) => {
       if (ex.id === mappingId) {
         return { ...ex, ...updates };
       }
@@ -116,10 +119,7 @@ export function RapidExerciseBuilder({
   };
 
   // Filter available exercises
-  const addedExerciseIds = useMemo(
-    () => new Set(exercises.map((m) => m.exerciseId)),
-    [exercises]
-  );
+  const addedExerciseIds = useMemo(() => new Set(exercises.map((m) => m.exerciseId)), [exercises]);
 
   // Filtered search results
   const searchResults = useMemo(() => {
@@ -146,7 +146,7 @@ export function RapidExerciseBuilder({
     (exercise: Exercise) => {
       const newMapping = createLocalMapping(exercise, exercises.length + 1);
       onExercisesChange([...exercises, newMapping]);
-      setSearchQuery("");
+      setSearchQuery('');
       setSelectedIndex(0);
       inputRef.current?.focus();
     },
@@ -156,8 +156,8 @@ export function RapidExerciseBuilder({
   // Remove exercise
   const removeExercise = useCallback(
     (mappingId: string) => {
-      const index = exercises.findIndex(e => e.id === mappingId);
-      const removed = exercises.find(e => e.id === mappingId);
+      const index = exercises.findIndex((e) => e.id === mappingId);
+      const removed = exercises.find((e) => e.id === mappingId);
 
       if (!removed) return;
 
@@ -167,12 +167,12 @@ export function RapidExerciseBuilder({
         exercises: [...exercises],
       };
 
-      const newExercises = exercises.filter(e => e.id !== mappingId);
+      const newExercises = exercises.filter((e) => e.id !== mappingId);
       onExercisesChange(newExercises);
 
       toast(`Usunięto "${removed.exercise?.name || 'ćwiczenie'}"`, {
         action: {
-          label: "Cofnij",
+          label: 'Cofnij',
           onClick: () => {
             if (lastRemovedRef.current) {
               onExercisesChange(lastRemovedRef.current.exercises);
@@ -189,17 +189,17 @@ export function RapidExerciseBuilder({
   // Keyboard navigation
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
-      if (e.key === "ArrowDown") {
+      if (e.key === 'ArrowDown') {
         e.preventDefault();
         setSelectedIndex((i) => Math.min(i + 1, searchResults.length - 1));
-      } else if (e.key === "ArrowUp") {
+      } else if (e.key === 'ArrowUp') {
         e.preventDefault();
         setSelectedIndex((i) => Math.max(i - 1, 0));
-      } else if (e.key === "Enter" && searchResults[selectedIndex]) {
+      } else if (e.key === 'Enter' && searchResults[selectedIndex]) {
         e.preventDefault();
         addExercise(searchResults[selectedIndex]);
-      } else if (e.key === "Escape") {
-        setSearchQuery("");
+      } else if (e.key === 'Escape') {
+        setSearchQuery('');
       }
     },
     [searchResults, selectedIndex, addExercise]
@@ -208,28 +208,31 @@ export function RapidExerciseBuilder({
   // Total time - obliczany bezpośrednio z exercises (ghost copy)
   const totalSeconds = exercises.reduce((acc, m) => {
     const exerciseType = m.exercise?.type?.toLowerCase();
-    const isTimeBased = exerciseType === "time";
-    
+    const isTimeBased = exerciseType === 'time';
+
     const sets = m.sets ?? m.exercise?.defaultSets ?? 3;
     const reps = m.reps ?? m.exercise?.defaultReps ?? 10;
     const rest = m.restSets ?? m.exercise?.defaultRestBetweenSets ?? 60;
     const executionTime = m.executionTime ?? m.exercise?.defaultExecutionTime;
-    
+
     // Duration tylko dla ćwiczeń time-based, dla rep-based używamy executionTime
     const duration = isTimeBased ? (m.duration ?? m.exercise?.defaultDuration) : undefined;
 
-    return acc + calculateEstimatedTime({
-      sets,
-      reps,
-      duration,
-      executionTime,
-      rest,
-    });
+    return (
+      acc +
+      calculateEstimatedTime({
+        sets,
+        reps,
+        duration,
+        executionTime,
+        rest,
+      })
+    );
   }, 0);
   const totalMinutes = totalSeconds / 60;
 
   // Exercise IDs for sortable
-  const exerciseIds = useMemo(() => exercises.map(e => e.id), [exercises]);
+  const exerciseIds = useMemo(() => exercises.map((e) => e.id), [exercises]);
 
   return (
     <TooltipProvider>
@@ -275,10 +278,10 @@ export function RapidExerciseBuilder({
                     type="button"
                     key={ex.id}
                     className={cn(
-                      "flex items-center gap-3 p-3 cursor-pointer transition-all w-full text-left",
+                      'flex items-center gap-3 p-3 cursor-pointer transition-all w-full text-left',
                       i === selectedIndex
-                        ? "bg-primary/10 border-l-2 border-l-primary"
-                        : "border-l-2 border-l-transparent hover:bg-surface-light/50"
+                        ? 'bg-primary/10 border-l-2 border-l-primary'
+                        : 'border-l-2 border-l-transparent hover:bg-surface-light/50'
                     )}
                     onClick={() => addExercise(ex)}
                     onMouseEnter={() => setSelectedIndex(i)}
@@ -300,10 +303,12 @@ export function RapidExerciseBuilder({
                         {ex.defaultDuration && ` • ${ex.defaultDuration}s`}
                       </p>
                     </div>
-                    <kbd className={cn(
-                      "text-xs px-2 py-1 rounded text-muted-foreground shrink-0 transition-opacity",
-                      i === selectedIndex ? "bg-primary/20 text-primary opacity-100" : "opacity-0"
-                    )}>
+                    <kbd
+                      className={cn(
+                        'text-xs px-2 py-1 rounded text-muted-foreground shrink-0 transition-opacity',
+                        i === selectedIndex ? 'bg-primary/20 text-primary opacity-100' : 'opacity-0'
+                      )}
+                    >
                       Enter ↵
                     </kbd>
                   </button>
@@ -314,9 +319,7 @@ export function RapidExerciseBuilder({
 
           {/* No results */}
           {searchQuery.trim() && searchResults.length === 0 && (
-            <p className="mt-2 text-sm text-muted-foreground text-center py-2">
-              Nie znaleziono ćwiczeń
-            </p>
+            <p className="mt-2 text-sm text-muted-foreground text-center py-2">Nie znaleziono ćwiczeń</p>
           )}
         </div>
 
@@ -346,7 +349,8 @@ export function RapidExerciseBuilder({
                     <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/50 text-amber-800 dark:text-amber-200 text-xs mb-3">
                       <Clock className="h-4 w-4 shrink-0" />
                       <span>
-                        <strong>Zmiana grupowa:</strong> Edycja parametrów wyłączona dla {selectedPatientsCount} pacjentów.
+                        <strong>Zmiana grupowa:</strong> Edycja parametrów wyłączona dla {selectedPatientsCount}{' '}
+                        pacjentów.
                       </span>
                     </div>
                   )}
@@ -401,7 +405,7 @@ export function RapidExerciseBuilder({
               <Clock className="h-4 w-4 text-muted-foreground/50" />
               <span className="text-muted-foreground">Szacowany czas:</span>
               <span className="font-semibold text-primary">
-                {exercises.length > 0 ? `${Math.round(totalMinutes)} min` : "—"}
+                {exercises.length > 0 ? `${Math.round(totalMinutes)} min` : '—'}
               </span>
             </div>
             <Badge variant="secondary" className="bg-surface-light/50">

@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import { Badge } from "@/components/ui/badge";
-import { SearchInput } from "@/components/shared/SearchInput";
-import { cn } from "@/lib/utils";
+import { Badge } from '@/components/ui/badge';
+import { SearchInput } from '@/components/shared/SearchInput';
+import { cn } from '@/lib/utils';
 
-type FilterType = "all" | "active" | "inactive";
+type FilterType = 'all' | 'active' | 'inactive';
 
 interface PatientFiltersProps {
   searchQuery: string;
@@ -24,9 +24,9 @@ export function PatientFilters({
   totalCount,
 }: PatientFiltersProps) {
   const filters: { value: FilterType; label: string }[] = [
-    { value: "all", label: "Wszyscy" },
-    { value: "active", label: "Aktywni" },
-    { value: "inactive", label: "Nieaktywni" },
+    { value: 'all', label: 'Wszyscy' },
+    { value: 'active', label: 'Aktywni' },
+    { value: 'inactive', label: 'Nieaktywni' },
   ];
 
   return (
@@ -50,11 +50,11 @@ export function PatientFilters({
             key={f.value}
             onClick={() => onFilterChange(f.value)}
             className={cn(
-              "px-3 py-1.5 rounded-lg text-sm font-medium transition-all",
-              "border border-border/60",
+              'px-3 py-1.5 rounded-lg text-sm font-medium transition-all',
+              'border border-border/60',
               filter === f.value
-                ? "bg-primary text-primary-foreground border-primary shadow-sm"
-                : "bg-surface text-muted-foreground hover:bg-surface-light hover:text-foreground"
+                ? 'bg-primary text-primary-foreground border-primary shadow-sm'
+                : 'bg-surface text-muted-foreground hover:bg-surface-light hover:text-foreground'
             )}
             data-testid={`patient-filter-${f.value}-btn`}
           >

@@ -1,4 +1,4 @@
-import { gql } from "@apollo/client";
+import { gql } from '@apollo/client';
 
 // Query do pobierania statystyk onboardingu
 // Sprawdza czy użytkownik ma pacjentów, zestawy i przypisania
@@ -18,10 +18,3 @@ export const GET_ONBOARDING_STATS_QUERY = gql`
     }
   }
 `;
-
-
-
-
-
-
-

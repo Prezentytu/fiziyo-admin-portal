@@ -39,12 +39,12 @@ export function calculateEstimatedTime(params: {
  * - 180 sekund → "~3 min"
  */
 export function formatEstimatedTime(seconds: number): string {
-  if (seconds <= 0) return "~0 min";
+  if (seconds <= 0) return '~0 min';
 
   const minutes = Math.round(seconds / 60);
 
   if (minutes < 1) {
-    return "~1 min";
+    return '~1 min';
   }
 
   return `~${minutes} min`;
@@ -58,23 +58,21 @@ export function formatEstimatedTime(seconds: number): string {
  * - Right → "R"
  * - Alternating → "⟳"
  */
-export function getSideIndicator(
-  side: string | undefined | null
-): { icon: string; label: string; showBadge: boolean } {
-  const normalizedSide = side?.toLowerCase() || "none";
+export function getSideIndicator(side: string | undefined | null): { icon: string; label: string; showBadge: boolean } {
+  const normalizedSide = side?.toLowerCase() || 'none';
 
   switch (normalizedSide) {
-    case "left":
-      return { icon: "L", label: "Lewa strona", showBadge: true };
-    case "right":
-      return { icon: "R", label: "Prawa strona", showBadge: true };
-    case "alternating":
-      return { icon: "⟳", label: "Naprzemiennie", showBadge: true };
-    case "both":
-      return { icon: "↔", label: "Obustronne", showBadge: false };
-    case "none":
+    case 'left':
+      return { icon: 'L', label: 'Lewa strona', showBadge: true };
+    case 'right':
+      return { icon: 'R', label: 'Prawa strona', showBadge: true };
+    case 'alternating':
+      return { icon: '⟳', label: 'Naprzemiennie', showBadge: true };
+    case 'both':
+      return { icon: '↔', label: 'Obustronne', showBadge: false };
+    case 'none':
     default:
-      return { icon: "↔", label: "Obustronne", showBadge: false };
+      return { icon: '↔', label: 'Obustronne', showBadge: false };
   }
 }
 
@@ -82,6 +80,6 @@ export function getSideIndicator(
  * Sprawdza czy strona wymaga wyświetlenia badge'a (jest inna niż domyślna).
  */
 export function shouldShowSideBadge(side: string | undefined | null): boolean {
-  const normalizedSide = side?.toLowerCase() || "none";
-  return normalizedSide === "left" || normalizedSide === "right" || normalizedSide === "alternating";
+  const normalizedSide = side?.toLowerCase() || 'none';
+  return normalizedSide === 'left' || normalizedSide === 'right' || normalizedSide === 'alternating';
 }

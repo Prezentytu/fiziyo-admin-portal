@@ -1,4 +1,4 @@
-import type { ExerciseLoad } from "@/components/assignment/types";
+import type { ExerciseLoad } from '@/components/assignment/types';
 
 /**
  * Parsuje tekst wpisany przez użytkownika do struktury ExerciseLoad.
@@ -16,60 +16,60 @@ export function parseLoad(input: string): ExerciseLoad {
   const text = input.trim();
 
   if (!text) {
-    return { type: "other", text: "" };
+    return { type: 'other', text: '' };
   }
 
   const lowerText = text.toLowerCase();
 
   // Wykryj bodyweight
   if (
-    lowerText.includes("własna waga") ||
-    lowerText.includes("ciężar ciała") ||
-    lowerText.includes("bodyweight") ||
-    lowerText === "bw"
+    lowerText.includes('własna waga') ||
+    lowerText.includes('ciężar ciała') ||
+    lowerText.includes('bodyweight') ||
+    lowerText === 'bw'
   ) {
-    return { type: "bodyweight", text };
+    return { type: 'bodyweight', text };
   }
 
   // Wykryj gumy oporowe
   if (
-    lowerText.includes("guma") ||
-    lowerText.includes("band") ||
-    lowerText.includes("taśma") ||
-    lowerText.includes("expander")
+    lowerText.includes('guma') ||
+    lowerText.includes('band') ||
+    lowerText.includes('taśma') ||
+    lowerText.includes('expander')
   ) {
     // Próba wyciągnięcia poziomu (np. "poziom 3", "level 2")
     const levelMatch = lowerText.match(/(?:poziom|level|lvl)\s*(\d+)/i);
     if (levelMatch) {
       return {
-        type: "band",
+        type: 'band',
         value: parseInt(levelMatch[1], 10),
-        unit: "level",
+        unit: 'level',
         text,
       };
     }
-    return { type: "band", text };
+    return { type: 'band', text };
   }
 
   // Wykryj ciężar w kg lub lbs
   const weightMatch = text.match(/(\d+(?:[.,]\d+)?)\s*(kg|lbs?|funt[óy]?w?)/i);
   if (weightMatch) {
-    const value = parseFloat(weightMatch[1].replace(",", "."));
+    const value = parseFloat(weightMatch[1].replace(',', '.'));
     const unitRaw = weightMatch[2].toLowerCase();
-    const unit: "kg" | "lbs" =
-      unitRaw === "kg" ? "kg" : unitRaw.startsWith("lb") || unitRaw.startsWith("funt") ? "lbs" : "kg";
-    return { type: "weight", value, unit, text };
+    const unit: 'kg' | 'lbs' =
+      unitRaw === 'kg' ? 'kg' : unitRaw.startsWith('lb') || unitRaw.startsWith('funt') ? 'lbs' : 'kg';
+    return { type: 'weight', value, unit, text };
   }
 
   // Wykryj sam numer z kg jako domyślna jednostka (np. "5" → 5 kg)
   const numberOnlyMatch = text.match(/^(\d+(?:[.,]\d+)?)\s*$/);
   if (numberOnlyMatch) {
-    const value = parseFloat(numberOnlyMatch[1].replace(",", "."));
-    return { type: "weight", value, unit: "kg", text: `${value} kg` };
+    const value = parseFloat(numberOnlyMatch[1].replace(',', '.'));
+    return { type: 'weight', value, unit: 'kg', text: `${value} kg` };
   }
 
   // Domyślnie - other
-  return { type: "other", text };
+  return { type: 'other', text };
 }
 
 /**
@@ -77,8 +77,8 @@ export function parseLoad(input: string): ExerciseLoad {
  * Zwraca oryginalny tekst lub pusty string.
  */
 export function formatLoad(load: ExerciseLoad | undefined | null): string {
-  if (!load) return "";
-  return load.text || "";
+  if (!load) return '';
+  return load.text || '';
 }
 
 /**
@@ -93,17 +93,17 @@ export function hasLoad(load: ExerciseLoad | undefined | null): boolean {
  * Zwraca kolor badge'a dla typu obciążenia.
  */
 export function getLoadBadgeColor(load: ExerciseLoad | undefined | null): string {
-  if (!load || !hasLoad(load)) return "";
+  if (!load || !hasLoad(load)) return '';
 
   switch (load.type) {
-    case "weight":
-      return "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400";
-    case "band":
-      return "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400";
-    case "bodyweight":
-      return "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400";
+    case 'weight':
+      return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400';
+    case 'band':
+      return 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400';
+    case 'bodyweight':
+      return 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400';
     default:
-      return "bg-gray-100 text-gray-800 dark:bg-gray-800/30 dark:text-gray-400";
+      return 'bg-gray-100 text-gray-800 dark:bg-gray-800/30 dark:text-gray-400';
   }
 }
 
@@ -114,14 +114,14 @@ export function getLoadIcon(load: ExerciseLoad | undefined | null): string | nul
   if (!load || !hasLoad(load)) return null;
 
   switch (load.type) {
-    case "weight":
-      return "Dumbbell";
-    case "band":
-      return "Activity";
-    case "bodyweight":
-      return "User";
+    case 'weight':
+      return 'Dumbbell';
+    case 'band':
+      return 'Activity';
+    case 'bodyweight':
+      return 'User';
     default:
-      return "HelpCircle";
+      return 'HelpCircle';
   }
 }
 
@@ -129,27 +129,27 @@ export function getLoadIcon(load: ExerciseLoad | undefined | null): string | nul
  * Zwraca skrócony opis obciążenia dla badge'a.
  */
 export function getLoadBadgeLabel(load: ExerciseLoad | undefined | null): string {
-  if (!load || !hasLoad(load)) return "";
+  if (!load || !hasLoad(load)) return '';
 
   // Dla weight z wartością - pokaż "5 kg"
-  if (load.type === "weight" && load.value !== undefined && load.unit) {
+  if (load.type === 'weight' && load.value !== undefined && load.unit) {
     return `${load.value} ${load.unit}`;
   }
 
   // Dla band z poziomem - "Lvl 3"
-  if (load.type === "band" && load.value !== undefined) {
+  if (load.type === 'band' && load.value !== undefined) {
     return `Lvl ${load.value}`;
   }
 
   // Dla bodyweight - "BW"
-  if (load.type === "bodyweight") {
-    return "BW";
+  if (load.type === 'bodyweight') {
+    return 'BW';
   }
 
   // Skróć długi tekst
   const text = load.text;
   if (text.length > 10) {
-    return text.substring(0, 8) + "…";
+    return text.substring(0, 8) + '…';
   }
 
   return text;

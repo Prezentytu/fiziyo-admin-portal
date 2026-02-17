@@ -21,13 +21,7 @@ interface NoteReviewCardProps {
  * Karta notatki do review - uproszczona
  * Przyciski z tekstem dla lepszej czytelności
  */
-export function NoteReviewCard({
-  note,
-  decision,
-  onDecisionChange,
-  disabled = false,
-  className,
-}: NoteReviewCardProps) {
+export function NoteReviewCard({ note, decision, onDecisionChange, disabled = false, className }: NoteReviewCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
 
   const getNoteTypeLabel = (type: string) => {
@@ -61,10 +55,7 @@ export function NoteReviewCard({
   };
 
   // Pokaż preview treści
-  const contentPreview =
-    note.content.length > 200
-      ? note.content.substring(0, 200) + '...'
-      : note.content;
+  const contentPreview = note.content.length > 200 ? note.content.substring(0, 200) + '...' : note.content;
 
   // Gdy disabled, traktuj jako "skip"
   const effectiveAction = disabled ? 'skip' : decision.action;
@@ -107,39 +98,23 @@ export function NoteReviewCard({
               <h3 className="text-base font-semibold text-foreground">
                 {note.title || getNoteTypeLabel(note.noteType)}
               </h3>
-              <Badge
-                variant="secondary"
-                className={cn('text-xs border-0', getNoteTypeColor(note.noteType))}
-              >
+              <Badge variant="secondary" className={cn('text-xs border-0', getNoteTypeColor(note.noteType))}>
                 {getNoteTypeLabel(note.noteType)}
               </Badge>
             </div>
 
             {/* Preview treści */}
-            <p className="mt-2 text-sm text-muted-foreground line-clamp-3">
-              {contentPreview}
-            </p>
+            <p className="mt-2 text-sm text-muted-foreground line-clamp-3">{contentPreview}</p>
 
             {/* Info o punktach */}
             {note.points && note.points.length > 0 && !isExpanded && (
-              <p className="mt-2 text-sm text-muted-foreground">
-                Zawiera {note.points.length} punktów
-              </p>
+              <p className="mt-2 text-sm text-muted-foreground">Zawiera {note.points.length} punktów</p>
             )}
           </div>
 
           {/* Przycisk rozwijania */}
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setIsExpanded(!isExpanded)}
-            className="shrink-0 h-10 w-10"
-          >
-            {isExpanded ? (
-              <ChevronUp className="h-5 w-5" />
-            ) : (
-              <ChevronDown className="h-5 w-5" />
-            )}
+          <Button variant="ghost" size="icon" onClick={() => setIsExpanded(!isExpanded)} className="shrink-0 h-10 w-10">
+            {isExpanded ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
           </Button>
         </div>
 
@@ -150,10 +125,7 @@ export function NoteReviewCard({
             size="sm"
             onClick={() => onDecisionChange({ action: 'create' })}
             disabled={disabled}
-            className={cn(
-              'gap-2 h-9 px-4',
-              effectiveAction === 'create' && 'bg-primary hover:bg-primary-dark'
-            )}
+            className={cn('gap-2 h-9 px-4', effectiveAction === 'create' && 'bg-primary hover:bg-primary-dark')}
             data-testid={`import-note-card-${note.tempId}-create-btn`}
           >
             <Check className="h-4 w-4" />
@@ -180,27 +152,18 @@ export function NoteReviewCard({
         {isExpanded && (
           <div className="mt-4 space-y-4 border-t border-border/60 pt-4">
             <div>
-              <p className="text-sm font-medium text-foreground mb-2">
-                Pełna treść:
-              </p>
+              <p className="text-sm font-medium text-foreground mb-2">Pełna treść:</p>
               <div className="rounded-lg bg-surface-light p-4">
-                <p className="whitespace-pre-wrap text-sm text-foreground">
-                  {decision.editedContent || note.content}
-                </p>
+                <p className="whitespace-pre-wrap text-sm text-foreground">{decision.editedContent || note.content}</p>
               </div>
             </div>
 
             {note.points && note.points.length > 0 && (
               <div>
-                <p className="text-sm font-medium text-foreground mb-2">
-                  Punkty:
-                </p>
+                <p className="text-sm font-medium text-foreground mb-2">Punkty:</p>
                 <ul className="space-y-2">
                   {note.points.map((point, index) => (
-                    <li
-                      key={index}
-                      className="flex items-start gap-3 text-sm text-foreground"
-                    >
+                    <li key={index} className="flex items-start gap-3 text-sm text-foreground">
                       <span className="mt-2 h-2 w-2 shrink-0 rounded-full bg-primary" />
                       {point}
                     </li>
