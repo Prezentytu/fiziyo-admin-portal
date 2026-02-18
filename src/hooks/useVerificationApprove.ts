@@ -129,4 +129,3 @@ export function useVerificationApprove({ onSuccess, onError }: UseVerificationAp
     isApproving,
   };
 }
-

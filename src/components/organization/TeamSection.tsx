@@ -150,44 +150,44 @@ export function TeamSection({
       <div className="space-y-4">
         {/* Filters and Search */}
         <div className="flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
-        <div className="flex items-center gap-2 p-1 rounded-xl bg-accent/30 border border-border/40 w-full md:w-auto overflow-x-auto">
-          {(['all', 'admin', 'therapist'] as RoleFilter[]).map((filter) => (
-            <button
-              key={filter}
-              onClick={() => setRoleFilter(filter)}
-              className={cn(
-                'px-4 py-1.5 text-xs font-medium rounded-lg transition-all whitespace-nowrap',
-                roleFilter === filter
-                  ? 'bg-background text-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-background/50'
-              )}
-              data-testid={`org-team-filter-${filter}`}
-            >
-              {filter === 'all' && 'Wszyscy'}
-              {filter === 'admin' && 'Administratorzy'}
-              {filter === 'therapist' && 'Fizjoterapeuci'}
-            </button>
-          ))}
-        </div>
+          <div className="flex items-center gap-2 p-1 rounded-xl bg-accent/30 border border-border/40 w-full md:w-auto overflow-x-auto">
+            {(['all', 'admin', 'therapist'] as RoleFilter[]).map((filter) => (
+              <button
+                key={filter}
+                onClick={() => setRoleFilter(filter)}
+                className={cn(
+                  'px-4 py-1.5 text-xs font-medium rounded-lg transition-all whitespace-nowrap',
+                  roleFilter === filter
+                    ? 'bg-background text-foreground shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-background/50'
+                )}
+                data-testid={`org-team-filter-${filter}`}
+              >
+                {filter === 'all' && 'Wszyscy'}
+                {filter === 'admin' && 'Administratorzy'}
+                {filter === 'therapist' && 'Fizjoterapeuci'}
+              </button>
+            ))}
+          </div>
 
-        <div className="relative w-full md:w-72">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Szukaj pracownika..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 h-10 bg-background border-input hover:border-primary/50 focus:ring-primary rounded-xl transition-all"
-            data-testid="org-team-search-input"
-          />
-          {searchQuery && (
-            <button
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-              onClick={() => setSearchQuery('')}
-            >
-              <X className="h-4 w-4" />
-            </button>
-          )}
-        </div>
+          <div className="relative w-full md:w-72">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              placeholder="Szukaj pracownika..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10 h-10 bg-background border-input hover:border-primary/50 focus:ring-primary rounded-xl transition-all"
+              data-testid="org-team-search-input"
+            />
+            {searchQuery && (
+              <button
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                onClick={() => setSearchQuery('')}
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Results info */}
@@ -215,7 +215,9 @@ export function TeamSection({
           <EmptyState
             icon={Users}
             title={hasActiveFilters ? 'Nie znaleziono osób' : 'Brak członków zespołu'}
-            description={hasActiveFilters ? 'Spróbuj zmienić kryteria wyszukiwania' : 'Zaproś pierwszą osobę do zespołu'}
+            description={
+              hasActiveFilters ? 'Spróbuj zmienić kryteria wyszukiwania' : 'Zaproś pierwszą osobę do zespołu'
+            }
             actionLabel={!hasActiveFilters && canInvite ? 'Zaproś do zespołu' : undefined}
             onAction={!hasActiveFilters && canInvite ? onInviteClick : undefined}
           />
