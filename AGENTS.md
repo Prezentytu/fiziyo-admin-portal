@@ -41,6 +41,13 @@ Przed rozpoczęciem pracy dopasuj zadanie do tabeli i przeczytaj WSZYSTKIE pasuj
 - Type-check: `npm run type-check`
 - Formatowanie: `npm run format`, `npm run format:check`
 - Walidacja pełna: `npm run validate` (lint + type-check + build)
+- Testy: `npm run test`, `npm run test:run`, `npm run test:coverage`
+
+## Testowanie
+
+- **Logika biznesowa** (filtry, reguły widoczności, walidacja): testy jednostkowe obowiązkowe. Wyciągaj czyste funkcje do helperów i testuj je (Vitest). Zobacz `docs/testing/testing-guidelines.md`.
+- Przed zakończeniem zadania uruchom `npm run test:run` i `npm run lint`; w razie potrzeby `npm run validate`.
+- Przy zmianie warunków lub filtrów: dodać/aktualizować testy dla tej logiki, żeby regresje były wykrywane.
 
 ## Opis projektu
 

@@ -105,15 +105,15 @@ export function ClinicsSection({
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* Section Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-secondary/10">
-            <MapPin className="h-5 w-5 text-secondary" />
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10">
+            <MapPin className="h-5 w-5 text-primary" />
           </div>
           <div>
-            <h2 className="text-xl font-bold tracking-tight text-foreground">Twoje Gabinety</h2>
+            <h3 className="text-lg font-semibold text-foreground">Twoje Gabinety</h3>
             <p className="text-sm text-muted-foreground">
               {clinics.length} {clinics.length === 1 ? 'lokalizacja' : 'lokalizacji'} w organizacji
             </p>
@@ -122,7 +122,7 @@ export function ClinicsSection({
         {canEdit && (
           <Button
             onClick={onAddClick}
-            className="gap-2 bg-primary text-white font-bold h-11 px-8 rounded-xl shadow-lg shadow-primary/20 transition-all hover:bg-primary/90"
+            className="gap-2 shadow-lg shadow-primary/20"
             data-testid="org-clinics-add-btn"
           >
             <Plus className="h-4 w-4" />
@@ -131,8 +131,9 @@ export function ClinicsSection({
         )}
       </div>
 
-      {/* Search (only if more than 3 clinics) */}
-      {clinics.length > 3 && (
+      <div className="space-y-4">
+        {/* Search (only if more than 3 clinics) */}
+        {clinics.length > 3 && (
         <div className="relative w-full md:w-72">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
@@ -151,20 +152,20 @@ export function ClinicsSection({
             </button>
           )}
         </div>
-      )}
+        )}
 
-      {/* Clinics Grid */}
-      {sortedClinics.length === 0 ? (
-        <EmptyState
-          icon={MapPin}
-          title={searchQuery ? 'Nie znaleziono gabinetów' : 'Brak gabinetów'}
-          description={searchQuery ? 'Spróbuj zmienić kryteria wyszukiwania' : 'Dodaj pierwszy gabinet do organizacji'}
-          actionLabel={!searchQuery && canEdit ? 'Dodaj gabinet' : undefined}
-          onAction={!searchQuery && canEdit ? onAddClick : undefined}
-        />
-      ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {sortedClinics.map((clinic) => (
+        {/* Clinics Grid */}
+        {sortedClinics.length === 0 ? (
+          <EmptyState
+            icon={MapPin}
+            title={searchQuery ? 'Nie znaleziono gabinetów' : 'Brak gabinetów'}
+            description={searchQuery ? 'Spróbuj zmienić kryteria wyszukiwania' : 'Dodaj pierwszy gabinet do organizacji'}
+            actionLabel={!searchQuery && canEdit ? 'Dodaj gabinet' : undefined}
+            onAction={!searchQuery && canEdit ? onAddClick : undefined}
+          />
+        ) : (
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {sortedClinics.map((clinic) => (
             <div
               key={clinic.id}
               className={cn(
@@ -257,9 +258,10 @@ export function ClinicsSection({
                 </div>
               )}
             </div>
-          ))}
-        </div>
-      )}
+            ))}
+          </div>
+        )}
+      </div>
 
       {/* Delete confirmation */}
       <ConfirmDialog
