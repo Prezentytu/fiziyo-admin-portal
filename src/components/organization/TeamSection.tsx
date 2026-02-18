@@ -57,9 +57,6 @@ export function TeamSection({
   canInvite = false,
   onInviteClick,
   onRefresh,
-  limits,
-  currentUsage,
-  planName = 'Free',
   therapistPatientCounts,
 }: TeamSectionProps) {
   const [searchQuery, setSearchQuery] = useState('');
