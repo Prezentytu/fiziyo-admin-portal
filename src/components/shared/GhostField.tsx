@@ -29,7 +29,10 @@ interface GhostFieldProps {
 /**
  * Default configurations for each field type
  */
-const FIELD_CONFIGS: Record<GhostFieldType, { icon: typeof FileText; label: string; aiLabel: string; description: string }> = {
+const FIELD_CONFIGS: Record<
+  GhostFieldType,
+  { icon: typeof FileText; label: string; aiLabel: string; description: string }
+> = {
   description: {
     icon: FileText,
     label: 'Dodaj opis',
@@ -125,11 +128,13 @@ export function GhostField({
     >
       <div className="flex items-center gap-3">
         {/* Icon container */}
-        <div className={cn(
-          'flex h-10 w-10 shrink-0 items-center justify-center rounded-lg',
-          'bg-amber-500/10 transition-all duration-300',
-          'group-hover:bg-amber-500/20 group-hover:scale-110'
-        )}>
+        <div
+          className={cn(
+            'flex h-10 w-10 shrink-0 items-center justify-center rounded-lg',
+            'bg-amber-500/10 transition-all duration-300',
+            'group-hover:bg-amber-500/20 group-hover:scale-110'
+          )}
+        >
           {isAILoading ? (
             <Loader2 className="h-5 w-5 text-amber-500 animate-spin" />
           ) : hasAI && onAIGenerate ? (
@@ -146,16 +151,10 @@ export function GhostField({
               {isAILoading ? 'Generowanie...' : displayLabel}
             </span>
             {hasAI && onAIGenerate && !isAILoading && (
-              <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-500/70">
-                AI
-              </span>
+              <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-500/70">AI</span>
             )}
           </div>
-          {displayDescription && (
-            <p className="text-xs text-muted-foreground mt-0.5 truncate">
-              {displayDescription}
-            </p>
-          )}
+          {displayDescription && <p className="text-xs text-muted-foreground mt-0.5 truncate">{displayDescription}</p>}
         </div>
 
         {/* Manual add button (if AI is primary) */}
@@ -177,10 +176,12 @@ export function GhostField({
 
         {/* Arrow indicator */}
         {!isAILoading && (
-          <div className={cn(
-            'shrink-0 text-amber-500/50 transition-all duration-300',
-            'group-hover:text-amber-500 group-hover:translate-x-1'
-          )}>
+          <div
+            className={cn(
+              'shrink-0 text-amber-500/50 transition-all duration-300',
+              'group-hover:text-amber-500 group-hover:translate-x-1'
+            )}
+          >
             <Plus className="h-4 w-4" />
           </div>
         )}

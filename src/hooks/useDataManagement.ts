@@ -1,16 +1,16 @@
-"use client";
+'use client';
 
-import { useReducer, useCallback, useSyncExternalStore } from "react";
-import { useMutation } from "@apollo/client/react";
-import { toast } from "sonner";
+import { useReducer, useCallback, useSyncExternalStore } from 'react';
+import { useMutation } from '@apollo/client/react';
+import { toast } from 'sonner';
 import {
   CREATE_EXAMPLE_EXERCISE_SETS_MUTATION,
   CLEAR_ALL_DATA_MUTATION,
-} from "@/graphql/mutations/exercises.mutations";
-import { GET_ORGANIZATION_EXERCISES_QUERY } from "@/graphql/queries/exercises.queries";
-import { GET_ORGANIZATION_EXERCISE_SETS_QUERY } from "@/graphql/queries/exerciseSets.queries";
-import { GET_EXERCISE_TAGS_BY_ORGANIZATION_QUERY } from "@/graphql/queries/exerciseTags.queries";
-import { GET_TAG_CATEGORIES_BY_ORGANIZATION_QUERY } from "@/graphql/queries/tagCategories.queries";
+} from '@/graphql/mutations/exercises.mutations';
+import { GET_ORGANIZATION_EXERCISES_QUERY } from '@/graphql/queries/exercises.queries';
+import { GET_ORGANIZATION_EXERCISE_SETS_QUERY } from '@/graphql/queries/exerciseSets.queries';
+import { GET_EXERCISE_TAGS_BY_ORGANIZATION_QUERY } from '@/graphql/queries/exerciseTags.queries';
+import { GET_TAG_CATEGORIES_BY_ORGANIZATION_QUERY } from '@/graphql/queries/tagCategories.queries';
 
 interface ImportResult {
   success: boolean;
@@ -48,8 +48,8 @@ interface UseDataManagementOptions {
  */
 // Custom subscribe function for localStorage changes
 function subscribeToStorage(callback: () => void) {
-  globalThis.addEventListener("storage", callback);
-  return () => globalThis.removeEventListener("storage", callback);
+  globalThis.addEventListener('storage', callback);
+  return () => globalThis.removeEventListener('storage', callback);
 }
 
 export function useDataManagement({ organizationId, onImportSuccess, onClearSuccess }: UseDataManagementOptions) {
@@ -65,7 +65,7 @@ export function useDataManagement({ organizationId, onImportSuccess, onClearSucc
     () => {
       if (!organizationId || globalThis.window === undefined) return false;
       try {
-        return localStorage.getItem(EXAMPLE_SETS_IMPORTED_KEY) === "true";
+        return localStorage.getItem(EXAMPLE_SETS_IMPORTED_KEY) === 'true';
       } catch {
         return false;
       }
@@ -79,13 +79,13 @@ export function useDataManagement({ organizationId, onImportSuccess, onClearSucc
       if (!organizationId) return;
       try {
         if (value) {
-          localStorage.setItem(EXAMPLE_SETS_IMPORTED_KEY, "true");
+          localStorage.setItem(EXAMPLE_SETS_IMPORTED_KEY, 'true');
         } else {
           localStorage.removeItem(EXAMPLE_SETS_IMPORTED_KEY);
         }
         forceUpdate();
       } catch {
-        console.error("Błąd podczas zapisu flagi importu");
+        console.error('Błąd podczas zapisu flagi importu');
       }
     },
     [organizationId, EXAMPLE_SETS_IMPORTED_KEY]
@@ -115,12 +115,12 @@ export function useDataManagement({ organizationId, onImportSuccess, onClearSucc
    */
   const importExampleSets = useCallback(async (): Promise<boolean> => {
     if (!organizationId) {
-      toast.error("Brak przypisanej organizacji");
+      toast.error('Brak przypisanej organizacji');
       return false;
     }
 
     if (hasImportedExamples) {
-      toast.info("Przykładowe zestawy zostały już wcześniej zaimportowane");
+      toast.info('Przykładowe zestawy zostały już wcześniej zaimportowane');
       return false;
     }
 
@@ -144,12 +144,12 @@ export function useDataManagement({ organizationId, onImportSuccess, onClearSucc
         onImportSuccess?.();
         return true;
       } else {
-        toast.error(result?.errorMessage || "Import przykładowych zestawów nie powiódł się");
+        toast.error(result?.errorMessage || 'Import przykładowych zestawów nie powiódł się');
         return false;
       }
     } catch (error) {
-      console.error("Błąd podczas importu przykładowych zestawów:", error);
-      toast.error("Wystąpił problem podczas importu przykładowych zestawów");
+      console.error('Błąd podczas importu przykładowych zestawów:', error);
+      toast.error('Wystąpił problem podczas importu przykładowych zestawów');
       return false;
     }
   }, [
@@ -168,12 +168,12 @@ export function useDataManagement({ organizationId, onImportSuccess, onClearSucc
   const clearAllData = useCallback(
     async (password: string): Promise<boolean> => {
       if (!organizationId) {
-        toast.error("Brak przypisanej organizacji");
+        toast.error('Brak przypisanej organizacji');
         return false;
       }
 
       if (!password) {
-        toast.error("Hasło jest wymagane");
+        toast.error('Hasło jest wymagane');
         return false;
       }
 
@@ -205,12 +205,12 @@ export function useDataManagement({ organizationId, onImportSuccess, onClearSucc
           onClearSuccess?.();
           return true;
         } else {
-          toast.error(result?.errorMessage || "Operacja nie powiodła się");
+          toast.error(result?.errorMessage || 'Operacja nie powiodła się');
           return false;
         }
       } catch (error) {
-        console.error("Błąd podczas czyszczenia danych:", error);
-        const errorMessage = error instanceof Error ? error.message : "Nieznany błąd";
+        console.error('Błąd podczas czyszczenia danych:', error);
+        const errorMessage = error instanceof Error ? error.message : 'Nieznany błąd';
         toast.error(`Wystąpił problem podczas czyszczenia danych: ${errorMessage}`);
         return false;
       }

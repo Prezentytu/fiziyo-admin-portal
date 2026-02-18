@@ -1,4 +1,4 @@
-import { gql } from "@apollo/client";
+import { gql } from '@apollo/client';
 
 // Fragment dla podstawowych danych przypisania pacjenta
 export const PATIENT_ASSIGNMENT_BASIC_FRAGMENT = gql`

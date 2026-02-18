@@ -17,10 +17,10 @@ export interface ExerciseSuggestionRequest {
  * Pojedyncza korekta/sugestia AI z uzasadnieniem
  */
 export interface AISuggestionItem {
-  field: string;           // np. 'name', 'description', 'reps', 'duration'
+  field: string; // np. 'name', 'description', 'reps', 'duration'
   original: string | number | null;
   suggested: string | number | null;
-  reason: string;          // "Wykryto literówkę", "Standard FiziYo", "Optymalizacja pod hipertrofię"
+  reason: string; // "Wykryto literówkę", "Standard FiziYo", "Optymalizacja pod hipertrofię"
   priority: 'high' | 'medium' | 'low';
 }
 
@@ -53,15 +53,15 @@ export interface ExerciseSuggestionResponse {
 
   /** Powód korekty nazwy */
   nameCorrection: {
-    reason: string;        // "Literówka", "Błąd fleksyjny", "Standard kliniczny"
+    reason: string; // "Literówka", "Błąd fleksyjny", "Standard kliniczny"
     original: string;
   } | null;
 
   /** Kategorie sugestii (The "Why") */
   corrections: {
-    naming: AISuggestionItem[];      // 🔤 Nazewnictwo (literówki, fleksja)
-    content: AISuggestionItem[];     // 📝 Treść (opis, tagi)
-    parameters: AISuggestionItem[];  // ⚡ Parametry (tylko jeśli nielogiczne)
+    naming: AISuggestionItem[]; // 🔤 Nazewnictwo (literówki, fleksja)
+    content: AISuggestionItem[]; // 📝 Treść (opis, tagi)
+    parameters: AISuggestionItem[]; // ⚡ Parametry (tylko jeśli nielogiczne)
   };
 
   /** Podpowiedzi AI */
@@ -69,11 +69,11 @@ export interface ExerciseSuggestionResponse {
 
   /** Zaawansowane parametry (Pro Tuning) */
   advancedParams: {
-    tempo: string | null;           // np. "3010"
-    weight: string | null;          // np. "20kg" lub "RPE 7"
-    rangeOfMotion: string | null;   // np. "Pełen zakres"
+    tempo: string | null; // np. "3010"
+    weight: string | null; // np. "20kg" lub "RPE 7"
+    rangeOfMotion: string | null; // np. "Pełen zakres"
     preparationTime: number | null; // sekundy
-    executionTime: number | null;   // czas pojedynczego powtórzenia
+    executionTime: number | null; // czas pojedynczego powtórzenia
   } | null;
 
   /** Informacja o podobnych ćwiczeniach w bazie (wykryte przez AI) */

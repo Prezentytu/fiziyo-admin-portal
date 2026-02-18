@@ -3,16 +3,8 @@
 import { Check, Trash2, RefreshCw, Dumbbell, ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
-import type {
-  ExtractedExercise,
-  MatchSuggestion,
-  ExerciseDecision,
-} from '@/types/import.types';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import type { ExtractedExercise, MatchSuggestion, ExerciseDecision } from '@/types/import.types';
 
 interface ConfidentMatchRowProps {
   /** The extracted exercise from PDF */
@@ -34,23 +26,14 @@ interface ConfidentMatchRowProps {
  * Shows: [Check icon] [PDF name] → [Thumbnail + DB name]
  * With hover preview showing original PDF text
  */
-export function ConfidentMatchRow({
-  exercise,
-  match,
-  decision,
-  onSkip,
-  onChange,
-  className,
-}: ConfidentMatchRowProps) {
+export function ConfidentMatchRow({ exercise, match, decision, onSkip, onChange, className }: ConfidentMatchRowProps) {
   const isSkipped = decision.action === 'skip';
 
   return (
     <div
       className={cn(
         'group flex items-center gap-3 rounded-lg border border-transparent px-3 py-2.5 transition-all duration-200',
-        isSkipped
-          ? 'opacity-50 bg-muted/30'
-          : 'hover:bg-green-500/5 hover:border-green-500/20',
+        isSkipped ? 'opacity-50 bg-muted/30' : 'hover:bg-green-500/5 hover:border-green-500/20',
         className
       )}
       data-testid={`import-confident-row-${exercise.tempId}`}
@@ -62,12 +45,7 @@ export function ConfidentMatchRow({
           isSkipped ? 'bg-muted' : 'bg-green-500/20'
         )}
       >
-        <Check
-          className={cn(
-            'h-4 w-4',
-            isSkipped ? 'text-muted-foreground' : 'text-green-500'
-          )}
-        />
+        <Check className={cn('h-4 w-4', isSkipped ? 'text-muted-foreground' : 'text-green-500')} />
       </div>
 
       {/* PDF exercise name with hover preview */}
@@ -84,9 +62,7 @@ export function ConfidentMatchRow({
         </TooltipTrigger>
         <TooltipContent side="top" className="max-w-sm">
           <p className="text-xs text-muted-foreground mb-1">Oryginalny tekst z PDF:</p>
-          <p className="text-sm italic">
-            &quot;{exercise.originalText || exercise.name}&quot;
-          </p>
+          <p className="text-sm italic">&quot;{exercise.originalText || exercise.name}&quot;</p>
           {exercise.sets && (
             <p className="text-xs text-muted-foreground mt-2">
               Serie: {exercise.sets}
@@ -114,12 +90,7 @@ export function ConfidentMatchRow({
             <Dumbbell className="h-4 w-4 text-muted-foreground" />
           </div>
         )}
-        <span
-          className={cn(
-            'text-sm text-foreground truncate',
-            isSkipped && 'text-muted-foreground'
-          )}
-        >
+        <span className={cn('text-sm text-foreground truncate', isSkipped && 'text-muted-foreground')}>
           {match.existingExerciseName}
         </span>
       </div>
@@ -150,12 +121,7 @@ export function ConfidentMatchRow({
           title={isSkipped ? 'Przywróć' : 'Nie importuj'}
           data-testid={`import-confident-row-${exercise.tempId}-skip-btn`}
         >
-          <Trash2
-            className={cn(
-              'h-4 w-4',
-              isSkipped ? 'text-primary' : 'text-muted-foreground'
-            )}
-          />
+          <Trash2 className={cn('h-4 w-4', isSkipped ? 'text-primary' : 'text-muted-foreground')} />
         </Button>
       </div>
     </div>

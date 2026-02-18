@@ -4,18 +4,10 @@ import { useState } from 'react';
 import { CheckCircle, ChevronDown, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from '@/components/ui/collapsible';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { ConfidentMatchRow } from '../cards/ConfidentMatchRow';
-import type {
-  ExtractedExercise,
-  MatchSuggestion,
-  ExerciseDecision,
-} from '@/types/import.types';
+import type { ExtractedExercise, MatchSuggestion, ExerciseDecision } from '@/types/import.types';
 
 interface ConfidentMatchSectionProps {
   /** Exercises with confident matches (confidence >= 0.7) */
@@ -57,9 +49,7 @@ export function ConfidentMatchSection({
   if (exercises.length === 0) return null;
 
   // Count how many are already set to reuse
-  const approvedCount = exercises.filter(
-    (e) => decisions[e.tempId]?.action === 'reuse'
-  ).length;
+  const approvedCount = exercises.filter((e) => decisions[e.tempId]?.action === 'reuse').length;
 
   const allApproved = approvedCount === exercises.length;
 
@@ -81,20 +71,13 @@ export function ConfidentMatchSection({
               <CheckCircle className="h-5 w-5 text-green-500" />
             </div>
             <div className="text-left">
-              <h3 className="font-semibold text-foreground">
-                Znalezione w bazie ({exercises.length})
-              </h3>
+              <h3 className="font-semibold text-foreground">Znalezione w bazie ({exercises.length})</h3>
               <p className="text-xs text-muted-foreground">
-                {allApproved
-                  ? 'Wszystkie zatwierdzone'
-                  : `${approvedCount} z ${exercises.length} zatwierdzonych`}
+                {allApproved ? 'Wszystkie zatwierdzone' : `${approvedCount} z ${exercises.length} zatwierdzonych`}
               </p>
             </div>
             <ChevronDown
-              className={cn(
-                'h-5 w-5 text-muted-foreground transition-transform duration-200',
-                isOpen && 'rotate-180'
-              )}
+              className={cn('h-5 w-5 text-muted-foreground transition-transform duration-200', isOpen && 'rotate-180')}
             />
           </CollapsibleTrigger>
 
@@ -140,8 +123,7 @@ export function ConfidentMatchSection({
                     const currentAction = decision?.action;
                     onDecisionChange(exercise.tempId, {
                       action: currentAction === 'skip' ? 'reuse' : 'skip',
-                      reuseExerciseId:
-                        currentAction === 'skip' ? bestMatch.existingExerciseId : undefined,
+                      reuseExerciseId: currentAction === 'skip' ? bestMatch.existingExerciseId : undefined,
                     });
                   }}
                   onChange={() => {

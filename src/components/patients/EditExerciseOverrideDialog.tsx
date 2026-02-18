@@ -3,7 +3,21 @@
 import * as React from 'react';
 import { useState, useCallback } from 'react';
 import { useMutation } from '@apollo/client/react';
-import { Loader2, Dumbbell, Plus, Minus, Clock, Sparkles, Upload, Trash2, ArrowLeft, ArrowRight, Maximize2, RefreshCw, X } from 'lucide-react';
+import {
+  Loader2,
+  Dumbbell,
+  Plus,
+  Minus,
+  Clock,
+  Sparkles,
+  Upload,
+  Trash2,
+  ArrowLeft,
+  ArrowRight,
+  Maximize2,
+  RefreshCw,
+  X,
+} from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
@@ -148,7 +162,12 @@ function EditExerciseOverrideDialogContent({
   const initialRestSets = currentOverride?.restSets ?? mapping.restSets ?? 0;
   const initialRestReps = currentOverride?.restReps ?? mapping.restReps ?? 0;
   const initialCustomName = currentOverride?.customName ?? mapping.customName ?? '';
-  const initialCustomDescription = currentOverride?.customDescription ?? mapping.customDescription ?? exercise?.patientDescription ?? exercise?.description ?? '';
+  const initialCustomDescription =
+    currentOverride?.customDescription ??
+    mapping.customDescription ??
+    exercise?.patientDescription ??
+    exercise?.description ??
+    '';
   const initialNotes = currentOverride?.notes ?? mapping.notes ?? '';
   // Support both new 'side' and legacy 'exerciseSide' field names
   const exerciseSideValue = exercise?.side?.toLowerCase() || exercise?.exerciseSide;
@@ -229,7 +248,7 @@ function EditExerciseOverrideDialogContent({
         // Convert File to base64 and add to customImages
         const reader = new FileReader();
         reader.onload = () => {
-          setCustomImages(prev => [...prev, reader.result as string]);
+          setCustomImages((prev) => [...prev, reader.result as string]);
           toast.success('Obraz wygenerowany przez AI!');
         };
         reader.readAsDataURL(result.file);
@@ -264,7 +283,7 @@ function EditExerciseOverrideDialogContent({
 
     const reader = new FileReader();
     reader.onload = () => {
-      setCustomImages(prev => [...prev, reader.result as string]);
+      setCustomImages((prev) => [...prev, reader.result as string]);
       toast.success('Zdjęcie dodane!');
     };
     reader.readAsDataURL(file);
@@ -310,7 +329,10 @@ function EditExerciseOverrideDialogContent({
       if (customName && customName !== mappingDefaults.customName) {
         newOverride.customName = customName;
       }
-      if (customDescription && customDescription !== (mappingDefaults.customDescription ?? exerciseDefaults?.description ?? '')) {
+      if (
+        customDescription &&
+        customDescription !== (mappingDefaults.customDescription ?? exerciseDefaults?.description ?? '')
+      ) {
         newOverride.customDescription = customDescription;
       }
       if (notes) {
@@ -414,12 +436,12 @@ function EditExerciseOverrideDialogContent({
                     </Badge>
                   )}
                   {(exercise?.side || exercise?.exerciseSide) &&
-                   (exercise?.side || exercise?.exerciseSide) !== 'none' &&
-                   (exercise?.side || exercise?.exerciseSide)?.toLowerCase() !== 'none' && (
-                    <Badge variant="outline" className="text-xs">
-                      {translateSide(exercise?.side || exercise?.exerciseSide)}
-                    </Badge>
-                  )}
+                    (exercise?.side || exercise?.exerciseSide) !== 'none' &&
+                    (exercise?.side || exercise?.exerciseSide)?.toLowerCase() !== 'none' && (
+                      <Badge variant="outline" className="text-xs">
+                        {translateSide(exercise?.side || exercise?.exerciseSide)}
+                      </Badge>
+                    )}
                 </div>
               </div>
             </div>
@@ -566,9 +588,7 @@ function EditExerciseOverrideDialogContent({
 
           {/* Exercise side selection */}
           <div className="space-y-4">
-            <p className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
-              Strona ćwiczenia
-            </p>
+            <p className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Strona ćwiczenia</p>
             <div className="flex flex-wrap gap-2">
               {EXERCISE_SIDES.map((side) => {
                 const Icon = side.icon;
@@ -589,18 +609,14 @@ function EditExerciseOverrideDialogContent({
                 );
               })}
             </div>
-            <p className="text-xs text-muted-foreground">
-              Określ która strona ciała jest zaangażowana w ćwiczenie
-            </p>
+            <p className="text-xs text-muted-foreground">Określ która strona ciała jest zaangażowana w ćwiczenie</p>
           </div>
 
           <Separator />
 
           {/* Images section */}
           <div className="space-y-4">
-            <p className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
-              Zdjęcia dla pacjenta
-            </p>
+            <p className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Zdjęcia dla pacjenta</p>
 
             {/* Main exercise image - read only preview */}
             <div className="space-y-2">
@@ -632,11 +648,14 @@ function EditExerciseOverrideDialogContent({
               {customImages.length > 0 && (
                 <div className="grid grid-cols-3 gap-3">
                   {customImages.map((img, index) => (
-                    <div key={index} className="relative group aspect-square rounded-lg overflow-hidden border border-border">
+                    <div
+                      key={index}
+                      className="relative group aspect-square rounded-lg overflow-hidden border border-border"
+                    >
                       <img src={img} alt={`Zdjęcie ${index + 1}`} className="h-full w-full object-cover" />
                       <button
                         type="button"
-                        onClick={() => setCustomImages(prev => prev.filter((_, i) => i !== index))}
+                        onClick={() => setCustomImages((prev) => prev.filter((_, i) => i !== index))}
                         className="absolute top-1 right-1 p-1.5 rounded-full bg-destructive text-destructive-foreground opacity-0 group-hover:opacity-100 transition-opacity hover:scale-110"
                         title="Usuń zdjęcie"
                       >
@@ -669,24 +688,12 @@ function EditExerciseOverrideDialogContent({
                   className="flex-1 gap-2"
                   data-testid="patient-exercise-override-ai-generate-btn"
                 >
-                  {isGeneratingImage ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Sparkles className="h-4 w-4" />
-                  )}
+                  {isGeneratingImage ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
                   {isGeneratingImage ? 'Generowanie...' : 'Generuj AI'}
                 </Button>
               </div>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                onChange={handleImageUpload}
-                className="hidden"
-              />
-              <p className="text-xs text-muted-foreground">
-                Te zdjęcia będą widoczne tylko dla tego pacjenta
-              </p>
+              <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
+              <p className="text-xs text-muted-foreground">Te zdjęcia będą widoczne tylko dla tego pacjenta</p>
             </div>
           </div>
 
@@ -718,9 +725,7 @@ function EditExerciseOverrideDialogContent({
                 className="min-h-[100px] resize-none"
               />
               {customDescription !== (exercise?.description ?? '') && (
-                <p className="text-xs text-muted-foreground">
-                  Opis został zmodyfikowany dla tego pacjenta
-                </p>
+                <p className="text-xs text-muted-foreground">Opis został zmodyfikowany dla tego pacjenta</p>
               )}
             </div>
 
@@ -752,10 +757,20 @@ function EditExerciseOverrideDialogContent({
 
       {/* Actions - fixed at bottom */}
       <div className="flex justify-end gap-3 px-6 py-4 border-t border-border bg-background/95 backdrop-blur-sm shrink-0">
-        <Button variant="outline" onClick={onCloseAttempt} className="rounded-xl" data-testid="patient-exercise-override-cancel-btn">
+        <Button
+          variant="outline"
+          onClick={onCloseAttempt}
+          className="rounded-xl"
+          data-testid="patient-exercise-override-cancel-btn"
+        >
           Anuluj
         </Button>
-        <Button onClick={handleSave} disabled={loading} className="rounded-xl shadow-lg shadow-primary/20" data-testid="patient-exercise-override-submit-btn">
+        <Button
+          onClick={handleSave}
+          disabled={loading}
+          className="rounded-xl shadow-lg shadow-primary/20"
+          data-testid="patient-exercise-override-submit-btn"
+        >
           {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           Zapisz zmiany
         </Button>

@@ -1,38 +1,24 @@
-"use client";
+'use client';
 
-import { useState, useMemo, useCallback } from "react";
-import { useQuery, useMutation } from "@apollo/client/react";
-import {
-  Search,
-  Loader2,
-  Plus,
-  FolderPlus,
-  ChevronRight,
-  Check,
-  AlertCircle,
-} from "lucide-react";
-import { toast } from "sonner";
+import { useState, useMemo, useCallback } from 'react';
+import { useQuery, useMutation } from '@apollo/client/react';
+import { Search, Loader2, Plus, FolderPlus, ChevronRight, Check, AlertCircle } from 'lucide-react';
+import { toast } from 'sonner';
 
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { cn } from "@/lib/utils";
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { cn } from '@/lib/utils';
 
-import { GET_AVAILABLE_EXERCISES_QUERY } from "@/graphql/queries/exercises.queries";
-import { useOrganization } from "@/contexts/OrganizationContext";
-import { GET_ORGANIZATION_EXERCISE_SETS_QUERY } from "@/graphql/queries/exerciseSets.queries";
+import { GET_AVAILABLE_EXERCISES_QUERY } from '@/graphql/queries/exercises.queries';
+import { useOrganization } from '@/contexts/OrganizationContext';
+import { GET_ORGANIZATION_EXERCISE_SETS_QUERY } from '@/graphql/queries/exerciseSets.queries';
 import {
   CREATE_EXERCISE_SET_MUTATION,
   ADD_EXERCISE_TO_EXERCISE_SET_MUTATION,
-} from "@/graphql/mutations/exercises.mutations";
-import type { ParsedExercise } from "@/types/chat.types";
+} from '@/graphql/mutations/exercises.mutations';
+import type { ParsedExercise } from '@/types/chat.types';
 
 interface ExerciseFromDB {
   id: string;
@@ -60,62 +46,49 @@ interface AddToSetFromChatDialogProps {
   exercise: ParsedExercise | null;
 }
 
-type Step = "select-set" | "create-set" | "success" | "not-found";
+type Step = 'select-set' | 'create-set' | 'success' | 'not-found';
 
 /**
  * Dialog do dodawania ćwiczenia z czatu AI do zestawu ćwiczeń
  */
-export function AddToSetFromChatDialog({
-  open,
-  onOpenChange,
-  exercise,
-}: AddToSetFromChatDialogProps) {
+export function AddToSetFromChatDialog({ open, onOpenChange, exercise }: AddToSetFromChatDialogProps) {
   const { currentOrganization } = useOrganization();
-  const [step, setStep] = useState<Step>("select-set");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [newSetName, setNewSetName] = useState("");
-  const [selectedSetId, setSelectedSetId] = useState<string | null>(null);
+  const [step, setStep] = useState<Step>('select-set');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [newSetName, setNewSetName] = useState('');
+  const [_selectedSetId, setSelectedSetId] = useState<string | null>(null);
 
   // Get organization ID from context (changes when user switches organization)
   const organizationId = currentOrganization?.organizationId;
 
   // Get exercises from DB to find matching one (includes global FiziYo exercises)
-  const { data: exercisesData, loading: exercisesLoading } = useQuery(
-    GET_AVAILABLE_EXERCISES_QUERY,
-    {
-      variables: { organizationId: organizationId || "" },
-      skip: !organizationId || !open,
-    }
-  );
+  const { data: exercisesData, loading: exercisesLoading } = useQuery(GET_AVAILABLE_EXERCISES_QUERY, {
+    variables: { organizationId: organizationId || '' },
+    skip: !organizationId || !open,
+  });
 
   // Get exercise sets
-  const { data: setsData, loading: setsLoading, refetch: refetchSets } = useQuery(
-    GET_ORGANIZATION_EXERCISE_SETS_QUERY,
-    {
-      variables: { organizationId: organizationId || "" },
-      skip: !organizationId || !open,
-    }
-  );
+  const {
+    data: setsData,
+    loading: setsLoading,
+    refetch: refetchSets,
+  } = useQuery(GET_ORGANIZATION_EXERCISE_SETS_QUERY, {
+    variables: { organizationId: organizationId || '' },
+    skip: !organizationId || !open,
+  });
 
   // Mutations
-  const [createSet, { loading: creatingSet }] = useMutation(
-    CREATE_EXERCISE_SET_MUTATION
-  );
-  const [addExerciseToSet, { loading: addingExercise }] = useMutation(
-    ADD_EXERCISE_TO_EXERCISE_SET_MUTATION
-  );
+  const [createSet, { loading: creatingSet }] = useMutation(CREATE_EXERCISE_SET_MUTATION);
+  const [addExerciseToSet, { loading: addingExercise }] = useMutation(ADD_EXERCISE_TO_EXERCISE_SET_MUTATION);
 
   // Find matching exercise in DB by name (searches both organization and global exercises)
   const matchingExercise = useMemo(() => {
     if (!exercise || !exercisesData) return null;
 
-    const exercises = (exercisesData as { availableExercises?: ExerciseFromDB[] })
-      ?.availableExercises || [];
+    const exercises = (exercisesData as { availableExercises?: ExerciseFromDB[] })?.availableExercises || [];
 
     // Try exact match first
-    let match = exercises.find(
-      (e) => e.name.toLowerCase() === exercise.name.toLowerCase()
-    );
+    let match = exercises.find((e) => e.name.toLowerCase() === exercise.name.toLowerCase());
 
     // If no exact match, try partial match
     if (!match) {
@@ -139,9 +112,7 @@ export function AddToSetFromChatDialog({
     if (!searchQuery.trim()) return exerciseSets;
     const query = searchQuery.toLowerCase();
     return exerciseSets.filter(
-      (s) =>
-        s.name.toLowerCase().includes(query) ||
-        s.description?.toLowerCase().includes(query)
+      (s) => s.name.toLowerCase().includes(query) || s.description?.toLowerCase().includes(query)
     );
   }, [exerciseSets, searchQuery]);
 
@@ -149,9 +120,9 @@ export function AddToSetFromChatDialog({
   const handleOpenChange = useCallback(
     (newOpen: boolean) => {
       if (newOpen) {
-        setStep("select-set");
-        setSearchQuery("");
-        setNewSetName("");
+        setStep('select-set');
+        setSearchQuery('');
+        setNewSetName('');
         setSelectedSetId(null);
       }
       onOpenChange(newOpen);
@@ -164,9 +135,7 @@ export function AddToSetFromChatDialog({
     (setId: string) => {
       if (!matchingExercise) return false;
       const set = exerciseSets.find((s) => s.id === setId);
-      return set?.exerciseMappings?.some(
-        (m) => m.exerciseId === matchingExercise.id
-      );
+      return set?.exerciseMappings?.some((m) => m.exerciseId === matchingExercise.id);
     },
     [matchingExercise, exerciseSets]
   );
@@ -196,11 +165,11 @@ export function AddToSetFromChatDialog({
 
         const setName = exerciseSets.find((s) => s.id === setId)?.name;
         toast.success(`Dodano "${matchingExercise.name}" do zestawu "${setName}"`);
-        setStep("success");
+        setStep('success');
         setTimeout(() => handleOpenChange(false), 1500);
       } catch (error) {
-        console.error("Error adding exercise to set:", error);
-        toast.error("Nie udało się dodać ćwiczenia do zestawu");
+        console.error('Error adding exercise to set:', error);
+        toast.error('Nie udało się dodać ćwiczenia do zestawu');
       }
     },
     [matchingExercise, organizationId, addExerciseToSet, exerciseSets, handleOpenChange]
@@ -215,13 +184,13 @@ export function AddToSetFromChatDialog({
         variables: {
           organizationId,
           name: newSetName.trim(),
-          description: "",
+          description: '',
         },
       });
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const newSetId = (result.data as any)?.createExerciseSet?.id;
-      if (!newSetId) throw new Error("Failed to create set");
+      if (!newSetId) throw new Error('Failed to create set');
 
       await addExerciseToSet({
         variables: {
@@ -236,24 +205,14 @@ export function AddToSetFromChatDialog({
 
       await refetchSets();
 
-      toast.success(
-        `Utworzono zestaw "${newSetName}" i dodano "${matchingExercise.name}"`
-      );
-      setStep("success");
+      toast.success(`Utworzono zestaw "${newSetName}" i dodano "${matchingExercise.name}"`);
+      setStep('success');
       setTimeout(() => handleOpenChange(false), 1500);
     } catch (error) {
-      console.error("Error creating set:", error);
-      toast.error("Nie udało się utworzyć zestawu");
+      console.error('Error creating set:', error);
+      toast.error('Nie udało się utworzyć zestawu');
     }
-  }, [
-    matchingExercise,
-    organizationId,
-    newSetName,
-    createSet,
-    addExerciseToSet,
-    refetchSets,
-    handleOpenChange,
-  ]);
+  }, [matchingExercise, organizationId, newSetName, createSet, addExerciseToSet, refetchSets, handleOpenChange]);
 
   const isLoading = exercisesLoading || setsLoading;
   const isSaving = creatingSet || addingExercise;
@@ -265,9 +224,7 @@ export function AddToSetFromChatDialog({
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Ćwiczenie nie znalezione</DialogTitle>
-            <DialogDescription>
-              Nie znaleziono ćwiczenia "{exercise.name}" w bazie danych.
-            </DialogDescription>
+            <DialogDescription>Nie znaleziono ćwiczenia &quot;{exercise.name}&quot; w bazie danych.</DialogDescription>
           </DialogHeader>
 
           <div className="flex flex-col items-center py-8 text-center">
@@ -275,8 +232,8 @@ export function AddToSetFromChatDialog({
               <AlertCircle className="h-8 w-8 text-warning" />
             </div>
             <p className="text-sm text-muted-foreground max-w-[280px]">
-              To ćwiczenie nie istnieje w Twojej bibliotece. Najpierw dodaj je
-              do ćwiczeń organizacji, a potem będziesz mógł dodać je do zestawu.
+              To ćwiczenie nie istnieje w Twojej bibliotece. Najpierw dodaj je do ćwiczeń organizacji, a potem będziesz
+              mógł dodać je do zestawu.
             </p>
           </div>
 
@@ -295,18 +252,14 @@ export function AddToSetFromChatDialog({
       <DialogContent className="max-w-lg max-h-[80vh] flex flex-col" data-testid="ai-chat-add-to-set-dialog">
         <DialogHeader>
           <DialogTitle>
-            {step === "create-set"
-              ? "Utwórz nowy zestaw"
-              : step === "success"
-              ? "Dodano!"
-              : "Dodaj do zestawu"}
+            {step === 'create-set' ? 'Utwórz nowy zestaw' : step === 'success' ? 'Dodano!' : 'Dodaj do zestawu'}
           </DialogTitle>
           <DialogDescription>
-            {step === "create-set"
+            {step === 'create-set'
               ? `Nowy zestaw z ćwiczeniem "${exercise?.name}"`
-              : step === "success"
-              ? "Ćwiczenie zostało dodane do zestawu"
-              : `Wybierz zestaw dla "${exercise?.name}"`}
+              : step === 'success'
+                ? 'Ćwiczenie zostało dodane do zestawu'
+                : `Wybierz zestaw dla "${exercise?.name}"`}
           </DialogDescription>
         </DialogHeader>
 
@@ -318,7 +271,7 @@ export function AddToSetFromChatDialog({
         )}
 
         {/* Success state */}
-        {step === "success" && (
+        {step === 'success' && (
           <div className="flex flex-col items-center py-8">
             <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
               <Check className="h-8 w-8 text-primary" />
@@ -327,22 +280,20 @@ export function AddToSetFromChatDialog({
         )}
 
         {/* Select set step */}
-        {!isLoading && step === "select-set" && (
+        {!isLoading && step === 'select-set' && (
           <div className="flex-1 flex flex-col min-h-0 space-y-4">
             {/* Create new button */}
             <Button
               variant="outline"
               className="w-full justify-start gap-3 h-14 border-dashed border-primary/50 hover:bg-primary/5 hover:border-primary"
-              onClick={() => setStep("create-set")}
+              onClick={() => setStep('create-set')}
             >
               <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10">
                 <FolderPlus className="h-4 w-4 text-primary" />
               </div>
               <div className="text-left">
                 <p className="font-medium">Utwórz nowy zestaw</p>
-                <p className="text-xs text-muted-foreground">
-                  Stwórz nowy zestaw z tym ćwiczeniem
-                </p>
+                <p className="text-xs text-muted-foreground">Stwórz nowy zestaw z tym ćwiczeniem</p>
               </div>
               <ChevronRight className="h-4 w-4 ml-auto text-muted-foreground" />
             </Button>
@@ -364,9 +315,7 @@ export function AddToSetFromChatDialog({
               {filteredSets.length === 0 ? (
                 <div className="flex flex-col items-center py-8 text-center">
                   <p className="text-sm text-muted-foreground">
-                    {searchQuery
-                      ? "Nie znaleziono zestawów"
-                      : "Brak zestawów - utwórz pierwszy!"}
+                    {searchQuery ? 'Nie znaleziono zestawów' : 'Brak zestawów - utwórz pierwszy!'}
                   </p>
                 </div>
               ) : (
@@ -381,16 +330,16 @@ export function AddToSetFromChatDialog({
                         onClick={() => !alreadyInSet && handleAddToSet(set.id)}
                         disabled={alreadyInSet || isSaving}
                         className={cn(
-                          "w-full flex items-center gap-3 rounded-xl border p-3 text-left transition-all",
+                          'w-full flex items-center gap-3 rounded-xl border p-3 text-left transition-all',
                           alreadyInSet
-                            ? "border-primary/20 bg-primary/5 cursor-not-allowed"
-                            : "border-border hover:border-primary/40 hover:bg-surface-light cursor-pointer"
+                            ? 'border-primary/20 bg-primary/5 cursor-not-allowed'
+                            : 'border-border hover:border-primary/40 hover:bg-surface-light cursor-pointer'
                         )}
                       >
                         <div
                           className={cn(
-                            "flex h-10 w-10 items-center justify-center rounded-lg",
-                            alreadyInSet ? "bg-primary/20" : "bg-surface-light"
+                            'flex h-10 w-10 items-center justify-center rounded-lg',
+                            alreadyInSet ? 'bg-primary/20' : 'bg-surface-light'
                           )}
                         >
                           {alreadyInSet ? (
@@ -400,23 +349,12 @@ export function AddToSetFromChatDialog({
                           )}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p
-                            className={cn(
-                              "font-medium truncate",
-                              alreadyInSet && "text-primary"
-                            )}
-                          >
-                            {set.name}
-                          </p>
+                          <p className={cn('font-medium truncate', alreadyInSet && 'text-primary')}>{set.name}</p>
                           <p className="text-xs text-muted-foreground">
-                            {alreadyInSet
-                              ? "Już dodane"
-                              : `${exerciseCount} ćwiczeń`}
+                            {alreadyInSet ? 'Już dodane' : `${exerciseCount} ćwiczeń`}
                           </p>
                         </div>
-                        {!alreadyInSet && (
-                          <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                        )}
+                        {!alreadyInSet && <ChevronRight className="h-4 w-4 text-muted-foreground" />}
                       </button>
                     );
                   })}
@@ -427,7 +365,7 @@ export function AddToSetFromChatDialog({
         )}
 
         {/* Create set step */}
-        {!isLoading && step === "create-set" && (
+        {!isLoading && step === 'create-set' && (
           <div className="space-y-4">
             <div className="space-y-2">
               <label className="text-sm font-medium">Nazwa zestawu</label>
@@ -441,7 +379,7 @@ export function AddToSetFromChatDialog({
             </div>
 
             <div className="flex justify-end gap-3 pt-4">
-              <Button variant="outline" onClick={() => setStep("select-set")}>
+              <Button variant="outline" onClick={() => setStep('select-set')}>
                 Wstecz
               </Button>
               <Button
@@ -449,11 +387,7 @@ export function AddToSetFromChatDialog({
                 disabled={!newSetName.trim() || isSaving}
                 data-testid="ai-chat-create-set-submit-btn"
               >
-                {isSaving ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                  <Plus className="mr-2 h-4 w-4" />
-                )}
+                {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Plus className="mr-2 h-4 w-4" />}
                 Utwórz i dodaj
               </Button>
             </div>

@@ -1,17 +1,16 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { useState, useEffect, useCallback } from "react";
-import { useMutation } from "@apollo/client/react";
-import { Loader2, Calendar, Clock } from "lucide-react";
-import { toast } from "sonner";
-import { format } from "date-fns";
-import { pl } from "date-fns/locale";
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useMutation } from '@apollo/client/react';
+import { Loader2, Calendar } from 'lucide-react';
+import { toast } from 'sonner';
+import { format } from 'date-fns';
+import { pl } from 'date-fns/locale';
 
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
 import {
   Dialog,
   DialogContent,
@@ -19,17 +18,13 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
-import {
-  FrequencyPicker,
-  FrequencyValue,
-  defaultFrequency,
-} from "@/components/exercise-sets/FrequencyPicker";
+} from '@/components/ui/dialog';
+import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
+import { FrequencyPicker, FrequencyValue, defaultFrequency } from '@/components/exercise-sets/FrequencyPicker';
 
-import { UPDATE_EXERCISE_SET_ASSIGNMENT_MUTATION } from "@/graphql/mutations/exercises.mutations";
-import { GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY } from "@/graphql/queries/patientAssignments.queries";
-import type { PatientAssignment, Frequency } from "./PatientAssignmentCard";
+import { UPDATE_EXERCISE_SET_ASSIGNMENT_MUTATION } from '@/graphql/mutations/exercises.mutations';
+import { GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY } from '@/graphql/queries/patientAssignments.queries';
+import type { PatientAssignment, Frequency } from './PatientAssignmentCard';
 
 interface EditAssignmentScheduleDialogProps {
   open: boolean;
@@ -66,7 +61,20 @@ export function EditAssignmentScheduleDialog({
   const [endDate, setEndDate] = useState<Date>(new Date());
   const [frequency, setFrequency] = useState<FrequencyValue>(defaultFrequency);
   const [showCloseConfirm, setShowCloseConfirm] = useState(false);
-  const [hasChanges, setHasChanges] = useState(false);
+
+  const hasChanges = useMemo(() => {
+    if (!open || !assignment) return false;
+
+    const origStartDate = assignment.startDate ? new Date(assignment.startDate) : new Date();
+    const origEndDate = assignment.endDate ? new Date(assignment.endDate) : new Date();
+    const origFreq = frequencyToValue(assignment.frequency);
+
+    return (
+      startDate.getTime() !== origStartDate.getTime() ||
+      endDate.getTime() !== origEndDate.getTime() ||
+      JSON.stringify(frequency) !== JSON.stringify(origFreq)
+    );
+  }, [open, assignment, startDate, endDate, frequency]);
 
   const handleCloseAttempt = useCallback(() => {
     if (hasChanges) {
@@ -78,40 +86,22 @@ export function EditAssignmentScheduleDialog({
 
   const handleConfirmClose = useCallback(() => {
     setShowCloseConfirm(false);
-    setHasChanges(false);
     onOpenChange(false);
   }, [onOpenChange]);
 
   // Initialize state when assignment changes
   useEffect(() => {
     if (assignment && open) {
-      setStartDate(assignment.startDate ? new Date(assignment.startDate) : new Date());
-      setEndDate(assignment.endDate ? new Date(assignment.endDate) : new Date());
-      setFrequency(frequencyToValue(assignment.frequency));
-      setHasChanges(false);
+      queueMicrotask(() => {
+        setStartDate(assignment.startDate ? new Date(assignment.startDate) : new Date());
+        setEndDate(assignment.endDate ? new Date(assignment.endDate) : new Date());
+        setFrequency(frequencyToValue(assignment.frequency));
+      });
     }
   }, [assignment, open]);
 
-  // Track changes
-  useEffect(() => {
-    if (open && assignment) {
-      const origStartDate = assignment.startDate ? new Date(assignment.startDate) : new Date();
-      const origEndDate = assignment.endDate ? new Date(assignment.endDate) : new Date();
-      const origFreq = frequencyToValue(assignment.frequency);
-
-      const changed =
-        startDate.getTime() !== origStartDate.getTime() ||
-        endDate.getTime() !== origEndDate.getTime() ||
-        JSON.stringify(frequency) !== JSON.stringify(origFreq);
-
-      setHasChanges(changed);
-    }
-  }, [open, assignment, startDate, endDate, frequency]);
-
   // Mutation
-  const [updateAssignment, { loading }] = useMutation(
-    UPDATE_EXERCISE_SET_ASSIGNMENT_MUTATION
-  );
+  const [updateAssignment, { loading }] = useMutation(UPDATE_EXERCISE_SET_ASSIGNMENT_MUTATION);
 
   const handleSave = async () => {
     if (!assignment) return;
@@ -143,16 +133,16 @@ export function EditAssignmentScheduleDialog({
         ],
       });
 
-      toast.success("Harmonogram został zaktualizowany");
+      toast.success('Harmonogram został zaktualizowany');
       onOpenChange(false);
       onSuccess?.();
     } catch (error) {
-      console.error("Błąd aktualizacji harmonogramu:", error);
-      toast.error("Nie udało się zaktualizować harmonogramu");
+      console.error('Błąd aktualizacji harmonogramu:', error);
+      toast.error('Nie udało się zaktualizować harmonogramu');
     }
   };
 
-  const setName = assignment?.exerciseSet?.name || "Nieznany zestaw";
+  const setName = assignment?.exerciseSet?.name || 'Nieznany zestaw';
 
   return (
     <Dialog open={open} onOpenChange={() => handleCloseAttempt()}>
@@ -170,9 +160,7 @@ export function EditAssignmentScheduleDialog({
             <Calendar className="h-5 w-5 text-primary" />
             Edytuj harmonogram
           </DialogTitle>
-          <DialogDescription>
-            Zmień harmonogram zestawu &quot;{setName}&quot;
-          </DialogDescription>
+          <DialogDescription>Zmień harmonogram zestawu &quot;{setName}&quot;</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-5 py-2">
@@ -182,7 +170,7 @@ export function EditAssignmentScheduleDialog({
               <Label className="text-sm font-medium">Data rozpoczęcia</Label>
               <Input
                 type="date"
-                value={format(startDate, "yyyy-MM-dd")}
+                value={format(startDate, 'yyyy-MM-dd')}
                 onChange={(e) => setStartDate(new Date(e.target.value))}
                 className="h-11"
               />
@@ -191,9 +179,9 @@ export function EditAssignmentScheduleDialog({
               <Label className="text-sm font-medium">Data zakończenia</Label>
               <Input
                 type="date"
-                value={format(endDate, "yyyy-MM-dd")}
+                value={format(endDate, 'yyyy-MM-dd')}
                 onChange={(e) => setEndDate(new Date(e.target.value))}
-                min={format(startDate, "yyyy-MM-dd")}
+                min={format(startDate, 'yyyy-MM-dd')}
                 className="h-11"
               />
             </div>
@@ -209,23 +197,18 @@ export function EditAssignmentScheduleDialog({
             <p className="text-sm font-medium text-foreground">Podsumowanie zmian:</p>
             <div className="text-sm text-muted-foreground space-y-1">
               <p>
-                • Okres:{" "}
+                • Okres:{' '}
                 <span className="text-foreground font-medium">
-                  {format(startDate, "d MMM", { locale: pl })} — {format(endDate, "d MMM yyyy", { locale: pl })}
+                  {format(startDate, 'd MMM', { locale: pl })} — {format(endDate, 'd MMM yyyy', { locale: pl })}
                 </span>
               </p>
               <p>
-                • Częstotliwość:{" "}
-                <span className="text-foreground font-medium">
-                  {frequency.timesPerDay}x dziennie
-                </span>
+                • Częstotliwość: <span className="text-foreground font-medium">{frequency.timesPerDay}x dziennie</span>
               </p>
               {frequency.breakBetweenSets > 0 && (
                 <p>
-                  • Przerwa między sesjami:{" "}
-                  <span className="text-foreground font-medium">
-                    {frequency.breakBetweenSets}h
-                  </span>
+                  • Przerwa między sesjami:{' '}
+                  <span className="text-foreground font-medium">{frequency.breakBetweenSets}h</span>
                 </p>
               )}
             </div>

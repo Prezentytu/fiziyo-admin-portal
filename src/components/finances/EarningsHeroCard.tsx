@@ -1,28 +1,16 @@
-"use client";
+'use client';
 
-import { useMemo } from "react";
-import { useQuery } from "@apollo/client/react";
-import {
-  TrendingUp,
-  Users,
-  Clock,
-  Sparkles,
-  ArrowUp,
-  Coins,
-} from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { GET_ORGANIZATION_EARNINGS_QUERY } from "@/graphql/queries";
-import type { GetOrganizationEarningsResponse } from "@/types/apollo";
-import { formatCurrency, formatPercent } from "@/types/revenue.types";
-import { cn } from "@/lib/utils";
+import { useMemo } from 'react';
+import { useQuery } from '@apollo/client/react';
+import { TrendingUp, Users, Clock, Sparkles, ArrowUp, Coins } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { GET_ORGANIZATION_EARNINGS_QUERY } from '@/graphql/queries';
+import type { GetOrganizationEarningsResponse } from '@/types/apollo';
+import { formatCurrency, formatPercent } from '@/types/revenue.types';
+import { cn } from '@/lib/utils';
 
 // ========================================
 // Types
@@ -37,19 +25,13 @@ interface EarningsHeroCardProps {
 // Component
 // ========================================
 
-export function EarningsHeroCard({
-  organizationId,
-  className,
-}: EarningsHeroCardProps) {
+export function EarningsHeroCard({ organizationId, className }: EarningsHeroCardProps) {
   // Fetch earnings data
-  const { data, loading, error } = useQuery<GetOrganizationEarningsResponse>(
-    GET_ORGANIZATION_EARNINGS_QUERY,
-    {
-      variables: { organizationId: organizationId || "" },
-      skip: !organizationId,
-      errorPolicy: "all",
-    }
-  );
+  const { data, loading, error } = useQuery<GetOrganizationEarningsResponse>(GET_ORGANIZATION_EARNINGS_QUERY, {
+    variables: { organizationId: organizationId || '' },
+    skip: !organizationId,
+    errorPolicy: 'all',
+  });
 
   const earnings = data?.organizationEarnings;
 
@@ -76,7 +58,7 @@ export function EarningsHeroCard({
     return (
       <Card
         className={cn(
-          "relative overflow-hidden border-primary/30 bg-gradient-to-br from-surface via-surface to-primary/5",
+          'relative overflow-hidden border-primary/30 bg-gradient-to-br from-surface via-surface to-primary/5',
           className
         )}
         data-testid="earnings-hero-card"
@@ -99,22 +81,15 @@ export function EarningsHeroCard({
   if (error || !displayData) {
     return (
       <Card
-        className={cn(
-          "relative overflow-hidden border-border/60 bg-surface",
-          className
-        )}
+        className={cn('relative overflow-hidden border-border/60 bg-surface', className)}
         data-testid="earnings-hero-card"
       >
         <CardContent className="flex flex-col items-center justify-center py-12 text-center">
           <div className="h-12 w-12 rounded-xl bg-muted flex items-center justify-center mb-3">
             <TrendingUp className="h-6 w-6 text-muted-foreground" />
           </div>
-          <p className="text-sm font-medium text-muted-foreground">
-            Nie udało się pobrać danych o zarobkach
-          </p>
-          <p className="text-xs text-muted-foreground/70 mt-1">
-            {error?.message || "Spróbuj ponownie później"}
-          </p>
+          <p className="text-sm font-medium text-muted-foreground">Nie udało się pobrać danych o zarobkach</p>
+          <p className="text-xs text-muted-foreground/70 mt-1">{error?.message || 'Spróbuj ponownie później'}</p>
         </CardContent>
       </Card>
     );
@@ -123,8 +98,8 @@ export function EarningsHeroCard({
   return (
     <Card
       className={cn(
-        "group relative overflow-hidden border-primary/30 bg-gradient-to-br from-surface via-surface to-primary/5",
-        "transition-all duration-300 hover:shadow-xl hover:shadow-primary/10",
+        'group relative overflow-hidden border-primary/30 bg-gradient-to-br from-surface via-surface to-primary/5',
+        'transition-all duration-300 hover:shadow-xl hover:shadow-primary/10',
         className
       )}
       data-testid="earnings-hero-card"
@@ -143,15 +118,8 @@ export function EarningsHeroCard({
             <Coins className="h-5 w-5 text-primary" />
           </div>
           <div className="flex items-center gap-2">
-            <h3 className="text-sm font-medium text-muted-foreground">
-              Twoje Zarobki
-            </h3>
-            <Badge
-              className={cn(
-                "gap-1 border-0",
-                "bg-primary/20 text-primary hover:bg-primary/30"
-              )}
-            >
+            <h3 className="text-sm font-medium text-muted-foreground">Twoje Zarobki</h3>
+            <Badge className={cn('gap-1 border-0', 'bg-primary/20 text-primary hover:bg-primary/30')}>
               <Sparkles className="h-3 w-3" />
               {displayData.commissionTier}
             </Badge>
@@ -167,21 +135,16 @@ export function EarningsHeroCard({
                   className="text-4xl sm:text-5xl font-bold text-primary tabular-nums tracking-tight"
                   data-testid="earnings-hero-monthly"
                 >
-                  {formatCurrency(
-                    displayData.monthlyEarnings,
-                    displayData.currency
-                  )}
+                  {formatCurrency(displayData.monthlyEarnings, displayData.currency)}
                 </p>
                 <p className="text-sm text-muted-foreground mt-1">
-                  Zarobki w tym miesiącu • Prowizja{" "}
-                  {formatPercent(displayData.commissionRate)}
+                  Zarobki w tym miesiącu • Prowizja {formatPercent(displayData.commissionRate)}
                 </p>
               </div>
             </TooltipTrigger>
             <TooltipContent side="bottom" className="max-w-xs">
               <p className="text-sm">
-                Suma prowizji od subskrypcji pacjentów Premium w bieżącym
-                miesiącu. Twoja prowizja to{" "}
+                Suma prowizji od subskrypcji pacjentów Premium w bieżącym miesiącu. Twoja prowizja to{' '}
                 {formatPercent(displayData.commissionRate)} od każdej płatności.
               </p>
             </TooltipContent>
@@ -196,10 +159,7 @@ export function EarningsHeroCard({
               <TrendingUp className="h-3.5 w-3.5 text-emerald-500" />
               <span className="text-xs text-muted-foreground">Łącznie</span>
             </div>
-            <p
-              className="text-lg font-bold text-foreground tabular-nums"
-              data-testid="earnings-hero-total"
-            >
+            <p className="text-lg font-bold text-foreground tabular-nums" data-testid="earnings-hero-total">
               {formatCurrency(displayData.totalEarnings, displayData.currency)}
             </p>
           </div>
@@ -210,14 +170,8 @@ export function EarningsHeroCard({
               <Clock className="h-3.5 w-3.5 text-amber-500" />
               <span className="text-xs text-muted-foreground">Oczekujące</span>
             </div>
-            <p
-              className="text-lg font-bold text-foreground tabular-nums"
-              data-testid="earnings-hero-pending"
-            >
-              {formatCurrency(
-                displayData.pendingEarnings,
-                displayData.currency
-              )}
+            <p className="text-lg font-bold text-foreground tabular-nums" data-testid="earnings-hero-pending">
+              {formatCurrency(displayData.pendingEarnings, displayData.currency)}
             </p>
           </div>
 
@@ -227,10 +181,7 @@ export function EarningsHeroCard({
               <Users className="h-3.5 w-3.5 text-info" />
               <span className="text-xs text-muted-foreground">Pacjenci</span>
             </div>
-            <p
-              className="text-lg font-bold text-foreground tabular-nums"
-              data-testid="earnings-hero-subscribers"
-            >
+            <p className="text-lg font-bold text-foreground tabular-nums" data-testid="earnings-hero-subscribers">
               {displayData.activeSubscribers}
             </p>
           </div>
@@ -241,14 +192,10 @@ export function EarningsHeroCard({
           <div className="mt-4 flex items-center gap-2 text-xs text-muted-foreground">
             <ArrowUp className="h-3 w-3 text-emerald-500" />
             <span>
-              Prognoza:{" "}
+              Prognoza:{' '}
               <span className="font-medium text-foreground">
-                ~
-                {formatCurrency(
-                  displayData.estimatedMonthlyRevenue,
-                  displayData.currency
-                )}
-              </span>{" "}
+                ~{formatCurrency(displayData.estimatedMonthlyRevenue, displayData.currency)}
+              </span>{' '}
               miesięcznie
             </span>
           </div>

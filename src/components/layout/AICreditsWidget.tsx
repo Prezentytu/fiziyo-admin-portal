@@ -1,13 +1,13 @@
-"use client";
+'use client';
 
-import { useEffect, useState, useMemo } from "react";
-import { useQuery } from "@apollo/client/react";
-import { Sparkles, Zap, TrendingUp } from "lucide-react";
-import { useOrganization } from "@/contexts/OrganizationContext";
-import { cn } from "@/lib/utils";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { GET_AI_CREDITS_STATUS } from "@/graphql/queries/aiCredits.queries";
-import { PurchaseCreditsDialog } from "@/components/shared/PurchaseCreditsDialog";
+import { useEffect, useState, useMemo } from 'react';
+import { useQuery } from '@apollo/client/react';
+import { Sparkles, Zap, TrendingUp } from 'lucide-react';
+import { useOrganization } from '@/contexts/OrganizationContext';
+import { cn } from '@/lib/utils';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { GET_AI_CREDITS_STATUS } from '@/graphql/queries/aiCredits.queries';
+import { PurchaseCreditsDialog } from '@/components/shared/PurchaseCreditsDialog';
 
 interface AICreditsStatus {
   monthlyLimit: number;
@@ -34,9 +34,9 @@ export function AICreditsWidget({ isCollapsed }: AICreditsWidgetProps) {
   const { data, loading, error, refetch } = useQuery<{
     aiCreditsStatus: AICreditsStatus;
   }>(GET_AI_CREDITS_STATUS, {
-    variables: { organizationId: organizationId || "" },
+    variables: { organizationId: organizationId || '' },
     skip: !organizationId,
-    errorPolicy: "ignore",
+    errorPolicy: 'ignore',
   });
 
   // Nasłuchuj na event 'ai-credits-changed' i odśwież dane
@@ -113,13 +113,13 @@ export function AICreditsWidget({ isCollapsed }: AICreditsWidgetProps) {
                 onClick={() => setIsPurchaseDialogOpen(true)}
                 data-testid="ai-credits-widget-collapsed-btn"
                 className={cn(
-                  "flex h-10 w-10 items-center justify-center rounded-xl transition-all duration-200",
-                  "hover:scale-110 active:scale-95",
+                  'flex h-10 w-10 items-center justify-center rounded-xl transition-all duration-200',
+                  'hover:scale-110 active:scale-95',
                   isEmpty
-                    ? "bg-destructive/20 text-destructive hover:bg-destructive/30"
+                    ? 'bg-destructive/20 text-destructive hover:bg-destructive/30'
                     : isLow
-                    ? "bg-warning/20 text-warning hover:bg-warning/30"
-                    : "bg-primary/20 text-primary hover:bg-primary/30"
+                      ? 'bg-warning/20 text-warning hover:bg-warning/30'
+                      : 'bg-primary/20 text-primary hover:bg-primary/30'
                 )}
               >
                 <Sparkles className="h-5 w-5" />
@@ -160,12 +160,13 @@ export function AICreditsWidget({ isCollapsed }: AICreditsWidgetProps) {
           onClick={() => setIsPurchaseDialogOpen(true)}
           data-testid="ai-credits-widget-btn"
           className={cn(
-            "group w-full text-left rounded-xl border p-3 transition-all duration-200",
-            "hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0",
+            'group w-full text-left rounded-xl border p-3 transition-all duration-200',
+            'hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0',
             {
-              "border-destructive/40 bg-destructive/10 hover:border-destructive/60 hover:shadow-destructive/20": isEmpty,
-              "border-warning/40 bg-warning/10 hover:border-warning/60 hover:shadow-warning/20": isLow && !isEmpty,
-              "border-primary/40 bg-primary/10 hover:border-primary/60 hover:shadow-primary/20": !isLow && !isEmpty,
+              'border-destructive/40 bg-destructive/10 hover:border-destructive/60 hover:shadow-destructive/20':
+                isEmpty,
+              'border-warning/40 bg-warning/10 hover:border-warning/60 hover:shadow-warning/20': isLow && !isEmpty,
+              'border-primary/40 bg-primary/10 hover:border-primary/60 hover:shadow-primary/20': !isLow && !isEmpty,
             }
           )}
         >
@@ -173,27 +174,24 @@ export function AICreditsWidget({ isCollapsed }: AICreditsWidgetProps) {
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <div
-                className={cn(
-                  "flex h-7 w-7 items-center justify-center rounded-lg",
-                  {
-                    "bg-destructive/20": isEmpty,
-                    "bg-warning/20": isLow && !isEmpty,
-                    "bg-primary/20": !isLow && !isEmpty,
-                  }
-                )}
+                className={cn('flex h-7 w-7 items-center justify-center rounded-lg', {
+                  'bg-destructive/20': isEmpty,
+                  'bg-warning/20': isLow && !isEmpty,
+                  'bg-primary/20': !isLow && !isEmpty,
+                })}
               >
                 <Sparkles
-                  className={cn("h-4 w-4", {
-                    "text-destructive": isEmpty,
-                    "text-warning": isLow && !isEmpty,
-                    "text-primary": !isLow && !isEmpty,
+                  className={cn('h-4 w-4', {
+                    'text-destructive': isEmpty,
+                    'text-warning': isLow && !isEmpty,
+                    'text-primary': !isLow && !isEmpty,
                   })}
                 />
               </div>
               <div className="flex flex-col">
                 <span className="text-xs font-semibold text-foreground">Kredyty AI</span>
                 <span className="text-[10px] text-muted-foreground">
-                  Reset za {daysUntilReset} {daysUntilReset === 1 ? "dzień" : "dni"}
+                  Reset za {daysUntilReset} {daysUntilReset === 1 ? 'dzień' : 'dni'}
                 </span>
               </div>
             </div>
@@ -201,11 +199,11 @@ export function AICreditsWidget({ isCollapsed }: AICreditsWidgetProps) {
             {/* Przycisk doładuj - zawsze widoczny */}
             <div
               className={cn(
-                "flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium transition-all duration-200",
+                'flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-medium transition-all duration-200',
                 {
-                  "bg-destructive/20 text-destructive": isEmpty,
-                  "bg-warning/20 text-warning": isLow && !isEmpty,
-                  "bg-primary/20 text-primary opacity-0 group-hover:opacity-100": !isLow && !isEmpty,
+                  'bg-destructive/20 text-destructive': isEmpty,
+                  'bg-warning/20 text-warning': isLow && !isEmpty,
+                  'bg-primary/20 text-primary opacity-0 group-hover:opacity-100': !isLow && !isEmpty,
                 }
               )}
             >
@@ -217,10 +215,10 @@ export function AICreditsWidget({ isCollapsed }: AICreditsWidgetProps) {
           {/* Główna liczba - ile DOSTĘPNYCH */}
           <div className="flex items-baseline gap-1 mb-2">
             <span
-              className={cn("text-2xl font-bold tabular-nums", {
-                "text-destructive": isEmpty,
-                "text-warning": isLow && !isEmpty,
-                "text-foreground": !isLow && !isEmpty,
+              className={cn('text-2xl font-bold tabular-nums', {
+                'text-destructive': isEmpty,
+                'text-warning': isLow && !isEmpty,
+                'text-foreground': !isLow && !isEmpty,
               })}
             >
               {remaining}
@@ -231,10 +229,10 @@ export function AICreditsWidget({ isCollapsed }: AICreditsWidgetProps) {
           {/* Progress bar - pokazuje stan DOSTĘPNYCH (pełny = dużo) */}
           <div className="relative h-1.5 w-full overflow-hidden rounded-full bg-surface/60 mb-2">
             <div
-              className={cn("h-full rounded-full transition-all duration-500 ease-out", {
-                "bg-destructive": isEmpty,
-                "bg-warning": isLow && !isEmpty,
-                "bg-primary": !isLow && !isEmpty,
+              className={cn('h-full rounded-full transition-all duration-500 ease-out', {
+                'bg-destructive': isEmpty,
+                'bg-warning': isLow && !isEmpty,
+                'bg-primary': !isLow && !isEmpty,
               })}
               style={{ width: `${Math.min(availablePercent, 100)}%` }}
             />
@@ -258,16 +256,13 @@ export function AICreditsWidget({ isCollapsed }: AICreditsWidgetProps) {
           {/* Alert dla niskiego stanu */}
           {(isEmpty || isLow) && (
             <div
-              className={cn(
-                "mt-2 pt-2 border-t flex items-center gap-1.5 text-[10px]",
-                {
-                  "border-destructive/30 text-destructive": isEmpty,
-                  "border-warning/30 text-warning": isLow && !isEmpty,
-                }
-              )}
+              className={cn('mt-2 pt-2 border-t flex items-center gap-1.5 text-[10px]', {
+                'border-destructive/30 text-destructive': isEmpty,
+                'border-warning/30 text-warning': isLow && !isEmpty,
+              })}
             >
               <Zap className="h-3 w-3" />
-              {isEmpty ? "Brak kredytów - doładuj aby kontynuować" : "Rozważ doładowanie"}
+              {isEmpty ? 'Brak kredytów - doładuj aby kontynuować' : 'Rozważ doładowanie'}
             </div>
           )}
         </button>

@@ -1,4 +1,4 @@
-import { gql } from "@apollo/client";
+import { gql } from '@apollo/client';
 
 /**
  * Mutacja do przypisywania pacjentów do fizjoterapeuty
@@ -240,12 +240,7 @@ export const UPDATE_TREATMENT_CONTEXT_MUTATION = gql`
  * Pozwala na dodawanie/edycję notatek
  */
 export const UPDATE_PATIENT_NOTES_MUTATION = gql`
-  mutation UpdatePatientNotes(
-    $therapistId: String!
-    $patientId: String!
-    $organizationId: String!
-    $notes: String!
-  ) {
+  mutation UpdatePatientNotes($therapistId: String!, $patientId: String!, $organizationId: String!, $notes: String!) {
     updatePatientNotes(
       therapistId: $therapistId
       patientId: $patientId

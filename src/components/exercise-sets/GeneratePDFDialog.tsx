@@ -5,7 +5,7 @@ import { useQuery } from '@apollo/client/react';
 import { useUser } from '@clerk/nextjs';
 import { pdf } from '@react-pdf/renderer';
 import { QRCodeCanvas } from 'qrcode.react';
-import { FileDown, FileText, Image, Calendar, QrCode, Loader2, Download, Eye, List } from 'lucide-react';
+import { FileDown, Image, Calendar, QrCode, Loader2, Download, Eye, List } from 'lucide-react';
 
 import {
   Dialog,
@@ -168,7 +168,8 @@ export function GeneratePDFDialog({
         name: mapping.exercise?.name || 'Nieznane ćwiczenie',
         description: mapping.exercise?.patientDescription || mapping.exercise?.description,
         type: mapping.exercise?.type as PDFExercise['type'],
-        exerciseSide: (mapping.exercise?.side?.toLowerCase() || mapping.exercise?.exerciseSide) as PDFExercise['exerciseSide'],
+        exerciseSide: (mapping.exercise?.side?.toLowerCase() ||
+          mapping.exercise?.exerciseSide) as PDFExercise['exerciseSide'],
         imageUrl: mapping.exercise?.thumbnailUrl || mapping.exercise?.imageUrl,
         images: mapping.exercise?.images,
         notes: mapping.notes || mapping.exercise?.notes,
@@ -403,7 +404,12 @@ export function GeneratePDFDialog({
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Anuluj
           </Button>
-          <Button onClick={handleGeneratePDF} disabled={isGenerating || !organization} className="gap-2" data-testid="set-pdf-download-btn">
+          <Button
+            onClick={handleGeneratePDF}
+            disabled={isGenerating || !organization}
+            className="gap-2"
+            data-testid="set-pdf-download-btn"
+          >
             {isGenerating ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" />

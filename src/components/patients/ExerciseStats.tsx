@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import { Dumbbell, Clock, TrendingUp, Star } from "lucide-react";
+import { Dumbbell, Clock, TrendingUp, Star } from 'lucide-react';
 
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
 
 interface ExerciseStat {
   exerciseId: string;
@@ -24,15 +24,11 @@ interface ExerciseStatsProps {
 
 export function ExerciseStats({ stats, className }: ExerciseStatsProps) {
   if (stats.length === 0) {
-    return (
-      <div className={cn("text-center py-8 text-muted-foreground", className)}>
-        Brak statystyk ćwiczeń
-      </div>
-    );
+    return <div className={cn('text-center py-8 text-muted-foreground', className)}>Brak statystyk ćwiczeń</div>;
   }
 
   return (
-    <div className={cn("space-y-3", className)}>
+    <div className={cn('space-y-3', className)}>
       {stats.map((stat) => (
         <Card key={stat.exerciseId} className="border-border/60">
           <CardContent className="p-4">
@@ -42,18 +38,14 @@ export function ExerciseStats({ stats, className }: ExerciseStatsProps) {
                   <Dumbbell className="h-5 w-5 text-muted-foreground" />
                 </div>
                 <div className="min-w-0">
-                  <h4 className="font-medium text-foreground truncate">
-                    {stat.exerciseName}
-                  </h4>
+                  <h4 className="font-medium text-foreground truncate">{stat.exerciseName}</h4>
                   <div className="flex items-center gap-3 mt-1 flex-wrap">
                     <span className="text-sm text-muted-foreground flex items-center gap-1">
                       <TrendingUp className="h-3.5 w-3.5" />
                       {stat.completedCount}x wykonane
                     </span>
                     {stat.totalSets && stat.totalSets > 0 && (
-                      <span className="text-sm text-muted-foreground">
-                        {stat.totalSets} serii
-                      </span>
+                      <span className="text-sm text-muted-foreground">{stat.totalSets} serii</span>
                     )}
                     {stat.averageRating && stat.averageRating > 0 && (
                       <span className="text-sm text-muted-foreground flex items-center gap-1">
@@ -66,7 +58,7 @@ export function ExerciseStats({ stats, className }: ExerciseStatsProps) {
               </div>
               {stat.type && (
                 <Badge variant="secondary" className="shrink-0">
-                  {stat.type === "time" ? "czasowe" : "powtórzenia"}
+                  {stat.type === 'time' ? 'czasowe' : 'powtórzenia'}
                 </Badge>
               )}
             </div>
@@ -94,7 +86,7 @@ export function StatsSummary({
   className,
 }: StatsSummaryProps) {
   return (
-    <div className={cn("grid gap-4 sm:grid-cols-2 lg:grid-cols-4", className)}>
+    <div className={cn('grid gap-4 sm:grid-cols-2 lg:grid-cols-4', className)}>
       <Card className="border-border/60">
         <CardContent className="p-4">
           <div className="flex items-center gap-3">
@@ -130,9 +122,7 @@ export function StatsSummary({
               <Star className="h-5 w-5 text-info" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-foreground">
-                {averageCompletion}%
-              </p>
+              <p className="text-2xl font-bold text-foreground">{averageCompletion}%</p>
               <p className="text-xs text-muted-foreground">Średnie ukończenie</p>
             </div>
           </div>
@@ -146,9 +136,7 @@ export function StatsSummary({
               <Clock className="h-5 w-5 text-warning" />
             </div>
             <div>
-              <p className="text-sm font-bold text-foreground truncate">
-                {lastActivity || "—"}
-              </p>
+              <p className="text-sm font-bold text-foreground truncate">{lastActivity || '—'}</p>
               <p className="text-xs text-muted-foreground">Ostatnia aktywność</p>
             </div>
           </div>
@@ -157,19 +145,3 @@ export function StatsSummary({
     </div>
   );
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

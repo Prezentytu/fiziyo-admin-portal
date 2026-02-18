@@ -1,11 +1,11 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { useUser, useClerk } from "@clerk/nextjs";
-import { User, Settings, HelpCircle, LogOut, ChevronUp } from "lucide-react";
-import Link from "next/link";
-import { cn } from "@/lib/utils";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useState } from 'react';
+import { useUser, useClerk } from '@clerk/nextjs';
+import { User, Settings, HelpCircle, LogOut, ChevronUp } from 'lucide-react';
+import Link from 'next/link';
+import { cn } from '@/lib/utils';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,14 +13,10 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { Skeleton } from "@/components/ui/skeleton";
-import { useOrganization } from "@/contexts/OrganizationContext";
+} from '@/components/ui/dropdown-menu';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useOrganization } from '@/contexts/OrganizationContext';
 
 // ========================================
 // Types
@@ -36,18 +32,18 @@ interface UserProfileFooterProps {
 
 function getInitials(name: string): string {
   return name
-    .split(" ")
+    .split(' ')
     .map((word) => word[0])
-    .join("")
+    .join('')
     .toUpperCase()
     .slice(0, 2);
 }
 
 function truncateEmail(email: string, maxLength: number = 20): string {
   if (email.length <= maxLength) return email;
-  const [local, domain] = email.split("@");
+  const [local, domain] = email.split('@');
   if (!domain) return email;
-  const truncatedLocal = local.slice(0, 3) + "...";
+  const truncatedLocal = local.slice(0, 3) + '...';
   return `${truncatedLocal}@${domain}`;
 }
 
@@ -58,18 +54,19 @@ function truncateEmail(email: string, maxLength: number = 20): string {
 export function UserProfileFooter({ isCollapsed }: UserProfileFooterProps) {
   const { user, isLoaded } = useUser();
   const { signOut, openUserProfile } = useClerk();
-  const { hasMultipleOrganizations, currentOrganization, organizations, switchOrganization, isSwitching } = useOrganization();
+  const { hasMultipleOrganizations, currentOrganization, organizations, switchOrganization, isSwitching } =
+    useOrganization();
   const [isOpen, setIsOpen] = useState(false);
 
   const avatarUrl = user?.imageUrl;
-  const fullName = user?.fullName || user?.firstName || "Użytkownik";
-  const email = user?.primaryEmailAddress?.emailAddress || "";
+  const fullName = user?.fullName || user?.firstName || 'Użytkownik';
+  const email = user?.primaryEmailAddress?.emailAddress || '';
   const initials = getInitials(fullName);
 
   // Loading state
   if (!isLoaded) {
     return (
-      <div className={cn("border-t border-border/60", isCollapsed ? "p-2" : "p-3")}>
+      <div className={cn('border-t border-border/60', isCollapsed ? 'p-2' : 'p-3')}>
         {isCollapsed ? (
           <Skeleton className="h-10 w-10 rounded-full mx-auto" />
         ) : (
@@ -91,10 +88,10 @@ export function UserProfileFooter({ isCollapsed }: UserProfileFooterProps) {
         <button
           data-testid="nav-user-footer-trigger"
           className={cn(
-            "group flex items-center rounded-xl transition-all duration-200 cursor-pointer w-full",
+            'group flex items-center rounded-xl transition-all duration-200 cursor-pointer w-full',
             isCollapsed
-              ? "h-10 w-10 justify-center hover:bg-surface-light mx-auto"
-              : "gap-3 p-2.5 hover:bg-surface-light"
+              ? 'h-10 w-10 justify-center hover:bg-surface-light mx-auto'
+              : 'gap-3 p-2.5 hover:bg-surface-light'
           )}
         >
           {/* Avatar */}
@@ -109,19 +106,15 @@ export function UserProfileFooter({ isCollapsed }: UserProfileFooterProps) {
           {!isCollapsed && (
             <>
               <div className="flex-1 min-w-0 text-left">
-                <div className="text-sm font-medium text-foreground truncate">
-                  {fullName}
-                </div>
-                <div className="text-xs text-muted-foreground truncate">
-                  {truncateEmail(email)}
-                </div>
+                <div className="text-sm font-medium text-foreground truncate">{fullName}</div>
+                <div className="text-xs text-muted-foreground truncate">{truncateEmail(email)}</div>
               </div>
 
               {/* Menu Icon - changes on hover/open */}
               <ChevronUp
                 className={cn(
-                  "h-4 w-4 text-muted-foreground transition-all shrink-0",
-                  isOpen ? "opacity-100 rotate-0" : "opacity-0 group-hover:opacity-100 -rotate-180"
+                  'h-4 w-4 text-muted-foreground transition-all shrink-0',
+                  isOpen ? 'opacity-100 rotate-0' : 'opacity-0 group-hover:opacity-100 -rotate-180'
                 )}
               />
             </>
@@ -130,16 +123,14 @@ export function UserProfileFooter({ isCollapsed }: UserProfileFooterProps) {
       </DropdownMenuTrigger>
 
       <DropdownMenuContent
-        align={isCollapsed ? "start" : "end"}
-        side={isCollapsed ? "right" : "top"}
+        align={isCollapsed ? 'start' : 'end'}
+        side={isCollapsed ? 'right' : 'top'}
         sideOffset={8}
         className="w-72"
       >
         {/* User info header - "Zalogowany jako" */}
         <DropdownMenuLabel className="p-3 pb-2">
-          <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-2">
-            Zalogowany jako
-          </p>
+          <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-2">Zalogowany jako</p>
           <div className="flex items-center gap-3">
             <Avatar className="h-10 w-10">
               <AvatarImage src={avatarUrl} alt={fullName} />
@@ -175,28 +166,20 @@ export function UserProfileFooter({ isCollapsed }: UserProfileFooterProps) {
                   }}
                   data-testid={`nav-user-footer-org-${org.organizationId}`}
                   className={cn(
-                    "gap-3 px-3 py-2 cursor-pointer",
-                    isActive && "bg-primary/10",
-                    isSwitching && "opacity-50 pointer-events-none"
+                    'gap-3 px-3 py-2 cursor-pointer',
+                    isActive && 'bg-primary/10',
+                    isSwitching && 'opacity-50 pointer-events-none'
                   )}
                 >
                   {org.logoUrl ? (
-                    <img
-                      src={org.logoUrl}
-                      alt={org.organizationName}
-                      className="h-6 w-6 rounded-md object-cover"
-                    />
+                    <img src={org.logoUrl} alt={org.organizationName} className="h-6 w-6 rounded-md object-cover" />
                   ) : (
                     <div className="flex h-6 w-6 items-center justify-center rounded-md bg-surface-light text-[10px] font-semibold text-muted-foreground">
                       {getInitials(org.organizationName)}
                     </div>
                   )}
-                  <span className={cn("flex-1 truncate", isActive && "font-medium")}>
-                    {org.organizationName}
-                  </span>
-                  {isActive && (
-                    <span className="text-[10px] text-primary">Aktywna</span>
-                  )}
+                  <span className={cn('flex-1 truncate', isActive && 'font-medium')}>{org.organizationName}</span>
+                  {isActive && <span className="text-[10px] text-primary">Aktywna</span>}
                 </DropdownMenuItem>
               );
             })}
@@ -215,10 +198,7 @@ export function UserProfileFooter({ isCollapsed }: UserProfileFooterProps) {
         </DropdownMenuItem>
 
         {/* Settings link */}
-        <DropdownMenuItem
-          asChild
-          className="gap-3 px-3 py-2.5 cursor-pointer"
-        >
+        <DropdownMenuItem asChild className="gap-3 px-3 py-2.5 cursor-pointer">
           <Link href="/settings" data-testid="nav-user-footer-settings">
             <Settings className="h-4 w-4 text-muted-foreground" />
             <span>Ustawienia konta</span>
@@ -226,10 +206,7 @@ export function UserProfileFooter({ isCollapsed }: UserProfileFooterProps) {
         </DropdownMenuItem>
 
         {/* Help / Support */}
-        <DropdownMenuItem
-          asChild
-          className="gap-3 px-3 py-2.5 cursor-pointer"
-        >
+        <DropdownMenuItem asChild className="gap-3 px-3 py-2.5 cursor-pointer">
           <a
             href="mailto:support@fiziyo.app"
             data-testid="nav-user-footer-help"
@@ -245,7 +222,7 @@ export function UserProfileFooter({ isCollapsed }: UserProfileFooterProps) {
 
         {/* Sign out */}
         <DropdownMenuItem
-          onClick={() => signOut({ redirectUrl: "/sign-in" })}
+          onClick={() => signOut({ redirectUrl: '/sign-in' })}
           data-testid="nav-user-footer-logout"
           className="gap-3 px-3 py-2.5 cursor-pointer text-error focus:text-error focus:bg-error/10"
         >
@@ -274,9 +251,5 @@ export function UserProfileFooter({ isCollapsed }: UserProfileFooterProps) {
   }
 
   // Expanded version
-  return (
-    <div className="border-t border-border/60 p-3 bg-surface-light/30">
-      {menuContent}
-    </div>
-  );
+  return <div className="border-t border-border/60 p-3 bg-surface-light/30">{menuContent}</div>;
 }

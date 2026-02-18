@@ -1,14 +1,9 @@
 'use client';
 
-import { User, UserX } from 'lucide-react';
+import { UserX } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 
 interface TherapistInfo {
@@ -81,9 +76,7 @@ export function TherapistBadge({
             >
               <Avatar className={avatarSize}>
                 <AvatarImage src={therapist.image} alt={displayName} />
-                <AvatarFallback className="text-[8px] bg-primary text-primary-foreground">
-                  {initials}
-                </AvatarFallback>
+                <AvatarFallback className="text-[8px] bg-primary text-primary-foreground">{initials}</AvatarFallback>
               </Avatar>
               <span className="font-medium">Mój pacjent</span>
             </Badge>
@@ -103,18 +96,12 @@ export function TherapistBadge({
         <TooltipTrigger asChild>
           <Badge
             variant="secondary"
-            className={cn(
-              'gap-1.5 px-2 py-0.5 bg-surface-light hover:bg-surface-light/80',
-              textSize,
-              className
-            )}
+            className={cn('gap-1.5 px-2 py-0.5 bg-surface-light hover:bg-surface-light/80', textSize, className)}
             data-testid="patient-card-therapist-badge"
           >
             <Avatar className={avatarSize}>
               <AvatarImage src={therapist.image} alt={displayName} />
-              <AvatarFallback className="text-[8px] bg-muted text-muted-foreground">
-                {initials}
-              </AvatarFallback>
+              <AvatarFallback className="text-[8px] bg-muted text-muted-foreground">{initials}</AvatarFallback>
             </Avatar>
             <span className="truncate max-w-[100px]">{displayName}</span>
           </Badge>

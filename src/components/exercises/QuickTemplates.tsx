@@ -9,7 +9,7 @@ import { QUICK_TEMPLATES } from '@/services/aiService';
 import type { VoiceParseResponse } from '@/types/ai.types';
 
 interface QuickTemplatesProps {
-  onSelect: (template: typeof QUICK_TEMPLATES[0]) => Promise<void>;
+  onSelect: (template: (typeof QUICK_TEMPLATES)[0]) => Promise<void>;
   className?: string;
   maxVisible?: number;
   defaultExpanded?: boolean;
@@ -22,41 +22,38 @@ const TEMPLATE_GROUPS = [
   { id: 'legs', label: 'Nogi & Kolana', ids: ['squat', 'lunge', 'wall-sit', 'step-up'] },
   { id: 'back', label: 'Plecy & Kręgosłup', ids: ['superman', 'child-pose', 'back-extension'] },
   { id: 'shoulders', label: 'Barki & Ramiona', ids: ['shoulder-external-rotation', 'wall-angels', 'band-pull-apart'] },
-  { id: 'stretch', label: 'Rozciąganie', ids: ['hip-flexor-stretch', 'hamstring-stretch', 'piriformis-stretch', 'chest-stretch'] },
+  {
+    id: 'stretch',
+    label: 'Rozciąganie',
+    ids: ['hip-flexor-stretch', 'hamstring-stretch', 'piriformis-stretch', 'chest-stretch'],
+  },
 ];
 
 /**
  * Komponent szybkich szablonów do generowania ćwiczeń przez AI
  * Rozwinięty grid z najpopularniejszymi ćwiczeniami fizjoterapeutycznymi
  */
-export function QuickTemplates({
-  onSelect,
-  className,
-  maxVisible = 12,
-  defaultExpanded = true,
-}: QuickTemplatesProps) {
+export function QuickTemplates({ onSelect, className, maxVisible = 12, defaultExpanded = true }: QuickTemplatesProps) {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [showAll, setShowAll] = useState(defaultExpanded);
   const [activeGroup, setActiveGroup] = useState<string | null>(null);
 
   // Grupowane szablony
   const groupedTemplates = useMemo(() => {
-    return TEMPLATE_GROUPS.map(group => ({
+    return TEMPLATE_GROUPS.map((group) => ({
       ...group,
       templates: group.ids
-        .map(id => QUICK_TEMPLATES.find(t => t.id === id))
-        .filter((t): t is typeof QUICK_TEMPLATES[0] => t !== undefined)
+        .map((id) => QUICK_TEMPLATES.find((t) => t.id === id))
+        .filter((t): t is (typeof QUICK_TEMPLATES)[0] => t !== undefined),
     }));
   }, []);
 
   // Flat list dla widoku kompaktowego
-  const visibleTemplates = showAll
-    ? QUICK_TEMPLATES
-    : QUICK_TEMPLATES.slice(0, maxVisible);
+  const visibleTemplates = showAll ? QUICK_TEMPLATES : QUICK_TEMPLATES.slice(0, maxVisible);
 
   const hasMore = QUICK_TEMPLATES.length > maxVisible;
 
-  const handleClick = async (template: typeof QUICK_TEMPLATES[0]) => {
+  const handleClick = async (template: (typeof QUICK_TEMPLATES)[0]) => {
     setActiveId(template.id);
     try {
       await onSelect(template);
@@ -66,7 +63,7 @@ export function QuickTemplates({
   };
 
   return (
-    <div className={cn("space-y-4", className)} data-testid="exercise-quick-templates">
+    <div className={cn('space-y-4', className)} data-testid="exercise-quick-templates">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -122,19 +119,17 @@ export function QuickTemplates({
                     disabled={activeId !== null}
                     data-testid={`exercise-quick-template-${template.id}-btn`}
                     className={cn(
-                      "group flex items-center gap-2 px-3 py-2.5 rounded-lg border text-left transition-all duration-200",
+                      'group flex items-center gap-2 px-3 py-2.5 rounded-lg border text-left transition-all duration-200',
                       activeId === template.id
-                        ? "border-primary bg-primary/10 text-primary shadow-sm shadow-primary/20"
-                        : "border-border/60 bg-surface hover:border-primary/40 hover:bg-surface-light hover:shadow-sm",
-                      activeId !== null && activeId !== template.id && "opacity-40",
-                      "disabled:cursor-not-allowed"
+                        ? 'border-primary bg-primary/10 text-primary shadow-sm shadow-primary/20'
+                        : 'border-border/60 bg-surface hover:border-primary/40 hover:bg-surface-light hover:shadow-sm',
+                      activeId !== null && activeId !== template.id && 'opacity-40',
+                      'disabled:cursor-not-allowed'
                     )}
                   >
                     <span className="text-base shrink-0">{template.icon}</span>
                     <span className="text-sm font-medium truncate flex-1">{template.label}</span>
-                    {activeId === template.id && (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin shrink-0 text-primary" />
-                    )}
+                    {activeId === template.id && <Loader2 className="h-3.5 w-3.5 animate-spin shrink-0 text-primary" />}
                   </button>
                 ))}
               </div>
@@ -152,19 +147,17 @@ export function QuickTemplates({
               disabled={activeId !== null}
               data-testid={`exercise-quick-template-${template.id}-btn`}
               className={cn(
-                "group flex items-center gap-2 px-3 py-2.5 rounded-lg border text-left transition-all duration-200",
+                'group flex items-center gap-2 px-3 py-2.5 rounded-lg border text-left transition-all duration-200',
                 activeId === template.id
-                  ? "border-primary bg-primary/10 text-primary shadow-sm shadow-primary/20"
-                  : "border-border/60 bg-surface hover:border-primary/40 hover:bg-surface-light hover:shadow-sm",
-                activeId !== null && activeId !== template.id && "opacity-40",
-                "disabled:cursor-not-allowed"
+                  ? 'border-primary bg-primary/10 text-primary shadow-sm shadow-primary/20'
+                  : 'border-border/60 bg-surface hover:border-primary/40 hover:bg-surface-light hover:shadow-sm',
+                activeId !== null && activeId !== template.id && 'opacity-40',
+                'disabled:cursor-not-allowed'
               )}
             >
               <span className="text-base shrink-0">{template.icon}</span>
               <span className="text-sm font-medium truncate flex-1">{template.label}</span>
-              {activeId === template.id && (
-                <Loader2 className="h-3.5 w-3.5 animate-spin shrink-0 text-primary" />
-              )}
+              {activeId === template.id && <Loader2 className="h-3.5 w-3.5 animate-spin shrink-0 text-primary" />}
             </button>
           ))}
         </div>

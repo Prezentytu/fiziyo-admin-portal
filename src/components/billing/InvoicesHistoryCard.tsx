@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import { FileText, Download, ExternalLink, CheckCircle2, Clock, AlertCircle } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
+import { FileText, Download, ExternalLink, CheckCircle2, Clock, AlertCircle } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
 
 // ========================================
 // Types
@@ -15,7 +15,7 @@ interface InvoicesHistoryCardProps {
   className?: string;
 }
 
-type InvoiceStatus = "paid" | "pending" | "overdue";
+type InvoiceStatus = 'paid' | 'pending' | 'overdue';
 
 interface MockInvoice {
   id: string;
@@ -31,25 +31,25 @@ interface MockInvoice {
 
 const mockInvoices: MockInvoice[] = [
   {
-    id: "inv-1",
-    number: "FV/2025/12/001",
-    date: "2025-12-01",
+    id: 'inv-1',
+    number: 'FV/2025/12/001',
+    date: '2025-12-01',
     amount: 585,
-    status: "paid",
+    status: 'paid',
   },
   {
-    id: "inv-2",
-    number: "FV/2025/11/001",
-    date: "2025-11-01",
+    id: 'inv-2',
+    number: 'FV/2025/11/001',
+    date: '2025-11-01',
     amount: 540,
-    status: "paid",
+    status: 'paid',
   },
   {
-    id: "inv-3",
-    number: "FV/2025/10/001",
-    date: "2025-10-01",
+    id: 'inv-3',
+    number: 'FV/2025/10/001',
+    date: '2025-10-01',
     amount: 495,
-    status: "paid",
+    status: 'paid',
   },
 ];
 
@@ -59,15 +59,15 @@ const mockInvoices: MockInvoice[] = [
 
 function formatDate(dateString: string): string {
   const date = new Date(dateString);
-  return date.toLocaleDateString("pl-PL", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
+  return date.toLocaleDateString('pl-PL', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
   });
 }
 
 function formatCurrency(amount: number): string {
-  return `${amount.toLocaleString("pl-PL")} PLN`;
+  return `${amount.toLocaleString('pl-PL')} PLN`;
 }
 
 function getStatusConfig(status: InvoiceStatus): {
@@ -76,23 +76,23 @@ function getStatusConfig(status: InvoiceStatus): {
   className: string;
 } {
   switch (status) {
-    case "paid":
+    case 'paid':
       return {
-        label: "Opłacona",
+        label: 'Opłacona',
         icon: CheckCircle2,
-        className: "bg-primary/20 text-primary border-0",
+        className: 'bg-primary/20 text-primary border-0',
       };
-    case "pending":
+    case 'pending':
       return {
-        label: "Oczekuje",
+        label: 'Oczekuje',
         icon: Clock,
-        className: "bg-warning/20 text-warning border-0",
+        className: 'bg-warning/20 text-warning border-0',
       };
-    case "overdue":
+    case 'overdue':
       return {
-        label: "Zaległa",
+        label: 'Zaległa',
         icon: AlertCircle,
-        className: "bg-destructive/20 text-destructive border-0",
+        className: 'bg-destructive/20 text-destructive border-0',
       };
   }
 }
@@ -107,7 +107,7 @@ export function InvoicesHistoryCard({ className }: InvoicesHistoryCardProps) {
 
   return (
     <Card
-      className={cn("border-border/60 bg-surface/50 backdrop-blur-sm", className)}
+      className={cn('border-border/60 bg-surface/50 backdrop-blur-sm', className)}
       data-testid="billing-invoices-history-card"
     >
       <CardHeader className="pb-3">
@@ -125,9 +125,7 @@ export function InvoicesHistoryCard({ className }: InvoicesHistoryCardProps) {
             <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-surface-light mx-auto mb-3">
               <FileText className="h-6 w-6 text-muted-foreground" />
             </div>
-            <p className="text-sm text-muted-foreground">
-              Brak faktur do wyświetlenia
-            </p>
+            <p className="text-sm text-muted-foreground">Brak faktur do wyświetlenia</p>
           </div>
         ) : (
           <>
@@ -145,20 +143,13 @@ export function InvoicesHistoryCard({ className }: InvoicesHistoryCardProps) {
                   >
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
-                        <p className="text-sm font-medium text-foreground truncate">
-                          {invoice.number}
-                        </p>
-                        <Badge
-                          variant="secondary"
-                          className={cn("gap-1 text-xs", statusConfig.className)}
-                        >
+                        <p className="text-sm font-medium text-foreground truncate">{invoice.number}</p>
+                        <Badge variant="secondary" className={cn('gap-1 text-xs', statusConfig.className)}>
                           <StatusIcon className="h-3 w-3" />
                           {statusConfig.label}
                         </Badge>
                       </div>
-                      <p className="text-xs text-muted-foreground">
-                        {formatDate(invoice.date)}
-                      </p>
+                      <p className="text-xs text-muted-foreground">{formatDate(invoice.date)}</p>
                     </div>
 
                     <div className="flex items-center gap-3">

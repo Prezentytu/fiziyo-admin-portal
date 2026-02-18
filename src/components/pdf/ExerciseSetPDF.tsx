@@ -40,27 +40,19 @@ export function ExerciseSetPDF({
   const formattedDateTime = format(now, 'd.MM.yyyy, HH:mm', { locale: pl });
 
   // Sortuj ćwiczenia
-  const sortedExercises = [...exerciseSet.exercises].sort(
-    (a, b) => (a.order || 0) - (b.order || 0)
-  );
+  const sortedExercises = [...exerciseSet.exercises].sort((a, b) => (a.order || 0) - (b.order || 0));
 
   const exerciseCountText = formatExercises(sortedExercises.length);
 
   // LOGIKA DNI: sprawdź czy są wybrane konkretne dni (nie wszystkie, nie żadne)
   const frequency = exerciseSet.frequency;
-  const selectedDays = frequency ? DAYS.filter(
-    (day) => frequency[day.key as keyof typeof frequency] === true
-  ) : [];
+  const selectedDays = frequency ? DAYS.filter((day) => frequency[day.key as keyof typeof frequency] === true) : [];
   const hasSpecificDays = selectedDays.length > 0 && selectedDays.length < 7;
   const isEveryDay = selectedDays.length === 7;
 
   // Tekst częstotliwości
-  const frequencyText = frequency?.timesPerDay
-    ? `${frequency.timesPerDay}x dziennie`
-    : '1x dziennie';
-  const daysText = isEveryDay || selectedDays.length === 0
-    ? '(Codziennie)'
-    : null;
+  const frequencyText = frequency?.timesPerDay ? `${frequency.timesPerDay}x dziennie` : '1x dziennie';
+  const daysText = isEveryDay || selectedDays.length === 0 ? '(Codziennie)' : null;
 
   return (
     <Document
@@ -80,17 +72,13 @@ export function ExerciseSetPDF({
             {/* Pacjent */}
             <View style={pdfStyles.infoStripColumn}>
               <Text style={pdfStyles.infoStripLabel}>Pacjent</Text>
-              <Text style={pdfStyles.infoStripValue}>
-                {patient?.name || 'Nieznany'}
-              </Text>
+              <Text style={pdfStyles.infoStripValue}>{patient?.name || 'Nieznany'}</Text>
             </View>
 
             {/* Terapeuta */}
             <View style={pdfStyles.infoStripColumn}>
               <Text style={pdfStyles.infoStripLabel}>Terapeuta</Text>
-              <Text style={pdfStyles.infoStripValueSmall}>
-                {therapist?.name || '-'}
-              </Text>
+              <Text style={pdfStyles.infoStripValueSmall}>{therapist?.name || '-'}</Text>
             </View>
 
             {/* Data */}
@@ -104,9 +92,7 @@ export function ExerciseSetPDF({
               <Text style={pdfStyles.infoStripLabel}>Częstotliwość</Text>
               <Text style={pdfStyles.infoStripValueAccent}>
                 {frequencyText}
-                {daysText && (
-                  <Text style={pdfStyles.infoStripValueSmall}> {daysText}</Text>
-                )}
+                {daysText && <Text style={pdfStyles.infoStripValueSmall}> {daysText}</Text>}
               </Text>
             </View>
           </View>
@@ -123,17 +109,13 @@ export function ExerciseSetPDF({
                       key={day.key}
                       style={[
                         pdfStyles.infoStripDayBox,
-                        isActive
-                          ? pdfStyles.infoStripDayBoxActive
-                          : pdfStyles.infoStripDayBoxInactive,
+                        isActive ? pdfStyles.infoStripDayBoxActive : pdfStyles.infoStripDayBoxInactive,
                       ]}
                     >
                       <Text
                         style={[
                           pdfStyles.infoStripDayText,
-                          isActive
-                            ? pdfStyles.infoStripDayTextActive
-                            : pdfStyles.infoStripDayTextInactive,
+                          isActive ? pdfStyles.infoStripDayTextActive : pdfStyles.infoStripDayTextInactive,
                         ]}
                       >
                         {day.label}
@@ -189,9 +171,7 @@ export function ExerciseSetPDF({
         {/* Numer strony */}
         <Text
           style={pdfStyles.pageNumber}
-          render={({ pageNumber, totalPages }) =>
-            `Strona ${pageNumber} z ${totalPages}`
-          }
+          render={({ pageNumber, totalPages }) => `Strona ${pageNumber} z ${totalPages}`}
           fixed
         />
       </Page>

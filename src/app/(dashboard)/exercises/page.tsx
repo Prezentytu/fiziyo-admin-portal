@@ -23,21 +23,14 @@ import { cn } from '@/lib/utils';
 import { GET_AVAILABLE_EXERCISES_QUERY } from '@/graphql/queries/exercises.queries';
 import { GET_EXERCISE_TAGS_BY_ORGANIZATION_QUERY } from '@/graphql/queries/exerciseTags.queries';
 import { GET_TAG_CATEGORIES_BY_ORGANIZATION_QUERY } from '@/graphql/queries/tagCategories.queries';
-import {
-  DELETE_EXERCISE_MUTATION,
-  SUBMIT_TO_GLOBAL_REVIEW_MUTATION,
-} from '@/graphql/mutations/exercises.mutations';
+import { DELETE_EXERCISE_MUTATION, SUBMIT_TO_GLOBAL_REVIEW_MUTATION } from '@/graphql/mutations/exercises.mutations';
 import { matchesSearchQuery, matchesAnyText } from '@/utils/textUtils';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { useExerciseBuilder, type BuilderExercise } from '@/contexts/ExerciseBuilderContext';
 import { createTagsMap, mapExercisesWithTags } from '@/utils/tagUtils';
 import { useDataManagement } from '@/hooks/useDataManagement';
 import { useRealtimeExercises } from '@/hooks/useRealtimeExercises';
-import type {
-  AvailableExercisesResponse,
-  ExerciseTagsResponse,
-  TagCategoriesResponse,
-} from '@/types/apollo';
+import type { AvailableExercisesResponse, ExerciseTagsResponse, TagCategoriesResponse } from '@/types/apollo';
 
 // Typ dla filtra źródła ćwiczeń
 type ExerciseSourceFilter = 'all' | 'organization' | 'fiziyo';
@@ -58,18 +51,21 @@ export default function ExercisesPage() {
   const organizationId = currentOrganization?.organizationId;
 
   // Handler for toggling exercise in builder
-  const handleToggleBuilder = useCallback((exercise: Exercise) => {
-    const builderExercise: BuilderExercise = {
-      id: exercise.id,
-      name: exercise.name,
-      imageUrl: exercise.imageUrl,
-      sets: exercise.sets || 3,
-      reps: exercise.reps || 10,
-      duration: exercise.duration || 0,
-      type: exercise.type,
-    };
-    toggleExercise(builderExercise);
-  }, [toggleExercise]);
+  const handleToggleBuilder = useCallback(
+    (exercise: Exercise) => {
+      const builderExercise: BuilderExercise = {
+        id: exercise.id,
+        name: exercise.name,
+        imageUrl: exercise.imageUrl,
+        sets: exercise.sets || 3,
+        reps: exercise.reps || 10,
+        duration: exercise.duration || 0,
+        type: exercise.type,
+      };
+      toggleExercise(builderExercise);
+    },
+    [toggleExercise]
+  );
 
   // Data management hook for importing examples
   const { importExampleSets, isImporting, hasImportedExamples } = useDataManagement({
@@ -114,17 +110,14 @@ export default function ExercisesPage() {
   });
 
   // Submit to global review mutation
-  const [submitToGlobalReview, { loading: submittingToGlobal }] = useMutation(
-    SUBMIT_TO_GLOBAL_REVIEW_MUTATION,
-    {
-      refetchQueries: [
-        {
-          query: GET_AVAILABLE_EXERCISES_QUERY,
-          variables: { organizationId },
-        },
-      ],
-    }
-  );
+  const [submitToGlobalReview, { loading: submittingToGlobal }] = useMutation(SUBMIT_TO_GLOBAL_REVIEW_MUTATION, {
+    refetchQueries: [
+      {
+        query: GET_AVAILABLE_EXERCISES_QUERY,
+        variables: { organizationId },
+      },
+    ],
+  });
 
   const rawExercises: Exercise[] = (data as AvailableExercisesResponse)?.availableExercises || [];
   const tags = (tagsData as ExerciseTagsResponse)?.exerciseTags || [];
@@ -138,23 +131,20 @@ export default function ExercisesPage() {
   const sourceFilteredExercises = useMemo(() => {
     if (sourceFilter === 'all') return exercises;
     if (sourceFilter === 'organization') {
-      return exercises.filter(e => e.scope === 'ORGANIZATION' || e.scope === 'PERSONAL');
+      return exercises.filter((e) => e.scope === 'ORGANIZATION' || e.scope === 'PERSONAL');
     }
     if (sourceFilter === 'fiziyo') {
-      return exercises.filter(e => e.scope === 'GLOBAL');
+      return exercises.filter((e) => e.scope === 'GLOBAL');
     }
     return exercises;
   }, [exercises, sourceFilter]);
 
   // Liczniki dla zakładek (po deduplikacji)
-  const organizationCount = useMemo(() => 
-    exercises.filter(e => e.scope === 'ORGANIZATION' || e.scope === 'PERSONAL').length,
+  const organizationCount = useMemo(
+    () => exercises.filter((e) => e.scope === 'ORGANIZATION' || e.scope === 'PERSONAL').length,
     [exercises]
   );
-  const fiziyoCount = useMemo(() => 
-    exercises.filter(e => e.scope === 'GLOBAL').length,
-    [exercises]
-  );
+  const fiziyoCount = useMemo(() => exercises.filter((e) => e.scope === 'GLOBAL').length, [exercises]);
 
   // Stats - łączna liczba (po deduplikacji)
   const totalCount = exercises.length;
@@ -242,7 +232,9 @@ export default function ExercisesPage() {
         <div className="max-w-[1400px] mx-auto space-y-6">
           {/* Compact Header with Search + View Toggle */}
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <h1 data-testid="exercise-page-title" className="text-2xl font-bold text-foreground">Ćwiczenia</h1>
+            <h1 data-testid="exercise-page-title" className="text-2xl font-bold text-foreground">
+              Ćwiczenia
+            </h1>
             <div className="flex items-center gap-2">
               {/* Search Input */}
               <div className="relative w-full sm:w-64">
@@ -304,12 +296,8 @@ export default function ExercisesPage() {
                   <Plus className="h-5 w-5 text-white" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <h3 className="text-base font-bold text-white">
-                    Dodaj ćwiczenie
-                  </h3>
-                  <p className="text-sm text-white/70">
-                    Utwórz własne
-                  </p>
+                  <h3 className="text-base font-bold text-white">Dodaj ćwiczenie</h3>
+                  <p className="text-sm text-white/70">Utwórz własne</p>
                 </div>
               </div>
             </button>
@@ -328,8 +316,12 @@ export default function ExercisesPage() {
                 )}
               >
                 <div className="flex items-center gap-2">
-                  <Dumbbell className={cn('h-4 w-4', sourceFilter === 'all' ? 'text-primary' : 'text-muted-foreground')} />
-                  <span className={cn('text-2xl font-bold', sourceFilter === 'all' ? 'text-primary' : 'text-foreground')}>
+                  <Dumbbell
+                    className={cn('h-4 w-4', sourceFilter === 'all' ? 'text-primary' : 'text-muted-foreground')}
+                  />
+                  <span
+                    className={cn('text-2xl font-bold', sourceFilter === 'all' ? 'text-primary' : 'text-foreground')}
+                  >
                     {totalCount}
                   </span>
                 </div>
@@ -348,8 +340,18 @@ export default function ExercisesPage() {
                 )}
               >
                 <div className="flex items-center gap-2">
-                  <Dumbbell className={cn('h-4 w-4', sourceFilter === 'organization' ? 'text-secondary' : 'text-muted-foreground')} />
-                  <span className={cn('text-2xl font-bold', sourceFilter === 'organization' ? 'text-secondary' : 'text-foreground')}>
+                  <Dumbbell
+                    className={cn(
+                      'h-4 w-4',
+                      sourceFilter === 'organization' ? 'text-secondary' : 'text-muted-foreground'
+                    )}
+                  />
+                  <span
+                    className={cn(
+                      'text-2xl font-bold',
+                      sourceFilter === 'organization' ? 'text-secondary' : 'text-foreground'
+                    )}
+                  >
                     {organizationCount}
                   </span>
                 </div>
@@ -368,8 +370,15 @@ export default function ExercisesPage() {
                 )}
               >
                 <div className="flex items-center gap-2">
-                  <Sparkles className={cn('h-4 w-4', sourceFilter === 'fiziyo' ? 'text-violet-500' : 'text-muted-foreground')} />
-                  <span className={cn('text-2xl font-bold', sourceFilter === 'fiziyo' ? 'text-violet-500' : 'text-foreground')}>
+                  <Sparkles
+                    className={cn('h-4 w-4', sourceFilter === 'fiziyo' ? 'text-violet-500' : 'text-muted-foreground')}
+                  />
+                  <span
+                    className={cn(
+                      'text-2xl font-bold',
+                      sourceFilter === 'fiziyo' ? 'text-violet-500' : 'text-foreground'
+                    )}
+                  >
                     {fiziyoCount}
                   </span>
                 </div>
@@ -385,12 +394,7 @@ export default function ExercisesPage() {
               <Badge variant="secondary" className="text-xs">
                 {filteredExercises.length} z {totalCount}
               </Badge>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-6 px-2 text-xs"
-                onClick={() => setSearchQuery('')}
-              >
+              <Button variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={() => setSearchQuery('')}>
                 Wyczyść wyszukiwanie
               </Button>
             </div>
@@ -398,12 +402,12 @@ export default function ExercisesPage() {
 
           {/* Content */}
           {loading ? (
-            <div className={cn(
-              viewMode === 'grid'
-                ? 'grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'
-                : 'space-y-2',
-              'animate-stagger'
-            )}>
+            <div
+              className={cn(
+                viewMode === 'grid' ? 'grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4' : 'space-y-2',
+                'animate-stagger'
+              )}
+            >
               <LoadingState type={viewMode === 'grid' ? 'exercise' : 'exercise-row'} count={8} />
             </div>
           ) : filteredExercises.length === 0 ? (
@@ -426,9 +430,7 @@ export default function ExercisesPage() {
               </CardContent>
             </Card>
           ) : viewMode === 'grid' ? (
-            <div className={cn(
-              "grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 animate-stagger"
-            )}>
+            <div className={cn('grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 animate-stagger')}>
               {filteredExercises.map((exercise) => (
                 <ExerciseCard
                   key={exercise.id}

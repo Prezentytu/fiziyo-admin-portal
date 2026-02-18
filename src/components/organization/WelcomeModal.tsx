@@ -1,20 +1,13 @@
-"use client";
+'use client';
 
-import { useState, useEffect, useCallback } from "react";
-import { useRouter } from "next/navigation";
-import {
-  Dumbbell,
-  Users,
-  FolderOpen,
-  ArrowRight,
-  Sparkles,
-  X,
-} from "lucide-react";
+import { useState, useEffect, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
+import { Dumbbell, Users, FolderOpen, ArrowRight, Sparkles, X } from 'lucide-react';
 
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { cn } from "@/lib/utils";
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { cn } from '@/lib/utils';
 
 // ========================================
 // Types
@@ -35,18 +28,18 @@ interface WelcomeModalProps {
 // ========================================
 
 const roleLabels: Record<string, string> = {
-  OWNER: "Właściciel",
-  ADMIN: "Administrator",
-  THERAPIST: "Fizjoterapeuta",
-  MEMBER: "Członek",
-  STAFF: "Personel",
+  OWNER: 'Właściciel',
+  ADMIN: 'Administrator',
+  THERAPIST: 'Fizjoterapeuta',
+  MEMBER: 'Członek',
+  STAFF: 'Personel',
 };
 
 function getInitials(name: string): string {
   return name
-    .split(" ")
+    .split(' ')
     .map((word) => word[0])
-    .join("")
+    .join('')
     .toUpperCase()
     .slice(0, 2);
 }
@@ -58,24 +51,24 @@ function getInitials(name: string): string {
 const quickTips = [
   {
     icon: Dumbbell,
-    title: "Ćwiczenia",
-    description: "Twórz i zarządzaj biblioteką ćwiczeń",
-    color: "text-primary",
-    bgColor: "bg-primary/20",
+    title: 'Ćwiczenia',
+    description: 'Twórz i zarządzaj biblioteką ćwiczeń',
+    color: 'text-primary',
+    bgColor: 'bg-primary/20',
   },
   {
     icon: Users,
-    title: "Pacjenci",
-    description: "Dodawaj pacjentów i przypisuj plany",
-    color: "text-blue-400",
-    bgColor: "bg-blue-500/20",
+    title: 'Pacjenci',
+    description: 'Dodawaj pacjentów i przypisuj plany',
+    color: 'text-blue-400',
+    bgColor: 'bg-blue-500/20',
   },
   {
     icon: FolderOpen,
-    title: "Zestawy",
-    description: "Grupuj ćwiczenia w gotowe programy",
-    color: "text-amber-400",
-    bgColor: "bg-amber-500/20",
+    title: 'Zestawy',
+    description: 'Grupuj ćwiczenia w gotowe programy',
+    color: 'text-amber-400',
+    bgColor: 'bg-amber-500/20',
   },
 ];
 
@@ -100,7 +93,7 @@ export function WelcomeModal({
     setIsExiting(true);
     setTimeout(() => {
       onClose?.();
-      router.push("/");
+      router.push('/');
     }, 300);
   }, [onClose, router]);
 
@@ -130,32 +123,30 @@ export function WelcomeModal({
   return (
     <div
       className={cn(
-        "fixed inset-0 z-50 flex items-center justify-center p-4",
-        "transition-all duration-300",
-        isVisible && !isExiting ? "opacity-100" : "opacity-0"
+        'fixed inset-0 z-50 flex items-center justify-center p-4',
+        'transition-all duration-300',
+        isVisible && !isExiting ? 'opacity-100' : 'opacity-0'
       )}
     >
       {/* Backdrop */}
       <button
         type="button"
         className={cn(
-          "absolute inset-0 bg-black/80 backdrop-blur-sm cursor-default",
-          "transition-opacity duration-300",
-          isVisible && !isExiting ? "opacity-100" : "opacity-0"
+          'absolute inset-0 bg-black/80 backdrop-blur-sm cursor-default',
+          'transition-opacity duration-300',
+          isVisible && !isExiting ? 'opacity-100' : 'opacity-0'
         )}
         onClick={handleClose}
-        onKeyDown={(e) => e.key === "Escape" && handleClose()}
+        onKeyDown={(e) => e.key === 'Escape' && handleClose()}
         aria-label="Zamknij modal"
       />
 
       {/* Modal */}
       <div
         className={cn(
-          "relative w-full max-w-lg rounded-3xl border border-border/60 bg-surface overflow-hidden",
-          "transition-all duration-500 ease-out",
-          isVisible && !isExiting
-            ? "opacity-100 scale-100 translate-y-0"
-            : "opacity-0 scale-95 translate-y-4"
+          'relative w-full max-w-lg rounded-3xl border border-border/60 bg-surface overflow-hidden',
+          'transition-all duration-500 ease-out',
+          isVisible && !isExiting ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 translate-y-4'
         )}
       >
         {/* Close button */}
@@ -174,17 +165,18 @@ export function WelcomeModal({
 
           {/* Sparkles */}
           <Sparkles className="absolute top-4 left-6 h-6 w-6 text-white/40 animate-pulse" />
-          <Sparkles className="absolute bottom-6 right-12 h-4 w-4 text-white/30 animate-pulse" style={{ animationDelay: "0.5s" }} />
+          <Sparkles
+            className="absolute bottom-6 right-12 h-4 w-4 text-white/30 animate-pulse"
+            style={{ animationDelay: '0.5s' }}
+          />
         </div>
 
         {/* Organization avatar - overlapping header */}
         <div className="relative -mt-12 flex justify-center">
           <div
             className={cn(
-              "transition-all duration-700 delay-200",
-              isVisible && !isExiting
-                ? "opacity-100 scale-100"
-                : "opacity-0 scale-50"
+              'transition-all duration-700 delay-200',
+              isVisible && !isExiting ? 'opacity-100 scale-100' : 'opacity-0 scale-50'
             )}
           >
             {organizationLogo ? (
@@ -206,15 +198,11 @@ export function WelcomeModal({
           {/* Welcome text */}
           <div
             className={cn(
-              "transition-all duration-500 delay-300",
-              isVisible && !isExiting
-                ? "opacity-100 translate-y-0"
-                : "opacity-0 translate-y-4"
+              'transition-all duration-500 delay-300',
+              isVisible && !isExiting ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
             )}
           >
-            <h1 className="text-2xl font-bold text-foreground mb-1">
-              Witaj w {organizationName}!
-            </h1>
+            <h1 className="text-2xl font-bold text-foreground mb-1">Witaj w {organizationName}!</h1>
 
             <div className="flex items-center justify-center gap-2 mb-4">
               <span className="text-muted-foreground">Dołączyłeś jako</span>
@@ -228,18 +216,14 @@ export function WelcomeModal({
           {invitedByName && (
             <div
               className={cn(
-                "flex items-center justify-center gap-3 mb-6 p-3 rounded-xl bg-surface-light",
-                "transition-all duration-500 delay-400",
-                isVisible && !isExiting
-                  ? "opacity-100 translate-y-0"
-                  : "opacity-0 translate-y-4"
+                'flex items-center justify-center gap-3 mb-6 p-3 rounded-xl bg-surface-light',
+                'transition-all duration-500 delay-400',
+                isVisible && !isExiting ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
               )}
             >
               <Avatar className="h-10 w-10">
                 <AvatarImage src={invitedByImage ?? undefined} alt={invitedByName} />
-                <AvatarFallback className="bg-primary/20 text-primary">
-                  {getInitials(invitedByName)}
-                </AvatarFallback>
+                <AvatarFallback className="bg-primary/20 text-primary">{getInitials(invitedByName)}</AvatarFallback>
               </Avatar>
               <div className="text-left">
                 <p className="text-sm font-medium text-foreground">{invitedByName}</p>
@@ -251,11 +235,9 @@ export function WelcomeModal({
           {/* Quick tips */}
           <div
             className={cn(
-              "grid grid-cols-3 gap-3 mb-6",
-              "transition-all duration-500 delay-500",
-              isVisible && !isExiting
-                ? "opacity-100 translate-y-0"
-                : "opacity-0 translate-y-4"
+              'grid grid-cols-3 gap-3 mb-6',
+              'transition-all duration-500 delay-500',
+              isVisible && !isExiting ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
             )}
           >
             {quickTips.map((tip, index) => (
@@ -264,13 +246,11 @@ export function WelcomeModal({
                 className="flex flex-col items-center p-3 rounded-xl bg-surface-light hover:bg-surface-hover transition-colors"
                 style={{ transitionDelay: `${600 + index * 100}ms` }}
               >
-                <div className={cn("p-2 rounded-lg mb-2", tip.bgColor)}>
-                  <tip.icon className={cn("h-5 w-5", tip.color)} />
+                <div className={cn('p-2 rounded-lg mb-2', tip.bgColor)}>
+                  <tip.icon className={cn('h-5 w-5', tip.color)} />
                 </div>
                 <span className="text-xs font-medium text-foreground">{tip.title}</span>
-                <span className="text-[10px] text-muted-foreground text-center mt-0.5">
-                  {tip.description}
-                </span>
+                <span className="text-[10px] text-muted-foreground text-center mt-0.5">{tip.description}</span>
               </div>
             ))}
           </div>
@@ -278,10 +258,8 @@ export function WelcomeModal({
           {/* CTA Button */}
           <div
             className={cn(
-              "transition-all duration-500 delay-700",
-              isVisible && !isExiting
-                ? "opacity-100 translate-y-0"
-                : "opacity-0 translate-y-4"
+              'transition-all duration-500 delay-700',
+              isVisible && !isExiting ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
             )}
           >
             <Button

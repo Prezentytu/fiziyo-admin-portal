@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import { useState, useCallback, useMemo } from "react";
-import { documentImportService } from "@/services/documentImportService";
+import { useState, useCallback, useMemo } from 'react';
+import { documentImportService } from '@/services/documentImportService';
 import type {
   ImportState,
   ImportWizardStep,
@@ -12,7 +12,7 @@ import type {
   ExerciseImportItem,
   ExerciseSetImportItem,
   ClinicalNoteImportItem,
-} from "@/types/import.types";
+} from '@/types/import.types';
 
 type ExerciseFilterType = 'all' | 'create' | 'reuse' | 'skip' | 'matched';
 
@@ -23,7 +23,7 @@ interface ExtendedImportState extends ImportState {
 }
 
 const initialState: ExtendedImportState = {
-  step: "upload",
+  step: 'upload',
   file: null,
   isAnalyzing: false,
   isImporting: false,
@@ -97,7 +97,7 @@ export function useDocumentImport() {
   const analyzeDocument = useCallback(
     async (additionalContext?: string) => {
       if (!state.file) {
-        setState((prev) => ({ ...prev, error: "Wybierz plik do analizy" }));
+        setState((prev) => ({ ...prev, error: 'Wybierz plik do analizy' }));
         return;
       }
 
@@ -105,7 +105,7 @@ export function useDocumentImport() {
       if (!documentImportService.isFormatSupported(state.file)) {
         setState((prev) => ({
           ...prev,
-          error: "Nieobsługiwany format pliku. Obsługiwane: PDF, Excel, CSV, TXT",
+          error: 'Nieobsługiwany format pliku. Obsługiwane: PDF, Excel, CSV, TXT',
         }));
         return;
       }
@@ -120,7 +120,7 @@ export function useDocumentImport() {
 
       setState((prev) => ({
         ...prev,
-        step: "processing",
+        step: 'processing',
         isAnalyzing: true,
         error: null,
       }));
@@ -135,20 +135,14 @@ export function useDocumentImport() {
         // Inicjalizuj domyślne decyzje
         const exerciseDecisions: Record<string, ExerciseDecision> = {};
         for (const exercise of result.exercises) {
-          const hasMatch =
-            result.matchSuggestions[exercise.tempId]?.length > 0;
+          const hasMatch = result.matchSuggestions[exercise.tempId]?.length > 0;
           const bestMatch = result.matchSuggestions[exercise.tempId]?.[0];
 
           exerciseDecisions[exercise.tempId] = {
             tempId: exercise.tempId,
-            action:
-              hasMatch && bestMatch && bestMatch.confidence >= 0.8
-                ? "reuse"
-                : "create",
+            action: hasMatch && bestMatch && bestMatch.confidence >= 0.8 ? 'reuse' : 'create',
             reuseExerciseId:
-              hasMatch && bestMatch && bestMatch.confidence >= 0.8
-                ? bestMatch.existingExerciseId
-                : undefined,
+              hasMatch && bestMatch && bestMatch.confidence >= 0.8 ? bestMatch.existingExerciseId : undefined,
           };
         }
 
@@ -156,7 +150,7 @@ export function useDocumentImport() {
         for (const set of result.exerciseSets) {
           setDecisions[set.tempId] = {
             tempId: set.tempId,
-            action: "create",
+            action: 'create',
           };
         }
 
@@ -164,13 +158,13 @@ export function useDocumentImport() {
         for (const note of result.clinicalNotes) {
           noteDecisions[note.tempId] = {
             tempId: note.tempId,
-            action: "create",
+            action: 'create',
           };
         }
 
         setState((prev) => ({
           ...prev,
-          step: "review-exercises",
+          step: 'review-exercises',
           isAnalyzing: false,
           analysisResult: result,
           exerciseDecisions,
@@ -180,12 +174,9 @@ export function useDocumentImport() {
       } catch (error) {
         setState((prev) => ({
           ...prev,
-          step: "upload",
+          step: 'upload',
           isAnalyzing: false,
-          error:
-            error instanceof Error
-              ? error.message
-              : "Błąd podczas analizy dokumentu",
+          error: error instanceof Error ? error.message : 'Błąd podczas analizy dokumentu',
         }));
       }
     },
@@ -196,56 +187,47 @@ export function useDocumentImport() {
   // Individual Decisions
   // ============================================
 
-  const updateExerciseDecision = useCallback(
-    (tempId: string, decision: Partial<ExerciseDecision>) => {
-      setState((prev) => ({
-        ...prev,
-        exerciseDecisions: {
-          ...prev.exerciseDecisions,
-          [tempId]: {
-            ...prev.exerciseDecisions[tempId],
-            ...decision,
-            tempId,
-          },
+  const updateExerciseDecision = useCallback((tempId: string, decision: Partial<ExerciseDecision>) => {
+    setState((prev) => ({
+      ...prev,
+      exerciseDecisions: {
+        ...prev.exerciseDecisions,
+        [tempId]: {
+          ...prev.exerciseDecisions[tempId],
+          ...decision,
+          tempId,
         },
-      }));
-    },
-    []
-  );
+      },
+    }));
+  }, []);
 
-  const updateSetDecision = useCallback(
-    (tempId: string, decision: Partial<ExerciseSetDecision>) => {
-      setState((prev) => ({
-        ...prev,
-        setDecisions: {
-          ...prev.setDecisions,
-          [tempId]: {
-            ...prev.setDecisions[tempId],
-            ...decision,
-            tempId,
-          },
+  const updateSetDecision = useCallback((tempId: string, decision: Partial<ExerciseSetDecision>) => {
+    setState((prev) => ({
+      ...prev,
+      setDecisions: {
+        ...prev.setDecisions,
+        [tempId]: {
+          ...prev.setDecisions[tempId],
+          ...decision,
+          tempId,
         },
-      }));
-    },
-    []
-  );
+      },
+    }));
+  }, []);
 
-  const updateNoteDecision = useCallback(
-    (tempId: string, decision: Partial<ClinicalNoteDecision>) => {
-      setState((prev) => ({
-        ...prev,
-        noteDecisions: {
-          ...prev.noteDecisions,
-          [tempId]: {
-            ...prev.noteDecisions[tempId],
-            ...decision,
-            tempId,
-          },
+  const updateNoteDecision = useCallback((tempId: string, decision: Partial<ClinicalNoteDecision>) => {
+    setState((prev) => ({
+      ...prev,
+      noteDecisions: {
+        ...prev.noteDecisions,
+        [tempId]: {
+          ...prev.noteDecisions[tempId],
+          ...decision,
+          tempId,
         },
-      }));
-    },
-    []
-  );
+      },
+    }));
+  }, []);
 
   // ============================================
   // Bulk Actions
@@ -262,7 +244,7 @@ export function useDocumentImport() {
       for (const exercise of prev.analysisResult.exercises) {
         newDecisions[exercise.tempId] = {
           tempId: exercise.tempId,
-          action: "create",
+          action: 'create',
           reuseExerciseId: undefined,
         };
       }
@@ -285,7 +267,7 @@ export function useDocumentImport() {
       for (const exercise of prev.analysisResult.exercises) {
         newDecisions[exercise.tempId] = {
           tempId: exercise.tempId,
-          action: "skip",
+          action: 'skip',
           reuseExerciseId: undefined,
         };
       }
@@ -312,7 +294,7 @@ export function useDocumentImport() {
           const bestMatch = suggestions[0];
           newDecisions[exercise.tempId] = {
             tempId: exercise.tempId,
-            action: "reuse",
+            action: 'reuse',
             reuseExerciseId: bestMatch.existingExerciseId,
           };
         }
@@ -344,7 +326,7 @@ export function useDocumentImport() {
         if (bestMatch && bestMatch.confidence >= CONFIDENT_THRESHOLD) {
           newDecisions[exercise.tempId] = {
             tempId: exercise.tempId,
-            action: "reuse",
+            action: 'reuse',
             reuseExerciseId: bestMatch.existingExerciseId,
           };
         }
@@ -367,13 +349,7 @@ export function useDocumentImport() {
 
   const goNext = useCallback(() => {
     setState((prev) => {
-      const stepOrder: ImportWizardStep[] = [
-        "upload",
-        "processing",
-        "review-exercises",
-        "review-sets",
-        "summary",
-      ];
+      const stepOrder: ImportWizardStep[] = ['upload', 'processing', 'review-exercises', 'review-sets', 'summary'];
       const currentIndex = stepOrder.indexOf(prev.step);
       const nextStep = stepOrder[currentIndex + 1] || prev.step;
       return { ...prev, step: nextStep };
@@ -382,13 +358,7 @@ export function useDocumentImport() {
 
   const goBack = useCallback(() => {
     setState((prev) => {
-      const stepOrder: ImportWizardStep[] = [
-        "upload",
-        "processing",
-        "review-exercises",
-        "review-sets",
-        "summary",
-      ];
+      const stepOrder: ImportWizardStep[] = ['upload', 'processing', 'review-exercises', 'review-sets', 'summary'];
       const currentIndex = stepOrder.indexOf(prev.step);
       const prevStep = stepOrder[currentIndex - 1] || prev.step;
       return { ...prev, step: prevStep };
@@ -418,11 +388,11 @@ export function useDocumentImport() {
 
     for (const exercise of analysisResult.exercises) {
       const decision = exerciseDecisions[exercise.tempId];
-      if (!decision || decision.action === "skip") continue;
+      if (!decision || decision.action === 'skip') continue;
 
-      if (decision.action === "reuse" && decision.reuseExerciseId) {
+      if (decision.action === 'reuse' && decision.reuseExerciseId) {
         exercisesToReuse[exercise.tempId] = decision.reuseExerciseId;
-      } else if (decision.action === "create") {
+      } else if (decision.action === 'create') {
         const editedData = decision.editedData || {};
         exercisesToCreate.push({
           tempId: exercise.tempId,
@@ -446,12 +416,12 @@ export function useDocumentImport() {
 
     for (const set of analysisResult.exerciseSets) {
       const decision = setDecisions[set.tempId];
-      if (!decision || decision.action === "skip") continue;
+      if (!decision || decision.action === 'skip') continue;
 
       // Filtruj ćwiczenia które nie są pominięte
       const validExerciseTempIds = set.exerciseTempIds.filter((tempId) => {
         const exDecision = exerciseDecisions[tempId];
-        return exDecision && exDecision.action !== "skip";
+        return exDecision && exDecision.action !== 'skip';
       });
 
       if (validExerciseTempIds.length === 0) continue;
@@ -474,7 +444,7 @@ export function useDocumentImport() {
     if (selectedPatientId) {
       for (const note of analysisResult.clinicalNotes) {
         const decision = noteDecisions[note.tempId];
-        if (!decision || decision.action === "skip") continue;
+        if (!decision || decision.action === 'skip') continue;
 
         clinicalNotesToCreate.push({
           tempId: note.tempId,
@@ -506,7 +476,7 @@ export function useDocumentImport() {
         ...prev,
         isImporting: false,
         importResult: result,
-        step: "summary",
+        step: 'summary',
       }));
 
       return result;
@@ -514,8 +484,7 @@ export function useDocumentImport() {
       setState((prev) => ({
         ...prev,
         isImporting: false,
-        error:
-          error instanceof Error ? error.message : "Błąd podczas importu",
+        error: error instanceof Error ? error.message : 'Błąd podczas importu',
       }));
       return null;
     }
@@ -534,8 +503,7 @@ export function useDocumentImport() {
   // ============================================
 
   const stats = useMemo(() => {
-    const { analysisResult, exerciseDecisions, setDecisions, noteDecisions } =
-      state;
+    const { analysisResult, exerciseDecisions, setDecisions, noteDecisions } = state;
 
     if (!analysisResult) {
       return {
@@ -555,8 +523,8 @@ export function useDocumentImport() {
 
     const exerciseStats = Object.values(exerciseDecisions).reduce(
       (acc, d) => {
-        if (d.action === "create") acc.create++;
-        else if (d.action === "reuse") acc.reuse++;
+        if (d.action === 'create') acc.create++;
+        else if (d.action === 'reuse') acc.reuse++;
         else acc.skip++;
         return acc;
       },
@@ -573,7 +541,7 @@ export function useDocumentImport() {
 
     const setStats = Object.values(setDecisions).reduce(
       (acc, d) => {
-        if (d.action === "create") acc.create++;
+        if (d.action === 'create') acc.create++;
         else acc.skip++;
         return acc;
       },
@@ -582,7 +550,7 @@ export function useDocumentImport() {
 
     const noteStats = Object.values(noteDecisions).reduce(
       (acc, d) => {
-        if (d.action === "create") acc.create++;
+        if (d.action === 'create') acc.create++;
         else acc.skip++;
         return acc;
       },
@@ -635,15 +603,15 @@ export function useDocumentImport() {
 
   const canProceed = useMemo(() => {
     switch (state.step) {
-      case "upload":
+      case 'upload':
         return !!state.file;
-      case "processing":
+      case 'processing':
         return false;
-      case "review-exercises":
+      case 'review-exercises':
         return stats.exercisesToCreate + stats.exercisesToReuse > 0;
-      case "review-sets":
+      case 'review-sets':
         return true; // Zestawy są opcjonalne
-      case "summary":
+      case 'summary':
         return !!state.importResult?.success;
       default:
         return false;

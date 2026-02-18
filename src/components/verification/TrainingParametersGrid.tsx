@@ -1,41 +1,24 @@
-"use client";
+'use client';
 
-import { useCallback, useEffect, useMemo, useState } from "react";
-import {
-  Timer,
-  RotateCcw,
-  Dumbbell,
-  Gauge,
-  AlertCircle,
-} from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { cn } from "@/lib/utils";
-import type { AdminExercise } from "@/graphql/types/adminExercise.types";
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Timer, RotateCcw, Dumbbell, Gauge, AlertCircle } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { cn } from '@/lib/utils';
+import type { AdminExercise } from '@/graphql/types/adminExercise.types';
 
 // ============================================
 // TYPES & OPTIONS
 // ============================================
 
 const DIFFICULTY_LEVELS = [
-  { value: "BEGINNER", label: "Początkujący" },
-  { value: "EASY", label: "Łatwy" },
-  { value: "MEDIUM", label: "Średni" },
-  { value: "HARD", label: "Trudny" },
-  { value: "EXPERT", label: "Ekspert" },
+  { value: 'BEGINNER', label: 'Początkujący' },
+  { value: 'EASY', label: 'Łatwy' },
+  { value: 'MEDIUM', label: 'Średni' },
+  { value: 'HARD', label: 'Trudny' },
+  { value: 'EXPERT', label: 'Ekspert' },
 ];
 
 interface TrainingParametersGridProps {
@@ -50,7 +33,7 @@ interface TrainingParametersGridProps {
   /** Dodatkowe klasy CSS */
   className?: string;
   /** data-testid */
-  "data-testid"?: string;
+  'data-testid'?: string;
 }
 
 /**
@@ -66,7 +49,7 @@ export function TrainingParametersGrid({
   onValidityChange,
   disabled = false,
   className,
-  "data-testid": testId,
+  'data-testid': testId,
 }: TrainingParametersGridProps) {
   // Local state for immediate feedback
   const [localSets, setLocalSets] = useState<number | null>(exercise.defaultSets ?? null);
@@ -126,49 +109,49 @@ export function TrainingParametersGrid({
   );
 
   const handleSetsChange = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = e.target.value === "" ? null : parseInt(e.target.value, 10);
+    const val = e.target.value === '' ? null : parseInt(e.target.value, 10);
     setLocalSets(isNaN(val as number) ? null : val);
   }, []);
 
   const handleSetsBlur = useCallback(async () => {
-    await handleFieldCommit("defaultSets", localSets);
+    await handleFieldCommit('defaultSets', localSets);
   }, [localSets, handleFieldCommit]);
 
   const handleRepsChange = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = e.target.value === "" ? null : parseInt(e.target.value, 10);
+    const val = e.target.value === '' ? null : parseInt(e.target.value, 10);
     setLocalReps(isNaN(val as number) ? null : val);
   }, []);
 
   const handleRepsBlur = useCallback(async () => {
-    await handleFieldCommit("defaultReps", localReps);
+    await handleFieldCommit('defaultReps', localReps);
   }, [localReps, handleFieldCommit]);
 
   const handleDurationChange = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = e.target.value === "" ? null : parseInt(e.target.value, 10);
+    const val = e.target.value === '' ? null : parseInt(e.target.value, 10);
     setLocalDuration(isNaN(val as number) ? null : val);
   }, []);
 
   const handleDurationBlur = useCallback(async () => {
-    await handleFieldCommit("defaultDuration", localDuration);
+    await handleFieldCommit('defaultDuration', localDuration);
   }, [localDuration, handleFieldCommit]);
 
   const handleRestChange = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = e.target.value === "" ? null : parseInt(e.target.value, 10);
+    const val = e.target.value === '' ? null : parseInt(e.target.value, 10);
     setLocalRest(isNaN(val as number) ? null : val);
   }, []);
 
   const handleRestBlur = useCallback(async () => {
-    await handleFieldCommit("defaultRestBetweenSets", localRest);
+    await handleFieldCommit('defaultRestBetweenSets', localRest);
   }, [localRest, handleFieldCommit]);
 
   // Local state for tempo and difficulty
-  const [localTempo, setLocalTempo] = useState<string>(exercise.tempo || "");
-  const [localDifficulty, setLocalDifficulty] = useState<string>(exercise.difficultyLevel || "");
+  const [localTempo, setLocalTempo] = useState<string>(exercise.tempo || '');
+  const [localDifficulty, setLocalDifficulty] = useState<string>(exercise.difficultyLevel || '');
 
   // Sync tempo and difficulty with external values
   useEffect(() => {
-    setLocalTempo(exercise.tempo || "");
-    setLocalDifficulty(exercise.difficultyLevel || "");
+    setLocalTempo(exercise.tempo || '');
+    setLocalDifficulty(exercise.difficultyLevel || '');
   }, [exercise.tempo, exercise.difficultyLevel]);
 
   const handleTempoChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -176,17 +159,20 @@ export function TrainingParametersGrid({
   }, []);
 
   const handleTempoBlur = useCallback(async () => {
-    await onFieldChange("tempo", localTempo || null);
+    await onFieldChange('tempo', localTempo || null);
   }, [localTempo, onFieldChange]);
 
-  const handleDifficultyChange = useCallback(async (value: string) => {
-    setLocalDifficulty(value);
-    await onFieldChange("difficultyLevel", value || null);
-  }, [onFieldChange]);
+  const handleDifficultyChange = useCallback(
+    async (value: string) => {
+      setLocalDifficulty(value);
+      await onFieldChange('difficultyLevel', value || null);
+    },
+    [onFieldChange]
+  );
 
   return (
     <TooltipProvider>
-      <div className={cn("space-y-4", className)} data-testid={testId}>
+      <div className={cn('space-y-4', className)} data-testid={testId}>
         {/* Header */}
         <div className="flex items-center gap-2">
           <h3 className="text-sm font-semibold flex items-center gap-2 text-foreground">
@@ -211,8 +197,8 @@ export function TrainingParametersGrid({
           <div className="space-y-1.5">
             <Label
               className={cn(
-                "text-xs flex items-center gap-1",
-                isInvalid(localSets) ? "text-destructive font-medium" : "text-muted-foreground"
+                'text-xs flex items-center gap-1',
+                isInvalid(localSets) ? 'text-destructive font-medium' : 'text-muted-foreground'
               )}
             >
               <Dumbbell className="h-3.5 w-3.5" />
@@ -222,15 +208,12 @@ export function TrainingParametersGrid({
               type="number"
               min={1}
               max={20}
-              value={localSets ?? ""}
+              value={localSets ?? ''}
               onChange={handleSetsChange}
               onBlur={handleSetsBlur}
-              disabled={disabled || savingField === "defaultSets"}
+              disabled={disabled || savingField === 'defaultSets'}
               placeholder="0"
-              className={cn(
-                "font-mono text-center h-10",
-                isInvalid(localSets) && "border-destructive"
-              )}
+              className={cn('font-mono text-center h-10', isInvalid(localSets) && 'border-destructive')}
               data-testid="training-grid-sets"
             />
           </div>
@@ -245,10 +228,10 @@ export function TrainingParametersGrid({
               type="number"
               min={1}
               max={100}
-              value={localReps ?? ""}
+              value={localReps ?? ''}
               onChange={handleRepsChange}
               onBlur={handleRepsBlur}
-              disabled={disabled || savingField === "defaultReps"}
+              disabled={disabled || savingField === 'defaultReps'}
               placeholder="0"
               className="font-mono text-center h-10"
               data-testid="training-grid-reps"
@@ -266,10 +249,10 @@ export function TrainingParametersGrid({
               min={5}
               max={600}
               step={5}
-              value={localDuration ?? ""}
+              value={localDuration ?? ''}
               onChange={handleDurationChange}
               onBlur={handleDurationBlur}
-              disabled={disabled || savingField === "defaultDuration"}
+              disabled={disabled || savingField === 'defaultDuration'}
               placeholder="0"
               className="font-mono text-center h-10"
               data-testid="training-grid-duration"
@@ -285,11 +268,7 @@ export function TrainingParametersGrid({
               <Gauge className="h-3.5 w-3.5" />
               Trudność
             </Label>
-            <Select
-              value={localDifficulty}
-              onValueChange={handleDifficultyChange}
-              disabled={disabled}
-            >
+            <Select value={localDifficulty} onValueChange={handleDifficultyChange} disabled={disabled}>
               <SelectTrigger className="h-10" data-testid="training-grid-difficulty">
                 <SelectValue placeholder="Wybierz" />
               </SelectTrigger>
@@ -332,10 +311,10 @@ export function TrainingParametersGrid({
               min={0}
               max={300}
               step={5}
-              value={localRest ?? ""}
+              value={localRest ?? ''}
               onChange={handleRestChange}
               onBlur={handleRestBlur}
-              disabled={disabled || savingField === "defaultRestBetweenSets"}
+              disabled={disabled || savingField === 'defaultRestBetweenSets'}
               placeholder="60"
               className="font-mono text-center h-10"
               data-testid="training-grid-rest"

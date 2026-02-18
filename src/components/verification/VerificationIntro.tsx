@@ -1,10 +1,9 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { Library, Sparkles, ArrowRight, CheckCircle2, Loader2, CloudDownload, RefreshCw } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
+import { Library, Sparkles, ArrowRight, CheckCircle2, Loader2, CloudDownload, RefreshCw } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { cn } from '@/lib/utils';
 
 interface RepositoryScanResult {
   success: boolean;
@@ -25,7 +24,7 @@ interface VerificationIntroProps {
 }
 
 export function VerificationIntro({
-  userName = "Ekspercie",
+  userName = 'Ekspercie',
   scanResult,
   onScan,
   onImport,
@@ -48,16 +47,13 @@ export function VerificationIntro({
     <div
       data-testid="verification-intro-container"
       className={cn(
-        "flex flex-col items-center justify-center min-h-[60vh] p-4 text-center max-w-2xl mx-auto",
-        "animate-in fade-in slide-in-from-bottom-4 duration-500",
+        'flex flex-col items-center justify-center min-h-[60vh] p-4 text-center max-w-2xl mx-auto',
+        'animate-in fade-in slide-in-from-bottom-4 duration-500',
         className
       )}
     >
       {/* Hero Icon */}
-      <div
-        data-testid="verification-intro-hero-icon"
-        className="relative mb-8"
-      >
+      <div data-testid="verification-intro-hero-icon" className="relative mb-8">
         <div className="absolute inset-0 bg-primary/20 rounded-full blur-2xl animate-pulse" />
         <div className="relative bg-gradient-to-br from-primary/20 to-primary/10 p-6 rounded-full border border-primary/20">
           <Library className="w-14 h-14 text-primary" />
@@ -65,22 +61,20 @@ export function VerificationIntro({
       </div>
 
       {/* Header */}
-      <h1 className="text-3xl md:text-4xl font-bold tracking-tight mb-4 text-foreground">
-        Centrum Weryfikacji FiziYo
-      </h1>
+      <h1 className="text-3xl md:text-4xl font-bold tracking-tight mb-4 text-foreground">Centrum Weryfikacji FiziYo</h1>
 
       <p className="text-lg text-muted-foreground mb-8 leading-relaxed max-w-lg">
-        Witaj w strefie eksperta, {userName}. Twój wkład pomaga budować najwyższy standard rehabilitacji.
-        Zadbajmy o to, by każde ćwiczenie było bezpieczne i skuteczne.
+        Witaj w strefie eksperta, {userName}. Twój wkład pomaga budować najwyższy standard rehabilitacji. Zadbajmy o to,
+        by każde ćwiczenie było bezpieczne i skuteczne.
       </p>
 
       {/* Status Card - shows scan result or prompt to scan */}
       <Card
         data-testid="verification-intro-status-card"
         className={cn(
-          "w-full max-w-md mb-8 border-primary/20 overflow-hidden",
-          "bg-gradient-to-b from-surface to-primary/5",
-          "shadow-lg shadow-primary/5"
+          'w-full max-w-md mb-8 border-primary/20 overflow-hidden',
+          'bg-gradient-to-b from-surface to-primary/5',
+          'shadow-lg shadow-primary/5'
         )}
       >
         <CardContent className="p-5">
@@ -93,12 +87,12 @@ export function VerificationIntro({
                 </div>
                 <div className="text-left flex-1">
                   <h3 className="font-semibold text-foreground">
-                    {hasNewExercises ? "Nowe materiały są gotowe" : "Wszystko aktualne"}
+                    {hasNewExercises ? 'Nowe materiały są gotowe' : 'Wszystko aktualne'}
                   </h3>
                   <p className="text-sm text-muted-foreground">
                     {hasNewExercises
                       ? `W poczekalni czeka ${scanResult.newExercisesCount} ćwiczeń wymagających oceny.`
-                      : "Wszystkie ćwiczenia z repozytorium są już w bazie."}
+                      : 'Wszystkie ćwiczenia z repozytorium są już w bazie.'}
                   </p>
                 </div>
               </div>
@@ -143,10 +137,10 @@ export function VerificationIntro({
         onClick={handleAction}
         disabled={isLoading}
         className={cn(
-          "h-14 px-8 text-lg font-medium",
-          "shadow-xl shadow-primary/20 hover:shadow-2xl hover:shadow-primary/30",
-          "transition-all duration-300 hover:-translate-y-0.5",
-          "bg-gradient-to-r from-primary to-primary-dark"
+          'h-14 px-8 text-lg font-medium',
+          'shadow-xl shadow-primary/20 hover:shadow-2xl hover:shadow-primary/30',
+          'transition-all duration-300 hover:-translate-y-0.5',
+          'bg-gradient-to-r from-primary to-primary-dark'
         )}
       >
         {isScanning ? (

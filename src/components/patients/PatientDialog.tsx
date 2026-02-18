@@ -12,7 +12,11 @@ import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { UnifiedPatientInput, PatientFormValues } from './UnifiedPatientInput';
 import { AssignmentWizard } from '@/components/assignment/AssignmentWizard';
 import { CREATE_SHADOW_PATIENT_MUTATION } from '@/graphql/mutations/users.mutations';
-import { GET_THERAPIST_PATIENTS_QUERY, GET_ALL_THERAPIST_PATIENTS_QUERY, GET_ORGANIZATION_PATIENTS_QUERY } from '@/graphql/queries/therapists.queries';
+import {
+  GET_THERAPIST_PATIENTS_QUERY,
+  GET_ALL_THERAPIST_PATIENTS_QUERY,
+  GET_ORGANIZATION_PATIENTS_QUERY,
+} from '@/graphql/queries/therapists.queries';
 import { GET_CURRENT_ORGANIZATION_PLAN } from '@/graphql/queries/organizations.queries';
 import { cn } from '@/lib/utils';
 import { getAvatarGradient, getInitials } from '@/utils/textUtils';
@@ -157,22 +161,25 @@ export function PatientDialog({
   };
 
   // Handler for SmartPatientLookup success (existing or new patient)
-  const handleLookupSuccess = useCallback((patient: { id: string; fullname: string; email?: string; firstName?: string; lastName?: string }) => {
-    if (patient.id) {
-      // Existing patient was added via SmartPatientLookup
-      setShowSuccessAnimation(true);
-      setCreatedPatient({
-        id: patient.id,
-        fullname: patient.fullname,
-        email: patient.email,
-        firstName: patient.firstName,
-        lastName: patient.lastName,
-      });
-      setFormIsDirty(false);
-    }
-    // Note: If id is empty, SmartPatientLookup's PatientForm will handle submission
-    // through onSubmit prop which we'll wire to handleCreateNewPatient
-  }, []);
+  const handleLookupSuccess = useCallback(
+    (patient: { id: string; fullname: string; email?: string; firstName?: string; lastName?: string }) => {
+      if (patient.id) {
+        // Existing patient was added via SmartPatientLookup
+        setShowSuccessAnimation(true);
+        setCreatedPatient({
+          id: patient.id,
+          fullname: patient.fullname,
+          email: patient.email,
+          firstName: patient.firstName,
+          lastName: patient.lastName,
+        });
+        setFormIsDirty(false);
+      }
+      // Note: If id is empty, SmartPatientLookup's PatientForm will handle submission
+      // through onSubmit prop which we'll wire to handleCreateNewPatient
+    },
+    []
+  );
 
   // Convert created patient to AssignmentWizard format
   const wizardPatient: Patient | undefined = createdPatient
@@ -185,9 +192,7 @@ export function PatientDialog({
     : undefined;
 
   // Get initials and gradient for success state
-  const successInitials = createdPatient
-    ? getInitials(createdPatient.firstName, createdPatient.lastName)
-    : '?';
+  const successInitials = createdPatient ? getInitials(createdPatient.firstName, createdPatient.lastName) : '?';
   const successGradient = createdPatient
     ? getAvatarGradient(createdPatient.firstName, createdPatient.lastName)
     : 'linear-gradient(135deg, #22c55e, #10b981)';
@@ -206,28 +211,27 @@ export function PatientDialog({
         >
           {createdPatient ? (
             // Success State - Animated
-            <div className={cn(
-              "p-8 text-center",
-              showSuccessAnimation && "animate-in fade-in zoom-in-95 duration-300"
-            )}>
+            <div
+              className={cn('p-8 text-center', showSuccessAnimation && 'animate-in fade-in zoom-in-95 duration-300')}
+            >
               {/* Success Avatar - Larger with animation */}
               <div className="flex justify-center mb-6">
                 <div className="relative">
                   {/* Glow effect */}
                   <div
                     className={cn(
-                      "absolute inset-0 rounded-full blur-xl opacity-50 transition-opacity duration-500",
-                      showSuccessAnimation && "animate-pulse"
+                      'absolute inset-0 rounded-full blur-xl opacity-50 transition-opacity duration-500',
+                      showSuccessAnimation && 'animate-pulse'
                     )}
                     style={{ background: successGradient }}
                   />
                   {/* Avatar */}
                   <div
                     className={cn(
-                      "relative flex items-center justify-center rounded-full text-white font-bold text-3xl",
-                      "w-28 h-28 shadow-2xl ring-4 ring-primary/20",
-                      "transition-all duration-500",
-                      showSuccessAnimation && "animate-in zoom-in-50 duration-500"
+                      'relative flex items-center justify-center rounded-full text-white font-bold text-3xl',
+                      'w-28 h-28 shadow-2xl ring-4 ring-primary/20',
+                      'transition-all duration-500',
+                      showSuccessAnimation && 'animate-in zoom-in-50 duration-500'
                     )}
                     style={{ background: successGradient }}
                   >
@@ -236,10 +240,10 @@ export function PatientDialog({
                   {/* Checkmark badge */}
                   <div
                     className={cn(
-                      "absolute -bottom-1 -right-1 flex h-8 w-8 items-center justify-center rounded-full",
-                      "bg-primary text-primary-foreground shadow-lg ring-4 ring-background",
-                      "transition-all duration-300 delay-200",
-                      showSuccessAnimation && "animate-in zoom-in-50 duration-300"
+                      'absolute -bottom-1 -right-1 flex h-8 w-8 items-center justify-center rounded-full',
+                      'bg-primary text-primary-foreground shadow-lg ring-4 ring-background',
+                      'transition-all duration-300 delay-200',
+                      showSuccessAnimation && 'animate-in zoom-in-50 duration-300'
                     )}
                   >
                     <CheckCircle2 className="h-5 w-5" />
@@ -248,10 +252,12 @@ export function PatientDialog({
               </div>
 
               {/* Success Text */}
-              <div className={cn(
-                "space-y-1 mb-6",
-                showSuccessAnimation && "animate-in fade-in slide-in-from-bottom-2 duration-300 delay-150"
-              )}>
+              <div
+                className={cn(
+                  'space-y-1 mb-6',
+                  showSuccessAnimation && 'animate-in fade-in slide-in-from-bottom-2 duration-300 delay-150'
+                )}
+              >
                 <h2 className="text-xl font-bold text-foreground flex items-center justify-center gap-2">
                   <Sparkles className="h-5 w-5 text-primary" />
                   Pacjent dodany!
@@ -260,18 +266,22 @@ export function PatientDialog({
               </div>
 
               {/* Next Steps */}
-              <p className={cn(
-                "text-sm text-muted-foreground mb-6",
-                showSuccessAnimation && "animate-in fade-in duration-300 delay-200"
-              )}>
+              <p
+                className={cn(
+                  'text-sm text-muted-foreground mb-6',
+                  showSuccessAnimation && 'animate-in fade-in duration-300 delay-200'
+                )}
+              >
                 Co chcesz zrobić dalej?
               </p>
 
               {/* Action Buttons */}
-              <div className={cn(
-                "flex flex-col gap-3",
-                showSuccessAnimation && "animate-in fade-in slide-in-from-bottom-3 duration-300 delay-300"
-              )}>
+              <div
+                className={cn(
+                  'flex flex-col gap-3',
+                  showSuccessAnimation && 'animate-in fade-in slide-in-from-bottom-3 duration-300 delay-300'
+                )}
+              >
                 {/* Primary Action - Assign Set */}
                 <Button
                   onClick={handleAssignSet}
@@ -314,7 +324,9 @@ export function PatientDialog({
                     <UserPlus className="h-6 w-6 text-white" />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <DialogTitle className="text-xl font-bold" data-testid="patient-dialog-title">Nowy pacjent</DialogTitle>
+                    <DialogTitle className="text-xl font-bold" data-testid="patient-dialog-title">
+                      Nowy pacjent
+                    </DialogTitle>
                     <DialogDescription className="text-sm">
                       Podaj email lub telefon, aby znaleźć lub dodać pacjenta
                     </DialogDescription>

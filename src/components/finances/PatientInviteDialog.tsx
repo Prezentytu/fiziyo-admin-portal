@@ -1,34 +1,17 @@
-"use client";
+'use client';
 
-import { useState, useEffect, useMemo } from "react";
-import { useMutation } from "@apollo/client/react";
-import {
-  Mail,
-  Phone,
-  User,
-  Loader2,
-  Copy,
-  Check,
-  Link2,
-  X,
-  Ticket,
-  QrCode,
-  Send,
-} from "lucide-react";
-import { QRCodeSVG } from "qrcode.react";
-import {
-  Dialog,
-  DialogContent,
-  DialogClose,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { toast } from "sonner";
-import { CREATE_PATIENT_INVITE_LINK_MUTATION } from "@/graphql/mutations";
-import { GET_PATIENT_INVITE_LINKS_QUERY } from "@/graphql/queries";
-import type { CreatePatientInviteLinkResponse } from "@/types/apollo";
+import { useState, useEffect, useMemo } from 'react';
+import { useMutation } from '@apollo/client/react';
+import { Mail, Phone, User, Loader2, Copy, Check, Link2, X, Ticket, QrCode, Send } from 'lucide-react';
+import { QRCodeSVG } from 'qrcode.react';
+import { Dialog, DialogContent, DialogClose, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { toast } from 'sonner';
+import { CREATE_PATIENT_INVITE_LINK_MUTATION } from '@/graphql/mutations';
+import { GET_PATIENT_INVITE_LINKS_QUERY } from '@/graphql/queries';
+import type { CreatePatientInviteLinkResponse } from '@/types/apollo';
 
 // ========================================
 // Types
@@ -44,13 +27,7 @@ interface PatientInviteDialogProps {
 // Helper Components
 // ========================================
 
-function SendButtonLabel({
-  email,
-  phone,
-}: {
-  readonly email: string;
-  readonly phone: string;
-}) {
+function SendButtonLabel({ email, phone }: { readonly email: string; readonly phone: string }) {
   if (email) return <>Wyślij Email</>;
   if (phone) return <>Wyślij SMS</>;
   return <>Wpisz dane kontaktowe</>;
@@ -60,27 +37,23 @@ function SendButtonLabel({
 // Component
 // ========================================
 
-export function PatientInviteDialog({
-  open,
-  onOpenChange,
-  organizationId,
-}: PatientInviteDialogProps) {
+export function PatientInviteDialog({ open, onOpenChange, organizationId }: PatientInviteDialogProps) {
   // State
   const [generatedLink, setGeneratedLink] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
-  const [patientName, setPatientName] = useState("");
-  const [patientEmail, setPatientEmail] = useState("");
-  const [patientPhone, setPatientPhone] = useState("");
+  const [patientName, setPatientName] = useState('');
+  const [patientEmail, setPatientEmail] = useState('');
+  const [patientPhone, setPatientPhone] = useState('');
   const [sendSuccess, setSendSuccess] = useState(false);
-  const [sentTo, setSentTo] = useState("");
+  const [sentTo, setSentTo] = useState('');
 
   // Personalized link with name parameter
   const personalizedLink = useMemo(() => {
-    if (!generatedLink) return "";
+    if (!generatedLink) return '';
     if (!patientName.trim()) return generatedLink;
     try {
       const url = new URL(generatedLink);
-      url.searchParams.set("name", patientName.trim());
+      url.searchParams.set('name', patientName.trim());
       return url.toString();
     } catch {
       return generatedLink;
@@ -88,29 +61,28 @@ export function PatientInviteDialog({
   }, [generatedLink, patientName]);
 
   // Create invite mutation
-  const [createInvite, { loading }] =
-    useMutation<CreatePatientInviteLinkResponse>(
-      CREATE_PATIENT_INVITE_LINK_MUTATION,
-      {
-        refetchQueries: [
-          {
-            query: GET_PATIENT_INVITE_LINKS_QUERY,
-            variables: { organizationId, limit: 20 },
-          },
-        ],
-        onCompleted: (data) => {
-          if (data.createPatientInviteLink.success) {
-            const url = data.createPatientInviteLink.fullUrl;
-            setGeneratedLink(url || null);
-          } else {
-            toast.error("Nie udało się utworzyć zaproszenia");
-          }
+  const [createInvite, { loading }] = useMutation<CreatePatientInviteLinkResponse>(
+    CREATE_PATIENT_INVITE_LINK_MUTATION,
+    {
+      refetchQueries: [
+        {
+          query: GET_PATIENT_INVITE_LINKS_QUERY,
+          variables: { organizationId, limit: 20 },
         },
-        onError: (error) => {
-          toast.error(`Błąd: ${error.message}`);
-        },
-      }
-    );
+      ],
+      onCompleted: (data) => {
+        if (data.createPatientInviteLink.success) {
+          const url = data.createPatientInviteLink.fullUrl;
+          setGeneratedLink(url || null);
+        } else {
+          toast.error('Nie udało się utworzyć zaproszenia');
+        }
+      },
+      onError: (error) => {
+        toast.error(`Błąd: ${error.message}`);
+      },
+    }
+  );
 
   // Auto-generate link on open
   useEffect(() => {
@@ -121,7 +93,7 @@ export function PatientInviteDialog({
           patientName: null,
           patientEmail: null,
           patientPhone: null,
-          linkType: "qr",
+          linkType: 'qr',
           expirationDays: 7,
         },
       });
@@ -135,10 +107,10 @@ export function PatientInviteDialog({
     try {
       await navigator.clipboard.writeText(linkToCopy);
       setCopied(true);
-      toast.success("Link skopiowany!");
+      toast.success('Link skopiowany!');
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      toast.error("Nie udało się skopiować");
+      toast.error('Nie udało się skopiować');
     }
   };
 
@@ -153,7 +125,7 @@ export function PatientInviteDialog({
           patientName: patientName || null,
           patientEmail: patientEmail || null,
           patientPhone: patientPhone || null,
-          linkType: patientEmail ? "email" : "sms",
+          linkType: patientEmail ? 'email' : 'sms',
           expirationDays: 7,
         },
       });
@@ -166,7 +138,7 @@ export function PatientInviteDialog({
         handleClose();
       }, 1500);
     } catch {
-      toast.error("Nie udało się wysłać zaproszenia");
+      toast.error('Nie udało się wysłać zaproszenia');
     }
   };
 
@@ -174,11 +146,11 @@ export function PatientInviteDialog({
   const handleClose = () => {
     setGeneratedLink(null);
     setCopied(false);
-    setPatientName("");
-    setPatientEmail("");
-    setPatientPhone("");
+    setPatientName('');
+    setPatientEmail('');
+    setPatientPhone('');
     setSendSuccess(false);
-    setSentTo("");
+    setSentTo('');
     onOpenChange(false);
   };
 
@@ -265,10 +237,7 @@ export function PatientInviteDialog({
             >
               {/* Personalization input */}
               <div className="space-y-2">
-                <label
-                  htmlFor="invite-name-input"
-                  className="text-sm text-zinc-400"
-                >
+                <label htmlFor="invite-name-input" className="text-sm text-zinc-400">
                   Personalizuj link
                 </label>
                 <div className="relative">
@@ -299,11 +268,7 @@ export function PatientInviteDialog({
                   onClick={handleCopyLink}
                   data-testid="invite-copy-inline-btn"
                 >
-                  {copied ? (
-                    <Check className="h-4 w-4" />
-                  ) : (
-                    <span className="text-xs font-medium">Kopiuj</span>
-                  )}
+                  {copied ? <Check className="h-4 w-4" /> : <span className="text-xs font-medium">Kopiuj</span>}
                 </Button>
               </div>
 
@@ -328,21 +293,15 @@ export function PatientInviteDialog({
             </TabsContent>
 
             {/* Tab: QR Code */}
-            <TabsContent
-              value="qr"
-              className="flex flex-col items-center py-4 animate-in fade-in-50 duration-200 mt-0"
-            >
+            <TabsContent value="qr" className="flex flex-col items-center py-4 animate-in fade-in-50 duration-200 mt-0">
               {/* Branded QR Code */}
-              <div
-                className="bg-white p-4 rounded-2xl shadow-xl"
-                data-testid="invite-qr-code"
-              >
+              <div className="bg-white p-4 rounded-2xl shadow-xl" data-testid="invite-qr-code">
                 <QRCodeSVG
-                  value={personalizedLink || "https://fiziyo.app/invite"}
+                  value={personalizedLink || 'https://fiziyo.app/invite'}
                   size={200}
                   level="H"
                   imageSettings={{
-                    src: "/images/logo.png",
+                    src: '/images/logo.png',
                     x: undefined,
                     y: undefined,
                     height: 40,
@@ -354,12 +313,8 @@ export function PatientInviteDialog({
 
               {/* Instructions */}
               <div className="mt-6 text-center">
-                <p className="text-sm font-medium text-zinc-300">
-                  Pokaż pacjentowi do zeskanowania
-                </p>
-                <p className="text-xs text-zinc-500 mt-1">
-                  Pacjent otworzy link bezpośrednio w przeglądarce
-                </p>
+                <p className="text-sm font-medium text-zinc-300">Pokaż pacjentowi do zeskanowania</p>
+                <p className="text-xs text-zinc-500 mt-1">Pacjent otworzy link bezpośrednio w przeglądarce</p>
               </div>
             </TabsContent>
 
@@ -378,9 +333,7 @@ export function PatientInviteDialog({
                     <Check className="h-8 w-8 text-emerald-500" />
                   </div>
                   <h3 className="text-lg font-semibold text-white">Wysłano!</h3>
-                  <p className="text-sm text-zinc-400 mt-1">
-                    Zaproszenie zostało wysłane do {sentTo}
-                  </p>
+                  <p className="text-sm text-zinc-400 mt-1">Zaproszenie zostało wysłane do {sentTo}</p>
                 </div>
               ) : (
                 /* Form */
@@ -394,7 +347,7 @@ export function PatientInviteDialog({
                     {/* Email input */}
                     <div
                       className={`relative transition-opacity duration-200 ${
-                        patientPhone ? "opacity-40" : "opacity-100"
+                        patientPhone ? 'opacity-40' : 'opacity-100'
                       }`}
                     >
                       <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-emerald-500" />
@@ -403,7 +356,7 @@ export function PatientInviteDialog({
                         value={patientEmail}
                         onChange={(e) => {
                           setPatientEmail(e.target.value);
-                          if (e.target.value) setPatientPhone("");
+                          if (e.target.value) setPatientPhone('');
                         }}
                         placeholder="Adres email pacjenta"
                         className="pl-10 bg-zinc-900/50 border-white/5 focus:border-emerald-500/50 rounded-xl h-11 text-sm"
@@ -414,7 +367,7 @@ export function PatientInviteDialog({
                     {/* Phone input */}
                     <div
                       className={`relative transition-opacity duration-200 ${
-                        patientEmail ? "opacity-40" : "opacity-100"
+                        patientEmail ? 'opacity-40' : 'opacity-100'
                       }`}
                     >
                       <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-emerald-500" />
@@ -423,7 +376,7 @@ export function PatientInviteDialog({
                         value={patientPhone}
                         onChange={(e) => {
                           setPatientPhone(e.target.value);
-                          if (e.target.value) setPatientEmail("");
+                          if (e.target.value) setPatientEmail('');
                         }}
                         placeholder="Numer telefonu (np. 500 600 700)"
                         className="pl-10 bg-zinc-900/50 border-white/5 focus:border-emerald-500/50 rounded-xl h-11 text-sm"
@@ -444,10 +397,7 @@ export function PatientInviteDialog({
                     ) : (
                       <>
                         <Send className="h-4 w-4 mr-2" />
-                        <SendButtonLabel
-                          email={patientEmail}
-                          phone={patientPhone}
-                        />
+                        <SendButtonLabel email={patientEmail} phone={patientPhone} />
                       </>
                     )}
                   </Button>

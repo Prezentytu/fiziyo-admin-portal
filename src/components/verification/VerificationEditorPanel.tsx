@@ -1,82 +1,56 @@
-"use client";
+'use client';
 
-import { useState, useCallback, useMemo, useEffect } from "react";
-import {
-  Dumbbell,
-  Timer,
-  Gauge,
-  User,
-  Stethoscope,
-  AlertCircle,
-  Hash,
-  Repeat,
-  Hourglass,
-  ChevronDown,
-} from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
-import { cn } from "@/lib/utils";
+import { useState, useCallback, useMemo, useEffect } from 'react';
+import { Dumbbell, Gauge, User, Stethoscope, AlertCircle, ChevronDown } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { cn } from '@/lib/utils';
 
 // Sub-components
-import { VerificationStickyHeader } from "./VerificationStickyHeader";
-import { TagSmartChips } from "./TagSmartChips";
+import { VerificationStickyHeader } from './VerificationStickyHeader';
+import { TagSmartChips } from './TagSmartChips';
 
-import type { AdminExercise, ExerciseRelationTarget } from "@/graphql/types/adminExercise.types";
+import type { AdminExercise, ExerciseRelationTarget } from '@/graphql/types/adminExercise.types';
 
 // ============================================
 // CONSTANTS
 // ============================================
 
 const DIFFICULTY_LEVELS = [
-  { value: "BEGINNER", label: "Początkujący" },
-  { value: "EASY", label: "Łatwy" },
-  { value: "MEDIUM", label: "Średni" },
-  { value: "HARD", label: "Trudny" },
-  { value: "EXPERT", label: "Ekspert" },
+  { value: 'BEGINNER', label: 'Początkujący' },
+  { value: 'EASY', label: 'Łatwy' },
+  { value: 'MEDIUM', label: 'Średni' },
+  { value: 'HARD', label: 'Trudny' },
+  { value: 'EXPERT', label: 'Ekspert' },
 ];
 
 const BODY_SIDES = [
-  { value: "NONE", label: "Brak" },
-  { value: "LEFT", label: "Lewa" },
-  { value: "RIGHT", label: "Prawa" },
-  { value: "BOTH", label: "Obie" },
-  { value: "ALTERNATING", label: "Naprzemiennie" },
+  { value: 'NONE', label: 'Brak' },
+  { value: 'LEFT', label: 'Lewa' },
+  { value: 'RIGHT', label: 'Prawa' },
+  { value: 'BOTH', label: 'Obie' },
+  { value: 'ALTERNATING', label: 'Naprzemiennie' },
 ];
 
 const RANGE_OF_MOTION_OPTIONS = [
-  { value: "FULL", label: "Pełny zakres" },
-  { value: "PARTIAL", label: "Częściowy zakres" },
-  { value: "ISOMETRIC", label: "Izometryczny" },
-  { value: "ECCENTRIC", label: "Ekscentryczny" },
-  { value: "CONCENTRIC", label: "Koncentryczny" },
+  { value: 'FULL', label: 'Pełny zakres' },
+  { value: 'PARTIAL', label: 'Częściowy zakres' },
+  { value: 'ISOMETRIC', label: 'Izometryczny' },
+  { value: 'ECCENTRIC', label: 'Ekscentryczny' },
+  { value: 'CONCENTRIC', label: 'Koncentryczny' },
 ];
 
 const LOAD_UNITS = [
-  { value: "kg", label: "kg" },
-  { value: "lb", label: "lb" },
-  { value: "band", label: "Guma" },
-  { value: "bodyweight", label: "Ciężar ciała" },
-  { value: "rpe", label: "RPE" },
+  { value: 'kg', label: 'kg' },
+  { value: 'lb', label: 'lb' },
+  { value: 'band', label: 'Guma' },
+  { value: 'bodyweight', label: 'Ciężar ciała' },
+  { value: 'rpe', label: 'RPE' },
 ];
 
 // ============================================
@@ -116,7 +90,7 @@ interface VerificationEditorPanelProps {
   /** Dodatkowe klasy CSS */
   className?: string;
   /** data-testid */
-  "data-testid"?: string;
+  'data-testid'?: string;
 }
 
 /**
@@ -137,14 +111,14 @@ export function VerificationEditorPanel({
   onFieldChange,
   mainTags,
   onMainTagsChange,
-  additionalTags,
-  onAdditionalTagsChange,
-  onRelationsChange,
+  additionalTags: _additionalTags,
+  onAdditionalTagsChange: _onAdditionalTagsChange,
+  onRelationsChange: _onRelationsChange,
   onValidationChange,
   onCompletionChange,
   disabled = false,
   className,
-  "data-testid": testId,
+  'data-testid': testId,
 }: VerificationEditorPanelProps) {
   // ============================================
   // LOCAL STATE FOR IMMEDIATE FEEDBACK
@@ -153,18 +127,20 @@ export function VerificationEditorPanel({
   const [localReps, setLocalReps] = useState<number | null>(exercise.defaultReps ?? null);
   const [localDuration, setLocalDuration] = useState<number | null>(exercise.defaultDuration ?? null);
   const [localRest, setLocalRest] = useState<number | null>(exercise.defaultRestBetweenSets ?? null);
-  const [localTempo, setLocalTempo] = useState<string>(exercise.tempo || "");
-  const [localDifficulty, setLocalDifficulty] = useState<string>(exercise.difficultyLevel || "");
-  const [localSide, setLocalSide] = useState<string>(exercise.side || "NONE");
+  const [localTempo, setLocalTempo] = useState<string>(exercise.tempo || '');
+  const [localDifficulty, setLocalDifficulty] = useState<string>(exercise.difficultyLevel || '');
+  const [localSide, setLocalSide] = useState<string>(exercise.side || 'NONE');
 
   // Extended parameters state
-  const [localRestBetweenReps, setLocalRestBetweenReps] = useState<number | null>(exercise.defaultRestBetweenReps ?? null);
+  const [localRestBetweenReps, setLocalRestBetweenReps] = useState<number | null>(
+    exercise.defaultRestBetweenReps ?? null
+  );
   const [localPrepTime, setLocalPrepTime] = useState<number | null>(exercise.preparationTime ?? null);
   const [localExecTime, setLocalExecTime] = useState<number | null>(exercise.defaultExecutionTime ?? null);
-  const [localRangeOfMotion, setLocalRangeOfMotion] = useState<string>(exercise.rangeOfMotion || "");
-  const [localLoadValue, setLocalLoadValue] = useState<string>(exercise.loadValue?.toString() || "");
-  const [localLoadUnit, setLocalLoadUnit] = useState<string>(exercise.loadUnit || "kg");
-  const [localLoadText, setLocalLoadText] = useState<string>(exercise.loadText || "");
+  const [localRangeOfMotion, setLocalRangeOfMotion] = useState<string>(exercise.rangeOfMotion || '');
+  const [localLoadValue, setLocalLoadValue] = useState<string>(exercise.loadValue?.toString() || '');
+  const [localLoadUnit, setLocalLoadUnit] = useState<string>(exercise.loadUnit || 'kg');
+  const [localLoadText, setLocalLoadText] = useState<string>(exercise.loadText || '');
 
   // Collapsible state for technical details
   const [isTechnicalOpen, setIsTechnicalOpen] = useState(false);
@@ -173,9 +149,9 @@ export function VerificationEditorPanel({
   const [technicalDetailsModified, setTechnicalDetailsModified] = useState(false);
 
   // Description states
-  const [localPatientDesc, setLocalPatientDesc] = useState(exercise.patientDescription || "");
-  const [localClinicalDesc, setLocalClinicalDesc] = useState(exercise.clinicalDescription || "");
-  const [activeDescTab, setActiveDescTab] = useState<"clinical" | "patient">("patient");
+  const [localPatientDesc, setLocalPatientDesc] = useState(exercise.patientDescription || '');
+  const [localClinicalDesc, setLocalClinicalDesc] = useState(exercise.clinicalDescription || '');
+  const [activeDescTab, setActiveDescTab] = useState<'clinical' | 'patient'>('patient');
   const [isDescSaving, setIsDescSaving] = useState(false);
 
   // Sync with external values ONLY when exercise ID changes (new exercise loaded)
@@ -184,19 +160,19 @@ export function VerificationEditorPanel({
     setLocalReps(exercise.defaultReps ?? null);
     setLocalDuration(exercise.defaultDuration ?? null);
     setLocalRest(exercise.defaultRestBetweenSets ?? null);
-    setLocalTempo(exercise.tempo || "");
-    setLocalDifficulty(exercise.difficultyLevel || "");
-    setLocalSide(exercise.side || "NONE");
-    setLocalPatientDesc(exercise.patientDescription || "");
-    setLocalClinicalDesc(exercise.clinicalDescription || "");
+    setLocalTempo(exercise.tempo || '');
+    setLocalDifficulty(exercise.difficultyLevel || '');
+    setLocalSide(exercise.side || 'NONE');
+    setLocalPatientDesc(exercise.patientDescription || '');
+    setLocalClinicalDesc(exercise.clinicalDescription || '');
     // Extended params sync
     setLocalRestBetweenReps(exercise.defaultRestBetweenReps ?? null);
     setLocalPrepTime(exercise.preparationTime ?? null);
     setLocalExecTime(exercise.defaultExecutionTime ?? null);
-    setLocalRangeOfMotion(exercise.rangeOfMotion || "");
-    setLocalLoadValue(exercise.loadValue?.toString() || "");
-    setLocalLoadUnit(exercise.loadUnit || "kg");
-    setLocalLoadText(exercise.loadText || "");
+    setLocalRangeOfMotion(exercise.rangeOfMotion || '');
+    setLocalLoadValue(exercise.loadValue?.toString() || '');
+    setLocalLoadUnit(exercise.loadUnit || 'kg');
+    setLocalLoadText(exercise.loadText || '');
     // Only sync when exercise ID changes (new exercise loaded), not on every field update
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [exercise.id]);
@@ -240,25 +216,30 @@ export function VerificationEditorPanel({
     const missing: string[] = [];
 
     if (!contentValidation.isPatientDescValid) {
-      missing.push("Opis pacjenta (min. 50 znaków)");
+      missing.push('Opis pacjenta (min. 50 znaków)');
     }
     if (!contentValidation.isClinicalDescValid) {
-      missing.push("Opis kliniczny (min. 20 znaków)");
+      missing.push('Opis kliniczny (min. 20 znaków)');
     }
     if (!dataValidation.hasSets) {
-      missing.push("Liczba serii");
+      missing.push('Liczba serii');
     }
     if (!dataValidation.hasVolume) {
-      missing.push("Powtórzenia lub czas");
+      missing.push('Powtórzenia lub czas');
     }
     if (!dataValidation.hasTags) {
-      missing.push("Tagi główne");
+      missing.push('Tagi główne');
     }
     if (!exercise.name?.trim() || exercise.name.trim().length < 2) {
-      missing.push("Nazwa ćwiczenia");
+      missing.push('Nazwa ćwiczenia');
     }
-    if (!exercise.videoUrl && !exercise.thumbnailUrl && !exercise.imageUrl && (!exercise.images || exercise.images.length === 0)) {
-      missing.push("Media (wideo lub zdjęcie)");
+    if (
+      !exercise.videoUrl &&
+      !exercise.thumbnailUrl &&
+      !exercise.imageUrl &&
+      (!exercise.images || exercise.images.length === 0)
+    ) {
+      missing.push('Media (wideo lub zdjęcie)');
     }
 
     return missing;
@@ -315,7 +296,7 @@ export function VerificationEditorPanel({
     [onFieldChange]
   );
 
-  const descriptionValue = exercise.patientDescription || exercise.description || "";
+  const descriptionValue = exercise.patientDescription || exercise.description || '';
 
   // ============================================
   // RENDER HELPERS
@@ -326,7 +307,7 @@ export function VerificationEditorPanel({
   return (
     <TooltipProvider>
       <div
-        className={cn("flex flex-col h-full overflow-y-auto overflow-x-hidden pr-2", className)}
+        className={cn('flex flex-col h-full overflow-y-auto overflow-x-hidden pr-2', className)}
         data-testid={testId}
       >
         {/* ============================================ */}
@@ -378,25 +359,29 @@ export function VerificationEditorPanel({
           <div className="flex gap-1.5">
             {/* Liczba serii */}
             <div className="flex-1 min-w-0 space-y-1">
-              <Label className={cn(
-                "text-[9px] uppercase tracking-wider text-center flex items-center justify-center gap-0.5 truncate",
-                isInvalid(localSets) ? "text-destructive font-medium" : "text-muted-foreground"
-              )}>
+              <Label
+                className={cn(
+                  'text-[9px] uppercase tracking-wider text-center flex items-center justify-center gap-0.5 truncate',
+                  isInvalid(localSets) ? 'text-destructive font-medium' : 'text-muted-foreground'
+                )}
+              >
                 <span>Serie</span>
               </Label>
-              <div className={cn(
-                "relative h-12 rounded-lg transition-all duration-200",
-                "bg-zinc-900/50 border",
-                isInvalid(localSets) ? "border-destructive/50" : "border-zinc-800",
-                "hover:border-zinc-700 focus-within:border-primary/50"
-              )}>
+              <div
+                className={cn(
+                  'relative h-12 rounded-lg transition-all duration-200',
+                  'bg-zinc-900/50 border',
+                  isInvalid(localSets) ? 'border-destructive/50' : 'border-zinc-800',
+                  'hover:border-zinc-700 focus-within:border-primary/50'
+                )}
+              >
                 <input
                   type="number"
                   min={1}
                   max={20}
-                  value={localSets ?? ""}
-                  onChange={(e) => setLocalSets(e.target.value === "" ? null : parseInt(e.target.value, 10))}
-                  onBlur={() => handleNumberBlur("defaultSets", localSets)}
+                  value={localSets ?? ''}
+                  onChange={(e) => setLocalSets(e.target.value === '' ? null : parseInt(e.target.value, 10))}
+                  onBlur={() => handleNumberBlur('defaultSets', localSets)}
                   disabled={disabled}
                   placeholder="0"
                   className="w-full h-full bg-transparent text-lg font-bold text-center outline-none text-foreground placeholder:text-zinc-600 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
@@ -410,19 +395,21 @@ export function VerificationEditorPanel({
               <Label className="text-[9px] uppercase tracking-wider text-center text-muted-foreground flex items-center justify-center gap-0.5 truncate">
                 <span>Powt.</span>
               </Label>
-              <div className={cn(
-                "relative h-12 rounded-lg transition-all duration-200",
-                "bg-zinc-900/50 border border-zinc-800",
-                "hover:border-zinc-700 focus-within:border-primary/50",
-                localDuration && !localReps && "opacity-40"
-              )}>
+              <div
+                className={cn(
+                  'relative h-12 rounded-lg transition-all duration-200',
+                  'bg-zinc-900/50 border border-zinc-800',
+                  'hover:border-zinc-700 focus-within:border-primary/50',
+                  localDuration && !localReps && 'opacity-40'
+                )}
+              >
                 <input
                   type="number"
                   min={1}
                   max={100}
-                  value={localReps ?? ""}
-                  onChange={(e) => setLocalReps(e.target.value === "" ? null : parseInt(e.target.value, 10))}
-                  onBlur={() => handleNumberBlur("defaultReps", localReps)}
+                  value={localReps ?? ''}
+                  onChange={(e) => setLocalReps(e.target.value === '' ? null : parseInt(e.target.value, 10))}
+                  onBlur={() => handleNumberBlur('defaultReps', localReps)}
                   disabled={disabled}
                   placeholder="0"
                   className="w-full h-full bg-transparent text-lg font-bold text-center outline-none text-foreground placeholder:text-zinc-600 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
@@ -436,20 +423,22 @@ export function VerificationEditorPanel({
               <Label className="text-[9px] uppercase tracking-wider text-center text-muted-foreground flex items-center justify-center gap-0.5 truncate">
                 <span>Czas powt.</span>
               </Label>
-              <div className={cn(
-                "relative h-12 rounded-lg transition-all duration-200",
-                "bg-zinc-900/50 border border-zinc-800",
-                "hover:border-zinc-700 focus-within:border-primary/50",
-                localReps && !localDuration && "opacity-40"
-              )}>
+              <div
+                className={cn(
+                  'relative h-12 rounded-lg transition-all duration-200',
+                  'bg-zinc-900/50 border border-zinc-800',
+                  'hover:border-zinc-700 focus-within:border-primary/50',
+                  localReps && !localDuration && 'opacity-40'
+                )}
+              >
                 <input
                   type="number"
                   min={5}
                   max={600}
                   step={5}
-                  value={localDuration ?? ""}
-                  onChange={(e) => setLocalDuration(e.target.value === "" ? null : parseInt(e.target.value, 10))}
-                  onBlur={() => handleNumberBlur("defaultDuration", localDuration)}
+                  value={localDuration ?? ''}
+                  onChange={(e) => setLocalDuration(e.target.value === '' ? null : parseInt(e.target.value, 10))}
+                  onBlur={() => handleNumberBlur('defaultDuration', localDuration)}
                   disabled={disabled}
                   placeholder="—"
                   className="w-full h-full bg-transparent text-lg font-bold text-center outline-none text-foreground placeholder:text-zinc-600 pr-5 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
@@ -466,19 +455,21 @@ export function VerificationEditorPanel({
               <Label className="text-[9px] uppercase tracking-wider text-center text-muted-foreground flex items-center justify-center gap-0.5 truncate">
                 <span>Przerwa (serie)</span>
               </Label>
-              <div className={cn(
-                "relative h-12 rounded-lg transition-all duration-200",
-                "bg-zinc-900/50 border border-zinc-800",
-                "hover:border-zinc-700 focus-within:border-primary/50"
-              )}>
+              <div
+                className={cn(
+                  'relative h-12 rounded-lg transition-all duration-200',
+                  'bg-zinc-900/50 border border-zinc-800',
+                  'hover:border-zinc-700 focus-within:border-primary/50'
+                )}
+              >
                 <input
                   type="number"
                   min={0}
                   max={300}
                   step={5}
-                  value={localRest ?? ""}
-                  onChange={(e) => setLocalRest(e.target.value === "" ? null : parseInt(e.target.value, 10))}
-                  onBlur={() => handleNumberBlur("defaultRestBetweenSets", localRest)}
+                  value={localRest ?? ''}
+                  onChange={(e) => setLocalRest(e.target.value === '' ? null : parseInt(e.target.value, 10))}
+                  onBlur={() => handleNumberBlur('defaultRestBetweenSets', localRest)}
                   disabled={disabled}
                   placeholder="60"
                   className="w-full h-full bg-transparent text-lg font-bold text-center outline-none text-foreground placeholder:text-zinc-600 pr-5 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
@@ -495,25 +486,21 @@ export function VerificationEditorPanel({
         {/* ============================================ */}
         {/* SECTION 3: SZCZEGÓŁY TECHNICZNE (Collapsible) */}
         {/* ============================================ */}
-        <Collapsible
-          open={isTechnicalOpen}
-          onOpenChange={setIsTechnicalOpen}
-          className="shrink-0 mb-5"
-        >
+        <Collapsible open={isTechnicalOpen} onOpenChange={setIsTechnicalOpen} className="shrink-0 mb-5">
           <CollapsibleTrigger className="flex items-center justify-between w-full p-3 rounded-t-lg bg-zinc-900/30 border border-zinc-800/50 hover:bg-zinc-900/50 transition-colors data-[state=open]:rounded-b-none data-[state=open]:border-b-0">
             <div className="flex items-center gap-2">
               <Gauge className="h-3.5 w-3.5 text-muted-foreground" />
               <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
                 Szczegóły techniczne
               </span>
-              {technicalDetailsModified && (
-                <span className="w-2 h-2 rounded-full bg-emerald-500" />
-              )}
+              {technicalDetailsModified && <span className="w-2 h-2 rounded-full bg-emerald-500" />}
             </div>
-            <ChevronDown className={cn(
-              "h-4 w-4 text-muted-foreground transition-transform duration-200",
-              isTechnicalOpen && "rotate-180"
-            )} />
+            <ChevronDown
+              className={cn(
+                'h-4 w-4 text-muted-foreground transition-transform duration-200',
+                isTechnicalOpen && 'rotate-180'
+              )}
+            />
           </CollapsibleTrigger>
 
           <CollapsibleContent>
@@ -522,18 +509,16 @@ export function VerificationEditorPanel({
               <div className="grid grid-cols-3 gap-x-4 gap-y-4">
                 {/* Tempo */}
                 <div className="space-y-1.5">
-                  <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                    Tempo
-                  </Label>
+                  <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Tempo</Label>
                   <Input
                     type="text"
                     value={localTempo}
                     onChange={(e) => {
-                      const value = e.target.value.replace(/\D/g, "").slice(0, 4);
+                      const value = e.target.value.replace(/\D/g, '').slice(0, 4);
                       setLocalTempo(value);
                       setTechnicalDetailsModified(true);
                     }}
-                    onBlur={() => handleSelectChange("tempo", localTempo)}
+                    onBlur={() => handleSelectChange('tempo', localTempo)}
                     disabled={disabled}
                     placeholder="3010"
                     className="font-mono text-center h-9 bg-zinc-900/50 border-zinc-800"
@@ -544,15 +529,13 @@ export function VerificationEditorPanel({
 
                 {/* Trudność */}
                 <div className="space-y-1.5">
-                  <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                    Trudność
-                  </Label>
+                  <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Trudność</Label>
                   <Select
                     value={localDifficulty}
                     onValueChange={(v) => {
                       setLocalDifficulty(v);
                       setTechnicalDetailsModified(true);
-                      handleSelectChange("difficultyLevel", v);
+                      handleSelectChange('difficultyLevel', v);
                     }}
                     disabled={disabled}
                   >
@@ -571,15 +554,13 @@ export function VerificationEditorPanel({
 
                 {/* Strona ciała */}
                 <div className="space-y-1.5">
-                  <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                    Strona
-                  </Label>
+                  <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Strona</Label>
                   <Select
                     value={localSide}
                     onValueChange={(v) => {
                       setLocalSide(v);
                       setTechnicalDetailsModified(true);
-                      handleSelectChange("side", v);
+                      handleSelectChange('side', v);
                     }}
                     disabled={disabled}
                   >
@@ -598,15 +579,13 @@ export function VerificationEditorPanel({
 
                 {/* Zakres ruchu */}
                 <div className="space-y-1.5">
-                  <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                    Zakres ruchu
-                  </Label>
+                  <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Zakres ruchu</Label>
                   <Select
                     value={localRangeOfMotion}
                     onValueChange={(v) => {
                       setLocalRangeOfMotion(v);
                       setTechnicalDetailsModified(true);
-                      handleSelectChange("rangeOfMotion", v);
+                      handleSelectChange('rangeOfMotion', v);
                     }}
                     disabled={disabled}
                   >
@@ -625,20 +604,18 @@ export function VerificationEditorPanel({
 
                 {/* Przerwa między powtórzeniami */}
                 <div className="space-y-1.5">
-                  <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                    Przerwa powt.
-                  </Label>
+                  <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Przerwa powt.</Label>
                   <div className="relative">
                     <Input
                       type="number"
                       min={0}
                       max={60}
-                      value={localRestBetweenReps ?? ""}
+                      value={localRestBetweenReps ?? ''}
                       onChange={(e) => {
-                        setLocalRestBetweenReps(e.target.value === "" ? null : parseInt(e.target.value, 10));
+                        setLocalRestBetweenReps(e.target.value === '' ? null : parseInt(e.target.value, 10));
                         setTechnicalDetailsModified(true);
                       }}
-                      onBlur={() => handleNumberBlur("defaultRestBetweenReps", localRestBetweenReps)}
+                      onBlur={() => handleNumberBlur('defaultRestBetweenReps', localRestBetweenReps)}
                       disabled={disabled}
                       placeholder="0"
                       className="h-9 bg-zinc-900/50 border-zinc-800 pr-6 text-center"
@@ -650,20 +627,18 @@ export function VerificationEditorPanel({
 
                 {/* Czas przygotowania */}
                 <div className="space-y-1.5">
-                  <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                    Przygotowanie
-                  </Label>
+                  <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Przygotowanie</Label>
                   <div className="relative">
                     <Input
                       type="number"
                       min={0}
                       max={120}
-                      value={localPrepTime ?? ""}
+                      value={localPrepTime ?? ''}
                       onChange={(e) => {
-                        setLocalPrepTime(e.target.value === "" ? null : parseInt(e.target.value, 10));
+                        setLocalPrepTime(e.target.value === '' ? null : parseInt(e.target.value, 10));
                         setTechnicalDetailsModified(true);
                       }}
-                      onBlur={() => handleNumberBlur("preparationTime", localPrepTime)}
+                      onBlur={() => handleNumberBlur('preparationTime', localPrepTime)}
                       disabled={disabled}
                       placeholder="0"
                       className="h-9 bg-zinc-900/50 border-zinc-800 pr-6 text-center"
@@ -675,20 +650,18 @@ export function VerificationEditorPanel({
 
                 {/* Czas wykonania powtórzenia */}
                 <div className="space-y-1.5">
-                  <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                    Czas wyk. powt.
-                  </Label>
+                  <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Czas wyk. powt.</Label>
                   <div className="relative">
                     <Input
                       type="number"
                       min={1}
                       max={60}
-                      value={localExecTime ?? ""}
+                      value={localExecTime ?? ''}
                       onChange={(e) => {
-                        setLocalExecTime(e.target.value === "" ? null : parseInt(e.target.value, 10));
+                        setLocalExecTime(e.target.value === '' ? null : parseInt(e.target.value, 10));
                         setTechnicalDetailsModified(true);
                       }}
-                      onBlur={() => handleNumberBlur("defaultExecutionTime", localExecTime)}
+                      onBlur={() => handleNumberBlur('defaultExecutionTime', localExecTime)}
                       disabled={disabled}
                       placeholder="0"
                       className="h-9 bg-zinc-900/50 border-zinc-800 pr-6 text-center"
@@ -700,9 +673,7 @@ export function VerificationEditorPanel({
 
                 {/* Sugerowany opór/obciążenie */}
                 <div className="space-y-1.5">
-                  <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                    Opór/obciążenie
-                  </Label>
+                  <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Opór/obciążenie</Label>
                   <div className="flex gap-1">
                     <Input
                       type="text"
@@ -711,7 +682,7 @@ export function VerificationEditorPanel({
                         setLocalLoadValue(e.target.value);
                         setTechnicalDetailsModified(true);
                       }}
-                      onBlur={() => handleSelectChange("loadValue", localLoadValue)}
+                      onBlur={() => handleSelectChange('loadValue', localLoadValue)}
                       disabled={disabled}
                       placeholder="10"
                       className="h-9 bg-zinc-900/50 border-zinc-800 w-16 text-center"
@@ -722,11 +693,14 @@ export function VerificationEditorPanel({
                       onValueChange={(v) => {
                         setLocalLoadUnit(v);
                         setTechnicalDetailsModified(true);
-                        handleSelectChange("loadUnit", v);
+                        handleSelectChange('loadUnit', v);
                       }}
                       disabled={disabled}
                     >
-                      <SelectTrigger className="h-9 bg-zinc-900/50 border-zinc-800 flex-1" data-testid="property-load-unit">
+                      <SelectTrigger
+                        className="h-9 bg-zinc-900/50 border-zinc-800 flex-1"
+                        data-testid="property-load-unit"
+                      >
                         <SelectValue placeholder="kg" />
                       </SelectTrigger>
                       <SelectContent>
@@ -742,9 +716,7 @@ export function VerificationEditorPanel({
 
                 {/* Opis obciążenia - zajmuje 2 kolumny */}
                 <div className="space-y-1.5 col-span-2">
-                  <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                    Opis obciążenia
-                  </Label>
+                  <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Opis obciążenia</Label>
                   <Input
                     type="text"
                     value={localLoadText}
@@ -752,7 +724,7 @@ export function VerificationEditorPanel({
                       setLocalLoadText(e.target.value);
                       setTechnicalDetailsModified(true);
                     }}
-                    onBlur={() => handleSelectChange("loadText", localLoadText)}
+                    onBlur={() => handleSelectChange('loadText', localLoadText)}
                     disabled={disabled}
                     placeholder="np. RPE 7, 60% 1RM, lekka guma..."
                     className="h-9 bg-zinc-900/50 border-zinc-800"
@@ -770,64 +742,60 @@ export function VerificationEditorPanel({
         <div className="flex-1 min-h-0">
           <Tabs
             value={activeDescTab}
-            onValueChange={(v) => setActiveDescTab(v as "clinical" | "patient")}
+            onValueChange={(v) => setActiveDescTab(v as 'clinical' | 'patient')}
             className="flex flex-col h-full"
           >
             <TabsList className="grid w-full grid-cols-2 h-9 mb-3 shrink-0">
               <TabsTrigger
                 value="patient"
                 className={cn(
-                  "text-xs gap-1.5 data-[state=active]:bg-emerald-500/20 data-[state=active]:text-emerald-400",
-                  !contentValidation.isPatientDescValid && "text-amber-500"
+                  'text-xs gap-1.5 data-[state=active]:bg-emerald-500/20 data-[state=active]:text-emerald-400',
+                  !contentValidation.isPatientDescValid && 'text-amber-500'
                 )}
                 data-testid="desc-tab-patient"
               >
                 <User className="h-3.5 w-3.5" />
                 Dla Pacjenta
-                {!contentValidation.isPatientDescValid && (
-                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-                )}
+                {!contentValidation.isPatientDescValid && <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />}
               </TabsTrigger>
               <TabsTrigger
                 value="clinical"
                 className={cn(
-                  "text-xs gap-1.5 data-[state=active]:bg-blue-500/20 data-[state=active]:text-blue-400",
-                  !contentValidation.isClinicalDescValid && "text-amber-500"
+                  'text-xs gap-1.5 data-[state=active]:bg-blue-500/20 data-[state=active]:text-blue-400',
+                  !contentValidation.isClinicalDescValid && 'text-amber-500'
                 )}
                 data-testid="desc-tab-clinical"
               >
                 <Stethoscope className="h-3.5 w-3.5" />
                 Dla Fizjoterapeuty
-                {!contentValidation.isClinicalDescValid && (
-                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-                )}
+                {!contentValidation.isClinicalDescValid && <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />}
               </TabsTrigger>
             </TabsList>
 
             {/* Patient Description */}
             <TabsContent value="patient" className="flex-1 mt-0">
-              <div className={cn(
-                "h-full rounded-lg border transition-colors",
-                activeDescTab === "patient" ? "border-emerald-500/30 bg-emerald-500/5" : "border-zinc-800"
-              )}>
+              <div
+                className={cn(
+                  'h-full rounded-lg border transition-colors',
+                  activeDescTab === 'patient' ? 'border-emerald-500/30 bg-emerald-500/5' : 'border-zinc-800'
+                )}
+              >
                 <Textarea
                   value={localPatientDesc}
                   onChange={(e) => setLocalPatientDesc(e.target.value)}
-                  onBlur={() => handleDescriptionBlur("patientDescription", localPatientDesc)}
+                  onBlur={() => handleDescriptionBlur('patientDescription', localPatientDesc)}
                   placeholder="Wpisz prosty opis dla pacjenta - jak Pani Jadzia ma wykonać to ćwiczenie..."
                   disabled={disabled || isDescSaving}
                   className={cn(
-                    "h-full min-h-[120px] resize-none border-0 bg-transparent",
-                    "text-sm leading-relaxed placeholder:text-zinc-600"
+                    'h-full min-h-[120px] resize-none border-0 bg-transparent',
+                    'text-sm leading-relaxed placeholder:text-zinc-600'
                   )}
                   data-testid="desc-patient-textarea"
                 />
               </div>
               <p className="text-[10px] text-muted-foreground mt-1.5 flex items-center justify-between">
                 <span>Prosty język zrozumiały dla pacjenta</span>
-                <span className={cn(
-                  contentValidation.isPatientDescValid ? "text-emerald-500" : "text-amber-500"
-                )}>
+                <span className={cn(contentValidation.isPatientDescValid ? 'text-emerald-500' : 'text-amber-500')}>
                   {contentValidation.patientDescLength}/50 znaków
                 </span>
               </p>
@@ -835,28 +803,28 @@ export function VerificationEditorPanel({
 
             {/* Clinical Description */}
             <TabsContent value="clinical" className="flex-1 mt-0">
-              <div className={cn(
-                "h-full rounded-lg border transition-colors",
-                activeDescTab === "clinical" ? "border-blue-500/30 bg-blue-500/5" : "border-zinc-800"
-              )}>
+              <div
+                className={cn(
+                  'h-full rounded-lg border transition-colors',
+                  activeDescTab === 'clinical' ? 'border-blue-500/30 bg-blue-500/5' : 'border-zinc-800'
+                )}
+              >
                 <Textarea
                   value={localClinicalDesc}
                   onChange={(e) => setLocalClinicalDesc(e.target.value)}
-                  onBlur={() => handleDescriptionBlur("clinicalDescription", localClinicalDesc)}
+                  onBlur={() => handleDescriptionBlur('clinicalDescription', localClinicalDesc)}
                   placeholder="Opis kliniczny: biomechanika, mięśnie aktywowane, wskazania medyczne..."
                   disabled={disabled || isDescSaving}
                   className={cn(
-                    "h-full min-h-[120px] resize-none border-0 bg-transparent",
-                    "text-sm leading-relaxed placeholder:text-zinc-600"
+                    'h-full min-h-[120px] resize-none border-0 bg-transparent',
+                    'text-sm leading-relaxed placeholder:text-zinc-600'
                   )}
                   data-testid="desc-clinical-textarea"
                 />
               </div>
               <p className="text-[10px] text-muted-foreground mt-1.5 flex items-center justify-between">
                 <span>Terminologia medyczna dla specjalistów</span>
-                <span className={cn(
-                  contentValidation.isClinicalDescValid ? "text-emerald-500" : "text-amber-500"
-                )}>
+                <span className={cn(contentValidation.isClinicalDescValid ? 'text-emerald-500' : 'text-amber-500')}>
                   {contentValidation.clinicalDescLength}/20 znaków
                 </span>
               </p>

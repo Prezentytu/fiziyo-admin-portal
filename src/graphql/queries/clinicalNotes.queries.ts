@@ -192,4 +192,3 @@ export const GET_PATIENT_CLINICAL_NOTES_COUNT_QUERY = gql`
     patientClinicalNotesCount(patientId: $patientId, organizationId: $organizationId)
   }
 `;
-

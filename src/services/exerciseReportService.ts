@@ -62,14 +62,10 @@ function updateLastReportTime(): void {
 /**
  * Wysyła raport o błędzie w ćwiczeniach na Discord
  */
-export async function sendExerciseReport(
-  data: ExerciseReportData
-): Promise<ExerciseReportResult> {
+export async function sendExerciseReport(data: ExerciseReportData): Promise<ExerciseReportResult> {
   // Rate limiting
   if (!canSendReport()) {
-    const remainingSeconds = Math.ceil(
-      (RATE_LIMIT_MS - (Date.now() - lastReportTime)) / 1000
-    );
+    const remainingSeconds = Math.ceil((RATE_LIMIT_MS - (Date.now() - lastReportTime)) / 1000);
     return {
       success: false,
       error: `Poczekaj ${remainingSeconds} sekund przed wysłaniem kolejnego zgłoszenia`,
@@ -77,10 +73,10 @@ export async function sendExerciseReport(
   }
 
   try {
-    const response = await fetch("/api/exercise-reports", {
-      method: "POST",
+    const response = await fetch('/api/exercise-reports', {
+      method: 'POST',
       headers: {
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify(data),
     });
@@ -89,7 +85,7 @@ export async function sendExerciseReport(
 
     if (response.ok && result.success) {
       updateLastReportTime();
-      console.log("[ExerciseReportService] Report sent successfully");
+      console.log('[ExerciseReportService] Report sent successfully');
       return { success: true };
     }
 
@@ -98,10 +94,10 @@ export async function sendExerciseReport(
       error: result.message || `Błąd serwera: ${response.status}`,
     };
   } catch (error) {
-    console.error("[ExerciseReportService] Error sending report:", error);
+    console.error('[ExerciseReportService] Error sending report:', error);
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Nieznany błąd",
+      error: error instanceof Error ? error.message : 'Nieznany błąd',
     };
   }
 }

@@ -1,12 +1,12 @@
-"use client";
+'use client';
 
-import { Clock, AlertTriangle, FileCheck, Archive } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
-import { cn } from "@/lib/utils";
-import type { VerificationStats } from "@/graphql/types/adminExercise.types";
+import { Clock, AlertTriangle, FileCheck, Archive } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
+import { cn } from '@/lib/utils';
+import type { VerificationStats } from '@/graphql/types/adminExercise.types';
 
-type FilterType = "pending" | "changes" | "published" | "archived";
+type FilterType = 'pending' | 'changes' | 'published' | 'archived';
 
 interface VerificationStatsCardsProps {
   stats: VerificationStats | null;
@@ -44,17 +44,17 @@ function StatCard({
     <Card
       data-testid={testId}
       className={cn(
-        "relative overflow-hidden transition-all duration-300 cursor-pointer",
+        'relative overflow-hidden transition-all duration-300 cursor-pointer',
         isActive
           ? `${activeBgColor} ${activeBorderColor} shadow-lg`
-          : "border-border/60 bg-card opacity-70 hover:opacity-100 hover:border-border hover:shadow-md"
+          : 'border-border/60 bg-card opacity-70 hover:opacity-100 hover:border-border hover:shadow-md'
       )}
       onClick={onClick}
     >
       <CardContent className="p-4">
         <div className="flex items-center gap-3">
-          <div className={cn("flex h-10 w-10 items-center justify-center rounded-xl", bgColor)}>
-            <Icon className={cn("h-5 w-5", color)} />
+          <div className={cn('flex h-10 w-10 items-center justify-center rounded-xl', bgColor)}>
+            <Icon className={cn('h-5 w-5', color)} />
           </div>
           <div>
             <p className="text-2xl font-bold text-foreground tabular-nums">{value}</p>
@@ -110,8 +110,8 @@ export function VerificationStatsCards({
         bgColor="bg-amber-500/20"
         activeBgColor="bg-amber-500/10"
         activeBorderColor="border-amber-500/40"
-        isActive={activeFilter === "pending"}
-        onClick={() => onFilterChange("pending")}
+        isActive={activeFilter === 'pending'}
+        onClick={() => onFilterChange('pending')}
       />
       <StatCard
         testId="verification-stats-changes"
@@ -122,8 +122,8 @@ export function VerificationStatsCards({
         bgColor="bg-orange-500/20"
         activeBgColor="bg-orange-500/10"
         activeBorderColor="border-orange-500/40"
-        isActive={activeFilter === "changes"}
-        onClick={() => onFilterChange("changes")}
+        isActive={activeFilter === 'changes'}
+        onClick={() => onFilterChange('changes')}
       />
       <StatCard
         testId="verification-stats-published"
@@ -134,8 +134,8 @@ export function VerificationStatsCards({
         bgColor="bg-primary/20"
         activeBgColor="bg-primary/10"
         activeBorderColor="border-primary/40"
-        isActive={activeFilter === "published"}
-        onClick={() => onFilterChange("published")}
+        isActive={activeFilter === 'published'}
+        onClick={() => onFilterChange('published')}
       />
       <StatCard
         testId="verification-stats-archived"
@@ -146,8 +146,8 @@ export function VerificationStatsCards({
         bgColor="bg-zinc-500/20"
         activeBgColor="bg-zinc-500/10"
         activeBorderColor="border-zinc-500/40"
-        isActive={activeFilter === "archived"}
-        onClick={() => onFilterChange("archived")}
+        isActive={activeFilter === 'archived'}
+        onClick={() => onFilterChange('archived')}
       />
     </div>
   );

@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import { useState, useCallback, useEffect } from "react";
-import { useQuery, useMutation } from "@apollo/client/react";
+import { useState, useCallback, useEffect } from 'react';
+import { useQuery, useMutation } from '@apollo/client/react';
 import {
   ArrowLeft,
   ArrowRight,
@@ -12,39 +12,44 @@ import {
   Sparkles,
   AlertTriangle,
   Image as ImageIcon,
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { cn } from "@/lib/utils";
-import { toast } from "sonner";
-import { ExerciseSearchPopover } from "./ExerciseSearchPopover";
-import {
-  GET_EXERCISE_RELATIONSHIPS_QUERY,
-} from "@/graphql/queries/adminExercises.queries";
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
+import { ExerciseSearchPopover } from './ExerciseSearchPopover';
+import { GET_EXERCISE_RELATIONSHIPS_QUERY } from '@/graphql/queries/adminExercises.queries';
 import {
   SET_EXERCISE_RELATION_MUTATION,
   REMOVE_EXERCISE_RELATION_MUTATION,
-} from "@/graphql/mutations/adminExercises.mutations";
+} from '@/graphql/mutations/adminExercises.mutations';
 import type {
   AdminExercise,
   ExerciseRelationTarget,
   GetExerciseRelationshipsResponse,
-} from "@/graphql/types/adminExercise.types";
-import { getMediaUrl } from "@/utils/mediaUrl";
+} from '@/graphql/types/adminExercise.types';
+import { getMediaUrl } from '@/utils/mediaUrl';
 
 // Difficulty level order for validation
 const DIFFICULTY_ORDER: Record<string, number> = {
-  BEGINNER: 1, Beginner: 1, Początkujący: 1,
-  EASY: 2, Easy: 2, Łatwy: 2,
-  MEDIUM: 3, Medium: 3, Średni: 3, Średniozaawansowany: 3,
-  HARD: 4, Hard: 4, Trudny: 4,
-  EXPERT: 5, Expert: 5, Zaawansowany: 5, Ekspert: 5,
+  BEGINNER: 1,
+  Beginner: 1,
+  Początkujący: 1,
+  EASY: 2,
+  Easy: 2,
+  Łatwy: 2,
+  MEDIUM: 3,
+  Medium: 3,
+  Średni: 3,
+  Średniozaawansowany: 3,
+  HARD: 4,
+  Hard: 4,
+  Trudny: 4,
+  EXPERT: 5,
+  Expert: 5,
+  Zaawansowany: 5,
+  Ekspert: 5,
 };
 
 interface ProgressionChainProps {
@@ -60,7 +65,7 @@ interface ProgressionChainProps {
   /** Dodatkowe klasy CSS */
   className?: string;
   /** data-testid */
-  "data-testid"?: string;
+  'data-testid'?: string;
 }
 
 /**
@@ -80,7 +85,7 @@ export function ProgressionChain({
   onRelationsChange,
   disabled = false,
   className,
-  "data-testid": testId,
+  'data-testid': testId,
 }: ProgressionChainProps) {
   // Local state
   const [localRegression, setLocalRegression] = useState<ExerciseRelationTarget | null>(null);
@@ -89,14 +94,16 @@ export function ProgressionChain({
   const [isProgressionSearchOpen, setIsProgressionSearchOpen] = useState(false);
 
   // Fetch existing relationships
-  const { data: relationsData, loading: relationsLoading, error: relationsError, refetch } = useQuery<GetExerciseRelationshipsResponse>(
-    GET_EXERCISE_RELATIONSHIPS_QUERY,
-    {
-      variables: { exerciseId: exercise.id },
-      skip: !exercise.id,
-      fetchPolicy: "cache-and-network",
-    }
-  );
+  const {
+    data: relationsData,
+    loading: relationsLoading,
+    error: relationsError,
+    refetch,
+  } = useQuery<GetExerciseRelationshipsResponse>(GET_EXERCISE_RELATIONSHIPS_QUERY, {
+    variables: { exerciseId: exercise.id },
+    skip: !exercise.id,
+    fetchPolicy: 'cache-and-network',
+  });
 
   // Handle relationships data
   useEffect(() => {
@@ -104,11 +111,13 @@ export function ProgressionChain({
       const rels = relationsData.exerciseRelationships;
       const regressionTarget = rels.regression?.targetExercise || null;
       const progressionTarget = rels.progression?.targetExercise || null;
-      setLocalRegression(regressionTarget);
-      setLocalProgression(progressionTarget);
-      onRelationsChange?.({
-        regression: regressionTarget,
-        progression: progressionTarget,
+      queueMicrotask(() => {
+        setLocalRegression(regressionTarget);
+        setLocalProgression(progressionTarget);
+        onRelationsChange?.({
+          regression: regressionTarget,
+          progression: progressionTarget,
+        });
       });
     }
   }, [relationsData, onRelationsChange]);
@@ -116,28 +125,22 @@ export function ProgressionChain({
   // Log errors silently
   useEffect(() => {
     if (relationsError) {
-      console.debug("Relationships query:", relationsError.message);
+      console.debug('Relationships query:', relationsError.message);
     }
   }, [relationsError]);
 
   // Mutations
-  const [setRelation, { loading: setRelationLoading }] = useMutation(
-    SET_EXERCISE_RELATION_MUTATION,
-    {
-      onError: (error) => {
-        toast.error(`Nie udało się ustawić relacji: ${error.message}`);
-      },
-    }
-  );
+  const [setRelation, { loading: setRelationLoading }] = useMutation(SET_EXERCISE_RELATION_MUTATION, {
+    onError: (error) => {
+      toast.error(`Nie udało się ustawić relacji: ${error.message}`);
+    },
+  });
 
-  const [removeRelation, { loading: removeRelationLoading }] = useMutation(
-    REMOVE_EXERCISE_RELATION_MUTATION,
-    {
-      onError: (error) => {
-        toast.error(`Nie udało się usunąć relacji: ${error.message}`);
-      },
-    }
-  );
+  const [removeRelation, { loading: removeRelationLoading }] = useMutation(REMOVE_EXERCISE_RELATION_MUTATION, {
+    onError: (error) => {
+      toast.error(`Nie udało się usunąć relacji: ${error.message}`);
+    },
+  });
 
   const isLoading = relationsLoading || setRelationLoading || removeRelationLoading;
 
@@ -147,7 +150,7 @@ export function ProgressionChain({
     const currentLevel = DIFFICULTY_ORDER[exercise.difficultyLevel] || 3;
     const regressionLevel = DIFFICULTY_ORDER[localRegression.difficultyLevel] || 3;
     if (regressionLevel >= currentLevel) {
-      return "Regresja powinna być łatwiejsza";
+      return 'Regresja powinna być łatwiejsza';
     }
     return null;
   }, [localRegression, exercise.difficultyLevel]);
@@ -157,7 +160,7 @@ export function ProgressionChain({
     const currentLevel = DIFFICULTY_ORDER[exercise.difficultyLevel] || 3;
     const progressionLevel = DIFFICULTY_ORDER[localProgression.difficultyLevel] || 3;
     if (progressionLevel <= currentLevel) {
-      return "Progresja powinna być trudniejsza";
+      return 'Progresja powinna być trudniejsza';
     }
     return null;
   }, [localProgression, exercise.difficultyLevel]);
@@ -174,10 +177,10 @@ export function ProgressionChain({
           variables: {
             sourceExerciseId: exercise.id,
             targetExerciseId: target.id,
-            relationType: "REGRESSION",
+            relationType: 'REGRESSION',
           },
         });
-        toast.success("Regresja ustawiona");
+        toast.success('Regresja ustawiona');
       } catch {
         setLocalRegression(previousValue);
         onRelationsChange?.({ regression: previousValue, progression: localProgression });
@@ -197,10 +200,10 @@ export function ProgressionChain({
           variables: {
             sourceExerciseId: exercise.id,
             targetExerciseId: target.id,
-            relationType: "PROGRESSION",
+            relationType: 'PROGRESSION',
           },
         });
-        toast.success("Progresja ustawiona");
+        toast.success('Progresja ustawiona');
       } catch {
         setLocalProgression(previousValue);
         onRelationsChange?.({ regression: localRegression, progression: previousValue });
@@ -218,10 +221,10 @@ export function ProgressionChain({
       await removeRelation({
         variables: {
           sourceExerciseId: exercise.id,
-          relationType: "REGRESSION",
+          relationType: 'REGRESSION',
         },
       });
-      toast.success("Regresja usunięta");
+      toast.success('Regresja usunięta');
     } catch {
       setLocalRegression(previousValue);
       onRelationsChange?.({ regression: previousValue, progression: localProgression });
@@ -237,10 +240,10 @@ export function ProgressionChain({
       await removeRelation({
         variables: {
           sourceExerciseId: exercise.id,
-          relationType: "PROGRESSION",
+          relationType: 'PROGRESSION',
         },
       });
-      toast.success("Progresja usunięta");
+      toast.success('Progresja usunięta');
     } catch {
       setLocalProgression(previousValue);
       onRelationsChange?.({ regression: localRegression, progression: previousValue });
@@ -252,7 +255,7 @@ export function ProgressionChain({
 
   return (
     <TooltipProvider>
-      <div className={cn("space-y-3", className)} data-testid={testId}>
+      <div className={cn('space-y-3', className)} data-testid={testId}>
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -268,14 +271,8 @@ export function ProgressionChain({
               </Tooltip>
             )}
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-6 w-6 p-0"
-            onClick={() => refetch()}
-            disabled={isLoading}
-          >
-            <RefreshCcw className={cn("h-3 w-3", isLoading && "animate-spin")} />
+          <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={() => refetch()} disabled={isLoading}>
+            <RefreshCcw className={cn('h-3 w-3', isLoading && 'animate-spin')} />
           </Button>
         </div>
 
@@ -361,7 +358,7 @@ export function ProgressionChain({
 // ============================================
 
 interface RelationSlotProps {
-  type: "regression" | "progression";
+  type: 'regression' | 'progression';
   relation: ExerciseRelationTarget | null;
   onSwap: () => void;
   onRemove: () => void;
@@ -379,9 +376,8 @@ function RelationSlot({
   disabled = false,
   isLoading = false,
 }: RelationSlotProps) {
-  const isRegression = type === "regression";
-  const label = isRegression ? "Łatwiejsza wersja" : "Trudniejsza wersja";
-  const emptyLabel = isRegression ? "+ Dodaj łatwiejszą" : "+ Dodaj trudniejszą";
+  const isRegression = type === 'regression';
+  const emptyLabel = isRegression ? '+ Dodaj łatwiejszą' : '+ Dodaj trudniejszą';
 
   // Ghost slot (empty)
   if (!relation) {
@@ -390,14 +386,14 @@ function RelationSlot({
         onClick={onSwap}
         disabled={disabled}
         className={cn(
-          "flex flex-col items-center justify-center",
-          "w-[80px] sm:w-[100px] h-[80px] sm:h-[100px]",
-          "rounded-lg border-2 border-dashed",
-          "transition-all cursor-pointer",
+          'flex flex-col items-center justify-center',
+          'w-[80px] sm:w-[100px] h-[80px] sm:h-[100px]',
+          'rounded-lg border-2 border-dashed',
+          'transition-all cursor-pointer',
           isRegression
-            ? "border-blue-500/30 hover:border-blue-500/50 hover:bg-blue-500/5"
-            : "border-emerald-500/30 hover:border-emerald-500/50 hover:bg-emerald-500/5",
-          disabled && "opacity-50 cursor-not-allowed"
+            ? 'border-blue-500/30 hover:border-blue-500/50 hover:bg-blue-500/5'
+            : 'border-emerald-500/30 hover:border-emerald-500/50 hover:bg-emerald-500/5',
+          disabled && 'opacity-50 cursor-not-allowed'
         )}
         data-testid={`progression-chain-${type}-ghost`}
       >
@@ -405,14 +401,8 @@ function RelationSlot({
           <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
         ) : (
           <>
-            <Plus className={cn(
-              "h-5 w-5 mb-1",
-              isRegression ? "text-blue-500" : "text-emerald-500"
-            )} />
-            <span className={cn(
-              "text-[10px] text-center px-1",
-              isRegression ? "text-blue-600" : "text-emerald-600"
-            )}>
+            <Plus className={cn('h-5 w-5 mb-1', isRegression ? 'text-blue-500' : 'text-emerald-500')} />
+            <span className={cn('text-[10px] text-center px-1', isRegression ? 'text-blue-600' : 'text-emerald-600')}>
               {emptyLabel}
             </span>
           </>
@@ -427,23 +417,18 @@ function RelationSlot({
   return (
     <div
       className={cn(
-        "relative group flex flex-col items-center",
-        "w-[80px] sm:w-[100px]",
-        "rounded-lg border bg-surface overflow-hidden",
-        warning ? "border-amber-500/50" : "border-border/60",
-        "transition-all"
+        'relative group flex flex-col items-center',
+        'w-[80px] sm:w-[100px]',
+        'rounded-lg border bg-surface overflow-hidden',
+        warning ? 'border-amber-500/50' : 'border-border/60',
+        'transition-all'
       )}
       data-testid={`progression-chain-${type}-filled`}
     >
       {/* Thumbnail */}
       <div className="relative w-full h-[50px] sm:h-[60px] bg-muted overflow-hidden">
         {thumbnailUrl ? (
-          <img
-            src={thumbnailUrl}
-            alt={relation.name}
-            className="w-full h-full object-cover"
-            loading="lazy"
-          />
+          <img src={thumbnailUrl} alt={relation.name} className="w-full h-full object-cover" loading="lazy" />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
             <ImageIcon className="h-5 w-5 text-muted-foreground" />
@@ -452,9 +437,7 @@ function RelationSlot({
 
         {/* AI suggested badge */}
         {relation.isAISuggested && (
-          <Badge className="absolute top-1 left-1 text-[8px] px-1 py-0 bg-amber-500/90">
-            AI
-          </Badge>
+          <Badge className="absolute top-1 left-1 text-[8px] px-1 py-0 bg-amber-500/90">AI</Badge>
         )}
 
         {/* Warning indicator */}
@@ -477,7 +460,10 @@ function RelationSlot({
             variant="ghost"
             size="icon"
             className="h-6 w-6 text-white hover:bg-white/20"
-            onClick={(e) => { e.stopPropagation(); onSwap(); }}
+            onClick={(e) => {
+              e.stopPropagation();
+              onSwap();
+            }}
             disabled={disabled}
           >
             <RefreshCcw className="h-3 w-3" />
@@ -486,7 +472,10 @@ function RelationSlot({
             variant="ghost"
             size="icon"
             className="h-6 w-6 text-white hover:bg-destructive/50"
-            onClick={(e) => { e.stopPropagation(); onRemove(); }}
+            onClick={(e) => {
+              e.stopPropagation();
+              onRemove();
+            }}
             disabled={disabled}
           >
             <X className="h-3 w-3" />
@@ -496,15 +485,13 @@ function RelationSlot({
 
       {/* Info */}
       <div className="p-1.5 w-full">
-        <p className="text-[10px] font-medium text-foreground text-center line-clamp-1">
-          {relation.name}
-        </p>
+        <p className="text-[10px] font-medium text-foreground text-center line-clamp-1">{relation.name}</p>
         {relation.difficultyLevel && (
           <Badge
             variant="outline"
             className={cn(
-              "text-[8px] mt-0.5 w-full justify-center",
-              isRegression ? "border-blue-500/30 text-blue-600" : "border-emerald-500/30 text-emerald-600"
+              'text-[8px] mt-0.5 w-full justify-center',
+              isRegression ? 'border-blue-500/30 text-blue-600' : 'border-emerald-500/30 text-emerald-600'
             )}
           >
             {relation.difficultyLevel}

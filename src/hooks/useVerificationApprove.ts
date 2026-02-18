@@ -1,14 +1,11 @@
-import { useCallback, useState } from "react";
-import { useMutation } from "@apollo/client/react";
-import { toast } from "sonner";
+import { useCallback, useState } from 'react';
+import { useMutation } from '@apollo/client/react';
+import { toast } from 'sonner';
 import {
   APPROVE_EXERCISE_MUTATION,
   SET_EXERCISE_RELATIONS_BATCH_MUTATION,
-} from "@/graphql/mutations/adminExercises.mutations";
-import type {
-  AdminExercise,
-  ExerciseRelationTarget,
-} from "@/graphql/types/adminExercise.types";
+} from '@/graphql/mutations/adminExercises.mutations';
+import type { AdminExercise, ExerciseRelationTarget } from '@/graphql/types/adminExercise.types';
 
 interface UseVerificationApproveOptions {
   /** Callback po sukcesie */
@@ -41,10 +38,7 @@ interface ApproveWithRelationsParams {
  * 2. Zatwierdź ćwiczenie
  * 3. Powiadom o sukcesie
  */
-export function useVerificationApprove({
-  onSuccess,
-  onError,
-}: UseVerificationApproveOptions = {}) {
+export function useVerificationApprove({ onSuccess, onError }: UseVerificationApproveOptions = {}) {
   const [isApproving, setIsApproving] = useState(false);
 
   // Mutation: Approve exercise
@@ -90,16 +84,9 @@ export function useVerificationApprove({
         if (approvedExercise) {
           // 3. Powiadom o sukcesie
           const hasRelations = regression || progression;
-          toast.success(
-            hasRelations
-              ? "Ćwiczenie zatwierdzone z relacjami"
-              : "Ćwiczenie zatwierdzone",
-            {
-              description: hasRelations
-                ? "Graf wiedzy został zaktualizowany"
-                : undefined,
-            }
-          );
+          toast.success(hasRelations ? 'Ćwiczenie zatwierdzone z relacjami' : 'Ćwiczenie zatwierdzone', {
+            description: hasRelations ? 'Graf wiedzy został zaktualizowany' : undefined,
+          });
 
           onSuccess?.(approvedExercise);
           return approvedExercise;
@@ -122,10 +109,7 @@ export function useVerificationApprove({
    * Zatwierdź ćwiczenie (bez relacji)
    */
   const approve = useCallback(
-    async (
-      exerciseId: string,
-      reviewNotes?: string | null
-    ): Promise<AdminExercise | null> => {
+    async (exerciseId: string, reviewNotes?: string | null): Promise<AdminExercise | null> => {
       return approveWithRelations({
         exerciseId,
         reviewNotes,
@@ -143,49 +127,5 @@ export function useVerificationApprove({
     approve,
     /** Czy trwa zatwierdzanie */
     isApproving,
-  };
-}
-
-/**
- * Typ dla stanu relacji w komponencie weryfikacji
- */
-export interface VerificationRelationsState {
-  regression: ExerciseRelationTarget | null;
-  progression: ExerciseRelationTarget | null;
-}
-
-/**
- * Hook do zarządzania stanem relacji podczas weryfikacji
- */
-export function useVerificationRelationsState(
-  initialRegression?: ExerciseRelationTarget | null,
-  initialProgression?: ExerciseRelationTarget | null
-) {
-  const [relations, setRelations] = useState<VerificationRelationsState>({
-    regression: initialRegression || null,
-    progression: initialProgression || null,
-  });
-
-  const setRegression = useCallback((exercise: ExerciseRelationTarget | null) => {
-    setRelations((prev) => ({ ...prev, regression: exercise }));
-  }, []);
-
-  const setProgression = useCallback((exercise: ExerciseRelationTarget | null) => {
-    setRelations((prev) => ({ ...prev, progression: exercise }));
-  }, []);
-
-  const clearRelations = useCallback(() => {
-    setRelations({ regression: null, progression: null });
-  }, []);
-
-  const hasRelations = relations.regression !== null || relations.progression !== null;
-
-  return {
-    relations,
-    setRelations,
-    setRegression,
-    setProgression,
-    clearRelations,
-    hasRelations,
   };
 }

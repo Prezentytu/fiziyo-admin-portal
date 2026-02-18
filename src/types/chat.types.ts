@@ -3,7 +3,7 @@
  */
 
 // Rola wiadomości
-export type ChatMessageRole = "user" | "assistant";
+export type ChatMessageRole = 'user' | 'assistant';
 
 // Wiadomość w czacie
 export interface ChatMessageType {
@@ -84,4 +84,3 @@ export interface SerializableChatSession {
   updatedAt: string;
   messages: SerializableChatMessage[];
 }
-

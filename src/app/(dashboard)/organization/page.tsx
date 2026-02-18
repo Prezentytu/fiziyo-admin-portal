@@ -1,40 +1,31 @@
-"use client";
+'use client';
 
-import { useState, useMemo } from "react";
-import { useQuery } from "@apollo/client/react";
-import { useUser } from "@clerk/nextjs";
-import {
-  Building2,
-  Users,
-  MapPin,
-  Mail,
-} from "lucide-react";
+import { useState, useMemo } from 'react';
+import { useQuery } from '@apollo/client/react';
+import { useUser } from '@clerk/nextjs';
+import { Building2, Users, MapPin, Mail } from 'lucide-react';
 
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
-import { LoadingState } from "@/components/shared/LoadingState";
-import { EmptyState } from "@/components/shared/EmptyState";
-import { AccessGuard } from "@/components/shared/AccessGuard";
-import {
-  InviteMemberDialog,
-  ClinicDialog,
-  AssignToClinicDialog,
-} from "@/components/organization";
-import { TeamSection } from "@/components/organization/TeamSection";
-import { ClinicsSection, Clinic } from "@/components/organization/ClinicsSection";
-import { InvitationsSection } from "@/components/organization/InvitationsSection";
-import type { OrganizationMember } from "@/components/organization/MemberCard";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
+import { LoadingState } from '@/components/shared/LoadingState';
+import { EmptyState } from '@/components/shared/EmptyState';
+import { AccessGuard } from '@/components/shared/AccessGuard';
+import { InviteMemberDialog, ClinicDialog, AssignToClinicDialog } from '@/components/organization';
+import { TeamSection } from '@/components/organization/TeamSection';
+import { ClinicsSection, Clinic } from '@/components/organization/ClinicsSection';
+import { InvitationsSection } from '@/components/organization/InvitationsSection';
+import type { OrganizationMember } from '@/components/organization/MemberCard';
 
 import {
   GET_ORGANIZATION_BY_ID_QUERY,
   GET_ORGANIZATION_MEMBERS_QUERY,
   GET_CURRENT_ORGANIZATION_PLAN,
   GET_ORGANIZATION_INVITATION_STATS_QUERY,
-} from "@/graphql/queries/organizations.queries";
-import { GET_USER_BY_CLERK_ID_QUERY, GET_USER_ORGANIZATIONS_QUERY } from "@/graphql/queries/users.queries";
-import { GET_ORGANIZATION_CLINICS_QUERY } from "@/graphql/queries/clinics.queries";
-import { GET_CURRENT_BILLING_STATUS_QUERY } from "@/graphql/queries/billing.queries";
-import { useOrganization } from "@/contexts/OrganizationContext";
+} from '@/graphql/queries/organizations.queries';
+import { GET_USER_BY_CLERK_ID_QUERY, GET_USER_ORGANIZATIONS_QUERY } from '@/graphql/queries/users.queries';
+import { GET_ORGANIZATION_CLINICS_QUERY } from '@/graphql/queries/clinics.queries';
+import { GET_CURRENT_BILLING_STATUS_QUERY } from '@/graphql/queries/billing.queries';
+import { useOrganization } from '@/contexts/OrganizationContext';
 import type {
   UserByClerkIdResponse,
   OrganizationByIdResponse,
@@ -43,7 +34,7 @@ import type {
   UserOrganizationsResponse,
   OrganizationInvitationStatsResponse,
   GetCurrentBillingStatusResponse,
-} from "@/types/apollo";
+} from '@/types/apollo';
 
 interface ClinicFromQuery {
   id: string;
@@ -77,12 +68,12 @@ interface PlanResponse {
 }
 
 // Filter out patients - only show staff members
-const STAFF_ROLES = new Set(["owner", "admin", "therapist", "member"]);
+const STAFF_ROLES = new Set(['owner', 'admin', 'therapist', 'member']);
 
 export default function OrganizationPage() {
   const { user } = useUser();
   const { currentOrganization } = useOrganization();
-  const [activeTab, setActiveTab] = useState("team");
+  const [activeTab, setActiveTab] = useState('team');
   const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
   const [isClinicDialogOpen, setIsClinicDialogOpen] = useState(false);
   const [isAssignToClinicDialogOpen, setIsAssignToClinicDialogOpen] = useState(false);
@@ -111,10 +102,7 @@ export default function OrganizationPage() {
     ?.role?.toLowerCase();
 
   // Get organization details
-  const {
-    data: orgData,
-    loading: orgLoading,
-  } = useQuery(GET_ORGANIZATION_BY_ID_QUERY, {
+  const { data: orgData, loading: orgLoading } = useQuery(GET_ORGANIZATION_BY_ID_QUERY, {
     variables: { id: organizationId },
     skip: !organizationId,
   });
@@ -146,14 +134,11 @@ export default function OrganizationPage() {
   });
 
   // Get billing status (for therapist patient counts)
-  const { data: billingData } = useQuery<GetCurrentBillingStatusResponse>(
-    GET_CURRENT_BILLING_STATUS_QUERY,
-    {
-      variables: { organizationId: organizationId || "" },
-      skip: !organizationId,
-      errorPolicy: "all",
-    }
-  );
+  const { data: billingData } = useQuery<GetCurrentBillingStatusResponse>(GET_CURRENT_BILLING_STATUS_QUERY, {
+    variables: { organizationId: organizationId || '' },
+    skip: !organizationId,
+    errorPolicy: 'all',
+  });
 
   // Get invitation stats (for KPI card)
   const { data: invitationStatsData } = useQuery<OrganizationInvitationStatsResponse>(
@@ -173,9 +158,9 @@ export default function OrganizationPage() {
   const staffMembers = members.filter((m) => STAFF_ROLES.has(m.role.toLowerCase()));
   const teamCount = staffMembers.length;
   const clinicsCount = clinics.length;
-  const planName = planInfo?.currentPlan || organization?.subscriptionPlan || "Free";
+  const planName = planInfo?.currentPlan || organization?.subscriptionPlan || 'Free';
 
-  const canEdit = currentUserRole === "owner" || currentUserRole === "admin";
+  const canEdit = currentUserRole === 'owner' || currentUserRole === 'admin';
 
   // Billing data for patient counts
   const billingStatus = billingData?.currentBillingStatus;
@@ -196,7 +181,7 @@ export default function OrganizationPage() {
 
   // Get therapists for clinic assignment (filter out patients)
   const therapists = members
-    .filter((m) => ["owner", "admin", "therapist"].includes(m.role.toLowerCase()))
+    .filter((m) => ['owner', 'admin', 'therapist'].includes(m.role.toLowerCase()))
     .map((m) => ({
       id: m.userId,
       fullname: m.user?.fullname,
@@ -206,7 +191,7 @@ export default function OrganizationPage() {
 
   // Patients for clinic assignment
   const patients = members
-    .filter((m) => m.role.toLowerCase() === "patient")
+    .filter((m) => m.role.toLowerCase() === 'patient')
     .map((m) => ({
       id: m.userId,
       fullname: m.user?.fullname,
@@ -253,11 +238,18 @@ export default function OrganizationPage() {
   return (
     <AccessGuard requiredAccess="admin" fallbackUrl="/">
       <div className="flex h-[calc(100vh-64px)] -m-4 lg:-m-6 overflow-hidden bg-background">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex w-full overflow-hidden" orientation="vertical">
+        <Tabs
+          value={activeTab}
+          onValueChange={setActiveTab}
+          className="flex w-full overflow-hidden"
+          orientation="vertical"
+        >
           {/* Inner Sidebar */}
           <div className="w-64 border-r border-border/40 bg-transparent flex flex-col shrink-0">
             <div className="p-6">
-              <h1 className="text-xl font-bold text-foreground mb-6" data-testid="org-page-title">Mój Zespół</h1>
+              <h1 className="text-xl font-bold text-foreground mb-6" data-testid="org-page-title">
+                Mój Zespół
+              </h1>
 
               <TabsList className="flex flex-col h-auto bg-transparent p-0 items-stretch gap-1">
                 <TabsTrigger

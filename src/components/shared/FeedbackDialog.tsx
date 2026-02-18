@@ -16,24 +16,13 @@ import { usePathname } from 'next/navigation';
 import { Send, Info } from 'lucide-react';
 import { toast } from 'sonner';
 
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { FileUpload } from '@/components/shared/FileUpload';
 import { cn } from '@/lib/utils';
 import { sendFeedbackToDiscord, createFeedbackMetadata } from '@/services/feedbackService';
-import type {
-  FeedbackType,
-  FeedbackData,
-  FeedbackImage,
-  FeedbackUserRole,
-} from '@/types/feedback.types';
+import type { FeedbackType, FeedbackData, FeedbackImage, FeedbackUserRole } from '@/types/feedback.types';
 import { FEEDBACK_TYPE_CONFIG } from '@/types/feedback.types';
 
 // ============================================================================
@@ -58,11 +47,7 @@ const MIN_DESCRIPTION_LENGTH = 10;
 // COMPONENT
 // ============================================================================
 
-export function FeedbackDialog({
-  isOpen,
-  onClose,
-  screenName,
-}: FeedbackDialogProps) {
+export function FeedbackDialog({ isOpen, onClose, screenName }: FeedbackDialogProps) {
   // === HOOKS ===
   const { user } = useUser();
   const pathname = usePathname();
@@ -75,11 +60,8 @@ export function FeedbackDialog({
 
   // === MEMOIZED VALUES ===
   const canSubmit = useMemo(() => {
-    return (
-      description.trim().length >= MIN_DESCRIPTION_LENGTH && !isSending
-    );
+    return description.trim().length >= MIN_DESCRIPTION_LENGTH && !isSending;
   }, [description, isSending]);
-
 
   const images: FeedbackImage[] = useMemo(() => {
     return files.map((file) => ({
@@ -150,16 +132,7 @@ export function FeedbackDialog({
     } finally {
       setIsSending(false);
     }
-  }, [
-    canSubmit,
-    user,
-    feedbackType,
-    description,
-    images,
-    screenName,
-    pathname,
-    handleClose,
-  ]);
+  }, [canSubmit, user, feedbackType, description, images, screenName, pathname, handleClose]);
 
   // === RENDER ===
 
@@ -168,9 +141,7 @@ export function FeedbackDialog({
       <DialogContent className="max-w-4xl" data-testid="common-feedback-dialog">
         <DialogHeader>
           <DialogTitle>Zgłoś uwagę</DialogTitle>
-          <DialogDescription>
-            Pomóż nam ulepszyć aplikację - zgłoś błąd, sugestię lub zadaj pytanie.
-          </DialogDescription>
+          <DialogDescription>Pomóż nam ulepszyć aplikację - zgłoś błąd, sugestię lub zadaj pytanie.</DialogDescription>
         </DialogHeader>
 
         {/* Two-column layout on desktop */}
@@ -179,82 +150,60 @@ export function FeedbackDialog({
           <div className="space-y-4">
             {/* Typ zgłoszenia */}
             <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground">
-                Typ zgłoszenia
-              </label>
+              <label className="text-sm font-medium text-foreground">Typ zgłoszenia</label>
               <div className="grid grid-cols-3 gap-2">
-                {(Object.keys(FEEDBACK_TYPE_CONFIG) as FeedbackType[]).map(
-                  (type) => {
-                    const config = FEEDBACK_TYPE_CONFIG[type];
-                    const isSelected = feedbackType === type;
-                    const Icon = config.icon;
+                {(Object.keys(FEEDBACK_TYPE_CONFIG) as FeedbackType[]).map((type) => {
+                  const config = FEEDBACK_TYPE_CONFIG[type];
+                  const isSelected = feedbackType === type;
+                  const Icon = config.icon;
 
-                    return (
-                      <button
-                        key={type}
-                        type="button"
-                        onClick={() => setFeedbackType(type)}
-                        className={cn(
-                          'flex flex-col items-center justify-center gap-1 rounded-lg border-2 p-2.5 transition-colors duration-200',
-                          isSelected
-                            ? 'shadow-sm'
-                            : 'border-border hover:border-muted-foreground/50'
-                        )}
+                  return (
+                    <button
+                      key={type}
+                      type="button"
+                      onClick={() => setFeedbackType(type)}
+                      className={cn(
+                        'flex flex-col items-center justify-center gap-1 rounded-lg border-2 p-2.5 transition-colors duration-200',
+                        isSelected ? 'shadow-sm' : 'border-border hover:border-muted-foreground/50'
+                      )}
+                      style={{
+                        borderColor: isSelected ? config.color : undefined,
+                        backgroundColor: isSelected ? `${config.color}15` : undefined,
+                      }}
+                    >
+                      <Icon
+                        className="h-5 w-5"
                         style={{
-                          borderColor: isSelected ? config.color : undefined,
-                          backgroundColor: isSelected
-                            ? `${config.color}15`
-                            : undefined,
+                          color: isSelected ? config.color : 'var(--muted-foreground)',
                         }}
+                      />
+                      <span
+                        className={cn('text-xs font-medium', isSelected ? 'text-foreground' : 'text-muted-foreground')}
                       >
-                        <Icon
-                          className="h-5 w-5"
-                          style={{
-                            color: isSelected
-                              ? config.color
-                              : 'var(--muted-foreground)',
-                          }}
-                        />
-                        <span
-                          className={cn(
-                            'text-xs font-medium',
-                            isSelected
-                              ? 'text-foreground'
-                              : 'text-muted-foreground'
-                          )}
-                        >
-                          {config.label}
-                        </span>
-                      </button>
-                    );
-                  }
-                )}
+                        {config.label}
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
             {/* Opis */}
             <div className="space-y-2">
-              <label className="text-sm font-medium text-foreground">
-                Opis problemu
-              </label>
+              <label className="text-sm font-medium text-foreground">Opis problemu</label>
               <Textarea
                 placeholder="Opisz co się dzieje, jak odtworzyć problem, czego oczekujesz..."
                 value={description}
-                onChange={(e) =>
-                  setDescription(e.target.value.slice(0, MAX_DESCRIPTION_LENGTH))
-                }
+                onChange={(e) => setDescription(e.target.value.slice(0, MAX_DESCRIPTION_LENGTH))}
                 rows={8}
                 className="resize-none"
                 data-testid="common-feedback-description-input"
               />
               <div className="flex items-center justify-between text-xs text-muted-foreground">
                 <span>
-                  {description.length > 0 &&
-                    description.length < MIN_DESCRIPTION_LENGTH && (
-                      <span className="text-warning">
-                        Min. {MIN_DESCRIPTION_LENGTH} znaków
-                      </span>
-                    )}
+                  {description.length > 0 && description.length < MIN_DESCRIPTION_LENGTH && (
+                    <span className="text-warning">Min. {MIN_DESCRIPTION_LENGTH} znaków</span>
+                  )}
                 </span>
                 <span>
                   {description.length} / {MAX_DESCRIPTION_LENGTH}
@@ -285,8 +234,7 @@ export function FeedbackDialog({
             <div className="flex items-start gap-2 rounded-lg bg-info/10 p-3">
               <Info className="h-4 w-4 text-info mt-0.5 shrink-0" />
               <p className="text-xs text-muted-foreground">
-                Twoje zgłoszenie zostanie wysłane do zespołu deweloperskiego wraz
-                z informacją o Twoim koncie.
+                Twoje zgłoszenie zostanie wysłane do zespołu deweloperskiego wraz z informacją o Twoim koncie.
               </p>
             </div>
           </div>
@@ -294,12 +242,7 @@ export function FeedbackDialog({
 
         {/* Footer */}
         <div className="flex justify-end gap-2 pt-2 border-t border-border">
-          <Button
-            variant="outline"
-            onClick={handleClose}
-            disabled={isSending}
-            data-testid="common-feedback-cancel-btn"
-          >
+          <Button variant="outline" onClick={handleClose} disabled={isSending} data-testid="common-feedback-cancel-btn">
             Anuluj
           </Button>
           <Button

@@ -1,38 +1,19 @@
-"use client";
+'use client';
 
-import { useMemo, useState } from "react";
-import {
-  ArrowUp,
-  Wind,
-  Shield,
-  Clock,
-  Maximize2,
-  User,
-  ChevronDown,
-  ChevronUp,
-  Sparkles,
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
-import { cn } from "@/lib/utils";
+import { useMemo, useState } from 'react';
+import { Wind, Shield, Clock, Maximize2, User, ChevronDown, ChevronUp, Sparkles } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { cn } from '@/lib/utils';
 import {
   getMacrosForTags,
   groupMacrosByCategory,
   getCategoryLabel,
   type ClinicalMacro,
   type MacroCategory,
-} from "@/data/clinical-macros";
+} from '@/data/clinical-macros';
 
 // Icon mapping
 const CATEGORY_ICONS: Record<MacroCategory, React.ReactNode> = {
@@ -53,7 +34,7 @@ interface ClinicalMacrosBarProps {
   /** Dodatkowe klasy CSS */
   className?: string;
   /** data-testid */
-  "data-testid"?: string;
+  'data-testid'?: string;
 }
 
 /**
@@ -73,21 +54,15 @@ export function ClinicalMacrosBar({
   onInsert,
   disabled = false,
   className,
-  "data-testid": testId,
+  'data-testid': testId,
 }: ClinicalMacrosBarProps) {
   const [isExpanded, setIsExpanded] = useState(false);
 
   // Get macros for current exercise tags
-  const relevantMacros = useMemo(
-    () => getMacrosForTags(exerciseTags),
-    [exerciseTags]
-  );
+  const relevantMacros = useMemo(() => getMacrosForTags(exerciseTags), [exerciseTags]);
 
   // Group by category for expanded view
-  const groupedMacros = useMemo(
-    () => groupMacrosByCategory(relevantMacros),
-    [relevantMacros]
-  );
+  const groupedMacros = useMemo(() => groupMacrosByCategory(relevantMacros), [relevantMacros]);
 
   // Top macros for compact view (max 6)
   const topMacros = useMemo(() => relevantMacros.slice(0, 6), [relevantMacros]);
@@ -95,8 +70,7 @@ export function ClinicalMacrosBar({
   // Categories with macros (for expanded view)
   const categoriesWithMacros = useMemo(
     () =>
-      (Object.entries(groupedMacros) as [MacroCategory, ClinicalMacro[]][])
-        .filter(([, macros]) => macros.length > 0),
+      (Object.entries(groupedMacros) as [MacroCategory, ClinicalMacro[]][]).filter(([, macros]) => macros.length > 0),
     [groupedMacros]
   );
 
@@ -114,7 +88,7 @@ export function ClinicalMacrosBar({
       <Collapsible
         open={isExpanded}
         onOpenChange={setIsExpanded}
-        className={cn("space-y-2", className)}
+        className={cn('space-y-2', className)}
         data-testid={testId}
       >
         {/* Header */}
@@ -127,11 +101,7 @@ export function ClinicalMacrosBar({
             </Badge>
           </div>
           <CollapsibleTrigger asChild>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-6 px-2 text-xs text-muted-foreground"
-            >
+            <Button variant="ghost" size="sm" className="h-6 px-2 text-xs text-muted-foreground">
               {isExpanded ? (
                 <>
                   <ChevronUp className="h-3 w-3 mr-1" />
@@ -151,12 +121,7 @@ export function ClinicalMacrosBar({
         {!isExpanded && (
           <div className="flex flex-wrap gap-1.5">
             {topMacros.map((macro) => (
-              <MacroChip
-                key={macro.id}
-                macro={macro}
-                onClick={() => handleInsert(macro)}
-                disabled={disabled}
-              />
+              <MacroChip key={macro.id} macro={macro} onClick={() => handleInsert(macro)} disabled={disabled} />
             ))}
             {relevantMacros.length > 6 && (
               <span className="text-xs text-muted-foreground self-center px-1">
@@ -204,18 +169,13 @@ interface MacroChipProps {
   showCategory?: boolean;
 }
 
-function MacroChip({
-  macro,
-  onClick,
-  disabled = false,
-  showCategory = true,
-}: MacroChipProps) {
+function MacroChip({ macro, onClick, disabled = false, showCategory = true }: MacroChipProps) {
   const categoryColors: Record<MacroCategory, string> = {
-    posture: "bg-blue-500/10 text-blue-600 hover:bg-blue-500/20 border-blue-500/20",
-    breathing: "bg-cyan-500/10 text-cyan-600 hover:bg-cyan-500/20 border-cyan-500/20",
-    safety: "bg-amber-500/10 text-amber-600 hover:bg-amber-500/20 border-amber-500/20",
-    tempo: "bg-purple-500/10 text-purple-600 hover:bg-purple-500/20 border-purple-500/20",
-    range: "bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20 border-emerald-500/20",
+    posture: 'bg-blue-500/10 text-blue-600 hover:bg-blue-500/20 border-blue-500/20',
+    breathing: 'bg-cyan-500/10 text-cyan-600 hover:bg-cyan-500/20 border-cyan-500/20',
+    safety: 'bg-amber-500/10 text-amber-600 hover:bg-amber-500/20 border-amber-500/20',
+    tempo: 'bg-purple-500/10 text-purple-600 hover:bg-purple-500/20 border-purple-500/20',
+    range: 'bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20 border-emerald-500/20',
   };
 
   return (
@@ -225,10 +185,10 @@ function MacroChip({
           onClick={onClick}
           disabled={disabled}
           className={cn(
-            "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium",
-            "border transition-colors cursor-pointer",
+            'inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium',
+            'border transition-colors cursor-pointer',
             categoryColors[macro.category],
-            disabled && "opacity-50 cursor-not-allowed"
+            disabled && 'opacity-50 cursor-not-allowed'
           )}
           data-testid={`clinical-macro-${macro.id}`}
         >
@@ -238,9 +198,7 @@ function MacroChip({
       </TooltipTrigger>
       <TooltipContent side="top" className="max-w-xs">
         <p className="text-xs">{macro.text}</p>
-        <p className="text-[10px] text-muted-foreground mt-1">
-          Kliknij aby dodać do opisu
-        </p>
+        <p className="text-[10px] text-muted-foreground mt-1">Kliknij aby dodać do opisu</p>
       </TooltipContent>
     </Tooltip>
   );

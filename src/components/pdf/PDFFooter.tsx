@@ -17,7 +17,6 @@ interface PDFFooterProps {
  * - Historia (śledzenie postępów)
  */
 export function PDFFooter({ generatedAt, qrCodeDataUrl, therapistName }: PDFFooterProps) {
-
   // WERSJA Z QR KODEM - APP PROMO BANNER
   if (qrCodeDataUrl) {
     return (
@@ -30,14 +29,11 @@ export function PDFFooter({ generatedAt, qrCodeDataUrl, therapistName }: PDFFoot
         {/* Marketing Content */}
         <View style={pdfStyles.appBannerContent}>
           {/* Tytuł */}
-          <Text style={pdfStyles.appBannerTitle}>
-            URUCHOM ASYSTENTA TRENINGU
-          </Text>
+          <Text style={pdfStyles.appBannerTitle}>URUCHOM ASYSTENTA TRENINGU</Text>
 
           {/* Subtitle */}
           <Text style={pdfStyles.appBannerSubtitle}>
-            Papier to tylko ściąga. Zeskanuj kod, aby pobrać bezpłatną aplikację
-            i ćwiczyć bezpieczniej w domu.
+            Papier to tylko ściąga. Zeskanuj kod, aby pobrać bezpłatną aplikację i ćwiczyć bezpieczniej w domu.
           </Text>
 
           {/* Features - Co daje apka? (BEZ lektora i czatu!) */}
@@ -63,9 +59,7 @@ export function PDFFooter({ generatedAt, qrCodeDataUrl, therapistName }: PDFFoot
         Dokument wygenerowano: {generatedAt}
         {therapistName && ` • ${therapistName}`}
       </Text>
-      <Text style={pdfStyles.footerBrand}>
-        FiziYo
-      </Text>
+      <Text style={pdfStyles.footerBrand}>FiziYo</Text>
     </View>
   );
 }

@@ -20,13 +20,7 @@ import {
 import { format } from 'date-fns';
 import { pl } from 'date-fns/locale';
 
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
@@ -125,9 +119,7 @@ export function AssignmentSuccessDialog({
 
   // Formatowanie daty premium
   const premiumDate = premiumValidUntil ? new Date(premiumValidUntil) : null;
-  const formattedPremiumDate = premiumDate
-    ? format(premiumDate, 'd MMMM yyyy', { locale: pl })
-    : null;
+  const formattedPremiumDate = premiumDate ? format(premiumDate, 'd MMMM yyyy', { locale: pl }) : null;
 
   const handleCopyLink = async () => {
     try {
@@ -203,7 +195,8 @@ export function AssignmentSuccessDialog({
         name: mapping.exercise?.name || 'Nieznane ćwiczenie',
         description: mapping.exercise?.patientDescription || mapping.exercise?.description,
         type: mapping.exercise?.type?.toLowerCase() as PDFExercise['type'],
-        exerciseSide: (mapping.exercise?.side?.toLowerCase() || mapping.exercise?.exerciseSide) as PDFExercise['exerciseSide'],
+        exerciseSide: (mapping.exercise?.side?.toLowerCase() ||
+          mapping.exercise?.exerciseSide) as PDFExercise['exerciseSide'],
         imageUrl: mapping.exercise?.thumbnailUrl || mapping.exercise?.imageUrl,
         images: mapping.exercise?.images,
         notes: mapping.notes || mapping.exercise?.notes,
@@ -222,18 +215,20 @@ export function AssignmentSuccessDialog({
         name: setName || exerciseSet.name,
         description: exerciseSet.description,
         exercises: pdfExercises,
-        frequency: frequency ? {
-          timesPerDay: frequency.timesPerDay,
-          timesPerWeek: frequency.timesPerWeek,
-          breakBetweenSets: frequency.breakBetweenSets,
-          monday: frequency.monday,
-          tuesday: frequency.tuesday,
-          wednesday: frequency.wednesday,
-          thursday: frequency.thursday,
-          friday: frequency.friday,
-          saturday: frequency.saturday,
-          sunday: frequency.sunday,
-        } : undefined,
+        frequency: frequency
+          ? {
+              timesPerDay: frequency.timesPerDay,
+              timesPerWeek: frequency.timesPerWeek,
+              breakBetweenSets: frequency.breakBetweenSets,
+              monday: frequency.monday,
+              tuesday: frequency.tuesday,
+              wednesday: frequency.wednesday,
+              thursday: frequency.thursday,
+              friday: frequency.friday,
+              saturday: frequency.saturday,
+              sunday: frequency.sunday,
+            }
+          : undefined,
       };
 
       const pdfPatient: PDFPatient = {
@@ -365,9 +360,7 @@ export function AssignmentSuccessDialog({
               <Sparkles className="h-5 w-5 text-primary shrink-0" />
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-foreground">Dostęp Premium aktywny</p>
-                <p className="text-xs text-muted-foreground">
-                  Pacjent ma dostęp do {formattedPremiumDate}
-                </p>
+                <p className="text-xs text-muted-foreground">Pacjent ma dostęp do {formattedPremiumDate}</p>
               </div>
               <Badge variant="secondary" className="shrink-0 bg-primary/20 text-primary border-0">
                 <Calendar className="h-3 w-3 mr-1" />
@@ -395,10 +388,8 @@ export function AssignmentSuccessDialog({
 
           {/* BODY: DWIE ŚCIEŻKI - Clean & Center (Bez linii, symetryczne) */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-
             {/* ==================== LEWA: APP ==================== */}
             <div className="flex flex-col p-5 rounded-xl border border-border/60 bg-surface/50 min-h-[320px] hover:border-border transition-colors">
-
               {/* Treść główna - CENTRUM */}
               <div className="flex-1 flex flex-col items-center justify-center">
                 <div
@@ -448,11 +439,7 @@ export function AssignmentSuccessDialog({
                   className="w-full gap-2"
                   data-testid="assign-success-copy-btn"
                 >
-                  {copied ? (
-                    <Check className="h-3.5 w-3.5 text-primary" />
-                  ) : (
-                    <Copy className="h-3.5 w-3.5" />
-                  )}
+                  {copied ? <Check className="h-3.5 w-3.5 text-primary" /> : <Copy className="h-3.5 w-3.5" />}
                   {copied ? 'Skopiowano!' : 'Kopiuj link'}
                 </Button>
               </div>
@@ -460,7 +447,6 @@ export function AssignmentSuccessDialog({
 
             {/* ==================== PRAWA: WYDRUK ==================== */}
             <div className="flex flex-col p-5 rounded-xl border border-border/60 bg-surface/50 min-h-[320px] hover:border-border transition-colors">
-
               {/* Treść główna - CENTRUM */}
               <div className="flex-1 flex flex-col items-center justify-center">
                 <div className="mb-4 hover:scale-105 transition-transform duration-300">
@@ -524,9 +510,7 @@ export function AssignmentSuccessDialog({
                   <Printer className="h-4 w-4 text-primary" />
                   Karta Pacjenta
                 </h3>
-                <p className="text-xs text-muted-foreground text-center max-w-[180px]">
-                  Wydruk A4 z Twoim logo.
-                </p>
+                <p className="text-xs text-muted-foreground text-center max-w-[180px]">Wydruk A4 z Twoim logo.</p>
               </div>
 
               {/* Przyciski - identyczna struktura jak lewa */}
@@ -573,20 +557,12 @@ export function AssignmentSuccessDialog({
 
         {/* Ukryty QR Code Canvas do generowania obrazu dla PDF */}
         <div ref={qrCanvasRef} className="hidden">
-          <QRCodeCanvas
-            value={`https://app.fiziyo.pl/sets/${exerciseSet?.id || ''}`}
-            size={200}
-            level="M"
-          />
+          <QRCodeCanvas value={`https://app.fiziyo.pl/sets/${exerciseSet?.id || ''}`} size={200} level="M" />
         </div>
 
         {/* Footer actions */}
         <div className="flex justify-between pt-4 border-t border-border">
-          <Button
-            variant="ghost"
-            onClick={() => onOpenChange(false)}
-            data-testid="assign-success-close-btn"
-          >
+          <Button variant="ghost" onClick={() => onOpenChange(false)} data-testid="assign-success-close-btn">
             Zamknij
           </Button>
           {onAssignAnother && (

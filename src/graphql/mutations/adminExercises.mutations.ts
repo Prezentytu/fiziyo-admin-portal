@@ -1,5 +1,5 @@
-import { gql } from "@apollo/client";
-import { ADMIN_EXERCISE_FRAGMENT } from "../queries/adminExercises.queries";
+import { gql } from '@apollo/client';
+import { ADMIN_EXERCISE_FRAGMENT } from '../queries/adminExercises.queries';
 
 /**
  * GraphQL Mutations for Admin Exercise Verification Module
@@ -120,11 +120,7 @@ export const IMPORT_EXERCISES_TO_REVIEW_MUTATION = gql`
  * @param value - New value (string)
  */
 export const UPDATE_EXERCISE_FIELD_MUTATION = gql`
-  mutation UpdateExerciseField(
-    $exerciseId: String!
-    $fieldName: String!
-    $value: String
-  ) {
+  mutation UpdateExerciseField($exerciseId: String!, $fieldName: String!, $value: String) {
     updateExerciseField(exerciseId: $exerciseId, fieldName: $fieldName, value: $value) {
       ...AdminExerciseFragment
     }
@@ -159,10 +155,7 @@ export const APPROVE_EXERCISE_AND_GET_NEXT_MUTATION = gql`
  * @param updates - Object with field:value pairs
  */
 export const BATCH_UPDATE_EXERCISE_FIELDS_MUTATION = gql`
-  mutation BatchUpdateExerciseFields(
-    $exerciseId: String!
-    $updates: JSON!
-  ) {
+  mutation BatchUpdateExerciseFields($exerciseId: String!, $updates: JSON!) {
     batchUpdateExerciseFields(exerciseId: $exerciseId, updates: $updates) {
       ...AdminExerciseFragment
     }
@@ -209,11 +202,7 @@ export const EXERCISE_RELATION_FRAGMENT = gql`
  * @param relationType - REGRESSION or PROGRESSION
  */
 export const SET_EXERCISE_RELATION_MUTATION = gql`
-  mutation SetExerciseRelation(
-    $sourceExerciseId: String!
-    $targetExerciseId: String!
-    $relationType: String!
-  ) {
+  mutation SetExerciseRelation($sourceExerciseId: String!, $targetExerciseId: String!, $relationType: String!) {
     setExerciseRelation(
       sourceExerciseId: $sourceExerciseId
       targetExerciseId: $targetExerciseId
@@ -232,14 +221,8 @@ export const SET_EXERCISE_RELATION_MUTATION = gql`
  * @param relationType - REGRESSION or PROGRESSION
  */
 export const REMOVE_EXERCISE_RELATION_MUTATION = gql`
-  mutation RemoveExerciseRelation(
-    $sourceExerciseId: String!
-    $relationType: String!
-  ) {
-    removeExerciseRelation(
-      sourceExerciseId: $sourceExerciseId
-      relationType: $relationType
-    )
+  mutation RemoveExerciseRelation($sourceExerciseId: String!, $relationType: String!) {
+    removeExerciseRelation(sourceExerciseId: $sourceExerciseId, relationType: $relationType)
   }
 `;
 
@@ -248,16 +231,8 @@ export const REMOVE_EXERCISE_RELATION_MUTATION = gql`
  * Saves all relationships when approving exercise
  */
 export const SET_EXERCISE_RELATIONS_BATCH_MUTATION = gql`
-  mutation SetExerciseRelationsBatch(
-    $exerciseId: String!
-    $regressionId: String
-    $progressionId: String
-  ) {
-    setExerciseRelationsBatch(
-      exerciseId: $exerciseId
-      regressionId: $regressionId
-      progressionId: $progressionId
-    ) {
+  mutation SetExerciseRelationsBatch($exerciseId: String!, $regressionId: String, $progressionId: String) {
+    setExerciseRelationsBatch(exerciseId: $exerciseId, regressionId: $regressionId, progressionId: $progressionId) {
       regression {
         ...ExerciseRelationFragment
       }

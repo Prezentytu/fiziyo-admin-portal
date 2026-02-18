@@ -1,4 +1,4 @@
-import { gql } from "@apollo/client";
+import { gql } from '@apollo/client';
 
 /**
  * Query do pobierania tygodniowego progresu użytkownika
@@ -118,16 +118,3 @@ export interface WeeklySchedule {
   weekEndDate: string;
   dailySchedules: DailySchedule[];
 }
-
-
-
-
-
-
-
-
-
-
-
-
-

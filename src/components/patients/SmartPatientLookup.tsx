@@ -10,20 +10,10 @@
  * This file will be removed in a future version.
  */
 
-import * as React from 'react';
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useQuery, useMutation } from '@apollo/client/react';
 import { toast } from 'sonner';
-import {
-  Search,
-  Mail,
-  Phone,
-  Loader2,
-  UserPlus,
-  ChevronRight,
-  CheckCircle2,
-  UserCheck,
-} from 'lucide-react';
+import { Search, Mail, Phone, Loader2, UserPlus, ChevronRight, CheckCircle2, UserCheck } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -65,7 +55,13 @@ interface SmartPatientLookupProps {
   readonly organizationId: string;
   readonly therapistId: string;
   readonly clinicId?: string;
-  readonly onSuccess: (patient: { id: string; fullname: string; email?: string; firstName?: string; lastName?: string }) => void;
+  readonly onSuccess: (patient: {
+    id: string;
+    fullname: string;
+    email?: string;
+    firstName?: string;
+    lastName?: string;
+  }) => void;
   readonly onCreateNewPatient: (values: PatientFormValues) => Promise<void>;
   readonly onCancel: () => void;
   readonly onDirtyChange?: (isDirty: boolean) => void;
@@ -150,7 +146,7 @@ export function SmartPatientLookup({
   const {
     data: emailData,
     loading: emailLoading,
-    error: emailError
+    error: emailError,
   } = useQuery<FindUserByEmailData>(FIND_USER_BY_EMAIL_QUERY, {
     variables: { email: debouncedEmail },
     skip: mode !== 'email' || !isValidEmail(debouncedEmail),
@@ -161,7 +157,7 @@ export function SmartPatientLookup({
   const {
     data: phoneData,
     loading: phoneLoading,
-    error: phoneError
+    error: phoneError,
   } = useQuery<FindUserByPhoneData>(FIND_USER_BY_PHONE_QUERY, {
     variables: { phone: `+48${debouncedPhone}` },
     skip: mode !== 'phone' || !isValidPhone(debouncedPhone),
@@ -174,30 +170,36 @@ export function SmartPatientLookup({
     if (emailLoading) return;
 
     if (emailError) {
-      setState('form');
-      setWasAutoExpanded(true);
+      queueMicrotask(() => {
+        setState('form');
+        setWasAutoExpanded(true);
+      });
       return;
     }
 
     const user = emailData?.userByEmail;
     if (user?.id) {
-      setFoundUser({
-        id: user.id,
-        fullname: user.fullname || '',
-        email: user.email,
-        image: user.image,
-        isShadowUser: user.isShadowUser,
-        isActive: user.isActive,
-        organizationIds: user.organizationIds,
-        personalData: user.personalData,
-        contactData: user.contactData,
+      queueMicrotask(() => {
+        setFoundUser({
+          id: user.id,
+          fullname: user.fullname || '',
+          email: user.email,
+          image: user.image,
+          isShadowUser: user.isShadowUser,
+          isActive: user.isActive,
+          organizationIds: user.organizationIds,
+          personalData: user.personalData,
+          contactData: user.contactData,
+        });
+        setState('found');
+        setWasAutoExpanded(false);
       });
-      setState('found');
-      setWasAutoExpanded(false);
     } else if (emailData) {
-      setFoundUser(null);
-      setState('form');
-      setWasAutoExpanded(true);
+      queueMicrotask(() => {
+        setFoundUser(null);
+        setState('form');
+        setWasAutoExpanded(true);
+      });
     }
   }, [emailData, emailLoading, emailError, debouncedEmail, mode]);
 
@@ -207,30 +209,36 @@ export function SmartPatientLookup({
     if (phoneLoading) return;
 
     if (phoneError) {
-      setState('form');
-      setWasAutoExpanded(true);
+      queueMicrotask(() => {
+        setState('form');
+        setWasAutoExpanded(true);
+      });
       return;
     }
 
     const user = phoneData?.userByPhone;
     if (user?.id) {
-      setFoundUser({
-        id: user.id,
-        fullname: user.fullname || '',
-        email: user.email,
-        image: user.image,
-        isShadowUser: user.isShadowUser,
-        isActive: user.isActive,
-        organizationIds: user.organizationIds,
-        personalData: user.personalData,
-        contactData: user.contactData,
+      queueMicrotask(() => {
+        setFoundUser({
+          id: user.id,
+          fullname: user.fullname || '',
+          email: user.email,
+          image: user.image,
+          isShadowUser: user.isShadowUser,
+          isActive: user.isActive,
+          organizationIds: user.organizationIds,
+          personalData: user.personalData,
+          contactData: user.contactData,
+        });
+        setState('found');
+        setWasAutoExpanded(false);
       });
-      setState('found');
-      setWasAutoExpanded(false);
     } else if (phoneData) {
-      setFoundUser(null);
-      setState('form');
-      setWasAutoExpanded(true);
+      queueMicrotask(() => {
+        setFoundUser(null);
+        setState('form');
+        setWasAutoExpanded(true);
+      });
     }
   }, [phoneData, phoneLoading, phoneError, debouncedPhone, mode]);
 
@@ -378,10 +386,7 @@ export function SmartPatientLookup({
     <div className="space-y-6">
       {/* Email/Phone Input Mode */}
       {state !== 'form' && mode !== 'manual' && (
-        <div className={cn(
-          "space-y-4",
-          "animate-in fade-in duration-300"
-        )}>
+        <div className={cn('space-y-4', 'animate-in fade-in duration-300')}>
           {/* Input Section */}
           <div className="space-y-2">
             {mode === 'email' ? (
@@ -398,10 +403,10 @@ export function SmartPatientLookup({
                     value={emailValue}
                     onChange={(e) => handleEmailChange(e.target.value)}
                     className={cn(
-                      "h-12 text-base pr-10",
-                      "transition-all duration-200",
-                      "focus:ring-2 focus:ring-primary/20 focus:border-primary",
-                      state === 'found' && "border-primary bg-primary/5"
+                      'h-12 text-base pr-10',
+                      'transition-all duration-200',
+                      'focus:ring-2 focus:ring-primary/20 focus:border-primary',
+                      state === 'found' && 'border-primary bg-primary/5'
                     )}
                     autoFocus
                     autoComplete="off"
@@ -414,9 +419,7 @@ export function SmartPatientLookup({
                     {state === 'found' && (
                       <CheckCircle2 className="h-5 w-5 text-primary animate-in zoom-in duration-200" />
                     )}
-                    {state === 'idle' && (
-                      <Search className="h-5 w-5 text-muted-foreground/50" />
-                    )}
+                    {state === 'idle' && <Search className="h-5 w-5 text-muted-foreground/50" />}
                   </div>
                 </div>
                 {/* Status message */}
@@ -439,10 +442,7 @@ export function SmartPatientLookup({
                     placeholder="123 456 789"
                     value={phoneValue}
                     onChange={handlePhoneChange}
-                    className={cn(
-                      "h-12 text-base",
-                      state === 'found' && "border-primary bg-primary/5"
-                    )}
+                    className={cn('h-12 text-base', state === 'found' && 'border-primary bg-primary/5')}
                     data-testid="patient-lookup-phone-input"
                   />
                   <div className="absolute right-3 top-1/2 -translate-y-1/2">
@@ -503,16 +503,17 @@ export function SmartPatientLookup({
 
       {/* Found User Card */}
       {state === 'found' && foundUser && (
-        <div className={cn(
-          "p-4 rounded-xl border",
-          isAlreadyAssignedToTherapist
-            ? "border-warning/30 bg-warning/5"
-            : "border-primary/30 bg-primary/5",
-          "animate-in fade-in slide-in-from-bottom-2 duration-300"
-        )} data-testid="patient-lookup-found-card">
+        <div
+          className={cn(
+            'p-4 rounded-xl border',
+            isAlreadyAssignedToTherapist ? 'border-warning/30 bg-warning/5' : 'border-primary/30 bg-primary/5',
+            'animate-in fade-in slide-in-from-bottom-2 duration-300'
+          )}
+          data-testid="patient-lookup-found-card"
+        >
           <div className="flex items-center gap-2 mb-4">
-            <UserCheck className={cn("h-4 w-4", isAlreadyAssignedToTherapist ? "text-warning" : "text-primary")} />
-            <span className={cn("text-sm font-medium", isAlreadyAssignedToTherapist ? "text-warning" : "text-primary")}>
+            <UserCheck className={cn('h-4 w-4', isAlreadyAssignedToTherapist ? 'text-warning' : 'text-primary')} />
+            <span className={cn('text-sm font-medium', isAlreadyAssignedToTherapist ? 'text-warning' : 'text-primary')}>
               {isAlreadyAssignedToTherapist && 'Pacjent jest już na Twojej liście'}
               {!isAlreadyAssignedToTherapist && isAlreadyInOrg && 'Pacjent już w organizacji'}
               {!isAlreadyAssignedToTherapist && !isAlreadyInOrg && 'Znaleziono pacjenta w systemie'}
@@ -529,17 +530,12 @@ export function SmartPatientLookup({
           <div className="flex items-center gap-4">
             <Avatar className="h-14 w-14 ring-2 ring-primary/20">
               <AvatarImage src={foundUser.image} />
-              <AvatarFallback
-                className="text-lg font-medium text-white"
-                style={{ background: foundGradient }}
-              >
+              <AvatarFallback className="text-lg font-medium text-white" style={{ background: foundGradient }}>
                 {foundInitials}
               </AvatarFallback>
             </Avatar>
             <div className="flex-1 min-w-0">
-              <p className="font-semibold text-foreground truncate">
-                {foundUser.fullname}
-              </p>
+              <p className="font-semibold text-foreground truncate">{foundUser.fullname}</p>
               {foundUser.email && (
                 <p className="text-sm text-muted-foreground truncate flex items-center gap-1">
                   <Mail className="h-3 w-3" />
@@ -582,7 +578,9 @@ export function SmartPatientLookup({
             {isAlreadyAssignedToTherapist ? (
               <Button
                 variant="outline"
-                onClick={() => { globalThis.location.href = `/patients/${foundUser.id}`; }}
+                onClick={() => {
+                  globalThis.location.href = `/patients/${foundUser.id}`;
+                }}
                 className="flex-1 h-11"
                 data-testid="patient-lookup-go-to-patient-btn"
               >
@@ -596,11 +594,7 @@ export function SmartPatientLookup({
                 className="flex-1 h-11 bg-linear-to-r from-primary to-primary-dark shadow-lg shadow-primary/20"
                 data-testid="patient-lookup-add-existing-btn"
               >
-                {isLoading ? (
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                ) : (
-                  <UserPlus className="h-4 w-4 mr-2" />
-                )}
+                {isLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <UserPlus className="h-4 w-4 mr-2" />}
                 Dodaj do moich pacjentów
               </Button>
             )}
@@ -616,14 +610,11 @@ export function SmartPatientLookup({
             <div className="p-3 rounded-lg bg-info/10 border border-info/20 flex items-start gap-3">
               <UserPlus className="h-5 w-5 text-info shrink-0 mt-0.5" />
               <div>
-                <p className="text-sm font-medium text-foreground">
-                  Nie znaleziono pacjenta
-                </p>
+                <p className="text-sm font-medium text-foreground">Nie znaleziono pacjenta</p>
                 <p className="text-xs text-muted-foreground mt-0.5">
                   {mode === 'email'
                     ? `Brak użytkownika z emailem "${emailValue}". Uzupełnij dane, aby utworzyć nowego pacjenta.`
-                    : `Brak użytkownika z telefonem "+48 ${phoneValue}". Uzupełnij dane, aby utworzyć nowego pacjenta.`
-                  }
+                    : `Brak użytkownika z telefonem "+48 ${phoneValue}". Uzupełnij dane, aby utworzyć nowego pacjenta.`}
                 </p>
               </div>
             </div>
@@ -645,12 +636,7 @@ export function SmartPatientLookup({
       {/* Cancel button for non-form states */}
       {state !== 'form' && (
         <div className="flex justify-end pt-4 border-t border-border">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={onCancel}
-            data-testid="patient-lookup-cancel-btn"
-          >
+          <Button type="button" variant="outline" onClick={onCancel} data-testid="patient-lookup-cancel-btn">
             Anuluj
           </Button>
         </div>

@@ -1,10 +1,7 @@
-import { ErrorLink } from "@apollo/client/link/error";
-import {
-  CombinedGraphQLErrors,
-  CombinedProtocolErrors,
-} from "@apollo/client/errors";
+import { ErrorLink } from '@apollo/client/link/error';
+import { CombinedGraphQLErrors, CombinedProtocolErrors } from '@apollo/client/errors';
 
-const isDev = process.env.NODE_ENV === "development";
+const isDev = process.env.NODE_ENV === 'development';
 
 /**
  * Error Link do obsługi błędów GraphQL i Network
@@ -36,32 +33,20 @@ export class ErrorLinkFactory {
       } else if (CombinedProtocolErrors.is(error)) {
         // Protocol errors
         error.errors.forEach(({ message, extensions }) => {
-          console.error(
-            `[Protocol Error]: Message: ${message}, Extensions: ${JSON.stringify(
-              extensions
-            )}`
-          );
+          console.error(`[Protocol Error]: Message: ${message}, Extensions: ${JSON.stringify(extensions)}`);
         });
       } else {
         // Network error
-        console.error(
-          `[Network Error]`,
-          `\nOperation: ${operation.operationName}`,
-          `\nError:`,
-          error
-        );
+        console.error(`[Network Error]`, `\nOperation: ${operation.operationName}`, `\nError:`, error);
 
         // Dodatkowe info dla 400 errors
         if (
           error &&
-          typeof error === "object" &&
-          "statusCode" in error &&
+          typeof error === 'object' &&
+          'statusCode' in error &&
           (error as { statusCode: number }).statusCode === 400
         ) {
-          console.error(
-            `[Network 400 Error]`,
-            `\nThis usually means bad request syntax or invalid query`
-          );
+          console.error(`[Network 400 Error]`, `\nThis usually means bad request syntax or invalid query`);
         }
       }
     });

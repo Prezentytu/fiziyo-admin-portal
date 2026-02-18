@@ -1,28 +1,18 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
-import { Loader2, FolderKanban, FileText } from "lucide-react";
+import * as React from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import { Loader2, FolderKanban, FileText } from 'lucide-react';
 
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 
 const setFormSchema = z.object({
-  name: z
-    .string()
-    .min(2, "Nazwa musi mieć min. 2 znaki")
-    .max(100, "Nazwa może mieć max. 100 znaków"),
+  name: z.string().min(2, 'Nazwa musi mieć min. 2 znaki').max(100, 'Nazwa może mieć max. 100 znaków'),
   description: z.string().optional(),
 });
 
@@ -42,14 +32,14 @@ export function SetForm({
   onSubmit,
   onCancel,
   isLoading = false,
-  submitLabel = "Zapisz",
+  submitLabel = 'Zapisz',
   onDirtyChange,
 }: SetFormProps) {
   const form = useForm<SetFormValues>({
     resolver: zodResolver(setFormSchema),
     defaultValues: {
-      name: "",
-      description: "",
+      name: '',
+      description: '',
       ...defaultValues,
     },
   });
@@ -65,7 +55,7 @@ export function SetForm({
     try {
       await onSubmit(values);
     } catch (error) {
-      console.error("Błąd podczas zapisywania:", error);
+      console.error('Błąd podczas zapisywania:', error);
     }
   };
 

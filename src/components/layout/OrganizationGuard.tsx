@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import { useAuth } from "@clerk/nextjs";
-import { useRouter, usePathname } from "next/navigation";
-import { getBackendToken, clearBackendToken } from "@/lib/tokenCache";
-import { tokenExchangeService } from "@/services/tokenExchangeService";
+import { useEffect, useState } from 'react';
+import { useAuth } from '@clerk/nextjs';
+import { useRouter, usePathname } from 'next/navigation';
+import { getBackendToken, clearBackendToken } from '@/lib/tokenCache';
+import { tokenExchangeService } from '@/services/tokenExchangeService';
 
 interface OrganizationGuardProps {
   children: React.ReactNode;
@@ -24,7 +24,7 @@ export function OrganizationGuard({ children }: OrganizationGuardProps) {
   useEffect(() => {
     async function checkOrganization() {
       // Pomiń sprawdzanie na stronie onboardingu
-      if (pathname === "/onboarding") {
+      if (pathname === '/onboarding') {
         setIsChecking(false);
         setHasOrganization(true);
         return;
@@ -54,20 +54,19 @@ export function OrganizationGuard({ children }: OrganizationGuardProps) {
         await tokenExchangeService.exchangeClerkToken(clerkToken);
         setHasOrganization(true);
       } catch (error) {
-        console.error("[OrganizationGuard] Token exchange error:", error);
+        console.error('[OrganizationGuard] Token exchange error:', error);
 
-        const errorMessage =
-          error instanceof Error ? error.message : String(error);
+        const errorMessage = error instanceof Error ? error.message : String(error);
 
         // Jeśli błąd dotyczy braku organizacji - przekieruj na onboarding
         if (
-          errorMessage.includes("does not belong to") ||
-          errorMessage.includes("organization") ||
-          errorMessage.includes("401")
+          errorMessage.includes('does not belong to') ||
+          errorMessage.includes('organization') ||
+          errorMessage.includes('401')
         ) {
           clearBackendToken();
           setHasOrganization(false);
-          router.replace("/onboarding");
+          router.replace('/onboarding');
           return;
         }
 
@@ -91,26 +90,9 @@ export function OrganizationGuard({ children }: OrganizationGuardProps) {
   }
 
   // Jeśli nie ma organizacji i nie jesteśmy na onboardingu - nie renderuj
-  if (hasOrganization === false && pathname !== "/onboarding") {
+  if (hasOrganization === false && pathname !== '/onboarding') {
     return null;
   }
 
   return <>{children}</>;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

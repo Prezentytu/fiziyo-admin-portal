@@ -1,11 +1,7 @@
 import { View, Text, Image } from '@react-pdf/renderer';
 import { pdfStyles } from './styles';
 import { getMediaUrl } from '@/utils/mediaUrl';
-import {
-  formatDurationPolish,
-  formatSeconds,
-  translateExerciseSidePolish
-} from './polishUtils';
+import { formatDurationPolish, formatSeconds, translateExerciseSidePolish } from './polishUtils';
 import type { PDFExercise } from './types';
 
 interface ExercisePDFItemProps {
@@ -39,18 +35,10 @@ export function ExercisePDFItem({ exercise, index, showImage, compact }: Exercis
         <Text style={pdfStyles.exerciseCompactNumber}>{index + 1}.</Text>
         <Text style={pdfStyles.exerciseCompactName}>{displayName}</Text>
         <View style={pdfStyles.exerciseCompactParams}>
-          {exercise.sets && (
-            <Text style={pdfStyles.exerciseCompactParam}>{exercise.sets} serii</Text>
-          )}
-          {exercise.reps && (
-            <Text style={pdfStyles.exerciseCompactParam}>{exercise.reps} powt.</Text>
-          )}
-          {durationText && !exercise.reps && (
-            <Text style={pdfStyles.exerciseCompactParam}>{durationText}</Text>
-          )}
-          {sideLabel && (
-            <Text style={pdfStyles.exerciseCompactParam}>{sideLabel}</Text>
-          )}
+          {exercise.sets && <Text style={pdfStyles.exerciseCompactParam}>{exercise.sets} serii</Text>}
+          {exercise.reps && <Text style={pdfStyles.exerciseCompactParam}>{exercise.reps} powt.</Text>}
+          {durationText && !exercise.reps && <Text style={pdfStyles.exerciseCompactParam}>{durationText}</Text>}
+          {sideLabel && <Text style={pdfStyles.exerciseCompactParam}>{sideLabel}</Text>}
         </View>
       </View>
     );
@@ -59,7 +47,6 @@ export function ExercisePDFItem({ exercise, index, showImage, compact }: Exercis
   // Pełny widok - Clean Layout
   return (
     <View style={pdfStyles.exerciseRowClean} wrap={false}>
-
       {/* KOLUMNA 1: OBRAZEK */}
       {showImage && (
         <View style={pdfStyles.exerciseColImageClean}>
@@ -67,9 +54,7 @@ export function ExercisePDFItem({ exercise, index, showImage, compact }: Exercis
             <Image src={imageUrl} style={pdfStyles.exerciseThumbnailClean} />
           ) : (
             <View style={pdfStyles.exerciseThumbnailPlaceholderClean}>
-              <Text style={pdfStyles.exerciseThumbnailPlaceholderText}>
-                Rysunek
-              </Text>
+              <Text style={pdfStyles.exerciseThumbnailPlaceholderText}>Rysunek</Text>
             </View>
           )}
         </View>
@@ -81,9 +66,7 @@ export function ExercisePDFItem({ exercise, index, showImage, compact }: Exercis
         <View style={pdfStyles.exerciseHeaderClean}>
           <Text style={pdfStyles.exerciseNumberClean}>{index + 1}.</Text>
           <Text style={pdfStyles.exerciseNameClean}>{displayName.toUpperCase()}</Text>
-          {sideLabel && (
-            <Text style={pdfStyles.exerciseSideTagClean}>{sideLabel}</Text>
-          )}
+          {sideLabel && <Text style={pdfStyles.exerciseSideTagClean}>{sideLabel}</Text>}
         </View>
 
         {/* Opis */}
@@ -98,9 +81,7 @@ export function ExercisePDFItem({ exercise, index, showImage, compact }: Exercis
         {/* Uwagi terapeuty (jeśli są) */}
         {exercise.notes && (
           <View style={pdfStyles.exerciseTherapistNotesClean}>
-            <Text style={pdfStyles.exerciseTherapistNotesTextClean}>
-              Uwaga: {exercise.notes}
-            </Text>
+            <Text style={pdfStyles.exerciseTherapistNotesTextClean}>Uwaga: {exercise.notes}</Text>
           </View>
         )}
 

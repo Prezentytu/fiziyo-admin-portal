@@ -3,11 +3,7 @@
 import { useState } from 'react';
 import { ChevronDown, type LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from '@/components/ui/collapsible';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Badge } from '@/components/ui/badge';
 
 interface SmartAccordionProps {
@@ -72,13 +68,14 @@ export function SmartAccordion({
   };
 
   // Determine the highest priority status
-  const status = criticalMissing > 0
-    ? 'critical'
-    : recommendedMissing > 0
-      ? 'recommended'
-      : optionalMissing > 0
-        ? 'optional'
-        : 'complete';
+  const status =
+    criticalMissing > 0
+      ? 'critical'
+      : recommendedMissing > 0
+        ? 'recommended'
+        : optionalMissing > 0
+          ? 'optional'
+          : 'complete';
 
   // Get badge content and styling based on status
   const getBadgeConfig = () => {
@@ -120,32 +117,21 @@ export function SmartAccordion({
   );
 
   // Header text styling based on status
-  const headerTextClassName = cn(
-    'text-sm font-medium transition-colors duration-300',
-    {
-      'text-red-500': status === 'critical',
-      'text-amber-500/80': status === 'recommended',
-      'text-muted-foreground': status === 'optional' || status === 'complete',
-    }
-  );
+  const headerTextClassName = cn('text-sm font-medium transition-colors duration-300', {
+    'text-red-500': status === 'critical',
+    'text-amber-500/80': status === 'recommended',
+    'text-muted-foreground': status === 'optional' || status === 'complete',
+  });
 
   // Icon styling based on status
-  const iconClassName = cn(
-    'h-4 w-4 transition-colors duration-300',
-    {
-      'text-red-500': status === 'critical',
-      'text-amber-500/80': status === 'recommended',
-      'text-muted-foreground': status === 'optional' || status === 'complete',
-    }
-  );
+  const iconClassName = cn('h-4 w-4 transition-colors duration-300', {
+    'text-red-500': status === 'critical',
+    'text-amber-500/80': status === 'recommended',
+    'text-muted-foreground': status === 'optional' || status === 'complete',
+  });
 
   return (
-    <Collapsible
-      open={isOpen}
-      onOpenChange={handleOpenChange}
-      className={containerClassName}
-      data-testid={testId}
-    >
+    <Collapsible open={isOpen} onOpenChange={handleOpenChange} className={containerClassName} data-testid={testId}>
       <CollapsibleTrigger
         className="flex w-full items-center gap-3 p-4 cursor-pointer hover:bg-surface-light/50 transition-colors rounded-xl"
         data-testid={testId ? `${testId}-trigger` : undefined}
@@ -178,9 +164,7 @@ export function SmartAccordion({
       </CollapsibleTrigger>
 
       <CollapsibleContent className="data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0">
-        <div className="px-4 pb-4">
-          {children}
-        </div>
+        <div className="px-4 pb-4">{children}</div>
       </CollapsibleContent>
     </Collapsible>
   );

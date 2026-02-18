@@ -13,11 +13,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { GET_ALL_THERAPIST_PATIENTS_QUERY } from '@/graphql/queries/therapists.queries';
 import { GET_USER_BY_CLERK_ID_QUERY } from '@/graphql/queries/users.queries';
 import { useOrganization } from '@/contexts/OrganizationContext';
@@ -69,7 +65,7 @@ function fuzzyMatch(query: string, target: string): number {
 
   let matchedWords = 0;
   for (const qWord of qWords) {
-    if (tWords.some(tWord => tWord.includes(qWord) || qWord.includes(tWord))) {
+    if (tWords.some((tWord) => tWord.includes(qWord) || qWord.includes(tWord))) {
       matchedWords++;
     }
   }
@@ -123,10 +119,11 @@ export function PatientContextPanel({
     if (!patientsData?.therapistPatients) return [];
 
     return patientsData.therapistPatients
-      .filter(assignment => assignment.patient && assignment.status !== 'inactive')
-      .map(assignment => ({
+      .filter((assignment) => assignment.patient && assignment.status !== 'inactive')
+      .map((assignment) => ({
         id: assignment.patient!.id,
-        fullname: assignment.patient!.fullname ||
+        fullname:
+          assignment.patient!.fullname ||
           `${assignment.patient!.personalData?.firstName || ''} ${assignment.patient!.personalData?.lastName || ''}`.trim() ||
           'Nieznany pacjent',
         email: assignment.patient!.email,
@@ -157,19 +154,20 @@ export function PatientContextPanel({
     if (!searchQuery.trim()) return patients;
 
     return patients
-      .map(patient => ({
+      .map((patient) => ({
         patient,
-        score: fuzzyMatch(searchQuery, patient.fullname) +
-               (patient.email ? fuzzyMatch(searchQuery, patient.email) * 0.5 : 0),
+        score:
+          fuzzyMatch(searchQuery, patient.fullname) +
+          (patient.email ? fuzzyMatch(searchQuery, patient.email) * 0.5 : 0),
       }))
-      .filter(item => item.score > 20)
+      .filter((item) => item.score > 20)
       .sort((a, b) => b.score - a.score)
-      .map(item => item.patient);
+      .map((item) => item.patient);
   }, [patients, searchQuery]);
 
   // Obecnie wybrany pacjent
   const selectedPatient = useMemo(() => {
-    return patients.find(p => p.id === selectedPatientId);
+    return patients.find((p) => p.id === selectedPatientId);
   }, [patients, selectedPatientId]);
 
   const handleSelectPatient = (patientId: string) => {
@@ -223,12 +221,11 @@ export function PatientContextPanel({
 
             {showWarning ? (
               <p className="mt-1 text-sm text-warning">
-                {notesToCreateCount} {notesToCreateCount === 1 ? 'notatka wymaga' : 'notatki wymagają'} powiązania z pacjentem
+                {notesToCreateCount} {notesToCreateCount === 1 ? 'notatka wymaga' : 'notatki wymagają'} powiązania z
+                pacjentem
               </p>
             ) : (
-              <p className="mt-1 text-sm text-muted-foreground">
-                Możesz powiązać import z konkretnym pacjentem
-              </p>
+              <p className="mt-1 text-sm text-muted-foreground">Możesz powiązać import z konkretnym pacjentem</p>
             )}
           </div>
         </div>
@@ -239,9 +236,7 @@ export function PatientContextPanel({
             <Badge variant="secondary" className="shrink-0 bg-blue-500/20 text-blue-600 border-0">
               AI wykryło
             </Badge>
-            <span className="text-sm text-foreground truncate flex-1">
-              &quot;{detectedPatientName}&quot;
-            </span>
+            <span className="text-sm text-foreground truncate flex-1">&quot;{detectedPatientName}&quot;</span>
             {suggestedPatient && (
               <Button
                 variant="outline"
@@ -268,22 +263,12 @@ export function PatientContextPanel({
                 </AvatarFallback>
               </Avatar>
               <div className="min-w-0 flex-1">
-                <p className="text-base font-medium text-foreground truncate">
-                  {selectedPatient.fullname}
-                </p>
+                <p className="text-base font-medium text-foreground truncate">{selectedPatient.fullname}</p>
                 {selectedPatient.email && (
-                  <p className="text-sm text-muted-foreground truncate">
-                    {selectedPatient.email}
-                  </p>
+                  <p className="text-sm text-muted-foreground truncate">{selectedPatient.email}</p>
                 )}
               </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleClear}
-                disabled={disabled}
-                className="shrink-0 gap-2"
-              >
+              <Button variant="outline" size="sm" onClick={handleClear} disabled={disabled} className="shrink-0 gap-2">
                 <X className="h-4 w-4" />
                 Usuń
               </Button>
@@ -318,9 +303,7 @@ export function PatientContextPanel({
                   {filteredPatients.length === 0 ? (
                     <div className="py-8 text-center">
                       <User className="mx-auto mb-3 h-10 w-10 text-muted-foreground/50" />
-                      <p className="text-sm text-muted-foreground">
-                        Nie znaleziono pacjentów
-                      </p>
+                      <p className="text-sm text-muted-foreground">Nie znaleziono pacjentów</p>
                     </div>
                   ) : (
                     <div className="p-2">
@@ -340,17 +323,14 @@ export function PatientContextPanel({
                             </AvatarFallback>
                           </Avatar>
                           <div className="min-w-0 flex-1">
-                            <p className="text-sm font-medium truncate">
-                              {patient.fullname}
-                            </p>
-                            {patient.email && (
-                              <p className="text-xs text-muted-foreground truncate">
-                                {patient.email}
-                              </p>
-                            )}
+                            <p className="text-sm font-medium truncate">{patient.fullname}</p>
+                            {patient.email && <p className="text-xs text-muted-foreground truncate">{patient.email}</p>}
                           </div>
                           {suggestedPatient?.id === patient.id && (
-                            <Badge variant="secondary" className="shrink-0 text-xs bg-blue-500/20 text-blue-600 border-0">
+                            <Badge
+                              variant="secondary"
+                              className="shrink-0 text-xs bg-blue-500/20 text-blue-600 border-0"
+                            >
                               Sugerowany
                             </Badge>
                           )}
@@ -374,10 +354,7 @@ export function PatientContextPanel({
               disabled={disabled}
               className="h-5 w-5"
             />
-            <Label
-              htmlFor="assign-sets"
-              className="text-sm text-foreground cursor-pointer"
-            >
+            <Label htmlFor="assign-sets" className="text-sm text-foreground cursor-pointer">
               Przypisz również zestawy ćwiczeń do tego pacjenta
             </Label>
           </div>

@@ -12,23 +12,23 @@
  * Matches backend ContentStatus enum
  */
 export type ContentStatus =
-  | 'DRAFT'           // Robocze - widzi tylko twórca
-  | 'PENDING_REVIEW'  // Zgłoszone do weryfikacji
+  | 'DRAFT' // Robocze - widzi tylko twórca
+  | 'PENDING_REVIEW' // Zgłoszone do weryfikacji
   | 'CHANGES_REQUESTED' // Odrzucone z uwagami
-  | 'APPROVED'        // Zatwierdzone
-  | 'PUBLISHED'       // Publiczne
-  | 'ARCHIVED_GLOBAL';  // Wycofane z bazy globalnej (soft delete)
+  | 'APPROVED' // Zatwierdzone
+  | 'PUBLISHED' // Publiczne
+  | 'ARCHIVED_GLOBAL'; // Wycofane z bazy globalnej (soft delete)
 
 /**
  * Predefiniowane powody odrzucenia ćwiczenia
  */
 export type RejectionReason =
-  | 'POOR_MEDIA_QUALITY'      // Zła jakość wideo/obrazu
-  | 'CLINICAL_ERROR'          // Błąd merytoryczny w technice
-  | 'INCOMPLETE_DESCRIPTION'  // Niekompletny opis
-  | 'INCORRECT_TAGS'          // Nieodpowiednie tagi
-  | 'POTENTIAL_DUPLICATE'     // Potencjalny duplikat
-  | 'OTHER';                  // Inne
+  | 'POOR_MEDIA_QUALITY' // Zła jakość wideo/obrazu
+  | 'CLINICAL_ERROR' // Błąd merytoryczny w technice
+  | 'INCOMPLETE_DESCRIPTION' // Niekompletny opis
+  | 'INCORRECT_TAGS' // Nieodpowiednie tagi
+  | 'POTENTIAL_DUPLICATE' // Potencjalny duplikat
+  | 'OTHER'; // Inne
 
 // ============================================
 // Verification Stats (from GetVerificationStats)

@@ -1,21 +1,10 @@
-"use client";
+'use client';
 
-import {
-  XCircle,
-  CheckCircle2,
-  Loader2,
-  ChevronRight,
-  Save,
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { cn } from "@/lib/utils";
-import { useSidebarState } from "@/hooks/useSidebarState";
+import { XCircle, CheckCircle2, Loader2, ChevronRight, Save } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { cn } from '@/lib/utils';
+import { useSidebarState } from '@/hooks/useSidebarState';
 
 interface VerificationStickyFooterV2Props {
   /** Callback: Zatwierdź i przejdź dalej */
@@ -63,7 +52,7 @@ export function VerificationStickyFooterV2({
   validationPassed = true,
   missingFields = [],
   clinicalCheckboxChecked = true, // Legacy - domyślnie true jeśli nie używane
-  onClinicalCheckboxChange,
+  onClinicalCheckboxChange: _onClinicalCheckboxChange,
   isRejecting = false,
   isApproving = false,
   isSavingDraft = false,
@@ -84,13 +73,13 @@ export function VerificationStickyFooterV2({
       <div
         className={cn(
           // FIXED position with dynamic sidebar offset
-          "fixed bottom-0 right-0 z-50",
-          "left-0",
-          isHydrated && "lg:transition-all lg:duration-300",
-          isHydrated && (isCollapsed ? "lg:left-[72px]" : "lg:left-64"),
+          'fixed bottom-0 right-0 z-50',
+          'left-0',
+          isHydrated && 'lg:transition-all lg:duration-300',
+          isHydrated && (isCollapsed ? 'lg:left-[72px]' : 'lg:left-64'),
           // Styling
-          "bg-background border-t border-border",
-          "px-4 py-3 lg:px-6",
+          'bg-background border-t border-border',
+          'px-4 py-3 lg:px-6',
           className
         )}
         data-testid="verification-sticky-footer"
@@ -107,11 +96,7 @@ export function VerificationStickyFooterV2({
                 className="gap-2 text-muted-foreground hover:text-foreground"
                 data-testid="verification-save-draft-btn"
               >
-                {isSavingDraft ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Save className="h-4 w-4" />
-                )}
+                {isSavingDraft ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                 <span className="hidden sm:inline">Zapisz szkic</span>
               </Button>
             )}
@@ -128,11 +113,7 @@ export function VerificationStickyFooterV2({
               className="gap-2 text-muted-foreground hover:text-destructive hover:border-destructive/50"
               data-testid="verification-reject-btn"
             >
-              {isRejecting ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <XCircle className="h-4 w-4" />
-              )}
+              {isRejecting ? <Loader2 className="h-4 w-4 animate-spin" /> : <XCircle className="h-4 w-4" />}
               <span className="hidden sm:inline">Odeślij do poprawki</span>
               <span className="sm:hidden">Odrzuć</span>
             </Button>
@@ -147,36 +128,24 @@ export function VerificationStickyFooterV2({
                     onClick={onApproveAndNext}
                     disabled={anyLoading || !canPublish}
                     className={cn(
-                      "gap-2 px-5 font-semibold",
+                      'gap-2 px-5 font-semibold',
                       canPublish
-                        ? "bg-emerald-600 hover:bg-emerald-700 text-white"
-                        : "bg-muted text-muted-foreground cursor-not-allowed"
+                        ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
+                        : 'bg-muted text-muted-foreground cursor-not-allowed'
                     )}
                     data-testid="verification-approve-btn"
                   >
-                    {isApproving ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <CheckCircle2 className="h-4 w-4" />
-                    )}
-                    <span className="hidden sm:inline">
-                      Zatwierdź{hasMoreExercises ? " i Następne" : ""}
-                    </span>
+                    {isApproving ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
+                    <span className="hidden sm:inline">Zatwierdź{hasMoreExercises ? ' i Następne' : ''}</span>
                     <span className="sm:hidden">Publikuj</span>
-                    {hasMoreExercises && (
-                      <ChevronRight className="h-4 w-4 hidden sm:block" />
-                    )}
+                    {hasMoreExercises && <ChevronRight className="h-4 w-4 hidden sm:block" />}
                   </Button>
                 </span>
               </TooltipTrigger>
 
               {/* Tooltip content - only show when cannot publish */}
               {!canPublish && missingFields.length > 0 && (
-                <TooltipContent
-                  side="top"
-                  align="end"
-                  className="bg-red-600 text-white border-0 max-w-xs p-3"
-                >
+                <TooltipContent side="top" align="end" className="bg-red-600 text-white border-0 max-w-xs p-3">
                   <p className="font-medium mb-2">Uzupełnij przed publikacją:</p>
                   <ul className="list-disc pl-4 text-sm space-y-0.5">
                     {missingFields.map((field) => (

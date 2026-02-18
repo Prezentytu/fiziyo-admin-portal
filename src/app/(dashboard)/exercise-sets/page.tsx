@@ -20,7 +20,10 @@ import { CreateSetWizard } from '@/components/exercise-sets/CreateSetWizard';
 import { AssignmentWizard } from '@/components/assignment/AssignmentWizard';
 import { cn } from '@/lib/utils';
 
-import { GET_ORGANIZATION_EXERCISE_SETS_QUERY, GET_RECENTLY_USED_SETS_QUERY } from '@/graphql/queries/exerciseSets.queries';
+import {
+  GET_ORGANIZATION_EXERCISE_SETS_QUERY,
+  GET_RECENTLY_USED_SETS_QUERY,
+} from '@/graphql/queries/exerciseSets.queries';
 import { GET_EXERCISE_TAGS_BY_ORGANIZATION_QUERY } from '@/graphql/queries/exerciseTags.queries';
 import { GET_USER_BY_CLERK_ID_QUERY } from '@/graphql/queries/users.queries';
 import { DELETE_EXERCISE_SET_MUTATION, DUPLICATE_EXERCISE_SET_MUTATION } from '@/graphql/mutations/exercises.mutations';
@@ -99,7 +102,8 @@ export default function ExerciseSetsPage() {
   });
 
   const exerciseSets: ExerciseSet[] = (data as OrganizationExerciseSetsResponse)?.exerciseSets || [];
-  const recentAssignments: RecentAssignment[] = (recentData as { patientAssignments?: RecentAssignment[] })?.patientAssignments || [];
+  const recentAssignments: RecentAssignment[] =
+    (recentData as { patientAssignments?: RecentAssignment[] })?.patientAssignments || [];
   const exerciseTags: ExerciseTag[] = (tagsData as { exerciseTags?: ExerciseTag[] })?.exerciseTags || [];
 
   // Create map of tags by ID for quick lookup
@@ -142,7 +146,7 @@ export default function ExerciseSetsPage() {
     }
     // Return full tag objects for found IDs
     return Array.from(tagIds)
-      .map(id => tagsMap.get(id))
+      .map((id) => tagsMap.get(id))
       .filter((tag): tag is ExerciseTag => tag !== undefined)
       .sort((a, b) => a.name.localeCompare(b.name));
   }, [exerciseSets, tagsMap]);
@@ -153,7 +157,7 @@ export default function ExerciseSetsPage() {
     for (const mapping of set.exerciseMappings || []) {
       const exercise = mapping.exercise;
       const allTags = [...(exercise?.mainTags || []), ...(exercise?.additionalTags || [])];
-      if (allTags.some(tagId => selectedTags.includes(tagId))) {
+      if (allTags.some((tagId) => selectedTags.includes(tagId))) {
         return true;
       }
     }
@@ -275,7 +279,9 @@ export default function ExerciseSetsPage() {
     <div className="space-y-6">
       {/* Compact Header with Search and Tag Filter */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-2xl font-bold text-foreground shrink-0" data-testid="set-page-title">Zestawy ćwiczeń</h1>
+        <h1 className="text-2xl font-bold text-foreground shrink-0" data-testid="set-page-title">
+          Zestawy ćwiczeń
+        </h1>
 
         <div className="flex items-center gap-3 flex-1 justify-end">
           {/* Enlarged Search */}
@@ -303,10 +309,7 @@ export default function ExerciseSetsPage() {
             <DropdownMenuTrigger asChild>
               <Button
                 variant="outline"
-                className={cn(
-                  "gap-2 shrink-0",
-                  selectedTags.length > 0 && "border-primary/40 bg-primary/5"
-                )}
+                className={cn('gap-2 shrink-0', selectedTags.length > 0 && 'border-primary/40 bg-primary/5')}
                 data-testid="set-tag-filter-btn"
               >
                 <Filter className="h-4 w-4" />
@@ -331,20 +334,14 @@ export default function ExerciseSetsPage() {
                 </>
               )}
               {availableTags.length === 0 ? (
-                <div className="px-2 py-3 text-sm text-muted-foreground text-center">
-                  Brak tagów
-                </div>
+                <div className="px-2 py-3 text-sm text-muted-foreground text-center">Brak tagów</div>
               ) : (
                 availableTags.map((tag) => (
                   <DropdownMenuCheckboxItem
                     key={tag.id}
                     checked={selectedTags.includes(tag.id)}
                     onCheckedChange={(checked) => {
-                      setSelectedTags(prev =>
-                        checked
-                          ? [...prev, tag.id]
-                          : prev.filter(id => id !== tag.id)
-                      );
+                      setSelectedTags((prev) => (checked ? [...prev, tag.id] : prev.filter((id) => id !== tag.id)));
                     }}
                   >
                     <div className="flex items-center gap-2">
@@ -379,12 +376,8 @@ export default function ExerciseSetsPage() {
               <FolderPlus className="h-5 w-5 text-white" />
             </div>
             <div className="min-w-0 flex-1">
-              <h3 className="text-base font-bold text-white">
-                Nowy zestaw
-              </h3>
-              <p className="text-sm text-white/70">
-                Utwórz program ćwiczeń
-              </p>
+              <h3 className="text-base font-bold text-white">Nowy zestaw</h3>
+              <p className="text-sm text-white/70">Utwórz program ćwiczeń</p>
             </div>
             <Plus className="h-5 w-5 text-white/60 group-hover:text-white transition-colors shrink-0" />
           </div>
@@ -465,7 +458,7 @@ export default function ExerciseSetsPage() {
           {/* Selected tags display */}
           {selectedTags.length > 0 && (
             <div className="flex flex-wrap items-center gap-1.5">
-              {selectedTags.map(tagId => {
+              {selectedTags.map((tagId) => {
                 const tag = tagsMap.get(tagId);
                 if (!tag) return null;
                 return (
@@ -475,9 +468,9 @@ export default function ExerciseSetsPage() {
                     style={{
                       backgroundColor: `${tag.color || '#22c55e'}20`,
                       color: tag.color || '#22c55e',
-                      borderColor: `${tag.color || '#22c55e'}40`
+                      borderColor: `${tag.color || '#22c55e'}40`,
                     }}
-                    onClick={() => setSelectedTags(prev => prev.filter(id => id !== tag.id))}
+                    onClick={() => setSelectedTags((prev) => prev.filter((id) => id !== tag.id))}
                   >
                     {tag.name}
                     <X className="h-3 w-3" />
@@ -488,32 +481,17 @@ export default function ExerciseSetsPage() {
           )}
 
           {searchQuery && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-6 px-2 text-xs"
-              onClick={() => setSearchQuery('')}
-            >
+            <Button variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={() => setSearchQuery('')}>
               Wyczyść wyszukiwanie
             </Button>
           )}
           {filter !== 'all' && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-6 px-2 text-xs"
-              onClick={() => setFilter('all')}
-            >
+            <Button variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={() => setFilter('all')}>
               Pokaż wszystkie
             </Button>
           )}
           {selectedTags.length > 0 && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-6 px-2 text-xs"
-              onClick={() => setSelectedTags([])}
-            >
+            <Button variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={() => setSelectedTags([])}>
               Wyczyść tagi
             </Button>
           )}
@@ -547,8 +525,12 @@ export default function ExerciseSetsPage() {
               }
               actionLabel={!searchQuery && filter === 'all' ? 'Nowy zestaw' : undefined}
               onAction={!searchQuery && filter === 'all' ? () => setIsCreateWizardOpen(true) : undefined}
-              secondaryActionLabel={!searchQuery && filter === 'all' && !hasImportedExamples ? 'Załaduj przykłady' : undefined}
-              onSecondaryAction={!searchQuery && filter === 'all' && !hasImportedExamples ? importExampleSets : undefined}
+              secondaryActionLabel={
+                !searchQuery && filter === 'all' && !hasImportedExamples ? 'Załaduj przykłady' : undefined
+              }
+              onSecondaryAction={
+                !searchQuery && filter === 'all' && !hasImportedExamples ? importExampleSets : undefined
+              }
               secondaryActionLoading={isImporting}
             />
           </CardContent>
@@ -610,22 +592,28 @@ export default function ExerciseSetsPage() {
           mode="from-set"
           organizationId={organizationId}
           therapistId={therapistId}
-          preselectedSet={assigningSet ? {
-            id: assigningSet.id,
-            name: assigningSet.name,
-            description: assigningSet.description,
-            exerciseMappings: assigningSet.exerciseMappings?.map(m => ({
-              id: m.id,
-              exerciseId: m.exerciseId,
-              order: m.order,
-              exercise: m.exercise ? {
-                id: m.exercise.id,
-                name: m.exercise.name,
-                imageUrl: m.exercise.imageUrl,
-                images: m.exercise.images,
-              } : undefined,
-            })),
-          } : undefined}
+          preselectedSet={
+            assigningSet
+              ? {
+                  id: assigningSet.id,
+                  name: assigningSet.name,
+                  description: assigningSet.description,
+                  exerciseMappings: assigningSet.exerciseMappings?.map((m) => ({
+                    id: m.id,
+                    exerciseId: m.exerciseId,
+                    order: m.order,
+                    exercise: m.exercise
+                      ? {
+                          id: m.exercise.id,
+                          name: m.exercise.name,
+                          imageUrl: m.exercise.imageUrl,
+                          images: m.exercise.images,
+                        }
+                      : undefined,
+                  })),
+                }
+              : undefined
+          }
           onSuccess={() => setAssigningSet(null)}
         />
       )}

@@ -1,15 +1,15 @@
-"use client";
+'use client';
 
-import { ApolloClient, InMemoryCache, ApolloLink, split } from "@apollo/client";
-import { ApolloProvider } from "@apollo/client/react";
-import { getMainDefinition } from "@apollo/client/utilities";
-import { useAuth } from "@clerk/nextjs";
-import { useMemo } from "react";
-import { AuthLinkFactory } from "@/graphql/links/authLink";
-import { HttpLinkFactory } from "@/graphql/links/httpLink";
-import { ErrorLinkFactory } from "@/graphql/links/errorLink";
-import { WsLinkFactory } from "@/graphql/links/wsLink";
-import { BackendAuthTokenProvider } from "@/graphql/providers/BackendAuthTokenProvider";
+import { ApolloClient, InMemoryCache, ApolloLink, split } from '@apollo/client';
+import { ApolloProvider } from '@apollo/client/react';
+import { getMainDefinition } from '@apollo/client/utilities';
+import { useAuth } from '@clerk/nextjs';
+import { useMemo } from 'react';
+import { AuthLinkFactory } from '@/graphql/links/authLink';
+import { HttpLinkFactory } from '@/graphql/links/httpLink';
+import { ErrorLinkFactory } from '@/graphql/links/errorLink';
+import { WsLinkFactory } from '@/graphql/links/wsLink';
+import { BackendAuthTokenProvider } from '@/graphql/providers/BackendAuthTokenProvider';
 
 // ZMIANA 2025: Używamy BackendAuthTokenProvider zamiast bezpośrednio Clerk
 // Provider automatycznie wymienia token Clerk na JWT backendu i cache'uje go
@@ -48,10 +48,7 @@ export function ApolloWrapper({ children }: { children: React.ReactNode }) {
     const splitLink = split(
       ({ query }) => {
         const definition = getMainDefinition(query);
-        return (
-          definition.kind === "OperationDefinition" &&
-          definition.operation === "subscription"
-        );
+        return definition.kind === 'OperationDefinition' && definition.operation === 'subscription';
       },
       wsLink,
       httpLink

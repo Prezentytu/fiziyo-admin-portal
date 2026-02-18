@@ -49,7 +49,7 @@ export function EditContextLabelDialog({
   onSuccess,
 }: Readonly<EditContextLabelDialogProps>) {
   // Compute initial value - don't show default "Leczenie podstawowe"
-  const initialLabel = currentLabel === 'Leczenie podstawowe' ? '' : (currentLabel || '');
+  const initialLabel = currentLabel === 'Leczenie podstawowe' ? '' : currentLabel || '';
   const [label, setLabel] = useState(initialLabel);
   const [showCloseConfirm, setShowCloseConfirm] = useState(false);
 
@@ -68,9 +68,7 @@ export function EditContextLabelDialog({
   const hasChanges = label.trim() !== initialLabel.trim();
 
   const [updateContext, { loading }] = useMutation(UPDATE_TREATMENT_CONTEXT_MUTATION, {
-    refetchQueries: [
-      { query: GET_ALL_THERAPIST_PATIENTS_QUERY, variables: { therapistId, organizationId } },
-    ],
+    refetchQueries: [{ query: GET_ALL_THERAPIST_PATIENTS_QUERY, variables: { therapistId, organizationId } }],
   });
 
   const handleCloseAttempt = useCallback(() => {
@@ -111,7 +109,10 @@ export function EditContextLabelDialog({
   const handleToggleTag = (tag: string) => {
     if (isTagAdded(tag)) {
       // Remove tag
-      const parts = label.split(',').map(p => p.trim()).filter(p => p.toLowerCase() !== tag.toLowerCase());
+      const parts = label
+        .split(',')
+        .map((p) => p.trim())
+        .filter((p) => p.toLowerCase() !== tag.toLowerCase());
       setLabel(parts.join(', '));
     } else {
       // Add tag
@@ -137,9 +138,7 @@ export function EditContextLabelDialog({
               <Tag className="h-5 w-5 text-primary" />
               Edytuj notatkę
             </DialogTitle>
-            <DialogDescription>
-              Zmień notatkę dla pacjenta {patientName}
-            </DialogDescription>
+            <DialogDescription>Zmień notatkę dla pacjenta {patientName}</DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 pt-2">
@@ -170,10 +169,10 @@ export function EditContextLabelDialog({
                           type="button"
                           onClick={() => handleToggleTag(tag)}
                           className={cn(
-                            "inline-flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-full transition-all duration-200",
+                            'inline-flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-full transition-all duration-200',
                             isAdded
-                              ? "bg-primary text-primary-foreground shadow-sm shadow-primary/20"
-                              : "bg-surface-light text-muted-foreground hover:bg-primary/10 hover:text-primary"
+                              ? 'bg-primary text-primary-foreground shadow-sm shadow-primary/20'
+                              : 'bg-surface-light text-muted-foreground hover:bg-primary/10 hover:text-primary'
                           )}
                         >
                           {tag}
@@ -188,7 +187,12 @@ export function EditContextLabelDialog({
 
             {/* Actions */}
             <div className="flex justify-end gap-3 pt-2">
-              <Button variant="outline" onClick={handleCloseAttempt} disabled={loading} data-testid="patient-context-cancel-btn">
+              <Button
+                variant="outline"
+                onClick={handleCloseAttempt}
+                disabled={loading}
+                data-testid="patient-context-cancel-btn"
+              >
                 Anuluj
               </Button>
               <Button onClick={handleSave} disabled={loading} data-testid="patient-context-submit-btn">

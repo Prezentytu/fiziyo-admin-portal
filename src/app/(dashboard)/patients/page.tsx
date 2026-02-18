@@ -85,17 +85,18 @@ export default function PatientsPage() {
 
   // Mutations
   const [unassignPatient, { loading: unassigning }] = useMutation(REMOVE_PATIENT_FROM_THERAPIST_MUTATION, {
-    refetchQueries: [
-      { query: GET_ORGANIZATION_PATIENTS_QUERY, variables: { organizationId, filter: 'all' } },
-    ],
+    refetchQueries: [{ query: GET_ORGANIZATION_PATIENTS_QUERY, variables: { organizationId, filter: 'all' } }],
   });
 
-  const [removeFromOrganization, { loading: removingFromOrg }] = useMutation(REMOVE_PATIENT_FROM_ORGANIZATION_MUTATION, {
-    refetchQueries: [
-      { query: GET_ORGANIZATION_PATIENTS_QUERY, variables: { organizationId, filter: 'all' } },
-      { query: GET_CURRENT_ORGANIZATION_PLAN, variables: { organizationId } },
-    ],
-  });
+  const [removeFromOrganization, { loading: removingFromOrg }] = useMutation(
+    REMOVE_PATIENT_FROM_ORGANIZATION_MUTATION,
+    {
+      refetchQueries: [
+        { query: GET_ORGANIZATION_PATIENTS_QUERY, variables: { organizationId, filter: 'all' } },
+        { query: GET_CURRENT_ORGANIZATION_PLAN, variables: { organizationId } },
+      ],
+    }
+  );
 
   // Transform data from OrganizationPatients query
   const organizationPatients = (data as OrganizationPatientsResponse)?.organizationPatients || [];
@@ -296,7 +297,9 @@ export default function PatientsPage() {
     <div className="space-y-6">
       {/* Compact Header with Search */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-2xl font-bold text-foreground" data-testid="patient-page-title">Pacjenci</h1>
+        <h1 className="text-2xl font-bold text-foreground" data-testid="patient-page-title">
+          Pacjenci
+        </h1>
         <div className="relative w-full sm:w-72">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
@@ -324,12 +327,8 @@ export default function PatientsPage() {
             <UserPlus className="h-5 w-5 text-white" />
           </div>
           <div className="min-w-0 flex-1">
-            <h3 className="text-base font-bold text-white">
-              Dodaj pacjenta
-            </h3>
-            <p className="text-sm text-white/70">
-              Nowy pacjent w systemie
-            </p>
+            <h3 className="text-base font-bold text-white">Dodaj pacjenta</h3>
+            <p className="text-sm text-white/70">Nowy pacjent w systemie</p>
           </div>
           <Plus className="h-5 w-5 text-white/60 group-hover:text-white transition-colors shrink-0" />
         </div>
@@ -369,8 +368,8 @@ export default function PatientsPage() {
           <TabsTrigger
             value="needs_attention"
             className={cn(
-              "gap-2 data-[state=active]:bg-surface data-[state=active]:shadow-sm px-4 py-2.5",
-              needsAttentionCount > 0 && "data-[state=inactive]:text-warning"
+              'gap-2 data-[state=active]:bg-surface data-[state=active]:shadow-sm px-4 py-2.5',
+              needsAttentionCount > 0 && 'data-[state=inactive]:text-warning'
             )}
             data-testid="patient-filter-attention-btn"
           >
@@ -386,8 +385,8 @@ export default function PatientsPage() {
           <TabsTrigger
             value="subscription"
             className={cn(
-              "gap-2 data-[state=active]:bg-surface data-[state=active]:shadow-sm px-4 py-2.5",
-              subscriptionIssueCount > 0 && "data-[state=inactive]:text-destructive"
+              'gap-2 data-[state=active]:bg-surface data-[state=active]:shadow-sm px-4 py-2.5',
+              subscriptionIssueCount > 0 && 'data-[state=inactive]:text-destructive'
             )}
             data-testid="patient-filter-subscription-btn"
           >
@@ -410,12 +409,7 @@ export default function PatientsPage() {
           <Badge variant="secondary" className="text-xs">
             {filteredPatients.length} z {filteredByType.length}
           </Badge>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-6 px-2 text-xs"
-            onClick={() => setSearchQuery('')}
-          >
+          <Button variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={() => setSearchQuery('')}>
             Wyczyść wyszukiwanie
           </Button>
         </div>
@@ -444,7 +438,9 @@ export default function PatientsPage() {
             <EmptyState
               icon={Users}
               title={searchQuery ? 'Nie znaleziono pacjentów' : getEmptyStateTitle(patientFilter)}
-              description={searchQuery ? 'Spróbuj zmienić kryteria wyszukiwania' : getEmptyStateDescription(patientFilter)}
+              description={
+                searchQuery ? 'Spróbuj zmienić kryteria wyszukiwania' : getEmptyStateDescription(patientFilter)
+              }
               actionLabel={!searchQuery && patientFilter === 'my' ? 'Dodaj pacjenta' : undefined}
               onAction={!searchQuery && patientFilter === 'my' ? () => setIsDialogOpen(true) : undefined}
             />
@@ -543,11 +539,15 @@ export default function PatientsPage() {
         <PatientQRCodeDialog
           open={!!qrPatient}
           onOpenChange={(open) => !open && setQrPatient(null)}
-          patient={qrPatient ? {
-            id: qrPatient.id,
-            name: qrPatient.fullname || 'Nieznany pacjent',
-            email: qrPatient.email,
-          } : null}
+          patient={
+            qrPatient
+              ? {
+                  id: qrPatient.id,
+                  name: qrPatient.fullname || 'Nieznany pacjent',
+                  email: qrPatient.email,
+                }
+              : null
+          }
           therapistId={therapistId}
           organizationId={organizationId}
         />

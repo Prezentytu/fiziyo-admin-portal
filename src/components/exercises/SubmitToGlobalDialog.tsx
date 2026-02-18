@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { useMemo, useState } from "react";
+import { useMemo, useState } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -8,21 +8,12 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import {
-  Rocket,
-  CheckCircle,
-  XCircle,
-  Video,
-  FileText,
-  Tag,
-  Loader2,
-  AlertTriangle,
-} from "lucide-react";
-import { cn } from "@/lib/utils";
-import type { Exercise } from "./ExerciseCard";
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Rocket, CheckCircle, XCircle, Video, FileText, Tag, Loader2, AlertTriangle } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import type { Exercise } from './ExerciseCard';
 
 interface SubmitToGlobalDialogProps {
   open: boolean;
@@ -43,7 +34,7 @@ interface ValidationCheck {
 
 /**
  * SubmitToGlobalDialog - Auto-Guard Validation before submission
- * 
+ *
  * Validates:
  * - Has video or image (critical)
  * - Description min 50 chars (critical)
@@ -71,32 +62,26 @@ export function SubmitToGlobalDialog({
       (exercise.images && exercise.images.length > 0)
     );
 
-    const descriptionLength = (
-      exercise.patientDescription ||
-      exercise.description ||
-      ""
-    ).trim().length;
+    const descriptionLength = (exercise.patientDescription || exercise.description || '').trim().length;
     const hasDescription = descriptionLength >= 50;
 
     const tagCount = (exercise.mainTags?.length || 0) + (exercise.additionalTags?.length || 0);
     const hasTags = tagCount >= 2;
 
-    const hasClinicalDesc = (exercise.clinicalDescription || "").trim().length >= 20;
+    const hasClinicalDesc = (exercise.clinicalDescription || '').trim().length >= 20;
 
     return [
       {
-        id: "media",
-        label: "Media",
-        description: hasMedia
-          ? "Wideo lub zdjęcie jest dostępne"
-          : "Dodaj wideo lub zdjęcie do ćwiczenia",
+        id: 'media',
+        label: 'Media',
+        description: hasMedia ? 'Wideo lub zdjęcie jest dostępne' : 'Dodaj wideo lub zdjęcie do ćwiczenia',
         icon: <Video className="h-4 w-4" />,
         passed: hasMedia,
         critical: true,
       },
       {
-        id: "description",
-        label: "Opis pacjenta",
+        id: 'description',
+        label: 'Opis pacjenta',
         description: hasDescription
           ? `${descriptionLength} znaków (minimum 50)`
           : `Tylko ${descriptionLength}/50 znaków - uzupełnij opis`,
@@ -105,8 +90,8 @@ export function SubmitToGlobalDialog({
         critical: true,
       },
       {
-        id: "tags",
-        label: "Kategorie",
+        id: 'tags',
+        label: 'Kategorie',
         description: hasTags
           ? `${tagCount} kategorii przypisanych`
           : `Tylko ${tagCount}/2 kategorii - dodaj więcej tagów`,
@@ -115,11 +100,11 @@ export function SubmitToGlobalDialog({
         critical: false,
       },
       {
-        id: "clinical",
-        label: "Opis kliniczny",
+        id: 'clinical',
+        label: 'Opis kliniczny',
         description: hasClinicalDesc
-          ? "Opis kliniczny jest dostępny"
-          : "Zalecane: dodaj opis kliniczny dla fizjoterapeutów",
+          ? 'Opis kliniczny jest dostępny'
+          : 'Zalecane: dodaj opis kliniczny dla fizjoterapeutów',
         icon: <FileText className="h-4 w-4" />,
         passed: hasClinicalDesc,
         critical: false,
@@ -153,8 +138,8 @@ export function SubmitToGlobalDialog({
             Zgłoś do Bazy Globalnej
           </DialogTitle>
           <DialogDescription>
-            Twoje ćwiczenie zostanie przesłane do weryfikacji przez zespół
-            ekspertów. Po zatwierdzeniu będzie widoczne dla wszystkich użytkowników.
+            Twoje ćwiczenie zostanie przesłane do weryfikacji przez zespół ekspertów. Po zatwierdzeniu będzie widoczne
+            dla wszystkich użytkowników.
           </DialogDescription>
         </DialogHeader>
 
@@ -165,7 +150,7 @@ export function SubmitToGlobalDialog({
             <div className="flex flex-wrap gap-1 mt-2">
               {(exercise.mainTags as string[]).slice(0, 3).map((tag, i) => (
                 <Badge key={i} variant="secondary" className="text-[10px]">
-                  {typeof tag === "string" ? tag : (tag as any).name}
+                  {tag}
                 </Badge>
               ))}
             </div>
@@ -181,22 +166,18 @@ export function SubmitToGlobalDialog({
             <div
               key={check.id}
               className={cn(
-                "flex items-start gap-3 p-3 rounded-lg border transition-colors",
+                'flex items-start gap-3 p-3 rounded-lg border transition-colors',
                 check.passed
-                  ? "bg-emerald-500/5 border-emerald-500/20"
+                  ? 'bg-emerald-500/5 border-emerald-500/20'
                   : check.critical
-                  ? "bg-red-500/5 border-red-500/20"
-                  : "bg-amber-500/5 border-amber-500/20"
+                    ? 'bg-red-500/5 border-red-500/20'
+                    : 'bg-amber-500/5 border-amber-500/20'
               )}
             >
               <div
                 className={cn(
-                  "shrink-0 mt-0.5",
-                  check.passed
-                    ? "text-emerald-500"
-                    : check.critical
-                    ? "text-red-500"
-                    : "text-amber-500"
+                  'shrink-0 mt-0.5',
+                  check.passed ? 'text-emerald-500' : check.critical ? 'text-red-500' : 'text-amber-500'
                 )}
               >
                 {check.passed ? (
@@ -211,12 +192,8 @@ export function SubmitToGlobalDialog({
                 <div className="flex items-center gap-2">
                   <span
                     className={cn(
-                      "text-sm font-medium",
-                      check.passed
-                        ? "text-emerald-600"
-                        : check.critical
-                        ? "text-red-600"
-                        : "text-amber-600"
+                      'text-sm font-medium',
+                      check.passed ? 'text-emerald-600' : check.critical ? 'text-red-600' : 'text-amber-600'
                     )}
                   >
                     {check.label}
@@ -227,9 +204,7 @@ export function SubmitToGlobalDialog({
                     </Badge>
                   )}
                 </div>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  {check.description}
-                </p>
+                <p className="text-xs text-muted-foreground mt-0.5">{check.description}</p>
               </div>
             </div>
           ))}
@@ -259,17 +234,9 @@ export function SubmitToGlobalDialog({
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Anuluj
           </Button>
-          <Button
-            onClick={handleSubmit}
-            disabled={!canSubmit || isSubmitting || isLoading}
-            className="gap-2"
-          >
-            {isSubmitting || isLoading ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Rocket className="h-4 w-4" />
-            )}
-            {canSubmit ? "Zgłoś do weryfikacji" : "Uzupełnij dane"}
+          <Button onClick={handleSubmit} disabled={!canSubmit || isSubmitting || isLoading} className="gap-2">
+            {isSubmitting || isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Rocket className="h-4 w-4" />}
+            {canSubmit ? 'Zgłoś do weryfikacji' : 'Uzupełnij dane'}
           </Button>
         </DialogFooter>
       </DialogContent>

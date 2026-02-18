@@ -1,13 +1,13 @@
-"use client";
+'use client';
 
-import { useSortable } from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
-import { GripVertical, Trash2, Minus, Plus } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { ImagePlaceholder } from "@/components/shared/ImagePlaceholder";
-import { cn } from "@/lib/utils";
-import { getMediaUrl } from "@/utils/mediaUrl";
-import type { BuilderExercise } from "@/contexts/ExerciseBuilderContext";
+import { useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import { GripVertical, Trash2, Minus, Plus } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { ImagePlaceholder } from '@/components/shared/ImagePlaceholder';
+import { cn } from '@/lib/utils';
+import { getMediaUrl } from '@/utils/mediaUrl';
+import type { BuilderExercise } from '@/contexts/ExerciseBuilderContext';
 
 interface CompactStepperProps {
   value: number;
@@ -18,14 +18,7 @@ interface CompactStepperProps {
   unit?: string;
 }
 
-function CompactStepper({
-  value,
-  onUpdate,
-  min = 0,
-  max = 999,
-  prefix,
-  unit,
-}: CompactStepperProps) {
+function CompactStepper({ value, onUpdate, min = 0, max = 999, prefix, unit }: CompactStepperProps) {
   return (
     <div className="flex items-center bg-zinc-800/50 hover:bg-zinc-800/80 rounded-full p-0.5 border border-white/5 transition-colors h-7 shrink-0">
       <button
@@ -39,7 +32,9 @@ function CompactStepper({
       </button>
       <div className="min-w-[2.5rem] px-1 text-center text-[11px] font-bold tabular-nums text-foreground flex items-center justify-center gap-1">
         <span>{value}</span>
-        {unit && <span className="text-[9px] text-muted-foreground/50 font-medium uppercase tracking-tighter">{prefix}</span>}
+        {unit && (
+          <span className="text-[9px] text-muted-foreground/50 font-medium uppercase tracking-tighter">{prefix}</span>
+        )}
       </div>
       <button
         onClick={(e) => {
@@ -60,19 +55,8 @@ interface BuilderExerciseItemProps {
   onRemove: () => void;
 }
 
-export function BuilderExerciseItem({
-  exercise,
-  onUpdate,
-  onRemove,
-}: BuilderExerciseItemProps) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: exercise.id });
+export function BuilderExerciseItem({ exercise, onUpdate, onRemove }: BuilderExerciseItemProps) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: exercise.id });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -80,7 +64,7 @@ export function BuilderExerciseItem({
   };
 
   const imageUrl = getMediaUrl(exercise.imageUrl);
-  const isTimeExercise = exercise.type === "time";
+  const isTimeExercise = exercise.type === 'time';
 
   return (
     <div
@@ -88,9 +72,9 @@ export function BuilderExerciseItem({
       style={style}
       data-testid={`builder-exercise-item-${exercise.id}`}
       className={cn(
-        "flex items-center gap-3 rounded-2xl border border-white/5 bg-zinc-900/40 p-3",
-        "transition-all duration-200 group relative hover:bg-zinc-900/60",
-        isDragging && "opacity-50 shadow-2xl scale-[1.02] ring-2 ring-primary/40 z-50"
+        'flex items-center gap-3 rounded-2xl border border-white/5 bg-zinc-900/40 p-3',
+        'transition-all duration-200 group relative hover:bg-zinc-900/60',
+        isDragging && 'opacity-50 shadow-2xl scale-[1.02] ring-2 ring-primary/40 z-50'
       )}
     >
       {/* Drag handle - Always visible as requested */}
@@ -106,12 +90,7 @@ export function BuilderExerciseItem({
       {/* Thumbnail */}
       <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-xl bg-zinc-950 border border-white/10 shadow-inner">
         {imageUrl ? (
-          <img
-            src={imageUrl}
-            alt={exercise.name}
-            loading="lazy"
-            className="h-full w-full object-cover"
-          />
+          <img src={imageUrl} alt={exercise.name} loading="lazy" className="h-full w-full object-cover" />
         ) : (
           <ImagePlaceholder type="exercise" iconClassName="h-5 w-5" />
         )}
@@ -121,9 +100,7 @@ export function BuilderExerciseItem({
       <div className="flex-1 flex flex-col min-w-0 gap-1.5">
         {/* Row 1: Name and Delete */}
         <div className="flex items-start justify-between gap-2">
-          <p className="font-bold text-sm text-foreground leading-tight line-clamp-2 min-w-0">
-            {exercise.name}
-          </p>
+          <p className="font-bold text-sm text-foreground leading-tight line-clamp-2 min-w-0">{exercise.name}</p>
           <Button
             variant="ghost"
             size="icon"

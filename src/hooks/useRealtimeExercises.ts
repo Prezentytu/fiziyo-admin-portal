@@ -1,11 +1,7 @@
-import { useSubscription, useApolloClient } from "@apollo/client/react";
-import { useCallback } from "react";
-import {
-  ON_EXERCISE_CREATED,
-  ON_EXERCISE_UPDATED,
-  ON_EXERCISE_DELETED,
-} from "@/graphql/subscriptions";
-import { GET_AVAILABLE_EXERCISES_QUERY } from "@/graphql/queries/exercises.queries";
+import { useSubscription, useApolloClient } from '@apollo/client/react';
+import { useCallback } from 'react';
+import { ON_EXERCISE_CREATED, ON_EXERCISE_UPDATED, ON_EXERCISE_DELETED } from '@/graphql/subscriptions';
+import { GET_AVAILABLE_EXERCISES_QUERY } from '@/graphql/queries/exercises.queries';
 
 interface UseRealtimeExercisesOptions {
   /** ID organizacji do subskrypcji */
@@ -91,7 +87,7 @@ export function useRealtimeExercises({
 
       // Usuń z cache
       client.cache.evict({
-        id: client.cache.identify({ __typename: "Exercise", id: exerciseId }),
+        id: client.cache.identify({ __typename: 'Exercise', id: exerciseId }),
       });
       client.cache.gc();
 

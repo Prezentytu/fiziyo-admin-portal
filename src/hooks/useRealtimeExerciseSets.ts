@@ -1,10 +1,6 @@
-import { useSubscription, useApolloClient } from "@apollo/client/react";
-import { useCallback } from "react";
-import {
-  ON_EXERCISE_SET_CREATED,
-  ON_EXERCISE_SET_UPDATED,
-  ON_EXERCISE_SET_DELETED,
-} from "@/graphql/subscriptions";
+import { useSubscription, useApolloClient } from '@apollo/client/react';
+import { useCallback } from 'react';
+import { ON_EXERCISE_SET_CREATED, ON_EXERCISE_SET_UPDATED, ON_EXERCISE_SET_DELETED } from '@/graphql/subscriptions';
 
 interface UseRealtimeExerciseSetsOptions {
   /** ID organizacji do subskrypcji */
@@ -40,7 +36,7 @@ export function useRealtimeExerciseSets({
   const refetch = useCallback(() => {
     if (!organizationId) return;
     client.refetchQueries({
-      include: ["GetOrganizationExerciseSets", "GetExerciseSet"],
+      include: ['GetOrganizationExerciseSets', 'GetExerciseSet'],
     });
   }, [client, organizationId]);
 
@@ -80,7 +76,7 @@ export function useRealtimeExerciseSets({
 
       // Usuń z cache
       client.cache.evict({
-        id: client.cache.identify({ __typename: "ExerciseSet", id: setId }),
+        id: client.cache.identify({ __typename: 'ExerciseSet', id: setId }),
       });
       client.cache.gc();
 

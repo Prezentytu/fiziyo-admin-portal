@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { Search, X } from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import * as React from 'react';
+import { Search, X } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 
 interface SearchInputProps {
   value?: string;
@@ -17,11 +17,11 @@ interface SearchInputProps {
 export function SearchInput({
   value: controlledValue,
   onChange,
-  placeholder = "Szukaj...",
+  placeholder = 'Szukaj...',
   className,
   debounceMs = 300,
 }: SearchInputProps) {
-  const [internalValue, setInternalValue] = React.useState(controlledValue ?? "");
+  const [internalValue, setInternalValue] = React.useState(controlledValue ?? '');
   const value = controlledValue ?? internalValue;
   const timeoutRef = React.useRef<NodeJS.Timeout | null>(null);
 
@@ -39,8 +39,8 @@ export function SearchInput({
   };
 
   const handleClear = () => {
-    setInternalValue("");
-    onChange?.("");
+    setInternalValue('');
+    onChange?.('');
   };
 
   React.useEffect(() => {
@@ -52,7 +52,7 @@ export function SearchInput({
   }, []);
 
   return (
-    <div className={cn("relative", className)}>
+    <div className={cn('relative', className)}>
       <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
       <Input
         value={value}

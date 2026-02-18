@@ -49,16 +49,20 @@ export function AIExerciseSuggestions({
         <div className="flex items-center gap-2 text-sm text-primary">
           <div className="relative">
             <Sparkles className="h-4 w-4" />
-            {isLoading && (
-              <span className="absolute -inset-1 animate-ping rounded-full bg-primary/30" />
-            )}
+            {isLoading && <span className="absolute -inset-1 animate-ping rounded-full bg-primary/30" />}
           </div>
           <span className="font-medium">Sugestie AI</span>
           {isLoading && (
             <div className="flex items-center gap-1">
-              <span className="animate-typing-dot" style={{ animationDelay: '0ms' }}>.</span>
-              <span className="animate-typing-dot" style={{ animationDelay: '200ms' }}>.</span>
-              <span className="animate-typing-dot" style={{ animationDelay: '400ms' }}>.</span>
+              <span className="animate-typing-dot" style={{ animationDelay: '0ms' }}>
+                .
+              </span>
+              <span className="animate-typing-dot" style={{ animationDelay: '200ms' }}>
+                .
+              </span>
+              <span className="animate-typing-dot" style={{ animationDelay: '400ms' }}>
+                .
+              </span>
             </div>
           )}
         </div>
@@ -87,9 +91,7 @@ export function AIExerciseSuggestions({
         <>
           {/* Description */}
           <div className="space-y-2">
-            <p className="text-sm text-muted-foreground leading-relaxed">
-              {suggestion.description}
-            </p>
+            <p className="text-sm text-muted-foreground leading-relaxed">{suggestion.description}</p>
           </div>
 
           {/* Parameters */}
@@ -101,10 +103,14 @@ export function AIExerciseSuggestions({
               {suggestion.sets} serii
             </Badge>
             {suggestion.type === 'reps' && suggestion.reps && (
-              <Badge variant="outline" className="text-xs">{suggestion.reps} powt.</Badge>
+              <Badge variant="outline" className="text-xs">
+                {suggestion.reps} powt.
+              </Badge>
             )}
             {suggestion.type !== 'reps' && suggestion.duration && (
-              <Badge variant="outline" className="text-xs">{suggestion.duration}s</Badge>
+              <Badge variant="outline" className="text-xs">
+                {suggestion.duration}s
+              </Badge>
             )}
             {suggestion.suggestedTags.map((tag) => (
               <Badge key={tag} variant="outline" className="text-xs text-primary border-primary/30">
@@ -115,12 +121,7 @@ export function AIExerciseSuggestions({
 
           {/* Apply button */}
           <div className="flex items-center gap-2 pt-1">
-            <Button
-              type="button"
-              size="sm"
-              onClick={onApply}
-              className="gap-1.5 bg-primary hover:bg-primary/90"
-            >
+            <Button type="button" size="sm" onClick={onApply} className="gap-1.5 bg-primary hover:bg-primary/90">
               <Wand2 className="h-3.5 w-3.5" />
               Zastosuj
             </Button>

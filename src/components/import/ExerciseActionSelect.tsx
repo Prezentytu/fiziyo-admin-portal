@@ -2,13 +2,7 @@
 
 import { Link2, Plus, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import type { MatchSuggestion, ExerciseDecision } from '@/types/import.types';
 
 type ActionValue = 'create' | 'skip' | `reuse:${string}`;
@@ -69,9 +63,7 @@ export function ExerciseActionSelect({
     if (decision.action === 'skip') return 'Nie importuj';
     if (decision.action === 'create') return 'Utwórz jako nowe';
     if (decision.action === 'reuse' && decision.reuseExerciseId) {
-      const match = matchSuggestions.find(
-        (m) => m.existingExerciseId === decision.reuseExerciseId
-      );
+      const match = matchSuggestions.find((m) => m.existingExerciseId === decision.reuseExerciseId);
       return match ? `Połącz z: ${match.existingExerciseName}` : 'Użyj z bazy';
     }
     return 'Wybierz akcję';
@@ -86,11 +78,7 @@ export function ExerciseActionSelect({
   };
 
   return (
-    <Select
-      value={getCurrentValue()}
-      onValueChange={handleValueChange}
-      disabled={disabled}
-    >
+    <Select value={getCurrentValue()} onValueChange={handleValueChange} disabled={disabled}>
       <SelectTrigger
         className={cn(
           'h-9 w-full min-w-[200px]',

@@ -1,65 +1,48 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { useMutation } from "@apollo/client/react";
-import {
-  Package,
-  Zap,
-  Star,
-  Check,
-  Loader2,
-  Key,
-  ArrowRight,
-} from "lucide-react";
-import { toast } from "sonner";
+import { useState } from 'react';
+import { useMutation } from '@apollo/client/react';
+import { Package, Zap, Star, Check, Loader2, Key, ArrowRight } from 'lucide-react';
+import { toast } from 'sonner';
 
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { cn } from "@/lib/utils";
-import {
-  PURCHASE_AI_CREDITS_PACKAGE,
-  ADD_CREDITS_WITH_CODE,
-} from "@/graphql/mutations/aiCredits.mutations";
-import { triggerCreditsRefresh } from "@/components/settings/AICreditsPanel";
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { cn } from '@/lib/utils';
+import { PURCHASE_AI_CREDITS_PACKAGE, ADD_CREDITS_WITH_CODE } from '@/graphql/mutations/aiCredits.mutations';
+import { triggerCreditsRefresh } from '@/components/settings/AICreditsPanel';
 
 // Credit packages configuration
 const creditPackages = [
   {
-    type: "small" as const,
+    type: 'small' as const,
     credits: 100,
     price: 19,
-    perCredit: "0.19",
+    perCredit: '0.19',
     icon: Package,
-    label: "Starter",
-    actions: "~80 czatów lub ~50 zestawów",
+    label: 'Starter',
+    actions: '~80 czatów lub ~50 zestawów',
   },
   {
-    type: "medium" as const,
+    type: 'medium' as const,
     credits: 300,
     price: 49,
-    perCredit: "0.16",
+    perCredit: '0.16',
     icon: Zap,
-    label: "Popular",
+    label: 'Popular',
     popular: true,
-    actions: "~250 czatów lub ~150 zestawów",
+    actions: '~250 czatów lub ~150 zestawów',
   },
   {
-    type: "large" as const,
+    type: 'large' as const,
     credits: 1000,
     price: 129,
-    perCredit: "0.13",
+    perCredit: '0.13',
     icon: Star,
-    label: "Power",
+    label: 'Power',
     best: true,
-    actions: "~800 czatów lub ~500 zestawów",
+    actions: '~800 czatów lub ~500 zestawów',
   },
 ];
 
@@ -69,13 +52,9 @@ interface PurchaseCreditsDialogProps {
   organizationId: string | undefined;
 }
 
-export function PurchaseCreditsDialog({
-  isOpen,
-  onClose,
-  organizationId,
-}: PurchaseCreditsDialogProps) {
+export function PurchaseCreditsDialog({ isOpen, onClose, organizationId }: PurchaseCreditsDialogProps) {
   const [selectedPackage, setSelectedPackage] = useState<string | null>(null);
-  const [bypassCode, setBypassCode] = useState("");
+  const [bypassCode, setBypassCode] = useState('');
 
   // Stripe purchase mutation
   const [purchasePackage, { loading: purchasing }] = useMutation<{
@@ -89,7 +68,7 @@ export function PurchaseCreditsDialog({
       if (data.purchaseAICreditsPackage.success && data.purchaseAICreditsPackage.checkoutUrl) {
         globalThis.location.href = data.purchaseAICreditsPackage.checkoutUrl;
       } else {
-        toast.error(data.purchaseAICreditsPackage.message || "Błąd podczas zakupu");
+        toast.error(data.purchaseAICreditsPackage.message || 'Błąd podczas zakupu');
       }
     },
     onError: (error) => {
@@ -111,7 +90,7 @@ export function PurchaseCreditsDialog({
         handleClose();
         triggerCreditsRefresh();
       } else {
-        toast.error(data.addCreditsWithCode.message || "Błąd podczas aktywacji");
+        toast.error(data.addCreditsWithCode.message || 'Błąd podczas aktywacji');
       }
     },
     onError: (error) => {
@@ -122,7 +101,7 @@ export function PurchaseCreditsDialog({
   const handleClose = () => {
     onClose();
     setSelectedPackage(null);
-    setBypassCode("");
+    setBypassCode('');
   };
 
   const handlePurchase = () => {
@@ -179,19 +158,19 @@ export function PurchaseCreditsDialog({
                   disabled={isLoading}
                   data-testid={`ai-credits-package-${pkg.type}-btn`}
                   className={cn(
-                    "group relative flex flex-col rounded-2xl border-2 p-5 text-left min-h-[320px]",
-                    "transition-all duration-300",
-                    "hover:-translate-y-2 hover:shadow-2xl cursor-pointer",
-                    "disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0",
+                    'group relative flex flex-col rounded-2xl border-2 p-5 text-left min-h-[320px]',
+                    'transition-all duration-300',
+                    'hover:-translate-y-2 hover:shadow-2xl cursor-pointer',
+                    'disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0',
                     isSelected
                       ? pkg.best
-                        ? "border-orange-500 bg-orange-500/5 shadow-xl shadow-orange-500/20"
-                        : "border-primary bg-primary/5 shadow-xl shadow-primary/20"
+                        ? 'border-orange-500 bg-orange-500/5 shadow-xl shadow-orange-500/20'
+                        : 'border-primary bg-primary/5 shadow-xl shadow-primary/20'
                       : pkg.best
-                      ? "border-orange-500/50 hover:border-orange-500 hover:shadow-orange-500/10"
-                      : pkg.popular
-                      ? "border-primary/50 hover:border-primary hover:shadow-primary/10"
-                      : "border-border/60 hover:border-primary/50 hover:shadow-primary/10"
+                        ? 'border-orange-500/50 hover:border-orange-500 hover:shadow-orange-500/10'
+                        : pkg.popular
+                          ? 'border-primary/50 hover:border-primary hover:shadow-primary/10'
+                          : 'border-border/60 hover:border-primary/50 hover:shadow-primary/10'
                   )}
                 >
                   {/* Badge */}
@@ -212,23 +191,27 @@ export function PurchaseCreditsDialog({
                   )}
 
                   {/* Icon */}
-                  <div className={cn(
-                    "flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br text-white mb-4 shadow-lg",
-                    "transition-transform duration-300 group-hover:scale-110",
-                    pkg.best
-                      ? "from-orange-500 to-red-500"
-                      : pkg.popular
-                      ? "from-primary to-emerald-600"
-                      : "from-slate-500 to-slate-600"
-                  )}>
+                  <div
+                    className={cn(
+                      'flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br text-white mb-4 shadow-lg',
+                      'transition-transform duration-300 group-hover:scale-110',
+                      pkg.best
+                        ? 'from-orange-500 to-red-500'
+                        : pkg.popular
+                          ? 'from-primary to-emerald-600'
+                          : 'from-slate-500 to-slate-600'
+                    )}
+                  >
                     <Icon className="h-7 w-7" />
                   </div>
 
                   {/* Credits */}
-                  <h3 className={cn(
-                    "text-4xl font-bold",
-                    pkg.best ? "text-orange-500" : pkg.popular ? "text-primary" : "text-foreground"
-                  )}>
+                  <h3
+                    className={cn(
+                      'text-4xl font-bold',
+                      pkg.best ? 'text-orange-500' : pkg.popular ? 'text-primary' : 'text-foreground'
+                    )}
+                  >
                     {pkg.credits}
                   </h3>
                   <p className="text-sm text-muted-foreground mb-4">kredytów</p>
@@ -236,10 +219,7 @@ export function PurchaseCreditsDialog({
                   {/* Price */}
                   <div className="mb-4">
                     <div className="flex items-baseline gap-1">
-                      <span className={cn(
-                        "text-2xl font-bold",
-                        pkg.best ? "text-orange-500" : "text-foreground"
-                      )}>
+                      <span className={cn('text-2xl font-bold', pkg.best ? 'text-orange-500' : 'text-foreground')}>
                         {pkg.price}
                       </span>
                       <span className="text-base text-muted-foreground">zł</span>
@@ -253,10 +233,12 @@ export function PurchaseCreditsDialog({
                   {/* Selection indicator */}
                   {isSelected && (
                     <div className="absolute top-3 right-3">
-                      <div className={cn(
-                        "h-6 w-6 rounded-full flex items-center justify-center",
-                        pkg.best ? "bg-orange-500" : "bg-primary"
-                      )}>
+                      <div
+                        className={cn(
+                          'h-6 w-6 rounded-full flex items-center justify-center',
+                          pkg.best ? 'bg-orange-500' : 'bg-primary'
+                        )}
+                      >
                         <Check className="h-4 w-4 text-white" />
                       </div>
                     </div>
@@ -291,10 +273,10 @@ export function PurchaseCreditsDialog({
             disabled={!selectedPackage || isLoading}
             data-testid="ai-credits-dialog-purchase-btn"
             className={cn(
-              "gap-2 min-w-[120px]",
-              selectedPackage === "large"
-                ? "bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600"
-                : "bg-primary hover:bg-primary/90"
+              'gap-2 min-w-[120px]',
+              selectedPackage === 'large'
+                ? 'bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600'
+                : 'bg-primary hover:bg-primary/90'
             )}
           >
             {isLoading ? (

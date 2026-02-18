@@ -1,4 +1,4 @@
-import { gql } from "@apollo/client";
+import { gql } from '@apollo/client';
 
 /**
  * Mutacja do aktualizacji nazwy organizacji
@@ -21,16 +21,8 @@ export const UPDATE_ORGANIZATION_NAME_MUTATION = gql`
  * Mutacja do dodawania użytkownika do organizacji po emailu
  */
 export const ADD_MEMBER_MUTATION = gql`
-  mutation AddMember(
-    $organizationId: String!
-    $userEmail: String!
-    $role: String!
-  ) {
-    addMember(
-      organizationId: $organizationId
-      userEmail: $userEmail
-      role: $role
-    ) {
+  mutation AddMember($organizationId: String!, $userEmail: String!, $role: String!) {
+    addMember(organizationId: $organizationId, userEmail: $userEmail, role: $role) {
       id
       organizationId
       userId
@@ -46,16 +38,8 @@ export const ADD_MEMBER_MUTATION = gql`
  * Mutacja do dodawania użytkownika do organizacji bezpośrednio po userId
  */
 export const ADD_DIRECT_MEMBER_MUTATION = gql`
-  mutation AddDirectMember(
-    $organizationId: String!
-    $userId: String!
-    $role: String!
-  ) {
-    addDirectMember(
-      organizationId: $organizationId
-      userId: $userId
-      role: $role
-    ) {
+  mutation AddDirectMember($organizationId: String!, $userId: String!, $role: String!) {
+    addDirectMember(organizationId: $organizationId, userId: $userId, role: $role) {
       id
       organizationId
       userId
@@ -103,12 +87,7 @@ export const CREATE_CLINIC_IN_ORGANIZATION_MUTATION = gql`
     $address: String!
     $contactInfo: String
   ) {
-    createClinic(
-      organizationId: $organizationId
-      name: $name
-      address: $address
-      contactInfo: $contactInfo
-    ) {
+    createClinic(organizationId: $organizationId, name: $name, address: $address, contactInfo: $contactInfo) {
       id
       organizationId
       name
@@ -131,13 +110,7 @@ export const UPDATE_CLINIC_IN_ORGANIZATION_MUTATION = gql`
     $contactInfo: String
     $isActive: Boolean
   ) {
-    updateClinic(
-      clinicId: $clinicId
-      name: $name
-      address: $address
-      contactInfo: $contactInfo
-      isActive: $isActive
-    ) {
+    updateClinic(clinicId: $clinicId, name: $name, address: $address, contactInfo: $contactInfo, isActive: $isActive) {
       id
       organizationId
       name
@@ -192,11 +165,7 @@ export const REMOVE_ORGANIZATION_LOGO_MUTATION = gql`
  * Mutacja do tworzenia nowej organizacji
  */
 export const CREATE_ORGANIZATION_MUTATION = gql`
-  mutation CreateOrganization(
-    $name: String!
-    $description: String
-    $plan: SubscriptionPlan! = FREE
-  ) {
+  mutation CreateOrganization($name: String!, $description: String, $plan: SubscriptionPlan! = FREE) {
     createOrganization(name: $name, description: $description, plan: $plan) {
       id
       name
@@ -243,10 +212,7 @@ export const ADD_OWNER_MUTATION = gql`
  */
 export const REMOVE_OWNER_MUTATION = gql`
   mutation RemoveOwner($organizationId: String!, $userIdToRemove: String!) {
-    removeOwner(
-      organizationId: $organizationId
-      userIdToRemove: $userIdToRemove
-    )
+    removeOwner(organizationId: $organizationId, userIdToRemove: $userIdToRemove)
   }
 `;
 
@@ -255,16 +221,8 @@ export const REMOVE_OWNER_MUTATION = gql`
  * Wymaga uprawnień OWNER lub SITE_ADMIN
  */
 export const UPDATE_SUBSCRIPTION_MUTATION = gql`
-  mutation UpdateSubscription(
-    $organizationId: String!
-    $newPlan: SubscriptionPlan!
-    $expiresAt: DateTime
-  ) {
-    updateSubscription(
-      organizationId: $organizationId
-      newPlan: $newPlan
-      expiresAt: $expiresAt
-    ) {
+  mutation UpdateSubscription($organizationId: String!, $newPlan: SubscriptionPlan!, $expiresAt: DateTime) {
+    updateSubscription(organizationId: $organizationId, newPlan: $newPlan, expiresAt: $expiresAt) {
       id
       name
       subscriptionPlan
@@ -281,16 +239,8 @@ export const UPDATE_SUBSCRIPTION_MUTATION = gql`
  * Prosty mechanizm do zmiany planu bez Stripe
  */
 export const ACTIVATE_PLAN_WITH_CODE_MUTATION = gql`
-  mutation ActivatePlanWithCode(
-    $organizationId: String!
-    $newPlan: SubscriptionPlan!
-    $activationCode: String!
-  ) {
-    activatePlanWithCode(
-      organizationId: $organizationId
-      newPlan: $newPlan
-      activationCode: $activationCode
-    ) {
+  mutation ActivatePlanWithCode($organizationId: String!, $newPlan: SubscriptionPlan!, $activationCode: String!) {
+    activatePlanWithCode(organizationId: $organizationId, newPlan: $newPlan, activationCode: $activationCode) {
       id
       name
       subscriptionPlan
@@ -329,18 +279,8 @@ export const UPDATE_EXERCISE_VISIBILITY_SETTINGS_MUTATION = gql`
  * Mutacja do wysyłania zaproszenia do organizacji
  */
 export const SEND_INVITATION_MUTATION = gql`
-  mutation SendInvitation(
-    $organizationId: String!
-    $email: String!
-    $role: OrganizationRole!
-    $message: String
-  ) {
-    sendInvitation(
-      organizationId: $organizationId
-      email: $email
-      role: $role
-      message: $message
-    ) {
+  mutation SendInvitation($organizationId: String!, $email: String!, $role: OrganizationRole!, $message: String) {
+    sendInvitation(organizationId: $organizationId, email: $email, role: $role, message: $message) {
       id
       organizationId
       email
@@ -429,16 +369,8 @@ export const SET_AUTO_SYNC_EXERCISES_MUTATION = gql`
  * Link można ręcznie skopiować i udostępnić
  */
 export const GENERATE_INVITE_LINK_MUTATION = gql`
-  mutation GenerateInviteLink(
-    $organizationId: String!
-    $role: OrganizationRole!
-    $expirationDays: Int = 7
-  ) {
-    generateInviteLink(
-      organizationId: $organizationId
-      role: $role
-      expirationDays: $expirationDays
-    ) {
+  mutation GenerateInviteLink($organizationId: String!, $role: OrganizationRole!, $expirationDays: Int = 7) {
+    generateInviteLink(organizationId: $organizationId, role: $role, expirationDays: $expirationDays) {
       id
       organizationId
       email

@@ -1,17 +1,16 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { Search, FolderKanban, Check, Dumbbell, ChevronRight, X, Plus, Loader2 } from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { ImagePlaceholder } from "@/components/shared/ImagePlaceholder";
-import { cn } from "@/lib/utils";
-import { getMediaUrl } from "@/utils/mediaUrl";
-import type { ExerciseSet, AssignedSetInfo, Exercise, ExerciseOverride, LocalExerciseMapping } from "./types";
-import { translateExerciseTypeShort } from "@/components/pdf/polishUtils";
-import { RapidExerciseBuilder } from "./RapidExerciseBuilder";
+import { useState } from 'react';
+import { Search, FolderKanban, Check, Dumbbell, ChevronRight, X, Plus, Loader2 } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { ImagePlaceholder } from '@/components/shared/ImagePlaceholder';
+import { cn } from '@/lib/utils';
+import { getMediaUrl } from '@/utils/mediaUrl';
+import type { ExerciseSet, AssignedSetInfo } from './types';
+import { translateExerciseTypeShort } from '@/components/pdf/polishUtils';
 
 interface SelectSetStepProps {
   exerciseSets: ExerciseSet[];
@@ -20,28 +19,10 @@ interface SelectSetStepProps {
   assignedSets?: AssignedSetInfo[];
   onUnassign?: (assignmentId: string, setName: string) => void;
   loading?: boolean;
-  // Ghost Copy props
-  localExercises: LocalExerciseMapping[];
-  onLocalExercisesChange: (exercises: LocalExerciseMapping[]) => void;
-  planName: string;
-  onPlanNameChange: (name: string) => void;
-  sourceTemplateName?: string;
-  // Exercise overrides (Progressive Disclosure)
-  overrides?: Map<string, ExerciseOverride>;
-  onOverridesChange?: (overrides: Map<string, ExerciseOverride>) => void;
-  selectedPatientsCount?: number;
   // Phantom Set props
-  onCreateSet?: () => Promise<void>;
+  onCreateSet?: () => void | Promise<void>;
   isCreatingSet?: boolean;
   patientName?: string;
-  // Rapid Builder props
-  availableExercises?: Exercise[];
-  organizationId?: string;
-  // Save as template props
-  saveAsTemplate?: boolean;
-  onSaveAsTemplateChange?: (save: boolean) => void;
-  templateName?: string;
-  onTemplateNameChange?: (name: string) => void;
 }
 
 export function SelectSetStep({
@@ -51,37 +32,17 @@ export function SelectSetStep({
   assignedSets = [],
   onUnassign,
   loading = false,
-  // Ghost Copy props
-  localExercises,
-  onLocalExercisesChange,
-  planName,
-  onPlanNameChange,
-  sourceTemplateName,
-  // Exercise overrides (Progressive Disclosure)
-  overrides = new Map(),
-  onOverridesChange,
-  selectedPatientsCount = 0,
   // Phantom Set props
   onCreateSet,
   isCreatingSet = false,
   patientName,
-  // Rapid Builder props
-  availableExercises = [],
-  organizationId,
-  // Save as template props
-  saveAsTemplate = false,
-  onSaveAsTemplateChange,
-  templateName = "",
-  onTemplateNameChange,
 }: SelectSetStepProps) {
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState('');
   const [previewSet, setPreviewSet] = useState<ExerciseSet | null>(selectedSet);
   const [selectedToUnassign, setSelectedToUnassign] = useState<string | null>(null);
 
   // Create a map for quick lookup of assigned sets
-  const assignedSetsMap = new Map(
-    assignedSets.map((a) => [a.exerciseSetId, a])
-  );
+  const assignedSetsMap = new Map(assignedSets.map((a) => [a.exerciseSetId, a]));
 
   // Filter sets by search query (show all, including assigned)
   const filteredSets = exerciseSets.filter(
@@ -106,9 +67,7 @@ export function SelectSetStep({
     return 0;
   });
 
-  const availableCount = exerciseSets.filter(
-    (set) => !assignedSetsMap.has(set.id)
-  ).length;
+  const availableCount = exerciseSets.filter((set) => !assignedSetsMap.has(set.id)).length;
 
   const handleSetClick = (set: ExerciseSet) => {
     const isAssigned = assignedSetsMap.has(set.id);
@@ -192,10 +151,10 @@ export function SelectSetStep({
               {onCreateSet && !searchQuery && (
                 <div
                   className={cn(
-                    "flex items-center gap-4 rounded-xl p-4 cursor-pointer transition-all",
-                    "border-2 border-dashed border-border/60",
-                    "hover:border-primary hover:bg-primary/5",
-                    isCreatingSet && "opacity-50 pointer-events-none"
+                    'flex items-center gap-4 rounded-xl p-4 cursor-pointer transition-all',
+                    'border-2 border-dashed border-border/60',
+                    'hover:border-primary hover:bg-primary/5',
+                    isCreatingSet && 'opacity-50 pointer-events-none'
                   )}
                   onClick={() => !isCreatingSet && onCreateSet()}
                   data-testid="assign-set-create-btn"
@@ -210,9 +169,7 @@ export function SelectSetStep({
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold">Stwórz nowy zestaw</p>
                     <p className="text-sm text-muted-foreground">
-                      {patientName
-                        ? `Terapia dla ${patientName}`
-                        : "Pusty zestaw do wypełnienia"}
+                      {patientName ? `Terapia dla ${patientName}` : 'Pusty zestaw do wypełnienia'}
                     </p>
                   </div>
                   <ChevronRight className="h-5 w-5 text-muted-foreground shrink-0" />
@@ -224,14 +181,10 @@ export function SelectSetStep({
                 <div className="flex flex-col items-center justify-center py-12 text-center px-4">
                   <FolderKanban className="h-12 w-12 text-muted-foreground/50 mb-3" />
                   <p className="text-sm font-medium text-foreground mb-1">
-                    {searchQuery
-                      ? "Nie znaleziono zestawów"
-                      : "Brak zestawów"}
+                    {searchQuery ? 'Nie znaleziono zestawów' : 'Brak zestawów'}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    {searchQuery
-                      ? "Spróbuj innej frazy"
-                      : "Utwórz nowy zestaw ćwiczeń"}
+                    {searchQuery ? 'Spróbuj innej frazy' : 'Utwórz nowy zestaw ćwiczeń'}
                   </p>
                 </div>
               )}
@@ -241,23 +194,24 @@ export function SelectSetStep({
                 const isSelectedForUnassign = selectedToUnassign === set.id;
                 const isPreview = previewSet?.id === set.id;
                 const exerciseCount = set.exerciseMappings?.length || 0;
-                const firstImage = getMediaUrl(set.exerciseMappings?.[0]?.exercise?.imageUrl ||
-                  set.exerciseMappings?.[0]?.exercise?.images?.[0]);
+                const firstImage = getMediaUrl(
+                  set.exerciseMappings?.[0]?.exercise?.imageUrl || set.exerciseMappings?.[0]?.exercise?.images?.[0]
+                );
 
                 return (
                   <div
                     key={set.id}
                     className={cn(
-                      "flex items-center gap-4 rounded-xl p-4 cursor-pointer transition-all",
+                      'flex items-center gap-4 rounded-xl p-4 cursor-pointer transition-all',
                       isSelectedForUnassign
-                        ? "bg-destructive/10 border-2 border-destructive/50"
+                        ? 'bg-destructive/10 border-2 border-destructive/50'
                         : isSelectedForAssign
-                        ? "bg-primary/10 border-2 border-primary/40"
-                        : isPreview
-                        ? "bg-surface-light border-2 border-border"
-                        : isAssigned
-                        ? "opacity-70 hover:opacity-100 hover:bg-surface-light border-2 border-transparent"
-                        : "hover:bg-surface-light border-2 border-transparent"
+                          ? 'bg-primary/10 border-2 border-primary/40'
+                          : isPreview
+                            ? 'bg-surface-light border-2 border-border'
+                            : isAssigned
+                              ? 'opacity-70 hover:opacity-100 hover:bg-surface-light border-2 border-transparent'
+                              : 'hover:bg-surface-light border-2 border-transparent'
                     )}
                     onClick={() => handleSetClick(set)}
                     data-testid={`assign-set-item-${set.id}`}
@@ -268,7 +222,10 @@ export function SelectSetStep({
                         <img
                           src={firstImage}
                           alt=""
-                          className={cn("h-full w-full object-cover", isAssigned && !isSelectedForUnassign && "grayscale")}
+                          className={cn(
+                            'h-full w-full object-cover',
+                            isAssigned && !isSelectedForUnassign && 'grayscale'
+                          )}
                         />
                       ) : (
                         <div className="h-full w-full bg-surface-light flex items-center justify-center">
@@ -280,15 +237,17 @@ export function SelectSetStep({
                     {/* Info */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <p className={cn(
-                          "font-semibold line-clamp-2 flex-1",
-                          isAssigned && !isSelectedForUnassign && "text-muted-foreground"
-                        )}>
+                        <p
+                          className={cn(
+                            'font-semibold line-clamp-2 flex-1',
+                            isAssigned && !isSelectedForUnassign && 'text-muted-foreground'
+                          )}
+                        >
                           {set.name}
                         </p>
                         {isAssigned && (
                           <Badge
-                            variant={isSelectedForUnassign ? "destructive" : "secondary"}
+                            variant={isSelectedForUnassign ? 'destructive' : 'secondary'}
                             className="text-[10px] shrink-0"
                           >
                             Przypisany
@@ -299,9 +258,7 @@ export function SelectSetStep({
                         </Badge>
                       </div>
                       {set.description && (
-                        <p className="text-sm text-muted-foreground line-clamp-1 mt-1">
-                          {set.description}
-                        </p>
+                        <p className="text-sm text-muted-foreground line-clamp-1 mt-1">{set.description}</p>
                       )}
                     </div>
 
@@ -327,59 +284,19 @@ export function SelectSetStep({
         </ScrollArea>
       </div>
 
-      {/* Right column - Rapid Builder (zawsze dla wybranego zestawu) */}
+      {/* Right column - Set Preview (read-only) */}
       <div className="flex flex-col min-h-0 h-full rounded-xl border border-border bg-surface/50">
         {previewSet ? (
-          // Rapid Builder dla każdego zestawu - szybkie dodawanie i Time Counter
-          (availableExercises.length > 0 && organizationId) ? (
-            <RapidExerciseBuilder
-              // Ghost Copy - lokalna tablica (nie z bazy)
-              exercises={localExercises}
-              onExercisesChange={onLocalExercisesChange}
-              // Plan name (dla pacjenta)
-              planName={planName}
-              onPlanNameChange={onPlanNameChange}
-              // Bazowy szablon (read-only info)
-              sourceTemplateName={sourceTemplateName}
-              // Dodawanie ćwiczeń
-              availableExercises={availableExercises}
-              // Save as template props
-              saveAsTemplate={saveAsTemplate}
-              onSaveAsTemplateChange={onSaveAsTemplateChange}
-              templateName={templateName}
-              onTemplateNameChange={onTemplateNameChange}
-              // Progressive Disclosure props
-              overrides={overrides}
-              onOverridesChange={onOverridesChange}
-              selectedPatientsCount={selectedPatientsCount}
-            />
-          ) : (
-          // Fallback gdy brak danych do Rapid Builder - prosty podgląd
           <>
             <div className="p-4 border-b border-border">
               <h3 className="font-semibold text-lg">{previewSet.name}</h3>
-              {previewSet.description && (
-                <p className="text-sm text-muted-foreground mt-1">
-                  {previewSet.description}
-                </p>
-              )}
+              {previewSet.description && <p className="text-sm text-muted-foreground mt-1">{previewSet.description}</p>}
               <div className="flex items-center gap-2 mt-2 flex-wrap">
-                <Badge variant="outline">
-                  {previewSet.exerciseMappings?.length || 0} ćwiczeń
-                </Badge>
-                {selectedToUnassign === previewSet.id && (
-                  <Badge variant="destructive">
-                    Wybrany do odpisania
-                  </Badge>
-                )}
+                <Badge variant="outline">{previewSet.exerciseMappings?.length || 0} ćwiczeń</Badge>
+                {selectedToUnassign === previewSet.id && <Badge variant="destructive">Wybrany do odpisania</Badge>}
               </div>
               {selectedToUnassign === previewSet.id && onUnassign && (
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  className="mt-3 w-full"
-                  onClick={handleUnassign}
-                >
+                <Button variant="destructive" size="sm" className="mt-3 w-full" onClick={handleUnassign}>
                   <X className="h-4 w-4 mr-2" />
                   Odpisz ten zestaw od pacjenta
                 </Button>
@@ -387,9 +304,7 @@ export function SelectSetStep({
             </div>
 
             <div className="px-4 pt-3 pb-2">
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                Ćwiczenia w zestawie
-              </p>
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Ćwiczenia w zestawie</p>
             </div>
 
             <ScrollArea className="flex-1 px-4 pb-4">
@@ -399,41 +314,31 @@ export function SelectSetStep({
                   const imageUrl = getMediaUrl(exercise?.imageUrl || exercise?.images?.[0]);
 
                   return (
-                    <div
-                      key={mapping.id}
-                      className="flex items-center gap-3 rounded-lg p-3 bg-surface-light/50"
-                    >
+                    <div key={mapping.id} className="flex items-center gap-3 rounded-lg p-3 bg-surface-light/50">
                       <div className="flex h-8 w-8 items-center justify-center rounded-lg text-xs font-semibold shrink-0 bg-surface text-muted-foreground">
                         {index + 1}
                       </div>
                       <div className="h-10 w-10 rounded-lg overflow-hidden shrink-0">
                         {imageUrl ? (
-                          <img
-                            src={imageUrl}
-                            alt=""
-                            className="h-full w-full object-cover"
-                          />
+                          <img src={imageUrl} alt="" className="h-full w-full object-cover" />
                         ) : (
-                          <ImagePlaceholder
-                            type="exercise"
-                            iconClassName="h-4 w-4"
-                          />
+                          <ImagePlaceholder type="exercise" iconClassName="h-4 w-4" />
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium line-clamp-2">
-                          {mapping.customName || exercise?.name || "Nieznane ćwiczenie"}
+                          {mapping.customName || exercise?.name || 'Nieznane ćwiczenie'}
                         </p>
                         <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5 flex-wrap">
-                          {(mapping.sets || exercise?.sets) && (
-                            <span>{mapping.sets || exercise?.sets} serie</span>
+                          {(mapping.sets ?? exercise?.defaultSets) && (
+                            <span>{mapping.sets ?? exercise?.defaultSets} serie</span>
                           )}
-                          {(mapping.reps || exercise?.reps) && (
-                            <span>• {mapping.reps || exercise?.reps} powt.</span>
+                          {(mapping.reps ?? exercise?.defaultReps) && (
+                            <span>• {mapping.reps ?? exercise?.defaultReps} powt.</span>
                           )}
-                          {(mapping.duration || exercise?.duration) && (
-                            <span>• {mapping.duration || exercise?.duration}s</span>
-                          )}
+                          {(mapping.executionTime ?? exercise?.defaultExecutionTime) ? (
+                            <span>• {mapping.executionTime ?? exercise?.defaultExecutionTime}s/powt.</span>
+                          ) : null}
                         </div>
                       </div>
                       {exercise?.type && (
@@ -447,16 +352,11 @@ export function SelectSetStep({
               </div>
             </ScrollArea>
           </>
-          )
         ) : (
           <div className="flex-1 flex flex-col items-center justify-center text-center p-4">
             <Dumbbell className="h-12 w-12 text-muted-foreground/30 mb-3" />
-            <p className="text-sm font-medium text-muted-foreground">
-              Wybierz zestaw
-            </p>
-            <p className="text-xs text-muted-foreground/70 mt-1">
-              Kliknij na zestaw, aby zobaczyć jego ćwiczenia
-            </p>
+            <p className="text-sm font-medium text-muted-foreground">Wybierz zestaw</p>
+            <p className="text-xs text-muted-foreground/70 mt-1">Kliknij na zestaw, aby zobaczyć jego ćwiczenia</p>
           </div>
         )}
       </div>

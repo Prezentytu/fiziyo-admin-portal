@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import { Check } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Check } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface StepIndicatorProps {
   currentStep: number;
@@ -9,11 +9,7 @@ interface StepIndicatorProps {
   labels?: string[];
 }
 
-export function StepIndicator({
-  currentStep,
-  totalSteps,
-  labels,
-}: StepIndicatorProps) {
+export function StepIndicator({ currentStep, totalSteps, labels }: StepIndicatorProps) {
   return (
     <div className="mb-6 mt-4 py-2">
       <div className="flex items-start justify-between px-4">
@@ -26,10 +22,10 @@ export function StepIndicator({
             <div key={stepNumber} className="flex flex-1 flex-col items-center">
               <div
                 className={cn(
-                  "flex h-8 w-8 items-center justify-center rounded-full border-2 transition-all duration-300",
-                  isActive && "border-primary bg-primary",
-                  isCompleted && "border-primary-dark bg-primary-dark",
-                  !isActive && !isCompleted && "border-border bg-surface-light"
+                  'flex h-8 w-8 items-center justify-center rounded-full border-2 transition-all duration-300',
+                  isActive && 'border-primary bg-primary',
+                  isCompleted && 'border-primary-dark bg-primary-dark',
+                  !isActive && !isCompleted && 'border-border bg-surface-light'
                 )}
               >
                 {isCompleted ? (
@@ -37,10 +33,8 @@ export function StepIndicator({
                 ) : (
                   <span
                     className={cn(
-                      "text-sm font-medium",
-                      isActive
-                        ? "font-bold text-primary-foreground"
-                        : "text-muted-foreground"
+                      'text-sm font-medium',
+                      isActive ? 'font-bold text-primary-foreground' : 'text-muted-foreground'
                     )}
                   >
                     {stepNumber}
@@ -50,10 +44,8 @@ export function StepIndicator({
               {labels && labels[index] && (
                 <span
                   className={cn(
-                    "mt-1 text-center text-xs transition-colors",
-                    isActive
-                      ? "font-medium text-foreground"
-                      : "text-muted-foreground"
+                    'mt-1 text-center text-xs transition-colors',
+                    isActive ? 'font-medium text-foreground' : 'text-muted-foreground'
                   )}
                 >
                   {labels[index]}
@@ -77,20 +69,3 @@ export function StepIndicator({
     </div>
   );
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

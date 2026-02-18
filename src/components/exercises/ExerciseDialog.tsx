@@ -1,27 +1,21 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { useState, useCallback } from "react";
-import { useMutation } from "@apollo/client/react";
-import { toast } from "sonner";
-import { Clock, Lock, Sparkles, Copy, Rocket } from "lucide-react";
+import * as React from 'react';
+import { useState, useCallback } from 'react';
+import { useMutation } from '@apollo/client/react';
+import { toast } from 'sonner';
+import { Clock, Lock, Sparkles, Copy, Rocket } from 'lucide-react';
 
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
-import { ExerciseForm, ExerciseFormValues } from "./ExerciseForm";
-import { CreateExerciseWizard } from "./CreateExerciseWizard";
-import { FeedbackBanner } from "./FeedbackBanner";
-import { UPDATE_EXERCISE_MUTATION, COPY_EXERCISE_TEMPLATE_MUTATION } from "@/graphql/mutations/exercises.mutations";
-import { GET_ORGANIZATION_EXERCISES_QUERY, GET_AVAILABLE_EXERCISES_QUERY } from "@/graphql/queries/exercises.queries";
-import type { Exercise } from "./ExerciseCard";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
+import { ExerciseForm, ExerciseFormValues } from './ExerciseForm';
+import { CreateExerciseWizard } from './CreateExerciseWizard';
+import { FeedbackBanner } from './FeedbackBanner';
+import { UPDATE_EXERCISE_MUTATION, COPY_EXERCISE_TEMPLATE_MUTATION } from '@/graphql/mutations/exercises.mutations';
+import { GET_ORGANIZATION_EXERCISES_QUERY, GET_AVAILABLE_EXERCISES_QUERY } from '@/graphql/queries/exercises.queries';
+import type { Exercise } from './ExerciseCard';
 
 interface ExerciseDialogProps {
   open: boolean;
@@ -58,9 +52,9 @@ export function ExerciseDialog({
   const isFixMode = isChangesRequested; // Enable editing to fix issues
 
   // Can submit to global: ORGANIZATION scope, no existing submission, not in review
-  const canSubmitToGlobal = 
-    onSubmitToGlobal && 
-    exercise?.scope === 'ORGANIZATION' && 
+  const canSubmitToGlobal =
+    onSubmitToGlobal &&
+    exercise?.scope === 'ORGANIZATION' &&
     !exercise?.globalSubmissionId &&
     !isPendingReview &&
     !isChangesRequested;
@@ -87,21 +81,17 @@ export function ExerciseDialog({
   }, [open]);
 
   const [updateExercise, { loading: updating }] = useMutation(UPDATE_EXERCISE_MUTATION, {
-    refetchQueries: [
-      { query: GET_ORGANIZATION_EXERCISES_QUERY, variables: { organizationId } },
-    ],
+    refetchQueries: [{ query: GET_ORGANIZATION_EXERCISES_QUERY, variables: { organizationId } }],
   });
 
   // Fork mutation - copy global exercise to organization
   const [copyExercise, { loading: copying }] = useMutation(COPY_EXERCISE_TEMPLATE_MUTATION, {
-    refetchQueries: [
-      { query: GET_AVAILABLE_EXERCISES_QUERY, variables: { organizationId } },
-    ],
+    refetchQueries: [{ query: GET_AVAILABLE_EXERCISES_QUERY, variables: { organizationId } }],
   });
 
   const handleForkExercise = async () => {
     if (!exercise) return;
-    
+
     try {
       await copyExercise({
         variables: {
@@ -113,8 +103,8 @@ export function ExerciseDialog({
       onOpenChange(false);
       onSuccess?.();
     } catch (error: unknown) {
-      console.error("Błąd podczas kopiowania ćwiczenia:", error);
-      toast.error("Nie udało się skopiować ćwiczenia");
+      console.error('Błąd podczas kopiowania ćwiczenia:', error);
+      toast.error('Nie udało się skopiować ćwiczenia');
     }
   };
 
@@ -125,7 +115,7 @@ export function ExerciseDialog({
         await updateExercise({
           variables: {
             exerciseId: exercise.id,
-            description: values.description || "",
+            description: values.description || '',
             type: values.type,
             sets: values.sets,
             reps: values.reps,
@@ -136,7 +126,7 @@ export function ExerciseDialog({
             executionTime: values.executionTime,
             videoUrl: values.videoUrl || null,
             notes: values.notes || null,
-            exerciseSide: values.exerciseSide === "none" ? null : values.exerciseSide,
+            exerciseSide: values.exerciseSide === 'none' ? null : values.exerciseSide,
           },
         });
 
@@ -145,23 +135,23 @@ export function ExerciseDialog({
           setIsResubmitting(true);
           try {
             await onResubmit(exercise.id);
-            toast.success("Poprawki wysłane do weryfikacji!");
+            toast.success('Poprawki wysłane do weryfikacji!');
           } catch {
-            toast.error("Nie udało się wysłać poprawek");
+            toast.error('Nie udało się wysłać poprawek');
             return;
           } finally {
             setIsResubmitting(false);
           }
         } else {
-          toast.success("Ćwiczenie zostało zaktualizowane");
+          toast.success('Ćwiczenie zostało zaktualizowane');
         }
-        
+
         onOpenChange(false);
         onSuccess?.();
       }
     } catch (error: unknown) {
-      console.error("Błąd podczas zapisywania ćwiczenia:", error);
-      toast.error("Nie udało się zaktualizować ćwiczenia");
+      console.error('Błąd podczas zapisywania ćwiczenia:', error);
+      toast.error('Nie udało się zaktualizować ćwiczenia');
     }
   };
 
@@ -182,8 +172,8 @@ export function ExerciseDialog({
   const defaultValues = exercise
     ? {
         name: exercise.name,
-        description: exercise.patientDescription || exercise.description || "",
-        type: ((exercise.type?.toLowerCase()) as "reps" | "time") || "reps",
+        description: exercise.patientDescription || exercise.description || '',
+        type: (exercise.type?.toLowerCase() as 'reps' | 'time') || 'reps',
         sets: exercise.defaultSets ?? exercise.sets,
         reps: exercise.defaultReps ?? exercise.reps,
         duration: exercise.defaultDuration ?? exercise.duration,
@@ -191,9 +181,10 @@ export function ExerciseDialog({
         restReps: undefined,
         preparationTime: undefined,
         executionTime: undefined,
-        exerciseSide: ((exercise.side?.toLowerCase() || exercise.exerciseSide) as "none" | "left" | "right" | "both") || "none",
-        videoUrl: "",
-        notes: "",
+        exerciseSide:
+          ((exercise.side?.toLowerCase() || exercise.exerciseSide) as 'none' | 'left' | 'right' | 'both') || 'none',
+        videoUrl: '',
+        notes: '',
       }
     : undefined;
 
@@ -208,18 +199,18 @@ export function ExerciseDialog({
               Ćwiczenie z bazy FiziYo
             </DialogTitle>
             <DialogDescription>
-              "{exercise?.name}" pochodzi z globalnej bazy FiziYo i nie może być edytowane.
+              &quot;{exercise?.name}&quot; pochodzi z globalnej bazy FiziYo i nie może być edytowane.
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="py-6">
             <div className="flex items-start gap-3 p-6 rounded-lg bg-violet-500/10 border border-violet-500/20">
               <Lock className="h-8 w-8 text-violet-500 shrink-0 mt-0.5" />
               <div>
                 <p className="font-medium text-violet-600">Ćwiczenie tylko do odczytu</p>
                 <p className="text-sm text-muted-foreground mt-1">
-                  To jest zweryfikowane ćwiczenie z globalnej bazy FiziYo. 
-                  Możesz je używać w zestawach, ale nie możesz go edytować ani usunąć.
+                  To jest zweryfikowane ćwiczenie z globalnej bazy FiziYo. Możesz je używać w zestawach, ale nie możesz
+                  go edytować ani usunąć.
                 </p>
                 <p className="text-sm text-muted-foreground mt-2">
                   Jeśli chcesz wprowadzić zmiany, utwórz własną kopię tego ćwiczenia.
@@ -234,7 +225,7 @@ export function ExerciseDialog({
             </Button>
             <Button onClick={handleForkExercise} disabled={copying}>
               <Copy className="mr-2 h-4 w-4" />
-              {copying ? "Kopiowanie..." : "Utwórz własną kopię"}
+              {copying ? 'Kopiowanie...' : 'Utwórz własną kopię'}
             </Button>
           </div>
         </DialogContent>
@@ -253,18 +244,17 @@ export function ExerciseDialog({
               Ćwiczenie oczekuje na weryfikację
             </DialogTitle>
             <DialogDescription>
-              "{exercise?.name}" zostało zgłoszone do bazy globalnej i oczekuje na weryfikację.
+              &quot;{exercise?.name}&quot; zostało zgłoszone do bazy globalnej i oczekuje na weryfikację.
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="py-6">
             <div className="flex items-center justify-center gap-3 p-6 rounded-lg bg-amber-500/10 border border-amber-500/20">
               <Clock className="h-8 w-8 text-amber-500" />
               <div>
                 <p className="font-medium text-amber-600">Edycja zablokowana</p>
                 <p className="text-sm text-muted-foreground mt-1">
-                  Nie możesz edytować ćwiczenia podczas weryfikacji.
-                  Poczekaj na decyzję weryfikatora.
+                  Nie możesz edytować ćwiczenia podczas weryfikacji. Poczekaj na decyzję weryfikatora.
                 </p>
               </div>
             </div>
@@ -293,9 +283,7 @@ export function ExerciseDialog({
       >
         <DialogHeader>
           <div className="flex items-center gap-2">
-            <DialogTitle>
-              {isFixMode ? "Popraw ćwiczenie" : "Edytuj ćwiczenie"}
-            </DialogTitle>
+            <DialogTitle>{isFixMode ? 'Popraw ćwiczenie' : 'Edytuj ćwiczenie'}</DialogTitle>
             {isFixMode && (
               <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/20">
                 Do poprawy
@@ -303,19 +291,15 @@ export function ExerciseDialog({
             )}
           </div>
           <DialogDescription>
-            {isFixMode 
+            {isFixMode
               ? `Wprowadź poprawki do "${exercise?.name}" i wyślij ponownie do weryfikacji`
-              : `Zmień parametry ćwiczenia "${exercise?.name}"`
-            }
+              : `Zmień parametry ćwiczenia "${exercise?.name}"`}
           </DialogDescription>
         </DialogHeader>
 
         {/* Feedback Banner for CHANGES_REQUESTED */}
         {isFixMode && exercise?.adminReviewNotes && (
-          <FeedbackBanner
-            adminReviewNotes={exercise.adminReviewNotes}
-            updatedAt={exercise.createdAt}
-          />
+          <FeedbackBanner adminReviewNotes={exercise.adminReviewNotes} updatedAt={exercise.createdAt} />
         )}
 
         <ExerciseForm
@@ -323,7 +307,7 @@ export function ExerciseDialog({
           onSubmit={handleSubmit}
           onCancel={handleCloseAttempt}
           isLoading={updating || isResubmitting}
-          submitLabel={isFixMode ? "Wyślij poprawki" : "Zapisz zmiany"}
+          submitLabel={isFixMode ? 'Wyślij poprawki' : 'Zapisz zmiany'}
           onDirtyChange={setFormIsDirty}
           secondaryAction={
             canSubmitToGlobal && exercise ? (

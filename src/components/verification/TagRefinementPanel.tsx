@@ -1,15 +1,19 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { useQuery } from "@apollo/client/react";
-import { Tag, X, Plus, Sparkles, Loader2 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { cn } from "@/lib/utils";
-import { GET_SUGGESTED_TAGS_QUERY } from "@/graphql/queries/adminExercises.queries";
-import type { AdminExercise, GetSuggestedTagsResponse, GetSuggestedTagsVariables } from "@/graphql/types/adminExercise.types";
+import { useState } from 'react';
+import { useQuery } from '@apollo/client/react';
+import { Tag, X, Plus, Sparkles, Loader2 } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { cn } from '@/lib/utils';
+import { GET_SUGGESTED_TAGS_QUERY } from '@/graphql/queries/adminExercises.queries';
+import type {
+  AdminExercise,
+  GetSuggestedTagsResponse,
+  GetSuggestedTagsVariables,
+} from '@/graphql/types/adminExercise.types';
 
 interface TagRefinementPanelProps {
   exercise: AdminExercise;
@@ -23,28 +27,28 @@ interface TagRefinementPanelProps {
 // Tag category colors (based on backend TagCategory)
 const TAG_CATEGORY_COLORS: Record<string, string> = {
   // Body parts - blue
-  "ramię": "bg-blue-500/10 text-blue-600 border-blue-500/20",
-  "bark": "bg-blue-500/10 text-blue-600 border-blue-500/20",
-  "plecy": "bg-blue-500/10 text-blue-600 border-blue-500/20",
-  "nogi": "bg-blue-500/10 text-blue-600 border-blue-500/20",
-  "kolano": "bg-blue-500/10 text-blue-600 border-blue-500/20",
-  "biodro": "bg-blue-500/10 text-blue-600 border-blue-500/20",
-  "stopa": "bg-blue-500/10 text-blue-600 border-blue-500/20",
-  "kręgosłup": "bg-blue-500/10 text-blue-600 border-blue-500/20",
+  ramię: 'bg-blue-500/10 text-blue-600 border-blue-500/20',
+  bark: 'bg-blue-500/10 text-blue-600 border-blue-500/20',
+  plecy: 'bg-blue-500/10 text-blue-600 border-blue-500/20',
+  nogi: 'bg-blue-500/10 text-blue-600 border-blue-500/20',
+  kolano: 'bg-blue-500/10 text-blue-600 border-blue-500/20',
+  biodro: 'bg-blue-500/10 text-blue-600 border-blue-500/20',
+  stopa: 'bg-blue-500/10 text-blue-600 border-blue-500/20',
+  kręgosłup: 'bg-blue-500/10 text-blue-600 border-blue-500/20',
   // Equipment - gray
-  "piłka": "bg-zinc-500/10 text-zinc-600 border-zinc-500/20",
-  "taśma": "bg-zinc-500/10 text-zinc-600 border-zinc-500/20",
-  "hantle": "bg-zinc-500/10 text-zinc-600 border-zinc-500/20",
-  "mata": "bg-zinc-500/10 text-zinc-600 border-zinc-500/20",
+  piłka: 'bg-zinc-500/10 text-zinc-600 border-zinc-500/20',
+  taśma: 'bg-zinc-500/10 text-zinc-600 border-zinc-500/20',
+  hantle: 'bg-zinc-500/10 text-zinc-600 border-zinc-500/20',
+  mata: 'bg-zinc-500/10 text-zinc-600 border-zinc-500/20',
   // Exercise type - purple
-  "rozciąganie": "bg-purple-500/10 text-purple-600 border-purple-500/20",
-  "wzmacnianie": "bg-purple-500/10 text-purple-600 border-purple-500/20",
-  "mobilizacja": "bg-purple-500/10 text-purple-600 border-purple-500/20",
-  "oddychanie": "bg-purple-500/10 text-purple-600 border-purple-500/20",
+  rozciąganie: 'bg-purple-500/10 text-purple-600 border-purple-500/20',
+  wzmacnianie: 'bg-purple-500/10 text-purple-600 border-purple-500/20',
+  mobilizacja: 'bg-purple-500/10 text-purple-600 border-purple-500/20',
+  oddychanie: 'bg-purple-500/10 text-purple-600 border-purple-500/20',
   // Difficulty - amber
-  "początkujący": "bg-amber-500/10 text-amber-600 border-amber-500/20",
-  "średniozaawansowany": "bg-amber-500/10 text-amber-600 border-amber-500/20",
-  "zaawansowany": "bg-amber-500/10 text-amber-600 border-amber-500/20",
+  początkujący: 'bg-amber-500/10 text-amber-600 border-amber-500/20',
+  średniozaawansowany: 'bg-amber-500/10 text-amber-600 border-amber-500/20',
+  zaawansowany: 'bg-amber-500/10 text-amber-600 border-amber-500/20',
 };
 
 function getTagColor(tag: string): string {
@@ -54,7 +58,7 @@ function getTagColor(tag: string): string {
       return color;
     }
   }
-  return "bg-muted text-muted-foreground border-border";
+  return 'bg-muted text-muted-foreground border-border';
 }
 
 interface TagListProps {
@@ -66,9 +70,7 @@ interface TagListProps {
 function TagList({ tags, onRemove, isMain }: TagListProps) {
   if (tags.length === 0) {
     return (
-      <p className="text-xs text-muted-foreground italic py-2">
-        Brak tagów {isMain ? "głównych" : "dodatkowych"}
-      </p>
+      <p className="text-xs text-muted-foreground italic py-2">Brak tagów {isMain ? 'głównych' : 'dodatkowych'}</p>
     );
   }
 
@@ -78,11 +80,7 @@ function TagList({ tags, onRemove, isMain }: TagListProps) {
         <Badge
           key={tag}
           variant="outline"
-          className={cn(
-            "pr-1.5 gap-1.5 group cursor-default",
-            getTagColor(tag),
-            isMain && "font-semibold"
-          )}
+          className={cn('pr-1.5 gap-1.5 group cursor-default', getTagColor(tag), isMain && 'font-semibold')}
         >
           {tag}
           <button
@@ -105,27 +103,25 @@ export function TagRefinementPanel({
   onAdditionalTagsChange,
   className,
 }: TagRefinementPanelProps) {
-  const [newMainTag, setNewMainTag] = useState("");
-  const [newAdditionalTag, setNewAdditionalTag] = useState("");
+  const [newMainTag, setNewMainTag] = useState('');
+  const [newAdditionalTag, setNewAdditionalTag] = useState('');
 
   // Fetch AI tag suggestions
-  const { data: suggestionsData, loading: suggestionsLoading } = useQuery<GetSuggestedTagsResponse, GetSuggestedTagsVariables>(
-    GET_SUGGESTED_TAGS_QUERY,
-    {
-      variables: { exerciseId: exercise.id },
-      skip: !exercise.id,
-    }
-  );
+  const { data: suggestionsData, loading: suggestionsLoading } = useQuery<
+    GetSuggestedTagsResponse,
+    GetSuggestedTagsVariables
+  >(GET_SUGGESTED_TAGS_QUERY, {
+    variables: { exerciseId: exercise.id },
+    skip: !exercise.id,
+  });
 
   const suggestions = suggestionsData?.suggestedTags;
 
   // Filter out already added tags from suggestions
-  const availableMainSuggestions = suggestions?.mainTags.filter(
-    (tag) => !mainTags.includes(tag) && !additionalTags.includes(tag)
-  ) || [];
-  const availableAdditionalSuggestions = suggestions?.additionalTags.filter(
-    (tag) => !mainTags.includes(tag) && !additionalTags.includes(tag)
-  ) || [];
+  const availableMainSuggestions =
+    suggestions?.mainTags.filter((tag) => !mainTags.includes(tag) && !additionalTags.includes(tag)) || [];
+  const availableAdditionalSuggestions =
+    suggestions?.additionalTags.filter((tag) => !mainTags.includes(tag) && !additionalTags.includes(tag)) || [];
   const allSuggestions = [...new Set([...availableMainSuggestions, ...availableAdditionalSuggestions])];
 
   const handleAddSuggestionAsMain = (tag: string) => {
@@ -144,7 +140,7 @@ export function TagRefinementPanel({
     const tag = newMainTag.trim();
     if (tag && !mainTags.includes(tag)) {
       onMainTagsChange([...mainTags, tag]);
-      setNewMainTag("");
+      setNewMainTag('');
     }
   };
 
@@ -152,7 +148,7 @@ export function TagRefinementPanel({
     const tag = newAdditionalTag.trim();
     if (tag && !additionalTags.includes(tag)) {
       onAdditionalTagsChange([...additionalTags, tag]);
-      setNewAdditionalTag("");
+      setNewAdditionalTag('');
     }
   };
 
@@ -165,7 +161,7 @@ export function TagRefinementPanel({
   };
 
   return (
-    <Card className={cn("border-border/60", className)}>
+    <Card className={cn('border-border/60', className)}>
       <CardHeader className="pb-3">
         <CardTitle className="text-base font-semibold flex items-center gap-2">
           <Tag className="h-5 w-5 text-primary" />
@@ -213,13 +209,12 @@ export function TagRefinementPanel({
               </div>
             )}
             {!suggestionsLoading && allSuggestions.length === 0 && suggestions && (
-              <p className="text-xs text-muted-foreground italic">
-                Wszystkie sugestie zostały już dodane
-              </p>
+              <p className="text-xs text-muted-foreground italic">Wszystkie sugestie zostały już dodane</p>
             )}
             {suggestions?.suggestedCategory && (
               <p className="text-xs text-muted-foreground">
-                Sugerowana kategoria: <span className="text-foreground font-medium">{suggestions.suggestedCategory}</span>
+                Sugerowana kategoria:{' '}
+                <span className="text-foreground font-medium">{suggestions.suggestedCategory}</span>
               </p>
             )}
           </div>
@@ -237,7 +232,7 @@ export function TagRefinementPanel({
               placeholder="Dodaj tag główny..."
               value={newMainTag}
               onChange={(e) => setNewMainTag(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleAddMainTag()}
+              onKeyDown={(e) => e.key === 'Enter' && handleAddMainTag()}
               className="h-8 text-sm"
             />
             <Button
@@ -264,7 +259,7 @@ export function TagRefinementPanel({
               placeholder="Dodaj tag dodatkowy..."
               value={newAdditionalTag}
               onChange={(e) => setNewAdditionalTag(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleAddAdditionalTag()}
+              onKeyDown={(e) => e.key === 'Enter' && handleAddAdditionalTag()}
               className="h-8 text-sm"
             />
             <Button
@@ -280,8 +275,8 @@ export function TagRefinementPanel({
         </div>
 
         {/* Info about changes */}
-        {(mainTags.join(",") !== (exercise.mainTags || []).join(",") ||
-          additionalTags.join(",") !== (exercise.additionalTags || []).join(",")) && (
+        {(mainTags.join(',') !== (exercise.mainTags || []).join(',') ||
+          additionalTags.join(',') !== (exercise.additionalTags || []).join(',')) && (
           <p className="text-xs text-amber-600 bg-amber-500/10 p-2 rounded-lg">
             Zmiany w tagach zostaną zapisane wraz z decyzją weryfikacji.
           </p>

@@ -1,13 +1,6 @@
 'use client';
 
-import {
-  Sun,
-  Moon,
-  Monitor,
-  Contrast,
-  Check,
-  RotateCcw,
-} from 'lucide-react';
+import { Sun, Moon, Monitor, Contrast, Check, RotateCcw } from 'lucide-react';
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -15,11 +8,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
-import {
-  useAccessibility,
-  FONT_SIZE_VALUES,
-  type FontSize,
-} from '@/contexts/AccessibilityContext';
+import { useAccessibility, FONT_SIZE_VALUES, type FontSize } from '@/contexts/AccessibilityContext';
 
 export function AccessibilitySettings() {
   const { preferences, updatePreference, resetToDefaults, isHydrated } = useAccessibility();
@@ -48,9 +37,7 @@ export function AccessibilitySettings() {
       {/* Motyw */}
       <Card className="rounded-xl border border-border/50 bg-card/30">
         <CardHeader className="pb-4">
-          <CardTitle className="text-lg font-semibold tracking-tight">
-            Motyw
-          </CardTitle>
+          <CardTitle className="text-lg font-semibold tracking-tight">Motyw</CardTitle>
           <CardDescription className="text-sm text-muted-foreground">
             Wybierz preferowany motyw kolorystyczny
           </CardDescription>
@@ -129,9 +116,7 @@ export function AccessibilitySettings() {
       {/* Rozmiar czcionki */}
       <Card className="rounded-xl border border-border/50 bg-card/30">
         <CardHeader className="pb-4">
-          <CardTitle className="text-lg font-semibold tracking-tight">
-            Rozmiar czcionki
-          </CardTitle>
+          <CardTitle className="text-lg font-semibold tracking-tight">Rozmiar czcionki</CardTitle>
           <CardDescription className="text-sm text-muted-foreground">
             Dostosuj wielkość tekstu w aplikacji
           </CardDescription>
@@ -178,8 +163,8 @@ export function AccessibilitySettings() {
               className="text-foreground leading-relaxed"
               style={{ fontSize: FONT_SIZE_VALUES[preferences.fontSize].css }}
             >
-              Ten tekst pokazuje jak będzie wyglądać treść przy wybranym rozmiarze czcionki.
-              Fizjoterapia pomaga w rehabilitacji.
+              Ten tekst pokazuje jak będzie wyglądać treść przy wybranym rozmiarze czcionki. Fizjoterapia pomaga w
+              rehabilitacji.
             </p>
           </div>
         </CardContent>
@@ -188,9 +173,7 @@ export function AccessibilitySettings() {
       {/* Opcje dostępności */}
       <Card className="rounded-xl border border-border/50 bg-card/30">
         <CardHeader className="pb-4">
-          <CardTitle className="text-lg font-semibold tracking-tight">
-            Opcje dostępności
-          </CardTitle>
+          <CardTitle className="text-lg font-semibold tracking-tight">Opcje dostępności</CardTitle>
           <CardDescription className="text-sm text-muted-foreground">
             Dodatkowe ustawienia dla lepszej widoczności
           </CardDescription>
@@ -206,9 +189,7 @@ export function AccessibilitySettings() {
                 <Label htmlFor="high-contrast" className="text-sm font-medium">
                   Wysoki kontrast
                 </Label>
-                <p className="text-xs text-muted-foreground">
-                  Zwiększa kontrast kolorów dla lepszej czytelności
-                </p>
+                <p className="text-xs text-muted-foreground">Zwiększa kontrast kolorów dla lepszej czytelności</p>
               </div>
             </div>
             <Switch
@@ -229,9 +210,7 @@ export function AccessibilitySettings() {
                 <Label htmlFor="reduced-motion" className="text-sm font-medium">
                   Ograniczone animacje
                 </Label>
-                <p className="text-xs text-muted-foreground">
-                  Wyłącza większość animacji i przejść
-                </p>
+                <p className="text-xs text-muted-foreground">Wyłącza większość animacji i przejść</p>
               </div>
             </div>
             <Switch

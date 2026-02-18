@@ -42,9 +42,7 @@ export function TagPicker({
   const filteredTags = useMemo(() => {
     if (!searchQuery) return availableTags;
     const query = searchQuery.toLowerCase();
-    return availableTags.filter((tag) =>
-      tag.name.toLowerCase().includes(query)
-    );
+    return availableTags.filter((tag) => tag.name.toLowerCase().includes(query));
   }, [availableTags, searchQuery]);
 
   // Group and limit tags
@@ -63,8 +61,8 @@ export function TagPicker({
     const hiddenCount = allTags.length - initialVisibleCount;
 
     return {
-      mainTags: visibleTags.filter(t => t.isMain),
-      otherTags: visibleTags.filter(t => !t.isMain),
+      mainTags: visibleTags.filter((t) => t.isMain),
+      otherTags: visibleTags.filter((t) => !t.isMain),
       hasMore: !showAll && hiddenCount > 0,
       totalHidden: hiddenCount,
     };
@@ -152,9 +150,7 @@ export function TagPicker({
                 );
               })}
               {selectedMainTags.length === 0 && (
-                <p className="text-xs text-muted-foreground italic">
-                  Kliknij ★ aby oznaczyć jako główny
-                </p>
+                <p className="text-xs text-muted-foreground italic">Kliknij ★ aby oznaczyć jako główny</p>
               )}
             </div>
           </div>
@@ -175,10 +171,7 @@ export function TagPicker({
                       key={tag.id}
                       className="group flex items-center gap-1 pl-2 pr-1 py-0.5 rounded-full border border-border bg-surface"
                     >
-                      <span
-                        className="text-xs font-medium"
-                        style={{ color: tag.color }}
-                      >
+                      <span className="text-xs font-medium" style={{ color: tag.color }}>
                         {tag.name}
                       </span>
                       {selectedMainTags.length < maxMainTags && (
@@ -211,9 +204,7 @@ export function TagPicker({
       <div className="space-y-3">
         <div className="flex items-center justify-between">
           <Label className="text-sm font-medium">Dostępne kategorie</Label>
-          <span className="text-xs text-muted-foreground">
-            {availableTags.length} tagów
-          </span>
+          <span className="text-xs text-muted-foreground">{availableTags.length} tagów</span>
         </div>
 
         {/* Search */}
@@ -234,16 +225,14 @@ export function TagPicker({
           </div>
         ) : filteredTags.length === 0 ? (
           <div className="text-center py-4 text-muted-foreground">
-            <p className="text-sm">Brak wyników dla "{searchQuery}"</p>
+            <p className="text-sm">Brak wyników dla &quot;{searchQuery}&quot;</p>
           </div>
         ) : (
           <div className="space-y-3">
             {/* Popular Tags */}
             {displayedTags.mainTags.length > 0 && (
               <div className="space-y-2">
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                  Popularne
-                </p>
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Popularne</p>
                 <div className="flex flex-wrap gap-1.5">
                   {displayedTags.mainTags.map((tag) => (
                     <TagButton
@@ -265,9 +254,7 @@ export function TagPicker({
             {displayedTags.otherTags.length > 0 && (
               <div className="space-y-2">
                 {displayedTags.mainTags.length > 0 && (
-                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                    Pozostałe
-                  </p>
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Pozostałe</p>
                 )}
                 <div className="flex flex-wrap gap-1.5">
                   {displayedTags.otherTags.map((tag) => (
@@ -341,16 +328,10 @@ function TagButton({
     <div
       className={cn(
         'group flex items-center gap-0.5 rounded-full transition-all cursor-pointer',
-        isSelected
-          ? isMain
-            ? 'ring-2 ring-primary/30'
-            : 'ring-1 ring-border'
-          : 'hover:ring-1 hover:ring-border/50'
+        isSelected ? (isMain ? 'ring-2 ring-primary/30' : 'ring-1 ring-border') : 'hover:ring-1 hover:ring-border/50'
       )}
       style={{
-        backgroundColor: isSelected
-          ? `${tag.color}15`
-          : `${tag.color}08`,
+        backgroundColor: isSelected ? `${tag.color}15` : `${tag.color}08`,
       }}
     >
       <button
@@ -362,14 +343,9 @@ function TagButton({
         )}
         style={{ color: tag.color }}
       >
-        <span
-          className="w-2 h-2 rounded-full shrink-0"
-          style={{ backgroundColor: tag.color }}
-        />
+        <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: tag.color }} />
         {tag.name}
-        {isSelected && (
-          <span className="text-primary ml-0.5">✓</span>
-        )}
+        {isSelected && <span className="text-primary ml-0.5">✓</span>}
       </button>
 
       {isSelected && (
@@ -388,8 +364,8 @@ function TagButton({
             isMain
               ? 'text-yellow-500 hover:bg-yellow-500/10'
               : canPromote
-              ? 'text-muted-foreground hover:text-yellow-500 hover:bg-yellow-500/10'
-              : 'text-muted-foreground/30 cursor-not-allowed'
+                ? 'text-muted-foreground hover:text-yellow-500 hover:bg-yellow-500/10'
+                : 'text-muted-foreground/30 cursor-not-allowed'
           )}
           title={isMain ? 'Usuń z głównych' : canPromote ? 'Oznacz jako główny' : `Limit ${3} głównych tagów`}
           disabled={!isMain && !canPromote}

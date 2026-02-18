@@ -2,12 +2,52 @@
 
 WAŻNE: Preferuj wnioskowanie oparte na dokumentacji (retrieval-led) zamiast wnioskowania opartego na danych treningowych dla zadań Next.js/React.
 
+## Task Router
+
+Przed rozpoczęciem pracy dopasuj zadanie do tabeli i przeczytaj WSZYSTKIE pasujące guide'y:
+
+| Zadanie                   | Guide                                             |
+| ------------------------- | ------------------------------------------------- |
+| Tworzenie/edycja ćwiczeń  | `src/components/exercises/AGENTS.md`              |
+| Assignment Wizard         | `src/components/assignment/AGENTS.md`             |
+| Praca z pacjentami        | `src/components/patients/AGENTS.md`               |
+| Zapytania/mutacje GraphQL | `src/graphql/AGENTS.md`                           |
+| Komponenty współdzielone  | `src/components/shared/AGENTS.md`                 |
+| Zestawy ćwiczeń           | `src/components/exercise-sets/AGENTS.md`          |
+| Nowa specyfikacja         | `.ai/specs/AGENTS.md`, `.ai/skills/spec-writing/` |
+| Code review               | `.ai/skills/code-review/`                         |
+| Ustawienia/organizacja    | `src/components/settings/AGENTS.md`               |
+
+## Workflow Orchestration
+
+1. **Spec-first**: Wejdź w plan mode dla nietrywialnych zadań (3+ kroki). Sprawdź `.ai/specs/` przed kodowaniem; utwórz SPEC jeśli nie istnieje.
+2. **Task Router**: Dopasuj zadanie do tabeli i przeczytaj odpowiednie guide'y.
+3. **Self-improvement**: Po korekcie zaktualizuj `.ai/lessons.md`.
+4. **Verification**: Uruchom build, sprawdź lint. Zapytaj: "Czy senior developer zaakceptowałby ten kod?"
+5. **Elegance**: Dla nietrywialnych zmian, zatrzymaj się i zapytaj "czy istnieje bardziej eleganckie rozwiązanie?"
+
+## Core Principles
+
+- **Simplicity First**: Każda zmiana tak prosta jak to możliwe. Minimalny wpływ na kod.
+- **No Laziness**: Szukaj root cause. Zero tymczasowych fixów. Standardy senior developera.
+- **Minimal Impact**: Zmiana dotyka tylko to co konieczne. Unikaj wprowadzania błędów.
+
 ## Komendy
 
 - Instalacja: `npm install`
 - Serwer dev: `npm run dev` (HTTPS)
 - Build: `npm run build`
-- Lint: `npm run lint`
+- Lint: `npm run lint`, `npm run lint:fix`
+- Type-check: `npm run type-check`
+- Formatowanie: `npm run format`, `npm run format:check`
+- Walidacja pełna: `npm run validate` (lint + type-check + build)
+- Testy: `npm run test`, `npm run test:run`, `npm run test:coverage`
+
+## Testowanie
+
+- **Logika biznesowa** (filtry, reguły widoczności, walidacja): testy jednostkowe obowiązkowe. Wyciągaj czyste funkcje do helperów i testuj je (Vitest). Zobacz `docs/testing/testing-guidelines.md`.
+- Przed zakończeniem zadania uruchom `npm run test:run` i `npm run lint`; w razie potrzeby `npm run validate`.
+- Przy zmianie warunków lub filtrów: dodać/aktualizować testy dla tej logiki, żeby regresje były wykrywane.
 
 ## Opis projektu
 
@@ -16,16 +56,16 @@ Integracja z fizjo-app (React Native) przez wspólny backend GraphQL (.NET Core)
 
 ## Stack technologiczny
 
-| Warstwa | Technologia |
-|---------|-------------|
-| Framework | Next.js 16 (App Router) |
-| Język | TypeScript 5 (strict mode) |
-| UI | React 19 + Tailwind CSS 4 + shadcn/ui |
-| Dane | Apollo Client 4.0 (GraphQL) |
-| Formularze | react-hook-form + zod |
-| Tabele | TanStack React Table |
-| Autoryzacja | Clerk (NextJS SDK) → Token Exchange → Własny JWT |
-| Backend | .NET Core 9.0 + HotChocolate GraphQL + PostgreSQL |
+| Warstwa     | Technologia                                       |
+| ----------- | ------------------------------------------------- |
+| Framework   | Next.js 16 (App Router)                           |
+| Język       | TypeScript 5 (strict mode)                        |
+| UI          | React 19 + Tailwind CSS 4 + shadcn/ui             |
+| Dane        | Apollo Client 4.0 (GraphQL)                       |
+| Formularze  | react-hook-form + zod                             |
+| Tabele      | TanStack React Table                              |
+| Autoryzacja | Clerk (NextJS SDK) → Token Exchange → Własny JWT  |
+| Backend     | .NET Core 9.0 + HotChocolate GraphQL + PostgreSQL |
 
 ## Struktura projektu
 
@@ -71,7 +111,7 @@ src/
 
 ```typescript
 // ❌ ZAKAZANE: any
-function handleError(error: any) { }
+function handleError(error: any) {}
 
 // ✅ WYMAGANE: unknown + type guard
 function handleError(error: unknown) {
@@ -102,9 +142,9 @@ export function ExerciseCard({ exercise, onEdit }: ExerciseCardProps) {
 
 ```typescript
 // ✅ MUSI być pierwsza linia, przed importami
-"use client";
+'use client';
 
-import { useState } from "react";
+import { useState } from 'react';
 ```
 
 ### GraphQL - useQuery z skip (NIE useLazyQuery)
@@ -112,9 +152,9 @@ import { useState } from "react";
 ```typescript
 // ✅ Poprawnie: useQuery z skip
 const { data, loading } = useQuery(GET_EXERCISES_QUERY, {
-  variables: { organizationId: orgId || "" },
+  variables: { organizationId: orgId || '' },
   skip: !orgId,
-  fetchPolicy: "cache-first",
+  fetchPolicy: 'cache-first',
 });
 
 // ❌ Zakazane: useLazyQuery (deprecated w Apollo 4.0)
@@ -125,15 +165,15 @@ const [fetch] = useLazyQuery(GET_EXERCISES_QUERY);
 
 ```typescript
 const schema = z.object({
-  name: z.string().min(2, "Min 2 znaki"),
-  type: z.enum(["reps", "time", "hold"]),
+  name: z.string().min(2, 'Min 2 znaki'),
+  type: z.enum(['reps', 'time', 'hold']),
 });
 
 type FormValues = z.infer<typeof schema>;
 
 const form = useForm<FormValues>({
   resolver: zodResolver(schema),
-  defaultValues: { name: "", type: "reps" },
+  defaultValues: { name: '', type: 'reps' },
 });
 ```
 
@@ -158,32 +198,32 @@ const name = exercise?.name ?? "";
 
 ```typescript
 // 1. Zewnętrzne biblioteki
-import { useState, useCallback } from "react";
-import { useQuery, useMutation } from "@apollo/client";
+import { useState, useCallback } from 'react';
+import { useQuery, useMutation } from '@apollo/client';
 
 // 2. Komponenty UI (shadcn/ui)
-import { Button } from "@/components/ui/button";
+import { Button } from '@/components/ui/button';
 
 // 3. Komponenty wewnętrzne
-import { ExerciseCard } from "@/components/exercises/ExerciseCard";
+import { ExerciseCard } from '@/components/exercises/ExerciseCard';
 
 // 4. GraphQL
-import { GET_EXERCISES_QUERY } from "@/graphql/queries";
+import { GET_EXERCISES_QUERY } from '@/graphql/queries';
 
 // 5. Utils i typy
-import { cn } from "@/lib/utils";
-import type { Exercise } from "@/types";
+import { cn } from '@/lib/utils';
+import type { Exercise } from '@/types';
 ```
 
 ## Konwencje nazewnictwa
 
-| Typ | Konwencja | Przykład |
-|-----|-----------|----------|
-| Komponenty | PascalCase | `ExerciseCard.tsx` |
-| Utils | camelCase | `dateUtils.ts` |
-| Stałe | UPPER_SNAKE | `MAX_RETRY_COUNT` |
+| Typ               | Konwencja   | Przykład              |
+| ----------------- | ----------- | --------------------- |
+| Komponenty        | PascalCase  | `ExerciseCard.tsx`    |
+| Utils             | camelCase   | `dateUtils.ts`        |
+| Stałe             | UPPER_SNAKE | `MAX_RETRY_COUNT`     |
 | Zapytania GraphQL | UPPER_SNAKE | `GET_EXERCISES_QUERY` |
-| Foldery | kebab-case | `exercise-sets/` |
+| Foldery           | kebab-case  | `exercise-sets/`      |
 
 ## Testowanie - data-testid OBOWIĄZKOWE
 
@@ -277,19 +317,12 @@ Prefiksy modułów: `auth-`, `nav-`, `exercise-`, `set-`, `patient-`, `org-`, `s
 - NIE używaj typu `any` - używaj `unknown`
 - NIE używaj `useLazyQuery` - używaj `useQuery` z `skip`
 
-## Schemat backendu (C# .NET)
+## Schemat backendu i wzorce domenowe
 
-### Exercise (Ćwiczenie)
+Szczegóły przeniesione do modułowych AGENTS.md (Task Router):
 
-`Id, Name, Description, Type ("reps"|"time"), Sets, Reps, Duration, RestSets, RestReps, PreparationTime, ExecutionTime, ExerciseSide ("left"|"right"|"alternating"|"both"|"none"), ImageUrl, Images[], GifUrl, VideoUrl, Notes, MainTags[], AdditionalTags[], Scope, IsActive, IsPublicTemplate`
-
-### ExerciseSet (Zestaw ćwiczeń)
-
-`Id, Name, Description, OrganizationId, IsActive, IsTemplate, Frequency { TimesPerDay, TimesPerWeek, BreakBetweenSets, Monday-Sunday }, ExerciseMappings[], PatientAssignments[]`
-
-### PatientAssignment (Przypisanie pacjenta)
-
-`Id, ExerciseSetId, UserId, AssignedById, Status, StartDate, EndDate, Frequency`
+- **Exercise, parametry, UI**: `src/components/exercises/AGENTS.md`
+- **ExerciseSetMapping, ExerciseSet, PatientAssignment**: `src/components/exercise-sets/AGENTS.md`
 
 ## Dokumentacja
 
@@ -300,6 +333,7 @@ Prefiksy modułów: `auth-`, `nav-`, `exercise-`, `set-`, `patient-`, `org-`, `s
 ## Specyfikacje (.ai/specs/)
 
 Przed implementacją nowych funkcjonalności sprawdź czy istnieje specyfikacja w `.ai/specs/`:
+
 - [SPEC-001 Assignment Wizard](.ai/specs/SPEC-001-2026-02-04-assignment-wizard.md)
 - [SPEC-002 Billing Widget](.ai/specs/SPEC-002-2026-02-04-billing-widget.md)
 
@@ -308,6 +342,7 @@ Zobacz [.ai/specs/README.md](.ai/specs/README.md) dla pełnego indeksu i [.ai/sp
 ## Auto-generowanie specyfikacji
 
 Nawet gdy nie poproszono o aktualizację specyfikacji, agenci powinni:
+
 - Generować lub aktualizować spec przy implementacji znaczących zmian
 - Utrzymywać synchronizację specyfikacji z implementacją
 - Dokumentować decyzje architektoniczne podjęte podczas developmentu

@@ -1,4 +1,4 @@
-import { gql } from "@apollo/client";
+import { gql } from '@apollo/client';
 
 /**
  * GraphQL Queries for Admin Exercise Verification Module
@@ -237,16 +237,8 @@ export const GET_EXERCISE_RELATIONSHIPS_QUERY = gql`
  * @param limit - Max number of candidates
  */
 export const GET_RELATION_CANDIDATES_QUERY = gql`
-  query GetRelationCandidates(
-    $exerciseId: String!
-    $relationType: ExerciseRelationType!
-    $limit: Int
-  ) {
-    relationCandidates(
-      exerciseId: $exerciseId
-      relationType: $relationType
-      limit: $limit
-    ) {
+  query GetRelationCandidates($exerciseId: String!, $relationType: ExerciseRelationType!, $limit: Int) {
+    relationCandidates(exerciseId: $exerciseId, relationType: $relationType, limit: $limit) {
       exerciseId
       relationType
       candidates {

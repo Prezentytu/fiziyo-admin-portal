@@ -54,9 +54,7 @@ export function TakeOverDialog({
   const [isConfirming, setIsConfirming] = useState(false);
 
   const [takeOver, { loading }] = useMutation(TAKE_OVER_PATIENT_MUTATION, {
-    refetchQueries: [
-      { query: GET_ORGANIZATION_PATIENTS_QUERY, variables: { organizationId, filter: 'all' } },
-    ],
+    refetchQueries: [{ query: GET_ORGANIZATION_PATIENTS_QUERY, variables: { organizationId, filter: 'all' } }],
   });
 
   const handleTakeOver = async (confirmed: boolean = false) => {
@@ -122,25 +120,17 @@ export function TakeOverDialog({
             <div className="flex items-center gap-3 p-3 rounded-lg bg-surface border border-border/60">
               <Avatar className="h-10 w-10">
                 <AvatarImage src={patient.image} alt={patientName} />
-                <AvatarFallback className="bg-primary/20 text-primary">
-                  {getInitials(patientName)}
-                </AvatarFallback>
+                <AvatarFallback className="bg-primary/20 text-primary">{getInitials(patientName)}</AvatarFallback>
               </Avatar>
               <div>
                 <span className="font-medium text-foreground block">{patientName}</span>
-                {patient.email && (
-                  <span className="text-xs text-muted-foreground block">{patient.email}</span>
-                )}
+                {patient.email && <span className="text-xs text-muted-foreground block">{patient.email}</span>}
               </div>
             </div>
           )}
           <AlertDialogFooter>
             <AlertDialogCancel>Anuluj</AlertDialogCancel>
-            <Button
-              onClick={() => handleTakeOver(false)}
-              disabled={loading}
-              data-testid="patient-takeover-confirm-btn"
-            >
+            <Button onClick={() => handleTakeOver(false)} disabled={loading} data-testid="patient-takeover-confirm-btn">
               {loading ? 'Przejmowanie...' : 'Przejmij opiekę'}
             </Button>
           </AlertDialogFooter>
@@ -151,7 +141,13 @@ export function TakeOverDialog({
 
   // Confirmation dialog (when patient has existing therapist)
   return (
-    <AlertDialog open={open} onOpenChange={(o) => { onOpenChange(o); if (!o) setIsConfirming(false); }}>
+    <AlertDialog
+      open={open}
+      onOpenChange={(o) => {
+        onOpenChange(o);
+        if (!o) setIsConfirming(false);
+      }}
+    >
       <AlertDialogContent data-testid="patient-takeover-dialog">
         <AlertDialogHeader>
           <AlertDialogTitle className="flex items-center gap-2 text-warning">
@@ -159,8 +155,7 @@ export function TakeOverDialog({
             Uwaga - Pacjent ma już fizjoterapeutę
           </AlertDialogTitle>
           <AlertDialogDescription>
-            Pacjent <strong>{patientName}</strong> jest obecnie pod opieką{' '}
-            <strong>{therapistName}</strong>.
+            Pacjent <strong>{patientName}</strong> jest obecnie pod opieką <strong>{therapistName}</strong>.
           </AlertDialogDescription>
         </AlertDialogHeader>
 
@@ -170,13 +165,9 @@ export function TakeOverDialog({
             <div className="flex flex-col items-center gap-1">
               <Avatar className="h-12 w-12 ring-2 ring-destructive/30">
                 <AvatarImage src={previousTherapist.image} alt={therapistName} />
-                <AvatarFallback className="bg-muted text-muted-foreground">
-                  {getInitials(therapistName)}
-                </AvatarFallback>
+                <AvatarFallback className="bg-muted text-muted-foreground">{getInitials(therapistName)}</AvatarFallback>
               </Avatar>
-              <span className="text-xs text-muted-foreground truncate max-w-[80px]">
-                {therapistName}
-              </span>
+              <span className="text-xs text-muted-foreground truncate max-w-[80px]">{therapistName}</span>
             </div>
           )}
 

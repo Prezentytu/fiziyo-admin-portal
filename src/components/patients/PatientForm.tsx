@@ -14,22 +14,21 @@ import { cn } from '@/lib/utils';
 import { getAvatarGradient, getInitials } from '@/utils/textUtils';
 
 // Schema z walidacją: wymagany phone LUB email
-const patientFormSchema = z.object({
-  firstName: z.string().min(2, 'Imię musi mieć min. 2 znaki'),
-  lastName: z.string().min(2, 'Nazwisko musi mieć min. 2 znaki'),
-  phone: z.string().optional().refine(
-    (val) => !val || val.length === 0 || val.length === 9,
-    'Numer telefonu musi mieć 9 cyfr'
-  ),
-  email: z.string().email('Podaj prawidłowy email').optional().or(z.literal('')),
-  contextLabel: z.string().optional(),
-}).refine(
-  (data) => (data.phone && data.phone.length === 9) || (data.email && data.email.length > 0),
-  {
+const patientFormSchema = z
+  .object({
+    firstName: z.string().min(2, 'Imię musi mieć min. 2 znaki'),
+    lastName: z.string().min(2, 'Nazwisko musi mieć min. 2 znaki'),
+    phone: z
+      .string()
+      .optional()
+      .refine((val) => !val || val.length === 0 || val.length === 9, 'Numer telefonu musi mieć 9 cyfr'),
+    email: z.string().email('Podaj prawidłowy email').optional().or(z.literal('')),
+    contextLabel: z.string().optional(),
+  })
+  .refine((data) => (data.phone && data.phone.length === 9) || (data.email && data.email.length > 0), {
     message: 'Podaj numer telefonu lub email',
     path: ['phone'], // Pokazuje błąd przy polu phone
-  }
-);
+  });
 
 export type PatientFormValues = {
   firstName: string;
@@ -99,7 +98,7 @@ export function PatientForm({
   }, [watchedValues, onValuesChange]);
 
   // Track added tags for visual feedback
-  const [addedTags, setAddedTags] = React.useState<Set<string>>(new Set());
+  const [_addedTags, setAddedTags] = React.useState<Set<string>>(new Set());
 
   const handleAddTag = (tag: string, currentValue: string, onChange: (value: string) => void) => {
     // Check if tag already exists in the value
@@ -114,16 +113,19 @@ export function PatientForm({
     onChange(newValue);
 
     // Add to visual tracking
-    setAddedTags(prev => new Set([...prev, tag]));
+    setAddedTags((prev) => new Set([...prev, tag]));
   };
 
   const handleRemoveTag = (tag: string, currentValue: string, onChange: (value: string) => void) => {
     // Remove tag from value (case insensitive)
-    const parts = currentValue.split(',').map(p => p.trim()).filter(p => p.toLowerCase() !== tag.toLowerCase());
+    const parts = currentValue
+      .split(',')
+      .map((p) => p.trim())
+      .filter((p) => p.toLowerCase() !== tag.toLowerCase());
     onChange(parts.join(', '));
 
     // Remove from visual tracking
-    setAddedTags(prev => {
+    setAddedTags((prev) => {
       const next = new Set(prev);
       next.delete(tag);
       return next;
@@ -161,19 +163,16 @@ export function PatientForm({
             <div className="flex justify-center sm:justify-start shrink-0 sm:w-24 sm:pt-2">
               <div
                 className={cn(
-                  "flex items-center justify-center rounded-full text-white font-bold text-2xl sm:text-3xl",
-                  "w-20 h-20 sm:w-24 sm:h-24",
-                  "shadow-lg transition-all duration-300 ease-out",
-                  "ring-4 ring-border/20",
-                  initials !== '?' && "scale-100 opacity-100",
-                  initials === '?' && "scale-95 opacity-60"
+                  'flex items-center justify-center rounded-full text-white font-bold text-2xl sm:text-3xl',
+                  'w-20 h-20 sm:w-24 sm:h-24',
+                  'shadow-lg transition-all duration-300 ease-out',
+                  'ring-4 ring-border/20',
+                  initials !== '?' && 'scale-100 opacity-100',
+                  initials === '?' && 'scale-95 opacity-60'
                 )}
                 style={{ background: gradient }}
               >
-                <span
-                  key={initials}
-                  className="animate-in fade-in zoom-in-95 duration-200"
-                >
+                <span key={initials} className="animate-in fade-in zoom-in-95 duration-200">
                   {initials}
                 </span>
               </div>
@@ -181,52 +180,52 @@ export function PatientForm({
 
             {/* Name Fields - Takes remaining space */}
             <div className="flex-1 min-w-0 grid gap-4 sm:grid-cols-2">
-            <FormField
-              control={form.control}
-              name="firstName"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="flex items-center gap-1.5 text-sm">
-                    <User className="h-3.5 w-3.5 text-muted-foreground" />
-                    Imię <span className="text-destructive">*</span>
-                  </FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="Jan"
-                      autoFocus
-                      autoComplete="given-name"
-                      className="h-11 text-base transition-all duration-200 focus:ring-2 focus:ring-primary/20 focus:border-primary"
-                      data-testid="patient-form-firstname-input"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+              <FormField
+                control={form.control}
+                name="firstName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="flex items-center gap-1.5 text-sm">
+                      <User className="h-3.5 w-3.5 text-muted-foreground" />
+                      Imię <span className="text-destructive">*</span>
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="Jan"
+                        autoFocus
+                        autoComplete="given-name"
+                        className="h-11 text-base transition-all duration-200 focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                        data-testid="patient-form-firstname-input"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-            <FormField
-              control={form.control}
-              name="lastName"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="flex items-center gap-1.5 text-sm">
-                    <User className="h-3.5 w-3.5 text-muted-foreground" />
-                    Nazwisko <span className="text-destructive">*</span>
-                  </FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="Kowalski"
-                      autoComplete="family-name"
-                      className="h-11 text-base transition-all duration-200 focus:ring-2 focus:ring-primary/20 focus:border-primary"
-                      data-testid="patient-form-lastname-input"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+              <FormField
+                control={form.control}
+                name="lastName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="flex items-center gap-1.5 text-sm">
+                      <User className="h-3.5 w-3.5 text-muted-foreground" />
+                      Nazwisko <span className="text-destructive">*</span>
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="Kowalski"
+                        autoComplete="family-name"
+                        className="h-11 text-base transition-all duration-200 focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                        data-testid="patient-form-lastname-input"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </div>
           </div>
 
@@ -242,9 +241,7 @@ export function PatientForm({
         <div className="space-y-3">
           <div className="flex items-center gap-2">
             <div className="h-px flex-1 bg-border" />
-            <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
-              Kontakt
-            </span>
+            <span className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Kontakt</span>
             <div className="h-px flex-1 bg-border" />
           </div>
           <p className="text-sm text-muted-foreground text-center">
@@ -340,16 +337,14 @@ export function PatientForm({
                               }
                             }}
                             className={cn(
-                              "inline-flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-full transition-all duration-200",
+                              'inline-flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-full transition-all duration-200',
                               isAdded
-                                ? "bg-primary text-primary-foreground shadow-sm shadow-primary/20"
-                                : "bg-surface-light text-muted-foreground hover:bg-primary/10 hover:text-primary"
+                                ? 'bg-primary text-primary-foreground shadow-sm shadow-primary/20'
+                                : 'bg-surface-light text-muted-foreground hover:bg-primary/10 hover:text-primary'
                             )}
                           >
                             {tag}
-                            {isAdded && (
-                              <X className="h-3 w-3 ml-0.5" />
-                            )}
+                            {isAdded && <X className="h-3 w-3 ml-0.5" />}
                           </button>
                         );
                       })}
@@ -365,7 +360,13 @@ export function PatientForm({
         {/* Actions */}
         <div className="flex justify-end gap-3 pt-4 border-t border-border">
           {onCancel && (
-            <Button type="button" variant="outline" onClick={onCancel} disabled={isLoading} data-testid="patient-form-cancel-btn">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onCancel}
+              disabled={isLoading}
+              data-testid="patient-form-cancel-btn"
+            >
               Anuluj
             </Button>
           )}

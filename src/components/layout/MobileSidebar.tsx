@@ -218,9 +218,7 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
                       )}
 
                       {/* AI accent in expanded */}
-                      {item.hasAiAccent && !active && (
-                        <Sparkles className="h-3.5 w-3.5 text-primary opacity-60" />
-                      )}
+                      {item.hasAiAccent && !active && <Sparkles className="h-3.5 w-3.5 text-primary opacity-60" />}
                     </Link>
                   );
                 })}

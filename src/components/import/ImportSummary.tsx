@@ -1,15 +1,6 @@
 'use client';
 
-import {
-  CheckCircle,
-  XCircle,
-  Dumbbell,
-  Layers,
-  FileText,
-  Link2,
-  RotateCcw,
-  AlertTriangle,
-} from 'lucide-react';
+import { CheckCircle, XCircle, Dumbbell, Layers, FileText, Link2, RotateCcw, AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -35,7 +26,7 @@ export function ImportSummary({
   onReset,
   notesSkippedDueToNoPatient = false,
   skippedNotesCount = 0,
-  className
+  className,
 }: ImportSummaryProps) {
   if (!result) {
     return null;
@@ -50,9 +41,7 @@ export function ImportSummary({
         <div
           className={cn(
             'mb-6 flex h-24 w-24 items-center justify-center rounded-full',
-            isSuccess
-              ? 'bg-primary/20'
-              : 'bg-destructive/20'
+            isSuccess ? 'bg-primary/20' : 'bg-destructive/20'
           )}
         >
           {isSuccess ? (
@@ -66,18 +55,14 @@ export function ImportSummary({
           {isSuccess ? 'Import zakończony pomyślnie!' : 'Wystąpił błąd'}
         </h2>
 
-        <p className="text-muted-foreground max-w-md">
-          {result.message}
-        </p>
+        <p className="text-muted-foreground max-w-md">{result.message}</p>
       </div>
 
       {/* Lista wyników - prosta, czytelna */}
       {isSuccess && (
         <Card className="max-w-lg mx-auto">
           <CardContent className="p-6">
-            <h3 className="text-lg font-semibold text-foreground mb-4">
-              Co zostało zaimportowane:
-            </h3>
+            <h3 className="text-lg font-semibold text-foreground mb-4">Co zostało zaimportowane:</h3>
 
             <ul className="space-y-3">
               {result.exercisesCreated > 0 && (
@@ -108,7 +93,8 @@ export function ImportSummary({
                     <Layers className="h-5 w-5 text-purple-500" />
                   </div>
                   <span className="text-base">
-                    Utworzono <strong>{result.exerciseSetsCreated}</strong> {result.exerciseSetsCreated === 1 ? 'zestaw' : 'zestawy'}
+                    Utworzono <strong>{result.exerciseSetsCreated}</strong>{' '}
+                    {result.exerciseSetsCreated === 1 ? 'zestaw' : 'zestawy'}
                   </span>
                 </li>
               )}
@@ -119,20 +105,19 @@ export function ImportSummary({
                     <FileText className="h-5 w-5 text-orange-500" />
                   </div>
                   <span className="text-base">
-                    Zapisano <strong>{result.clinicalNotesCreated}</strong> {result.clinicalNotesCreated === 1 ? 'notatkę' : 'notatki'}
+                    Zapisano <strong>{result.clinicalNotesCreated}</strong>{' '}
+                    {result.clinicalNotesCreated === 1 ? 'notatkę' : 'notatki'}
                   </span>
                 </li>
               )}
 
               {/* Gdy nic nie zaimportowano */}
               {result.exercisesCreated === 0 &&
-               result.exercisesReused === 0 &&
-               result.exerciseSetsCreated === 0 &&
-               result.clinicalNotesCreated === 0 && (
-                <li className="text-muted-foreground text-center py-4">
-                  Nie zaimportowano żadnych danych
-                </li>
-              )}
+                result.exercisesReused === 0 &&
+                result.exerciseSetsCreated === 0 &&
+                result.clinicalNotesCreated === 0 && (
+                  <li className="text-muted-foreground text-center py-4">Nie zaimportowano żadnych danych</li>
+                )}
             </ul>
           </CardContent>
         </Card>
@@ -148,8 +133,8 @@ export function ImportSummary({
                 {skippedNotesCount} {skippedNotesCount === 1 ? 'notatka pominięta' : 'notatki pominięte'}
               </p>
               <p className="text-sm text-muted-foreground mt-1">
-                Notatki nie zostały zaimportowane, ponieważ nie wybrano pacjenta.
-                Następnym razem wybierz pacjenta, aby zaimportować również notatki.
+                Notatki nie zostały zaimportowane, ponieważ nie wybrano pacjenta. Następnym razem wybierz pacjenta, aby
+                zaimportować również notatki.
               </p>
             </div>
           </CardContent>
@@ -160,9 +145,7 @@ export function ImportSummary({
       {result.errors.length > 0 && (
         <Card className="max-w-lg mx-auto border-destructive/50 bg-destructive/5">
           <CardContent className="p-5">
-            <h3 className="font-medium text-destructive mb-3">
-              Wystąpiły błędy:
-            </h3>
+            <h3 className="font-medium text-destructive mb-3">Wystąpiły błędy:</h3>
             <ul className="space-y-2">
               {result.errors.map((error, index) => (
                 <li key={index} className="text-sm text-destructive/80 flex items-start gap-2">
@@ -195,11 +178,7 @@ export function ImportSummary({
           </Link>
         )}
 
-        <Button
-          variant="ghost"
-          onClick={onReset}
-          className="gap-2 text-muted-foreground hover:text-foreground"
-        >
+        <Button variant="ghost" onClick={onReset} className="gap-2 text-muted-foreground hover:text-foreground">
           <RotateCcw className="h-4 w-4" />
           Importuj kolejny dokument
         </Button>

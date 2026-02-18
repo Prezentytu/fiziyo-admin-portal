@@ -1,15 +1,15 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { Share2, Copy, Check, MessageCircle } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { useState } from 'react';
+import { Share2, Copy, Check, MessageCircle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { toast } from "sonner";
+} from '@/components/ui/dropdown-menu';
+import { toast } from 'sonner';
 
 // ========================================
 // Types
@@ -18,7 +18,7 @@ import { toast } from "sonner";
 interface ShareInviteButtonProps {
   url: string;
   patientName?: string;
-  variant?: "default" | "icon";
+  variant?: 'default' | 'icon';
   className?: string;
 }
 
@@ -30,12 +30,7 @@ interface ShareInviteButtonProps {
  * Share button with Native Share API support
  * Falls back to copy-to-clipboard on desktop
  */
-export function ShareInviteButton({
-  url,
-  patientName,
-  variant = "icon",
-  className,
-}: ShareInviteButtonProps) {
+export function ShareInviteButton({ url, patientName, variant = 'icon', className }: ShareInviteButtonProps) {
   const [copied, setCopied] = useState(false);
 
   // Prepare share message
@@ -44,14 +39,14 @@ export function ShareInviteButton({
     : `Cześć! Tu Twój fizjoterapeuta. Przesyłam Twój plan ćwiczeń. Pierwszy miesiąc masz w cenie wizyty!`;
 
   const shareData = {
-    title: "Plan ćwiczeń od FiziYo",
+    title: 'Plan ćwiczeń od FiziYo',
     text: shareText,
     url: url,
   };
 
   // Check if Native Share API is available
   const canShare =
-    typeof navigator !== "undefined" &&
+    typeof navigator !== 'undefined' &&
     'share' in navigator &&
     'canShare' in navigator &&
     navigator.canShare(shareData);
@@ -60,11 +55,11 @@ export function ShareInviteButton({
   const handleNativeShare = async () => {
     try {
       await navigator.share(shareData);
-      toast.success("Udostępniono!");
+      toast.success('Udostępniono!');
     } catch (error) {
       // User cancelled or error occurred
-      if ((error as Error).name !== "AbortError") {
-        toast.error("Nie udało się udostępnić");
+      if ((error as Error).name !== 'AbortError') {
+        toast.error('Nie udało się udostępnić');
       }
     }
   };
@@ -74,10 +69,10 @@ export function ShareInviteButton({
     try {
       await navigator.clipboard.writeText(url);
       setCopied(true);
-      toast.success("Link skopiowany do schowka!");
+      toast.success('Link skopiowany do schowka!');
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      toast.error("Nie udało się skopiować");
+      toast.error('Nie udało się skopiować');
     }
   };
 
@@ -87,16 +82,16 @@ export function ShareInviteButton({
       const fullMessage = `${shareText}\n\n${url}`;
       await navigator.clipboard.writeText(fullMessage);
       setCopied(true);
-      toast.success("Wiadomość skopiowana do schowka!");
+      toast.success('Wiadomość skopiowana do schowka!');
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      toast.error("Nie udało się skopiować");
+      toast.error('Nie udało się skopiować');
     }
   };
 
   // If native share is available, use it directly
   if (canShare) {
-    if (variant === "icon") {
+    if (variant === 'icon') {
       return (
         <Button
           variant="ghost"
@@ -129,32 +124,13 @@ export function ShareInviteButton({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        {variant === "icon" ? (
-          <Button
-            variant="ghost"
-            size="icon"
-            className={className}
-            title="Udostępnij"
-            data-testid="share-invite-btn"
-          >
-            {copied ? (
-              <Check className="h-4 w-4 text-emerald-500" />
-            ) : (
-              <Share2 className="h-4 w-4" />
-            )}
+        {variant === 'icon' ? (
+          <Button variant="ghost" size="icon" className={className} title="Udostępnij" data-testid="share-invite-btn">
+            {copied ? <Check className="h-4 w-4 text-emerald-500" /> : <Share2 className="h-4 w-4" />}
           </Button>
         ) : (
-          <Button
-            variant="outline"
-            size="sm"
-            className={className}
-            data-testid="share-invite-btn"
-          >
-            {copied ? (
-              <Check className="h-4 w-4 mr-2 text-emerald-500" />
-            ) : (
-              <Share2 className="h-4 w-4 mr-2" />
-            )}
+          <Button variant="outline" size="sm" className={className} data-testid="share-invite-btn">
+            {copied ? <Check className="h-4 w-4 mr-2 text-emerald-500" /> : <Share2 className="h-4 w-4 mr-2" />}
             Udostępnij
           </Button>
         )}

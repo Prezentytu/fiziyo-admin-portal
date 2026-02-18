@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import { Users, MapPin, UserCheck, Sparkles } from "lucide-react";
-import { StatsCard } from "@/components/shared/StatsCard";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Card, CardContent } from "@/components/ui/card";
+import { Users, MapPin, UserCheck, Sparkles } from 'lucide-react';
+import { StatsCard } from '@/components/shared/StatsCard';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Card, CardContent } from '@/components/ui/card';
 
 interface SubscriptionLimits {
   maxExercises?: number;
@@ -56,13 +56,10 @@ export function OrganizationQuickStats({
   }
 
   // Calculate usage percentages
-  const patientsUsage = limits?.maxPatients && currentUsage?.patients
-    ? Math.round((currentUsage.patients / limits.maxPatients) * 100)
-    : null;
-
-  const therapistsUsage = limits?.maxTherapists && currentUsage?.therapists
-    ? Math.round((currentUsage.therapists / limits.maxTherapists) * 100)
-    : null;
+  const patientsUsage =
+    limits?.maxPatients && currentUsage?.patients
+      ? Math.round((currentUsage.patients / limits.maxPatients) * 100)
+      : null;
 
   return (
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -72,11 +69,7 @@ export function OrganizationQuickStats({
         value={membersCount}
         icon={Users}
         variant="primary"
-        description={
-          limits?.maxTherapists
-            ? `Limit: ${limits.maxTherapists} terapeutów`
-            : undefined
-        }
+        description={limits?.maxTherapists ? `Limit: ${limits.maxTherapists} terapeutów` : undefined}
       />
 
       {/* Clinics */}
@@ -85,11 +78,7 @@ export function OrganizationQuickStats({
         value={clinicsCount}
         icon={MapPin}
         variant="secondary"
-        description={
-          limits?.maxClinics
-            ? `Limit: ${limits.maxClinics} gabinetów`
-            : undefined
-        }
+        description={limits?.maxClinics ? `Limit: ${limits.maxClinics} gabinetów` : undefined}
       />
 
       {/* Patients */}
@@ -98,24 +87,16 @@ export function OrganizationQuickStats({
         value={currentUsage?.patients ?? 0}
         icon={UserCheck}
         variant="info"
-        description={
-          limits?.maxPatients
-            ? `${patientsUsage}% z ${limits.maxPatients}`
-            : undefined
-        }
+        description={limits?.maxPatients ? `${patientsUsage}% z ${limits.maxPatients}` : undefined}
       />
 
       {/* Plan */}
       <StatsCard
         title="Plan subskrypcji"
-        value={subscriptionPlan || "Free"}
+        value={subscriptionPlan || 'Free'}
         icon={Sparkles}
         variant="warning"
-        description={
-          limits?.maxExercises
-            ? `${limits.maxExercises} ćwiczeń dostępnych`
-            : undefined
-        }
+        description={limits?.maxExercises ? `${limits.maxExercises} ćwiczeń dostępnych` : undefined}
         href="/subscription"
       />
     </div>

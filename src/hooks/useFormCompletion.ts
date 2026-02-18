@@ -84,26 +84,18 @@ const PUBLISH_THRESHOLD = 100; // Everything filled = can publish
 export function useFormCompletion(fields: FieldConfig[]): CompletionResult {
   return useMemo(() => {
     // Calculate percentage based on filled fields and their weights
-    const filledWeight = fields
-      .filter(f => f.isFilled)
-      .reduce((sum, f) => sum + f.weight, 0);
+    const filledWeight = fields.filter((f) => f.isFilled).reduce((sum, f) => sum + f.weight, 0);
 
     const percentage = Math.min(100, Math.max(0, Math.round(filledWeight)));
 
     // Group missing fields by priority
-    const missingFields = fields.filter(f => !f.isFilled);
+    const missingFields = fields.filter((f) => !f.isFilled);
 
-    const criticalMissing = missingFields
-      .filter(f => f.priority === 'critical')
-      .map(f => f.label);
+    const criticalMissing = missingFields.filter((f) => f.priority === 'critical').map((f) => f.label);
 
-    const recommendedMissing = missingFields
-      .filter(f => f.priority === 'recommended')
-      .map(f => f.label);
+    const recommendedMissing = missingFields.filter((f) => f.priority === 'recommended').map((f) => f.label);
 
-    const optionalMissing = missingFields
-      .filter(f => f.priority === 'optional')
-      .map(f => f.label);
+    const optionalMissing = missingFields.filter((f) => f.priority === 'optional').map((f) => f.label);
 
     // Draft requires critical fields (name = 40%)
     const canSaveDraft = percentage >= DRAFT_THRESHOLD && criticalMissing.length === 0;

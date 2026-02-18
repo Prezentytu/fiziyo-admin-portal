@@ -37,10 +37,10 @@ const LIMIT_ERROR_CODES = [
 ] as const;
 
 const codeToLimitType: Record<string, LimitType> = {
-  'THERAPIST_LIMIT_REACHED': 'therapists',
-  'PATIENT_LIMIT_REACHED': 'patients',
-  'EXERCISE_LIMIT_REACHED': 'exercises',
-  'CLINIC_LIMIT_REACHED': 'clinics',
+  THERAPIST_LIMIT_REACHED: 'therapists',
+  PATIENT_LIMIT_REACHED: 'patients',
+  EXERCISE_LIMIT_REACHED: 'exercises',
+  CLINIC_LIMIT_REACHED: 'clinics',
 };
 
 // ========================================
@@ -69,7 +69,7 @@ export function useLimitError() {
     const graphQLError = apolloError.graphQLErrors.find((e) => {
       const extensions = e.extensions as GraphQLErrorExtensions | undefined;
       const code = extensions?.code;
-      return code && LIMIT_ERROR_CODES.includes(code as typeof LIMIT_ERROR_CODES[number]);
+      return code && LIMIT_ERROR_CODES.includes(code as (typeof LIMIT_ERROR_CODES)[number]);
     });
 
     if (!graphQLError) {
@@ -108,20 +108,4 @@ export function useLimitError() {
     handleError,
     clearError,
   };
-}
-
-/**
- * Helper do sprawdzania czy error jest błędem limitu bez state
- */
-export function isLimitError(error: unknown): boolean {
-  const apolloError = error as ApolloErrorLike;
-  if (!apolloError?.graphQLErrors || !Array.isArray(apolloError.graphQLErrors)) {
-    return false;
-  }
-
-  return apolloError.graphQLErrors.some((e) => {
-    const extensions = e.extensions as GraphQLErrorExtensions | undefined;
-    const code = extensions?.code;
-    return code && LIMIT_ERROR_CODES.includes(code as typeof LIMIT_ERROR_CODES[number]);
-  });
 }

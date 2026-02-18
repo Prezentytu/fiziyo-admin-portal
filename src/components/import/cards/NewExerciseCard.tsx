@@ -7,10 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { ExerciseActionSelect } from '../ExerciseActionSelect';
 import { translateExerciseTypeShort } from '@/components/pdf/polishUtils';
-import type {
-  ExtractedExercise,
-  ExerciseDecision,
-} from '@/types/import.types';
+import type { ExtractedExercise, ExerciseDecision } from '@/types/import.types';
 
 interface NewExerciseCardProps {
   /** The extracted exercise from PDF */
@@ -28,16 +25,9 @@ interface NewExerciseCardProps {
  * Features inline edit for name (click to edit)
  * Default action: "Utwórz jako nowe"
  */
-export function NewExerciseCard({
-  exercise,
-  decision,
-  onDecisionChange,
-  className,
-}: NewExerciseCardProps) {
+export function NewExerciseCard({ exercise, decision, onDecisionChange, className }: NewExerciseCardProps) {
   const [isEditingName, setIsEditingName] = useState(false);
-  const [editedName, setEditedName] = useState(
-    decision.editedData?.name || exercise.name
-  );
+  const [editedName, setEditedName] = useState(decision.editedData?.name || exercise.name);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const isSkipped = decision.action === 'skip';
@@ -71,10 +61,7 @@ export function NewExerciseCard({
     }
   };
 
-  const handleActionChange = (
-    action: 'create' | 'reuse' | 'skip',
-    reuseExerciseId?: string
-  ) => {
+  const handleActionChange = (action: 'create' | 'reuse' | 'skip', reuseExerciseId?: string) => {
     onDecisionChange({
       action,
       reuseExerciseId,
@@ -104,12 +91,7 @@ export function NewExerciseCard({
               isSkipped ? 'bg-muted' : 'bg-blue-500/20'
             )}
           >
-            <Plus
-              className={cn(
-                'h-5 w-5',
-                isSkipped ? 'text-muted-foreground' : 'text-blue-500'
-              )}
-            />
+            <Plus className={cn('h-5 w-5', isSkipped ? 'text-muted-foreground' : 'text-blue-500')} />
           </div>
 
           {/* Title - inline editable */}
@@ -136,9 +118,7 @@ export function NewExerciseCard({
                 title="Kliknij, aby edytować nazwę"
                 data-testid={`import-new-card-${exercise.tempId}-name-btn`}
               >
-                <h3 className="text-lg font-semibold text-foreground truncate">
-                  {displayName}
-                </h3>
+                <h3 className="text-lg font-semibold text-foreground truncate">{displayName}</h3>
                 <Pencil className="h-3.5 w-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
               </button>
             )}
@@ -154,11 +134,7 @@ export function NewExerciseCard({
                     : 'bg-primary/20 text-primary border-0'
                 )}
               >
-                {exercise.type === 'time' ? (
-                  <Clock className="h-3 w-3 mr-1" />
-                ) : (
-                  <Dumbbell className="h-3 w-3 mr-1" />
-                )}
+                {exercise.type === 'time' ? <Clock className="h-3 w-3 mr-1" /> : <Dumbbell className="h-3 w-3 mr-1" />}
                 {translateExerciseTypeShort(exercise.type)}
               </Badge>
             </div>
@@ -189,19 +165,13 @@ export function NewExerciseCard({
 
         {/* Description if present */}
         {exercise.description && (
-          <p className="mt-3 text-sm text-muted-foreground line-clamp-2">
-            {exercise.description}
-          </p>
+          <p className="mt-3 text-sm text-muted-foreground line-clamp-2">{exercise.description}</p>
         )}
       </div>
 
       {/* Footer with action select */}
       <div className="border-t border-border/40 px-4 py-3">
-        <ExerciseActionSelect
-          decision={decision}
-          onActionChange={handleActionChange}
-          className="w-full"
-        />
+        <ExerciseActionSelect decision={decision} onActionChange={handleActionChange} className="w-full" />
       </div>
     </div>
   );

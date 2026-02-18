@@ -1,20 +1,16 @@
-"use client";
+'use client';
 
-import Link from "next/link";
-import { LogIn, UserPlus } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import Link from 'next/link';
+import { LogIn, UserPlus } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 export default function AuthLandingPage() {
   return (
     <div className="space-y-8">
       {/* Header */}
       <div className="space-y-2 text-center lg:text-left">
-        <h1 className="text-3xl font-bold tracking-tight text-foreground">
-          Witaj w FiziYo
-        </h1>
-        <p className="text-muted-foreground">
-          Panel administracyjny dla fizjoterapeutów i właścicieli gabinetów
-        </p>
+        <h1 className="text-3xl font-bold tracking-tight text-foreground">Witaj w FiziYo</h1>
+        <p className="text-muted-foreground">Panel administracyjny dla fizjoterapeutów i właścicieli gabinetów</p>
       </div>
 
       {/* Buttons */}
@@ -48,18 +44,18 @@ export default function AuthLandingPage() {
       {/* Info */}
       <div className="rounded-xl border border-border bg-surface p-4">
         <p className="text-sm text-muted-foreground">
-          <strong className="text-foreground">Dla fizjoterapeutów:</strong>{" "}
-          Twórz ćwiczenia, zarządzaj pacjentami i monitoruj postępy terapii.
+          <strong className="text-foreground">Dla fizjoterapeutów:</strong> Twórz ćwiczenia, zarządzaj pacjentami i
+          monitoruj postępy terapii.
         </p>
       </div>
 
       {/* Terms */}
       <p className="text-center text-xs text-muted-foreground">
-        Kontynuując, akceptujesz nasze{" "}
+        Kontynuując, akceptujesz nasze{' '}
         <Link href="/terms" className="text-primary hover:underline">
           Warunki użytkowania
-        </Link>{" "}
-        oraz{" "}
+        </Link>{' '}
+        oraz{' '}
         <Link href="/privacy" className="text-primary hover:underline">
           Politykę prywatności
         </Link>
@@ -67,5 +63,3 @@ export default function AuthLandingPage() {
     </div>
   );
 }
-
-

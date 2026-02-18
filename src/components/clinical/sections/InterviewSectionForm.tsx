@@ -14,23 +14,17 @@ interface InterviewSectionFormProps {
   disabled?: boolean;
 }
 
-export function InterviewSectionForm({
-  data,
-  onChange,
-  disabled = false,
-}: InterviewSectionFormProps) {
-  const updateField = <K extends keyof InterviewSection>(
-    field: K,
-    value: InterviewSection[K]
-  ) => {
+export function InterviewSectionForm({ data, onChange, disabled = false }: InterviewSectionFormProps) {
+  const updateField = <K extends keyof InterviewSection>(field: K, value: InterviewSection[K]) => {
     onChange({ ...data, [field]: value });
   };
 
-  const toggleArrayItem = (field: 'painLocation' | 'painCharacter' | 'aggravatingFactors' | 'relievingFactors', item: string) => {
+  const toggleArrayItem = (
+    field: 'painLocation' | 'painCharacter' | 'aggravatingFactors' | 'relievingFactors',
+    item: string
+  ) => {
     const currentArray = data[field] || [];
-    const newArray = currentArray.includes(item)
-      ? currentArray.filter((i) => i !== item)
-      : [...currentArray, item];
+    const newArray = currentArray.includes(item) ? currentArray.filter((i) => i !== item) : [...currentArray, item];
     updateField(field, newArray);
   };
 
@@ -49,9 +43,7 @@ export function InterviewSectionForm({
           className="min-h-[100px] text-base"
           disabled={disabled}
         />
-        <FormHint>
-          Opisz główny powód wizyty pacjenta - to najważniejsze pole dokumentacji
-        </FormHint>
+        <FormHint>Opisz główny powód wizyty pacjenta - to najważniejsze pole dokumentacji</FormHint>
         <QuickPhrases
           phrases={QUICK_PHRASES.mainComplaint}
           onSelect={(phrase) => updateField('mainComplaint', phrase)}
@@ -206,4 +198,3 @@ export function InterviewSectionForm({
     </div>
   );
 }
-

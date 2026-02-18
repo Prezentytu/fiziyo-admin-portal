@@ -1,19 +1,19 @@
-"use client";
+'use client';
 
-import { cn } from "@/lib/utils";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Plus, Minus } from "lucide-react";
+import { cn } from '@/lib/utils';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Plus, Minus } from 'lucide-react';
 
 const DAYS = [
-  { key: "monday", label: "Pn", fullLabel: "Poniedziałek" },
-  { key: "tuesday", label: "Wt", fullLabel: "Wtorek" },
-  { key: "wednesday", label: "Śr", fullLabel: "Środa" },
-  { key: "thursday", label: "Cz", fullLabel: "Czwartek" },
-  { key: "friday", label: "Pt", fullLabel: "Piątek" },
-  { key: "saturday", label: "So", fullLabel: "Sobota" },
-  { key: "sunday", label: "Nd", fullLabel: "Niedziela" },
+  { key: 'monday', label: 'Pn', fullLabel: 'Poniedziałek' },
+  { key: 'tuesday', label: 'Wt', fullLabel: 'Wtorek' },
+  { key: 'wednesday', label: 'Śr', fullLabel: 'Środa' },
+  { key: 'thursday', label: 'Cz', fullLabel: 'Czwartek' },
+  { key: 'friday', label: 'Pt', fullLabel: 'Piątek' },
+  { key: 'saturday', label: 'So', fullLabel: 'Sobota' },
+  { key: 'sunday', label: 'Nd', fullLabel: 'Niedziela' },
 ] as const;
 
 export interface FrequencyValue {
@@ -34,20 +34,14 @@ interface FrequencyPickerProps {
   className?: string;
 }
 
-export function FrequencyPicker({
-  value,
-  onChange,
-  className,
-}: FrequencyPickerProps) {
+export function FrequencyPicker({ value, onChange, className }: FrequencyPickerProps) {
   const toggleDay = (day: keyof FrequencyValue) => {
-    if (typeof value[day] === "boolean") {
+    if (typeof value[day] === 'boolean') {
       onChange({ ...value, [day]: !value[day] });
     }
   };
 
-  const selectedDaysCount = DAYS.filter(
-    (d) => value[d.key as keyof FrequencyValue]
-  ).length;
+  const selectedDaysCount = DAYS.filter((d) => value[d.key as keyof FrequencyValue]).length;
 
   const selectAllDays = () => {
     onChange({
@@ -89,25 +83,17 @@ export function FrequencyPicker({
   };
 
   return (
-    <div className={cn("space-y-5", className)} data-testid="set-frequency-picker">
+    <div className={cn('space-y-5', className)} data-testid="set-frequency-picker">
       {/* Days of week */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
           <Label className="text-sm font-medium">Dni tygodnia</Label>
           <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={selectAllDays}
-              className="text-xs text-primary hover:underline"
-            >
+            <button type="button" onClick={selectAllDays} className="text-xs text-primary hover:underline">
               Wszystkie
             </button>
             <span className="text-muted-foreground">·</span>
-            <button
-              type="button"
-              onClick={selectWeekdays}
-              className="text-xs text-primary hover:underline"
-            >
+            <button type="button" onClick={selectWeekdays} className="text-xs text-primary hover:underline">
               Pn-Pt
             </button>
             <span className="text-muted-foreground">·</span>
@@ -129,10 +115,10 @@ export function FrequencyPicker({
                 type="button"
                 onClick={() => toggleDay(day.key as keyof FrequencyValue)}
                 className={cn(
-                  "flex h-12 w-12 items-center justify-center rounded-xl text-sm font-semibold transition-all duration-200",
+                  'flex h-12 w-12 items-center justify-center rounded-xl text-sm font-semibold transition-all duration-200',
                   isSelected
-                    ? "bg-primary text-primary-foreground shadow-lg shadow-primary/30 scale-105"
-                    : "bg-surface-light text-muted-foreground hover:bg-surface hover:text-foreground border border-transparent hover:border-border/50"
+                    ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/30 scale-105'
+                    : 'bg-surface-light text-muted-foreground hover:bg-surface hover:text-foreground border border-transparent hover:border-border/50'
                 )}
                 title={day.fullLabel}
                 data-testid={`set-frequency-day-${day.key}`}
@@ -143,7 +129,7 @@ export function FrequencyPicker({
           })}
         </div>
         <p className="text-xs text-muted-foreground">
-          Wybrano: {selectedDaysCount} {selectedDaysCount === 1 ? "dzień" : "dni"}
+          Wybrano: {selectedDaysCount} {selectedDaysCount === 1 ? 'dzień' : 'dni'}
         </p>
       </div>
 
@@ -200,9 +186,7 @@ export function FrequencyPicker({
               <Plus className="h-4 w-4" />
             </Button>
           </div>
-          <p className="text-xs text-muted-foreground">
-            Liczba wykonań zestawu dziennie
-          </p>
+          <p className="text-xs text-muted-foreground">Liczba wykonań zestawu dziennie</p>
         </div>
 
         <div className="space-y-2">
@@ -256,9 +240,7 @@ export function FrequencyPicker({
               <Plus className="h-4 w-4" />
             </Button>
           </div>
-          <p className="text-xs text-muted-foreground">
-            Minimalny odstęp między sesjami
-          </p>
+          <p className="text-xs text-muted-foreground">Minimalny odstęp między sesjami</p>
         </div>
       </div>
     </div>

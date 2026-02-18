@@ -1,21 +1,21 @@
-"use client";
+'use client';
 
-import { useState, useMemo } from "react";
-import { Pencil, Trash2, Dumbbell, Copy, Sparkles, Send, MoreVertical, Link as LinkIcon, Clock } from "lucide-react";
-import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { useState, useMemo } from 'react';
+import { Pencil, Trash2, Dumbbell, Copy, Sparkles, Send, MoreVertical, Link as LinkIcon, Clock } from 'lucide-react';
+import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import {
   DropdownMenu,
   DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
-} from "@/components/ui/dropdown-menu";
-import { cn } from "@/lib/utils";
-import { ImagePlaceholder } from "@/components/shared/ImagePlaceholder";
-import { getMediaUrl } from "@/utils/mediaUrl";
-import type { ExerciseTag } from "@/types/apollo";
+} from '@/components/ui/dropdown-menu';
+import { cn } from '@/lib/utils';
+import { ImagePlaceholder } from '@/components/shared/ImagePlaceholder';
+import { getMediaUrl } from '@/utils/mediaUrl';
+import type { ExerciseTag } from '@/types/apollo';
 
 interface ExerciseMapping {
   id: string;
@@ -60,16 +60,7 @@ interface SetCardProps {
   className?: string;
 }
 
-export function SetCard({
-  set,
-  tagsMap,
-  onView,
-  onEdit,
-  onDelete,
-  onDuplicate,
-  onAssign,
-  className,
-}: SetCardProps) {
+export function SetCard({ set, tagsMap, onView, onEdit, onDelete, onDuplicate, onAssign, className }: SetCardProps) {
   // State for Dynamic Preview (scrubbing) - tracks which exercise image is shown
   const [activeExerciseIndex, setActiveExerciseIndex] = useState<number | null>(null);
 
@@ -124,7 +115,7 @@ export function SetCard({
 
     // Return full tag objects, sorted by name, limited to first 5
     return Array.from(tagIds)
-      .map(id => tagsMap.get(id))
+      .map((id) => tagsMap.get(id))
       .filter((tag): tag is ExerciseTag => tag !== undefined)
       .sort((a, b) => a.name.localeCompare(b.name))
       .slice(0, 5);
@@ -136,10 +127,7 @@ export function SetCard({
     const rect = e.currentTarget.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const percentage = x / rect.width;
-    const index = Math.min(
-      Math.floor(percentage * allExerciseImages.length),
-      allExerciseImages.length - 1
-    );
+    const index = Math.min(Math.floor(percentage * allExerciseImages.length), allExerciseImages.length - 1);
     setActiveExerciseIndex(index);
   };
 
@@ -152,8 +140,8 @@ export function SetCard({
     e.stopPropagation();
     const shareUrl = `${window.location.origin}/set/share/${set.id}`;
     navigator.clipboard.writeText(shareUrl);
-    toast.success("Skopiowano link do zestawu", {
-      description: "Wyślij go pacjentowi przez SMS lub WhatsApp"
+    toast.success('Skopiowano link do zestawu', {
+      description: 'Wyślij go pacjentowi przez SMS lub WhatsApp',
     });
   };
 
@@ -166,9 +154,9 @@ export function SetCard({
     <div
       data-testid={`set-card-${set.id}`}
       className={cn(
-        "group relative flex flex-col rounded-xl border border-border/60 bg-surface overflow-hidden",
-        "transition-all duration-200 hover:border-border hover:shadow-lg hover:shadow-black/5",
-        "cursor-pointer h-full",
+        'group relative flex flex-col rounded-xl border border-border/60 bg-surface overflow-hidden',
+        'transition-all duration-200 hover:border-border hover:shadow-lg hover:shadow-black/5',
+        'cursor-pointer h-full',
         className
       )}
       onClick={() => onView?.(set)}
@@ -184,20 +172,26 @@ export function SetCard({
           <>
             {/* Blurred background layer */}
             <img
-              src={activeExerciseIndex !== null && allExerciseImages[activeExerciseIndex]?.url
-                ? allExerciseImages[activeExerciseIndex].url
-                : allExerciseImages[0].url}
+              src={
+                activeExerciseIndex !== null && allExerciseImages[activeExerciseIndex]?.url
+                  ? allExerciseImages[activeExerciseIndex].url
+                  : allExerciseImages[0].url
+              }
               alt=""
               className="absolute inset-0 w-full h-full object-cover blur-xl scale-110 opacity-50"
             />
             {/* Main image - shows first image (cover) in IDLE, active image in HOVER */}
             <img
-              src={activeExerciseIndex !== null && allExerciseImages[activeExerciseIndex]?.url
-                ? allExerciseImages[activeExerciseIndex].url
-                : allExerciseImages[0].url}
-              alt={activeExerciseIndex !== null && allExerciseImages[activeExerciseIndex]?.name
-                ? allExerciseImages[activeExerciseIndex].name
-                : allExerciseImages[0].name}
+              src={
+                activeExerciseIndex !== null && allExerciseImages[activeExerciseIndex]?.url
+                  ? allExerciseImages[activeExerciseIndex].url
+                  : allExerciseImages[0].url
+              }
+              alt={
+                activeExerciseIndex !== null && allExerciseImages[activeExerciseIndex]?.name
+                  ? allExerciseImages[activeExerciseIndex].name
+                  : allExerciseImages[0].name
+              }
               className="absolute inset-0 w-full h-full object-contain z-10 transition-opacity duration-200"
             />
           </>
@@ -210,18 +204,18 @@ export function SetCard({
 
         {/* LAYER 2: TOP - Progress bars (HOVER only) */}
         {allExerciseImages.length > 1 && (
-          <div className={cn(
-            "absolute top-2 left-2 right-2 flex gap-1 z-20 transition-opacity duration-300",
-            "opacity-0 group-hover:opacity-100"
-          )}>
+          <div
+            className={cn(
+              'absolute top-2 left-2 right-2 flex gap-1 z-20 transition-opacity duration-300',
+              'opacity-0 group-hover:opacity-100'
+            )}
+          >
             {allExerciseImages.map((_, i) => (
               <div
                 key={i}
                 className={cn(
-                  "h-1 flex-1 rounded-full transition-colors duration-150",
-                  activeExerciseIndex !== null && i === activeExerciseIndex
-                    ? "bg-white"
-                    : "bg-white/40"
+                  'h-1 flex-1 rounded-full transition-colors duration-150',
+                  activeExerciseIndex !== null && i === activeExerciseIndex ? 'bg-white' : 'bg-white/40'
                 )}
               />
             ))}
@@ -230,10 +224,12 @@ export function SetCard({
 
         {/* TOP HEADER AREA - Flex Layout (Below Progress Bars) */}
         {activeExerciseIndex !== null && allExerciseImages.length > 1 && (
-          <div className={cn(
-            "absolute top-4 left-0 right-0 px-3 flex items-start justify-between z-20 pointer-events-none transition-opacity duration-200",
-            "opacity-0 group-hover:opacity-100"
-          )}>
+          <div
+            className={cn(
+              'absolute top-4 left-0 right-0 px-3 flex items-start justify-between z-20 pointer-events-none transition-opacity duration-200',
+              'opacity-0 group-hover:opacity-100'
+            )}
+          >
             {/* A. Exercise Name (Flexible Width) */}
             {allExerciseImages[activeExerciseIndex]?.name && (
               <div className="flex-1 pr-2 pt-1 pointer-events-none min-w-0">
@@ -315,10 +311,12 @@ export function SetCard({
         {/* LAYER 5: BOTTOM - "Wymiana warty" (The Swap) */}
         <div className="absolute bottom-3 left-3 right-3 z-20 h-9">
           {/* A. INFO BADGE - Visible in IDLE, fades out on HOVER */}
-          <div className={cn(
-            "absolute inset-0 flex items-center transition-all duration-300",
-            "group-hover:opacity-0 group-hover:translate-y-2"
-          )}>
+          <div
+            className={cn(
+              'absolute inset-0 flex items-center transition-all duration-300',
+              'group-hover:opacity-0 group-hover:translate-y-2'
+            )}
+          >
             <div className="flex items-center gap-1.5 bg-black/70 backdrop-blur-md rounded-full px-2.5 py-1 text-xs text-white font-medium shadow-lg">
               <Dumbbell className="h-3 w-3" />
               <span>{exerciseCount} ćw</span>
@@ -334,10 +332,12 @@ export function SetCard({
 
           {/* B. ASSIGN BUTTON - Compact Pill (Hidden in IDLE, slides up on HOVER) */}
           {onAssign && (
-            <div className={cn(
-              "absolute inset-0 flex items-center justify-center transition-all duration-300",
-              "opacity-0 translate-y-4 group-hover:opacity-100 group-hover:translate-y-0"
-            )}>
+            <div
+              className={cn(
+                'absolute inset-0 flex items-center justify-center transition-all duration-300',
+                'opacity-0 translate-y-4 group-hover:opacity-100 group-hover:translate-y-0'
+              )}
+            >
               <Button
                 className="h-9 px-5 bg-primary/90 hover:bg-primary text-white backdrop-blur-sm shadow-lg rounded-full font-medium"
                 onClick={(e) => handleAction(e, () => onAssign(set))}
@@ -387,9 +387,7 @@ export function SetCard({
 
         {/* Footer - always at bottom with mt-auto */}
         <div className="flex items-center justify-between mt-auto pt-2">
-          <span className="text-xs text-zinc-500">
-            Przypisano {assignmentCount} razy
-          </span>
+          <span className="text-xs text-zinc-500">Przypisano {assignmentCount} razy</span>
           {set.isActive === false && (
             <Badge variant="outline" className="text-[10px] px-1.5 py-0">
               Nieaktywny

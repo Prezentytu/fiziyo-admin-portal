@@ -15,10 +15,11 @@ import { defaultFrequency } from '@/components/exercise-sets/FrequencyPicker';
 import { WizardStepIndicator } from './WizardStepIndicator';
 import { SelectSetStep } from './SelectSetStep';
 import { SelectPatientsStep } from './SelectPatientsStep';
-// CustomizeExercisesStep removed - Progressive Disclosure merged into SelectSetStep
+import { CustomizeSetStep } from './CustomizeSetStep';
 import { ScheduleStep } from './ScheduleStep';
 import { SummaryStep } from './SummaryStep';
 import { AssignmentSuccessDialog } from './AssignmentSuccessDialog';
+import type { ExerciseInstance, ExerciseParams } from '@/components/shared/ExerciseSetBuilder';
 import {
   getWizardSteps,
   createGhostCopy,
@@ -34,9 +35,18 @@ import {
   type LocalExerciseMapping,
 } from './types';
 
-import { GET_ORGANIZATION_EXERCISE_SETS_QUERY, GET_EXERCISE_SET_WITH_ASSIGNMENTS_QUERY } from '@/graphql/queries/exerciseSets.queries';
+import {
+  GET_ORGANIZATION_EXERCISE_SETS_QUERY,
+  GET_EXERCISE_SET_WITH_ASSIGNMENTS_QUERY,
+} from '@/graphql/queries/exerciseSets.queries';
 import { GET_THERAPIST_PATIENTS_QUERY, GET_ORGANIZATION_PATIENTS_QUERY } from '@/graphql/queries/therapists.queries';
-import { ASSIGN_EXERCISE_SET_TO_PATIENT_MUTATION, REMOVE_EXERCISE_SET_ASSIGNMENT_MUTATION, UPDATE_PATIENT_EXERCISE_OVERRIDES_MUTATION, CREATE_EXERCISE_SET_MUTATION, ADD_EXERCISE_TO_EXERCISE_SET_MUTATION } from '@/graphql/mutations/exercises.mutations';
+import {
+  ASSIGN_EXERCISE_SET_TO_PATIENT_MUTATION,
+  REMOVE_EXERCISE_SET_ASSIGNMENT_MUTATION,
+  UPDATE_PATIENT_EXERCISE_OVERRIDES_MUTATION,
+  CREATE_EXERCISE_SET_MUTATION,
+  ADD_EXERCISE_TO_EXERCISE_SET_MUTATION,
+} from '@/graphql/mutations/exercises.mutations';
 import { GET_AVAILABLE_EXERCISES_QUERY } from '@/graphql/queries/exercises.queries';
 import { GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY } from '@/graphql/queries/patientAssignments.queries';
 import { GET_CURRENT_BILLING_STATUS_QUERY } from '@/graphql/queries/billing.queries';
@@ -76,12 +86,15 @@ export function AssignmentWizard(props: AssignmentWizardProps) {
   }, [onOpenChange]);
 
   // Callback for AssignmentWizardContent to show success dialog
-  const handleAssignmentSuccess = useCallback((data: SuccessDialogData) => {
-    setSuccessData(data);
-    setShowSuccessDialog(true);
-    // Close the wizard dialog
-    onOpenChange(false);
-  }, [onOpenChange]);
+  const handleAssignmentSuccess = useCallback(
+    (data: SuccessDialogData) => {
+      setSuccessData(data);
+      setShowSuccessDialog(true);
+      // Close the wizard dialog
+      onOpenChange(false);
+    },
+    [onOpenChange]
+  );
 
   // Reset when dialog opens
   if (!open && hasChanges) {
@@ -151,7 +164,7 @@ interface AssignmentWizardContentProps extends AssignmentWizardProps {
 // Inner component with all the wizard logic - remounts on each dialog open
 function AssignmentWizardContent({
   open,
-  onOpenChange,
+  onOpenChange: _onOpenChange,
   mode,
   preselectedSet,
   preselectedPatient,
@@ -162,10 +175,13 @@ function AssignmentWizardContent({
   onHasChanges,
   onAssignmentSuccess,
 }: AssignmentWizardContentProps) {
-  // Compute dynamic steps based on what's preselected
+  // State for customize-set mode - true when creating new set, false when customizing existing
+  const [isCreatingNewSet, setIsCreatingNewSet] = useState(false);
+
+  // Compute dynamic steps based on what's preselected and if creating new set
   const steps = useMemo(
-    () => getWizardSteps(mode, !!preselectedSet, !!preselectedPatient),
-    [mode, preselectedSet, preselectedPatient]
+    () => getWizardSteps(mode, !!preselectedSet, !!preselectedPatient, isCreatingNewSet),
+    [mode, preselectedSet, preselectedPatient, isCreatingNewSet]
   );
 
   // Get first step id
@@ -185,12 +201,16 @@ function AssignmentWizardContent({
   // Ghost Copy state - lokalna tablica ćwiczeń (nie dotyka bazy)
   const [localExercises, setLocalExercises] = useState<LocalExerciseMapping[]>([]);
   // Nazwa planu dla pacjenta (Assignment name)
-  const [planName, setPlanName] = useState<string>("");
+  const [planName, setPlanName] = useState<string>('');
   // Szablon - opcjonalny zapis do biblioteki
-  const [saveAsTemplate, setSaveAsTemplate] = useState(false);
-  const [templateName, setTemplateName] = useState<string>("");
+  const [saveAsTemplate, _setSaveAsTemplate] = useState(false);
+  const [templateName, setTemplateName] = useState<string>('');
   // Wykluczone ćwiczenia (legacy - pustý Set bo customize step został usunięty)
   const [excludedExercises] = useState<Set<string>>(new Set());
+
+  // State for CustomizeSetStep builder
+  const [builderInstances, setBuilderInstances] = useState<ExerciseInstance[]>([]);
+  const [builderParams, setBuilderParams] = useState<Map<string, ExerciseParams>>(new Map());
 
   // Track changes for close confirmation
   const hasChanges = !preselectedSet ? selectedSet !== null : selectedPatients.length > (preselectedPatient ? 1 : 0);
@@ -205,16 +225,49 @@ function AssignmentWizardContent({
     setSelectedSet(set);
     // Reset customizations when changing set
     setOverrides(new Map());
+    // Clear create-new mode when selecting existing set
+    setIsCreatingNewSet(false);
 
     // Ghost Copy - kopiuj ćwiczenia do lokalnego stanu (nie dotyka bazy)
     if (set?.exerciseMappings) {
       setLocalExercises(set.exerciseMappings.map(createGhostCopy));
+
+      // Also populate builder state for customize-set step
+      const instances: ExerciseInstance[] = [];
+      const params = new Map<string, ExerciseParams>();
+
+      set.exerciseMappings.forEach((mapping) => {
+        const instanceId = `existing-${mapping.id}`;
+        instances.push({
+          instanceId,
+          exerciseId: mapping.exerciseId,
+        });
+        params.set(instanceId, {
+          sets: mapping.sets ?? undefined,
+          reps: mapping.reps ?? undefined,
+          duration: mapping.duration ?? undefined,
+          restSets: mapping.restSets ?? undefined,
+          restReps: mapping.restReps ?? undefined,
+          executionTime: mapping.executionTime ?? undefined,
+          preparationTime: mapping.preparationTime ?? undefined,
+          tempo: mapping.tempo ?? '',
+          load: mapping.load ?? undefined,
+          notes: mapping.notes ?? '',
+          customName: mapping.customName ?? '',
+          customDescription: mapping.customDescription ?? '',
+        });
+      });
+
+      setBuilderInstances(instances);
+      setBuilderParams(params);
     } else {
       setLocalExercises([]);
+      setBuilderInstances([]);
+      setBuilderParams(new Map());
     }
 
     // Set plan name (dla pacjenta) i template name (dla biblioteki)
-    const baseName = set?.name || "Nowy Plan";
+    const baseName = set?.name || 'Nowy Plan';
     setPlanName(baseName);
     setTemplateName(`${baseName} (szablon)`);
 
@@ -250,18 +303,24 @@ function AssignmentWizardContent({
   });
 
   // Load patient's existing assignments (for from-patient mode - to show which sets are already assigned)
-  const { data: patientAssignmentsData, refetch: refetchPatientAssignments } = useQuery(GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY, {
-    variables: { userId: preselectedPatient?.id || '' },
-    skip: !preselectedPatient?.id || !open || mode !== 'from-patient',
-  });
+  const { data: patientAssignmentsData, refetch: refetchPatientAssignments } = useQuery(
+    GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY,
+    {
+      variables: { userId: preselectedPatient?.id || '' },
+      skip: !preselectedPatient?.id || !open || mode !== 'from-patient',
+    }
+  );
 
   // Load exercise set's existing assignments (for from-set mode OR when a set is selected in from-patient mode)
   // This allows showing which patients already have the selected set
   const effectiveSetId = preselectedSet?.id || selectedSet?.id;
-  const { data: setAssignmentsData, refetch: refetchSetAssignments } = useQuery(GET_EXERCISE_SET_WITH_ASSIGNMENTS_QUERY, {
-    variables: { exerciseSetId: effectiveSetId || '' },
-    skip: !effectiveSetId || !open,
-  });
+  const { data: setAssignmentsData, refetch: refetchSetAssignments } = useQuery(
+    GET_EXERCISE_SET_WITH_ASSIGNMENTS_QUERY,
+    {
+      variables: { exerciseSetId: effectiveSetId || '' },
+      skip: !effectiveSetId || !open,
+    }
+  );
 
   // Load available exercises for Rapid Builder (includes global FiziYo exercises)
   const { data: exercisesData } = useQuery(GET_AVAILABLE_EXERCISES_QUERY, {
@@ -272,17 +331,15 @@ function AssignmentWizardContent({
   // Mutations
   const [assignSet, { loading: assigning }] = useMutation(ASSIGN_EXERCISE_SET_TO_PATIENT_MUTATION);
   const [removeAssignment, { loading: removing }] = useMutation(REMOVE_EXERCISE_SET_ASSIGNMENT_MUTATION);
-  const [updatePatientOverrides, { loading: updatingOverrides }] = useMutation(UPDATE_PATIENT_EXERCISE_OVERRIDES_MUTATION);
+  const [updatePatientOverrides, { loading: updatingOverrides }] = useMutation(
+    UPDATE_PATIENT_EXERCISE_OVERRIDES_MUTATION
+  );
   const [createExerciseSet] = useMutation(CREATE_EXERCISE_SET_MUTATION, {
-    refetchQueries: [
-      { query: GET_ORGANIZATION_EXERCISE_SETS_QUERY, variables: { organizationId } },
-    ],
+    refetchQueries: [{ query: GET_ORGANIZATION_EXERCISE_SETS_QUERY, variables: { organizationId } }],
     awaitRefetchQueries: true,
   });
   const [addExerciseToSet] = useMutation(ADD_EXERCISE_TO_EXERCISE_SET_MUTATION, {
-    refetchQueries: [
-      { query: GET_ORGANIZATION_EXERCISE_SETS_QUERY, variables: { organizationId } },
-    ],
+    refetchQueries: [{ query: GET_ORGANIZATION_EXERCISE_SETS_QUERY, variables: { organizationId } }],
   });
 
   // State for unassign confirmation dialog
@@ -371,17 +428,19 @@ function AssignmentWizardContent({
     if (mode !== 'from-patient' || !patientAssignmentsData) return [];
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const assignments = (patientAssignmentsData as any)?.patientAssignments || [];
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return assignments
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .filter((a: any) => a.exerciseSetId) // Only exercise set assignments
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .map((a: any) => ({
-        exerciseSetId: a.exerciseSetId,
-        assignmentId: a.id,
-        assignedAt: a.assignedAt,
-        status: a.status,
-      }));
+
+    return (
+      assignments
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .filter((a: any) => a.exerciseSetId) // Only exercise set assignments
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        .map((a: any) => ({
+          exerciseSetId: a.exerciseSetId,
+          assignmentId: a.id,
+          assignedAt: a.assignedAt,
+          status: a.status,
+        }))
+    );
   }, [mode, patientAssignmentsData]);
 
   // Process exercise set's assigned patients (for from-set mode OR when a set is selected)
@@ -423,57 +482,27 @@ function AssignmentWizardContent({
       }));
   }, [exercisesData]);
 
-  // Handle create new set (Phantom Set) with Smart Draft Logic
-  const handleCreateSet = useCallback(async () => {
+  // Handle create new set - sets mode to creating new and navigates to customize step
+  const handleCreateSet = useCallback(() => {
     const today = format(new Date(), 'dd.MM.yyyy');
     const setNamePattern = preselectedPatient
-      ? `Terapia dla ${preselectedPatient.name} - ${today}`
+      ? `Plan dla ${preselectedPatient.name} - ${today}`
       : `Nowy zestaw - ${today}`;
 
-    // Smart Draft Logic: Sprawdź czy istnieje pusty szkic z dzisiaj
-    const existingDraft = exerciseSets.find(s =>
-      (s.exerciseMappings?.length || 0) === 0 && // Jest pusty
-      s.name.includes(today) // Utworzony dzisiaj (data w nazwie)
-    );
+    // Reset builder state for new set
+    setBuilderInstances([]);
+    setBuilderParams(new Map());
+    setPlanName(setNamePattern);
+    setTemplateName(`${setNamePattern} (szablon)`);
 
-    if (existingDraft) {
-      // Otwórz istniejący szkic zamiast tworzyć nowy
-      setSelectedSet(existingDraft);
-      toast.info('Otwarto istniejący szkic');
-      return;
-    }
+    // Clear any previously selected set
+    setSelectedSet(null);
+    setLocalExercises([]);
 
-    // Nie ma szkicu - utwórz nowy
-    setIsCreatingSet(true);
-    try {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const result = await createExerciseSet({
-        variables: {
-          organizationId,
-          name: setNamePattern,
-          description: null,
-        },
-      });
-
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const newSet = (result.data as any)?.createExerciseSet;
-      if (newSet) {
-        // Auto-select the new set
-        setSelectedSet({
-          id: newSet.id,
-          name: newSet.name,
-          description: newSet.description,
-          exerciseMappings: [], // pusty zestaw
-        });
-        toast.success('Utworzono zestaw');
-      }
-    } catch (error) {
-      console.error('Błąd tworzenia zestawu:', error);
-      toast.error('Nie udało się utworzyć zestawu');
-    } finally {
-      setIsCreatingSet(false);
-    }
-  }, [organizationId, preselectedPatient, createExerciseSet, exerciseSets]);
+    // Switch to creating-new mode and navigate to customize step
+    setIsCreatingNewSet(true);
+    setCurrentStep('customize-set');
+  }, [preselectedPatient]);
 
   // Ghost Copy - synchronizuj localExercises gdy zmieni się selectedSet z zewnątrz
   useEffect(() => {
@@ -579,14 +608,26 @@ function AssignmentWizardContent({
             ? `Wybierz zestaw dla pacjenta ${preselectedPatient.name}`
             : 'Wybierz zestaw ćwiczeń do przypisania',
         };
+      case 'customize-set':
+        return {
+          title: isCreatingNewSet ? 'Nowy zestaw ćwiczeń' : 'Personalizacja zestawu',
+          description: isCreatingNewSet
+            ? preselectedPatient
+              ? `Utwórz zestaw dla pacjenta ${preselectedPatient.name}`
+              : 'Dodaj ćwiczenia i skonfiguruj parametry'
+            : preselectedPatient
+              ? `Dostosuj ćwiczenia dla pacjenta ${preselectedPatient.name}`
+              : 'Dodaj, usuń lub edytuj parametry ćwiczeń',
+        };
       case 'select-patients':
         return {
           title: 'Wybierz pacjentów',
           description: selectedSet
             ? `Wybierz pacjentów dla zestawu "${selectedSet.name}"`
-            : 'Wybierz pacjentów do przypisania',
+            : planName
+              ? `Wybierz pacjentów dla zestawu "${planName}"`
+              : 'Wybierz pacjentów do przypisania',
         };
-      // customize step removed - Progressive Disclosure merged into select-set
       case 'schedule':
         return {
           title: 'Harmonogram',
@@ -609,9 +650,11 @@ function AssignmentWizardContent({
     switch (currentStep) {
       case 'select-set':
         return selectedSet !== null;
+      case 'customize-set':
+        // Must have at least 1 exercise and a name
+        return builderInstances.length > 0 && planName.trim().length >= 2;
       case 'select-patients':
         return selectedPatients.length > 0;
-      // customize step removed - Progressive Disclosure merged into select-set
       case 'schedule':
         return true;
       case 'summary':
@@ -623,7 +666,7 @@ function AssignmentWizardContent({
 
   // Track animation direction
   const [slideDirection, setSlideDirection] = useState<'left' | 'right'>('right');
-  const [isAnimating, setIsAnimating] = useState(false);
+  const [_isAnimating, _setIsAnimating] = useState(false);
   const animationKey = useRef(0);
 
   const goToStep = (step: WizardStep) => {
@@ -673,52 +716,119 @@ function AssignmentWizardContent({
   }, [overrides]);
 
   const handleSubmit = async () => {
-    if (!selectedSet || selectedPatients.length === 0) return;
+    // Need either: creating new set with exercises, or customizing existing set
+    if (builderInstances.length === 0) return;
+    if (selectedPatients.length === 0) return;
 
     try {
       const overridesJson = buildExerciseOverridesJson();
       let lastPremiumValidUntil: string | null = null;
 
-      // Określ exerciseSetId do przypisania
-      let exerciseSetIdToAssign = selectedSet.id;
+      // Zawsze tworzymy NOWY zestaw z builderInstances (bo customize-set jest zawsze wykonywany)
+      let exerciseSetIdToAssign = '';
+      let createdSetForSuccess: ExerciseSet | null = null;
 
-      // Jeśli saveAsTemplate - utwórz nowy szablon w bibliotece
-      if (saveAsTemplate && templateName.trim() && localExercises.length > 0) {
+      setIsCreatingSet(true);
+      try {
+        // 1. Utwórz nowy Set (personalizowana kopia lub zupełnie nowy)
+
+        const createResult = await createExerciseSet({
+          variables: {
+            organizationId,
+            name: planName.trim(),
+            description: isCreatingNewSet ? null : `Spersonalizowany z: ${selectedSet?.name || 'szablonu'}`,
+          },
+        });
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const newSet = (createResult.data as any)?.createExerciseSet;
+        if (newSet?.id) {
+          // 2. Dodaj ćwiczenia do nowego setu
+          for (let i = 0; i < builderInstances.length; i++) {
+            const instance = builderInstances[i];
+            const params = builderParams.get(instance.instanceId);
+            const exercise = availableExercises.find((e) => e.id === instance.exerciseId);
+
+            await addExerciseToSet({
+              variables: {
+                exerciseId: instance.exerciseId,
+                exerciseSetId: newSet.id,
+                order: i + 1,
+                sets: params?.sets || exercise?.defaultSets || 3,
+                reps: params?.reps || exercise?.defaultReps || 10,
+                duration: params?.duration || exercise?.defaultDuration,
+                restSets: params?.restSets || exercise?.defaultRestBetweenSets || 60,
+                restReps: params?.restReps || 0,
+                executionTime: params?.executionTime || 0,
+                tempo: params?.tempo || null,
+                notes: params?.notes || null,
+                customName: params?.customName || null,
+                customDescription: params?.customDescription || null,
+                loadType: params?.loadType || null,
+                loadValue: params?.loadValue || null,
+                loadUnit: params?.loadUnit || null,
+                loadText: params?.loadText || null,
+              },
+            });
+          }
+
+          exerciseSetIdToAssign = newSet.id;
+          createdSetForSuccess = {
+            id: newSet.id,
+            name: planName.trim(),
+            description: undefined,
+            exerciseMappings: [],
+          };
+        } else {
+          throw new Error('Nie udało się utworzyć zestawu');
+        }
+      } catch (createError) {
+        console.error('Błąd tworzenia zestawu:', createError);
+        toast.error('Nie udało się utworzyć zestawu');
+        setIsCreatingSet(false);
+        return;
+      } finally {
+        setIsCreatingSet(false);
+      }
+
+      // Jeśli saveAsTemplate - utwórz DODATKOWY szablon w bibliotece (kopia do ponownego użycia)
+      if (saveAsTemplate && templateName.trim() && builderInstances.length > 0) {
         try {
-          // 1. Utwórz nowy Set
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const createResult = await createExerciseSet({
+          const templateResult = await createExerciseSet({
             variables: {
               organizationId,
               name: templateName.trim(),
-              description: `Utworzono z planu: ${planName}`,
+              description: `Szablon utworzony z planu: ${planName}`,
             },
           });
 
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const newSet = (createResult.data as any)?.createExerciseSet;
-          if (newSet?.id) {
-            // 2. Dodaj ćwiczenia do nowego setu
-            for (let i = 0; i < localExercises.length; i++) {
-              const mapping = localExercises[i];
+          const templateSet = (templateResult.data as any)?.createExerciseSet;
+          if (templateSet?.id) {
+            for (let i = 0; i < builderInstances.length; i++) {
+              const instance = builderInstances[i];
+              const params = builderParams.get(instance.instanceId);
+              const exercise = availableExercises.find((e) => e.id === instance.exerciseId);
+
               await addExerciseToSet({
                 variables: {
-                  exerciseId: mapping.exerciseId,
-                  exerciseSetId: newSet.id,
+                  exerciseId: instance.exerciseId,
+                  exerciseSetId: templateSet.id,
                   order: i + 1,
-                  sets: mapping.sets || mapping.exercise?.defaultSets,
-                  reps: mapping.reps || mapping.exercise?.defaultReps,
-                  duration: mapping.duration || mapping.exercise?.defaultDuration,
-                  restSets: mapping.restSets,
-                  notes: mapping.notes,
-                  customName: mapping.customName,
+                  sets: params?.sets || exercise?.defaultSets || 3,
+                  reps: params?.reps || exercise?.defaultReps || 10,
+                  duration: params?.duration || exercise?.defaultDuration,
+                  restSets: params?.restSets || exercise?.defaultRestBetweenSets || 60,
+                  restReps: params?.restReps || 0,
+                  executionTime: params?.executionTime || 0,
+                  tempo: params?.tempo || null,
+                  notes: params?.notes || null,
+                  customName: params?.customName || null,
+                  customDescription: params?.customDescription || null,
                 },
               });
             }
-
-            toast.success(`Zapisano szablon "${templateName}"`);
-            // Użyj nowego setu do przypisania
-            exerciseSetIdToAssign = newSet.id;
+            toast.success(`Zapisano szablon "${templateName}" do biblioteki`);
           }
         } catch (templateError) {
           console.error('Błąd tworzenia szablonu:', templateError);
@@ -740,9 +850,7 @@ function AssignmentWizardContent({
           frequency.saturday,
           frequency.sunday,
         ].filter(Boolean).length;
-        const effectiveTimesPerWeek = selectedDaysCount > 0
-          ? selectedDaysCount
-          : (frequency.timesPerWeek || 3);
+        const effectiveTimesPerWeek = selectedDaysCount > 0 ? selectedDaysCount : frequency.timesPerWeek || 3;
 
         const assignResult = await assignSet({
           variables: {
@@ -809,15 +917,16 @@ function AssignmentWizardContent({
 
       // 🎯 Beta Pilot Flow: Pokazuj QR dialog zamiast zamykać od razu
       // Call parent to show success dialog (lifted state to wrapper)
+      const effectiveSet = createdSetForSuccess || selectedSet;
       onAssignmentSuccess({
         patients: selectedPatients.map((p) => ({
           id: p.id,
           name: p.name,
           email: p.email,
         })),
-        setName: planName || selectedSet.name,
+        setName: planName || effectiveSet?.name || 'Nowy zestaw',
         premiumValidUntil: lastPremiumValidUntil,
-        exerciseSet: selectedSet,
+        exerciseSet: effectiveSet!,
         frequency,
       });
 
@@ -888,28 +997,29 @@ function AssignmentWizardContent({
             assignedSets={assignedSets}
             onUnassign={(assignmentId, setName) => handleUnassignRequest(assignmentId, setName, 'set')}
             loading={loadingSets}
-            // Ghost Copy props
-            localExercises={localExercises}
-            onLocalExercisesChange={setLocalExercises}
-            planName={planName}
-            onPlanNameChange={setPlanName}
-            sourceTemplateName={selectedSet?.name}
-            // Progressive Disclosure props
-            overrides={overrides}
-            onOverridesChange={setOverrides}
-            selectedPatientsCount={selectedPatients.length}
             // Phantom Set props
             onCreateSet={handleCreateSet}
             isCreatingSet={isCreatingSet}
             patientName={preselectedPatient?.name}
-            // Rapid Builder props
+          />
+        );
+
+      case 'customize-set':
+        return (
+          <CustomizeSetStep
+            planName={planName}
+            onPlanNameChange={setPlanName}
+            isCreatingNew={isCreatingNewSet}
+            sourceSetName={selectedSet?.name}
+            selectedInstances={builderInstances}
+            onSelectedInstancesChange={setBuilderInstances}
+            exerciseParams={builderParams}
+            onExerciseParamsChange={setBuilderParams}
             availableExercises={availableExercises}
+            loadingExercises={false}
             organizationId={organizationId}
-            // Save as template props
-            saveAsTemplate={saveAsTemplate}
-            onSaveAsTemplateChange={setSaveAsTemplate}
-            templateName={templateName}
-            onTemplateNameChange={setTemplateName}
+            patientName={preselectedPatient?.name}
+            showAI={true}
           />
         );
 
@@ -925,10 +1035,9 @@ function AssignmentWizardContent({
           />
         );
 
-      // customize step removed - Progressive Disclosure merged into select-set
-
       case 'schedule':
-        if (!selectedSet) return null;
+        // When creating new set, we use builderInstances instead of selectedSet
+        if (!isCreatingNewSet && !selectedSet) return null;
         return (
           <ScheduleStep
             startDate={startDate}
@@ -940,12 +1049,49 @@ function AssignmentWizardContent({
           />
         );
 
-      case 'summary':
-        if (!selectedSet) return null;
+      case 'summary': {
+        // Need either a selected set (customized) or creating new set
+        if (builderInstances.length === 0) return null;
+
+        // Always build exercise set from builder state (it's always customized in customize-set step)
+        const summaryExerciseSet: ExerciseSet = {
+          id: isCreatingNewSet ? 'new-set' : selectedSet?.id || 'customized-set',
+          name: planName,
+          description: selectedSet?.description,
+          exerciseMappings: builderInstances.map((instance, index) => {
+            const exercise = availableExercises.find((e) => e.id === instance.exerciseId);
+            const params = builderParams.get(instance.instanceId);
+            return {
+              id: instance.instanceId,
+              exerciseId: instance.exerciseId,
+              order: index + 1,
+              sets: params?.sets,
+              reps: params?.reps,
+              duration: params?.duration,
+              restSets: params?.restSets,
+              restReps: params?.restReps,
+              executionTime: params?.executionTime,
+              preparationTime: params?.preparationTime,
+              tempo: params?.tempo,
+              load: params?.load,
+              notes: params?.notes,
+              customName: params?.customName,
+              customDescription: params?.customDescription,
+              exercise: exercise,
+            };
+          }),
+        };
+
+        const summaryLocalExercises =
+          summaryExerciseSet.exerciseMappings?.map((m) => ({
+            ...m,
+            isNew: isCreatingNewSet,
+          })) || [];
+
         return (
           <SummaryStep
-            exerciseSet={selectedSet}
-            localExercises={localExercises}
+            exerciseSet={summaryExerciseSet}
+            localExercises={summaryLocalExercises}
             selectedPatients={selectedPatients}
             startDate={startDate}
             endDate={endDate}
@@ -955,6 +1101,7 @@ function AssignmentWizardContent({
             onGoToStep={goToStep}
           />
         );
+      }
 
       default:
         return null;
@@ -963,132 +1110,143 @@ function AssignmentWizardContent({
 
   return (
     <>
-    <DialogContent
-      className="max-w-7xl w-[98vw] max-h-[95vh] h-[90vh] md:h-[85vh] flex flex-col p-0 gap-0 overflow-hidden"
-      onInteractOutside={(e) => e.preventDefault()}
-      onEscapeKeyDown={(e) => {
-        e.preventDefault();
-        onCloseAttempt();
-      }}
-      data-testid="assign-wizard"
-    >
-      {/* Header */}
-      <DialogHeader className="px-6 pt-6 pb-4 border-b border-border shrink-0">
-        <div className="flex flex-col gap-4">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <DialogTitle className="text-xl">{stepInfo.title}</DialogTitle>
-              <DialogDescription className="mt-1">{stepInfo.description}</DialogDescription>
-            </div>
-
-            {/* Floating Context Summary - mr-8 to avoid X button */}
-            {selectedSet && currentStep !== 'select-set' && (
-              <div className="hidden sm:flex items-center gap-3 px-3 py-2 rounded-lg bg-surface-light/50 border border-border/50 text-xs shrink-0 mr-8">
-                <div className="flex items-center gap-1.5 text-muted-foreground">
-                  <FolderKanban className="h-3.5 w-3.5" />
-                  <span className="font-medium text-foreground max-w-[120px] truncate">{selectedSet.name}</span>
-                  <span className="text-muted-foreground">
-                    ({(selectedSet.exerciseMappings?.length || 0) - excludedExercises.size}
-                    {excludedExercises.size > 0 && <span className="text-destructive/70">/{selectedSet.exerciseMappings?.length || 0}</span>})
-                  </span>
-                </div>
-                {selectedPatients.length > 0 && currentStep !== 'select-patients' && (
-                  <>
-                    <span className="text-border">•</span>
-                    <div className="flex items-center gap-1.5 text-muted-foreground">
-                      <Users className="h-3.5 w-3.5" />
-                      <span>{selectedPatients.length}</span>
-                    </div>
-                  </>
-                )}
-                {currentStep === 'summary' && (
-                  <>
-                    <span className="text-border">•</span>
-                    <div className="flex items-center gap-1.5 text-muted-foreground">
-                      <Calendar className="h-3.5 w-3.5" />
-                      <span>{durationDays} dni</span>
-                    </div>
-                  </>
-                )}
+      <DialogContent
+        className="max-w-7xl w-[98vw] max-h-[95vh] h-[90vh] md:h-[85vh] flex flex-col p-0 gap-0 overflow-hidden"
+        onInteractOutside={(e) => e.preventDefault()}
+        onEscapeKeyDown={(e) => {
+          e.preventDefault();
+          onCloseAttempt();
+        }}
+        data-testid="assign-wizard"
+      >
+        {/* Header */}
+        <DialogHeader className="px-6 pt-6 pb-4 border-b border-border shrink-0">
+          <div className="flex flex-col gap-4">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <DialogTitle className="text-xl">{stepInfo.title}</DialogTitle>
+                <DialogDescription className="mt-1">{stepInfo.description}</DialogDescription>
               </div>
-            )}
+
+              {/* Floating Context Summary - mr-8 to avoid X button */}
+              {selectedSet && currentStep !== 'select-set' && (
+                <div className="hidden sm:flex items-center gap-3 px-3 py-2 rounded-lg bg-surface-light/50 border border-border/50 text-xs shrink-0 mr-8">
+                  <div className="flex items-center gap-1.5 text-muted-foreground">
+                    <FolderKanban className="h-3.5 w-3.5" />
+                    <span className="font-medium text-foreground max-w-[120px] truncate">{selectedSet.name}</span>
+                    <span className="text-muted-foreground">
+                      ({(selectedSet.exerciseMappings?.length || 0) - excludedExercises.size}
+                      {excludedExercises.size > 0 && (
+                        <span className="text-destructive/70">/{selectedSet.exerciseMappings?.length || 0}</span>
+                      )}
+                      )
+                    </span>
+                  </div>
+                  {selectedPatients.length > 0 && currentStep !== 'select-patients' && (
+                    <>
+                      <span className="text-border">•</span>
+                      <div className="flex items-center gap-1.5 text-muted-foreground">
+                        <Users className="h-3.5 w-3.5" />
+                        <span>{selectedPatients.length}</span>
+                      </div>
+                    </>
+                  )}
+                  {currentStep === 'summary' && (
+                    <>
+                      <span className="text-border">•</span>
+                      <div className="flex items-center gap-1.5 text-muted-foreground">
+                        <Calendar className="h-3.5 w-3.5" />
+                        <span>{durationDays} dni</span>
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
+            <WizardStepIndicator
+              steps={steps}
+              currentStep={currentStep}
+              completedSteps={completedSteps}
+              onStepClick={goToStep}
+              allowNavigation={completedSteps.size > 0}
+              data-testid="assign-wizard-step-indicator"
+            />
           </div>
-          <WizardStepIndicator
-            steps={steps}
-            currentStep={currentStep}
-            completedSteps={completedSteps}
-            onStepClick={goToStep}
-            allowNavigation={completedSteps.size > 0}
-            data-testid="assign-wizard-step-indicator"
-          />
-        </div>
-      </DialogHeader>
+        </DialogHeader>
 
-      {/* Content - overflow-hidden dla clip animacji, scroll wewnątrz */}
-      <div className="flex-1 overflow-hidden min-h-0">
-        <div
-          key={animationKey.current}
-          className={cn(
-            "h-full overflow-y-auto",
-            slideDirection === 'right'
-              ? 'animate-wizard-slide-in-right'
-              : 'animate-wizard-slide-in-left'
-          )}
-        >
-          {renderStepContent()}
-        </div>
-      </div>
-
-      {/* Footer */}
-      <div className="px-6 py-4 border-t border-border shrink-0 flex items-center justify-between gap-4">
-        {/* Left side - Cancel button */}
-        <Button variant="ghost" onClick={onCloseAttempt} className="text-muted-foreground hover:text-foreground" data-testid="assign-wizard-close-btn">
-          Anuluj
-        </Button>
-
-        {/* Right side - Navigation */}
-        <div className="flex items-center gap-3">
-          {!isFirstStep && (
-            <Button variant="ghost" onClick={goBack} className="text-muted-foreground hover:text-foreground" data-testid="assign-wizard-back-btn">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Wstecz
-            </Button>
-          )}
-
-          <Button
-            onClick={isLastStep ? handleSubmit : goNext}
-            disabled={isLoading || !canProceed()}
+        {/* Content - overflow-hidden dla clip animacji, scroll wewnątrz */}
+        <div className="flex-1 overflow-hidden min-h-0">
+          <div
+            key={animationKey.current}
             className={cn(
-              "shadow-lg shadow-primary/20 min-w-[160px] transition-all duration-300",
-              isLastStep && "bg-gradient-to-r from-primary to-emerald-500 hover:from-primary-dark hover:to-emerald-600"
+              'h-full overflow-y-auto',
+              slideDirection === 'right' ? 'animate-wizard-slide-in-right' : 'animate-wizard-slide-in-left'
             )}
-            data-testid={isLastStep ? "assign-summary-submit-btn" : "assign-wizard-next-btn"}
           >
-            {assigning && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {getNextButtonText()}
-            <ArrowRight className="ml-2 h-4 w-4" />
-          </Button>
+            {renderStepContent()}
+          </div>
         </div>
-      </div>
 
-      {/* Unassign confirmation dialog */}
-      <ConfirmDialog
-        open={unassignConfirm?.open ?? false}
-        onOpenChange={(open) => !open && setUnassignConfirm(null)}
-        title={unassignConfirm?.type === 'set' ? 'Odpisać zestaw?' : 'Odpisać pacjenta?'}
-        description={
-          unassignConfirm?.type === 'set'
-            ? `Czy na pewno chcesz odpisać zestaw "${unassignConfirm?.name}" od tego pacjenta?`
-            : `Czy na pewno chcesz odpisać pacjenta "${unassignConfirm?.name}" od tego zestawu?`
-        }
-        confirmText="Tak, odpisz"
-        cancelText="Anuluj"
-        variant="destructive"
-        onConfirm={handleUnassignConfirm}
-        isLoading={removing}
-      />
+        {/* Footer */}
+        <div className="px-6 py-4 border-t border-border shrink-0 flex items-center justify-between gap-4">
+          {/* Left side - Cancel button */}
+          <Button
+            variant="ghost"
+            onClick={onCloseAttempt}
+            className="text-muted-foreground hover:text-foreground"
+            data-testid="assign-wizard-close-btn"
+          >
+            Anuluj
+          </Button>
 
-    </DialogContent>
+          {/* Right side - Navigation */}
+          <div className="flex items-center gap-3">
+            {!isFirstStep && (
+              <Button
+                variant="ghost"
+                onClick={goBack}
+                className="text-muted-foreground hover:text-foreground"
+                data-testid="assign-wizard-back-btn"
+              >
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Wstecz
+              </Button>
+            )}
+
+            <Button
+              onClick={isLastStep ? handleSubmit : goNext}
+              disabled={isLoading || !canProceed()}
+              className={cn(
+                'shadow-lg shadow-primary/20 min-w-[160px] transition-all duration-300',
+                isLastStep &&
+                  'bg-gradient-to-r from-primary to-emerald-500 hover:from-primary-dark hover:to-emerald-600'
+              )}
+              data-testid={isLastStep ? 'assign-summary-submit-btn' : 'assign-wizard-next-btn'}
+            >
+              {assigning && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {getNextButtonText()}
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+
+        {/* Unassign confirmation dialog */}
+        <ConfirmDialog
+          open={unassignConfirm?.open ?? false}
+          onOpenChange={(open) => !open && setUnassignConfirm(null)}
+          title={unassignConfirm?.type === 'set' ? 'Odpisać zestaw?' : 'Odpisać pacjenta?'}
+          description={
+            unassignConfirm?.type === 'set'
+              ? `Czy na pewno chcesz odpisać zestaw "${unassignConfirm?.name}" od tego pacjenta?`
+              : `Czy na pewno chcesz odpisać pacjenta "${unassignConfirm?.name}" od tego zestawu?`
+          }
+          confirmText="Tak, odpisz"
+          cancelText="Anuluj"
+          variant="destructive"
+          onConfirm={handleUnassignConfirm}
+          isLoading={removing}
+        />
+      </DialogContent>
     </>
   );
 }

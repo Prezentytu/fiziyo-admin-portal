@@ -1,11 +1,11 @@
-export { AssignmentWizard } from "./AssignmentWizard";
-export { WizardStepIndicator } from "./WizardStepIndicator";
-export { SelectSetStep } from "./SelectSetStep";
-export { SelectPatientsStep } from "./SelectPatientsStep";
-export { CustomizeExercisesStep } from "./CustomizeExercisesStep";
-export { ScheduleStep } from "./ScheduleStep";
-export { SummaryStep } from "./SummaryStep";
-export { getWizardSteps } from "./types";
+export { AssignmentWizard } from './AssignmentWizard';
+export { WizardStepIndicator } from './WizardStepIndicator';
+export { SelectSetStep } from './SelectSetStep';
+export { SelectPatientsStep } from './SelectPatientsStep';
+export { CustomizeExercisesStep } from './CustomizeExercisesStep';
+export { ScheduleStep } from './ScheduleStep';
+export { SummaryStep } from './SummaryStep';
+export { getWizardSteps } from './types';
 export type {
   AssignmentWizardProps,
   ExerciseSet,
@@ -16,5 +16,4 @@ export type {
   ExerciseOverride,
   WizardStep,
   WizardStepConfig,
-} from "./types";
-
+} from './types';

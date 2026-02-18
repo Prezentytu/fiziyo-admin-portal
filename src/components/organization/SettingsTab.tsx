@@ -1,41 +1,27 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { useMutation } from "@apollo/client/react";
-import {
-  Building2,
-  FileText,
-  Image,
-  Loader2,
-  Pencil,
-  Save,
-  Trash2,
-  ChevronDown,
-} from "lucide-react";
-import { toast } from "sonner";
+import { useState } from 'react';
+import { useMutation } from '@apollo/client/react';
+import { Building2, FileText, Image, Loader2, Pencil, Save, Trash2, ChevronDown } from 'lucide-react';
+import { toast } from 'sonner';
 
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
-import { cn } from "@/lib/utils";
-import { ExerciseVisibilitySettings } from "./ExerciseVisibilitySettings";
-import { AutoSyncSettings } from "./AutoSyncSettings";
-import { DataManagementCard } from "./DataManagementCard";
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { cn } from '@/lib/utils';
+import { ExerciseVisibilitySettings } from './ExerciseVisibilitySettings';
+import { DataManagementCard } from './DataManagementCard';
 import {
   UPDATE_ORGANIZATION_NAME_MUTATION,
   UPDATE_ORGANIZATION_LOGO_MUTATION,
   REMOVE_ORGANIZATION_LOGO_MUTATION,
-} from "@/graphql/mutations/organizations.mutations";
-import { GET_ORGANIZATION_BY_ID_QUERY } from "@/graphql/queries/organizations.queries";
+} from '@/graphql/mutations/organizations.mutations';
+import { GET_ORGANIZATION_BY_ID_QUERY } from '@/graphql/queries/organizations.queries';
 
 interface Organization {
   id: string;
@@ -47,7 +33,6 @@ interface Organization {
   subscriptionExpiresAt?: string;
   allowPersonalExercises?: boolean;
   sharedExercisesByDefault?: boolean;
-  autoSyncExampleExercises?: boolean;
 }
 
 interface SettingsTabProps {
@@ -73,7 +58,7 @@ function SettingsSection({
   icon: Icon,
   gradient,
   defaultOpen = true,
-  children
+  children,
 }: SettingsSectionProps) {
   const [isOpen, setIsOpen] = useState(defaultOpen);
 
@@ -84,80 +69,58 @@ function SettingsSection({
           <button className="w-full group">
             <div className="flex items-center justify-between p-4 rounded-xl bg-card/30 hover:bg-card/50 border border-border/50 transition-all cursor-pointer">
               <div className="flex items-center gap-4">
-                <div className={cn(
-                  "flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br shadow-lg shadow-black/20",
-                  gradient
-                )}>
+                <div
+                  className={cn(
+                    'flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br shadow-lg shadow-black/20',
+                    gradient
+                  )}
+                >
                   <Icon className="h-5 w-5 text-white" />
                 </div>
                 <div className="text-left">
                   <h3 className="text-lg font-semibold tracking-tight text-foreground">{title}</h3>
-                  {description && (
-                    <p className="text-sm text-muted-foreground">{description}</p>
-                  )}
+                  {description && <p className="text-sm text-muted-foreground">{description}</p>}
                 </div>
               </div>
-              <ChevronDown className={cn(
-                "h-5 w-5 text-muted-foreground transition-transform duration-300",
-                isOpen && "rotate-180"
-              )} />
+              <ChevronDown
+                className={cn(
+                  'h-5 w-5 text-muted-foreground transition-transform duration-300',
+                  isOpen && 'rotate-180'
+                )}
+              />
             </div>
           </button>
         </CollapsibleTrigger>
-        <CollapsibleContent className="space-y-4 pt-2">
-          {children}
-        </CollapsibleContent>
+        <CollapsibleContent className="space-y-4 pt-2">{children}</CollapsibleContent>
       </div>
     </Collapsible>
   );
 }
 
-export function SettingsTab({
-  organization,
-  currentUserRole,
-  isLoading = false,
-  onRefresh,
-}: SettingsTabProps) {
+export function SettingsTab({ organization, currentUserRole, isLoading = false, onRefresh }: SettingsTabProps) {
   const [isEditingBasic, setIsEditingBasic] = useState(false);
   const [editedName, setEditedName] = useState(organization.name);
-  const [editedDescription, setEditedDescription] = useState(
-    organization.description || ""
-  );
+  const [editedDescription, setEditedDescription] = useState(organization.description || '');
 
-  const canEdit = currentUserRole === "owner" || currentUserRole === "admin";
+  const canEdit = currentUserRole === 'owner' || currentUserRole === 'admin';
 
-  const [updateName, { loading: updatingName }] = useMutation(
-    UPDATE_ORGANIZATION_NAME_MUTATION,
-    {
-      refetchQueries: [
-        { query: GET_ORGANIZATION_BY_ID_QUERY, variables: { id: organization.id } },
-      ],
-    }
-  );
+  const [updateName, { loading: updatingName }] = useMutation(UPDATE_ORGANIZATION_NAME_MUTATION, {
+    refetchQueries: [{ query: GET_ORGANIZATION_BY_ID_QUERY, variables: { id: organization.id } }],
+  });
 
-  const [updateLogo, { loading: updatingLogo }] = useMutation(
-    UPDATE_ORGANIZATION_LOGO_MUTATION,
-    {
-      refetchQueries: [
-        { query: GET_ORGANIZATION_BY_ID_QUERY, variables: { id: organization.id } },
-      ],
-    }
-  );
+  const [updateLogo, { loading: updatingLogo }] = useMutation(UPDATE_ORGANIZATION_LOGO_MUTATION, {
+    refetchQueries: [{ query: GET_ORGANIZATION_BY_ID_QUERY, variables: { id: organization.id } }],
+  });
 
-  const [removeLogo, { loading: removingLogo }] = useMutation(
-    REMOVE_ORGANIZATION_LOGO_MUTATION,
-    {
-      refetchQueries: [
-        { query: GET_ORGANIZATION_BY_ID_QUERY, variables: { id: organization.id } },
-      ],
-    }
-  );
+  const [removeLogo, { loading: removingLogo }] = useMutation(REMOVE_ORGANIZATION_LOGO_MUTATION, {
+    refetchQueries: [{ query: GET_ORGANIZATION_BY_ID_QUERY, variables: { id: organization.id } }],
+  });
 
   const isUpdating = updatingName || updatingLogo || removingLogo;
 
   const handleSaveBasicInfo = async () => {
     if (!editedName.trim()) {
-      toast.error("Nazwa organizacji jest wymagana");
+      toast.error('Nazwa organizacji jest wymagana');
       return;
     }
 
@@ -168,18 +131,18 @@ export function SettingsTab({
           name: editedName.trim(),
         },
       });
-      toast.success("Informacje zostały zaktualizowane");
+      toast.success('Informacje zostały zaktualizowane');
       setIsEditingBasic(false);
       onRefresh?.();
     } catch (error) {
-      console.error("Błąd podczas aktualizacji:", error);
-      toast.error("Nie udało się zaktualizować informacji");
+      console.error('Błąd podczas aktualizacji:', error);
+      toast.error('Nie udało się zaktualizować informacji');
     }
   };
 
   const handleCancelEdit = () => {
     setEditedName(organization.name);
-    setEditedDescription(organization.description || "");
+    setEditedDescription(organization.description || '');
     setIsEditingBasic(false);
   };
 
@@ -187,13 +150,13 @@ export function SettingsTab({
     const file = event.target.files?.[0];
     if (!file) return;
 
-    if (!file.type.startsWith("image/")) {
-      toast.error("Proszę wybrać plik obrazu");
+    if (!file.type.startsWith('image/')) {
+      toast.error('Proszę wybrać plik obrazu');
       return;
     }
 
     if (file.size > 2 * 1024 * 1024) {
-      toast.error("Plik jest zbyt duży. Maksymalny rozmiar to 2MB");
+      toast.error('Plik jest zbyt duży. Maksymalny rozmiar to 2MB');
       return;
     }
 
@@ -204,11 +167,11 @@ export function SettingsTab({
         await updateLogo({
           variables: { organizationId: organization.id, logoUrl: dataUrl },
         });
-        toast.success("Logo zostało zaktualizowane");
+        toast.success('Logo zostało zaktualizowane');
         onRefresh?.();
       } catch (error) {
-        console.error("Błąd podczas aktualizacji logo:", error);
-        toast.error("Nie udało się zaktualizować logo");
+        console.error('Błąd podczas aktualizacji logo:', error);
+        toast.error('Nie udało się zaktualizować logo');
       }
     };
     reader.readAsDataURL(file);
@@ -219,11 +182,11 @@ export function SettingsTab({
       await removeLogo({
         variables: { organizationId: organization.id },
       });
-      toast.success("Logo zostało usunięte");
+      toast.success('Logo zostało usunięte');
       onRefresh?.();
     } catch (error) {
-      console.error("Błąd podczas usuwania logo:", error);
-      toast.error("Nie udało się usunąć logo");
+      console.error('Błąd podczas usuwania logo:', error);
+      toast.error('Nie udało się usunąć logo');
     }
   };
 
@@ -306,12 +269,8 @@ export function SettingsTab({
                       htmlFor="logo-upload"
                       className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-border/50 bg-background/50 hover:bg-background hover:border-primary/50 transition-all text-sm font-medium"
                     >
-                      {updatingLogo ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <Image className="h-4 w-4" />
-                      )}
-                      {organization.logoUrl ? "Zmień logo" : "Dodaj logo"}
+                      {updatingLogo ? <Loader2 className="h-4 w-4 animate-spin" /> : <Image className="h-4 w-4" />}
+                      {organization.logoUrl ? 'Zmień logo' : 'Dodaj logo'}
                     </Label>
                     <input
                       id="logo-upload"
@@ -329,18 +288,12 @@ export function SettingsTab({
                         disabled={removingLogo}
                         className="gap-2 rounded-xl border-border/50 text-destructive hover:text-destructive hover:bg-destructive/10 transition-all"
                       >
-                        {removingLogo ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <Trash2 className="h-4 w-4" />
-                        )}
+                        {removingLogo ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
                         Usuń
                       </Button>
                     )}
                   </div>
-                  <p className="text-xs text-muted-foreground">
-                    Zalecany rozmiar: 200x200px. Maksymalnie 2MB.
-                  </p>
+                  <p className="text-xs text-muted-foreground">Zalecany rozmiar: 200x200px. Maksymalnie 2MB.</p>
                 </div>
               )}
             </div>
@@ -349,7 +302,9 @@ export function SettingsTab({
             {isEditingBasic ? (
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="org-name" className="text-sm font-medium">Nazwa organizacji *</Label>
+                  <Label htmlFor="org-name" className="text-sm font-medium">
+                    Nazwa organizacji *
+                  </Label>
                   <Input
                     id="org-name"
                     value={editedName}
@@ -358,7 +313,9 @@ export function SettingsTab({
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="org-description" className="text-sm font-medium">Opis</Label>
+                  <Label htmlFor="org-description" className="text-sm font-medium">
+                    Opis
+                  </Label>
                   <Textarea
                     id="org-description"
                     value={editedDescription}
@@ -374,14 +331,14 @@ export function SettingsTab({
                     disabled={isUpdating}
                     className="gap-2 rounded-xl bg-primary text-white font-bold h-11 px-8 shadow-lg shadow-primary/20 transition-all"
                   >
-                    {updatingName ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Save className="h-4 w-4" />
-                    )}
+                    {updatingName ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                     Zapisz zmiany
                   </Button>
-                  <Button variant="outline" onClick={handleCancelEdit} className="rounded-xl border-border/50 h-11 px-6">
+                  <Button
+                    variant="outline"
+                    onClick={handleCancelEdit}
+                    className="rounded-xl border-border/50 h-11 px-6"
+                  >
                     Anuluj
                   </Button>
                 </div>
@@ -394,9 +351,7 @@ export function SettingsTab({
                 </div>
                 <div className="space-y-1">
                   <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Opis</Label>
-                  <p className="text-muted-foreground leading-relaxed">
-                    {organization.description || "Brak opisu"}
-                  </p>
+                  <p className="text-muted-foreground leading-relaxed">{organization.description || 'Brak opisu'}</p>
                 </div>
               </div>
             )}
@@ -411,14 +366,6 @@ export function SettingsTab({
           canEdit={canEdit}
           onSuccess={onRefresh}
         />
-
-        {/* Auto-sync settings */}
-        <AutoSyncSettings
-          organizationId={organization.id}
-          autoSyncEnabled={organization.autoSyncExampleExercises}
-          canEdit={canEdit}
-          onSuccess={onRefresh}
-        />
       </SettingsSection>
 
       {/* Section 2: Data Management */}
@@ -429,11 +376,7 @@ export function SettingsTab({
         gradient="from-amber-500 to-orange-600"
         defaultOpen={false}
       >
-        <DataManagementCard
-          organizationId={organization.id}
-          canEdit={canEdit}
-          onRefresh={onRefresh}
-        />
+        <DataManagementCard organizationId={organization.id} canEdit={canEdit} onRefresh={onRefresh} />
       </SettingsSection>
     </div>
   );

@@ -2,12 +2,7 @@
 
 import { Mic, MicOff, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-  TooltipProvider,
-} from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { useVoiceInput, type VoiceInputState } from '@/hooks/useVoiceInput';
 import type { VoiceParseResponse } from '@/types/ai.types';
@@ -22,16 +17,12 @@ interface ExerciseVoiceInputProps {
  * Komponent przycisku mikrofonu do voice input dla ćwiczeń
  * Używa hooka useVoiceInput i zwraca sparsowany wynik
  */
-export function ExerciseVoiceInput({
-  onResult,
-  disabled = false,
-  className,
-}: ExerciseVoiceInputProps) {
+export function ExerciseVoiceInput({ onResult, disabled = false, className }: ExerciseVoiceInputProps) {
   const {
     state,
     isSupported,
     interimTranscript,
-    finalTranscript,
+    finalTranscript: _finalTranscript,
     error,
     toggleListening,
   } = useVoiceInput({
@@ -69,10 +60,10 @@ export function ExerciseVoiceInput({
               onClick={toggleListening}
               disabled={disabled || isProcessing}
               className={cn(
-                "h-10 w-10 rounded-lg transition-all duration-200",
-                isListening && "bg-destructive/10 text-destructive",
-                !isListening && !isProcessing && "text-muted-foreground hover:text-foreground hover:bg-surface-hover",
-                isProcessing && "text-muted-foreground",
+                'h-10 w-10 rounded-lg transition-all duration-200',
+                isListening && 'bg-destructive/10 text-destructive',
+                !isListening && !isProcessing && 'text-muted-foreground hover:text-foreground hover:bg-surface-hover',
+                isProcessing && 'text-muted-foreground',
                 className
               )}
             >
@@ -83,7 +74,10 @@ export function ExerciseVoiceInput({
                   <MicOff className="h-5 w-5" />
                   {/* Pulsing rings */}
                   <span className="absolute -inset-2 animate-ping rounded-full bg-destructive/30" />
-                  <span className="absolute -inset-3 animate-mic-pulse rounded-full bg-destructive/20" style={{ animationDelay: '0.5s' }} />
+                  <span
+                    className="absolute -inset-3 animate-mic-pulse rounded-full bg-destructive/20"
+                    style={{ animationDelay: '0.5s' }}
+                  />
                 </div>
               ) : (
                 <Mic className="h-5 w-5" />
@@ -111,9 +105,7 @@ export function ExerciseVoiceInput({
         {/* Error message */}
         {error && (
           <div className="absolute left-full ml-3 top-1/2 -translate-y-1/2 whitespace-nowrap animate-in fade-in slide-in-from-left-2 duration-200">
-            <div className="px-3 py-1.5 rounded-full bg-destructive/10 text-destructive text-xs">
-              {error}
-            </div>
+            <div className="px-3 py-1.5 rounded-full bg-destructive/10 text-destructive text-xs">{error}</div>
           </div>
         )}
       </div>

@@ -1,11 +1,11 @@
-"use client";
+'use client';
 
-import { useState, useRef, useCallback, useEffect } from "react";
-import { Loader2 } from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { Slider } from "@/components/ui/slider";
-import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
+import { useState, useRef, useCallback, useEffect } from 'react';
+import { Loader2 } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Slider } from '@/components/ui/slider';
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
 
 interface ClickableStatProps {
   /** Aktualna wartość */
@@ -27,14 +27,14 @@ interface ClickableStatProps {
   /** Czy wyłączony */
   disabled?: boolean;
   /** Compact variant for dense layouts - inline display */
-  variant?: "default" | "compact";
+  variant?: 'default' | 'compact';
   /** Dodatkowe klasy CSS */
   className?: string;
   /** data-testid dla testów */
-  "data-testid"?: string;
+  'data-testid'?: string;
 }
 
-type StatStatus = "idle" | "hover" | "editing" | "saving" | "error" | "success";
+type StatStatus = 'idle' | 'hover' | 'editing' | 'saving' | 'error' | 'success';
 
 /**
  * ClickableStat - Duża liczba klikalna z edycją inline
@@ -54,20 +54,20 @@ export function ClickableStat({
   onCommit,
   icon,
   disabled = false,
-  variant = "default",
+  variant = 'default',
   className,
-  "data-testid": testId,
+  'data-testid': testId,
 }: ClickableStatProps) {
-  const [status, setStatus] = useState<StatStatus>("idle");
+  const [status, setStatus] = useState<StatStatus>('idle');
   const [editValue, setEditValue] = useState<number | null>(value);
   const [originalValue, setOriginalValue] = useState<number | null>(value);
   const inputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const isCompact = variant === "compact";
+  const isCompact = variant === 'compact';
 
   // Sync with external value
   useEffect(() => {
-    if (status === "idle") {
+    if (status === 'idle') {
       setEditValue(value);
       setOriginalValue(value);
     }
@@ -75,7 +75,7 @@ export function ClickableStat({
 
   const handleStartEdit = useCallback(() => {
     if (disabled) return;
-    setStatus("editing");
+    setStatus('editing');
     setEditValue(value);
     setOriginalValue(value);
     setTimeout(() => inputRef.current?.focus(), 0);
@@ -83,36 +83,36 @@ export function ClickableStat({
 
   const handleCommit = useCallback(async () => {
     if (editValue === originalValue) {
-      setStatus("idle");
+      setStatus('idle');
       return;
     }
 
-    setStatus("saving");
+    setStatus('saving');
 
     try {
       await onCommit(editValue);
-      setStatus("success");
-      setTimeout(() => setStatus("idle"), 500);
+      setStatus('success');
+      setTimeout(() => setStatus('idle'), 500);
     } catch (error) {
-      console.error("ClickableStat commit error:", error);
+      console.error('ClickableStat commit error:', error);
       setEditValue(originalValue);
-      setStatus("error");
-      setTimeout(() => setStatus("idle"), 2000);
+      setStatus('error');
+      setTimeout(() => setStatus('idle'), 2000);
     }
   }, [editValue, originalValue, onCommit]);
 
   const handleCancel = useCallback(() => {
     setEditValue(originalValue);
-    setStatus("idle");
+    setStatus('idle');
   }, [originalValue]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
-      if (e.key === "Enter") {
+      if (e.key === 'Enter') {
         e.preventDefault();
         handleCommit();
       }
-      if (e.key === "Escape") {
+      if (e.key === 'Escape') {
         e.preventDefault();
         handleCancel();
       }
@@ -135,28 +135,31 @@ export function ClickableStat({
     setEditValue(values[0] ?? null);
   }, []);
 
-  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = e.target.value;
-    if (val === "") {
-      setEditValue(null);
-    } else {
-      const num = Number(val);
-      if (!isNaN(num)) {
-        setEditValue(Math.min(max, Math.max(min, num)));
+  const handleInputChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const val = e.target.value;
+      if (val === '') {
+        setEditValue(null);
+      } else {
+        const num = Number(val);
+        if (!isNaN(num)) {
+          setEditValue(Math.min(max, Math.max(min, num)));
+        }
       }
-    }
-  }, [min, max]);
+    },
+    [min, max]
+  );
 
   // Editing mode
-  if (status === "editing" || status === "saving") {
+  if (status === 'editing' || status === 'saving') {
     // Compact editing - inline input only
     if (isCompact) {
       return (
         <div
           ref={containerRef}
           className={cn(
-            "flex items-center gap-1.5 px-2 py-1 bg-surface rounded-lg border border-primary transition-all",
-            status === "saving" && "opacity-70",
+            'flex items-center gap-1.5 px-2 py-1 bg-surface rounded-lg border border-primary transition-all',
+            status === 'saving' && 'opacity-70',
             className
           )}
           data-testid={testId}
@@ -165,20 +168,18 @@ export function ClickableStat({
           <Input
             ref={inputRef}
             type="number"
-            value={editValue ?? ""}
+            value={editValue ?? ''}
             onChange={handleInputChange}
             onBlur={handleBlur}
             onKeyDown={handleKeyDown}
             min={min}
             max={max}
             step={step}
-            disabled={status === "saving"}
+            disabled={status === 'saving'}
             className="h-6 w-14 text-center text-sm font-semibold px-1"
           />
           {unit && <span className="text-xs text-muted-foreground">{unit}</span>}
-          {status === "saving" && (
-            <Loader2 className="h-3 w-3 animate-spin text-primary shrink-0" />
-          )}
+          {status === 'saving' && <Loader2 className="h-3 w-3 animate-spin text-primary shrink-0" />}
         </div>
       );
     }
@@ -188,8 +189,8 @@ export function ClickableStat({
       <div
         ref={containerRef}
         className={cn(
-          "flex flex-col items-center gap-3 p-4 bg-surface rounded-xl border-2 border-primary transition-all",
-          status === "saving" && "opacity-70",
+          'flex flex-col items-center gap-3 p-4 bg-surface rounded-xl border-2 border-primary transition-all',
+          status === 'saving' && 'opacity-70',
           className
         )}
         data-testid={testId}
@@ -198,17 +199,17 @@ export function ClickableStat({
           <Input
             ref={inputRef}
             type="number"
-            value={editValue ?? ""}
+            value={editValue ?? ''}
             onChange={handleInputChange}
             onBlur={handleBlur}
             onKeyDown={handleKeyDown}
             min={min}
             max={max}
             step={step}
-            disabled={status === "saving"}
+            disabled={status === 'saving'}
             className="text-center text-2xl font-bold h-12"
           />
-          {status === "saving" && (
+          {status === 'saving' && (
             <div className="absolute right-3 top-1/2 -translate-y-1/2">
               <Loader2 className="h-4 w-4 animate-spin text-primary" />
             </div>
@@ -221,7 +222,7 @@ export function ClickableStat({
           min={min}
           max={max}
           step={step}
-          disabled={status === "saving"}
+          disabled={status === 'saving'}
           className="w-full max-w-[160px]"
         />
 
@@ -242,15 +243,15 @@ export function ClickableStat({
       <button
         type="button"
         onClick={handleStartEdit}
-        onMouseEnter={() => !disabled && setStatus("hover")}
-        onMouseLeave={() => status === "hover" && setStatus("idle")}
+        onMouseEnter={() => !disabled && setStatus('hover')}
+        onMouseLeave={() => status === 'hover' && setStatus('idle')}
         disabled={disabled}
         className={cn(
-          "group flex items-center gap-1.5 px-2 py-1 rounded-lg border border-transparent transition-all cursor-pointer",
-          status === "hover" && "border-border/60 bg-surface-light/50",
-          status === "success" && "border-emerald-500/50 bg-emerald-500/5",
-          status === "error" && "border-destructive/50 bg-destructive/5",
-          disabled && "opacity-50 cursor-not-allowed",
+          'group flex items-center gap-1.5 px-2 py-1 rounded-lg border border-transparent transition-all cursor-pointer',
+          status === 'hover' && 'border-border/60 bg-surface-light/50',
+          status === 'success' && 'border-emerald-500/50 bg-emerald-500/5',
+          status === 'error' && 'border-destructive/50 bg-destructive/5',
+          disabled && 'opacity-50 cursor-not-allowed',
           className
         )}
         data-testid={testId}
@@ -259,17 +260,15 @@ export function ClickableStat({
         <span className="text-xs text-muted-foreground">{label}:</span>
         <span
           className={cn(
-            "text-sm font-semibold text-foreground transition-colors",
-            status === "hover" && "text-primary",
-            status === "success" && "text-emerald-500",
-            status === "error" && "text-destructive"
+            'text-sm font-semibold text-foreground transition-colors',
+            status === 'hover' && 'text-primary',
+            status === 'success' && 'text-emerald-500',
+            status === 'error' && 'text-destructive'
           )}
         >
-          {value ?? "—"}
+          {value ?? '—'}
         </span>
-        {unit && value !== null && (
-          <span className="text-xs text-muted-foreground">{unit}</span>
-        )}
+        {unit && value !== null && <span className="text-xs text-muted-foreground">{unit}</span>}
       </button>
     );
   }
@@ -279,37 +278,33 @@ export function ClickableStat({
     <button
       type="button"
       onClick={handleStartEdit}
-      onMouseEnter={() => !disabled && setStatus("hover")}
-      onMouseLeave={() => status === "hover" && setStatus("idle")}
+      onMouseEnter={() => !disabled && setStatus('hover')}
+      onMouseLeave={() => status === 'hover' && setStatus('idle')}
       disabled={disabled}
       className={cn(
-        "group flex flex-col items-center gap-1 p-4 bg-surface rounded-xl border border-border/60 transition-all cursor-pointer",
-        status === "hover" && "border-primary/40 shadow-lg shadow-primary/5 -translate-y-0.5",
-        status === "success" && "border-emerald-500/50 bg-emerald-500/5",
-        status === "error" && "border-destructive/50 bg-destructive/5",
-        disabled && "opacity-50 cursor-not-allowed",
+        'group flex flex-col items-center gap-1 p-4 bg-surface rounded-xl border border-border/60 transition-all cursor-pointer',
+        status === 'hover' && 'border-primary/40 shadow-lg shadow-primary/5 -translate-y-0.5',
+        status === 'success' && 'border-emerald-500/50 bg-emerald-500/5',
+        status === 'error' && 'border-destructive/50 bg-destructive/5',
+        disabled && 'opacity-50 cursor-not-allowed',
         className
       )}
       data-testid={testId}
     >
       {/* Value display */}
       <div className="flex items-baseline gap-1">
-        {icon && (
-          <span className="text-muted-foreground mr-1">{icon}</span>
-        )}
+        {icon && <span className="text-muted-foreground mr-1">{icon}</span>}
         <span
           className={cn(
-            "text-3xl font-bold text-foreground transition-colors",
-            status === "hover" && "text-primary",
-            status === "success" && "text-emerald-500",
-            status === "error" && "text-destructive"
+            'text-3xl font-bold text-foreground transition-colors',
+            status === 'hover' && 'text-primary',
+            status === 'success' && 'text-emerald-500',
+            status === 'error' && 'text-destructive'
           )}
         >
-          {value ?? "—"}
+          {value ?? '—'}
         </span>
-        {unit && value !== null && (
-          <span className="text-lg text-muted-foreground">{unit}</span>
-        )}
+        {unit && value !== null && <span className="text-lg text-muted-foreground">{unit}</span>}
       </div>
 
       {/* Label */}
@@ -327,11 +322,7 @@ interface ClickableStatGroupProps {
 }
 
 export function ClickableStatGroup({ children, className }: ClickableStatGroupProps) {
-  return (
-    <div className={cn("grid grid-cols-3 gap-3", className)}>
-      {children}
-    </div>
-  );
+  return <div className={cn('grid grid-cols-3 gap-3', className)}>{children}</div>;
 }
 
 /**
@@ -355,14 +346,14 @@ export function StatBadge({ originalValue, currentValue, label }: StatBadgeProps
     <Badge
       variant="outline"
       className={cn(
-        "text-[10px] font-normal",
+        'text-[10px] font-normal',
         isIncrease
-          ? "border-emerald-500/40 text-emerald-600 bg-emerald-500/5"
-          : "border-amber-500/40 text-amber-600 bg-amber-500/5"
+          ? 'border-emerald-500/40 text-emerald-600 bg-emerald-500/5'
+          : 'border-amber-500/40 text-amber-600 bg-amber-500/5'
       )}
     >
       {label && <span className="mr-1">{label}:</span>}
-      {isIncrease ? "+" : ""}
+      {isIncrease ? '+' : ''}
       {diff}
     </Badge>
   );

@@ -558,52 +558,52 @@ export type {
   RedeemPartnerCodeResult,
   CancelSubscriptionResult,
   SetCommissionResult,
-} from "./revenue.types";
+} from './revenue.types';
 
 // Response types for GraphQL queries
 export interface GetOrganizationEarningsResponse {
-  organizationEarnings: import("./revenue.types").OrganizationEarnings;
+  organizationEarnings: import('./revenue.types').OrganizationEarnings;
 }
 
 export interface GetCommissionTierInfoResponse {
-  commissionTierInfo: import("./revenue.types").CommissionTierInfo;
+  commissionTierInfo: import('./revenue.types').CommissionTierInfo;
 }
 
 export interface GetStripeConnectStatusResponse {
-  stripeConnectStatus: import("./revenue.types").StripeConnectStatus;
+  stripeConnectStatus: import('./revenue.types').StripeConnectStatus;
 }
 
 export interface GetMonthlyEarningsSummaryResponse {
-  monthlyEarningsSummary: import("./revenue.types").MonthlyEarningsSummary[];
+  monthlyEarningsSummary: import('./revenue.types').MonthlyEarningsSummary[];
 }
 
 export interface GetRevenueHistoryResponse {
-  revenueHistory: import("./revenue.types").RevenueTransaction[];
+  revenueHistory: import('./revenue.types').RevenueTransaction[];
 }
 
 export interface GetPatientInviteLinksResponse {
-  patientInviteLinks: import("./revenue.types").PatientInviteLink[];
+  patientInviteLinks: import('./revenue.types').PatientInviteLink[];
 }
 
 export interface GetPatientSubscriptionsResponse {
-  patientSubscriptions: import("./revenue.types").PatientSubscription[];
+  patientSubscriptions: import('./revenue.types').PatientSubscription[];
 }
 
 export interface GetAllPartnershipCodesResponse {
-  allPartnershipCodes: import("./revenue.types").PartnershipCode[];
+  allPartnershipCodes: import('./revenue.types').PartnershipCode[];
 }
 
 // Response types for GraphQL mutations
 export interface InitiateStripeConnectOnboardingResponse {
-  initiateStripeConnectOnboarding: import("./revenue.types").StripeConnectOnboardingResult;
+  initiateStripeConnectOnboarding: import('./revenue.types').StripeConnectOnboardingResult;
 }
 
 export interface RefreshStripeConnectLinkResponse {
-  refreshStripeConnectOnboardingLink: import("./revenue.types").StripeConnectOnboardingResult;
+  refreshStripeConnectOnboardingLink: import('./revenue.types').StripeConnectOnboardingResult;
 }
 
 export interface CreatePatientInviteLinkResponse {
-  createPatientInviteLink: import("./revenue.types").CreatePatientInviteLinkResult;
+  createPatientInviteLink: import('./revenue.types').CreatePatientInviteLinkResult;
 }
 
 export interface CancelPatientInviteLinkResponse {
@@ -611,19 +611,19 @@ export interface CancelPatientInviteLinkResponse {
 }
 
 export interface RedeemPartnershipCodeResponse {
-  redeemPartnershipCode: import("./revenue.types").RedeemPartnerCodeResult;
+  redeemPartnershipCode: import('./revenue.types').RedeemPartnerCodeResult;
 }
 
 export interface CancelPatientSubscriptionResponse {
-  cancelPatientSubscription: import("./revenue.types").CancelSubscriptionResult;
+  cancelPatientSubscription: import('./revenue.types').CancelSubscriptionResult;
 }
 
 export interface SetOrganizationCommissionRateResponse {
-  setOrganizationCommissionRate: import("./revenue.types").SetCommissionResult;
+  setOrganizationCommissionRate: import('./revenue.types').SetCommissionResult;
 }
 
 export interface CreatePartnershipCodeResponse {
-  createPartnershipCode: import("./revenue.types").PartnershipCode;
+  createPartnershipCode: import('./revenue.types').PartnershipCode;
 }
 
 export interface DeactivatePartnershipCodeResponse {

@@ -30,12 +30,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { ClinicalNoteEditor } from './ClinicalNoteEditor';
@@ -59,7 +54,10 @@ const VISIT_TYPE_LABELS: Record<VisitType, string> = {
   CONSULTATION: 'Konsultacja',
 };
 
-const STATUS_CONFIG: Record<ClinicalNoteStatus, { label: string; variant: 'default' | 'secondary' | 'success' | 'warning' }> = {
+const STATUS_CONFIG: Record<
+  ClinicalNoteStatus,
+  { label: string; variant: 'default' | 'secondary' | 'success' | 'warning' }
+> = {
   DRAFT: { label: 'Wersja robocza', variant: 'warning' },
   COMPLETED: { label: 'Zakończona', variant: 'secondary' },
   SIGNED: { label: 'Podpisana', variant: 'success' },
@@ -69,7 +67,7 @@ export function ClinicalNotesList({
   patientId,
   therapistId,
   organizationId,
-  patientName,
+  patientName: _patientName,
 }: ClinicalNotesListProps) {
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [selectedNote, setSelectedNote] = useState<ClinicalNote | null>(null);
@@ -84,9 +82,7 @@ export function ClinicalNotesList({
 
   // Delete mutation
   const [deleteNote, { loading: deleting }] = useMutation(DELETE_CLINICAL_NOTE_MUTATION, {
-    refetchQueries: [
-      { query: GET_PATIENT_CLINICAL_NOTES_QUERY, variables: { patientId, organizationId } },
-    ],
+    refetchQueries: [{ query: GET_PATIENT_CLINICAL_NOTES_QUERY, variables: { patientId, organizationId } }],
   });
 
   const notes = (data as { patientClinicalNotes?: ClinicalNote[] })?.patientClinicalNotes || [];
@@ -207,7 +203,7 @@ export function ClinicalNotesList({
                       ? 'border-border/40 bg-surface/30 hover:bg-surface/50'
                       : 'border-border/60 bg-surface hover:border-primary/30 hover:shadow-sm cursor-pointer'
                   )}
-                  onClick={() => note.status !== 'SIGNED' ? handleEditNote(note) : handleViewNote(note)}
+                  onClick={() => (note.status !== 'SIGNED' ? handleEditNote(note) : handleViewNote(note))}
                 >
                   {/* Icon */}
                   <div
@@ -216,8 +212,8 @@ export function ClinicalNotesList({
                       note.status === 'SIGNED'
                         ? 'bg-primary/10'
                         : note.status === 'DRAFT'
-                        ? 'bg-warning/10'
-                        : 'bg-secondary/10'
+                          ? 'bg-warning/10'
+                          : 'bg-secondary/10'
                     )}
                   >
                     {note.status === 'SIGNED' ? (
@@ -233,10 +229,7 @@ export function ClinicalNotesList({
                       <span className="font-medium text-sm text-foreground truncate">
                         {note.title || VISIT_TYPE_LABELS[note.visitType]}
                       </span>
-                      <Badge
-                        variant={STATUS_CONFIG[note.status].variant}
-                        className="text-[10px]"
-                      >
+                      <Badge variant={STATUS_CONFIG[note.status].variant} className="text-[10px]">
                         {STATUS_CONFIG[note.status].label}
                       </Badge>
                     </div>
@@ -325,9 +318,7 @@ export function ClinicalNotesList({
           </button>
 
           <DialogHeader className="sr-only">
-            <DialogTitle>
-              {selectedNote ? 'Edycja notatki' : 'Nowa notatka'}
-            </DialogTitle>
+            <DialogTitle>{selectedNote ? 'Edycja notatki' : 'Nowa notatka'}</DialogTitle>
           </DialogHeader>
           <ClinicalNoteEditor
             patientId={patientId}

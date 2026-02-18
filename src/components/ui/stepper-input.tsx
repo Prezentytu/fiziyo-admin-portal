@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { Minus, Plus } from "lucide-react";
-import { cn } from "@/lib/utils";
+import * as React from 'react';
+import { Minus, Plus } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface StepperInputProps {
   value: number;
@@ -14,7 +14,7 @@ interface StepperInputProps {
   suffix?: string;
   disabled?: boolean;
   className?: string;
-  size?: "sm" | "md";
+  size?: 'sm' | 'md';
 }
 
 /**
@@ -23,21 +23,7 @@ interface StepperInputProps {
  * Clean, precise controls with subtle interactions.
  */
 const StepperInput = React.forwardRef<HTMLDivElement, StepperInputProps>(
-  (
-    {
-      value,
-      onChange,
-      step = 1,
-      min = 0,
-      max = 999,
-      label,
-      suffix,
-      disabled = false,
-      className,
-      size = "md",
-    },
-    ref
-  ) => {
+  ({ value, onChange, step = 1, min = 0, max = 999, label, suffix, disabled = false, className, size = 'md' }, ref) => {
     const handleDecrement = React.useCallback(() => {
       if (disabled) return;
       const newValue = Math.max(min, value - step);
@@ -61,14 +47,14 @@ const StepperInput = React.forwardRef<HTMLDivElement, StepperInputProps>(
       [min, max, onChange]
     );
 
-    const isSmall = size === "sm";
-    const buttonSize = isSmall ? "w-7 h-7" : "w-8 h-8";
-    const inputSize = isSmall ? "w-12 h-8" : "w-14 h-10";
-    const fontSize = isSmall ? "text-base font-bold" : "text-lg font-bold";
-    const iconSize = "w-4 h-4";
+    const isSmall = size === 'sm';
+    const buttonSize = isSmall ? 'w-7 h-7' : 'w-8 h-8';
+    const inputSize = isSmall ? 'w-12 h-8' : 'w-14 h-10';
+    const fontSize = isSmall ? 'text-base font-bold' : 'text-lg font-bold';
+    const iconSize = 'w-4 h-4';
 
     return (
-      <div ref={ref} className={cn("flex flex-col items-center shrink-0 group/stepper", className)}>
+      <div ref={ref} className={cn('flex flex-col items-center shrink-0 group/stepper', className)}>
         {/* Controls Row */}
         <div className="flex items-center gap-0.5">
           {/* Minus Button */}
@@ -77,10 +63,10 @@ const StepperInput = React.forwardRef<HTMLDivElement, StepperInputProps>(
             onClick={handleDecrement}
             disabled={disabled || value <= min}
             className={cn(
-              "flex items-center justify-center rounded-md transition-all touch-manipulation",
+              'flex items-center justify-center rounded-md transition-all touch-manipulation',
               buttonSize,
-              "text-muted-foreground/60 hover:text-foreground hover:bg-surface-light/80 active:scale-95",
-              "disabled:opacity-20 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:active:scale-100"
+              'text-muted-foreground/60 hover:text-foreground hover:bg-surface-light/80 active:scale-95',
+              'disabled:opacity-20 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:active:scale-100'
             )}
             aria-label="Zmniejsz"
             data-testid="stepper-decrement"
@@ -98,14 +84,14 @@ const StepperInput = React.forwardRef<HTMLDivElement, StepperInputProps>(
               onChange={handleInputChange}
               disabled={disabled}
               className={cn(
-                "bg-surface-light/80 border border-border/40 rounded-md text-center font-semibold text-foreground transition-all",
-                "focus:border-primary/50 focus:ring-2 focus:ring-primary/20 focus:outline-none focus:bg-surface",
-                "hover:border-border/60",
+                'bg-surface-light/80 border border-border/40 rounded-md text-center font-semibold text-foreground transition-all',
+                'focus:border-primary/50 focus:ring-2 focus:ring-primary/20 focus:outline-none focus:bg-surface',
+                'hover:border-border/60',
                 inputSize,
                 fontSize,
-                suffix && "pr-4",
-                disabled && "opacity-40 cursor-not-allowed",
-                "[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                suffix && 'pr-4',
+                disabled && 'opacity-40 cursor-not-allowed',
+                '[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none'
               )}
               data-testid="stepper-input"
             />
@@ -123,10 +109,10 @@ const StepperInput = React.forwardRef<HTMLDivElement, StepperInputProps>(
             onClick={handleIncrement}
             disabled={disabled || value >= max}
             className={cn(
-              "flex items-center justify-center rounded-md transition-all touch-manipulation",
+              'flex items-center justify-center rounded-md transition-all touch-manipulation',
               buttonSize,
-              "text-muted-foreground/60 hover:text-foreground hover:bg-surface-light/80 active:scale-95",
-              "disabled:opacity-20 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:active:scale-100"
+              'text-muted-foreground/60 hover:text-foreground hover:bg-surface-light/80 active:scale-95',
+              'disabled:opacity-20 disabled:cursor-not-allowed disabled:hover:bg-transparent disabled:active:scale-100'
             )}
             aria-label="Zwiększ"
             data-testid="stepper-increment"
@@ -146,7 +132,7 @@ const StepperInput = React.forwardRef<HTMLDivElement, StepperInputProps>(
   }
 );
 
-StepperInput.displayName = "StepperInput";
+StepperInput.displayName = 'StepperInput';
 
 export { StepperInput };
 export type { StepperInputProps };

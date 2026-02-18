@@ -1,41 +1,19 @@
-"use client";
+'use client';
 
-import { useState, useCallback, useMemo } from "react";
-import { useSortable } from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
-import {
-  ChevronRight,
-  Clock,
-  StickyNote,
-  Settings2,
-  GripVertical,
-  Trash2,
-  ChevronUp
-} from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { cn } from "@/lib/utils";
-import { getMediaUrl } from "@/utils/mediaUrl";
-import { ImagePlaceholder } from "@/components/shared/ImagePlaceholder";
-import { parseLoad, formatLoad, hasLoad, getLoadBadgeColor, getLoadBadgeLabel } from "@/utils/loadParser";
-import {
-  calculateEstimatedTime,
-  formatEstimatedTime,
-  shouldShowSideBadge
-} from "@/utils/exerciseTime";
-import type { ExerciseMapping, ExerciseOverride } from "./types";
+import { useState, useCallback, useMemo } from 'react';
+import { useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import { ChevronRight, Clock, StickyNote, Settings2, GripVertical, Trash2, ChevronUp } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { cn } from '@/lib/utils';
+import { getMediaUrl } from '@/utils/mediaUrl';
+import { ImagePlaceholder } from '@/components/shared/ImagePlaceholder';
+import { parseLoad, formatLoad, hasLoad, getLoadBadgeColor, getLoadBadgeLabel } from '@/utils/loadParser';
+import { calculateEstimatedTime, formatEstimatedTime, shouldShowSideBadge } from '@/utils/exerciseTime';
+import type { ExerciseMapping, ExerciseOverride } from './types';
 
 // --- GHOST INPUT (Czysta liczba - Linear Style) ---
 interface GhostInputProps {
@@ -53,15 +31,15 @@ function GhostInput({
   value,
   onChange,
   label,
-  suffix = "",
+  suffix = '',
   min = 0,
   max = 999,
   step = 1,
-  disabled = false
+  disabled = false,
 }: GhostInputProps) {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
-    if (val === "") {
+    if (val === '') {
       onChange(min);
       return;
     }
@@ -104,13 +82,13 @@ function GhostInput({
             inputMode="numeric"
             pattern="[0-9]*"
             className={cn(
-              "w-14 h-10 bg-surface-light/80 rounded-lg text-center font-bold text-xl text-foreground",
-              "placeholder-muted-foreground/30 outline-none border-2 border-transparent",
-              "hover:border-border/50 focus:border-primary focus:bg-surface",
-              "transition-all tabular-nums",
-              disabled && "opacity-40 cursor-not-allowed"
+              'w-14 h-10 bg-surface-light/80 rounded-lg text-center font-bold text-xl text-foreground',
+              'placeholder-muted-foreground/30 outline-none border-2 border-transparent',
+              'hover:border-border/50 focus:border-primary focus:bg-surface',
+              'transition-all tabular-nums',
+              disabled && 'opacity-40 cursor-not-allowed'
             )}
-            value={value ?? ""}
+            value={value ?? ''}
             onChange={handleChange}
             placeholder="-"
             disabled={disabled}
@@ -159,7 +137,7 @@ interface ExerciseRowProps {
  */
 export function ExerciseRow({
   mapping,
-  index,
+  index: _index,
   override,
   onOverrideChange,
   onRemove,
@@ -172,14 +150,7 @@ export function ExerciseRow({
   const exercise = mapping.exercise;
 
   // Drag & Drop setup
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: mapping.id });
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: mapping.id });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -187,21 +158,24 @@ export function ExerciseRow({
   };
 
   // Compute effective values - mapping has priority (updated directly via ghost copy)
-  const effectiveValues = useMemo(() => ({
-    sets: mapping.sets ?? override?.sets ?? exercise?.defaultSets ?? 3,
-    reps: mapping.reps ?? override?.reps ?? exercise?.defaultReps ?? 10,
-    duration: mapping.duration ?? override?.duration ?? exercise?.defaultDuration,
-    restSets: mapping.restSets ?? override?.restSets ?? exercise?.defaultRestBetweenSets ?? 60,
-    tempo: mapping.tempo ?? override?.tempo ?? exercise?.tempo ?? "",
-    load: mapping.load ?? override?.load ?? exercise?.defaultLoad,
-    notes: mapping.notes ?? override?.notes ?? "",
-    executionTime: mapping.executionTime ?? override?.executionTime ?? exercise?.defaultExecutionTime,
-    side: exercise?.side ?? "none",
-  }), [override, mapping, exercise]);
+  const effectiveValues = useMemo(
+    () => ({
+      sets: mapping.sets ?? override?.sets ?? exercise?.defaultSets ?? 3,
+      reps: mapping.reps ?? override?.reps ?? exercise?.defaultReps ?? 10,
+      duration: mapping.duration ?? override?.duration ?? exercise?.defaultDuration,
+      restSets: mapping.restSets ?? override?.restSets ?? exercise?.defaultRestBetweenSets ?? 60,
+      tempo: mapping.tempo ?? override?.tempo ?? exercise?.tempo ?? '',
+      load: mapping.load ?? override?.load ?? exercise?.defaultLoad,
+      notes: mapping.notes ?? override?.notes ?? '',
+      executionTime: mapping.executionTime ?? override?.executionTime ?? exercise?.defaultExecutionTime,
+      side: exercise?.side ?? 'none',
+    }),
+    [override, mapping, exercise]
+  );
 
   // Czy pokazywać kolumnę CZAS (Izometria/Hybryda)?
   const exerciseType = exercise?.type?.toLowerCase();
-  const isTimeBased = exerciseType === "time";
+  const isTimeBased = exerciseType === 'time';
   const showDurationColumn = !isTimeBased && effectiveValues.executionTime && effectiveValues.executionTime > 0;
 
   // Auto Czas - kalkulacja szacowanego czasu
@@ -217,31 +191,38 @@ export function ExerciseRow({
   }, [effectiveValues, isTimeBased]);
 
   // Check if user has modified any fields (override exists)
-  const hasProTuneData = useMemo(() => ({
-    // Only show indicators when user has actually changed something (override exists)
-    hasLoadValue: override?.load !== undefined && hasLoad(override.load),
-    hasCustomRest: override?.restSets !== undefined,
-    hasNotes: override?.notes !== undefined && Boolean(override.notes?.trim()),
-    hasSide: shouldShowSideBadge(effectiveValues.side),
-  }), [override, effectiveValues.side]);
-
-  // Handle field updates
-  const handleFieldChange = useCallback((field: keyof ExerciseOverride, value: unknown) => {
-    onOverrideChange(mapping.id, { [field]: value });
-  }, [mapping.id, onOverrideChange]);
-
-  // Handle load input blur
-  const handleLoadBlur = useCallback((e: React.FocusEvent<HTMLInputElement>) => {
-    const parsed = parseLoad(e.target.value);
-    handleFieldChange("load", parsed);
-  }, [handleFieldChange]);
-
-  // Get display values
-  const imageUrl = getMediaUrl(
-    exercise?.thumbnailUrl || exercise?.imageUrl || exercise?.images?.[0]
+  const hasProTuneData = useMemo(
+    () => ({
+      // Only show indicators when user has actually changed something (override exists)
+      hasLoadValue: override?.load !== undefined && hasLoad(override.load),
+      hasCustomRest: override?.restSets !== undefined,
+      hasNotes: override?.notes !== undefined && Boolean(override.notes?.trim()),
+      hasSide: shouldShowSideBadge(effectiveValues.side),
+    }),
+    [override, effectiveValues.side]
   );
 
-  const exerciseName = mapping.customName || exercise?.name || "Ćwiczenie";
+  // Handle field updates
+  const handleFieldChange = useCallback(
+    (field: keyof ExerciseOverride, value: unknown) => {
+      onOverrideChange(mapping.id, { [field]: value });
+    },
+    [mapping.id, onOverrideChange]
+  );
+
+  // Handle load input blur
+  const handleLoadBlur = useCallback(
+    (e: React.FocusEvent<HTMLInputElement>) => {
+      const parsed = parseLoad(e.target.value);
+      handleFieldChange('load', parsed);
+    },
+    [handleFieldChange]
+  );
+
+  // Get display values
+  const imageUrl = getMediaUrl(exercise?.thumbnailUrl || exercise?.imageUrl || exercise?.images?.[0]);
+
+  const exerciseName = mapping.customName || exercise?.name || 'Ćwiczenie';
   const isDisabled = readOnly || isMultiPatient;
 
   return (
@@ -249,11 +230,11 @@ export function ExerciseRow({
       ref={setNodeRef}
       style={style}
       className={cn(
-        "group relative rounded-xl overflow-hidden transition-all duration-200",
-        "bg-surface border border-border/60",
-        "hover:border-border/80 hover:shadow-lg hover:shadow-black/5",
-        isExpanded && "border-primary/30",
-        isDragging && "opacity-50 shadow-2xl scale-[1.02] z-50"
+        'group relative rounded-xl overflow-hidden transition-all duration-200',
+        'bg-surface border border-border/60',
+        'hover:border-border/80 hover:shadow-lg hover:shadow-black/5',
+        isExpanded && 'border-primary/30',
+        isDragging && 'opacity-50 shadow-2xl scale-[1.02] z-50'
       )}
       data-testid={`exercise-row-${mapping.id}`}
     >
@@ -265,9 +246,9 @@ export function ExerciseRow({
         <button
           type="button"
           className={cn(
-            "flex items-center justify-center w-5 h-5 mt-1 rounded transition-colors shrink-0",
-            "text-muted-foreground/30 hover:text-muted-foreground",
-            "cursor-grab active:cursor-grabbing focus:outline-none"
+            'flex items-center justify-center w-5 h-5 mt-1 rounded transition-colors shrink-0',
+            'text-muted-foreground/30 hover:text-muted-foreground',
+            'cursor-grab active:cursor-grabbing focus:outline-none'
           )}
           {...attributes}
           {...listeners}
@@ -305,14 +286,12 @@ export function ExerciseRow({
             </span>
 
             {hasProTuneData.hasLoadValue && (
-              <span className={cn("text-[10px] font-medium", getLoadBadgeColor(effectiveValues.load))}>
+              <span className={cn('text-[10px] font-medium', getLoadBadgeColor(effectiveValues.load))}>
                 {getLoadBadgeLabel(effectiveValues.load)}
               </span>
             )}
 
-            {hasProTuneData.hasNotes && (
-              <StickyNote className="h-3 w-3 text-muted-foreground/40" />
-            )}
+            {hasProTuneData.hasNotes && <StickyNote className="h-3 w-3 text-muted-foreground/40" />}
           </div>
         </div>
 
@@ -323,22 +302,19 @@ export function ExerciseRow({
               type="button"
               onClick={() => setIsExpanded(!isExpanded)}
               className={cn(
-                "relative p-1.5 rounded-md transition-all",
+                'relative p-1.5 rounded-md transition-all',
                 isExpanded
-                  ? "bg-primary/10 text-primary"
-                  : "text-muted-foreground/40 hover:text-foreground hover:bg-surface-light"
+                  ? 'bg-primary/10 text-primary'
+                  : 'text-muted-foreground/40 hover:text-foreground hover:bg-surface-light'
               )}
-              title={isExpanded ? "Zwiń" : "Więcej opcji"}
+              title={isExpanded ? 'Zwiń' : 'Więcej opcji'}
               data-testid={`exercise-row-toggle-${mapping.id}`}
             >
-              {isExpanded ? (
-                <ChevronUp className="h-4 w-4" />
-              ) : (
-                <Settings2 className="h-4 w-4" />
-              )}
-              {!isExpanded && (hasProTuneData.hasLoadValue || hasProTuneData.hasNotes || hasProTuneData.hasCustomRest) && (
-                <span className="absolute top-0 right-0 w-1.5 h-1.5 rounded-full bg-primary" />
-              )}
+              {isExpanded ? <ChevronUp className="h-4 w-4" /> : <Settings2 className="h-4 w-4" />}
+              {!isExpanded &&
+                (hasProTuneData.hasLoadValue || hasProTuneData.hasNotes || hasProTuneData.hasCustomRest) && (
+                  <span className="absolute top-0 right-0 w-1.5 h-1.5 rounded-full bg-primary" />
+                )}
             </button>
           )}
 
@@ -363,7 +339,7 @@ export function ExerciseRow({
         {/* KOLUMNA 1: SERIE */}
         <GhostInput
           value={effectiveValues.sets}
-          onChange={(val) => handleFieldChange("sets", val)}
+          onChange={(val) => handleFieldChange('sets', val)}
           label="Serie"
           min={1}
           max={20}
@@ -374,7 +350,7 @@ export function ExerciseRow({
         {isTimeBased ? (
           <GhostInput
             value={effectiveValues.duration || 30}
-            onChange={(val) => handleFieldChange("duration", val)}
+            onChange={(val) => handleFieldChange('duration', val)}
             label="Czas"
             suffix="s"
             min={1}
@@ -385,7 +361,7 @@ export function ExerciseRow({
         ) : (
           <GhostInput
             value={effectiveValues.reps}
-            onChange={(val) => handleFieldChange("reps", val)}
+            onChange={(val) => handleFieldChange('reps', val)}
             label="Powt."
             min={1}
             max={100}
@@ -397,7 +373,7 @@ export function ExerciseRow({
         {showDurationColumn && (
           <GhostInput
             value={effectiveValues.executionTime}
-            onChange={(val) => handleFieldChange("executionTime", val)}
+            onChange={(val) => handleFieldChange('executionTime', val)}
             label="Czas"
             suffix="s"
             min={1}
@@ -422,7 +398,7 @@ export function ExerciseRow({
               <Input
                 type="number"
                 value={effectiveValues.restSets}
-                onChange={(e) => handleFieldChange("restSets", Number(e.target.value))}
+                onChange={(e) => handleFieldChange('restSets', Number(e.target.value))}
                 className="bg-surface-light border-border/50 focus:border-primary h-9"
                 disabled={readOnly}
               />
@@ -451,7 +427,7 @@ export function ExerciseRow({
               <Textarea
                 placeholder="Instrukcje, wskazówki..."
                 value={effectiveValues.notes}
-                onChange={(e) => handleFieldChange("notes", e.target.value)}
+                onChange={(e) => handleFieldChange('notes', e.target.value)}
                 className="bg-surface-light border-border/50 focus:border-primary min-h-[60px] resize-none"
                 disabled={readOnly}
                 data-testid={`exercise-row-notes-${mapping.id}`}
@@ -466,12 +442,7 @@ export function ExerciseRow({
               onClick={() => setShowMoreOptions(!showMoreOptions)}
               className="flex items-center gap-1.5 text-xs text-muted-foreground/60 hover:text-foreground transition-colors"
             >
-              <ChevronRight
-                className={cn(
-                  "h-3.5 w-3.5 transition-transform",
-                  showMoreOptions && "rotate-90"
-                )}
-              />
+              <ChevronRight className={cn('h-3.5 w-3.5 transition-transform', showMoreOptions && 'rotate-90')} />
               Zaawansowane
             </button>
 
@@ -485,7 +456,7 @@ export function ExerciseRow({
                   <Input
                     placeholder="np. 3-1-2-0"
                     value={effectiveValues.tempo}
-                    onChange={(e) => handleFieldChange("tempo", e.target.value)}
+                    onChange={(e) => handleFieldChange('tempo', e.target.value)}
                     className="bg-surface-light border-border/50 h-9"
                     disabled={readOnly}
                     data-testid={`exercise-row-tempo-${mapping.id}`}
@@ -497,10 +468,7 @@ export function ExerciseRow({
                   <label className="text-[10px] uppercase text-muted-foreground/60 font-bold tracking-wide mb-1.5 block">
                     Strona ciała
                   </label>
-                  <Select
-                    value={effectiveValues.side.toLowerCase()}
-                    disabled={readOnly}
-                  >
+                  <Select value={effectiveValues.side.toLowerCase()} disabled={readOnly}>
                     <SelectTrigger className="h-9 bg-surface-light border-border/50">
                       <SelectValue placeholder="Wybierz" />
                     </SelectTrigger>

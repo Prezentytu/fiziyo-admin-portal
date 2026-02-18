@@ -10,34 +10,34 @@
  * - ELITE: 300+ pacjentów = 50%
  * - PARTNER: 80% przez pierwsze 2 lata, potem 50% (ELITE)
  */
-export type CommissionTier = "START" | "PRO" | "EXPERT" | "ELITE" | "PARTNER";
+export type CommissionTier = 'START' | 'PRO' | 'EXPERT' | 'ELITE' | 'PARTNER';
 
 /**
  * Status subskrypcji pacjenta
  */
 export type PatientSubscriptionStatus =
-  | "Active"
-  | "PastDue"
-  | "Canceled"
-  | "Paused"
-  | "Trialing"
-  | "Incomplete"
-  | "Expired";
+  | 'Active'
+  | 'PastDue'
+  | 'Canceled'
+  | 'Paused'
+  | 'Trialing'
+  | 'Incomplete'
+  | 'Expired';
 
 /**
  * Typ transakcji Revenue Share
  */
-export type RevenueTransactionType = "PatientPayment" | "Commission" | "Payout";
+export type RevenueTransactionType = 'PatientPayment' | 'Commission' | 'Payout';
 
 /**
  * Status linku zaproszeniowego
  */
-export type InviteLinkStatus = "pending" | "used" | "expired";
+export type InviteLinkStatus = 'pending' | 'used' | 'expired';
 
 /**
  * Typ linku zaproszeniowego
  */
-export type InviteLinkType = "email" | "sms" | "qr";
+export type InviteLinkType = 'email' | 'sms' | 'qr';
 
 // ========================================
 // Główne interfejsy
@@ -261,63 +261,64 @@ export interface SetCommissionResult {
  */
 export const COMMISSION_TIERS = {
   START: {
-    name: "START",
+    name: 'START',
     rate: 0.35,
     minSubscribers: 0,
     maxSubscribers: 49,
-    color: "zinc",
-    gradientFrom: "from-zinc-500",
-    gradientTo: "to-zinc-600",
+    color: 'zinc',
+    gradientFrom: 'from-zinc-500',
+    gradientTo: 'to-zinc-600',
   },
   PRO: {
-    name: "PRO",
-    rate: 0.40,
+    name: 'PRO',
+    rate: 0.4,
     minSubscribers: 50,
     maxSubscribers: 99,
-    color: "amber",
-    gradientFrom: "from-amber-500",
-    gradientTo: "to-orange-600",
+    color: 'amber',
+    gradientFrom: 'from-amber-500',
+    gradientTo: 'to-orange-600',
   },
   EXPERT: {
-    name: "EXPERT",
+    name: 'EXPERT',
     rate: 0.45,
     minSubscribers: 100,
     maxSubscribers: 299,
-    color: "emerald",
-    gradientFrom: "from-emerald-500",
-    gradientTo: "to-green-600",
+    color: 'emerald',
+    gradientFrom: 'from-emerald-500',
+    gradientTo: 'to-green-600',
   },
   ELITE: {
-    name: "ELITE",
-    rate: 0.50,
+    name: 'ELITE',
+    rate: 0.5,
     minSubscribers: 300,
     maxSubscribers: null,
-    color: "violet",
-    gradientFrom: "from-violet-500",
-    gradientTo: "to-purple-600",
+    color: 'violet',
+    gradientFrom: 'from-violet-500',
+    gradientTo: 'to-purple-600',
   },
   PARTNER: {
-    name: "PARTNER",
-    rate: 0.80, // 80% przez pierwsze 2 lata, potem spada do ELITE (50%)
+    name: 'PARTNER',
+    rate: 0.8, // 80% przez pierwsze 2 lata, potem spada do ELITE (50%)
     minSubscribers: null,
     maxSubscribers: null,
-    color: "primary",
-    gradientFrom: "from-primary",
-    gradientTo: "to-emerald-600",
+    color: 'primary',
+    gradientFrom: 'from-primary',
+    gradientTo: 'to-emerald-600',
   },
 } as const;
 
 /**
  * Helper do formatowania kwoty
  */
-export function formatCurrency(
-  amount: number,
-  currency: string = "PLN"
-): string {
-  return amount.toLocaleString("pl-PL", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }) + " " + currency;
+export function formatCurrency(amount: number, currency: string = 'PLN'): string {
+  return (
+    amount.toLocaleString('pl-PL', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }) +
+    ' ' +
+    currency
+  );
 }
 
 /**

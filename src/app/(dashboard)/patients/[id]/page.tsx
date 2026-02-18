@@ -20,7 +20,6 @@ import {
   CheckCircle2,
   Send,
   QrCode,
-  Target,
   User,
 } from 'lucide-react';
 
@@ -36,11 +35,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from '@/components/ui/collapsible';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { LoadingState } from '@/components/shared/LoadingState';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { ActivityReport } from '@/components/patients/ActivityReport';
@@ -64,9 +59,6 @@ import { ExtendSetDialog } from '@/components/patients/ExtendSetDialog';
 import { GeneratePDFDialog } from '@/components/exercise-sets/GeneratePDFDialog';
 import { PatientQRCodeDialog } from '@/components/patients/PatientQRCodeDialog';
 import { EditPatientDialog } from '@/components/patients/EditPatientDialog';
-import { BodyMap } from '@/components/patients/bodymap/index';
-import { FEATURE_FLAGS } from '@/lib/featureFlags';
-
 interface PatientDetailPageProps {
   params: Promise<{ id: string }>;
 }
@@ -96,7 +88,10 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
   } | null>(null);
   const [pdfAssignment, setPdfAssignment] = useState<PatientAssignment | null>(null);
   const [addExerciseAssignment, setAddExerciseAssignment] = useState<PatientAssignment | null>(null);
-  const [previewExercise, setPreviewExercise] = useState<{ mapping: ExerciseMapping; override?: ExerciseOverride } | null>(null);
+  const [previewExercise, setPreviewExercise] = useState<{
+    mapping: ExerciseMapping;
+    override?: ExerciseOverride;
+  } | null>(null);
   const [extendingAssignment, setExtendingAssignment] = useState<PatientAssignment | null>(null);
 
   // Get organization ID from context (changes when user switches organization)
@@ -248,7 +243,9 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
             <AvatarFallback
               className={cn(
                 'text-lg font-semibold',
-                patient.isShadowUser ? 'bg-muted-foreground/60 text-white' : 'bg-gradient-to-br from-primary to-primary-dark text-white'
+                patient.isShadowUser
+                  ? 'bg-muted-foreground/60 text-white'
+                  : 'bg-gradient-to-br from-primary to-primary-dark text-white'
               )}
             >
               {initials}
@@ -262,7 +259,9 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <h1 className="text-xl font-bold text-foreground truncate" data-testid="patient-detail-name">{displayName}</h1>
+            <h1 className="text-xl font-bold text-foreground truncate" data-testid="patient-detail-name">
+              {displayName}
+            </h1>
             {patient.isShadowUser && (
               <Badge variant="secondary" className="text-[10px] shrink-0">
                 Tymczasowe
@@ -309,12 +308,8 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
               <Send className="h-5 w-5 text-white" />
             </div>
             <div className="min-w-0 flex-1">
-              <h3 className="text-base font-bold text-white">
-                Przypisz zestaw
-              </h3>
-              <p className="text-sm text-white/70">
-                Program ćwiczeń
-              </p>
+              <h3 className="text-base font-bold text-white">Przypisz zestaw</h3>
+              <p className="text-sm text-white/70">Program ćwiczeń</p>
             </div>
             <Plus className="h-5 w-5 text-white/60 group-hover:text-white transition-colors shrink-0" />
           </div>
@@ -334,12 +329,8 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
               <QrCode className="h-5 w-5 text-white" />
             </div>
             <div className="min-w-0 flex-1">
-              <h3 className="text-base font-bold text-white">
-                QR kod
-              </h3>
-              <p className="text-sm text-white/70">
-                Połącz z aplikacją
-              </p>
+              <h3 className="text-base font-bold text-white">QR kod</h3>
+              <p className="text-sm text-white/70">Połącz z aplikacją</p>
             </div>
           </div>
         </button>
@@ -411,32 +402,6 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
         )}
       </div>
 
-      {/* Pain Body Map Section - Hidden behind feature flag */}
-      {FEATURE_FLAGS.BODY_PAIN_MAP && (
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-base font-semibold text-foreground flex items-center gap-2">
-              <Target className="h-4 w-4 text-warning" />
-              Mapa bólu
-              <Badge variant="outline" className="ml-1 text-xs border-warning/40 text-warning">
-                Profesjonalna
-              </Badge>
-            </h2>
-          </div>
-          <Card className="border-border/40 overflow-hidden">
-            <div className="h-1 bg-gradient-to-r from-warning via-orange-500 to-red-500" />
-            <CardContent className="p-4 sm:p-6">
-              <BodyMap
-                patientId={id}
-                onSave={(session) => {
-                  console.log('Zapisano sesję mapy bólu:', session);
-                }}
-              />
-            </CardContent>
-          </Card>
-        </div>
-      )}
-
       {/* Clinical Documentation Section */}
       {therapistId && organizationId && (
         <ClinicalNotesList
@@ -477,13 +442,15 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
           open={isAssignDialogOpen}
           onOpenChange={setIsAssignDialogOpen}
           mode="from-patient"
-          preselectedPatient={{
-            id: patient.id,
-            name: displayName,
-            email: patient.email,
-            image: patient.image,
-            isShadowUser: patient.isShadowUser,
-          } as AssignmentPatient}
+          preselectedPatient={
+            {
+              id: patient.id,
+              name: displayName,
+              email: patient.email,
+              image: patient.image,
+              isShadowUser: patient.isShadowUser,
+            } as AssignmentPatient
+          }
           organizationId={organizationId}
           therapistId={therapistId}
           onSuccess={() => refetchAssignments()}
@@ -592,11 +559,7 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
       )}
 
       {/* Edit Patient Dialog */}
-      <EditPatientDialog
-        open={isEditPatientOpen}
-        onOpenChange={setIsEditPatientOpen}
-        patient={patient}
-      />
+      <EditPatientDialog open={isEditPatientOpen} onOpenChange={setIsEditPatientOpen} patient={patient} />
     </div>
   );
 }

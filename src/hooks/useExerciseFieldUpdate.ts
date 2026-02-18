@@ -1,11 +1,11 @@
-import { useCallback, useState, useRef } from "react";
-import { useMutation, useApolloClient } from "@apollo/client/react";
-import { toast } from "sonner";
+import { useCallback, useState } from 'react';
+import { useMutation } from '@apollo/client/react';
+import { toast } from 'sonner';
 import {
   UPDATE_EXERCISE_FIELD_MUTATION,
   BATCH_UPDATE_EXERCISE_FIELDS_MUTATION,
-} from "@/graphql/mutations/adminExercises.mutations";
-import type { AdminExercise } from "@/graphql/types/adminExercise.types";
+} from '@/graphql/mutations/adminExercises.mutations';
+import type { AdminExercise } from '@/graphql/types/adminExercise.types';
 
 interface UseExerciseFieldUpdateOptions {
   /** ID ćwiczenia */
@@ -14,8 +14,6 @@ interface UseExerciseFieldUpdateOptions {
   onSuccess?: (field: string, value: unknown) => void;
   /** Callback po błędzie */
   onError?: (field: string, error: Error) => void;
-  /** Debounce w ms dla batch updates */
-  debounceMs?: number;
 }
 
 interface UseExerciseFieldUpdateReturn {
@@ -58,13 +56,9 @@ export function useExerciseFieldUpdate({
   exerciseId,
   onSuccess,
   onError,
-  debounceMs = 0,
 }: UseExerciseFieldUpdateOptions): UseExerciseFieldUpdateReturn {
-  const client = useApolloClient();
   const [pendingFields, setPendingFields] = useState<Set<string>>(new Set());
   const [error, setError] = useState<Error | null>(null);
-  const debounceRef = useRef<NodeJS.Timeout | null>(null);
-  const pendingUpdatesRef = useRef<Record<string, unknown>>({});
 
   // Single field mutation
   const [updateFieldMutation] = useMutation<{ updateExerciseField: AdminExercise }>(UPDATE_EXERCISE_FIELD_MUTATION, {
@@ -75,16 +69,19 @@ export function useExerciseFieldUpdate({
   });
 
   // Batch update mutation
-  const [batchUpdateMutation] = useMutation<{ batchUpdateExerciseFields: AdminExercise }>(BATCH_UPDATE_EXERCISE_FIELDS_MUTATION, {
-    onError: (err) => {
-      setError(err);
-      toast.error(`Nie udało się zapisać zmian: ${err.message}`);
-    },
-  });
+  const [batchUpdateMutation] = useMutation<{ batchUpdateExerciseFields: AdminExercise }>(
+    BATCH_UPDATE_EXERCISE_FIELDS_MUTATION,
+    {
+      onError: (err) => {
+        setError(err);
+        toast.error(`Nie udało się zapisać zmian: ${err.message}`);
+      },
+    }
+  );
 
   // Update single field with optimistic response
   const updateField = useCallback(
-    async <T,>(field: string, value: T) => {
+    async <T>(field: string, value: T) => {
       setPendingFields((prev) => new Set(prev).add(field));
       setError(null);
 
@@ -97,7 +94,7 @@ export function useExerciseFieldUpdate({
           },
           optimisticResponse: {
             updateExerciseField: {
-              __typename: "AdminExercise",
+              __typename: 'AdminExercise',
               id: exerciseId,
               [field]: value,
             } as unknown as AdminExercise,
@@ -106,7 +103,7 @@ export function useExerciseFieldUpdate({
             if (data?.updateExerciseField) {
               // Update cache with new value
               cache.modify({
-                id: cache.identify({ __typename: "AdminExercise", id: exerciseId }),
+                id: cache.identify({ __typename: 'AdminExercise', id: exerciseId }),
                 fields: {
                   [field]: () => value as never,
                 },
@@ -151,7 +148,7 @@ export function useExerciseFieldUpdate({
           },
           optimisticResponse: {
             batchUpdateExerciseFields: {
-              __typename: "AdminExercise",
+              __typename: 'AdminExercise',
               id: exerciseId,
               ...updates,
             } as unknown as AdminExercise,
@@ -160,12 +157,9 @@ export function useExerciseFieldUpdate({
             if (data?.batchUpdateExerciseFields) {
               // Update cache with all new values
               cache.modify({
-                id: cache.identify({ __typename: "AdminExercise", id: exerciseId }),
+                id: cache.identify({ __typename: 'AdminExercise', id: exerciseId }),
                 fields: Object.fromEntries(
-                  Object.entries(updates).map(([field, value]) => [
-                    field,
-                    () => value as never,
-                  ])
+                  Object.entries(updates).map(([field, value]) => [field, () => value as never])
                 ),
               });
             }
@@ -195,102 +189,5 @@ export function useExerciseFieldUpdate({
     isUpdating: pendingFields.size > 0,
     pendingFields,
     error,
-  };
-}
-
-/**
- * Hook do debounced batch updates
- * Grupuje zmiany i wysyła je razem po określonym czasie
- */
-interface UseDebouncedExerciseUpdateOptions extends UseExerciseFieldUpdateOptions {
-  /** Debounce w ms (domyślnie 500ms) */
-  debounceMs?: number;
-}
-
-export function useDebouncedExerciseUpdate({
-  exerciseId,
-  onSuccess,
-  onError,
-  debounceMs = 500,
-}: UseDebouncedExerciseUpdateOptions) {
-  const [pendingChanges, setPendingChanges] = useState<Record<string, unknown>>({});
-  const [isSaving, setIsSaving] = useState(false);
-  const debounceRef = useRef<NodeJS.Timeout | null>(null);
-
-  const [batchUpdateMutation] = useMutation(BATCH_UPDATE_EXERCISE_FIELDS_MUTATION);
-
-  // Queue a field update
-  const queueUpdate = useCallback(
-    <T,>(field: string, value: T) => {
-      // Clear existing timeout
-      if (debounceRef.current) {
-        clearTimeout(debounceRef.current);
-      }
-
-      // Add to pending changes
-      setPendingChanges((prev) => ({ ...prev, [field]: value }));
-
-      // Schedule batch save
-      debounceRef.current = setTimeout(async () => {
-        const changes = { ...pendingChanges, [field]: value };
-
-        if (Object.keys(changes).length === 0) return;
-
-        setIsSaving(true);
-        try {
-          await batchUpdateMutation({
-            variables: {
-              exerciseId,
-              updates: changes,
-            },
-          });
-          setPendingChanges({});
-          Object.entries(changes).forEach(([f, v]) => onSuccess?.(f, v));
-        } catch (err) {
-          const error = err instanceof Error ? err : new Error(String(err));
-          Object.keys(changes).forEach((f) => onError?.(f, error));
-          toast.error("Nie udało się zapisać zmian");
-        } finally {
-          setIsSaving(false);
-        }
-      }, debounceMs);
-    },
-    [exerciseId, pendingChanges, batchUpdateMutation, onSuccess, onError, debounceMs]
-  );
-
-  // Flush all pending changes immediately
-  const flush = useCallback(async () => {
-    if (debounceRef.current) {
-      clearTimeout(debounceRef.current);
-    }
-
-    if (Object.keys(pendingChanges).length === 0) return;
-
-    setIsSaving(true);
-    try {
-      await batchUpdateMutation({
-        variables: {
-          exerciseId,
-          updates: pendingChanges,
-        },
-      });
-      const changes = { ...pendingChanges };
-      setPendingChanges({});
-      Object.entries(changes).forEach(([f, v]) => onSuccess?.(f, v));
-    } catch (err) {
-      const error = err instanceof Error ? err : new Error(String(err));
-      Object.keys(pendingChanges).forEach((f) => onError?.(f, error));
-      toast.error("Nie udało się zapisać zmian");
-    } finally {
-      setIsSaving(false);
-    }
-  }, [exerciseId, pendingChanges, batchUpdateMutation, onSuccess, onError]);
-
-  return {
-    queueUpdate,
-    flush,
-    pendingChanges,
-    hasPendingChanges: Object.keys(pendingChanges).length > 0,
-    isSaving,
   };
 }

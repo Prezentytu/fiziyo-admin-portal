@@ -11,7 +11,13 @@ export type ExerciseSide = 'NONE' | 'LEFT' | 'RIGHT' | 'BOTH' | 'ALTERNATING';
 export type ExerciseScope = 'PERSONAL' | 'ORGANIZATION' | 'GLOBAL';
 export type ContentStatus = 'DRAFT' | 'PENDING_REVIEW' | 'CHANGES_REQUESTED' | 'APPROVED' | 'PUBLISHED';
 export type MediaType = 'VIDEO' | 'IMAGE' | 'AUDIO';
-export type MediaContext = 'MAIN_DEMO' | 'THUMBNAIL' | 'COMMON_MISTAKE' | 'STEP_BY_STEP' | 'ANATOMY_VIEW' | 'PATIENT_MATERIAL';
+export type MediaContext =
+  | 'MAIN_DEMO'
+  | 'THUMBNAIL'
+  | 'COMMON_MISTAKE'
+  | 'STEP_BY_STEP'
+  | 'ANATOMY_VIEW'
+  | 'PATIENT_MATERIAL';
 export type DifficultyLevel = 'EASY' | 'MEDIUM' | 'HARD' | 'EXPERT';
 
 // ============================================
@@ -80,12 +86,12 @@ export interface Exercise {
   contributorId?: string;
   createdAt?: string;
   updatedAt?: string;
-  
+
   // Global submission tracking (nowy model weryfikacji)
   globalSubmissionId?: string;
   sourceOrganizationExerciseId?: string;
   submittedToGlobalAt?: string;
-  
+
   // Legacy aliasy (dla kompatybilności wstecznej w komponentach)
   description?: string; // alias dla patientDescription
   exerciseSide?: ExerciseSide | string; // alias dla side
@@ -208,8 +214,3 @@ export interface UploadExerciseImageVariables {
 export interface UploadExerciseImageMutationResult {
   uploadExerciseImage: string;
 }
-
-
-
-
-

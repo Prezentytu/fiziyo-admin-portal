@@ -1,29 +1,18 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { useQuery, useMutation } from "@apollo/client/react";
-import {
-  CreditCard,
-  ExternalLink,
-  CheckCircle,
-  AlertCircle,
-  Loader2,
-  Shield,
-  Banknote,
-} from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
-import { toast } from "sonner";
-import { GET_STRIPE_CONNECT_STATUS_QUERY } from "@/graphql/queries";
-import { INITIATE_STRIPE_CONNECT_ONBOARDING_MUTATION } from "@/graphql/mutations";
-import type {
-  GetStripeConnectStatusResponse,
-  InitiateStripeConnectOnboardingResponse,
-} from "@/types/apollo";
-import { formatCurrency } from "@/types/revenue.types";
-import { cn } from "@/lib/utils";
+import { useState } from 'react';
+import { useQuery, useMutation } from '@apollo/client/react';
+import { CreditCard, ExternalLink, CheckCircle, AlertCircle, Loader2, Shield, Banknote } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
+import { toast } from 'sonner';
+import { GET_STRIPE_CONNECT_STATUS_QUERY } from '@/graphql/queries';
+import { INITIATE_STRIPE_CONNECT_ONBOARDING_MUTATION } from '@/graphql/mutations';
+import type { GetStripeConnectStatusResponse, InitiateStripeConnectOnboardingResponse } from '@/types/apollo';
+import { formatCurrency } from '@/types/revenue.types';
+import { cn } from '@/lib/utils';
 
 // ========================================
 // Types
@@ -38,46 +27,43 @@ interface StripeConnectCardProps {
 // Component
 // ========================================
 
-export function StripeConnectCard({
-  organizationId,
-  className,
-}: StripeConnectCardProps) {
+export function StripeConnectCard({ organizationId, className }: StripeConnectCardProps) {
   const [isRedirecting, setIsRedirecting] = useState(false);
 
   // Fetch Stripe Connect status
-  const { data, loading, error, refetch } =
-    useQuery<GetStripeConnectStatusResponse>(GET_STRIPE_CONNECT_STATUS_QUERY, {
-      variables: { organizationId: organizationId || "" },
-      skip: !organizationId,
-      errorPolicy: "all",
-    });
+  const {
+    data,
+    loading,
+    error,
+    refetch: _refetch,
+  } = useQuery<GetStripeConnectStatusResponse>(GET_STRIPE_CONNECT_STATUS_QUERY, {
+    variables: { organizationId: organizationId || '' },
+    skip: !organizationId,
+    errorPolicy: 'all',
+  });
 
   // Initiate onboarding mutation
-  const [initiateOnboarding, { loading: onboardingLoading }] =
-    useMutation<InitiateStripeConnectOnboardingResponse>(
-      INITIATE_STRIPE_CONNECT_ONBOARDING_MUTATION,
-      {
-        onCompleted: (data) => {
-          if (data.initiateStripeConnectOnboarding.success) {
-            const url = data.initiateStripeConnectOnboarding.onboardingUrl;
-            if (url) {
-              setIsRedirecting(true);
-              toast.success("Przekierowuję do Stripe...");
-              // Redirect to Stripe onboarding
-              window.location.href = url;
-            }
-          } else {
-            toast.error(
-              data.initiateStripeConnectOnboarding.message ||
-                "Nie udało się rozpocząć konfiguracji"
-            );
+  const [initiateOnboarding, { loading: onboardingLoading }] = useMutation<InitiateStripeConnectOnboardingResponse>(
+    INITIATE_STRIPE_CONNECT_ONBOARDING_MUTATION,
+    {
+      onCompleted: (data) => {
+        if (data.initiateStripeConnectOnboarding.success) {
+          const url = data.initiateStripeConnectOnboarding.onboardingUrl;
+          if (url) {
+            setIsRedirecting(true);
+            toast.success('Przekierowuję do Stripe...');
+            // Redirect to Stripe onboarding
+            window.location.href = url;
           }
-        },
-        onError: (error) => {
-          toast.error(`Błąd: ${error.message}`);
-        },
-      }
-    );
+        } else {
+          toast.error(data.initiateStripeConnectOnboarding.message || 'Nie udało się rozpocząć konfiguracji');
+        }
+      },
+      onError: (error) => {
+        toast.error(`Błąd: ${error.message}`);
+      },
+    }
+  );
 
   const status = data?.stripeConnectStatus;
 
@@ -90,13 +76,13 @@ export function StripeConnectCard({
   // Handle open Stripe dashboard
   const handleOpenDashboard = () => {
     // Stripe Express Dashboard URL
-    window.open("https://dashboard.stripe.com/", "_blank");
+    window.open('https://dashboard.stripe.com/', '_blank');
   };
 
   // Loading state
   if (loading) {
     return (
-      <Card className={cn("border-border/60", className)}>
+      <Card className={cn('border-border/60', className)}>
         <CardHeader className="pb-3">
           <Skeleton className="h-5 w-40" />
         </CardHeader>
@@ -111,12 +97,10 @@ export function StripeConnectCard({
   // Error state
   if (error) {
     return (
-      <Card className={cn("border-border/60", className)}>
+      <Card className={cn('border-border/60', className)}>
         <CardContent className="flex flex-col items-center justify-center py-8 text-center">
           <AlertCircle className="h-8 w-8 text-destructive mb-3" />
-          <p className="text-sm text-muted-foreground">
-            Nie udało się pobrać statusu Stripe
-          </p>
+          <p className="text-sm text-muted-foreground">Nie udało się pobrać statusu Stripe</p>
         </CardContent>
       </Card>
     );
@@ -125,12 +109,7 @@ export function StripeConnectCard({
   // Not connected - show onboarding prompt
   if (!status?.hasConnectedAccount || !status?.onboardingComplete) {
     return (
-      <Card
-        className={cn(
-          "border-amber-500/30 bg-gradient-to-br from-surface to-amber-500/5",
-          className
-        )}
-      >
+      <Card className={cn('border-amber-500/30 bg-gradient-to-br from-surface to-amber-500/5', className)}>
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-base">
             <CreditCard className="h-5 w-5 text-amber-500" />
@@ -142,12 +121,9 @@ export function StripeConnectCard({
           <div className="flex items-start gap-3 p-4 rounded-xl bg-amber-500/10 border border-amber-500/20">
             <AlertCircle className="h-5 w-5 text-amber-500 shrink-0 mt-0.5" />
             <div>
-              <p className="font-medium text-foreground mb-1">
-                Skonfiguruj wypłaty
-              </p>
+              <p className="font-medium text-foreground mb-1">Skonfiguruj wypłaty</p>
               <p className="text-sm text-muted-foreground">
-                Aby otrzymywać prowizje od subskrypcji pacjentów, połącz swoje
-                konto bankowe przez Stripe.
+                Aby otrzymywać prowizje od subskrypcji pacjentów, połącz swoje konto bankowe przez Stripe.
               </p>
             </div>
           </div>
@@ -173,7 +149,7 @@ export function StripeConnectCard({
             {onboardingLoading || isRedirecting ? (
               <>
                 <Loader2 className="h-4 w-4 animate-spin" />
-                {isRedirecting ? "Przekierowuję..." : "Przygotowuję..."}
+                {isRedirecting ? 'Przekierowuję...' : 'Przygotowuję...'}
               </>
             ) : (
               <>
@@ -186,9 +162,7 @@ export function StripeConnectCard({
 
           {/* Partial progress indicator */}
           {status?.hasConnectedAccount && !status?.onboardingComplete && (
-            <p className="text-xs text-center text-muted-foreground">
-              Konfiguracja w toku - dokończ ją w Stripe
-            </p>
+            <p className="text-xs text-center text-muted-foreground">Konfiguracja w toku - dokończ ją w Stripe</p>
           )}
         </CardContent>
       </Card>
@@ -197,12 +171,7 @@ export function StripeConnectCard({
 
   // Connected - show status
   return (
-    <Card
-      className={cn(
-        "border-emerald-500/30 bg-gradient-to-br from-surface to-emerald-500/5",
-        className
-      )}
-    >
+    <Card className={cn('border-emerald-500/30 bg-gradient-to-br from-surface to-emerald-500/5', className)}>
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-base">
           <CreditCard className="h-5 w-5 text-emerald-500" />
@@ -221,9 +190,7 @@ export function StripeConnectCard({
               <p className="text-xs text-muted-foreground">Konto aktywne</p>
             </div>
           </div>
-          <Badge className="bg-emerald-500/20 text-emerald-500 border-0">
-            Połączono
-          </Badge>
+          <Badge className="bg-emerald-500/20 text-emerald-500 border-0">Połączono</Badge>
         </div>
 
         {/* Balance info */}
@@ -237,9 +204,7 @@ export function StripeConnectCard({
             </div>
             <div className="rounded-lg bg-surface-light p-3">
               <p className="text-xs text-muted-foreground mb-1">Oczekujące</p>
-              <p className="text-lg font-bold text-foreground tabular-nums">
-                {formatCurrency(status.pendingBalance)}
-              </p>
+              <p className="text-lg font-bold text-foreground tabular-nums">{formatCurrency(status.pendingBalance)}</p>
             </div>
           </div>
         )}
@@ -261,11 +226,7 @@ export function StripeConnectCard({
         </div>
 
         {/* Dashboard button */}
-        <Button
-          variant="outline"
-          onClick={handleOpenDashboard}
-          className="w-full gap-2"
-        >
+        <Button variant="outline" onClick={handleOpenDashboard} className="w-full gap-2">
           Otwórz Dashboard Stripe
           <ExternalLink className="h-3 w-3" />
         </Button>

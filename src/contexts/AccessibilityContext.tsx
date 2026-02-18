@@ -31,10 +31,7 @@ export const STORAGE_KEY = 'fiziyo-accessibility';
 
 interface AccessibilityContextValue {
   preferences: AccessibilityPreferences;
-  updatePreference: <K extends keyof AccessibilityPreferences>(
-    key: K,
-    value: AccessibilityPreferences[K]
-  ) => void;
+  updatePreference: <K extends keyof AccessibilityPreferences>(key: K, value: AccessibilityPreferences[K]) => void;
   resetToDefaults: () => void;
   isHydrated: boolean;
 }
@@ -122,17 +119,17 @@ export function AccessibilityProvider({ children }: { children: React.ReactNode 
   }, [preferences]);
 
   // Aktualizacja pojedynczej preferencji
-  const updatePreference = useCallback(<K extends keyof AccessibilityPreferences>(
-    key: K,
-    value: AccessibilityPreferences[K]
-  ) => {
-    setPreferences((prev) => {
-      const newPrefs = { ...prev, [key]: value };
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(newPrefs));
-      applyPreferences(newPrefs);
-      return newPrefs;
-    });
-  }, []);
+  const updatePreference = useCallback(
+    <K extends keyof AccessibilityPreferences>(key: K, value: AccessibilityPreferences[K]) => {
+      setPreferences((prev) => {
+        const newPrefs = { ...prev, [key]: value };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(newPrefs));
+        applyPreferences(newPrefs);
+        return newPrefs;
+      });
+    },
+    []
+  );
 
   // Reset do domyślnych
   const resetToDefaults = useCallback(() => {
@@ -142,18 +139,17 @@ export function AccessibilityProvider({ children }: { children: React.ReactNode 
   }, []);
 
   // Memoizacja wartości kontekstu
-  const value = useMemo<AccessibilityContextValue>(() => ({
-    preferences,
-    updatePreference,
-    resetToDefaults,
-    isHydrated,
-  }), [preferences, updatePreference, resetToDefaults, isHydrated]);
-
-  return (
-    <AccessibilityContext.Provider value={value}>
-      {children}
-    </AccessibilityContext.Provider>
+  const value = useMemo<AccessibilityContextValue>(
+    () => ({
+      preferences,
+      updatePreference,
+      resetToDefaults,
+      isHydrated,
+    }),
+    [preferences, updatePreference, resetToDefaults, isHydrated]
   );
+
+  return <AccessibilityContext.Provider value={value}>{children}</AccessibilityContext.Provider>;
 }
 
 // Hook do korzystania z kontekstu
@@ -164,6 +160,3 @@ export function useAccessibility() {
   }
   return context;
 }
-
-
-

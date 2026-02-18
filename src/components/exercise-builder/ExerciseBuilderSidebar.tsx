@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { useState } from "react";
+import { useState } from 'react';
 import {
   DndContext,
   closestCenter,
@@ -9,19 +9,15 @@ import {
   useSensor,
   useSensors,
   DragEndEvent,
-} from "@dnd-kit/core";
-import {
-  SortableContext,
-  sortableKeyboardCoordinates,
-  verticalListSortingStrategy,
-} from "@dnd-kit/sortable";
-import { Dumbbell, Trash2, Plus, Sparkles } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { cn } from "@/lib/utils";
-import { useExerciseBuilder } from "@/contexts/ExerciseBuilderContext";
-import { BuilderExerciseItem } from "./BuilderExerciseItem";
-import { CreateSetDialog } from "./CreateSetDialog";
+} from '@dnd-kit/core';
+import { SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { Dumbbell, Trash2, Plus, Sparkles } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { cn } from '@/lib/utils';
+import { useExerciseBuilder } from '@/contexts/ExerciseBuilderContext';
+import { BuilderExerciseItem } from './BuilderExerciseItem';
+import { CreateSetDialog } from './CreateSetDialog';
 
 interface ExerciseBuilderSidebarProps {
   className?: string;
@@ -64,8 +60,8 @@ export function ExerciseBuilderSidebar({ className }: ExerciseBuilderSidebarProp
       <aside
         data-testid="exercise-builder-sidebar"
         className={cn(
-          "z-40 w-[400px] border-l border-white/5 bg-zinc-950/80 backdrop-blur-2xl flex flex-col shrink-0 transition-all duration-300",
-          !hasExercises && "w-0 opacity-0 pointer-events-none border-none overflow-hidden",
+          'z-40 w-[400px] border-l border-white/5 bg-zinc-950/80 backdrop-blur-2xl flex flex-col shrink-0 transition-all duration-300',
+          !hasExercises && 'w-0 opacity-0 pointer-events-none border-none overflow-hidden',
           className
         )}
       >
@@ -80,7 +76,7 @@ export function ExerciseBuilderSidebar({ className }: ExerciseBuilderSidebarProp
                 <h2 className="font-bold text-foreground tracking-tight">Kreator Zestawu</h2>
                 <div className="flex items-center gap-2">
                   <span className="text-[10px] uppercase tracking-widest font-bold text-primary">
-                    {exerciseCount} {exerciseCount === 1 ? "Pozycja" : exerciseCount < 5 ? "Pozycje" : "Pozycji"}
+                    {exerciseCount} {exerciseCount === 1 ? 'Pozycja' : exerciseCount < 5 ? 'Pozycje' : 'Pozycji'}
                   </span>
                 </div>
               </div>
@@ -104,15 +100,8 @@ export function ExerciseBuilderSidebar({ className }: ExerciseBuilderSidebarProp
         <ScrollArea className="flex-1">
           <div className="px-4 py-6">
             {hasExercises ? (
-              <DndContext
-                sensors={sensors}
-                collisionDetection={closestCenter}
-                onDragEnd={handleDragEnd}
-              >
-                <SortableContext
-                  items={selectedExercises.map((e) => e.id)}
-                  strategy={verticalListSortingStrategy}
-                >
+              <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                <SortableContext items={selectedExercises.map((e) => e.id)} strategy={verticalListSortingStrategy}>
                   <div className="space-y-3">
                     {selectedExercises.map((exercise) => (
                       <BuilderExerciseItem
@@ -131,7 +120,8 @@ export function ExerciseBuilderSidebar({ className }: ExerciseBuilderSidebarProp
                   <Plus className="h-8 w-8 text-muted-foreground/40" />
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  Kliknij "+" na karcie ćwiczenia,<br />
+                  Kliknij &quot;+&quot; na karcie ćwiczenia,
+                  <br />
                   aby dodać je do zestawu
                 </p>
               </div>
@@ -145,18 +135,26 @@ export function ExerciseBuilderSidebar({ className }: ExerciseBuilderSidebarProp
             {/* Stats section restored */}
             <div className="flex items-center justify-between text-sm">
               <div className="flex flex-col">
-                <span className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">Szacowany czas</span>
+                <span className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">
+                  Szacowany czas
+                </span>
                 <span className="text-xl font-bold text-foreground">~{estimatedTime} min</span>
               </div>
               <div className="text-right">
-                <span className="block text-[10px] text-muted-foreground uppercase tracking-widest font-bold">Intensywność</span>
-                <span className={cn(
-                  "text-[11px] font-bold uppercase px-2 py-0.5 rounded-full",
-                  estimatedTime < 15 ? "bg-green-500/10 text-green-500" :
-                  estimatedTime < 30 ? "bg-yellow-500/10 text-yellow-500" :
-                  "bg-red-500/10 text-red-500"
-                )}>
-                  {estimatedTime < 15 ? "Niska" : estimatedTime < 30 ? "Średnia" : "Wysoka"}
+                <span className="block text-[10px] text-muted-foreground uppercase tracking-widest font-bold">
+                  Intensywność
+                </span>
+                <span
+                  className={cn(
+                    'text-[11px] font-bold uppercase px-2 py-0.5 rounded-full',
+                    estimatedTime < 15
+                      ? 'bg-green-500/10 text-green-500'
+                      : estimatedTime < 30
+                        ? 'bg-yellow-500/10 text-yellow-500'
+                        : 'bg-red-500/10 text-red-500'
+                  )}
+                >
+                  {estimatedTime < 15 ? 'Niska' : estimatedTime < 30 ? 'Średnia' : 'Wysoka'}
                 </span>
               </div>
             </div>
@@ -188,10 +186,7 @@ export function ExerciseBuilderSidebar({ className }: ExerciseBuilderSidebarProp
       </aside>
 
       {/* Create Set Dialog */}
-      <CreateSetDialog
-        open={isCreateDialogOpen}
-        onOpenChange={setIsCreateDialogOpen}
-      />
+      <CreateSetDialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen} />
     </>
   );
 }

@@ -1,40 +1,19 @@
-"use client";
+'use client';
 
-import { useState, useMemo, useCallback } from "react";
-import { useUser } from "@clerk/nextjs";
-import {
-  Calendar,
-  User,
-  Users,
-  Flag,
-  Clock,
-  X,
-  Pencil,
-  Check,
-  Settings2,
-  Loader2,
-} from "lucide-react";
-import { format, differenceInDays } from "date-fns";
-import { pl } from "date-fns/locale";
-import { toast } from "sonner";
-import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
-import { ImagePlaceholder } from "@/components/shared/ImagePlaceholder";
-import { getMediaUrl } from "@/utils/mediaUrl";
-import {
-  calculateEstimatedTime,
-  formatEstimatedTime,
-} from "@/utils/exerciseTime";
-import { useOrganization } from "@/contexts/OrganizationContext";
-import { sendExerciseReport } from "@/services/exerciseReportService";
-import type {
-  ExerciseSet,
-  Patient,
-  Frequency,
-  ExerciseOverride,
-  ExerciseMapping,
-  LocalExerciseMapping,
-} from "./types";
+import { useState, useMemo, useCallback } from 'react';
+import { useUser } from '@clerk/nextjs';
+import { Calendar, User, Users, Flag, Clock, X, Pencil, Check, Settings2, Loader2 } from 'lucide-react';
+import { format, differenceInDays } from 'date-fns';
+import { pl } from 'date-fns/locale';
+import { toast } from 'sonner';
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
+import { ImagePlaceholder } from '@/components/shared/ImagePlaceholder';
+import { getMediaUrl } from '@/utils/mediaUrl';
+import { calculateEstimatedTime, formatEstimatedTime } from '@/utils/exerciseTime';
+import { useOrganization } from '@/contexts/OrganizationContext';
+import { sendExerciseReport } from '@/services/exerciseReportService';
+import type { ExerciseSet, Patient, Frequency, ExerciseOverride, ExerciseMapping, LocalExerciseMapping } from './types';
 
 interface SummaryStepProps {
   exerciseSet: ExerciseSet;
@@ -45,21 +24,18 @@ interface SummaryStepProps {
   frequency: Frequency;
   overrides: Map<string, ExerciseOverride>;
   excludedExercises: Set<string>;
-  onGoToStep?: (step: "select-set" | "select-patients" | "schedule") => void;
+  onGoToStep?: (step: 'select-set' | 'select-patients' | 'schedule') => void;
 }
 
 // Helper: Formatuj dawkowanie do kompaktowej formy
-function formatDosage(
-  mapping: ExerciseMapping,
-  override?: ExerciseOverride
-): string {
+function formatDosage(mapping: ExerciseMapping, override?: ExerciseOverride): string {
   const exercise = mapping.exercise;
   const sets = override?.sets ?? mapping.sets ?? exercise?.defaultSets ?? 3;
   const reps = override?.reps ?? mapping.reps ?? exercise?.defaultReps ?? 10;
   const duration = override?.duration ?? mapping.duration ?? exercise?.defaultDuration;
 
   const exerciseType = exercise?.type?.toLowerCase();
-  const isTimeBased = exerciseType === "time";
+  const isTimeBased = exerciseType === 'time';
 
   if (isTimeBased && duration) {
     return `${sets} × ${duration}s`;
@@ -69,33 +45,31 @@ function formatDosage(
 }
 
 // Helper: Oblicz łączny czas zestawu
-function calculateTotalTime(
-  mappings: ExerciseMapping[],
-  overrides: Map<string, ExerciseOverride>
-): number {
+function calculateTotalTime(mappings: ExerciseMapping[], overrides: Map<string, ExerciseOverride>): number {
   return mappings.reduce((total, mapping) => {
     const exercise = mapping.exercise;
     const override = overrides.get(mapping.id);
     const exerciseType = exercise?.type?.toLowerCase();
-    const isTimeBased = exerciseType === "time";
+    const isTimeBased = exerciseType === 'time';
 
     const sets = override?.sets ?? mapping.sets ?? exercise?.defaultSets ?? 3;
     const reps = override?.reps ?? mapping.reps ?? exercise?.defaultReps ?? 10;
     const executionTime = override?.executionTime ?? mapping.executionTime ?? exercise?.defaultExecutionTime;
     const rest = override?.restSets ?? mapping.restSets ?? exercise?.defaultRestBetweenSets ?? 60;
-    
-    // Duration tylko dla ćwiczeń time-based, dla rep-based używamy executionTime
-    const duration = isTimeBased 
-      ? (override?.duration ?? mapping.duration ?? exercise?.defaultDuration) 
-      : undefined;
 
-    return total + calculateEstimatedTime({
-      sets,
-      reps,
-      duration,
-      executionTime,
-      rest,
-    });
+    // Duration tylko dla ćwiczeń time-based, dla rep-based używamy executionTime
+    const duration = isTimeBased ? (override?.duration ?? mapping.duration ?? exercise?.defaultDuration) : undefined;
+
+    return (
+      total +
+      calculateEstimatedTime({
+        sets,
+        reps,
+        duration,
+        executionTime,
+        rest,
+      })
+    );
   }, 0);
 }
 
@@ -113,7 +87,7 @@ export function SummaryStep({
   const { user } = useUser();
   const { currentOrganization } = useOrganization();
   const [showConcierge, setShowConcierge] = useState(false);
-  const [feedback, setFeedback] = useState("");
+  const [feedback, setFeedback] = useState('');
   const [feedbackSent, setFeedbackSent] = useState(false);
   const [isSendingFeedback, setIsSendingFeedback] = useState(false);
 
@@ -134,16 +108,10 @@ export function SummaryStep({
   const isFlexibleMode = selectedDaysCount === 0;
 
   // Efektywna częstotliwość tygodniowa
-  const effectiveWeeklyFrequency = isFlexibleMode
-    ? (frequency.timesPerWeek || 3)
-    : selectedDaysCount;
+  const effectiveWeeklyFrequency = isFlexibleMode ? frequency.timesPerWeek || 3 : selectedDaysCount;
 
-  const customizedCount = [...overrides.values()].filter(
-    (o) =>
-      Object.keys(o).some(
-        (key) =>
-          key !== "exerciseMappingId" && o[key as keyof ExerciseOverride] !== undefined
-      )
+  const customizedCount = [...overrides.values()].filter((o) =>
+    Object.keys(o).some((key) => key !== 'exerciseMappingId' && o[key as keyof ExerciseOverride] !== undefined)
   ).length;
 
   const getDayNames = () => {
@@ -151,21 +119,19 @@ export function SummaryStep({
       return null; // Nie pokazuj dni w trybie elastycznym
     }
     const days: string[] = [];
-    if (frequency.monday) days.push("Pn");
-    if (frequency.tuesday) days.push("Wt");
-    if (frequency.wednesday) days.push("Śr");
-    if (frequency.thursday) days.push("Cz");
-    if (frequency.friday) days.push("Pt");
-    if (frequency.saturday) days.push("So");
-    if (frequency.sunday) days.push("Nd");
-    return days.join(", ");
+    if (frequency.monday) days.push('Pn');
+    if (frequency.tuesday) days.push('Wt');
+    if (frequency.wednesday) days.push('Śr');
+    if (frequency.thursday) days.push('Cz');
+    if (frequency.friday) days.push('Pt');
+    if (frequency.saturday) days.push('So');
+    if (frequency.sunday) days.push('Nd');
+    return days.join(', ');
   };
 
   // Filter out excluded exercises - use localExercises (ghost copy) instead of exerciseSet.exerciseMappings
-  const visibleMappings = useMemo(() =>
-    localExercises.filter(
-      (m) => !excludedExercises.has(m.id)
-    ),
+  const visibleMappings = useMemo(
+    () => localExercises.filter((m) => !excludedExercises.has(m.id)),
     [localExercises, excludedExercises]
   );
 
@@ -173,10 +139,7 @@ export function SummaryStep({
   const excludedCount = excludedExercises.size;
 
   // Oblicz łączny czas zestawu
-  const totalTimeSeconds = useMemo(() =>
-    calculateTotalTime(visibleMappings, overrides),
-    [visibleMappings, overrides]
-  );
+  const totalTimeSeconds = useMemo(() => calculateTotalTime(visibleMappings, overrides), [visibleMappings, overrides]);
   const totalTimeFormatted = formatEstimatedTime(totalTimeSeconds);
 
   // Obsługa wysyłania feedbacku - wysyła raport na Discord
@@ -189,7 +152,7 @@ export function SummaryStep({
       // Przygotuj listę ćwiczeń z zestawu
       const exercises = (exerciseSet.exerciseMappings || []).map((m) => ({
         id: m.id,
-        name: m.customName || m.exercise?.name || "Nieznane ćwiczenie",
+        name: m.customName || m.exercise?.name || 'Nieznane ćwiczenie',
         exerciseId: m.exerciseId || m.exercise?.id,
       }));
 
@@ -209,33 +172,31 @@ export function SummaryStep({
         patients,
         reporter: {
           userId: user.id,
-          email: user.primaryEmailAddress?.emailAddress || "unknown@email.com",
-          name: user.firstName
-            ? `${user.firstName} ${user.lastName || ""}`.trim()
-            : undefined,
+          email: user.primaryEmailAddress?.emailAddress || 'unknown@email.com',
+          name: user.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : undefined,
         },
-        organizationId: currentOrganization?.organizationId || "unknown",
+        organizationId: currentOrganization?.organizationId || 'unknown',
       });
 
       if (result.success) {
         setFeedbackSent(true);
-        toast.success("Dziękujemy!", {
-          description: "Zgłoszenie zostało wysłane do zespołu FiziYo.",
+        toast.success('Dziękujemy!', {
+          description: 'Zgłoszenie zostało wysłane do zespołu FiziYo.',
         });
         setTimeout(() => {
           setShowConcierge(false);
-          setFeedback("");
+          setFeedback('');
           setFeedbackSent(false);
         }, 2000);
       } else {
-        toast.error("Błąd wysyłania", {
-          description: result.error || "Nie udało się wysłać zgłoszenia.",
+        toast.error('Błąd wysyłania', {
+          description: result.error || 'Nie udało się wysłać zgłoszenia.',
         });
       }
     } catch (error) {
-      console.error("[SummaryStep] Error sending feedback:", error);
-      toast.error("Błąd", {
-        description: "Wystąpił nieoczekiwany błąd.",
+      console.error('[SummaryStep] Error sending feedback:', error);
+      toast.error('Błąd', {
+        description: 'Wystąpił nieoczekiwany błąd.',
       });
     } finally {
       setIsSendingFeedback(false);
@@ -251,7 +212,6 @@ export function SummaryStep({
       {/* KOLUMNA LEWA: WSAD MERYTORYCZNY (8/12)                         */}
       {/* ══════════════════════════════════════════════════════════════ */}
       <div className="col-span-12 lg:col-span-8 flex flex-col gap-3 sm:gap-4">
-
         {/* KARTA 1: ĆWICZENIA (Zawsze rozwinięte!) */}
         <div
           className="bg-surface border border-border/60 rounded-xl overflow-hidden flex flex-col min-h-[200px] sm:min-h-[280px] lg:min-h-0 lg:flex-1"
@@ -270,15 +230,13 @@ export function SummaryStep({
                   <Clock className="h-3 w-3" />
                   {totalTimeFormatted}
                 </span>
-                {excludedCount > 0 && (
-                  <span className="text-muted-foreground/60">(-{excludedCount} wykluczone)</span>
-                )}
+                {excludedCount > 0 && <span className="text-muted-foreground/60">(-{excludedCount} wykluczone)</span>}
               </p>
             </div>
             {/* Edytuj - powrót do kroku 1 */}
             {onGoToStep && (
               <button
-                onClick={() => onGoToStep("select-set")}
+                onClick={() => onGoToStep('select-set')}
                 className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1.5 transition-colors"
                 data-testid="summary-edit-exercises-btn"
               >
@@ -294,11 +252,13 @@ export function SummaryStep({
               const exercise = mapping.exercise;
               const imageUrl = getMediaUrl(exercise?.thumbnailUrl || exercise?.imageUrl || exercise?.images?.[0]);
               const override = overrides.get(mapping.id);
-              const hasOverride = override && Object.keys(override).some(
-                (key) => key !== "exerciseMappingId" && override[key as keyof ExerciseOverride] !== undefined
-              );
+              const hasOverride =
+                override &&
+                Object.keys(override).some(
+                  (key) => key !== 'exerciseMappingId' && override[key as keyof ExerciseOverride] !== undefined
+                );
               const dosage = formatDosage(mapping, override);
-              const exerciseName = mapping.customName || exercise?.name || "Nieznane";
+              const exerciseName = mapping.customName || exercise?.name || 'Nieznane';
 
               return (
                 <div
@@ -308,9 +268,7 @@ export function SummaryStep({
                 >
                   <div className="flex items-center gap-3.5 min-w-0 flex-1">
                     {/* Numer */}
-                    <span className="text-sm text-muted-foreground/50 font-mono w-6 text-right shrink-0">
-                      {i + 1}.
-                    </span>
+                    <span className="text-sm text-muted-foreground/50 font-mono w-6 text-right shrink-0">{i + 1}.</span>
 
                     {/* Miniatura */}
                     <div className="w-10 h-10 rounded-lg overflow-hidden shrink-0 bg-surface-light border border-border/30">
@@ -322,9 +280,7 @@ export function SummaryStep({
                     </div>
 
                     {/* Nazwa */}
-                    <span className="text-base text-foreground font-medium truncate">
-                      {exerciseName}
-                    </span>
+                    <span className="text-base text-foreground font-medium truncate">{exerciseName}</span>
 
                     {/* Badge "Zmienione" */}
                     {hasOverride && (
@@ -350,10 +306,8 @@ export function SummaryStep({
         {/* KARTA 2: EARLY ACCESS CONCIERGE */}
         <div
           className={cn(
-            "border rounded-xl p-4 sm:p-5 transition-all shrink-0",
-            feedbackSent
-              ? "bg-emerald-950/20 border-emerald-500/30"
-              : "bg-amber-950/10 border-amber-900/20"
+            'border rounded-xl p-4 sm:p-5 transition-all shrink-0',
+            feedbackSent ? 'bg-emerald-950/20 border-emerald-500/30' : 'bg-amber-950/10 border-amber-900/20'
           )}
           data-testid="summary-concierge-card"
         >
@@ -436,7 +390,7 @@ export function SummaryStep({
                         Wysyłanie...
                       </>
                     ) : (
-                      "Wyślij zgłoszenie"
+                      'Wyślij zgłoszenie'
                     )}
                   </button>
                 </div>
@@ -450,24 +404,16 @@ export function SummaryStep({
       {/* KOLUMNA PRAWA: KONTEKST I AKCJA (4/12)                         */}
       {/* ══════════════════════════════════════════════════════════════ */}
       <div className="col-span-12 lg:col-span-4 flex flex-col gap-3 sm:gap-4">
-
         {/* KARTA 3: PACJENT(CI) */}
-        <div
-          className="bg-surface border border-border/60 rounded-xl p-4 sm:p-5"
-          data-testid="summary-patients-card"
-        >
+        <div className="bg-surface border border-border/60 rounded-xl p-4 sm:p-5" data-testid="summary-patients-card">
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-xs uppercase text-muted-foreground font-bold flex items-center gap-2">
-              {selectedPatients.length > 1 ? (
-                <Users className="w-3 h-3" />
-              ) : (
-                <User className="w-3 h-3" />
-              )}
-              {selectedPatients.length > 1 ? "Pacjenci" : "Pacjent"}
+              {selectedPatients.length > 1 ? <Users className="w-3 h-3" /> : <User className="w-3 h-3" />}
+              {selectedPatients.length > 1 ? 'Pacjenci' : 'Pacjent'}
             </h3>
             {onGoToStep && (
               <button
-                onClick={() => onGoToStep("select-patients")}
+                onClick={() => onGoToStep('select-patients')}
                 className="text-[10px] text-muted-foreground hover:text-foreground transition-colors"
                 data-testid="summary-edit-patients-btn"
               >
@@ -481,22 +427,18 @@ export function SummaryStep({
             <div className="flex items-center gap-3">
               <div
                 className={cn(
-                  "w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold shrink-0",
+                  'w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold shrink-0',
                   selectedPatients[0].isShadowUser
-                    ? "bg-muted-foreground/60 text-white"
-                    : "bg-gradient-to-br from-primary to-primary-dark text-primary-foreground"
+                    ? 'bg-muted-foreground/60 text-white'
+                    : 'bg-gradient-to-br from-primary to-primary-dark text-primary-foreground'
                 )}
               >
                 {selectedPatients[0].name[0]?.toUpperCase()}
               </div>
               <div className="min-w-0">
-                <div className="text-base font-bold text-foreground truncate">
-                  {selectedPatients[0].name}
-                </div>
+                <div className="text-base font-bold text-foreground truncate">{selectedPatients[0].name}</div>
                 {selectedPatients[0].email && (
-                  <div className="text-xs text-muted-foreground truncate">
-                    {selectedPatients[0].email}
-                  </div>
+                  <div className="text-xs text-muted-foreground truncate">{selectedPatients[0].email}</div>
                 )}
               </div>
             </div>
@@ -507,10 +449,10 @@ export function SummaryStep({
                 <div key={patient.id} className="flex items-center gap-2">
                   <div
                     className={cn(
-                      "w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold shrink-0",
+                      'w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold shrink-0',
                       patient.isShadowUser
-                        ? "bg-muted-foreground/60 text-white"
-                        : "bg-gradient-to-br from-primary to-primary-dark text-primary-foreground"
+                        ? 'bg-muted-foreground/60 text-white'
+                        : 'bg-gradient-to-br from-primary to-primary-dark text-primary-foreground'
                     )}
                   >
                     {patient.name[0]?.toUpperCase()}
@@ -519,9 +461,7 @@ export function SummaryStep({
                 </div>
               ))}
               {selectedPatients.length > 3 && (
-                <p className="text-xs text-muted-foreground pl-9">
-                  + {selectedPatients.length - 3} więcej
-                </p>
+                <p className="text-xs text-muted-foreground pl-9">+ {selectedPatients.length - 3} więcej</p>
               )}
             </div>
           )}
@@ -536,17 +476,14 @@ export function SummaryStep({
         </div>
 
         {/* KARTA 4: HARMONOGRAM */}
-        <div
-          className="bg-surface border border-border/60 rounded-xl p-4 sm:p-5"
-          data-testid="summary-schedule-card"
-        >
+        <div className="bg-surface border border-border/60 rounded-xl p-4 sm:p-5" data-testid="summary-schedule-card">
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-xs uppercase text-muted-foreground font-bold flex items-center gap-2">
               <Calendar className="w-3 h-3" /> Harmonogram
             </h3>
             {onGoToStep && (
               <button
-                onClick={() => onGoToStep("schedule")}
+                onClick={() => onGoToStep('schedule')}
                 className="text-[10px] text-muted-foreground hover:text-foreground transition-colors"
                 data-testid="summary-edit-schedule-btn"
               >
@@ -559,15 +496,11 @@ export function SummaryStep({
             {/* Daty */}
             <div className="flex justify-between items-center text-sm">
               <span className="text-muted-foreground">Start:</span>
-              <span className="text-foreground font-mono">
-                {format(startDate, "dd.MM.yyyy", { locale: pl })}
-              </span>
+              <span className="text-foreground font-mono">{format(startDate, 'dd.MM.yyyy', { locale: pl })}</span>
             </div>
             <div className="flex justify-between items-center text-sm">
               <span className="text-muted-foreground">Koniec:</span>
-              <span className="text-foreground font-mono">
-                {format(endDate, "dd.MM.yyyy", { locale: pl })}
-              </span>
+              <span className="text-foreground font-mono">{format(endDate, 'dd.MM.yyyy', { locale: pl })}</span>
             </div>
 
             <div className="w-full h-px bg-border/50 my-2" />
@@ -588,11 +521,7 @@ export function SummaryStep({
             )}
 
             {/* Info o trybie elastycznym */}
-            {isFlexibleMode && (
-              <div className="text-xs text-muted-foreground">
-                Pacjent sam wybierze dni ćwiczeń
-              </div>
-            )}
+            {isFlexibleMode && <div className="text-xs text-muted-foreground">Pacjent sam wybierze dni ćwiczeń</div>}
 
             {/* Dostosowane ćwiczenia */}
             {customizedCount > 0 && (
@@ -610,10 +539,9 @@ export function SummaryStep({
         {/* Compliance Shield - "Pieczątka prawna" */}
         <div className="p-3 sm:p-4 rounded-xl bg-surface border border-border/40">
           <p className="text-[11px] sm:text-xs text-muted-foreground leading-relaxed">
-            Przypisując zestaw ćwiczeń potwierdzasz, że dobór ćwiczeń jest odpowiedni
-            dla stanu zdrowia pacjenta i został ustalony na podstawie przeprowadzonej
-            diagnostyki. FiziYo nie ponosi odpowiedzialności za skutki nieprawidłowego
-            doboru ćwiczeń.
+            Przypisując zestaw ćwiczeń potwierdzasz, że dobór ćwiczeń jest odpowiedni dla stanu zdrowia pacjenta i
+            został ustalony na podstawie przeprowadzonej diagnostyki. FiziYo nie ponosi odpowiedzialności za skutki
+            nieprawidłowego doboru ćwiczeń.
           </p>
         </div>
       </div>

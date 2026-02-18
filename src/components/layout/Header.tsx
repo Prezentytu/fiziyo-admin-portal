@@ -6,12 +6,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { MobileOrgIndicator } from '@/components/layout/MobileOrgIndicator';
 import { FeedbackButton } from '@/components/shared/FeedbackButton';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-  TooltipProvider,
-} from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 
 // Route name mappings
 const routeNames: Record<string, string> = {
@@ -48,16 +43,26 @@ function Breadcrumbs() {
 
   return (
     <nav className="flex items-center gap-1.5 text-sm" data-testid="nav-breadcrumbs">
-      <Link href="/" data-testid="nav-breadcrumb-home" className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors">
+      <Link
+        href="/"
+        data-testid="nav-breadcrumb-home"
+        className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors"
+      >
         <Home className="h-4 w-4" />
       </Link>
       {breadcrumbs.map((crumb, index) => (
         <div key={crumb.href} className="flex items-center gap-1.5">
           <ChevronRight className="h-4 w-4 text-muted-foreground/50" />
           {crumb.isLast ? (
-            <span data-testid={`nav-breadcrumb-item-${index}`} className="font-medium text-foreground">{crumb.label}</span>
+            <span data-testid={`nav-breadcrumb-item-${index}`} className="font-medium text-foreground">
+              {crumb.label}
+            </span>
           ) : (
-            <Link href={crumb.href} data-testid={`nav-breadcrumb-item-${index}`} className="text-muted-foreground hover:text-foreground transition-colors">
+            <Link
+              href={crumb.href}
+              data-testid={`nav-breadcrumb-item-${index}`}
+              className="text-muted-foreground hover:text-foreground transition-colors"
+            >
               {crumb.label}
             </Link>
           )}
@@ -78,7 +83,10 @@ export function Header({ onMobileMenuToggle }: HeaderProps) {
 
   return (
     <TooltipProvider delayDuration={0}>
-      <header data-testid="nav-header" className="flex h-16 items-center justify-between border-b border-border bg-surface px-4 lg:px-6">
+      <header
+        data-testid="nav-header"
+        className="flex h-16 items-center justify-between border-b border-border bg-surface px-4 lg:px-6"
+      >
         {/* Left side - Mobile menu + Org indicator + Breadcrumbs */}
         <div className="flex items-center gap-3">
           {/* Mobile menu button */}

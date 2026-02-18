@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { useState } from "react";
+import { useState } from 'react';
 import {
   DndContext,
   closestCenter,
@@ -9,27 +9,17 @@ import {
   useSensor,
   useSensors,
   DragEndEvent,
-} from "@dnd-kit/core";
-import {
-  SortableContext,
-  sortableKeyboardCoordinates,
-  verticalListSortingStrategy,
-} from "@dnd-kit/sortable";
-import { Dumbbell, Trash2, Clock, Plus, Sparkles } from "lucide-react";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetDescription,
-} from "@/components/ui/sheet";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { cn } from "@/lib/utils";
-import { useExerciseBuilder } from "@/contexts/ExerciseBuilderContext";
-import { BuilderExerciseItem } from "./BuilderExerciseItem";
-import { CreateSetDialog } from "./CreateSetDialog";
+} from '@dnd-kit/core';
+import { SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { Dumbbell, Trash2, Clock, Plus, Sparkles } from 'lucide-react';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { cn } from '@/lib/utils';
+import { useExerciseBuilder } from '@/contexts/ExerciseBuilderContext';
+import { BuilderExerciseItem } from './BuilderExerciseItem';
+import { CreateSetDialog } from './CreateSetDialog';
 
 interface ExerciseBuilderSheetProps {
   open: boolean;
@@ -86,8 +76,11 @@ export function ExerciseBuilderSheet({ open, onOpenChange }: ExerciseBuilderShee
                 <div>
                   <SheetTitle className="text-foreground tracking-tight">Nowy Zestaw</SheetTitle>
                   <SheetDescription className="flex items-center gap-2 mt-0.5">
-                    <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4 bg-zinc-800 text-zinc-400 border-0">
-                      {exerciseCount} {exerciseCount === 1 ? "ćwiczenie" : exerciseCount < 5 ? "ćwiczenia" : "ćwiczeń"}
+                    <Badge
+                      variant="secondary"
+                      className="text-[10px] px-1.5 py-0 h-4 bg-zinc-800 text-zinc-400 border-0"
+                    >
+                      {exerciseCount} {exerciseCount === 1 ? 'ćwiczenie' : exerciseCount < 5 ? 'ćwiczenia' : 'ćwiczeń'}
                     </Badge>
                   </SheetDescription>
                 </div>
@@ -108,15 +101,8 @@ export function ExerciseBuilderSheet({ open, onOpenChange }: ExerciseBuilderShee
           {/* Exercise List */}
           <ScrollArea className="flex-1 px-4 py-6">
             {hasExercises ? (
-              <DndContext
-                sensors={sensors}
-                collisionDetection={closestCenter}
-                onDragEnd={handleDragEnd}
-              >
-                <SortableContext
-                  items={selectedExercises.map((e) => e.id)}
-                  strategy={verticalListSortingStrategy}
-                >
+              <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                <SortableContext items={selectedExercises.map((e) => e.id)} strategy={verticalListSortingStrategy}>
                   <div className="space-y-3">
                     {selectedExercises.map((exercise) => (
                       <BuilderExerciseItem
@@ -135,7 +121,8 @@ export function ExerciseBuilderSheet({ open, onOpenChange }: ExerciseBuilderShee
                   <Plus className="h-8 w-8 text-muted-foreground" />
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  Kliknij "+" na karcie ćwiczenia,<br />
+                  Kliknij &quot;+&quot; na karcie ćwiczenia,
+                  <br />
                   aby dodać je do zestawu
                 </p>
               </div>
@@ -155,14 +142,20 @@ export function ExerciseBuilderSheet({ open, onOpenChange }: ExerciseBuilderShee
                   <span className="text-lg font-bold text-foreground">~{estimatedTime} min</span>
                 </div>
                 <div className="text-right">
-                  <span className="block text-[10px] text-muted-foreground uppercase tracking-widest font-bold">Intensywność</span>
-                  <span className={cn(
-                    "text-xs font-semibold px-2 py-0.5 rounded-full",
-                    estimatedTime < 15 ? "bg-green-500/10 text-green-500" :
-                    estimatedTime < 30 ? "bg-yellow-500/10 text-yellow-500" :
-                    "bg-red-500/10 text-red-500"
-                  )}>
-                    {estimatedTime < 15 ? "Niska" : estimatedTime < 30 ? "Średnia" : "Wysoka"}
+                  <span className="block text-[10px] text-muted-foreground uppercase tracking-widest font-bold">
+                    Intensywność
+                  </span>
+                  <span
+                    className={cn(
+                      'text-xs font-semibold px-2 py-0.5 rounded-full',
+                      estimatedTime < 15
+                        ? 'bg-green-500/10 text-green-500'
+                        : estimatedTime < 30
+                          ? 'bg-yellow-500/10 text-yellow-500'
+                          : 'bg-red-500/10 text-red-500'
+                    )}
+                  >
+                    {estimatedTime < 15 ? 'Niska' : estimatedTime < 30 ? 'Średnia' : 'Wysoka'}
                   </span>
                 </div>
               </div>
@@ -194,10 +187,7 @@ export function ExerciseBuilderSheet({ open, onOpenChange }: ExerciseBuilderShee
       </Sheet>
 
       {/* Create Set Dialog */}
-      <CreateSetDialog
-        open={isCreateDialogOpen}
-        onOpenChange={setIsCreateDialogOpen}
-      />
+      <CreateSetDialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen} />
     </>
   );
 }

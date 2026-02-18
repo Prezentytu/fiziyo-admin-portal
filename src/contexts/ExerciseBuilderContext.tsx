@@ -1,12 +1,6 @@
-"use client";
+'use client';
 
-import {
-  createContext,
-  useContext,
-  useState,
-  useCallback,
-  useMemo,
-} from "react";
+import { createContext, useContext, useState, useCallback, useMemo } from 'react';
 
 // ========================================
 // Types
@@ -57,10 +51,10 @@ const ExerciseBuilderContext = createContext<ExerciseBuilderContextValue | null>
 // Local Storage Keys
 // ========================================
 
-const BUILDER_STORAGE_KEY = "fizyo_exercise_builder";
+const BUILDER_STORAGE_KEY = 'fizyo_exercise_builder';
 
 function getStoredExercises(): BuilderExercise[] {
-  if (typeof window === "undefined") return [];
+  if (typeof window === 'undefined') return [];
   try {
     const stored = localStorage.getItem(BUILDER_STORAGE_KEY);
     return stored ? JSON.parse(stored) : [];
@@ -70,7 +64,7 @@ function getStoredExercises(): BuilderExercise[] {
 }
 
 function setStoredExercises(exercises: BuilderExercise[]): void {
-  if (typeof window === "undefined") return;
+  if (typeof window === 'undefined') return;
   try {
     if (exercises.length === 0) {
       localStorage.removeItem(BUILDER_STORAGE_KEY);
@@ -122,9 +116,7 @@ export function ExerciseBuilderProvider({ children }: ExerciseBuilderProviderPro
 
   const updateExercise = useCallback((exerciseId: string, updates: Partial<BuilderExercise>) => {
     setSelectedExercises((prev) => {
-      const updated = prev.map((e) =>
-        e.id === exerciseId ? { ...e, ...updates } : e
-      );
+      const updated = prev.map((e) => (e.id === exerciseId ? { ...e, ...updates } : e));
       setStoredExercises(updated);
       return updated;
     });
@@ -144,17 +136,23 @@ export function ExerciseBuilderProvider({ children }: ExerciseBuilderProviderPro
     updateExercises([]);
   }, [updateExercises]);
 
-  const isInBuilder = useCallback((exerciseId: string) => {
-    return selectedExercises.some((e) => e.id === exerciseId);
-  }, [selectedExercises]);
+  const isInBuilder = useCallback(
+    (exerciseId: string) => {
+      return selectedExercises.some((e) => e.id === exerciseId);
+    },
+    [selectedExercises]
+  );
 
-  const toggleExercise = useCallback((exercise: BuilderExercise) => {
-    if (isInBuilder(exercise.id)) {
-      removeExercise(exercise.id);
-    } else {
-      addExercise(exercise);
-    }
-  }, [isInBuilder, removeExercise, addExercise]);
+  const toggleExercise = useCallback(
+    (exercise: BuilderExercise) => {
+      if (isInBuilder(exercise.id)) {
+        removeExercise(exercise.id);
+      } else {
+        addExercise(exercise);
+      }
+    },
+    [isInBuilder, removeExercise, addExercise]
+  );
 
   // Calculate estimated time: (total sets * 3 min) + (total duration in seconds / 60)
   const estimatedTime = useMemo(() => {
@@ -199,11 +197,7 @@ export function ExerciseBuilderProvider({ children }: ExerciseBuilderProviderPro
     ]
   );
 
-  return (
-    <ExerciseBuilderContext.Provider value={value}>
-      {children}
-    </ExerciseBuilderContext.Provider>
-  );
+  return <ExerciseBuilderContext.Provider value={value}>{children}</ExerciseBuilderContext.Provider>;
 }
 
 // ========================================
@@ -213,9 +207,7 @@ export function ExerciseBuilderProvider({ children }: ExerciseBuilderProviderPro
 export function useExerciseBuilder() {
   const context = useContext(ExerciseBuilderContext);
   if (!context) {
-    throw new Error(
-      "useExerciseBuilder must be used within an ExerciseBuilderProvider"
-    );
+    throw new Error('useExerciseBuilder must be used within an ExerciseBuilderProvider');
   }
   return context;
 }

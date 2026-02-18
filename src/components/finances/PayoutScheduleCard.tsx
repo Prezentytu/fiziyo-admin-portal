@@ -1,28 +1,16 @@
-"use client";
+'use client';
 
-import { useMemo } from "react";
-import { useQuery } from "@apollo/client/react";
-import {
-  Calendar,
-  Clock,
-  Banknote,
-  ArrowRight,
-  Info,
-  TrendingUp,
-} from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { GET_STRIPE_CONNECT_STATUS_QUERY } from "@/graphql/queries";
-import type { GetStripeConnectStatusResponse } from "@/types/apollo";
-import { formatCurrency } from "@/types/revenue.types";
-import { cn } from "@/lib/utils";
+import { useMemo } from 'react';
+import { useQuery } from '@apollo/client/react';
+import { Calendar, Clock, Banknote, ArrowRight, Info, TrendingUp } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { GET_STRIPE_CONNECT_STATUS_QUERY } from '@/graphql/queries';
+import type { GetStripeConnectStatusResponse } from '@/types/apollo';
+import { formatCurrency } from '@/types/revenue.types';
+import { cn } from '@/lib/utils';
 
 // ========================================
 // Types
@@ -52,10 +40,10 @@ function getNextPayoutDate(): { date: Date; formatted: string } {
   nextPayout.setDate(now.getDate() + daysUntilMonday);
   nextPayout.setHours(0, 0, 0, 0);
 
-  const formatted = nextPayout.toLocaleDateString("pl-PL", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
+  const formatted = nextPayout.toLocaleDateString('pl-PL', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
   });
 
   return { date: nextPayout, formatted };
@@ -75,19 +63,17 @@ function getDaysUntilPayout(payoutDate: Date): number {
 // Component
 // ========================================
 
-export function PayoutScheduleCard({
-  organizationId,
-  className,
-}: PayoutScheduleCardProps) {
+export function PayoutScheduleCard({ organizationId, className }: PayoutScheduleCardProps) {
   // Fetch Stripe Connect status for balance info
-  const { data, loading, error } = useQuery<GetStripeConnectStatusResponse>(
-    GET_STRIPE_CONNECT_STATUS_QUERY,
-    {
-      variables: { organizationId: organizationId || "" },
-      skip: !organizationId,
-      errorPolicy: "all",
-    }
-  );
+  const {
+    data,
+    loading,
+    error: _error,
+  } = useQuery<GetStripeConnectStatusResponse>(GET_STRIPE_CONNECT_STATUS_QUERY, {
+    variables: { organizationId: organizationId || '' },
+    skip: !organizationId,
+    errorPolicy: 'all',
+  });
 
   const status = data?.stripeConnectStatus;
 
@@ -110,7 +96,7 @@ export function PayoutScheduleCard({
   // Loading state
   if (loading) {
     return (
-      <Card className={cn("border-border/60", className)}>
+      <Card className={cn('border-border/60', className)}>
         <CardHeader className="pb-3">
           <Skeleton className="h-5 w-36" />
         </CardHeader>
@@ -125,7 +111,7 @@ export function PayoutScheduleCard({
   // Not connected state
   if (!payoutInfo.isConnected || !payoutInfo.payoutsEnabled) {
     return (
-      <Card className={cn("border-border/60", className)}>
+      <Card className={cn('border-border/60', className)}>
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-base">
             <Calendar className="h-5 w-5 text-muted-foreground" />
@@ -137,9 +123,7 @@ export function PayoutScheduleCard({
             <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted mx-auto mb-3">
               <Banknote className="h-6 w-6 text-muted-foreground" />
             </div>
-            <p className="text-sm text-muted-foreground">
-              Skonfiguruj konto Stripe, aby zobaczyć harmonogram wypłat
-            </p>
+            <p className="text-sm text-muted-foreground">Skonfiguruj konto Stripe, aby zobaczyć harmonogram wypłat</p>
           </div>
         </CardContent>
       </Card>
@@ -147,12 +131,7 @@ export function PayoutScheduleCard({
   }
 
   return (
-    <Card
-      className={cn(
-        "border-border/60 hover:border-primary/30 transition-colors",
-        className
-      )}
-    >
+    <Card className={cn('border-border/60 hover:border-primary/30 transition-colors', className)}>
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-base">
           <Calendar className="h-5 w-5 text-primary" />
@@ -164,8 +143,8 @@ export function PayoutScheduleCard({
               </TooltipTrigger>
               <TooltipContent className="max-w-xs">
                 <p className="text-sm">
-                  Stripe automatycznie przelewa środki na Twoje konto bankowe.
-                  Standardowy harmonogram to wypłaty co tydzień w poniedziałki.
+                  Stripe automatycznie przelewa środki na Twoje konto bankowe. Standardowy harmonogram to wypłaty co
+                  tydzień w poniedziałki.
                 </p>
               </TooltipContent>
             </Tooltip>
@@ -181,25 +160,21 @@ export function PayoutScheduleCard({
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Następna wypłata</p>
-              <p className="font-medium text-foreground capitalize">
-                {payoutInfo.nextDate}
-              </p>
+              <p className="font-medium text-foreground capitalize">{payoutInfo.nextDate}</p>
             </div>
           </div>
           <Badge
             variant="outline"
             className={cn(
-              "text-xs",
-              payoutInfo.daysUntil <= 2
-                ? "border-emerald-500/30 text-emerald-500"
-                : "border-border"
+              'text-xs',
+              payoutInfo.daysUntil <= 2 ? 'border-emerald-500/30 text-emerald-500' : 'border-border'
             )}
           >
             <Clock className="h-3 w-3 mr-1" />
             {payoutInfo.daysUntil === 0
-              ? "Dziś"
+              ? 'Dziś'
               : payoutInfo.daysUntil === 1
-                ? "Jutro"
+                ? 'Jutro'
                 : `Za ${payoutInfo.daysUntil} dni`}
           </Badge>
         </div>
@@ -210,9 +185,7 @@ export function PayoutScheduleCard({
           <div className="rounded-lg bg-emerald-500/10 border border-emerald-500/20 p-3">
             <div className="flex items-center gap-1.5 mb-1">
               <Banknote className="h-3.5 w-3.5 text-emerald-500" />
-              <span className="text-xs text-emerald-600 dark:text-emerald-400">
-                Gotowe do wypłaty
-              </span>
+              <span className="text-xs text-emerald-600 dark:text-emerald-400">Gotowe do wypłaty</span>
             </div>
             <p className="text-lg font-bold text-emerald-500 tabular-nums">
               {formatCurrency(payoutInfo.availableBalance)}
@@ -236,10 +209,8 @@ export function PayoutScheduleCard({
           <div className="flex items-center gap-2 text-xs text-muted-foreground pt-2 border-t border-border/40">
             <TrendingUp className="h-3 w-3 text-primary" />
             <span>
-              Łącznie oczekuje:{" "}
-              <span className="font-medium text-foreground">
-                {formatCurrency(payoutInfo.totalPending)}
-              </span>
+              Łącznie oczekuje:{' '}
+              <span className="font-medium text-foreground">{formatCurrency(payoutInfo.totalPending)}</span>
             </span>
           </div>
         )}
@@ -247,9 +218,7 @@ export function PayoutScheduleCard({
         {/* Empty state */}
         {payoutInfo.totalPending === 0 && (
           <div className="text-center py-2">
-            <p className="text-xs text-muted-foreground">
-              Brak środków oczekujących na wypłatę
-            </p>
+            <p className="text-xs text-muted-foreground">Brak środków oczekujących na wypłatę</p>
           </div>
         )}
       </CardContent>

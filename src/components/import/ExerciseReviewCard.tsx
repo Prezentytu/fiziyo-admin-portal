@@ -1,26 +1,12 @@
 'use client';
 
 import { useState } from 'react';
-import {
-  Dumbbell,
-  Check,
-  Link2,
-  X,
-  ChevronDown,
-  ChevronUp,
-  Clock,
-  Repeat,
-  Timer,
-} from 'lucide-react';
+import { Dumbbell, Check, Link2, X, ChevronDown, ChevronUp, Repeat, Timer } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import type {
-  ExtractedExercise,
-  MatchSuggestion,
-  ExerciseDecision,
-} from '@/types/import.types';
+import type { ExtractedExercise, MatchSuggestion, ExerciseDecision } from '@/types/import.types';
 import { translateExerciseTypeShort } from '@/components/pdf/polishUtils';
 
 interface ExerciseReviewCardProps {
@@ -47,13 +33,10 @@ export function ExerciseReviewCard({
 
   const hasMatches = matchSuggestions.length > 0;
   const bestMatch = matchSuggestions[0];
-  const selectedMatch = matchSuggestions.find(
-    (m) => m.existingExerciseId === decision.reuseExerciseId
-  );
+  const selectedMatch = matchSuggestions.find((m) => m.existingExerciseId === decision.reuseExerciseId);
 
   // Czy AI sugeruje użycie istniejącego (wysoka pewność dopasowania)
   const aiSuggestsReuse = bestMatch && bestMatch.confidence >= 0.7;
-
 
   // Prosty label zgodności (słowny, nie %)
   const getConfidenceLabel = (confidence: number) => {
@@ -89,8 +72,8 @@ export function ExerciseReviewCard({
               decision.action === 'reuse'
                 ? 'bg-blue-500/20'
                 : decision.action === 'create'
-                ? 'bg-primary/20'
-                : 'bg-surface-light'
+                  ? 'bg-primary/20'
+                  : 'bg-surface-light'
             )}
           >
             <Dumbbell
@@ -99,8 +82,8 @@ export function ExerciseReviewCard({
                 decision.action === 'reuse'
                   ? 'text-blue-500'
                   : decision.action === 'create'
-                  ? 'text-primary'
-                  : 'text-muted-foreground'
+                    ? 'text-primary'
+                    : 'text-muted-foreground'
               )}
             />
           </div>
@@ -109,9 +92,7 @@ export function ExerciseReviewCard({
           <div className="min-w-0 flex-1">
             {/* Nazwa - większa, wyraźniejsza */}
             <div className="flex items-center gap-2 flex-wrap">
-              <h3 className="text-base font-semibold text-foreground">
-                {exercise.name}
-              </h3>
+              <h3 className="text-base font-semibold text-foreground">{exercise.name}</h3>
               <Badge variant="secondary" className="text-xs">
                 {translateExerciseTypeShort(exercise.type)}
               </Badge>
@@ -142,9 +123,7 @@ export function ExerciseReviewCard({
             {/* AI Suggestion - wyraźny komunikat co AI znalazło */}
             {aiSuggestsReuse && decision.action !== 'reuse' && (
               <div className="mt-3 rounded-lg bg-blue-500/10 border border-blue-500/20 p-3">
-                <p className="text-sm font-medium text-blue-600 mb-1">
-                  Znalazłem podobne ćwiczenie w Twojej bazie:
-                </p>
+                <p className="text-sm font-medium text-blue-600 mb-1">Znalazłem podobne ćwiczenie w Twojej bazie:</p>
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="text-sm font-semibold text-foreground">
                     &ldquo;{bestMatch.existingExerciseName}&rdquo;
@@ -170,17 +149,8 @@ export function ExerciseReviewCard({
           </div>
 
           {/* Przycisk rozwijania */}
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setIsExpanded(!isExpanded)}
-            className="shrink-0 h-10 w-10"
-          >
-            {isExpanded ? (
-              <ChevronUp className="h-5 w-5" />
-            ) : (
-              <ChevronDown className="h-5 w-5" />
-            )}
+          <Button variant="ghost" size="icon" onClick={() => setIsExpanded(!isExpanded)} className="shrink-0 h-10 w-10">
+            {isExpanded ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
           </Button>
         </div>
 
@@ -190,10 +160,7 @@ export function ExerciseReviewCard({
             variant={decision.action === 'create' ? 'default' : 'outline'}
             size="sm"
             onClick={() => onDecisionChange({ action: 'create', reuseExerciseId: undefined })}
-            className={cn(
-              'gap-2 h-9 px-4',
-              decision.action === 'create' && 'bg-primary hover:bg-primary-dark'
-            )}
+            className={cn('gap-2 h-9 px-4', decision.action === 'create' && 'bg-primary hover:bg-primary-dark')}
             data-testid={`import-exercise-card-${exercise.tempId}-create-btn`}
           >
             <Check className="h-4 w-4" />
@@ -215,10 +182,7 @@ export function ExerciseReviewCard({
                   });
                 }
               }}
-              className={cn(
-                'gap-2 h-9 px-4',
-                decision.action === 'reuse' && 'bg-blue-500 hover:bg-blue-600'
-              )}
+              className={cn('gap-2 h-9 px-4', decision.action === 'reuse' && 'bg-blue-500 hover:bg-blue-600')}
               data-testid={`import-exercise-card-${exercise.tempId}-reuse-btn`}
             >
               <Link2 className="h-4 w-4" />
@@ -230,10 +194,7 @@ export function ExerciseReviewCard({
             variant={decision.action === 'skip' ? 'secondary' : 'outline'}
             size="sm"
             onClick={() => onDecisionChange({ action: 'skip', reuseExerciseId: undefined })}
-            className={cn(
-              'gap-2 h-9 px-4',
-              decision.action === 'skip' && 'bg-muted text-muted-foreground'
-            )}
+            className={cn('gap-2 h-9 px-4', decision.action === 'skip' && 'bg-muted text-muted-foreground')}
             data-testid={`import-exercise-card-${exercise.tempId}-skip-btn`}
           >
             <X className="h-4 w-4" />
@@ -244,9 +205,7 @@ export function ExerciseReviewCard({
         {/* Lista dopasowań - uproszczona */}
         {showMatches && hasMatches && (
           <div className="mt-4 space-y-2 rounded-xl bg-surface-light p-4">
-            <p className="text-sm font-medium text-foreground mb-3">
-              Wybierz ćwiczenie z Twojej bazy:
-            </p>
+            <p className="text-sm font-medium text-foreground mb-3">Wybierz ćwiczenie z Twojej bazy:</p>
             {matchSuggestions.map((match, index) => (
               <button
                 key={match.existingExerciseId}
@@ -276,18 +235,11 @@ export function ExerciseReviewCard({
                   </div>
                 )}
                 <div className="min-w-0 flex-1">
-                  <p className="font-medium text-foreground">
-                    {match.existingExerciseName}
-                  </p>
-                  <p className="text-sm text-muted-foreground mt-0.5">
-                    {match.matchReason}
-                  </p>
+                  <p className="font-medium text-foreground">{match.existingExerciseName}</p>
+                  <p className="text-sm text-muted-foreground mt-0.5">{match.matchReason}</p>
                 </div>
                 <div className="shrink-0">
-                  <Badge
-                    variant="secondary"
-                    className={cn('text-xs', getConfidenceBadgeClass(match.confidence))}
-                  >
+                  <Badge variant="secondary" className={cn('text-xs', getConfidenceBadgeClass(match.confidence))}>
                     {index === 0 ? 'Najlepsze' : getConfidenceLabel(match.confidence)}
                   </Badge>
                 </div>
@@ -301,18 +253,14 @@ export function ExerciseReviewCard({
           <div className="mt-4 space-y-4 border-t border-border/60 pt-4">
             {exercise.description && (
               <div>
-                <p className="text-sm font-medium text-foreground mb-1">
-                  Opis:
-                </p>
+                <p className="text-sm font-medium text-foreground mb-1">Opis:</p>
                 <p className="text-sm text-muted-foreground">{exercise.description}</p>
               </div>
             )}
 
             {exercise.suggestedTags.length > 0 && (
               <div>
-                <p className="text-sm font-medium text-foreground mb-2">
-                  Sugerowane kategorie:
-                </p>
+                <p className="text-sm font-medium text-foreground mb-2">Sugerowane kategorie:</p>
                 <div className="flex flex-wrap gap-2">
                   {exercise.suggestedTags.map((tag) => (
                     <Badge key={tag} variant="outline" className="text-sm">
@@ -325,9 +273,7 @@ export function ExerciseReviewCard({
 
             {exercise.originalText && (
               <div>
-                <p className="text-sm font-medium text-foreground mb-1">
-                  Oryginalny tekst z dokumentu:
-                </p>
+                <p className="text-sm font-medium text-foreground mb-1">Oryginalny tekst z dokumentu:</p>
                 <p className="rounded-lg bg-surface-light p-3 text-sm text-muted-foreground italic">
                   &quot;{exercise.originalText}&quot;
                 </p>
@@ -336,9 +282,7 @@ export function ExerciseReviewCard({
 
             {exercise.notes && (
               <div>
-                <p className="text-sm font-medium text-foreground mb-1">
-                  Notatki:
-                </p>
+                <p className="text-sm font-medium text-foreground mb-1">Notatki:</p>
                 <p className="text-sm text-muted-foreground">{exercise.notes}</p>
               </div>
             )}

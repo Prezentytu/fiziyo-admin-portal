@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import {
   AlertDialog,
@@ -9,9 +9,9 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { buttonVariants } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+} from '@/components/ui/alert-dialog';
+import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 
 interface ConfirmDialogProps {
   open: boolean;
@@ -20,7 +20,7 @@ interface ConfirmDialogProps {
   description: string;
   confirmText?: string;
   cancelText?: string;
-  variant?: "default" | "destructive";
+  variant?: 'default' | 'destructive';
   onConfirm: () => void;
   onCancel?: () => void;
   isLoading?: boolean;
@@ -31,9 +31,9 @@ export function ConfirmDialog({
   onOpenChange,
   title,
   description,
-  confirmText = "Potwierdź",
-  cancelText = "Anuluj",
-  variant = "default",
+  confirmText = 'Potwierdź',
+  cancelText = 'Anuluj',
+  variant = 'default',
   onConfirm,
   onCancel,
   isLoading = false,
@@ -65,12 +65,9 @@ export function ConfirmDialog({
             data-testid="common-confirm-dialog-confirm-btn"
             onClick={handleConfirm}
             disabled={isLoading}
-            className={cn(
-              variant === "destructive" &&
-                buttonVariants({ variant: "destructive" })
-            )}
+            className={cn(variant === 'destructive' && buttonVariants({ variant: 'destructive' }))}
           >
-            {isLoading ? "Ładowanie..." : confirmText}
+            {isLoading ? 'Ładowanie...' : confirmText}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

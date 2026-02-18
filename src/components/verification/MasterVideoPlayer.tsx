@@ -1,25 +1,13 @@
-"use client";
+'use client';
 
-import { useState, useCallback } from "react";
-import {
-  Play,
-  Volume2,
-  VolumeX,
-  Maximize2,
-  ChevronLeft,
-  ChevronRight,
-} from "lucide-react";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { ImagePlaceholder } from "@/components/shared/ImagePlaceholder";
-import { ImageLightbox } from "@/components/shared/ImageLightbox";
-import { cn } from "@/lib/utils";
-import { getMediaUrl, getMediaUrls } from "@/utils/mediaUrl";
-import type { AdminExercise } from "@/graphql/types/adminExercise.types";
+import { useState, useCallback } from 'react';
+import { Play, Volume2, VolumeX, Maximize2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { ImagePlaceholder } from '@/components/shared/ImagePlaceholder';
+import { ImageLightbox } from '@/components/shared/ImageLightbox';
+import { cn } from '@/lib/utils';
+import { getMediaUrl, getMediaUrls } from '@/utils/mediaUrl';
+import type { AdminExercise } from '@/graphql/types/adminExercise.types';
 
 interface MasterVideoPlayerProps {
   exercise: AdminExercise;
@@ -45,11 +33,7 @@ export function MasterVideoPlayer({ exercise, className }: MasterVideoPlayerProp
   const [isMuted, setIsMuted] = useState(true);
 
   // Collect all media
-  const allImages = getMediaUrls([
-    exercise.thumbnailUrl,
-    exercise.imageUrl,
-    ...(exercise.images || []),
-  ]);
+  const allImages = getMediaUrls([exercise.thumbnailUrl, exercise.imageUrl, ...(exercise.images || [])]);
   const currentImage = allImages[selectedImageIndex] || null;
   const hasVideo = !!exercise.videoUrl;
   const hasGif = !!exercise.gifUrl;
@@ -70,9 +54,9 @@ export function MasterVideoPlayer({ exercise, className }: MasterVideoPlayerProp
   // Keyboard navigation
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
-      if (e.key === "ArrowLeft") handlePrev();
-      if (e.key === "ArrowRight") handleNext();
-      if (e.key === "Escape" && lightboxOpen) setLightboxOpen(false);
+      if (e.key === 'ArrowLeft') handlePrev();
+      if (e.key === 'ArrowRight') handleNext();
+      if (e.key === 'Escape' && lightboxOpen) setLightboxOpen(false);
     },
     [handlePrev, handleNext, lightboxOpen]
   );
@@ -80,10 +64,7 @@ export function MasterVideoPlayer({ exercise, className }: MasterVideoPlayerProp
   return (
     <TooltipProvider>
       <div
-        className={cn(
-          "relative flex flex-col h-full bg-zinc-950",
-          className
-        )}
+        className={cn('relative flex flex-col h-full bg-zinc-950', className)}
         onKeyDown={handleKeyDown}
         tabIndex={0}
         data-testid="master-video-player"
@@ -107,17 +88,9 @@ export function MasterVideoPlayer({ exercise, className }: MasterVideoPlayerProp
               loading="eager"
             />
           ) : hasGif && gifUrl ? (
-            <img
-              src={gifUrl}
-              alt={exercise.name}
-              className="relative max-h-full max-w-full object-contain"
-            />
+            <img src={gifUrl} alt={exercise.name} className="relative max-h-full max-w-full object-contain" />
           ) : (
-            <ImagePlaceholder
-              type="exercise"
-              className="h-64 w-64"
-              iconClassName="h-20 w-20"
-            />
+            <ImagePlaceholder type="exercise" className="h-64 w-64" iconClassName="h-20 w-20" />
           )}
 
           {/* Navigation arrows (if multiple images) */}
@@ -127,11 +100,11 @@ export function MasterVideoPlayer({ exercise, className }: MasterVideoPlayerProp
                 onClick={handlePrev}
                 disabled={!hasPrev}
                 className={cn(
-                  "absolute left-2 top-1/2 -translate-y-1/2 z-20",
-                  "flex h-10 w-10 items-center justify-center rounded-full",
-                  "bg-black/50 text-white/80 backdrop-blur-sm",
-                  "transition-all hover:bg-black/70 hover:scale-110",
-                  !hasPrev && "opacity-30 cursor-not-allowed"
+                  'absolute left-2 top-1/2 -translate-y-1/2 z-20',
+                  'flex h-10 w-10 items-center justify-center rounded-full',
+                  'bg-black/50 text-white/80 backdrop-blur-sm',
+                  'transition-all hover:bg-black/70 hover:scale-110',
+                  !hasPrev && 'opacity-30 cursor-not-allowed'
                 )}
                 data-testid="master-player-prev-btn"
               >
@@ -141,11 +114,11 @@ export function MasterVideoPlayer({ exercise, className }: MasterVideoPlayerProp
                 onClick={handleNext}
                 disabled={!hasNext}
                 className={cn(
-                  "absolute right-2 top-1/2 -translate-y-1/2 z-20",
-                  "flex h-10 w-10 items-center justify-center rounded-full",
-                  "bg-black/50 text-white/80 backdrop-blur-sm",
-                  "transition-all hover:bg-black/70 hover:scale-110",
-                  !hasNext && "opacity-30 cursor-not-allowed"
+                  'absolute right-2 top-1/2 -translate-y-1/2 z-20',
+                  'flex h-10 w-10 items-center justify-center rounded-full',
+                  'bg-black/50 text-white/80 backdrop-blur-sm',
+                  'transition-all hover:bg-black/70 hover:scale-110',
+                  !hasNext && 'opacity-30 cursor-not-allowed'
                 )}
                 data-testid="master-player-next-btn"
               >
@@ -218,19 +191,14 @@ export function MasterVideoPlayer({ exercise, className }: MasterVideoPlayerProp
                   key={`${img}-${idx}`}
                   onClick={() => setSelectedImageIndex(idx)}
                   className={cn(
-                    "shrink-0 w-12 h-12 rounded-md overflow-hidden border-2 transition-all",
+                    'shrink-0 w-12 h-12 rounded-md overflow-hidden border-2 transition-all',
                     selectedImageIndex === idx
-                      ? "border-primary ring-1 ring-primary/50"
-                      : "border-transparent opacity-60 hover:opacity-100 hover:border-zinc-600"
+                      ? 'border-primary ring-1 ring-primary/50'
+                      : 'border-transparent opacity-60 hover:opacity-100 hover:border-zinc-600'
                   )}
                   data-testid={`master-player-thumb-${idx}`}
                 >
-                  <img
-                    src={img}
-                    alt=""
-                    className="w-full h-full object-cover"
-                    loading="lazy"
-                  />
+                  <img src={img} alt="" className="w-full h-full object-cover" loading="lazy" />
                 </button>
               ))}
             </div>

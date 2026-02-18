@@ -26,24 +26,3 @@ export interface ChangeOrganizationResponse {
 export interface ExchangeClerkTokenRequest {
   token: string;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

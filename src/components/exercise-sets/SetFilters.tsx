@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import { Badge } from "@/components/ui/badge";
-import { SearchInput } from "@/components/shared/SearchInput";
+import { Badge } from '@/components/ui/badge';
+import { SearchInput } from '@/components/shared/SearchInput';
 
-type FilterType = "all" | "active" | "inactive" | "templates";
+type FilterType = 'all' | 'active' | 'inactive' | 'templates';
 
 interface SetFiltersProps {
   searchQuery: string;
@@ -23,10 +23,10 @@ export function SetFilters({
   totalCount,
 }: SetFiltersProps) {
   const filters: { value: FilterType; label: string }[] = [
-    { value: "all", label: "Wszystkie" },
-    { value: "active", label: "Aktywne" },
-    { value: "templates", label: "Szablony" },
-    { value: "inactive", label: "Nieaktywne" },
+    { value: 'all', label: 'Wszystkie' },
+    { value: 'active', label: 'Aktywne' },
+    { value: 'templates', label: 'Szablony' },
+    { value: 'inactive', label: 'Nieaktywne' },
   ];
 
   return (
@@ -50,8 +50,8 @@ export function SetFilters({
             onClick={() => onFilterChange(f.value)}
             className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all border border-border/60 ${
               filter === f.value
-                ? "bg-primary text-primary-foreground border-primary shadow-sm"
-                : "bg-surface text-muted-foreground hover:bg-surface-light hover:text-foreground"
+                ? 'bg-primary text-primary-foreground border-primary shadow-sm'
+                : 'bg-surface text-muted-foreground hover:bg-surface-light hover:text-foreground'
             }`}
           >
             {f.label}
@@ -61,19 +61,3 @@ export function SetFilters({
     </div>
   );
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import { MessageSquare, Settings, ThumbsUp, Phone } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
-import type { TherapyStatus, TherapyStatusResult } from "@/lib/therapyStatus";
+import { MessageSquare, Settings, ThumbsUp, Phone } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+import type { TherapyStatus, TherapyStatusResult } from '@/lib/therapyStatus';
 
 interface NextStepCardProps {
   statusResult: TherapyStatusResult;
@@ -15,9 +15,9 @@ interface NextStepCardProps {
 }
 
 const recommendationText: Record<TherapyStatus, string> = {
-  success: "Wszystko idzie zgodnie z planem. Możesz pochwalić pacjenta.",
-  warning: "Pacjent może potrzebować wsparcia. Rozważ kontakt.",
-  alert: "Wymaga pilnej uwagi. Zalecany kontakt telefoniczny.",
+  success: 'Wszystko idzie zgodnie z planem. Możesz pochwalić pacjenta.',
+  warning: 'Pacjent może potrzebować wsparcia. Rozważ kontakt.',
+  alert: 'Wymaga pilnej uwagi. Zalecany kontakt telefoniczny.',
 };
 
 export function NextStepCard({
@@ -33,20 +33,13 @@ export function NextStepCard({
 
   return (
     <div
-      className={cn(
-        "rounded-2xl border border-white/5 bg-zinc-900/50 p-6 flex flex-col justify-between",
-        className
-      )}
+      className={cn('rounded-2xl border border-white/5 bg-zinc-900/50 p-6 flex flex-col justify-between', className)}
     >
       <div>
-        <h3 className="text-[10px] uppercase tracking-wider font-bold text-zinc-400 mb-2">
-          Rekomendacja
-        </h3>
-        <p className="text-white font-medium text-sm">
-          {recommendationText[statusResult.status]}
-        </p>
+        <h3 className="text-[10px] uppercase tracking-wider font-bold text-zinc-400 mb-2">Rekomendacja</h3>
+        <p className="text-white font-medium text-sm">{recommendationText[statusResult.status]}</p>
       </div>
-      
+
       <div className="mt-4 flex gap-2">
         {isSuccess ? (
           <Button

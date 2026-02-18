@@ -1,15 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import {
-  ArrowRight,
-  Crown,
-  Dumbbell,
-  Rocket,
-  Sparkles,
-  Users,
-  Zap,
-} from 'lucide-react';
+import { ArrowRight, Crown, Dumbbell, Rocket, Sparkles, Users, Zap } from 'lucide-react';
 
 type LimitType = 'patients' | 'exercises' | 'therapists';
 
@@ -27,11 +19,7 @@ const limitConfig: Record<LimitType, { label: string; icon: typeof Users }> = {
   therapists: { label: 'terapeutów', icon: Users },
 };
 
-export function SubscriptionBanner({
-  variant,
-  limitType = 'patients',
-  planName = 'Free',
-}: SubscriptionBannerProps) {
+export function SubscriptionBanner({ variant, limitType = 'patients', planName = 'Free' }: SubscriptionBannerProps) {
   const config = limitConfig[limitType];
 
   if (variant === 'urgent') {

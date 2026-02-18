@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import { useUser, useClerk } from "@clerk/nextjs";
-import { User, Settings, LogOut, ChevronDown } from "lucide-react";
-import Link from "next/link";
+import { useUser, useClerk } from '@clerk/nextjs';
+import { User, Settings, LogOut, ChevronDown } from 'lucide-react';
+import Link from 'next/link';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,20 +10,20 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Skeleton } from "@/components/ui/skeleton";
+} from '@/components/ui/dropdown-menu';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export function UserMenu() {
   const { user, isLoaded } = useUser();
   const { signOut, openUserProfile } = useClerk();
 
   const avatarUrl = user?.imageUrl;
-  const fullName = user?.fullName || user?.firstName || "Użytkownik";
+  const fullName = user?.fullName || user?.firstName || 'Użytkownik';
   const email = user?.primaryEmailAddress?.emailAddress;
   const initials = fullName
-    .split(" ")
+    .split(' ')
     .map((n) => n[0])
-    .join("")
+    .join('')
     .toUpperCase()
     .slice(0, 2);
 
@@ -36,15 +36,11 @@ export function UserMenu() {
       <DropdownMenuTrigger
         data-testid="nav-user-menu-trigger"
         className="flex items-center gap-2 rounded-xl p-1 pr-2 transition-colors hover:bg-surface-light"
-        style={{ outline: "none", boxShadow: "none" }}
+        style={{ outline: 'none', boxShadow: 'none' }}
       >
         {/* Avatar */}
         {avatarUrl ? (
-          <img
-            src={avatarUrl}
-            alt={fullName}
-            className="h-9 w-9 rounded-xl object-cover"
-          />
+          <img src={avatarUrl} alt={fullName} className="h-9 w-9 rounded-xl object-cover" />
         ) : (
           <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary-dark text-sm font-semibold text-white">
             {initials}
@@ -58,20 +54,14 @@ export function UserMenu() {
         <DropdownMenuLabel className="p-3">
           <div className="flex items-center gap-3">
             {avatarUrl ? (
-              <img
-                src={avatarUrl}
-                alt={fullName}
-                className="h-10 w-10 rounded-xl object-cover"
-              />
+              <img src={avatarUrl} alt={fullName} className="h-10 w-10 rounded-xl object-cover" />
             ) : (
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary-dark text-sm font-semibold text-white">
                 {initials}
               </div>
             )}
             <div className="flex-1 min-w-0">
-              <p className="font-semibold text-foreground truncate">
-                {fullName}
-              </p>
+              <p className="font-semibold text-foreground truncate">{fullName}</p>
               <p className="text-sm text-muted-foreground truncate">{email}</p>
             </div>
           </div>
@@ -84,7 +74,7 @@ export function UserMenu() {
           onClick={() => openUserProfile()}
           data-testid="nav-user-menu-profile"
           className="gap-3 px-3 py-2.5 cursor-pointer focus:outline-none focus-visible:outline-none"
-          style={{ outline: "none" }}
+          style={{ outline: 'none' }}
         >
           <User className="h-4 w-4 text-muted-foreground" />
           <span>Profil</span>
@@ -94,7 +84,7 @@ export function UserMenu() {
           asChild
           className="gap-3 px-3 py-2.5 cursor-pointer focus:outline-none focus-visible:outline-none"
         >
-          <Link href="/settings" data-testid="nav-user-menu-settings" style={{ outline: "none" }}>
+          <Link href="/settings" data-testid="nav-user-menu-settings" style={{ outline: 'none' }}>
             <Settings className="h-4 w-4 text-muted-foreground" />
             <span>Ustawienia</span>
           </Link>
@@ -103,10 +93,10 @@ export function UserMenu() {
         <DropdownMenuSeparator />
 
         <DropdownMenuItem
-          onClick={() => signOut({ redirectUrl: "/sign-in" })}
+          onClick={() => signOut({ redirectUrl: '/sign-in' })}
           data-testid="nav-user-menu-logout"
           className="gap-3 px-3 py-2.5 cursor-pointer text-error focus:text-error focus:bg-error/10 focus:outline-none focus-visible:outline-none"
-          style={{ outline: "none" }}
+          style={{ outline: 'none' }}
         >
           <LogOut className="h-4 w-4" />
           <span>Wyloguj się</span>

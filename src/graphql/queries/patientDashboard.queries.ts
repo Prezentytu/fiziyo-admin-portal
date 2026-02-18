@@ -1,4 +1,4 @@
-import { gql } from "@apollo/client";
+import { gql } from '@apollo/client';
 
 /**
  * Query do pobierania kompletnych danych dashboardu pacjenta
@@ -148,17 +148,3 @@ export interface PatientDashboardData {
 export interface GetPatientDashboardData {
   patientDashboard: PatientDashboardData;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-

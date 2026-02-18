@@ -4,11 +4,7 @@ import { AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { UncertainMatchCard } from '../cards/UncertainMatchCard';
-import type {
-  ExtractedExercise,
-  MatchSuggestion,
-  ExerciseDecision,
-} from '@/types/import.types';
+import type { ExtractedExercise, MatchSuggestion, ExerciseDecision } from '@/types/import.types';
 
 interface UncertainMatchSectionProps {
   /** Exercises with uncertain matches (confidence < 0.7) */
@@ -36,7 +32,7 @@ export function UncertainMatchSection({
   matchSuggestions,
   decisions,
   onDecisionChange,
-  disabled = false,
+  disabled: _disabled = false,
   className,
 }: UncertainMatchSectionProps) {
   if (exercises.length === 0) return null;
@@ -56,13 +52,9 @@ export function UncertainMatchSection({
             <AlertTriangle className="h-5 w-5 text-yellow-500" />
           </div>
           <div>
-            <h3 className="font-semibold text-foreground">
-              Wymaga uwagi ({exercises.length})
-            </h3>
+            <h3 className="font-semibold text-foreground">Wymaga uwagi ({exercises.length})</h3>
             <p className="text-xs text-muted-foreground">
-              {pendingCount > 0
-                ? `${pendingCount} ćwiczeń wymaga Twojej decyzji`
-                : 'Wszystkie sprawdzone'}
+              {pendingCount > 0 ? `${pendingCount} ćwiczeń wymaga Twojej decyzji` : 'Wszystkie sprawdzone'}
             </p>
           </div>
         </div>

@@ -1,18 +1,18 @@
-"use client";
+'use client';
 
-import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { LoadingState } from "@/components/shared/LoadingState";
-import { AccessGuard } from "@/components/shared/AccessGuard";
-import { useOrganization } from "@/contexts/OrganizationContext";
+import Link from 'next/link';
+import { ArrowLeft } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { LoadingState } from '@/components/shared/LoadingState';
+import { AccessGuard } from '@/components/shared/AccessGuard';
+import { useOrganization } from '@/contexts/OrganizationContext';
 import {
   BillingHeroCard,
   TherapistBillingTable,
   FairUsageCard,
   BillingDetailsCard,
   InvoicesHistoryCard,
-} from "@/components/billing";
+} from '@/components/billing';
 
 // ========================================
 // Invoices Page - Faktury B2B (za korzystanie z systemu)
@@ -26,9 +26,7 @@ export default function InvoicesPage() {
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-foreground">
-            Faktury i Rozliczenia
-          </h1>
+          <h1 className="text-2xl font-bold text-foreground">Faktury i Rozliczenia</h1>
         </div>
         <LoadingState type="text" count={3} />
       </div>
@@ -47,12 +45,8 @@ export default function InvoicesPage() {
               </Link>
             </Button>
             <div>
-              <h1 className="text-2xl font-bold text-foreground">
-                Faktury i Rozliczenia
-              </h1>
-              <p className="text-sm text-muted-foreground">
-                Opłaty za korzystanie z systemu FiziYo
-              </p>
+              <h1 className="text-2xl font-bold text-foreground">Faktury i Rozliczenia</h1>
+              <p className="text-sm text-muted-foreground">Opłaty za korzystanie z systemu FiziYo</p>
             </div>
           </div>
         </div>

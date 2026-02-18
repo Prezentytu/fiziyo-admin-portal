@@ -1,66 +1,45 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import {
-  ArrowLeft,
-  ArrowRight,
-  Plus,
-  X,
-  RefreshCw,
-  Play,
-  Eye,
-  Sparkles,
-  Loader2,
-  AlertTriangle,
-} from "lucide-react";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { cn } from "@/lib/utils";
-import type { ExerciseRelationTarget } from "@/graphql/types/adminExercise.types";
+import { useState } from 'react';
+import { ArrowLeft, ArrowRight, Plus, X, RefreshCw, Play, Eye, Sparkles, Loader2, AlertTriangle } from 'lucide-react';
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { cn } from '@/lib/utils';
+import type { ExerciseRelationTarget } from '@/graphql/types/adminExercise.types';
 
 // Difficulty level labels and colors
 const DIFFICULTY_LABELS: Record<string, string> = {
-  BEGINNER: "Początkujący",
-  Beginner: "Początkujący",
-  EASY: "Łatwy",
-  Easy: "Łatwy",
-  MEDIUM: "Średni",
-  Medium: "Średni",
-  HARD: "Trudny",
-  Hard: "Trudny",
-  EXPERT: "Ekspert",
-  Expert: "Ekspert",
+  BEGINNER: 'Początkujący',
+  Beginner: 'Początkujący',
+  EASY: 'Łatwy',
+  Easy: 'Łatwy',
+  MEDIUM: 'Średni',
+  Medium: 'Średni',
+  HARD: 'Trudny',
+  Hard: 'Trudny',
+  EXPERT: 'Ekspert',
+  Expert: 'Ekspert',
 };
 
 const DIFFICULTY_COLORS: Record<string, string> = {
-  BEGINNER: "bg-emerald-500/10 text-emerald-600 border-emerald-500/20",
-  Beginner: "bg-emerald-500/10 text-emerald-600 border-emerald-500/20",
-  EASY: "bg-green-500/10 text-green-600 border-green-500/20",
-  Easy: "bg-green-500/10 text-green-600 border-green-500/20",
-  MEDIUM: "bg-amber-500/10 text-amber-600 border-amber-500/20",
-  Medium: "bg-amber-500/10 text-amber-600 border-amber-500/20",
-  HARD: "bg-orange-500/10 text-orange-600 border-orange-500/20",
-  Hard: "bg-orange-500/10 text-orange-600 border-orange-500/20",
-  EXPERT: "bg-red-500/10 text-red-600 border-red-500/20",
-  Expert: "bg-red-500/10 text-red-600 border-red-500/20",
+  BEGINNER: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20',
+  Beginner: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20',
+  EASY: 'bg-green-500/10 text-green-600 border-green-500/20',
+  Easy: 'bg-green-500/10 text-green-600 border-green-500/20',
+  MEDIUM: 'bg-amber-500/10 text-amber-600 border-amber-500/20',
+  Medium: 'bg-amber-500/10 text-amber-600 border-amber-500/20',
+  HARD: 'bg-orange-500/10 text-orange-600 border-orange-500/20',
+  Hard: 'bg-orange-500/10 text-orange-600 border-orange-500/20',
+  EXPERT: 'bg-red-500/10 text-red-600 border-red-500/20',
+  Expert: 'bg-red-500/10 text-red-600 border-red-500/20',
 };
 
 interface RelationSlotProps {
   /** Typ slotu: regresja (łatwiej) lub progresja (trudniej) */
-  type: "regression" | "progression";
+  type: 'regression' | 'progression';
   /** Ćwiczenie docelowe (może być null) */
   exercise: ExerciseRelationTarget | null;
   /** Callback przy zmianie relacji */
@@ -80,7 +59,7 @@ interface RelationSlotProps {
   /** Dodatkowe klasy CSS */
   className?: string;
   /** data-testid */
-  "data-testid"?: string;
+  'data-testid'?: string;
 }
 
 /**
@@ -109,17 +88,15 @@ export function RelationSlot({
   isLoading = false,
   warning,
   className,
-  "data-testid": testId,
+  'data-testid': testId,
 }: RelationSlotProps) {
   const [isHovering, setIsHovering] = useState(false);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
-  const isRegression = type === "regression";
+  const isRegression = type === 'regression';
   const Icon = isRegression ? ArrowLeft : ArrowRight;
-  const label = isRegression ? "Regresja (Łatwiej)" : "Progresja (Trudniej)";
-  const defaultEmptyLabel = isRegression
-    ? "Dodaj łatwiejszą wersję"
-    : "Dodaj trudniejszą wersję";
+  const label = isRegression ? 'Regresja (Łatwiej)' : 'Progresja (Trudniej)';
+  const defaultEmptyLabel = isRegression ? 'Dodaj łatwiejszą wersję' : 'Dodaj trudniejszą wersję';
 
   // Get media URL for preview
   const mediaUrl = exercise?.gifUrl || exercise?.thumbnailUrl;
@@ -127,13 +104,7 @@ export function RelationSlot({
   // Empty state
   if (!exercise && !isLoading) {
     return (
-      <div
-        className={cn(
-          "flex flex-col items-center gap-2 w-[180px]",
-          className
-        )}
-        data-testid={testId}
-      >
+      <div className={cn('flex flex-col items-center gap-2 w-[180px]', className)} data-testid={testId}>
         {/* Label */}
         <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
           <Icon className="h-3 w-3" />
@@ -145,19 +116,17 @@ export function RelationSlot({
           onClick={onSwap}
           disabled={disabled}
           className={cn(
-            "w-full aspect-video rounded-lg border-2 border-dashed border-border/60",
-            "flex flex-col items-center justify-center gap-2",
-            "text-muted-foreground text-sm",
-            "hover:border-primary/50 hover:text-primary hover:bg-primary/5",
-            "transition-all cursor-pointer",
-            disabled && "opacity-50 cursor-not-allowed"
+            'w-full aspect-video rounded-lg border-2 border-dashed border-border/60',
+            'flex flex-col items-center justify-center gap-2',
+            'text-muted-foreground text-sm',
+            'hover:border-primary/50 hover:text-primary hover:bg-primary/5',
+            'transition-all cursor-pointer',
+            disabled && 'opacity-50 cursor-not-allowed'
           )}
           data-testid={`${testId}-add-btn`}
         >
           <Plus className="h-5 w-5" />
-          <span className="text-xs text-center px-2">
-            {emptyLabel || defaultEmptyLabel}
-          </span>
+          <span className="text-xs text-center px-2">{emptyLabel || defaultEmptyLabel}</span>
         </button>
 
         {/* Add placeholder option */}
@@ -179,13 +148,7 @@ export function RelationSlot({
   // Loading state
   if (isLoading) {
     return (
-      <div
-        className={cn(
-          "flex flex-col items-center gap-2 w-[180px]",
-          className
-        )}
-        data-testid={testId}
-      >
+      <div className={cn('flex flex-col items-center gap-2 w-[180px]', className)} data-testid={testId}>
         <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
           <Icon className="h-3 w-3" />
           <span>{label}</span>
@@ -200,13 +163,7 @@ export function RelationSlot({
   // Filled state
   return (
     <TooltipProvider>
-      <div
-        className={cn(
-          "flex flex-col items-center gap-2 w-[180px]",
-          className
-        )}
-        data-testid={testId}
-      >
+      <div className={cn('flex flex-col items-center gap-2 w-[180px]', className)} data-testid={testId}>
         {/* Label */}
         <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
           <Icon className="h-3 w-3" />
@@ -226,10 +183,10 @@ export function RelationSlot({
         {/* Exercise card */}
         <Card
           className={cn(
-            "w-full overflow-hidden transition-all group cursor-pointer",
-            "border-border/60 hover:border-primary/40 hover:shadow-md",
-            warning && "border-amber-500/50",
-            exercise?.isAISuggested && !exercise?.isVerified && "border-dashed border-amber-500/40"
+            'w-full overflow-hidden transition-all group cursor-pointer',
+            'border-border/60 hover:border-primary/40 hover:shadow-md',
+            warning && 'border-amber-500/50',
+            exercise?.isAISuggested && !exercise?.isVerified && 'border-dashed border-amber-500/40'
           )}
           onMouseEnter={() => setIsHovering(true)}
           onMouseLeave={() => setIsHovering(false)}
@@ -239,8 +196,8 @@ export function RelationSlot({
           <div className="relative aspect-video bg-zinc-900">
             {mediaUrl ? (
               <img
-                src={isHovering && exercise?.gifUrl ? exercise.gifUrl : (exercise?.thumbnailUrl || mediaUrl)}
-                alt={exercise?.name || "Exercise"}
+                src={isHovering && exercise?.gifUrl ? exercise.gifUrl : exercise?.thumbnailUrl || mediaUrl}
+                alt={exercise?.name || 'Exercise'}
                 className="w-full h-full object-cover transition-all"
                 loading="lazy"
               />
@@ -253,8 +210,8 @@ export function RelationSlot({
             {/* Hover overlay with actions */}
             <div
               className={cn(
-                "absolute inset-0 bg-black/60 flex items-center justify-center gap-2",
-                "opacity-0 group-hover:opacity-100 transition-opacity"
+                'absolute inset-0 bg-black/60 flex items-center justify-center gap-2',
+                'opacity-0 group-hover:opacity-100 transition-opacity'
               )}
             >
               <Tooltip>
@@ -313,9 +270,7 @@ export function RelationSlot({
 
             {/* AI suggestion badge */}
             {exercise?.isAISuggested && !exercise?.isVerified && (
-              <Badge
-                className="absolute top-1 left-1 text-[9px] px-1.5 py-0 bg-amber-500/90 text-white border-0"
-              >
+              <Badge className="absolute top-1 left-1 text-[9px] px-1.5 py-0 bg-amber-500/90 text-white border-0">
                 <Sparkles className="h-2.5 w-2.5 mr-0.5" />
                 AI
               </Badge>
@@ -331,10 +286,7 @@ export function RelationSlot({
               {exercise?.difficultyLevel && (
                 <Badge
                   variant="outline"
-                  className={cn(
-                    "text-[9px] px-1.5 py-0",
-                    DIFFICULTY_COLORS[exercise.difficultyLevel] || ""
-                  )}
+                  className={cn('text-[9px] px-1.5 py-0', DIFFICULTY_COLORS[exercise.difficultyLevel] || '')}
                 >
                   {DIFFICULTY_LABELS[exercise.difficultyLevel] || exercise.difficultyLevel}
                 </Badge>
@@ -352,11 +304,7 @@ export function RelationSlot({
         )}
 
         {/* Preview Dialog */}
-        <ExercisePreviewDialog
-          exercise={exercise}
-          open={isPreviewOpen}
-          onOpenChange={setIsPreviewOpen}
-        />
+        <ExercisePreviewDialog exercise={exercise} open={isPreviewOpen} onOpenChange={setIsPreviewOpen} />
       </div>
     </TooltipProvider>
   );
@@ -371,11 +319,7 @@ interface ExercisePreviewDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-function ExercisePreviewDialog({
-  exercise,
-  open,
-  onOpenChange,
-}: ExercisePreviewDialogProps) {
+function ExercisePreviewDialog({ exercise, open, onOpenChange }: ExercisePreviewDialogProps) {
   if (!exercise) return null;
 
   const mediaUrl = exercise.gifUrl || exercise.thumbnailUrl;
@@ -401,10 +345,7 @@ function ExercisePreviewDialog({
           {/* Info */}
           <div className="flex flex-wrap gap-2">
             {exercise.difficultyLevel && (
-              <Badge
-                variant="outline"
-                className={DIFFICULTY_COLORS[exercise.difficultyLevel] || ""}
-              >
+              <Badge variant="outline" className={DIFFICULTY_COLORS[exercise.difficultyLevel] || ''}>
                 {DIFFICULTY_LABELS[exercise.difficultyLevel] || exercise.difficultyLevel}
               </Badge>
             )}

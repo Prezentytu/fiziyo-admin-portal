@@ -81,9 +81,7 @@ export function BulkActionsToolbar({
     >
       {/* Przyciski akcji zbiorczych - czytelne etykiety dla fizjoterapeutów */}
       <div className="flex flex-wrap items-center gap-3">
-        <span className="text-sm font-medium text-muted-foreground">
-          Dla wszystkich:
-        </span>
+        <span className="text-sm font-medium text-muted-foreground">Dla wszystkich:</span>
 
         <Button
           variant="outline"
@@ -155,8 +153,7 @@ export function BulkActionsToolbar({
             onClick={() => onFilterChange('reuse')}
             className={cn('cursor-pointer', activeFilter === 'reuse' && 'bg-primary/10')}
           >
-            <Link2 className="mr-2 h-4 w-4 text-blue-500" />
-            Z mojej bazy ({reuseCount})
+            <Link2 className="mr-2 h-4 w-4 text-blue-500" />Z mojej bazy ({reuseCount})
           </DropdownMenuItem>
 
           <DropdownMenuItem

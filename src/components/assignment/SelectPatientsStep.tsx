@@ -1,14 +1,14 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { Search, Users, Check, Wrench, X } from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
-import type { Patient, AssignedPatientInfo } from "./types";
+import { useState } from 'react';
+import { Search, Users, Check, Wrench, X } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+import type { Patient, AssignedPatientInfo } from './types';
 
 interface SelectPatientsStepProps {
   patients: Patient[];
@@ -27,13 +27,11 @@ export function SelectPatientsStep({
   onUnassign,
   loading = false,
 }: SelectPatientsStepProps) {
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState('');
   const [patientsToUnassign, setPatientsToUnassign] = useState<Set<string>>(new Set());
 
   // Create a map for quick lookup of assigned patients
-  const assignedPatientsMap = new Map(
-    assignedPatients.map((a) => [a.patientId, a])
-  );
+  const assignedPatientsMap = new Map(assignedPatients.map((a) => [a.patientId, a]));
 
   // Filter patients by search query (show all, including assigned)
   const filteredPatients = patients.filter(
@@ -50,14 +48,10 @@ export function SelectPatientsStep({
     return 0;
   });
 
-  const availableCount = patients.filter(
-    (p) => !assignedPatientsMap.has(p.id)
-  ).length;
+  const availableCount = patients.filter((p) => !assignedPatientsMap.has(p.id)).length;
 
   // Filter available patients for "select all" functionality
-  const availablePatients = filteredPatients.filter(
-    (p) => !assignedPatientsMap.has(p.id)
-  );
+  const availablePatients = filteredPatients.filter((p) => !assignedPatientsMap.has(p.id));
 
   const selectedIds = new Set(selectedPatients.map((p) => p.id));
 
@@ -138,11 +132,7 @@ export function SelectPatientsStep({
               )}
             </p>
             <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={selectAll}
-                className="text-xs text-primary hover:underline"
-              >
+              <button type="button" onClick={selectAll} className="text-xs text-primary hover:underline">
                 Zaznacz wszystkich
               </button>
               <span className="text-muted-foreground">·</span>
@@ -166,14 +156,10 @@ export function SelectPatientsStep({
             <div className="flex flex-col items-center justify-center py-12 text-center px-4">
               <Users className="h-12 w-12 text-muted-foreground/50 mb-3" />
               <p className="text-sm font-medium text-foreground mb-1">
-                {searchQuery
-                  ? "Nie znaleziono pacjentów"
-                  : "Brak pacjentów"}
+                {searchQuery ? 'Nie znaleziono pacjentów' : 'Brak pacjentów'}
               </p>
               <p className="text-xs text-muted-foreground">
-                {searchQuery
-                  ? "Spróbuj innej frazy"
-                  : "Dodaj nowych pacjentów do listy"}
+                {searchQuery ? 'Spróbuj innej frazy' : 'Dodaj nowych pacjentów do listy'}
               </p>
             </div>
           ) : (
@@ -187,14 +173,14 @@ export function SelectPatientsStep({
                   <div
                     key={patient.id}
                     className={cn(
-                      "flex items-center gap-3 rounded-xl p-3 cursor-pointer transition-all",
+                      'flex items-center gap-3 rounded-xl p-3 cursor-pointer transition-all',
                       isSelectedForUnassign
-                        ? "bg-destructive/10 border-2 border-destructive/50"
+                        ? 'bg-destructive/10 border-2 border-destructive/50'
                         : isSelectedForAssign
-                        ? "bg-primary/10 border-2 border-primary/30"
-                        : isAssigned
-                        ? "opacity-70 hover:opacity-100 hover:bg-surface-light border-2 border-transparent"
-                        : "hover:bg-surface-light border-2 border-transparent"
+                          ? 'bg-primary/10 border-2 border-primary/30'
+                          : isAssigned
+                            ? 'opacity-70 hover:opacity-100 hover:bg-surface-light border-2 border-transparent'
+                            : 'hover:bg-surface-light border-2 border-transparent'
                     )}
                     onClick={() => togglePatient(patient)}
                     data-testid={`assign-patient-item-${patient.id}`}
@@ -206,24 +192,24 @@ export function SelectPatientsStep({
                         className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
                       />
                     ) : (
-                      <div className={cn(
-                        "h-4 w-4 rounded border-2 flex items-center justify-center",
-                        isSelectedForUnassign
-                          ? "border-destructive bg-destructive"
-                          : "border-muted-foreground/40"
-                      )}>
+                      <div
+                        className={cn(
+                          'h-4 w-4 rounded border-2 flex items-center justify-center',
+                          isSelectedForUnassign ? 'border-destructive bg-destructive' : 'border-muted-foreground/40'
+                        )}
+                      >
                         {isSelectedForUnassign && <X className="h-3 w-3 text-destructive-foreground" />}
                       </div>
                     )}
                     <div className="relative">
                       <div
                         className={cn(
-                          "flex h-10 w-10 items-center justify-center rounded-full text-sm font-semibold",
+                          'flex h-10 w-10 items-center justify-center rounded-full text-sm font-semibold',
                           isAssigned && !isSelectedForUnassign
-                            ? "bg-muted-foreground/40 text-muted-foreground grayscale"
+                            ? 'bg-muted-foreground/40 text-muted-foreground grayscale'
                             : patient.isShadowUser
-                            ? "bg-muted-foreground/60 text-white"
-                            : "bg-gradient-to-br from-primary to-primary-dark text-primary-foreground"
+                              ? 'bg-muted-foreground/60 text-white'
+                              : 'bg-gradient-to-br from-primary to-primary-dark text-primary-foreground'
                         )}
                       >
                         {patient.name[0]?.toUpperCase()}
@@ -236,26 +222,24 @@ export function SelectPatientsStep({
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <p className={cn(
-                          "font-medium truncate",
-                          isAssigned && !isSelectedForUnassign && "text-muted-foreground"
-                        )}>
+                        <p
+                          className={cn(
+                            'font-medium truncate',
+                            isAssigned && !isSelectedForUnassign && 'text-muted-foreground'
+                          )}
+                        >
                           {patient.name}
                         </p>
                         {isAssigned && (
                           <Badge
-                            variant={isSelectedForUnassign ? "destructive" : "secondary"}
+                            variant={isSelectedForUnassign ? 'destructive' : 'secondary'}
                             className="text-[10px] shrink-0"
                           >
                             Ma ten zestaw
                           </Badge>
                         )}
                       </div>
-                      {patient.email && (
-                        <p className="text-xs text-muted-foreground truncate">
-                          {patient.email}
-                        </p>
-                      )}
+                      {patient.email && <p className="text-xs text-muted-foreground truncate">{patient.email}</p>}
                     </div>
                     {isSelectedForUnassign ? (
                       <X className="h-5 w-5 text-destructive shrink-0" />
@@ -276,13 +260,13 @@ export function SelectPatientsStep({
           <h3 className="font-semibold text-lg">Wybrani pacjenci</h3>
           <p className="text-sm text-muted-foreground mt-1">
             {selectedPatients.length === 0 && patientsToUnassign.size === 0
-              ? "Wybierz pacjentów z listy po lewej"
+              ? 'Wybierz pacjentów z listy po lewej'
               : selectedPatients.length > 0
-              ? `${selectedPatients.length} do przypisania`
-              : null}
+                ? `${selectedPatients.length} do przypisania`
+                : null}
             {patientsToUnassign.size > 0 && (
-              <span className={selectedPatients.length > 0 ? "text-destructive ml-2" : "text-destructive"}>
-                {selectedPatients.length > 0 && "• "}
+              <span className={selectedPatients.length > 0 ? 'text-destructive ml-2' : 'text-destructive'}>
+                {selectedPatients.length > 0 && '• '}
                 {patientsToUnassign.size} do odpisania
               </span>
             )}
@@ -300,21 +284,17 @@ export function SelectPatientsStep({
                 >
                   <div
                     className={cn(
-                      "flex h-9 w-9 items-center justify-center rounded-full text-sm font-semibold shrink-0",
+                      'flex h-9 w-9 items-center justify-center rounded-full text-sm font-semibold shrink-0',
                       patient.isShadowUser
-                        ? "bg-muted-foreground/60 text-white"
-                        : "bg-gradient-to-br from-primary to-primary-dark text-primary-foreground"
+                        ? 'bg-muted-foreground/60 text-white'
+                        : 'bg-gradient-to-br from-primary to-primary-dark text-primary-foreground'
                     )}
                   >
                     {patient.name[0]?.toUpperCase()}
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium truncate">{patient.name}</p>
-                    {patient.email && (
-                      <p className="text-xs text-muted-foreground truncate">
-                        {patient.email}
-                      </p>
-                    )}
+                    {patient.email && <p className="text-xs text-muted-foreground truncate">{patient.email}</p>}
                   </div>
                   <Button
                     variant="ghost"
@@ -342,11 +322,7 @@ export function SelectPatientsStep({
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium truncate">{patient.name}</p>
-                      {patient.email && (
-                        <p className="text-xs text-muted-foreground truncate">
-                          {patient.email}
-                        </p>
-                      )}
+                      {patient.email && <p className="text-xs text-muted-foreground truncate">{patient.email}</p>}
                     </div>
                     <div className="flex items-center gap-1">
                       <Button
@@ -374,12 +350,8 @@ export function SelectPatientsStep({
         ) : (
           <div className="flex-1 flex flex-col items-center justify-center text-center p-4">
             <Users className="h-12 w-12 text-muted-foreground/30 mb-3" />
-            <p className="text-sm font-medium text-muted-foreground">
-              Brak wybranych pacjentów
-            </p>
-            <p className="text-xs text-muted-foreground/70 mt-1">
-              Kliknij na pacjenta, aby go dodać do listy
-            </p>
+            <p className="text-sm font-medium text-muted-foreground">Brak wybranych pacjentów</p>
+            <p className="text-xs text-muted-foreground/70 mt-1">Kliknij na pacjenta, aby go dodać do listy</p>
           </div>
         )}
 

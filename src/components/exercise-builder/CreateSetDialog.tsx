@@ -1,13 +1,13 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { useMutation } from "@apollo/client/react";
-import { useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
-import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
+import { useState } from 'react';
+import { useMutation } from '@apollo/client/react';
+import { useRouter } from 'next/navigation';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import { toast } from 'sonner';
+import { Loader2 } from 'lucide-react';
 
 import {
   Dialog,
@@ -16,32 +16,23 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Button } from "@/components/ui/button";
-import { useExerciseBuilder } from "@/contexts/ExerciseBuilderContext";
-import { useOrganization } from "@/contexts/OrganizationContext";
+} from '@/components/ui/dialog';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Button } from '@/components/ui/button';
+import { useExerciseBuilder } from '@/contexts/ExerciseBuilderContext';
+import { useOrganization } from '@/contexts/OrganizationContext';
 import {
   CREATE_EXERCISE_SET_MUTATION,
   ADD_EXERCISE_TO_EXERCISE_SET_MUTATION,
-} from "@/graphql/mutations/exercises.mutations";
-import { GET_ORGANIZATION_EXERCISE_SETS_QUERY } from "@/graphql/queries/exerciseSets.queries";
-
+} from '@/graphql/mutations/exercises.mutations';
 // ========================================
 // Form Schema
 // ========================================
 
 const createSetFormSchema = z.object({
-  name: z.string().min(2, "Nazwa musi mieć minimum 2 znaki"),
+  name: z.string().min(2, 'Nazwa musi mieć minimum 2 znaki'),
   description: z.string().optional(),
 });
 
@@ -74,8 +65,8 @@ export function CreateSetDialog({ open, onOpenChange }: CreateSetDialogProps) {
   const form = useForm<CreateSetFormValues>({
     resolver: zodResolver(createSetFormSchema),
     defaultValues: {
-      name: "",
-      description: "",
+      name: '',
+      description: '',
     },
   });
 
@@ -84,12 +75,12 @@ export function CreateSetDialog({ open, onOpenChange }: CreateSetDialogProps) {
 
   const handleSubmit = async (values: CreateSetFormValues) => {
     if (!organizationId) {
-      toast.error("Brak organizacji");
+      toast.error('Brak organizacji');
       return;
     }
 
     if (selectedExercises.length === 0) {
-      toast.error("Dodaj przynajmniej jedno ćwiczenie do zestawu");
+      toast.error('Dodaj przynajmniej jedno ćwiczenie do zestawu');
       return;
     }
 
@@ -107,7 +98,7 @@ export function CreateSetDialog({ open, onOpenChange }: CreateSetDialogProps) {
 
       const exerciseSetId = setData?.createExerciseSet?.id;
       if (!exerciseSetId) {
-        throw new Error("Nie udało się utworzyć zestawu");
+        throw new Error('Nie udało się utworzyć zestawu');
       }
 
       // 2. Add all exercises to the set
@@ -127,8 +118,8 @@ export function CreateSetDialog({ open, onOpenChange }: CreateSetDialogProps) {
       await Promise.all(addPromises);
 
       // 3. Success!
-      toast.success("Zestaw został utworzony", {
-        description: `${exerciseCount} ${exerciseCount === 1 ? "ćwiczenie" : exerciseCount < 5 ? "ćwiczenia" : "ćwiczeń"} w zestawie`,
+      toast.success('Zestaw został utworzony', {
+        description: `${exerciseCount} ${exerciseCount === 1 ? 'ćwiczenie' : exerciseCount < 5 ? 'ćwiczenia' : 'ćwiczeń'} w zestawie`,
       });
 
       // Clear the builder
@@ -143,9 +134,9 @@ export function CreateSetDialog({ open, onOpenChange }: CreateSetDialogProps) {
       // Navigate to the new set
       router.push(`/exercise-sets/${exerciseSetId}`);
     } catch (error) {
-      console.error("Error creating exercise set:", error);
-      toast.error("Nie udało się utworzyć zestawu", {
-        description: error instanceof Error ? error.message : "Spróbuj ponownie",
+      console.error('Error creating exercise set:', error);
+      toast.error('Nie udało się utworzyć zestawu', {
+        description: error instanceof Error ? error.message : 'Spróbuj ponownie',
       });
     } finally {
       setIsCreating(false);
@@ -165,9 +156,9 @@ export function CreateSetDialog({ open, onOpenChange }: CreateSetDialogProps) {
         <DialogHeader>
           <DialogTitle>Utwórz nowy zestaw</DialogTitle>
           <DialogDescription>
-            Zestaw będzie zawierał {exerciseCount}{" "}
-            {exerciseCount === 1 ? "ćwiczenie" : exerciseCount < 5 ? "ćwiczenia" : "ćwiczeń"}.
-            Nadaj mu nazwę i opcjonalnie dodaj opis.
+            Zestaw będzie zawierał {exerciseCount}{' '}
+            {exerciseCount === 1 ? 'ćwiczenie' : exerciseCount < 5 ? 'ćwiczenia' : 'ćwiczeń'}. Nadaj mu nazwę i
+            opcjonalnie dodaj opis.
           </DialogDescription>
         </DialogHeader>
 
@@ -222,18 +213,14 @@ export function CreateSetDialog({ open, onOpenChange }: CreateSetDialogProps) {
               >
                 Anuluj
               </Button>
-              <Button
-                type="submit"
-                disabled={isCreating}
-                data-testid="create-set-submit-btn"
-              >
+              <Button type="submit" disabled={isCreating} data-testid="create-set-submit-btn">
                 {isCreating ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     Tworzenie...
                   </>
                 ) : (
-                  "Utwórz zestaw"
+                  'Utwórz zestaw'
                 )}
               </Button>
             </DialogFooter>

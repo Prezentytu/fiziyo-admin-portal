@@ -1,4 +1,4 @@
-import { gql } from "@apollo/client";
+import { gql } from '@apollo/client';
 
 // Fallback queries dla testowania gdy baza danych nie jest dostępna
 // Te queries działają bez połączenia z bazą danych
@@ -87,4 +87,3 @@ export const GET_AVAILABLE_QUERIES = gql`
     }
   }
 `;
-

@@ -1,33 +1,30 @@
-"use client"
+'use client';
 
-import * as React from "react"
-import { cn } from "@/lib/utils"
+import * as React from 'react';
+import { cn } from '@/lib/utils';
 
 interface SliderProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'value' | 'onChange'> {
-  value?: number[]
-  onValueChange?: (value: number[]) => void
-  min?: number
-  max?: number
-  step?: number
+  value?: number[];
+  onValueChange?: (value: number[]) => void;
+  min?: number;
+  max?: number;
+  step?: number;
 }
 
 const Slider = React.forwardRef<HTMLInputElement, SliderProps>(
   ({ className, value = [50], onValueChange, min = 0, max = 100, step = 1, ...props }, ref) => {
-    const currentValue = value[0] ?? 50
-    const percentage = ((currentValue - min) / (max - min)) * 100
+    const currentValue = value[0] ?? 50;
+    const percentage = ((currentValue - min) / (max - min)) * 100;
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-      const newValue = Number(e.target.value)
-      onValueChange?.([newValue])
-    }
+      const newValue = Number(e.target.value);
+      onValueChange?.([newValue]);
+    };
 
     return (
-      <div className={cn("relative flex w-full touch-none select-none items-center", className)}>
+      <div className={cn('relative flex w-full touch-none select-none items-center', className)}>
         <div className="relative h-2 w-full grow overflow-hidden rounded-full bg-surface-light">
-          <div
-            className="absolute h-full bg-primary rounded-full transition-all"
-            style={{ width: `${percentage}%` }}
-          />
+          <div className="absolute h-full bg-primary rounded-full transition-all" style={{ width: `${percentage}%` }} />
         </div>
         <input
           ref={ref}
@@ -47,16 +44,9 @@ const Slider = React.forwardRef<HTMLInputElement, SliderProps>(
           }}
         />
       </div>
-    )
+    );
   }
-)
-Slider.displayName = "Slider"
+);
+Slider.displayName = 'Slider';
 
-export { Slider }
-
-
-
-
-
-
-
+export { Slider };

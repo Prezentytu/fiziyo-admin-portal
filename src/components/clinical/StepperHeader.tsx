@@ -34,12 +34,10 @@ export function StepperHeader({
           <span className="text-sm font-medium text-foreground">
             Krok {currentStep + 1} z {steps.length}
           </span>
-          <span className="text-sm text-muted-foreground">
-            {steps[currentStep]?.label}
-          </span>
+          <span className="text-sm text-muted-foreground">{steps[currentStep]?.label}</span>
         </div>
         <div className="h-2 bg-surface-light rounded-full overflow-hidden">
-          <div 
+          <div
             className="h-full bg-primary transition-all duration-300 ease-out rounded-full"
             style={{ width: `${((currentStep + 1) / steps.length) * 100}%` }}
           />
@@ -73,8 +71,11 @@ export function StepperHeader({
                   <div
                     className={cn(
                       'absolute left-1/2 right-0 top-5 h-0.5 -translate-y-1/2',
-                      isPast && index < currentStep - 1 ? 'bg-primary' : 
-                      isCompleted && completedSteps.has(index + 1) ? 'bg-primary' : 'bg-border'
+                      isPast && index < currentStep - 1
+                        ? 'bg-primary'
+                        : isCompleted && completedSteps.has(index + 1)
+                          ? 'bg-primary'
+                          : 'bg-border'
                     )}
                     style={{ left: '50%', right: '-50%' }}
                   />
@@ -94,17 +95,14 @@ export function StepperHeader({
                   <span
                     className={cn(
                       'relative z-10 flex h-10 w-10 items-center justify-center rounded-full border-2 transition-all duration-200',
-                      isCurrent && 'border-primary bg-primary text-primary-foreground scale-110 shadow-lg shadow-primary/30',
+                      isCurrent &&
+                        'border-primary bg-primary text-primary-foreground scale-110 shadow-lg shadow-primary/30',
                       isCompleted && !isCurrent && 'border-primary bg-primary text-primary-foreground',
                       !isCurrent && !isCompleted && 'border-border bg-surface text-muted-foreground',
                       isClickable && !isCurrent && 'group-hover:border-primary/60 group-hover:bg-primary/10'
                     )}
                   >
-                    {isCompleted && !isCurrent ? (
-                      <Check className="h-5 w-5" />
-                    ) : (
-                      <StepIcon className="h-5 w-5" />
-                    )}
+                    {isCompleted && !isCurrent ? <Check className="h-5 w-5" /> : <StepIcon className="h-5 w-5" />}
                   </span>
 
                   {/* Step label */}
@@ -128,4 +126,3 @@ export function StepperHeader({
     </div>
   );
 }
-

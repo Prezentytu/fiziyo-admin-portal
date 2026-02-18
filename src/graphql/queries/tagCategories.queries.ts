@@ -1,4 +1,4 @@
-import { gql } from "@apollo/client";
+import { gql } from '@apollo/client';
 
 // Fragment dla podstawowych danych kategorii tagów
 export const TAG_CATEGORY_BASIC_FRAGMENT = gql`
@@ -44,4 +44,3 @@ export const GET_TAG_CATEGORY_BY_ID_QUERY = gql`
   }
   ${TAG_CATEGORY_FULL_FRAGMENT}
 `;
-
