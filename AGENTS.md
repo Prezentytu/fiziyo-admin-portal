@@ -6,17 +6,20 @@ WAŻNE: Preferuj wnioskowanie oparte na dokumentacji (retrieval-led) zamiast wni
 
 Przed rozpoczęciem pracy dopasuj zadanie do tabeli i przeczytaj WSZYSTKIE pasujące guide'y:
 
-| Zadanie                   | Guide                                             |
-| ------------------------- | ------------------------------------------------- |
-| Tworzenie/edycja ćwiczeń  | `src/components/exercises/AGENTS.md`              |
-| Assignment Wizard         | `src/components/assignment/AGENTS.md`             |
-| Praca z pacjentami        | `src/components/patients/AGENTS.md`               |
-| Zapytania/mutacje GraphQL | `src/graphql/AGENTS.md`                           |
-| Komponenty współdzielone  | `src/components/shared/AGENTS.md`                 |
-| Zestawy ćwiczeń           | `src/components/exercise-sets/AGENTS.md`          |
-| Nowa specyfikacja         | `.ai/specs/AGENTS.md`, `.ai/skills/spec-writing/` |
-| Code review               | `.ai/skills/code-review/`                         |
-| Ustawienia/organizacja    | `src/components/settings/AGENTS.md`               |
+| Zadanie                       | Guide                                             |
+| ----------------------------- | ------------------------------------------------- |
+| Tworzenie/edycja ćwiczeń      | `src/components/exercises/AGENTS.md`              |
+| Assignment Wizard             | `src/components/assignment/AGENTS.md`             |
+| Praca z pacjentami            | `src/components/patients/AGENTS.md`               |
+| Zapytania/mutacje GraphQL     | `src/graphql/AGENTS.md`                           |
+| Komponenty współdzielone      | `src/components/shared/AGENTS.md`                 |
+| Zestawy ćwiczeń               | `src/components/exercise-sets/AGENTS.md`          |
+| Nowa specyfikacja             | `.ai/specs/AGENTS.md`, `.ai/skills/spec-writing/` |
+| Code review                   | `.ai/skills/code-review/`                         |
+| Ustawienia/organizacja        | `src/components/settings/AGENTS.md`               |
+| Kontekst cross-repo / backend | `.ai/ECOSYSTEM.md`                                |
+| Encje / enumy / relacje       | `.ai/DOMAIN_MODEL.md`                             |
+| Flow biznesowe / auth / AI    | `.ai/DATA_FLOWS.md`                               |
 
 ## Workflow Orchestration
 
@@ -317,9 +320,22 @@ Prefiksy modułów: `auth-`, `nav-`, `exercise-`, `set-`, `patient-`, `org-`, `s
 - NIE używaj typu `any` - używaj `unknown`
 - NIE używaj `useLazyQuery` - używaj `useQuery` z `skip`
 
+## Wiedza domenowa (.ai/)
+
+Pełna dokumentacja ekosystemu dla agentów AI:
+
+| Plik                  | Opis                                                                           | Kiedy czytać                                                 |
+| --------------------- | ------------------------------------------------------------------------------ | ------------------------------------------------------------ |
+| `.ai/ECOSYSTEM.md`    | Mapa cross-repo: admin ↔ mobile ↔ backend, GraphQL contract, gdzie szukać kodu | Zmiana dotykająca więcej niż jeden klient; praca z backendem |
+| `.ai/DOMAIN_MODEL.md` | Encje, enumy (pełne wartości), state machines, JSONB, relacje                  | Praca z danymi; nowe pola/encje; walidacja                   |
+| `.ai/DATA_FLOWS.md`   | Diagramy: auth, assignment, billing, AI, rejestracja, real-time, media         | Implementacja lub debugowanie flow wielowarstwowego          |
+| `.ai/specs/`          | Specyfikacje modułów (SPEC-001…005)                                            | Przed implementacją nowej funkcjonalności                    |
+| `.ai/lessons.md`      | Dziennik wniosków z pracy AI                                                   | Po korekcie — dodaj wpis                                     |
+| `.ai/skills/`         | Umiejętności: spec-writing, code-review, create-agents-md                      | Tworzenie specyfikacji, przegląd kodu                        |
+
 ## Schemat backendu i wzorce domenowe
 
-Szczegóły przeniesione do modułowych AGENTS.md (Task Router):
+Szczegóły encji i enumów → `.ai/DOMAIN_MODEL.md`. Wzorce modułowe:
 
 - **Exercise, parametry, UI**: `src/components/exercises/AGENTS.md`
 - **ExerciseSetMapping, ExerciseSet, PatientAssignment**: `src/components/exercise-sets/AGENTS.md`

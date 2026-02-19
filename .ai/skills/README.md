@@ -10,6 +10,18 @@ Umiejętności (skills) to specjalistyczne przewodniki dla AI agentów pracując
 | [code-review](code-review/SKILL.md)           | Code review w FiziYo              | Przegląd kodu przed merge, weryfikacja zmian       |
 | [create-agents-md](create-agents-md/SKILL.md) | Jak tworzyć AGENTS.md dla modułów | Dodawanie nowego modułu/komponentu do Task Routera |
 
+## Dokumentacja ekosystemowa (.ai/)
+
+Oprócz skills, folder `.ai/` zawiera dokumentację kontekstową:
+
+| Plik                                  | Opis                                                        |
+| ------------------------------------- | ----------------------------------------------------------- |
+| [ECOSYSTEM.md](../ECOSYSTEM.md)       | Mapa cross-repo: admin ↔ mobile ↔ backend, GraphQL contract |
+| [DOMAIN_MODEL.md](../DOMAIN_MODEL.md) | Encje, enumy, relacje, JSONB — szybka referencja            |
+| [DATA_FLOWS.md](../DATA_FLOWS.md)     | Kluczowe flow biznesowe z diagramami                        |
+| [lessons.md](../lessons.md)           | Dziennik wniosków z pracy AI                                |
+| [specs/](../specs/README.md)          | Specyfikacje modułów (SPEC-001…005)                         |
+
 ## Struktura skilla
 
 Każdy skill zawiera plik `SKILL.md` z:
