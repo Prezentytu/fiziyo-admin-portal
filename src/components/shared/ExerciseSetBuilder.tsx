@@ -172,20 +172,21 @@ function ExercisePickerItem({
           : 'bg-surface/50 hover:bg-surface-light border-border/50 hover:border-border'
       )}
     >
-      <div className="h-9 w-9 rounded-lg overflow-hidden shrink-0 relative group bg-surface-light border border-border/60">
+      <button
+        type="button"
+        onClick={onPreview}
+        className="h-9 w-9 rounded-lg overflow-hidden shrink-0 relative group bg-surface-light border border-border/60 cursor-pointer"
+        aria-label={`Podgląd galerii ćwiczenia: ${exercise.name}`}
+      >
         {imageUrl ? (
           <img src={imageUrl} alt="" className="h-full w-full object-cover" loading="lazy" />
         ) : (
           <ImagePlaceholder type="exercise" iconClassName="h-4 w-4" />
         )}
-        <button
-          type="button"
-          onClick={onPreview}
-          className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
-        >
+        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
           <Eye className="h-3 w-3 text-white" />
-        </button>
-      </div>
+        </div>
+      </button>
 
       <div className="flex-1 min-w-0">
         <p className="font-medium text-sm truncate">{exercise.name}</p>

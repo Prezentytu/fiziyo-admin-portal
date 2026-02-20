@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useQuery } from '@apollo/client/react';
 import {
   ExerciseSetBuilder,
@@ -9,6 +9,8 @@ import {
   type BuilderExercise,
   type ExerciseTag,
 } from '@/components/shared/ExerciseSetBuilder';
+import { ImageLightbox } from '@/components/shared/ImageLightbox';
+import { buildExerciseImageUrls } from '@/components/shared/exercise';
 import { GET_EXERCISE_TAGS_BY_ORGANIZATION_QUERY } from '@/graphql/queries/exerciseTags.queries';
 import { GET_TAG_CATEGORIES_BY_ORGANIZATION_QUERY } from '@/graphql/queries/tagCategories.queries';
 import { GET_ORGANIZATION_EXERCISE_SETS_QUERY } from '@/graphql/queries/exerciseSets.queries';
@@ -66,6 +68,7 @@ export function CustomizeSetStep({
   onAIClick,
   onPreviewExercise,
 }: CustomizeSetStepProps) {
+  const [previewExercise, setPreviewExercise] = useState<BuilderExercise | null>(null);
   // Load tags for filtering
   const { data: tagsData } = useQuery(GET_EXERCISE_TAGS_BY_ORGANIZATION_QUERY, {
     variables: { organizationId },
@@ -127,6 +130,16 @@ export function CustomizeSetStep({
         : 'np. Rehabilitacja kolana - tydzień 1';
 
   const testIdPrefix = isCreatingNew ? 'create-set' : 'customize-set';
+  const handlePreviewExercise = useCallback(
+    (exercise: BuilderExercise) => {
+      if (onPreviewExercise) {
+        onPreviewExercise(exercise);
+        return;
+      }
+      setPreviewExercise(exercise);
+    },
+    [onPreviewExercise]
+  );
 
   return (
     <div className="h-full flex flex-col" data-testid={`${testIdPrefix}-step`}>
@@ -146,9 +159,24 @@ export function CustomizeSetStep({
         showAI={showAI}
         onAIClick={onAIClick}
         aiButtonLabel="Dobierz za mnie"
-        onPreviewExercise={onPreviewExercise}
+        onPreviewExercise={handlePreviewExercise}
         testIdPrefix={testIdPrefix}
       />
+      {!onPreviewExercise && previewExercise && (() => {
+        const gallery = buildExerciseImageUrls(previewExercise);
+        if (gallery.length === 0) return null;
+        return (
+          <ImageLightbox
+            src={gallery[0]}
+            alt={previewExercise.name}
+            open={true}
+            onOpenChange={(open) => {
+              if (!open) setPreviewExercise(null);
+            }}
+            images={gallery}
+          />
+        );
+      })()}
     </div>
   );
 }

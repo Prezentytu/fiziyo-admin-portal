@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { Clock, Settings2, ChevronUp, ChevronDown, X, Eye } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -9,6 +9,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { LabeledStepper } from '@/components/shared/LabeledStepper';
 import { ImagePlaceholder } from '@/components/shared/ImagePlaceholder';
+import { ImageLightbox } from '@/components/shared/ImageLightbox';
 import { getMediaUrl } from '@/utils/mediaUrl';
 import { cn } from '@/lib/utils';
 import {
@@ -45,6 +46,7 @@ export function ExerciseExecutionCard({
 }: Readonly<ExerciseExecutionCardProps>) {
   const [uncontrolledExpanded, setUncontrolledExpanded] = useState(defaultExpanded);
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [internalPreviewOpen, setInternalPreviewOpen] = useState(false);
 
   const isExpanded = controlledExpanded ?? uncontrolledExpanded;
   const setExpanded = useCallback(
@@ -61,10 +63,22 @@ export function ExerciseExecutionCard({
   const showReadableView = mode === 'view' && viewVariant === 'readable';
   const id = exercise.id;
   const testId = `${testIdPrefix}-${id}`;
-  const imageUrl = getMediaUrl(exercise.thumbnailUrl);
-  const hasGallery = Boolean(onPreview && (imageUrl || (exercise.imageUrls && exercise.imageUrls.length > 0)));
+  const imageUrl = getMediaUrl(exercise.thumbnailUrl ?? exercise.imageUrls?.[0]);
+  const galleryImages = useMemo(() => {
+    if (exercise.imageUrls && exercise.imageUrls.length > 0) return exercise.imageUrls;
+    return imageUrl ? [imageUrl] : [];
+  }, [exercise.imageUrls, imageUrl]);
+  const hasGallery = galleryImages.length > 0;
 
   const canEditField = (field: EditableField) => canEdit && isFieldEditable(field, mode, editableFields);
+  const handlePreviewTrigger = useCallback(() => {
+    if (!hasGallery) return;
+    if (onPreview) {
+      onPreview();
+      return;
+    }
+    setInternalPreviewOpen(true);
+  }, [hasGallery, onPreview]);
 
   const handleChange = useCallback(
     (patch: Partial<typeof exercise>) => {
@@ -75,60 +89,68 @@ export function ExerciseExecutionCard({
 
   return (
     <Collapsible open={isExpanded} onOpenChange={setExpanded}>
+      {/*
+        @container on the card — container queries let the card self-adapt:
+        < 460px  → 2-row (narrow sidebar)
+        ≥ 460px  → 1-row (dialogs, wide builders)
+      */}
       <div
         className={cn(
-          'w-full overflow-hidden rounded-xl border border-border bg-surface transition-colors',
+          '@container w-full overflow-hidden rounded-xl border border-border bg-surface transition-colors',
           mode === 'edit' && 'hover:border-border/80',
           isExpanded && 'border-primary/30 bg-surface/95',
           className
         )}
         data-testid={testId}
       >
-        {/* ── EDIT MODE: 2-row layout, never overflows ── */}
+        {/* ── EDIT MODE ── */}
         {mode === 'edit' && (
-          <div className="w-full p-3 flex flex-col gap-3">
-            {/* Row 1: CSS Grid — 1fr name column is hard-bounded, truncate always works */}
+          <div className="w-full p-4 flex flex-col @[460px]:flex-row gap-3 @[460px]:gap-2 @[460px]:items-center">
+
+            {/* Info section: CSS Grid (1fr name = hard-bounded, truncate guaranteed) */}
             <div
-              className="grid items-center gap-2"
+              className="grid items-center gap-2 @[460px]:flex-1 @[460px]:min-w-0"
               style={{ gridTemplateColumns: dragHandle ? 'auto auto 1fr' : 'auto 1fr' }}
             >
               {dragHandle && <div className="shrink-0">{dragHandle}</div>}
-              {/* thumbnail */}
-              <div className="h-10 w-10 shrink-0 overflow-hidden rounded-lg bg-surface-light border border-border/60 relative group/thumb">
+              <button
+                type="button"
+                className={cn(
+                  'h-10 w-10 shrink-0 overflow-hidden rounded-lg bg-surface-light border border-border/60 relative group/thumb',
+                  hasGallery ? 'cursor-pointer' : 'cursor-default'
+                )}
+                onClick={handlePreviewTrigger}
+                disabled={!hasGallery}
+                aria-label={hasGallery ? 'Otwórz galerię ćwiczenia' : 'Miniatura ćwiczenia'}
+                data-testid={hasGallery ? `${testId}-thumbnail-btn` : undefined}
+              >
                 {imageUrl ? (
                   <>
                     <img src={imageUrl} alt="" className="h-full w-full object-cover" loading="lazy" />
                     {hasGallery && (
-                      <button
-                        type="button"
-                        onClick={(e) => { e.stopPropagation(); onPreview?.(); }}
-                        className="absolute inset-0 bg-black/50 opacity-0 group-hover/thumb:opacity-100 transition-opacity flex items-center justify-center"
-                        aria-label="Podgląd galerii"
+                      <div
+                        className="absolute inset-0 bg-black/50 opacity-0 group-hover/thumb:opacity-100 transition-opacity flex items-center justify-center pointer-events-none"
                         data-testid={`${testId}-preview-btn`}
                       >
                         <Eye className="h-4 w-4 text-white" />
-                      </button>
+                      </div>
                     )}
                   </>
                 ) : (
                   <>
                     <ImagePlaceholder type="exercise" iconClassName="h-4 w-4" />
                     {hasGallery && (
-                      <button
-                        type="button"
-                        onClick={(e) => { e.stopPropagation(); onPreview?.(); }}
-                        className="absolute inset-0 bg-black/50 opacity-0 group-hover/thumb:opacity-100 transition-opacity flex items-center justify-center"
-                        aria-label="Podgląd galerii"
+                      <div
+                        className="absolute inset-0 bg-black/50 opacity-0 group-hover/thumb:opacity-100 transition-opacity flex items-center justify-center pointer-events-none"
                         data-testid={`${testId}-preview-btn`}
                       >
                         <Eye className="h-4 w-4 text-white" />
-                      </button>
+                      </div>
                     )}
                   </>
                 )}
-              </div>
-              {/* name — always truncated, tooltip reveals full text */}
-              <div className="min-w-0 flex-1 overflow-hidden">
+              </button>
+              <div className="min-w-0 overflow-hidden">
                 <TooltipProvider delayDuration={200}>
                   <Tooltip>
                     <TooltipTrigger asChild>
@@ -162,30 +184,34 @@ export function ExerciseExecutionCard({
               </div>
             </div>
 
-            {/* Row 2: steppers left-aligned · actions right-aligned (items-start = controls top-edge matches buttons top-edge) */}
-            <div className="flex items-start gap-3">
-              <LabeledStepper
-                value={exercise.sets}
-                onChange={(v) => handleChange({ sets: v })}
-                label="SERIE"
-                min={1}
-                max={20}
-                disabled={!canEditField('sets')}
-              />
-              <LabeledStepper
-                value={exercise.reps}
-                onChange={(v) => handleChange({ reps: v })}
-                label="POWT."
-                min={1}
-                max={100}
-                disabled={!canEditField('reps')}
-              />
-              {/* ml-auto pushes actions flush right */}
-              <div className="ml-auto flex items-center gap-1">
+            {/* Controls: steppers + actions — always flex-row, aligned by h-8 controls top */}
+            <div className="flex items-start gap-3 shrink-0">
+              {/* h-8 clip: only control row participates in vertical alignment, label overflows below */}
+              <div className="h-8 overflow-visible shrink-0">
+                <LabeledStepper
+                  value={exercise.sets}
+                  onChange={(v) => handleChange({ sets: v })}
+                  label="SERIE"
+                  min={1}
+                  max={20}
+                  disabled={!canEditField('sets')}
+                />
+              </div>
+              <div className="h-8 overflow-visible shrink-0">
+                <LabeledStepper
+                  value={exercise.reps}
+                  onChange={(v) => handleChange({ reps: v })}
+                  label="POWT."
+                  min={1}
+                  max={100}
+                  disabled={!canEditField('reps')}
+                />
+              </div>
+              <div className="flex items-center gap-1 @[460px]:ml-0 ml-auto">
                 <CollapsibleTrigger asChild>
                   <button
                     type="button"
-                    className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground/60 hover:text-foreground hover:bg-surface-light transition-colors data-[state=open]:bg-primary/10 data-[state=open]:text-primary"
+                    className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground/60 hover:text-foreground hover:bg-surface-light transition-colors data-[state=open]:bg-primary/10 data-[state=open]:text-primary cursor-pointer"
                     title={isExpanded ? 'Zwiń' : 'Więcej opcji'}
                     data-testid={`${testId}-expand-btn`}
                   >
@@ -200,7 +226,7 @@ export function ExerciseExecutionCard({
                   <button
                     type="button"
                     onClick={onRemove}
-                    className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground/60 hover:text-destructive hover:bg-destructive/10 transition-colors"
+                    className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground/60 hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer"
                     title="Usuń"
                     data-testid={`${testId}-remove-btn`}
                   >
@@ -226,39 +252,43 @@ export function ExerciseExecutionCard({
               style={{ gridTemplateColumns: dragHandle ? 'auto auto 1fr' : 'auto 1fr' }}
             >
               {dragHandle && <div className="shrink-0">{dragHandle}</div>}
-              <div className="h-12 w-12 shrink-0 overflow-hidden rounded-lg bg-surface-light border border-border/60 relative group/thumb">
+              <button
+                type="button"
+                className={cn(
+                  'h-12 w-12 shrink-0 overflow-hidden rounded-lg bg-surface-light border border-border/60 relative group/thumb',
+                  hasGallery ? 'cursor-pointer' : 'cursor-default'
+                )}
+                onClick={handlePreviewTrigger}
+                disabled={!hasGallery}
+                aria-label={hasGallery ? 'Otwórz galerię ćwiczenia' : 'Miniatura ćwiczenia'}
+                data-testid={hasGallery ? `${testId}-thumbnail-btn` : undefined}
+              >
                 {imageUrl ? (
                   <>
                     <img src={imageUrl} alt="" className="h-full w-full object-cover" loading="lazy" />
                     {hasGallery && (
-                      <button
-                        type="button"
-                        onClick={(e) => { e.stopPropagation(); onPreview?.(); }}
-                        className="absolute inset-0 bg-black/50 opacity-0 group-hover/thumb:opacity-100 transition-opacity flex items-center justify-center"
-                        aria-label="Podgląd galerii"
+                      <div
+                        className="absolute inset-0 bg-black/50 opacity-0 group-hover/thumb:opacity-100 transition-opacity flex items-center justify-center pointer-events-none"
                         data-testid={`${testId}-preview-btn`}
                       >
                         <Eye className="h-4 w-4 text-white" />
-                      </button>
+                      </div>
                     )}
                   </>
                 ) : (
                   <>
                     <ImagePlaceholder type="exercise" iconClassName="h-4 w-4" />
                     {hasGallery && (
-                      <button
-                        type="button"
-                        onClick={(e) => { e.stopPropagation(); onPreview?.(); }}
-                        className="absolute inset-0 bg-black/50 opacity-0 group-hover/thumb:opacity-100 transition-opacity flex items-center justify-center"
-                        aria-label="Podgląd galerii"
+                      <div
+                        className="absolute inset-0 bg-black/50 opacity-0 group-hover/thumb:opacity-100 transition-opacity flex items-center justify-center pointer-events-none"
                         data-testid={`${testId}-preview-btn`}
                       >
                         <Eye className="h-4 w-4 text-white" />
-                      </button>
+                      </div>
                     )}
                   </>
                 )}
-              </div>
+              </button>
               <div className="min-w-0 flex-1">
                 <TooltipProvider delayDuration={200}>
                   <Tooltip>
@@ -555,6 +585,16 @@ export function ExerciseExecutionCard({
               {readOnlyReason}
             </p>
           </div>
+        )}
+
+        {!onPreview && hasGallery && (
+          <ImageLightbox
+            src={galleryImages[0]}
+            alt={exercise.displayName}
+            open={internalPreviewOpen}
+            onOpenChange={setInternalPreviewOpen}
+            images={galleryImages}
+          />
         )}
       </div>
     </Collapsible>

@@ -186,13 +186,13 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
                       className={cn(
                         'group relative flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium transition-all duration-200',
                         active
-                          ? 'bg-primary text-primary-foreground shadow-md shadow-primary/20'
+                          ? 'border border-primary/20 bg-primary/10 text-foreground shadow-sm shadow-primary/10'
                           : 'text-muted-foreground hover:bg-surface-light hover:text-foreground'
                       )}
                     >
                       {/* Active indicator */}
                       {active && (
-                        <span className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-primary-foreground/50 rounded-full" />
+                        <span className="absolute left-0 top-1/2 h-6 w-1 -translate-y-1/2 rounded-full bg-primary/60" />
                       )}
 
                       <div className="relative">

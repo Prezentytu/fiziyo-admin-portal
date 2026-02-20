@@ -74,7 +74,7 @@ export function LabeledStepper({
           disabled={disabled || value <= min}
           data-stepper-control
           className={cn(
-            'w-7 flex items-center justify-center rounded-l-lg transition-all shrink-0',
+            'w-7 flex items-center justify-center rounded-l-lg transition-all shrink-0 cursor-pointer',
             'bg-surface-light/80 border border-r-0 border-border/40',
             'text-muted-foreground/70 hover:text-foreground hover:bg-surface-light',
             'active:scale-95 disabled:cursor-not-allowed disabled:bg-surface-light/35 disabled:text-muted-foreground/35 disabled:hover:bg-surface-light/35',
@@ -99,7 +99,7 @@ export function LabeledStepper({
               onChange={handleInputChange}
               disabled={disabled}
               className={cn(
-                'w-auto min-w-0 bg-transparent text-right font-bold text-sm text-foreground tabular-nums',
+                'w-auto min-w-0 bg-transparent text-right font-bold text-sm text-foreground tabular-nums cursor-text',
                 'outline-none border-0 p-0 leading-none',
                 'focus:bg-transparent !focus:outline-none !focus:ring-0 !focus:ring-offset-0 !focus-visible:outline-none !focus-visible:ring-0 !focus-visible:ring-offset-0',
                 'disabled:opacity-40 disabled:cursor-not-allowed',
@@ -122,7 +122,7 @@ export function LabeledStepper({
           disabled={disabled || value >= max}
           data-stepper-control
           className={cn(
-            'w-7 flex items-center justify-center rounded-r-lg transition-all shrink-0',
+            'w-7 flex items-center justify-center rounded-r-lg transition-all shrink-0 cursor-pointer',
             'bg-surface-light/80 border border-l-0 border-border/40',
             'text-muted-foreground/70 hover:text-foreground hover:bg-surface-light',
             'active:scale-95 disabled:cursor-not-allowed disabled:bg-surface-light/35 disabled:text-muted-foreground/35 disabled:hover:bg-surface-light/35',

@@ -206,7 +206,7 @@ export function Sidebar({ isCollapsed, onToggleCollapse }: SidebarProps) {
                         'group relative flex items-center rounded-xl text-sm font-medium transition-all duration-200',
                         isCollapsed ? 'h-10 w-10 justify-center' : 'gap-3 px-3 py-2.5',
                         active
-                          ? 'bg-primary text-primary-foreground shadow-md shadow-primary/20'
+                          ? 'border border-primary/20 bg-primary/10 text-foreground shadow-sm shadow-primary/10'
                           : 'text-muted-foreground hover:bg-surface-light hover:text-foreground'
                       )}
                     >
