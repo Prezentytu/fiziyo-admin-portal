@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 import { Building2, Shield, ShieldCheck, User, Star, UserPlus, ArrowRight, Check, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { pl } from 'date-fns/locale';
@@ -166,11 +167,15 @@ export function OrganizationsList({
                   <div className="flex items-center gap-3">
                     {/* Logo/Avatar */}
                     {org.logoUrl ? (
-                      <img
-                        src={org.logoUrl}
-                        alt={org.organizationName || 'Organizacja'}
-                        className="h-9 w-9 rounded-lg object-cover shrink-0"
-                      />
+                      <span className="relative block h-9 w-9 rounded-lg overflow-hidden shrink-0">
+                        <Image
+                          src={org.logoUrl}
+                          alt={org.organizationName || 'Organizacja'}
+                          fill
+                          className="object-cover"
+                          sizes="36px"
+                        />
+                      </span>
                     ) : (
                       <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-surface-light shrink-0">
                         <Building2 className="h-4 w-4 text-muted-foreground" />

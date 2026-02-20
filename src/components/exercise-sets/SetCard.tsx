@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
+import Image from 'next/image';
 import { Pencil, Trash2, Dumbbell, Copy, Sparkles, Send, MoreVertical, Link as LinkIcon, Clock } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -171,17 +172,19 @@ export function SetCard({ set, tagsMap, onView, onEdit, onDelete, onDuplicate, o
         {allExerciseImages.length > 0 && allExerciseImages[0]?.url ? (
           <>
             {/* Blurred background layer */}
-            <img
+            <Image
               src={
                 activeExerciseIndex !== null && allExerciseImages[activeExerciseIndex]?.url
                   ? allExerciseImages[activeExerciseIndex].url
                   : allExerciseImages[0].url
               }
               alt=""
-              className="absolute inset-0 w-full h-full object-cover blur-xl scale-110 opacity-50"
+              fill
+              className="object-cover blur-xl scale-110 opacity-50"
+              sizes="(max-width: 768px) 100vw, 400px"
             />
             {/* Main image - shows first image (cover) in IDLE, active image in HOVER */}
-            <img
+            <Image
               src={
                 activeExerciseIndex !== null && allExerciseImages[activeExerciseIndex]?.url
                   ? allExerciseImages[activeExerciseIndex].url
@@ -192,7 +195,9 @@ export function SetCard({ set, tagsMap, onView, onEdit, onDelete, onDuplicate, o
                   ? allExerciseImages[activeExerciseIndex].name
                   : allExerciseImages[0].name
               }
-              className="absolute inset-0 w-full h-full object-contain z-10 transition-opacity duration-200"
+              fill
+              className="object-contain z-10 transition-opacity duration-200"
+              sizes="(max-width: 768px) 100vw, 400px"
             />
           </>
         ) : (

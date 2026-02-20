@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { Check, ChevronDown, Plus, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useOrganization } from '@/contexts/OrganizationContext';
@@ -123,11 +124,15 @@ export function OrganizationSwitcher({ isCollapsed = false }: OrganizationSwitch
     >
       {/* Organization Avatar */}
       {currentOrganization.logoUrl ? (
-        <img
-          src={currentOrganization.logoUrl}
-          alt={currentOrganization.organizationName}
-          className={cn('rounded-xl object-cover shrink-0', isCollapsed ? 'h-9 w-9' : 'h-9 w-9')}
-        />
+        <span className={cn('relative block rounded-xl overflow-hidden shrink-0', isCollapsed ? 'h-9 w-9' : 'h-9 w-9')}>
+          <Image
+            src={currentOrganization.logoUrl}
+            alt={currentOrganization.organizationName}
+            fill
+            className="object-cover"
+            sizes="36px"
+          />
+        </span>
       ) : (
         <div
           className={cn(
@@ -237,11 +242,9 @@ export function OrganizationSwitcher({ isCollapsed = false }: OrganizationSwitch
             >
               {/* Avatar */}
               {org.logoUrl ? (
-                <img
-                  src={org.logoUrl}
-                  alt={org.organizationName}
-                  className="h-8 w-8 rounded-lg object-cover shrink-0"
-                />
+                <span className="relative block h-8 w-8 rounded-lg overflow-hidden shrink-0">
+                  <Image src={org.logoUrl} alt={org.organizationName} fill className="object-cover" sizes="32px" />
+                </span>
               ) : (
                 <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-surface-light to-surface text-xs font-semibold text-muted-foreground shrink-0">
                   {getInitials(org.organizationName)}

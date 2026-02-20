@@ -1,6 +1,7 @@
 'use client';
 
 import { useUser, useClerk } from '@clerk/nextjs';
+import Image from 'next/image';
 import { User, Settings, LogOut, ChevronDown } from 'lucide-react';
 import Link from 'next/link';
 import {
@@ -40,7 +41,9 @@ export function UserMenu() {
       >
         {/* Avatar */}
         {avatarUrl ? (
-          <img src={avatarUrl} alt={fullName} className="h-9 w-9 rounded-xl object-cover" />
+          <span className="relative block h-9 w-9 rounded-xl overflow-hidden">
+            <Image src={avatarUrl} alt={fullName} fill className="object-cover" sizes="36px" />
+          </span>
         ) : (
           <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary-dark text-sm font-semibold text-white">
             {initials}
@@ -54,7 +57,9 @@ export function UserMenu() {
         <DropdownMenuLabel className="p-3">
           <div className="flex items-center gap-3">
             {avatarUrl ? (
-              <img src={avatarUrl} alt={fullName} className="h-10 w-10 rounded-xl object-cover" />
+              <span className="relative block h-10 w-10 rounded-xl overflow-hidden">
+                <Image src={avatarUrl} alt={fullName} fill className="object-cover" sizes="40px" />
+              </span>
             ) : (
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary-dark text-sm font-semibold text-white">
                 {initials}

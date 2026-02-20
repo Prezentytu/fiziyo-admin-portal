@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 import { useUser, useClerk } from '@clerk/nextjs';
 import { User, Settings, HelpCircle, LogOut, ChevronUp } from 'lucide-react';
 import Link from 'next/link';
@@ -172,7 +173,9 @@ export function UserProfileFooter({ isCollapsed }: UserProfileFooterProps) {
                   )}
                 >
                   {org.logoUrl ? (
-                    <img src={org.logoUrl} alt={org.organizationName} className="h-6 w-6 rounded-md object-cover" />
+                    <span className="relative block h-6 w-6 rounded-md overflow-hidden shrink-0">
+                      <Image src={org.logoUrl} alt={org.organizationName} fill className="object-cover" sizes="24px" />
+                    </span>
                   ) : (
                     <div className="flex h-6 w-6 items-center justify-center rounded-md bg-surface-light text-[10px] font-semibold text-muted-foreground">
                       {getInitials(org.organizationName)}

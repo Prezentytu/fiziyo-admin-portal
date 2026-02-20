@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 import { Dumbbell, Check, Link2, X, ChevronDown, ChevronUp, Repeat, Timer } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -224,11 +225,15 @@ export function ExerciseReviewCard({
                 )}
               >
                 {match.imageUrl ? (
-                  <img
-                    src={match.imageUrl}
-                    alt={match.existingExerciseName}
-                    className="h-12 w-12 rounded-lg object-cover"
-                  />
+                  <span className="relative block h-12 w-12 rounded-lg overflow-hidden shrink-0">
+                    <Image
+                      src={match.imageUrl}
+                      alt={match.existingExerciseName}
+                      fill
+                      className="object-cover"
+                      sizes="48px"
+                    />
+                  </span>
                 ) : (
                   <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-surface-hover">
                     <Dumbbell className="h-6 w-6 text-muted-foreground" />

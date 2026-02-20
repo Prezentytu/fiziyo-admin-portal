@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback, useMemo } from 'react';
+import Image from 'next/image';
 import { Sparkles, Loader2, Check, X, RefreshCw, AlertCircle, Plus, ChevronDown, ChevronUp } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -413,9 +414,9 @@ export function AISetGenerator({
                         {isSelected && <Check className="h-3 w-3" />}
                       </div>
 
-                      <div className="h-10 w-10 rounded-lg overflow-hidden shrink-0 bg-surface mt-0.5">
+                      <div className="relative h-10 w-10 rounded-lg overflow-hidden shrink-0 bg-surface mt-0.5">
                         {imageUrl ? (
-                          <img src={imageUrl} alt="" className="h-full w-full object-cover" loading="lazy" />
+                          <Image src={imageUrl} alt="" fill className="object-cover" sizes="40px" />
                         ) : (
                           <ImagePlaceholder type="exercise" iconClassName="h-4 w-4" />
                         )}

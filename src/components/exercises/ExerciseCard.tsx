@@ -467,11 +467,12 @@ export function ExerciseCard({
                   style={{ backgroundImage: `url(${imageUrl})` }}
                 />
                 {/* Main image */}
-                <img
+                <Image
                   src={imageUrl}
                   alt={exercise.name}
-                  loading="lazy"
-                  className="relative h-full w-full object-contain transition-transform duration-500 ease-out group-hover:scale-[1.05]"
+                  fill
+                  className="object-contain transition-transform duration-500 ease-out group-hover:scale-[1.05]"
+                  sizes="(max-width: 768px) 100vw, 400px"
                 />
                 {/* Dark gradient overlay */}
                 <div className="absolute inset-0 bg-linear-to-t from-black/60 via-transparent to-transparent opacity-60 group-hover:opacity-40 transition-opacity duration-300" />

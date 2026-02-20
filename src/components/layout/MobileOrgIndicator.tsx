@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { ChevronDown } from 'lucide-react';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -69,11 +70,15 @@ export function MobileOrgIndicator() {
     >
       {/* Avatar */}
       {currentOrganization.logoUrl ? (
-        <img
-          src={currentOrganization.logoUrl}
-          alt={currentOrganization.organizationName}
-          className="h-6 w-6 rounded-md object-cover"
-        />
+        <span className="relative block h-6 w-6 rounded-md overflow-hidden shrink-0">
+          <Image
+            src={currentOrganization.logoUrl}
+            alt={currentOrganization.organizationName}
+            fill
+            className="object-cover"
+            sizes="24px"
+          />
+        </span>
       ) : (
         <div className="flex h-6 w-6 items-center justify-center rounded-md bg-primary/20 text-primary text-[10px] font-bold">
           {getInitials(currentOrganization.organizationName)}
@@ -124,11 +129,9 @@ export function MobileOrgIndicator() {
             >
               {/* Avatar */}
               {org.logoUrl ? (
-                <img
-                  src={org.logoUrl}
-                  alt={org.organizationName}
-                  className="h-7 w-7 rounded-md object-cover shrink-0"
-                />
+                <span className="relative block h-7 w-7 rounded-md overflow-hidden shrink-0">
+                  <Image src={org.logoUrl} alt={org.organizationName} fill className="object-cover" sizes="28px" />
+                </span>
               ) : (
                 <div className="flex h-7 w-7 items-center justify-center rounded-md bg-surface-light text-[10px] font-semibold text-muted-foreground shrink-0">
                   {getInitials(org.organizationName)}

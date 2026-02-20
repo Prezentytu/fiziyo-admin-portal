@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import NextImage from 'next/image';
 import { Upload, X, Image, Film, FileIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -151,7 +152,9 @@ export function FileUpload({
                 className="relative flex items-center gap-2 rounded-lg border border-border bg-surface p-2"
               >
                 {previewUrl ? (
-                  <img src={previewUrl} alt={file.name} className="h-12 w-12 rounded object-cover" />
+                  <span className="relative block h-12 w-12 rounded overflow-hidden shrink-0">
+                    <NextImage src={previewUrl} alt={file.name} fill className="object-cover" sizes="48px" unoptimized />
+                  </span>
                 ) : (
                   <div className="flex h-12 w-12 items-center justify-center rounded bg-surface-light">
                     <Icon className="h-6 w-6 text-muted-foreground" />

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback, useEffect } from 'react';
+import Image from 'next/image';
 import { useQuery, useMutation } from '@apollo/client/react';
 import {
   ArrowLeft,
@@ -428,7 +429,7 @@ function RelationSlot({
       {/* Thumbnail */}
       <div className="relative w-full h-[50px] sm:h-[60px] bg-muted overflow-hidden">
         {thumbnailUrl ? (
-          <img src={thumbnailUrl} alt={relation.name} className="w-full h-full object-cover" loading="lazy" />
+          <Image src={thumbnailUrl} alt={relation.name} fill className="object-cover" sizes="(max-width: 640px) 100vw, 200px" />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
             <ImageIcon className="h-5 w-5 text-muted-foreground" />

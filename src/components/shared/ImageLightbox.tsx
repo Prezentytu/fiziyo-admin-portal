@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import Image from 'next/image';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -130,13 +131,15 @@ export function ImageLightbox({
 
           {/* Image container */}
           <div
-            className="relative max-h-[90vh] max-w-[90vw] flex items-center justify-center"
+            className="relative w-[90vw] h-[90vh] max-w-[90vw] max-h-[90vh] flex items-center justify-center"
             onClick={(e) => e.stopPropagation()}
           >
-            <img
+            <Image
               src={currentImage}
               alt={alt}
-              className="max-h-[90vh] max-w-[90vw] object-contain rounded-lg shadow-2xl"
+              fill
+              className="object-contain rounded-lg shadow-2xl"
+              sizes="90vw"
             />
           </div>
 

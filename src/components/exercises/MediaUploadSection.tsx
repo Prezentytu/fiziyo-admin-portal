@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
+import Image from 'next/image';
 import { Upload, X, Image as ImageIcon, Video, Film, Link as LinkIcon, ExternalLink, Play, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -178,7 +179,13 @@ export function MediaUploadSection({
                 key={`${file.name}-${index}`}
                 className="group relative aspect-video rounded-lg overflow-hidden bg-surface-light border border-border"
               >
-                <img src={URL.createObjectURL(file)} alt={file.name} className="h-full w-full object-cover" />
+                <Image
+                  src={URL.createObjectURL(file)}
+                  alt={file.name}
+                  fill
+                  className="object-cover"
+                  unoptimized
+                />
                 <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                   <Button
                     type="button"
@@ -231,7 +238,9 @@ export function MediaUploadSection({
           {videoUrl && isVideoUrlValid && (
             <div className="flex items-center gap-3 p-3 rounded-lg bg-surface-light border border-border">
               {videoThumbnail ? (
-                <img src={videoThumbnail} alt="Video thumbnail" className="w-24 h-16 object-cover rounded" />
+                <span className="relative block w-24 h-16 rounded overflow-hidden shrink-0">
+                  <Image src={videoThumbnail} alt="Video thumbnail" fill className="object-cover" sizes="96px" />
+                </span>
               ) : (
                 <div className="w-24 h-16 bg-surface rounded flex items-center justify-center">
                   <Play className="h-6 w-6 text-muted-foreground" />
@@ -283,15 +292,17 @@ export function MediaUploadSection({
           </div>
           {gifUrl && (
             <div className="flex items-center gap-3 p-3 rounded-lg bg-surface-light border border-border">
-              <img
-                src={gifUrl}
-                alt="GIF preview"
-                className="w-24 h-16 object-cover rounded"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src = '';
-                  (e.target as HTMLImageElement).style.display = 'none';
-                }}
-              />
+              <span className="relative block w-24 h-16 rounded overflow-hidden shrink-0 bg-surface">
+                <Image
+                  src={gifUrl}
+                  alt="GIF preview"
+                  fill
+                  className="object-cover"
+                  sizes="96px"
+                  unoptimized
+                  onError={() => {}}
+                />
+              </span>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium">Animacja GIF</p>
                 <p className="text-xs text-muted-foreground truncate">{gifUrl}</p>

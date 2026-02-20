@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 import { ArrowLeft, ArrowRight, Plus, X, RefreshCw, Play, Eye, Sparkles, Loader2, AlertTriangle } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -195,11 +196,12 @@ export function RelationSlot({
           {/* Thumbnail */}
           <div className="relative aspect-video bg-zinc-900">
             {mediaUrl ? (
-              <img
+              <Image
                 src={isHovering && exercise?.gifUrl ? exercise.gifUrl : exercise?.thumbnailUrl || mediaUrl}
                 alt={exercise?.name || 'Exercise'}
-                className="w-full h-full object-cover transition-all"
-                loading="lazy"
+                fill
+                className="object-cover transition-all"
+                sizes="(max-width: 768px) 100vw, 400px"
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center text-muted-foreground">
@@ -333,11 +335,13 @@ function ExercisePreviewDialog({ exercise, open, onOpenChange }: ExercisePreview
         <div className="space-y-4">
           {/* Media */}
           {mediaUrl && (
-            <div className="aspect-video rounded-lg overflow-hidden bg-zinc-900">
-              <img
+            <div className="relative aspect-video rounded-lg overflow-hidden bg-zinc-900">
+              <Image
                 src={exercise.gifUrl || exercise.thumbnailUrl}
                 alt={exercise.name}
-                className="w-full h-full object-cover"
+                fill
+                className="object-cover"
+                sizes="(max-width: 448px) 100vw, 448px"
               />
             </div>
           )}

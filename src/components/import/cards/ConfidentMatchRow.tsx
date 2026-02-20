@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { Check, Trash2, RefreshCw, Dumbbell, ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -79,12 +80,15 @@ export function ConfidentMatchRow({ exercise, match, decision, onSkip, onChange,
       {/* Matched exercise from database */}
       <div className="flex items-center gap-2 min-w-0 flex-1">
         {match.imageUrl ? (
-          <img
-            src={match.imageUrl}
-            alt={match.existingExerciseName}
-            className="h-8 w-8 rounded-md object-cover shrink-0"
-            loading="lazy"
-          />
+          <span className="relative block h-8 w-8 rounded-md overflow-hidden shrink-0">
+            <Image
+              src={match.imageUrl}
+              alt={match.existingExerciseName}
+              fill
+              className="object-cover"
+              sizes="32px"
+            />
+          </span>
         ) : (
           <div className="flex h-8 w-8 items-center justify-center rounded-md bg-surface-light shrink-0">
             <Dumbbell className="h-4 w-4 text-muted-foreground" />

@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { Dumbbell } from 'lucide-react';
 import { getMediaUrl } from '@/utils/mediaUrl';
 
@@ -42,7 +43,7 @@ export function SetThumbnail({ exerciseMappings, size = 'sm', className = '' }: 
       {[0, 1, 2, 3].map((i) => (
         <div key={i} className="relative overflow-hidden">
           {images[i] ? (
-            <img src={images[i]} alt="" loading="lazy" className="h-full w-full object-cover" />
+            <Image src={images[i]} alt="" fill className="object-cover" sizes="44px" />
           ) : (
             <div className="h-full w-full bg-surface flex items-center justify-center">
               <Dumbbell className={`${iconSize} text-muted-foreground/40`} />

@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { AlertTriangle, Dumbbell, Repeat, Timer, HelpCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
@@ -148,12 +149,15 @@ export function UncertainMatchCard({
               >
                 {/* Thumbnail */}
                 {match.imageUrl ? (
-                  <img
-                    src={match.imageUrl}
-                    alt={match.existingExerciseName}
-                    className="h-10 w-10 rounded-lg object-cover shrink-0"
-                    loading="lazy"
-                  />
+                  <span className="relative block h-10 w-10 rounded-lg overflow-hidden shrink-0">
+                    <Image
+                      src={match.imageUrl}
+                      alt={match.existingExerciseName}
+                      fill
+                      className="object-cover"
+                      sizes="40px"
+                    />
+                  </span>
                 ) : (
                   <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-surface-light shrink-0">
                     <Dumbbell className="h-5 w-5 text-muted-foreground" />

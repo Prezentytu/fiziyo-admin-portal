@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { Dumbbell, Users, FolderOpen, ArrowRight, Sparkles, X } from 'lucide-react';
 
@@ -180,11 +181,15 @@ export function WelcomeModal({
             )}
           >
             {organizationLogo ? (
-              <img
-                src={organizationLogo}
-                alt={organizationName}
-                className="h-24 w-24 rounded-2xl border-4 border-surface shadow-xl object-cover"
-              />
+              <span className="relative block h-24 w-24 rounded-2xl border-4 border-surface shadow-xl overflow-hidden">
+                <Image
+                  src={organizationLogo}
+                  alt={organizationName}
+                  fill
+                  className="object-cover"
+                  sizes="96px"
+                />
+              </span>
             ) : (
               <div className="flex h-24 w-24 items-center justify-center rounded-2xl border-4 border-surface bg-gradient-to-br from-primary to-primary-dark text-white text-2xl font-bold shadow-xl">
                 {getInitials(organizationName)}

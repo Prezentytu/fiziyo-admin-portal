@@ -11,6 +11,7 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "**.azurefd.net", pathname: "/**" },
       { protocol: "https", hostname: "images.fiziyo.com", pathname: "/**" },
       { protocol: "https", hostname: "**.blob.core.windows.net", pathname: "/**" },
+      { protocol: "https", hostname: "img.clerk.com", pathname: "/**" },
       { protocol: "http", hostname: "localhost", pathname: "/**" },
     ],
   },

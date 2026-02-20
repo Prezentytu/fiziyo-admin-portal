@@ -1,6 +1,7 @@
 'use client';
 
 import { use, useState } from 'react';
+import Image from 'next/image';
 import { useQuery, useMutation } from '@apollo/client/react';
 import { useRouter } from 'next/navigation';
 import {
@@ -492,7 +493,7 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
                 className="relative aspect-video w-full bg-black/5 dark:bg-black/20 cursor-pointer"
                 onClick={() => setLightboxOpen(true)}
               >
-                <img src={currentImage} alt={exercise.name} className="w-full h-full object-contain" />
+                <Image src={currentImage} alt={exercise.name} fill className="object-contain" sizes="(max-width: 1024px) 100vw, 800px" />
                 <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/20">
                   <div className="flex h-14 w-14 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-sm">
                     <ZoomIn className="h-6 w-6" />
@@ -508,13 +509,13 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
                       key={img}
                       onClick={() => setSelectedImageIndex(idx)}
                       className={cn(
-                        'shrink-0 w-16 h-16 rounded-xl overflow-hidden border-2 transition-all',
+                        'relative shrink-0 w-16 h-16 rounded-xl overflow-hidden border-2 transition-all',
                         selectedImageIndex === idx
                           ? 'border-primary ring-2 ring-primary/20'
                           : 'border-transparent hover:border-border'
                       )}
                     >
-                      <img src={img} alt={`${exercise.name} - ${idx + 1}`} className="w-full h-full object-cover" />
+                      <Image src={img} alt={`${exercise.name} - ${idx + 1}`} fill className="object-cover" sizes="64px" />
                     </button>
                   ))}
                   {exercise.videoUrl && (

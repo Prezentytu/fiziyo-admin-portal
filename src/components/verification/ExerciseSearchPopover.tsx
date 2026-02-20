@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
+import Image from 'next/image';
 import { useQuery } from '@apollo/client/react';
 import { Loader2, Play, Sparkles, ArrowLeft, ArrowRight } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -248,13 +249,14 @@ function ExerciseCommandItem({
       className="flex items-center gap-3 py-2 cursor-pointer"
     >
       {/* Thumbnail */}
-      <div className="w-12 h-12 rounded-md overflow-hidden bg-zinc-900 shrink-0">
+      <div className="relative w-12 h-12 rounded-md overflow-hidden bg-zinc-900 shrink-0">
         {exercise.thumbnailUrl || exercise.gifUrl ? (
-          <img
+          <Image
             src={exercise.thumbnailUrl || exercise.gifUrl}
             alt={exercise.name}
-            className="w-full h-full object-cover"
-            loading="lazy"
+            fill
+            className="object-cover"
+            sizes="48px"
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center">
@@ -305,11 +307,13 @@ function ExercisePreviewPanel({ exercise }: { exercise: ExerciseRelationTarget }
     <div className="absolute right-0 top-0 translate-x-full w-[200px] ml-2 p-2 bg-popover border border-border rounded-lg shadow-lg">
       {/* Media */}
       {mediaUrl && (
-        <div className="aspect-video rounded-md overflow-hidden bg-zinc-900 mb-2">
-          <img
+        <div className="relative aspect-video rounded-md overflow-hidden bg-zinc-900 mb-2">
+          <Image
             src={exercise.gifUrl || exercise.thumbnailUrl}
             alt={exercise.name}
-            className="w-full h-full object-cover"
+            fill
+            className="object-cover"
+            sizes="200px"
           />
         </div>
       )}

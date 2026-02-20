@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
+import Image from 'next/image';
 import {
   Dumbbell,
   Plus,
@@ -276,9 +277,9 @@ export function CustomizeExercisesStep({
                   >
                     {isExcluded ? <EyeOff className="h-4 w-4" /> : index + 1}
                   </div>
-                  <div className={cn('h-12 w-12 rounded-lg overflow-hidden shrink-0', isExcluded && 'grayscale')}>
+                  <div className={cn('relative h-12 w-12 rounded-lg overflow-hidden shrink-0', isExcluded && 'grayscale')}>
                     {imageUrl ? (
-                      <img src={imageUrl} alt="" className="h-full w-full object-cover" />
+                      <Image src={imageUrl} alt="" fill className="object-cover" sizes="48px" />
                     ) : (
                       <ImagePlaceholder type="exercise" iconClassName="h-5 w-5" />
                     )}
@@ -358,14 +359,16 @@ export function CustomizeExercisesStep({
             {/* Compact Header with image */}
             <div className="p-4 border-b border-border shrink-0">
               <div className="flex items-center gap-3">
-                <div className="h-12 w-12 rounded-lg overflow-hidden shrink-0">
+                <div className="relative h-12 w-12 rounded-lg overflow-hidden shrink-0">
                   {getMediaUrl(selectedMapping.exercise?.imageUrl || selectedMapping.exercise?.images?.[0]) ? (
-                    <img
+                    <Image
                       src={
                         getMediaUrl(selectedMapping.exercise?.imageUrl || selectedMapping.exercise?.images?.[0]) || ''
                       }
                       alt=""
-                      className="h-full w-full object-cover"
+                      fill
+                      className="object-cover"
+                      sizes="48px"
                     />
                   ) : (
                     <ImagePlaceholder type="exercise" iconClassName="h-5 w-5" />
