@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useMemo, useCallback } from 'react';
+import Image from 'next/image';
 import {
   Search,
   Loader2,
@@ -179,7 +180,7 @@ function ExercisePickerItem({
         aria-label={`Podgląd galerii ćwiczenia: ${exercise.name}`}
       >
         {imageUrl ? (
-          <img src={imageUrl} alt="" className="h-full w-full object-cover" loading="lazy" />
+          <Image src={imageUrl} alt="" fill className="object-cover" sizes="36px" />
         ) : (
           <ImagePlaceholder type="exercise" iconClassName="h-4 w-4" />
         )}

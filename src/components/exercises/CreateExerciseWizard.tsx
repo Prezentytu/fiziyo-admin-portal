@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
+import Image from 'next/image';
 import { useQuery, useMutation } from '@apollo/client/react';
 import {
   Loader2,
@@ -258,7 +259,9 @@ function SimilarExercisesAlert({ exercises, onUseExisting }: SimilarExercisesAle
           >
             <div className="flex items-center gap-2 min-w-0">
               {ex.imageUrl ? (
-                <img src={ex.imageUrl} alt={ex.name} className="w-8 h-8 rounded object-cover shrink-0" />
+                <span className="relative w-8 h-8 rounded overflow-hidden shrink-0 block">
+                  <Image src={ex.imageUrl} alt={ex.name} fill className="object-cover" sizes="32px" />
+                </span>
               ) : (
                 <div className="w-8 h-8 rounded bg-surface-light flex items-center justify-center shrink-0">
                   <Dumbbell className="h-4 w-4 text-muted-foreground" />
@@ -1615,10 +1618,12 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
                       )}
                       style={{ animationDelay: `${idx * 50}ms` }}
                     >
-                      <img
+                      <Image
                         src={URL.createObjectURL(file)}
                         alt={`Media ${idx + 1}`}
-                        className="w-full h-full object-cover"
+                        fill
+                        className="object-cover"
+                        unoptimized
                       />
                       {/* Overlay gradient */}
                       <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />

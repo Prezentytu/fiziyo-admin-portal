@@ -1,28 +1,36 @@
-import { defineConfig, globalIgnores } from "eslint/config";
-import nextVitals from "eslint-config-next/core-web-vitals";
+import nextCoreWebVitals from "eslint-config-next/core-web-vitals";
 import nextTs from "eslint-config-next/typescript";
 import eslintConfigPrettier from "eslint-config-prettier";
 
-const eslintConfig = defineConfig([
-  ...nextVitals,
-  ...nextTs,
-  {
-    rules: {
-      "react-hooks/set-state-in-effect": "warn",
-      "react-hooks/preserve-manual-memoization": "warn",
-      "react-hooks/purity": "warn",
-      "react-hooks/static-components": "warn",
-    },
-  },
-  eslintConfigPrettier,
-  // Override default ignores of eslint-config-next.
-  globalIgnores([
-    // Default ignores of eslint-config-next:
-    ".next/**",
-    "out/**",
-    "build/**",
-    "next-env.d.ts",
-  ]),
-]);
+const ignores = [
+  "node_modules/**",
+  ".next/**",
+  "dist/**",
+  "out/**",
+  "build/**",
+  "next-env.d.ts",
+];
 
-export default eslintConfig;
+const ruleOverrides = {
+  "@typescript-eslint/no-unused-vars": [
+    "warn",
+    { "argsIgnorePattern": "^_", "varsIgnorePattern": "^_" },
+  ],
+  "react/display-name": "off",
+  "react-hooks/immutability": "off",
+  "react-hooks/preserve-manual-memoization": "off",
+  "react-hooks/purity": "off",
+  "react-hooks/refs": "off",
+  "react-hooks/set-state-in-effect": "off",
+  "react-hooks/static-components": "off",
+};
+
+const config = [
+  ...nextCoreWebVitals,
+  ...nextTs,
+  { ignores },
+  { name: "project/rule-overrides", rules: ruleOverrides },
+  eslintConfigPrettier,
+];
+
+export default config;

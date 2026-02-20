@@ -154,7 +154,9 @@ export function VerificationEditorPanel({
   const [activeDescTab, setActiveDescTab] = useState<'clinical' | 'patient'>('patient');
   const [isDescSaving, setIsDescSaving] = useState(false);
 
-  // Sync with external values ONLY when exercise ID changes (new exercise loaded)
+  // Sync with external values ONLY when exercise ID changes (new exercise loaded).
+  // We intentionally depend only on exercise.id so we don't reset local form state when parent
+  // updates other exercise fields (e.g. after save), which would overwrite in-progress edits.
   useEffect(() => {
     setLocalSets(exercise.defaultSets ?? null);
     setLocalReps(exercise.defaultReps ?? null);
@@ -165,7 +167,6 @@ export function VerificationEditorPanel({
     setLocalSide(exercise.side || 'NONE');
     setLocalPatientDesc(exercise.patientDescription || '');
     setLocalClinicalDesc(exercise.clinicalDescription || '');
-    // Extended params sync
     setLocalRestBetweenReps(exercise.defaultRestBetweenReps ?? null);
     setLocalPrepTime(exercise.preparationTime ?? null);
     setLocalExecTime(exercise.defaultExecutionTime ?? null);
@@ -173,8 +174,7 @@ export function VerificationEditorPanel({
     setLocalLoadValue(exercise.loadValue?.toString() || '');
     setLocalLoadUnit(exercise.loadUnit || 'kg');
     setLocalLoadText(exercise.loadText || '');
-    // Only sync when exercise ID changes (new exercise loaded), not on every field update
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- sync only on exercise switch (id), not on every field update
   }, [exercise.id]);
 
   // ============================================

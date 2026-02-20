@@ -6,6 +6,14 @@ const withBundleAnalyzer = bundleAnalyzer({
 });
 
 const nextConfig: NextConfig = {
+  images: {
+    remotePatterns: [
+      { protocol: "https", hostname: "**.azurefd.net", pathname: "/**" },
+      { protocol: "https", hostname: "images.fiziyo.com", pathname: "/**" },
+      { protocol: "https", hostname: "**.blob.core.windows.net", pathname: "/**" },
+      { protocol: "http", hostname: "localhost", pathname: "/**" },
+    ],
+  },
   compiler: {
     reactRemoveProperties:
       process.env.NODE_ENV === "production"

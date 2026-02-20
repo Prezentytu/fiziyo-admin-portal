@@ -2,6 +2,7 @@
 
 import { useState, useRef } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Clock, User, AlertCircle, ChevronRight, Undo2, Play, Building2 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -149,29 +150,36 @@ export function VerificationTaskCard({ exercise, className, onUnpublish, isUnpub
                   )}
                   style={{ backgroundImage: `url(${imageUrl})` }}
                 />
-                <img
+                <div className="relative h-full w-full">
+                <Image
                   src={imageUrl}
                   alt={exercise.name}
-                  loading="lazy"
+                  fill
+                  sizes="(max-width: 768px) 100vw, 33vw"
                   className={cn(
-                    'relative h-full w-full object-contain transition-all duration-500',
+                    'object-contain transition-all duration-500',
                     'group-hover:scale-[1.03]',
                     isHovered && hasVideoPreview && 'opacity-0'
                   )}
                 />
+                </div>
               </>
             )}
 
             {/* GIF preview (shown on hover if available) */}
             {gifUrl && (
-              <img
-                src={gifUrl}
-                alt={`${exercise.name} preview`}
-                className={cn(
-                  'absolute inset-0 h-full w-full object-contain transition-opacity duration-300',
-                  isHovered ? 'opacity-100' : 'opacity-0'
-                )}
-              />
+              <div className="absolute inset-0">
+                <Image
+                  src={gifUrl}
+                  alt={`${exercise.name} preview`}
+                  fill
+                  sizes="(max-width: 768px) 100vw, 33vw"
+                  className={cn(
+                    'object-contain transition-opacity duration-300',
+                    isHovered ? 'opacity-100' : 'opacity-0'
+                  )}
+                />
+              </div>
             )}
 
             {/* Video preview (shown on hover if no GIF available) */}

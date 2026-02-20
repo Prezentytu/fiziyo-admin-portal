@@ -56,7 +56,7 @@ export function AddToSetFromChatDialog({ open, onOpenChange, exercise }: AddToSe
   const [step, setStep] = useState<Step>('select-set');
   const [searchQuery, setSearchQuery] = useState('');
   const [newSetName, setNewSetName] = useState('');
-  const [_selectedSetId, setSelectedSetId] = useState<string | null>(null);
+  const [, setSelectedSetId] = useState<string | null>(null);
 
   // Get organization ID from context (changes when user switches organization)
   const organizationId = currentOrganization?.organizationId;

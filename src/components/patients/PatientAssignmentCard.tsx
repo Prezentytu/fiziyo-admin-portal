@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import { useState } from 'react';
+import Image from 'next/image';
 import { useMutation } from '@apollo/client/react';
 import {
   ChevronDown,
@@ -376,12 +377,14 @@ export function PatientAssignmentCard({
               </div>
 
               {/* Set thumbnail */}
-              <div className="h-12 w-12 rounded-lg overflow-hidden shrink-0 bg-surface-light">
+              <div className="relative h-12 w-12 rounded-lg overflow-hidden shrink-0 bg-surface-light">
                 {getMediaUrl(exercises[0]?.exercise?.imageUrl || exercises[0]?.exercise?.images?.[0]) ? (
-                  <img
+                  <Image
                     src={getMediaUrl(exercises[0]?.exercise?.imageUrl || exercises[0]?.exercise?.images?.[0]) || ''}
                     alt=""
-                    className="h-full w-full object-contain"
+                    fill
+                    className="object-contain"
+                    sizes="48px"
                   />
                 ) : (
                   <ImagePlaceholder type="set" iconClassName="h-5 w-5" />
@@ -566,7 +569,7 @@ export function PatientAssignmentCard({
                               onClick={() => onPreviewExercise?.(mapping, exerciseOverrides[mapping.id])}
                             >
                               {imageUrl ? (
-                                <img src={imageUrl} alt={exerciseName} className="h-full w-full object-contain" />
+                                <Image src={imageUrl} alt={exerciseName} fill className="object-contain" sizes="64px" />
                               ) : (
                                 <ImagePlaceholder type="exercise" iconClassName="h-6 w-6" />
                               )}

@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { LabeledStepper } from '@/components/shared/LabeledStepper';
+import Image from 'next/image';
 import { ImagePlaceholder } from '@/components/shared/ImagePlaceholder';
 import { ImageLightbox } from '@/components/shared/ImageLightbox';
 import { getMediaUrl } from '@/utils/mediaUrl';
@@ -126,7 +127,7 @@ export function ExerciseExecutionCard({
               >
                 {imageUrl ? (
                   <>
-                    <img src={imageUrl} alt="" className="h-full w-full object-cover" loading="lazy" />
+                    <Image src={imageUrl} alt="" fill className="object-cover" sizes="40px" />
                     {hasGallery && (
                       <div
                         className="absolute inset-0 bg-black/50 opacity-0 group-hover/thumb:opacity-100 transition-opacity flex items-center justify-center pointer-events-none"
@@ -265,7 +266,7 @@ export function ExerciseExecutionCard({
               >
                 {imageUrl ? (
                   <>
-                    <img src={imageUrl} alt="" className="h-full w-full object-cover" loading="lazy" />
+                    <Image src={imageUrl} alt="" fill className="object-cover" sizes="48px" />
                     {hasGallery && (
                       <div
                         className="absolute inset-0 bg-black/50 opacity-0 group-hover/thumb:opacity-100 transition-opacity flex items-center justify-center pointer-events-none"

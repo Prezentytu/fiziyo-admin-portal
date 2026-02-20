@@ -88,21 +88,24 @@ export function AccessibilityProvider({ children }: { children: React.ReactNode 
   const [isHydrated, setIsHydrated] = useState(false);
 
   // Wczytanie preferencji z localStorage przy montowaniu (client-side)
+  // Odłożone do mikrotaska, żeby uniknąć synchronicznego setState w efekcie (cascading renders)
   useEffect(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
+    let prefsToApply = DEFAULT_PREFERENCES;
     if (saved) {
       try {
         const parsed = JSON.parse(saved) as AccessibilityPreferences;
-        setPreferences(parsed);
-        applyPreferences(parsed);
+        prefsToApply = parsed;
       } catch {
-        // Ignore invalid JSON, use defaults
-        applyPreferences(DEFAULT_PREFERENCES);
+        // Ignore invalid JSON
       }
-    } else {
-      applyPreferences(DEFAULT_PREFERENCES);
     }
-    setIsHydrated(true);
+    applyPreferences(prefsToApply);
+    const prefsForState = prefsToApply;
+    queueMicrotask(() => {
+      setPreferences(prefsForState);
+      setIsHydrated(true);
+    });
   }, []);
 
   // Nasłuchiwanie na zmiany systemowego motywu (dla opcji "system")

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
+import Image from 'next/image';
 import { Play, Volume2, VolumeX, Maximize2, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { ImagePlaceholder } from '@/components/shared/ImagePlaceholder';
@@ -81,14 +82,26 @@ export function MasterVideoPlayer({ exercise, className }: MasterVideoPlayerProp
 
           {/* Main Image/Video */}
           {currentImage ? (
-            <img
-              src={currentImage}
-              alt={exercise.name}
-              className="relative max-h-full max-w-full object-contain transition-all duration-300"
-              loading="eager"
-            />
+            <div className="relative w-full h-full min-h-[200px]">
+              <Image
+                src={currentImage}
+                alt={exercise.name}
+                fill
+                className="object-contain transition-all duration-300"
+                sizes="(max-width: 1200px) 100vw, 50vw"
+                priority
+              />
+            </div>
           ) : hasGif && gifUrl ? (
-            <img src={gifUrl} alt={exercise.name} className="relative max-h-full max-w-full object-contain" />
+            <div className="relative w-full h-full min-h-[200px]">
+              <Image
+                src={gifUrl}
+                alt={exercise.name}
+                fill
+                className="object-contain"
+                sizes="(max-width: 1200px) 100vw, 50vw"
+              />
+            </div>
           ) : (
             <ImagePlaceholder type="exercise" className="h-64 w-64" iconClassName="h-20 w-20" />
           )}
@@ -198,7 +211,14 @@ export function MasterVideoPlayer({ exercise, className }: MasterVideoPlayerProp
                   )}
                   data-testid={`master-player-thumb-${idx}`}
                 >
-                  <img src={img} alt="" className="w-full h-full object-cover" loading="lazy" />
+                  <Image
+                    src={img}
+                    alt=""
+                    width={48}
+                    height={48}
+                    className="w-full h-full object-cover"
+                    sizes="48px"
+                  />
                 </button>
               ))}
             </div>

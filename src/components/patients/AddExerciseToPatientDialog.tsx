@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import { useState, useMemo, useCallback } from 'react';
+import Image from 'next/image';
 import { useQuery, useMutation } from '@apollo/client/react';
 import { Search, Plus, Minus, Loader2, Dumbbell, Clock, X } from 'lucide-react';
 import { toast } from 'sonner';
@@ -275,12 +276,14 @@ function AddExerciseToPatientDialogContent({
             <div className="space-y-6">
               {/* Selected exercise preview */}
               <div className="flex items-start gap-4 p-4 rounded-xl border border-primary/30 bg-primary/5">
-                <div className="h-20 w-20 rounded-xl overflow-hidden shrink-0 bg-surface-light">
+                <div className="relative h-20 w-20 rounded-xl overflow-hidden shrink-0 bg-surface-light">
                   {getMediaUrl(selectedExercise.imageUrl || selectedExercise.images?.[0]) ? (
-                    <img
+                    <Image
                       src={getMediaUrl(selectedExercise.imageUrl || selectedExercise.images?.[0]) || ''}
                       alt={selectedExercise.name}
-                      className="h-full w-full object-cover"
+                      fill
+                      className="object-cover"
+                      sizes="80px"
                     />
                   ) : (
                     <ImagePlaceholder type="exercise" iconClassName="h-8 w-8" />
@@ -453,9 +456,9 @@ function AddExerciseToPatientDialogContent({
                         )}
                         data-testid={`add-exercise-item-${exercise.id}`}
                       >
-                        <div className="h-14 w-14 rounded-lg overflow-hidden shrink-0 bg-surface-light">
+                        <div className="relative h-14 w-14 rounded-lg overflow-hidden shrink-0 bg-surface-light">
                           {imageUrl ? (
-                            <img src={imageUrl} alt={exercise.name} className="h-full w-full object-cover" />
+                            <Image src={imageUrl} alt={exercise.name} fill className="object-cover" sizes="56px" />
                           ) : (
                             <ImagePlaceholder type="exercise" iconClassName="h-5 w-5" />
                           )}

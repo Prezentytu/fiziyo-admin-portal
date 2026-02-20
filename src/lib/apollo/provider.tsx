@@ -4,7 +4,7 @@ import { ApolloClient, InMemoryCache, ApolloLink, split } from '@apollo/client';
 import { ApolloProvider } from '@apollo/client/react';
 import { getMainDefinition } from '@apollo/client/utilities';
 import { useAuth } from '@clerk/nextjs';
-import { useMemo } from 'react';
+import { useMemo, useRef } from 'react';
 import { AuthLinkFactory } from '@/graphql/links/authLink';
 import { HttpLinkFactory } from '@/graphql/links/httpLink';
 import { ErrorLinkFactory } from '@/graphql/links/errorLink';
@@ -19,13 +19,12 @@ import { BackendAuthTokenProvider } from '@/graphql/providers/BackendAuthTokenPr
 
 export function ApolloWrapper({ children }: { children: React.ReactNode }) {
   const { getToken } = useAuth();
+  const getTokenRef = useRef(getToken);
+  getTokenRef.current = getToken;
 
-  // Apollo Client configuration for Next.js
-  // KRYTYCZNE: useMemo BEZ dependencies - client powinien być tworzony tylko RAZ
-  // getToken jest przekazywany jako funkcja więc nie musi być w dependencies
+  // Apollo Client configuration for Next.js - created once; tokenProvider uses ref for latest getToken
   const client = useMemo(() => {
-    // Backend token provider - automatycznie wymienia Clerk token na backend JWT
-    const tokenProvider = new BackendAuthTokenProvider(getToken);
+    const tokenProvider = new BackendAuthTokenProvider(() => getTokenRef.current());
 
     // HTTP link dla queries i mutations
     const httpLink = ApolloLink.from([
@@ -58,7 +57,6 @@ export function ApolloWrapper({ children }: { children: React.ReactNode }) {
       link: splitLink,
       cache: new InMemoryCache(),
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Pusty array - client tworzony tylko raz
 
   return <ApolloProvider client={client}>{children}</ApolloProvider>;

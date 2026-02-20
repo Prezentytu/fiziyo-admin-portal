@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import { useState, useMemo, useCallback } from 'react';
+import Image from 'next/image';
 import { useQuery, useMutation } from '@apollo/client/react';
 import { Search, Loader2, Dumbbell, Check, ArrowLeft, ArrowRight, X, Plus, Minus } from 'lucide-react';
 import { toast } from 'sonner';
@@ -348,9 +349,9 @@ export function AddExerciseToSetDialog({
                         </div>
 
                         {/* Image */}
-                        <div className="h-14 w-14 rounded-lg overflow-hidden flex-shrink-0">
+                        <div className="relative h-14 w-14 rounded-lg overflow-hidden flex-shrink-0">
                           {imageUrl ? (
-                            <img src={imageUrl} alt={exercise.name} className="h-full w-full object-cover" />
+                            <Image src={imageUrl} alt={exercise.name} fill className="object-cover" sizes="56px" />
                           ) : (
                             <ImagePlaceholder type="exercise" iconClassName="h-5 w-5" />
                           )}
@@ -407,9 +408,9 @@ export function AddExerciseToSetDialog({
                     <div key={exercise.id} className="rounded-xl border border-border bg-surface p-4 space-y-4">
                       {/* Exercise header */}
                       <div className="flex items-center gap-4">
-                        <div className="h-12 w-12 rounded-lg overflow-hidden flex-shrink-0">
+                        <div className="relative h-12 w-12 rounded-lg overflow-hidden flex-shrink-0">
                           {imageUrl ? (
-                            <img src={imageUrl} alt={exercise.name} className="h-full w-full object-cover" />
+                            <Image src={imageUrl} alt={exercise.name} fill className="object-cover" sizes="48px" />
                           ) : (
                             <ImagePlaceholder type="exercise" iconClassName="h-4 w-4" />
                           )}

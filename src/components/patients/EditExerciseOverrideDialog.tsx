@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import { useState, useCallback } from 'react';
+import Image from 'next/image';
 import { useMutation } from '@apollo/client/react';
 import {
   Loader2,
@@ -416,9 +417,9 @@ function EditExerciseOverrideDialogContent({
           {/* Exercise preview */}
           <div className="rounded-xl border border-border bg-surface p-4">
             <div className="flex items-start gap-4">
-              <div className="h-16 w-16 rounded-lg overflow-hidden shrink-0">
+              <div className="relative h-16 w-16 rounded-lg overflow-hidden shrink-0">
                 {imageUrl ? (
-                  <img src={imageUrl} alt={exercise?.name} className="h-full w-full object-cover" />
+                  <Image src={imageUrl} alt={exercise?.name ?? ''} fill className="object-cover" sizes="64px" />
                 ) : (
                   <ImagePlaceholder type="exercise" iconClassName="h-6 w-6" />
                 )}
@@ -613,9 +614,9 @@ function EditExerciseOverrideDialogContent({
             <div className="space-y-2">
               <Label className="text-sm text-muted-foreground">Główne zdjęcie ćwiczenia</Label>
               <div className="flex items-center gap-4 p-3 rounded-xl border border-border bg-surface/50">
-                <div className="h-20 w-20 rounded-lg overflow-hidden shrink-0 bg-surface-light">
+                <div className="relative h-20 w-20 rounded-lg overflow-hidden shrink-0 bg-surface-light">
                   {imageUrl ? (
-                    <img src={imageUrl} alt={exercise?.name} className="h-full w-full object-cover" />
+                    <Image src={imageUrl} alt={exercise?.name ?? ''} fill className="object-cover" sizes="80px" />
                   ) : (
                     <ImagePlaceholder type="exercise" iconClassName="h-8 w-8" />
                   )}
@@ -643,7 +644,7 @@ function EditExerciseOverrideDialogContent({
                       key={index}
                       className="relative group aspect-square rounded-lg overflow-hidden border border-border"
                     >
-                      <img src={img} alt={`Zdjęcie ${index + 1}`} className="h-full w-full object-cover" />
+                      <Image src={img} alt={`Zdjęcie ${index + 1}`} fill className="object-cover" sizes="(max-width: 768px) 33vw, 200px" />
                       <button
                         type="button"
                         onClick={() => setCustomImages((prev) => prev.filter((_, i) => i !== index))}

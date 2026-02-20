@@ -30,6 +30,7 @@ import {
   UNPUBLISH_EXERCISE_MUTATION,
 } from '@/graphql/mutations/adminExercises.mutations';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Badge } from '@/components/ui/badge';
 import { getMediaUrl } from '@/utils/mediaUrl';
 import { cn } from '@/lib/utils';
@@ -88,9 +89,16 @@ function VerificationTaskRow({
         data-testid={`verification-row-${exercise.id}`}
       >
         {/* Thumbnail */}
-        <div className="w-16 h-12 rounded-md overflow-hidden bg-surface-light shrink-0">
+        <div className="w-16 h-12 rounded-md overflow-hidden bg-surface-light shrink-0 relative">
           {imageUrl ? (
-            <img src={imageUrl} alt={exercise.name} className="w-full h-full object-cover" loading="lazy" />
+            <Image
+              src={imageUrl}
+              alt={exercise.name}
+              width={64}
+              height={48}
+              className="w-full h-full object-cover"
+              sizes="64px"
+            />
           ) : (
             <div className="w-full h-full flex items-center justify-center text-muted-foreground">
               <ShieldCheck className="h-5 w-5" />

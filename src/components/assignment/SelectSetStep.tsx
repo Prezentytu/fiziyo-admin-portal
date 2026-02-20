@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 import { Search, FolderKanban, Check, Dumbbell, ChevronRight, X, Plus, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -216,15 +217,17 @@ export function SelectSetStep({
                     data-testid={`assign-set-item-${set.id}`}
                   >
                     {/* Preview image */}
-                    <div className="h-14 w-14 shrink-0 rounded-lg overflow-hidden">
+                    <div className="h-14 w-14 shrink-0 rounded-lg overflow-hidden relative">
                       {firstImage ? (
-                        <img
+                        <Image
                           src={firstImage}
                           alt=""
+                          fill
                           className={cn(
-                            'h-full w-full object-cover',
+                            'object-cover',
                             isAssigned && !isSelectedForUnassign && 'grayscale'
                           )}
+                          sizes="56px"
                         />
                       ) : (
                         <div className="h-full w-full bg-surface-light flex items-center justify-center">

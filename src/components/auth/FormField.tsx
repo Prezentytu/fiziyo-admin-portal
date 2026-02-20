@@ -14,7 +14,12 @@ export const FormField = forwardRef<HTMLInputElement, FormFieldProps>(
     return (
       <div className="mb-5">
         <div className="mb-2 flex items-center">
-          <label className="text-sm font-semibold text-foreground">{label}</label>
+          <label className="text-sm font-semibold text-foreground">
+            {label}
+            {optional && (
+              <span className="ml-1 font-normal text-muted-foreground">(opcjonalnie)</span>
+            )}
+          </label>
         </div>
         <input
           ref={ref}

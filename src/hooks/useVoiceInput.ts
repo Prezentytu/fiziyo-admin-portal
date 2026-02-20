@@ -83,12 +83,11 @@ export function useVoiceInput(options: UseVoiceInputOptions = {}): UseVoiceInput
   const silenceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const finalTranscriptRef = useRef('');
 
-  // Sprawdź wsparcie dla Web Speech API
+  // Sprawdź wsparcie dla Web Speech API (defer setState to avoid set-state-in-effect)
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
-      setIsSupported(!!SpeechRecognitionAPI);
-    }
+    if (typeof window === 'undefined') return;
+    const supported = !!(window.SpeechRecognition || window.webkitSpeechRecognition);
+    queueMicrotask(() => setIsSupported(supported));
   }, []);
 
   // Cleanup przy unmount

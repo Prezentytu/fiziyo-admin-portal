@@ -17,6 +17,7 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { restrictToVerticalAxis, restrictToParentElement } from '@dnd-kit/modifiers';
+import Image from 'next/image';
 import { Search, Dumbbell, Clock, Pencil } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -287,9 +288,9 @@ export function RapidExerciseBuilder({
                     onMouseEnter={() => setSelectedIndex(i)}
                     data-testid={`rapid-builder-result-${ex.id}`}
                   >
-                    <div className="h-10 w-10 rounded-lg overflow-hidden shrink-0 bg-surface-light ring-1 ring-border/30">
+                    <div className="relative h-10 w-10 rounded-lg overflow-hidden shrink-0 bg-surface-light ring-1 ring-border/30">
                       {imageUrl ? (
-                        <img src={imageUrl} alt="" className="h-full w-full object-cover" />
+                        <Image src={imageUrl} alt="" fill className="object-cover" sizes="40px" />
                       ) : (
                         <div className="h-full w-full flex items-center justify-center">
                           <Dumbbell className="h-4 w-4 text-muted-foreground/40" />

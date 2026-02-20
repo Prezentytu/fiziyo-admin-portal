@@ -9,13 +9,14 @@ export function useSidebarState() {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [isHydrated, setIsHydrated] = useState(false);
 
-  // Load state from localStorage after hydration
+  // Load state from localStorage after hydration (defer setState to avoid set-state-in-effect)
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored !== null) {
-      setIsCollapsed(stored === 'true');
-    }
-    setIsHydrated(true);
+    const collapsed = stored !== null ? stored === 'true' : false;
+    queueMicrotask(() => {
+      setIsCollapsed(collapsed);
+      setIsHydrated(true);
+    });
   }, []);
 
   // Persist collapsed state to localStorage

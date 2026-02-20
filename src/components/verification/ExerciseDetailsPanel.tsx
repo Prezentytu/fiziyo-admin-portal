@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
+import Image from 'next/image';
 import {
   Dumbbell,
   Timer,
@@ -185,7 +186,7 @@ export function ExerciseDetailsPanel({
                       key={`${img}-${idx}`}
                       className="relative aspect-square rounded-lg overflow-hidden border border-border/60 group"
                     >
-                      <img src={img} alt={`Zdjęcie ${idx + 1}`} className="w-full h-full object-cover" loading="lazy" />
+                      <Image src={img} alt={`Zdjęcie ${idx + 1}`} fill className="object-cover" sizes="(max-width: 640px) 25vw, 150px" />
                       <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                         <Button size="icon" variant="ghost" className="h-8 w-8 text-white">
                           <X className="h-4 w-4" />

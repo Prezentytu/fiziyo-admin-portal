@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
+import Image from 'next/image';
 import {
   Clock,
   Repeat,
@@ -240,7 +241,7 @@ export function ExerciseCard({
           {/* Thumbnail */}
           <div className="relative h-14 w-14 flex-shrink-0 overflow-hidden rounded-lg bg-surface-light">
             {imageUrl ? (
-              <img src={imageUrl} alt={exercise.name} loading="lazy" className="h-full w-full object-cover" />
+              <Image src={imageUrl} alt={exercise.name} fill className="object-cover" sizes="56px" />
             ) : (
               <ImagePlaceholder type="exercise" iconClassName="h-5 w-5" />
             )}
