@@ -135,11 +135,9 @@ function calculateSetRelevance(
     }
   }
 
-  // Type matching (max 20 points)
+  // Type matching contributes internally, but is not surfaced in therapist-facing labels.
   if (exercise.type && setTypes.includes(exercise.type)) {
     score += 20;
-    const typeLabel = exercise.type === 'time' ? 'czasowe' : exercise.type === 'reps' ? 'powtórzeniowe' : exercise.type;
-    reasons.push(`Ten sam typ: ${typeLabel}`);
   }
 
   // Set size bonus (max 10 points) - prefer sets with more exercises
@@ -579,11 +577,6 @@ export function AddExerciseToSetsDialog({ open, onOpenChange, exercise }: AddExe
                 <Badge variant="secondary" className="text-xs">
                   {exercise.name}
                 </Badge>
-                {exercise.type && (
-                  <Badge variant="outline" className="text-xs">
-                    {exercise.type === 'time' ? 'czasowe' : exercise.type === 'reps' ? 'powtórzenia' : exercise.type}
-                  </Badge>
-                )}
               </div>
             </div>
 

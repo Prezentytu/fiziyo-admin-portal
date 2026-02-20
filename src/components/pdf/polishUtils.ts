@@ -134,8 +134,8 @@ export function translateExerciseTypePolish(type?: string): string {
 export function translateExerciseTypeShort(type?: string): string {
   if (!type) return '';
   const types: Record<string, string> = {
-    reps: 'Powtórzenia',
-    time: 'Czasowe',
+    reps: 'Na powt.',
+    time: 'Na czas',
   };
   return types[type.toLowerCase()] || type;
 }

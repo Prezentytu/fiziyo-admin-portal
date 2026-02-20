@@ -81,6 +81,7 @@ Serie × Powtórzenia [× Czas powtórzenia]
 
 - `executionTime` > 0 → timer w aplikacji pacjenta
 - `executionTime` = 0/null → bez timera
+- NIE eksponuj terapeucie „typu ćwiczenia” jako osobnej etykiety; UI ma pokazywać parametry wykonania, a semantyka timera wynika z `executionTime`
 
 Przykłady: `3 × 10`, `3 × 10 × 10s`, `3 × 1 × 30s`
 

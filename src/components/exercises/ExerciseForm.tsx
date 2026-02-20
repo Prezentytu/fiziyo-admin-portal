@@ -4,13 +4,14 @@ import * as React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Loader2 } from 'lucide-react';
+import { Loader2, ChevronDown } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 const exerciseFormSchema = z.object({
   name: z.string().min(2, 'Nazwa musi mieć min. 2 znaki').max(100, 'Nazwa może mieć max. 100 znaków'),
@@ -23,9 +24,13 @@ const exerciseFormSchema = z.object({
   restReps: z.number().min(0).max(300).optional().nullable(),
   preparationTime: z.number().min(0).max(300).optional().nullable(),
   executionTime: z.number().min(0).max(300).optional().nullable(),
-  exerciseSide: z.enum(['none', 'left', 'right', 'both']).optional(),
+  exerciseSide: z.enum(['none', 'left', 'right', 'both', 'alternating']).optional(),
   videoUrl: z.string().url('Podaj prawidłowy URL').optional().or(z.literal('')),
   notes: z.string().optional(),
+  tempo: z.string().max(20).optional(),
+  clinicalDescription: z.string().optional(),
+  audioCue: z.string().max(200).optional(),
+  rangeOfMotion: z.string().max(100).optional(),
 });
 
 export type ExerciseFormValues = z.infer<typeof exerciseFormSchema>;
@@ -66,11 +71,14 @@ export function ExerciseForm({
       exerciseSide: 'none',
       videoUrl: '',
       notes: '',
+      tempo: '',
+      clinicalDescription: '',
+      audioCue: '',
+      rangeOfMotion: '',
       ...defaultValues,
     },
   });
 
-  const watchType = form.watch('type');
   const isDirty = form.formState.isDirty;
 
   // Notify parent about dirty state
@@ -80,7 +88,8 @@ export function ExerciseForm({
 
   const handleSubmit = async (values: ExerciseFormValues) => {
     try {
-      await onSubmit(values);
+      const inferredType: ExerciseFormValues['type'] = (values.duration ?? 0) > 0 ? 'time' : 'reps';
+      await onSubmit({ ...values, type: inferredType });
     } catch (error) {
       console.error('Błąd podczas zapisywania:', error);
     }
@@ -122,40 +131,14 @@ export function ExerciseForm({
           )}
         />
 
-        <div className="grid gap-4 sm:grid-cols-2">
-          <FormField
-            control={form.control}
-            name="type"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Typ ćwiczenia *</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                  <FormControl>
-                    <SelectTrigger data-testid="exercise-form-type-select">
-                      <SelectValue placeholder="Wybierz typ" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="reps" data-testid="exercise-form-type-option-reps">
-                      Powtórzenia
-                    </SelectItem>
-                    <SelectItem value="time" data-testid="exercise-form-type-option-time">
-                      Czasowe
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
+        <div className="grid gap-4 sm:grid-cols-1">
           <FormField
             control={form.control}
             name="exerciseSide"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Strona ciała</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <Select onValueChange={field.onChange} value={field.value ?? undefined}>
                   <FormControl>
                     <SelectTrigger data-testid="exercise-form-side-select">
                       <SelectValue placeholder="Wybierz stronę" />
@@ -166,6 +149,7 @@ export function ExerciseForm({
                     <SelectItem value="left">Lewa strona</SelectItem>
                     <SelectItem value="right">Prawa strona</SelectItem>
                     <SelectItem value="both">Obie strony</SelectItem>
+                    <SelectItem value="alternating">Naprzemiennie</SelectItem>
                   </SelectContent>
                 </Select>
                 <FormMessage />
@@ -195,49 +179,46 @@ export function ExerciseForm({
             )}
           />
 
-          {watchType === 'reps' && (
-            <FormField
-              control={form.control}
-              name="reps"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Liczba powtórzeń</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="number"
-                      min="0"
-                      max="1000"
-                      value={field.value ?? ''}
-                      onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : null)}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          )}
+          <FormField
+            control={form.control}
+            name="reps"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Liczba powtórzeń</FormLabel>
+                <FormControl>
+                  <Input
+                    type="number"
+                    min="0"
+                    max="1000"
+                    value={field.value ?? ''}
+                    onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : null)}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-          {watchType === 'time' && (
-            <FormField
-              control={form.control}
-              name="duration"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Czas serii (sekundy)</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="number"
-                      min="0"
-                      max="3600"
-                      value={field.value ?? ''}
-                      onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : null)}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          )}
+          <FormField
+            control={form.control}
+            name="duration"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Czas serii (sekundy)</FormLabel>
+                <FormControl>
+                  <Input
+                    type="number"
+                    min="0"
+                    max="3600"
+                    value={field.value ?? ''}
+                    onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : null)}
+                  />
+                </FormControl>
+                <FormDescription>Opcjonalne. Jeśli ustawione, zapis zostanie oznaczony technicznie jako tryb czasu.</FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
@@ -354,6 +335,80 @@ export function ExerciseForm({
             </FormItem>
           )}
         />
+
+        <Collapsible>
+          <CollapsibleTrigger asChild>
+            <button
+              type="button"
+              className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors py-2"
+              data-testid="exercise-form-advanced-toggle"
+            >
+              Zaawansowane
+              <ChevronDown className="h-4 w-4 data-[state=open]:rotate-180 transition-transform" />
+            </button>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <div className="grid gap-4 sm:grid-cols-2 pt-2 space-y-4">
+              <FormField
+                control={form.control}
+                name="tempo"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Tempo (np. 3-0-1-0)</FormLabel>
+                    <FormControl>
+                      <Input placeholder="np. 2-1-2-0" {...field} value={field.value ?? ''} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="rangeOfMotion"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Zakres ruchu (ROM)</FormLabel>
+                    <FormControl>
+                      <Input placeholder="np. 0–90°" {...field} value={field.value ?? ''} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="audioCue"
+                render={({ field }) => (
+                  <FormItem className="sm:col-span-2">
+                    <FormLabel>Podpowiedź głosowa TTS</FormLabel>
+                    <FormControl>
+                      <Input placeholder="np. Proste plecy" {...field} value={field.value ?? ''} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="clinicalDescription"
+                render={({ field }) => (
+                  <FormItem className="sm:col-span-2">
+                    <FormLabel>Opis kliniczny</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="Opis dla fizjoterapeuty (język medyczny)"
+                        className="min-h-[80px]"
+                        {...field}
+                        value={field.value ?? ''}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
 
         <div className="flex justify-end gap-3">
           {onCancel && (

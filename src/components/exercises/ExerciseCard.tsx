@@ -32,7 +32,6 @@ import { ColorBadge } from '@/components/shared/ColorBadge';
 import { ImagePlaceholder } from '@/components/shared/ImagePlaceholder';
 import { ImageLightbox } from '@/components/shared/ImageLightbox';
 import { getMediaUrl } from '@/utils/mediaUrl';
-import { translateExerciseTypeShort } from '@/components/pdf/polishUtils';
 
 export interface ExerciseTag {
   id: string;
@@ -50,6 +49,10 @@ export interface Exercise {
   defaultSets?: number;
   defaultReps?: number;
   defaultDuration?: number;
+  defaultExecutionTime?: number;
+  defaultRestBetweenSets?: number;
+  defaultRestBetweenReps?: number;
+  preparationTime?: number;
   thumbnailUrl?: string;
   videoUrl?: string;
   gifUrl?: string;
@@ -68,7 +71,14 @@ export interface Exercise {
   sets?: number;
   reps?: number;
   duration?: number;
+  executionTime?: number;
+  restSets?: number;
+  restReps?: number;
   exerciseSide?: string;
+  notes?: string;
+  tempo?: string;
+  audioCue?: string;
+  rangeOfMotion?: string;
   imageUrl?: string;
   images?: string[];
   mainTags?: string[] | ExerciseTag[];
@@ -306,9 +316,6 @@ export function ExerciseCard({
               )}
             </div>
             <div className="flex items-center gap-3 text-xs text-muted-foreground">
-              {exercise.type && (
-                <span className="text-primary font-medium">{translateExerciseTypeShort(exercise.type)}</span>
-              )}
               {sets && sets > 0 && (
                 <span className="flex items-center gap-1">
                   <Repeat className="h-3 w-3" />
@@ -668,11 +675,6 @@ export function ExerciseCard({
 
             {/* Primary Metadata: Focus on Type & Body Parts */}
             <div className="flex items-center gap-2 text-[10px] sm:text-[11px] text-muted-foreground/80 font-medium">
-              {exercise.type && (
-                <span className="text-primary/90 font-bold uppercase tracking-widest">
-                  {translateExerciseTypeShort(exercise.type)}
-                </span>
-              )}
               {exercise.mainTags && exercise.mainTags.length > 0 && (
                 <>
                   <span className="w-1 h-1 rounded-full bg-zinc-700" />

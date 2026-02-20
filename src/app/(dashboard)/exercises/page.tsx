@@ -56,7 +56,9 @@ export default function ExercisesPage() {
       const builderExercise: BuilderExercise = {
         id: exercise.id,
         name: exercise.name,
+        thumbnailUrl: exercise.thumbnailUrl,
         imageUrl: exercise.imageUrl,
+        images: exercise.images,
         sets: exercise.sets || 3,
         reps: exercise.reps || 10,
         duration: exercise.duration || 0,

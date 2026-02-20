@@ -23,3 +23,6 @@ export type {
   ExerciseTag,
 } from './ExerciseSetBuilder';
 export { ErrorBoundary } from './ErrorBoundary';
+export { ExerciseExecutionCard } from './exercise';
+export type { ExerciseExecutionCardProps, ExerciseExecutionCardData, EditableField } from './exercise';
+export { isTimerExercise, isFieldEditable, fromExerciseMapping, fromBuilderExercise } from './exercise';

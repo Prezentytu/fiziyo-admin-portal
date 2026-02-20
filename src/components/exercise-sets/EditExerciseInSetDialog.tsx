@@ -1,24 +1,19 @@
 'use client';
 
 import * as React from 'react';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { useMutation } from '@apollo/client/react';
-import { Loader2, Plus, Minus } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { ImagePlaceholder } from '@/components/shared/ImagePlaceholder';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
-import { getMediaUrl } from '@/utils/mediaUrl';
+import { ExerciseExecutionCard } from '@/components/shared/exercise';
+import type { ExerciseExecutionCardData } from '@/components/shared/exercise';
 
 import { UPDATE_EXERCISE_IN_SET_MUTATION } from '@/graphql/mutations/exercises.mutations';
 import { GET_EXERCISE_SET_WITH_ASSIGNMENTS_QUERY } from '@/graphql/queries/exerciseSets.queries';
-import { translateExerciseTypeShort } from '@/components/pdf/polishUtils';
 
 interface ExerciseMapping {
   id: string;
@@ -30,6 +25,7 @@ interface ExerciseMapping {
   duration?: number;
   restSets?: number;
   restReps?: number;
+  preparationTime?: number;
   executionTime?: number;
   tempo?: string;
   notes?: string;
@@ -38,7 +34,6 @@ interface ExerciseMapping {
   exercise?: {
     id: string;
     name: string;
-    // Nowe pola
     patientDescription?: string;
     side?: string;
     thumbnailUrl?: string;
@@ -48,7 +43,7 @@ interface ExerciseMapping {
     defaultExecutionTime?: number;
     defaultRestBetweenSets?: number;
     defaultRestBetweenReps?: number;
-    // Legacy aliasy
+    preparationTime?: number;
     description?: string;
     type?: string;
     imageUrl?: string;
@@ -65,7 +60,30 @@ interface EditExerciseInSetDialogProps {
   onSuccess?: () => void;
 }
 
-// Wrapper component that handles dialog state
+function mappingToCardData(mapping: ExerciseMapping): ExerciseExecutionCardData {
+  const exercise = mapping.exercise;
+  const type = exercise?.type?.toLowerCase();
+  const isTimeBased = type === 'time';
+  return {
+    id: mapping.id,
+    displayName: mapping.customName ?? exercise?.name ?? 'Ćwiczenie',
+    thumbnailUrl: exercise?.thumbnailUrl ?? exercise?.imageUrl ?? exercise?.images?.[0],
+    sets: mapping.sets ?? exercise?.defaultSets ?? 3,
+    reps: mapping.reps ?? exercise?.defaultReps ?? 10,
+    duration: mapping.duration ?? exercise?.defaultDuration,
+    executionTime: mapping.executionTime ?? exercise?.defaultExecutionTime,
+    restSets: mapping.restSets ?? exercise?.defaultRestBetweenSets ?? 60,
+    restReps: mapping.restReps ?? exercise?.defaultRestBetweenReps,
+    preparationTime: mapping.preparationTime ?? exercise?.preparationTime,
+    tempo: mapping.tempo,
+    notes: mapping.notes ?? '',
+    customName: mapping.customName,
+    customDescription: mapping.customDescription,
+    side: (exercise?.side ?? exercise?.exerciseSide ?? 'none')?.toLowerCase(),
+    isTimeBased,
+  };
+}
+
 export function EditExerciseInSetDialog({
   open,
   onOpenChange,
@@ -90,7 +108,6 @@ export function EditExerciseInSetDialog({
     onOpenChange(false);
   }, [onOpenChange]);
 
-  // Reset when dialog closes
   if (!open && hasChanges) {
     setHasChanges(false);
   }
@@ -122,7 +139,6 @@ export function EditExerciseInSetDialog({
   );
 }
 
-// Inner component with form state - remounts on each dialog open
 interface EditExerciseInSetDialogContentProps {
   exerciseMapping: ExerciseMapping;
   exerciseSetId: string;
@@ -140,50 +156,48 @@ function EditExerciseInSetDialogContent({
   onCloseAttempt,
   onHasChanges,
 }: EditExerciseInSetDialogContentProps) {
-  // State initialized directly from props (no useEffect needed)
-  const [sets, setSets] = useState(exerciseMapping.sets || 0);
-  const [reps, setReps] = useState(exerciseMapping.reps || 0);
-  const [duration, setDuration] = useState(exerciseMapping.duration || 0);
-  const [restSets, setRestSets] = useState(exerciseMapping.restSets || 0);
-  const [restReps, setRestReps] = useState(exerciseMapping.restReps || 0);
-  const [notes, setNotes] = useState(exerciseMapping.notes || '');
-  const [customName, setCustomName] = useState(exerciseMapping.customName || '');
-  const [customDescription, setCustomDescription] = useState(exerciseMapping.customDescription || '');
+  const initialData = useMemo(() => mappingToCardData(exerciseMapping), [exerciseMapping]);
+  const [draft, setDraft] = useState<ExerciseExecutionCardData>(initialData);
 
-  // Track changes
-  const hasChanges =
-    sets !== (exerciseMapping.sets || 0) ||
-    reps !== (exerciseMapping.reps || 0) ||
-    duration !== (exerciseMapping.duration || 0) ||
-    restSets !== (exerciseMapping.restSets || 0) ||
-    restReps !== (exerciseMapping.restReps || 0) ||
-    notes !== (exerciseMapping.notes || '') ||
-    customName !== (exerciseMapping.customName || '') ||
-    customDescription !== (exerciseMapping.customDescription || '');
+  const hasChanges = useMemo(() => {
+    return (
+      draft.sets !== initialData.sets ||
+      draft.reps !== initialData.reps ||
+      (draft.duration ?? 0) !== (initialData.duration ?? 0) ||
+      (draft.executionTime ?? 0) !== (initialData.executionTime ?? 0) ||
+      (draft.restSets ?? 0) !== (initialData.restSets ?? 0) ||
+      (draft.restReps ?? 0) !== (initialData.restReps ?? 0) ||
+      (draft.preparationTime ?? 0) !== (initialData.preparationTime ?? 0) ||
+      (draft.notes ?? '') !== (initialData.notes ?? '') ||
+      (draft.customName ?? '') !== (initialData.customName ?? '') ||
+      (draft.customDescription ?? '') !== (initialData.customDescription ?? '') ||
+      (draft.tempo ?? '') !== (initialData.tempo ?? '')
+    );
+  }, [draft, initialData]);
 
-  // Notify parent
   React.useEffect(() => {
     onHasChanges(hasChanges);
   }, [hasChanges, onHasChanges]);
 
   const [updateExercise, { loading }] = useMutation(UPDATE_EXERCISE_IN_SET_MUTATION);
 
-  const handleSave = async () => {
-    if (!exerciseMapping) return;
-
+  const handleSave = useCallback(async () => {
     try {
       await updateExercise({
         variables: {
           exerciseId: exerciseMapping.exerciseId,
           exerciseSetId,
-          sets: sets || null,
-          reps: reps || null,
-          duration: duration || null,
-          restSets: restSets || null,
-          restReps: restReps || null,
-          notes: notes || null,
-          customName: customName || null,
-          customDescription: customDescription || null,
+          sets: draft.sets ?? null,
+          reps: draft.reps ?? null,
+          duration: draft.duration ?? null,
+          restSets: draft.restSets ?? null,
+          restReps: draft.restReps ?? null,
+          preparationTime: draft.preparationTime ?? null,
+          executionTime: draft.executionTime ?? null,
+          notes: draft.notes || null,
+          customName: draft.customName || null,
+          customDescription: draft.customDescription ?? null,
+          tempo: draft.tempo || null,
         },
         refetchQueries: [
           {
@@ -200,23 +214,11 @@ function EditExerciseInSetDialogContent({
       console.error('Błąd podczas aktualizacji:', error);
       toast.error('Nie udało się zaktualizować parametrów');
     }
-  };
+  }, [draft, exerciseMapping.exerciseId, exerciseSetId, onOpenChange, onSuccess, updateExercise]);
 
-  const exercise = exerciseMapping.exercise;
-  const imageUrl = getMediaUrl(exercise?.imageUrl || exercise?.images?.[0]);
-
-  const translateSide = (side?: string) => {
-    if (!side) return '';
-    const normalizedSide = side.toLowerCase();
-    const sides: Record<string, string> = {
-      left: 'lewa strona',
-      right: 'prawa strona',
-      both: 'obie strony',
-      alternating: 'naprzemiennie',
-      none: 'bez strony',
-    };
-    return sides[normalizedSide] || side;
-  };
+  const handleChange = useCallback((patch: Partial<ExerciseExecutionCardData>) => {
+    setDraft((prev) => ({ ...prev, ...patch }));
+  }, []);
 
   return (
     <DialogContent
@@ -233,202 +235,16 @@ function EditExerciseInSetDialogContent({
         <DialogDescription>Dostosuj parametry ćwiczenia w tym zestawie</DialogDescription>
       </DialogHeader>
 
-      <div className="flex-1 min-h-0 overflow-y-auto px-6">
-        <div className="space-y-5 pb-6">
-          {/* Exercise preview */}
-          <div className="rounded-xl border border-border bg-surface p-3">
-            <div className="flex items-start gap-3">
-              <div className="h-12 w-12 rounded-lg overflow-hidden shrink-0">
-                {imageUrl ? (
-                  <img src={imageUrl} alt={exercise?.name} className="h-full w-full object-cover" />
-                ) : (
-                  <ImagePlaceholder type="exercise" iconClassName="h-5 w-5" />
-                )}
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="font-semibold text-sm leading-tight">{exercise?.name || 'Nieznane ćwiczenie'}</p>
-                <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                  {exercise?.type && (
-                    <Badge variant="secondary" className="text-[10px]">
-                      {translateExerciseTypeShort(exercise.type)}
-                    </Badge>
-                  )}
-                  {(exercise?.side || exercise?.exerciseSide) &&
-                    (exercise?.side || exercise?.exerciseSide) !== 'none' &&
-                    (exercise?.side || exercise?.exerciseSide)?.toLowerCase() !== 'none' && (
-                      <Badge variant="outline" className="text-[10px]">
-                        {translateSide(exercise?.side || exercise?.exerciseSide)}
-                      </Badge>
-                    )}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Main parameters */}
-          <div className="space-y-4">
-            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Główne parametry</p>
-
-            {/* Sets & Reps row */}
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label className="text-xs">Serie</Label>
-                <div className="flex items-center gap-1">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon"
-                    className="h-9 w-9 shrink-0"
-                    onClick={() => setSets(Math.max(0, sets - 1))}
-                  >
-                    <Minus className="h-3 w-3" />
-                  </Button>
-                  <Input
-                    type="number"
-                    value={sets}
-                    onChange={(e) => setSets(Math.max(0, Number.parseInt(e.target.value) || 0))}
-                    className="h-9 text-center font-semibold"
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon"
-                    className="h-9 w-9 shrink-0"
-                    onClick={() => setSets(sets + 1)}
-                  >
-                    <Plus className="h-3 w-3" />
-                  </Button>
-                </div>
-              </div>
-
-              <div className="space-y-1.5">
-                <Label className="text-xs">Powtórzenia</Label>
-                <div className="flex items-center gap-1">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon"
-                    className="h-9 w-9 shrink-0"
-                    onClick={() => setReps(Math.max(0, reps - 1))}
-                  >
-                    <Minus className="h-3 w-3" />
-                  </Button>
-                  <Input
-                    type="number"
-                    value={reps}
-                    onChange={(e) => setReps(Math.max(0, Number.parseInt(e.target.value) || 0))}
-                    className="h-9 text-center font-semibold"
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon"
-                    className="h-9 w-9 shrink-0"
-                    onClick={() => setReps(reps + 1)}
-                  >
-                    <Plus className="h-3 w-3" />
-                  </Button>
-                </div>
-              </div>
-            </div>
-
-            {/* Duration */}
-            <div className="space-y-1.5">
-              <Label className="text-xs">Czas trwania (s)</Label>
-              <div className="flex items-center gap-1">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  className="h-9 w-9 shrink-0"
-                  onClick={() => setDuration(Math.max(0, duration - 5))}
-                >
-                  <Minus className="h-3 w-3" />
-                </Button>
-                <Input
-                  type="number"
-                  value={duration}
-                  onChange={(e) => setDuration(Math.max(0, Number.parseInt(e.target.value) || 0))}
-                  className="h-9 text-center font-semibold"
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  className="h-9 w-9 shrink-0"
-                  onClick={() => setDuration(duration + 5)}
-                >
-                  <Plus className="h-3 w-3" />
-                </Button>
-              </div>
-            </div>
-          </div>
-
-          {/* Rest parameters */}
-          <div className="space-y-4">
-            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Przerwy</p>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label className="text-xs text-muted-foreground">Między seriami (s)</Label>
-                <Input
-                  type="number"
-                  value={restSets}
-                  onChange={(e) => setRestSets(Math.max(0, Number.parseInt(e.target.value) || 0))}
-                  className="h-9"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <Label className="text-xs text-muted-foreground">Między powt. (s)</Label>
-                <Input
-                  type="number"
-                  value={restReps}
-                  onChange={(e) => setRestReps(Math.max(0, Number.parseInt(e.target.value) || 0))}
-                  className="h-9"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Customization */}
-          <div className="space-y-4">
-            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Personalizacja</p>
-
-            <div className="space-y-1.5">
-              <Label className="text-xs text-muted-foreground">Własna nazwa</Label>
-              <Input
-                value={customName}
-                onChange={(e) => setCustomName(e.target.value)}
-                placeholder={exercise?.name || 'Zostaw puste dla domyślnej'}
-                className="h-9"
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <Label className="text-xs text-muted-foreground">Własny opis (opcjonalnie)</Label>
-              <Textarea
-                value={customDescription}
-                onChange={(e) => setCustomDescription(e.target.value)}
-                placeholder="Dodatkowy opis dla tego zestawu..."
-                className="min-h-[60px] resize-none text-sm"
-              />
-            </div>
-
-            <div className="space-y-1.5">
-              <Label className="text-xs text-muted-foreground">Notatki / instrukcje</Label>
-              <Textarea
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder="Wskazówki dla pacjenta..."
-                className="min-h-[60px] resize-none text-sm"
-              />
-            </div>
-          </div>
-        </div>
+      <div className="flex-1 min-h-0 overflow-y-auto px-6 pb-4">
+        <ExerciseExecutionCard
+          mode="edit"
+          exercise={draft}
+          onChange={handleChange}
+          testIdPrefix="set-edit-exercise"
+          defaultExpanded
+        />
       </div>
 
-      {/* Actions - fixed at bottom */}
       <div className="flex justify-end gap-3 px-6 py-4 border-t border-border bg-background/95 backdrop-blur-sm shrink-0">
         <Button variant="outline" onClick={onCloseAttempt} className="rounded-xl">
           Anuluj

@@ -259,6 +259,8 @@ Prefiksy modułów: `auth-`, `nav-`, `exercise-`, `set-`, `patient-`, `org-`, `s
 - Preferuj komponenty z `@/components/ui/` i `@/components/shared/` przed tworzeniem nowych
 - Domyślnie używaj `DataTable` dla tabel z danymi
 - Sprawdź istniejące wzorce przed implementacją nowego UI
+- Dla poziomych pasków/kafelków ćwiczeń obowiązuje reużycie `src/components/shared/exercise/ExerciseExecutionCard.tsx` + adapterów (bez lokalnych klonów layoutu)
+- Unikaj etykiet „ćwiczenie czasowe/powtórzeniowe” w UI; semantyka ma wynikać z `executionTime` (timer pacjenta)
 
 ## Wytyczne UI/UX
 

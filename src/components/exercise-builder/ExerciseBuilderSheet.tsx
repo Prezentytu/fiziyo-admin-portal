@@ -63,11 +63,11 @@ export function ExerciseBuilderSheet({ open, onOpenChange }: ExerciseBuilderShee
       <Sheet open={open} onOpenChange={onOpenChange}>
         <SheetContent
           side="bottom"
-          className="h-[85vh] flex flex-col p-0 bg-zinc-950/80 backdrop-blur-2xl border-t border-white/5 shadow-[0_-10px_40px_rgba(0,0,0,0.5)] rounded-t-[32px]"
+          className="h-[85vh] flex flex-col p-0 bg-surface/95 backdrop-blur-2xl border-t border-border shadow-[0_-10px_40px_rgba(0,0,0,0.5)] rounded-t-[32px]"
           data-testid="exercise-builder-sheet"
         >
           {/* Header */}
-          <SheetHeader className="border-b border-white/5 p-5 bg-zinc-950/40 backdrop-blur-md sticky top-0 z-10">
+          <SheetHeader className="border-b border-border p-5 bg-surface/70 backdrop-blur-md sticky top-0 z-10">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 border border-primary/20">
@@ -78,7 +78,7 @@ export function ExerciseBuilderSheet({ open, onOpenChange }: ExerciseBuilderShee
                   <SheetDescription className="flex items-center gap-2 mt-0.5">
                     <Badge
                       variant="secondary"
-                      className="text-[10px] px-1.5 py-0 h-4 bg-zinc-800 text-zinc-400 border-0"
+                      className="text-[10px] px-1.5 py-0 h-4 bg-surface-light text-muted-foreground border-border"
                     >
                       {exerciseCount} {exerciseCount === 1 ? 'ćwiczenie' : exerciseCount < 5 ? 'ćwiczenia' : 'ćwiczeń'}
                     </Badge>
@@ -131,7 +131,7 @@ export function ExerciseBuilderSheet({ open, onOpenChange }: ExerciseBuilderShee
 
           {/* Footer */}
           {hasExercises && (
-            <div className="border-t border-white/5 p-6 bg-zinc-950/60 backdrop-blur-xl space-y-4 sticky bottom-0">
+            <div className="border-t border-border p-6 bg-surface/90 backdrop-blur-xl space-y-4 sticky bottom-0">
               {/* Estimated time */}
               <div className="flex items-center justify-between text-sm mb-2">
                 <div className="flex flex-col">

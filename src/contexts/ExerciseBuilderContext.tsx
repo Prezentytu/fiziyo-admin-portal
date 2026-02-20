@@ -9,7 +9,9 @@ import { createContext, useContext, useState, useCallback, useMemo } from 'react
 export interface BuilderExercise {
   id: string;
   name: string;
+  thumbnailUrl?: string;
   imageUrl?: string;
+  images?: string[];
   sets: number;
   reps: number;
   duration: number;

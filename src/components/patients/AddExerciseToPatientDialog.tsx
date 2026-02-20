@@ -9,7 +9,6 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ImagePlaceholder } from '@/components/shared/ImagePlaceholder';
@@ -21,7 +20,6 @@ import { GET_AVAILABLE_EXERCISES_QUERY } from '@/graphql/queries/exercises.queri
 import { UPDATE_PATIENT_EXERCISE_OVERRIDES_MUTATION } from '@/graphql/mutations/exercises.mutations';
 import { GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY } from '@/graphql/queries/patientAssignments.queries';
 import type { PatientAssignment, ExerciseOverride } from './PatientAssignmentCard';
-import { translateExerciseTypeShort } from '@/components/pdf/polishUtils';
 
 // Types
 interface Exercise {
@@ -291,11 +289,6 @@ function AddExerciseToPatientDialogContent({
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <p className="font-semibold text-lg">{selectedExercise.name}</p>
-                    {selectedExercise.type && (
-                      <Badge variant="secondary" className="text-xs">
-                        {translateExerciseTypeShort(selectedExercise.type)}
-                      </Badge>
-                    )}
                   </div>
                   {selectedExercise.description && (
                     <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{selectedExercise.description}</p>
@@ -469,11 +462,6 @@ function AddExerciseToPatientDialogContent({
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="font-medium text-sm truncate">{exercise.name}</p>
-                          {exercise.type && (
-                            <Badge variant="secondary" className="text-[10px] mt-1">
-                              {translateExerciseTypeShort(exercise.type)}
-                            </Badge>
-                          )}
                         </div>
                       </button>
                     );

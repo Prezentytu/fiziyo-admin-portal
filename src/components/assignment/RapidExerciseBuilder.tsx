@@ -215,7 +215,7 @@ export function RapidExerciseBuilder({
     const rest = m.restSets ?? m.exercise?.defaultRestBetweenSets ?? 60;
     const executionTime = m.executionTime ?? m.exercise?.defaultExecutionTime;
 
-    // Duration tylko dla ćwiczeń time-based, dla rep-based używamy executionTime
+    // Duration służy do kalkulacji czasu serii; w pozostałych przypadkach używamy executionTime.
     const duration = isTimeBased ? (m.duration ?? m.exercise?.defaultDuration) : undefined;
 
     return (

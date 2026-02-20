@@ -35,7 +35,6 @@ import { UPDATE_PATIENT_EXERCISE_OVERRIDES_MUTATION } from '@/graphql/mutations/
 import { GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY } from '@/graphql/queries/patientAssignments.queries';
 import { aiService } from '@/services/aiService';
 import type { PatientAssignment, ExerciseMapping, ExerciseOverride } from './PatientAssignmentCard';
-import { translateExerciseTypeShort } from '@/components/pdf/polishUtils';
 
 interface EditExerciseOverrideDialogProps {
   open: boolean;
@@ -226,9 +225,6 @@ function EditExerciseOverrideDialogContent({
     descParts.push(`Nazwa ćwiczenia: ${exerciseName}`);
     if (exerciseDesc) {
       descParts.push(`Opis: ${exerciseDesc}`);
-    }
-    if (exercise?.type) {
-      descParts.push(`Typ: ${exercise.type === 'reps' ? 'powtórzeniowe' : 'czasowe'}`);
     }
     if (exerciseSide && exerciseSide !== 'none') {
       descParts.push(`Strona: ${translateSide(exerciseSide)}`);
@@ -430,11 +426,6 @@ function EditExerciseOverrideDialogContent({
               <div className="flex-1 min-w-0">
                 <p className="font-semibold text-lg">{exercise?.name || 'Nieznane ćwiczenie'}</p>
                 <div className="flex items-center gap-2 mt-1 flex-wrap">
-                  {exercise?.type && (
-                    <Badge variant="secondary" className="text-xs">
-                      {translateExerciseTypeShort(exercise.type)}
-                    </Badge>
-                  )}
                   {(exercise?.side || exercise?.exerciseSide) &&
                     (exercise?.side || exercise?.exerciseSide) !== 'none' &&
                     (exercise?.side || exercise?.exerciseSide)?.toLowerCase() !== 'none' && (

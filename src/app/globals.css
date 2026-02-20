@@ -1064,6 +1064,15 @@ input[type="number"] {
   outline-offset: 2px;
 }
 
+/* Stepper override: disable global focus outline for compact numeric control */
+[data-stepper-control]:focus,
+[data-stepper-control]:focus-visible,
+[data-stepper-input]:focus,
+[data-stepper-input]:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
 /* Reduced motion */
 .reduced-motion *,
 .reduced-motion *::before,

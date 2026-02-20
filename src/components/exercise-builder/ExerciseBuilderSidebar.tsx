@@ -60,13 +60,13 @@ export function ExerciseBuilderSidebar({ className }: ExerciseBuilderSidebarProp
       <aside
         data-testid="exercise-builder-sidebar"
         className={cn(
-          'z-40 w-[400px] border-l border-white/5 bg-zinc-950/80 backdrop-blur-2xl flex flex-col shrink-0 transition-all duration-300',
+          'z-40 w-[380px] xl:w-[420px] max-w-[92vw] border-l border-border bg-surface/95 backdrop-blur-2xl flex flex-col shrink-0 transition-all duration-300',
           !hasExercises && 'w-0 opacity-0 pointer-events-none border-none overflow-hidden',
           className
         )}
       >
         {/* Header */}
-        <div className="flex flex-col border-b border-white/5 bg-zinc-950/40 backdrop-blur-md sticky top-0 z-10 shrink-0">
+        <div className="flex flex-col border-b border-border bg-surface/70 backdrop-blur-md sticky top-0 z-10 shrink-0">
           <div className="flex items-center justify-between p-5">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 border border-primary/20">
@@ -76,7 +76,7 @@ export function ExerciseBuilderSidebar({ className }: ExerciseBuilderSidebarProp
                 <h2 className="font-bold text-foreground tracking-tight">Kreator Zestawu</h2>
                 <div className="flex items-center gap-2">
                   <span className="text-[10px] uppercase tracking-widest font-bold text-primary">
-                    {exerciseCount} {exerciseCount === 1 ? 'Pozycja' : exerciseCount < 5 ? 'Pozycje' : 'Pozycji'}
+                    {exerciseCount} {exerciseCount === 1 ? 'Ćwiczenie' : exerciseCount < 5 ? 'Ćwiczenia' : 'Ćwiczeń'}
                   </span>
                 </div>
               </div>
@@ -116,7 +116,7 @@ export function ExerciseBuilderSidebar({ className }: ExerciseBuilderSidebarProp
               </DndContext>
             ) : (
               <div className="flex flex-col items-center justify-center py-24 text-center">
-                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-zinc-900/50 border border-white/5 mb-4">
+                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-surface-light border border-border mb-4">
                   <Plus className="h-8 w-8 text-muted-foreground/40" />
                 </div>
                 <p className="text-sm text-muted-foreground">
@@ -131,7 +131,7 @@ export function ExerciseBuilderSidebar({ className }: ExerciseBuilderSidebarProp
 
         {/* Footer */}
         {hasExercises && (
-          <div className="border-t border-white/5 p-6 bg-zinc-950/80 backdrop-blur-xl sticky bottom-0 z-10 shrink-0 space-y-4">
+          <div className="border-t border-border p-6 bg-surface/95 backdrop-blur-xl sticky bottom-0 z-10 shrink-0 space-y-4">
             {/* Stats section restored */}
             <div className="flex items-center justify-between text-sm">
               <div className="flex flex-col">
@@ -174,7 +174,7 @@ export function ExerciseBuilderSidebar({ className }: ExerciseBuilderSidebarProp
               <Button
                 variant="outline"
                 size="icon"
-                className="h-14 w-14 shrink-0 rounded-2xl border-white/10 bg-white/5 text-primary hover:bg-primary/10 hover:border-primary/30 transition-all active:scale-95 group"
+                className="h-14 w-14 shrink-0 rounded-2xl border-border bg-surface-light text-primary hover:bg-primary/10 hover:border-primary/30 transition-all active:scale-95 group"
                 onClick={() => setIsChatOpen(true)}
                 title="AI Magic - Optymalizuj zestaw"
               >

@@ -10,7 +10,7 @@ import { Separator } from '@/components/ui/separator';
 import { ImagePlaceholder } from '@/components/shared/ImagePlaceholder';
 import { getMediaUrl } from '@/utils/mediaUrl';
 import type { ExerciseMapping, ExerciseOverride } from './PatientAssignmentCard';
-import { translateExerciseTypeShort, translateExerciseSidePolish } from '@/components/pdf/polishUtils';
+import { translateExerciseSidePolish } from '@/components/pdf/polishUtils';
 
 interface ExercisePreviewDrawerProps {
   open: boolean;
@@ -85,11 +85,6 @@ export function ExercisePreviewDrawer({ open, onOpenChange, mapping, override, o
         <DialogHeader className="px-6 pt-6 pb-4 border-b border-border">
           <div className="flex items-center gap-3">
             <DialogTitle className="text-lg">{effectiveName || 'Nieznane ćwiczenie'}</DialogTitle>
-            {exercise?.type && (
-              <Badge variant="secondary" className="text-xs">
-                {translateExerciseTypeShort(exercise.type)}
-              </Badge>
-            )}
             {hasOverride && (
               <Badge variant="outline" className="text-xs border-primary/40 text-primary">
                 Zmodyfikowane

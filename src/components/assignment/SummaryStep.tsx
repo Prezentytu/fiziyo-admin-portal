@@ -8,8 +8,7 @@ import { pl } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { ImagePlaceholder } from '@/components/shared/ImagePlaceholder';
-import { getMediaUrl } from '@/utils/mediaUrl';
+import { ExerciseExecutionCard, fromExerciseMapping } from '@/components/shared/exercise';
 import { calculateEstimatedTime, formatEstimatedTime } from '@/utils/exerciseTime';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { sendExerciseReport } from '@/services/exerciseReportService';
@@ -27,23 +26,6 @@ interface SummaryStepProps {
   onGoToStep?: (step: 'select-set' | 'select-patients' | 'schedule') => void;
 }
 
-// Helper: Formatuj dawkowanie do kompaktowej formy
-function formatDosage(mapping: ExerciseMapping, override?: ExerciseOverride): string {
-  const exercise = mapping.exercise;
-  const sets = override?.sets ?? mapping.sets ?? exercise?.defaultSets ?? 3;
-  const reps = override?.reps ?? mapping.reps ?? exercise?.defaultReps ?? 10;
-  const duration = override?.duration ?? mapping.duration ?? exercise?.defaultDuration;
-
-  const exerciseType = exercise?.type?.toLowerCase();
-  const isTimeBased = exerciseType === 'time';
-
-  if (isTimeBased && duration) {
-    return `${sets} × ${duration}s`;
-  }
-
-  return `${sets} × ${reps}`;
-}
-
 // Helper: Oblicz łączny czas zestawu
 function calculateTotalTime(mappings: ExerciseMapping[], overrides: Map<string, ExerciseOverride>): number {
   return mappings.reduce((total, mapping) => {
@@ -57,7 +39,7 @@ function calculateTotalTime(mappings: ExerciseMapping[], overrides: Map<string, 
     const executionTime = override?.executionTime ?? mapping.executionTime ?? exercise?.defaultExecutionTime;
     const rest = override?.restSets ?? mapping.restSets ?? exercise?.defaultRestBetweenSets ?? 60;
 
-    // Duration tylko dla ćwiczeń time-based, dla rep-based używamy executionTime
+    // Duration służy do kalkulacji czasu serii; w pozostałych przypadkach używamy executionTime.
     const duration = isTimeBased ? (override?.duration ?? mapping.duration ?? exercise?.defaultDuration) : undefined;
 
     return (
@@ -246,57 +228,39 @@ export function SummaryStep({
             )}
           </div>
 
-          {/* Lista Kompaktowa (Rozwinięta) */}
-          <div className="p-3 flex-1 overflow-y-auto">
+          {/* Lista Kompaktowa (Rozwinięta) - shared ExerciseExecutionCard view mode */}
+          <div className="p-3 flex-1 overflow-y-auto space-y-2">
             {visibleMappings.map((mapping, i) => {
-              const exercise = mapping.exercise;
-              const imageUrl = getMediaUrl(exercise?.thumbnailUrl || exercise?.imageUrl || exercise?.images?.[0]);
               const override = overrides.get(mapping.id);
               const hasOverride =
                 override &&
                 Object.keys(override).some(
                   (key) => key !== 'exerciseMappingId' && override[key as keyof ExerciseOverride] !== undefined
                 );
-              const dosage = formatDosage(mapping, override);
-              const exerciseName = mapping.customName || exercise?.name || 'Nieznane';
+              const cardData = fromExerciseMapping(mapping, override);
 
               return (
                 <div
                   key={mapping.id}
-                  className="flex items-center justify-between p-3 hover:bg-surface-light/50 rounded-lg group transition-colors"
+                  className="relative"
                   data-testid={`summary-exercise-item-${mapping.id}`}
                 >
-                  <div className="flex items-center gap-3.5 min-w-0 flex-1">
-                    {/* Numer */}
-                    <span className="text-sm text-muted-foreground/50 font-mono w-6 text-right shrink-0">{i + 1}.</span>
-
-                    {/* Miniatura */}
-                    <div className="w-10 h-10 rounded-lg overflow-hidden shrink-0 bg-surface-light border border-border/30">
-                      {imageUrl ? (
-                        <img src={imageUrl} alt="" className="h-full w-full object-cover" />
-                      ) : (
-                        <ImagePlaceholder type="exercise" iconClassName="h-4 w-4" />
-                      )}
-                    </div>
-
-                    {/* Nazwa */}
-                    <span className="text-base text-foreground font-medium truncate">{exerciseName}</span>
-
-                    {/* Badge "Zmienione" */}
-                    {hasOverride && (
-                      <Badge variant="outline" className="text-[10px] border-primary/40 text-primary shrink-0 ml-1">
-                        <Settings2 className="h-2.5 w-2.5 mr-0.5" />
-                        Zmienione
-                      </Badge>
-                    )}
-                  </div>
-
-                  {/* Dawkowanie */}
-                  <div className="flex items-center gap-2 shrink-0">
-                    <span className="text-sm text-primary font-mono bg-primary/10 px-2.5 py-1.5 rounded-md border border-primary/20 min-w-[72px] text-center">
-                      {dosage}
-                    </span>
-                  </div>
+                  <ExerciseExecutionCard
+                    mode="view"
+                    exercise={cardData}
+                    index={i + 1}
+                    testIdPrefix="summary-exercise"
+                    className="border-border/40"
+                  />
+                  {hasOverride && (
+                    <Badge
+                      variant="outline"
+                      className="absolute top-2 right-2 text-[10px] border-primary/40 text-primary shrink-0"
+                    >
+                      <Settings2 className="h-2.5 w-2.5 mr-0.5" />
+                      Zmienione
+                    </Badge>
+                  )}
                 </div>
               );
             })}

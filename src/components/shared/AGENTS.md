@@ -14,6 +14,10 @@ Główna tabela z danymi. Używaj dla list (ćwiczenia, pacjenci, zestawy).
 
 Builder zestawu ćwiczeń — listowanie, dodawanie, edycja, usuwanie ćwiczeń w zestawie. Współdzielony przez CreateSetWizard i Assignment Wizard.
 
+### ExerciseExecutionCard
+
+Jedyny bazowy komponent poziomego kafelka/paska ćwiczenia (miniatura + nazwa + dawkowanie + akcje). Używaj go we wszystkich flow wymagających listy ćwiczeń zamiast tworzyć lokalne warianty.
+
 ### LabeledStepper
 
 Krokowy wskaźnik (np. 1/5, 2/5). Używany w wizardach.
@@ -56,3 +60,5 @@ import { ExerciseSetBuilder } from '@/components/shared';
 - Sprawdź `index.ts` przed tworzeniem nowego — eksportuj przez index
 - Preferuj komponenty z `@/components/ui/` (shadcn) i `shared` przed nowymi
 - Każdy interaktywny element: `data-testid`
+- Dla pasków/kafelków ćwiczeń obowiązuje `ExerciseExecutionCard` + adaptery z `shared/exercise`
+- Nie wprowadzaj terminów „ćwiczenie czasowe/powtórzeniowe” w UI; używaj modelu `executionTime` i komunikatów o timerze

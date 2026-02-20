@@ -4,7 +4,6 @@ import { useState, useCallback } from 'react';
 import {
   Dumbbell,
   Timer,
-  RotateCcw,
   ArrowLeftRight,
   Image as ImageIcon,
   Video,
@@ -27,12 +26,6 @@ import { ClickableStat, ClickableStatGroup } from './ClickableStat';
 import type { AdminExercise } from '@/graphql/types/adminExercise.types';
 
 // Types & Options
-const EXERCISE_TYPES = [
-  { value: 'reps', label: 'Powtórzenia', icon: <RotateCcw className="h-4 w-4" /> },
-  { value: 'time', label: 'Czasowe', icon: <Timer className="h-4 w-4" /> },
-  { value: 'hold', label: 'Izometryczne', icon: <Dumbbell className="h-4 w-4" /> },
-];
-
 const EXERCISE_SIDES = [
   { value: 'none', label: 'Brak strony', icon: <span className="w-4" /> },
   { value: 'left', label: 'Lewa strona', icon: <ArrowLeftRight className="h-4 w-4" /> },
@@ -111,21 +104,9 @@ export function ExerciseDetailsPanel({
           />
         </div>
 
-        {/* TYPE & SIDE - Inline selects */}
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-1">
-            <Label className="text-xs text-muted-foreground">Typ ćwiczenia</Label>
-            <InlineEditSelect
-              value={exercise.type || 'reps'}
-              onCommit={handleFieldCommit('type')}
-              options={EXERCISE_TYPES}
-              placeholder="Wybierz typ"
-              disabled={disabled}
-              data-testid="verification-details-type"
-            />
-          </div>
-
-          <div className="space-y-1">
+        {/* SIDE - Inline select */}
+        <div className="grid grid-cols-1 gap-4">
+          <div className="space-y-1 max-w-xs">
             <Label className="text-xs text-muted-foreground">Strona ciała</Label>
             <InlineEditSelect
               value={exercise.side || 'none'}

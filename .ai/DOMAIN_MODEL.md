@@ -11,6 +11,9 @@ Szybka referencja encji, enumów, relacji i struktur JSONB. Używaj tego pliku z
 | `Reps` (0) | Licznik powtórzeń (np. Przysiady) |
 | `Time` (1) | Stoper czasowy (np. Plank)        |
 
+Uwaga produktowa: w UI admina nie wprowadzamy etykiet „ćwiczenie czasowe/powtórzeniowe”.
+Prezentacja opiera się na `executionTime` (timer w aplikacji pacjenta) i kontekście wyświetlania.
+
 ### ExerciseSide
 
 | Wartość           | Opis                                |

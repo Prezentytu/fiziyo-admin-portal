@@ -6,11 +6,10 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { ImagePlaceholder } from '@/components/shared/ImagePlaceholder';
+import { ExerciseExecutionCard, fromExerciseMapping } from '@/components/shared/exercise';
 import { cn } from '@/lib/utils';
 import { getMediaUrl } from '@/utils/mediaUrl';
 import type { ExerciseSet, AssignedSetInfo } from './types';
-import { translateExerciseTypeShort } from '@/components/pdf/polishUtils';
 
 interface SelectSetStepProps {
   exerciseSets: ExerciseSet[];
@@ -309,44 +308,17 @@ export function SelectSetStep({
 
             <ScrollArea className="flex-1 px-4 pb-4">
               <div className="space-y-2">
-                {previewSet.exerciseMappings?.map((mapping, index) => {
-                  const exercise = mapping.exercise;
-                  const imageUrl = getMediaUrl(exercise?.imageUrl || exercise?.images?.[0]);
-
+                {previewSet.exerciseMappings?.map((mapping) => {
+                  const cardData = fromExerciseMapping(mapping);
                   return (
-                    <div key={mapping.id} className="flex items-center gap-3 rounded-lg p-3 bg-surface-light/50">
-                      <div className="flex h-8 w-8 items-center justify-center rounded-lg text-xs font-semibold shrink-0 bg-surface text-muted-foreground">
-                        {index + 1}
-                      </div>
-                      <div className="h-10 w-10 rounded-lg overflow-hidden shrink-0">
-                        {imageUrl ? (
-                          <img src={imageUrl} alt="" className="h-full w-full object-cover" />
-                        ) : (
-                          <ImagePlaceholder type="exercise" iconClassName="h-4 w-4" />
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium line-clamp-2">
-                          {mapping.customName || exercise?.name || 'Nieznane ćwiczenie'}
-                        </p>
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5 flex-wrap">
-                          {(mapping.sets ?? exercise?.defaultSets) && (
-                            <span>{mapping.sets ?? exercise?.defaultSets} serie</span>
-                          )}
-                          {(mapping.reps ?? exercise?.defaultReps) && (
-                            <span>• {mapping.reps ?? exercise?.defaultReps} powt.</span>
-                          )}
-                          {(mapping.executionTime ?? exercise?.defaultExecutionTime) ? (
-                            <span>• {mapping.executionTime ?? exercise?.defaultExecutionTime}s/powt.</span>
-                          ) : null}
-                        </div>
-                      </div>
-                      {exercise?.type && (
-                        <Badge variant="secondary" className="text-[10px] shrink-0">
-                          {translateExerciseTypeShort(exercise.type)}
-                        </Badge>
-                      )}
-                    </div>
+                    <ExerciseExecutionCard
+                      key={mapping.id}
+                      mode="view"
+                      exercise={cardData}
+                      viewVariant="readable"
+                      hideTimerBadge
+                      testIdPrefix="assign-set-preview-exercise"
+                    />
                   );
                 })}
               </div>

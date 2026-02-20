@@ -43,7 +43,6 @@ import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { cn } from '@/lib/utils';
 import { translateAssignmentStatus, type AssignmentStatus } from '@/utils/statusUtils';
 import { getMediaUrl } from '@/utils/mediaUrl';
-import { translateExerciseTypeShort } from '@/components/pdf/polishUtils';
 
 import {
   UPDATE_EXERCISE_SET_ASSIGNMENT_MUTATION,
@@ -612,13 +611,6 @@ export function PatientAssignmentCard({
                                   </span>
                                 )}
                               </div>
-                              {mapping.exercise?.type && (
-                                <div className="mt-1.5">
-                                  <Badge variant="secondary" className="text-[10px]">
-                                    {translateExerciseTypeShort(mapping.exercise.type)}
-                                  </Badge>
-                                </div>
-                              )}
                             </div>
 
                             {/* Actions - Always visible */}

@@ -20,7 +20,6 @@ import { cn } from '@/lib/utils';
 import { GET_ORGANIZATION_EXERCISES_QUERY } from '@/graphql/queries/exercises.queries';
 import { ADD_EXERCISE_TO_EXERCISE_SET_MUTATION } from '@/graphql/mutations/exercises.mutations';
 import { GET_EXERCISE_SET_WITH_ASSIGNMENTS_QUERY } from '@/graphql/queries/exerciseSets.queries';
-import { translateExerciseTypeShort } from '@/components/pdf/polishUtils';
 
 interface Exercise {
   id: string;
@@ -361,11 +360,6 @@ export function AddExerciseToSetDialog({
                         <div className="flex-1 min-w-0">
                           <p className="font-medium truncate">{exercise.name}</p>
                           <div className="flex items-center gap-2 mt-1">
-                            {exercise.type && (
-                              <Badge variant="secondary" className="text-xs">
-                                {translateExerciseTypeShort(exercise.type)}
-                              </Badge>
-                            )}
                             {(exercise.side || exercise.exerciseSide) &&
                               (exercise.side || exercise.exerciseSide) !== 'none' &&
                               (exercise.side || exercise.exerciseSide)?.toLowerCase() !== 'none' && (
@@ -422,11 +416,6 @@ export function AddExerciseToSetDialog({
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="font-semibold truncate">{exercise.name}</p>
-                          {exercise.type && (
-                            <Badge variant="secondary" className="text-xs mt-1">
-                              {translateExerciseTypeShort(exercise.type)}
-                            </Badge>
-                          )}
                         </div>
                         <Button
                           variant="ghost"

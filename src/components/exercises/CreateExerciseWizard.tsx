@@ -202,7 +202,7 @@ const DEFAULT_DATA: ExerciseData = {
   exerciseSide: 'none',
   sets: 3,
   reps: 10, // Domyślnie 10 powtórzeń (najczęstszy przypadek)
-  duration: null, // null = ćwiczenie powtórzeniowe (nie czasowe)
+  duration: null, // null = brak czasu serii
   restSets: 60,
   restReps: null,
   preparationTime: 5,

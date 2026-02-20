@@ -43,14 +43,14 @@ import {
 import { LoadingState } from '@/components/shared/LoadingState';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
+import { ExerciseExecutionCard } from '@/components/shared/exercise';
+import type { ExerciseExecutionCardData } from '@/components/shared/exercise';
 import { SetDialog } from '@/components/exercise-sets/SetDialog';
 import { AddExerciseToSetDialog } from '@/components/exercise-sets/AddExerciseToSetDialog';
 import { EditExerciseInSetDialog } from '@/components/exercise-sets/EditExerciseInSetDialog';
 import { GeneratePDFDialog } from '@/components/exercise-sets/GeneratePDFDialog';
 import { AssignmentWizard } from '@/components/assignment/AssignmentWizard';
 import type { ExerciseSet as AssignmentExerciseSet } from '@/components/assignment/types';
-import { ImagePlaceholder } from '@/components/shared/ImagePlaceholder';
-import { getMediaUrl } from '@/utils/mediaUrl';
 
 import {
   GET_EXERCISE_SET_WITH_ASSIGNMENTS_QUERY,
@@ -64,7 +64,6 @@ import {
 } from '@/graphql/mutations/exercises.mutations';
 import { GET_USER_BY_CLERK_ID_QUERY } from '@/graphql/queries/users.queries';
 import { useOrganization } from '@/contexts/OrganizationContext';
-import { translateExerciseTypeShort } from '@/components/pdf/polishUtils';
 
 interface SetDetailPageProps {
   params: Promise<{ id: string }>;
@@ -77,6 +76,7 @@ interface ExerciseMapping {
   sets?: number;
   reps?: number;
   duration?: number;
+  executionTime?: number;
   restSets?: number;
   restReps?: number;
   notes?: string;
@@ -92,6 +92,7 @@ interface ExerciseMapping {
     defaultSets?: number;
     defaultReps?: number;
     defaultDuration?: number;
+    defaultExecutionTime?: number;
     // Legacy aliasy
     description?: string;
     type?: string;
@@ -303,6 +304,23 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
     return days.join(', ');
   };
 
+  const toExecutionCardData = (mapping: ExerciseMapping): ExerciseExecutionCardData => ({
+    id: mapping.id,
+    displayName: mapping.customName || mapping.exercise?.name || 'Nieznane ćwiczenie',
+    thumbnailUrl: mapping.exercise?.thumbnailUrl ?? mapping.exercise?.imageUrl ?? mapping.exercise?.images?.[0],
+    sets: mapping.sets ?? mapping.exercise?.defaultSets ?? 3,
+    reps: mapping.reps ?? mapping.exercise?.defaultReps ?? 10,
+    duration: mapping.duration ?? mapping.exercise?.defaultDuration,
+    executionTime: mapping.executionTime ?? mapping.exercise?.defaultExecutionTime,
+    restSets: mapping.restSets,
+    restReps: mapping.restReps,
+    notes: mapping.notes,
+    customName: mapping.customName,
+    customDescription: mapping.customDescription,
+    side: (mapping.exercise?.side ?? mapping.exercise?.exerciseSide ?? 'none')?.toLowerCase(),
+    isTimeBased: false,
+  });
+
   if (loading) {
     return (
       <div className="space-y-6">
@@ -466,77 +484,25 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
           <div className="space-y-2 animate-stagger">
             {[...exercises]
               .sort((a, b) => (a.order || 0) - (b.order || 0))
-              .map((mapping, index) => {
-                const imageUrl = getMediaUrl(mapping.exercise?.imageUrl || mapping.exercise?.images?.[0]);
-                const hasParams = mapping.sets || mapping.reps || mapping.duration;
+              .map((mapping) => {
+                const cardData = toExecutionCardData(mapping);
                 return (
-                  <div
-                    key={mapping.id}
-                    className="group flex items-center gap-4 rounded-xl border border-border/60 bg-surface p-4 transition-all duration-200 hover:border-primary/30 hover:bg-surface-light cursor-pointer"
-                    onClick={() => setEditingExercise(mapping)}
-                  >
-                    {/* Order number */}
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-surface-light text-lg font-semibold text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary transition-colors shrink-0">
-                      {index + 1}
-                    </div>
+                  <div key={mapping.id} className="group relative">
+                    <button
+                      type="button"
+                      className="w-full text-left"
+                      onClick={() => setEditingExercise(mapping)}
+                      data-testid={`set-detail-exercise-row-${mapping.id}`}
+                    >
+                      <ExerciseExecutionCard
+                        mode="view"
+                        exercise={cardData}
+                        className="transition-all duration-200 group-hover:border-primary/30 group-hover:bg-surface-light"
+                        testIdPrefix="set-detail-exercise-row"
+                      />
+                    </button>
 
-                    {/* Thumbnail */}
-                    <div className="h-14 w-14 rounded-lg overflow-hidden shrink-0 bg-surface-light">
-                      {imageUrl ? (
-                        <img
-                          src={imageUrl}
-                          alt={mapping.exercise?.name}
-                          loading="lazy"
-                          className="h-full w-full object-cover"
-                        />
-                      ) : (
-                        <ImagePlaceholder type="exercise" iconClassName="h-5 w-5" />
-                      )}
-                    </div>
-
-                    {/* Info */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <p className="font-semibold truncate">
-                          {mapping.customName || mapping.exercise?.name || 'Nieznane ćwiczenie'}
-                        </p>
-                        {mapping.customName && (
-                          <Badge variant="outline" className="text-[10px] shrink-0 border-primary/30 text-primary">
-                            zmieniona
-                          </Badge>
-                        )}
-                        {mapping.exercise?.type && (
-                          <Badge variant="secondary" className="text-[10px] shrink-0">
-                            {translateExerciseTypeShort(mapping.exercise.type)}
-                          </Badge>
-                        )}
-                      </div>
-                      {hasParams ? (
-                        <div className="flex items-center gap-3 text-sm mt-1.5">
-                          {mapping.sets && (
-                            <span className="text-xs text-muted-foreground">
-                              <span className="font-semibold text-foreground">{mapping.sets}</span> serii
-                            </span>
-                          )}
-                          {mapping.reps && (
-                            <span className="text-xs text-muted-foreground">
-                              <span className="font-semibold text-foreground">{mapping.reps}</span> powt.
-                            </span>
-                          )}
-                          {mapping.duration && (
-                            <span className="text-xs text-muted-foreground flex items-center gap-1">
-                              <Clock className="h-3 w-3" />
-                              <span className="font-semibold text-foreground">{mapping.duration}s</span>
-                            </span>
-                          )}
-                        </div>
-                      ) : (
-                        <p className="text-xs text-muted-foreground mt-1">Kliknij aby ustawić parametry</p>
-                      )}
-                    </div>
-
-                    {/* Actions */}
-                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                       <Button
                         variant="ghost"
                         size="icon"
@@ -545,6 +511,7 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
                           e.stopPropagation();
                           setEditingExercise(mapping);
                         }}
+                        data-testid={`set-detail-exercise-row-${mapping.id}-edit-btn`}
                       >
                         <Pencil className="h-4 w-4" />
                       </Button>
@@ -556,6 +523,7 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
                           e.stopPropagation();
                           setRemovingExerciseId(mapping.exerciseId);
                         }}
+                        data-testid={`set-detail-exercise-row-${mapping.id}-remove-btn`}
                       >
                         <X className="h-4 w-4" />
                       </Button>

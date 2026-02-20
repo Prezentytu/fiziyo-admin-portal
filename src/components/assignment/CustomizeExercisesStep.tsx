@@ -25,7 +25,7 @@ import { ImagePlaceholder } from '@/components/shared/ImagePlaceholder';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { cn } from '@/lib/utils';
 import { getMediaUrl } from '@/utils/mediaUrl';
-import { translateExerciseTypeShort, translateExerciseSidePolish } from '@/components/pdf/polishUtils';
+import { translateExerciseSidePolish } from '@/components/pdf/polishUtils';
 import type { ExerciseSet, ExerciseMapping, ExerciseOverride } from './types';
 
 interface CustomizeExercisesStepProps {
@@ -376,11 +376,6 @@ export function CustomizeExercisesStep({
                     {selectedMapping.customName || selectedMapping.exercise?.name || 'Nieznane ćwiczenie'}
                   </p>
                   <div className="flex items-center gap-1.5 mt-1">
-                    {selectedMapping.exercise?.type && (
-                      <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
-                        {translateExerciseTypeShort(selectedMapping.exercise.type)}
-                      </Badge>
-                    )}
                     {selectedMapping.exercise?.exerciseSide && selectedMapping.exercise.exerciseSide !== 'none' && (
                       <Badge variant="outline" className="text-[10px] px-1.5 py-0">
                         {translateExerciseSidePolish(selectedMapping.exercise.exerciseSide)}

@@ -127,6 +127,10 @@ export function ExerciseDialog({
             videoUrl: values.videoUrl || null,
             notes: values.notes || null,
             exerciseSide: values.exerciseSide === 'none' ? null : values.exerciseSide,
+            tempo: values.tempo || null,
+            clinicalDescription: values.clinicalDescription || null,
+            audioCue: values.audioCue || null,
+            rangeOfMotion: values.rangeOfMotion || null,
           },
         });
 
@@ -177,14 +181,23 @@ export function ExerciseDialog({
         sets: exercise.defaultSets ?? exercise.sets,
         reps: exercise.defaultReps ?? exercise.reps,
         duration: exercise.defaultDuration ?? exercise.duration,
-        restSets: undefined,
-        restReps: undefined,
-        preparationTime: undefined,
-        executionTime: undefined,
+        restSets: exercise.defaultRestBetweenSets ?? exercise.restSets ?? 60,
+        restReps: exercise.defaultRestBetweenReps ?? exercise.restReps ?? null,
+        preparationTime: exercise.preparationTime ?? 5,
+        executionTime: exercise.defaultExecutionTime ?? exercise.executionTime ?? null,
         exerciseSide:
-          ((exercise.side?.toLowerCase() || exercise.exerciseSide) as 'none' | 'left' | 'right' | 'both') || 'none',
-        videoUrl: '',
-        notes: '',
+          ((exercise.side?.toLowerCase() || exercise.exerciseSide) as
+            | 'none'
+            | 'left'
+            | 'right'
+            | 'both'
+            | 'alternating') || 'none',
+        videoUrl: exercise.videoUrl ?? '',
+        notes: exercise.notes ?? '',
+        tempo: exercise.tempo ?? '',
+        clinicalDescription: exercise.clinicalDescription ?? '',
+        audioCue: exercise.audioCue ?? '',
+        rangeOfMotion: exercise.rangeOfMotion ?? '',
       }
     : undefined;
 

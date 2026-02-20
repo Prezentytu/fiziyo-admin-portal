@@ -3,7 +3,6 @@
 import { Dumbbell, Clock, TrendingUp, Star } from 'lucide-react';
 
 import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 
 interface ExerciseStat {
@@ -56,11 +55,6 @@ export function ExerciseStats({ stats, className }: ExerciseStatsProps) {
                   </div>
                 </div>
               </div>
-              {stat.type && (
-                <Badge variant="secondary" className="shrink-0">
-                  {stat.type === 'time' ? 'czasowe' : 'powtórzenia'}
-                </Badge>
-              )}
             </div>
           </CardContent>
         </Card>

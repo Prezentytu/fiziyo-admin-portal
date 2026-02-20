@@ -16,11 +16,6 @@ interface AIExerciseSuggestionsProps {
   className?: string;
 }
 
-const EXERCISE_TYPE_LABELS: Record<string, string> = {
-  reps: 'Powtórzenia',
-  time: 'Czasowe',
-};
-
 /**
  * Komponent wyświetlający sugestie AI dla ćwiczenia
  */
@@ -96,9 +91,6 @@ export function AIExerciseSuggestions({
 
           {/* Parameters */}
           <div className="flex flex-wrap gap-2">
-            <Badge variant="secondary" className="text-xs">
-              {EXERCISE_TYPE_LABELS[suggestion.type] || suggestion.type}
-            </Badge>
             <Badge variant="outline" className="text-xs">
               {suggestion.sets} serii
             </Badge>

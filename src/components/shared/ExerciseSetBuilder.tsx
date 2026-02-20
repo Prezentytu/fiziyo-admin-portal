@@ -6,10 +6,8 @@ import {
   Loader2,
   Dumbbell,
   Plus,
-  X,
   GripVertical,
   Eye,
-  Sliders,
   TrendingUp,
   Sparkles,
   Timer,
@@ -36,15 +34,13 @@ import { CSS } from '@dnd-kit/utilities';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Collapsible, CollapsibleContent } from '@/components/ui/collapsible';
 import { ImagePlaceholder } from '@/components/shared/ImagePlaceholder';
-import { LabeledStepper } from '@/components/shared/LabeledStepper';
 import { getMediaUrl } from '@/utils/mediaUrl';
+import { ExerciseExecutionCard, fromBuilderExercise } from '@/components/shared/exercise';
+import type { ExerciseExecutionCardData } from '@/components/shared/exercise';
 import { ColorBadge } from '@/components/shared/ColorBadge';
 import { cn } from '@/lib/utils';
-import { translateExerciseTypeShort } from '@/components/pdf/polishUtils';
 
 // ============================================================
 // TYPES
@@ -165,18 +161,18 @@ function ExercisePickerItem({
   onPreview: () => void;
   getExerciseTags: (ex: BuilderExercise) => ExerciseTag[];
 }) {
-  const imageUrl = getMediaUrl(exercise.imageUrl || exercise.images?.[0]);
+  const imageUrl = getMediaUrl(exercise.thumbnailUrl ?? exercise.imageUrl ?? exercise.images?.[0]);
 
   return (
     <div
       className={cn(
-        'w-full flex items-center gap-3 p-2.5 rounded-xl text-left transition-all duration-200 border overflow-hidden',
+        'w-full flex items-center gap-3 p-2.5 rounded-xl text-left transition-all duration-200 border overflow-hidden min-w-0',
         instanceCount > 0
-          ? 'bg-zinc-900/60 border-zinc-800/80 opacity-80'
-          : 'bg-zinc-900/30 hover:bg-zinc-900/50 border-zinc-800/50 hover:border-zinc-700'
+          ? 'bg-surface-light border-border/80 opacity-80'
+          : 'bg-surface/50 hover:bg-surface-light border-border/50 hover:border-border'
       )}
     >
-      <div className="h-9 w-9 rounded-lg overflow-hidden shrink-0 relative group bg-zinc-800">
+      <div className="h-9 w-9 rounded-lg overflow-hidden shrink-0 relative group bg-surface-light border border-border/60">
         {imageUrl ? (
           <img src={imageUrl} alt="" className="h-full w-full object-cover" loading="lazy" />
         ) : (
@@ -194,7 +190,6 @@ function ExercisePickerItem({
       <div className="flex-1 min-w-0">
         <p className="font-medium text-sm truncate">{exercise.name}</p>
         <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
-          <span className="text-xs text-zinc-500">{translateExerciseTypeShort(exercise.type)}</span>
           {getExerciseTags(exercise)
             .slice(0, 1)
             .map((tag) => (
@@ -215,7 +210,7 @@ function ExercisePickerItem({
           size="icon"
           variant="secondary"
           onClick={onAdd}
-          className="h-8 w-8 rounded-lg bg-zinc-800 hover:bg-primary hover:text-primary-foreground border-zinc-700 transition-all"
+          className="h-8 w-8 rounded-lg bg-surface-light hover:bg-primary hover:text-primary-foreground border-border transition-all"
         >
           <Plus className="h-4 w-4" />
         </Button>
@@ -225,33 +220,30 @@ function ExercisePickerItem({
 }
 
 // ============================================================
-// SORTABLE EXERCISE CARD - INLINE PARAMS EDITING
+// SORTABLE EXERCISE CARD - uses shared ExerciseExecutionCard
 // ============================================================
 
-const EXERCISE_SIDE_OPTIONS = [
-  { value: 'both', label: 'Obie strony' },
-  { value: 'left', label: 'Lewa' },
-  { value: 'right', label: 'Prawa' },
-  { value: 'alternating', label: 'Naprzemiennie' },
-  { value: 'none', label: 'Nie dotyczy' },
-];
-
-const LOAD_TYPE_OPTIONS = [
-  { value: '', label: 'Brak' },
-  { value: 'weight', label: 'Ciężar' },
-  { value: 'band', label: 'Guma' },
-  { value: 'bodyweight', label: 'Masa ciała' },
-  { value: 'percentage', label: 'Procent' },
-  { value: 'rpe', label: 'RPE' },
-  { value: 'other', label: 'Inne' },
-];
-
-const LOAD_UNIT_OPTIONS = [
-  { value: 'kg', label: 'kg' },
-  { value: 'lbs', label: 'lbs' },
-  { value: '%', label: '%' },
-  { value: 'rpe', label: 'RPE' },
-];
+function applyCardPatchToParams(
+  patch: Partial<ExerciseExecutionCardData>,
+  onUpdateParams: (field: keyof ExerciseParams, value: number | string) => void
+): void {
+  if (patch.sets !== undefined) onUpdateParams('sets', patch.sets);
+  if (patch.reps !== undefined) onUpdateParams('reps', patch.reps);
+  if (patch.duration !== undefined) onUpdateParams('duration', patch.duration);
+  if (patch.executionTime !== undefined) onUpdateParams('executionTime', patch.executionTime);
+  if (patch.restSets !== undefined) onUpdateParams('restSets', patch.restSets);
+  if (patch.restReps !== undefined) onUpdateParams('restReps', patch.restReps ?? 0);
+  if (patch.preparationTime !== undefined) onUpdateParams('preparationTime', patch.preparationTime);
+  if (patch.tempo !== undefined) onUpdateParams('tempo', patch.tempo);
+  if (patch.notes !== undefined) onUpdateParams('notes', patch.notes);
+  if (patch.customName !== undefined) onUpdateParams('customName', patch.customName);
+  if (patch.customDescription !== undefined) onUpdateParams('customDescription', patch.customDescription);
+  if (patch.side !== undefined) onUpdateParams('exerciseSide', patch.side);
+  if (patch.loadKg !== undefined) {
+    onUpdateParams('loadValue', patch.loadKg ?? 0);
+    onUpdateParams('loadUnit', 'kg');
+  }
+}
 
 function SortableExerciseCard({
   instanceId,
@@ -272,315 +264,54 @@ function SortableExerciseCard({
   onPreview: () => void;
   testIdPrefix?: string;
 }) {
-  const [showTuning, setShowTuning] = useState(false);
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: instanceId,
   });
 
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-  };
+  const cardData = useMemo(
+    () => fromBuilderExercise(exercise, params),
+    [exercise, params]
+  );
 
-  const imageUrl = getMediaUrl(exercise.imageUrl || exercise.images?.[0]);
-  const isTimeType = exercise.type === 'time';
-
-  // Check if there are any custom settings
-  const hasSideSet = params.exerciseSide !== 'both' && params.exerciseSide !== 'none';
-  const hasCustomSettings = params.customName || params.notes || hasSideSet || params.loadType;
+  const handleChange = useCallback(
+    (patch: Partial<ExerciseExecutionCardData>) => {
+      applyCardPatchToParams(patch, onUpdateParams);
+    },
+    [onUpdateParams]
+  );
 
   return (
     <div
       ref={setNodeRef}
-      style={style}
+      style={{
+        transform: CSS.Transform.toString(transform),
+        transition,
+      }}
       className={cn(
-        'rounded-lg bg-surface-light/50 overflow-hidden transition-all',
-        isDragging && 'shadow-xl shadow-primary/20 opacity-90 z-50 ring-2 ring-primary/50'
+        'min-w-0 transition-all',
+        isDragging && 'shadow-lg opacity-70 z-50'
       )}
       data-testid={testIdPrefix ? `${testIdPrefix}-exercise-${exercise.id}` : undefined}
     >
-      {/* Main Row */}
-      <div className="p-3 flex items-center gap-3">
-        {/* Drag Handle */}
-        <button
-          {...attributes}
-          {...listeners}
-          className="p-1 rounded hover:bg-surface-light cursor-grab active:cursor-grabbing touch-none shrink-0"
-        >
-          <GripVertical className="h-4 w-4 text-muted-foreground/50" />
-        </button>
-
-        {/* Index */}
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg text-xs font-semibold shrink-0 bg-surface text-muted-foreground">
-          {index + 1}
-        </div>
-
-        {/* Thumbnail */}
-        <div className="h-10 w-10 rounded-lg overflow-hidden shrink-0 relative group">
-          {imageUrl ? (
-            <img src={imageUrl} alt="" className="h-full w-full object-cover" loading="lazy" />
-          ) : (
-            <ImagePlaceholder type="exercise" iconClassName="h-4 w-4" />
-          )}
+      <ExerciseExecutionCard
+        mode="edit"
+        exercise={cardData}
+        onChange={handleChange}
+        onRemove={onRemove}
+        onPreview={onPreview}
+        dragHandle={
           <button
             type="button"
-            onClick={onPreview}
-            className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
+            {...attributes}
+            {...listeners}
+            className="p-1 rounded hover:bg-surface-light cursor-grab active:cursor-grabbing touch-none shrink-0"
           >
-            <Eye className="h-3 w-3 text-white" />
+            <GripVertical className="h-4 w-4 text-muted-foreground/50" />
           </button>
-        </div>
-
-        {/* Name */}
-        <div className="flex-1 min-w-0">
-          <p className="font-medium text-sm line-clamp-2" title={exercise.name}>
-            {params.customName || exercise.name}
-          </p>
-          {hasCustomSettings && (
-            <div className="flex items-center gap-1 mt-0.5">
-              {hasSideSet && (
-                <span className="text-[9px] px-1.5 py-0.5 rounded bg-surface text-muted-foreground">
-                  {EXERCISE_SIDE_OPTIONS.find((o) => o.value === params.exerciseSide)?.label}
-                </span>
-              )}
-              {params.loadType && (
-                <span className="text-[9px] px-1.5 py-0.5 rounded bg-surface text-muted-foreground">
-                  {params.loadValue
-                    ? `${params.loadValue}${params.loadUnit || ''}`
-                    : LOAD_TYPE_OPTIONS.find((o) => o.value === params.loadType)?.label}
-                </span>
-              )}
-              {params.notes && (
-                <span className="text-[9px] px-1.5 py-0.5 rounded bg-surface text-muted-foreground">Notatka</span>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* Serie × Reps/Time - Stepper Controls */}
-        <div className="flex items-center gap-2 shrink-0">
-          <LabeledStepper value={params.sets ?? 3} onChange={(v) => onUpdateParams('sets', v)} min={1} label="Serie" />
-          <LabeledStepper
-            value={isTimeType ? (params.duration ?? 30) : (params.reps ?? 10)}
-            onChange={(v) => onUpdateParams(isTimeType ? 'duration' : 'reps', v)}
-            min={1}
-            label={isTimeType ? 'Czas serii' : 'Powt.'}
-            suffix={isTimeType ? 's' : undefined}
-          />
-          {(params.executionTime ?? 0) > 0 && (
-            <LabeledStepper
-              value={params.executionTime ?? 0}
-              onChange={(v) => onUpdateParams('executionTime', v)}
-              min={0}
-              label="Czas powt."
-              suffix="s"
-            />
-          )}
-        </div>
-
-        {/* Tune Button */}
-        <button
-          type="button"
-          onClick={() => setShowTuning(!showTuning)}
-          className={cn(
-            'p-1.5 rounded-lg transition-colors shrink-0',
-            showTuning
-              ? 'bg-primary/20 text-primary'
-              : hasCustomSettings
-                ? 'bg-surface text-muted-foreground'
-                : 'hover:bg-surface-light text-muted-foreground/50'
-          )}
-          title="Dostrojenie"
-        >
-          <Sliders className="h-4 w-4" />
-        </button>
-
-        {/* Remove Button */}
-        <button
-          type="button"
-          onClick={onRemove}
-          className="p-1.5 rounded-lg hover:bg-destructive/20 text-muted-foreground/50 hover:text-destructive transition-colors shrink-0"
-        >
-          <X className="h-4 w-4" />
-        </button>
-      </div>
-
-      {/* Tuning Panel - Expandable */}
-      <Collapsible open={showTuning} onOpenChange={setShowTuning}>
-        <CollapsibleContent>
-          <div className="px-4 pb-4 pt-3 bg-surface/50 border-t border-border/30 space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              {/* Side Selector */}
-              <div>
-                <label className="text-[10px] text-zinc-500 uppercase font-bold tracking-wider block mb-1.5">
-                  Strona ciała
-                </label>
-                <select
-                  value={params.exerciseSide ?? 'both'}
-                  onChange={(e) => onUpdateParams('exerciseSide', e.target.value)}
-                  className="h-9 w-full rounded-lg border border-zinc-700 bg-zinc-800/50 px-3 text-sm focus:border-primary/50 outline-none transition-colors"
-                >
-                  {EXERCISE_SIDE_OPTIONS.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Custom Name */}
-              <div>
-                <label className="text-[10px] text-zinc-500 uppercase font-bold tracking-wider block mb-1.5">
-                  Własna nazwa
-                </label>
-                <Input
-                  value={params.customName ?? ''}
-                  onChange={(e) => onUpdateParams('customName', e.target.value)}
-                  placeholder={exercise.name}
-                  className="h-9 text-sm bg-zinc-800/50 border-zinc-700 focus:border-primary/50"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              {/* Rest between sets */}
-              <div>
-                <label className="text-[10px] text-zinc-500 uppercase font-bold tracking-wider block mb-1.5">
-                  Przerwa między seriami (s)
-                </label>
-                <Input
-                  type="number"
-                  value={params.restSets ?? ''}
-                  onChange={(e) => onUpdateParams('restSets', Number.parseInt(e.target.value) || 0)}
-                  className="h-9 text-sm bg-zinc-800/50 border-zinc-700"
-                />
-              </div>
-
-              {/* Rest between reps */}
-              <div>
-                <label className="text-[10px] text-zinc-500 uppercase font-bold tracking-wider block mb-1.5">
-                  Przerwa między powtórzeniami (s)
-                </label>
-                <Input
-                  type="number"
-                  value={params.restReps ?? ''}
-                  onChange={(e) => onUpdateParams('restReps', Number.parseInt(e.target.value) || 0)}
-                  className="h-9 text-sm bg-zinc-800/50 border-zinc-700"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              {/* Execution time */}
-              <div>
-                <label className="text-[10px] text-zinc-500 uppercase font-bold tracking-wider block mb-1.5">
-                  Czas wykonania powtórzenia (s)
-                </label>
-                <Input
-                  type="number"
-                  value={params.executionTime ?? ''}
-                  onChange={(e) => onUpdateParams('executionTime', Number.parseInt(e.target.value) || 0)}
-                  className="h-9 text-sm bg-zinc-800/50 border-zinc-700"
-                />
-              </div>
-
-              {/* Tempo */}
-              <div>
-                <label className="text-[10px] text-zinc-500 uppercase font-bold tracking-wider block mb-1.5">
-                  Tempo
-                </label>
-                <Input
-                  value={params.tempo ?? ''}
-                  onChange={(e) => onUpdateParams('tempo', e.target.value)}
-                  placeholder="np. 2-1-2-0 (ekscentryka-pauza-koncentryka-pauza)"
-                  className="h-9 text-sm bg-zinc-800/50 border-zinc-700 focus:border-primary/50"
-                />
-              </div>
-            </div>
-
-            {/* Load settings */}
-            <div className="grid grid-cols-3 gap-4">
-              {/* Load Type */}
-              <div>
-                <label className="text-[10px] text-zinc-500 uppercase font-bold tracking-wider block mb-1.5">
-                  Typ obciążenia
-                </label>
-                <select
-                  value={params.loadType ?? ''}
-                  onChange={(e) => onUpdateParams('loadType', e.target.value)}
-                  className="h-9 w-full rounded-lg border border-zinc-700 bg-zinc-800/50 px-3 text-sm focus:border-primary/50 outline-none transition-colors"
-                >
-                  {LOAD_TYPE_OPTIONS.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Load Value */}
-              <div>
-                <label className="text-[10px] text-zinc-500 uppercase font-bold tracking-wider block mb-1.5">
-                  Wartość
-                </label>
-                <Input
-                  type="number"
-                  value={params.loadValue ?? ''}
-                  onChange={(e) => onUpdateParams('loadValue', Number.parseFloat(e.target.value) || 0)}
-                  placeholder="0"
-                  className="h-9 text-sm bg-zinc-800/50 border-zinc-700"
-                />
-              </div>
-
-              {/* Load Unit */}
-              <div>
-                <label className="text-[10px] text-zinc-500 uppercase font-bold tracking-wider block mb-1.5">
-                  Jednostka
-                </label>
-                <select
-                  value={params.loadUnit ?? 'kg'}
-                  onChange={(e) => onUpdateParams('loadUnit', e.target.value)}
-                  className="h-9 w-full rounded-lg border border-zinc-700 bg-zinc-800/50 px-3 text-sm focus:border-primary/50 outline-none transition-colors"
-                >
-                  {LOAD_UNIT_OPTIONS.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            {/* Load Text */}
-            {params.loadType === 'other' && (
-              <div>
-                <label className="text-[10px] text-zinc-500 uppercase font-bold tracking-wider block mb-1.5">
-                  Opis obciążenia
-                </label>
-                <Input
-                  value={params.loadText ?? ''}
-                  onChange={(e) => onUpdateParams('loadText', e.target.value)}
-                  placeholder="np. lekka guma, średni opór..."
-                  className="h-9 text-sm bg-zinc-800/50 border-zinc-700 focus:border-primary/50"
-                />
-              </div>
-            )}
-
-            {/* Notes */}
-            <div>
-              <label className="text-[10px] text-zinc-500 uppercase font-bold tracking-wider block mb-1.5">
-                Notatka dla pacjenta
-              </label>
-              <Textarea
-                value={params.notes ?? ''}
-                onChange={(e) => onUpdateParams('notes', e.target.value)}
-                placeholder="Wskazówki techniczne, uwagi do wykonania..."
-                className="min-h-[70px] text-sm resize-none bg-zinc-800/50 border-zinc-700 focus:border-primary/50"
-              />
-            </div>
-          </div>
-        </CollapsibleContent>
-      </Collapsible>
+        }
+        index={index + 1}
+        testIdPrefix={testIdPrefix ?? 'set-builder'}
+      />
     </div>
   );
 }
@@ -977,29 +708,29 @@ export function ExerciseSetBuilder({
         </div>
 
         {/* RIGHT COLUMN - Canvas/Set (60%) */}
-        <div className="hidden lg:flex lg:flex-1 flex-col bg-zinc-900/30 overflow-hidden min-w-0">
+        <div className="hidden lg:flex lg:flex-1 flex-col bg-surface/30 overflow-hidden min-w-0">
           {/* Header with Hero Duration */}
-          <div className="px-4 py-3 border-b border-zinc-800 flex items-center justify-between gap-2">
-            <div className="flex items-center gap-3">
-              <h3 className="font-semibold text-sm">W zestawie</h3>
-              <Badge variant="secondary" className="h-5 px-1.5 text-[10px] bg-zinc-800 text-zinc-400 border-none">
+          <div className="px-4 py-3 border-b border-border flex items-center justify-between gap-2 shrink-0">
+            <div className="flex items-center gap-3 min-w-0">
+              <h3 className="font-semibold text-sm text-foreground">W zestawie</h3>
+              <Badge variant="secondary" className="h-5 px-1.5 text-[10px] bg-surface-light text-muted-foreground border-border shrink-0">
                 {selectedInstances.length}
               </Badge>
 
               {/* Hero Duration Badge */}
               {estimatedTime > 0 && (
-                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-950/30 border border-emerald-900/50">
-                  <Timer className="h-3.5 w-3.5 text-emerald-400" />
-                  <span className="text-sm font-bold text-emerald-400">~{estimatedTime} min</span>
+                <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-primary/10 border border-primary/20 shrink-0">
+                  <Timer className="h-3.5 w-3.5 text-primary" />
+                  <span className="text-sm font-bold text-primary">~{estimatedTime} min</span>
                 </div>
               )}
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 shrink-0">
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-7 text-[10px] text-zinc-500 hover:text-destructive"
+                className="h-7 text-[10px] text-muted-foreground hover:text-destructive"
                 onClick={() => {
                   onSelectedInstancesChange([]);
                   onExerciseParamsChange(new Map());
@@ -1012,14 +743,14 @@ export function ExerciseSetBuilder({
           </div>
 
           {/* Exercise list with inline editing */}
-          <div className="flex-1 overflow-y-auto overflow-x-hidden bg-zinc-950/20">
+          <div className="flex-1 overflow-y-auto overflow-x-hidden bg-surface/20 min-h-0">
             {selectedInstancesData.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full text-center px-6">
-                <div className="h-16 w-16 rounded-full bg-zinc-900 flex items-center justify-center mb-4 border border-zinc-800">
-                  <Plus className="h-6 w-6 text-zinc-700" />
+                <div className="h-16 w-16 rounded-full bg-surface-light flex items-center justify-center mb-4 border border-border">
+                  <Plus className="h-6 w-6 text-muted-foreground" />
                 </div>
-                <p className="text-sm font-medium text-zinc-500">Twój zestaw jest pusty</p>
-                <p className="text-xs text-zinc-600 mt-2 max-w-[200px]">
+                <p className="text-sm font-medium text-muted-foreground">Twój zestaw jest pusty</p>
+                <p className="text-xs text-muted-foreground/80 mt-2 max-w-[200px]">
                   Wybierz ćwiczenia z biblioteki po lewej, aby dodać je do treningu.
                 </p>
               </div>

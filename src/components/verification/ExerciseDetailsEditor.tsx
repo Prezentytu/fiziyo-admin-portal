@@ -4,7 +4,6 @@ import { useState } from 'react';
 import {
   Dumbbell,
   Timer,
-  RotateCcw,
   Image as ImageIcon,
   Video,
   Plus,
@@ -47,12 +46,6 @@ interface ExerciseDetailsEditorProps {
   className?: string;
 }
 
-const EXERCISE_TYPES = [
-  { value: 'reps', label: 'Powtórzenia', icon: RotateCcw },
-  { value: 'time', label: 'Czasowe', icon: Timer },
-  { value: 'hold', label: 'Izometryczne', icon: Dumbbell },
-];
-
 const EXERCISE_SIDES = [
   { value: 'none', label: 'Brak strony' },
   { value: 'left', label: 'Lewa strona' },
@@ -65,8 +58,8 @@ export function ExerciseDetailsEditor({
   exercise,
   name,
   onNameChange,
-  exerciseType,
-  onTypeChange,
+  exerciseType: _exerciseType,
+  onTypeChange: _onTypeChange,
   exerciseSide,
   onSideChange,
   sets,
@@ -118,28 +111,9 @@ export function ExerciseDetailsEditor({
           />
         </div>
 
-        {/* Type & Side */}
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label>Typ ćwiczenia</Label>
-            <Select value={exerciseType} onValueChange={onTypeChange}>
-              <SelectTrigger>
-                <SelectValue placeholder="Wybierz typ" />
-              </SelectTrigger>
-              <SelectContent>
-                {EXERCISE_TYPES.map((type) => (
-                  <SelectItem key={type.value} value={type.value}>
-                    <div className="flex items-center gap-2">
-                      <type.icon className="h-4 w-4" />
-                      {type.label}
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
+        {/* Side */}
+        <div className="grid grid-cols-1 gap-4">
+          <div className="space-y-2 max-w-xs">
             <Label>Strona ciała</Label>
             <Select value={exerciseSide} onValueChange={onSideChange}>
               <SelectTrigger>
