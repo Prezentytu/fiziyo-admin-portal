@@ -26,6 +26,7 @@ import { GET_USER_BY_CLERK_ID_QUERY, GET_USER_ORGANIZATIONS_QUERY } from '@/grap
 import { GET_ORGANIZATION_CLINICS_QUERY } from '@/graphql/queries/clinics.queries';
 import { GET_CURRENT_BILLING_STATUS_QUERY } from '@/graphql/queries/billing.queries';
 import { useOrganization } from '@/contexts/OrganizationContext';
+import { DashboardRouteLoading } from '@/components/layout/DashboardRouteLoading';
 import type {
   UserByClerkIdResponse,
   OrganizationByIdResponse,
@@ -72,7 +73,7 @@ const STAFF_ROLES = new Set(['owner', 'admin', 'therapist', 'member']);
 
 export default function OrganizationPage() {
   const { user } = useUser();
-  const { currentOrganization } = useOrganization();
+  const { currentOrganization, isLoading: orgContextLoading } = useOrganization();
   const [activeTab, setActiveTab] = useState('team');
   const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
   const [isClinicDialogOpen, setIsClinicDialogOpen] = useState(false);
@@ -219,6 +220,14 @@ export default function OrganizationPage() {
     setAssigningClinic(null);
   };
 
+  if (orgContextLoading && !organizationId) {
+    return (
+      <div className="space-y-6">
+        <DashboardRouteLoading />
+      </div>
+    );
+  }
+
   if (orgLoading) {
     return (
       <div className="space-y-6">
@@ -254,7 +263,8 @@ export default function OrganizationPage() {
               <TabsList className="flex flex-col h-auto bg-transparent p-0 items-stretch gap-1">
                 <TabsTrigger
                   value="team"
-                  className="justify-start gap-3 px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-accent/30 data-[state=active]:bg-accent/50 data-[state=active]:text-foreground data-[state=active]:font-medium data-[state=active]:shadow-none transition-all rounded-lg"
+                  activeVariant="subtle"
+                  className="justify-start gap-3 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-all hover:bg-accent/30 hover:text-foreground data-[state=active]:font-medium"
                   data-testid="org-tab-team"
                 >
                   <Users className="h-4 w-4" />
@@ -264,7 +274,8 @@ export default function OrganizationPage() {
 
                 <TabsTrigger
                   value="clinics"
-                  className="justify-start gap-3 px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-accent/30 data-[state=active]:bg-accent/50 data-[state=active]:text-foreground data-[state=active]:font-medium data-[state=active]:shadow-none transition-all rounded-lg"
+                  activeVariant="subtle"
+                  className="justify-start gap-3 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-all hover:bg-accent/30 hover:text-foreground data-[state=active]:font-medium"
                   data-testid="org-tab-clinics"
                 >
                   <MapPin className="h-4 w-4" />
@@ -275,7 +286,8 @@ export default function OrganizationPage() {
                 {canEdit && (
                   <TabsTrigger
                     value="invitations"
-                    className="justify-start gap-3 px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-accent/30 data-[state=active]:bg-accent/50 data-[state=active]:text-foreground data-[state=active]:font-medium data-[state=active]:shadow-none transition-all rounded-lg"
+                    activeVariant="subtle"
+                    className="justify-start gap-3 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-all hover:bg-accent/30 hover:text-foreground data-[state=active]:font-medium"
                     data-testid="org-tab-invitations"
                   >
                     <Mail className="h-4 w-4" />

@@ -22,7 +22,7 @@ import type { UserByClerkIdResponse, UserOrganizationsResponse, OrganizationById
 
 export default function SettingsPage() {
   const { user: clerkUser } = useUser();
-  const { currentOrganization } = useOrganization();
+  const { currentOrganization, isLoading: orgContextLoading } = useOrganization();
   const { canManageOrganization } = useRoleAccess();
   const organizationId = currentOrganization?.organizationId;
   const [activeTab, setActiveTab] = useState('profile');
@@ -65,7 +65,7 @@ export default function SettingsPage() {
     .find((o: { organizationId: string; role: string }) => o.organizationId === organizationId)
     ?.role?.toLowerCase();
 
-  const isLoading = userLoading || !clerkUser?.id;
+  const isLoading = userLoading || !clerkUser?.id || orgContextLoading;
 
   if (isLoading) {
     return (
@@ -125,7 +125,8 @@ export default function SettingsPage() {
             <TabsList className="flex flex-col h-auto bg-transparent p-0 items-stretch gap-1">
               <TabsTrigger
                 value="profile"
-                className="justify-start gap-3 px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-accent/30 data-[state=active]:bg-accent/50 data-[state=active]:text-foreground data-[state=active]:font-medium data-[state=active]:shadow-none transition-all rounded-lg"
+                activeVariant="subtle"
+                className="justify-start gap-3 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-all hover:bg-accent/30 hover:text-foreground data-[state=active]:font-medium"
                 data-testid="settings-tab-profile"
               >
                 <User className="h-4 w-4" />
@@ -135,7 +136,8 @@ export default function SettingsPage() {
               {canManageOrganization && (
                 <TabsTrigger
                   value="organization"
-                  className="justify-start gap-3 px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-accent/30 data-[state=active]:bg-accent/50 data-[state=active]:text-foreground data-[state=active]:font-medium data-[state=active]:shadow-none transition-all rounded-lg"
+                  activeVariant="subtle"
+                  className="justify-start gap-3 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-all hover:bg-accent/30 hover:text-foreground data-[state=active]:font-medium"
                   data-testid="settings-tab-organization"
                 >
                   <Settings className="h-4 w-4" />
@@ -145,7 +147,8 @@ export default function SettingsPage() {
 
               <TabsTrigger
                 value="organizations"
-                className="justify-start gap-3 px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-accent/30 data-[state=active]:bg-accent/50 data-[state=active]:text-foreground data-[state=active]:font-medium data-[state=active]:shadow-none transition-all rounded-lg"
+                activeVariant="subtle"
+                className="justify-start gap-3 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-all hover:bg-accent/30 hover:text-foreground data-[state=active]:font-medium"
                 data-testid="settings-tab-organizations"
               >
                 <Building2 className="h-4 w-4" />
@@ -155,7 +158,8 @@ export default function SettingsPage() {
 
               <TabsTrigger
                 value="accessibility"
-                className="justify-start gap-3 px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-accent/30 data-[state=active]:bg-accent/50 data-[state=active]:text-foreground data-[state=active]:font-medium data-[state=active]:shadow-none transition-all rounded-lg"
+                activeVariant="subtle"
+                className="justify-start gap-3 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-all hover:bg-accent/30 hover:text-foreground data-[state=active]:font-medium"
                 data-testid="settings-tab-accessibility"
               >
                 <Eye className="h-4 w-4" />

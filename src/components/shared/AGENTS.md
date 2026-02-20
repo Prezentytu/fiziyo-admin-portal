@@ -62,3 +62,11 @@ import { ExerciseSetBuilder } from '@/components/shared';
 - Każdy interaktywny element: `data-testid`
 - Dla pasków/kafelków ćwiczeń obowiązuje `ExerciseExecutionCard` + adaptery z `shared/exercise`
 - Nie wprowadzaj terminów „ćwiczenie czasowe/powtórzeniowe” w UI; używaj modelu `executionTime` i komunikatów o timerze
+
+## Standaryzacja active / selected
+
+- Używaj jednego contractu stanów `active/selected` przez wspólne komponenty (`@/components/ui/*`) zamiast lokalnych klas `data-[state=active]` w feature'ach
+- Dla zakładek używaj wariantów `TabsTrigger` (`activeVariant`: `surface`, `subtle`, `accent`, `success`, `warning`, `destructive`)
+- Nawigacja (sidebar, pionowe menu sekcyjne) używa stylu subtelnego (`subtle`) — aktywny element ma być czytelny, ale nie dominujący
+- Główne CTA (hero actions) muszą mieć wyższy priorytet wizualny niż stany `active` nawigacji i filtrów
+- Jeśli potrzebny jest nowy styl zaznaczenia, dodaj go centralnie w UI primitive, nie jako ad-hoc wyjątek na pojedynczej stronie

@@ -5,6 +5,7 @@ import { useAuth } from '@clerk/nextjs';
 import { useRouter, usePathname } from 'next/navigation';
 import { getBackendToken, clearBackendToken } from '@/lib/tokenCache';
 import { tokenExchangeService } from '@/services/tokenExchangeService';
+import { DashboardRouteLoading } from '@/components/layout/DashboardRouteLoading';
 
 interface OrganizationGuardProps {
   children: React.ReactNode;
@@ -13,8 +14,9 @@ interface OrganizationGuardProps {
 /**
  * Guard component sprawdzający czy użytkownik ma organizację w backendzie.
  * Jeśli token exchange zwróci błąd o braku organizacji, przekieruje na /onboarding.
+ * Zawsze renderuje widoczny fallback (nigdy null), żeby uniknąć pustego ekranu.
  */
-export function OrganizationGuard({ children }: OrganizationGuardProps) {
+export function OrganizationGuard({ children }: Readonly<OrganizationGuardProps>) {
   const { getToken, isLoaded, isSignedIn } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
@@ -80,18 +82,26 @@ export function OrganizationGuard({ children }: OrganizationGuardProps) {
     checkOrganization();
   }, [isLoaded, isSignedIn, getToken, router, pathname]);
 
-  // Loading state
+  // Loading state – spójny skeleton zamiast surowego spinnera
   if (isChecking) {
     return (
-      <div className="flex h-full items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+      <div className="min-h-screen w-full bg-background" data-testid="organization-guard-loading">
+        <div className="p-4 lg:p-6">
+          <DashboardRouteLoading />
+        </div>
       </div>
     );
   }
 
-  // Jeśli nie ma organizacji i nie jesteśmy na onboardingu - nie renderuj
+  // Redirect w toku (hasOrganization === false) – pokazuj fallback zamiast null
   if (hasOrganization === false && pathname !== '/onboarding') {
-    return null;
+    return (
+      <div className="min-h-screen w-full bg-background" data-testid="organization-guard-redirecting">
+        <div className="p-4 lg:p-6">
+          <DashboardRouteLoading />
+        </div>
+      </div>
+    );
   }
 
   return <>{children}</>;

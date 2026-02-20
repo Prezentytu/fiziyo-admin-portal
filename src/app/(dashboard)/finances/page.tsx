@@ -144,21 +144,24 @@ export default function FinancesPage() {
           <TabsList className="bg-zinc-900/50 border border-white/5 p-1">
             <TabsTrigger
               value="chart"
-              className="gap-2 data-[state=active]:bg-emerald-500/20 data-[state=active]:text-emerald-400"
+              activeVariant="success"
+              className="gap-2"
             >
               <BarChart3 className="h-4 w-4" />
               Wykres
             </TabsTrigger>
             <TabsTrigger
               value="history"
-              className="gap-2 data-[state=active]:bg-emerald-500/20 data-[state=active]:text-emerald-400"
+              activeVariant="success"
+              className="gap-2"
             >
               <History className="h-4 w-4" />
               Historia
             </TabsTrigger>
             <TabsTrigger
               value="payouts"
-              className="gap-2 data-[state=active]:bg-emerald-500/20 data-[state=active]:text-emerald-400"
+              activeVariant="success"
+              className="gap-2"
             >
               <Settings className="h-4 w-4" />
               Ustawienia Wypłat

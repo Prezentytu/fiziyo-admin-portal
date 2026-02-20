@@ -22,6 +22,7 @@ import {
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { OrganizationSwitcher } from './OrganizationSwitcher';
 import { UserProfileFooter } from './UserProfileFooter';
+import { NAV_ITEM_ACTIVE, NAV_ITEM_BASE, NAV_ITEM_INACTIVE } from './navigationItemStyles';
 import { Logo } from '@/components/shared/Logo';
 import { useRoleAccess } from '@/hooks/useRoleAccess';
 import { useSystemRole } from '@/hooks/useSystemRole';
@@ -203,11 +204,9 @@ export function Sidebar({ isCollapsed, onToggleCollapse }: SidebarProps) {
                       href={item.href}
                       data-testid={item.testId}
                       className={cn(
-                        'group relative flex items-center rounded-xl text-sm font-medium transition-all duration-200',
+                        NAV_ITEM_BASE,
                         isCollapsed ? 'h-10 w-10 justify-center' : 'gap-3 px-3 py-2.5',
-                        active
-                          ? 'border border-primary/20 bg-primary/10 text-foreground shadow-sm shadow-primary/10'
-                          : 'text-muted-foreground hover:bg-surface-light hover:text-foreground'
+                        active ? NAV_ITEM_ACTIVE : NAV_ITEM_INACTIVE
                       )}
                     >
                       <div className="relative">

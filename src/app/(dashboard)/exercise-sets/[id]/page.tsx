@@ -11,7 +11,6 @@ import {
   Users,
   Dumbbell,
   Plus,
-  X,
   Calendar,
   Clock,
   FolderKanban,
@@ -59,11 +58,13 @@ import {
 import {
   DELETE_EXERCISE_SET_MUTATION,
   REMOVE_EXERCISE_FROM_SET_MUTATION,
+  UPDATE_EXERCISE_IN_SET_MUTATION,
   UPDATE_EXERCISE_SET_ASSIGNMENT_MUTATION,
   REMOVE_EXERCISE_SET_ASSIGNMENT_MUTATION,
 } from '@/graphql/mutations/exercises.mutations';
 import { GET_USER_BY_CLERK_ID_QUERY } from '@/graphql/queries/users.queries';
 import { useOrganization } from '@/contexts/OrganizationContext';
+import { DashboardRouteLoading } from '@/components/layout/DashboardRouteLoading';
 
 interface SetDetailPageProps {
   params: Promise<{ id: string }>;
@@ -79,6 +80,8 @@ interface ExerciseMapping {
   executionTime?: number;
   restSets?: number;
   restReps?: number;
+  preparationTime?: number;
+  tempo?: string;
   notes?: string;
   customName?: string;
   customDescription?: string;
@@ -148,7 +151,7 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
   const { id } = use(params);
   const router = useRouter();
   const { user } = useUser();
-  const { currentOrganization } = useOrganization();
+  const { currentOrganization, isLoading: orgContextLoading } = useOrganization();
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isAddExerciseDialogOpen, setIsAddExerciseDialogOpen] = useState(false);
@@ -157,6 +160,7 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
   const [editingExercise, setEditingExercise] = useState<ExerciseMapping | null>(null);
   const [removingExerciseId, setRemovingExerciseId] = useState<string | null>(null);
   const [removingAssignment, setRemovingAssignment] = useState<PatientAssignmentInSet | null>(null);
+  const [localExercisePatches, setLocalExercisePatches] = useState<Record<string, Partial<ExerciseMapping>>>({});
 
   // Get organization ID from context (changes when user switches organization)
   const organizationId = currentOrganization?.organizationId;
@@ -188,6 +192,7 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
   });
 
   const [removeExercise, { loading: removingExercise }] = useMutation(REMOVE_EXERCISE_FROM_SET_MUTATION);
+  const [updateExerciseInSet] = useMutation(UPDATE_EXERCISE_IN_SET_MUTATION);
 
   const [updateAssignment, { loading: updatingAssignment }] = useMutation(UPDATE_EXERCISE_SET_ASSIGNMENT_MUTATION);
 
@@ -196,6 +201,14 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
   );
 
   const exerciseSet = (data as ExerciseSetData | undefined)?.exerciseSetById;
+
+  if (orgContextLoading && !organizationId) {
+    return (
+      <div className="space-y-6">
+        <DashboardRouteLoading />
+      </div>
+    );
+  }
 
   const handleDelete = async () => {
     try {
@@ -243,6 +256,74 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
     } catch (err) {
       console.error('Błąd zmiany statusu:', err);
       toast.error('Nie udało się zmienić statusu');
+    }
+  };
+
+  const handleQuickExerciseUpdate = async (
+    mapping: ExerciseMapping,
+    patch: Partial<ExerciseExecutionCardData>
+  ) => {
+    const mappingPatch: Partial<ExerciseMapping> = {};
+    if (patch.sets !== undefined) mappingPatch.sets = patch.sets;
+    if (patch.reps !== undefined) mappingPatch.reps = patch.reps;
+    if (patch.duration !== undefined) mappingPatch.duration = patch.duration;
+    if (patch.executionTime !== undefined) mappingPatch.executionTime = patch.executionTime;
+    if (patch.restSets !== undefined) mappingPatch.restSets = patch.restSets;
+    if (patch.restReps !== undefined) mappingPatch.restReps = patch.restReps;
+    if (patch.preparationTime !== undefined) mappingPatch.preparationTime = patch.preparationTime;
+    if (patch.tempo !== undefined) mappingPatch.tempo = patch.tempo;
+    if (patch.notes !== undefined) mappingPatch.notes = patch.notes;
+    if (patch.customName !== undefined) mappingPatch.customName = patch.customName;
+    if (patch.customDescription !== undefined) mappingPatch.customDescription = patch.customDescription;
+
+    if (Object.keys(mappingPatch).length === 0) return;
+    const previousPatch = localExercisePatches[mapping.id];
+    const mergedMapping: ExerciseMapping = {
+      ...mapping,
+      ...(previousPatch ?? {}),
+      ...mappingPatch,
+    };
+
+    // Optimistic UI update - no full-page refetch/flicker.
+    setLocalExercisePatches((prev) => ({
+      ...prev,
+      [mapping.id]: {
+        ...prev[mapping.id],
+        ...mappingPatch,
+      },
+    }));
+
+    try {
+      await updateExerciseInSet({
+        variables: {
+          exerciseId: mapping.exerciseId,
+          exerciseSetId: id,
+          sets: mergedMapping.sets ?? null,
+          reps: mergedMapping.reps ?? null,
+          duration: mergedMapping.duration ?? null,
+          restSets: mergedMapping.restSets ?? null,
+          restReps: mergedMapping.restReps ?? null,
+          preparationTime: mergedMapping.preparationTime ?? null,
+          executionTime: mergedMapping.executionTime ?? null,
+          notes: mergedMapping.notes ?? null,
+          customName: mergedMapping.customName ?? null,
+          customDescription: mergedMapping.customDescription ?? null,
+          tempo: mergedMapping.tempo ?? null,
+        },
+      });
+    } catch (err) {
+      console.error('Błąd szybkiej aktualizacji ćwiczenia:', err);
+      toast.error('Nie udało się zapisać zmian ćwiczenia');
+      // Rollback optimistic patch for this mapping.
+      setLocalExercisePatches((prev) => {
+        const next = { ...prev };
+        if (previousPatch) {
+          next[mapping.id] = previousPatch;
+        } else {
+          delete next[mapping.id];
+        }
+        return next;
+      });
     }
   };
 
@@ -485,49 +566,25 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
             {[...exercises]
               .sort((a, b) => (a.order || 0) - (b.order || 0))
               .map((mapping) => {
-                const cardData = toExecutionCardData(mapping);
+                const patchedMapping: ExerciseMapping = {
+                  ...mapping,
+                  ...(localExercisePatches[mapping.id] ?? {}),
+                };
+                const cardData = toExecutionCardData(patchedMapping);
                 return (
-                  <div key={mapping.id} className="group relative">
-                    <button
-                      type="button"
-                      className="w-full text-left"
-                      onClick={() => setEditingExercise(mapping)}
-                      data-testid={`set-detail-exercise-row-${mapping.id}`}
-                    >
-                      <ExerciseExecutionCard
-                        mode="view"
-                        exercise={cardData}
-                        className="transition-all duration-200 group-hover:border-primary/30 group-hover:bg-surface-light"
-                        testIdPrefix="set-detail-exercise-row"
-                      />
-                    </button>
-
-                    <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 hover:bg-primary/10 hover:text-primary"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setEditingExercise(mapping);
-                        }}
-                        data-testid={`set-detail-exercise-row-${mapping.id}-edit-btn`}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 hover:bg-destructive/10 hover:text-destructive"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setRemovingExerciseId(mapping.exerciseId);
-                        }}
-                        data-testid={`set-detail-exercise-row-${mapping.id}-remove-btn`}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
+                  <div key={mapping.id} data-testid={`set-detail-exercise-row-${mapping.id}`}>
+                    <ExerciseExecutionCard
+                      mode="edit"
+                      exercise={cardData}
+                      hideTimerBadge
+                      onChange={(patch: Partial<ExerciseExecutionCardData>) =>
+                        handleQuickExerciseUpdate(mapping, patch)
+                      }
+                      onExpand={() => setEditingExercise(mapping)}
+                      onRemove={() => setRemovingExerciseId(mapping.exerciseId)}
+                      className="transition-all duration-200 hover:border-primary/30 hover:bg-surface-light"
+                      testIdPrefix="set-detail-exercise-row"
+                    />
                   </div>
                 );
               })}

@@ -50,11 +50,12 @@ import {
 import { GET_USER_BY_CLERK_ID_QUERY } from '@/graphql/queries/users.queries';
 import { matchesSearchQuery } from '@/utils/textUtils';
 import { useOrganization } from '@/contexts/OrganizationContext';
+import { DashboardRouteLoading } from '@/components/layout/DashboardRouteLoading';
 import type { UserByClerkIdResponse, OrganizationPatientsResponse, OrganizationPatientDto } from '@/types/apollo';
 
 export default function PatientsPage() {
   const { user } = useUser();
-  const { currentOrganization } = useOrganization();
+  const { currentOrganization, isLoading: orgContextLoading } = useOrganization();
   const [searchQuery, setSearchQuery] = useState('');
   const [patientFilter, setPatientFilter] = useState<TherapyFilterType>('my');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -285,6 +286,10 @@ export default function PatientsPage() {
     }
   };
 
+  if (orgContextLoading && !organizationId) {
+    return <DashboardRouteLoading />;
+  }
+
   if (error) {
     return (
       <div className="flex h-full items-center justify-center">
@@ -343,7 +348,7 @@ export default function PatientsPage() {
         <TabsList className="w-full sm:w-auto grid grid-cols-4 sm:inline-flex h-auto p-1 bg-surface-light/50 rounded-xl">
           <TabsTrigger
             value="my"
-            className="gap-2 data-[state=active]:bg-surface data-[state=active]:shadow-sm px-4 py-2.5"
+            className="gap-2 px-4 py-2.5"
             data-testid="patient-filter-my-btn"
           >
             <UserCheck className="h-4 w-4" />
@@ -355,7 +360,7 @@ export default function PatientsPage() {
           </TabsTrigger>
           <TabsTrigger
             value="all"
-            className="gap-2 data-[state=active]:bg-surface data-[state=active]:shadow-sm px-4 py-2.5"
+            className="gap-2 px-4 py-2.5"
             data-testid="patient-filter-all-btn"
           >
             <Users className="h-4 w-4" />
@@ -368,7 +373,7 @@ export default function PatientsPage() {
           <TabsTrigger
             value="needs_attention"
             className={cn(
-              'gap-2 data-[state=active]:bg-surface data-[state=active]:shadow-sm px-4 py-2.5',
+              'gap-2 px-4 py-2.5',
               needsAttentionCount > 0 && 'data-[state=inactive]:text-warning'
             )}
             data-testid="patient-filter-attention-btn"
@@ -385,7 +390,7 @@ export default function PatientsPage() {
           <TabsTrigger
             value="subscription"
             className={cn(
-              'gap-2 data-[state=active]:bg-surface data-[state=active]:shadow-sm px-4 py-2.5',
+              'gap-2 px-4 py-2.5',
               subscriptionIssueCount > 0 && 'data-[state=inactive]:text-destructive'
             )}
             data-testid="patient-filter-subscription-btn"
