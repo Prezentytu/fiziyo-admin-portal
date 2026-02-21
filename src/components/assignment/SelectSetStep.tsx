@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, type MouseEvent } from 'react';
 import Image from 'next/image';
 import { Search, FolderKanban, Check, Dumbbell, ChevronRight, X, Plus, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -10,7 +10,8 @@ import { Button } from '@/components/ui/button';
 import { ExerciseExecutionCard, fromExerciseMapping } from '@/components/shared/exercise';
 import { cn } from '@/lib/utils';
 import { getMediaUrl } from '@/utils/mediaUrl';
-import type { ExerciseSet, AssignedSetInfo } from './types';
+import { ExerciseDetailsDialog } from './ExerciseDetailsDialog';
+import type { ExerciseSet, AssignedSetInfo, ExerciseMapping } from './types';
 
 interface SelectSetStepProps {
   exerciseSets: ExerciseSet[];
@@ -36,10 +37,11 @@ export function SelectSetStep({
   onCreateSet,
   isCreatingSet = false,
   patientName,
-}: SelectSetStepProps) {
+}: Readonly<SelectSetStepProps>) {
   const [searchQuery, setSearchQuery] = useState('');
   const [previewSet, setPreviewSet] = useState<ExerciseSet | null>(selectedSet);
   const [selectedToUnassign, setSelectedToUnassign] = useState<string | null>(null);
+  const [selectedMappingForDetails, setSelectedMappingForDetails] = useState<ExerciseMapping | null>(null);
 
   // Create a map for quick lookup of assigned sets
   const assignedSetsMap = new Map(assignedSets.map((a) => [a.exerciseSetId, a]));
@@ -77,9 +79,11 @@ export function SelectSetStep({
       if (selectedToUnassign === set.id) {
         setSelectedToUnassign(null);
         setPreviewSet(null);
+        setSelectedMappingForDetails(null);
       } else {
         setSelectedToUnassign(set.id);
         setPreviewSet(set);
+        setSelectedMappingForDetails(null);
         // Clear normal selection when selecting for unassign
         onSelectSet(null);
       }
@@ -87,6 +91,7 @@ export function SelectSetStep({
       // Normal selection for available sets
       setSelectedToUnassign(null);
       setPreviewSet(set);
+      setSelectedMappingForDetails(null);
       onSelectSet(set);
     }
   };
@@ -100,6 +105,13 @@ export function SelectSetStep({
     }
     setSelectedToUnassign(null);
     setPreviewSet(null);
+    setSelectedMappingForDetails(null);
+  };
+
+  const handleExerciseCardClick = (mapping: ExerciseMapping, event: MouseEvent<HTMLDivElement>) => {
+    const target = event.target as HTMLElement;
+    if (target.closest('button, a, input, textarea, select')) return;
+    setSelectedMappingForDetails(mapping);
   };
 
   return (
@@ -131,6 +143,7 @@ export function SelectSetStep({
                   setPreviewSet(null);
                   onSelectSet(null);
                   setSelectedToUnassign(null);
+                  setSelectedMappingForDetails(null);
                 }}
                 className="text-xs text-muted-foreground hover:text-foreground transition-colors"
               >
@@ -314,14 +327,20 @@ export function SelectSetStep({
                 {previewSet.exerciseMappings?.map((mapping) => {
                   const cardData = fromExerciseMapping(mapping);
                   return (
-                    <ExerciseExecutionCard
+                    <div
                       key={mapping.id}
-                      mode="view"
-                      exercise={cardData}
-                      viewVariant="readable"
-                      hideTimerBadge
-                      testIdPrefix="assign-set-preview-exercise"
-                    />
+                      className="rounded-xl cursor-pointer"
+                      onClick={(event) => handleExerciseCardClick(mapping, event)}
+                      data-testid={`assign-set-preview-exercise-row-${mapping.id}`}
+                    >
+                      <ExerciseExecutionCard
+                        mode="view"
+                        exercise={cardData}
+                        viewVariant="readable"
+                        hideTimerBadge
+                        testIdPrefix="assign-set-preview-exercise"
+                      />
+                    </div>
                   );
                 })}
               </div>
@@ -335,6 +354,16 @@ export function SelectSetStep({
           </div>
         )}
       </div>
+
+      <ExerciseDetailsDialog
+        open={Boolean(selectedMappingForDetails)}
+        mapping={selectedMappingForDetails}
+        onOpenChange={(open) => {
+          if (!open) {
+            setSelectedMappingForDetails(null);
+          }
+        }}
+      />
     </div>
   );
 }

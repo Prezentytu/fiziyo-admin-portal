@@ -13,11 +13,11 @@ Wizard służy do **przypisywania zestawów ćwiczeń pacjentom**. Jest to głó
 
 ## Punkty wejścia
 
-| Miejsce | Tryb | Co jest predefiniowane |
-|---------|------|------------------------|
-| **Strona pacjenta** → "Przypisz zestaw" | from-patient | Pacjent jest już wybrany |
-| **Strona zestawu** → "Przypisz pacjentom" | from-set | Zestaw jest już wybrany |
-| **Dashboard** → "Przypisz zestaw" | from-patient | Nic nie jest predefiniowane |
+| Miejsce                                   | Tryb         | Co jest predefiniowane      |
+| ----------------------------------------- | ------------ | --------------------------- |
+| **Strona pacjenta** → "Przypisz zestaw"   | from-patient | Pacjent jest już wybrany    |
+| **Strona zestawu** → "Przypisz pacjentom" | from-set     | Zestaw jest już wybrany     |
+| **Dashboard** → "Przypisz zestaw"         | from-patient | Nic nie jest predefiniowane |
 
 ## Architektura - 5 kroków wizarda
 
@@ -31,12 +31,18 @@ Zestaw       Pacjenci    Personalizacja   Harmonogram   Podsumowanie
 
 **Layout:** Lista zestawów (lewa) + Podgląd/Builder (prawa)
 
+**Podgląd szczegółów ćwiczenia (read-only):**
+
+- W sekcji „Ćwiczenia w zestawie” dostępna jest akcja „Szczegóły” dla każdej pozycji.
+- Akcja otwiera dialog ze szczegółami pojedynczego ćwiczenia (opis, media, parametry wykonania).
+- Źródło danych: `exerciseMappings` wybranego zestawu (bez dodatkowego requestu GraphQL).
+
 **Tryby pracy:**
+
 - **Template Mode** - wybrano szablon z ćwiczeniami
   - Nazwa: tylko do odczytu
   - Ćwiczenia: można tylko ukrywać (Eye/EyeOff)
   - Przycisk "Dostosuj" → tworzy kopię
-  
 - **Draft Mode** - nowy zestaw lub po "Dostosuj"
   - Nazwa: edytowalna
   - Pełny CRUD na ćwiczeniach
@@ -74,6 +80,7 @@ Zestaw       Pacjenci    Personalizacja   Harmonogram   Podsumowanie
 ### Phantom Set (Natychmiastowe tworzenie)
 
 Przycisk "Stwórz nowy" natychmiast tworzy pusty zestaw:
+
 - `"Terapia dla {Pacjent} - {Data}"` (jeśli pacjent predefiniowany)
 - `"Nowy zestaw - {Data}"` (bez pacjenta)
 
@@ -82,6 +89,7 @@ Przycisk "Stwórz nowy" natychmiast tworzy pusty zestaw:
 ### Rapid Builder
 
 Command Bar z wyszukiwarką:
+
 1. Wpisz nazwę ćwiczenia
 2. Strzałka ↓ do nawigacji
 3. Enter → ćwiczenie dodane z domyślnymi parametrami
@@ -92,15 +100,15 @@ Szablony są chronione przed przypadkową edycją. "Dostosuj" tworzy kopię (For
 
 ## Komponenty
 
-| Komponent | Lokalizacja | Opis |
-|-----------|-------------|------|
-| AssignmentWizard | `src/components/assignment/AssignmentWizard.tsx` | Główny kontener wizarda |
-| StepSetSelection | `src/components/assignment/steps/StepSetSelection.tsx` | Krok 1 |
-| StepPatientSelection | `src/components/assignment/steps/StepPatientSelection.tsx` | Krok 2 |
-| StepPersonalization | `src/components/assignment/steps/StepPersonalization.tsx` | Krok 3 |
-| StepSchedule | `src/components/assignment/steps/StepSchedule.tsx` | Krok 4 |
-| StepSummary | `src/components/assignment/steps/StepSummary.tsx` | Krok 5 |
-| RapidBuilder | `src/components/assignment/RapidBuilder.tsx` | Szybkie dodawanie ćwiczeń |
+| Komponent            | Lokalizacja                                                | Opis                      |
+| -------------------- | ---------------------------------------------------------- | ------------------------- |
+| AssignmentWizard     | `src/components/assignment/AssignmentWizard.tsx`           | Główny kontener wizarda   |
+| StepSetSelection     | `src/components/assignment/steps/StepSetSelection.tsx`     | Krok 1                    |
+| StepPatientSelection | `src/components/assignment/steps/StepPatientSelection.tsx` | Krok 2                    |
+| StepPersonalization  | `src/components/assignment/steps/StepPersonalization.tsx`  | Krok 3                    |
+| StepSchedule         | `src/components/assignment/steps/StepSchedule.tsx`         | Krok 4                    |
+| StepSummary          | `src/components/assignment/steps/StepSummary.tsx`          | Krok 5                    |
+| RapidBuilder         | `src/components/assignment/RapidBuilder.tsx`               | Szybkie dodawanie ćwiczeń |
 
 ## Data-testid
 
@@ -129,15 +137,20 @@ assign-schedule-weekday-{day}
 
 ## Metryki sukcesu
 
-| Metryka | Cel |
-|---------|-----|
+| Metryka                        | Cel         |
+| ------------------------------ | ----------- |
 | Czas przypisania standardowego | < 30 sekund |
-| Czas tworzenia nowego zestawu | < 60 sekund |
-| Liczba kliknięć do przypisania | ≤ 5 |
-| Błędy "zniszczenia szablonu" | 0 |
+| Czas tworzenia nowego zestawu  | < 60 sekund |
+| Liczba kliknięć do przypisania | ≤ 5         |
+| Błędy "zniszczenia szablonu"   | 0           |
 
 ## Changelog
 
 ### 2026-02-04
+
 - Migracja dokumentacji do formatu SPEC
 - Utworzenie specyfikacji na podstawie `docs/assignment-wizard-overview.md`
+
+### 2026-02-21
+
+- Krok 1 rozszerzony o podgląd szczegółów pojedynczego ćwiczenia w dialogu (opis, zdjęcia/wideo, parametry).
