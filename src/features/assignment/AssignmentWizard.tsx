@@ -2,15 +2,16 @@
 
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { useQuery, useMutation } from '@apollo/client/react';
-import { Loader2, ArrowLeft, ArrowRight, FolderKanban, Users, Calendar } from 'lucide-react';
+import { Loader2, ArrowLeft, ArrowRight, FolderKanban, Users, Calendar, Pencil, Sparkles, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { addDays, differenceInDays, format } from 'date-fns';
 import { cn } from '@/lib/utils';
 
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import * as VisuallyHidden from '@radix-ui/react-visually-hidden';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
-import { defaultFrequency } from '@/components/exercise-sets/FrequencyPicker';
+import { defaultFrequency } from '@/features/exercise-sets/FrequencyPicker';
 
 import { WizardStepIndicator } from './WizardStepIndicator';
 import { SelectSetStep } from './SelectSetStep';
@@ -20,6 +21,7 @@ import { ScheduleStep } from './ScheduleStep';
 import { SummaryStep } from './SummaryStep';
 import { AssignmentSuccessDialog } from './AssignmentSuccessDialog';
 import type { ExerciseInstance, ExerciseParams } from '@/components/shared/ExerciseSetBuilder';
+import { canProceedFromStep } from './utils/assignmentWizardUtils';
 import {
   getWizardSteps,
   createGhostCopy,
@@ -646,23 +648,13 @@ function AssignmentWizardContent({
   const stepInfo = getStepInfo();
 
   // Navigation
-  const canProceed = () => {
-    switch (currentStep) {
-      case 'select-set':
-        return selectedSet !== null;
-      case 'customize-set':
-        // Must have at least 1 exercise and a name
-        return builderInstances.length > 0 && planName.trim().length >= 2;
-      case 'select-patients':
-        return selectedPatients.length > 0;
-      case 'schedule':
-        return true;
-      case 'summary':
-        return true;
-      default:
-        return false;
-    }
-  };
+  const canProceed = () =>
+    canProceedFromStep(currentStep, {
+      selectedSet,
+      builderInstancesLength: builderInstances.length,
+      planNameTrimLength: planName.trim().length,
+      selectedPatientsCount: selectedPatients.length,
+    });
 
   // Track animation direction
   const [slideDirection, setSlideDirection] = useState<'left' | 'right'>('right');
@@ -1020,6 +1012,7 @@ function AssignmentWizardContent({
             organizationId={organizationId}
             patientName={preselectedPatient?.name}
             showAI={true}
+            hideNameSection
           />
         );
 
@@ -1112,6 +1105,7 @@ function AssignmentWizardContent({
     <>
       <DialogContent
         className="max-w-7xl w-[98vw] max-h-[95vh] h-[90vh] md:h-[85vh] flex flex-col p-0 gap-0 overflow-hidden"
+        hideCloseButton
         onInteractOutside={(e) => e.preventDefault()}
         onEscapeKeyDown={(e) => {
           e.preventDefault();
@@ -1119,60 +1113,81 @@ function AssignmentWizardContent({
         }}
         data-testid="assign-wizard"
       >
-        {/* Header */}
-        <DialogHeader className="px-6 pt-6 pb-4 border-b border-border shrink-0">
-          <div className="flex flex-col gap-4">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <DialogTitle className="text-xl">{stepInfo.title}</DialogTitle>
-                <DialogDescription className="mt-1">{stepInfo.description}</DialogDescription>
+        <VisuallyHidden.Root>
+          <DialogTitle>Przypisanie zestawu – {stepInfo.title}</DialogTitle>
+        </VisuallyHidden.Root>
+        {/* Toolbar: jedna bryła, jeden separator na dole (bez wewnętrznych linii) */}
+        <div className="flex flex-row items-stretch gap-0 min-h-[56px] max-h-[70px] shrink-0 bg-surface/95 backdrop-blur-sm border-b border-border">
+          <div className="w-full lg:w-[40%] flex items-center gap-2 min-w-0 px-4 py-2">
+            {currentStep === 'customize-set' ? (
+              <div className="flex-1 flex items-center gap-2 min-w-0 rounded-md border border-transparent px-2 py-1.5 min-h-[36px] hover:bg-surface-light/80 hover:border-border focus-within:bg-surface focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 transition-colors cursor-text">
+                <input
+                  type="text"
+                  value={planName}
+                  onChange={(e) => setPlanName(e.target.value)}
+                  placeholder="Nazwa planu dla pacjenta"
+                  autoComplete="off"
+                  data-testid="customize-set-name-input"
+                  className="flex-1 min-w-0 bg-transparent text-base font-semibold text-foreground placeholder-muted-foreground/50 focus:outline-none border-none p-0 cursor-text"
+                />
+                <Pencil className="h-3.5 w-3.5 text-muted-foreground shrink-0" aria-hidden />
+                <button
+                  type="button"
+                  title="Wygeneruj nazwę AI"
+                  className="p-1 rounded text-muted-foreground hover:text-secondary hover:bg-secondary/10 shrink-0"
+                  data-testid="customize-set-ai-btn"
+                  aria-label="Wygeneruj nazwę AI"
+                >
+                  <Sparkles className="h-3.5 w-3.5" />
+                </button>
               </div>
-
-              {/* Floating Context Summary - mr-8 to avoid X button */}
-              {selectedSet && currentStep !== 'select-set' && (
-                <div className="hidden sm:flex items-center gap-3 px-3 py-2 rounded-lg bg-surface-light/50 border border-border/50 text-xs shrink-0 mr-8">
-                  <div className="flex items-center gap-1.5 text-muted-foreground">
-                    <FolderKanban className="h-3.5 w-3.5" />
-                    <span className="font-medium text-foreground max-w-[120px] truncate">{selectedSet.name}</span>
-                    <span className="text-muted-foreground">
-                      ({(selectedSet.exerciseMappings?.length || 0) - excludedExercises.size}
-                      {excludedExercises.size > 0 && (
-                        <span className="text-destructive/70">/{selectedSet.exerciseMappings?.length || 0}</span>
-                      )}
-                      )
-                    </span>
-                  </div>
-                  {selectedPatients.length > 0 && currentStep !== 'select-patients' && (
-                    <>
-                      <span className="text-border">•</span>
-                      <div className="flex items-center gap-1.5 text-muted-foreground">
-                        <Users className="h-3.5 w-3.5" />
-                        <span>{selectedPatients.length}</span>
-                      </div>
-                    </>
-                  )}
-                  {currentStep === 'summary' && (
-                    <>
-                      <span className="text-border">•</span>
-                      <div className="flex items-center gap-1.5 text-muted-foreground">
-                        <Calendar className="h-3.5 w-3.5" />
-                        <span>{durationDays} dni</span>
-                      </div>
-                    </>
-                  )}
-                </div>
-              )}
-            </div>
-            <WizardStepIndicator
-              steps={steps}
-              currentStep={currentStep}
-              completedSteps={completedSteps}
-              onStepClick={goToStep}
-              allowNavigation={completedSteps.size > 0}
-              data-testid="assign-wizard-step-indicator"
-            />
+            ) : (
+              <span className="text-base font-semibold text-foreground truncate block min-w-0">{stepInfo.title}</span>
+            )}
           </div>
-        </DialogHeader>
+          <div className="flex-1 flex items-center gap-3 min-w-0 px-4 py-2">
+            {selectedSet && currentStep !== 'select-set' && currentStep !== 'customize-set' && (
+              <div className="hidden sm:flex items-center gap-2 px-2 py-1 rounded-md bg-surface-light/40 text-[10px] text-muted-foreground shrink-0">
+                <FolderKanban className="h-3 w-3" />
+                <span className="font-medium text-foreground max-w-[80px] truncate">{selectedSet.name}</span>
+                {selectedPatients.length > 0 && currentStep !== 'select-patients' && (
+                  <>
+                    <span className="text-border">·</span>
+                    <Users className="h-3 w-3" />
+                    <span>{selectedPatients.length}</span>
+                  </>
+                )}
+                {currentStep === 'summary' && (
+                  <>
+                    <span className="text-border">·</span>
+                    <Calendar className="h-3 w-3" />
+                    <span>{durationDays}d</span>
+                  </>
+                )}
+              </div>
+            )}
+            <div className="flex-1 min-w-0 flex items-center gap-2">
+              <WizardStepIndicator
+                steps={steps}
+                currentStep={currentStep}
+                completedSteps={completedSteps}
+                onStepClick={goToStep}
+                allowNavigation={completedSteps.size > 0}
+                variant="compact"
+              />
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onCloseAttempt}
+              className="h-9 w-9 min-w-[2.25rem] shrink-0 px-3 text-muted-foreground hover:text-foreground rounded-md"
+              data-testid="assign-wizard-close-btn"
+              aria-label="Zamknij"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
 
         {/* Content - overflow-hidden dla clip animacji, scroll wewnątrz */}
         <div className="flex-1 overflow-hidden min-h-0">

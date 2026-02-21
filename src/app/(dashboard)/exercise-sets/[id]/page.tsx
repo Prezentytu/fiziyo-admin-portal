@@ -44,12 +44,12 @@ import { EmptyState } from '@/components/shared/EmptyState';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { ExerciseExecutionCard } from '@/components/shared/exercise';
 import type { ExerciseExecutionCardData } from '@/components/shared/exercise';
-import { SetDialog } from '@/components/exercise-sets/SetDialog';
-import { AddExerciseToSetDialog } from '@/components/exercise-sets/AddExerciseToSetDialog';
-import { EditExerciseInSetDialog } from '@/components/exercise-sets/EditExerciseInSetDialog';
-import { GeneratePDFDialog } from '@/components/exercise-sets/GeneratePDFDialog';
-import { AssignmentWizard } from '@/components/assignment/AssignmentWizard';
-import type { ExerciseSet as AssignmentExerciseSet } from '@/components/assignment/types';
+import { SetDialog } from '@/features/exercise-sets/SetDialog';
+import { AddExerciseToSetDialog } from '@/features/exercise-sets/AddExerciseToSetDialog';
+import { EditExerciseInSetDialog } from '@/features/exercise-sets/EditExerciseInSetDialog';
+import { GeneratePDFDialog } from '@/features/exercise-sets/GeneratePDFDialog';
+import { AssignmentWizard } from '@/features/assignment/AssignmentWizard';
+import type { ExerciseSet as AssignmentExerciseSet } from '@/features/assignment/types';
 
 import {
   GET_EXERCISE_SET_WITH_ASSIGNMENTS_QUERY,

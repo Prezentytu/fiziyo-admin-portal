@@ -100,15 +100,15 @@ Szablony są chronione przed przypadkową edycją. "Dostosuj" tworzy kopię (For
 
 ## Komponenty
 
-| Komponent            | Lokalizacja                                                | Opis                      |
-| -------------------- | ---------------------------------------------------------- | ------------------------- |
-| AssignmentWizard     | `src/components/assignment/AssignmentWizard.tsx`           | Główny kontener wizarda   |
-| StepSetSelection     | `src/components/assignment/steps/StepSetSelection.tsx`     | Krok 1                    |
-| StepPatientSelection | `src/components/assignment/steps/StepPatientSelection.tsx` | Krok 2                    |
-| StepPersonalization  | `src/components/assignment/steps/StepPersonalization.tsx`  | Krok 3                    |
-| StepSchedule         | `src/components/assignment/steps/StepSchedule.tsx`         | Krok 4                    |
-| StepSummary          | `src/components/assignment/steps/StepSummary.tsx`          | Krok 5                    |
-| RapidBuilder         | `src/components/assignment/RapidBuilder.tsx`               | Szybkie dodawanie ćwiczeń |
+| Komponent            | Lokalizacja                                        | Opis                      |
+| -------------------- | -------------------------------------------------- | ------------------------- |
+| AssignmentWizard     | `src/features/assignment/AssignmentWizard.tsx`     | Główny kontener wizarda   |
+| SelectSetStep        | `src/features/assignment/SelectSetStep.tsx`        | Krok 1 (zestaw)           |
+| CustomizeSetStep     | `src/features/assignment/CustomizeSetStep.tsx`     | Krok 2 (personalizacja)   |
+| SelectPatientsStep   | `src/features/assignment/SelectPatientsStep.tsx`   | Krok 3 (pacjenci)         |
+| ScheduleStep         | `src/features/assignment/ScheduleStep.tsx`         | Krok 4 (harmonogram)      |
+| SummaryStep          | `src/features/assignment/SummaryStep.tsx`          | Krok 5 (podsumowanie)     |
+| RapidExerciseBuilder | `src/features/assignment/RapidExerciseBuilder.tsx` | Szybkie dodawanie ćwiczeń |
 
 ## Data-testid
 

@@ -11,6 +11,7 @@ import { ExerciseExecutionCard, fromExerciseMapping } from '@/components/shared/
 import { cn } from '@/lib/utils';
 import { getMediaUrl } from '@/utils/mediaUrl';
 import { ExerciseDetailsDialog } from './ExerciseDetailsDialog';
+import { filterSetsByQuery, sortSetsForSelection } from './utils/selectSetStepUtils';
 import type { ExerciseSet, AssignedSetInfo, ExerciseMapping } from './types';
 
 interface SelectSetStepProps {
@@ -46,28 +47,8 @@ export function SelectSetStep({
   // Create a map for quick lookup of assigned sets
   const assignedSetsMap = new Map(assignedSets.map((a) => [a.exerciseSetId, a]));
 
-  // Filter sets by search query (show all, including assigned)
-  const filteredSets = exerciseSets.filter(
-    (set) =>
-      set.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      set.description?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  // Sort: empty sets first (newly created), then by exercise count, then assigned at bottom
-  const sortedSets = [...filteredSets].sort((a, b) => {
-    const aAssigned = assignedSetsMap.has(a.id);
-    const bAssigned = assignedSetsMap.has(b.id);
-    const aEmpty = (a.exerciseMappings?.length || 0) === 0;
-    const bEmpty = (b.exerciseMappings?.length || 0) === 0;
-
-    // Assigned sets always at the bottom
-    if (aAssigned !== bAssigned) return aAssigned ? 1 : -1;
-
-    // Empty sets (newly created) at the top
-    if (aEmpty !== bEmpty) return aEmpty ? -1 : 1;
-
-    return 0;
-  });
+  const filteredSets = filterSetsByQuery(exerciseSets, searchQuery);
+  const sortedSets = sortSetsForSelection(filteredSets, assignedSets);
 
   const availableCount = exerciseSets.filter((set) => !assignedSetsMap.has(set.id)).length;
 

@@ -1,4 +1,4 @@
-import type { ExerciseLoad } from '@/components/assignment/types';
+import type { ExerciseLoad } from '@/features/assignment/types';
 
 /**
  * Parsuje tekst wpisany przez użytkownika do struktury ExerciseLoad.

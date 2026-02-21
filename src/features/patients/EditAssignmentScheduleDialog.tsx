@@ -20,7 +20,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
-import { FrequencyPicker, FrequencyValue, defaultFrequency } from '@/components/exercise-sets/FrequencyPicker';
+import { FrequencyPicker, FrequencyValue, defaultFrequency } from '@/features/exercise-sets/FrequencyPicker';
 
 import { UPDATE_EXERCISE_SET_ASSIGNMENT_MUTATION } from '@/graphql/mutations/exercises.mutations';
 import { GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY } from '@/graphql/queries/patientAssignments.queries';

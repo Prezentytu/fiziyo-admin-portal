@@ -14,11 +14,11 @@ import { Input } from '@/components/ui/input';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
-import { PatientExpandableCard, Patient } from '@/components/patients/PatientExpandableCard';
-import { PatientDialog } from '@/components/patients/PatientDialog';
-import { PatientQRCodeDialog } from '@/components/patients/PatientQRCodeDialog';
-import { TakeOverDialog } from '@/components/patients/TakeOverDialog';
-import { AssignmentWizard } from '@/components/assignment/AssignmentWizard';
+import { PatientExpandableCard, Patient } from '@/features/patients/PatientExpandableCard';
+import { PatientDialog } from '@/features/patients/PatientDialog';
+import { PatientQRCodeDialog } from '@/features/patients/PatientQRCodeDialog';
+import { TakeOverDialog } from '@/features/patients/TakeOverDialog';
+import { AssignmentWizard } from '@/features/assignment/AssignmentWizard';
 
 // Extended filter type for Therapy Management View
 type TherapyFilterType = 'my' | 'all' | 'needs_attention' | 'subscription';
@@ -38,7 +38,7 @@ const hasSubscriptionIssue = (patient: Patient): boolean => {
   const daysUntilExpiry = Math.floor((expiryDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
   return daysUntilExpiry <= 7; // Expiring within 7 days or already expired
 };
-import type { Patient as AssignmentPatient } from '@/components/assignment/types';
+import type { Patient as AssignmentPatient } from '@/features/assignment/types';
 import { cn } from '@/lib/utils';
 
 import { GET_ORGANIZATION_PATIENTS_QUERY } from '@/graphql/queries/therapists.queries';

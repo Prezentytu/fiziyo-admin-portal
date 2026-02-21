@@ -138,6 +138,9 @@ export interface ExerciseSetBuilderProps {
   onAIClick?: () => void;
   aiButtonLabel?: string;
 
+  // When true, name is rendered by parent (e.g. in wizard toolbar); no Name Section block.
+  hideNameSection?: boolean;
+
   // Preview exercise callback
   onPreviewExercise?: (exercise: BuilderExercise) => void;
 
@@ -338,6 +341,7 @@ export function ExerciseSetBuilder({
   showAI = false,
   onAIClick,
   aiButtonLabel = 'Dobierz za mnie',
+  hideNameSection = false,
   onPreviewExercise,
   testIdPrefix = 'set-builder',
 }: ExerciseSetBuilderProps) {
@@ -559,39 +563,36 @@ export function ExerciseSetBuilder({
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
-      {/* Name Section */}
-      <div className="px-6 py-4 border-b border-border">
-        <div className="flex items-center justify-between mb-2">
-          <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">
-            {nameLabel}
-          </label>
-          {showAI && onAIClick && (
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={onAIClick}
-              className="h-7 px-2.5 text-[10px] gap-1.5 text-secondary hover:text-secondary hover:bg-secondary/10"
-              data-testid={`${testIdPrefix}-ai-btn`}
-            >
-              <Sparkles className="h-3.5 w-3.5" />
-              {aiButtonLabel}
-            </Button>
-          )}
+      {!hideNameSection && (
+        <div className="px-4 py-2 border-b border-border flex items-center gap-2 min-h-0">
+          <div className="group flex-1 flex items-center gap-2 rounded-md border border-transparent px-2 py-1.5 min-h-[36px] hover:bg-surface-light/80 hover:border-border focus-within:bg-surface focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 transition-colors cursor-text">
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => onNameChange(e.target.value)}
+              placeholder={namePlaceholder}
+              autoComplete="off"
+              data-testid={`${testIdPrefix}-name-input`}
+              className="flex-1 min-w-0 bg-transparent text-base font-semibold text-foreground placeholder-muted-foreground/50 focus:outline-none border-none p-0 cursor-text"
+            />
+            <Pencil className="h-3.5 w-3.5 text-muted-foreground shrink-0" aria-hidden />
+            {showAI && onAIClick && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  onAIClick();
+                }}
+                title="Wygeneruj nazwę AI"
+                className="p-1 rounded text-muted-foreground hover:text-secondary hover:bg-secondary/10 shrink-0"
+                data-testid={`${testIdPrefix}-ai-btn`}
+              >
+                <Sparkles className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
         </div>
-        <div className="group relative flex items-center gap-2 -mx-2 px-2 py-1.5 rounded-lg hover:bg-surface-light/50 transition-colors cursor-text">
-          <input
-            type="text"
-            value={name}
-            onChange={(e) => onNameChange(e.target.value)}
-            placeholder={namePlaceholder}
-            autoComplete="off"
-            data-testid={`${testIdPrefix}-name-input`}
-            className="flex-1 bg-transparent text-lg font-semibold text-foreground placeholder-muted-foreground/50 focus:outline-none focus:ring-0 border-none p-0 cursor-text"
-          />
-          <Pencil className="h-3.5 w-3.5 text-muted-foreground/30 opacity-0 group-hover:opacity-100 group-focus-within:opacity-0 transition-opacity shrink-0" />
-        </div>
-      </div>
+      )}
 
       {/* Main Content - Split View */}
       <div className="flex-1 flex overflow-hidden">

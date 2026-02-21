@@ -40,6 +40,12 @@ Wyszukiwarka ćwiczeń + Enter dodaje ćwiczenie do zestawu. Szybkie budowanie b
 | Strona zestawu → "Przypisz pacjentom" | from-set     | Zestaw         |
 | Dashboard → "Przypisz zestaw"         | -            | Nic            |
 
+## Struktura folderów (zgodna z .ai/STRUCTURE.md)
+
+- **utils/** — logika czysta: `assignmentWizardUtils.ts` (canProceed), `selectSetStepUtils.ts` (filter/sort). Testy w **utils/**tests**/**.
+- **types.ts** — typy domenowe i `getWizardSteps`; test: `types.test.ts` obok.
+- **Komponenty** i testy komponentów (`.test.tsx`) — w korzeniu folderu obok plików.
+
 ## Komponenty
 
 - `AssignmentWizard.tsx` — główny wizard

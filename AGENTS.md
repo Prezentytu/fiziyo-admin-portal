@@ -6,20 +6,21 @@ WAŻNE: Preferuj wnioskowanie oparte na dokumentacji (retrieval-led) zamiast wni
 
 Przed rozpoczęciem pracy dopasuj zadanie do tabeli i przeczytaj WSZYSTKIE pasujące guide'y:
 
-| Zadanie                       | Guide                                             |
-| ----------------------------- | ------------------------------------------------- |
-| Tworzenie/edycja ćwiczeń      | `src/components/exercises/AGENTS.md`              |
-| Assignment Wizard             | `src/components/assignment/AGENTS.md`             |
-| Praca z pacjentami            | `src/components/patients/AGENTS.md`               |
-| Zapytania/mutacje GraphQL     | `src/graphql/AGENTS.md`                           |
-| Komponenty współdzielone      | `src/components/shared/AGENTS.md`                 |
-| Zestawy ćwiczeń               | `src/components/exercise-sets/AGENTS.md`          |
-| Nowa specyfikacja             | `.ai/specs/AGENTS.md`, `.ai/skills/spec-writing/` |
-| Code review                   | `.ai/skills/code-review/`                         |
-| Ustawienia/organizacja        | `src/components/settings/AGENTS.md`               |
-| Kontekst cross-repo / backend | `.ai/ECOSYSTEM.md`                                |
-| Encje / enumy / relacje       | `.ai/DOMAIN_MODEL.md`                             |
-| Flow biznesowe / auth / AI    | `.ai/DATA_FLOWS.md`                               |
+| Zadanie                          | Guide                                             |
+| -------------------------------- | ------------------------------------------------- |
+| Tworzenie/edycja ćwiczeń         | `src/features/exercises/AGENTS.md`                |
+| Assignment Wizard                | `src/features/assignment/AGENTS.md`               |
+| Praca z pacjentami               | `src/features/patients/AGENTS.md`                 |
+| Zapytania/mutacje GraphQL        | `src/graphql/AGENTS.md`                           |
+| Komponenty współdzielone         | `src/components/shared/AGENTS.md`                 |
+| Zestawy ćwiczeń                  | `src/features/exercise-sets/AGENTS.md`            |
+| Nowa specyfikacja                | `.ai/specs/AGENTS.md`, `.ai/skills/spec-writing/` |
+| Code review                      | `.ai/skills/code-review/`                         |
+| Ustawienia/organizacja           | `src/components/settings/AGENTS.md`               |
+| Kontekst cross-repo / backend    | `.ai/ECOSYSTEM.md`                                |
+| Encje / enumy / relacje          | `.ai/DOMAIN_MODEL.md`                             |
+| Flow biznesowe / auth / AI       | `.ai/DATA_FLOWS.md`                               |
+| Struktura modułów (utils, testy) | `.ai/STRUCTURE.md`                                |
 
 ## Workflow Orchestration
 
@@ -83,11 +84,18 @@ src/
 │   │   ├── organization/     # Zarządzanie organizacją
 │   │   ├── billing/          # Rozliczenia
 │   │   ├── settings/         # Ustawienia
-├── components/
-│   ├── exercises/            # Komponenty ćwiczeń
-│   ├── patients/             # Komponenty pacjentów
+├── features/                 # Moduły domenowe (zobacz .ai/STRUCTURE.md)
+│   ├── assignment/           # Wizard przypisań (utils/, utils/__tests__/)
+│   ├── exercises/            # Ćwiczenia
+│   ├── exercise-sets/        # Zestawy ćwiczeń
+│   ├── patients/             # Pacjenci
+│   ├── verification/         # Weryfikacja treści
+│   └── import/               # Import dokumentów
+├── components/               # Komponenty współdzielone
 │   ├── shared/               # DataTable, EmptyState, etc.
-│   └── ui/                   # Komponenty shadcn/ui
+│   ├── ui/                   # shadcn/ui
+│   ├── layout/               # Sidebar, Header, etc.
+│   └── ...                   # auth, organization, settings, finances, ...
 ├── graphql/
 │   ├── queries/              # Zapytania GraphQL
 │   ├── mutations/            # Mutacje GraphQL
@@ -208,7 +216,7 @@ import { useQuery, useMutation } from '@apollo/client';
 import { Button } from '@/components/ui/button';
 
 // 3. Komponenty wewnętrzne
-import { ExerciseCard } from '@/components/exercises/ExerciseCard';
+import { ExerciseCard } from '@/features/exercises/ExerciseCard';
 
 // 4. GraphQL
 import { GET_EXERCISES_QUERY } from '@/graphql/queries';
@@ -339,8 +347,8 @@ Pełna dokumentacja ekosystemu dla agentów AI:
 
 Szczegóły encji i enumów → `.ai/DOMAIN_MODEL.md`. Wzorce modułowe:
 
-- **Exercise, parametry, UI**: `src/components/exercises/AGENTS.md`
-- **ExerciseSetMapping, ExerciseSet, PatientAssignment**: `src/components/exercise-sets/AGENTS.md`
+- **Exercise, parametry, UI**: `src/features/exercises/AGENTS.md`
+- **ExerciseSetMapping, ExerciseSet, PatientAssignment**: `src/features/exercise-sets/AGENTS.md`
 
 ## Dokumentacja
 

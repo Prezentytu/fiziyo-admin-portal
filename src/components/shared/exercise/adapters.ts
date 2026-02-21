@@ -1,5 +1,5 @@
 import type { ExerciseExecutionCardData } from './types';
-import type { ExerciseMapping, ExerciseOverride, ExerciseLoad } from '@/components/assignment/types';
+import type { ExerciseMapping, ExerciseOverride, ExerciseLoad } from '@/features/assignment/types';
 import { formatLoad } from '@/utils/loadParser';
 import { getMediaUrl, getMediaUrls } from '@/utils/mediaUrl';
 

@@ -28,7 +28,7 @@ Ze strony pacjenta: przycisk "Przypisz zestaw" otwiera wizard z predefiniowanym 
 
 ## Referencje
 
-- Assignment Wizard: `src/components/assignment/AGENTS.md`
+- Assignment Wizard: `src/features/assignment/AGENTS.md`
 - Billing: `docs/billing-widget-readme.md`, SPEC-002
 
 ## Konwencje data-testid

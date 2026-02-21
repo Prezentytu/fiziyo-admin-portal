@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { UnifiedPatientInput, PatientFormValues } from './UnifiedPatientInput';
-import { AssignmentWizard } from '@/components/assignment/AssignmentWizard';
+import { AssignmentWizard } from '@/features/assignment/AssignmentWizard';
 import { CREATE_SHADOW_PATIENT_MUTATION } from '@/graphql/mutations/users.mutations';
 import {
   GET_THERAPIST_PATIENTS_QUERY,
@@ -20,7 +20,7 @@ import {
 import { GET_CURRENT_ORGANIZATION_PLAN } from '@/graphql/queries/organizations.queries';
 import { cn } from '@/lib/utils';
 import { getAvatarGradient, getInitials } from '@/utils/textUtils';
-import type { Patient } from '@/components/assignment/types';
+import type { Patient } from '@/features/assignment/types';
 
 interface CreatedPatient {
   id: string;

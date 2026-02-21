@@ -170,7 +170,7 @@ const handleSave = async () => {
    }
 
    // ✅ DOBRE: Client Component dla interaktywności
-   // components/exercises/ExerciseCard.tsx
+   // features/exercises/ExerciseCard.tsx
    ("use client");
 
    export function ExerciseCard({ exercise }: ExerciseCardProps) {
@@ -216,7 +216,7 @@ const handleSave = async () => {
 **NIGDY nie używaj React.FC** - preferuj plain functions:
 
 ```typescript
-// components/exercises/ExerciseCard.tsx
+// features/exercises/ExerciseCard.tsx
 "use client";
 
 // 1. Imports (grouped: external, internal, types, styles)
@@ -260,7 +260,7 @@ export function ExerciseCard({
 ### Form Handling Pattern (react-hook-form + zod)
 
 ```typescript
-// components/exercises/ExerciseForm.tsx
+// features/exercises/ExerciseForm.tsx
 "use client";
 
 import { useForm } from "react-hook-form";
@@ -663,7 +663,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 
 // 3. Internal components
-import { ExerciseCard } from "@/components/exercises/ExerciseCard";
+import { ExerciseCard } from "@/features/exercises/ExerciseCard";
 
 // 4. GraphQL
 import { GET_EXERCISES_QUERY } from "@/graphql/queries";
@@ -678,11 +678,11 @@ import type { Exercise } from "@/types";
 
 ```typescript
 // ✅ DOBRE: Direct imports
-import { ExerciseCard } from "@/components/exercises/ExerciseCard";
+import { ExerciseCard } from "@/features/exercises/ExerciseCard";
 import { Button } from "@/components/ui/button";
 
 // ❌ ZŁE: Barrel exports (slower builds)
-import { ExerciseCard, ExerciseForm } from "@/components/exercises";
+import { ExerciseCard, ExerciseForm } from "@/features/exercises";
 ```
 
 ## ⚠️ COMMON PITFALLS
@@ -710,7 +710,7 @@ export default function ExercisesPage() {
 }
 
 // ✅ DOBRE: Client Component dla data fetching
-// components/exercises/ExercisesList.tsx
+// features/exercises/ExercisesList.tsx
 ("use client");
 
 export function ExercisesList() {

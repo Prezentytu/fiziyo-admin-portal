@@ -47,6 +47,9 @@ interface CustomizeSetStepProps {
   showAI?: boolean;
   onAIClick?: () => void;
 
+  // When true, name is rendered in parent (e.g. wizard toolbar); builder omits Name Section.
+  hideNameSection?: boolean;
+
   // Preview exercise callback
   onPreviewExercise?: (exercise: BuilderExercise) => void;
 }
@@ -66,6 +69,7 @@ export function CustomizeSetStep({
   patientName,
   showAI = true,
   onAIClick,
+  hideNameSection = false,
   onPreviewExercise,
 }: CustomizeSetStepProps) {
   const [previewExercise, setPreviewExercise] = useState<BuilderExercise | null>(null);
@@ -159,6 +163,7 @@ export function CustomizeSetStep({
         showAI={showAI}
         onAIClick={onAIClick}
         aiButtonLabel="Dobierz za mnie"
+        hideNameSection={hideNameSection}
         onPreviewExercise={handlePreviewExercise}
         testIdPrefix={testIdPrefix}
       />

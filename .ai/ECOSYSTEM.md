@@ -70,10 +70,10 @@ Przy zmianie schematu backendu — zaktualizuj typy w **obu** repozytoriach.
 
 | Funkcja                 | Admin (fiziyo-admin)                                | Mobile (fizjo-app)                                  | Backend                                                  |
 | ----------------------- | --------------------------------------------------- | --------------------------------------------------- | -------------------------------------------------------- |
-| CRUD ćwiczeń            | `src/components/exercises/`                         | `components/exercises/`                             | `Types/ExerciseMutation.cs`                              |
-| Zestawy ćwiczeń         | `src/components/exercise-sets/`                     | `components/exercises/`                             | `Types/ExerciseSetQuery.cs`                              |
-| Assignment Wizard       | `src/components/assignment/`                        | —                                                   | `Types/PatientAssignmentMutation.cs`                     |
-| Pacjenci                | `src/components/patients/`                          | `components/patient/`                               | `Types/PatientMutation.cs`                               |
+| CRUD ćwiczeń            | `src/features/exercises/`                           | `components/exercises/`                             | `Types/ExerciseMutation.cs`                              |
+| Zestawy ćwiczeń         | `src/features/exercise-sets/`                       | `components/exercises/`                             | `Types/ExerciseSetQuery.cs`                              |
+| Assignment Wizard       | `src/features/assignment/`                          | —                                                   | `Types/PatientAssignmentMutation.cs`                     |
+| Pacjenci                | `src/features/patients/`                            | `components/patient/`                               | `Types/PatientMutation.cs`                               |
 | Player ćwiczeń          | —                                                   | `app/(tabs)/patient/sets/exercise-player/`          | `Types/PatientProgressMutation.cs`                       |
 | Chat AI                 | `src/services/chatService.ts`                       | `src/services/chatService.ts`                       | `Controllers/ChatController.cs`                          |
 | Sugestie AI             | `src/services/aiService.ts`                         | —                                                   | `Controllers/AIController.cs`                            |

@@ -12,8 +12,8 @@ import { SearchInput } from '@/components/shared/SearchInput';
 import { LoadingState } from '@/components/shared/LoadingState';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
-import { TagCard, CategoryCard, ExerciseTag, TagCategory } from '@/components/exercises/TagCard';
-import { TagDialog } from '@/components/exercises/TagDialog';
+import { TagCard, CategoryCard, ExerciseTag, TagCategory } from '@/features/exercises/TagCard';
+import { TagDialog } from '@/features/exercises/TagDialog';
 
 import { GET_EXERCISE_TAGS_BY_ORGANIZATION_QUERY } from '@/graphql/queries/exerciseTags.queries';
 import { GET_TAG_CATEGORIES_BY_ORGANIZATION_QUERY } from '@/graphql/queries/tagCategories.queries';

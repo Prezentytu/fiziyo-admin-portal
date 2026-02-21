@@ -10,14 +10,14 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/shared/EmptyState';
-import { MasterVideoPlayer } from '@/components/verification/MasterVideoPlayer';
-import { RejectReasonDialog } from '@/components/verification/RejectReasonDialog';
-import { ApproveDialog } from '@/components/verification/ApproveDialog';
+import { MasterVideoPlayer } from '@/features/verification/MasterVideoPlayer';
+import { RejectReasonDialog } from '@/features/verification/RejectReasonDialog';
+import { ApproveDialog } from '@/features/verification/ApproveDialog';
 
 // Clinical Operator UI Components - 3-Column Layout
-import { VerificationEditorPanel } from '@/components/verification/VerificationEditorPanel';
-import { VerdictPanel } from '@/components/verification/VerdictPanel';
-import { useExerciseValidation } from '@/components/verification/PublishGuardrails';
+import { VerificationEditorPanel } from '@/features/verification/VerificationEditorPanel';
+import { VerdictPanel } from '@/features/verification/VerdictPanel';
+import { useExerciseValidation } from '@/features/verification/PublishGuardrails';
 
 import { useSystemRole } from '@/hooks/useSystemRole';
 import { useVerificationHotkeys } from '@/hooks/useVerificationHotkeys';

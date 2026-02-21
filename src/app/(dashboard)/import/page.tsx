@@ -27,7 +27,7 @@ import {
   ImportSummary,
   PatientContextPanel,
   ImportReviewDashboard,
-} from '@/components/import';
+} from '@/features/import';
 
 type StepId = 'upload' | 'processing' | 'review-exercises' | 'review-sets' | 'summary';
 

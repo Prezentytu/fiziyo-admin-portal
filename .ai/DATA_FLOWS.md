@@ -109,10 +109,10 @@ Diagramy i opisy głównych przepływów danych. Czytaj gdy implementujesz lub m
 
 **Pliki Admin:**
 
-- Ćwiczenia: `src/components/exercises/`
-- Zestawy: `src/components/exercise-sets/`
-- Assignment Wizard: `src/components/assignment/` (SPEC-001)
-- Pacjenci/postępy: `src/components/patients/`
+- Ćwiczenia: `src/features/exercises/`
+- Zestawy: `src/features/exercise-sets/`
+- Assignment Wizard: `src/features/assignment/` (SPEC-001)
+- Pacjenci/postępy: `src/features/patients/`
 
 **Pliki Mobile:**
 

@@ -14,10 +14,10 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
-import { SetCard, ExerciseSet } from '@/components/exercise-sets/SetCard';
-import { SetDialog } from '@/components/exercise-sets/SetDialog';
-import { CreateSetWizard } from '@/components/exercise-sets/CreateSetWizard';
-import { AssignmentWizard } from '@/components/assignment/AssignmentWizard';
+import { SetCard, ExerciseSet } from '@/features/exercise-sets/SetCard';
+import { SetDialog } from '@/features/exercise-sets/SetDialog';
+import { CreateSetWizard } from '@/features/exercise-sets/CreateSetWizard';
+import { AssignmentWizard } from '@/features/assignment/AssignmentWizard';
 import { cn } from '@/lib/utils';
 
 import {

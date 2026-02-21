@@ -9,7 +9,6 @@ import {
   Loader2,
   Dumbbell,
   Check,
-  FolderPlus,
   Plus,
   GripVertical,
   ChevronDown,
@@ -17,6 +16,8 @@ import {
   TrendingUp,
   Sparkles,
   Timer,
+  Pencil,
+  X,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
@@ -42,7 +43,8 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import * as VisuallyHidden from '@radix-ui/react-visually-hidden';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { ImagePlaceholder } from '@/components/shared/ImagePlaceholder';
 import { getMediaUrl } from '@/utils/mediaUrl';
@@ -759,6 +761,7 @@ export function CreateSetWizard({
     <Dialog open={open} onOpenChange={() => handleCloseAttempt()}>
       <DialogContent
         className="max-w-7xl w-[98vw] max-h-[95vh] h-[90vh] md:h-[85vh] flex flex-col p-0 gap-0 overflow-hidden bg-surface border-border"
+        hideCloseButton
         data-testid="set-composer"
         onInteractOutside={(e) => e.preventDefault()}
         onEscapeKeyDown={(e) => {
@@ -766,61 +769,71 @@ export function CreateSetWizard({
           handleCloseAttempt();
         }}
       >
-        {/* ============================================================ */}
-        {/* HEADER */}
-        {/* ============================================================ */}
-        <DialogHeader className="px-6 pt-5 pb-4 border-b border-border shrink-0">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/20">
-                <FolderPlus className="h-5 w-5 text-primary" />
-              </div>
-              <DialogTitle className="text-lg font-semibold text-foreground">Nowy zestaw ćwiczeń</DialogTitle>
+        <VisuallyHidden.Root>
+          <DialogTitle>Nowy zestaw ćwiczeń</DialogTitle>
+        </VisuallyHidden.Root>
+        {/* Nagłówek: jedna bryła (toolbar + Dodaj opis), jeden separator na dole */}
+        <div className="shrink-0 bg-surface/95 backdrop-blur-sm border-b border-border">
+          <div className="flex flex-row items-stretch gap-0 min-h-[56px] max-h-[70px]">
+            <div className="w-full lg:w-[40%] flex items-center min-w-0 px-4 py-2">
+            <div className="flex-1 flex items-center gap-2 min-w-0 rounded-md border border-transparent px-2 py-1.5 min-h-[36px] hover:bg-surface-light/80 hover:border-border focus-within:bg-surface focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 transition-colors cursor-text">
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="np. Rehabilitacja kolana - tydzień 1"
+                autoFocus
+                autoComplete="off"
+                data-testid="set-composer-name-input"
+                className="flex-1 min-w-0 bg-transparent text-base font-semibold text-foreground placeholder-muted-foreground/50 focus:outline-none border-none p-0 cursor-text"
+              />
+              <Pencil className="h-3.5 w-3.5 text-muted-foreground shrink-0" aria-hidden />
+              <button
+                type="button"
+                onClick={() => setShowAIPanel(!showAIPanel)}
+                title="Wygeneruj nazwę AI"
+                className={cn(
+                  'p-1 rounded shrink-0',
+                  showAIPanel ? 'text-secondary bg-secondary/10' : 'text-muted-foreground hover:text-secondary hover:bg-secondary/10'
+                )}
+                data-testid="set-composer-ai-btn"
+                aria-label="Wygeneruj nazwę AI"
+              >
+                <Sparkles className="h-3.5 w-3.5" />
+              </button>
             </div>
           </div>
-        </DialogHeader>
-
-        {/* ============================================================ */}
-        {/* NAME + DESCRIPTION SECTION */}
-        {/* ============================================================ */}
-        <div className="px-6 py-4 border-b border-border">
-          <div className="flex items-center justify-between mb-2">
-            <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">
-              Nazwa zestawu
-            </label>
-            {/* AI Button */}
+          <div className="flex-1 flex items-center justify-end gap-3 min-w-0 px-4 py-2">
+            {patientContext && (
+              <div className="flex items-center gap-2 text-[10px] text-muted-foreground shrink-0">
+                <span>Dla:</span>
+                <span className="font-medium text-foreground">{patientContext.patientName}</span>
+                {autoAssign && (
+                  <Badge variant="secondary" className="text-[9px] bg-surface-light border-border text-muted-foreground">
+                    Auto-przypisanie
+                  </Badge>
+                )}
+              </div>
+            )}
             <Button
-              type="button"
               variant="ghost"
-              size="sm"
-              onClick={() => setShowAIPanel(!showAIPanel)}
-              className={cn(
-                'h-7 px-2.5 text-[10px] gap-1.5',
-                'text-secondary hover:text-secondary hover:bg-secondary/10',
-                showAIPanel && 'bg-secondary/10'
-              )}
-              data-testid="set-composer-ai-btn"
+              size="icon"
+              onClick={handleCloseAttempt}
+              className="h-9 w-9 min-w-[2.25rem] shrink-0 px-3 text-muted-foreground hover:text-foreground rounded-md"
+              aria-label="Zamknij"
             >
-              <Sparkles className="h-3.5 w-3.5" />
-              Dobierz za mnie
+              <X className="h-4 w-4" />
             </Button>
           </div>
-          <Input
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="np. Rehabilitacja kolana - tydzień 1"
-            autoFocus
-            autoComplete="off"
-            data-testid="set-composer-name-input"
-            className="h-12 text-lg font-semibold bg-surface border-border text-foreground placeholder:text-muted-foreground/50 focus:border-primary/50 focus:ring-primary/20"
-          />
+          </div>
 
-          {/* Collapsible description */}
+          {/* Collapsible description - w tej samej bryle co toolbar, bez własnej linii */}
           <Collapsible open={showDescription} onOpenChange={setShowDescription}>
+            <div className="px-4 py-1">
             <CollapsibleTrigger asChild>
               <button
                 type="button"
-                className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground mt-3 transition-colors"
+                className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground transition-colors"
               >
                 <ChevronDown className={cn('h-3 w-3 transition-transform', showDescription && 'rotate-180')} />
                 {description ? 'Edytuj opis' : 'Dodaj opis'}
@@ -831,24 +844,12 @@ export function CreateSetWizard({
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="Opisz cel zestawu..."
-                className="mt-2 min-h-[60px] text-sm resize-none bg-surface border-border placeholder:text-muted-foreground/50"
+                className="mt-2 min-h-[60px] text-sm resize-none bg-surface border-border placeholder:text-muted-foreground/50 w-full"
                 data-testid="set-composer-description-input"
               />
             </CollapsibleContent>
-          </Collapsible>
-
-          {/* Patient context */}
-          {patientContext && (
-            <div className="flex items-center gap-2 mt-3 text-xs text-muted-foreground">
-              <span>Dla:</span>
-              <span className="font-medium text-foreground">{patientContext.patientName}</span>
-              {autoAssign && (
-                <Badge variant="secondary" className="text-[10px] bg-surface-light border-border text-muted-foreground">
-                  Auto-przypisanie
-                </Badge>
-              )}
-            </div>
-          )}
+          </div>
+        </Collapsible>
         </div>
 
         {/* ============================================================ */}

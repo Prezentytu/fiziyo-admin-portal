@@ -38,10 +38,10 @@ import {
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { LoadingState } from '@/components/shared/LoadingState';
 import { EmptyState } from '@/components/shared/EmptyState';
-import { ActivityReport } from '@/components/patients/ActivityReport';
-import { PatientAssignmentCard } from '@/components/patients/PatientAssignmentCard';
+import { ActivityReport } from '@/features/patients/ActivityReport';
+import { PatientAssignmentCard } from '@/features/patients/PatientAssignmentCard';
 import { ClinicalNotesList } from '@/components/clinical/ClinicalNotesList';
-import type { PatientAssignment, ExerciseMapping, ExerciseOverride } from '@/components/patients/PatientAssignmentCard';
+import type { PatientAssignment, ExerciseMapping, ExerciseOverride } from '@/features/patients/PatientAssignmentCard';
 
 import { GET_USER_BY_ID_QUERY, GET_USER_BY_CLERK_ID_QUERY } from '@/graphql/queries/users.queries';
 import { useOrganization } from '@/contexts/OrganizationContext';
@@ -49,16 +49,16 @@ import { GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY } from '@/graphql/queries/patient
 import type { UserByIdResponse } from '@/types/apollo';
 
 // Dialogs
-import { AssignmentWizard } from '@/components/assignment/AssignmentWizard';
-import type { Patient as AssignmentPatient } from '@/components/assignment/types';
-import { EditAssignmentScheduleDialog } from '@/components/patients/EditAssignmentScheduleDialog';
-import { EditExerciseOverrideDialog } from '@/components/patients/EditExerciseOverrideDialog';
-import { AddExerciseToPatientDialog } from '@/components/patients/AddExerciseToPatientDialog';
-import { ExercisePreviewDrawer } from '@/components/patients/ExercisePreviewDrawer';
-import { ExtendSetDialog } from '@/components/patients/ExtendSetDialog';
-import { GeneratePDFDialog } from '@/components/exercise-sets/GeneratePDFDialog';
-import { PatientQRCodeDialog } from '@/components/patients/PatientQRCodeDialog';
-import { EditPatientDialog } from '@/components/patients/EditPatientDialog';
+import { AssignmentWizard } from '@/features/assignment/AssignmentWizard';
+import type { Patient as AssignmentPatient } from '@/features/assignment/types';
+import { EditAssignmentScheduleDialog } from '@/features/patients/EditAssignmentScheduleDialog';
+import { EditExerciseOverrideDialog } from '@/features/patients/EditExerciseOverrideDialog';
+import { AddExerciseToPatientDialog } from '@/features/patients/AddExerciseToPatientDialog';
+import { ExercisePreviewDrawer } from '@/features/patients/ExercisePreviewDrawer';
+import { ExtendSetDialog } from '@/features/patients/ExtendSetDialog';
+import { GeneratePDFDialog } from '@/features/exercise-sets/GeneratePDFDialog';
+import { PatientQRCodeDialog } from '@/features/patients/PatientQRCodeDialog';
+import { EditPatientDialog } from '@/features/patients/EditPatientDialog';
 interface PatientDetailPageProps {
   params: Promise<{ id: string }>;
 }

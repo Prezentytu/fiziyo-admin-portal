@@ -10,10 +10,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/shared/EmptyState';
-import { VerificationStatsCards } from '@/components/verification/VerificationStatsCards';
-import { VerificationTaskCard } from '@/components/verification/VerificationTaskCard';
-import { ReviewerAchievements } from '@/components/verification/ReviewerAchievements';
-import { VerificationIntro } from '@/components/verification/VerificationIntro';
+import { VerificationStatsCards } from '@/features/verification/VerificationStatsCards';
+import { VerificationTaskCard } from '@/features/verification/VerificationTaskCard';
+import { ReviewerAchievements } from '@/features/verification/ReviewerAchievements';
+import { VerificationIntro } from '@/features/verification/VerificationIntro';
 import { useSystemRole } from '@/hooks/useSystemRole';
 
 import { GET_USER_BY_CLERK_ID_QUERY } from '@/graphql/queries/users.queries';

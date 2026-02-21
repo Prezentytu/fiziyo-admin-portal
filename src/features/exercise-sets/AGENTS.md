@@ -48,8 +48,8 @@ TIER 4: Przerwa między powt., Własna nazwa/opis
 
 ## Referencje
 
-- Schemat Exercise: `src/components/exercises/AGENTS.md`
-- Assignment Wizard: `src/components/assignment/AGENTS.md`
+- Schemat Exercise: `src/features/exercises/AGENTS.md`
+- Assignment Wizard: `src/features/assignment/AGENTS.md`
 - ExerciseSetBuilder: `src/components/shared/ExerciseSetBuilder.tsx`
 
 ## Konwencje data-testid
