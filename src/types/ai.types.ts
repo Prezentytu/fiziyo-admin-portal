@@ -89,6 +89,15 @@ export interface ExerciseSuggestionResponse {
 // 2. Set Generation
 // ============================================
 
+export interface SetNameSuggestRequest {
+  currentName: string;
+  exerciseNames: string[];
+}
+
+export interface SetNameSuggestResponse {
+  suggestedName: string;
+}
+
 export interface PatientContext {
   patientName?: string;
   diagnosis?: string[];

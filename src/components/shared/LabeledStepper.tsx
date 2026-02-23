@@ -62,11 +62,11 @@ export function LabeledStepper({
 
   return (
     <div
-      className={cn('flex flex-col items-center justify-center group', className)}
+      className={cn('flex flex-col items-stretch justify-center group', className)}
       data-testid="labeled-stepper"
     >
-      {/* Controls row: height used by parent for alignment (label ignored for vertical center) */}
-      <div className="flex items-stretch h-8">
+      {/* Controls row: grid so label below aligns with value column only */}
+      <div className="grid grid-cols-[auto_1fr_auto] items-stretch h-8 w-full">
         {/* Minus */}
         <button
           type="button"
@@ -74,7 +74,7 @@ export function LabeledStepper({
           disabled={disabled || value <= min}
           data-stepper-control
           className={cn(
-            'w-7 flex items-center justify-center rounded-l-lg transition-all shrink-0 cursor-pointer',
+            'w-7 flex items-center justify-center rounded-l-lg transition-all cursor-pointer',
             'bg-surface-light/80 border border-r-0 border-border/40',
             'text-muted-foreground/70 hover:text-foreground hover:bg-surface-light',
             'active:scale-95 disabled:cursor-not-allowed disabled:bg-surface-light/35 disabled:text-muted-foreground/35 disabled:hover:bg-surface-light/35',
@@ -85,7 +85,7 @@ export function LabeledStepper({
           <Minus className="h-3.5 w-3.5" strokeWidth={2.5} />
         </button>
 
-        {/* Value + suffix: same baseline, centered; no focus ring on container */}
+        {/* Value + suffix: middle column — label will sit under this only */}
         <div className="flex items-center justify-center min-w-10 h-full border-y border-border/40 bg-surface/80 px-1 rounded-none [&:has(input:focus)]:ring-0 [&:has(input:focus)]:ring-offset-0">
           <div className="flex items-baseline justify-center gap-0 leading-none">
             <input
@@ -122,7 +122,7 @@ export function LabeledStepper({
           disabled={disabled || value >= max}
           data-stepper-control
           className={cn(
-            'w-7 flex items-center justify-center rounded-r-lg transition-all shrink-0 cursor-pointer',
+            'w-7 flex items-center justify-center rounded-r-lg transition-all cursor-pointer',
             'bg-surface-light/80 border border-l-0 border-border/40',
             'text-muted-foreground/70 hover:text-foreground hover:bg-surface-light',
             'active:scale-95 disabled:cursor-not-allowed disabled:bg-surface-light/35 disabled:text-muted-foreground/35 disabled:hover:bg-surface-light/35',
@@ -134,10 +134,14 @@ export function LabeledStepper({
         </button>
       </div>
 
-      {/* Label: fixed height so all steppers in a row align vertically */}
-      <span className="text-[9px] uppercase font-bold text-muted-foreground/40 tracking-wider mt-1 min-h-[14px] flex items-center justify-center group-hover:text-muted-foreground/70 transition-colors whitespace-nowrap">
-        {label}
-      </span>
+      {/* Label: same 3-column grid so label sits exactly under the value cell */}
+      <div className="grid grid-cols-[auto_1fr_auto] w-full mt-1 min-h-[14px] items-center">
+        <span className="w-7 shrink-0" aria-hidden />
+        <span className="text-[9px] uppercase font-bold text-muted-foreground/40 tracking-wider text-center group-hover:text-muted-foreground/70 transition-colors whitespace-nowrap">
+          {label}
+        </span>
+        <span className="w-7 shrink-0" aria-hidden />
+      </div>
     </div>
   );
 }

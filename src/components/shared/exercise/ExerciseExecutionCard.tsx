@@ -44,6 +44,7 @@ export function ExerciseExecutionCard({
   readOnlyReason,
   className,
   testIdPrefix = 'exercise-execution-card',
+  layoutVariant = 'default',
 }: Readonly<ExerciseExecutionCardProps>) {
   const [uncontrolledExpanded, setUncontrolledExpanded] = useState(defaultExpanded);
   const [showAdvanced, setShowAdvanced] = useState(false);
@@ -106,137 +107,188 @@ export function ExerciseExecutionCard({
       >
         {/* ── EDIT MODE ── */}
         {mode === 'edit' && (
-          <div className="w-full p-4 flex flex-col @[460px]:flex-row gap-3 @[460px]:gap-2 @[460px]:items-center">
+          <>
+            {(() => {
+              const editDragHandle = dragHandle && (
+                <div className="shrink-0 flex items-center">
+                  {dragHandle}
+                </div>
+              );
 
-            {/* Info section: CSS Grid (1fr name = hard-bounded, truncate guaranteed) */}
-            <div
-              className="grid items-center gap-2 @[460px]:flex-1 @[460px]:min-w-0"
-              style={{ gridTemplateColumns: dragHandle ? 'auto auto 1fr' : 'auto 1fr' }}
-            >
-              {dragHandle && <div className="shrink-0">{dragHandle}</div>}
-              <button
-                type="button"
-                className={cn(
-                  'h-10 w-10 shrink-0 overflow-hidden rounded-lg bg-surface-light border border-border/60 relative group/thumb',
-                  hasGallery ? 'cursor-pointer' : 'cursor-default'
-                )}
-                onClick={handlePreviewTrigger}
-                disabled={!hasGallery}
-                aria-label={hasGallery ? 'Otwórz galerię ćwiczenia' : 'Miniatura ćwiczenia'}
-                data-testid={hasGallery ? `${testId}-thumbnail-btn` : undefined}
-              >
-                {imageUrl ? (
-                  <>
-                    <Image src={imageUrl} alt="" fill className="object-cover" sizes="40px" />
-                    {hasGallery && (
-                      <div
-                        className="absolute inset-0 bg-black/50 opacity-0 group-hover/thumb:opacity-100 transition-opacity flex items-center justify-center pointer-events-none"
-                        data-testid={`${testId}-preview-btn`}
-                      >
-                        <Eye className="h-4 w-4 text-white" />
-                      </div>
-                    )}
-                  </>
-                ) : (
-                  <>
-                    <ImagePlaceholder type="exercise" iconClassName="h-4 w-4" />
-                    {hasGallery && (
-                      <div
-                        className="absolute inset-0 bg-black/50 opacity-0 group-hover/thumb:opacity-100 transition-opacity flex items-center justify-center pointer-events-none"
-                        data-testid={`${testId}-preview-btn`}
-                      >
-                        <Eye className="h-4 w-4 text-white" />
-                      </div>
-                    )}
-                  </>
-                )}
-              </button>
-              <div className="min-w-0 overflow-hidden">
-                <TooltipProvider delayDuration={200}>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <p
-                        className="font-medium text-sm text-foreground truncate"
-                        data-testid={`${testId}-name`}
-                      >
-                        {exercise.displayName}
-                      </p>
-                    </TooltipTrigger>
-                    <TooltipContent side="top" className="text-xs max-w-[300px] wrap-break-word">
-                      {exercise.displayName}
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-                {shouldShowTimerBadge && (
-                  <TooltipProvider delayDuration={150}>
+              const editThumb = (
+                <button
+                  type="button"
+                  className={cn(
+                    'h-10 w-10 shrink-0 overflow-hidden rounded-lg bg-surface-light border border-border/60 relative group/thumb',
+                    hasGallery ? 'cursor-pointer' : 'cursor-default'
+                  )}
+                  onClick={handlePreviewTrigger}
+                  disabled={!hasGallery}
+                  aria-label={hasGallery ? 'Otwórz galerię ćwiczenia' : 'Miniatura ćwiczenia'}
+                  data-testid={hasGallery ? `${testId}-thumbnail-btn` : undefined}
+                >
+                  {imageUrl ? (
+                    <>
+                      <Image src={imageUrl} alt="" fill className="object-cover" sizes="40px" />
+                      {hasGallery && (
+                        <div
+                          className="absolute inset-0 bg-black/50 opacity-0 group-hover/thumb:opacity-100 transition-opacity flex items-center justify-center pointer-events-none"
+                          data-testid={`${testId}-preview-btn`}
+                        >
+                          <Eye className="h-4 w-4 text-white" />
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      <ImagePlaceholder type="exercise" iconClassName="h-4 w-4" />
+                      {hasGallery && (
+                        <div
+                          className="absolute inset-0 bg-black/50 opacity-0 group-hover/thumb:opacity-100 transition-opacity flex items-center justify-center pointer-events-none"
+                          data-testid={`${testId}-preview-btn`}
+                        >
+                          <Eye className="h-4 w-4 text-white" />
+                        </div>
+                      )}
+                    </>
+                  )}
+                </button>
+              );
+
+              const editName = (
+                <div className="min-w-0 overflow-hidden flex-1">
+                  <TooltipProvider delayDuration={200}>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <span className="inline-flex items-center gap-1 mt-0.5 text-[10px] text-primary font-medium">
-                          <Clock className="h-3 w-3" />
-                          Timer ({exercise.executionTime}s)
-                        </span>
+                        <p
+                          className="font-medium text-sm text-foreground truncate"
+                          data-testid={`${testId}-name`}
+                        >
+                          {exercise.displayName}
+                        </p>
                       </TooltipTrigger>
-                      <TooltipContent side="top" className="text-xs max-w-[220px]">
-                        Dla pacjenta w aplikacji mobilnej zostanie uruchomiony timer na czas jednego powtórzenia.
+                      <TooltipContent side="top" className="text-xs max-w-[300px] wrap-break-word">
+                        {exercise.displayName}
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
-                )}
-              </div>
-            </div>
+                  {shouldShowTimerBadge && (
+                    <TooltipProvider delayDuration={150}>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span className="inline-flex items-center gap-1 mt-0.5 text-[10px] text-primary font-medium">
+                            <Clock className="h-3 w-3" />
+                            Timer ({exercise.executionTime}s)
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent side="top" className="text-xs max-w-[220px]">
+                          Dla pacjenta w aplikacji mobilnej zostanie uruchomiony timer na czas jednego powtórzenia.
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  )}
+                </div>
+              );
 
-            {/* Controls: steppers + actions — always flex-row, aligned by h-8 controls top */}
-            <div className="flex items-start gap-3 shrink-0">
-              {/* h-8 clip: only control row participates in vertical alignment, label overflows below */}
-              <div className="h-8 overflow-visible shrink-0">
-                <LabeledStepper
-                  value={exercise.sets}
-                  onChange={(v) => handleChange({ sets: v })}
-                  label="SERIE"
-                  min={1}
-                  max={20}
-                  disabled={!canEditField('sets')}
-                />
-              </div>
-              <div className="h-8 overflow-visible shrink-0">
-                <LabeledStepper
-                  value={exercise.reps}
-                  onChange={(v) => handleChange({ reps: v })}
-                  label="POWT."
-                  min={1}
-                  max={100}
-                  disabled={!canEditField('reps')}
-                />
-              </div>
-              <div className="flex items-center gap-1 @[460px]:ml-0 ml-auto">
-                <CollapsibleTrigger asChild>
-                  <button
-                    type="button"
-                    className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground/60 hover:text-foreground hover:bg-surface-light transition-colors data-[state=open]:bg-primary/10 data-[state=open]:text-primary cursor-pointer"
-                    title={isExpanded ? 'Zwiń' : 'Więcej opcji'}
-                    data-testid={`${testId}-expand-btn`}
+              const editSteppers = (
+                <>
+                  <div className={cn(layoutVariant === 'sidebar' ? 'shrink-0' : 'h-8 overflow-visible shrink-0 flex flex-col items-center justify-start')}>
+                    <LabeledStepper
+                      value={exercise.sets}
+                      onChange={(v) => handleChange({ sets: v })}
+                      label="SERIE"
+                      min={1}
+                      max={20}
+                      disabled={!canEditField('sets')}
+                    />
+                  </div>
+                  <div className={cn(layoutVariant === 'sidebar' ? 'shrink-0' : 'h-8 overflow-visible shrink-0 flex flex-col items-center justify-start')}>
+                    <LabeledStepper
+                      value={exercise.reps}
+                      onChange={(v) => handleChange({ reps: v })}
+                      label="POWT."
+                      min={1}
+                      max={100}
+                      disabled={!canEditField('reps')}
+                    />
+                  </div>
+                </>
+              );
+
+              const editActions = (
+                <div
+                  className={cn(
+                    'flex items-center gap-1 shrink-0',
+                    layoutVariant === 'sidebar' ? '' : '@[460px]:ml-0 ml-auto'
+                  )}
+                >
+                  <CollapsibleTrigger asChild>
+                    <button
+                      type="button"
+                      className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground/60 hover:text-foreground hover:bg-surface-light transition-colors data-[state=open]:bg-primary/10 data-[state=open]:text-primary cursor-pointer"
+                      title={isExpanded ? 'Zwiń' : 'Więcej opcji'}
+                      data-testid={`${testId}-expand-btn`}
+                    >
+                      {isExpanded ? (
+                        <ChevronUp className="h-4 w-4" />
+                      ) : (
+                        <Settings2 className="h-4 w-4" />
+                      )}
+                    </button>
+                  </CollapsibleTrigger>
+                  {onRemove && (
+                    <button
+                      type="button"
+                      onClick={onRemove}
+                      className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground/60 hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer"
+                      title="Usuń"
+                      data-testid={`${testId}-remove-btn`}
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  )}
+                </div>
+              );
+
+              if (layoutVariant === 'sidebar') {
+                return (
+                  <div className="w-full p-4 flex flex-col gap-4">
+                    {/* Górny wiersz: Identyfikacja i akcje rozciągnięte na pełną szerokość */}
+                    <div className="flex flex-row items-center gap-3 w-full">
+                      {editDragHandle}
+                      {editThumb}
+                      {editName}
+                      <div className="shrink-0 ml-auto pl-1">
+                        {editActions}
+                      </div>
+                    </div>
+
+                    {/* Dolny wiersz: Steppery wyśrodkowane i szeroko rozstawione dla idealnego balansu (złoty podział) */}
+                    <div className="flex flex-row items-center justify-center gap-10 sm:gap-12 w-full pt-1 pb-1">
+                      {editSteppers}
+                    </div>
+                  </div>
+                );
+              }
+
+              return (
+                <div className="w-full p-4 flex flex-col gap-3 @[460px]:flex-row @[460px]:gap-2 @[460px]:items-center">
+                  <div
+                    className="grid items-center gap-2 @[460px]:flex-1 @[460px]:min-w-0"
+                    style={{ gridTemplateColumns: dragHandle ? 'auto auto 1fr' : 'auto 1fr' }}
                   >
-                    {isExpanded ? (
-                      <ChevronUp className="h-4 w-4" />
-                    ) : (
-                      <Settings2 className="h-4 w-4" />
-                    )}
-                  </button>
-                </CollapsibleTrigger>
-                {onRemove && (
-                  <button
-                    type="button"
-                    onClick={onRemove}
-                    className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground/60 hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer"
-                    title="Usuń"
-                    data-testid={`${testId}-remove-btn`}
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
-                )}
-              </div>
-            </div>
-          </div>
+                    {editDragHandle}
+                    {editThumb}
+                    {editName}
+                  </div>
+                  <div className="flex shrink-0 gap-3 items-start">
+                    {editSteppers}
+                    {editActions}
+                  </div>
+                </div>
+              );
+            })()}
+          </>
         )}
 
         {/* ── VIEW & READABLE MODE: single-row layout ── */}
@@ -337,11 +389,26 @@ export function ExerciseExecutionCard({
             </div>
             {/* Right: dosage summary */}
             {viewVariant === 'compact' && (
-              <div className="flex items-center gap-2 text-sm font-semibold text-foreground tabular-nums shrink-0 ml-3">
-                <span>{exercise.sets}×</span>
-                <span>{exercise.reps}</span>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-center sm:justify-end gap-1.5 sm:gap-3 text-sm font-semibold text-foreground shrink-0 ml-3 bg-surface-light/50 px-3 py-2 sm:py-1.5 rounded-lg border border-border/40 min-w-[80px] sm:min-w-[120px]">
+                <div className="flex items-center justify-between sm:justify-start gap-3 sm:gap-1.5 w-full sm:w-auto">
+                  <span className="text-[10px] sm:hidden text-muted-foreground uppercase font-bold tracking-wide">Serie</span>
+                  <span className="tabular-nums">{exercise.sets}</span>
+                  <span className="text-muted-foreground text-xs font-normal hidden sm:inline ml-[-2px]">serie</span>
+                </div>
+                <div className="hidden sm:block text-muted-foreground/30 h-4 w-px bg-border/50"></div>
+                <div className="flex items-center justify-between sm:justify-start gap-3 sm:gap-1.5 w-full sm:w-auto">
+                  <span className="text-[10px] sm:hidden text-muted-foreground uppercase font-bold tracking-wide">Powt.</span>
+                  <span className="tabular-nums">{exercise.reps}</span>
+                  <span className="text-muted-foreground text-xs font-normal hidden sm:inline ml-[-2px]">powt.</span>
+                </div>
                 {shouldShowTimerBadge && exercise.executionTime != null && (
-                  <span className="text-primary">×{exercise.executionTime}s</span>
+                  <>
+                    <div className="hidden sm:block text-muted-foreground/30 h-4 w-px bg-border/50"></div>
+                    <div className="flex items-center justify-between sm:justify-start gap-3 sm:gap-1.5 w-full sm:w-auto">
+                      <span className="text-[10px] sm:hidden text-muted-foreground uppercase font-bold tracking-wide">Czas</span>
+                      <span className="text-primary tabular-nums">{exercise.executionTime}s</span>
+                    </div>
+                  </>
                 )}
               </div>
             )}

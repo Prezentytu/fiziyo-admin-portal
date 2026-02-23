@@ -37,6 +37,8 @@ import {
   type LocalExerciseMapping,
 } from './types';
 
+import { aiService } from '@/services/aiService';
+
 import {
   GET_ORGANIZATION_EXERCISE_SETS_QUERY,
   GET_EXERCISE_SET_WITH_ASSIGNMENTS_QUERY,
@@ -199,6 +201,7 @@ function AssignmentWizardContent({
   const [endDate, setEndDate] = useState<Date>(() => addDays(new Date(), 30));
   const [frequency, setFrequency] = useState<Frequency>(defaultFrequency as Frequency);
   const [isCreatingSet, setIsCreatingSet] = useState(false);
+  const [isGeneratingName, setIsGeneratingName] = useState(false);
 
   // Ghost Copy state - lokalna tablica ćwiczeń (nie dotyka bazy)
   const [localExercises, setLocalExercises] = useState<LocalExerciseMapping[]>([]);
@@ -485,11 +488,17 @@ function AssignmentWizardContent({
   }, [exercisesData]);
 
   // Handle create new set - sets mode to creating new and navigates to customize step
-  const handleCreateSet = useCallback(() => {
+  const handleCreateSet = useCallback((searchQuery?: string) => {
     const today = format(new Date(), 'dd.MM.yyyy');
+    
+    // Użyj przekazanej nazwy z wyszukiwarki lub domyślnej
+    const baseName = searchQuery && searchQuery.trim().length > 0 
+      ? searchQuery.trim() 
+      : 'Nowy zestaw';
+      
     const setNamePattern = preselectedPatient
       ? `Plan dla ${preselectedPatient.name} - ${today}`
-      : `Nowy zestaw - ${today}`;
+      : `${baseName} - ${today}`;
 
     // Reset builder state for new set
     setBuilderInstances([]);
@@ -505,6 +514,36 @@ function AssignmentWizardContent({
     setIsCreatingNewSet(true);
     setCurrentStep('customize-set');
   }, [preselectedPatient]);
+
+  // AI: Generowanie ulepszonej nazwy planu na podstawie wybranych ćwiczeń
+  const handleGenerateAIName = useCallback(async () => {
+    if (builderInstances.length === 0) {
+      toast.error('Dodaj przynajmniej jedno ćwiczenie, aby AI mogło zasugerować nazwę');
+      return;
+    }
+
+    try {
+      setIsGeneratingName(true);
+      // Pobieramy pełne nazwy ćwiczeń na podstawie instance.exerciseId
+      const exerciseNames = builderInstances
+        .map((instance) => availableExercises.find((e) => e.id === instance.exerciseId)?.name)
+        .filter((name): name is string => Boolean(name));
+
+      const response = await aiService.suggestSetName(planName, exerciseNames);
+
+      if (response && response.suggestedName) {
+        setPlanName(response.suggestedName);
+        toast.success('Nazwa została wygenerowana');
+      } else {
+        toast.error('AI nie zwróciło poprawnej nazwy');
+      }
+    } catch (error) {
+      toast.error('Nie udało się wygenerować nazwy');
+      console.error(error);
+    } finally {
+      setIsGeneratingName(false);
+    }
+  }, [builderInstances, availableExercises, planName]);
 
   // Ghost Copy - synchronizuj localExercises gdy zmieni się selectedSet z zewnątrz
   useEffect(() => {
@@ -1134,11 +1173,20 @@ function AssignmentWizardContent({
                 <button
                   type="button"
                   title="Wygeneruj nazwę AI"
-                  className="p-1 rounded text-muted-foreground hover:text-secondary hover:bg-secondary/10 shrink-0"
+                  className={cn(
+                    "p-1 rounded text-muted-foreground hover:text-secondary hover:bg-secondary/10 shrink-0",
+                    isGeneratingName && "opacity-50 pointer-events-none cursor-not-allowed"
+                  )}
                   data-testid="customize-set-ai-btn"
                   aria-label="Wygeneruj nazwę AI"
+                  onClick={handleGenerateAIName}
+                  disabled={isGeneratingName}
                 >
-                  <Sparkles className="h-3.5 w-3.5" />
+                  {isGeneratingName ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Sparkles className="h-3.5 w-3.5" />
+                  )}
                 </button>
               </div>
             ) : (

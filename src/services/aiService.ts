@@ -119,6 +119,35 @@ class AIService {
   // ============================================
 
   /**
+   * Generuje zoptymalizowaną nazwę dla zestawu ćwiczeń
+   * @param currentName - aktualnie wpisana nazwa (lub domyślna np. "Nowy zestaw")
+   * @param exerciseNames - lista nazw ćwiczeń w zestawie
+   * @returns sugerowana nazwa zestawu
+   */
+  async suggestSetName(
+    currentName: string,
+    exerciseNames: string[]
+  ): Promise<{ suggestedName: string } | null> {
+    if (!exerciseNames || exerciseNames.length === 0) {
+      return null;
+    }
+
+    try {
+      const request = {
+        currentName: currentName.trim(),
+        exerciseNames,
+      };
+
+      return await this.request<{ suggestedName: string }>('set-name-suggest', request);
+    } catch (error) {
+      if (isDev) {
+        console.error('[AIService] suggestSetName error:', error);
+      }
+      return null;
+    }
+  }
+
+  /**
    * Generuje zestaw ćwiczeń na podstawie opisu potrzeb
    * @param prompt - opis celu zestawu
    * @param patientContext - opcjonalny kontekst pacjenta

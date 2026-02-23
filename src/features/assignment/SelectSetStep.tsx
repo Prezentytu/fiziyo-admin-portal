@@ -22,7 +22,7 @@ interface SelectSetStepProps {
   onUnassign?: (assignmentId: string, setName: string) => void;
   loading?: boolean;
   // Phantom Set props
-  onCreateSet?: () => void | Promise<void>;
+  onCreateSet?: (searchQuery?: string) => void | Promise<void>;
   isCreatingSet?: boolean;
   patientName?: string;
 }
@@ -142,7 +142,7 @@ export function SelectSetStep({
           ) : (
             <div className="p-3 pr-4 space-y-2">
               {/* Phantom Set - Karta "Stwórz nowy" */}
-              {onCreateSet && !searchQuery && (
+              {onCreateSet && (
                 <div
                   className={cn(
                     'flex items-center gap-4 rounded-xl p-4 cursor-pointer transition-all',
@@ -150,7 +150,7 @@ export function SelectSetStep({
                     'hover:border-primary hover:bg-primary/5',
                     isCreatingSet && 'opacity-50 pointer-events-none'
                   )}
-                  onClick={() => !isCreatingSet && onCreateSet()}
+                  onClick={() => !isCreatingSet && onCreateSet(searchQuery)}
                   data-testid="assign-set-create-btn"
                 >
                   <div className="h-14 w-14 shrink-0 rounded-lg bg-surface-light flex items-center justify-center border border-dashed border-border">
@@ -171,14 +171,14 @@ export function SelectSetStep({
               )}
 
               {/* Empty state */}
-              {sortedSets.length === 0 && !onCreateSet && (
+              {sortedSets.length === 0 && (
                 <div className="flex flex-col items-center justify-center py-12 text-center px-4">
                   <FolderKanban className="h-12 w-12 text-muted-foreground/50 mb-3" />
                   <p className="text-sm font-medium text-foreground mb-1">
                     {searchQuery ? 'Nie znaleziono zestawów' : 'Brak zestawów'}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    {searchQuery ? 'Spróbuj innej frazy' : 'Utwórz nowy zestaw ćwiczeń'}
+                    {searchQuery ? (onCreateSet ? 'Utwórz nowy zestaw klikając przycisk powyżej' : 'Spróbuj innej frazy') : 'Utwórz nowy zestaw ćwiczeń'}
                   </p>
                 </div>
               )}

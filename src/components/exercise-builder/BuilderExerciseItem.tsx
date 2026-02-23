@@ -86,13 +86,14 @@ export function BuilderExerciseItem({ exercise, onUpdate, onRemove }: BuilderExe
             <button
               {...attributes}
               {...listeners}
-              className="cursor-grab touch-none text-muted-foreground/40 hover:text-foreground transition-colors shrink-0"
+              className="cursor-grab touch-none text-muted-foreground/40 hover:text-foreground transition-colors shrink-0 flex items-center justify-center h-10 w-10"
               data-testid={`builder-exercise-item-${exercise.id}-drag-handle`}
               type="button"
             >
               <GripVertical className="h-4 w-4" />
             </button>
           }
+          layoutVariant="sidebar"
           testIdPrefix="builder-exercise-item"
         />
       </div>
