@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import { AlertTriangle, RefreshCw, Home, Link } from 'lucide-react';
+import { AlertTriangle, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface ErrorPageProps {
@@ -18,7 +18,7 @@ export default function ErrorPage({ error, reset }: ErrorPageProps) {
 
   return (
     <div
-      className="flex min-h-[60vh] flex-col items-center justify-center gap-6 p-8 text-center"
+      className="flex min-h-screen flex-col items-center justify-center gap-6 p-8 text-center"
       data-testid="common-error-page"
     >
       <div className="flex h-20 w-20 items-center justify-center rounded-full bg-destructive/10">
@@ -41,12 +41,6 @@ export default function ErrorPage({ error, reset }: ErrorPageProps) {
         <Button onClick={reset} variant="default" className="gap-2" data-testid="common-error-page-retry-btn">
           <RefreshCw className="h-4 w-4" />
           Spróbuj ponownie
-        </Button>
-        <Button variant="outline" className="gap-2" asChild data-testid="common-error-page-home-btn">
-          <Link href="/">
-            <Home className="h-4 w-4" />
-            Panel główny
-          </Link>
         </Button>
       </div>
     </div>

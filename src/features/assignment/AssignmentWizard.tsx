@@ -484,6 +484,7 @@ function AssignmentWizardContent({
         thumbnailUrl: ex.thumbnailUrl,
         imageUrl: ex.imageUrl,
         images: ex.images,
+        scope: ex.scope,
       }));
   }, [exercisesData]);
 

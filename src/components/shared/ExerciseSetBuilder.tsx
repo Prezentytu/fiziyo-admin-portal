@@ -41,6 +41,8 @@ import { getMediaUrl } from '@/utils/mediaUrl';
 import { ExerciseExecutionCard, fromBuilderExercise } from '@/components/shared/exercise';
 import type { ExerciseExecutionCardData } from '@/components/shared/exercise';
 import { ColorBadge } from '@/components/shared/ColorBadge';
+import { filterExercisesBySource, countBySource } from '@/utils/exerciseSourceFilter';
+import type { ExerciseSourceFilter } from '@/utils/exerciseSourceFilter';
 import { cn } from '@/lib/utils';
 
 // ============================================================
@@ -82,6 +84,8 @@ export interface BuilderExercise {
   exerciseSide?: string;
   mainTags?: ExerciseTag[];
   additionalTags?: ExerciseTag[];
+  /** GLOBAL | ORGANIZATION | PERSONAL - for source filter (Moje / Wszystkie / FiziYo) */
+  scope?: string;
 }
 
 export interface ExerciseParams {
@@ -329,24 +333,21 @@ export function ExerciseSetBuilder({
   name,
   onNameChange,
   namePlaceholder = 'np. Rehabilitacja kolana - tydzień 1',
-  nameLabel = 'Nazwa zestawu',
   selectedInstances,
   onSelectedInstancesChange,
   exerciseParams,
   onExerciseParamsChange,
   availableExercises,
   loadingExercises = false,
-  tags = [],
   exercisePopularity = {},
   showAI = false,
   onAIClick,
-  aiButtonLabel = 'Dobierz za mnie',
   hideNameSection = false,
   onPreviewExercise,
   testIdPrefix = 'set-builder',
-}: ExerciseSetBuilderProps) {
+}: Readonly<ExerciseSetBuilderProps>) {
   const [searchQuery, setSearchQuery] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState('all');
+  const [sourceFilter, setSourceFilter] = useState<ExerciseSourceFilter>('all');
 
   // DnD sensors
   const sensors = useSensors(
@@ -367,54 +368,20 @@ export function ExerciseSetBuilder({
       .slice(0, 10);
   }, [availableExercises, exercisePopularity]);
 
-  // Category filters from tags
-  const quickStartCategories = useMemo(() => {
-    const tagExerciseCounts: Record<string, number> = {};
+  // Source filter: by scope (all / Moje = ORGANIZATION|PERSONAL / FiziYo = GLOBAL)
+  const sourceFilteredExercises = useMemo(
+    () => filterExercisesBySource(availableExercises, sourceFilter),
+    [availableExercises, sourceFilter]
+  );
 
-    for (const exercise of availableExercises) {
-      const exerciseTags = getExerciseTags(exercise);
-      for (const tag of exerciseTags) {
-        if (tag.id) {
-          tagExerciseCounts[tag.id] = (tagExerciseCounts[tag.id] || 0) + 1;
-        }
-      }
-    }
+  const { total: totalCount, organization: organizationCount, fiziyo: fiziyoCount } = useMemo(
+    () => countBySource(availableExercises),
+    [availableExercises]
+  );
 
-    const mainTags = tags.filter((tag) => (tag as ExerciseTag & { isMain?: boolean }).isMain);
-    const tagsToShow =
-      mainTags.length > 0
-        ? mainTags
-        : tags.sort((a, b) => (tagExerciseCounts[b.id] || 0) - (tagExerciseCounts[a.id] || 0)).slice(0, 8);
-
-    return tagsToShow
-      .map((tag) => ({
-        id: tag.id,
-        label: tag.name,
-        color: tag.color || '#22c55e',
-        exerciseCount: tagExerciseCounts[tag.id] || 0,
-      }))
-      .filter((cat) => cat.exerciseCount > 0)
-      .sort((a, b) => b.exerciseCount - a.exerciseCount)
-      .slice(0, 8);
-  }, [availableExercises, tags, getExerciseTags]);
-
-  const categoryFilters = useMemo(() => {
-    return [
-      { id: 'all', label: 'Wszystkie' },
-      ...quickStartCategories.map((cat) => ({ id: cat.id, label: cat.label })),
-    ];
-  }, [quickStartCategories]);
-
-  // Filtered exercises
+  // Filtered exercises: source first, then search
   const filteredExercises = useMemo(() => {
-    let result = availableExercises;
-
-    if (categoryFilter !== 'all') {
-      result = result.filter((ex) => {
-        const allTags = getExerciseTags(ex);
-        return allTags.some((tag) => tag.id === categoryFilter);
-      });
-    }
+    let result = sourceFilteredExercises;
 
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
@@ -427,7 +394,7 @@ export function ExerciseSetBuilder({
     }
 
     return result;
-  }, [availableExercises, searchQuery, categoryFilter, getExerciseTags]);
+  }, [sourceFilteredExercises, searchQuery, getExerciseTags]);
 
   // Params helpers
   const getDefaultParams = useCallback(
@@ -613,27 +580,56 @@ export function ExerciseSetBuilder({
               </div>
             </div>
 
-            {/* Category filters */}
+            {/* Source filters - same badge style as exercises page */}
             <div className="flex flex-wrap gap-1.5">
-              {categoryFilters.map((cat) => (
-                <button
-                  key={cat.id}
-                  type="button"
-                  onClick={() => setCategoryFilter(cat.id)}
-                  className={cn(
-                    'px-2.5 py-1 rounded-lg text-xs font-medium transition-all',
-                    categoryFilter === cat.id
-                      ? 'bg-primary text-primary-foreground'
-                      : 'bg-surface-light text-muted-foreground hover:bg-surface-hover hover:text-foreground'
-                  )}
-                  data-testid={`${testIdPrefix}-category-${cat.id}`}
-                >
-                  {cat.label}
-                </button>
-              ))}
+              <button
+                type="button"
+                onClick={() => setSourceFilter('all')}
+                className={cn(
+                  'px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all border flex items-center gap-1.5',
+                  sourceFilter === 'all'
+                    ? 'border-primary/40 bg-primary/10 ring-1 ring-primary/20 text-primary'
+                    : 'border-border/40 bg-surface/50 text-muted-foreground hover:bg-surface-light hover:text-foreground hover:border-border'
+                )}
+                data-testid={`${testIdPrefix}-filter-all`}
+              >
+                <Dumbbell className="h-3.5 w-3.5 shrink-0" />
+                <span>Wszystkie</span>
+                <span className="font-semibold">{totalCount}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setSourceFilter('organization')}
+                className={cn(
+                  'px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all border flex items-center gap-1.5',
+                  sourceFilter === 'organization'
+                    ? 'border-secondary/40 bg-secondary/10 ring-1 ring-secondary/20 text-secondary'
+                    : 'border-border/40 bg-surface/50 text-muted-foreground hover:bg-surface-light hover:text-foreground hover:border-border'
+                )}
+                data-testid={`${testIdPrefix}-filter-organization`}
+              >
+                <Dumbbell className="h-3.5 w-3.5 shrink-0" />
+                <span>Moje ćwiczenia</span>
+                <span className="font-semibold">{organizationCount}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setSourceFilter('fiziyo')}
+                className={cn(
+                  'px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all border flex items-center gap-1.5',
+                  sourceFilter === 'fiziyo'
+                    ? 'border-violet-500/40 bg-violet-500/10 ring-1 ring-violet-500/20 text-violet-500'
+                    : 'border-border/40 bg-surface/50 text-muted-foreground hover:bg-surface-light hover:text-foreground hover:border-border'
+                )}
+                data-testid={`${testIdPrefix}-filter-fiziyo`}
+              >
+                <Sparkles className="h-3.5 w-3.5 shrink-0" />
+                <span>FiziYo</span>
+                <span className="font-semibold">{fiziyoCount}</span>
+              </button>
             </div>
 
-            <p className="text-xs text-muted-foreground">{filteredExercises.length} ćwiczeń</p>
+
           </div>
 
           {/* Exercise list */}
@@ -653,7 +649,7 @@ export function ExerciseSetBuilder({
               ) : (
                 <div className="space-y-6">
                   {/* Popular - show at top when no search/filter active */}
-                  {!searchQuery && categoryFilter === 'all' && popularExercises.length > 0 && (
+                  {!searchQuery && sourceFilter === 'all' && popularExercises.length > 0 && (
                     <div>
                       <div className="flex items-center gap-2 mb-3">
                         <TrendingUp className="h-4 w-4 text-primary" />
@@ -677,7 +673,7 @@ export function ExerciseSetBuilder({
 
                   {/* All exercises */}
                   <div>
-                    {!searchQuery && categoryFilter === 'all' && popularExercises.length > 0 && (
+                    {!searchQuery && sourceFilter === 'all' && popularExercises.length > 0 && (
                       <div className="flex items-center gap-2 mb-3">
                         <Dumbbell className="h-4 w-4 text-muted-foreground" />
                         <h4 className="text-sm font-semibold">Wszystkie ćwiczenia</h4>
@@ -685,7 +681,7 @@ export function ExerciseSetBuilder({
                     )}
                     <div className="grid gap-2">
                       {(() => {
-                        const showPopular = !searchQuery && categoryFilter === 'all' && popularExercises.length > 0;
+                        const showPopular = !searchQuery && sourceFilter === 'all' && popularExercises.length > 0;
                         const popularIds = new Set(popularExercises.map((e) => e.id));
                         const exercisesToShow = showPopular
                           ? filteredExercises.filter((e) => !popularIds.has(e.id))
