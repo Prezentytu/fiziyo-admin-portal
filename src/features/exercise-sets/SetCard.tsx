@@ -64,6 +64,8 @@ interface SetCardProps {
 export function SetCard({ set, tagsMap, onView, onEdit, onDelete, onDuplicate, onAssign, className }: SetCardProps) {
   // State for Dynamic Preview (scrubbing) - tracks which exercise image is shown
   const [activeExerciseIndex, setActiveExerciseIndex] = useState<number | null>(null);
+  // Keep actions visible while dropdown is open so menu does not disappear when moving cursor to it
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const exerciseCount = set.exerciseMappings?.length || 0;
   const assignmentCount = set.patientAssignments?.length || 0;
@@ -227,81 +229,78 @@ export function SetCard({ set, tagsMap, onView, onEdit, onDelete, onDuplicate, o
           </div>
         )}
 
-        {/* TOP HEADER AREA - Flex Layout (Below Progress Bars) */}
-        {activeExerciseIndex !== null && allExerciseImages.length > 1 && (
-          <div
-            className={cn(
-              'absolute top-4 left-0 right-0 px-3 flex items-start justify-between z-20 pointer-events-none transition-opacity duration-200',
-              'opacity-0 group-hover:opacity-100'
-            )}
-          >
-            {/* A. Exercise Name (Flexible Width) */}
-            {allExerciseImages[activeExerciseIndex]?.name && (
-              <div className="flex-1 pr-2 pt-1 pointer-events-none min-w-0">
-                <span className="text-white text-xs font-bold leading-tight drop-shadow-md line-clamp-2">
-                  {allExerciseImages[activeExerciseIndex].name}
-                </span>
-              </div>
-            )}
-
-            {/* B. Action Buttons (Fixed Width) */}
-            <div className="flex gap-1 flex-none pointer-events-auto">
-              {/* Copy Link */}
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-7 w-7 bg-black/40 hover:bg-black/80 backdrop-blur-sm rounded-full border border-white/10 text-white transition-colors"
-                onClick={handleCopyLink}
-                title="Kopiuj link publiczny"
-                data-testid={`set-card-${set.id}-copy-link-btn`}
-              >
-                <LinkIcon className="h-3.5 w-3.5" />
-              </Button>
-
-              {/* Menu dropdown */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-7 w-7 bg-black/40 hover:bg-black/80 backdrop-blur-sm rounded-full border border-white/10 text-white transition-colors"
-                    onClick={(e) => e.stopPropagation()}
-                    data-testid={`set-card-${set.id}-menu-trigger`}
-                  >
-                    <MoreVertical className="h-3.5 w-3.5" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-                  {onEdit && (
-                    <DropdownMenuItem onClick={() => onEdit(set)} data-testid={`set-card-${set.id}-edit-btn`}>
-                      <Pencil className="mr-2 h-4 w-4" />
-                      Edytuj
-                    </DropdownMenuItem>
-                  )}
-                  {onDuplicate && (
-                    <DropdownMenuItem onClick={() => onDuplicate(set)} data-testid={`set-card-${set.id}-duplicate-btn`}>
-                      <Copy className="mr-2 h-4 w-4" />
-                      Duplikuj
-                    </DropdownMenuItem>
-                  )}
-                  {onDelete && (
-                    <>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem
-                        onClick={() => onDelete(set)}
-                        className="text-destructive focus:text-destructive"
-                        data-testid={`set-card-${set.id}-delete-btn`}
-                      >
-                        <Trash2 className="mr-2 h-4 w-4" />
-                        Usuń
-                      </DropdownMenuItem>
-                    </>
-                  )}
-                </DropdownMenuContent>
-              </DropdownMenu>
+        {/* TOP HEADER AREA - Actions visible on hover or while menu open (so cursor can move to menu) */}
+        <div
+          className={cn(
+            'absolute top-4 left-0 right-0 px-3 flex items-start justify-between z-20 pointer-events-none transition-opacity duration-200',
+            'opacity-0 group-hover:opacity-100',
+            menuOpen && 'opacity-100'
+          )}
+        >
+          {/* A. Exercise Name when scrubbing (multiple images) */}
+          {allExerciseImages.length > 1 && allExerciseImages[activeExerciseIndex ?? 0]?.name && (
+            <div className="flex-1 pr-2 pt-1 pointer-events-none min-w-0">
+              <span className="text-white text-xs font-bold leading-tight drop-shadow-md line-clamp-2">
+                {allExerciseImages[activeExerciseIndex ?? 0].name}
+              </span>
             </div>
+          )}
+
+          {/* B. Action Buttons - pointer-events-auto so clickable */}
+          <div className="flex gap-1 flex-none pointer-events-auto ml-auto">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 bg-black/40 hover:bg-black/80 backdrop-blur-sm rounded-full border border-white/10 text-white transition-colors"
+              onClick={handleCopyLink}
+              title="Kopiuj link publiczny"
+              data-testid={`set-card-${set.id}-copy-link-btn`}
+            >
+              <LinkIcon className="h-3.5 w-3.5" />
+            </Button>
+
+            <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 bg-black/40 hover:bg-black/80 backdrop-blur-sm rounded-full border border-white/10 text-white transition-colors"
+                  onClick={(e) => e.stopPropagation()}
+                  data-testid={`set-card-${set.id}-menu-trigger`}
+                >
+                  <MoreVertical className="h-3.5 w-3.5" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+                {onEdit && (
+                  <DropdownMenuItem onClick={() => onEdit(set)} data-testid={`set-card-${set.id}-edit-btn`}>
+                    <Pencil className="mr-2 h-4 w-4" />
+                    Edytuj
+                  </DropdownMenuItem>
+                )}
+                {onDuplicate && (
+                  <DropdownMenuItem onClick={() => onDuplicate(set)} data-testid={`set-card-${set.id}-duplicate-btn`}>
+                    <Copy className="mr-2 h-4 w-4" />
+                    Duplikuj
+                  </DropdownMenuItem>
+                )}
+                {onDelete && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onClick={() => onDelete(set)}
+                      className="text-destructive focus:text-destructive"
+                      data-testid={`set-card-${set.id}-delete-btn`}
+                    >
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Usuń
+                    </DropdownMenuItem>
+                  </>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
-        )}
+        </div>
 
         {/* LAYER 4: TOP-LEFT - Template badge (always visible if template) */}
         {set.isTemplate && (
@@ -313,29 +312,9 @@ export function SetCard({ set, tagsMap, onView, onEdit, onDelete, onDuplicate, o
           </div>
         )}
 
-        {/* LAYER 5: BOTTOM - "Wymiana warty" (The Swap) */}
+        {/* LAYER 5: BOTTOM - Assign button only (metadata moved to content under name) */}
         <div className="absolute bottom-3 left-3 right-3 z-20 h-9">
-          {/* A. INFO BADGE - Visible in IDLE, fades out on HOVER */}
-          <div
-            className={cn(
-              'absolute inset-0 flex items-center transition-all duration-300',
-              'group-hover:opacity-0 group-hover:translate-y-2'
-            )}
-          >
-            <div className="flex items-center gap-1.5 bg-black/70 backdrop-blur-md rounded-full px-2.5 py-1 text-xs text-white font-medium shadow-lg">
-              <Dumbbell className="h-3 w-3" />
-              <span>{exerciseCount} ćw</span>
-              {estimatedDuration > 0 && (
-                <>
-                  <span className="text-white/50">•</span>
-                  <Clock className="h-3 w-3" />
-                  <span>~{estimatedDuration} min</span>
-                </>
-              )}
-            </div>
-          </div>
-
-          {/* B. ASSIGN BUTTON - Compact Pill (Hidden in IDLE, slides up on HOVER) */}
+          {/* ASSIGN BUTTON - Compact Pill (Hidden in IDLE, slides up on HOVER) */}
           {onAssign && (
             <div
               className={cn(
@@ -388,6 +367,19 @@ export function SetCard({ set, tagsMap, onView, onEdit, onDelete, onDuplicate, o
           <h3 className="text-base font-semibold leading-snug line-clamp-2 text-foreground group-hover:text-secondary transition-colors">
             {set.name}
           </h3>
+        </div>
+
+        {/* Metadata: exercise count and estimated time under name (fixed height for grid alignment) */}
+        <div className="h-5 flex items-center gap-1.5 text-xs text-muted-foreground mt-1">
+          <Dumbbell className="h-3 w-3 shrink-0" />
+          <span>{exerciseCount} ćw</span>
+          {estimatedDuration > 0 && (
+            <>
+              <span className="text-muted-foreground/60">•</span>
+              <Clock className="h-3 w-3 shrink-0" />
+              <span>~{estimatedDuration} min</span>
+            </>
+          )}
         </div>
 
         {/* Footer - always at bottom with mt-auto */}

@@ -546,7 +546,7 @@ function AssignmentWizardContent({
     }
   }, [builderInstances, availableExercises, planName]);
 
-  // Ghost Copy - synchronizuj localExercises gdy zmieni się selectedSet z zewnątrz
+  // Ghost Copy - synchronizuj localExercises gdy zmieni się selectedSet z zewnątrz (z query)
   useEffect(() => {
     if (selectedSet && exerciseSets.length > 0) {
       const updatedSet = exerciseSets.find((s) => s.id === selectedSet.id);
@@ -556,6 +556,56 @@ function AssignmentWizardContent({
       }
     }
   }, [exerciseSets, selectedSet, localExercises.length]);
+
+  // From set-details: preselectedSet is passed but sets query is skipped → init state from preselectedSet
+  useEffect(() => {
+    if (!open || !preselectedSet || localExercises.length > 0) return;
+    const set = preselectedSet;
+    if (set.exerciseMappings?.length) {
+      setLocalExercises(set.exerciseMappings.map(createGhostCopy));
+      const instances: ExerciseInstance[] = [];
+      const params = new Map<string, ExerciseParams>();
+      set.exerciseMappings.forEach((mapping) => {
+        const instanceId = `existing-${mapping.id}`;
+        instances.push({
+          instanceId,
+          exerciseId: mapping.exerciseId,
+        });
+        params.set(instanceId, {
+          sets: mapping.sets ?? undefined,
+          reps: mapping.reps ?? undefined,
+          duration: mapping.duration ?? undefined,
+          restSets: mapping.restSets ?? undefined,
+          restReps: mapping.restReps ?? undefined,
+          executionTime: mapping.executionTime ?? undefined,
+          preparationTime: mapping.preparationTime ?? undefined,
+          tempo: mapping.tempo ?? '',
+          load: mapping.load ?? undefined,
+          notes: mapping.notes ?? '',
+          customName: mapping.customName ?? '',
+          customDescription: mapping.customDescription ?? '',
+        });
+      });
+      setBuilderInstances(instances);
+      setBuilderParams(params);
+    }
+    setPlanName(set.name || 'Nowy Plan');
+    setTemplateName(`${set.name || 'Nowy Plan'} (szablon)`);
+    if (set.frequency) {
+      setFrequency({
+        timesPerDay: set.frequency.timesPerDay || 1,
+        timesPerWeek: set.frequency.timesPerWeek,
+        breakBetweenSets: set.frequency.breakBetweenSets || 60,
+        monday: set.frequency.monday ?? true,
+        tuesday: set.frequency.tuesday ?? true,
+        wednesday: set.frequency.wednesday ?? true,
+        thursday: set.frequency.thursday ?? true,
+        friday: set.frequency.friday ?? true,
+        saturday: set.frequency.saturday ?? false,
+        sunday: set.frequency.sunday ?? false,
+      });
+    }
+  }, [open, preselectedSet, localExercises.length]);
 
   // Handle unassign action
   const handleUnassignRequest = useCallback((assignmentId: string, name: string, type: 'set' | 'patient') => {

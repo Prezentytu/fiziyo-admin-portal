@@ -1,93 +1,63 @@
 'use client';
 
 import * as React from 'react';
-import { useState, useMemo, useCallback } from 'react';
-import Image from 'next/image';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useQuery, useMutation } from '@apollo/client/react';
-import { Search, Loader2, Dumbbell, Check, ArrowLeft, ArrowRight, X, Plus, Minus } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
+import * as VisuallyHidden from '@radix-ui/react-visually-hidden';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { ImagePlaceholder } from '@/components/shared/ImagePlaceholder';
-import { getMediaUrl } from '@/utils/mediaUrl';
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
-import { cn } from '@/lib/utils';
+import {
+  ExerciseSetBuilder,
+  type ExerciseInstance,
+  type ExerciseParams,
+  type BuilderExercise,
+  type ExerciseTag,
+} from '@/components/shared/ExerciseSetBuilder';
+import { ImageLightbox } from '@/components/shared/ImageLightbox';
+import { buildExerciseImageUrls } from '@/components/shared/exercise';
 
-import { GET_ORGANIZATION_EXERCISES_QUERY } from '@/graphql/queries/exercises.queries';
+import { GET_AVAILABLE_EXERCISES_QUERY } from '@/graphql/queries/exercises.queries';
+import {
+  GET_EXERCISE_SET_WITH_ASSIGNMENTS_QUERY,
+  GET_ORGANIZATION_EXERCISE_SETS_QUERY,
+} from '@/graphql/queries/exerciseSets.queries';
+import { GET_EXERCISE_TAGS_BY_ORGANIZATION_QUERY } from '@/graphql/queries/exerciseTags.queries';
+import { GET_TAG_CATEGORIES_BY_ORGANIZATION_QUERY } from '@/graphql/queries/tagCategories.queries';
 import { ADD_EXERCISE_TO_EXERCISE_SET_MUTATION } from '@/graphql/mutations/exercises.mutations';
-import { GET_EXERCISE_SET_WITH_ASSIGNMENTS_QUERY } from '@/graphql/queries/exerciseSets.queries';
-
-interface Exercise {
-  id: string;
-  name: string;
-  type?: string;
-  // Nowe pola
-  patientDescription?: string;
-  side?: string;
-  defaultSets?: number;
-  defaultReps?: number;
-  defaultDuration?: number;
-  thumbnailUrl?: string;
-  // Legacy aliasy
-  description?: string;
-  imageUrl?: string;
-  images?: string[];
-  sets?: number;
-  reps?: number;
-  duration?: number;
-  exerciseSide?: string;
-}
-
-interface ExerciseParams {
-  exerciseId: string;
-  sets: number;
-  reps: number;
-  duration: number;
-}
+import { createTagsMap, mapExercisesWithTags } from '@/utils/tagUtils';
+import type {
+  ExerciseTagsResponse,
+  TagCategoriesResponse,
+  OrganizationExerciseSetsResponse,
+} from '@/types/apollo';
 
 interface AddExerciseToSetDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   exerciseSetId: string;
   organizationId: string;
-  existingExerciseIds?: string[];
   onSuccess?: () => void;
 }
-
-const translateSide = (side?: string) => {
-  if (!side) return '';
-  const normalizedSide = side.toLowerCase();
-  const sides: Record<string, string> = {
-    left: 'lewa',
-    right: 'prawa',
-    both: 'obie',
-    alternating: 'naprzemiennie',
-    none: '',
-  };
-  return sides[normalizedSide] || side;
-};
 
 export function AddExerciseToSetDialog({
   open,
   onOpenChange,
   exerciseSetId,
   organizationId,
-  existingExerciseIds = [],
   onSuccess,
-}: AddExerciseToSetDialogProps) {
-  const [step, setStep] = useState<1 | 2>(1);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedExercises, setSelectedExercises] = useState<Set<string>>(new Set());
+}: Readonly<AddExerciseToSetDialogProps>) {
+  const [selectedInstances, setSelectedInstances] = useState<ExerciseInstance[]>([]);
   const [exerciseParams, setExerciseParams] = useState<Map<string, ExerciseParams>>(new Map());
   const [showCloseConfirm, setShowCloseConfirm] = useState(false);
+  const [previewExercise, setPreviewExercise] = useState<BuilderExercise | null>(null);
+  const initialInstanceIdsRef = React.useRef<Set<string>>(new Set());
+  const initializedFromExistingRef = React.useRef(false);
 
-  // Check if there are unsaved changes
-  const hasChanges = selectedExercises.size > 0;
+  const hasChanges = selectedInstances.some((instance) => !initialInstanceIdsRef.current.has(instance.instanceId));
 
   const handleCloseAttempt = useCallback(() => {
     if (hasChanges) {
@@ -102,102 +72,209 @@ export function AddExerciseToSetDialog({
     onOpenChange(false);
   }, [onOpenChange]);
 
-  // Reset state when dialog opens/closes
-  React.useEffect(() => {
+  useEffect(() => {
     if (open) {
-      setStep(1);
-      setSearchQuery('');
-      setSelectedExercises(new Set());
+      setSelectedInstances([]);
       setExerciseParams(new Map());
       setShowCloseConfirm(false);
+      setPreviewExercise(null);
+      initialInstanceIdsRef.current = new Set();
+      initializedFromExistingRef.current = false;
     }
   }, [open]);
 
-  // Get exercises
-  const { data, loading } = useQuery(GET_ORGANIZATION_EXERCISES_QUERY, {
+  const { data: exercisesData, loading: loadingExercises } = useQuery(GET_AVAILABLE_EXERCISES_QUERY, {
     variables: { organizationId },
     skip: !organizationId || !open,
   });
 
-  // Add exercise mutation
-  const [addExercise, { loading: adding }] = useMutation(ADD_EXERCISE_TO_EXERCISE_SET_MUTATION);
+  const { data: tagsData } = useQuery(GET_EXERCISE_TAGS_BY_ORGANIZATION_QUERY, {
+    variables: { organizationId },
+    skip: !organizationId || !open,
+  });
 
-  const exercises: Exercise[] = useMemo(() => {
-    const allExercises = (data as { organizationExercises?: Exercise[] })?.organizationExercises || [];
-    // Filter out already added exercises
-    return allExercises.filter((ex) => !existingExerciseIds.includes(ex.id));
-  }, [data, existingExerciseIds]);
+  const { data: categoriesData } = useQuery(GET_TAG_CATEGORIES_BY_ORGANIZATION_QUERY, {
+    variables: { organizationId },
+    skip: !organizationId || !open,
+  });
 
-  const filteredExercises = useMemo(() => {
-    if (!searchQuery.trim()) return exercises;
-    const query = searchQuery.toLowerCase();
-    return exercises.filter(
-      (ex) =>
-        ex.name.toLowerCase().includes(query) ||
-        ex.description?.toLowerCase().includes(query) ||
-        ex.type?.toLowerCase().includes(query)
-    );
-  }, [exercises, searchQuery]);
+  const { data: exerciseSetsData } = useQuery(GET_ORGANIZATION_EXERCISE_SETS_QUERY, {
+    variables: { organizationId },
+    skip: !organizationId || !open,
+  });
+  const { data: setDetailsData } = useQuery(GET_EXERCISE_SET_WITH_ASSIGNMENTS_QUERY, {
+    variables: { exerciseSetId },
+    skip: !exerciseSetId || !open,
+  });
 
-  const selectedExercisesList = useMemo(() => {
-    return exercises.filter((ex) => selectedExercises.has(ex.id));
-  }, [exercises, selectedExercises]);
+  const tags = useMemo(() => (tagsData as ExerciseTagsResponse)?.exerciseTags || [], [tagsData]);
+  const categories = useMemo(
+    () => (categoriesData as TagCategoriesResponse)?.tagsByOrganizationId || [],
+    [categoriesData]
+  );
+  const tagsMap = useMemo(() => createTagsMap(tags, categories), [tags, categories]);
 
-  const toggleExercise = (exerciseId: string) => {
-    const newSelected = new Set(selectedExercises);
-    if (newSelected.has(exerciseId)) {
-      newSelected.delete(exerciseId);
-    } else {
-      newSelected.add(exerciseId);
+  const rawAvailableExercises = useMemo(() => {
+    const data = exercisesData as { availableExercises?: Record<string, unknown>[] } | undefined;
+    return (data?.availableExercises || []).filter((ex) => (ex as { isActive?: boolean }).isActive !== false);
+  }, [exercisesData]);
+
+  const availableExercises: BuilderExercise[] = useMemo(() => {
+    return mapExercisesWithTags(
+      rawAvailableExercises.map((raw) => ({
+        id: raw.id as string,
+        name: raw.name as string,
+        type: raw.type as string | undefined,
+        patientDescription: (raw.patientDescription ?? raw.description) as string | undefined,
+        side: raw.side as string | undefined,
+        thumbnailUrl: raw.thumbnailUrl as string | undefined,
+        imageUrl: raw.imageUrl as string | undefined,
+        images: raw.images as string[] | undefined,
+        defaultSets: raw.defaultSets as number | undefined,
+        defaultReps: raw.defaultReps as number | undefined,
+        defaultDuration: raw.defaultDuration as number | undefined,
+        defaultRestBetweenSets: raw.defaultRestBetweenSets as number | undefined,
+        defaultRestBetweenReps: raw.defaultRestBetweenReps as number | undefined,
+        defaultExecutionTime: raw.defaultExecutionTime as number | undefined,
+        description: (raw.patientDescription ?? raw.description) as string | undefined,
+        sets: raw.sets as number | undefined,
+        reps: raw.reps as number | undefined,
+        duration: raw.duration as number | undefined,
+        restSets: raw.restSets as number | undefined,
+        restReps: raw.restReps as number | undefined,
+        exerciseSide: (raw.side as string)?.toLowerCase() ?? (raw.exerciseSide as string) ?? undefined,
+        mainTags: raw.mainTags as (string | ExerciseTag)[] | undefined,
+        additionalTags: raw.additionalTags as (string | ExerciseTag)[] | undefined,
+        scope: raw.scope as string | undefined,
+      })),
+      tagsMap
+    ) as BuilderExercise[];
+  }, [rawAvailableExercises, tagsMap]);
+
+  const exerciseSets = useMemo(
+    () => (exerciseSetsData as OrganizationExerciseSetsResponse)?.exerciseSets || [],
+    [exerciseSetsData]
+  );
+  const exercisePopularity = useMemo(() => {
+    const popularity: Record<string, number> = {};
+    for (const set of exerciseSets) {
+      for (const mapping of set.exerciseMappings || []) {
+        if (mapping.exerciseId) {
+          popularity[mapping.exerciseId] = (popularity[mapping.exerciseId] || 0) + 1;
+        }
+      }
     }
-    setSelectedExercises(newSelected);
-  };
+    return popularity;
+  }, [exerciseSets]);
 
-  const initializeParams = () => {
-    const params = new Map<string, ExerciseParams>();
-    selectedExercisesList.forEach((ex) => {
-      params.set(ex.id, {
-        exerciseId: ex.id,
-        sets: ex.sets || 3,
-        reps: ex.reps || 10,
-        duration: ex.duration || 0,
-      });
-    });
-    setExerciseParams(params);
-  };
+  const builderTags: ExerciseTag[] = useMemo(
+    () => tags.map((tag) => ({ id: tag.id, name: tag.name, color: tag.color })),
+    [tags]
+  );
 
-  const updateParam = (exerciseId: string, field: keyof ExerciseParams, value: number) => {
-    const newParams = new Map(exerciseParams);
-    const current = newParams.get(exerciseId);
-    if (current) {
-      newParams.set(exerciseId, { ...current, [field]: Math.max(0, value) });
-    }
-    setExerciseParams(newParams);
-  };
-
-  const handleNextStep = () => {
-    if (selectedExercises.size === 0) {
-      toast.error('Wybierz przynajmniej jedno ćwiczenie');
+  useEffect(() => {
+    if (!open || initializedFromExistingRef.current) {
       return;
     }
-    initializeParams();
-    setStep(2);
-  };
 
-  const handleSave = async () => {
+    const mappings =
+      (
+        setDetailsData as {
+          exerciseSetById?: {
+            exerciseMappings?: Array<{
+              id: string;
+              exerciseId: string;
+              sets?: number;
+              reps?: number;
+              duration?: number;
+              restSets?: number;
+              restReps?: number;
+              preparationTime?: number;
+              executionTime?: number;
+              notes?: string;
+              customName?: string;
+              customDescription?: string;
+              tempo?: string;
+              loadType?: string;
+              loadValue?: number;
+              loadUnit?: string;
+              loadText?: string;
+            }>;
+          };
+        }
+      )?.exerciseSetById?.exerciseMappings || [];
+
+    const initialInstances = mappings.map((mapping, index) => ({
+      instanceId: `existing-${mapping.id}-${index}`,
+      exerciseId: mapping.exerciseId,
+    }));
+
+    const initialParams = new Map<string, ExerciseParams>();
+    initialInstances.forEach((instance, index) => {
+      const mapping = mappings[index];
+      initialParams.set(instance.instanceId, {
+        sets: mapping.sets,
+        reps: mapping.reps,
+        duration: mapping.duration,
+        restSets: mapping.restSets,
+        restReps: mapping.restReps,
+        preparationTime: mapping.preparationTime,
+        executionTime: mapping.executionTime,
+        notes: mapping.notes ?? '',
+        customName: mapping.customName ?? '',
+        customDescription: mapping.customDescription ?? '',
+        tempo: mapping.tempo ?? '',
+        loadType: mapping.loadType ?? '',
+        loadValue: mapping.loadValue ?? 0,
+        loadUnit: mapping.loadUnit ?? 'kg',
+        loadText: mapping.loadText ?? '',
+      });
+    });
+
+    initialInstanceIdsRef.current = new Set(initialInstances.map((instance) => instance.instanceId));
+    setSelectedInstances(initialInstances);
+    setExerciseParams(initialParams);
+    initializedFromExistingRef.current = true;
+  }, [open, setDetailsData]);
+
+  const [addExerciseToSet, { loading: adding }] = useMutation(ADD_EXERCISE_TO_EXERCISE_SET_MUTATION);
+
+  const handleSave = useCallback(async () => {
+    const newInstances = selectedInstances.filter((instance) => !initialInstanceIdsRef.current.has(instance.instanceId));
+    if (newInstances.length === 0) {
+      toast.error('Dodaj przynajmniej jedno ćwiczenie');
+      return;
+    }
+
+    const exerciseLookup = new Map(availableExercises.map((e) => [e.id, e]));
+    const existingCount = initialInstanceIdsRef.current.size;
+
     try {
-      const exercisesToAdd = Array.from(exerciseParams.values());
+      for (let i = 0; i < newInstances.length; i++) {
+        const instance = newInstances[i];
+        const params = exerciseParams.get(instance.instanceId);
+        const exercise = exerciseLookup.get(instance.exerciseId);
 
-      for (let i = 0; i < exercisesToAdd.length; i++) {
-        const params = exercisesToAdd[i];
-        await addExercise({
+        await addExerciseToSet({
           variables: {
-            exerciseId: params.exerciseId,
+            exerciseId: instance.exerciseId,
             exerciseSetId,
-            order: i + 1,
-            sets: params.sets || null,
-            reps: params.reps || null,
-            duration: params.duration || null,
+            order: existingCount + i + 1,
+            sets: params?.sets ?? exercise?.defaultSets ?? 3,
+            reps: params?.reps ?? exercise?.defaultReps ?? 10,
+            duration: params?.duration ?? exercise?.defaultDuration ?? null,
+            restSets: params?.restSets ?? exercise?.defaultRestBetweenSets ?? null,
+            restReps: params?.restReps ?? null,
+            preparationTime: params?.preparationTime ?? null,
+            executionTime: params?.executionTime ?? null,
+            notes: params?.notes ?? null,
+            customName: params?.customName ?? null,
+            customDescription: params?.customDescription ?? null,
+            tempo: params?.tempo ?? null,
+            loadType: params?.loadType ?? null,
+            loadValue: params?.loadValue ?? null,
+            loadUnit: params?.loadUnit ?? null,
+            loadText: params?.loadText ?? null,
           },
           refetchQueries: [
             {
@@ -208,8 +285,9 @@ export function AddExerciseToSetDialog({
         });
       }
 
+      const count = newInstances.length;
       toast.success(
-        `Dodano ${exercisesToAdd.length} ${exercisesToAdd.length === 1 ? 'ćwiczenie' : 'ćwiczeń'} do zestawu`
+        count === 1 ? 'Dodano 1 ćwiczenie do zestawu' : `Dodano ${count} ćwiczeń do zestawu`
       );
       onOpenChange(false);
       onSuccess?.();
@@ -217,335 +295,91 @@ export function AddExerciseToSetDialog({
       console.error('Błąd podczas dodawania ćwiczeń:', error);
       toast.error('Nie udało się dodać ćwiczeń do zestawu');
     }
-  };
+  }, [
+    selectedInstances,
+    exerciseParams,
+    availableExercises,
+    exerciseSetId,
+    addExerciseToSet,
+    onOpenChange,
+    onSuccess,
+  ]);
 
-  const getExerciseImage = (exercise: Exercise) => {
-    return getMediaUrl(exercise.imageUrl || exercise.images?.[0]);
-  };
+  const handlePreviewExercise = useCallback((exercise: BuilderExercise) => {
+    setPreviewExercise(exercise);
+  }, []);
+
+  const previewGallery = previewExercise ? buildExerciseImageUrls(previewExercise) : [];
+  const showLightbox = previewExercise !== null && previewGallery.length > 0;
 
   return (
-    <Dialog open={open} onOpenChange={() => handleCloseAttempt()}>
-      <DialogContent
-        className="max-w-2xl max-h-[85vh] flex flex-col"
-        onInteractOutside={(e) => e.preventDefault()}
-        onEscapeKeyDown={(e) => {
-          e.preventDefault();
-          handleCloseAttempt();
-        }}
-        data-testid="set-add-exercise-dialog"
-      >
-        <DialogHeader>
-          <div className="flex items-center gap-3">
-            {step === 2 && (
-              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setStep(1)}>
-                <ArrowLeft className="h-4 w-4" />
-              </Button>
-            )}
-            <div>
-              <DialogTitle>{step === 1 ? 'Dodaj ćwiczenia' : 'Ustaw parametry'}</DialogTitle>
-              <DialogDescription>
-                {step === 1
-                  ? 'Wybierz ćwiczenia, które chcesz dodać do zestawu'
-                  : 'Ustaw serie, powtórzenia i czas dla wybranych ćwiczeń'}
-              </DialogDescription>
-            </div>
+    <>
+      <Dialog open={open} onOpenChange={() => handleCloseAttempt()}>
+        <DialogContent
+          className="max-w-7xl w-[98vw] max-h-[95vh] h-[90vh] md:h-[85vh] flex flex-col p-0 gap-0 overflow-hidden"
+          onInteractOutside={(e) => e.preventDefault()}
+          onEscapeKeyDown={(e) => {
+            e.preventDefault();
+            handleCloseAttempt();
+          }}
+          data-testid="set-add-exercise-dialog"
+        >
+          <VisuallyHidden.Root>
+            <DialogTitle>Dodaj ćwiczenia do zestawu</DialogTitle>
+            <DialogDescription>
+              Wybierz ćwiczenia z biblioteki i ustaw parametry. Możesz dodać to samo ćwiczenie wielokrotnie.
+            </DialogDescription>
+          </VisuallyHidden.Root>
+          <div className="px-4 py-3 border-b border-border shrink-0">
+            <h2 className="text-lg font-semibold text-foreground">Dodaj ćwiczenia do zestawu</h2>
+            <p className="text-sm text-muted-foreground mt-0.5">
+              Wybierz ćwiczenia z biblioteki i ustaw parametry. Możesz dodać to samo ćwiczenie wielokrotnie.
+            </p>
           </div>
-        </DialogHeader>
 
-        {/* Step indicator */}
-        <div className="flex items-center justify-center gap-2 py-2">
-          <div
-            className={cn(
-              'flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium transition-all',
-              step >= 1 ? 'bg-primary text-primary-foreground' : 'bg-surface-light text-muted-foreground'
-            )}
-          >
-            {step > 1 ? <Check className="h-4 w-4" /> : '1'}
+          <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
+            <ExerciseSetBuilder
+              name=""
+              onNameChange={() => {}}
+              selectedInstances={selectedInstances}
+              onSelectedInstancesChange={setSelectedInstances}
+              exerciseParams={exerciseParams}
+              onExerciseParamsChange={setExerciseParams}
+              availableExercises={availableExercises}
+              loadingExercises={loadingExercises}
+              tags={builderTags}
+              exercisePopularity={exercisePopularity}
+              showAI={false}
+              hideNameSection
+              onPreviewExercise={handlePreviewExercise}
+              testIdPrefix="set-add-exercise"
+            />
           </div>
-          <div className={cn('h-0.5 w-12 transition-colors', step > 1 ? 'bg-primary' : 'bg-border')} />
-          <div
-            className={cn(
-              'flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium transition-all',
-              step >= 2 ? 'bg-primary text-primary-foreground' : 'bg-surface-light text-muted-foreground'
-            )}
-          >
-            2
+
+          <div className="px-4 py-3 border-t border-border shrink-0 flex items-center justify-between gap-4">
+            <Button
+              variant="ghost"
+              onClick={handleCloseAttempt}
+              className="text-muted-foreground hover:text-foreground"
+              data-testid="set-add-exercise-cancel-btn"
+            >
+              Anuluj
+            </Button>
+            <Button
+              onClick={handleSave}
+              disabled={adding || selectedInstances.length === 0}
+              className="min-w-[160px]"
+              data-testid="set-add-exercise-submit-btn"
+            >
+              {adding ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : null}
+              Dodaj {selectedInstances.length}{' '}
+              {selectedInstances.length === 1 ? 'ćwiczenie' : 'ćwiczeń'}
+            </Button>
           </div>
-        </div>
-
-        {/* Step 1: Select exercises */}
-        {step === 1 && (
-          <div className="flex-1 flex flex-col min-h-0 space-y-4">
-            {/* Search */}
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder="Szukaj ćwiczeń..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="h-11 pl-10"
-                data-testid="set-add-exercise-search"
-              />
-            </div>
-
-            {/* Selected count */}
-            {selectedExercises.size > 0 && (
-              <div className="flex items-center justify-between rounded-xl border border-primary/20 bg-primary/5 px-4 py-2">
-                <span className="text-sm text-muted-foreground">
-                  Wybrano <span className="font-semibold text-foreground">{selectedExercises.size}</span>{' '}
-                  {selectedExercises.size === 1 ? 'ćwiczenie' : 'ćwiczeń'}
-                </span>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setSelectedExercises(new Set())}
-                  className="h-7 text-xs"
-                >
-                  Wyczyść
-                </Button>
-              </div>
-            )}
-
-            {/* Exercise list */}
-            <ScrollArea className="flex-1 -mx-6 px-6">
-              {loading ? (
-                <div className="flex items-center justify-center py-12">
-                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                </div>
-              ) : filteredExercises.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-12 text-center">
-                  <div className="h-16 w-16 rounded-full bg-surface-light flex items-center justify-center mb-4">
-                    <Dumbbell className="h-8 w-8 text-muted-foreground" />
-                  </div>
-                  <p className="text-muted-foreground">
-                    {searchQuery ? 'Nie znaleziono ćwiczeń' : 'Brak dostępnych ćwiczeń do dodania'}
-                  </p>
-                </div>
-              ) : (
-                <div className="grid gap-2">
-                  {filteredExercises.map((exercise) => {
-                    const isSelected = selectedExercises.has(exercise.id);
-                    const imageUrl = getExerciseImage(exercise);
-
-                    return (
-                      <div
-                        key={exercise.id}
-                        className={cn(
-                          'flex items-center gap-4 rounded-xl border p-3 cursor-pointer transition-all',
-                          isSelected
-                            ? 'border-primary bg-primary/5'
-                            : 'border-border hover:border-border-light hover:bg-surface-light'
-                        )}
-                        onClick={() => toggleExercise(exercise.id)}
-                      >
-                        {/* Checkbox indicator */}
-                        <div
-                          className={cn(
-                            'flex h-6 w-6 items-center justify-center rounded-md border-2 transition-all flex-shrink-0',
-                            isSelected ? 'border-primary bg-primary text-primary-foreground' : 'border-border'
-                          )}
-                        >
-                          {isSelected && <Check className="h-4 w-4" />}
-                        </div>
-
-                        {/* Image */}
-                        <div className="relative h-14 w-14 rounded-lg overflow-hidden flex-shrink-0">
-                          {imageUrl ? (
-                            <Image src={imageUrl} alt={exercise.name} fill className="object-cover" sizes="56px" />
-                          ) : (
-                            <ImagePlaceholder type="exercise" iconClassName="h-5 w-5" />
-                          )}
-                        </div>
-
-                        {/* Info */}
-                        <div className="flex-1 min-w-0">
-                          <p className="font-medium truncate">{exercise.name}</p>
-                          <div className="flex items-center gap-2 mt-1">
-                            {(exercise.side || exercise.exerciseSide) &&
-                              (exercise.side || exercise.exerciseSide) !== 'none' &&
-                              (exercise.side || exercise.exerciseSide)?.toLowerCase() !== 'none' && (
-                                <Badge variant="outline" className="text-xs">
-                                  {translateSide(exercise.side || exercise.exerciseSide)}
-                                </Badge>
-                              )}
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </ScrollArea>
-
-            {/* Actions */}
-            <div className="flex justify-end gap-3 pt-4 border-t border-border">
-              <Button variant="outline" onClick={handleCloseAttempt}>
-                Anuluj
-              </Button>
-              <Button
-                onClick={handleNextStep}
-                disabled={selectedExercises.size === 0}
-                className="rounded-xl font-semibold"
-                data-testid="set-add-exercise-next-btn"
-              >
-                Dalej
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-        )}
-
-        {/* Step 2: Set parameters */}
-        {step === 2 && (
-          <div className="flex-1 flex flex-col min-h-0 space-y-4">
-            <ScrollArea className="flex-1 -mx-6 px-6">
-              <div className="space-y-4">
-                {selectedExercisesList.map((exercise) => {
-                  const params = exerciseParams.get(exercise.id);
-                  const imageUrl = getExerciseImage(exercise);
-
-                  return (
-                    <div key={exercise.id} className="rounded-xl border border-border bg-surface p-4 space-y-4">
-                      {/* Exercise header */}
-                      <div className="flex items-center gap-4">
-                        <div className="relative h-12 w-12 rounded-lg overflow-hidden flex-shrink-0">
-                          {imageUrl ? (
-                            <Image src={imageUrl} alt={exercise.name} fill className="object-cover" sizes="48px" />
-                          ) : (
-                            <ImagePlaceholder type="exercise" iconClassName="h-4 w-4" />
-                          )}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-semibold truncate">{exercise.name}</p>
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                          onClick={() => {
-                            toggleExercise(exercise.id);
-                            const newParams = new Map(exerciseParams);
-                            newParams.delete(exercise.id);
-                            setExerciseParams(newParams);
-                          }}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </div>
-
-                      {/* Parameters */}
-                      <div className="grid grid-cols-3 gap-4">
-                        {/* Sets */}
-                        <div className="space-y-2">
-                          <Label className="text-xs text-muted-foreground">Serie</Label>
-                          <div className="flex items-center gap-1">
-                            <Button
-                              variant="outline"
-                              size="icon"
-                              className="h-9 w-9"
-                              onClick={() => updateParam(exercise.id, 'sets', (params?.sets || 0) - 1)}
-                            >
-                              <Minus className="h-3 w-3" />
-                            </Button>
-                            <Input
-                              type="number"
-                              value={params?.sets || 0}
-                              onChange={(e) => updateParam(exercise.id, 'sets', parseInt(e.target.value) || 0)}
-                              className="h-9 text-center"
-                            />
-                            <Button
-                              variant="outline"
-                              size="icon"
-                              className="h-9 w-9"
-                              onClick={() => updateParam(exercise.id, 'sets', (params?.sets || 0) + 1)}
-                            >
-                              <Plus className="h-3 w-3" />
-                            </Button>
-                          </div>
-                        </div>
-
-                        {/* Reps */}
-                        <div className="space-y-2">
-                          <Label className="text-xs text-muted-foreground">Powtórzenia</Label>
-                          <div className="flex items-center gap-1">
-                            <Button
-                              variant="outline"
-                              size="icon"
-                              className="h-9 w-9"
-                              onClick={() => updateParam(exercise.id, 'reps', (params?.reps || 0) - 1)}
-                            >
-                              <Minus className="h-3 w-3" />
-                            </Button>
-                            <Input
-                              type="number"
-                              value={params?.reps || 0}
-                              onChange={(e) => updateParam(exercise.id, 'reps', parseInt(e.target.value) || 0)}
-                              className="h-9 text-center"
-                            />
-                            <Button
-                              variant="outline"
-                              size="icon"
-                              className="h-9 w-9"
-                              onClick={() => updateParam(exercise.id, 'reps', (params?.reps || 0) + 1)}
-                            >
-                              <Plus className="h-3 w-3" />
-                            </Button>
-                          </div>
-                        </div>
-
-                        {/* Duration */}
-                        <div className="space-y-2">
-                          <Label className="text-xs text-muted-foreground">Czas (s)</Label>
-                          <div className="flex items-center gap-1">
-                            <Button
-                              variant="outline"
-                              size="icon"
-                              className="h-9 w-9"
-                              onClick={() => updateParam(exercise.id, 'duration', (params?.duration || 0) - 5)}
-                            >
-                              <Minus className="h-3 w-3" />
-                            </Button>
-                            <Input
-                              type="number"
-                              value={params?.duration || 0}
-                              onChange={(e) => updateParam(exercise.id, 'duration', parseInt(e.target.value) || 0)}
-                              className="h-9 text-center"
-                            />
-                            <Button
-                              variant="outline"
-                              size="icon"
-                              className="h-9 w-9"
-                              onClick={() => updateParam(exercise.id, 'duration', (params?.duration || 0) + 5)}
-                            >
-                              <Plus className="h-3 w-3" />
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </ScrollArea>
-
-            {/* Actions */}
-            <div className="flex justify-end gap-3 pt-4 border-t border-border">
-              <Button variant="outline" onClick={() => setStep(1)}>
-                Wstecz
-              </Button>
-              <Button
-                onClick={handleSave}
-                disabled={adding || selectedExercises.size === 0}
-                className="rounded-xl font-semibold"
-                data-testid="set-add-exercise-submit-btn"
-              >
-                {adding ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Plus className="mr-2 h-4 w-4" />}
-                Dodaj {selectedExercises.size} {selectedExercises.size === 1 ? 'ćwiczenie' : 'ćwiczeń'}
-              </Button>
-            </div>
-          </div>
-        )}
-      </DialogContent>
+        </DialogContent>
+      </Dialog>
 
       <ConfirmDialog
         open={showCloseConfirm}
@@ -557,6 +391,18 @@ export function AddExerciseToSetDialog({
         variant="destructive"
         onConfirm={handleConfirmClose}
       />
-    </Dialog>
+
+      {showLightbox && previewExercise && (
+        <ImageLightbox
+          src={previewGallery[0]}
+          alt={previewExercise.name}
+          open={showLightbox}
+          onOpenChange={(isOpen) => {
+            if (!isOpen) setPreviewExercise(null);
+          }}
+          images={previewGallery}
+        />
+      )}
+    </>
   );
 }

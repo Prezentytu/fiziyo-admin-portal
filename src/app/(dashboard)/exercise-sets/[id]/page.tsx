@@ -781,7 +781,6 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
           onOpenChange={setIsAddExerciseDialogOpen}
           exerciseSetId={id}
           organizationId={organizationId}
-          existingExerciseIds={exercises.map((m) => m.exerciseId)}
           onSuccess={() => refetch()}
         />
       )}
