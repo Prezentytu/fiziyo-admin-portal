@@ -337,7 +337,7 @@ function ExercisePreviewDialog({ exercise, open, onOpenChange }: ExercisePreview
           {mediaUrl && (
             <div className="relative aspect-video rounded-lg overflow-hidden bg-zinc-900">
               <Image
-                src={exercise.gifUrl || exercise.thumbnailUrl}
+                src={mediaUrl}
                 alt={exercise.name}
                 fill
                 className="object-cover"

@@ -1,16 +1,9 @@
 import type { Metadata } from 'next';
 import { ClerkProvider } from '@clerk/nextjs';
-import { Inter } from 'next/font/google';
 import { ApolloWrapper } from '@/lib/apollo/provider';
 import { Toaster } from '@/components/ui/sonner';
 import { AccessibilityProvider } from '@/contexts/AccessibilityContext';
 import './globals.css';
-
-const inter = Inter({
-  subsets: ['latin-ext'],
-  display: 'swap',
-  variable: '--font-sans',
-});
 
 export const metadata: Metadata = {
   title: 'FiziYo Admin',
@@ -56,7 +49,7 @@ export default function RootLayout({
 }>) {
   return (
     <ClerkProvider>
-      <html lang="pl" suppressHydrationWarning className={`${inter.variable}`}>
+      <html lang="pl" suppressHydrationWarning>
         <head>
           <script dangerouslySetInnerHTML={{ __html: accessibilityScript }} />
         </head>

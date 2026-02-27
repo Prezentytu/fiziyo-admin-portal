@@ -26,7 +26,7 @@ const config: UserConfig = {
         'deps',
       ],
     ],
-    'scope-empty': [1, 'never'],
+    'scope-empty': [0],
     'subject-case': [2, 'always', 'lower-case'],
   },
 };

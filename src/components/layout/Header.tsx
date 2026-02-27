@@ -42,7 +42,7 @@ function Breadcrumbs() {
   });
 
   return (
-    <nav className="flex items-center gap-1.5 text-sm" data-testid="nav-breadcrumbs">
+    <nav className="flex items-center gap-1.5 text-sm leading-none" data-testid="nav-breadcrumbs">
       <Link
         href="/"
         data-testid="nav-breadcrumb-home"
@@ -54,14 +54,14 @@ function Breadcrumbs() {
         <div key={crumb.href} className="flex items-center gap-1.5">
           <ChevronRight className="h-4 w-4 text-muted-foreground/50" />
           {crumb.isLast ? (
-            <span data-testid={`nav-breadcrumb-item-${index}`} className="font-medium text-foreground">
+            <span data-testid={`nav-breadcrumb-item-${index}`} className="inline-flex items-center font-medium text-foreground">
               {crumb.label}
             </span>
           ) : (
             <Link
               href={crumb.href}
               data-testid={`nav-breadcrumb-item-${index}`}
-              className="text-muted-foreground hover:text-foreground transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface rounded"
+              className="inline-flex items-center text-muted-foreground hover:text-foreground transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface rounded"
             >
               {crumb.label}
             </Link>
@@ -109,7 +109,7 @@ export function Header({ onMobileMenuToggle }: HeaderProps) {
           </div>
 
           {/* Breadcrumbs - hidden on mobile */}
-          <div className="hidden sm:block">
+          <div className="hidden sm:flex sm:items-center">
             <Breadcrumbs />
           </div>
         </div>

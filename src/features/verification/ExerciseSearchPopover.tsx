@@ -240,6 +240,8 @@ function ExerciseCommandItem({
   onSelect,
   onHover,
 }: ExerciseCommandItemProps) {
+  const thumbnailSource = exercise.thumbnailUrl ?? exercise.gifUrl;
+
   return (
     <CommandItem
       value={exercise.id}
@@ -250,9 +252,9 @@ function ExerciseCommandItem({
     >
       {/* Thumbnail */}
       <div className="relative w-12 h-12 rounded-md overflow-hidden bg-zinc-900 shrink-0">
-        {exercise.thumbnailUrl || exercise.gifUrl ? (
+        {thumbnailSource ? (
           <Image
-            src={exercise.thumbnailUrl || exercise.gifUrl}
+            src={thumbnailSource}
             alt={exercise.name}
             fill
             className="object-cover"
@@ -301,7 +303,7 @@ function ExerciseCommandItem({
  * Preview panel (shown on hover)
  */
 function ExercisePreviewPanel({ exercise }: { exercise: ExerciseRelationTarget }) {
-  const mediaUrl = exercise.gifUrl || exercise.thumbnailUrl;
+  const mediaUrl = exercise.gifUrl ?? exercise.thumbnailUrl;
 
   return (
     <div className="absolute right-0 top-0 translate-x-full w-[200px] ml-2 p-2 bg-popover border border-border rounded-lg shadow-lg">
@@ -309,7 +311,7 @@ function ExercisePreviewPanel({ exercise }: { exercise: ExerciseRelationTarget }
       {mediaUrl && (
         <div className="relative aspect-video rounded-md overflow-hidden bg-zinc-900 mb-2">
           <Image
-            src={exercise.gifUrl || exercise.thumbnailUrl}
+            src={mediaUrl}
             alt={exercise.name}
             fill
             className="object-cover"
