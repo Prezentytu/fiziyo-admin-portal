@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import {
-  LayoutDashboard,
+  LayoutGrid,
   Dumbbell,
   FolderKanban,
   Users,
@@ -60,7 +60,7 @@ const navigationGroups: NavigationGroup[] = [
   {
     label: 'Klinika',
     items: [
-      { name: 'Panel', href: '/', icon: LayoutDashboard, testId: 'nav-link-dashboard' },
+      { name: 'Panel', href: '/', icon: LayoutGrid, testId: 'nav-link-dashboard' },
       { name: 'Pacjenci', href: '/patients', icon: Users, testId: 'nav-link-patients' },
       { name: 'Zestawy', href: '/exercise-sets', icon: FolderKanban, testId: 'nav-link-exercise-sets' },
       { name: 'Ćwiczenia', href: '/exercises', icon: Dumbbell, testId: 'nav-link-exercises' },
@@ -146,8 +146,8 @@ export function Sidebar({ isCollapsed, onToggleCollapse }: SidebarProps) {
         {/* Header with logo and toggle */}
         <div
           className={cn(
-            'flex h-16 items-center border-b border-border/60 transition-all duration-300',
-            isCollapsed ? 'justify-center px-3' : 'justify-between px-4'
+            'flex h-20 items-center transition-all duration-300',
+            isCollapsed ? 'justify-center px-3' : 'justify-start px-6'
           )}
         >
           <Logo variant={isCollapsed ? 'icon' : 'full'} size="md" asLink href="/" />
@@ -157,7 +157,7 @@ export function Sidebar({ isCollapsed, onToggleCollapse }: SidebarProps) {
               type="button"
               onClick={onToggleCollapse}
               data-testid="nav-collapse-btn"
-              className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-surface-light hover:text-foreground transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
+              className="ml-auto flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-surface-light hover:text-foreground transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
               aria-label="Zwiń menu"
             >
               <PanelLeftClose className="h-4 w-4" />
@@ -184,19 +184,19 @@ export function Sidebar({ isCollapsed, onToggleCollapse }: SidebarProps) {
         <OrganizationSwitcher isCollapsed={isCollapsed} />
 
         {/* Navigation groups */}
-        <nav className="flex-1 overflow-y-auto py-4">
+        <nav className="flex-1 overflow-y-auto py-6">
           {filteredNavigationGroups.map((group, groupIndex) => (
-            <div key={group.label} className={cn(groupIndex > 0 && 'mt-6')}>
+            <div key={group.label} className={cn(groupIndex > 0 && 'mt-8')}>
               {/* Group label */}
               {!isCollapsed && (
-                <p className="px-4 mb-2 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+                <p className="px-6 mb-3 text-[11px] font-semibold text-muted-foreground/70 uppercase tracking-widest">
                   {group.label}
                 </p>
               )}
-              {isCollapsed && groupIndex > 0 && <div className="mx-3 mb-2 border-t border-border" />}
+              {isCollapsed && groupIndex > 0 && <div className="mx-4 mb-3 border-t border-border" />}
 
               {/* Navigation items */}
-              <div className={cn('space-y-1', isCollapsed ? 'flex flex-col items-center' : 'px-3')}>
+              <div className={cn('space-y-2', isCollapsed ? 'flex flex-col items-center' : 'px-4')}>
                 {group.items.map((item) => {
                   const active = isActive(item.href);
                   const Icon = item.icon;
@@ -207,7 +207,7 @@ export function Sidebar({ isCollapsed, onToggleCollapse }: SidebarProps) {
                       data-testid={item.testId}
                       className={cn(
                         NAV_ITEM_BASE,
-                        isCollapsed ? 'h-10 w-10 justify-center' : 'gap-3 px-3 py-2.5',
+                        isCollapsed ? 'h-12 w-12 justify-center' : 'gap-4 px-4 py-3.5',
                         active ? NAV_ITEM_ACTIVE : NAV_ITEM_INACTIVE
                       )}
                     >
@@ -215,7 +215,7 @@ export function Sidebar({ isCollapsed, onToggleCollapse }: SidebarProps) {
                         <Icon
                           className={cn(
                             'h-5 w-5 shrink-0 transition-transform duration-200',
-                            !active && 'group-hover:scale-110'
+                            active ? 'nav-icon' : 'text-muted-foreground group-hover:text-foreground group-hover:scale-105'
                           )}
                         />
                         {/* AI Accent - small sparkle indicator */}

@@ -14,10 +14,10 @@ export interface AccessibilityPreferences {
 }
 
 export const FONT_SIZE_VALUES: Record<FontSize, { label: string; scale: number; css: string }> = {
-  small: { label: 'Mały', scale: 0.875, css: '14px' },
-  normal: { label: 'Normalny', scale: 1, css: '16px' },
-  large: { label: 'Duży', scale: 1.125, css: '18px' },
-  xlarge: { label: 'Bardzo duży', scale: 1.25, css: '20px' },
+  small: { label: 'Mały', scale: 1, css: '16px' },
+  normal: { label: 'Normalny', scale: 1.125, css: '18px' },
+  large: { label: 'Duży', scale: 1.25, css: '20px' },
+  xlarge: { label: 'Bardzo duży', scale: 1.375, css: '22px' },
 };
 
 export const DEFAULT_PREFERENCES: AccessibilityPreferences = {

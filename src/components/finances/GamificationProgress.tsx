@@ -153,10 +153,10 @@ export function GamificationProgress({ organizationId, className }: Gamification
   // Loading state
   if (loading) {
     return (
-      <div className={cn('rounded-xl border border-white/5 bg-zinc-900/50 p-6 h-full', className)}>
-        <Skeleton className="h-5 w-40 bg-zinc-800 mb-6" />
-        <Skeleton className="h-4 w-full bg-zinc-800 mb-4" />
-        <Skeleton className="h-20 w-full bg-zinc-800" />
+      <div className={cn('rounded-2xl border border-border/60 bg-surface shadow-sm p-6 h-full', className)}>
+        <Skeleton className="h-6 w-48 bg-surface-elevated mb-5" />
+        <Skeleton className="h-4 w-full bg-surface-elevated mb-4" />
+        <Skeleton className="h-24 w-full bg-surface-elevated" />
       </div>
     );
   }
@@ -166,36 +166,37 @@ export function GamificationProgress({ organizationId, className }: Gamification
     return (
       <div
         className={cn(
-          'rounded-xl border border-white/5 bg-zinc-900/50 p-6 h-full flex items-center justify-center',
+          'rounded-2xl border border-border/60 bg-surface p-6 h-full flex items-center justify-center shadow-sm',
           className
         )}
       >
         <div className="text-center">
-          <Trophy className="h-8 w-8 text-zinc-600 mx-auto mb-2" />
-          <p className="text-sm text-zinc-500">Nie udało się pobrać danych</p>
+          <Trophy className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+          <p className="text-sm text-muted-foreground">Nie udało się pobrać danych</p>
         </div>
       </div>
     );
   }
 
-  // Partner tier - special display
   if (progressData.isPartner) {
     return (
       <div
         className={cn(
-          'rounded-xl border border-emerald-500/20 bg-gradient-to-br from-zinc-900 to-emerald-950/20 p-6 h-full',
+          'rounded-2xl border border-emerald-500/20 bg-surface p-6 h-full shadow-sm',
           className
         )}
       >
-        <div className="flex items-center gap-2 mb-4">
-          <Crown className="h-5 w-5 text-emerald-400" />
-          <h3 className="text-lg font-semibold text-white">Status Partnera</h3>
+        <div className="flex items-center gap-3 mb-5">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10">
+            <Crown className="h-5 w-5 text-emerald-500" />
+          </div>
+          <h3 className="text-base font-semibold text-foreground">Status Partnera</h3>
         </div>
-        <div className="flex items-center gap-4 p-4 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
-          <Crown className="h-10 w-10 text-emerald-400" />
+        <div className="flex items-center gap-5 p-5 rounded-xl bg-emerald-500/5 border border-emerald-500/10">
+          <Crown className="h-10 w-10 text-emerald-500" />
           <div>
-            <p className="text-2xl font-bold text-white">PARTNER</p>
-            <p className="text-sm text-zinc-400">Stały udział: {formatPercent(progressData.commissionRate)}</p>
+            <p className="text-2xl font-bold text-foreground tracking-tight">PARTNER</p>
+            <p className="text-sm text-muted-foreground mt-0.5">Stały udział: {formatPercent(progressData.commissionRate)}</p>
           </div>
         </div>
       </div>
@@ -206,15 +207,17 @@ export function GamificationProgress({ organizationId, className }: Gamification
 
   return (
     <TooltipProvider>
-      <div className={cn('rounded-xl border border-white/5 bg-zinc-900/50 p-6 h-full', className)}>
+      <div className={cn('rounded-2xl border border-border/60 bg-surface shadow-sm p-6 h-full flex flex-col', className)}>
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-2">
-            <Trophy className="h-5 w-5 text-emerald-400" />
-            <h3 className="text-lg font-semibold text-white">Twój Poziom Partnerski</h3>
+        <div className="flex items-center justify-between mb-5">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-surface-elevated border border-border/60">
+              <Trophy className="h-5 w-5 text-muted-foreground" />
+            </div>
+            <h3 className="text-base font-semibold text-foreground">Twój Poziom Partnerski</h3>
           </div>
-          <div className="flex items-center gap-2 text-sm text-zinc-400">
-            <Users className="h-4 w-4" />
+          <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground bg-surface-light px-2.5 py-1 rounded-md border border-border/50">
+            <Users className="h-3.5 w-3.5" />
             <span>
               {progressData.activeSubscribers} {progressData.activeSubscribers === 1 ? 'pacjent' : 'pacjentów'}
             </span>
@@ -222,20 +225,22 @@ export function GamificationProgress({ organizationId, className }: Gamification
         </div>
 
         {/* Current tier badge */}
-        <div className="flex items-center gap-3 mb-6">
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gradient-to-r from-emerald-600 to-emerald-500">
-            <CurrentIcon className="h-4 w-4 text-white" />
-            <span className="font-bold text-white">{progressData.currentTier}</span>
+        <div className="flex items-end gap-3 mb-6 mt-1">
+          <span className="text-3xl sm:text-4xl font-bold text-foreground tracking-tight leading-none">
+            {formatPercent(progressData.commissionRate)}
+          </span>
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-primary/10 border border-primary/20 mb-0.5">
+            <CurrentIcon className="h-3.5 w-3.5 text-primary" />
+            <span className="text-xs font-bold text-primary tracking-wide uppercase">{progressData.currentTier}</span>
           </div>
-          <span className="text-2xl font-bold text-white">{formatPercent(progressData.commissionRate)}</span>
         </div>
 
         {/* RPG Progress Bar */}
-        <div className="relative h-4 bg-zinc-800 rounded-full overflow-visible mb-4">
+        <div className="relative h-4 bg-surface-elevated rounded-full overflow-visible mb-6 mt-auto">
           {/* Fill with gradient */}
           <div
             className={cn(
-              'h-full bg-gradient-to-r from-emerald-600 to-emerald-400 rounded-full transition-all duration-1000 ease-out',
+              'h-full bg-primary rounded-full transition-all duration-1000 ease-out shadow-[0_0_15px_rgba(50,150,93,0.3)]',
               progressData.isCloseToNextTier && 'animate-pulse'
             )}
             style={{ width: `${progressData.progressPercent}%` }}
@@ -249,7 +254,7 @@ export function GamificationProgress({ organizationId, className }: Gamification
                 <TooltipTrigger asChild>
                   <div
                     className={cn(
-                      'absolute top-1/2 -translate-y-1/2 -translate-x-1/2 cursor-pointer transition-transform hover:scale-125',
+                      'absolute top-1/2 -translate-y-1/2 -translate-x-1/2 cursor-pointer transition-transform hover:scale-110',
                       marker.tier === 'START' && 'left-0 translate-x-0'
                     )}
                     style={{
@@ -258,13 +263,13 @@ export function GamificationProgress({ organizationId, className }: Gamification
                   >
                     <div
                       className={cn(
-                        'w-7 h-7 rounded-full flex items-center justify-center border-2 transition-colors',
+                        'w-7 h-7 rounded-full flex items-center justify-center border-2 transition-all duration-300',
                         marker.reached
-                          ? 'bg-emerald-500 border-emerald-400 shadow-lg shadow-emerald-500/30'
-                          : 'bg-zinc-700 border-zinc-600'
+                          ? 'bg-primary border-surface shadow-md'
+                          : 'bg-surface-elevated border-surface'
                       )}
                     >
-                      <Icon className={cn('h-3.5 w-3.5', marker.reached ? 'text-white' : 'text-zinc-400')} />
+                      <Icon className={cn('h-3.5 w-3.5', marker.reached ? 'text-primary-foreground' : 'text-muted-foreground')} />
                     </div>
                   </div>
                 </TooltipTrigger>
@@ -283,7 +288,7 @@ export function GamificationProgress({ organizationId, className }: Gamification
         </div>
 
         {/* Tier labels below bar */}
-        <div className="flex justify-between text-xs text-zinc-500 mb-6">
+        <div className="flex justify-between text-[10px] font-medium text-muted-foreground mb-6 px-1 tracking-wider uppercase">
           <span>START</span>
           <span>PRO</span>
           <span>EXPERT</span>
@@ -294,30 +299,25 @@ export function GamificationProgress({ organizationId, className }: Gamification
         {progressData.progressToNext > 0 && progressData.nextTierName && (
           <div
             className={cn(
-              'p-4 rounded-lg border transition-all',
+              'p-3.5 rounded-xl border transition-all mt-auto',
               progressData.isCloseToNextTier
-                ? 'bg-emerald-500/10 border-emerald-500/30 animate-pulse'
-                : 'bg-zinc-800/50 border-white/5'
+                ? 'bg-primary/5 border-primary/20 animate-pulse'
+                : 'bg-surface-light/50 border-border/50'
             )}
           >
-            <div className="flex items-center gap-2">
-              <Target
-                className={cn(
-                  'h-5 w-5 shrink-0',
-                  progressData.isCloseToNextTier ? 'text-emerald-400' : 'text-zinc-400'
-                )}
-              />
-              <p className="text-white">
+            <div className="flex items-center gap-2.5">
+              <div className={cn("p-1.5 rounded-lg bg-surface", progressData.isCloseToNextTier ? "text-primary" : "text-muted-foreground")}>
+                <Target className="h-4 w-4" />
+              </div>
+              <p className="text-foreground text-xs sm:text-sm">
                 Jeszcze tylko{' '}
-                <span className="font-bold text-emerald-400">
+                <span className="font-bold text-primary">
                   {progressData.progressToNext} {progressData.progressToNext === 1 ? 'pacjent' : 'pacjentów'}
                 </span>{' '}
-                do <span className="font-bold text-white">{progressData.nextTierName}</span>
+                do <span className="font-bold">{progressData.nextTierName}</span>
                 {progressData.nextTierRate && (
-                  <span className="text-zinc-400">
-                    {' '}
-                    (+
-                    {Math.round((progressData.nextTierRate - progressData.commissionRate) * 100)}% udziału!)
+                  <span className="text-muted-foreground ml-1">
+                    (+{Math.round((progressData.nextTierRate - progressData.commissionRate) * 100)}%)
                   </span>
                 )}
               </p>

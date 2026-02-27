@@ -326,7 +326,7 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="mx-auto w-full max-w-[1400px] space-y-8">
+    <div className="mx-auto w-full space-y-8">
       {/* Header Section - Greeting with date */}
       <div className="flex items-end justify-between gap-4">
         <div>
@@ -430,7 +430,7 @@ export default function DashboardPage() {
         {/* Activity Feed - Left Column (8 cols) */}
         <Card
           data-testid="dashboard-activity-section"
-          className="bg-surface-elevated/70 shadow-sm overflow-hidden lg:col-span-8"
+          className="bg-surface border-border shadow-md overflow-hidden lg:col-span-8 rounded-2xl"
         >
           <CardHeader className="pb-4">
             <div className="flex items-center justify-between">
@@ -440,7 +440,7 @@ export default function DashboardPage() {
                 </div>
                 <span>Wymagają uwagi</span>
                 {patientsNeedingAttention.length > 0 && (
-                  <Badge variant="secondary" className="ml-1 bg-warning-muted text-warning font-medium">
+                  <Badge variant="secondary" className="ml-1 bg-surface-light text-muted-foreground border-border font-medium">
                     {patientsNeedingAttention.length}
                   </Badge>
                 )}
@@ -581,7 +581,7 @@ export default function DashboardPage() {
         {/* Quick Sets - Right Column (4 cols) */}
         <Card
           data-testid="dashboard-sets-section"
-          className="bg-surface-elevated/70 shadow-sm overflow-hidden lg:col-span-4"
+          className="bg-surface border-border shadow-md overflow-hidden lg:col-span-4 rounded-2xl"
         >
           <CardHeader className="pb-4">
             <div className="flex items-center justify-between">

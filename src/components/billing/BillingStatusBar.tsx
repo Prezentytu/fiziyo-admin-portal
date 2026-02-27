@@ -112,7 +112,7 @@ export function BillingStatusBar({ organizationId, className }: BillingStatusBar
 
           {/* Pilot mode badge */}
           {isPilotMode && hasActivity && (
-            <Badge variant="outline" className="bg-amber-500/10 text-amber-500 border-amber-500/30 gap-1 text-xs">
+            <Badge variant="outline" className="bg-slate-500/10 text-slate-400 border-slate-500/20 gap-1 text-xs">
               <Gift className="h-3 w-3" />
               Wczesny dostęp
             </Badge>
@@ -123,7 +123,7 @@ export function BillingStatusBar({ organizationId, className }: BillingStatusBar
             className={cn(
               'text-base font-bold tabular-nums transition-colors',
               isPilotMode
-                ? 'text-amber-500 group-hover:text-amber-400'
+                ? 'text-slate-300 group-hover:text-slate-200'
                 : hasActivity
                   ? 'text-emerald-500 group-hover:text-emerald-400'
                   : 'text-muted-foreground group-hover:text-foreground'

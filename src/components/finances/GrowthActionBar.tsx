@@ -54,9 +54,9 @@ export function GrowthActionBar({ organizationId, className }: GrowthActionBarPr
       <div
         onClick={handleInvite}
         className={cn(
-          'w-full flex items-center justify-between px-6 py-4',
-          'bg-zinc-900/50 border border-white/5 rounded-xl',
-          'hover:border-emerald-500/30 transition-all duration-300',
+          'w-full flex items-center justify-between p-4 sm:px-6 sm:py-5',
+          'bg-surface border border-border/60 rounded-2xl shadow-sm',
+          'hover:border-primary/30 hover:shadow-md transition-all duration-300',
           'group cursor-pointer',
           className
         )}
@@ -64,15 +64,15 @@ export function GrowthActionBar({ organizationId, className }: GrowthActionBarPr
         {/* Left side - Icon + Text */}
         <div className="flex items-center gap-4">
           <div className="relative">
-            <div className="p-3 rounded-xl bg-emerald-500/20 group-hover:bg-emerald-500/30 transition-colors">
-              <UserPlus className="h-6 w-6 text-emerald-400" />
+            <div className="p-3 rounded-xl bg-primary/10 group-hover:bg-primary/20 transition-colors">
+              <UserPlus className="h-5 w-5 text-primary" />
             </div>
             {/* Sparkle decoration */}
-            <Sparkles className="absolute -top-1 -right-1 h-4 w-4 text-emerald-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+            <Sparkles className="absolute -top-1 -right-1 h-3.5 w-3.5 text-primary opacity-0 group-hover:opacity-100 transition-opacity" />
           </div>
           <div>
-            <p className="text-white font-medium">Zwiększ swoje zarobki zapraszając pacjentów</p>
-            <p className="text-sm text-zinc-500">Każdy pacjent Premium = prowizja dla Ciebie</p>
+            <p className="text-foreground text-base font-semibold tracking-tight">Zwiększ swoje zarobki zapraszając pacjentów</p>
+            <p className="text-xs text-muted-foreground mt-0.5">Każdy pacjent Premium = prowizja dla Ciebie</p>
           </div>
         </div>
 
@@ -80,8 +80,8 @@ export function GrowthActionBar({ organizationId, className }: GrowthActionBarPr
         <Button
           variant="ghost"
           className={cn(
-            'gap-2 text-zinc-300',
-            'group-hover:bg-emerald-500/20 group-hover:text-emerald-400',
+            'gap-2 text-muted-foreground font-medium',
+            'group-hover:bg-primary/10 group-hover:text-primary',
             'transition-all duration-300'
           )}
           onClick={(e) => {

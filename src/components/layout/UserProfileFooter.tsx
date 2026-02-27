@@ -67,7 +67,7 @@ export function UserProfileFooter({ isCollapsed }: UserProfileFooterProps) {
   // Loading state
   if (!isLoaded) {
     return (
-      <div className={cn('border-t border-border/60', isCollapsed ? 'p-2' : 'p-3')}>
+      <div className={cn('border-t border-border', isCollapsed ? 'p-2' : 'p-4')}>
         {isCollapsed ? (
           <Skeleton className="h-10 w-10 rounded-full mx-auto" />
         ) : (
@@ -89,10 +89,10 @@ export function UserProfileFooter({ isCollapsed }: UserProfileFooterProps) {
         <button
           data-testid="nav-user-footer-trigger"
           className={cn(
-            'group flex items-center rounded-xl transition-all duration-200 cursor-pointer w-full',
+            'group flex items-center rounded-2xl transition-all duration-200 cursor-pointer w-full',
             isCollapsed
-              ? 'h-10 w-10 justify-center hover:bg-surface-light mx-auto'
-              : 'gap-3 p-2.5 hover:bg-surface-light'
+              ? 'h-12 w-12 justify-center hover:bg-surface-light mx-auto'
+              : 'gap-4 p-3 hover:bg-surface-light'
           )}
         >
           {/* Avatar */}
@@ -239,7 +239,7 @@ export function UserProfileFooter({ isCollapsed }: UserProfileFooterProps) {
   // Collapsed version with tooltip
   if (isCollapsed) {
     return (
-      <div className="border-t border-border/60 p-2 bg-surface-light/30">
+      <div className="border-t border-border p-2 bg-surface">
         <Tooltip>
           <TooltipTrigger asChild>
             <div>{menuContent}</div>
@@ -254,5 +254,5 @@ export function UserProfileFooter({ isCollapsed }: UserProfileFooterProps) {
   }
 
   // Expanded version
-  return <div className="border-t border-border/60 p-3 bg-surface-light/30">{menuContent}</div>;
+  return <div className="border-t border-border p-4 bg-surface">{menuContent}</div>;
 }

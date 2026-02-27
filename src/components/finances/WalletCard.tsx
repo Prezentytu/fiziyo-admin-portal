@@ -84,16 +84,16 @@ export function WalletCard({ organizationId, className }: WalletCardProps) {
     return (
       <div
         className={cn(
-          'relative overflow-hidden rounded-xl border border-white/10',
-          'bg-gradient-to-br from-emerald-900 via-zinc-900 to-black',
-          'p-6 h-full min-h-[200px]',
+          'relative overflow-hidden rounded-2xl border border-border shadow-sm',
+          'bg-surface',
+          'p-6 h-full min-h-[160px]',
           className
         )}
       >
         <div className="space-y-4">
-          <Skeleton className="h-4 w-24 bg-zinc-800" />
-          <Skeleton className="h-12 w-48 bg-zinc-800" />
-          <Skeleton className="h-4 w-32 bg-zinc-800" />
+          <Skeleton className="h-4 w-24 bg-surface-elevated" />
+          <Skeleton className="h-10 w-48 bg-surface-elevated" />
+          <Skeleton className="h-4 w-32 bg-surface-elevated" />
         </div>
       </div>
     );
@@ -104,15 +104,14 @@ export function WalletCard({ organizationId, className }: WalletCardProps) {
     return (
       <div
         className={cn(
-          'relative overflow-hidden rounded-xl border border-white/10',
-          'bg-gradient-to-br from-zinc-900 via-zinc-900 to-black',
-          'p-6 h-full min-h-[200px] flex items-center justify-center',
+          'relative overflow-hidden rounded-2xl border border-border bg-surface',
+          'p-6 h-full min-h-[160px] flex items-center justify-center',
           className
         )}
       >
         <div className="text-center">
-          <Wallet className="h-8 w-8 text-zinc-600 mx-auto mb-2" />
-          <p className="text-sm text-zinc-500">Nie udało się pobrać danych</p>
+          <Wallet className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+          <p className="text-sm text-muted-foreground">Nie udało się pobrać danych</p>
         </div>
       </div>
     );
@@ -126,38 +125,25 @@ export function WalletCard({ organizationId, className }: WalletCardProps) {
   return (
     <div
       className={cn(
-        'relative overflow-hidden rounded-xl border border-white/10',
-        'bg-gradient-to-br from-emerald-900 via-zinc-900 to-black',
-        'shadow-2xl transition-transform duration-300 hover:scale-[1.01]',
-        'h-full min-h-[200px]',
+        'relative overflow-hidden rounded-2xl border border-border bg-surface',
+        'shadow-sm transition-all duration-300 hover:shadow-md hover:border-border/80',
+        'h-full min-h-[160px]',
         className
       )}
     >
-      {/* Noise overlay - using CSS pattern instead of image */}
-      <div
-        className="absolute inset-0 opacity-[0.03] mix-blend-overlay pointer-events-none"
-        style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
-        }}
-      />
-
-      {/* Glass shine effect - top right glow */}
-      <div className="absolute -top-10 -right-10 h-40 w-40 bg-emerald-500/20 blur-3xl rounded-full pointer-events-none" />
-
-      {/* Secondary glow - bottom left */}
-      <div className="absolute -bottom-20 -left-20 h-32 w-32 bg-emerald-600/10 blur-3xl rounded-full pointer-events-none" />
-
       {/* Content */}
       <div className="relative z-10 p-6 flex flex-col h-full">
         {/* Header */}
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <Wallet className="h-5 w-5 text-emerald-400" />
-            <span className="text-sm font-medium text-zinc-400">Dostępne środki</span>
+        <div className="flex items-center justify-between mb-5">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-surface-elevated border border-border/60">
+              <Wallet className="h-5 w-5 text-muted-foreground" />
+            </div>
+            <span className="text-base font-semibold text-foreground">Dostępne środki</span>
           </div>
           {displayData.isPilotMode && (
-            <Badge className="bg-amber-500/20 text-amber-400 border-amber-500/30 gap-1">
-              <Sparkles className="h-3 w-3" />
+            <Badge className="bg-slate-500/10 text-slate-400 border-slate-500/20 gap-1 px-3 py-1 text-xs">
+              <Sparkles className="h-3.5 w-3.5" />
               Pilot 100% gratis
             </Badge>
           )}
@@ -165,7 +151,7 @@ export function WalletCard({ organizationId, className }: WalletCardProps) {
 
         {/* Main Balance with CountUp animation */}
         <div className="flex-1">
-          <div className="text-4xl sm:text-5xl font-bold text-white tracking-tight tabular-nums">
+          <div className="text-3xl sm:text-4xl font-bold text-foreground tracking-tight tabular-nums leading-none mb-4">
             <CountUp
               end={displayData.monthlyEarnings}
               decimals={2}
@@ -178,11 +164,11 @@ export function WalletCard({ organizationId, className }: WalletCardProps) {
           </div>
 
           {/* Secondary stats */}
-          <div className="flex items-center gap-4 mt-3">
-            <div className="flex items-center gap-1.5 text-sm">
-              <TrendingUp className="h-3.5 w-3.5 text-emerald-400" />
-              <span className="text-zinc-400">Łącznie:</span>
-              <span className="text-white font-medium tabular-nums">
+          <div className="flex items-center gap-5 mt-1">
+            <div className="flex items-center gap-2 text-sm">
+              <TrendingUp className="h-4 w-4 text-emerald-500" />
+              <span className="text-muted-foreground">Łącznie:</span>
+              <span className="text-foreground font-semibold tabular-nums">
                 <CountUp
                   end={displayData.totalEarnings}
                   decimals={2}
@@ -194,40 +180,40 @@ export function WalletCard({ organizationId, className }: WalletCardProps) {
                 />
               </span>
             </div>
-          </div>
 
-          {/* Pending */}
-          {displayData.pendingEarnings > 0 && (
-            <div className="flex items-center gap-1.5 text-sm mt-1">
-              <Clock className="h-3.5 w-3.5 text-amber-400" />
-              <span className="text-zinc-400">Oczekuje:</span>
-              <span className="text-amber-400 font-medium tabular-nums">
-                <CountUp
-                  end={displayData.pendingEarnings}
-                  decimals={2}
-                  duration={1}
-                  separator=" "
-                  decimal=","
-                  suffix=" zł"
-                  preserveValue
-                />
-              </span>
-            </div>
-          )}
+            {/* Pending */}
+            {displayData.pendingEarnings > 0 && (
+              <div className="flex items-center gap-2 text-sm">
+                <Clock className="h-4 w-4 text-amber-500" />
+                <span className="text-muted-foreground">Oczekuje:</span>
+                <span className="text-amber-500 font-semibold tabular-nums">
+                  <CountUp
+                    end={displayData.pendingEarnings}
+                    decimals={2}
+                    duration={1}
+                    separator=" "
+                    decimal=","
+                    suffix=" zł"
+                    preserveValue
+                  />
+                </span>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Footer - Status */}
-        <div className="flex items-center justify-between mt-4 pt-4 border-t border-white/5">
+        <div className="flex items-center justify-between mt-5 pt-4 border-t border-border">
           <div className="flex items-center gap-2">
-            <div className={cn('h-2 w-2 rounded-full', isReady ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500')} />
-            <span className="text-sm text-zinc-400">{statusText}</span>
-            <StatusIcon className={cn('h-4 w-4', isReady ? 'text-emerald-400' : 'text-amber-400')} />
+            <div className={cn('h-2 w-2 rounded-full', isReady ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]' : 'bg-slate-400')} />
+            <span className="text-xs font-medium text-muted-foreground">{statusText}</span>
+            <StatusIcon className={cn('h-3.5 w-3.5', isReady ? 'text-emerald-500' : 'text-slate-400')} />
           </div>
 
           {/* Active Premium patients count */}
           <div className="flex items-center gap-1.5 text-xs">
-            <Users className="h-3.5 w-3.5 text-emerald-400" />
-            <span className={cn(displayData.premiumPatients > 0 ? 'text-emerald-400 font-medium' : 'text-zinc-500')}>
+            <Users className="h-3.5 w-3.5 text-primary" />
+            <span className={cn(displayData.premiumPatients > 0 ? 'text-primary font-semibold' : 'text-muted-foreground')}>
               {displayData.premiumPatients} {displayData.premiumPatients === 1 ? 'pacjent' : 'pacjentów'} Premium
             </span>
           </div>
@@ -235,7 +221,7 @@ export function WalletCard({ organizationId, className }: WalletCardProps) {
       </div>
 
       {/* FiziYo logo decoration */}
-      <div className="absolute right-4 bottom-4 opacity-[0.03] pointer-events-none">
+      <div className="absolute right-6 top-8 opacity-[0.02] pointer-events-none">
         <Logo variant="icon" size="lg" />
       </div>
     </div>

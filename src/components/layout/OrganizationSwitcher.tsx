@@ -43,12 +43,12 @@ const roleLabels: Record<string, string> = {
 };
 
 const roleColors: Record<string, string> = {
-  OWNER: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
-  owner: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
-  ADMIN: 'bg-primary/20 text-primary border-primary/30',
-  admin: 'bg-primary/20 text-primary border-primary/30',
-  THERAPIST: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
-  therapist: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
+  OWNER: 'bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border-indigo-500/20',
+  owner: 'bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border-indigo-500/20',
+  ADMIN: 'bg-primary/20 text-primary-dark dark:text-primary border-primary/30',
+  admin: 'bg-primary/20 text-primary-dark dark:text-primary border-primary/30',
+  THERAPIST: 'bg-blue-500/20 text-blue-700 dark:text-blue-400 border-blue-500/30',
+  therapist: 'bg-blue-500/20 text-blue-700 dark:text-blue-400 border-blue-500/30',
   MEMBER: 'bg-muted text-muted-foreground border-border',
   member: 'bg-muted text-muted-foreground border-border',
   STAFF: 'bg-muted text-muted-foreground border-border',
@@ -92,7 +92,7 @@ export function OrganizationSwitcher({ isCollapsed = false }: OrganizationSwitch
   // Loading state
   if (isLoading) {
     return (
-      <div className={cn('border-b border-border/60', isCollapsed ? 'p-2' : 'p-3')}>
+      <div className={cn('border-b border-border', isCollapsed ? 'p-2' : 'p-4')}>
         {isCollapsed ? (
           <Skeleton className="h-10 w-10 rounded-xl mx-auto" />
         ) : (
@@ -117,8 +117,8 @@ export function OrganizationSwitcher({ isCollapsed = false }: OrganizationSwitch
     <div
       data-testid="nav-org-switcher-trigger"
       className={cn(
-        'group flex items-center rounded-xl transition-all duration-200 cursor-pointer',
-        isCollapsed ? 'h-10 w-10 justify-center hover:bg-surface-light' : 'gap-3 p-2 hover:bg-surface-light w-full',
+        'group flex items-center rounded-2xl transition-all duration-200 cursor-pointer',
+        isCollapsed ? 'h-12 w-12 justify-center hover:bg-surface-light' : 'gap-4 p-3 hover:bg-surface-light w-full',
         isSwitching && 'opacity-60 pointer-events-none'
       )}
     >
@@ -188,7 +188,7 @@ export function OrganizationSwitcher({ isCollapsed = false }: OrganizationSwitch
   if (!hasMultipleOrganizations) {
     if (isCollapsed) {
       return (
-        <div className="border-b border-border/60 p-2">
+        <div className="border-b border-border p-2">
           <Tooltip>
             <TooltipTrigger asChild>{triggerContent}</TooltipTrigger>
             <TooltipContent side="right" className="font-medium">
@@ -202,7 +202,7 @@ export function OrganizationSwitcher({ isCollapsed = false }: OrganizationSwitch
       );
     }
 
-    return <div className="border-b border-border/60 p-3">{triggerContent}</div>;
+    return <div className="border-b border-border p-4">{triggerContent}</div>;
   }
 
   // Multiple organizations - with dropdown
@@ -293,7 +293,7 @@ export function OrganizationSwitcher({ isCollapsed = false }: OrganizationSwitch
 
   if (isCollapsed) {
     return (
-      <div className="border-b border-border/60 p-2">
+      <div className="border-b border-border p-2">
         <Tooltip>
           <TooltipTrigger asChild>
             <div>{dropdownContent}</div>
@@ -307,5 +307,5 @@ export function OrganizationSwitcher({ isCollapsed = false }: OrganizationSwitch
     );
   }
 
-  return <div className="border-b border-border/60 p-3">{dropdownContent}</div>;
+  return <div className="border-b border-border p-4">{dropdownContent}</div>;
 }
