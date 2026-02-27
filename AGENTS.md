@@ -16,6 +16,7 @@ Przed rozpoczęciem pracy dopasuj zadanie do tabeli i przeczytaj WSZYSTKIE pasuj
 | Zestawy ćwiczeń                  | `src/features/exercise-sets/AGENTS.md`            |
 | Nowa specyfikacja                | `.ai/specs/AGENTS.md`, `.ai/skills/spec-writing/` |
 | Code review                      | `.ai/skills/code-review/`                         |
+| UI/UX / design / accessibility   | `.ai/skills/product-designer/SKILL.md`            |
 | Ustawienia/organizacja           | `src/components/settings/AGENTS.md`               |
 | Kontekst cross-repo / backend    | `.ai/ECOSYSTEM.md`                                |
 | Encje / enumy / relacje          | `.ai/DOMAIN_MODEL.md`                             |
@@ -26,6 +27,7 @@ Przed rozpoczęciem pracy dopasuj zadanie do tabeli i przeczytaj WSZYSTKIE pasuj
 
 1. **Spec-first**: Wejdź w plan mode dla nietrywialnych zadań (3+ kroki). Sprawdź `.ai/specs/` przed kodowaniem; utwórz SPEC jeśli nie istnieje.
 2. **Task Router**: Dopasuj zadanie do tabeli i przeczytaj odpowiednie guide'y.
+   - Jeśli zadanie dotyczy UI/UX/designu (np. redesign, layout, komponenty wizualne, dostępność, audit UI), zawsze przeczytaj `.ai/skills/product-designer/SKILL.md`.
 3. **Self-improvement**: Po korekcie zaktualizuj `.ai/lessons.md`.
 4. **Verification**: Uruchom build, sprawdź lint. Zapytaj: "Czy senior developer zaakceptowałby ten kod?"
 5. **Elegance**: Dla nietrywialnych zmian, zatrzymaj się i zapytaj "czy istnieje bardziej eleganckie rozwiązanie?"
@@ -341,7 +343,7 @@ Pełna dokumentacja ekosystemu dla agentów AI:
 | `.ai/DATA_FLOWS.md`   | Diagramy: auth, assignment, billing, AI, rejestracja, real-time, media         | Implementacja lub debugowanie flow wielowarstwowego          |
 | `.ai/specs/`          | Specyfikacje modułów (SPEC-001…005)                                            | Przed implementacją nowej funkcjonalności                    |
 | `.ai/lessons.md`      | Dziennik wniosków z pracy AI                                                   | Po korekcie — dodaj wpis                                     |
-| `.ai/skills/`         | Umiejętności: spec-writing, code-review, create-agents-md                      | Tworzenie specyfikacji, przegląd kodu                        |
+| `.ai/skills/`         | Umiejętności: spec-writing, code-review, create-agents-md, product-designer    | Tworzenie specyfikacji, przegląd kodu, zadania UI/UX         |
 
 ## Schemat backendu i wzorce domenowe
 

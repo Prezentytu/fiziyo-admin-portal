@@ -46,7 +46,7 @@ function Breadcrumbs() {
       <Link
         href="/"
         data-testid="nav-breadcrumb-home"
-        className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors"
+        className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface rounded"
       >
         <Home className="h-4 w-4" />
       </Link>
@@ -61,7 +61,7 @@ function Breadcrumbs() {
             <Link
               href={crumb.href}
               data-testid={`nav-breadcrumb-item-${index}`}
-              className="text-muted-foreground hover:text-foreground transition-colors"
+              className="text-muted-foreground hover:text-foreground transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface rounded"
             >
               {crumb.label}
             </Link>
@@ -82,7 +82,7 @@ export function Header({ onMobileMenuToggle }: HeaderProps) {
   const hasNotifications = notificationCount > 0;
 
   return (
-    <TooltipProvider delayDuration={0}>
+    <TooltipProvider delayDuration={300}>
       <header
         data-testid="nav-header"
         className="flex h-16 items-center justify-between border-b border-border bg-surface px-4 lg:px-6"

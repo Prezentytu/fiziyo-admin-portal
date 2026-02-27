@@ -187,7 +187,7 @@ export function GettingStartedCard({
     return (
       <div
         className={cn(
-          'relative overflow-hidden rounded-2xl border border-primary/30 bg-gradient-to-r from-primary/5 to-surface',
+          'relative overflow-hidden rounded-2xl border border-primary/30 bg-linear-to-r from-primary/5 to-surface',
           className
         )}
       >
@@ -230,14 +230,14 @@ export function GettingStartedCard({
   return (
     <div
       data-testid="onboarding-getting-started-card"
-      className={cn(
-        'relative overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/5 via-surface to-surface',
-        className
-      )}
+        className={cn(
+          'relative overflow-hidden rounded-2xl border border-border/30 bg-linear-to-br from-surface-elevated via-surface to-surface',
+          className
+        )}
     >
-      {/* Decorative glow */}
-      <div className="absolute -top-20 -right-20 w-40 h-40 bg-primary/10 rounded-full blur-3xl" />
-      <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-secondary/10 rounded-full blur-3xl" />
+      {/* Decorative glow - subtle */}
+      <div className="absolute -top-20 -right-20 w-40 h-40 bg-primary/5 rounded-full blur-3xl pointer-events-none" aria-hidden="true" />
+      <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-secondary/5 rounded-full blur-3xl pointer-events-none" aria-hidden="true" />
 
       <div className="relative p-5 sm:p-6">
         {/* Header */}
@@ -252,9 +252,11 @@ export function GettingStartedCard({
             </div>
           </div>
           <button
+            type="button"
             onClick={handleDismiss}
-            className="shrink-0 p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-surface-light transition-colors"
+            className="shrink-0 p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-surface-light transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
             title="Nie pokazuj więcej"
+            aria-label="Nie pokazuj więcej"
             data-testid="onboarding-dismiss-btn"
           >
             <X className="h-4 w-4" />
@@ -281,16 +283,17 @@ export function GettingStartedCard({
 
             return (
               <button
+                type="button"
                 key={step.id}
                 onClick={() => handleStepClick(step)}
                 disabled={isCompleted}
                 data-testid={`onboarding-getting-started-step-${step.id}`}
                 className={cn(
-                  'w-full flex items-center gap-3 p-3 rounded-xl text-left transition-all duration-200',
+                  'w-full flex items-center gap-3 p-3 rounded-xl text-left transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface',
                   isCompleted
                     ? 'bg-primary/5 cursor-default'
                     : isNext
-                      ? 'bg-surface-light hover:bg-surface-hover border border-primary/30 cursor-pointer'
+                      ? 'bg-surface-light hover:bg-surface-hover border border-border/30 hover:border-primary/30 cursor-pointer'
                       : 'bg-surface/50 hover:bg-surface-light cursor-pointer'
                 )}
               >

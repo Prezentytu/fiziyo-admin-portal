@@ -135,7 +135,7 @@ export function Sidebar({ isCollapsed, onToggleCollapse }: SidebarProps) {
   }, [canManageOrganization, canReviewExercises]);
 
   return (
-    <TooltipProvider delayDuration={0}>
+    <TooltipProvider delayDuration={300}>
       <aside
         data-testid="nav-sidebar"
         className={cn(
@@ -154,9 +154,10 @@ export function Sidebar({ isCollapsed, onToggleCollapse }: SidebarProps) {
 
           {!isCollapsed && (
             <button
+              type="button"
               onClick={onToggleCollapse}
               data-testid="nav-collapse-btn"
-              className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-surface-light hover:text-foreground transition-colors"
+              className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-surface-light hover:text-foreground transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
               aria-label="Zwiń menu"
             >
               <PanelLeftClose className="h-4 w-4" />
@@ -168,9 +169,10 @@ export function Sidebar({ isCollapsed, onToggleCollapse }: SidebarProps) {
         {isCollapsed && (
           <div className="flex justify-center py-3 border-b border-border">
             <button
+              type="button"
               onClick={onToggleCollapse}
               data-testid="nav-expand-btn"
-              className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-surface-light hover:text-foreground transition-colors"
+              className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-surface-light hover:text-foreground transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
               aria-label="Rozwiń menu"
             >
               <PanelLeft className="h-4 w-4" />

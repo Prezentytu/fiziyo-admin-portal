@@ -1,5 +1,5 @@
 export const NAV_ITEM_BASE =
-  'group relative flex items-center rounded-xl text-sm font-medium transition-all duration-200';
+  'group relative flex items-center rounded-xl text-sm font-medium transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface';
 
 export const NAV_ITEM_ACTIVE = 'bg-primary/10 text-primary font-semibold';
 

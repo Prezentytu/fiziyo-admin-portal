@@ -40,13 +40,13 @@
   }
 }
 
-/* AI Chat Animations */
+/* AI Chat Animations - use tokens for theme consistency */
 @keyframes pulse-glow {
   0%, 100% {
-    box-shadow: 0 0 0 0 rgba(50, 150, 93, 0.5);
+    box-shadow: 0 0 0 0 var(--primary-glow);
   }
   50% {
-    box-shadow: 0 0 0 12px rgba(50, 150, 93, 0);
+    box-shadow: 0 0 0 12px var(--primary-glow-fade);
   }
 }
 
@@ -64,10 +64,10 @@
 /* AI Suggestion animations */
 @keyframes ai-glow {
   0%, 100% {
-    box-shadow: 0 0 10px rgba(50, 150, 93, 0.2);
+    box-shadow: 0 0 10px var(--primary-glow-soft);
   }
   50% {
-    box-shadow: 0 0 20px rgba(50, 150, 93, 0.4);
+    box-shadow: 0 0 20px var(--primary-glow-medium);
   }
 }
 
@@ -173,10 +173,10 @@
 
 @keyframes success-glow {
   0%, 100% {
-    box-shadow: 0 0 0 0 rgba(50, 150, 93, 0.4);
+    box-shadow: 0 0 0 0 var(--primary-glow-medium);
   }
   50% {
-    box-shadow: 0 0 20px 10px rgba(50, 150, 93, 0.2);
+    box-shadow: 0 0 20px 10px var(--primary-glow-soft);
   }
 }
 
@@ -218,6 +218,7 @@
 }
 
 :root {
+  color-scheme: dark;
   --base-font-size: 16px;
   /* Base colors - Fizjo App Dark Theme */
   --background: #121212;
@@ -233,6 +234,10 @@
   --primary-dark: #22804a;
   --primary-foreground: #ffffff;
   --primary-muted: rgba(50, 150, 93, 0.12);
+  --primary-glow: rgba(50, 150, 93, 0.5);
+  --primary-glow-fade: rgba(50, 150, 93, 0);
+  --primary-glow-soft: rgba(50, 150, 93, 0.2);
+  --primary-glow-medium: rgba(50, 150, 93, 0.4);
 
   /* Secondary - Teal accent */
   --secondary: #2dd4bf;
@@ -260,7 +265,7 @@
   --radius: 0.75rem;
 
   --muted: #2a2a2a;
-  --muted-foreground: #9ca3af;
+  --muted-foreground: #b3b3b3;
 
   --card: #1a1a1a;
   --card-foreground: #ffffff;
@@ -362,6 +367,8 @@
 
 * {
   border-color: var(--border);
+  scrollbar-width: thin;
+  scrollbar-color: var(--surface-light) var(--surface);
 }
 
 body {
@@ -372,10 +379,15 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Scrollbar */
+/* Scrollbar - WebKit + Firefox */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
+}
+
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
 }
 
 .custom-scrollbar::-webkit-scrollbar {
@@ -1007,19 +1019,17 @@ input[type="number"] {
   animation: shimmer 1.5s ease-in-out infinite;
 }
 
-/* Chat panel - no focus outline */
-.chat-panel,
-.chat-panel *,
-.chat-panel [data-radix-scroll-area-viewport],
-.chat-panel textarea,
-.chat-panel button {
-  outline: none !important;
+/* Chat panel - visible focus for keyboard (a11y) */
+.chat-panel button:focus-visible,
+.chat-panel textarea:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 2px var(--primary-muted);
 }
 
-.chat-panel *:focus,
-.chat-panel *:focus-visible {
-  outline: none !important;
-  box-shadow: none !important;
+.chat-panel [data-radix-scroll-area-viewport]:focus-visible {
+  outline: 1px solid var(--border);
+  outline-offset: -1px;
 }
 
 /* ============================================
@@ -1028,6 +1038,7 @@ input[type="number"] {
 
 /* Light theme */
 .light-theme {
+  color-scheme: light;
   --background: #ffffff;
   --foreground: #1a1a1a;
   --surface: #f5f5f5;
@@ -1077,16 +1088,16 @@ input[type="number"] {
   outline-offset: 2px;
 }
 
-/* Stepper override: disable global focus outline for compact numeric control */
-[data-stepper-control]:focus,
+/* Stepper - visible focus for keyboard (a11y) */
 [data-stepper-control]:focus-visible,
-[data-stepper-input]:focus,
 [data-stepper-input]:focus-visible {
-  outline: none !important;
-  box-shadow: none !important;
+  outline: 2px solid var(--primary);
+  outline-offset: 1px;
+  box-shadow: 0 0 0 2px var(--primary-muted);
+  border-radius: var(--radius-sm);
 }
 
-/* Reduced motion */
+/* Reduced motion - class (user preference) */
 .reduced-motion *,
 .reduced-motion *::before,
 .reduced-motion *::after {
@@ -1096,6 +1107,18 @@ input[type="number"] {
   scroll-behavior: auto !important;
 }
 
+/* Reduced motion - system preference (a11y) */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
 html {
-  font-size: var(--base-font-size);
+  font-size: var(--base-font-size, 16px);
 }

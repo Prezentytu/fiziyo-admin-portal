@@ -248,9 +248,10 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
               {/* Quick Actions */}
               <div className="mt-2 space-y-1">
                 <button
+                  type="button"
                   onClick={handleOpenProfile}
                   data-testid="nav-mobile-user-profile"
-                  className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-muted-foreground hover:bg-surface-light hover:text-foreground transition-colors"
+                  className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-muted-foreground hover:bg-surface-light hover:text-foreground transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
                 >
                   <User className="h-4 w-4" />
                   <span>Ustawienia profilu</span>
@@ -259,9 +260,10 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
 
                 {hasMultipleOrganizations && (
                   <button
+                    type="button"
                     onClick={onClose}
                     data-testid="nav-mobile-switch-org"
-                    className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-muted-foreground hover:bg-surface-light hover:text-foreground transition-colors"
+                    className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-muted-foreground hover:bg-surface-light hover:text-foreground transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
                   >
                     <Building2 className="h-4 w-4" />
                     <span>Przełącz organizację</span>
@@ -272,7 +274,7 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
                 <a
                   href="mailto:support@fiziyo.app"
                   data-testid="nav-mobile-help"
-                  className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-muted-foreground hover:bg-surface-light hover:text-foreground transition-colors"
+                  className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-muted-foreground hover:bg-surface-light hover:text-foreground transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
                 >
                   <HelpCircle className="h-4 w-4" />
                   <span>Pomoc / Support</span>
@@ -280,9 +282,10 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
                 </a>
 
                 <button
+                  type="button"
                   onClick={handleSignOut}
                   data-testid="nav-mobile-logout-btn"
-                  className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-error hover:bg-error/10 transition-colors"
+                  className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-error hover:bg-error/10 transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
                 >
                   <LogOut className="h-4 w-4" />
                   <span>Wyloguj się</span>

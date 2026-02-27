@@ -140,18 +140,18 @@ function getActivityStatus(lastCompletedAt?: string): { status: ActivityStatus; 
   return { status: 'inactive', text: `Nieaktywny od ${diffDays} dni`, date: lastDate };
 }
 
-// Activity status indicator component
+// Activity status indicator component - use design tokens
 function ActivityIndicator({ status }: { status: ActivityStatus }) {
   switch (status) {
     case 'active':
       return (
-        <div className="absolute -bottom-0.5 -right-0.5 h-4 w-4 rounded-full bg-emerald-500 flex items-center justify-center ring-2 ring-surface">
+        <div className="absolute -bottom-0.5 -right-0.5 h-4 w-4 rounded-full bg-success flex items-center justify-center ring-2 ring-surface">
           <CheckCircle2 className="h-2.5 w-2.5 text-white" />
         </div>
       );
     case 'warning':
       return (
-        <div className="absolute -bottom-0.5 -right-0.5 h-4 w-4 rounded-full bg-amber-500 flex items-center justify-center ring-2 ring-surface">
+        <div className="absolute -bottom-0.5 -right-0.5 h-4 w-4 rounded-full bg-warning flex items-center justify-center ring-2 ring-surface">
           <AlertCircle className="h-2.5 w-2.5 text-white" />
         </div>
       );
@@ -326,17 +326,17 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="mx-auto w-full max-w-[1400px] space-y-8">
       {/* Header Section - Greeting with date */}
-      <div className="flex items-end justify-between">
+      <div className="flex items-end justify-between gap-4">
         <div>
           <h1
             data-testid="dashboard-greeting"
-            className="text-2xl lg:text-3xl font-bold text-foreground tracking-tight"
+            className="text-xl lg:text-2xl font-semibold text-foreground tracking-tight"
           >
             {greeting}, {userName}!
           </h1>
-          <p className="text-muted-foreground mt-1">
+          <p className="mt-2 text-sm text-muted-foreground">
             {patientsNeedingAttention.length > 0
               ? `${patientsNeedingAttention.length} pacjentów wymaga uwagi`
               : 'Wszyscy pacjenci są aktywni'}
@@ -352,82 +352,87 @@ export default function DashboardPage() {
         assignmentsCount={therapistAssignmentsCount}
       />
 
-      {/* Quick Actions - Three Equal Action Cards (4:4:4) */}
-      <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+      {/* Quick Actions - spójna hierarchia: Primary + Secondary + Tertiary */}
+      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
         {/* Action 1 - Przypisz zestaw (zielona - główna akcja) */}
         <button
+          type="button"
           onClick={() => setIsAssignWizardOpen(true)}
           disabled={!organizationId || !therapistId}
+          aria-label="Przypisz zestaw ćwiczeń pacjentowi"
           data-testid="dashboard-hero-assign-set-btn"
-          className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary via-primary to-primary-dark p-5 text-left transition-all duration-300 hover:shadow-xl hover:shadow-primary/20 hover:scale-[1.02] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+          className="group relative overflow-hidden rounded-2xl bg-linear-to-br from-primary via-primary to-primary-dark p-5 text-left transition-all duration-150 hover:shadow-xl hover:shadow-primary/20 hover:scale-[1.02] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
         >
-          <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-          <div className="absolute -top-24 -right-24 w-48 h-48 bg-white/10 rounded-full blur-3xl group-hover:bg-white/20 transition-all duration-500" />
+          <div className="absolute inset-0 bg-linear-to-br from-white/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-150" />
+          <div className="absolute -top-24 -right-24 w-48 h-48 bg-white/10 rounded-full blur-3xl opacity-30 group-hover:opacity-50 transition-opacity duration-200" />
 
           <div className="relative flex items-center gap-4">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm shrink-0 group-hover:scale-110 transition-transform duration-300">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm shrink-0 group-hover:scale-110 transition-transform duration-150">
               <Send className="h-5 w-5 text-white" />
             </div>
             <div className="min-w-0 flex-1">
-              <h3 className="text-base font-bold text-white mb-0.5">Przypisz zestaw</h3>
-              <p className="text-xs text-white/70">Dla obecnych pacjentów</p>
+              <h3 className="text-base font-bold text-white mb-1">Przypisz zestaw</h3>
+              <p className="text-xs text-white/80">Dla obecnych pacjentów</p>
             </div>
-            <ArrowRight className="h-5 w-5 text-white/60 group-hover:text-white group-hover:translate-x-1 transition-all duration-300 shrink-0" />
+            <ArrowRight className="h-5 w-5 text-white/60 group-hover:text-white group-hover:translate-x-1 transition-all duration-150 shrink-0" />
           </div>
         </button>
 
         {/* Action 2 - Nowy pacjent (niebieska) */}
         <button
+          type="button"
           onClick={() => setIsPatientDialogOpen(true)}
           disabled={!organizationId || !therapistId}
+          aria-label="Dodaj nowego pacjenta do bazy"
           data-testid="dashboard-add-patient-btn"
-          className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-info via-info to-blue-600 p-5 text-left transition-all duration-300 hover:shadow-xl hover:shadow-info/20 hover:scale-[1.02] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+          className="group relative overflow-hidden rounded-2xl border border-border/20 bg-surface-elevated p-5 text-left transition-all duration-150 hover:border-info/30 hover:bg-surface hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-          <div className="absolute -top-24 -right-24 w-48 h-48 bg-white/10 rounded-full blur-3xl group-hover:bg-white/20 transition-all duration-500" />
-
           <div className="relative flex items-center gap-4">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm shrink-0 group-hover:scale-110 transition-transform duration-300">
-              <UserPlus className="h-5 w-5 text-white" />
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-info/10 shrink-0 group-hover:bg-info/20 group-hover:scale-110 transition-all duration-150">
+              <UserPlus className="h-5 w-5 text-info" />
             </div>
             <div className="min-w-0 flex-1">
-              <h3 className="text-base font-bold text-white mb-0.5">Nowy pacjent</h3>
-              <p className="text-xs text-white/70">Dodaj do bazy</p>
+              <h3 className="mb-1 text-base font-semibold text-foreground group-hover:text-info transition-colors duration-150">
+                Nowy pacjent
+              </h3>
+              <p className="text-xs text-muted-foreground">Dodaj do bazy</p>
             </div>
-            <ArrowRight className="h-5 w-5 text-white/60 group-hover:text-white group-hover:translate-x-1 transition-all duration-300 shrink-0" />
+            <ArrowRight className="h-5 w-5 text-muted-foreground/40 group-hover:text-info group-hover:translate-x-1 transition-all duration-150 shrink-0" />
           </div>
         </button>
 
         {/* Action 3 - Utwórz zestaw (ciemna/szara - rzadsza akcja) */}
         <button
+          type="button"
           onClick={() => setIsCreateSetWizardOpen(true)}
           disabled={!organizationId}
+          aria-label="Utwórz nowy zestaw ćwiczeń"
           data-testid="dashboard-create-set-btn"
-          className="group relative overflow-hidden rounded-2xl border border-border/60 bg-surface-light p-5 text-left transition-all duration-300 hover:border-primary/40 hover:bg-surface hover:shadow-lg cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+          className="group relative overflow-hidden rounded-2xl border border-border/20 bg-surface-light p-5 text-left transition-all duration-150 hover:border-primary/30 hover:bg-surface hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <div className="relative flex items-center gap-4">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 shrink-0 group-hover:bg-primary/20 group-hover:scale-110 transition-all duration-300">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 shrink-0 group-hover:bg-primary/20 group-hover:scale-110 transition-all duration-150">
               <FolderPlus className="h-5 w-5 text-primary" />
             </div>
             <div className="min-w-0 flex-1">
-              <h3 className="text-base font-bold text-foreground group-hover:text-primary transition-colors mb-0.5">
+              <h3 className="text-base font-semibold text-foreground group-hover:text-primary transition-colors mb-1">
                 Utwórz zestaw
               </h3>
               <p className="text-xs text-muted-foreground">Nowy program</p>
             </div>
-            <ArrowRight className="h-5 w-5 text-muted-foreground/40 group-hover:text-primary group-hover:translate-x-1 transition-all duration-300 shrink-0" />
+            <ArrowRight className="h-5 w-5 text-muted-foreground/40 group-hover:text-primary group-hover:translate-x-1 transition-all duration-150 shrink-0" />
           </div>
         </button>
       </div>
 
       {/* Main Content - 8:4 Grid Layout */}
-      <div className="grid gap-4 lg:grid-cols-12">
+      <div className="grid gap-5 lg:grid-cols-12">
         {/* Activity Feed - Left Column (8 cols) */}
         <Card
           data-testid="dashboard-activity-section"
-          className="border-border/40 bg-surface/50 backdrop-blur-sm overflow-hidden lg:col-span-8"
+          className="bg-surface-elevated/70 shadow-sm overflow-hidden lg:col-span-8"
         >
-          <CardHeader className="pb-3">
+          <CardHeader className="pb-4">
             <div className="flex items-center justify-between">
               <CardTitle className="flex items-center gap-3 text-base font-semibold">
                 <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-info/10">
@@ -435,7 +440,7 @@ export default function DashboardPage() {
                 </div>
                 <span>Wymagają uwagi</span>
                 {patientsNeedingAttention.length > 0 && (
-                  <Badge variant="secondary" className="ml-1 bg-amber-500/10 text-amber-500 font-medium">
+                  <Badge variant="secondary" className="ml-1 bg-warning-muted text-warning font-medium">
                     {patientsNeedingAttention.length}
                   </Badge>
                 )}
@@ -471,7 +476,7 @@ export default function DashboardPage() {
                 ))}
               </div>
             ) : patients.length > 0 ? (
-              <div className="space-y-1 animate-stagger">
+              <div className="space-y-2 animate-stagger">
                 {displayedPatients.map((assignment: PatientWithActivity) => {
                   const isShadow = assignment.patient?.isShadowUser;
                   return (
@@ -479,21 +484,21 @@ export default function DashboardPage() {
                       key={assignment.id}
                       href={`/patients/${assignment.patient?.id}`}
                       data-testid={`dashboard-patient-item-${assignment.patient?.id}`}
-                      className={`group flex items-center gap-3 p-3 rounded-xl transition-all duration-200 ${
+                      className={`group flex items-center gap-3 p-3 rounded-xl transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface ${
                         assignment.activityStatus === 'warning'
-                          ? 'bg-amber-500/5 hover:bg-amber-500/10'
+                          ? 'bg-warning-muted hover:bg-warning-muted/80'
                           : assignment.activityStatus === 'inactive'
                             ? 'hover:bg-surface-light'
-                            : 'hover:bg-emerald-500/5'
+                            : 'hover:bg-success-muted'
                       }`}
                     >
                       <div className="relative shrink-0">
                         <Avatar
-                          className={`h-10 w-10 ring-2 transition-all ${
+                          className={`h-10 w-10 ring-2 transition-all duration-150 ${
                             assignment.activityStatus === 'warning'
-                              ? 'ring-amber-500/30 group-hover:ring-amber-500/50'
+                              ? 'ring-warning/30 group-hover:ring-warning/50'
                               : assignment.activityStatus === 'active'
-                                ? 'ring-emerald-500/30 group-hover:ring-emerald-500/50'
+                                ? 'ring-success/30 group-hover:ring-success/50'
                                 : 'ring-border/20 group-hover:ring-primary/30'
                           }`}
                         >
@@ -502,7 +507,7 @@ export default function DashboardPage() {
                             className={`text-sm font-medium ${
                               isShadow
                                 ? 'bg-muted-foreground/60 text-white'
-                                : 'bg-gradient-to-br from-info to-blue-600 text-white'
+                                : 'bg-linear-to-br from-info to-blue-600 text-white'
                             }`}
                           >
                             {assignment.patient?.fullname?.[0] || '?'}
@@ -518,11 +523,11 @@ export default function DashboardPage() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <p
-                          className={`font-medium text-sm truncate transition-colors ${
+                          className={`font-medium text-sm truncate transition-colors duration-150 ${
                             assignment.activityStatus === 'warning'
-                              ? 'text-foreground group-hover:text-amber-500'
+                              ? 'text-foreground group-hover:text-warning'
                               : assignment.activityStatus === 'active'
-                                ? 'text-foreground group-hover:text-emerald-600'
+                                ? 'text-foreground group-hover:text-success'
                                 : 'text-foreground group-hover:text-primary'
                           }`}
                         >
@@ -531,9 +536,9 @@ export default function DashboardPage() {
                         <p
                           className={`text-xs truncate ${
                             assignment.activityStatus === 'warning'
-                              ? 'text-amber-600/80'
+                              ? 'text-warning/90'
                               : assignment.activityStatus === 'active'
-                                ? 'text-emerald-600/80'
+                                ? 'text-success/90'
                                 : 'text-muted-foreground'
                           }`}
                         >
@@ -541,11 +546,11 @@ export default function DashboardPage() {
                         </p>
                       </div>
                       <ChevronRight
-                        className={`h-4 w-4 transition-all group-hover:translate-x-0.5 ${
+                        className={`h-4 w-4 transition-all duration-150 group-hover:translate-x-0.5 ${
                           assignment.activityStatus === 'warning'
-                            ? 'text-amber-500/30 group-hover:text-amber-500'
+                            ? 'text-warning/30 group-hover:text-warning'
                             : assignment.activityStatus === 'active'
-                              ? 'text-emerald-500/30 group-hover:text-emerald-500'
+                              ? 'text-success/30 group-hover:text-success'
                               : 'text-muted-foreground/30 group-hover:text-primary'
                         }`}
                       />
@@ -576,9 +581,9 @@ export default function DashboardPage() {
         {/* Quick Sets - Right Column (4 cols) */}
         <Card
           data-testid="dashboard-sets-section"
-          className="border-border/40 bg-surface/50 backdrop-blur-sm overflow-hidden lg:col-span-4"
+          className="bg-surface-elevated/70 shadow-sm overflow-hidden lg:col-span-4"
         >
-          <CardHeader className="pb-3">
+          <CardHeader className="pb-4">
             <div className="flex items-center justify-between">
               <CardTitle className="flex items-center gap-3 text-base font-semibold">
                 <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-secondary/10">
@@ -622,16 +627,16 @@ export default function DashboardPage() {
                 ))}
               </div>
             ) : sortedExerciseSets.length > 0 ? (
-              <div className="space-y-1 animate-stagger">
+              <div className="space-y-2 animate-stagger">
                 {sortedExerciseSets.slice(0, 5).map((set: ExerciseSetItem) => (
                   <div
                     key={set.id}
-                    className="group flex items-center gap-3 p-2.5 rounded-xl transition-all duration-200 hover:bg-surface-light"
+                    className="group flex items-center gap-3 p-3 rounded-xl transition-all duration-150 hover:bg-surface-light"
                   >
                     <Link
                       href={`/exercise-sets/${set.id}`}
                       data-testid={`dashboard-set-item-${set.id}`}
-                      className="flex items-center gap-3 flex-1 min-w-0"
+                      className="flex items-center gap-3 flex-1 min-w-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface rounded-lg"
                     >
                       <SetThumbnail exerciseMappings={set.exerciseMappings} size="sm" />
                       <div className="flex-1 min-w-0">

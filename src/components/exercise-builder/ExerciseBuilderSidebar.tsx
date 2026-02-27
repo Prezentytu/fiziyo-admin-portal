@@ -60,8 +60,10 @@ export function ExerciseBuilderSidebar({ className }: ExerciseBuilderSidebarProp
       <aside
         data-testid="exercise-builder-sidebar"
         className={cn(
-          'z-40 w-[380px] xl:w-[420px] max-w-[92vw] border-l border-border bg-surface/95 backdrop-blur-2xl flex flex-col shrink-0 transition-all duration-300',
-          !hasExercises && 'w-0 opacity-0 pointer-events-none border-none overflow-hidden',
+          'z-40 min-w-0 border-l border-border bg-surface/95 backdrop-blur-2xl flex flex-col shrink-0 transition-all duration-300',
+          hasExercises
+            ? 'w-[380px] xl:w-[420px] max-w-[92vw]'
+            : 'w-0 max-w-0 min-w-0 opacity-0 pointer-events-none border-none overflow-hidden',
           className
         )}
       >

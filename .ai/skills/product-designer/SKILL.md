@@ -1,5 +1,5 @@
 ---
-name: Senior_B2B_Product_Designer
+name: product-designer
 description: Tworzy najwyższej klasy, nowoczesne interfejsy "Premium Utility" dla aplikacji MedTech SaaS. Projektuje na poziomie Senior Product Designera ze spółek takich jak Stripe, Linear czy Vercel.
 ---
 

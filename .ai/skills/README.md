@@ -4,11 +4,12 @@ Umiejętności (skills) to specjalistyczne przewodniki dla AI agentów pracując
 
 ## Dostępne skills
 
-| Skill                                         | Opis                              | Kiedy używać                                       |
-| --------------------------------------------- | --------------------------------- | -------------------------------------------------- |
-| [spec-writing](spec-writing/SKILL.md)         | Jak pisać specyfikacje FiziYo     | Tworzenie/aktualizacja plików w `.ai/specs/`       |
-| [code-review](code-review/SKILL.md)           | Code review w FiziYo              | Przegląd kodu przed merge, weryfikacja zmian       |
-| [create-agents-md](create-agents-md/SKILL.md) | Jak tworzyć AGENTS.md dla modułów | Dodawanie nowego modułu/komponentu do Task Routera |
+| Skill                                         | Opis                              | Kiedy używać                                         |
+| --------------------------------------------- | --------------------------------- | ---------------------------------------------------- |
+| [spec-writing](spec-writing/SKILL.md)         | Jak pisać specyfikacje FiziYo     | Tworzenie/aktualizacja plików w `.ai/specs/`         |
+| [code-review](code-review/SKILL.md)           | Code review w FiziYo              | Przegląd kodu przed merge, weryfikacja zmian         |
+| [create-agents-md](create-agents-md/SKILL.md) | Jak tworzyć AGENTS.md dla modułów | Dodawanie nowego modułu/komponentu do Task Routera   |
+| [product-designer](product-designer/SKILL.md) | Premium UI/UX dla MedTech SaaS    | Zadania UI/UX, redesign, audit designu i dostępności |
 
 ## Dokumentacja ekosystemowa (.ai/)
 
