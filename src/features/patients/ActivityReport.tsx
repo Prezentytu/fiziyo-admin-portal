@@ -23,12 +23,14 @@ import {
 } from '@/lib/therapyStatus';
 
 interface ActivityReportProps {
-  patientId: string;
-  patientName?: string;
-  onSendMessage?: () => void;
-  onSendPraise?: () => void;
-  onEditPlan?: () => void;
-  onCall?: () => void;
+  readonly patientId: string;
+  readonly patientName?: string;
+  readonly heatmapDays?: number;
+  readonly journalDays?: number;
+  readonly onSendMessage?: () => void;
+  readonly onSendPraise?: () => void;
+  readonly onEditPlan?: () => void;
+  readonly onCall?: () => void;
 }
 
 interface ExerciseProgressQueryItem {
@@ -59,6 +61,8 @@ interface PatientAssignmentsQueryResponse {
 export function ActivityReport({
   patientId,
   patientName: _patientName,
+  heatmapDays = 28,
+  journalDays = 5,
   onSendMessage,
   onSendPraise,
   onEditPlan,
@@ -103,7 +107,7 @@ export function ActivityReport({
   const therapyStatus = calculateTherapyStatus(exerciseProgress, assignmentsForStatus);
 
   // Generate heatmap data (with assignments for proper schedule awareness)
-  const heatmapData = generateHeatmapData(exerciseProgress, assignmentsForStatus);
+  const heatmapData = generateHeatmapData(exerciseProgress, assignmentsForStatus, heatmapDays);
 
   // Get last activity label
   const lastActivity = exerciseProgress
@@ -151,7 +155,7 @@ export function ActivityReport({
       {/* Content Row: Heatmap + Event Journal */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <FeelingsHeatmap data={heatmapData} className="lg:col-span-2" />
-        <EventJournal progress={exerciseProgress} maxEvents={5} />
+        <EventJournal progress={exerciseProgress} maxEvents={journalDays} />
       </div>
     </div>
   );

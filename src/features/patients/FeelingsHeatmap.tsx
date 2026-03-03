@@ -5,13 +5,14 @@ import type { DayData } from '@/lib/therapyStatus';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface FeelingsHeatmapProps {
-  data: DayData[];
-  className?: string;
+  readonly data: DayData[];
+  readonly className?: string;
+  readonly title?: string;
 }
 
 const dayLabels = ['Pn', 'Wt', 'Śr', 'Cz', 'Pt', 'So', 'Nd'];
 
-export function FeelingsHeatmap({ data, className }: FeelingsHeatmapProps) {
+export function FeelingsHeatmap({ data, className, title }: FeelingsHeatmapProps) {
   const today = new Date().toDateString();
 
   // Podziel dane na tygodnie (7 dni na tydzień)
@@ -105,7 +106,7 @@ export function FeelingsHeatmap({ data, className }: FeelingsHeatmapProps) {
   return (
     <div className={cn('rounded-2xl border border-white/5 bg-zinc-900/50 p-6', className)}>
       <div className="flex justify-between items-center mb-6">
-        <h3 className="font-bold text-white text-sm">Regularność (Ostatnie 28 dni)</h3>
+        <h3 className="font-bold text-white text-sm">{title ?? `Regularność (Ostatnie ${data.length} dni)`}</h3>
         <div className="flex gap-3 text-[10px] text-zinc-500 uppercase tracking-wider font-medium">
           <div className="flex items-center gap-1.5">
             <span className="w-2 h-2 rounded bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.4)]" />

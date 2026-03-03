@@ -316,7 +316,8 @@ export function calculateTherapyStatus(
  */
 export function generateHeatmapData(
   progress: ExerciseProgressData[],
-  assignments: PatientAssignmentData[] = []
+  assignments: PatientAssignmentData[] = [],
+  days: number = 28
 ): DayData[] {
   const now = new Date();
   now.setHours(23, 59, 59, 999);
@@ -338,12 +339,11 @@ export function generateHeatmapData(
   startOfCurrentWeek.setDate(now.getDate() - daysFromMonday);
   startOfCurrentWeek.setHours(0, 0, 0, 0);
 
-  // Cofnij się o 3 tygodnie (łącznie 4 tygodnie)
+  const weeksBack = Math.max(0, Math.floor(days / 7) - 1);
   const startDate = new Date(startOfCurrentWeek);
-  startDate.setDate(startDate.getDate() - 21);
+  startDate.setDate(startDate.getDate() - weeksBack * 7);
 
-  // Generuj dane dla każdego dnia
-  for (let i = 0; i < 28; i++) {
+  for (let i = 0; i < days; i++) {
     const date = new Date(startDate);
     date.setDate(startDate.getDate() + i);
     date.setHours(12, 0, 0, 0); // Środek dnia żeby uniknąć problemów z timezone
