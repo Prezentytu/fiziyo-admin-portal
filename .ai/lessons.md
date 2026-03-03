@@ -13,6 +13,20 @@ Dziennik wniosków z pracy AI agentów. Po każdej korekcie dodaj nowy wpis.
 
 ## Wpisy
 
+### 2026-03-03 - CTA "Wygeneruj nazwę AI" nie może otwierać innej funkcji
+
+- **Problem**: Przycisk z etykietą generowania nazwy otwierał asystenta doboru ćwiczeń
+- **Przyczyna**: Logika UI była podpięta do panelu `AISetGenerator`, mimo innej intencji akcji
+- **Rozwiązanie**: W `CreateSetWizard` usunięto użycie asystenta i podpięto przycisk bezpośrednio pod `aiService.suggestSetName`
+- **Reguła**: CTA musi wykonywać dokładnie obiecaną akcję; alternatywne flow wymagają osobnego, jednoznacznego przycisku
+
+### 2026-03-03 - Przycisk AI uruchamiał panel przez bubbling
+
+- **Problem**: Kliknięcie "Wygeneruj nazwę AI" otwierało panel boczny zamiast wykonać akcję generowania nazwy
+- **Przyczyna**: Event z przycisku bąbelkował do rodzica, który miał własną akcję otwierania panelu
+- **Rozwiązanie**: Dodano `stopPropagation()` dla `pointerdown` i `click` w przycisku AI oraz test regresyjny na brak propagacji
+- **Reguła**: W osadzanych komponentach z lokalnymi CTA zawsze izoluj eventy (`pointerdown` + `click`) gdy rodzic może być triggerem nawigacji/panelu
+
 ### 2026-02-16 - Git pre-commit hook uruchamia ESLint na stale staged files
 
 - **Problem**: Commit odrzucony mimo poprawionego kodu lokalnie

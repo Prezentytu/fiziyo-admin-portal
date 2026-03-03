@@ -546,8 +546,12 @@ export function ExerciseSetBuilder({
             {showAI && onAIClick && (
               <button
                 type="button"
+                onPointerDown={(event) => {
+                  event.stopPropagation();
+                }}
                 onClick={(e) => {
                   e.preventDefault();
+                  e.stopPropagation();
                   onAIClick();
                 }}
                 title="Wygeneruj nazwę AI"

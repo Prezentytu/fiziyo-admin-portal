@@ -54,7 +54,7 @@ import { ImageLightbox } from '@/components/shared/ImageLightbox';
 import { ExerciseExecutionCard, fromBuilderExercise, buildExerciseImageUrls } from '@/components/shared/exercise';
 import type { ExerciseExecutionCardData } from '@/components/shared/exercise';
 import { cn } from '@/lib/utils';
-import { AISetGenerator } from './AISetGenerator';
+import { aiService } from '@/services/aiService';
 
 import { GET_AVAILABLE_EXERCISES_QUERY } from '@/graphql/queries/exercises.queries';
 import {
@@ -337,7 +337,7 @@ export function CreateSetWizard({
   const [exerciseParams, setExerciseParams] = useState<Map<string, ExerciseParams>>(new Map());
   const [showCloseConfirm, setShowCloseConfirm] = useState(false);
   const [previewExercise, setPreviewExercise] = useState<Exercise | null>(null);
-  const [showAIPanel, setShowAIPanel] = useState(false);
+  const [isGeneratingName, setIsGeneratingName] = useState(false);
 
   // DnD sensors
   const sensors = useSensors(
@@ -372,7 +372,7 @@ export function CreateSetWizard({
       setExerciseParams(new Map());
       setShowCloseConfirm(false);
       setPreviewExercise(null);
-      setShowAIPanel(false);
+      setIsGeneratingName(false);
     }
   }, [open, patientName]);
 
@@ -638,19 +638,35 @@ export function CreateSetWizard({
     }
   }, []);
 
-  // AI integration
-  const handleAISelectExercises = useCallback(
-    (exerciseIds: string[]) => {
-      for (const id of exerciseIds) {
-        const exercise = exercises.find((e) => e.id === id);
-        if (exercise) {
-          addExerciseToSet(exercise);
-        }
+  // AI name suggestion (without opening assistant panel)
+  const handleGenerateAIName = useCallback(async () => {
+    if (selectedInstances.length === 0) {
+      toast.error('Dodaj przynajmniej jedno ćwiczenie, aby AI mogło zasugerować nazwę');
+      return;
+    }
+
+    try {
+      setIsGeneratingName(true);
+
+      const exerciseNames = selectedInstances
+        .map((instance) => exercises.find((exercise) => exercise.id === instance.exerciseId)?.name)
+        .filter((exerciseName): exerciseName is string => Boolean(exerciseName));
+
+      const response = await aiService.suggestSetName(name, exerciseNames);
+      if (response?.suggestedName) {
+        setName(response.suggestedName);
+        toast.success('Nazwa została wygenerowana');
+        return;
       }
-      setShowAIPanel(false);
-    },
-    [exercises, addExerciseToSet]
-  );
+
+      toast.error('AI nie zwróciło poprawnej nazwy');
+    } catch (error) {
+      console.error('Błąd generowania nazwy zestawu:', error);
+      toast.error('Nie udało się wygenerować nazwy');
+    } finally {
+      setIsGeneratingName(false);
+    }
+  }, [exercises, name, selectedInstances]);
 
   // Create set
   const canCreate = name.trim().length >= 2;
@@ -790,16 +806,23 @@ export function CreateSetWizard({
               <Pencil className="h-3.5 w-3.5 text-muted-foreground shrink-0" aria-hidden />
               <button
                 type="button"
-                onClick={() => setShowAIPanel(!showAIPanel)}
+                onClick={handleGenerateAIName}
                 title="Wygeneruj nazwę AI"
                 className={cn(
                   'p-1 rounded shrink-0',
-                  showAIPanel ? 'text-secondary bg-secondary/10' : 'text-muted-foreground hover:text-secondary hover:bg-secondary/10'
+                  isGeneratingName
+                    ? 'text-muted-foreground cursor-not-allowed opacity-50'
+                    : 'text-muted-foreground hover:text-secondary hover:bg-secondary/10'
                 )}
                 data-testid="set-composer-ai-btn"
                 aria-label="Wygeneruj nazwę AI"
+                disabled={isGeneratingName}
               >
-                <Sparkles className="h-3.5 w-3.5" />
+                {isGeneratingName ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Sparkles className="h-3.5 w-3.5" />
+                )}
               </button>
             </div>
           </div>
@@ -1041,31 +1064,6 @@ export function CreateSetWizard({
             </div>
           </div>
 
-          {/* AI PANEL - Slides in from right */}
-          <div
-            className={cn(
-              'absolute inset-y-0 right-0 w-full sm:w-[400px] bg-surface border-l border-border shadow-2xl z-50 flex flex-col transition-transform duration-300 ease-in-out',
-              showAIPanel ? 'translate-x-0' : 'translate-x-full'
-            )}
-          >
-            <AISetGenerator
-              exercises={exercises}
-              onSelectExercises={handleAISelectExercises}
-              onCancel={() => setShowAIPanel(false)}
-              setName={name}
-              onSetNameChange={setName}
-              patientContext={
-                patientContext
-                  ? {
-                      patientName: patientContext.patientName,
-                      diagnosis: patientContext.diagnosis,
-                      painLocation: patientContext.painLocation,
-                    }
-                  : undefined
-              }
-              className="h-full"
-            />
-          </div>
         </div>
 
         {/* ============================================================ */}
