@@ -190,6 +190,10 @@ const form = useForm<FormValues>({
 });
 ```
 
+### Etykiety pól formularza
+
+- **Pola opcjonalne**: tylko nazwa pola, bez gwiazdki i bez słowa „opcjonalnie” / „(opcjonalnie)” w etykiecie.
+
 ### Wzorzec Dialog - zawsze renderuj, akceptuj null
 
 ```typescript

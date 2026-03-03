@@ -171,9 +171,9 @@ export function ClinicalNotesList({
                 </Badge>
               )}
             </CardTitle>
-            <Button size="sm" onClick={handleNewNote} className="gap-1.5">
+            <Button size="sm" onClick={handleNewNote} className="gap-1.5" data-testid="clinical-notes-new-note-btn">
               <Plus className="h-3.5 w-3.5" />
-              Nowa wizyta
+              Nowa notatka
             </Button>
           </div>
         </CardHeader>
@@ -297,7 +297,7 @@ export function ClinicalNotesList({
       {/* Editor Dialog */}
       <Dialog open={isEditorOpen} onOpenChange={handleDialogOpenChange}>
         <DialogContent
-          className="max-w-4xl h-[90vh] flex flex-col p-0"
+          className="max-w-4xl max-h-[90vh] h-auto flex flex-col overflow-auto p-0"
           hideCloseButton
           onInteractOutside={(e) => {
             // Zawsze blokuj zamknięcie przez kliknięcie poza dialog
