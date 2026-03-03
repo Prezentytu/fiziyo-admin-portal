@@ -63,3 +63,39 @@ describe('ExerciseSetBuilder AI button', () => {
     expect(onParentClick).not.toHaveBeenCalled();
   });
 });
+
+describe('ExerciseSetBuilder description field', () => {
+  it('renderuje pole opisu tylko gdy przekazano onDescriptionChange', () => {
+    const { rerender } = render(<ExerciseSetBuilder {...createProps()} />);
+    expect(screen.queryByTestId('set-builder-description-input')).not.toBeInTheDocument();
+
+    rerender(
+      <ExerciseSetBuilder
+        {...createProps({
+          description: 'Opis testowy',
+          onDescriptionChange: vi.fn(),
+        })}
+      />
+    );
+    expect(screen.getByTestId('set-builder-description-input')).toBeInTheDocument();
+  });
+
+  it('wywołuje onDescriptionChange po zmianie opisu', async () => {
+    const user = userEvent.setup();
+    const onDescriptionChange = vi.fn();
+
+    render(
+      <ExerciseSetBuilder
+        {...createProps({
+          description: '',
+          onDescriptionChange,
+        })}
+      />
+    );
+
+    const descriptionInput = screen.getByTestId('set-builder-description-input');
+    await user.type(descriptionInput, 'Nowy opis');
+
+    expect(onDescriptionChange).toHaveBeenCalled();
+  });
+});

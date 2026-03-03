@@ -44,8 +44,7 @@ import { EmptyState } from '@/components/shared/EmptyState';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { ExerciseExecutionCard } from '@/components/shared/exercise';
 import type { ExerciseExecutionCardData } from '@/components/shared/exercise';
-import { SetDialog } from '@/features/exercise-sets/SetDialog';
-import { AddExerciseToSetDialog } from '@/features/exercise-sets/AddExerciseToSetDialog';
+import { EditExerciseSetFullDialog } from '@/features/exercise-sets/EditExerciseSetFullDialog';
 import { EditExerciseInSetDialog } from '@/features/exercise-sets/EditExerciseInSetDialog';
 import { GeneratePDFDialog } from '@/features/exercise-sets/GeneratePDFDialog';
 import { AssignmentWizard } from '@/features/assignment/AssignmentWizard';
@@ -152,9 +151,8 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
   const router = useRouter();
   const { user } = useUser();
   const { currentOrganization, isLoading: orgContextLoading } = useOrganization();
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isEditSetFullOpen, setIsEditSetFullOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [isAddExerciseDialogOpen, setIsAddExerciseDialogOpen] = useState(false);
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
   const [isPDFDialogOpen, setIsPDFDialogOpen] = useState(false);
   const [editingExercise, setEditingExercise] = useState<ExerciseMapping | null>(null);
@@ -455,7 +453,7 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
               Pobierz PDF
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => setIsEditDialogOpen(true)} data-testid="set-detail-edit-btn">
+            <DropdownMenuItem onClick={() => setIsEditSetFullOpen(true)} data-testid="set-detail-edit-btn">
               <Pencil className="mr-2 h-4 w-4" />
               Edytuj zestaw
             </DropdownMenuItem>
@@ -545,9 +543,9 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
             <Dumbbell className="h-5 w-5 text-primary" />
             Ćwiczenia ({exercises.length})
           </h2>
-          <Button size="sm" onClick={() => setIsAddExerciseDialogOpen(true)} data-testid="set-detail-add-exercise-btn">
-            <Plus className="mr-2 h-4 w-4" />
-            Dodaj
+          <Button size="sm" onClick={() => setIsEditSetFullOpen(true)} data-testid="set-detail-edit-set-btn">
+            <Pencil className="mr-2 h-4 w-4" />
+            Edytuj zestaw
           </Button>
         </div>
 
@@ -557,8 +555,8 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
               icon={Dumbbell}
               title="Brak ćwiczeń"
               description="Dodaj ćwiczenia do tego zestawu"
-              actionLabel="Dodaj ćwiczenie"
-              onAction={() => setIsAddExerciseDialogOpen(true)}
+              actionLabel="Edytuj zestaw"
+              onAction={() => setIsEditSetFullOpen(true)}
             />
           </div>
         ) : (
@@ -739,13 +737,14 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
         )}
       </div>
 
-      {/* Edit Dialog */}
-      {organizationId && (
-        <SetDialog
-          open={isEditDialogOpen}
-          onOpenChange={setIsEditDialogOpen}
-          set={exerciseSet}
+      {/* Full Edit Set Dialog */}
+      {organizationId && exerciseSet && (
+        <EditExerciseSetFullDialog
+          open={isEditSetFullOpen}
+          onOpenChange={setIsEditSetFullOpen}
+          exerciseSetId={id}
           organizationId={organizationId}
+          set={exerciseSet}
           onSuccess={() => refetch()}
         />
       )}
@@ -774,18 +773,7 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
         isLoading={removingExercise}
       />
 
-      {/* Add Exercise Dialog */}
-      {organizationId && (
-        <AddExerciseToSetDialog
-          open={isAddExerciseDialogOpen}
-          onOpenChange={setIsAddExerciseDialogOpen}
-          exerciseSetId={id}
-          organizationId={organizationId}
-          onSuccess={() => refetch()}
-        />
-      )}
-
-      {/* Edit Exercise Dialog */}
+      {/* Edit Exercise Dialog (inline expand) */}
       <EditExerciseInSetDialog
         open={!!editingExercise}
         onOpenChange={(open) => !open && setEditingExercise(null)}

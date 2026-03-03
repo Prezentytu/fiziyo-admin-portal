@@ -34,6 +34,7 @@ import { CSS } from '@dnd-kit/utilities';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { ImagePlaceholder } from '@/components/shared/ImagePlaceholder';
@@ -121,6 +122,11 @@ export interface ExerciseSetBuilderProps {
   namePlaceholder?: string;
   nameLabel?: string;
 
+  /** Optional set description; when provided with onDescriptionChange, shows description field under name. */
+  description?: string;
+  onDescriptionChange?: (description: string) => void;
+  descriptionPlaceholder?: string;
+
   // Exercises state (instances + params)
   selectedInstances: ExerciseInstance[];
   onSelectedInstancesChange: (instances: ExerciseInstance[]) => void;
@@ -150,6 +156,9 @@ export interface ExerciseSetBuilderProps {
 
   // Test IDs prefix
   testIdPrefix?: string;
+
+  /** When set, instances with these IDs are shown read-only (e.g. already in set). */
+  readonlyInstanceIds?: Set<string>;
 }
 
 // ============================================================
@@ -263,6 +272,7 @@ function SortableExerciseCard({
   onRemove,
   onPreview,
   testIdPrefix,
+  isReadonly,
 }: {
   instanceId: string;
   exercise: BuilderExercise;
@@ -272,9 +282,11 @@ function SortableExerciseCard({
   onRemove: () => void;
   onPreview: () => void;
   testIdPrefix?: string;
+  isReadonly?: boolean;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: instanceId,
+    disabled: isReadonly,
   });
 
   const cardData = useMemo(
@@ -289,6 +301,21 @@ function SortableExerciseCard({
     [onUpdateParams]
   );
 
+  const dragHandle = isReadonly ? (
+    <div className="p-1 shrink-0 cursor-default opacity-50" aria-hidden>
+      <GripVertical className="h-4 w-4 text-muted-foreground/50" />
+    </div>
+  ) : (
+    <button
+      type="button"
+      {...attributes}
+      {...listeners}
+      className="p-1 rounded hover:bg-surface-light cursor-grab active:cursor-grabbing touch-none shrink-0"
+    >
+      <GripVertical className="h-4 w-4 text-muted-foreground/50" />
+    </button>
+  );
+
   return (
     <div
       ref={setNodeRef}
@@ -298,28 +325,22 @@ function SortableExerciseCard({
       }}
       className={cn(
         'min-w-0 transition-all',
-        isDragging && 'shadow-lg opacity-70 z-50'
+        isDragging && 'shadow-lg opacity-70 z-50',
+        isReadonly && 'opacity-90'
       )}
       data-testid={testIdPrefix ? `${testIdPrefix}-exercise-${exercise.id}` : undefined}
     >
       <ExerciseExecutionCard
-        mode="edit"
+        mode={isReadonly ? 'view' : 'edit'}
         exercise={cardData}
         onChange={handleChange}
-        onRemove={onRemove}
+        onRemove={isReadonly ? undefined : onRemove}
         onPreview={onPreview}
-        dragHandle={
-          <button
-            type="button"
-            {...attributes}
-            {...listeners}
-            className="p-1 rounded hover:bg-surface-light cursor-grab active:cursor-grabbing touch-none shrink-0"
-          >
-            <GripVertical className="h-4 w-4 text-muted-foreground/50" />
-          </button>
-        }
+        dragHandle={dragHandle}
         index={index + 1}
         testIdPrefix={testIdPrefix ?? 'set-builder'}
+        readOnlyReason={isReadonly ? 'W zestawie wcześniej' : undefined}
+        className={isReadonly ? 'border-amber-500/20 bg-amber-500/5 ring-1 ring-amber-500/15' : undefined}
       />
     </div>
   );
@@ -342,9 +363,13 @@ export function ExerciseSetBuilder({
   exercisePopularity = {},
   showAI = false,
   onAIClick,
+  description,
+  onDescriptionChange,
+  descriptionPlaceholder = 'Opis zestawu (opcjonalnie)',
   hideNameSection = false,
   onPreviewExercise,
   testIdPrefix = 'set-builder',
+  readonlyInstanceIds,
 }: Readonly<ExerciseSetBuilderProps>) {
   const [searchQuery, setSearchQuery] = useState('');
   const [sourceFilter, setSourceFilter] = useState<ExerciseSourceFilter>('all');
@@ -531,7 +556,7 @@ export function ExerciseSetBuilder({
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
       {!hideNameSection && (
-        <div className="px-4 py-2 border-b border-border flex items-center gap-2 min-h-0">
+        <div className="px-4 py-2 border-b border-border space-y-2 min-h-0">
           <div className="group flex-1 flex items-center gap-2 rounded-md border border-transparent px-2 py-1.5 min-h-[36px] hover:bg-surface-light/80 hover:border-border focus-within:bg-surface focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 transition-colors cursor-text">
             <input
               type="text"
@@ -562,6 +587,15 @@ export function ExerciseSetBuilder({
               </button>
             )}
           </div>
+          {onDescriptionChange != null && (
+            <Textarea
+              value={description ?? ''}
+              onChange={(e) => onDescriptionChange(e.target.value)}
+              placeholder={descriptionPlaceholder}
+              className="min-h-[60px] resize-none text-sm bg-transparent border-border/50 focus:border-primary"
+              data-testid={`${testIdPrefix}-description-input`}
+            />
+          )}
         </div>
       )}
 
@@ -775,6 +809,7 @@ export function ExerciseSetBuilder({
                         onRemove={() => removeInstance(data.instanceId)}
                         onPreview={() => onPreviewExercise?.(data.exercise)}
                         testIdPrefix={testIdPrefix}
+                        isReadonly={readonlyInstanceIds?.has(data.instanceId) ?? false}
                       />
                     ))}
                   </div>

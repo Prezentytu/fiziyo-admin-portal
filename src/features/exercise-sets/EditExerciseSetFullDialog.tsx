@@ -27,38 +27,93 @@ import {
 } from '@/graphql/queries/exerciseSets.queries';
 import { GET_EXERCISE_TAGS_BY_ORGANIZATION_QUERY } from '@/graphql/queries/exerciseTags.queries';
 import { GET_TAG_CATEGORIES_BY_ORGANIZATION_QUERY } from '@/graphql/queries/tagCategories.queries';
-import { ADD_EXERCISE_TO_EXERCISE_SET_MUTATION } from '@/graphql/mutations/exercises.mutations';
+import {
+  UPDATE_EXERCISE_SET_MUTATION,
+  UPDATE_EXERCISE_IN_SET_MUTATION,
+  REMOVE_EXERCISE_FROM_SET_MUTATION,
+  ADD_EXERCISE_TO_EXERCISE_SET_MUTATION,
+} from '@/graphql/mutations/exercises.mutations';
 import { createTagsMap, mapExercisesWithTags } from '@/utils/tagUtils';
-import { pluralize } from '@/utils/textUtils';
 import type {
   ExerciseTagsResponse,
   TagCategoriesResponse,
   OrganizationExerciseSetsResponse,
 } from '@/types/apollo';
+import {
+  computeExerciseSetDiff,
+  type InitialMapping,
+} from '@/features/exercise-sets/utils/exerciseSetDiff';
 
-interface AddExerciseToSetDialogProps {
+interface SetSnapshot {
+  id: string;
+  name: string;
+  description?: string | null;
+  exerciseMappings?: Array<{
+    id: string;
+    exerciseId: string;
+    order?: number;
+    sets?: number;
+    reps?: number;
+    duration?: number;
+    restSets?: number;
+    restReps?: number;
+    preparationTime?: number;
+    executionTime?: number;
+    notes?: string;
+    customName?: string;
+    customDescription?: string;
+    tempo?: string;
+    loadType?: string;
+    loadValue?: number;
+    loadUnit?: string;
+    loadText?: string;
+  }>;
+}
+
+interface EditExerciseSetFullDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   exerciseSetId: string;
   organizationId: string;
+  set: SetSnapshot | null;
   onSuccess?: () => void;
 }
 
-export function AddExerciseToSetDialog({
+export function EditExerciseSetFullDialog({
   open,
   onOpenChange,
   exerciseSetId,
   organizationId,
+  set,
   onSuccess,
-}: Readonly<AddExerciseToSetDialogProps>) {
+}: Readonly<EditExerciseSetFullDialogProps>) {
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
   const [selectedInstances, setSelectedInstances] = useState<ExerciseInstance[]>([]);
   const [exerciseParams, setExerciseParams] = useState<Map<string, ExerciseParams>>(new Map());
   const [showCloseConfirm, setShowCloseConfirm] = useState(false);
   const [previewExercise, setPreviewExercise] = useState<BuilderExercise | null>(null);
-  const initialInstanceIdsRef = React.useRef<Set<string>>(new Set());
-  const initializedFromExistingRef = React.useRef(false);
+  const initialMappingsRef = React.useRef<InitialMapping[]>([]);
+  const initialNameRef = React.useRef('');
+  const initialDescriptionRef = React.useRef('');
+  const initializedRef = React.useRef(false);
 
-  const hasChanges = selectedInstances.some((instance) => !initialInstanceIdsRef.current.has(instance.instanceId));
+  const diff = useMemo(
+    () =>
+      computeExerciseSetDiff({
+        initialMappings: initialMappingsRef.current,
+        selectedInstances,
+        exerciseParams,
+      }),
+    [selectedInstances, exerciseParams]
+  );
+
+  const hasChanges =
+    name.trim() !== initialNameRef.current ||
+    (description ?? '') !== initialDescriptionRef.current ||
+    diff.toRemove.length > 0 ||
+    diff.toUpdate.length > 0 ||
+    diff.toAdd.length > 0;
 
   const handleCloseAttempt = useCallback(() => {
     if (hasChanges) {
@@ -74,15 +129,69 @@ export function AddExerciseToSetDialog({
   }, [onOpenChange]);
 
   useEffect(() => {
-    if (open) {
-      setSelectedInstances([]);
-      setExerciseParams(new Map());
-      setShowCloseConfirm(false);
-      setPreviewExercise(null);
-      initialInstanceIdsRef.current = new Set();
-      initializedFromExistingRef.current = false;
+    if (!open) {
+      initializedRef.current = false;
+      return;
     }
-  }, [open]);
+    setShowCloseConfirm(false);
+    setPreviewExercise(null);
+    if (!set) return;
+
+    const mappings = set.exerciseMappings ?? [];
+    initialMappingsRef.current = mappings.map((m) => ({
+      id: m.id,
+      exerciseId: m.exerciseId,
+      order: m.order,
+      sets: m.sets,
+      reps: m.reps,
+      duration: m.duration,
+      restSets: m.restSets,
+      restReps: m.restReps,
+      preparationTime: m.preparationTime,
+      executionTime: m.executionTime,
+      notes: m.notes,
+      customName: m.customName,
+      customDescription: m.customDescription,
+      tempo: m.tempo,
+      loadType: m.loadType,
+      loadValue: m.loadValue,
+      loadUnit: m.loadUnit,
+      loadText: m.loadText,
+    }));
+    initialNameRef.current = set.name ?? '';
+    initialDescriptionRef.current = set.description ?? '';
+
+    setName(set.name ?? '');
+    setDescription(set.description ?? '');
+    const initialInstances: ExerciseInstance[] = mappings.map((mapping, index) => ({
+      instanceId: `existing-${mapping.id}-${index}`,
+      exerciseId: mapping.exerciseId,
+    }));
+    const initialParams = new Map<string, ExerciseParams>();
+    initialInstances.forEach((instance, index) => {
+      const mapping = mappings[index];
+      initialParams.set(instance.instanceId, {
+        sets: mapping.sets,
+        reps: mapping.reps,
+        duration: mapping.duration,
+        restSets: mapping.restSets,
+        restReps: mapping.restReps,
+        preparationTime: mapping.preparationTime,
+        executionTime: mapping.executionTime,
+        notes: mapping.notes ?? '',
+        customName: mapping.customName ?? '',
+        customDescription: mapping.customDescription ?? '',
+        tempo: mapping.tempo ?? '',
+        loadType: mapping.loadType ?? '',
+        loadValue: mapping.loadValue ?? 0,
+        loadUnit: mapping.loadUnit ?? 'kg',
+        loadText: mapping.loadText ?? '',
+      });
+    });
+    setSelectedInstances(initialInstances);
+    setExerciseParams(initialParams);
+    initializedRef.current = true;
+  }, [open, set]);
 
   const { data: exercisesData, loading: loadingExercises } = useQuery(GET_AVAILABLE_EXERCISES_QUERY, {
     variables: { organizationId },
@@ -102,10 +211,6 @@ export function AddExerciseToSetDialog({
   const { data: exerciseSetsData } = useQuery(GET_ORGANIZATION_EXERCISE_SETS_QUERY, {
     variables: { organizationId },
     skip: !organizationId || !open,
-  });
-  const { data: setDetailsData } = useQuery(GET_EXERCISE_SET_WITH_ASSIGNMENTS_QUERY, {
-    variables: { exerciseSetId },
-    skip: !exerciseSetId || !open,
   });
 
   const tags = useMemo(() => (tagsData as ExerciseTagsResponse)?.exerciseTags || [], [tagsData]);
@@ -158,8 +263,8 @@ export function AddExerciseToSetDialog({
   );
   const exercisePopularity = useMemo(() => {
     const popularity: Record<string, number> = {};
-    for (const set of exerciseSets) {
-      for (const mapping of set.exerciseMappings || []) {
+    for (const s of exerciseSets) {
+      for (const mapping of s.exerciseMappings || []) {
         if (mapping.exerciseId) {
           popularity[mapping.exerciseId] = (popularity[mapping.exerciseId] || 0) + 1;
         }
@@ -173,134 +278,129 @@ export function AddExerciseToSetDialog({
     [tags]
   );
 
-  useEffect(() => {
-    if (!open || initializedFromExistingRef.current) {
-      return;
-    }
+  const [updateSet, { loading: updatingSet }] = useMutation(UPDATE_EXERCISE_SET_MUTATION);
+  const [updateExerciseInSet, { loading: updatingExercise }] = useMutation(UPDATE_EXERCISE_IN_SET_MUTATION);
+  const [removeExerciseFromSet] = useMutation(REMOVE_EXERCISE_FROM_SET_MUTATION);
+  const [addExerciseToSet] = useMutation(ADD_EXERCISE_TO_EXERCISE_SET_MUTATION);
 
-    const mappings =
-      (
-        setDetailsData as {
-          exerciseSetById?: {
-            exerciseMappings?: Array<{
-              id: string;
-              exerciseId: string;
-              sets?: number;
-              reps?: number;
-              duration?: number;
-              restSets?: number;
-              restReps?: number;
-              preparationTime?: number;
-              executionTime?: number;
-              notes?: string;
-              customName?: string;
-              customDescription?: string;
-              tempo?: string;
-              loadType?: string;
-              loadValue?: number;
-              loadUnit?: string;
-              loadText?: string;
-            }>;
-          };
-        }
-      )?.exerciseSetById?.exerciseMappings || [];
-
-    const initialInstances = mappings.map((mapping, index) => ({
-      instanceId: `existing-${mapping.id}-${index}`,
-      exerciseId: mapping.exerciseId,
-    }));
-
-    const initialParams = new Map<string, ExerciseParams>();
-    initialInstances.forEach((instance, index) => {
-      const mapping = mappings[index];
-      initialParams.set(instance.instanceId, {
-        sets: mapping.sets,
-        reps: mapping.reps,
-        duration: mapping.duration,
-        restSets: mapping.restSets,
-        restReps: mapping.restReps,
-        preparationTime: mapping.preparationTime,
-        executionTime: mapping.executionTime,
-        notes: mapping.notes ?? '',
-        customName: mapping.customName ?? '',
-        customDescription: mapping.customDescription ?? '',
-        tempo: mapping.tempo ?? '',
-        loadType: mapping.loadType ?? '',
-        loadValue: mapping.loadValue ?? 0,
-        loadUnit: mapping.loadUnit ?? 'kg',
-        loadText: mapping.loadText ?? '',
-      });
-    });
-
-    initialInstanceIdsRef.current = new Set(initialInstances.map((instance) => instance.instanceId));
-    setSelectedInstances(initialInstances);
-    setExerciseParams(initialParams);
-    initializedFromExistingRef.current = true;
-  }, [open, setDetailsData]);
-
-  const [addExerciseToSet, { loading: adding }] = useMutation(ADD_EXERCISE_TO_EXERCISE_SET_MUTATION);
+  const saving = updatingSet || updatingExercise;
 
   const handleSave = useCallback(async () => {
-    const newInstances = selectedInstances.filter((instance) => !initialInstanceIdsRef.current.has(instance.instanceId));
-    if (newInstances.length === 0) {
-      toast.error('Dodaj przynajmniej jedno ćwiczenie');
+    const trimmedName = name.trim();
+    if (!trimmedName) {
+      toast.error('Podaj nazwę zestawu');
       return;
     }
 
+    const saveDiff = computeExerciseSetDiff({
+      initialMappings: initialMappingsRef.current,
+      selectedInstances,
+      exerciseParams,
+    });
+
     const exerciseLookup = new Map(availableExercises.map((e) => [e.id, e]));
-    const existingCount = initialInstanceIdsRef.current.size;
 
     try {
-      for (let i = 0; i < newInstances.length; i++) {
-        const instance = newInstances[i];
-        const params = exerciseParams.get(instance.instanceId);
-        const exercise = exerciseLookup.get(instance.exerciseId);
-
-        await addExerciseToSet({
+      const descriptionChanged = (description ?? '') !== initialDescriptionRef.current;
+      if (trimmedName !== initialNameRef.current || descriptionChanged) {
+        await updateSet({
           variables: {
-            exerciseId: instance.exerciseId,
             exerciseSetId,
-            order: existingCount + i + 1,
-            sets: params?.sets ?? exercise?.defaultSets ?? 3,
-            reps: params?.reps ?? exercise?.defaultReps ?? 10,
-            duration: params?.duration ?? exercise?.defaultDuration ?? null,
-            restSets: params?.restSets ?? exercise?.defaultRestBetweenSets ?? null,
-            restReps: params?.restReps ?? null,
-            preparationTime: params?.preparationTime ?? null,
-            executionTime: params?.executionTime ?? null,
-            notes: params?.notes ?? null,
-            customName: params?.customName ?? null,
-            customDescription: params?.customDescription ?? null,
-            tempo: params?.tempo ?? null,
-            loadType: params?.loadType ?? null,
-            loadValue: params?.loadValue ?? null,
-            loadUnit: params?.loadUnit ?? null,
-            loadText: params?.loadText ?? null,
+            name: trimmedName,
+            description: (description ?? '').trim() || null,
           },
           refetchQueries: [
-            {
-              query: GET_EXERCISE_SET_WITH_ASSIGNMENTS_QUERY,
-              variables: { exerciseSetId },
-            },
+            { query: GET_EXERCISE_SET_WITH_ASSIGNMENTS_QUERY, variables: { exerciseSetId } },
           ],
         });
       }
 
-      const count = newInstances.length;
-      toast.success(
-        count === 1 ? 'Dodano 1 ćwiczenie do zestawu' : `Dodano ${count} ćwiczeń do zestawu`
-      );
+      for (const item of saveDiff.toRemove) {
+        await removeExerciseFromSet({
+          variables: { exerciseId: item.exerciseId, exerciseSetId },
+          refetchQueries: [
+            { query: GET_EXERCISE_SET_WITH_ASSIGNMENTS_QUERY, variables: { exerciseSetId } },
+          ],
+        });
+      }
+
+      for (const item of saveDiff.toUpdate) {
+        const params = item.params;
+        const exercise = exerciseLookup.get(item.exerciseId);
+        await updateExerciseInSet({
+          variables: {
+            exerciseId: item.exerciseId,
+            exerciseSetId,
+            order: item.order,
+            sets: params.sets ?? exercise?.defaultSets ?? 3,
+            reps: params.reps ?? exercise?.defaultReps ?? 10,
+            duration: params.duration ?? exercise?.defaultDuration ?? null,
+            restSets: params.restSets ?? exercise?.defaultRestBetweenSets ?? null,
+            restReps: params.restReps ?? null,
+            preparationTime: params.preparationTime ?? null,
+            executionTime: params.executionTime ?? null,
+            notes: params.notes ?? null,
+            customName: params.customName ?? null,
+            customDescription: params.customDescription ?? null,
+            tempo: params.tempo ?? null,
+            loadType: params.loadType ?? null,
+            loadValue: params.loadValue ?? null,
+            loadUnit: params.loadUnit ?? null,
+            loadText: params.loadText ?? null,
+          },
+          refetchQueries: [
+            { query: GET_EXERCISE_SET_WITH_ASSIGNMENTS_QUERY, variables: { exerciseSetId } },
+          ],
+        });
+      }
+
+      for (const item of saveDiff.toAdd) {
+        const params = item.params;
+        const exercise = exerciseLookup.get(item.exerciseId);
+        await addExerciseToSet({
+          variables: {
+            exerciseId: item.exerciseId,
+            exerciseSetId,
+            order: item.order,
+            sets: params.sets ?? exercise?.defaultSets ?? 3,
+            reps: params.reps ?? exercise?.defaultReps ?? 10,
+            duration: params.duration ?? exercise?.defaultDuration ?? null,
+            restSets: params.restSets ?? exercise?.defaultRestBetweenSets ?? null,
+            restReps: params.restReps ?? null,
+            preparationTime: params.preparationTime ?? null,
+            executionTime: params.executionTime ?? null,
+            notes: params.notes ?? null,
+            customName: params.customName ?? null,
+            customDescription: params.customDescription ?? null,
+            tempo: params.tempo ?? null,
+            loadType: params.loadType ?? null,
+            loadValue: params.loadValue ?? null,
+            loadUnit: params.loadUnit ?? null,
+            loadText: params.loadText ?? null,
+          },
+          refetchQueries: [
+            { query: GET_EXERCISE_SET_WITH_ASSIGNMENTS_QUERY, variables: { exerciseSetId } },
+          ],
+        });
+      }
+
+      toast.success('Zestaw został zapisany');
       onOpenChange(false);
       onSuccess?.();
     } catch (error) {
-      console.error('Błąd podczas dodawania ćwiczeń:', error);
-      toast.error('Nie udało się dodać ćwiczeń do zestawu');
+      console.error('Błąd podczas zapisywania zestawu:', error);
+      toast.error('Nie udało się zapisać zestawu');
     }
   }, [
+    name,
+    description,
     selectedInstances,
     exerciseParams,
     availableExercises,
     exerciseSetId,
+    updateSet,
+    updateExerciseInSet,
+    removeExerciseFromSet,
     addExerciseToSet,
     onOpenChange,
     onSuccess,
@@ -313,9 +413,7 @@ export function AddExerciseToSetDialog({
   const previewGallery = previewExercise ? buildExerciseImageUrls(previewExercise) : [];
   const showLightbox = previewExercise !== null && previewGallery.length > 0;
 
-  const newInstancesCount = selectedInstances.filter(
-    (instance) => !initialInstanceIdsRef.current.has(instance.instanceId)
-  ).length;
+  const canSave = name.trim().length > 0;
 
   return (
     <>
@@ -327,25 +425,29 @@ export function AddExerciseToSetDialog({
             e.preventDefault();
             handleCloseAttempt();
           }}
-          data-testid="set-add-exercise-dialog"
+          data-testid="set-edit-full-dialog"
         >
           <VisuallyHidden.Root>
-            <DialogTitle>Dodaj ćwiczenia do zestawu</DialogTitle>
+            <DialogTitle>Edytuj zestaw</DialogTitle>
             <DialogDescription>
-              Wybierz ćwiczenia z biblioteki i ustaw parametry. Możesz dodać to samo ćwiczenie wielokrotnie.
+              Zmień nazwę zestawu oraz listę i parametry ćwiczeń. Możesz dodawać, usuwać i zmieniać kolejność.
             </DialogDescription>
           </VisuallyHidden.Root>
           <div className="px-4 py-3 border-b border-border shrink-0">
-            <h2 className="text-lg font-semibold text-foreground">Dodaj ćwiczenia do zestawu</h2>
+            <h2 className="text-lg font-semibold text-foreground">Edytuj zestaw</h2>
             <p className="text-sm text-muted-foreground mt-0.5">
-              Wybierz ćwiczenia z biblioteki i ustaw parametry. Możesz dodać to samo ćwiczenie wielokrotnie.
+              Zmień nazwę zestawu oraz listę i parametry ćwiczeń. Możesz dodawać, usuwać i zmieniać kolejność.
             </p>
           </div>
 
           <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
             <ExerciseSetBuilder
-              name=""
-              onNameChange={() => {}}
+              name={name}
+              onNameChange={setName}
+              namePlaceholder="Nazwa zestawu"
+              description={description}
+              onDescriptionChange={setDescription}
+              descriptionPlaceholder="Opis zestawu (opcjonalnie)"
               selectedInstances={selectedInstances}
               onSelectedInstancesChange={setSelectedInstances}
               exerciseParams={exerciseParams}
@@ -355,10 +457,8 @@ export function AddExerciseToSetDialog({
               tags={builderTags}
               exercisePopularity={exercisePopularity}
               showAI={false}
-              hideNameSection
               onPreviewExercise={handlePreviewExercise}
-              testIdPrefix="set-add-exercise"
-              readonlyInstanceIds={initialInstanceIdsRef.current}
+              testIdPrefix="set-edit-full"
             />
           </div>
 
@@ -367,22 +467,20 @@ export function AddExerciseToSetDialog({
               variant="ghost"
               onClick={handleCloseAttempt}
               className="text-muted-foreground hover:text-foreground"
-              data-testid="set-add-exercise-cancel-btn"
+              data-testid="set-edit-full-cancel-btn"
             >
               Anuluj
             </Button>
             <Button
               onClick={handleSave}
-              disabled={adding || newInstancesCount === 0}
+              disabled={saving || !canSave}
               className="min-w-[160px]"
-              data-testid="set-add-exercise-submit-btn"
+              data-testid="set-edit-full-submit-btn"
             >
-              {adding ? (
+              {saving ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               ) : null}
-              {newInstancesCount === 0
-                ? 'Brak nowych ćwiczeń'
-                : `Dodaj ${pluralize(newInstancesCount, 'ćwiczenie', true)}`}
+              Zapisz zmiany
             </Button>
           </div>
         </DialogContent>
