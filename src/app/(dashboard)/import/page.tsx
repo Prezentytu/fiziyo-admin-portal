@@ -95,7 +95,7 @@ export default function ImportPage() {
   );
 
   return (
-    <div className="min-h-screen" data-testid="import-page">
+    <div className="min-h-full" data-testid="import-page">
       {/* Header */}
       <div className="mb-8">
         <div className="flex items-center gap-4 mb-2">

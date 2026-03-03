@@ -246,7 +246,7 @@ export default function OrganizationPage() {
 
   return (
     <AccessGuard requiredAccess="admin" fallbackUrl="/">
-      <div className="flex h-[calc(100vh-64px)] -m-4 lg:-m-6 overflow-hidden bg-background">
+      <div className="flex h-full -m-4 lg:-m-6 overflow-hidden bg-background">
         <Tabs
           value={activeTab}
           onValueChange={setActiveTab}

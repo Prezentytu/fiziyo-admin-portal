@@ -139,18 +139,18 @@ export function Sidebar({ isCollapsed, onToggleCollapse }: SidebarProps) {
       <aside
         data-testid="nav-sidebar"
         className={cn(
-          'hidden lg:flex h-screen flex-col border-r border-border/60 bg-surface transition-all duration-300 ease-in-out',
+          'hidden xl:flex h-full flex-col border-r border-border/60 bg-surface transition-all duration-300 ease-in-out',
           isCollapsed ? 'w-[72px]' : 'w-64'
         )}
       >
-        {/* Header with logo and toggle */}
+        {/* Header with logo and toggle - h-16 = ta sama wysokość co Header, wyrównanie „FiziYo” z „Zgłoś uwagę” */}
         <div
           className={cn(
-            'flex h-20 items-center transition-all duration-300',
-            isCollapsed ? 'justify-center px-3' : 'justify-start px-6'
+            'flex h-16 shrink-0 items-center transition-all duration-300',
+            isCollapsed ? 'justify-center px-3' : 'justify-start px-4 xl:px-6'
           )}
         >
-          <Logo variant={isCollapsed ? 'icon' : 'full'} size="md" asLink href="/" />
+          <Logo variant={isCollapsed ? 'icon' : 'full'} size="sm" asLink href="/" />
 
           {!isCollapsed && (
             <button
@@ -167,7 +167,7 @@ export function Sidebar({ isCollapsed, onToggleCollapse }: SidebarProps) {
 
         {/* Expand button when collapsed */}
         {isCollapsed && (
-          <div className="flex justify-center py-3 border-b border-border">
+          <div className="flex shrink-0 justify-center py-3 border-b border-border">
             <button
               type="button"
               onClick={onToggleCollapse}
@@ -180,23 +180,25 @@ export function Sidebar({ isCollapsed, onToggleCollapse }: SidebarProps) {
           </div>
         )}
 
-        {/* Organization Switcher */}
-        <OrganizationSwitcher isCollapsed={isCollapsed} />
+        {/* Organization Switcher – mały pt, żeby „AW Fizjoterapia” było w jednej linii z „Dzień dobry” */}
+        <div className="shrink-0">
+          <OrganizationSwitcher isCollapsed={isCollapsed} />
+        </div>
 
-        {/* Navigation groups */}
-        <nav className="flex-1 overflow-y-auto py-6">
+        {/* Navigation groups – większy pt, żeby dół zaznaczenia „Panel” był na tej samej wysokości co dół przycisku „Przypisz zestaw” */}
+        <nav className="flex-1 min-h-0 overflow-y-auto pt-5 pb-3 xl:pt-7 xl:pb-6">
           {filteredNavigationGroups.map((group, groupIndex) => (
-            <div key={group.label} className={cn(groupIndex > 0 && 'mt-8')}>
+            <div key={group.label} className={cn(groupIndex > 0 && 'mt-4 xl:mt-8')}>
               {/* Group label */}
               {!isCollapsed && (
-                <p className="px-6 mb-3 text-[11px] font-semibold text-muted-foreground/70 uppercase tracking-widest">
+                <p className="px-4 xl:px-6 mb-2 xl:mb-3 text-[11px] font-semibold text-muted-foreground/70 uppercase tracking-widest">
                   {group.label}
                 </p>
               )}
-              {isCollapsed && groupIndex > 0 && <div className="mx-4 mb-3 border-t border-border" />}
+              {isCollapsed && groupIndex > 0 && <div className="mx-3 xl:mx-4 mb-2 xl:mb-3 border-t border-border" />}
 
               {/* Navigation items */}
-              <div className={cn('space-y-2', isCollapsed ? 'flex flex-col items-center' : 'px-4')}>
+              <div className={cn('space-y-1 xl:space-y-2', isCollapsed ? 'flex flex-col items-center' : 'px-3 xl:px-4')}>
                 {group.items.map((item) => {
                   const active = isActive(item.href);
                   const Icon = item.icon;
@@ -207,7 +209,7 @@ export function Sidebar({ isCollapsed, onToggleCollapse }: SidebarProps) {
                       data-testid={item.testId}
                       className={cn(
                         NAV_ITEM_BASE,
-                        isCollapsed ? 'h-12 w-12 justify-center' : 'gap-4 px-4 py-3.5',
+                        isCollapsed ? 'h-10 w-10 xl:h-12 xl:w-12 justify-center' : 'gap-3 xl:gap-4 px-3 py-2.5 xl:px-4 xl:py-3.5',
                         active ? NAV_ITEM_ACTIVE : NAV_ITEM_INACTIVE
                       )}
                     >
@@ -265,7 +267,9 @@ export function Sidebar({ isCollapsed, onToggleCollapse }: SidebarProps) {
         </nav>
 
         {/* User Profile Footer */}
-        <UserProfileFooter isCollapsed={isCollapsed} />
+        <div className="shrink-0">
+          <UserProfileFooter isCollapsed={isCollapsed} />
+        </div>
       </aside>
     </TooltipProvider>
   );

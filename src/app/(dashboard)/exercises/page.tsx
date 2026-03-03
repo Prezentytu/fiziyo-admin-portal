@@ -228,7 +228,7 @@ export default function ExercisesPage() {
   }
 
   return (
-    <div className="flex h-[calc(100vh-theme(spacing.16))] overflow-hidden -m-4 lg:-m-6">
+    <div className="flex h-full overflow-hidden -m-4 lg:-m-6">
       {/* Left Panel: Strefa Inspiracji (Grid) */}
       <div className="flex-1 overflow-y-auto p-4 lg:p-6 scroll-smooth custom-scrollbar">
         <div className="max-w-[1400px] mx-auto space-y-6">

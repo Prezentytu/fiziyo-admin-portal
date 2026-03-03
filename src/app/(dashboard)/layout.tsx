@@ -28,7 +28,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     <OrganizationGuard>
       <OrganizationProvider>
         <ExerciseBuilderProvider>
-          <div className="flex h-screen bg-background">
+          <div className="flex h-dvh bg-background">
             {/* Desktop Sidebar */}
             <Sidebar isCollapsed={isHydrated ? isCollapsed : false} onToggleCollapse={toggleCollapsed} />
 
@@ -36,9 +36,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <MobileSidebar isOpen={isMobileOpen} onClose={closeMobile} />
 
             {/* Main content area */}
-            <div className="flex flex-1 flex-col overflow-hidden">
+            <div className="flex flex-1 flex-col overflow-hidden min-h-0">
               <Header onMobileMenuToggle={toggleMobile} />
-              <main className="flex-1 overflow-y-auto p-4 lg:p-6">{children}</main>
+              <main className="flex-1 overflow-y-auto min-h-0 p-4 lg:p-6">{children}</main>
             </div>
           </div>
         </ExerciseBuilderProvider>

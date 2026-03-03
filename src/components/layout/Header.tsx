@@ -85,7 +85,7 @@ export function Header({ onMobileMenuToggle }: HeaderProps) {
     <TooltipProvider delayDuration={300}>
       <header
         data-testid="nav-header"
-        className="flex h-16 items-center justify-between border-b border-border bg-surface px-4 lg:px-6"
+        className="flex shrink-0 h-16 items-center justify-between border-b border-border bg-surface px-4 lg:px-6"
       >
         {/* Left side - Mobile menu + Org indicator + Breadcrumbs */}
         <div className="flex items-center gap-3">
@@ -94,7 +94,7 @@ export function Header({ onMobileMenuToggle }: HeaderProps) {
             <Button
               variant="ghost"
               size="icon"
-              className="lg:hidden"
+              className="xl:hidden"
               onClick={onMobileMenuToggle}
               aria-label="Otwórz menu"
               data-testid="nav-mobile-menu-btn"
@@ -103,8 +103,8 @@ export function Header({ onMobileMenuToggle }: HeaderProps) {
             </Button>
           )}
 
-          {/* Mobile organization indicator - visible only on mobile */}
-          <div className="lg:hidden">
+          {/* Mobile organization indicator - visible when sidebar is overlay (tablet + mobile) */}
+          <div className="xl:hidden">
             <MobileOrgIndicator />
           </div>
 

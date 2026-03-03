@@ -326,17 +326,17 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="mx-auto w-full space-y-8">
+    <div className="mx-auto w-full space-y-5 md:space-y-6 xl:space-y-8">
       {/* Header Section - Greeting with date */}
-      <div className="flex items-end justify-between gap-4">
-        <div>
+      <div className="flex flex-wrap items-end justify-between gap-3 md:gap-4">
+        <div className="min-w-0">
           <h1
             data-testid="dashboard-greeting"
-            className="text-xl lg:text-2xl font-semibold text-foreground tracking-tight"
+            className="text-lg sm:text-xl lg:text-2xl font-semibold text-foreground tracking-tight"
           >
             {greeting}, {userName}!
           </h1>
-          <p className="mt-2 text-sm text-muted-foreground">
+          <p className="mt-1 md:mt-2 text-sm text-muted-foreground">
             {patientsNeedingAttention.length > 0
               ? `${patientsNeedingAttention.length} pacjentów wymaga uwagi`
               : 'Wszyscy pacjenci są aktywni'}
@@ -353,7 +353,7 @@ export default function DashboardPage() {
       />
 
       {/* Quick Actions - spójna hierarchia: Primary + Secondary + Tertiary */}
-      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-3 md:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
         {/* Action 1 - Przypisz zestaw (zielona - główna akcja) */}
         <button
           type="button"
@@ -361,20 +361,20 @@ export default function DashboardPage() {
           disabled={!organizationId || !therapistId}
           aria-label="Przypisz zestaw ćwiczeń pacjentowi"
           data-testid="dashboard-hero-assign-set-btn"
-          className="group relative overflow-hidden rounded-2xl bg-linear-to-br from-primary via-primary to-primary-dark p-5 text-left transition-all duration-150 hover:shadow-xl hover:shadow-primary/20 hover:scale-[1.02] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+          className="group relative overflow-hidden rounded-xl md:rounded-2xl bg-linear-to-br from-primary via-primary to-primary-dark p-4 md:p-5 text-left transition-all duration-150 hover:shadow-xl hover:shadow-primary/20 hover:scale-[1.02] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
         >
           <div className="absolute inset-0 bg-linear-to-br from-white/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-150" />
           <div className="absolute -top-24 -right-24 w-48 h-48 bg-white/10 rounded-full blur-3xl opacity-30 group-hover:opacity-50 transition-opacity duration-200" />
 
-          <div className="relative flex items-center gap-4">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm shrink-0 group-hover:scale-110 transition-transform duration-150">
-              <Send className="h-5 w-5 text-white" />
+          <div className="relative flex items-center gap-3 md:gap-4">
+            <div className="flex h-9 w-9 md:h-11 md:w-11 items-center justify-center rounded-lg md:rounded-xl bg-white/20 backdrop-blur-sm shrink-0 group-hover:scale-110 transition-transform duration-150">
+              <Send className="h-4 w-4 md:h-5 md:w-5 text-white" />
             </div>
             <div className="min-w-0 flex-1">
-              <h3 className="text-base font-bold text-white mb-1">Przypisz zestaw</h3>
+              <h3 className="text-sm md:text-base font-bold text-white mb-0.5 md:mb-1">Przypisz zestaw</h3>
               <p className="text-xs text-white/80">Dla obecnych pacjentów</p>
             </div>
-            <ArrowRight className="h-5 w-5 text-white/60 group-hover:text-white group-hover:translate-x-1 transition-all duration-150 shrink-0" />
+            <ArrowRight className="h-4 w-4 md:h-5 md:w-5 text-white/60 group-hover:text-white group-hover:translate-x-1 transition-all duration-150 shrink-0" />
           </div>
         </button>
 
@@ -385,19 +385,19 @@ export default function DashboardPage() {
           disabled={!organizationId || !therapistId}
           aria-label="Dodaj nowego pacjenta do bazy"
           data-testid="dashboard-add-patient-btn"
-          className="group relative overflow-hidden rounded-2xl border border-border/20 bg-surface-elevated p-5 text-left transition-all duration-150 hover:border-info/30 hover:bg-surface hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+          className="group relative overflow-hidden rounded-xl md:rounded-2xl border border-border/20 bg-surface-elevated p-4 md:p-5 text-left transition-all duration-150 hover:border-info/30 hover:bg-surface hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          <div className="relative flex items-center gap-4">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-info/10 shrink-0 group-hover:bg-info/20 group-hover:scale-110 transition-all duration-150">
-              <UserPlus className="h-5 w-5 text-info" />
+          <div className="relative flex items-center gap-3 md:gap-4">
+            <div className="flex h-9 w-9 md:h-11 md:w-11 items-center justify-center rounded-lg md:rounded-xl bg-info/10 shrink-0 group-hover:bg-info/20 group-hover:scale-110 transition-all duration-150">
+              <UserPlus className="h-4 w-4 md:h-5 md:w-5 text-info" />
             </div>
             <div className="min-w-0 flex-1">
-              <h3 className="mb-1 text-base font-semibold text-foreground group-hover:text-info transition-colors duration-150">
+              <h3 className="text-sm md:text-base font-semibold text-foreground group-hover:text-info transition-colors duration-150 mb-0.5 md:mb-1">
                 Nowy pacjent
               </h3>
               <p className="text-xs text-muted-foreground">Dodaj do bazy</p>
             </div>
-            <ArrowRight className="h-5 w-5 text-muted-foreground/40 group-hover:text-info group-hover:translate-x-1 transition-all duration-150 shrink-0" />
+            <ArrowRight className="h-4 w-4 md:h-5 md:w-5 text-muted-foreground/40 group-hover:text-info group-hover:translate-x-1 transition-all duration-150 shrink-0" />
           </div>
         </button>
 
@@ -408,35 +408,35 @@ export default function DashboardPage() {
           disabled={!organizationId}
           aria-label="Utwórz nowy zestaw ćwiczeń"
           data-testid="dashboard-create-set-btn"
-          className="group relative overflow-hidden rounded-2xl border border-border/20 bg-surface-light p-5 text-left transition-all duration-150 hover:border-primary/30 hover:bg-surface hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+          className="group relative overflow-hidden rounded-xl md:rounded-2xl border border-border/20 bg-surface-light p-4 md:p-5 text-left transition-all duration-150 hover:border-primary/30 hover:bg-surface hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          <div className="relative flex items-center gap-4">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 shrink-0 group-hover:bg-primary/20 group-hover:scale-110 transition-all duration-150">
-              <FolderPlus className="h-5 w-5 text-primary" />
+          <div className="relative flex items-center gap-3 md:gap-4">
+            <div className="flex h-9 w-9 md:h-11 md:w-11 items-center justify-center rounded-lg md:rounded-xl bg-primary/10 shrink-0 group-hover:bg-primary/20 group-hover:scale-110 transition-all duration-150">
+              <FolderPlus className="h-4 w-4 md:h-5 md:w-5 text-primary" />
             </div>
             <div className="min-w-0 flex-1">
-              <h3 className="text-base font-semibold text-foreground group-hover:text-primary transition-colors mb-1">
+              <h3 className="text-sm md:text-base font-semibold text-foreground group-hover:text-primary transition-colors mb-0.5 md:mb-1">
                 Utwórz zestaw
               </h3>
               <p className="text-xs text-muted-foreground">Nowy program</p>
             </div>
-            <ArrowRight className="h-5 w-5 text-muted-foreground/40 group-hover:text-primary group-hover:translate-x-1 transition-all duration-150 shrink-0" />
+            <ArrowRight className="h-4 w-4 md:h-5 md:w-5 text-muted-foreground/40 group-hover:text-primary group-hover:translate-x-1 transition-all duration-150 shrink-0" />
           </div>
         </button>
       </div>
 
       {/* Main Content - 8:4 Grid Layout */}
-      <div className="grid gap-5 lg:grid-cols-12">
+      <div className="grid gap-4 md:gap-5 lg:grid-cols-12">
         {/* Activity Feed - Left Column (8 cols) */}
         <Card
           data-testid="dashboard-activity-section"
-          className="bg-surface border-border shadow-md overflow-hidden lg:col-span-8 rounded-2xl"
+          className="bg-surface border-border shadow-md overflow-hidden lg:col-span-8 rounded-xl md:rounded-2xl"
         >
-          <CardHeader className="pb-4">
+          <CardHeader className="p-4 md:px-6 md:pt-6 md:pb-4">
             <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-3 text-base font-semibold">
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-info/10">
-                  <Users className="h-4.5 w-4.5 text-info" />
+              <CardTitle className="flex items-center gap-2 md:gap-3 text-sm md:text-base font-semibold">
+                <div className="flex h-8 w-8 md:h-9 md:w-9 items-center justify-center rounded-lg md:rounded-xl bg-info/10">
+                  <Users className="h-4 w-4 md:h-4.5 md:w-4.5 text-info" />
                 </div>
                 <span>Wymagają uwagi</span>
                 {patientsNeedingAttention.length > 0 && (
@@ -581,13 +581,13 @@ export default function DashboardPage() {
         {/* Quick Sets - Right Column (4 cols) */}
         <Card
           data-testid="dashboard-sets-section"
-          className="bg-surface border-border shadow-md overflow-hidden lg:col-span-4 rounded-2xl"
+          className="bg-surface border-border shadow-md overflow-hidden lg:col-span-4 rounded-xl md:rounded-2xl"
         >
-          <CardHeader className="pb-4">
+          <CardHeader className="p-4 md:px-6 md:pt-6 md:pb-4">
             <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-3 text-base font-semibold">
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-secondary/10">
-                  <FolderKanban className="h-4.5 w-4.5 text-secondary" />
+              <CardTitle className="flex items-center gap-2 md:gap-3 text-sm md:text-base font-semibold">
+                <div className="flex h-8 w-8 md:h-9 md:w-9 items-center justify-center rounded-lg md:rounded-xl bg-secondary/10">
+                  <FolderKanban className="h-4 w-4 md:h-4.5 md:w-4.5 text-secondary" />
                 </div>
                 <span>Szybki wybór</span>
               </CardTitle>
