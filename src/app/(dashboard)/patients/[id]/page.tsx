@@ -40,6 +40,7 @@ import { LoadingState } from '@/components/shared/LoadingState';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { ActivityReport } from '@/features/patients/ActivityReport';
 import { PatientAssignmentCard } from '@/features/patients/PatientAssignmentCard';
+import { PatientDetailSkeleton } from '@/features/patients/PatientDetailSkeleton';
 import { ClinicalNotesList } from '@/components/clinical/ClinicalNotesList';
 import type { PatientAssignment, ExerciseMapping, ExerciseOverride } from '@/features/patients/PatientAssignmentCard';
 
@@ -131,11 +132,7 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
   const setAssignments = assignments.filter((a) => a.exerciseSetId);
 
   if (userLoading) {
-    return (
-      <div className="space-y-6">
-        <LoadingState type="text" count={3} />
-      </div>
-    );
+    return <PatientDetailSkeleton />;
   }
 
   if (userError || !patient) {
