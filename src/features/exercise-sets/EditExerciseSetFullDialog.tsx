@@ -41,6 +41,7 @@ import type {
 } from '@/types/apollo';
 import {
   computeExerciseSetDiff,
+  hasExerciseSetChanges,
   type InitialMapping,
 } from '@/features/exercise-sets/utils/exerciseSetDiff';
 
@@ -108,12 +109,13 @@ export function EditExerciseSetFullDialog({
     [selectedInstances, exerciseParams]
   );
 
-  const hasChanges =
-    name.trim() !== initialNameRef.current ||
-    (description ?? '') !== initialDescriptionRef.current ||
-    diff.toRemove.length > 0 ||
-    diff.toUpdate.length > 0 ||
-    diff.toAdd.length > 0;
+  const hasChanges = hasExerciseSetChanges({
+    name,
+    description,
+    initialName: initialNameRef.current,
+    initialDescription: initialDescriptionRef.current,
+    diff,
+  });
 
   const handleCloseAttempt = useCallback(() => {
     if (hasChanges) {

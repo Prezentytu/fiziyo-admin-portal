@@ -127,6 +127,31 @@ function mappingToParams(m: InitialMapping): ExerciseParams {
   };
 }
 
+export interface ExerciseSetChangeInput {
+  name: string;
+  description: string;
+  initialName: string;
+  initialDescription: string;
+  diff: ExerciseSetDiffResult;
+}
+
+/** Returns true if anything changed compared to initial state (name, description, or exercises). */
+export function hasExerciseSetChanges({
+  name,
+  description,
+  initialName,
+  initialDescription,
+  diff,
+}: ExerciseSetChangeInput): boolean {
+  return (
+    name.trim() !== initialName ||
+    (description ?? '') !== initialDescription ||
+    diff.toRemove.length > 0 ||
+    diff.toUpdate.length > 0 ||
+    diff.toAdd.length > 0
+  );
+}
+
 /**
  * Computes diff between initial set state and current builder state.
  */

@@ -15,7 +15,7 @@ import { Input } from '@/components/ui/input';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { SetCard, ExerciseSet } from '@/features/exercise-sets/SetCard';
-import { SetDialog } from '@/features/exercise-sets/SetDialog';
+import { EditExerciseSetFullDialog } from '@/features/exercise-sets/EditExerciseSetFullDialog';
 import { CreateSetWizard } from '@/features/exercise-sets/CreateSetWizard';
 import { AssignmentWizard } from '@/features/assignment/AssignmentWizard';
 import { cn } from '@/lib/utils';
@@ -563,12 +563,14 @@ export default function ExerciseSetsPage() {
       )}
 
       {/* Edit Set Dialog */}
-      {organizationId && (
-        <SetDialog
+      {organizationId && editingSet && (
+        <EditExerciseSetFullDialog
           open={isEditDialogOpen}
-          onOpenChange={handleCloseEditDialog}
-          set={editingSet}
+          onOpenChange={(open) => { if (!open) handleCloseEditDialog(); }}
+          exerciseSetId={editingSet.id}
           organizationId={organizationId}
+          set={editingSet}
+          onSuccess={handleCloseEditDialog}
         />
       )}
 
