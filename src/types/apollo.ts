@@ -534,6 +534,14 @@ export interface GetCurrentBillingStatusResponse {
   currentBillingStatus: CurrentBillingStatus;
 }
 
+export interface GetBillingDetailsResponse {
+  billingDetails: import('./billing-details.types').BillingDetails | null;
+}
+
+export interface UpdateBillingDetailsResponse {
+  updateBillingDetails: import('./billing-details.types').UpdateBillingDetailsResult;
+}
+
 // ========================================
 // Revenue Share Types (zarobki organizacji)
 // ========================================

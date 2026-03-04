@@ -32,3 +32,22 @@ export const GET_CURRENT_BILLING_STATUS_QUERY = gql`
     }
   }
 `;
+
+/**
+ * Query do pobierania danych rozliczeniowych organizacji
+ * (NIP, adres, IBAN, email do faktur)
+ */
+export const GET_BILLING_DETAILS_QUERY = gql`
+  query GetBillingDetails($organizationId: String!) {
+    billingDetails(organizationId: $organizationId) {
+      companyName
+      nip
+      address
+      postalCode
+      city
+      iban
+      billingEmail
+      isComplete
+    }
+  }
+`;

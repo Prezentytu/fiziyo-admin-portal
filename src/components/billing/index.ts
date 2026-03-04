@@ -6,3 +6,4 @@ export { BillingStatusBar } from './BillingStatusBar';
 export { FairUsageCard } from './FairUsageCard';
 export { BillingDetailsCard } from './BillingDetailsCard';
 export { InvoicesHistoryCard } from './InvoicesHistoryCard';
+export { BillingDetailsDialog } from './BillingDetailsDialog';

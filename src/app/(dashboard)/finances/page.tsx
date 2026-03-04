@@ -116,7 +116,7 @@ export default function FinancesPage() {
           </div>
           <div>
             <h1 className="text-2xl font-bold text-foreground tracking-tight">Twoje Finanse</h1>
-            <p className="text-xs text-muted-foreground mt-0.5">Zarobki z subskrypcji pacjentów Premium</p>
+            <p className="text-xs text-muted-foreground mt-0.5">Przychody i rozliczenia z pacjentami</p>
           </div>
         </div>
 
