@@ -1,8 +1,20 @@
 'use client';
 
-import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useState, useMemo, useCallback } from 'react';
+import Image from 'next/image';
 import { useQuery, useMutation } from '@apollo/client/react';
-import { Search, Loader2, Plus, FolderPlus, ChevronRight, Check, Sparkles, Wand2, TrendingUp } from 'lucide-react';
+import {
+  Search,
+  Loader2,
+  Plus,
+  FolderPlus,
+  ChevronRight,
+  Check,
+  Sparkles,
+  Wand2,
+  TrendingUp,
+  AlertTriangle,
+} from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
@@ -11,6 +23,8 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
+import { getMediaUrl } from '@/utils/mediaUrl';
+import { ImagePlaceholder } from '@/components/shared/ImagePlaceholder';
 
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { GET_ORGANIZATION_EXERCISE_SETS_QUERY } from '@/graphql/queries/exerciseSets.queries';
@@ -35,6 +49,9 @@ interface Exercise {
   name: string;
   type?: string;
   description?: string;
+  imageUrl?: string;
+  images?: string[];
+  thumbnailUrl?: string;
   sets?: number;
   reps?: number;
   duration?: number;
@@ -46,6 +63,9 @@ interface ExerciseInSet {
   id: string;
   name: string;
   type?: string;
+  imageUrl?: string;
+  images?: string[];
+  thumbnailUrl?: string;
   mainTags?: string[];
   additionalTags?: string[];
 }
@@ -60,6 +80,7 @@ interface ExerciseSetFromDB {
   name: string;
   description?: string;
   isActive: boolean;
+  creationTime?: string;
   exerciseMappings?: ExerciseMapping[];
 }
 
@@ -70,13 +91,20 @@ interface RankedSet {
   isAlreadyAdded: boolean;
 }
 
-interface AddExerciseToSetsDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  exercise: Exercise | null;
+interface SimilarSetCandidate {
+  setId: string;
+  setName: string;
+  similarity: number;
+  isAlreadyAdded: boolean;
 }
 
-type Step = 'select-set' | 'create-set' | 'success';
+interface AddExerciseToSetsDialogProps {
+  readonly open: boolean;
+  readonly onOpenChange: (open: boolean) => void;
+  readonly exercise: Exercise | null;
+}
+
+type Step = 'select-set' | 'preview-set' | 'create-set' | 'success';
 
 // ============================================
 // Smart Matching Algorithm
@@ -85,6 +113,84 @@ type Step = 'select-set' | 'create-set' | 'success';
 function getTagNames(tags: (string | ExerciseTag)[] | undefined): string[] {
   if (!tags) return [];
   return tags.map((tag) => (typeof tag === 'string' ? tag : tag.name));
+}
+
+function normalizeForComparison(value: string): string {
+  return value
+    .toLowerCase()
+    .normalize('NFD')
+    .replaceAll(/[\u0300-\u036f]/g, '')
+    .replaceAll(/[^a-z0-9\s]/g, ' ')
+    .replaceAll(/\s+/g, ' ')
+    .trim();
+}
+
+function calculateNameSimilarity(left: string, right: string): number {
+  const normalizedLeft = normalizeForComparison(left);
+  const normalizedRight = normalizeForComparison(right);
+
+  if (!normalizedLeft || !normalizedRight) return 0;
+  if (normalizedLeft === normalizedRight) return 1;
+  if (normalizedLeft.includes(normalizedRight) || normalizedRight.includes(normalizedLeft)) return 0.88;
+
+  const leftTokens = new Set(normalizedLeft.split(' ').filter((token) => token.length > 2));
+  const rightTokens = new Set(normalizedRight.split(' ').filter((token) => token.length > 2));
+
+  if (leftTokens.size === 0 || rightTokens.size === 0) return 0;
+
+  const commonTokenCount = [...leftTokens].filter((token) => rightTokens.has(token)).length;
+  const tokenUnionCount = new Set([...leftTokens, ...rightTokens]).size;
+
+  return tokenUnionCount > 0 ? commonTokenCount / tokenUnionCount : 0;
+}
+
+function getCreationTimestamp(creationTime?: string): number {
+  if (!creationTime) return 0;
+  const timestamp = Date.parse(creationTime);
+  return Number.isNaN(timestamp) ? 0 : timestamp;
+}
+
+function getExerciseThumbnail(exerciseWithMedia: {
+  imageUrl?: string;
+  images?: string[];
+  thumbnailUrl?: string;
+}): string | null {
+  const rawUrl = exerciseWithMedia.thumbnailUrl || exerciseWithMedia.imageUrl || exerciseWithMedia.images?.[0];
+  return getMediaUrl(rawUrl) || null;
+}
+
+interface ExerciseCompactRowProps {
+  name: string;
+  imageUrl?: string;
+  images?: string[];
+  thumbnailUrl?: string;
+  meta?: string;
+  emphasize?: boolean;
+}
+
+function ExerciseCompactRow({ name, imageUrl, images, thumbnailUrl, meta, emphasize = false }: Readonly<ExerciseCompactRowProps>) {
+  const thumbnail = getExerciseThumbnail({ imageUrl, images, thumbnailUrl });
+
+  return (
+    <div
+      className={cn(
+        'flex items-center gap-3 rounded-lg px-2 py-2 transition-colors',
+        emphasize ? 'bg-primary/10' : 'bg-surface-light/40'
+      )}
+    >
+      <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-md bg-surface-light">
+        {thumbnail ? (
+          <Image src={thumbnail} alt={name} fill className="object-cover" sizes="40px" />
+        ) : (
+          <ImagePlaceholder type="exercise" iconClassName="h-4 w-4" />
+        )}
+      </div>
+      <div className="min-w-0">
+        <p className="truncate text-sm font-medium text-foreground">{name}</p>
+        {meta ? <p className="truncate text-xs text-muted-foreground">{meta}</p> : null}
+      </div>
+    </div>
+  );
 }
 
 function calculateSetRelevance(
@@ -112,8 +218,8 @@ function calculateSetRelevance(
 
   // Calculate tag overlap
   const lowerExerciseTags = exerciseTags.map((t) => t.toLowerCase());
-  const lowerSetTags = setTags.map((t) => t.toLowerCase());
-  const commonTags = lowerExerciseTags.filter((t) => lowerSetTags.includes(t));
+  const lowerSetTags = new Set(setTags.map((tag) => tag.toLowerCase()));
+  const commonTags = lowerExerciseTags.filter((tag) => lowerSetTags.has(tag));
 
   // Score calculation
   let score = 0;
@@ -161,6 +267,7 @@ function calculateSetRelevance(
 export function AddExerciseToSetsDialog({ open, onOpenChange, exercise }: AddExerciseToSetsDialogProps) {
   const { currentOrganization } = useOrganization();
   const [step, setStep] = useState<Step>('select-set');
+  const [selectedSet, setSelectedSet] = useState<ExerciseSetFromDB | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [newSetName, setNewSetName] = useState('');
   const [aiSuggestedName, setAiSuggestedName] = useState<string | null>(null);
@@ -187,6 +294,7 @@ export function AddExerciseToSetsDialog({ open, onOpenChange, exercise }: AddExe
     (newOpen: boolean) => {
       if (newOpen) {
         setStep('select-set');
+        setSelectedSet(null);
         setSearchQuery('');
         setNewSetName('');
         setAiSuggestedName(null);
@@ -205,11 +313,23 @@ export function AddExerciseToSetsDialog({ open, onOpenChange, exercise }: AddExe
     try {
       const tags = [...getTagNames(exercise.mainTags), ...getTagNames(exercise.additionalTags)];
 
-      const prompt = `Zaproponuj krótką, profesjonalną nazwę zestawu ćwiczeń (max 5 słów) zawierającego ćwiczenie: "${exercise.name}". ${
-        tags.length > 0 ? `Tagi ćwiczenia: ${tags.join(', ')}.` : ''
-      } ${exercise.type ? `Typ: ${exercise.type}.` : ''}`;
+      const existingSetNames =
+        ((setsData as { exerciseSets?: ExerciseSetFromDB[] })?.exerciseSets || [])
+          .filter((set) => set.isActive)
+          .map((set) => set.name)
+          .filter(Boolean) ?? [];
 
-      const response = await aiService.generateExerciseSet(prompt, undefined, []);
+      const prompt = `
+Jesteś ekspertem klinicznym i UX writerem dla fizjoterapii.
+Na podstawie ćwiczenia "${exercise.name}" zaproponuj nazwę zestawu (maksymalnie 5 słów, profesjonalnie, po polsku).
+Jeśli nazwa ćwiczenia zawiera błąd lub niezręczną formę, popraw ją i użyj poprawnej formy przy tworzeniu nazwy zestawu.
+Uwzględnij kontekst tagów: ${tags.length > 0 ? tags.join(', ') : 'brak'}.
+Uwzględnij typ ćwiczenia: ${exercise.type || 'brak'}.
+Unikaj tworzenia nazwy bardzo podobnej do istniejących zestawów: ${existingSetNames.join(', ') || 'brak'}.
+Zwróć wyłącznie propozycję nazwy zestawu.
+      `.trim();
+
+      const response = await aiService.generateExerciseSet(prompt);
 
       if (response?.setName) {
         setAiSuggestedName(response.setName);
@@ -220,14 +340,7 @@ export function AddExerciseToSetsDialog({ open, onOpenChange, exercise }: AddExe
     } finally {
       setIsGeneratingName(false);
     }
-  }, [exercise]);
-
-  // Trigger AI generation when entering create step
-  useEffect(() => {
-    if (step === 'create-set' && !aiSuggestedName && !isGeneratingName) {
-      generateAiName();
-    }
-  }, [step, aiSuggestedName, isGeneratingName, generateAiName]);
+  }, [exercise, setsData]);
 
   // Process and rank exercise sets
   const { rankedSets, recommendedSets, otherSets } = useMemo(() => {
@@ -260,7 +373,9 @@ export function AddExerciseToSetsDialog({ open, onOpenChange, exercise }: AddExe
 
     // Split into recommended (score >= 30) and others
     const recommended = ranked.filter((r) => r.score >= 30 && !r.isAlreadyAdded);
-    const others = ranked.filter((r) => r.score < 30 || r.isAlreadyAdded);
+    const others = ranked
+      .filter((r) => r.score < 30 || r.isAlreadyAdded)
+      .sort((left, right) => getCreationTimestamp(right.set.creationTime) - getCreationTimestamp(left.set.creationTime));
 
     return {
       rankedSets: ranked,
@@ -268,6 +383,28 @@ export function AddExerciseToSetsDialog({ open, onOpenChange, exercise }: AddExe
       otherSets: others,
     };
   }, [setsData, exercise]);
+
+  const similarExistingSets = useMemo((): SimilarSetCandidate[] => {
+    const draftSetName = newSetName.trim();
+    if (!draftSetName) return [];
+
+    const allSets = (setsData as { exerciseSets?: ExerciseSetFromDB[] })?.exerciseSets || [];
+    return allSets
+      .filter((set) => set.isActive)
+      .map((set) => {
+        const similarity = calculateNameSimilarity(draftSetName, set.name);
+        const isAlreadyAdded = set.exerciseMappings?.some((mapping) => mapping.exerciseId === exercise?.id) || false;
+        return {
+          setId: set.id,
+          setName: set.name,
+          similarity,
+          isAlreadyAdded,
+        };
+      })
+      .filter((candidate) => candidate.similarity >= 0.55)
+      .sort((left, right) => right.similarity - left.similarity)
+      .slice(0, 3);
+  }, [setsData, newSetName, exercise?.id]);
 
   // Filter sets based on search
   const filteredOtherSets = useMemo(() => {
@@ -278,9 +415,16 @@ export function AddExerciseToSetsDialog({ open, onOpenChange, exercise }: AddExe
     );
   }, [otherSets, searchQuery]);
 
+  const handleOpenPreview = useCallback((setId: string) => {
+    const allSets = (setsData as { exerciseSets?: ExerciseSetFromDB[] })?.exerciseSets || [];
+    const matchedSet = allSets.find((set) => set.id === setId) || null;
+    setSelectedSet(matchedSet);
+    setStep('preview-set');
+  }, [setsData]);
+
   // Add to existing set
   const handleAddToSet = useCallback(
-    async (setId: string) => {
+    async (setId: string, closeAfterSuccess: boolean = true) => {
       if (!exercise || !organizationId) return;
 
       try {
@@ -303,8 +447,10 @@ export function AddExerciseToSetsDialog({ open, onOpenChange, exercise }: AddExe
 
         const setName = rankedSets.find((r) => r.set.id === setId)?.set.name;
         toast.success(`Dodano "${exercise.name}" do zestawu "${setName}"`);
-        setStep('success');
-        setTimeout(() => handleOpenChange(false), 1500);
+        if (closeAfterSuccess) {
+          setStep('success');
+          setTimeout(() => handleOpenChange(false), 1500);
+        }
       } catch (error) {
         console.error('Error adding exercise to set:', error);
         const errorMessage = error instanceof Error ? error.message : '';
@@ -367,20 +513,35 @@ export function AddExerciseToSetsDialog({ open, onOpenChange, exercise }: AddExe
 
   if (!exercise) return null;
 
+  const dialogTitleByStep: Record<Step, string> = {
+    'select-set': 'Dodaj do zestawu',
+    'preview-set': 'Podgląd przed dodaniem',
+    'create-set': 'Utwórz nowy zestaw',
+    success: 'Dodano!',
+  };
+
+  const dialogDescriptionByStep: Record<Step, string> = {
+    'select-set': `Wybierz zestaw dla "${exercise.name}"`,
+    'preview-set': `Sprawdź zestaw "${selectedSet?.name ?? ''}" przed potwierdzeniem`,
+    'create-set': `Nowy zestaw z ćwiczeniem "${exercise.name}"`,
+    success: 'Ćwiczenie zostało dodane do zestawu',
+  };
+
+  let emptySetsMessage = 'Wszystkie zestawy są w rekomendacjach';
+  if (searchQuery) {
+    emptySetsMessage = 'Nie znaleziono zestawów';
+  } else if (rankedSets.length === 0) {
+    emptySetsMessage = 'Brak zestawów - utwórz pierwszy!';
+  }
+
+  const exerciseMeta = `${exercise.sets ?? '-'} serii • ${exercise.reps ?? '-'} powt. • ${exercise.duration ?? '-'} s`;
+
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-w-xl sm:max-w-2xl max-h-[85vh] flex flex-col">
-        <DialogHeader>
-          <DialogTitle>
-            {step === 'create-set' ? 'Utwórz nowy zestaw' : step === 'success' ? 'Dodano!' : 'Dodaj do zestawu'}
-          </DialogTitle>
-          <DialogDescription>
-            {step === 'create-set'
-              ? `Nowy zestaw z ćwiczeniem "${exercise.name}"`
-              : step === 'success'
-                ? 'Ćwiczenie zostało dodane do zestawu'
-                : `Wybierz zestaw dla "${exercise.name}"`}
-          </DialogDescription>
+      <DialogContent className="max-w-xl sm:max-w-2xl max-h-[85vh] overflow-hidden bg-surface shadow-xl flex flex-col p-0">
+        <DialogHeader className="border-b border-border/40 px-6 pb-4 pt-5">
+          <DialogTitle className="text-lg font-semibold tracking-tight">{dialogTitleByStep[step]}</DialogTitle>
+          <DialogDescription className="text-sm text-muted-foreground/80">{dialogDescriptionByStep[step]}</DialogDescription>
         </DialogHeader>
 
         {/* Loading state */}
@@ -404,36 +565,34 @@ export function AddExerciseToSetsDialog({ open, onOpenChange, exercise }: AddExe
 
         {/* Select set step */}
         {!isLoading && step === 'select-set' && (
-          <div className="flex-1 flex flex-col min-h-0 space-y-4">
+          <div className="flex-1 flex min-h-0 flex-col space-y-4 px-6 py-4">
             {/* AI Recommendations Section */}
             {recommendedSets.length > 0 && (
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <div className="flex items-center gap-2">
-                  <div className="flex h-6 w-6 items-center justify-center rounded-md bg-gradient-to-br from-violet-500 to-purple-600">
-                    <Sparkles className="h-3.5 w-3.5 text-white" />
+                  <div className="flex h-5 w-5 items-center justify-center rounded-full bg-violet-500/10">
+                    <Sparkles className="h-3 w-3 text-violet-400" />
                   </div>
-                  <span className="text-sm font-medium text-foreground">Asystent AI Rekomenduje</span>
+                  <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Asystent AI rekomenduje</span>
                 </div>
 
-                <div className="space-y-1.5">
+                <div className="divide-y divide-border/20 rounded-lg bg-surface-light/30">
                   {recommendedSets.map((ranked) => (
                     <button
                       key={ranked.set.id}
-                      onClick={() => handleAddToSet(ranked.set.id)}
+                      onClick={() => handleOpenPreview(ranked.set.id)}
                       disabled={isSaving}
-                      className="w-full flex items-center gap-3 rounded-xl border border-violet-500/30 bg-gradient-to-r from-violet-500/5 to-purple-500/5 p-3 text-left transition-all hover:border-violet-500/50 hover:from-violet-500/10 hover:to-purple-500/10 cursor-pointer group"
+                      className="group flex w-full items-center gap-3 px-3 py-3 text-left transition-colors duration-150 hover:bg-surface-light/70"
+                      data-testid={`exercise-add-set-recommended-${ranked.set.id}`}
                     >
-                      {/* Score badge */}
-                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-violet-500 to-purple-600 text-white font-bold text-sm shrink-0">
-                        {ranked.score}%
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-medium text-foreground">{ranked.set.name}</p>
+                        <p className="truncate text-xs text-muted-foreground">{ranked.reasoning}</p>
                       </div>
-
-                      <div className="flex-1 min-w-0 overflow-hidden">
-                        <p className="font-medium truncate max-w-full">{ranked.set.name}</p>
-                        <p className="text-xs text-muted-foreground truncate max-w-full">{ranked.reasoning}</p>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-medium text-violet-300">{ranked.score}%</span>
+                        <TrendingUp className="h-4 w-4 text-violet-400 opacity-0 transition-opacity group-hover:opacity-100" />
                       </div>
-
-                      <TrendingUp className="h-4 w-4 text-violet-500 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
                     </button>
                   ))}
                 </div>
@@ -443,10 +602,11 @@ export function AddExerciseToSetsDialog({ open, onOpenChange, exercise }: AddExe
             {/* Create new with AI button */}
             <Button
               variant="outline"
-              className="w-full justify-start gap-3 h-14 border-dashed border-primary/50 hover:bg-primary/5 hover:border-primary"
+              className="h-12 w-full justify-start gap-3 border-border/50 bg-surface-light/20 hover:bg-surface-light/50"
               onClick={() => setStep('create-set')}
+              data-testid="exercise-add-set-create-ai-btn"
             >
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-primary/20 to-emerald-500/20">
+              <div className="flex h-8 w-8 items-center justify-center rounded-md bg-primary/10">
                 <Wand2 className="h-4 w-4 text-primary" />
               </div>
               <div className="text-left">
@@ -482,37 +642,32 @@ export function AddExerciseToSetsDialog({ open, onOpenChange, exercise }: AddExe
             </div>
 
             {/* Other sets list */}
-            <ScrollArea className="flex-1 -mx-6 px-6">
+            <ScrollArea className="flex-1">
               {filteredOtherSets.length === 0 ? (
                 <div className="flex flex-col items-center py-8 text-center">
-                  <p className="text-sm text-muted-foreground">
-                    {searchQuery
-                      ? 'Nie znaleziono zestawów'
-                      : rankedSets.length === 0
-                        ? 'Brak zestawów - utwórz pierwszy!'
-                        : 'Wszystkie zestawy są w rekomendacjach'}
-                  </p>
+                  <p className="text-sm text-muted-foreground">{emptySetsMessage}</p>
                 </div>
               ) : (
-                <div className="space-y-1.5">
+                <div className="divide-y divide-border/20 rounded-lg bg-surface-light/20">
                   {filteredOtherSets.map((ranked) => {
                     const exerciseCount = ranked.set.exerciseMappings?.length || 0;
 
                     return (
                       <button
                         key={ranked.set.id}
-                        onClick={() => !ranked.isAlreadyAdded && handleAddToSet(ranked.set.id)}
+                        onClick={() => !ranked.isAlreadyAdded && handleOpenPreview(ranked.set.id)}
                         disabled={ranked.isAlreadyAdded || isSaving}
+                        data-testid={`exercise-add-set-other-${ranked.set.id}`}
                         className={cn(
-                          'w-full flex items-center gap-3 rounded-xl border p-3 text-left transition-all',
+                          'group flex w-full items-center gap-3 px-3 py-3 text-left transition-colors duration-150',
                           ranked.isAlreadyAdded
-                            ? 'border-primary/20 bg-primary/5 cursor-not-allowed'
-                            : 'border-border hover:border-primary/40 hover:bg-surface-light cursor-pointer'
+                            ? 'cursor-not-allowed bg-primary/8'
+                            : 'cursor-pointer hover:bg-surface-light/60'
                         )}
                       >
                         <div
                           className={cn(
-                            'flex h-10 w-10 items-center justify-center rounded-lg shrink-0',
+                            'flex h-9 w-9 shrink-0 items-center justify-center rounded-md',
                             ranked.isAlreadyAdded ? 'bg-primary/20' : 'bg-surface-light'
                           )}
                         >
@@ -523,11 +678,11 @@ export function AddExerciseToSetsDialog({ open, onOpenChange, exercise }: AddExe
                           )}
                         </div>
 
-                        <div className="flex-1 min-w-0 overflow-hidden">
-                          <p className={cn('font-medium truncate max-w-full', ranked.isAlreadyAdded && 'text-primary')}>
+                        <div className="min-w-0 flex-1">
+                          <p className={cn('truncate text-sm font-medium', ranked.isAlreadyAdded && 'text-primary')}>
                             {ranked.set.name}
                           </p>
-                          <p className="text-xs text-muted-foreground truncate">
+                          <p className="truncate text-xs text-muted-foreground">
                             {ranked.isAlreadyAdded ? 'Już dodane' : `${exerciseCount} ćwiczeń`}
                           </p>
                         </div>
@@ -544,49 +699,188 @@ export function AddExerciseToSetsDialog({ open, onOpenChange, exercise }: AddExe
 
         {/* Create set step */}
         {!isLoading && step === 'create-set' && (
-          <div className="space-y-4">
+          <div className="space-y-4 px-6 py-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium">Nazwa zestawu</label>
+              <label htmlFor="exercise-add-set-name-input" className="text-sm font-medium">
+                Nazwa zestawu
+              </label>
               <div className="relative">
                 <Input
+                  id="exercise-add-set-name-input"
                   placeholder="np. Ćwiczenia na kręgosłup"
                   value={newSetName}
                   onChange={(e) => setNewSetName(e.target.value)}
                   autoFocus
-                  disabled={isGeneratingName}
+                  className="pr-28"
                 />
+                <div className="absolute right-1.5 top-1/2 -translate-y-1/2">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    onClick={generateAiName}
+                    disabled={isGeneratingName}
+                    className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground"
+                    data-testid="exercise-add-set-generate-name-btn"
+                  >
+                    {isGeneratingName ? (
+                      <>
+                        <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />
+                        Generuję
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="mr-1 h-3.5 w-3.5" />
+                        Generuj AI
+                      </>
+                    )}
+                  </Button>
+                </div>
                 {isGeneratingName && (
-                  <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                    <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                  <div className="sr-only" aria-live="polite">
+                    Generowanie sugestii AI
                   </div>
                 )}
               </div>
 
               {aiSuggestedName && newSetName === aiSuggestedName && (
-                <div className="flex items-center gap-2 text-xs text-violet-500">
+                <div className="flex items-center gap-2 text-xs text-violet-400">
                   <Sparkles className="h-3 w-3" />
                   <span>Sugestia AI</span>
                 </div>
               )}
             </div>
 
-            {/* Quick exercise preview */}
-            <div className="rounded-xl border border-border/60 bg-surface/50 p-3">
-              <p className="text-xs text-muted-foreground mb-1">Ćwiczenie do dodania:</p>
-              <div className="flex items-center gap-2">
-                <Badge variant="secondary" className="text-xs">
-                  {exercise.name}
-                </Badge>
+            {similarExistingSets.length > 0 && (
+              <div className="rounded-xl bg-surface-light/30 p-3">
+                <div className="mb-2 flex items-center gap-2 text-xs text-muted-foreground">
+                  <AlertTriangle className="h-3.5 w-3.5 text-amber-400" />
+                  <span>Wykryto zestawy o zbliżonej nazwie</span>
+                </div>
+                <div className="space-y-2">
+                  {similarExistingSets.map((candidate) => (
+                    <div
+                      key={candidate.setId}
+                      className="flex items-center justify-between gap-2 rounded-lg bg-surface px-2 py-2"
+                    >
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-medium text-foreground">{candidate.setName}</p>
+                        <p className="text-xs text-muted-foreground">
+                          Podobieństwo: {Math.round(candidate.similarity * 100)}%
+                          {candidate.isAlreadyAdded ? ' • ćwiczenie już dodane' : ''}
+                        </p>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        disabled={candidate.isAlreadyAdded || isSaving}
+                        onClick={() => handleOpenPreview(candidate.setId)}
+                        data-testid={`exercise-add-set-duplicate-suggestion-${candidate.setId}`}
+                      >
+                        {candidate.isAlreadyAdded ? 'Już dodane' : 'Dodaj do tego'}
+                      </Button>
+                    </div>
+                  ))}
+                </div>
               </div>
+            )}
+
+            {/* Quick exercise preview */}
+            <div className="space-y-2 rounded-xl bg-surface-light/30 p-3">
+              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Ćwiczenie do dodania</p>
+              <ExerciseCompactRow
+                name={exercise.name}
+                imageUrl={exercise.imageUrl}
+                images={exercise.images}
+                thumbnailUrl={exercise.thumbnailUrl}
+                meta={exerciseMeta}
+                emphasize
+              />
             </div>
 
-            <div className="flex justify-end gap-3 pt-4">
+            <div className="flex justify-end gap-3 border-t border-border/30 pt-4">
               <Button variant="outline" onClick={() => setStep('select-set')}>
                 Wstecz
               </Button>
               <Button onClick={handleCreateAndAdd} disabled={!newSetName.trim() || isSaving} className="gap-2">
                 {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <FolderPlus className="h-4 w-4" />}
                 Utwórz i dodaj
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Preview set step */}
+        {!isLoading && step === 'preview-set' && selectedSet && (
+          <div className="space-y-4 px-6 py-4">
+            <div className="rounded-xl bg-surface-light/30 p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-base font-semibold text-foreground">{selectedSet.name}</p>
+                  <p className="text-xs text-muted-foreground">
+                    Aktualnie w zestawie: {selectedSet.exerciseMappings?.length ?? 0}{' '}
+                    {(selectedSet.exerciseMappings?.length ?? 0) === 1 ? 'ćwiczenie' : 'ćwiczeń'}
+                  </p>
+                </div>
+                <Badge variant="outline" className="text-xs">
+                  Podgląd
+                </Badge>
+              </div>
+            </div>
+
+            <div className="space-y-2 rounded-xl bg-surface-light/25 p-4">
+              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Dołącza do zestawu</p>
+              <ExerciseCompactRow
+                name={exercise.name}
+                imageUrl={exercise.imageUrl}
+                images={exercise.images}
+                thumbnailUrl={exercise.thumbnailUrl}
+                meta={exerciseMeta}
+                emphasize
+              />
+            </div>
+
+            <div className="space-y-2 rounded-xl bg-surface-light/25 p-4">
+              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Ćwiczenia już w zestawie</p>
+              {selectedSet.exerciseMappings && selectedSet.exerciseMappings.length > 0 ? (
+                <ScrollArea className="max-h-44 pr-2">
+                  <div className="space-y-1.5">
+                    {selectedSet.exerciseMappings.map((mapping) => (
+                      <ExerciseCompactRow
+                        key={mapping.exerciseId}
+                        name={mapping.exercise?.name ?? 'Ćwiczenie'}
+                        imageUrl={mapping.exercise?.imageUrl}
+                        images={mapping.exercise?.images}
+                        thumbnailUrl={mapping.exercise?.thumbnailUrl}
+                      />
+                    ))}
+                  </div>
+                </ScrollArea>
+              ) : (
+                <p className="text-sm text-muted-foreground">Ten zestaw jest pusty. Dodawane ćwiczenie będzie pierwsze.</p>
+              )}
+            </div>
+
+            <div className="flex justify-end gap-3 border-t border-border/30 pt-3">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setStep('select-set');
+                  setSelectedSet(null);
+                }}
+                data-testid="exercise-add-set-preview-back-btn"
+              >
+                Wstecz
+              </Button>
+              <Button
+                onClick={() => handleAddToSet(selectedSet.id)}
+                disabled={isSaving}
+                className="gap-2"
+                data-testid="exercise-add-set-preview-confirm-btn"
+              >
+                {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <FolderPlus className="h-4 w-4" />}
+                Potwierdź i dodaj
               </Button>
             </div>
           </div>

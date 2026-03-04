@@ -25,6 +25,8 @@ import {
   AlertCircle,
   Globe,
   RefreshCw,
+  Copy,
+  ChevronDown,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -56,12 +58,15 @@ import {
   DELETE_EXERCISE_MUTATION,
   SUBMIT_TO_GLOBAL_REVIEW_MUTATION,
   RESUBMIT_FROM_ORIGINAL_MUTATION,
+  CREATE_EXERCISE_MUTATION,
 } from '@/graphql/mutations/exercises.mutations';
 import { createTagsMap, mapExerciseTagsToObjects } from '@/utils/tagUtils';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { useExerciseBuilder } from '@/contexts/ExerciseBuilderContext';
 import type { ExerciseByIdResponse, ExerciseTagsResponse, TagCategoriesResponse } from '@/types/apollo';
 import { translateExerciseTypeShort, translateExerciseSidePolish } from '@/components/pdf/polishUtils';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 interface ExerciseDetailPageProps {
   params: Promise<{ id: string }>;
@@ -88,6 +93,7 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
   const [isSubmitToGlobalDialogOpen, setIsSubmitToGlobalDialogOpen] = useState(false);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [isParametersOpen, setIsParametersOpen] = useState(false);
 
   // Get organization ID from context (changes when user switches organization)
   const organizationId = currentOrganization?.organizationId;
@@ -129,6 +135,11 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
   // Resubmit after changes mutation
   const [resubmitFromOriginal, { loading: resubmitting }] = useMutation(RESUBMIT_FROM_ORIGINAL_MUTATION, {
     refetchQueries: [{ query: GET_EXERCISE_BY_ID_QUERY, variables: { id } }],
+  });
+  const [createExercise, { loading: duplicating }] = useMutation(CREATE_EXERCISE_MUTATION, {
+    refetchQueries: organizationId
+      ? [{ query: GET_ORGANIZATION_EXERCISES_QUERY, variables: { organizationId } }]
+      : [],
   });
 
   const rawExercise = (data as ExerciseByIdResponse)?.exerciseById;
@@ -180,6 +191,71 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
     }
   };
 
+  const normalizeTagIds = (tagValues: (string | ExerciseTag)[] | undefined) => {
+    if (!tagValues || tagValues.length === 0) return null;
+    const tagIds = tagValues
+      .map((tag) => (isTagObject(tag) ? tag.id : tag))
+      .filter((tag): tag is string => Boolean(tag));
+
+    return tagIds.length > 0 ? tagIds : null;
+  };
+
+  const handleDuplicateExercise = async () => {
+    if (!organizationId || !exercise) return;
+
+    const setsValue = exercise.defaultSets ?? exercise.sets ?? null;
+    const repsValue = exercise.defaultReps ?? exercise.reps ?? null;
+    const durationValue = exercise.defaultDuration ?? exercise.duration ?? null;
+    const restBetweenSetsValue = exercise.defaultRestBetweenSets ?? exercise.restSets ?? null;
+    const restBetweenRepsValue = exercise.defaultRestBetweenReps ?? exercise.restReps ?? null;
+    const sideValue = exercise.side || exercise.exerciseSide;
+
+    try {
+      const result = await createExercise({
+        variables: {
+          organizationId,
+          scope: 'ORGANIZATION',
+          name: `Kopia ${exercise.name}`,
+          description: (exercise.patientDescription || exercise.description || '').trim(),
+          type: exercise.type || 'reps',
+          sets: setsValue,
+          reps: repsValue,
+          duration: durationValue,
+          restSets: restBetweenSetsValue,
+          restReps: restBetweenRepsValue,
+          preparationTime: exercise.preparationTime ?? null,
+          executionTime: exercise.defaultExecutionTime ?? exercise.executionTime ?? null,
+          videoUrl: exercise.videoUrl || null,
+          images: exercise.images?.length ? exercise.images : null,
+          notes: exercise.notes || null,
+          exerciseSide: sideValue && sideValue !== 'none' ? sideValue : null,
+          mainTags: normalizeTagIds(exercise.mainTags),
+          additionalTags: normalizeTagIds(exercise.additionalTags),
+          tempo: exercise.tempo || null,
+          clinicalDescription: exercise.clinicalDescription || null,
+          audioCue: (exercise as { audioCue?: string }).audioCue || null,
+          rangeOfMotion: (exercise as { rangeOfMotion?: string }).rangeOfMotion || null,
+          isActive: true,
+        },
+      });
+
+      const duplicatedExerciseId = (result.data as { createExercise?: { id?: string } } | undefined)?.createExercise?.id;
+
+      toast.success('Kopia ćwiczenia została utworzona', {
+        description: `Nowe ćwiczenie: "Kopia ${exercise.name}"`,
+        action: duplicatedExerciseId
+          ? {
+              label: 'Zobacz kopię',
+              onClick: () => router.push(`/exercises/${duplicatedExerciseId}`),
+            }
+          : undefined,
+      });
+    } catch (err) {
+      console.error('Błąd podczas duplikowania ćwiczenia:', err);
+      toast.error('Nie udało się utworzyć kopii ćwiczenia');
+    }
+  };
+
   if (loading) {
     return (
       <div className="space-y-6">
@@ -222,24 +298,32 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
   // Can resubmit when changes were requested
   const canResubmit = isChangesRequested && hasGlobalSubmission;
 
-  // Metrics for Quick Stats
-  const metrics = [
-    { id: 'sets', label: 'Serie', value: exercise.sets, icon: Repeat, color: 'text-primary' },
-    { id: 'reps', label: 'Powtórzenia', value: exercise.reps, icon: Dumbbell, color: 'text-secondary' },
+  const setsValue = exercise.defaultSets ?? exercise.sets;
+  const repsValue = exercise.defaultReps ?? exercise.reps;
+  const executionTimeValue = exercise.defaultExecutionTime ?? exercise.executionTime;
+  const restBetweenSetsValue = exercise.defaultRestBetweenSets ?? exercise.restSets;
+  const restBetweenRepsValue = exercise.defaultRestBetweenReps ?? exercise.restReps;
+
+  const quickStats = [
+    { id: 'sets', label: 'Serie', value: setsValue, icon: Repeat, color: 'text-primary' },
+    { id: 'reps', label: 'Powtórzenia', value: repsValue, icon: Dumbbell, color: 'text-secondary' },
     {
-      id: 'duration',
-      label: 'Czas',
-      value: exercise.duration ? `${exercise.duration}s` : null,
+      id: 'executionTime',
+      label: 'Czas powtórzenia',
+      value: executionTimeValue ? `${executionTimeValue}s` : null,
       icon: Clock,
       color: 'text-info',
     },
     {
-      id: 'rest',
-      label: 'Przerwa',
-      value: exercise.restSets ? `${exercise.restSets}s` : null,
+      id: 'restBetweenSets',
+      label: 'Przerwa między seriami',
+      value: restBetweenSetsValue ? `${restBetweenSetsValue}s` : null,
       icon: Timer,
       color: 'text-orange-500',
     },
+  ].filter((metric) => metric.value);
+
+  const detailStats = [
     {
       id: 'prep',
       label: 'Przygotowanie',
@@ -247,7 +331,41 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
       icon: Clock,
       color: 'text-emerald-500',
     },
-  ].filter((m) => m.value);
+    {
+      id: 'restBetweenReps',
+      label: 'Przerwa między powt.',
+      value: restBetweenRepsValue ? `${restBetweenRepsValue}s` : null,
+      icon: Timer,
+      color: 'text-cyan-500',
+    },
+    {
+      id: 'tempo',
+      label: 'Tempo',
+      value: exercise.tempo ?? null,
+      icon: RefreshCw,
+      color: 'text-violet-500',
+    },
+    {
+      id: 'side',
+      label: 'Strona ciała',
+      value: translateExerciseSidePolish(exercise.side || exercise.exerciseSide) || null,
+      icon: ArrowLeftRight,
+      color: 'text-sky-500',
+    },
+    {
+      id: 'difficulty',
+      label: 'Poziom trudności',
+      value: exercise.difficultyLevel ?? null,
+      icon: Dumbbell,
+      color: 'text-amber-500',
+    },
+  ].filter((metric) => metric.value);
+
+  const patientDescription = exercise.patientDescription || exercise.description || '';
+  const physiotherapistDescription = exercise.clinicalDescription || '';
+  const audioCue = (exercise as { audioCue?: string }).audioCue || '';
+  const notes = exercise.notes || '';
+  const hasMissingCoreInformation = !patientDescription.trim() || !physiotherapistDescription.trim() || allImages.length === 0;
 
   return (
     <div className="space-y-6">
@@ -274,6 +392,14 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
             <DropdownMenuItem onClick={() => setIsEditDialogOpen(true)} data-testid="exercise-detail-edit-btn">
               <Pencil className="mr-2 h-4 w-4" />
               Edytuj ćwiczenie
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={handleDuplicateExercise}
+              disabled={duplicating}
+              data-testid="exercise-detail-duplicate-btn"
+            >
+              <Copy className="mr-2 h-4 w-4" />
+              {duplicating ? 'Tworzenie kopii...' : 'Duplikuj'}
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => setIsChatOpen(true)}>
               <Sparkles className="mr-2 h-4 w-4" />
@@ -423,16 +549,29 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
       {isChangesRequested && exercise.adminReviewNotes && (
         <FeedbackBanner adminReviewNotes={exercise.adminReviewNotes} updatedAt={exercise.updatedAt} />
       )}
+      {hasMissingCoreInformation && (
+        <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4">
+          <div className="flex items-start gap-3">
+            <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-amber-500" />
+            <div>
+              <p className="text-sm font-semibold text-amber-200">Brak wszystkich informacji o ćwiczeniu</p>
+              <p className="text-sm text-amber-100/80">
+                Uzupełnij opis dla pacjenta, opis kliniczny i media, aby ćwiczenie było kompletne.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Hero Action + Quick Stats */}
       <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-12">
         {/* Hero Action - Dodaj do zestawu */}
         <button
           onClick={handleAddToSet}
-          className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary via-primary to-primary-dark p-5 text-left transition-all duration-300 hover:shadow-xl hover:shadow-primary/20 hover:scale-[1.02] cursor-pointer sm:col-span-1 lg:col-span-4"
+          className="group relative overflow-hidden rounded-2xl bg-linear-to-br from-primary via-primary to-primary-dark p-5 text-left transition-all duration-300 hover:shadow-xl hover:shadow-primary/20 hover:scale-[1.02] cursor-pointer sm:col-span-1 lg:col-span-4"
           data-testid="exercise-detail-add-to-set-btn"
         >
-          <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+          <div className="absolute inset-0 bg-linear-to-br from-white/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
           <div className="absolute -top-24 -right-24 w-48 h-48 bg-white/10 rounded-full blur-3xl group-hover:bg-white/20 transition-all duration-500" />
 
           <div className="relative flex items-center gap-4">
@@ -451,10 +590,10 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
         <div
           className={cn(
             'grid gap-3 sm:col-span-1 lg:col-span-8',
-            metrics.length <= 3 ? 'grid-cols-3' : 'grid-cols-3 sm:grid-cols-5'
+            quickStats.length <= 2 ? 'grid-cols-2' : 'grid-cols-2 sm:grid-cols-4'
           )}
         >
-          {metrics.slice(0, 5).map((metric) => (
+          {quickStats.map((metric) => (
             <div
               key={metric.id}
               className="rounded-2xl border border-border/40 bg-surface/50 p-4 flex flex-col items-center justify-center text-center"
@@ -468,6 +607,39 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
           ))}
         </div>
       </div>
+      <Collapsible open={isParametersOpen} onOpenChange={setIsParametersOpen}>
+        <div className="rounded-2xl border border-border/40 bg-surface/50">
+          <CollapsibleTrigger
+            className="flex w-full items-center justify-between p-4 text-left hover:bg-surface-light/40 transition-colors"
+            data-testid="exercise-detail-advanced-params-toggle"
+          >
+            <div>
+              <p className="text-sm font-semibold text-foreground">Szczegóły parametrów</p>
+              <p className="text-xs text-muted-foreground">Rozwiń, aby zobaczyć wszystkie parametry wykonania</p>
+            </div>
+            <ChevronDown className={cn('h-4 w-4 text-muted-foreground transition-transform', isParametersOpen && 'rotate-180')} />
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <div className="grid gap-3 border-t border-border/40 p-4 sm:grid-cols-2 lg:grid-cols-3">
+              {detailStats.length > 0 ? (
+                detailStats.map((metric) => (
+                  <div key={metric.id} className="rounded-xl bg-surface-light/40 p-3">
+                    <p className="text-xs text-muted-foreground">{metric.label}</p>
+                    <div className="mt-1 flex items-center gap-2">
+                      <metric.icon className={cn('h-4 w-4', metric.color)} />
+                      <span className="text-sm font-semibold text-foreground">{metric.value}</span>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <p className="text-sm text-muted-foreground sm:col-span-2 lg:col-span-3">
+                  Brak dodatkowych parametrów dla tego ćwiczenia.
+                </p>
+              )}
+            </div>
+          </CollapsibleContent>
+        </div>
+      </Collapsible>
 
       {/* Media Gallery Section */}
       <div className="space-y-4">
@@ -539,35 +711,69 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
         </div>
       </div>
 
-      {/* Description Section */}
-      {exercise.description && (
-        <div className="space-y-4">
-          <h2 className="text-base font-semibold text-foreground flex items-center gap-2">
-            <FileText className="h-4 w-4 text-muted-foreground" />
-            Opis ćwiczenia
-          </h2>
-          <div className="rounded-2xl border border-border/40 bg-surface/50 p-6">
-            <p className="text-muted-foreground whitespace-pre-wrap leading-relaxed">{exercise.description}</p>
-          </div>
+      {/* Information Sections */}
+      <div className="space-y-4">
+        <h2 className="text-base font-semibold text-foreground flex items-center gap-2">
+          <FileText className="h-4 w-4 text-muted-foreground" />
+          Informacje o ćwiczeniu
+        </h2>
+        <div className="rounded-2xl border border-border/40 bg-surface/50 p-4 sm:p-6">
+          <Tabs defaultValue="patient" className="w-full">
+            <TabsList className="grid h-auto w-full grid-cols-2 gap-1 bg-surface-light/60 p-1 sm:grid-cols-4">
+              <TabsTrigger value="patient" className="text-xs sm:text-sm" data-testid="exercise-detail-tab-patient">
+                Dla pacjenta
+              </TabsTrigger>
+              <TabsTrigger value="physio" className="text-xs sm:text-sm" data-testid="exercise-detail-tab-physio">
+                Dla fizjoterapeuty
+              </TabsTrigger>
+              <TabsTrigger value="audio" className="text-xs sm:text-sm" data-testid="exercise-detail-tab-audio">
+                Audio cue
+              </TabsTrigger>
+              <TabsTrigger value="notes" className="text-xs sm:text-sm" data-testid="exercise-detail-tab-notes">
+                Notatki
+              </TabsTrigger>
+            </TabsList>
+            <TabsContent value="patient">
+              <div className="rounded-xl bg-surface-light/30 p-4">
+                {patientDescription ? (
+                  <p className="whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground">{patientDescription}</p>
+                ) : (
+                  <p className="text-sm text-muted-foreground">Brak opisu dla pacjenta.</p>
+                )}
+              </div>
+            </TabsContent>
+            <TabsContent value="physio">
+              <div className="rounded-xl bg-surface-light/30 p-4">
+                {physiotherapistDescription ? (
+                  <p className="whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground">
+                    {physiotherapistDescription}
+                  </p>
+                ) : (
+                  <p className="text-sm text-muted-foreground">Brak opisu klinicznego dla fizjoterapeuty.</p>
+                )}
+              </div>
+            </TabsContent>
+            <TabsContent value="audio">
+              <div className="rounded-xl bg-surface-light/30 p-4">
+                {audioCue ? (
+                  <p className="whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground">{audioCue}</p>
+                ) : (
+                  <p className="text-sm text-muted-foreground">Brak podpowiedzi głosowej.</p>
+                )}
+              </div>
+            </TabsContent>
+            <TabsContent value="notes">
+              <div className="rounded-xl bg-surface-light/30 p-4">
+                {notes ? (
+                  <p className="whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground">{notes}</p>
+                ) : (
+                  <p className="text-sm text-muted-foreground">Brak notatek.</p>
+                )}
+              </div>
+            </TabsContent>
+          </Tabs>
         </div>
-      )}
-
-      {/* Notes Section */}
-      {exercise.notes && (
-        <div className="space-y-4">
-          <h2 className="text-base font-semibold text-foreground flex items-center gap-2">
-            <FileText className="h-4 w-4 text-muted-foreground" />
-            Notatki
-          </h2>
-          <div className="rounded-2xl border border-border/40 bg-surface/50 p-6">
-            <div className="relative pl-4 border-l-2 border-primary/30">
-              <p className="text-muted-foreground whitespace-pre-wrap leading-relaxed italic">
-                &quot;{exercise.notes}&quot;
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
+      </div>
 
       {/* Edit Dialog */}
       {organizationId && (
