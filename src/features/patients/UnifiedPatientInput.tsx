@@ -117,18 +117,6 @@ const getCleanPhone = (phone: string): string => {
   return phone.replace(/[\s+\-()]/g, '');
 };
 
-// Debounce hook
-function useDebounce<T>(value: T, delay: number): T {
-  const [debouncedValue, setDebouncedValue] = useState<T>(value);
-
-  useEffect(() => {
-    const timer = setTimeout(() => setDebouncedValue(value), delay);
-    return () => clearTimeout(timer);
-  }, [value, delay]);
-
-  return debouncedValue;
-}
-
 // Quick tags for notes
 const QUICK_TAG_GROUPS = [
   {
@@ -161,6 +149,7 @@ export function UnifiedPatientInput({
 
   const [contactValue, setContactValue] = useState('');
   const [contactType, setContactType] = useState<ContactType>('unknown');
+  const [submittedContact, setSubmittedContact] = useState('');
   const [viewState, setViewState] = useState<ViewState>('search');
   const [foundUser, setFoundUser] = useState<FoundUser | null>(null);
   const [isNoteExpanded, setIsNoteExpanded] = useState(false);
@@ -169,9 +158,6 @@ export function UnifiedPatientInput({
   const contactInputRef = useRef<HTMLInputElement>(null);
   const firstNameInputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-
-  // Debounced contact value (300ms)
-  const debouncedContact = useDebounce(contactValue, 300);
 
   // Form for new patient
   const form = useForm<z.infer<typeof patientFormSchema>>({
@@ -206,15 +192,15 @@ export function UnifiedPatientInput({
 
   // Query: search by email
   const { data: emailData, loading: emailLoading } = useQuery<FindUserByEmailData>(FIND_USER_BY_EMAIL_QUERY, {
-    variables: { email: debouncedContact },
-    skip: contactType !== 'email' || !isValidEmail(debouncedContact),
+    variables: { email: submittedContact },
+    skip: detectContactType(submittedContact) !== 'email' || !isValidEmail(submittedContact),
     fetchPolicy: 'network-only',
   });
 
   // Query: search by phone
   const { data: phoneData, loading: phoneLoading } = useQuery<FindUserByPhoneData>(FIND_USER_BY_PHONE_QUERY, {
-    variables: { phone: `+48${getCleanPhone(debouncedContact)}` },
-    skip: contactType !== 'phone' || !isValidPhone(debouncedContact),
+    variables: { phone: `+48${getCleanPhone(submittedContact)}` },
+    skip: detectContactType(submittedContact) !== 'phone' || !isValidPhone(submittedContact),
     fetchPolicy: 'network-only',
   });
 
@@ -251,7 +237,7 @@ export function UnifiedPatientInput({
 
   // Handle search results - EMAIL
   useEffect(() => {
-    if (contactType !== 'email' || !isValidEmail(debouncedContact)) return;
+    if (detectContactType(submittedContact) !== 'email' || !isValidEmail(submittedContact)) return;
     if (emailLoading) return;
 
     const user = emailData?.userByEmail;
@@ -275,11 +261,11 @@ export function UnifiedPatientInput({
       // Focus on first name after transition
       setTimeout(() => firstNameInputRef.current?.focus(), 100);
     }
-  }, [emailData, emailLoading, debouncedContact, contactType]);
+  }, [emailData, emailLoading, submittedContact]);
 
   // Handle search results - PHONE
   useEffect(() => {
-    if (contactType !== 'phone' || !isValidPhone(debouncedContact)) return;
+    if (detectContactType(submittedContact) !== 'phone' || !isValidPhone(submittedContact)) return;
     if (phoneLoading) return;
 
     const user = phoneData?.userByPhone;
@@ -303,20 +289,7 @@ export function UnifiedPatientInput({
       // Focus on first name after transition
       setTimeout(() => firstNameInputRef.current?.focus(), 100);
     }
-  }, [phoneData, phoneLoading, debouncedContact, contactType]);
-
-  // Reset view state when contact changes
-  useEffect(() => {
-    if (viewState !== 'search' && !isSearching) {
-      const isValid =
-        (contactType === 'email' && isValidEmail(contactValue)) ||
-        (contactType === 'phone' && isValidPhone(contactValue));
-      if (!isValid) {
-        setViewState('search');
-        setFoundUser(null);
-      }
-    }
-  }, [contactValue, contactType, viewState, isSearching]);
+  }, [phoneData, phoneLoading, submittedContact]);
 
   // ============================================
   // COMPUTED
@@ -360,6 +333,31 @@ export function UnifiedPatientInput({
 
     setContactValue(value);
   }, []);
+
+  const handleNext = useCallback(() => {
+    const normalizedValue = contactValue.trim();
+    const normalizedType = detectContactType(normalizedValue);
+
+    if (normalizedType === 'email') {
+      if (!isValidEmail(normalizedValue)) {
+        toast.error('Podaj poprawny adres email');
+        return;
+      }
+      setSubmittedContact(normalizedValue);
+      return;
+    }
+
+    if (normalizedType === 'phone') {
+      if (!isValidPhone(normalizedValue)) {
+        toast.error('Podaj poprawny numer telefonu (9 cyfr)');
+        return;
+      }
+      setSubmittedContact(normalizedValue);
+      return;
+    }
+
+    toast.error('Wpisz poprawny email lub numer telefonu');
+  }, [contactValue]);
 
   const handleAddExistingPatient = useCallback(async () => {
     if (!foundUser) return;
@@ -421,6 +419,7 @@ export function UnifiedPatientInput({
 
   const handleEditContact = useCallback(() => {
     setViewState('search');
+    setSubmittedContact('');
     setTimeout(() => contactInputRef.current?.focus(), 100);
   }, []);
 
@@ -428,6 +427,7 @@ export function UnifiedPatientInput({
     setViewState('search');
     setFoundUser(null);
     setContactValue('');
+    setSubmittedContact('');
     form.reset();
     setIsNoteExpanded(false);
     setTimeout(() => contactInputRef.current?.focus(), 100);
@@ -483,6 +483,12 @@ export function UnifiedPatientInput({
         } else {
           handleAddExistingPatient();
         }
+        return;
+      }
+
+      if (key === 'Enter' && viewState === 'search') {
+        e.preventDefault();
+        handleNext();
       }
     },
     [
@@ -490,6 +496,7 @@ export function UnifiedPatientInput({
       foundUser,
       isAlreadyAssignedToTherapist,
       handleAddExistingPatient,
+      handleNext,
       handleBackToSearch,
       onCancel,
       handleEditContact,
@@ -547,10 +554,20 @@ export function UnifiedPatientInput({
             )}
           </div>
 
-          {/* Cancel button */}
-          <div className="flex justify-end pt-6 border-t border-border mt-8">
+          {/* Actions */}
+          <div className="flex justify-end gap-3 pt-6 border-t border-border mt-8">
             <Button type="button" variant="outline" onClick={onCancel} data-testid="patient-unified-cancel-btn">
               Anuluj
+            </Button>
+            <Button
+              type="button"
+              onClick={handleNext}
+              disabled={!contactValue.trim() || isSearching}
+              className="min-w-[120px] bg-linear-to-r from-primary to-primary-dark shadow-lg shadow-primary/20"
+              data-testid="patient-unified-next-btn"
+            >
+              {isSearching && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Dalej
             </Button>
           </div>
         </div>

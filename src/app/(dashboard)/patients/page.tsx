@@ -348,7 +348,8 @@ export default function PatientsPage() {
         <TabsList className="w-full sm:w-auto grid grid-cols-2 sm:grid-cols-4 2xl:grid-cols-4 h-auto p-1 bg-surface-light/50 rounded-xl">
           <TabsTrigger
             value="my"
-            className="gap-2 px-4 py-2.5"
+            activeVariant="accent"
+            className="cursor-pointer gap-2 px-4 py-2.5 transition-all duration-200 hover:bg-background/50"
             data-testid="patient-filter-my-btn"
           >
             <UserCheck className="h-4 w-4" />
@@ -360,7 +361,8 @@ export default function PatientsPage() {
           </TabsTrigger>
           <TabsTrigger
             value="all"
-            className="gap-2 px-4 py-2.5"
+            activeVariant="accent"
+            className="cursor-pointer gap-2 px-4 py-2.5 transition-all duration-200 hover:bg-background/50"
             data-testid="patient-filter-all-btn"
           >
             <Users className="h-4 w-4" />
@@ -372,15 +374,16 @@ export default function PatientsPage() {
           </TabsTrigger>
           <TabsTrigger
             value="needs_attention"
+            activeVariant="warning"
             className={cn(
-              'gap-2 px-4 py-2.5',
-              needsAttentionCount > 0 && 'data-[state=inactive]:text-warning'
+              'cursor-pointer gap-2 px-4 py-2.5 transition-all duration-200 hover:bg-background/50',
+              needsAttentionCount > 0 && 'data-[state=inactive]:text-warning/80'
             )}
             data-testid="patient-filter-attention-btn"
           >
             <AlertTriangle className="h-4 w-4" />
-            <span className="hidden sm:inline">Wymagają uwagi</span>
-            <span className="sm:hidden">Uwaga</span>
+            <span className="hidden sm:inline">Brak aktywności</span>
+            <span className="sm:hidden">Brak akt.</span>
             {needsAttentionCount > 0 && (
               <Badge variant="secondary" className="ml-1 text-xs bg-warning/20 text-warning">
                 {needsAttentionCount}
@@ -389,9 +392,10 @@ export default function PatientsPage() {
           </TabsTrigger>
           <TabsTrigger
             value="subscription"
+            activeVariant="destructive"
             className={cn(
-              'gap-2 px-4 py-2.5',
-              subscriptionIssueCount > 0 && 'data-[state=inactive]:text-destructive'
+              'cursor-pointer gap-2 px-4 py-2.5 transition-all duration-200 hover:bg-background/50',
+              subscriptionIssueCount > 0 && 'data-[state=inactive]:text-destructive/80'
             )}
             data-testid="patient-filter-subscription-btn"
           >

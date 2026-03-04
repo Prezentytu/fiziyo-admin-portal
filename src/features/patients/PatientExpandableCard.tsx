@@ -370,7 +370,7 @@ export function PatientExpandableCard({
                 size="icon"
                 className="h-8 w-8 hover:bg-primary/10 hover:text-primary"
                 onClick={(e) => handleAction(e, () => onShowQR(patient))}
-                title="Pokaż receptę (QR)"
+                title="Pokaż zalecenia (QR)"
                 data-testid={`patient-expandable-${patient.id}-qr-btn`}
               >
                 <QrCode className="h-4 w-4" />
@@ -412,7 +412,7 @@ export function PatientExpandableCard({
                     {onShowQR && (
                       <DropdownMenuItem onClick={() => onShowQR(patient)}>
                         <QrCode className="mr-2 h-4 w-4" />
-                        Pokaż receptę (QR)
+                        Pokaż zalecenia (QR)
                       </DropdownMenuItem>
                     )}
                     <DropdownMenuItem onClick={() => initiateActivation(patient.id, displayName)}>
