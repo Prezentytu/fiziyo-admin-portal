@@ -228,10 +228,10 @@ export default function ExercisesPage() {
   }
 
   return (
-    <div className="flex h-full overflow-hidden -m-4 lg:-m-6">
+    <div className="flex h-full overflow-hidden -m-4 lg:-m-6 2xl:-m-8">
       {/* Left Panel: Strefa Inspiracji (Grid) */}
       <div className="flex-1 overflow-y-auto p-4 lg:p-6 scroll-smooth custom-scrollbar">
-        <div className="max-w-[1400px] mx-auto space-y-6">
+        <div className="max-w-screen-2xl mx-auto space-y-6">
           {/* Compact Header with Search + View Toggle */}
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <h1 data-testid="exercise-page-title" className="text-2xl font-bold text-foreground">

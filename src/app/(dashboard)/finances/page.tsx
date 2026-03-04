@@ -111,7 +111,7 @@ export default function FinancesPage() {
         </Suspense>
       )}
 
-      <div className="space-y-4">
+      <div className="mx-auto w-full max-w-screen-2xl space-y-4">
         {/* Header */}
         <div className="flex items-center gap-3 mb-2">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 border border-primary/20">

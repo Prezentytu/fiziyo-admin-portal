@@ -276,7 +276,7 @@ export default function ExerciseSetsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="mx-auto w-full max-w-screen-2xl space-y-6">
       {/* Compact Header with Search and Tag Filter */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-2xl font-bold text-foreground shrink-0" data-testid="set-page-title">
@@ -500,7 +500,7 @@ export default function ExerciseSetsPage() {
 
       {/* Content */}
       {loading ? (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 animate-stagger">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 animate-stagger">
           {[1, 2, 3, 4, 5, 6].map((i) => (
             <Card key={i} className="border-border/40">
               <Skeleton className="aspect-[4/3] w-full" />
@@ -536,7 +536,7 @@ export default function ExerciseSetsPage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 animate-stagger">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 animate-stagger">
           {filteredSets.map((set) => (
             <SetCard
               key={set.id}

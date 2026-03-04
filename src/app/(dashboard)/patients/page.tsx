@@ -299,7 +299,7 @@ export default function PatientsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="mx-auto w-full max-w-screen-2xl space-y-6">
       {/* Compact Header with Search */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-2xl font-bold text-foreground" data-testid="patient-page-title">
@@ -345,7 +345,7 @@ export default function PatientsPage() {
         onValueChange={(value) => setPatientFilter(value as TherapyFilterType)}
         className="w-full"
       >
-        <TabsList className="w-full sm:w-auto grid grid-cols-4 sm:inline-flex h-auto p-1 bg-surface-light/50 rounded-xl">
+        <TabsList className="w-full sm:w-auto grid grid-cols-2 sm:grid-cols-4 2xl:grid-cols-4 h-auto p-1 bg-surface-light/50 rounded-xl">
           <TabsTrigger
             value="my"
             className="gap-2 px-4 py-2.5"
