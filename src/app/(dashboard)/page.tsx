@@ -326,7 +326,7 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="mx-auto w-full space-y-5 md:space-y-6 xl:space-y-8">
+    <div className="mx-auto w-full max-w-screen-2xl space-y-5 md:space-y-6 xl:space-y-8">
       {/* Header Section - Greeting with date */}
       <div className="flex flex-wrap items-end justify-between gap-3 md:gap-4">
         <div className="min-w-0">
@@ -426,162 +426,166 @@ export default function DashboardPage() {
       </div>
 
       {/* Main Content - 8:4 Grid Layout */}
-      <div className="grid gap-4 md:gap-5 lg:grid-cols-12">
-        {/* Activity Feed - Left Column (8 cols) */}
-        <Card
-          data-testid="dashboard-activity-section"
-          className="bg-surface border-border shadow-md overflow-hidden lg:col-span-8 rounded-xl md:rounded-2xl"
-        >
-          <CardHeader className="p-4 md:px-6 md:pt-6 md:pb-4">
-            <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-2 md:gap-3 text-sm md:text-base font-semibold">
-                <div className="flex h-8 w-8 md:h-9 md:w-9 items-center justify-center rounded-lg md:rounded-xl bg-info/10">
-                  <Users className="h-4 w-4 md:h-4.5 md:w-4.5 text-info" />
-                </div>
-                <span>Wymagają uwagi</span>
-                {patientsNeedingAttention.length > 0 && (
-                  <Badge variant="secondary" className="ml-1 bg-surface-light text-muted-foreground border-border font-medium">
-                    {patientsNeedingAttention.length}
-                  </Badge>
-                )}
-              </CardTitle>
-              <Link href="/patients" data-testid="dashboard-patients-view-all" className="group">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-8 text-xs gap-1 text-muted-foreground hover:text-foreground"
-                >
-                  Wszyscy ({patientsCount})
-                  <ChevronRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
-                </Button>
-              </Link>
-            </div>
-          </CardHeader>
-          <CardContent className="pt-0">
-            {patientsLoading ? (
-              <div className="space-y-2">
-                {[1, 2, 3, 4, 5].map((i) => (
-                  <div
-                    key={i}
-                    className="flex items-center gap-3 p-3 rounded-xl"
-                    style={{ animationDelay: `${i * 50}ms` }}
-                  >
-                    <Skeleton className="h-10 w-10 rounded-full shrink-0" />
-                    <div className="flex-1 space-y-1.5">
-                      <Skeleton className="h-4 w-32 rounded-lg" />
-                      <Skeleton className="h-3 w-48 rounded-lg" />
-                    </div>
-                    <Skeleton className="h-4 w-4 rounded shrink-0" />
+      <div className="grid gap-4 md:gap-5 lg:grid-cols-12 lg:max-h-[clamp(22rem,50dvh,37.5rem)]">
+        {/* Left Column (8 cols): Activity + Billing */}
+        <div className="lg:col-span-8 flex h-full flex-col gap-4 md:gap-5">
+          <Card
+            data-testid="dashboard-activity-section"
+            className="bg-surface border-border shadow-md overflow-hidden rounded-xl md:rounded-2xl flex flex-1 min-h-0 flex-col"
+          >
+            <CardHeader className="p-4 md:px-6 md:pt-6 md:pb-4">
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2 md:gap-3 text-sm md:text-base font-semibold">
+                  <div className="flex h-8 w-8 md:h-9 md:w-9 items-center justify-center rounded-lg md:rounded-xl bg-info/10">
+                    <Users className="h-4 w-4 md:h-4.5 md:w-4.5 text-info" />
                   </div>
-                ))}
+                  <span>Wymagają uwagi</span>
+                  {patientsNeedingAttention.length > 0 && (
+                    <Badge variant="secondary" className="ml-1 bg-surface-light text-muted-foreground border-border font-medium">
+                      {patientsNeedingAttention.length}
+                    </Badge>
+                  )}
+                </CardTitle>
+                <Link href="/patients" data-testid="dashboard-patients-view-all" className="group">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 text-xs gap-1 text-muted-foreground hover:text-foreground"
+                  >
+                    Wszyscy ({patientsCount})
+                    <ChevronRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
+                  </Button>
+                </Link>
               </div>
-            ) : patients.length > 0 ? (
-              <div className="space-y-2 animate-stagger">
-                {displayedPatients.map((assignment: PatientWithActivity) => {
-                  const isShadow = assignment.patient?.isShadowUser;
-                  return (
-                    <Link
-                      key={assignment.id}
-                      href={`/patients/${assignment.patient?.id}`}
-                      data-testid={`dashboard-patient-item-${assignment.patient?.id}`}
-                      className={`group flex items-center gap-3 p-3 rounded-xl transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface ${
-                        assignment.activityStatus === 'warning'
-                          ? 'bg-warning-muted hover:bg-warning-muted/80'
-                          : assignment.activityStatus === 'inactive'
-                            ? 'hover:bg-surface-light'
-                            : 'hover:bg-success-muted'
-                      }`}
+            </CardHeader>
+            <CardContent className="pt-0 flex-1 min-h-0 overflow-y-auto">
+              {patientsLoading ? (
+                <div className="space-y-2">
+                  {[1, 2, 3, 4, 5].map((i) => (
+                    <div
+                      key={i}
+                      className="flex items-center gap-3 p-3 rounded-xl"
+                      style={{ animationDelay: `${i * 50}ms` }}
                     >
-                      <div className="relative shrink-0">
-                        <Avatar
-                          className={`h-10 w-10 ring-2 transition-all duration-150 ${
-                            assignment.activityStatus === 'warning'
-                              ? 'ring-warning/30 group-hover:ring-warning/50'
-                              : assignment.activityStatus === 'active'
-                                ? 'ring-success/30 group-hover:ring-success/50'
-                                : 'ring-border/20 group-hover:ring-primary/30'
-                          }`}
-                        >
-                          <AvatarImage src={assignment.patient?.image} />
-                          <AvatarFallback
-                            className={`text-sm font-medium ${
-                              isShadow
-                                ? 'bg-muted-foreground/60 text-white'
-                                : 'bg-linear-to-br from-info to-blue-600 text-white'
+                      <Skeleton className="h-10 w-10 rounded-full shrink-0" />
+                      <div className="flex-1 space-y-1.5">
+                        <Skeleton className="h-4 w-32 rounded-lg" />
+                        <Skeleton className="h-3 w-48 rounded-lg" />
+                      </div>
+                      <Skeleton className="h-4 w-4 rounded shrink-0" />
+                    </div>
+                  ))}
+                </div>
+              ) : patients.length > 0 ? (
+                <div className="space-y-2 animate-stagger">
+                  {displayedPatients.map((assignment: PatientWithActivity) => {
+                    const isShadow = assignment.patient?.isShadowUser;
+                    return (
+                      <Link
+                        key={assignment.id}
+                        href={`/patients/${assignment.patient?.id}`}
+                        data-testid={`dashboard-patient-item-${assignment.patient?.id}`}
+                        className={`group flex items-center gap-3 p-3 rounded-xl transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface ${
+                          assignment.activityStatus === 'warning'
+                            ? 'bg-warning-muted hover:bg-warning-muted/80'
+                            : assignment.activityStatus === 'inactive'
+                              ? 'hover:bg-surface-light'
+                              : 'hover:bg-success-muted'
+                        }`}
+                      >
+                        <div className="relative shrink-0">
+                          <Avatar
+                            className={`h-10 w-10 ring-2 transition-all duration-150 ${
+                              assignment.activityStatus === 'warning'
+                                ? 'ring-warning/30 group-hover:ring-warning/50'
+                                : assignment.activityStatus === 'active'
+                                  ? 'ring-success/30 group-hover:ring-success/50'
+                                  : 'ring-border/20 group-hover:ring-primary/30'
                             }`}
                           >
-                            {assignment.patient?.fullname?.[0] || '?'}
-                          </AvatarFallback>
-                        </Avatar>
-                        {isShadow ? (
-                          <div className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-muted-foreground/80 flex items-center justify-center ring-2 ring-surface">
-                            <Wrench className="h-2.5 w-2.5 text-white" />
-                          </div>
-                        ) : (
-                          <ActivityIndicator status={assignment.activityStatus} />
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p
-                          className={`font-medium text-sm truncate transition-colors duration-150 ${
+                            <AvatarImage src={assignment.patient?.image} />
+                            <AvatarFallback
+                              className={`text-sm font-medium ${
+                                isShadow
+                                  ? 'bg-muted-foreground/60 text-white'
+                                  : 'bg-linear-to-br from-info to-blue-600 text-white'
+                              }`}
+                            >
+                              {assignment.patient?.fullname?.[0] || '?'}
+                            </AvatarFallback>
+                          </Avatar>
+                          {isShadow ? (
+                            <div className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-muted-foreground/80 flex items-center justify-center ring-2 ring-surface">
+                              <Wrench className="h-2.5 w-2.5 text-white" />
+                            </div>
+                          ) : (
+                            <ActivityIndicator status={assignment.activityStatus} />
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p
+                            className={`font-medium text-sm truncate transition-colors duration-150 ${
+                              assignment.activityStatus === 'warning'
+                                ? 'text-foreground group-hover:text-warning'
+                                : assignment.activityStatus === 'active'
+                                  ? 'text-foreground group-hover:text-success'
+                                  : 'text-foreground group-hover:text-primary'
+                            }`}
+                          >
+                            {assignment.patient?.fullname || 'Nieznany'}
+                          </p>
+                          <p
+                            className={`text-xs truncate ${
+                              assignment.activityStatus === 'warning'
+                                ? 'text-warning/90'
+                                : assignment.activityStatus === 'active'
+                                  ? 'text-success/90'
+                                  : 'text-muted-foreground'
+                            }`}
+                          >
+                            {assignment.lastActivityText}
+                          </p>
+                        </div>
+                        <ChevronRight
+                          className={`h-4 w-4 transition-all duration-150 group-hover:translate-x-0.5 ${
                             assignment.activityStatus === 'warning'
-                              ? 'text-foreground group-hover:text-warning'
+                              ? 'text-warning/30 group-hover:text-warning'
                               : assignment.activityStatus === 'active'
-                                ? 'text-foreground group-hover:text-success'
-                                : 'text-foreground group-hover:text-primary'
+                                ? 'text-success/30 group-hover:text-success'
+                                : 'text-muted-foreground/30 group-hover:text-primary'
                           }`}
-                        >
-                          {assignment.patient?.fullname || 'Nieznany'}
-                        </p>
-                        <p
-                          className={`text-xs truncate ${
-                            assignment.activityStatus === 'warning'
-                              ? 'text-warning/90'
-                              : assignment.activityStatus === 'active'
-                                ? 'text-success/90'
-                                : 'text-muted-foreground'
-                          }`}
-                        >
-                          {assignment.lastActivityText}
-                        </p>
-                      </div>
-                      <ChevronRight
-                        className={`h-4 w-4 transition-all duration-150 group-hover:translate-x-0.5 ${
-                          assignment.activityStatus === 'warning'
-                            ? 'text-warning/30 group-hover:text-warning'
-                            : assignment.activityStatus === 'active'
-                              ? 'text-success/30 group-hover:text-success'
-                              : 'text-muted-foreground/30 group-hover:text-primary'
-                        }`}
-                      />
-                    </Link>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center py-8 text-center">
-                <div className="h-14 w-14 rounded-2xl bg-surface-light flex items-center justify-center mb-3">
-                  <UserPlus className="h-7 w-7 text-muted-foreground/50" />
+                        />
+                      </Link>
+                    );
+                  })}
                 </div>
-                <p className="text-sm font-medium text-muted-foreground mb-1">Brak pacjentów</p>
-                <p className="text-xs text-muted-foreground/70 mb-4">Dodaj pierwszego pacjenta</p>
-                <Button
-                  size="sm"
-                  className="h-8 text-xs"
-                  onClick={() => setIsPatientDialogOpen(true)}
-                  disabled={!organizationId || !therapistId}
-                >
-                  Dodaj pacjenta
-                </Button>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-8 text-center">
+                  <div className="h-14 w-14 rounded-2xl bg-surface-light flex items-center justify-center mb-3">
+                    <UserPlus className="h-7 w-7 text-muted-foreground/50" />
+                  </div>
+                  <p className="text-sm font-medium text-muted-foreground mb-1">Brak pacjentów</p>
+                  <p className="text-xs text-muted-foreground/70 mb-4">Dodaj pierwszego pacjenta</p>
+                  <Button
+                    size="sm"
+                    className="h-8 text-xs"
+                    onClick={() => setIsPatientDialogOpen(true)}
+                    disabled={!organizationId || !therapistId}
+                  >
+                    Dodaj pacjenta
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {canViewBilling && organizationId && <BillingStatusBar organizationId={organizationId} />}
+        </div>
 
         {/* Quick Sets - Right Column (4 cols) */}
         <Card
           data-testid="dashboard-sets-section"
-          className="bg-surface border-border shadow-md overflow-hidden lg:col-span-4 rounded-xl md:rounded-2xl"
+          className="bg-surface border-border shadow-md overflow-hidden lg:col-span-4 rounded-xl md:rounded-2xl flex h-full flex-col"
         >
           <CardHeader className="p-4 md:px-6 md:pt-6 md:pb-4">
             <div className="flex items-center justify-between">
@@ -603,7 +607,7 @@ export default function DashboardPage() {
               </Link>
             </div>
           </CardHeader>
-          <CardContent className="pt-0">
+          <CardContent className="pt-0 flex-1 min-h-0 overflow-y-auto">
             {setsLoading ? (
               <div className="space-y-2">
                 {[1, 2, 3, 4].map((i) => (
@@ -681,9 +685,6 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
       </div>
-
-      {/* Billing Status Bar - Only for Owner/Admin (Full Width) */}
-      {canViewBilling && organizationId && <BillingStatusBar organizationId={organizationId} />}
 
       {/* Assignment Wizard */}
       {organizationId && therapistId && (

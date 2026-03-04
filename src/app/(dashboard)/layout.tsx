@@ -38,7 +38,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             {/* Main content area */}
             <div className="flex flex-1 flex-col overflow-hidden min-h-0">
               <Header onMobileMenuToggle={toggleMobile} />
-              <main className="flex-1 overflow-y-auto min-h-0 p-4 lg:p-6">{children}</main>
+              <main className="flex-1 overflow-y-auto min-h-0 p-4 lg:p-[clamp(1rem,1.5vw,1.5rem)]">{children}</main>
             </div>
           </div>
         </ExerciseBuilderProvider>
