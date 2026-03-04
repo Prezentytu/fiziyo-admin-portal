@@ -338,7 +338,7 @@ export default function DashboardPage() {
           </h1>
           <p className="mt-1 md:mt-2 text-sm text-muted-foreground">
             {patientsNeedingAttention.length > 0
-              ? `${patientsNeedingAttention.length} pacjentów wymaga uwagi`
+              ? `Sprawdź, co u ${patientsNeedingAttention.length} pacjentów`
               : 'Wszyscy pacjenci są aktywni'}
           </p>
         </div>
@@ -439,7 +439,7 @@ export default function DashboardPage() {
                   <div className="flex h-8 w-8 md:h-9 md:w-9 items-center justify-center rounded-lg md:rounded-xl bg-info/10">
                     <Users className="h-4 w-4 md:h-4.5 md:w-4.5 text-info" />
                   </div>
-                  <span>Wymagają uwagi</span>
+                  <span>Pacjenci do sprawdzenia</span>
                   {patientsNeedingAttention.length > 0 && (
                     <Badge variant="secondary" className="ml-1 bg-surface-light text-muted-foreground border-border font-medium">
                       {patientsNeedingAttention.length}
