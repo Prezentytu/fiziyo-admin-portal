@@ -5,20 +5,18 @@ import { useMutation, useQuery } from '@apollo/client/react';
 import { format } from 'date-fns';
 import { pl } from 'date-fns/locale';
 import { toast } from 'sonner';
-import { Loader2, Save, CheckCircle } from 'lucide-react';
+import { Loader2, Save } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AutoSaveIndicator, SaveStatus } from '@/components/shared/AutoSaveIndicator';
 
 import {
   CREATE_CLINICAL_NOTE_MUTATION,
   UPDATE_CLINICAL_NOTE_MUTATION,
-  SIGN_CLINICAL_NOTE_MUTATION,
 } from '@/graphql/mutations/clinicalNotes.mutations';
 import {
   GET_PATIENT_CLINICAL_NOTES_QUERY,
@@ -91,7 +89,6 @@ export function ClinicalNoteEditor({
 
   const [createNote, { loading: creating }] = useMutation(CREATE_CLINICAL_NOTE_MUTATION);
   const [updateNote, { loading: updating }] = useMutation(UPDATE_CLINICAL_NOTE_MUTATION);
-  const [signNote, { loading: signing }] = useMutation(SIGN_CLINICAL_NOTE_MUTATION);
 
   const { data: fullNoteData, loading: loadingFullNote } = useQuery(GET_CLINICAL_NOTE_BY_ID_QUERY, {
     variables: { id: existingNote?.id || '' },
@@ -100,8 +97,7 @@ export function ClinicalNoteEditor({
 
   const fullNote = (fullNoteData as { clinicalNoteById?: ClinicalNote })?.clinicalNoteById;
   const noteData = fullNote || existingNote;
-  const isSigned = noteData?.status === 'SIGNED';
-  const isLoading = creating || updating || signing;
+  const isLoading = creating || updating;
   const isLoadingData = loadingFullNote && !!existingNote?.id;
 
   const [visitType, setVisitType] = useState<VisitType>(existingNote?.visitType || 'INITIAL');
@@ -136,8 +132,7 @@ export function ClinicalNoteEditor({
     onDirtyChange?.(isDirty);
   }, [isDirty, onDirtyChange]);
 
-  const performSave = useCallback(
-    async (shouldSign: boolean) => {
+  const performSave = useCallback(async () => {
       const sectionInput = omitTypename({
         ...noteData?.sections,
         interview: {
@@ -175,14 +170,6 @@ export function ClinicalNoteEditor({
       setLastSavedAt(new Date());
       setIsDirty(false);
       setTimeout(() => setSaveStatus('idle'), 2000);
-
-      if (shouldSign && noteIdRef.current) {
-        await signNote({
-          variables: { id: noteIdRef.current },
-          refetchQueries: [{ query: GET_PATIENT_CLINICAL_NOTES_QUERY, variables: { patientId, organizationId } }],
-        });
-        toast.success('Notatka została podpisana');
-      }
     },
     [
       content,
@@ -192,23 +179,22 @@ export function ClinicalNoteEditor({
       noteData?.sections,
       updateNote,
       createNote,
-      signNote,
       patientId,
       organizationId,
     ]
   );
 
   useEffect(() => {
-    if (!isDirty || isSigned) return;
+    if (!isDirty) return;
     if (autoSaveTimeoutRef.current) clearTimeout(autoSaveTimeoutRef.current);
     autoSaveTimeoutRef.current = setTimeout(() => {
       setSaveStatus('saving');
-      performSave(false).catch(() => setSaveStatus('error'));
+      performSave().catch(() => setSaveStatus('error'));
     }, 30000);
     return () => {
       if (autoSaveTimeoutRef.current) clearTimeout(autoSaveTimeoutRef.current);
     };
-  }, [isDirty, isSigned, performSave]);
+  }, [isDirty, performSave]);
 
   const handleVisitTypeChange = (value: VisitType) => {
     setVisitType(value);
@@ -230,7 +216,7 @@ export function ClinicalNoteEditor({
     setIsDirty(true);
   };
 
-  const handleSave = async (shouldSign = false) => {
+  const handleSave = async () => {
     try {
       setSaveStatus('saving');
       const sectionInput = omitTypename({
@@ -273,14 +259,6 @@ export function ClinicalNoteEditor({
         toast.success('Notatka utworzona');
       }
 
-      if (shouldSign && result) {
-        await signNote({
-          variables: { id: result.id },
-          refetchQueries: [{ query: GET_PATIENT_CLINICAL_NOTES_QUERY, variables: { patientId, organizationId } }],
-        });
-        toast.success('Notatka podpisana');
-      }
-
       setSaveStatus('saved');
       setLastSavedAt(new Date());
       setIsDirty(false);
@@ -316,12 +294,6 @@ export function ClinicalNoteEditor({
           </p>
         </div>
         <div className="flex items-center gap-3">
-          {isSigned && (
-            <Badge variant="success" className="gap-1">
-              <CheckCircle className="h-3 w-3" />
-              Podpisana
-            </Badge>
-          )}
           <AutoSaveIndicator status={saveStatus} lastSavedAt={lastSavedAt} />
         </div>
       </div>
@@ -333,7 +305,6 @@ export function ClinicalNoteEditor({
             <Select
               value={visitType}
               onValueChange={(v) => handleVisitTypeChange(v as VisitType)}
-              disabled={isSigned}
             >
               <SelectTrigger className="h-11" data-testid="clinical-note-visit-type-select">
                 <SelectValue />
@@ -353,7 +324,6 @@ export function ClinicalNoteEditor({
               type="date"
               value={visitDate}
               onChange={(e) => handleVisitDateChange(e.target.value)}
-              disabled={isSigned}
               className="h-11"
               data-testid="clinical-note-visit-date-input"
             />
@@ -364,7 +334,6 @@ export function ClinicalNoteEditor({
               value={title}
               onChange={(e) => handleTitleChange(e.target.value)}
               placeholder="np. Kolano, bark"
-              disabled={isSigned}
               className="h-11"
               data-testid="clinical-note-title-input"
             />
@@ -381,36 +350,21 @@ export function ClinicalNoteEditor({
             value={content}
             onChange={(e) => handleContentChange(e.target.value)}
             placeholder="Opisz wizytę: objawy, badanie, wnioski, zalecenia..."
-            disabled={isSigned}
             className="min-h-[280px] resize-y text-base"
           />
         </div>
       </div>
 
       <div className="shrink-0 border-t border-border py-4 px-6 flex items-center justify-end gap-3">
-        {!isSigned && (
-          <>
-            <Button
-              variant="outline"
-              onClick={() => handleSave(false)}
-              disabled={isLoading}
-              className="gap-2"
-              data-testid="clinical-note-save-draft-btn"
-            >
-              {saveStatus === 'saving' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-              Zapisz
-            </Button>
-            <Button
-              onClick={() => handleSave(true)}
-              disabled={isLoading}
-              className="gap-2"
-              data-testid="clinical-note-sign-btn"
-            >
-              {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle className="h-4 w-4" />}
-              Podpisz i zakończ
-            </Button>
-          </>
-        )}
+        <Button
+          onClick={handleSave}
+          disabled={isLoading}
+          className="gap-2 bg-primary text-primary-foreground hover:bg-primary-dark"
+          data-testid="clinical-note-save-btn"
+        >
+          {saveStatus === 'saving' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+          Zapisz
+        </Button>
       </div>
     </div>
   );

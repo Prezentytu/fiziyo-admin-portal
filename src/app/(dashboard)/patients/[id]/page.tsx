@@ -406,7 +406,7 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
         </Card>
 
         {therapistId && organizationId && (
-          <div className="lg:col-span-4 lg:sticky lg:top-6">
+          <div className="lg:col-span-4">
             <ClinicalNotesList
               patientId={id}
               therapistId={therapistId}

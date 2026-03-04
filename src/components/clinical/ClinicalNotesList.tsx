@@ -9,13 +9,9 @@ import {
   FileText,
   Plus,
   Calendar,
-  CheckCircle,
-  Clock,
   Pencil,
   MoreHorizontal,
   Trash2,
-  Eye,
-  ChevronRight,
   X,
 } from 'lucide-react';
 
@@ -34,17 +30,16 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { ClinicalNoteEditor } from './ClinicalNoteEditor';
-import { cn } from '@/lib/utils';
 
 import { GET_PATIENT_CLINICAL_NOTES_QUERY } from '@/graphql/queries/clinicalNotes.queries';
 import { DELETE_CLINICAL_NOTE_MUTATION } from '@/graphql/mutations/clinicalNotes.mutations';
-import type { ClinicalNote, VisitType, ClinicalNoteStatus } from '@/types/clinical.types';
+import type { ClinicalNote, VisitType } from '@/types/clinical.types';
 
 interface ClinicalNotesListProps {
-  patientId: string;
-  therapistId: string;
-  organizationId: string;
-  patientName?: string;
+  readonly patientId: string;
+  readonly therapistId: string;
+  readonly organizationId: string;
+  readonly patientName?: string;
 }
 
 const VISIT_TYPE_LABELS: Record<VisitType, string> = {
@@ -52,15 +47,6 @@ const VISIT_TYPE_LABELS: Record<VisitType, string> = {
   FOLLOWUP: 'Wizyta kontrolna',
   DISCHARGE: 'Wizyta końcowa',
   CONSULTATION: 'Konsultacja',
-};
-
-const STATUS_CONFIG: Record<
-  ClinicalNoteStatus,
-  { label: string; variant: 'default' | 'secondary' | 'success' | 'warning' }
-> = {
-  DRAFT: { label: 'Wersja robocza', variant: 'warning' },
-  COMPLETED: { label: 'Zakończona', variant: 'secondary' },
-  SIGNED: { label: 'Podpisana', variant: 'success' },
 };
 
 export function ClinicalNotesList({
@@ -93,11 +79,6 @@ export function ClinicalNotesList({
   };
 
   const handleEditNote = (note: ClinicalNote) => {
-    setSelectedNote(note);
-    setIsEditorOpen(true);
-  };
-
-  const handleViewNote = (note: ClinicalNote) => {
     setSelectedNote(note);
     setIsEditorOpen(true);
   };
@@ -193,99 +174,70 @@ export function ClinicalNotesList({
               onAction={handleNewNote}
             />
           ) : (
-            <div className="space-y-2">
+            <div className="space-y-2.5">
               {notes.map((note) => (
                 <div
                   key={note.id}
-                  className={cn(
-                    'group flex items-center gap-3 p-3 rounded-xl border transition-all duration-200',
-                    note.status === 'SIGNED'
-                      ? 'border-border/40 bg-surface/30 hover:bg-surface/50'
-                      : 'border-border/60 bg-surface hover:border-primary/30 hover:shadow-sm cursor-pointer'
-                  )}
-                  onClick={() => (note.status !== 'SIGNED' ? handleEditNote(note) : handleViewNote(note))}
+                  className="group grid grid-cols-[1fr_auto] items-start gap-3 rounded-xl border border-border/60 bg-surface p-3.5 transition-all duration-150 hover:border-primary/30 hover:bg-surface-elevated hover:shadow-sm"
                 >
-                  {/* Icon */}
-                  <div
-                    className={cn(
-                      'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl',
-                      note.status === 'SIGNED'
-                        ? 'bg-primary/10'
-                        : note.status === 'DRAFT'
-                          ? 'bg-warning/10'
-                          : 'bg-secondary/10'
-                    )}
+                  <button
+                    type="button"
+                    className="grid min-w-0 grid-cols-[auto_1fr] items-start gap-3 text-left"
+                    data-testid={`clinical-note-card-btn-${note.id}`}
+                    onClick={() => handleEditNote(note)}
                   >
-                    {note.status === 'SIGNED' ? (
-                      <CheckCircle className="h-5 w-5 text-primary" />
-                    ) : (
-                      <Clock className="h-5 w-5 text-warning" />
-                    )}
-                  </div>
-
-                  {/* Content */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium text-sm text-foreground truncate">
-                        {note.title || VISIT_TYPE_LABELS[note.visitType]}
-                      </span>
-                      <Badge variant={STATUS_CONFIG[note.status].variant} className="text-[10px]">
-                        {STATUS_CONFIG[note.status].label}
-                      </Badge>
+                    <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10">
+                      <FileText className="h-4 w-4 text-primary" />
                     </div>
-                    <div className="flex items-center gap-2 mt-0.5 text-xs text-muted-foreground">
-                      <Calendar className="h-3 w-3" />
-                      {format(new Date(note.visitDate), 'd MMMM yyyy', { locale: pl })}
-                      {note.therapist?.fullname && (
-                        <>
-                          <span>•</span>
-                          <span>{note.therapist.fullname}</span>
-                        </>
-                      )}
-                    </div>
-                  </div>
 
-                  {/* Actions */}
-                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    {note.status !== 'SIGNED' && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleEditNote(note);
-                        }}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                    )}
+                    <div className="min-w-0 space-y-1.5">
+                      <div className="flex items-center gap-2">
+                        <span className="truncate text-sm font-semibold text-foreground">
+                          {note.title || VISIT_TYPE_LABELS[note.visitType]}
+                        </span>
+                        <span className="shrink-0 rounded-md border border-border/50 bg-surface-light px-1.5 py-0.5 text-[10px] text-muted-foreground">
+                          {VISIT_TYPE_LABELS[note.visitType]}
+                        </span>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                        <span className="inline-flex items-center gap-1.5">
+                          <Calendar className="h-3 w-3" />
+                          {format(new Date(note.visitDate), 'd MMMM yyyy', { locale: pl })}
+                        </span>
+                        {note.therapist?.fullname && (
+                          <span className="truncate">{note.therapist.fullname}</span>
+                        )}
+                      </div>
+                    </div>
+                  </button>
+
+                  <div className="flex items-center">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-muted-foreground transition-colors hover:text-foreground"
+                          data-testid={`clinical-note-menu-btn-${note.id}`}
+                        >
                           <MoreHorizontal className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => handleViewNote(note)}>
-                          <Eye className="mr-2 h-4 w-4" />
-                          Podgląd
+                        <DropdownMenuItem onClick={() => handleEditNote(note)}>
+                          <Pencil className="mr-2 h-4 w-4" />
+                          Edytuj
                         </DropdownMenuItem>
-                        {note.status === 'DRAFT' && (
-                          <>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                              className="text-destructive focus:text-destructive"
-                              onClick={() => setDeletingNote(note)}
-                            >
-                              <Trash2 className="mr-2 h-4 w-4" />
-                              Usuń
-                            </DropdownMenuItem>
-                          </>
-                        )}
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                          className="text-destructive focus:text-destructive"
+                          onClick={() => setDeletingNote(note)}
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Usuń
+                        </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
-                    <ChevronRight className="h-4 w-4 text-muted-foreground" />
                   </div>
                 </div>
               ))}
