@@ -154,7 +154,7 @@ export function ExerciseCard({
   onToggleBuilder,
   className,
   compact = false,
-}: ExerciseCardProps) {
+}: Readonly<ExerciseCardProps>) {
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [isBouncing, setIsBouncing] = useState(false);
 
@@ -239,7 +239,7 @@ export function ExerciseCard({
             </div>
           )}
           {/* Thumbnail */}
-          <div className="relative h-14 w-14 flex-shrink-0 overflow-hidden rounded-lg bg-surface-light">
+          <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-surface-light">
             {imageUrl ? (
               <Image src={imageUrl} alt={exercise.name} fill className="object-cover" sizes="56px" />
             ) : (
@@ -442,7 +442,7 @@ export function ExerciseCard({
         <div
           data-testid={`exercise-card-${exercise.id}`}
           className={cn(
-            'group relative flex flex-col rounded-2xl border border-border/60 bg-zinc-900/40 overflow-hidden',
+            'group relative flex flex-col rounded-2xl border border-border/70 bg-card overflow-hidden',
             'transition-all duration-300 ease-out cursor-pointer',
             'hover:-translate-y-1 hover:border-primary/40 hover:shadow-xl hover:shadow-primary/10',
             isInBuilder && 'ring-2 ring-primary border-primary/50 shadow-lg shadow-primary/20',
@@ -458,7 +458,7 @@ export function ExerciseCard({
           }}
         >
           {/* Image section with Atlas pattern (Blurred backdrop + Contain) */}
-          <div className="relative aspect-[4/3] overflow-hidden bg-zinc-950">
+          <div className="relative aspect-4/3 overflow-hidden bg-muted/60 dark:bg-zinc-950">
             {imageUrl ? (
               <>
                 {/* Blurred background */}
@@ -475,7 +475,7 @@ export function ExerciseCard({
                   sizes="(max-width: 768px) 100vw, 400px"
                 />
                 {/* Dark gradient overlay */}
-                <div className="absolute inset-0 bg-linear-to-t from-black/60 via-transparent to-transparent opacity-60 group-hover:opacity-40 transition-opacity duration-300" />
+                <div className="absolute inset-0 bg-linear-to-t from-black/50 dark:from-black/60 via-transparent to-transparent opacity-60 group-hover:opacity-40 transition-opacity duration-300" />
 
                 {/* Selection state tint (Subtle) */}
                 {isInBuilder && <div className="absolute inset-0 bg-primary/10 pointer-events-none" />}
@@ -495,9 +495,9 @@ export function ExerciseCard({
                     className={cn(
                       'absolute bottom-3 right-3 z-10',
                       'flex h-8 w-8 items-center justify-center rounded-full',
-                      'bg-black/50 text-white/80 backdrop-blur-sm',
+                      'bg-background/90 dark:bg-black/50 text-foreground dark:text-white/80 border border-border/70 dark:border-white/10 backdrop-blur-sm',
                       'opacity-0 group-hover:opacity-100 transition-all duration-200',
-                      'hover:bg-black/70 hover:text-white hover:scale-110'
+                      'hover:bg-background dark:hover:bg-black/70 hover:text-foreground dark:hover:text-white hover:scale-110'
                     )}
                     aria-label="Powiększ zdjęcie"
                   >
@@ -506,7 +506,7 @@ export function ExerciseCard({
                 )}
               </>
             ) : (
-              <ImagePlaceholder type="exercise" className="aspect-[4/3]" iconClassName="h-12 w-12" />
+              <ImagePlaceholder type="exercise" className="aspect-4/3 bg-muted/50" iconClassName="h-12 w-12" />
             )}
 
             {/* Status badges - top left */}
@@ -588,7 +588,7 @@ export function ExerciseCard({
                     'h-9 w-9 backdrop-blur-md transition-all duration-300 rounded-xl shadow-lg',
                     isInBuilder
                       ? 'bg-primary text-white border-primary/50'
-                      : 'bg-black/40 hover:bg-black/60 text-white border border-white/10 hover:scale-105',
+                      : 'bg-background/90 dark:bg-black/40 hover:bg-background dark:hover:bg-black/60 text-foreground dark:text-white border border-border/70 dark:border-white/10 hover:scale-105',
                     isBouncing && 'animate-bounce-once'
                   )}
                   onClick={handleToggleBuilder}
@@ -604,7 +604,7 @@ export function ExerciseCard({
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-9 w-9 bg-black/40 hover:bg-black/60 text-white backdrop-blur-sm rounded-xl border border-white/10 shadow-lg"
+                    className="h-9 w-9 bg-background/90 dark:bg-black/40 hover:bg-background dark:hover:bg-black/60 text-foreground dark:text-white backdrop-blur-sm rounded-xl border border-border/70 dark:border-white/10 shadow-lg"
                   >
                     <MoreVertical className="h-5 w-5" />
                   </Button>
@@ -670,7 +670,7 @@ export function ExerciseCard({
           </div>
 
           {/* Content section */}
-          <div className="flex flex-col p-4 pt-3 space-y-1 bg-zinc-900/20 backdrop-blur-sm">
+          <div className="flex flex-col p-4 pt-3 space-y-1 bg-card border-t border-border/50 backdrop-blur-sm">
             <h3 className="font-bold text-sm sm:text-base leading-tight line-clamp-1 text-foreground">
               {exercise.name}
             </h3>
@@ -679,7 +679,7 @@ export function ExerciseCard({
             <div className="flex items-center gap-2 text-[10px] sm:text-[11px] text-muted-foreground/80 font-medium">
               {exercise.mainTags && exercise.mainTags.length > 0 && (
                 <>
-                  <span className="w-1 h-1 rounded-full bg-zinc-700" />
+                  <span className="w-1 h-1 rounded-full bg-border" />
                   <span className="truncate">{exercise.mainTags.slice(0, 2).map(normalizeTagLabel).join(', ')}</span>
                 </>
               )}

@@ -39,12 +39,16 @@ Zastosuj te zasady w każdym komponencie, który generujesz:
 - **Monochromatyczna Baza:** 90% interfejsu powinno być czarno-biało-szare (użyj chłodnych szarości np. `slate` lub `zinc` dla bardziej profesjonalnego, medycznego sznytu).
 - **Kolor to Funkcja:** Używaj głównego koloru marki (Primary Color) WYŁĄCZNIE do elementów interaktywnych (przyciski akcji, aktywne zakładki, linki).
 - **Statusy:** Sukces (zielony), Błąd (czerwony), Ostrzeżenie (żółty) stosuj w bardzo rozbielonych pastelowych wersjach jako tła (np. `bg-green-50 text-green-700`), nigdy jako jaskrawe, nasycone bloki koloru.
+- **Theme-safe first:** Każdy komponent musi być zaprojektowany równolegle dla light/dark mode. Nie kończ pracy na jednym motywie.
+- **Semantyczne tokeny > palety na sztywno:** Dla bazy UI preferuj `bg-surface`, `bg-card`, `text-foreground`, `text-muted-foreground`, `border-border` zamiast `zinc/gray/slate`.
+- **Overlaye i akcje na media:** Jeśli używasz warstw na zdjęciach/wideo, zawsze dawaj varianty motywu (np. `bg-background/90 dark:bg-black/40`) i sprawdzaj kontrast ikon/tekstu.
 
 ## 5. Mikro-interakcje bez spowalniania (Performance first)
 
 - Wszelkie animacje (hover, focus, aktywacja) muszą być błyskawiczne (max 150-200ms) - używaj `transition-all duration-150 ease-in-out` ew. `duration-200`. Animacje i ruch muszą być powiązane z intuicją fizyki UI.
 - Każdy klikalny element MUSI mieć zaprojektowany stan `:hover` i pierścień `:focus-visible` (dla dostępności z klawiatury).
 - Zakaz layout-shiftów (skakania treści) podczas najeżdżania na elementy.
+- Stany `:hover`/`:focus` nie mogą pogarszać czytelności treści (szczególnie w light mode).
 
 ## 6. Proaktywne Interfejsy (B2B SaaS 2026 Standard)
 

@@ -14,6 +14,7 @@ import { UPDATE_BILLING_DETAILS_MUTATION } from '@/graphql/mutations';
 import { GET_BILLING_DETAILS_QUERY } from '@/graphql/queries';
 import type { GetBillingDetailsResponse, UpdateBillingDetailsResponse } from '@/types/apollo';
 import { billingDetailsSchema, type BillingDetailsFormValues } from '@/types/billing-details.types';
+import { isFeatureEnabled } from '@/lib/featureFlags';
 
 interface BillingDetailsDialogProps {
   readonly open: boolean;
@@ -50,6 +51,7 @@ function formatIbanForDisplay(inputValue: string): string {
 }
 
 export function BillingDetailsDialog({ open, onOpenChange, organizationId, onSaved }: Readonly<BillingDetailsDialogProps>) {
+  const isBillingDetailsApiEnabled = isFeatureEnabled('BILLING_DETAILS_API');
   const form = useForm<BillingDetailsFormValues>({
     resolver: zodResolver(billingDetailsSchema),
     defaultValues: EMPTY_VALUES,
@@ -57,8 +59,8 @@ export function BillingDetailsDialog({ open, onOpenChange, organizationId, onSav
 
   const { data, loading: isLoadingDetails } = useQuery<GetBillingDetailsResponse>(GET_BILLING_DETAILS_QUERY, {
     variables: { organizationId: organizationId || '' },
-    skip: !organizationId || !open,
-    errorPolicy: 'all',
+    skip: !organizationId || !open || !isBillingDetailsApiEnabled,
+    errorPolicy: 'ignore', // zmiana na ignore, zeby brak pola na backendzie nie wysypywal UI
     fetchPolicy: 'cache-and-network',
   });
 
@@ -78,7 +80,8 @@ export function BillingDetailsDialog({ open, onOpenChange, organizationId, onSav
       onError: (error) => {
         toast.error(`Błąd: ${error.message}`);
       },
-      refetchQueries: organizationId ? [{ query: GET_BILLING_DETAILS_QUERY, variables: { organizationId } }] : [],
+      refetchQueries:
+        organizationId && isBillingDetailsApiEnabled ? [{ query: GET_BILLING_DETAILS_QUERY, variables: { organizationId } }] : [],
     }
   );
 
@@ -105,6 +108,11 @@ export function BillingDetailsDialog({ open, onOpenChange, organizationId, onSav
   }, [data?.billingDetails, form, isLoadingDetails, open]);
 
   const handleSubmit = (values: BillingDetailsFormValues) => {
+    if (!isBillingDetailsApiEnabled) {
+      toast.error('Moduł danych rozliczeniowych nie jest jeszcze aktywny na tym środowisku');
+      return;
+    }
+
     if (!organizationId) {
       toast.error('Brak organizacji do zapisania danych rozliczeniowych');
       return;

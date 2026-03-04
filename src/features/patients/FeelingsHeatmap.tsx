@@ -27,12 +27,12 @@ export function FeelingsHeatmap({ data, className, title }: FeelingsHeatmapProps
 
     // Przyszłe dni (po dzisiaj) - wyszarzone
     if (day.date > now) {
-      return 'bg-zinc-900/30 border-zinc-800/50 opacity-50';
+      return 'bg-surface-light/50 border-border opacity-50';
     }
 
     // Przed rozpoczęciem planu - neutralne, bez alarmu
     if (day.isBeforeStart) {
-      return 'bg-zinc-900/30 border-zinc-800/50 opacity-40';
+      return 'bg-surface-light/40 border-border opacity-40';
     }
 
     // Wykonał trening
@@ -53,11 +53,11 @@ export function FeelingsHeatmap({ data, className, title }: FeelingsHeatmapProps
     // Nie ćwiczył
     if (day.isScheduled) {
       // Był zaplanowany ale nie ćwiczył - subtelne ostrzeżenie (nie czerwone!)
-      return 'bg-zinc-900/50 border-orange-500/30 hover:border-orange-500/50';
+      return 'bg-surface-light/70 border-orange-500/30 hover:border-orange-500/50';
     }
 
     // Nie był zaplanowany - neutralne
-    return 'bg-zinc-900/50 border-zinc-800 hover:border-zinc-600';
+    return 'bg-surface-light/80 border-border hover:border-border-light';
   };
 
   const formatTooltip = (day: DayData) => {
@@ -104,10 +104,10 @@ export function FeelingsHeatmap({ data, className, title }: FeelingsHeatmapProps
   };
 
   return (
-    <div className={cn('rounded-2xl border border-white/5 bg-zinc-900/50 p-6', className)}>
+    <div className={cn('rounded-2xl border border-border bg-surface dark:bg-zinc-900/50 p-6', className)}>
       <div className="flex justify-between items-center mb-6">
-        <h3 className="font-bold text-white text-sm">{title ?? `Regularność (Ostatnie ${data.length} dni)`}</h3>
-        <div className="flex gap-3 text-[10px] text-zinc-500 uppercase tracking-wider font-medium">
+        <h3 className="font-bold text-foreground text-sm">{title ?? `Regularność (Ostatnie ${data.length} dni)`}</h3>
+        <div className="flex gap-3 text-[10px] text-muted-foreground uppercase tracking-wider font-medium">
           <div className="flex items-center gap-1.5">
             <span className="w-2 h-2 rounded bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.4)]" />
             <span>OK</span>
@@ -121,7 +121,7 @@ export function FeelingsHeatmap({ data, className, title }: FeelingsHeatmapProps
             <span>Dyskomfort</span>
           </div>
           <div className="flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded bg-zinc-800 border border-zinc-700" />
+            <span className="w-2 h-2 rounded bg-surface-light border border-border" />
             <span>Brak</span>
           </div>
         </div>
@@ -132,7 +132,7 @@ export function FeelingsHeatmap({ data, className, title }: FeelingsHeatmapProps
           {/* Day labels */}
           <div className="grid grid-cols-7 gap-2">
             {dayLabels.map((label) => (
-              <div key={label} className="text-center text-zinc-600 text-[10px] uppercase pb-1">
+              <div key={label} className="text-center text-muted-foreground text-[10px] uppercase pb-1">
                 {label}
               </div>
             ))}
@@ -155,11 +155,11 @@ export function FeelingsHeatmap({ data, className, title }: FeelingsHeatmapProps
                       >
                         {/* Marker dla "dzisiaj" - biała kropka */}
                         {isToday && day.hasActivity && (
-                          <div className="absolute -top-1 -right-1 w-2 h-2 bg-white rounded-full" />
+                          <div className="absolute -top-1 -right-1 w-2 h-2 bg-primary rounded-full" />
                         )}
                       </div>
                     </TooltipTrigger>
-                    <TooltipContent side="top" className="bg-zinc-800 border-zinc-700 text-white max-w-[200px]">
+                    <TooltipContent side="top" className="bg-popover border-border text-popover-foreground max-w-[200px]">
                       <p className="whitespace-pre-line text-xs">{formatTooltip(day)}</p>
                     </TooltipContent>
                   </Tooltip>

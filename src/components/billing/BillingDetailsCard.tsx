@@ -12,6 +12,7 @@ import { GET_BILLING_DETAILS_QUERY } from '@/graphql/queries';
 import { GET_ORGANIZATION_BY_ID_QUERY } from '@/graphql/queries/organizations.queries';
 import type { GetBillingDetailsResponse, OrganizationByIdResponse } from '@/types/apollo';
 import { BillingDetailsDialog } from './BillingDetailsDialog';
+import { isFeatureEnabled } from '@/lib/featureFlags';
 
 // ========================================
 // Types
@@ -27,6 +28,7 @@ interface BillingDetailsCardProps {
 // ========================================
 
 export function BillingDetailsCard({ organizationId, className }: Readonly<BillingDetailsCardProps>) {
+  const isBillingDetailsApiEnabled = isFeatureEnabled('BILLING_DETAILS_API');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   const { data, loading, error } = useQuery(GET_ORGANIZATION_BY_ID_QUERY, {
@@ -38,15 +40,15 @@ export function BillingDetailsCard({ organizationId, className }: Readonly<Billi
     GET_BILLING_DETAILS_QUERY,
     {
       variables: { organizationId: organizationId || '' },
-      skip: !organizationId,
-      errorPolicy: 'all',
+      skip: !organizationId || !isBillingDetailsApiEnabled,
+      errorPolicy: 'ignore', // zmiana na ignore, zeby brak pola na backendzie nie wysypywal UI
       fetchPolicy: 'cache-and-network',
     }
   );
 
   const organization = (data as OrganizationByIdResponse)?.organizationById;
   const billingDetails = billingData?.billingDetails;
-  const hasBillingDetails = Boolean(billingDetails?.isComplete);
+  const hasBillingDetails = isBillingDetailsApiEnabled && Boolean(billingDetails?.isComplete);
   const completeBillingDetails = hasBillingDetails && billingDetails ? billingDetails : null;
 
   const formatNip = (rawNip: string) => {
@@ -61,7 +63,7 @@ export function BillingDetailsCard({ organizationId, className }: Readonly<Billi
     return `${normalizedIban.slice(0, 4)} **** **** **** **** ${normalizedIban.slice(-4)}`;
   };
 
-  if (loading || billingLoading) {
+  if (loading || (isBillingDetailsApiEnabled && billingLoading)) {
     return (
       <Card
         className={cn('border-border/40 bg-surface/50 backdrop-blur-sm', className)}
@@ -113,7 +115,7 @@ export function BillingDetailsCard({ organizationId, className }: Readonly<Billi
             <div className="flex items-center gap-3">
               <Avatar className="h-12 w-12 rounded-xl">
                 <AvatarImage src={organization.logoUrl} className="object-cover" />
-                <AvatarFallback className="rounded-xl bg-gradient-to-br from-primary to-primary-dark text-white text-lg font-bold">
+                <AvatarFallback className="rounded-xl bg-linear-to-br from-primary to-primary-dark text-white text-lg font-bold">
                   {organization.name?.[0] || 'F'}
                 </AvatarFallback>
               </Avatar>
@@ -121,7 +123,7 @@ export function BillingDetailsCard({ organizationId, className }: Readonly<Billi
               <div>
                 <p className="text-sm font-semibold text-foreground">{billingDetails?.companyName || organization.name}</p>
                 <p className="text-xs text-muted-foreground tabular-nums">
-                  {completeBillingDetails ? `NIP: ${formatNip(completeBillingDetails.nip)}` : 'Brak danych rozliczeniowych'}
+                  {completeBillingDetails ? `NIP: ${formatNip(completeBillingDetails.nip)}` : organization.contactEmail || 'Brak danych rozliczeniowych'}
                 </p>
               </div>
             </div>
@@ -149,14 +151,22 @@ export function BillingDetailsCard({ organizationId, className }: Readonly<Billi
               <p className="text-xs text-muted-foreground">Email: {completeBillingDetails.billingEmail}</p>
             </div>
           ) : (
-            <Button
-              variant="outline"
-              className="w-full"
-              onClick={() => setIsDialogOpen(true)}
-              data-testid="billing-details-add-btn"
-            >
-              Uzupełnij dane
-            </Button>
+            <>
+              {isBillingDetailsApiEnabled ? (
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => setIsDialogOpen(true)}
+                  data-testid="billing-details-add-btn"
+                >
+                  Uzupełnij dane
+                </Button>
+              ) : (
+                <p className="text-xs text-muted-foreground">
+                  Konfiguracja danych do faktury jest chwilowo niedostępna na tym środowisku.
+                </p>
+              )}
+            </>
           )}
 
           <div className="h-px bg-border/40 my-3" />
@@ -164,14 +174,16 @@ export function BillingDetailsCard({ organizationId, className }: Readonly<Billi
         </CardContent>
       </Card>
 
-      <BillingDetailsDialog
-        open={isDialogOpen}
-        onOpenChange={setIsDialogOpen}
-        organizationId={organizationId}
-        onSaved={() => {
-          refetchBillingDetails();
-        }}
-      />
+      {isBillingDetailsApiEnabled && (
+        <BillingDetailsDialog
+          open={isDialogOpen}
+          onOpenChange={setIsDialogOpen}
+          organizationId={organizationId}
+          onSaved={() => {
+            refetchBillingDetails();
+          }}
+        />
+      )}
     </>
   );
 }

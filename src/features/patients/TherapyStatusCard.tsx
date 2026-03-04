@@ -29,9 +29,9 @@ const statusConfig: Record<
     bgColor: 'bg-green-500/5',
     iconBg: 'bg-green-500/10',
     iconBorder: 'border-green-500/20',
-    iconColor: 'text-green-500',
+    iconColor: 'text-green-600 dark:text-green-400',
     badgeBg: 'bg-green-500/20',
-    badgeText: 'text-green-400',
+    badgeText: 'text-green-700 dark:text-green-300',
     badgeLabel: 'W NORMIE',
     Icon: TrendingUp,
   },
@@ -40,9 +40,9 @@ const statusConfig: Record<
     bgColor: 'bg-yellow-500/5',
     iconBg: 'bg-yellow-500/10',
     iconBorder: 'border-yellow-500/20',
-    iconColor: 'text-yellow-500',
+    iconColor: 'text-yellow-700 dark:text-yellow-400',
     badgeBg: 'bg-yellow-500/20',
-    badgeText: 'text-yellow-400',
+    badgeText: 'text-yellow-700 dark:text-yellow-300',
     badgeLabel: 'UWAGA',
     Icon: AlertTriangle,
   },
@@ -51,21 +51,21 @@ const statusConfig: Record<
     bgColor: 'bg-red-500/5',
     iconBg: 'bg-red-500/10',
     iconBorder: 'border-red-500/20',
-    iconColor: 'text-red-500',
+    iconColor: 'text-red-600 dark:text-red-400',
     badgeBg: 'bg-red-500/20',
-    badgeText: 'text-red-400',
+    badgeText: 'text-red-700 dark:text-red-300',
     badgeLabel: 'ALARM',
     Icon: AlertCircle,
   },
 };
 
-export function TherapyStatusCard({ statusResult, lastActivityLabel, className }: TherapyStatusCardProps) {
+export function TherapyStatusCard({ statusResult, lastActivityLabel, className }: Readonly<TherapyStatusCardProps>) {
   const config = statusConfig[statusResult.status];
   const { Icon } = config;
 
   return (
     <div
-      className={cn('relative overflow-hidden rounded-2xl border bg-zinc-900/50 p-6', config.borderColor, className)}
+      className={cn('relative overflow-hidden rounded-2xl border border-border bg-surface dark:bg-zinc-900/50 p-6', config.borderColor, className)}
     >
       {/* Background glow */}
       <div className={cn('absolute inset-0 pointer-events-none', config.bgColor)} />
@@ -85,18 +85,18 @@ export function TherapyStatusCard({ statusResult, lastActivityLabel, className }
         {/* Content */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
-            <h3 className="text-[10px] uppercase tracking-wider font-bold text-zinc-400">Status Terapii</h3>
+            <h3 className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground">Status Terapii</h3>
             <span className={cn('px-2 py-0.5 rounded-full text-[10px] font-bold', config.badgeBg, config.badgeText)}>
               {config.badgeLabel}
             </span>
           </div>
-          <p className="text-2xl font-bold text-white mb-2">
+          <p className="text-2xl font-bold text-foreground mb-2">
             {statusResult.title}
             {lastActivityLabel && (
-              <span className="text-lg font-normal text-zinc-400 ml-2">(Ostatnio: {lastActivityLabel})</span>
+              <span className="text-lg font-normal text-muted-foreground ml-2">(Ostatnio: {lastActivityLabel})</span>
             )}
           </p>
-          <p className="text-sm text-zinc-400 leading-relaxed">{statusResult.description}</p>
+          <p className="text-sm text-muted-foreground leading-relaxed">{statusResult.description}</p>
         </div>
       </div>
     </div>

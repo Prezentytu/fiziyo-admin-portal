@@ -37,7 +37,7 @@ const eventConfig: Record<
   },
   message: {
     dotColor: 'bg-blue-500',
-    lineColor: 'border-zinc-800',
+    lineColor: 'border-border/60',
     priority: 2,
   },
   training: {
@@ -47,8 +47,8 @@ const eventConfig: Record<
     glowEffect: true,
   },
   inactive: {
-    dotColor: 'bg-zinc-600',
-    lineColor: 'border-zinc-800',
+    dotColor: 'bg-muted-foreground',
+    lineColor: 'border-border/60',
     priority: 4,
   },
 };
@@ -137,21 +137,21 @@ function progressToEvents(progress: ExerciseProgressData[], maxDays: number = 7)
   return events;
 }
 
-export function EventJournal({ progress, maxEvents = 5, className }: EventJournalProps) {
+export function EventJournal({ progress, maxEvents = 5, className }: Readonly<EventJournalProps>) {
   const events = progressToEvents(progress, maxEvents);
 
   if (events.length === 0) {
     return (
-      <div className={cn('rounded-2xl border border-white/5 bg-zinc-900/50 p-6', className)}>
-        <h3 className="font-bold text-white mb-6">Dziennik Zdarzeń</h3>
-        <p className="text-sm text-zinc-500 text-center py-8">Brak zdarzeń do wyświetlenia</p>
+      <div className={cn('rounded-2xl border border-border bg-surface dark:bg-zinc-900/50 p-6', className)}>
+        <h3 className="font-bold text-foreground mb-6">Dziennik Zdarzeń</h3>
+        <p className="text-sm text-muted-foreground text-center py-8">Brak zdarzeń do wyświetlenia</p>
       </div>
     );
   }
 
   return (
-    <div className={cn('rounded-2xl border border-white/5 bg-zinc-900/50 p-6 flex flex-col h-full', className)}>
-      <h3 className="font-bold text-white mb-6">Dziennik Zdarzeń</h3>
+    <div className={cn('rounded-2xl border border-border bg-surface dark:bg-zinc-900/50 p-6 flex flex-col h-full', className)}>
+      <h3 className="font-bold text-foreground mb-6">Dziennik Zdarzeń</h3>
 
       <div className="space-y-6 overflow-y-auto pr-2 flex-1">
         {events.map((event, index) => {
@@ -163,7 +163,7 @@ export function EventJournal({ progress, maxEvents = 5, className }: EventJourna
               key={event.id}
               className={cn(
                 'relative pl-6 border-l-2',
-                isLast ? 'border-zinc-800' : config.lineColor,
+                isLast ? 'border-border/60' : config.lineColor,
                 !isLast && 'pb-1'
               )}
             >
@@ -177,16 +177,16 @@ export function EventJournal({ progress, maxEvents = 5, className }: EventJourna
               />
 
               {/* Content */}
-              <div className="text-[10px] text-zinc-500 mb-1">{formatDateWithTime(event.date)}</div>
-              <p className={cn('text-sm mb-1', event.type === 'inactive' ? 'text-zinc-400' : 'text-white font-medium')}>
+              <div className="text-[10px] text-muted-foreground mb-1">{formatDateWithTime(event.date)}</div>
+              <p className={cn('text-sm mb-1', event.type === 'inactive' ? 'text-muted-foreground' : 'text-foreground font-medium')}>
                 {event.title}
               </p>
 
-              {event.description && <p className="text-zinc-500 text-xs italic">&ldquo;{event.description}&rdquo;</p>}
+              {event.description && <p className="text-muted-foreground text-xs italic">&ldquo;{event.description}&rdquo;</p>}
 
               {event.feeling && (
                 <div className="flex items-center gap-2 mt-1">
-                  <span className="px-2 py-0.5 rounded bg-zinc-800 border border-zinc-700 text-[10px] text-zinc-300">
+                  <span className="px-2 py-0.5 rounded bg-surface-elevated border border-border text-[10px] text-muted-foreground">
                     Ocena: {event.feeling}
                   </span>
                 </div>

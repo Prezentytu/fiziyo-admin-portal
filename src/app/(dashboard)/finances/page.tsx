@@ -9,6 +9,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { LoadingState } from '@/components/shared/LoadingState';
 import { AccessGuard } from '@/components/shared/AccessGuard';
 import { useOrganization } from '@/contexts/OrganizationContext';
+import { isFeatureEnabled } from '@/lib/featureFlags';
 import {
   WalletCard,
   GamificationProgress,
@@ -69,6 +70,7 @@ function EmptyStateTeaser({ onInvite }: { onInvite: () => void }) {
 // ========================================
 
 export default function FinancesPage() {
+  const isStripeConnectEnabled = isFeatureEnabled('STRIPE_CONNECT_ROLLOUT');
   const { currentOrganization, isLoading: orgLoading } = useOrganization();
   const organizationId = currentOrganization?.organizationId;
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
@@ -103,10 +105,11 @@ export default function FinancesPage() {
 
   return (
     <AccessGuard requiredAccess="admin" fallbackUrl="/">
-      {/* Stripe Return Handler - obsługa powrotu z onboardingu */}
-      <Suspense fallback={null}>
-        <StripeReturnHandler organizationId={organizationId} />
-      </Suspense>
+      {isStripeConnectEnabled && (
+        <Suspense fallback={null}>
+          <StripeReturnHandler organizationId={organizationId} />
+        </Suspense>
+      )}
 
       <div className="space-y-4">
         {/* Header */}
@@ -156,13 +159,15 @@ export default function FinancesPage() {
               <History className="h-3.5 w-3.5" />
               Historia
             </TabsTrigger>
-            <TabsTrigger
-              value="payouts"
-              className="gap-1.5 px-4 py-1.5 rounded-lg text-sm font-medium text-muted-foreground data-[state=active]:text-primary data-[state=active]:shadow-sm transition-all"
-            >
-              <Settings className="h-3.5 w-3.5" />
-              Ustawienia Wypłat
-            </TabsTrigger>
+            {isStripeConnectEnabled && (
+              <TabsTrigger
+                value="payouts"
+                className="gap-1.5 px-4 py-1.5 rounded-lg text-sm font-medium text-muted-foreground data-[state=active]:text-primary data-[state=active]:shadow-sm transition-all"
+              >
+                <Settings className="h-3.5 w-3.5" />
+                Ustawienia Wypłat
+              </TabsTrigger>
+            )}
           </TabsList>
 
           {/* Chart Tab */}
@@ -187,13 +192,15 @@ export default function FinancesPage() {
             )}
           </TabsContent>
 
-          {/* Payouts Tab */}
-          <TabsContent value="payouts" className="mt-6 space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <PayoutScheduleCard organizationId={organizationId} />
-              <StripeConnectCard organizationId={organizationId} />
-            </div>
-          </TabsContent>
+          {/* TODO: Re-enable payouts tab when Stripe rollout is enabled. */}
+          {isStripeConnectEnabled && (
+            <TabsContent value="payouts" className="mt-6 space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <PayoutScheduleCard organizationId={organizationId} />
+                <StripeConnectCard organizationId={organizationId} />
+              </div>
+            </TabsContent>
+          )}
         </Tabs>
       </div>
 

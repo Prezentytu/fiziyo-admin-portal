@@ -301,6 +301,15 @@ Prefiksy modułów: `auth-`, `nav-`, `exercise-`, `set-`, `patient-`, `org-`, `s
 <div style={{ backgroundColor: '#1a1a1a' }}>
 ```
 
+### Theme-safe UI (LIGHT + DARK) - OBOWIĄZKOWE
+
+- Każda nowa lub edytowana część UI MUSI być czytelna w obu motywach od pierwszej wersji.
+- Bazowe style buduj na tokenach semantycznych: `bg-surface`, `bg-card`, `text-foreground`, `text-muted-foreground`, `border-border`.
+- Unikaj hardcoded baz kolorów (`zinc`, `gray`, `slate`, `white`, `black`) dla kontenerów i typografii; wyjątki status/media tylko z poprawnym wariantem `dark:`.
+- Hover/focus nie mogą obniżać kontrastu tekstu; stan interakcji ma utrzymać lub poprawić czytelność.
+- Dla kart z overlayami i pływającymi akcjami stosuj tła i bordery theme-aware (np. `bg-background/90 dark:bg-black/40`, `border-border` + `dark:` override).
+- Przed zakończeniem zmian UI uruchom lint dla zmienionych plików i popraw problemy dodane w tej iteracji.
+
 ## Bezpieczeństwo i jakość
 
 ### Walidacja danych
