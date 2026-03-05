@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { useQuery, useMutation } from '@apollo/client/react';
-import { Loader2, ArrowLeft, ArrowRight, FolderKanban, Users, Calendar, Pencil, Sparkles, X } from 'lucide-react';
+import { Loader2, ArrowLeft, ArrowRight, Users, Calendar, Pencil, Sparkles, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { addDays, differenceInDays, format } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -491,12 +491,12 @@ function AssignmentWizardContent({
   // Handle create new set - sets mode to creating new and navigates to customize step
   const handleCreateSet = useCallback((searchQuery?: string) => {
     const today = format(new Date(), 'dd.MM.yyyy');
-    
+
     // Użyj przekazanej nazwy z wyszukiwarki lub domyślnej
-    const baseName = searchQuery && searchQuery.trim().length > 0 
-      ? searchQuery.trim() 
+    const baseName = searchQuery && searchQuery.trim().length > 0
+      ? searchQuery.trim()
       : 'Nowy zestaw';
-      
+
     const setNamePattern = preselectedPatient
       ? `Plan dla ${preselectedPatient.name} - ${today}`
       : `${baseName} - ${today}`;
@@ -1206,86 +1206,100 @@ function AssignmentWizardContent({
         <VisuallyHidden.Root>
           <DialogTitle>Przypisanie zestawu – {stepInfo.title}</DialogTitle>
         </VisuallyHidden.Root>
-        {/* Toolbar: jedna bryła, jeden separator na dole (bez wewnętrznych linii) */}
-        <div className="flex flex-row items-stretch gap-0 min-h-[56px] max-h-[70px] shrink-0 bg-surface/95 backdrop-blur-sm border-b border-border">
-          <div className="w-full lg:w-[40%] flex items-center gap-2 min-w-0 px-4 py-2">
-            {currentStep === 'customize-set' ? (
-              <div className="flex-1 flex items-center gap-2 min-w-0 rounded-md border border-transparent px-2 py-1.5 min-h-[36px] hover:bg-surface-light/80 hover:border-border focus-within:bg-surface focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 transition-colors cursor-text">
-                <input
-                  type="text"
-                  value={planName}
-                  onChange={(e) => setPlanName(e.target.value)}
-                  placeholder="Nazwa planu dla pacjenta"
-                  autoComplete="off"
-                  data-testid="customize-set-name-input"
-                  className="flex-1 min-w-0 bg-transparent text-base font-semibold text-foreground placeholder-muted-foreground/50 focus:outline-none border-none p-0 cursor-text"
-                />
-                <Pencil className="h-3.5 w-3.5 text-muted-foreground shrink-0" aria-hidden />
-                <button
-                  type="button"
-                  title="Wygeneruj nazwę AI"
-                  className={cn(
-                    "p-1 rounded text-muted-foreground hover:text-secondary hover:bg-secondary/10 shrink-0",
-                    isGeneratingName && "opacity-50 pointer-events-none cursor-not-allowed"
-                  )}
-                  data-testid="customize-set-ai-btn"
-                  aria-label="Wygeneruj nazwę AI"
-                  onClick={handleGenerateAIName}
-                  disabled={isGeneratingName}
-                >
-                  {isGeneratingName ? (
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  ) : (
-                    <Sparkles className="h-3.5 w-3.5" />
-                  )}
-                </button>
-              </div>
-            ) : (
-              <span className="text-base font-semibold text-foreground truncate block min-w-0">{stepInfo.title}</span>
-            )}
+        {/* Toolbar: row-1 = eyebrow (h-7), row-2 = input + stepper + X (h-9). All on same grid → perfect alignment */}
+        <div className="shrink-0 bg-surface/95 backdrop-blur-sm border-b border-border px-6">
+          {/* Row 1: eyebrow — fixed height with padding */}
+          <div className="h-7 flex items-end pb-1">
+            <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60 leading-none">
+              Przypisanie zestawu
+            </span>
           </div>
-          <div className="flex-1 flex items-center gap-3 min-w-0 px-4 py-2">
-            {selectedSet && currentStep !== 'select-set' && currentStep !== 'customize-set' && (
-              <div className="hidden sm:flex items-center gap-2 px-2 py-1 rounded-md bg-surface-light/40 text-[10px] text-muted-foreground shrink-0">
-                <FolderKanban className="h-3 w-3" />
-                <span className="font-medium text-foreground max-w-[80px] truncate">{selectedSet.name}</span>
-                {selectedPatients.length > 0 && currentStep !== 'select-patients' && (
-                  <>
-                    <span className="text-border">·</span>
-                    <Users className="h-3 w-3" />
-                    <span>{selectedPatients.length}</span>
-                  </>
-                )}
-                {currentStep === 'summary' && (
-                  <>
-                    <span className="text-border">·</span>
-                    <Calendar className="h-3 w-3" />
-                    <span>{durationDays}d</span>
-                  </>
-                )}
-              </div>
-            )}
-            <div className="flex-1 min-w-0 flex items-center gap-2">
-              <WizardStepIndicator
-                steps={steps}
-                currentStep={currentStep}
-                completedSteps={completedSteps}
-                onStepClick={goToStep}
-                allowNavigation={completedSteps.size > 0}
-                variant="compact"
-              />
+          {/* Row 2: input (left) + stepper + X (right) — all h-9, same row → centers aligned by definition */}
+          <div className="h-11 flex items-center gap-0 -mx-1">
+            {/* Left: plan name editable or step title */}
+            <div className="w-full lg:w-[40%] min-w-0 pr-3 flex items-center gap-1">
+              {(currentStep !== 'select-set' || selectedSet || isCreatingNewSet) ? (
+                <label className="flex-1 flex h-9 items-center min-w-0 rounded-md border border-transparent px-1.5 focus-within:bg-surface focus-within:border-border focus-within:ring-1 focus-within:ring-primary/20 transition-colors cursor-text hover:bg-surface-light/50">
+                  <input
+                    type="text"
+                    value={planName}
+                    onChange={(e) => setPlanName(e.target.value)}
+                    placeholder="Nazwa planu dla pacjenta"
+                    autoComplete="off"
+                    data-testid="wizard-plan-name-input"
+                    className="peer flex-1 min-w-0 bg-transparent text-base font-semibold text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-0 border-none p-0 cursor-text"
+                  />
+                  <Pencil className="h-3.5 w-3.5 text-muted-foreground/40 shrink-0 ml-2 peer-focus:hidden transition-opacity pointer-events-none" aria-hidden />
+                  <button
+                    type="button"
+                    title="Wygeneruj nazwę AI"
+                    className={cn(
+                      "p-1.5 rounded-md text-muted-foreground hover:text-secondary hover:bg-secondary/10 shrink-0 transition-colors ml-1 relative z-10",
+                      isGeneratingName && "opacity-50 pointer-events-none cursor-not-allowed"
+                    )}
+                    data-testid="wizard-plan-name-ai-btn"
+                    aria-label="Wygeneruj nazwę AI"
+                    onClick={(e) => { e.preventDefault(); handleGenerateAIName(); }}
+                    disabled={isGeneratingName}
+                  >
+                    {isGeneratingName ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <Sparkles className="h-3.5 w-3.5" />
+                    )}
+                  </button>
+                </label>
+              ) : (
+                <span className="flex h-9 items-center text-base font-semibold text-muted-foreground/60 truncate min-w-0 px-1.5">
+                  {stepInfo.title}
+                </span>
+              )}
             </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={onCloseAttempt}
-              className="h-9 w-9 min-w-[2.25rem] shrink-0 px-3 text-muted-foreground hover:text-foreground rounded-md"
-              data-testid="assign-wizard-close-btn"
-              aria-label="Zamknij"
-            >
-              <X className="h-4 w-4" />
-            </Button>
+            {/* Right: context chip + stepper + X — all h-9, centered in the same row */}
+            <div className="flex-1 flex items-center gap-3 min-w-0 pl-3">
+              {selectedPatients.length > 0 || currentStep === 'summary' ? (
+                <div className="hidden sm:flex items-center gap-2 px-2 py-1 rounded-md bg-surface-light/40 text-[10px] text-muted-foreground shrink-0">
+                  {selectedPatients.length > 0 && (
+                    <div className="flex items-center gap-1">
+                      <Users className="h-3 w-3" />
+                      <span className="font-medium">{selectedPatients.length} {selectedPatients.length === 1 ? 'pacjent' : 'pacjentów'}</span>
+                    </div>
+                  )}
+                  {selectedPatients.length > 0 && currentStep === 'summary' && (
+                    <span className="text-border">·</span>
+                  )}
+                  {currentStep === 'summary' && (
+                    <div className="flex items-center gap-1">
+                      <Calendar className="h-3 w-3" />
+                      <span className="font-medium">{durationDays} dni</span>
+                    </div>
+                  )}
+                </div>
+              ) : null}
+              <div className="flex-1 min-w-0 flex items-center justify-end gap-2">
+                <WizardStepIndicator
+                  steps={steps}
+                  currentStep={currentStep}
+                  completedSteps={completedSteps}
+                  onStepClick={goToStep}
+                  allowNavigation={completedSteps.size > 0}
+                  variant="compact"
+                />
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={onCloseAttempt}
+                className="h-9 w-9 min-w-9 shrink-0 text-muted-foreground hover:text-foreground rounded-md"
+                data-testid="assign-wizard-close-btn"
+                aria-label="Zamknij"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
+          {/* Bottom padding row — same height as eyebrow row to center the main row vertically */}
+          <div className="h-7" />
         </div>
 
         {/* Content - overflow-hidden dla clip animacji, scroll wewnątrz */}
@@ -1333,7 +1347,7 @@ function AssignmentWizardContent({
               className={cn(
                 'shadow-lg shadow-primary/20 min-w-[160px] transition-all duration-300',
                 isLastStep &&
-                  'bg-gradient-to-r from-primary to-emerald-500 hover:from-primary-dark hover:to-emerald-600'
+                  'bg-linear-to-r from-primary to-emerald-500 hover:from-primary-dark hover:to-emerald-600'
               )}
               data-testid={isLastStep ? 'assign-summary-submit-btn' : 'assign-wizard-next-btn'}
             >

@@ -603,22 +603,22 @@ export function ExerciseSetBuilder({
       <div className="flex-1 flex overflow-hidden">
         {/* LEFT COLUMN - Library (40%) */}
         <div className="w-full lg:w-[40%] flex flex-col border-r border-border min-w-0">
-          {/* Search and filters */}
-          <div className="p-4 border-b border-border space-y-3">
-            <div className="flex items-center gap-2">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Szukaj ćwiczeń..."
-                  className="h-10 pl-10 bg-surface border-border placeholder:text-muted-foreground/50"
-                  data-testid={`${testIdPrefix}-search-input`}
-                />
-              </div>
+          {/* Search header */}
+          <div className="h-[72px] px-6 py-4 border-b border-border flex items-center shrink-0">
+            <div className="relative w-full">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Szukaj ćwiczeń..."
+                className="h-10 pl-10 bg-surface border-border placeholder:text-muted-foreground/50"
+                data-testid={`${testIdPrefix}-search-input`}
+              />
             </div>
+          </div>
 
-            {/* Source filters - same badge style as exercises page */}
+          {/* Source filters */}
+          <div className="px-6 py-3 border-b border-border bg-surface/30 shrink-0">
             <div className="flex flex-wrap gap-1.5">
               <button
                 type="button"
@@ -666,8 +666,6 @@ export function ExerciseSetBuilder({
                 <span className="font-semibold">{fiziyoCount}</span>
               </button>
             </div>
-
-
           </div>
 
           {/* Exercise list */}
@@ -747,7 +745,7 @@ export function ExerciseSetBuilder({
         {/* RIGHT COLUMN - Canvas/Set (60%) */}
         <div className="hidden lg:flex lg:flex-1 flex-col bg-surface/30 overflow-hidden min-w-0">
           {/* Header with Hero Duration */}
-          <div className="px-4 py-3 border-b border-border flex items-center justify-between gap-2 shrink-0">
+          <div className="h-[72px] px-6 py-4 border-b border-border flex items-center justify-between gap-2 shrink-0">
             <div className="flex items-center gap-3 min-w-0">
               <h3 className="font-semibold text-sm text-foreground">W zestawie</h3>
               <Badge variant="secondary" className="h-5 px-1.5 text-[10px] bg-surface-light text-muted-foreground border-border shrink-0">

@@ -48,6 +48,7 @@ import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { ImagePlaceholder } from '@/components/shared/ImagePlaceholder';
 import { getMediaUrl } from '@/utils/mediaUrl';
+import { countBySource, filterExercisesBySource, type ExerciseSourceFilter } from '@/utils/exerciseSourceFilter';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { ColorBadge } from '@/components/shared/ColorBadge';
 import { ImageLightbox } from '@/components/shared/ImageLightbox';
@@ -87,6 +88,7 @@ interface ExerciseTag {
 interface Exercise {
   id: string;
   name: string;
+  scope?: string;
   type?: string;
   patientDescription?: string;
   side?: string;
@@ -332,7 +334,7 @@ export function CreateSetWizard({
   const [description, setDescription] = useState('');
   const [showDescription, setShowDescription] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState('all');
+  const [sourceFilter, setSourceFilter] = useState<ExerciseSourceFilter>('all');
   const [selectedInstances, setSelectedInstances] = useState<ExerciseInstance[]>([]);
   const [exerciseParams, setExerciseParams] = useState<Map<string, ExerciseParams>>(new Map());
   const [showCloseConfirm, setShowCloseConfirm] = useState(false);
@@ -367,7 +369,7 @@ export function CreateSetWizard({
       setDescription('');
       setShowDescription(false);
       setSearchQuery('');
-      setCategoryFilter('all');
+      setSourceFilter('all');
       setSelectedInstances([]);
       setExerciseParams(new Map());
       setShowCloseConfirm(false);
@@ -482,53 +484,8 @@ export function CreateSetWizard({
       .slice(0, 10);
   }, [exercises, exercisePopularity]);
 
-  // Category filters
-  const quickStartCategories = useMemo(() => {
-    const tagExerciseCounts: Record<string, number> = {};
-
-    for (const exercise of exercises) {
-      const exerciseTags = getExerciseTags(exercise);
-      for (const tag of exerciseTags) {
-        if (tag.id) {
-          tagExerciseCounts[tag.id] = (tagExerciseCounts[tag.id] || 0) + 1;
-        }
-      }
-    }
-
-    const mainTags = tags.filter((tag) => tag.isMain);
-    const tagsToShow =
-      mainTags.length > 0
-        ? mainTags
-        : tags.sort((a, b) => (tagExerciseCounts[b.id] || 0) - (tagExerciseCounts[a.id] || 0)).slice(0, 8);
-
-    return tagsToShow
-      .map((tag) => ({
-        id: tag.id,
-        label: tag.name,
-        color: tag.color || '#22c55e',
-        exerciseCount: tagExerciseCounts[tag.id] || 0,
-      }))
-      .filter((cat) => cat.exerciseCount > 0)
-      .sort((a, b) => b.exerciseCount - a.exerciseCount)
-      .slice(0, 8);
-  }, [exercises, tags, getExerciseTags]);
-
-  const categoryFilters = useMemo(() => {
-    return [
-      { id: 'all', label: 'Wszystkie' },
-      ...quickStartCategories.map((cat) => ({ id: cat.id, label: cat.label })),
-    ];
-  }, [quickStartCategories]);
-
   const filteredExercises = useMemo(() => {
-    let result = exercises;
-
-    if (categoryFilter !== 'all') {
-      result = result.filter((ex) => {
-        const allTags = getExerciseTags(ex);
-        return allTags.some((tag) => tag.id === categoryFilter);
-      });
-    }
+    let result = filterExercisesBySource(exercises, sourceFilter);
 
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
@@ -541,7 +498,16 @@ export function CreateSetWizard({
     }
 
     return result;
-  }, [exercises, searchQuery, categoryFilter, getExerciseTags]);
+  }, [exercises, searchQuery, sourceFilter, getExerciseTags]);
+
+  const { totalCount, organizationCount, fiziyoCount } = useMemo(() => {
+    const counts = countBySource(exercises);
+    return {
+      totalCount: counts.total,
+      organizationCount: counts.organization,
+      fiziyoCount: counts.fiziyo,
+    };
+  }, [exercises]);
 
   // Params helpers
   const getDefaultParams = useCallback(
@@ -788,91 +754,104 @@ export function CreateSetWizard({
         <VisuallyHidden.Root>
           <DialogTitle>Nowy zestaw ćwiczeń</DialogTitle>
         </VisuallyHidden.Root>
-        {/* Nagłówek: jedna bryła (toolbar + Dodaj opis), jeden separator na dole */}
+        {/* Nagłówek: ta sama geometria co AssignmentWizard (eyebrow + input row + dolny spacer) */}
         <div className="shrink-0 bg-surface/95 backdrop-blur-sm border-b border-border">
-          <div className="flex flex-row items-stretch gap-0 min-h-[56px] max-h-[70px]">
-            <div className="w-full lg:w-[40%] flex items-center min-w-0 px-4 py-2">
-            <div className="flex-1 flex items-center gap-2 min-w-0 rounded-md border border-transparent px-2 py-1.5 min-h-[36px] hover:bg-surface-light/80 hover:border-border focus-within:bg-surface focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 transition-colors cursor-text">
-              <input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="np. Rehabilitacja kolana - tydzień 1"
-                autoFocus
-                autoComplete="off"
-                data-testid="set-composer-name-input"
-                className="flex-1 min-w-0 bg-transparent text-base font-semibold text-foreground placeholder-muted-foreground/50 focus:outline-none border-none p-0 cursor-text"
-              />
-              <Pencil className="h-3.5 w-3.5 text-muted-foreground shrink-0" aria-hidden />
-              <button
-                type="button"
-                onClick={handleGenerateAIName}
-                title="Wygeneruj nazwę AI"
-                className={cn(
-                  'p-1 rounded shrink-0',
-                  isGeneratingName
-                    ? 'text-muted-foreground cursor-not-allowed opacity-50'
-                    : 'text-muted-foreground hover:text-secondary hover:bg-secondary/10'
-                )}
-                data-testid="set-composer-ai-btn"
-                aria-label="Wygeneruj nazwę AI"
-                disabled={isGeneratingName}
-              >
-                {isGeneratingName ? (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                ) : (
-                  <Sparkles className="h-3.5 w-3.5" />
-                )}
-              </button>
+          <div className="px-6">
+            <div className="h-7 flex items-end pb-1">
+              <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60 leading-none">
+                Nazwa zestawu
+              </span>
             </div>
-          </div>
-          <div className="flex-1 flex items-center justify-end gap-3 min-w-0 px-4 py-2">
-            {patientContext && (
-              <div className="flex items-center gap-2 text-[10px] text-muted-foreground shrink-0">
-                <span>Dla:</span>
-                <span className="font-medium text-foreground">{patientContext.patientName}</span>
-                {autoAssign && (
-                  <Badge variant="secondary" className="text-[9px] bg-surface-light border-border text-muted-foreground">
-                    Auto-przypisanie
-                  </Badge>
-                )}
+            <div className="h-11 flex items-center gap-0 -mx-1">
+              <div className="w-full lg:w-[40%] min-w-0 pr-3 flex items-center gap-1">
+                <label className="flex-1 flex h-9 items-center min-w-0 rounded-md border border-transparent px-1.5 focus-within:bg-surface focus-within:border-border focus-within:ring-1 focus-within:ring-primary/20 transition-colors cursor-text hover:bg-surface-light/50">
+                  <input
+                    type="text"
+                    value={name}
+                    onChange={(event) => setName(event.target.value)}
+                    placeholder="np. Rehabilitacja kolana - tydzień 1"
+                    autoFocus
+                    autoComplete="off"
+                    data-testid="set-composer-name-input"
+                    className="peer flex-1 min-w-0 bg-transparent text-base font-semibold text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-0 border-none p-0 cursor-text"
+                  />
+                  <Pencil className="h-3.5 w-3.5 text-muted-foreground/40 shrink-0 ml-2 peer-focus:hidden transition-opacity pointer-events-none" aria-hidden />
+                  <button
+                    type="button"
+                    onClick={(e) => { e.preventDefault(); handleGenerateAIName(); }}
+                    title="Wygeneruj nazwę AI"
+                    className={cn(
+                      'p-1.5 rounded-md shrink-0 transition-colors ml-1 relative z-10',
+                      isGeneratingName
+                        ? 'text-muted-foreground cursor-not-allowed opacity-50'
+                        : 'text-muted-foreground hover:text-secondary hover:bg-secondary/10'
+                    )}
+                    data-testid="set-composer-ai-btn"
+                    aria-label="Wygeneruj nazwę AI"
+                    disabled={isGeneratingName}
+                  >
+                    {isGeneratingName ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <Sparkles className="h-3.5 w-3.5" />
+                    )}
+                  </button>
+                </label>
               </div>
-            )}
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handleCloseAttempt}
-              className="h-9 w-9 min-w-[2.25rem] shrink-0 px-3 text-muted-foreground hover:text-foreground rounded-md"
-              aria-label="Zamknij"
-            >
-              <X className="h-4 w-4" />
-            </Button>
+              <div className="flex-1 flex items-center justify-end gap-3 min-w-0 pl-3">
+                {patientContext && (
+                  <div className="flex items-center gap-2 text-[10px] text-muted-foreground shrink-0">
+                    <span>Dla:</span>
+                    <span className="font-medium text-foreground">{patientContext.patientName}</span>
+                    {autoAssign && (
+                      <Badge variant="secondary" className="text-[9px] bg-surface-light border-border text-muted-foreground">
+                        Auto-przypisanie
+                      </Badge>
+                    )}
+                  </div>
+                )}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={handleCloseAttempt}
+                  className="h-9 w-9 min-w-9 shrink-0 text-muted-foreground hover:text-foreground rounded-md"
+                  aria-label="Zamknij"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+            
+            {/* Row 3: Bottom spacer + Collapsible trigger (idealne wykorzystanie przestrzeni h-7 i wyrównanie) */}
+            <Collapsible open={showDescription} onOpenChange={setShowDescription}>
+              <div className="h-7 flex items-start -mx-1">
+                <div className="w-full lg:w-[40%] pr-3 px-1.5 flex items-start">
+                  <CollapsibleTrigger asChild>
+                    <button
+                      type="button"
+                      className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors rounded-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary pt-0.5"
+                    >
+                      <ChevronDown className={cn('h-3.5 w-3.5 transition-transform', showDescription && 'rotate-180')} />
+                      {description ? 'Edytuj opis' : 'Dodaj opis'}
+                    </button>
+                  </CollapsibleTrigger>
+                </div>
+              </div>
+              <CollapsibleContent>
+                <div className="pb-5 pt-1 -mx-1">
+                  <div className="w-full lg:w-[40%] pr-3 px-1.5">
+                    <Textarea
+                      value={description}
+                      onChange={(e) => setDescription(e.target.value)}
+                      placeholder="Opisz cel zestawu (np. wzmocnienie mięśnia czworogłowego)..."
+                      className="h-[68px] min-h-[68px] text-sm resize-none bg-surface border-border placeholder:text-muted-foreground/50 w-full focus-visible:ring-1 focus-visible:ring-primary shadow-sm"
+                      data-testid="set-composer-description-input"
+                    />
+                  </div>
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
           </div>
-          </div>
-
-          {/* Collapsible description - w tej samej bryle co toolbar, bez własnej linii */}
-          <Collapsible open={showDescription} onOpenChange={setShowDescription}>
-            <div className="px-4 py-1">
-            <CollapsibleTrigger asChild>
-              <button
-                type="button"
-                className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground transition-colors"
-              >
-                <ChevronDown className={cn('h-3 w-3 transition-transform', showDescription && 'rotate-180')} />
-                {description ? 'Edytuj opis' : 'Dodaj opis'}
-              </button>
-            </CollapsibleTrigger>
-            <CollapsibleContent>
-              <Textarea
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="Opisz cel zestawu..."
-                className="mt-2 min-h-[60px] text-sm resize-none bg-surface border-border placeholder:text-muted-foreground/50 w-full"
-                data-testid="set-composer-description-input"
-              />
-            </CollapsibleContent>
-          </div>
-        </Collapsible>
         </div>
 
         {/* ============================================================ */}
@@ -881,41 +860,69 @@ export function CreateSetWizard({
         <div className="flex-1 flex overflow-hidden">
           {/* LEFT COLUMN - Library (40%) */}
           <div className="w-full lg:w-[40%] flex flex-col border-r border-border min-w-0">
-            {/* Search and filters */}
-            <div className="p-4 border-b border-border space-y-3">
-              <div className="flex items-center gap-2">
-                <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Szukaj ćwiczeń..."
-                    className="h-10 pl-10 bg-surface border-border placeholder:text-muted-foreground/50"
-                    data-testid="set-composer-search-input"
-                  />
-                </div>
+            {/* Search header */}
+            <div className="h-[72px] px-6 py-4 border-b border-border flex items-center">
+              <div className="relative w-full">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  value={searchQuery}
+                  onChange={(event) => setSearchQuery(event.target.value)}
+                  placeholder="Szukaj ćwiczeń..."
+                  className="h-10 pl-10 bg-surface border-border placeholder:text-muted-foreground/50"
+                  data-testid="set-composer-search-input"
+                />
               </div>
+            </div>
 
-              {/* Category filters */}
+            {/* Source filters */}
+            <div className="px-6 py-3 border-b border-border bg-surface/30 shrink-0">
               <div className="flex flex-wrap gap-1.5">
-                {categoryFilters.map((cat) => (
-                  <button
-                    key={cat.id}
-                    type="button"
-                    onClick={() => setCategoryFilter(cat.id)}
-                    className={cn(
-                      'px-2.5 py-1 rounded-lg text-xs font-medium transition-all',
-                      categoryFilter === cat.id
-                        ? 'bg-primary text-primary-foreground'
-                        : 'bg-surface-light text-muted-foreground hover:bg-surface-hover hover:text-foreground'
-                    )}
-                  >
-                    {cat.label}
-                  </button>
-                ))}
+                <button
+                  type="button"
+                  onClick={() => setSourceFilter('all')}
+                  className={cn(
+                    'px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all border flex items-center gap-1.5',
+                    sourceFilter === 'all'
+                      ? 'border-primary/40 bg-primary/10 ring-1 ring-primary/20 text-primary'
+                      : 'border-border/40 bg-surface/50 text-muted-foreground hover:bg-surface-light hover:text-foreground hover:border-border'
+                  )}
+                  data-testid="set-composer-filter-all"
+                >
+                  <Dumbbell className="h-3.5 w-3.5 shrink-0" />
+                  <span>Wszystkie</span>
+                  <span className="font-semibold">{totalCount}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSourceFilter('organization')}
+                  className={cn(
+                    'px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all border flex items-center gap-1.5',
+                    sourceFilter === 'organization'
+                      ? 'border-secondary/40 bg-secondary/10 ring-1 ring-secondary/20 text-secondary'
+                      : 'border-border/40 bg-surface/50 text-muted-foreground hover:bg-surface-light hover:text-foreground hover:border-border'
+                  )}
+                  data-testid="set-composer-filter-organization"
+                >
+                  <Dumbbell className="h-3.5 w-3.5 shrink-0" />
+                  <span>Moje ćwiczenia</span>
+                  <span className="font-semibold">{organizationCount}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSourceFilter('fiziyo')}
+                  className={cn(
+                    'px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all border flex items-center gap-1.5',
+                    sourceFilter === 'fiziyo'
+                      ? 'border-violet-500/40 bg-violet-500/10 ring-1 ring-violet-500/20 text-violet-500'
+                      : 'border-border/40 bg-surface/50 text-muted-foreground hover:bg-surface-light hover:text-foreground hover:border-border'
+                  )}
+                  data-testid="set-composer-filter-fiziyo"
+                >
+                  <Sparkles className="h-3.5 w-3.5 shrink-0" />
+                  <span>FiziYo</span>
+                  <span className="font-semibold">{fiziyoCount}</span>
+                </button>
               </div>
-
-              <p className="text-xs text-muted-foreground">{filteredExercises.length} ćwiczeń</p>
             </div>
 
             {/* Exercise list */}
@@ -929,13 +936,13 @@ export function CreateSetWizard({
                   <div className="flex flex-col items-center justify-center py-16 text-center">
                     <Dumbbell className="h-12 w-12 text-muted-foreground/50 mb-4" />
                     <p className="text-sm font-medium text-muted-foreground">
-                      {searchQuery ? 'Brak wyników wyszukiwania' : 'Brak ćwiczeń w tej kategorii'}
+                      {searchQuery ? 'Brak wyników wyszukiwania' : 'Brak ćwiczeń'}
                     </p>
                   </div>
                 ) : (
                   <div className="space-y-6">
                     {/* Popular - show at top when no search/filter active */}
-                    {!searchQuery && categoryFilter === 'all' && popularExercises.length > 0 && (
+                    {!searchQuery && sourceFilter === 'all' && popularExercises.length > 0 && (
                       <div>
                         <div className="flex items-center gap-2 mb-3">
                           <TrendingUp className="h-4 w-4 text-primary" />
@@ -960,7 +967,7 @@ export function CreateSetWizard({
 
                     {/* All exercises (excluding popular when shown) */}
                     <div>
-                      {!searchQuery && categoryFilter === 'all' && popularExercises.length > 0 && (
+                      {!searchQuery && sourceFilter === 'all' && popularExercises.length > 0 && (
                         <div className="flex items-center gap-2 mb-3">
                           <Dumbbell className="h-4 w-4 text-muted-foreground" />
                           <h4 className="text-sm font-semibold">Wszystkie ćwiczenia</h4>
@@ -969,7 +976,7 @@ export function CreateSetWizard({
                       <div className="grid gap-2">
                         {(() => {
                           // Exclude popular exercises when showing popular section
-                          const showPopular = !searchQuery && categoryFilter === 'all' && popularExercises.length > 0;
+                          const showPopular = !searchQuery && sourceFilter === 'all' && popularExercises.length > 0;
                           const popularIds = new Set(popularExercises.map((e) => e.id));
                           const exercisesToShow = showPopular
                             ? filteredExercises.filter((e) => !popularIds.has(e.id))
@@ -997,7 +1004,7 @@ export function CreateSetWizard({
           {/* RIGHT COLUMN - Canvas/Set (60%) */}
           <div className="hidden lg:flex lg:flex-1 flex-col bg-surface/30 overflow-hidden min-w-0">
             {/* Header with Hero Duration */}
-            <div className="px-4 py-3 border-b border-border flex items-center justify-between gap-2 shrink-0">
+            <div className="h-[72px] px-6 py-4 border-b border-border flex items-center justify-between gap-2 shrink-0">
               <div className="flex items-center gap-3 min-w-0">
                 <h3 className="font-semibold text-sm text-foreground">W zestawie</h3>
                 <Badge variant="secondary" className="h-5 px-1.5 text-[10px] bg-surface-light text-muted-foreground border-border shrink-0">
