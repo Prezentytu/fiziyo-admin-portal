@@ -101,11 +101,11 @@ Dodaj wiersz do tabeli w `.ai/specs/README.md`.
 
 ## Integration Test Coverage
 
-| Scenariusz         | Typ testu    | Priorytet |
-| ------------------ | ------------ | --------- |
-| Happy path         | Integracyjny | High      |
-| Edge case          | Integracyjny | Medium    |
-| Regresja krytyczna | Integracyjny | High      |
+| Scenariusz | Typ testu | Priorytet |
+| ---------- | --------- | --------- |
+| Happy path | Integracyjny | High |
+| Edge case  | Integracyjny | Medium |
+| Regresja krytyczna | Integracyjny | High |
 
 ## Changelog
 

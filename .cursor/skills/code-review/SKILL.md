@@ -10,7 +10,6 @@ description: Przeglada zmiany kodu pod katem jakosci, bezpieczenstwa i zgodnosci
 Użyj tego skilla gdy wykonujesz code review kodu w projekcie FiziYo Admin. Zapewnia spójność z konwencjami projektu.
 
 Pelna lista kontroli znajduje sie w pliku referencyjnym:
-
 - [references/review-checklist.md](references/review-checklist.md)
 - Kontrakt kompatybilnosci: [BACKWARD_COMPATIBILITY.md](../../../BACKWARD_COMPATIBILITY.md)
 

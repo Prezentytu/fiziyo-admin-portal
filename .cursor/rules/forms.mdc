@@ -1,0 +1,13 @@
+---
+description: Reguly formularzy react-hook-form + zod
+globs:
+  - "src/**/*.tsx"
+  - "src/**/*.ts"
+alwaysApply: false
+---
+
+- Formularze buduj przez `react-hook-form` oraz `zod` + `zodResolver`.
+- Typ formularza wyprowadzaj przez `z.infer<typeof schema>`.
+- Definiuj pelne `defaultValues` dla wszystkich pol.
+- Etykiety pol opcjonalnych nie powinny zawierac gwiazdki ani dopisku "(opcjonalnie)".
+- W dialogach formularzy zapewnij skroty `Cmd/Ctrl+Enter` (submit) i `Escape` (zamkniecie).

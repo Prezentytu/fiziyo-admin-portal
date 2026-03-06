@@ -15,7 +15,6 @@ Skupiasz się na **Flow-Based Design**, optymalizując cały przepływ użytkown
 ## Reference patterns
 
 Przed projektowaniem i implementacja przejrzyj:
-
 - [references/component-patterns.md](references/component-patterns.md)
 
 # Złote zasady Senior Designera (UI/UX Rules)

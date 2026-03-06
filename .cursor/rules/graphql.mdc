@@ -1,0 +1,15 @@
+---
+description: GraphQL i Apollo Client standardy dla FiziYo
+globs:
+  - "src/graphql/**/*.ts"
+  - "src/graphql/**/*.tsx"
+  - "src/features/**/*.ts"
+  - "src/features/**/*.tsx"
+alwaysApply: false
+---
+
+- Uzywaj `useQuery` z `skip` zamiast `useLazyQuery`.
+- Dla query ustawiaj `fetchPolicy` zgodnie z przypadkiem uzycia i preferuj `cache-first`, jesli nie ma silnego powodu inaczej.
+- Waliduj wymagane zmienne zapytan (np. `organizationId`) zanim trafia do requestu.
+- Typuj odpowiedzi i zmienne przez wygenerowane typy GraphQL; nie uzywaj `any`.
+- Dla nowych operacji GraphQL trzymaj spojnosc nazewnictwa: stale operacji `UPPER_SNAKE`, komponenty `PascalCase`.

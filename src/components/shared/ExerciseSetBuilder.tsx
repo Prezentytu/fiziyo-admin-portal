@@ -38,6 +38,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { ImagePlaceholder } from '@/components/shared/ImagePlaceholder';
+import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { getMediaUrl } from '@/utils/mediaUrl';
 import { ExerciseExecutionCard, fromBuilderExercise } from '@/components/shared/exercise';
 import type { ExerciseExecutionCardData } from '@/components/shared/exercise';
@@ -373,6 +374,8 @@ export function ExerciseSetBuilder({
 }: Readonly<ExerciseSetBuilderProps>) {
   const [searchQuery, setSearchQuery] = useState('');
   const [sourceFilter, setSourceFilter] = useState<ExerciseSourceFilter>('all');
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const [instanceToRemove, setInstanceToRemove] = useState<string | null>(null);
 
   // DnD sensors
   const sensors = useSensors(
@@ -501,6 +504,18 @@ export function ExerciseSetBuilder({
     },
     [selectedInstances, exerciseParams, onSelectedInstancesChange, onExerciseParamsChange]
   );
+
+  const handleConfirmClear = useCallback(() => {
+    onSelectedInstancesChange([]);
+    onExerciseParamsChange(new Map());
+    setShowClearConfirm(false);
+  }, [onSelectedInstancesChange, onExerciseParamsChange]);
+
+  const handleConfirmRemoveInstance = useCallback(() => {
+    if (!instanceToRemove) return;
+    removeInstance(instanceToRemove);
+    setInstanceToRemove(null);
+  }, [instanceToRemove, removeInstance]);
 
   const handleDragEnd = useCallback(
     (event: DragEndEvent) => {
@@ -766,10 +781,7 @@ export function ExerciseSetBuilder({
                 variant="ghost"
                 size="sm"
                 className="h-7 text-[10px] text-muted-foreground hover:text-destructive"
-                onClick={() => {
-                  onSelectedInstancesChange([]);
-                  onExerciseParamsChange(new Map());
-                }}
+                onClick={() => setShowClearConfirm(true)}
                 disabled={selectedInstances.length === 0}
               >
                 Wyczyść
@@ -804,7 +816,7 @@ export function ExerciseSetBuilder({
                         index={index}
                         params={exerciseParams.get(data.instanceId) || getDefaultParams(data.exercise)}
                         onUpdateParams={(field, value) => updateExerciseParams(data.instanceId, field, value)}
-                        onRemove={() => removeInstance(data.instanceId)}
+                        onRemove={() => setInstanceToRemove(data.instanceId)}
                         onPreview={() => onPreviewExercise?.(data.exercise)}
                         testIdPrefix={testIdPrefix}
                         isReadonly={readonlyInstanceIds?.has(data.instanceId) ?? false}
@@ -817,6 +829,30 @@ export function ExerciseSetBuilder({
           </div>
         </div>
       </div>
+
+      <ConfirmDialog
+        open={showClearConfirm}
+        onOpenChange={setShowClearConfirm}
+        title="Wyczyścić zestaw?"
+        description="Ta akcja usunie wszystkie ćwiczenia z listy. Czy chcesz kontynuować?"
+        confirmText="Tak, wyczyść"
+        cancelText="Anuluj"
+        variant="destructive"
+        onConfirm={handleConfirmClear}
+      />
+
+      <ConfirmDialog
+        open={instanceToRemove !== null}
+        onOpenChange={(open) => {
+          if (!open) setInstanceToRemove(null);
+        }}
+        title="Usunąć ćwiczenie?"
+        description="To ćwiczenie zostanie usunięte z zestawu. Czy chcesz kontynuować?"
+        confirmText="Tak, usuń"
+        cancelText="Anuluj"
+        variant="destructive"
+        onConfirm={handleConfirmRemoveInstance}
+      />
     </div>
   );
 }

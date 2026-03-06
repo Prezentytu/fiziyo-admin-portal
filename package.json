@@ -6,6 +6,7 @@
     "dev": "next dev --experimental-https",
     "build": "next build",
     "start": "next start",
+    "skills:sync": "node scripts/sync-cursor-skills.mjs",
     "lint": "eslint",
     "lint:fix": "eslint --fix",
     "type-check": "tsc --noEmit",

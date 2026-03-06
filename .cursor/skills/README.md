@@ -4,15 +4,15 @@ Umiejętności (skills) to specjalistyczne przewodniki dla AI agentów pracując
 
 ## Dostępne skills
 
-| Skill                                             | Opis                                              | Kiedy używać                                                 |
-| ------------------------------------------------- | ------------------------------------------------- | ------------------------------------------------------------ |
-| [spec-writing](spec-writing/SKILL.md)             | Jak pisać specyfikacje FiziYo                     | Tworzenie/aktualizacja plików w `.ai/specs/`                 |
-| [code-review](code-review/SKILL.md)               | Code review w FiziYo                              | Przegląd kodu przed merge, weryfikacja zmian                 |
-| [create-agents-md](create-agents-md/SKILL.md)     | Jak tworzyć AGENTS.md dla modułów                 | Dodawanie nowego modułu/komponentu do Task Routera           |
-| [product-designer](product-designer/SKILL.md)     | Premium UI/UX dla MedTech SaaS                    | Zadania UI/UX, redesign, audit designu i dostępności         |
-| [implement-spec](implement-spec/SKILL.md)         | Implementacja spec krok po kroku                  | Wdrażanie złożonych funkcjonalności ze specyfikacji          |
-| [pre-implement-spec](pre-implement-spec/SKILL.md) | Analiza gotowości specyfikacji                    | Ocena ryzyka i braków przed rozpoczęciem kodowania           |
-| [integration-tests](integration-tests/SKILL.md)   | Orkiestracja testów regresyjnych i integracyjnych | Bugfixy, zmiany logiki biznesowej, wdrożenia ze specyfikacji |
+| Skill                                         | Opis                              | Kiedy używać                                         |
+| --------------------------------------------- | --------------------------------- | ---------------------------------------------------- |
+| [spec-writing](spec-writing/SKILL.md)         | Jak pisać specyfikacje FiziYo     | Tworzenie/aktualizacja plików w `.ai/specs/`         |
+| [code-review](code-review/SKILL.md)           | Code review w FiziYo              | Przegląd kodu przed merge, weryfikacja zmian         |
+| [create-agents-md](create-agents-md/SKILL.md) | Jak tworzyć AGENTS.md dla modułów | Dodawanie nowego modułu/komponentu do Task Routera   |
+| [product-designer](product-designer/SKILL.md) | Premium UI/UX dla MedTech SaaS    | Zadania UI/UX, redesign, audit designu i dostępności |
+| [implement-spec](implement-spec/SKILL.md)     | Implementacja spec krok po kroku  | Wdrażanie złożonych funkcjonalności ze specyfikacji  |
+| [pre-implement-spec](pre-implement-spec/SKILL.md) | Analiza gotowości specyfikacji | Ocena ryzyka i braków przed rozpoczęciem kodowania   |
+| [integration-tests](integration-tests/SKILL.md) | Orkiestracja testów regresyjnych i integracyjnych | Bugfixy, zmiany logiki biznesowej, wdrożenia ze specyfikacji |
 
 ## Dokumentacja ekosystemowa (.ai/)
 

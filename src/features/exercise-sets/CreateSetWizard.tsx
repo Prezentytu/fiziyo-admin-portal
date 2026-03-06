@@ -338,6 +338,8 @@ export function CreateSetWizard({
   const [selectedInstances, setSelectedInstances] = useState<ExerciseInstance[]>([]);
   const [exerciseParams, setExerciseParams] = useState<Map<string, ExerciseParams>>(new Map());
   const [showCloseConfirm, setShowCloseConfirm] = useState(false);
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
+  const [instanceToRemove, setInstanceToRemove] = useState<string | null>(null);
   const [previewExercise, setPreviewExercise] = useState<Exercise | null>(null);
   const [isGeneratingName, setIsGeneratingName] = useState(false);
 
@@ -373,6 +375,8 @@ export function CreateSetWizard({
       setSelectedInstances([]);
       setExerciseParams(new Map());
       setShowCloseConfirm(false);
+      setShowClearConfirm(false);
+      setInstanceToRemove(null);
       setPreviewExercise(null);
       setIsGeneratingName(false);
     }
@@ -592,6 +596,18 @@ export function CreateSetWizard({
       return next;
     });
   }, []);
+
+  const handleConfirmClear = useCallback(() => {
+    setSelectedInstances([]);
+    setExerciseParams(new Map());
+    setShowClearConfirm(false);
+  }, []);
+
+  const handleConfirmRemoveInstance = useCallback(() => {
+    if (!instanceToRemove) return;
+    removeInstance(instanceToRemove);
+    setInstanceToRemove(null);
+  }, [instanceToRemove, removeInstance]);
 
   const handleDragEnd = useCallback((event: DragEndEvent) => {
     const { active, over } = event;
@@ -1025,7 +1041,7 @@ export function CreateSetWizard({
                   variant="ghost"
                   size="sm"
                   className="h-7 text-[10px] text-muted-foreground hover:text-destructive"
-                  onClick={() => setSelectedInstances([])}
+                  onClick={() => setShowClearConfirm(true)}
                   disabled={selectedInstances.length === 0}
                 >
                   Wyczyść
@@ -1060,7 +1076,7 @@ export function CreateSetWizard({
                           index={index}
                           params={exerciseParams.get(data.instanceId) || getDefaultParams(data.exercise)}
                           onUpdateParams={(field, value) => updateExerciseParams(data.instanceId, field, value)}
-                          onRemove={() => removeInstance(data.instanceId)}
+                          onRemove={() => setInstanceToRemove(data.instanceId)}
                           onPreview={() => setPreviewExercise(data.exercise)}
                         />
                       ))}
@@ -1113,6 +1129,30 @@ export function CreateSetWizard({
         cancelText="Kontynuuj edycję"
         variant="destructive"
         onConfirm={handleConfirmClose}
+      />
+
+      <ConfirmDialog
+        open={showClearConfirm}
+        onOpenChange={setShowClearConfirm}
+        title="Wyczyścić zestaw?"
+        description="Ta akcja usunie wszystkie ćwiczenia z listy. Czy chcesz kontynuować?"
+        confirmText="Tak, wyczyść"
+        cancelText="Anuluj"
+        variant="destructive"
+        onConfirm={handleConfirmClear}
+      />
+
+      <ConfirmDialog
+        open={instanceToRemove !== null}
+        onOpenChange={(open) => {
+          if (!open) setInstanceToRemove(null);
+        }}
+        title="Usunąć ćwiczenie?"
+        description="To ćwiczenie zostanie usunięte z zestawu. Czy chcesz kontynuować?"
+        confirmText="Tak, usuń"
+        cancelText="Anuluj"
+        variant="destructive"
+        onConfirm={handleConfirmRemoveInstance}
       />
 
       {/* Exercise image gallery lightbox */}

@@ -1,0 +1,13 @@
+---
+description: Reguly domenowe i architektoniczne FiziYo dla zadan wielowarstwowych
+globs:
+  - "src/**/*.ts"
+  - "src/**/*.tsx"
+alwaysApply: false
+---
+
+- Gdy zadanie dotyczy cwiczen, zestawow, assignment lub pacjentow, sprawdz odpowiedni modulowy `AGENTS.md` przed implementacja.
+- Gdy zadanie dotyczy enumow, encji, relacji lub JSONB, przeczytaj `.ai/DOMAIN_MODEL.md`.
+- Gdy zadanie dotyczy auth, billing, AI, media lub cross-repo, przeczytaj `.ai/DATA_FLOWS.md` i `.ai/ECOSYSTEM.md`.
+- Logike biznesowa wyciagaj do czystych helperow w `utils/` i testuj w `utils/__tests__/` lub obok pliku.
+- Traktuj zmiany backend contract jako potencjalny impact na aplikacje mobilna i typy frontendowe.
