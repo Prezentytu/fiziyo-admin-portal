@@ -124,6 +124,7 @@ Przy zmianie schematu backendu — zaktualizuj typy w **obu** repozytoriach.
 
 1. **Zmiana schematu GraphQL** — zmiana w backendzie wymaga aktualizacji typów i zapytań w **obu** frontendach.
 2. **Subscriptions** — admin używa WebSocket (wsLink), mobile nie ma subskrypcji (polling lub cache).
-3. **Nowa encja** — dodaj migrację EF Core w backendzie, query/mutation w backendzie, typy + zapytania w odpowiednim frontendzie.
+3. **Nowa encja / nowe pole backendowe** — dodaj migrację EF Core w backendzie, uruchom `dotnet ef database update`, zrestartuj lokalne API, potem dopiero aktualizuj query/mutation i typy w frontendach.
 4. **ExerciseLoad** — JSONB w bazie, różne interpretacje w admin (formularz edycji) i mobile (player). Przy zmianie struktury — sprawdź oba.
 5. **Env variables** — admin: `NEXT_PUBLIC_API_URL`; mobile: `EXPO_PUBLIC_API_URL` (w `app.config.ts`); backend: connection strings w `appsettings.json`.
+6. **Deploy backendu** — wdrożenie na Azure jest manualne i wykonuje je użytkownik. Agent powinien jasno zaznaczyć, gdy zmiana backendowa wymaga ręcznego deploya, zamiast zakładać, że środowisko zdalne samo się zaktualizuje.

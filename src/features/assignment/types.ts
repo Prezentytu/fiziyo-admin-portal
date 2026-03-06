@@ -43,6 +43,10 @@ export interface ExerciseMapping {
   tempo?: string;
   // Load/Resistance - Smart String
   load?: ExerciseLoad;
+  loadType?: string;
+  loadValue?: number;
+  loadUnit?: string;
+  loadText?: string;
   // Custom content
   notes?: string;
   customName?: string;
@@ -61,6 +65,8 @@ export interface Exercise {
   // Opisy
   patientDescription?: string;
   clinicalDescription?: string;
+  audioCue?: string;
+  rangeOfMotion?: string;
   notes?: string;
   // Parametry wykonania
   type?: 'REPS' | 'TIME' | 'reps' | 'time' | string;
@@ -86,15 +92,22 @@ export interface Exercise {
   tempo?: string;
   // Load/Resistance - Smart String
   defaultLoad?: ExerciseLoad;
+  loadType?: string;
+  loadValue?: number;
+  loadUnit?: string;
+  loadText?: string;
   // Media
   imageUrl?: string;
   thumbnailUrl?: string;
   images?: string[];
+  gifUrl?: string;
   videoUrl?: string;
   // Status
   scope?: string;
   status?: string;
   difficultyLevel?: string;
+  mainTags?: string[];
+  additionalTags?: string[];
 
   // Legacy aliasy (dla kompatybilności wstecznej)
   description?: string;
@@ -200,7 +213,15 @@ export function createLocalMapping(exercise: Exercise, order: number): LocalExer
     reps: exercise.defaultReps || 10,
     duration: exercise.defaultDuration,
     restSets: exercise.defaultRestBetweenSets || 60,
+    restReps: exercise.defaultRestBetweenReps,
+    preparationTime: exercise.preparationTime,
+    executionTime: exercise.defaultExecutionTime ?? exercise.executionTime,
     tempo: exercise.tempo,
+    load: exercise.defaultLoad,
+    loadType: exercise.loadType,
+    loadValue: exercise.loadValue,
+    loadUnit: exercise.loadUnit,
+    loadText: exercise.loadText,
     isNew: true,
   };
 }

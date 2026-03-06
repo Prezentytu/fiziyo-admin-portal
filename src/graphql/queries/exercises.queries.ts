@@ -43,6 +43,13 @@ export const EXERCISE_FULL_FRAGMENT = gql`
     adminReviewNotes
     audioCue
     tempo
+    rangeOfMotion
+    defaultLoad {
+      type
+      value
+      unit
+      text
+    }
     difficultyLevel
     progressionFamilyId
     contributorId

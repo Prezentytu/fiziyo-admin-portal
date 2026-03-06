@@ -39,24 +39,37 @@ export const EXERCISE_SET_WITH_EXERCISES_FRAGMENT = gql`
       duration
       restSets
       restReps
+      preparationTime
       executionTime
       tempo
+      loadType
+      loadValue
+      loadUnit
+      loadText
       notes
       customName
       customDescription
+      videoUrl
+      imageUrl
+      images
       exercise {
         id
         name
         type
         side
+        gifUrl
         imageUrl
         images
         thumbnailUrl
         patientDescription
+        clinicalDescription
         notes
         videoUrl
+        audioCue
         preparationTime
         defaultExecutionTime
+        tempo
+        rangeOfMotion
         defaultSets
         defaultReps
         defaultDuration

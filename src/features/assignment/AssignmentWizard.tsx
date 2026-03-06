@@ -22,6 +22,7 @@ import { SummaryStep } from './SummaryStep';
 import { AssignmentSuccessDialog } from './AssignmentSuccessDialog';
 import type { ExerciseInstance, ExerciseParams } from '@/components/shared/ExerciseSetBuilder';
 import { canProceedFromStep } from './utils/assignmentWizardUtils';
+import { buildStructuredLoad, mapAvailableExercises } from './utils/availableExercisesMapper';
 import {
   getWizardSteps,
   createGhostCopy,
@@ -367,7 +368,23 @@ function AssignmentWizardContent({
       isTemplate: set.isTemplate,
       frequency: set.frequency,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      exerciseMappings: set.exerciseMappings?.map((m: any) => ({
+      exerciseMappings: set.exerciseMappings?.map((m: any) => {
+        const mappingLoad = buildStructuredLoad({
+          type: m.loadType,
+          value: m.loadValue,
+          unit: m.loadUnit,
+          text: m.loadText,
+        });
+        const exerciseLoad =
+          buildStructuredLoad(m.exercise?.defaultLoad) ??
+          buildStructuredLoad({
+            type: m.exercise?.loadType,
+            value: m.exercise?.loadValue,
+            unit: m.exercise?.loadUnit,
+            text: m.exercise?.loadText,
+          });
+
+        return {
         id: m.id,
         exerciseId: m.exerciseId,
         exerciseSetId: m.exerciseSetId,
@@ -378,9 +395,20 @@ function AssignmentWizardContent({
         duration: m.duration,
         restSets: m.restSets,
         restReps: m.restReps,
+        preparationTime: m.preparationTime,
+        executionTime: m.executionTime,
+        tempo: m.tempo,
+        load: mappingLoad,
+        loadType: m.loadType,
+        loadValue: m.loadValue,
+        loadUnit: m.loadUnit,
+        loadText: m.loadText,
         notes: m.notes,
         customName: m.customName,
         customDescription: m.customDescription,
+        videoUrl: m.videoUrl,
+        imageUrl: m.imageUrl,
+        images: m.images,
         // Exercise data with all fields (support both new and legacy names)
         exercise: m.exercise
           ? {
@@ -390,11 +418,15 @@ function AssignmentWizardContent({
               // Support both new and legacy field names
               description: m.exercise.patientDescription || m.exercise.description,
               patientDescription: m.exercise.patientDescription,
+              clinicalDescription: m.exercise.clinicalDescription,
+              audioCue: m.exercise.audioCue,
+              rangeOfMotion: m.exercise.rangeOfMotion,
               side: m.exercise.side,
               exerciseSide: m.exercise.side?.toLowerCase() || m.exercise.exerciseSide,
               imageUrl: m.exercise.thumbnailUrl || m.exercise.imageUrl,
               thumbnailUrl: m.exercise.thumbnailUrl,
               images: m.exercise.images,
+              gifUrl: m.exercise.gifUrl,
               videoUrl: m.exercise.videoUrl,
               notes: m.exercise.notes,
               // Exercise default values (support both new and legacy names)
@@ -405,15 +437,27 @@ function AssignmentWizardContent({
               restReps: m.exercise.defaultRestBetweenReps ?? m.exercise.restReps,
               preparationTime: m.exercise.preparationTime,
               executionTime: m.exercise.defaultExecutionTime ?? m.exercise.executionTime,
+              tempo: m.exercise.tempo,
+              defaultLoad: exerciseLoad,
+              loadType: m.exercise.loadType,
+              loadValue: m.exercise.loadValue,
+              loadUnit: m.exercise.loadUnit,
+              loadText: m.exercise.loadText,
               defaultSets: m.exercise.defaultSets,
               defaultReps: m.exercise.defaultReps,
               defaultDuration: m.exercise.defaultDuration,
               defaultRestBetweenSets: m.exercise.defaultRestBetweenSets,
               defaultRestBetweenReps: m.exercise.defaultRestBetweenReps,
               defaultExecutionTime: m.exercise.defaultExecutionTime,
+              mainTags: m.exercise.mainTags,
+              additionalTags: m.exercise.additionalTags,
+              difficultyLevel: m.exercise.difficultyLevel,
+              scope: m.exercise.scope,
+              status: m.exercise.status,
             }
           : undefined,
-      })),
+      };
+      }),
     }));
   }, [setsData]);
 
@@ -470,22 +514,7 @@ function AssignmentWizardContent({
   const availableExercises: Exercise[] = useMemo(() => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const data = exercisesData as { availableExercises?: any[] } | undefined;
-    return (data?.availableExercises || [])
-      .filter((ex) => ex.isActive !== false)
-      .map((ex) => ({
-        id: ex.id,
-        name: ex.name,
-        type: ex.type,
-        patientDescription: ex.patientDescription,
-        notes: ex.notes,
-        defaultSets: ex.defaultSets,
-        defaultReps: ex.defaultReps,
-        defaultDuration: ex.defaultDuration,
-        thumbnailUrl: ex.thumbnailUrl,
-        imageUrl: ex.imageUrl,
-        images: ex.images,
-        scope: ex.scope,
-      }));
+    return mapAvailableExercises(data?.availableExercises);
   }, [exercisesData]);
 
   // Handle create new set - sets mode to creating new and navigates to customize step
@@ -907,6 +936,10 @@ function AssignmentWizardContent({
                   notes: params?.notes || null,
                   customName: params?.customName || null,
                   customDescription: params?.customDescription || null,
+                  loadType: params?.loadType || null,
+                  loadValue: params?.loadValue || null,
+                  loadUnit: params?.loadUnit || null,
+                  loadText: params?.loadText || null,
                 },
               });
             }

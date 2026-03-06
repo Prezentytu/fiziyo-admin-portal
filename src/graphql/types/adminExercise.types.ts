@@ -88,6 +88,12 @@ export interface AdminExercise {
   updatedAt?: string;
   // Extended training parameters
   rangeOfMotion?: string;
+  defaultLoad?: {
+    type: string;
+    value?: number;
+    unit?: string;
+    text: string;
+  };
   loadType?: string;
   loadValue?: number;
   loadUnit?: string;

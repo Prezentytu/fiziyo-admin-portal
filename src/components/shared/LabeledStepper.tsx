@@ -1,7 +1,8 @@
 'use client';
 
-import { Minus, Plus } from 'lucide-react';
+import { Info, Minus, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface LabeledStepperProps {
   readonly value: number;
@@ -13,6 +14,8 @@ interface LabeledStepperProps {
   readonly step?: number;
   readonly disabled?: boolean;
   readonly className?: string;
+  readonly infoTooltip?: string;
+  readonly infoTestId?: string;
 }
 
 /**
@@ -31,6 +34,8 @@ export function LabeledStepper({
   step = 1,
   disabled = false,
   className,
+  infoTooltip,
+  infoTestId,
 }: LabeledStepperProps) {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
@@ -140,7 +145,27 @@ export function LabeledStepper({
         <span className="text-[9px] uppercase font-bold text-muted-foreground/40 tracking-wider text-center group-hover:text-muted-foreground/70 transition-colors whitespace-nowrap">
           {label}
         </span>
-        <span className="w-7 shrink-0" aria-hidden />
+        <span className="w-7 shrink-0 flex items-center justify-center">
+          {infoTooltip ? (
+            <TooltipProvider delayDuration={150}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    className="inline-flex h-4 w-4 items-center justify-center rounded-full text-muted-foreground/60 hover:text-foreground transition-colors"
+                    aria-label={`Informacja o polu: ${label}`}
+                    data-testid={infoTestId}
+                  >
+                    <Info className="h-3 w-3" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="max-w-xs text-xs">
+                  {infoTooltip}
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          ) : null}
+        </span>
       </div>
     </div>
   );

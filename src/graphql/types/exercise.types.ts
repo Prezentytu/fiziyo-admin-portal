@@ -20,6 +20,13 @@ export type MediaContext =
   | 'PATIENT_MATERIAL';
 export type DifficultyLevel = 'EASY' | 'MEDIUM' | 'HARD' | 'EXPERT';
 
+export interface ExerciseLoad {
+  type: 'weight' | 'band' | 'bodyweight' | 'other' | string;
+  value?: number;
+  unit?: 'kg' | 'lbs' | 'level' | string;
+  text: string;
+}
+
 // ============================================
 // ExerciseMedia Model
 // ============================================
@@ -60,6 +67,7 @@ export interface Exercise {
   preparationTime?: number;
   tempo?: string;
   rangeOfMotion?: string;
+  defaultLoad?: ExerciseLoad;
   // Media (legacy + nowe)
   videoUrl?: string;
   gifUrl?: string;

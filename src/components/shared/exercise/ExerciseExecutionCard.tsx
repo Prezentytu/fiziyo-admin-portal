@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback, useMemo } from 'react';
-import { Clock, Settings2, ChevronUp, ChevronDown, X, Eye } from 'lucide-react';
+import { Clock, Settings2, ChevronUp, ChevronDown, X, Eye, Info } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -19,6 +19,7 @@ import {
   isTimerExercise,
   isFieldEditable,
 } from './types';
+import { EXERCISE_FIELD_METADATA, INLINE_EXERCISE_FIELD_ORDER } from '@/features/assignment/exerciseFieldMetadata';
 
 const SIDE_OPTIONS = [
   { value: 'none', label: 'Bez podziału' },
@@ -27,6 +28,53 @@ const SIDE_OPTIONS = [
   { value: 'right', label: 'Prawa strona' },
   { value: 'alternating', label: 'Naprzemiennie' },
 ] as const;
+
+function EditableFieldLabel({
+  label,
+  tooltip,
+  htmlFor,
+  labelId,
+  testId,
+}: Readonly<{
+  label: string;
+  tooltip: string;
+  htmlFor?: string;
+  labelId?: string;
+  testId: string;
+}>) {
+  const textClassName = 'text-[10px] uppercase text-muted-foreground/60 font-bold tracking-wide';
+
+  return (
+    <div className="mb-1.5 flex items-center gap-1.5">
+      {htmlFor ? (
+        <label htmlFor={htmlFor} className={textClassName}>
+          {label}
+        </label>
+      ) : (
+        <span id={labelId} className={textClassName}>
+          {label}
+        </span>
+      )}
+      <TooltipProvider delayDuration={150}>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              type="button"
+              className="inline-flex h-4 w-4 items-center justify-center rounded-full text-muted-foreground hover:text-foreground"
+              aria-label={`Informacja o polu: ${label}`}
+              data-testid={testId}
+            >
+              <Info className="h-3 w-3" />
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="top" className="max-w-xs text-xs">
+            {tooltip}
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    </div>
+  );
+}
 
 export function ExerciseExecutionCard({
   mode,
@@ -40,6 +88,7 @@ export function ExerciseExecutionCard({
   onChange,
   onRemove,
   onPreview,
+  onOpenDetails,
   dragHandle,
   readOnlyReason,
   className,
@@ -73,6 +122,29 @@ export function ExerciseExecutionCard({
   const hasGallery = galleryImages.length > 0;
 
   const canEditField = (field: EditableField) => canEdit && isFieldEditable(field, mode, editableFields);
+  const setsField = EXERCISE_FIELD_METADATA.sets;
+  const repsField = EXERCISE_FIELD_METADATA.reps;
+  const executionTimeField = EXERCISE_FIELD_METADATA.executionTime;
+  const restSetsField = EXERCISE_FIELD_METADATA.restSets;
+  const loadField = EXERCISE_FIELD_METADATA.load;
+  const notesField = EXERCISE_FIELD_METADATA.notes;
+  const restRepsField = EXERCISE_FIELD_METADATA.restReps;
+  const preparationTimeField = EXERCISE_FIELD_METADATA.preparationTime;
+  const tempoField = EXERCISE_FIELD_METADATA.tempo;
+  const sideField = EXERCISE_FIELD_METADATA.side;
+  const customNameTooltip = 'Własna nazwa widoczna dla pacjenta w tym konkretnym planie.';
+  const customDescriptionTooltip = 'Własny opis nadpisujący opis ćwiczenia tylko dla tego planu.';
+  const inlineSourceFields = useMemo(
+    () =>
+      INLINE_EXERCISE_FIELD_ORDER.map((fieldKey) => {
+        const field = EXERCISE_FIELD_METADATA[fieldKey];
+        if (!field.isInlineVisible) return null;
+        const value = field.formatValue(exercise);
+        if (!value) return null;
+        return { field, value };
+      }).filter((fieldData): fieldData is { field: (typeof EXERCISE_FIELD_METADATA)[keyof typeof EXERCISE_FIELD_METADATA]; value: string } => fieldData !== null),
+    [exercise]
+  );
   const handlePreviewTrigger = useCallback(() => {
     if (!hasGallery) return;
     if (onPreview) {
@@ -197,6 +269,8 @@ export function ExerciseExecutionCard({
                       value={exercise.sets}
                       onChange={(v) => handleChange({ sets: v })}
                       label="SERIE"
+                      infoTooltip={setsField.tooltip}
+                      infoTestId={`${testId}-help-sets`}
                       min={1}
                       max={20}
                       disabled={!canEditField('sets')}
@@ -207,6 +281,8 @@ export function ExerciseExecutionCard({
                       value={exercise.reps}
                       onChange={(v) => handleChange({ reps: v })}
                       label="POWT."
+                      infoTooltip={repsField.tooltip}
+                      infoTestId={`${testId}-help-reps`}
                       min={1}
                       max={100}
                       disabled={!canEditField('reps')}
@@ -421,12 +497,12 @@ export function ExerciseExecutionCard({
             <div className="w-full border-t border-border bg-surface/50 p-4 space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label
+                  <EditableFieldLabel
                     htmlFor={`${testId}-execution-time-input`}
-                    className="text-[10px] uppercase text-muted-foreground/60 font-bold tracking-wide mb-1.5 block"
-                  >
-                    Czas powtórzenia (s)
-                  </label>
+                    label={`${executionTimeField.label} (s)`}
+                    tooltip={executionTimeField.tooltip}
+                    testId={`${testId}-help-executionTime`}
+                  />
                   <Input
                     id={`${testId}-execution-time-input`}
                     type="number"
@@ -444,12 +520,12 @@ export function ExerciseExecutionCard({
                   />
                 </div>
                 <div>
-                  <label
+                  <EditableFieldLabel
                     htmlFor={`${testId}-rest-sets-input`}
-                    className="text-[10px] uppercase text-muted-foreground/60 font-bold tracking-wide mb-1.5 block"
-                  >
-                    Przerwa między seriami (s)
-                  </label>
+                    label={`${restSetsField.label} (s)`}
+                    tooltip={restSetsField.tooltip}
+                    testId={`${testId}-help-restSets`}
+                  />
                   <Input
                     id={`${testId}-rest-sets-input`}
                     type="number"
@@ -463,12 +539,12 @@ export function ExerciseExecutionCard({
                   />
                 </div>
                 <div>
-                  <label
+                  <EditableFieldLabel
                     htmlFor={`${testId}-load-input`}
-                    className="text-[10px] uppercase text-muted-foreground/60 font-bold tracking-wide mb-1.5 block"
-                  >
-                    Obciążenie (kg)
-                  </label>
+                    label={`${loadField.label} (kg)`}
+                    tooltip={loadField.tooltip}
+                    testId={`${testId}-help-load`}
+                  />
                   <Input
                     id={`${testId}-load-input`}
                     type="number"
@@ -487,12 +563,12 @@ export function ExerciseExecutionCard({
                 </div>
               </div>
               <div>
-                <label
+                <EditableFieldLabel
                   htmlFor={`${testId}-notes-input`}
-                  className="text-[10px] uppercase text-muted-foreground/60 font-bold tracking-wide mb-1.5 block"
-                >
-                  Notatka dla pacjenta
-                </label>
+                  label="Notatka dla pacjenta"
+                  tooltip={notesField.tooltip}
+                  testId={`${testId}-help-notes`}
+                />
                 <Textarea
                   id={`${testId}-notes-input`}
                   placeholder="Instrukcje, wskazówki..."
@@ -521,12 +597,12 @@ export function ExerciseExecutionCard({
                 {showAdvanced && (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-3 pt-3 border-t border-border/20">
                     <div>
-                      <label
+                      <EditableFieldLabel
                         htmlFor={`${testId}-rest-reps-input`}
-                        className="text-[10px] uppercase text-muted-foreground/60 font-bold tracking-wide mb-1.5 block"
-                      >
-                        Przerwa między powt. (s)
-                      </label>
+                        label={`${restRepsField.label} (s)`}
+                        tooltip={restRepsField.tooltip}
+                        testId={`${testId}-help-restReps`}
+                      />
                       <Input
                         id={`${testId}-rest-reps-input`}
                         type="number"
@@ -542,12 +618,12 @@ export function ExerciseExecutionCard({
                       />
                     </div>
                     <div>
-                      <label
+                      <EditableFieldLabel
                         htmlFor={`${testId}-preparation-time-input`}
-                        className="text-[10px] uppercase text-muted-foreground/60 font-bold tracking-wide mb-1.5 block"
-                      >
-                        Czas przygotowania (s)
-                      </label>
+                        label={`${preparationTimeField.label} (s)`}
+                        tooltip={preparationTimeField.tooltip}
+                        testId={`${testId}-help-preparationTime`}
+                      />
                       <Input
                         id={`${testId}-preparation-time-input`}
                         type="number"
@@ -565,12 +641,12 @@ export function ExerciseExecutionCard({
                       />
                     </div>
                     <div>
-                      <label
+                      <EditableFieldLabel
                         htmlFor={`${testId}-tempo-input`}
-                        className="text-[10px] uppercase text-muted-foreground/60 font-bold tracking-wide mb-1.5 block"
-                      >
-                        Tempo
-                      </label>
+                        label={tempoField.label}
+                        tooltip={tempoField.tooltip}
+                        testId={`${testId}-help-tempo`}
+                      />
                       <Input
                         id={`${testId}-tempo-input`}
                         placeholder="np. 2-1-2-0"
@@ -582,12 +658,12 @@ export function ExerciseExecutionCard({
                       />
                     </div>
                     <div>
-                      <span
-                        id={`${testId}-side-label`}
-                        className="text-[10px] uppercase text-muted-foreground/60 font-bold tracking-wide mb-1.5 block"
-                      >
-                        Strona ciała
-                      </span>
+                      <EditableFieldLabel
+                        label={sideField.label}
+                        tooltip={sideField.tooltip}
+                        labelId={`${testId}-side-label`}
+                        testId={`${testId}-help-side`}
+                      />
                       <Select
                         value={(exercise.side ?? 'none').toLowerCase()}
                         onValueChange={(v) => handleChange({ side: v })}
@@ -606,12 +682,12 @@ export function ExerciseExecutionCard({
                       </Select>
                     </div>
                     <div className="sm:col-span-2">
-                      <label
+                      <EditableFieldLabel
                         htmlFor={`${testId}-custom-name-input`}
-                        className="text-[10px] uppercase text-muted-foreground/60 font-bold tracking-wide mb-1.5 block"
-                      >
-                        Własna nazwa
-                      </label>
+                        label="Własna nazwa"
+                        tooltip={customNameTooltip}
+                        testId={`${testId}-help-customName`}
+                      />
                       <Input
                         id={`${testId}-custom-name-input`}
                         placeholder="Nadpisz nazwę dla pacjenta"
@@ -623,12 +699,12 @@ export function ExerciseExecutionCard({
                       />
                     </div>
                     <div className="sm:col-span-2">
-                      <label
+                      <EditableFieldLabel
                         htmlFor={`${testId}-custom-description-input`}
-                        className="text-[10px] uppercase text-muted-foreground/60 font-bold tracking-wide mb-1.5 block"
-                      >
-                        Własny opis
-                      </label>
+                        label="Własny opis"
+                        tooltip={customDescriptionTooltip}
+                        testId={`${testId}-help-customDescription`}
+                      />
                       <Textarea
                         id={`${testId}-custom-description-input`}
                         placeholder="Opis dla pacjenta (opcjonalnie)"
@@ -638,6 +714,81 @@ export function ExerciseExecutionCard({
                         disabled={!canEditField('customDescription')}
                         data-testid={`${testId}-custom-description-input`}
                       />
+                    </div>
+                    <div className="sm:col-span-2 space-y-3 border-t border-border/30 pt-3">
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="text-[10px] uppercase text-muted-foreground/60 font-bold tracking-wide">
+                          Informacje z ćwiczenia
+                        </p>
+                        {onOpenDetails && (
+                          <button
+                            type="button"
+                            onClick={onOpenDetails}
+                            className="text-xs text-primary hover:underline"
+                            data-testid={`${testId}-open-details-btn`}
+                          >
+                            Zobacz pełne szczegóły
+                          </button>
+                        )}
+                      </div>
+
+                      {inlineSourceFields.length > 0 ? (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          {inlineSourceFields.map(({ field, value }) => (
+                            <div
+                              key={field.key}
+                              className="rounded-lg border border-border/40 bg-surface-light/30 px-3 py-2"
+                            >
+                              <div className="flex items-center gap-1.5">
+                                <p className="text-[11px] text-muted-foreground">{field.label}</p>
+                                <TooltipProvider delayDuration={150}>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <button
+                                        type="button"
+                                        className="inline-flex h-4 w-4 items-center justify-center rounded-full text-muted-foreground hover:text-foreground"
+                                        aria-label={`Informacja o polu: ${field.label}`}
+                                        data-testid={`${testId}-source-help-${field.key}`}
+                                      >
+                                        <Info className="h-3 w-3" />
+                                      </button>
+                                    </TooltipTrigger>
+                                    <TooltipContent side="top" className="max-w-xs text-xs">
+                                      {field.tooltip}
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              </div>
+                              <p className="mt-1 text-xs text-foreground whitespace-pre-wrap">{value}</p>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-xs text-muted-foreground">
+                          Brak dodatkowych informacji źródłowych dla tego ćwiczenia.
+                        </p>
+                      )}
+
+                      {(exercise.mainTags?.length || exercise.additionalTags?.length) ? (
+                        <div className="flex flex-wrap gap-1.5">
+                          {exercise.mainTags?.map((tag) => (
+                            <span
+                              key={`main-${tag}`}
+                              className="rounded-md border border-primary/30 bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary"
+                            >
+                              {tag}
+                            </span>
+                          ))}
+                          {exercise.additionalTags?.map((tag) => (
+                            <span
+                              key={`additional-${tag}`}
+                              className="rounded-md border border-border bg-surface px-2 py-0.5 text-[10px] text-muted-foreground"
+                            >
+                              {tag}
+                            </span>
+                          ))}
+                        </div>
+                      ) : null}
                     </div>
                   </div>
                 )}

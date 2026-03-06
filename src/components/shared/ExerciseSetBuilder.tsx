@@ -66,7 +66,14 @@ export interface BuilderExercise {
   id: string;
   name: string;
   type?: string;
+  clinicalDescription?: string;
+  audioCue?: string;
+  rangeOfMotion?: string;
   patientDescription?: string;
+  notes?: string;
+  tempo?: string;
+  preparationTime?: number;
+  difficultyLevel?: string;
   side?: string;
   thumbnailUrl?: string;
   defaultSets?: number;
@@ -337,6 +344,7 @@ function SortableExerciseCard({
         onChange={handleChange}
         onRemove={isReadonly ? undefined : onRemove}
         onPreview={onPreview}
+        onOpenDetails={onPreview}
         dragHandle={dragHandle}
         index={index + 1}
         testIdPrefix={testIdPrefix ?? 'set-builder'}

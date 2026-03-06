@@ -9,14 +9,13 @@ import {
   type BuilderExercise,
   type ExerciseTag,
 } from '@/components/shared/ExerciseSetBuilder';
-import { ImageLightbox } from '@/components/shared/ImageLightbox';
-import { buildExerciseImageUrls } from '@/components/shared/exercise';
 import { GET_EXERCISE_TAGS_BY_ORGANIZATION_QUERY } from '@/graphql/queries/exerciseTags.queries';
 import { GET_TAG_CATEGORIES_BY_ORGANIZATION_QUERY } from '@/graphql/queries/tagCategories.queries';
 import { GET_ORGANIZATION_EXERCISE_SETS_QUERY } from '@/graphql/queries/exerciseSets.queries';
 import { createTagsMap, mapExercisesWithTags } from '@/utils/tagUtils';
 import type { ExerciseTagsResponse, TagCategoriesResponse, OrganizationExerciseSetsResponse } from '@/types/apollo';
-import type { Exercise } from './types';
+import type { Exercise, ExerciseMapping } from './types';
+import { ExerciseDetailsDialog } from './ExerciseDetailsDialog';
 
 interface CustomizeSetStepProps {
   // Set name
@@ -72,7 +71,7 @@ export function CustomizeSetStep({
   hideNameSection = false,
   onPreviewExercise,
 }: CustomizeSetStepProps) {
-  const [previewExercise, setPreviewExercise] = useState<BuilderExercise | null>(null);
+  const [detailsMapping, setDetailsMapping] = useState<ExerciseMapping | null>(null);
   // Load tags for filtering
   const { data: tagsData } = useQuery(GET_EXERCISE_TAGS_BY_ORGANIZATION_QUERY, {
     variables: { organizationId },
@@ -134,15 +133,48 @@ export function CustomizeSetStep({
         : 'np. Rehabilitacja kolana - tydzień 1';
 
   const testIdPrefix = isCreatingNew ? 'create-set' : 'customize-set';
+  const buildMappingForDetails = useCallback((exercise: BuilderExercise): ExerciseMapping => {
+    return {
+      id: `preview-${exercise.id}`,
+      exerciseId: exercise.id,
+      sets: exercise.defaultSets ?? exercise.sets ?? 3,
+      reps: exercise.defaultReps ?? exercise.reps ?? 10,
+      duration: exercise.defaultDuration ?? exercise.duration,
+      restSets: exercise.defaultRestBetweenSets ?? exercise.restSets ?? 60,
+      restReps: exercise.defaultRestBetweenReps ?? exercise.restReps,
+      executionTime: exercise.defaultExecutionTime,
+      exercise: {
+        id: exercise.id,
+        name: exercise.name,
+        type: exercise.type,
+        patientDescription: exercise.patientDescription ?? exercise.description,
+        side: exercise.side,
+        exerciseSide: exercise.exerciseSide,
+        imageUrl: exercise.imageUrl,
+        thumbnailUrl: exercise.thumbnailUrl,
+        images: exercise.images,
+        defaultSets: exercise.defaultSets,
+        defaultReps: exercise.defaultReps,
+        defaultDuration: exercise.defaultDuration,
+        defaultExecutionTime: exercise.defaultExecutionTime,
+        defaultRestBetweenSets: exercise.defaultRestBetweenSets,
+        defaultRestBetweenReps: exercise.defaultRestBetweenReps,
+        mainTags: exercise.mainTags?.map((tag) => tag.name),
+        additionalTags: exercise.additionalTags?.map((tag) => tag.name),
+        scope: exercise.scope,
+      },
+    };
+  }, []);
+
   const handlePreviewExercise = useCallback(
     (exercise: BuilderExercise) => {
       if (onPreviewExercise) {
         onPreviewExercise(exercise);
         return;
       }
-      setPreviewExercise(exercise);
+      setDetailsMapping(buildMappingForDetails(exercise));
     },
-    [onPreviewExercise]
+    [buildMappingForDetails, onPreviewExercise]
   );
 
   return (
@@ -167,21 +199,17 @@ export function CustomizeSetStep({
         onPreviewExercise={handlePreviewExercise}
         testIdPrefix={testIdPrefix}
       />
-      {!onPreviewExercise && previewExercise && (() => {
-        const gallery = buildExerciseImageUrls(previewExercise);
-        if (gallery.length === 0) return null;
-        return (
-          <ImageLightbox
-            src={gallery[0]}
-            alt={previewExercise.name}
-            open={true}
-            onOpenChange={(open) => {
-              if (!open) setPreviewExercise(null);
-            }}
-            images={gallery}
-          />
-        );
-      })()}
+      {!onPreviewExercise && (
+        <ExerciseDetailsDialog
+          open={Boolean(detailsMapping)}
+          mapping={detailsMapping}
+          onOpenChange={(open) => {
+            if (!open) {
+              setDetailsMapping(null);
+            }
+          }}
+        />
+      )}
     </div>
   );
 }

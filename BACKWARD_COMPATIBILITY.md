@@ -36,7 +36,8 @@ Przy zmianie kontraktowej wykonaj:
 2. Dodaj surface docelowy (nowe pole/nowa sciezka).
 3. Zaktualizuj wszystkie miejsca uzycia (admin + mobile + testy, jesli dotyczy).
 4. Dodaj test regresyjny zabezpieczajacy migracje.
-5. Usuniecie starego surface'u dopiero po zamknieciu migracji.
+5. Jesli zmiana dotyka backendu lub bazy, wykonaj lokalnie migracje i `dotnet ef database update`, a w komunikacie koncowym zaznacz, ze deploy backendu na Azure jest manualny i wykonuje go uzytkownik.
+6. Usuniecie starego surface'u dopiero po zamknieciu migracji.
 
 ## Co jest breaking change
 
@@ -66,3 +67,4 @@ Przed merge odpowiedz:
 - Czy oba klienty (admin i mobile) sa uwzglednione?
 - Czy testy i spec sa zaktualizowane?
 - Czy review opisuje ryzyko i rollback?
+- Czy przy zmianie backendowej zaznaczono potrzebe manualnego deploya po stronie uzytkownika?

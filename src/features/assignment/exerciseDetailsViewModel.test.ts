@@ -95,5 +95,21 @@ describe('buildExerciseDetailsViewModel', () => {
     expect(viewModel.imageUrls).toEqual(['/a.jpg', '/b.jpg']);
     expect(viewModel.videoUrl).toBe('https://example.com/video-fallback.mp4');
   });
+
+  it('normalizes tags safely when API returns undefined entries', () => {
+    const viewModel = buildExerciseDetailsViewModel(
+      createMapping({
+        exercise: {
+          id: 'exercise-1',
+          name: 'Przysiad',
+          mainTags: [' core ', undefined as unknown as string, ''],
+          additionalTags: [undefined as unknown as string, 'mobilność'],
+        },
+      })
+    );
+
+    expect(viewModel.mainTags).toEqual(['core']);
+    expect(viewModel.additionalTags).toEqual(['mobilność']);
+  });
 });
 

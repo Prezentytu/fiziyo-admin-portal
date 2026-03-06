@@ -1,14 +1,21 @@
 'use client';
 
 import Image from 'next/image';
+import { Info } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { getMediaUrl } from '@/utils/mediaUrl';
 import type { ExerciseMapping } from './types';
 import { buildExerciseDetailsViewModel } from './exerciseDetailsViewModel';
+import {
+  DIALOG_EXERCISE_FIELD_ORDER,
+  EXERCISE_FIELD_METADATA,
+  type ExerciseFieldGroup,
+  type ExerciseFieldMetadata,
+} from './exerciseFieldMetadata';
 
 interface ExerciseDetailsDialogProps {
   open: boolean;
@@ -16,30 +23,81 @@ interface ExerciseDetailsDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
-function formatSideLabel(side?: string): string | null {
-  if (!side) return null;
+const GROUP_TITLES: Record<ExerciseFieldGroup, string> = {
+  dosage: 'Dawkowanie',
+  execution: 'Parametry wykonania',
+  content: 'Treści ćwiczenia',
+  classification: 'Klasyfikacja',
+};
 
-  const normalizedSide = side.toLowerCase();
-  if (normalizedSide === 'left') return 'Lewa strona';
-  if (normalizedSide === 'right') return 'Prawa strona';
-  if (normalizedSide === 'both') return 'Obie strony';
-  if (normalizedSide === 'alternating') return 'Naprzemiennie';
-  if (normalizedSide === 'none') return 'Bez podziału';
-  return null;
+function FieldInfoItem({
+  field,
+  value,
+}: Readonly<{
+  field: ExerciseFieldMetadata;
+  value: string;
+}>) {
+  return (
+    <div className="rounded-lg border border-border/60 bg-surface-light/20 p-3">
+      <div className="flex items-center gap-2">
+        <p className="text-xs font-medium text-muted-foreground">{field.label}</p>
+        <TooltipProvider delayDuration={150}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                type="button"
+                className="inline-flex h-4 w-4 items-center justify-center rounded-full text-muted-foreground transition-colors hover:text-foreground"
+                aria-label={`Informacja o polu: ${field.label}`}
+                data-testid={`assign-set-preview-exercise-details-help-${field.key}`}
+              >
+                <Info className="h-3.5 w-3.5" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="max-w-xs text-xs">
+              {field.tooltip}
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      </div>
+      <p className="mt-1 text-sm text-foreground whitespace-pre-wrap">{value}</p>
+    </div>
+  );
 }
 
 export function ExerciseDetailsDialog({ open, mapping, onOpenChange }: Readonly<ExerciseDetailsDialogProps>) {
   const viewModel = mapping ? buildExerciseDetailsViewModel(mapping) : null;
-  const sideLabel = formatSideLabel(viewModel?.side);
   const imageUrls = viewModel?.imageUrls ?? [];
   const primaryImage = imageUrls[0] ?? null;
   const fallbackImage = getMediaUrl(mapping?.exercise?.imageUrl) ?? null;
   const displayImage = primaryImage ?? fallbackImage;
+  const dialogFields =
+    viewModel == null
+      ? []
+      : DIALOG_EXERCISE_FIELD_ORDER.map((fieldKey) => {
+          const field = EXERCISE_FIELD_METADATA[fieldKey];
+          if (!field.isDialogVisible) return null;
+          const value = field.formatValue(viewModel);
+          if (!value) return null;
+          return { field, value };
+        }).filter((item): item is { field: ExerciseFieldMetadata; value: string } => item !== null);
+
+  const fieldsByGroup = dialogFields.reduce<Record<ExerciseFieldGroup, Array<{ field: ExerciseFieldMetadata; value: string }>>>(
+    (accumulator, fieldData) => {
+      accumulator[fieldData.field.group].push(fieldData);
+      return accumulator;
+    },
+    {
+      dosage: [],
+      execution: [],
+      content: [],
+      classification: [],
+    }
+  );
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="max-w-3xl p-0 flex flex-col"
+        className="max-w-3xl max-h-[90vh] overflow-hidden p-0 flex flex-col"
         data-testid="assign-set-preview-exercise-details-dialog"
       >
         <DialogHeader className="px-6 pt-6 pb-4 border-b border-border">
@@ -51,7 +109,10 @@ export function ExerciseDetailsDialog({ open, mapping, onOpenChange }: Readonly<
           </DialogDescription>
         </DialogHeader>
 
-        <ScrollArea className="max-h-[70vh]" data-testid="assign-set-preview-exercise-details-content">
+        <div
+          className="flex-1 min-h-0 overflow-y-auto overscroll-contain"
+          data-testid="assign-set-preview-exercise-details-content"
+        >
           <div className="px-6 py-5 space-y-5">
             {displayImage && (
               <div
@@ -88,43 +149,49 @@ export function ExerciseDetailsDialog({ open, mapping, onOpenChange }: Readonly<
 
             <Separator />
 
-            <div className="space-y-2">
-              <p className="text-xs uppercase tracking-wide text-muted-foreground">Parametry wykonania</p>
-              <div className="flex flex-wrap gap-2" data-testid="assign-set-preview-exercise-details-params">
-                <Badge variant="outline">{viewModel?.sets ?? 0} serie</Badge>
-                <Badge variant="outline">{viewModel?.reps ?? 0} powt.</Badge>
-                {viewModel?.executionTime != null && viewModel.executionTime > 0 && (
-                  <Badge variant="outline">Czas powtórzenia: {viewModel.executionTime}s</Badge>
-                )}
-                {viewModel?.duration != null && viewModel.duration > 0 && (
-                  <Badge variant="outline">Czas serii: {viewModel.duration}s</Badge>
-                )}
-                {viewModel?.restSets != null && viewModel.restSets > 0 && (
-                  <Badge variant="outline">Przerwa między seriami: {viewModel.restSets}s</Badge>
-                )}
-                {viewModel?.restReps != null && viewModel.restReps > 0 && (
-                  <Badge variant="outline">Przerwa między powt.: {viewModel.restReps}s</Badge>
-                )}
-                {viewModel?.preparationTime != null && viewModel.preparationTime > 0 && (
-                  <Badge variant="outline">Czas przygotowania: {viewModel.preparationTime}s</Badge>
-                )}
-                {viewModel?.tempo && <Badge variant="outline">Tempo: {viewModel.tempo}</Badge>}
-                {viewModel?.loadDisplayText && <Badge variant="outline">Obciążenie: {viewModel.loadDisplayText}</Badge>}
-                {sideLabel && <Badge variant="outline">Strona ciała: {sideLabel}</Badge>}
+            <div className="space-y-4">
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">Parametry i informacje kliniczne</p>
+              <div className="grid gap-4" data-testid="assign-set-preview-exercise-details-params">
+                {(Object.keys(fieldsByGroup) as ExerciseFieldGroup[]).map((groupKey) => {
+                  const groupFields = fieldsByGroup[groupKey];
+                  if (groupFields.length === 0) return null;
+
+                  return (
+                    <div key={groupKey} className="space-y-2">
+                      <p className="text-xs font-semibold text-foreground/80">{GROUP_TITLES[groupKey]}</p>
+                      <div className="grid gap-2 sm:grid-cols-2">
+                        {groupFields.map(({ field, value }) => (
+                          <FieldInfoItem key={field.key} field={field} value={value} />
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
 
-            {viewModel?.notes && (
+            {(viewModel?.mainTags.length || viewModel?.additionalTags.length) ? (
               <>
                 <Separator />
                 <div className="space-y-2">
-                  <p className="text-xs uppercase tracking-wide text-muted-foreground">Notatka</p>
-                  <p className="text-sm text-foreground whitespace-pre-wrap">{viewModel.notes}</p>
+                  <p className="text-xs uppercase tracking-wide text-muted-foreground">Tagi</p>
+                  <div className="flex flex-wrap gap-2">
+                    {viewModel?.mainTags.map((tag) => (
+                      <Badge key={`main-${tag}`} variant="default">
+                        {tag}
+                      </Badge>
+                    ))}
+                    {viewModel?.additionalTags.map((tag) => (
+                      <Badge key={`additional-${tag}`} variant="outline">
+                        {tag}
+                      </Badge>
+                    ))}
+                  </div>
                 </div>
               </>
-            )}
+            ) : null}
           </div>
-        </ScrollArea>
+        </div>
 
         <div className="px-6 py-4 border-t border-border flex justify-end">
           <Button

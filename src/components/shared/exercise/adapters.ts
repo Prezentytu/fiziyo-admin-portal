@@ -26,6 +26,31 @@ function resolveDisplayName(primaryName?: string, fallbackName?: string): string
   return 'Ćwiczenie';
 }
 
+function buildLoadFromScalars(load: {
+  type?: string;
+  value?: number;
+  unit?: string;
+  text?: string;
+}): ExerciseLoad | undefined {
+  const hasAnyValue =
+    Boolean(load.text && load.text.trim().length > 0) || load.value != null || Boolean(load.type) || Boolean(load.unit);
+  if (!hasAnyValue) return undefined;
+
+  const normalizedType: ExerciseLoad['type'] =
+    load.type === 'band' || load.type === 'bodyweight' || load.type === 'other' ? load.type : 'weight';
+  const normalizedUnit: ExerciseLoad['unit'] =
+    load.unit === 'kg' || load.unit === 'lbs' || load.unit === 'level' ? load.unit : undefined;
+  const textFromValue = load.value == null ? '' : `${load.value}${normalizedUnit ? ` ${normalizedUnit}` : ''}`.trim();
+  const text = load.text?.trim() || textFromValue || 'Obciążenie';
+
+  return {
+    type: normalizedType,
+    value: load.value,
+    unit: normalizedUnit,
+    text,
+  };
+}
+
 /**
  * Maps Assignment Wizard mapping + override to ExerciseExecutionCardData.
  */
@@ -40,7 +65,22 @@ export function fromExerciseMapping(
     mapping.executionTime ?? override?.executionTime ?? exercise?.defaultExecutionTime;
   const exerciseType = exercise?.type?.toLowerCase();
   const isTimeBased = exerciseType === 'time';
-  const load = mapping.load ?? override?.load ?? exercise?.defaultLoad;
+  const load =
+    mapping.load ??
+    buildLoadFromScalars({
+      type: mapping.loadType,
+      value: mapping.loadValue,
+      unit: mapping.loadUnit,
+      text: mapping.loadText,
+    }) ??
+    override?.load ??
+    exercise?.defaultLoad ??
+    buildLoadFromScalars({
+      type: exercise?.loadType,
+      value: exercise?.loadValue,
+      unit: exercise?.loadUnit,
+      text: exercise?.loadText,
+    });
   const loadKg = load?.unit === 'kg' ? load.value : undefined;
   const loadDisplayText = formatLoad(load);
 
@@ -61,6 +101,14 @@ export function fromExerciseMapping(
     loadKg,
     loadDisplayText: loadDisplayText || undefined,
     notes: mapping.notes ?? override?.notes ?? '',
+    patientDescription:
+      mapping.customDescription ?? exercise?.patientDescription ?? exercise?.description ?? undefined,
+    clinicalDescription: exercise?.clinicalDescription,
+    audioCue: exercise?.audioCue,
+    rangeOfMotion: exercise?.rangeOfMotion,
+    difficultyLevel: exercise?.difficultyLevel,
+    mainTags: exercise?.mainTags,
+    additionalTags: exercise?.additionalTags,
     customName: mapping.customName ?? override?.customName,
     customDescription: mapping.customDescription ?? override?.customDescription,
     side: (exercise?.side ?? exercise?.exerciseSide ?? 'none')?.toString().toLowerCase(),
@@ -137,6 +185,17 @@ export function fromBuilderExercise(
     loadKg,
     loadDisplayText: loadDisplayText ?? (loadKg == null ? undefined : `${loadKg} kg`),
     notes: params.notes ?? '',
+    patientDescription: exercise.patientDescription ?? exercise.description,
+    clinicalDescription: (exercise as { clinicalDescription?: string }).clinicalDescription,
+    audioCue: (exercise as { audioCue?: string }).audioCue,
+    rangeOfMotion: (exercise as { rangeOfMotion?: string }).rangeOfMotion,
+    difficultyLevel: (exercise as { difficultyLevel?: string }).difficultyLevel,
+    mainTags: (exercise as { mainTags?: Array<{ name?: string } | string> }).mainTags
+      ?.map((tag) => (typeof tag === 'string' ? tag : tag.name))
+      .filter((tag): tag is string => Boolean(tag)),
+    additionalTags: (exercise as { additionalTags?: Array<{ name?: string } | string> }).additionalTags
+      ?.map((tag) => (typeof tag === 'string' ? tag : tag.name))
+      .filter((tag): tag is string => Boolean(tag)),
     customName: params.customName,
     customDescription: params.customDescription,
     side: (params.exerciseSide ?? exercise.side ?? exercise.exerciseSide ?? 'both')?.toLowerCase(),

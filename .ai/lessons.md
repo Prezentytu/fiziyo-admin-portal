@@ -14,6 +14,14 @@ Dziennik wniosków z pracy AI agentów. Po każdej korekcie dodaj nowy wpis.
 
 ## Wpisy
 
+### 2026-03-06 - Backend contract change needs migration and manual deploy
+
+- **Kategoria**: `Build/Tooling`
+- **Problem**: Zmiana kontraktu GraphQL na backendzie mogła wyglądać na gotową po samym kodzie i buildzie, ale frontend dalej widział stary schemat.
+- **Przyczyna**: Pominięto pełny workflow wdrożeniowy: migracja EF Core, `database update`, restart API oraz fakt, że deploy backendu na Azure jest wykonywany manualnie przez użytkownika.
+- **Rozwiązanie**: Doprecyzowano instrukcje cross-repo i backendowe, że agent przygotowuje kod i migracje, ale musi jasno wskazać potrzebę lokalnego update bazy i ręcznego deploya po stronie użytkownika.
+- **Reguła**: Przy każdej zmianie backendowego kontraktu zakończ pracę dopiero po: migracji, `dotnet ef database update`, lokalnej weryfikacji i komunikacie, że zdalne wdrożenie wykonuje użytkownik manualnie.
+
 ### 2026-03-03 - CTA "Wygeneruj nazwę AI" nie może otwierać innej funkcji
 
 - **Kategoria**: `UI/UX`

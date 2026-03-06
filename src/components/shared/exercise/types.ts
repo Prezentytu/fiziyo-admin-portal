@@ -27,6 +27,13 @@ export interface ExerciseExecutionCardData {
   loadKg?: number;
   loadDisplayText?: string;
   notes?: string;
+  patientDescription?: string;
+  clinicalDescription?: string;
+  audioCue?: string;
+  rangeOfMotion?: string;
+  difficultyLevel?: string;
+  mainTags?: string[];
+  additionalTags?: string[];
   customName?: string;
   customDescription?: string;
   /** Side: none | left | right | both | alternating */
@@ -69,6 +76,8 @@ export interface ExerciseExecutionCardProps {
   onRemove?: () => void;
   /** Optional: show preview icon on thumbnail and call on click */
   onPreview?: () => void;
+  /** Optional: opens full read-only details dialog */
+  onOpenDetails?: () => void;
   /** Optional slot: drag handle (e.g. for sortable list) */
   dragHandle?: ReactNode;
   /** Optional index badge (e.g. "1") */

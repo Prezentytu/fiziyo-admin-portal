@@ -15,6 +15,9 @@ function createMapping(overrides?: Partial<ExerciseMapping>): ExerciseMapping {
     sets: 3,
     reps: 10,
     executionTime: 6,
+    tempo: '3-1-2-0',
+    preparationTime: 5,
+    restSets: 45,
     customName: 'Skłon boczny',
     customDescription: 'Opis dla pacjenta z customizacji',
     notes: 'Oddychaj spokojnie',
@@ -22,10 +25,14 @@ function createMapping(overrides?: Partial<ExerciseMapping>): ExerciseMapping {
       id: 'exercise-1',
       name: 'Skłon boczny bazowy',
       patientDescription: 'Opis bazowy',
+      clinicalDescription: 'Opis kliniczny',
+      audioCue: 'Oddychaj spokojnie',
+      rangeOfMotion: 'Pełny zakres',
       imageUrl: '/image-1.jpg',
       images: ['/image-1.jpg', '/image-2.jpg'],
       videoUrl: 'https://example.com/video.mp4',
       side: 'right',
+      difficultyLevel: 'MEDIUM',
     },
     ...overrides,
   };
@@ -42,8 +49,14 @@ describe('ExerciseDetailsDialog', () => {
     expect(screen.getByTestId('assign-set-preview-exercise-details-description')).toHaveTextContent(
       'Opis dla pacjenta z customizacji'
     );
-    expect(screen.getByTestId('assign-set-preview-exercise-details-params')).toHaveTextContent('3 serie');
+    expect(screen.getByTestId('assign-set-preview-exercise-details-params')).toHaveTextContent('Serie');
+    expect(screen.getByTestId('assign-set-preview-exercise-details-params')).toHaveTextContent('3');
+    expect(screen.getByTestId('assign-set-preview-exercise-details-params')).toHaveTextContent('Tempo');
+    expect(screen.getByTestId('assign-set-preview-exercise-details-params')).toHaveTextContent('3-1-2-0');
+    expect(screen.getByTestId('assign-set-preview-exercise-details-help-tempo')).toBeInTheDocument();
     expect(screen.getByTestId('assign-set-preview-exercise-details-video')).toBeInTheDocument();
+    expect(screen.getByTestId('assign-set-preview-exercise-details-dialog')).toHaveClass('max-h-[90vh]');
+    expect(screen.getByTestId('assign-set-preview-exercise-details-content')).toHaveClass('flex-1', 'min-h-0');
   });
 
   it('shows fallback description when mapping does not provide descriptions', () => {
