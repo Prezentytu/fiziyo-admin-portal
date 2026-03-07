@@ -2,57 +2,66 @@
 
 ## Zakres
 
-5-krokowy wizard przypisywania zestawów ćwiczeń pacjentom. Główny flow pracy fizjoterapeuty.
+Wizard personalizacji i przypisania planu pacjenta. Flow zawsze kończy się utworzeniem nowego planu (kopii roboczej) i przypisaniem go pacjentowi/pacjentom.
 
-## Architektura — 5 kroków
+## Aktualna architektura flow
 
-```
-KROK 1        KROK 2         KROK 3           KROK 4        KROK 5
-●─────────────○─────────────○───────────────○─────────────○
-Zestaw       Pacjenci    Personalizacja   Harmonogram   Podsumowanie
-```
+Kroki są dynamiczne zależnie od punktu wejścia:
+
+- `from-set` (detal zestawu): `customize-set -> select-patients -> schedule -> summary`
+- `from-patient` z preselected pacjentem i bez preselected zestawu: `select-set -> customize-set -> schedule -> summary`
+- `from-patient` bez preselected pacjenta (dashboard): `select-set -> customize-set -> select-patients -> schedule -> summary`
+
+`customize-set` jest zawsze obecny i nie jest opcjonalny.
+
+## Model danych i intencja UX
+
+- Użytkownik wybiera zestaw źródłowy (lub tworzy od zera).
+- Użytkownik personalizuje nazwę planu i ćwiczenia.
+- Podczas `submit` tworzymy nowy `ExerciseSet` na bazie buildera i dopiero ten nowy plan przypisujemy pacjentom.
+- Copy w UI musi jasno rozróżniać:
+  - `zestaw źródłowy/szablon`
+  - `plan pacjenta` (wynik personalizacji)
 
 ## Kluczowe wzorce
 
-### Template vs Draft Mode (Krok 1)
+### Template vs Draft Mode
 
-- **Template Mode** — wybrano szablon: nazwa tylko do odczytu, ćwiczenia można ukrywać, przycisk "Dostosuj" tworzy kopię
-- **Draft Mode** — nowy zestaw lub po "Dostosuj": pełny CRUD, Rapid Builder, checkbox "Zapisz jako szablon"
+- **Template Mode**: wybrany zestaw jako źródło, ograniczona edycja, ochrona przed przypadkową zmianą szablonu.
+- **Draft Mode**: pełna edycja planu pacjenta (CRUD ćwiczeń + parametry + nazwa).
 
 ### Phantom Set
 
-Przycisk "Stwórz nowy" natychmiast tworzy pusty zestaw:
-
-- `"Terapia dla {Pacjent} - {Data}"` (gdy pacjent predefiniowany)
-- `"Nowy zestaw - {Data}"` (bez pacjenta)
-
-**Smart Draft Logic**: Jeśli pusty szkic z dzisiaj istnieje → otwórz go zamiast duplikatu.
+Przycisk "Stwórz nowy" inicjuje nowy plan w wizardze bez opuszczania flow przypisania.
 
 ### Rapid Builder
 
-Wyszukiwarka ćwiczeń + Enter dodaje ćwiczenie do zestawu. Szybkie budowanie bez wychodzenia z wizarda.
+Wyszukiwarka + Enter dodaje ćwiczenia do planu pacjenta.
 
-### Punkty wejścia
+## Punkty wejścia
 
-| Miejsce                               | Tryb         | Predefiniowane |
-| ------------------------------------- | ------------ | -------------- |
-| Strona pacjenta → "Przypisz zestaw"   | from-patient | Pacjent        |
-| Strona zestawu → "Przypisz pacjentom" | from-set     | Zestaw         |
-| Dashboard → "Przypisz zestaw"         | -            | Nic            |
+| Miejsce                                    | Tryb         | Predefiniowane |
+| ------------------------------------------ | ------------ | -------------- |
+| Strona pacjenta → "Przypisz zestaw"        | from-patient | Pacjent        |
+| Strona zestawu → "Personalizuj i przypisz" | from-set     | Zestaw         |
+| Dashboard → "Przypisz zestaw"              | from-patient | Nic            |
 
-## Struktura folderów (zgodna z .ai/STRUCTURE.md)
+## Struktura folderu
 
-- **utils/** — logika czysta: `assignmentWizardUtils.ts` (canProceed), `selectSetStepUtils.ts` (filter/sort). Testy w **utils/**tests**/**.
-- **types.ts** — typy domenowe i `getWizardSteps`; test: `types.test.ts` obok.
-- **Komponenty** i testy komponentów (`.test.tsx`) — w korzeniu folderu obok plików.
+- `utils/assignmentWizardUtils.ts` — `canProceed` i logika przejść
+- `utils/selectSetStepUtils.ts` — filtrowanie/sortowanie w kroku wyboru zestawu
+- `types.ts` — domena + `getWizardSteps`
+- komponenty kroków i dialogi sukcesu obok siebie w `src/features/assignment/`
 
 ## Komponenty
 
-- `AssignmentWizard.tsx` — główny wizard
-- `SelectSetStep.tsx`, `CustomizeSetStep.tsx` — krok 1
+- `AssignmentWizard.tsx` — kontener i orkiestracja
+- `SelectSetStep.tsx` — wybór zestawu źródłowego
+- `CustomizeSetStep.tsx` — personalizacja planu pacjenta
+- `SelectPatientsStep.tsx` — wybór pacjentów
 - `ScheduleStep.tsx` — harmonogram
-- `SummaryStep.tsx` — podsumowanie
-- `RapidExerciseBuilder.tsx` — szybkie dodawanie ćwiczeń
+- `SummaryStep.tsx` — podsumowanie i potwierdzenie
+- `AssignmentSuccessDialog.tsx` — sukces + QR/PDF
 
 ## Referencje
 
@@ -63,4 +72,4 @@ Wyszukiwarka ćwiczeń + Enter dodaje ćwiczenie do zestawu. Szybkie budowanie b
 ## Konwencje data-testid
 
 Prefiks: `assignment-`, `set-`
-Przykłady: `assignment-wizard`, `assignment-step-1`, `assignment-submit-btn`, `set-rapid-builder-search`
+Przykłady: `assign-wizard`, `assign-summary-submit-btn`, `wizard-plan-name-input`, `set-rapid-builder-search`

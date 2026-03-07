@@ -1,156 +1,107 @@
-# Assignment Wizard - Wizard Przypisywania Zestawów Ćwiczeń
+# Assignment Wizard - Personalizacja i przypisanie planu pacjenta
 
 ## Cel biznesowy
 
-Wizard służy do **przypisywania zestawów ćwiczeń pacjentom**. Jest to główny flow pracy fizjoterapeuty w aplikacji - zamiast tworzyć program ćwiczeń od zera dla każdego pacjenta, fizjoterapeuta może:
+Wizard służy do szybkiego przygotowania i przypisania planu pacjentowi. Fizjoterapeuta nie przypina "surowego" zestawu 1:1, tylko personalizuje plan na bazie zestawu źródłowego.
 
-1. Wybrać gotowy szablon z biblioteki
-2. Dostosować go do potrzeb konkretnego pacjenta
-3. Ustawić harmonogram (częstotliwość, okres)
-4. Przypisać jednocześnie do wielu pacjentów
-
-**Efekt końcowy:** Pacjent otrzymuje spersonalizowany zestaw ćwiczeń w aplikacji mobilnej.
+**Efekt końcowy:** powstaje nowy plan pacjenta (`ExerciseSet`) i zostaje przypisany do wybranych pacjentów.
 
 ## Punkty wejścia
 
-| Miejsce                                   | Tryb         | Co jest predefiniowane      |
-| ----------------------------------------- | ------------ | --------------------------- |
-| **Strona pacjenta** → "Przypisz zestaw"   | from-patient | Pacjent jest już wybrany    |
-| **Strona zestawu** → "Przypisz pacjentom" | from-set     | Zestaw jest już wybrany     |
-| **Dashboard** → "Przypisz zestaw"         | from-patient | Nic nie jest predefiniowane |
+| Miejsce                                    | Tryb         | Co jest predefiniowane      |
+| ------------------------------------------ | ------------ | --------------------------- |
+| Strona pacjenta → "Przypisz zestaw"        | from-patient | Pacjent jest już wybrany    |
+| Strona zestawu → "Personalizuj i przypisz" | from-set     | Zestaw źródłowy             |
+| Dashboard → "Przypisz zestaw"              | from-patient | Nic nie jest predefiniowane |
 
-## Architektura - 5 kroków wizarda
+## Architektura kroków (dynamiczna)
 
-```
-KROK 1        KROK 2         KROK 3           KROK 4        KROK 5
-●─────────────○─────────────○───────────────○─────────────○
-Zestaw       Pacjenci    Personalizacja   Harmonogram   Podsumowanie
-```
+Wizard ma do 5 kroków, ale kolejność zależy od kontekstu wejścia:
 
-### Krok 1: Wybór zestawu ćwiczeń
+- `from-set`: `customize-set -> select-patients -> schedule -> summary`
+- `from-patient` (pacjent preselected): `select-set -> customize-set -> schedule -> summary`
+- `from-patient` (dashboard, bez preselected): `select-set -> customize-set -> select-patients -> schedule -> summary`
 
-**Layout:** Lista zestawów (lewa) + Podgląd/Builder (prawa)
+`customize-set` jest zawsze obowiązkowy.
 
-**Podgląd szczegółów ćwiczenia (read-only):**
+## Aktualny kontrakt UX
 
-- W sekcji „Ćwiczenia w zestawie” dostępna jest akcja „Szczegóły” dla każdej pozycji.
-- Akcja otwiera dialog ze szczegółami pojedynczego ćwiczenia (opis, media, parametry wykonania).
-- Źródło danych: `exerciseMappings` wybranego zestawu (bez dodatkowego requestu GraphQL).
+- CTA wejściowe musi komunikować intencję: personalizacja + przypisanie.
+- W wizardze rozróżniamy:
+  - **zestaw źródłowy/szablon**
+  - **plan pacjenta** (nazwa edytowana przez użytkownika)
+- CTA końcowe komunikuje dwie operacje: utworzenie planu i przypisanie.
 
-**Tryby pracy:**
+## Zachowanie domenowe (source of truth)
 
-- **Template Mode** - wybrano szablon z ćwiczeniami
-  - Nazwa: tylko do odczytu
-  - Ćwiczenia: można tylko ukrywać (Eye/EyeOff)
-  - Przycisk "Dostosuj" → tworzy kopię
-- **Draft Mode** - nowy zestaw lub po "Dostosuj"
-  - Nazwa: edytowalna
-  - Pełny CRUD na ćwiczeniach
-  - Rapid Builder (wyszukiwarka + Enter)
-  - Checkbox "Zapisz jako szablon"
+W `handleSubmit`:
 
-### Krok 2: Wybór pacjentów
+1. Tworzymy nowy `ExerciseSet` z aktualnego stanu buildera (`planName`, ćwiczenia, parametry)
+2. Dodajemy ćwiczenia do nowego planu
+3. Przypisujemy nowy plan pacjentowi/pacjentom
+4. Opcjonalnie tworzymy dodatkowy szablon, jeśli użytkownik zaznaczy zapis jako template
 
-- Wyszukiwanie pacjentów
-- Multi-select
-- Badge "Przypisany" dla już przypisanych
-- Możliwość odpisania z listy
-
-### Krok 3: Personalizacja (opcjonalny)
-
-- Zmiana parametrów (serie, powtórzenia, czas)
-- Notatki dla pacjenta
-- Ukrywanie pojedynczych ćwiczeń
-
-### Krok 4: Harmonogram
-
-- Data rozpoczęcia/zakończenia
-- Częstotliwość (ile razy dziennie)
-- Dni tygodnia
-- Przerwy między seriami
-
-### Krok 5: Podsumowanie
-
-- Przegląd wybranych opcji
-- Przycisk "Przypisz do X pacjentów"
-- Dialog sukcesu z QR kodem
+To zachowanie jest obowiązujące dla bieżącej implementacji.
 
 ## Kluczowe funkcjonalności
 
-### Phantom Set (Natychmiastowe tworzenie)
+### Template vs Draft
 
-Przycisk "Stwórz nowy" natychmiast tworzy pusty zestaw:
+- **Template Mode**: wybór zestawu źródłowego i bezpieczne przejście do personalizacji.
+- **Draft Mode**: pełna edycja planu pacjenta (nazwa, ćwiczenia, parametry).
 
-- `"Terapia dla {Pacjent} - {Data}"` (jeśli pacjent predefiniowany)
-- `"Nowy zestaw - {Data}"` (bez pacjenta)
+### Phantom Set
 
-**Smart Draft Logic:** Jeśli pusty szkic z dzisiaj istnieje → otwiera go zamiast duplikatu.
+Szybkie rozpoczęcie planu bez wychodzenia z wizarda ("Stwórz nowy").
 
 ### Rapid Builder
 
-Command Bar z wyszukiwarką:
-
-1. Wpisz nazwę ćwiczenia
-2. Strzałka ↓ do nawigacji
-3. Enter → ćwiczenie dodane z domyślnymi parametrami
-
-### Template Protection
-
-Szablony są chronione przed przypadkową edycją. "Dostosuj" tworzy kopię (Fork).
+Wyszukiwarka + Enter do szybkiego dodawania ćwiczeń.
 
 ## Komponenty
 
-| Komponent            | Lokalizacja                                        | Opis                      |
-| -------------------- | -------------------------------------------------- | ------------------------- |
-| AssignmentWizard     | `src/features/assignment/AssignmentWizard.tsx`     | Główny kontener wizarda   |
-| SelectSetStep        | `src/features/assignment/SelectSetStep.tsx`        | Krok 1 (zestaw)           |
-| CustomizeSetStep     | `src/features/assignment/CustomizeSetStep.tsx`     | Krok 2 (personalizacja)   |
-| SelectPatientsStep   | `src/features/assignment/SelectPatientsStep.tsx`   | Krok 3 (pacjenci)         |
-| ScheduleStep         | `src/features/assignment/ScheduleStep.tsx`         | Krok 4 (harmonogram)      |
-| SummaryStep          | `src/features/assignment/SummaryStep.tsx`          | Krok 5 (podsumowanie)     |
-| RapidExerciseBuilder | `src/features/assignment/RapidExerciseBuilder.tsx` | Szybkie dodawanie ćwiczeń |
+| Komponent               | Lokalizacja                                           | Rola                                 |
+| ----------------------- | ----------------------------------------------------- | ------------------------------------ |
+| AssignmentWizard        | `src/features/assignment/AssignmentWizard.tsx`        | Orkiestracja flow, submit i success  |
+| SelectSetStep           | `src/features/assignment/SelectSetStep.tsx`           | Wybór zestawu źródłowego             |
+| CustomizeSetStep        | `src/features/assignment/CustomizeSetStep.tsx`        | Personalizacja planu pacjenta        |
+| SelectPatientsStep      | `src/features/assignment/SelectPatientsStep.tsx`      | Wybór pacjentów                      |
+| ScheduleStep            | `src/features/assignment/ScheduleStep.tsx`            | Harmonogram                          |
+| SummaryStep             | `src/features/assignment/SummaryStep.tsx`             | Podsumowanie przed utworzeniem planu |
+| AssignmentSuccessDialog | `src/features/assignment/AssignmentSuccessDialog.tsx` | Potwierdzenie przypisania + QR/PDF   |
 
-## Data-testid
+## Data-testid (kluczowe)
 
 ```
-assign-wizard-container
-assign-wizard-step-{1-5}
+assign-wizard
 assign-wizard-next-btn
-assign-wizard-back-btn
-assign-wizard-submit-btn
-
-assign-set-list
-assign-set-card-{id}
-assign-set-create-new-btn
-assign-set-customize-btn
-
-assign-patient-list
-assign-patient-search-input
-assign-patient-item-{id}
-assign-patient-selected-count
-
-assign-schedule-start-date
-assign-schedule-end-date
-assign-schedule-frequency-input
-assign-schedule-weekday-{day}
+assign-summary-submit-btn
+wizard-plan-name-input
+wizard-plan-name-ai-btn
+assign-success-dialog
+assign-success-close-btn
 ```
 
 ## Metryki sukcesu
 
-| Metryka                        | Cel         |
-| ------------------------------ | ----------- |
-| Czas przypisania standardowego | < 30 sekund |
-| Czas tworzenia nowego zestawu  | < 60 sekund |
-| Liczba kliknięć do przypisania | ≤ 5         |
-| Błędy "zniszczenia szablonu"   | 0           |
+| Metryka                                  | Cel            |
+| ---------------------------------------- | -------------- |
+| Czas od CTA do potwierdzenia przypisania | < 60 sekund    |
+| Liczba nieporozumień dot. zmiany nazwy   | trend malejący |
+| Błędy przypadkowej edycji szablonu       | 0              |
 
 ## Changelog
 
-### 2026-02-04
+### 2026-03-07
 
-- Migracja dokumentacji do formatu SPEC
-- Utworzenie specyfikacji na podstawie `docs/assignment-wizard-overview.md`
+- Aktualizacja specyfikacji do realnego flow `personalizacja planu -> przypisanie`.
+- Doprecyzowanie kontraktu UX: użytkownik tworzy plan pacjenta na bazie zestawu źródłowego.
+- Ujednolicenie nomenklatury (`plan pacjenta` vs `zestaw źródłowy`).
 
 ### 2026-02-21
 
 - Krok 1 rozszerzony o podgląd szczegółów pojedynczego ćwiczenia w dialogu (opis, zdjęcia/wideo, parametry).
+
+### 2026-02-04
+
+- Migracja dokumentacji do formatu SPEC.

@@ -480,7 +480,7 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
 
       {/* Hero Action + Quick Stats */}
       <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-12">
-        {/* Hero Action - Przypisz pacjenta */}
+        {/* Hero Action - Personalizacja i przypisanie */}
         <button
           onClick={() => setIsAssignDialogOpen(true)}
           className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary via-primary to-primary-dark p-5 text-left transition-all duration-300 hover:shadow-xl hover:shadow-primary/20 hover:scale-[1.02] cursor-pointer sm:col-span-1 lg:col-span-4"
@@ -494,8 +494,8 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
               <UserPlus className="h-5 w-5 text-white" />
             </div>
             <div className="min-w-0 flex-1">
-              <h3 className="text-base font-bold text-white">Przypisz pacjenta</h3>
-              <p className="text-sm text-white/70">Dodaj do programu</p>
+              <h3 className="text-base font-bold text-white">Personalizuj i przypisz</h3>
+              <p className="text-sm text-white/70">Utwórz plan pacjenta na bazie zestawu</p>
             </div>
             <Plus className="h-5 w-5 text-white/60 group-hover:text-white transition-colors shrink-0" />
           </div>
@@ -597,21 +597,21 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
             <Users className="h-5 w-5 text-secondary" />
             Przypisani pacjenci ({assignments.length})
           </h2>
-          <Button size="sm" variant="outline" onClick={() => setIsAssignDialogOpen(true)}>
+          <Button size="sm" onClick={() => setIsAssignDialogOpen(true)}>
             <Plus className="mr-2 h-4 w-4" />
-            Przypisz
+            Personalizuj i przypisz zestaw
           </Button>
         </div>
 
         {assignments.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-border/60 bg-surface/30 p-12">
-            <EmptyState
-              icon={Users}
-              title="Brak przypisanych pacjentów"
-              description="Przypisz ten zestaw do pacjentów"
-              actionLabel="Przypisz pacjenta"
-              onAction={() => setIsAssignDialogOpen(true)}
-            />
+          <div className="py-10 text-center">
+            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-surface-light">
+              <Users className="h-6 w-6 text-muted-foreground" />
+            </div>
+            <p className="text-xl font-semibold text-foreground">Brak przypisanych pacjentów</p>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Utwórz spersonalizowany plan i przypisz go pacjentom
+            </p>
           </div>
         ) : (
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 animate-stagger">

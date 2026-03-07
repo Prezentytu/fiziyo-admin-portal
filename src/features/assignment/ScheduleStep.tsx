@@ -121,9 +121,9 @@ function getSelectedDaysCount(frequency: Frequency): number {
 function detectFrequencyType(frequency: Frequency): FrequencyType {
   const selectedDaysCount = getSelectedDaysCount(frequency);
   const hasSpecificDays = selectedDaysCount > 0;
-  
+
   if (frequency.isFlexible === false || hasSpecificDays) return 'SPECIFIC_DAYS';
-  
+
   const tpw = frequency.timesPerWeek ?? 7;
   const tpd = frequency.timesPerDay ?? 1;
 
@@ -131,7 +131,7 @@ function detectFrequencyType(frequency: Frequency): FrequencyType {
     if (tpd >= 2) return 'DAILY_2X';
     return 'DAILY_1X';
   }
-  
+
   return 'WEEKLY_3X';
 }
 
@@ -194,11 +194,11 @@ export function ScheduleStep({
         timesPerWeek: selectedDaysCount || 3,
         isFlexible: false,
       };
-      
+
       if (defaultDays) {
         Object.assign(newFreq, defaultDays);
       }
-      
+
       onFrequencyChange(newFreq);
       return;
     }
@@ -282,14 +282,14 @@ export function ScheduleStep({
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full min-h-0 p-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      
+
       {/* LEWA KOLUMNA: CZĘSTOTLIWOŚĆ */}
       <div className="flex flex-col min-h-0 h-full bg-surface border border-border/60 rounded-2xl shadow-sm overflow-hidden">
         <div className="flex-1 overflow-y-auto p-6 md:p-8 flex flex-col gap-6">
           <h3 className="text-base font-semibold text-foreground flex items-center gap-2 shrink-0 border-b border-border/40 pb-4">
             <Zap className="w-5 h-5 text-muted-foreground" /> Częstotliwość ćwiczeń
           </h3>
-          
+
           <div className="grid grid-cols-2 gap-3 shrink-0">
             <CardOption
               checked={frequencyType === 'DAILY_1X'}
@@ -370,7 +370,7 @@ export function ScheduleStep({
             </div>
             <div>
               <label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2.5 block">
-                Razy w ciągu dnia
+                Sesje w ciągu dnia
               </label>
               <NumberControl
                 value={Math.max(1, frequency.timesPerDay || 1)}
@@ -392,7 +392,7 @@ export function ScheduleStep({
             <h3 className="text-base font-semibold text-foreground flex items-center gap-2 shrink-0 border-b border-border/40 pb-4">
               <Calendar className="w-5 h-5 text-muted-foreground" /> Okres trwania planu
             </h3>
-            
+
             <div className="grid grid-cols-3 gap-3 shrink-0">
               <CardOption
                 checked={durationType === 'WEEKS_2' && !isCustomDateDirty}

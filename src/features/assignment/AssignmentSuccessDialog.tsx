@@ -50,7 +50,7 @@ interface AssignmentSuccessDialogProps {
     name: string;
     email?: string;
   }>;
-  /** Nazwa zestawu ćwiczeń */
+  /** Nazwa planu pacjenta */
   setName: string;
   /** Data wygaśnięcia Premium (z backendu) */
   premiumValidUntil?: string | null;
@@ -341,11 +341,11 @@ export function AssignmentSuccessDialog({
               <CheckCircle2 className="h-6 w-6 text-primary" />
             </div>
             <div>
-              <DialogTitle className="text-lg">Zestaw przypisany!</DialogTitle>
+              <DialogTitle className="text-lg">Plan pacjenta przypisany!</DialogTitle>
               <DialogDescription>
                 {isSinglePatient
-                  ? `Pacjent ${selectedPatient.name} otrzymał zestaw "${setName}"`
-                  : `${patients.length} pacjentów otrzymało zestaw "${setName}"`}
+                  ? `Pacjent ${selectedPatient.name} otrzymał plan "${setName}"`
+                  : `${patients.length} pacjentów otrzymało plan "${setName}"`}
               </DialogDescription>
             </div>
           </div>
@@ -487,7 +487,7 @@ export function AssignmentSuccessDialog({
                 data-testid="assign-success-another-btn"
               >
                 <ArrowRight className="h-3 w-3" />
-                Przypisz kolejny zestaw
+                Utwórz i przypisz kolejny plan
               </Button>
             )}
           </div>

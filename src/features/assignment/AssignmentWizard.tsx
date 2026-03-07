@@ -727,26 +727,26 @@ function AssignmentWizardContent({
           title: 'Wybierz zestaw ćwiczeń',
           description: preselectedPatient
             ? `Wybierz zestaw dla pacjenta ${preselectedPatient.name}`
-            : 'Wybierz zestaw ćwiczeń do przypisania',
+            : 'Wybierz zestaw ćwiczeń do personalizacji i przypisania',
         };
       case 'customize-set':
         return {
-          title: isCreatingNewSet ? 'Nowy zestaw ćwiczeń' : 'Personalizacja zestawu',
+          title: isCreatingNewSet ? 'Tworzenie planu pacjenta' : 'Personalizacja planu pacjenta',
           description: isCreatingNewSet
             ? preselectedPatient
-              ? `Utwórz zestaw dla pacjenta ${preselectedPatient.name}`
-              : 'Dodaj ćwiczenia i skonfiguruj parametry'
+              ? `Utwórz plan dla pacjenta ${preselectedPatient.name}`
+              : 'Dodaj ćwiczenia i skonfiguruj plan pacjenta'
             : preselectedPatient
-              ? `Dostosuj ćwiczenia dla pacjenta ${preselectedPatient.name}`
-              : 'Dodaj, usuń lub edytuj parametry ćwiczeń',
+              ? `Dostosuj nazwę i ćwiczenia planu dla pacjenta ${preselectedPatient.name}`
+              : 'Dostosuj nazwę i parametry planu pacjenta',
         };
       case 'select-patients':
         return {
           title: 'Wybierz pacjentów',
           description: selectedSet
-            ? `Wybierz pacjentów dla zestawu "${selectedSet.name}"`
+            ? `Wybierz pacjentów dla planu "${selectedSet.name}"`
             : planName
-              ? `Wybierz pacjentów dla zestawu "${planName}"`
+              ? `Wybierz pacjentów dla planu "${planName}"`
               : 'Wybierz pacjentów do przypisania',
         };
       case 'schedule':
@@ -757,7 +757,7 @@ function AssignmentWizardContent({
       case 'summary':
         return {
           title: 'Podsumowanie',
-          description: 'Sprawdź i potwierdź przypisanie zestawu',
+          description: 'Sprawdź i potwierdź utworzenie planu oraz przypisanie',
         };
       default:
         return { title: '', description: '' };
@@ -847,7 +847,7 @@ function AssignmentWizardContent({
           variables: {
             organizationId,
             name: planName.trim(),
-            description: isCreatingNewSet ? null : `Spersonalizowany z: ${selectedSet?.name || 'szablonu'}`,
+            description: isCreatingNewSet ? null : `Plan pacjenta utworzony na bazie: ${selectedSet?.name || 'szablonu'}`,
           },
         });
 
@@ -891,11 +891,11 @@ function AssignmentWizardContent({
             exerciseMappings: [],
           };
         } else {
-          throw new Error('Nie udało się utworzyć zestawu');
+          throw new Error('Nie udało się utworzyć planu pacjenta');
         }
       } catch (createError) {
-        console.error('Błąd tworzenia zestawu:', createError);
-        toast.error('Nie udało się utworzyć zestawu');
+        console.error('Błąd tworzenia planu pacjenta:', createError);
+        toast.error('Nie udało się utworzyć planu pacjenta');
         setIsCreatingSet(false);
         return;
       } finally {
@@ -1039,7 +1039,7 @@ function AssignmentWizardContent({
           name: p.name,
           email: p.email,
         })),
-        setName: planName || effectiveSet?.name || 'Nowy zestaw',
+        setName: planName || effectiveSet?.name || 'Nowy plan pacjenta',
         premiumValidUntil: lastPremiumValidUntil,
         exerciseSet: effectiveSet!,
         frequency,
@@ -1049,7 +1049,7 @@ function AssignmentWizardContent({
       onSuccess?.();
     } catch (error) {
       console.error('Błąd przypisywania:', error);
-      toast.error('Nie udało się przypisać zestawu');
+      toast.error('Nie udało się utworzyć i przypisać planu');
     }
   };
 
@@ -1063,7 +1063,7 @@ function AssignmentWizardContent({
     const nextStep = steps[currentIndex + 1];
 
     if (isLastStep) {
-      return 'Przypisz zestaw';
+      return 'Utwórz plan i przypisz';
     }
 
     if (nextStep) {
@@ -1237,14 +1237,14 @@ function AssignmentWizardContent({
         data-testid="assign-wizard"
       >
         <VisuallyHidden.Root>
-          <DialogTitle>Przypisanie zestawu – {stepInfo.title}</DialogTitle>
+          <DialogTitle>Personalizacja i przypisanie – {stepInfo.title}</DialogTitle>
         </VisuallyHidden.Root>
         {/* Toolbar: row-1 = eyebrow (h-7), row-2 = input + stepper + X (h-9). All on same grid → perfect alignment */}
         <div className="shrink-0 bg-surface/95 backdrop-blur-sm border-b border-border px-6">
           {/* Row 1: eyebrow — fixed height with padding */}
           <div className="h-7 flex items-end pb-1">
             <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60 leading-none">
-              Przypisanie zestawu
+              Personalizacja i przypisanie
             </span>
           </div>
           {/* Row 2: input (left) + stepper + X (right) — all h-9, same row → centers aligned by definition */}
@@ -1257,7 +1257,7 @@ function AssignmentWizardContent({
                     type="text"
                     value={planName}
                     onChange={(e) => setPlanName(e.target.value)}
-                    placeholder="Nazwa planu dla pacjenta"
+                    placeholder="Nazwa planu pacjenta"
                     autoComplete="off"
                     data-testid="wizard-plan-name-input"
                     className="peer flex-1 min-w-0 bg-transparent text-base font-semibold text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-0 border-none p-0 cursor-text"

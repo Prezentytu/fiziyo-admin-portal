@@ -14,6 +14,14 @@ Dziennik wniosków z pracy AI agentów. Po każdej korekcie dodaj nowy wpis.
 
 ## Wpisy
 
+### 2026-03-07 - CTA przypisania musi ujawniać tworzenie planu
+
+- **Kategoria**: `UI/UX`
+- **Problem**: CTA `Przypisz pacjenta` sugerowało proste przypięcie zestawu, a flow faktycznie przechodził przez personalizację i tworzył nowy plan.
+- **Przyczyna**: Niespójny model mentalny między copy na ekranie detalu a logiką `AssignmentWizard` (`create copy -> assign`).
+- **Rozwiązanie**: Ujednolicono język na `plan pacjenta`, zmieniono CTA wejściowe i końcowe oraz zsynchronizowano dokumentację assignment.
+- **Reguła**: Gdy flow tworzy nowy byt pośredni, CTA i nagłówki muszą to komunikować przed pierwszym kliknięciem.
+
 ### 2026-03-07 - Po utworzeniu zestawu bez auto-przekierowania
 
 - **Kategoria**: `UI/UX`

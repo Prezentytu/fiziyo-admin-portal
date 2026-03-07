@@ -274,8 +274,8 @@ export function getWizardSteps(
   // This is where user can personalize exercises (add, remove, edit parameters)
   steps.push({
     id: 'customize-set',
-    label: isCreatingNewSet ? 'Nowy zestaw' : 'Personalizacja',
-    description: isCreatingNewSet ? 'Utwórz zestaw ćw.' : 'Dostosuj ćwiczenia',
+    label: isCreatingNewSet ? 'Tworzenie planu' : 'Personalizacja planu',
+    description: isCreatingNewSet ? 'Utwórz plan pacjenta' : 'Dostosuj plan pacjenta',
   });
 
   // Step 3: Select patients (if not preselected)

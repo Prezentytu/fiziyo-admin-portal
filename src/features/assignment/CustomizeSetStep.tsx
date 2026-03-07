@@ -123,7 +123,7 @@ export function CustomizeSetStep({
   }, [tags]);
 
   // Dynamic labels based on mode
-  const nameLabel = isCreatingNew ? 'Nazwa nowego zestawu' : 'Nazwa planu dla pacjenta';
+  const nameLabel = 'Nazwa planu pacjenta';
   const namePlaceholder = isCreatingNew
     ? 'np. Rehabilitacja kolana - tydzień 1'
     : patientName
