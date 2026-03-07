@@ -68,6 +68,11 @@ Zastosuj te zasady w każdym komponencie, który generujesz:
 - Nie opieraj znaczenia jedynie na kolorze; zawsze dodaj tekst/ikonografie wspierajaca.
 - Sprawdz stany `hover`, `focus`, `disabled`, `error` w light oraz dark mode.
 
+## 8. Dialog actions layout (consistency rule)
+
+- W stopce dialogu formularzowego akcja wtórna `Anuluj` jest kotwiczona po lewej stronie, a główne CTA (`Zapisz`, `Utwórz`, `Potwierdź`) po prawej.
+- Dla desktopowych stopek stosuj wzorzec `flex items-center justify-between`; nie grupuj obu akcji po prawej przez `justify-end`.
+
 # Oczekiwany rezultat
 
 Wygenerowany kod (HTML/CSS/JS, React, Vue, Tailwind) musi być produkcyjny, gotowy do wdrożenia, całkowicie pozbawiony typowych błędów początkujących (niespójne paddingi, agresywne kolory) i emanować profesjonalizmem klasy Enterprise.

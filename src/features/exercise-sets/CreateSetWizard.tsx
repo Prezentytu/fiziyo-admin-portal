@@ -1092,7 +1092,7 @@ export function CreateSetWizard({
         {/* ============================================================ */}
         {/* FOOTER */}
         {/* ============================================================ */}
-        <div className="px-6 py-4 border-t border-border bg-surface shrink-0 flex items-center justify-end gap-3">
+        <div className="px-6 py-4 border-t border-border bg-surface shrink-0 flex items-center justify-between gap-3">
           <Button
             type="button"
             variant="ghost"

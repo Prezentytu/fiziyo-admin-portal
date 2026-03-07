@@ -277,6 +277,11 @@ Prefiksy modułów: `auth-`, `nav-`, `exercise-`, `set-`, `patient-`, `org-`, `s
 - Każdy dialog MUSI wspierać `Escape` do zamykania
 - Używaj wzorców z istniejących komponentów
 
+### Układ stopki dialogu (OBOWIĄZKOWE)
+
+- W dialogach formularzowych przycisk wtórny `Anuluj` umieszczaj po lewej stronie stopki, a główne CTA (`Zapisz` / `Utwórz`) po prawej.
+- Domyślny layout stopki: `flex items-center justify-between` (nie grupuj obu przycisków po prawej przez `justify-end`).
+
 ### Reużywalność komponentów
 
 - Preferuj komponenty z `@/components/ui/` i `@/components/shared/` przed tworzeniem nowych

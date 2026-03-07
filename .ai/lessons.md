@@ -14,6 +14,14 @@ Dziennik wniosków z pracy AI agentów. Po każdej korekcie dodaj nowy wpis.
 
 ## Wpisy
 
+### 2026-03-07 - Spójny układ akcji w stopce dialogów
+
+- **Kategoria**: `UI/UX`
+- **Problem**: W kreatorze tworzenia zestawu akcje stopki były zgrupowane po prawej, co łamało wzorzec używany w innych dialogach.
+- **Przyczyna**: Zastosowano `justify-end` zamiast layoutu rozdzielającego akcję wtórną i główną.
+- **Rozwiązanie**: Zmieniono footer na `justify-between` i dopisano globalną regułę w `AGENTS.md` oraz w skillu `product-designer`.
+- **Reguła**: W dialogach formularzowych `Anuluj` zawsze po lewej, a główne CTA po prawej.
+
 ### 2026-03-06 - Backend contract change needs migration and manual deploy
 
 - **Kategoria**: `Build/Tooling`
