@@ -5,6 +5,7 @@ import { Calendar, Zap, ArrowRight, Minus, Plus, Info } from 'lucide-react';
 import { addDays, addWeeks, differenceInDays, format, startOfDay } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
+import { formatEstimatedTime } from '@/utils/exerciseTime';
 import { getDefaultDaysForFrequency } from './utils/scheduleUtils';
 import type { Frequency } from './types';
 
@@ -12,6 +13,7 @@ interface ScheduleStepProps {
   readonly startDate: Date;
   readonly endDate: Date;
   readonly frequency: Frequency;
+  readonly estimatedSessionDurationSeconds: number;
   readonly onStartDateChange: (date: Date) => void;
   readonly onEndDateChange: (date: Date) => void;
   readonly onFrequencyChange: (frequency: Frequency) => void;
@@ -151,6 +153,7 @@ export function ScheduleStep({
   startDate,
   endDate,
   frequency,
+  estimatedSessionDurationSeconds,
   onStartDateChange,
   onEndDateChange,
   onFrequencyChange,
@@ -163,6 +166,7 @@ export function ScheduleStep({
 
   const durationDays = Math.max(1, differenceInDays(endDate, startDate));
   const effectiveWeeklyFrequency = frequencyType === 'SPECIFIC_DAYS' ? selectedDaysCount : (frequency.timesPerWeek ?? 7);
+  const estimatedDailyDurationSeconds = estimatedSessionDurationSeconds * Math.max(1, frequency.timesPerDay ?? 1);
   const totalSessions = Math.round((durationDays / 7) * effectiveWeeklyFrequency * (frequency.timesPerDay ?? 1));
 
   const schedulePayload: SchedulePayload = useMemo(
@@ -379,6 +383,17 @@ export function ScheduleStep({
                 onChange={setTimesPerDay}
                 testIdPrefix="assign-schedule-times-per-day"
               />
+            </div>
+          </div>
+
+          <div
+            className="bg-surface-light/40 border border-border/40 rounded-xl px-4 py-3 flex flex-col gap-1.5"
+            data-testid="assign-schedule-session-duration-summary"
+          >
+            <div className="text-xs text-muted-foreground">Szacowany czas jednej sesji</div>
+            <div className="text-sm font-semibold text-foreground">{formatEstimatedTime(estimatedSessionDurationSeconds)}</div>
+            <div className="text-xs text-muted-foreground">
+              Łącznie dziennie: <span className="text-foreground font-medium">{formatEstimatedTime(estimatedDailyDurationSeconds)}</span>
             </div>
           </div>
         </div>

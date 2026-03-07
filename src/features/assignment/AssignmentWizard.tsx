@@ -23,6 +23,7 @@ import { AssignmentSuccessDialog } from './AssignmentSuccessDialog';
 import type { ExerciseInstance, ExerciseParams } from '@/components/shared/ExerciseSetBuilder';
 import { canProceedFromStep } from './utils/assignmentWizardUtils';
 import { buildStructuredLoad, mapAvailableExercises } from './utils/availableExercisesMapper';
+import { calculateEstimatedTime } from '@/utils/exerciseTime';
 import {
   getWizardSteps,
   createGhostCopy,
@@ -810,6 +811,32 @@ function AssignmentWizardContent({
   // Calculate duration for context summary
   const durationDays = differenceInDays(endDate, startDate);
 
+  const estimatedSessionDurationSeconds = useMemo(() => {
+    return builderInstances.reduce((totalSeconds, instance) => {
+      const params = builderParams.get(instance.instanceId);
+      const exercise = availableExercises.find((item) => item.id === instance.exerciseId);
+      const exerciseType = exercise?.type?.toLowerCase();
+      const isTimeBasedExercise = exerciseType === 'time';
+
+      const sets = params?.sets ?? exercise?.defaultSets ?? 3;
+      const reps = params?.reps ?? exercise?.defaultReps ?? 10;
+      const executionTime = params?.executionTime ?? exercise?.defaultExecutionTime;
+      const restBetweenSets = params?.restSets ?? exercise?.defaultRestBetweenSets ?? 60;
+      const duration = isTimeBasedExercise ? (params?.duration ?? exercise?.defaultDuration) : undefined;
+
+      return (
+        totalSeconds +
+        calculateEstimatedTime({
+          sets,
+          reps,
+          duration,
+          executionTime,
+          rest: restBetweenSets,
+        })
+      );
+    }, 0);
+  }, [availableExercises, builderInstances, builderParams]);
+
   // Build exercise overrides JSON for backend (Ghost Copy model)
   const buildExerciseOverridesJson = useCallback((): string | null => {
     if (overrides.size === 0) return null;
@@ -1159,6 +1186,7 @@ function AssignmentWizardContent({
             startDate={startDate}
             endDate={endDate}
             frequency={frequency}
+            estimatedSessionDurationSeconds={estimatedSessionDurationSeconds}
             onStartDateChange={setStartDate}
             onEndDateChange={setEndDate}
             onFrequencyChange={setFrequency}
