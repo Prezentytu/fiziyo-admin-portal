@@ -14,6 +14,14 @@ Dziennik wniosków z pracy AI agentów. Po każdej korekcie dodaj nowy wpis.
 
 ## Wpisy
 
+### 2026-03-07 - Po utworzeniu zestawu bez auto-przekierowania
+
+- **Kategoria**: `UI/UX`
+- **Problem**: Po utworzeniu zestawu kreator automatycznie przekierowywał do widoku szczegółów, wyrywając użytkownika z kontekstu listy.
+- **Przyczyna**: W `CreateSetWizard` był twardy `router.push` po sukcesie mutacji.
+- **Rozwiązanie**: Usunięto auto-nawigację; kreator zamyka się i odświeża listę zestawów, a nowy rekord pojawia się jako pierwszy wg `creationTime`.
+- **Reguła**: W flow typu "utwórz z listy" po sukcesie domyślnie zostań na liście; nawigacja do detalu tylko jako świadoma akcja użytkownika.
+
 ### 2026-03-07 - Spójny układ akcji w stopce dialogów
 
 - **Kategoria**: `UI/UX`

@@ -2,7 +2,6 @@
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
 import { useQuery, useMutation } from '@apollo/client/react';
 import {
   Search,
@@ -327,8 +326,6 @@ export function CreateSetWizard({
   patientName,
   autoAssign = false,
 }: CreateSetWizardProps) {
-  const router = useRouter();
-
   // Form state
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -748,7 +745,6 @@ export function CreateSetWizard({
       }
       onOpenChange(false);
       onSuccess?.(newSetId);
-      router.push(`/exercise-sets/${newSetId}`);
     } catch (error) {
       console.error('Błąd tworzenia zestawu:', error);
       toast.error('Nie udało się utworzyć zestawu');
