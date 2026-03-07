@@ -311,6 +311,10 @@ export interface ExerciseSet {
   description?: string;
   isActive?: boolean;
   isTemplate?: boolean;
+  kind?: 'TEMPLATE' | 'PATIENT_PLAN';
+  templateSource?: 'FIZIYO_VERIFIED' | 'ORG_PRIVATE';
+  reviewStatus?: 'DRAFT' | 'PENDING_REVIEW' | 'CHANGES_REQUESTED' | 'PUBLISHED';
+  sourceExerciseSetId?: string;
   createdById?: string;
   organizationId?: string;
   creationTime?: string;

@@ -4,7 +4,7 @@ import { useState, useMemo } from 'react';
 import { useQuery, useMutation } from '@apollo/client/react';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@clerk/nextjs';
-import { Plus, FolderKanban, FolderPlus, Search, Sparkles, Clock, Filter, X } from 'lucide-react';
+import { Plus, FolderKanban, FolderPlus, Search, Sparkles, Filter, X, UserRound } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
@@ -22,7 +22,6 @@ import { cn } from '@/lib/utils';
 
 import {
   GET_ORGANIZATION_EXERCISE_SETS_QUERY,
-  GET_RECENTLY_USED_SETS_QUERY,
 } from '@/graphql/queries/exerciseSets.queries';
 import { GET_EXERCISE_TAGS_BY_ORGANIZATION_QUERY } from '@/graphql/queries/exerciseTags.queries';
 import { GET_USER_BY_CLERK_ID_QUERY } from '@/graphql/queries/users.queries';
@@ -39,19 +38,14 @@ import {
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 
-type FilterType = 'all' | 'recent' | 'templates';
-
-interface RecentAssignment {
-  exerciseSetId: string;
-  assignedAt: string;
-}
+type FilterType = 'all-templates' | 'fiziyo-templates' | 'my-templates' | 'patient-plans';
 
 export default function ExerciseSetsPage() {
   const router = useRouter();
   const { user } = useUser();
   const { currentOrganization } = useOrganization();
   const [searchQuery, setSearchQuery] = useState('');
-  const [filter, setFilter] = useState<FilterType>('all');
+  const [filter, setFilter] = useState<FilterType>('all-templates');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [isCreateWizardOpen, setIsCreateWizardOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -80,12 +74,6 @@ export default function ExerciseSetsPage() {
     skip: !organizationId,
   });
 
-  // Get recently used sets (for "Ostatnio używane" filter)
-  const { data: recentData } = useQuery(GET_RECENTLY_USED_SETS_QUERY, {
-    variables: { organizationId },
-    skip: !organizationId,
-  });
-
   // Get exercise tags for filtering
   const { data: tagsData } = useQuery(GET_EXERCISE_TAGS_BY_ORGANIZATION_QUERY, {
     variables: { organizationId },
@@ -102,8 +90,6 @@ export default function ExerciseSetsPage() {
   });
 
   const exerciseSets: ExerciseSet[] = (data as OrganizationExerciseSetsResponse)?.exerciseSets || [];
-  const recentAssignments: RecentAssignment[] =
-    (recentData as { patientAssignments?: RecentAssignment[] })?.patientAssignments || [];
   const exerciseTags: ExerciseTag[] = (tagsData as { exerciseTags?: ExerciseTag[] })?.exerciseTags || [];
 
   // Create map of tags by ID for quick lookup
@@ -114,17 +100,6 @@ export default function ExerciseSetsPage() {
     }
     return map;
   }, [exerciseTags]);
-
-  // Create map of recently used set IDs with their latest assignment date
-  const recentSetMap = useMemo(() => {
-    const map = new Map<string, string>();
-    for (const assignment of recentAssignments) {
-      if (!map.has(assignment.exerciseSetId)) {
-        map.set(assignment.exerciseSetId, assignment.assignedAt);
-      }
-    }
-    return map;
-  }, [recentAssignments]);
 
   // Get all unique tags used in exercise sets (aggregated from exercises)
   const availableTags = useMemo(() => {
@@ -164,16 +139,24 @@ export default function ExerciseSetsPage() {
     return false;
   };
 
+  const isTemplateSet = (set: ExerciseSet) => set.kind === 'TEMPLATE' || set.isTemplate === true;
+  const isFiziyoTemplate = (set: ExerciseSet) => isTemplateSet(set) && set.templateSource === 'FIZIYO_VERIFIED';
+  const isMyTemplate = (set: ExerciseSet) =>
+    isTemplateSet(set) && (set.templateSource === 'ORG_PRIVATE' || !set.templateSource);
+  const isPatientPlan = (set: ExerciseSet) => set.kind === 'PATIENT_PLAN';
+
   // Calculate stats
-  const totalCount = exerciseSets.length;
-  const recentCount = recentSetMap.size;
-  const templatesCount = exerciseSets.filter((s) => s.isTemplate === true).length;
+  const allTemplatesCount = exerciseSets.filter(isTemplateSet).length;
+  const fiziyoTemplatesCount = exerciseSets.filter(isFiziyoTemplate).length;
+  const myTemplatesCount = exerciseSets.filter(isMyTemplate).length;
+  const patientPlansCount = exerciseSets.filter(isPatientPlan).length;
 
   // Filter by status/template
   const statusFilteredSets = exerciseSets.filter((set) => {
-    if (filter === 'all') return true;
-    if (filter === 'recent') return recentSetMap.has(set.id);
-    if (filter === 'templates') return set.isTemplate === true;
+    if (filter === 'all-templates') return isTemplateSet(set);
+    if (filter === 'fiziyo-templates') return isFiziyoTemplate(set);
+    if (filter === 'my-templates') return isMyTemplate(set);
+    if (filter === 'patient-plans') return isPatientPlan(set);
     return true;
   });
 
@@ -189,31 +172,19 @@ export default function ExerciseSetsPage() {
   const filteredSets = useMemo(() => {
     const sorted = [...searchFilteredSets];
 
-    if (filter === 'recent') {
-      // Sort by last assignment date (most recent first)
-      sorted.sort((a, b) => {
-        const aDate = recentSetMap.get(a.id);
-        const bDate = recentSetMap.get(b.id);
-        if (!aDate && !bDate) return 0;
-        if (!aDate) return 1;
-        if (!bDate) return -1;
-        return new Date(bDate).getTime() - new Date(aDate).getTime();
-      });
-    } else {
-      // Default sort: inactive at bottom, then by creation time
-      sorted.sort((a, b) => {
-        const aInactive = a.isActive === false;
-        const bInactive = b.isActive === false;
-        if (aInactive && !bInactive) return 1;
-        if (!aInactive && bInactive) return -1;
-        const aTime = a.creationTime ? new Date(a.creationTime).getTime() : 0;
-        const bTime = b.creationTime ? new Date(b.creationTime).getTime() : 0;
-        return bTime - aTime;
-      });
-    }
+    // Default sort: inactive at bottom, then by creation time
+    sorted.sort((a, b) => {
+      const aInactive = a.isActive === false;
+      const bInactive = b.isActive === false;
+      if (aInactive && !bInactive) return 1;
+      if (!aInactive && bInactive) return -1;
+      const aTime = a.creationTime ? new Date(a.creationTime).getTime() : 0;
+      const bTime = b.creationTime ? new Date(b.creationTime).getTime() : 0;
+      return bTime - aTime;
+    });
 
     return sorted;
-  }, [searchFilteredSets, filter, recentSetMap]);
+  }, [searchFilteredSets]);
 
   const handleView = (set: ExerciseSet) => {
     router.push(`/exercise-sets/${set.id}`);
@@ -384,75 +355,95 @@ export default function ExerciseSetsPage() {
         </button>
 
         {/* Quick Stats - Clickable filters */}
-        <div className="grid grid-cols-3 gap-3 sm:col-span-1 lg:col-span-8">
-          {/* All sets */}
+        <div className="grid grid-cols-2 gap-3 sm:col-span-1 lg:col-span-8 lg:grid-cols-4">
           <button
-            onClick={() => setFilter('all')}
+            onClick={() => setFilter('all-templates')}
             className={cn(
               'rounded-2xl border p-4 flex flex-col items-center justify-center text-center transition-all duration-200',
-              filter === 'all'
+              filter === 'all-templates'
                 ? 'border-primary/40 bg-primary/10 ring-1 ring-primary/20'
                 : 'border-border/40 bg-surface/50 hover:bg-surface-light hover:border-border'
             )}
-            data-testid="set-filter-all-btn"
+            data-testid="set-filter-all-templates-btn"
           >
             <div className="flex items-center gap-2">
-              <FolderKanban className={cn('h-4 w-4', filter === 'all' ? 'text-primary' : 'text-muted-foreground')} />
-              <span className={cn('text-2xl font-bold', filter === 'all' ? 'text-primary' : 'text-foreground')}>
-                {totalCount}
+              <FolderKanban
+                className={cn('h-4 w-4', filter === 'all-templates' ? 'text-primary' : 'text-muted-foreground')}
+              />
+              <span className={cn('text-2xl font-bold', filter === 'all-templates' ? 'text-primary' : 'text-foreground')}>
+                {allTemplatesCount}
               </span>
             </div>
-            <p className="text-xs text-muted-foreground mt-1">Wszystkie</p>
+            <p className="text-xs text-muted-foreground mt-1">Wszystkie szablony</p>
           </button>
 
-          {/* Recently used sets */}
           <button
-            onClick={() => setFilter('recent')}
+            onClick={() => setFilter('fiziyo-templates')}
             className={cn(
               'rounded-2xl border p-4 flex flex-col items-center justify-center text-center transition-all duration-200',
-              filter === 'recent'
-                ? 'border-secondary/40 bg-secondary/10 ring-1 ring-secondary/20'
-                : 'border-border/40 bg-surface/50 hover:bg-surface-light hover:border-border'
-            )}
-            data-testid="set-filter-recent-btn"
-          >
-            <div className="flex items-center gap-2">
-              <Clock className={cn('h-4 w-4', filter === 'recent' ? 'text-secondary' : 'text-muted-foreground')} />
-              <span className={cn('text-2xl font-bold', filter === 'recent' ? 'text-secondary' : 'text-foreground')}>
-                {recentCount}
-              </span>
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">Ostatnio używane</p>
-          </button>
-
-          {/* Templates */}
-          <button
-            onClick={() => setFilter('templates')}
-            className={cn(
-              'rounded-2xl border p-4 flex flex-col items-center justify-center text-center transition-all duration-200',
-              filter === 'templates'
+              filter === 'fiziyo-templates'
                 ? 'border-info/40 bg-info/10 ring-1 ring-info/20'
                 : 'border-border/40 bg-surface/50 hover:bg-surface-light hover:border-border'
             )}
-            data-testid="set-filter-templates-btn"
+            data-testid="set-filter-fiziyo-templates-btn"
           >
             <div className="flex items-center gap-2">
-              <Sparkles className={cn('h-4 w-4', filter === 'templates' ? 'text-info' : 'text-muted-foreground')} />
-              <span className={cn('text-2xl font-bold', filter === 'templates' ? 'text-info' : 'text-foreground')}>
-                {templatesCount}
+              <Sparkles
+                className={cn('h-4 w-4', filter === 'fiziyo-templates' ? 'text-info' : 'text-muted-foreground')}
+              />
+              <span className={cn('text-2xl font-bold', filter === 'fiziyo-templates' ? 'text-info' : 'text-foreground')}>
+                {fiziyoTemplatesCount}
               </span>
             </div>
-            <p className="text-xs text-muted-foreground mt-1">Szablony</p>
+            <p className="text-xs text-muted-foreground mt-1">Szablony FiziYo</p>
+          </button>
+
+          <button
+            onClick={() => setFilter('my-templates')}
+            className={cn(
+              'rounded-2xl border p-4 flex flex-col items-center justify-center text-center transition-all duration-200',
+              filter === 'my-templates'
+                ? 'border-secondary/40 bg-secondary/10 ring-1 ring-secondary/20'
+                : 'border-border/40 bg-surface/50 hover:bg-surface-light hover:border-border'
+            )}
+            data-testid="set-filter-my-templates-btn"
+          >
+            <div className="flex items-center gap-2">
+              <UserRound className={cn('h-4 w-4', filter === 'my-templates' ? 'text-secondary' : 'text-muted-foreground')} />
+              <span className={cn('text-2xl font-bold', filter === 'my-templates' ? 'text-secondary' : 'text-foreground')}>
+                {myTemplatesCount}
+              </span>
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">Moje szablony</p>
+          </button>
+
+          <button
+            onClick={() => setFilter('patient-plans')}
+            className={cn(
+              'rounded-2xl border p-4 flex flex-col items-center justify-center text-center transition-all duration-200',
+              filter === 'patient-plans'
+                ? 'border-primary/30 bg-primary/5 ring-1 ring-primary/15'
+                : 'border-border/40 bg-surface/50 hover:bg-surface-light hover:border-border'
+            )}
+            data-testid="set-filter-patient-plans-btn"
+          >
+            <div className="flex items-center gap-2">
+              <FolderPlus className={cn('h-4 w-4', filter === 'patient-plans' ? 'text-primary' : 'text-muted-foreground')} />
+              <span className={cn('text-2xl font-bold', filter === 'patient-plans' ? 'text-primary' : 'text-foreground')}>
+                {patientPlansCount}
+              </span>
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">Plany spersonalizowane</p>
           </button>
         </div>
       </div>
 
       {/* Results info */}
-      {(searchQuery || filter !== 'all' || selectedTags.length > 0) && (
+      {(searchQuery || filter !== 'all-templates' || selectedTags.length > 0) && (
         <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
           <span>Wyniki:</span>
           <Badge variant="secondary" className="text-xs">
-            {filteredSets.length} z {totalCount}
+            {filteredSets.length} z {exerciseSets.length}
           </Badge>
 
           {/* Selected tags display */}
@@ -485,9 +476,9 @@ export default function ExerciseSetsPage() {
               Wyczyść wyszukiwanie
             </Button>
           )}
-          {filter !== 'all' && (
-            <Button variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={() => setFilter('all')}>
-              Pokaż wszystkie
+          {filter !== 'all-templates' && (
+            <Button variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={() => setFilter('all-templates')}>
+              Pokaz wszystkie szablony
             </Button>
           )}
           {selectedTags.length > 0 && (
@@ -517,19 +508,19 @@ export default function ExerciseSetsPage() {
           <CardContent className="py-16">
             <EmptyState
               icon={FolderKanban}
-              title={searchQuery || filter !== 'all' ? 'Nie znaleziono zestawów' : 'Brak zestawów'}
+              title={searchQuery || filter !== 'all-templates' ? 'Nie znaleziono zestawów' : 'Brak zestawów'}
               description={
-                searchQuery || filter !== 'all'
+                searchQuery || filter !== 'all-templates'
                   ? 'Spróbuj zmienić kryteria wyszukiwania lub filtry'
                   : 'Utwórz pierwszy zestaw lub załaduj przykładowe zestawy ćwiczeń'
               }
-              actionLabel={!searchQuery && filter === 'all' ? 'Nowy zestaw' : undefined}
-              onAction={!searchQuery && filter === 'all' ? () => setIsCreateWizardOpen(true) : undefined}
+              actionLabel={!searchQuery && filter === 'all-templates' ? 'Nowy zestaw' : undefined}
+              onAction={!searchQuery && filter === 'all-templates' ? () => setIsCreateWizardOpen(true) : undefined}
               secondaryActionLabel={
-                !searchQuery && filter === 'all' && !hasImportedExamples ? 'Załaduj przykłady' : undefined
+                !searchQuery && filter === 'all-templates' && !hasImportedExamples ? 'Załaduj przykłady' : undefined
               }
               onSecondaryAction={
-                !searchQuery && filter === 'all' && !hasImportedExamples ? importExampleSets : undefined
+                !searchQuery && filter === 'all-templates' && !hasImportedExamples ? importExampleSets : undefined
               }
               secondaryActionLoading={isImporting}
             />

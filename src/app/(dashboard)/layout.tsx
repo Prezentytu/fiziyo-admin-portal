@@ -9,7 +9,7 @@ import { OrganizationProvider } from '@/contexts/OrganizationContext';
 import { ExerciseBuilderProvider } from '@/contexts/ExerciseBuilderContext';
 import { useSidebarState } from '@/hooks/useSidebarState';
 
-export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+export default function DashboardLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   const pathname = usePathname();
   const isOnboarding = pathname === '/onboarding';
   const { isCollapsed, isMobileOpen, isHydrated, toggleCollapsed, toggleMobile, closeMobile } = useSidebarState();
@@ -38,7 +38,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             {/* Main content area */}
             <div className="flex flex-1 flex-col overflow-hidden min-h-0">
               <Header onMobileMenuToggle={toggleMobile} />
-              <main className="flex-1 overflow-y-auto min-h-0 p-4 lg:p-6 2xl:p-8">{children}</main>
+              <main className="flex-1 overflow-y-auto min-h-0 p-4 lg:p-6 2xl:p-8" style={{ scrollbarGutter: 'stable' }}>
+                {children}
+              </main>
             </div>
           </div>
         </ExerciseBuilderProvider>

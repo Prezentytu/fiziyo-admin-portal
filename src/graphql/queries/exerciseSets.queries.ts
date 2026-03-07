@@ -7,6 +7,11 @@ export const EXERCISE_SET_BASIC_FRAGMENT = gql`
     name
     description
     isActive
+    isTemplate
+    kind
+    templateSource
+    reviewStatus
+    sourceExerciseSetId
     createdById
     organizationId
     creationTime
@@ -94,6 +99,10 @@ export const GET_EXERCISE_SETS_QUERY = gql`
       name
       isActive
       isTemplate
+      kind
+      templateSource
+      reviewStatus
+      sourceExerciseSetId
     }
   }
 `;
@@ -120,6 +129,10 @@ export const GET_PATIENT_EXERCISE_SETS_QUERY = gql`
       organizationId
       creationTime
       isTemplate
+      kind
+      templateSource
+      reviewStatus
+      sourceExerciseSetId
     }
   }
 `;
@@ -129,7 +142,6 @@ export const GET_ORGANIZATION_EXERCISE_SETS_QUERY = gql`
   query GetOrganizationExerciseSets($organizationId: String!) {
     exerciseSets(where: { organizationId: { eq: $organizationId }, isActive: { eq: true } }) {
       ...ExerciseSetWithExercisesFragment
-      isTemplate
       patientAssignments {
         id
       }

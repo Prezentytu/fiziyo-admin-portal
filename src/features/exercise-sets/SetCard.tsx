@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import Image from 'next/image';
-import { Pencil, Trash2, Dumbbell, Copy, Sparkles, Send, MoreVertical, Link as LinkIcon, Clock } from 'lucide-react';
+import { Pencil, Trash2, Dumbbell, Copy, Send, MoreVertical, Link as LinkIcon, Clock } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -45,6 +45,10 @@ export interface ExerciseSet {
   description?: string;
   isActive?: boolean;
   isTemplate?: boolean;
+  kind?: 'TEMPLATE' | 'PATIENT_PLAN';
+  templateSource?: 'FIZIYO_VERIFIED' | 'ORG_PRIVATE';
+  reviewStatus?: 'DRAFT' | 'PENDING_REVIEW' | 'CHANGES_REQUESTED' | 'PUBLISHED';
+  sourceExerciseSetId?: string;
   creationTime?: string;
   exerciseMappings?: ExerciseMapping[];
   patientAssignments?: { id: string }[];
@@ -69,6 +73,33 @@ export function SetCard({ set, tagsMap, onView, onEdit, onDelete, onDuplicate, o
 
   const exerciseCount = set.exerciseMappings?.length || 0;
   const assignmentCount = set.patientAssignments?.length || 0;
+  const isTemplateSet = set.kind === 'TEMPLATE' || set.isTemplate === true;
+  const isPatientPlan = set.kind === 'PATIENT_PLAN';
+
+  const setTypeBadge = useMemo(() => {
+    if (isPatientPlan) {
+      return {
+        label: 'Plan spersonalizowany',
+        className: 'border-info/30 bg-info/10 text-info',
+      };
+    }
+
+    if (isTemplateSet && set.templateSource === 'FIZIYO_VERIFIED') {
+      return {
+        label: 'Szablon FiziYo',
+        className: 'border-primary/30 bg-primary/10 text-primary',
+      };
+    }
+
+    if (isTemplateSet) {
+      return {
+        label: 'Moj szablon',
+        className: 'border-secondary/30 bg-secondary/10 text-secondary',
+      };
+    }
+
+    return null;
+  }, [isPatientPlan, isTemplateSet, set.templateSource]);
 
   // Get ALL exercise images with names for scrubbing
   const allExerciseImages = useMemo(() => {
@@ -302,17 +333,7 @@ export function SetCard({ set, tagsMap, onView, onEdit, onDelete, onDuplicate, o
           </div>
         </div>
 
-        {/* LAYER 4: TOP-LEFT - Template badge (always visible if template) */}
-        {set.isTemplate && (
-          <div className="absolute top-6 left-3 z-10">
-            <Badge className="bg-primary text-primary-foreground border-0 shadow-lg gap-1.5">
-              <Sparkles className="h-3 w-3" />
-              Szablon
-            </Badge>
-          </div>
-        )}
-
-        {/* LAYER 5: BOTTOM - Assign button only (metadata moved to content under name) */}
+        {/* LAYER 4: BOTTOM - Assign button only (metadata moved to content under name) */}
         <div className="absolute bottom-3 left-3 right-3 z-20 h-9">
           {/* ASSIGN BUTTON - Compact Pill (Hidden in IDLE, slides up on HOVER) */}
           {onAssign && (
@@ -369,7 +390,18 @@ export function SetCard({ set, tagsMap, onView, onEdit, onDelete, onDuplicate, o
           </h3>
         </div>
 
-        {/* Metadata: exercise count and estimated time under name (fixed height for grid alignment) */}
+        {/* Type badge under title - removed from image to keep media clean */}
+        <div className="h-6 mt-1 flex items-center">
+          {setTypeBadge ? (
+            <Badge variant="outline" className={cn('text-[10px] px-2 py-0.5 font-medium', setTypeBadge.className)}>
+              {setTypeBadge.label}
+            </Badge>
+          ) : (
+            <span className="text-[11px] text-muted-foreground/50">—</span>
+          )}
+        </div>
+
+        {/* Metadata: exercise count and estimated time under type (fixed height for grid alignment) */}
         <div className="h-5 flex items-center gap-1.5 text-xs text-muted-foreground mt-1">
           <Dumbbell className="h-3 w-3 shrink-0" />
           <span>{exerciseCount} ćw</span>
@@ -384,7 +416,13 @@ export function SetCard({ set, tagsMap, onView, onEdit, onDelete, onDuplicate, o
 
         {/* Footer - always at bottom with mt-auto */}
         <div className="flex items-center justify-between mt-auto pt-2">
-          <span className="text-xs text-zinc-500">Przypisano {assignmentCount} razy</span>
+          <span className="text-xs text-muted-foreground">
+            {assignmentCount > 0
+              ? `Przypisany do ${assignmentCount} ${assignmentCount === 1 ? 'pacjenta' : 'pacjentow'}`
+              : isPatientPlan
+                ? 'Oczekuje na przypisanie'
+                : 'Jeszcze nieprzypisany'}
+          </span>
           {set.isActive === false && (
             <Badge variant="outline" className="text-[10px] px-1.5 py-0">
               Nieaktywny

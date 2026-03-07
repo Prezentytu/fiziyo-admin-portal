@@ -7,12 +7,14 @@ import { format, differenceInDays } from 'date-fns';
 import { pl } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
 import { ExerciseExecutionCard, fromExerciseMapping } from '@/components/shared/exercise';
 import { calculateEstimatedTime, formatEstimatedTime } from '@/utils/exerciseTime';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { sendExerciseReport } from '@/services/exerciseReportService';
 import type { ExerciseSet, Patient, Frequency, ExerciseOverride, ExerciseMapping, LocalExerciseMapping } from './types';
+import type { AssignmentExecutionMode } from './utils/assignmentPlanDecision';
 
 interface SummaryStepProps {
   exerciseSet: ExerciseSet;
@@ -23,6 +25,9 @@ interface SummaryStepProps {
   frequency: Frequency;
   overrides: Map<string, ExerciseOverride>;
   excludedExercises: Set<string>;
+  saveAsTemplate: boolean;
+  assignmentMode: AssignmentExecutionMode;
+  onSaveAsTemplateChange: (value: boolean) => void;
   onGoToStep?: (step: 'select-set' | 'select-patients' | 'schedule') => void;
 }
 
@@ -64,6 +69,9 @@ export function SummaryStep({
   frequency,
   overrides,
   excludedExercises,
+  saveAsTemplate,
+  assignmentMode,
+  onSaveAsTemplateChange,
   onGoToStep,
 }: SummaryStepProps) {
   const { user } = useUser();
@@ -494,6 +502,27 @@ export function SummaryStep({
                 {customizedCount} dostosowane
               </Badge>
             )}
+          </div>
+        </div>
+
+        <div className="bg-surface border border-border/60 rounded-xl p-4 sm:p-5" data-testid="summary-template-save-card">
+          <div className="mb-3 rounded-lg border border-border/50 bg-surface-light/30 px-3 py-2 text-xs text-muted-foreground">
+            {assignmentMode === 'PERSONALIZED_PLAN'
+              ? 'W tym wariancie zostanie utworzony nowy plan spersonalizowany.'
+              : 'W tym wariancie przypiszesz istniejacy szablon; modyfikacje parametrow zostana zapisane per pacjent.'}
+          </div>
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <h3 className="text-xs uppercase text-muted-foreground font-bold">Moj szablon</h3>
+              <p className="text-sm text-foreground mt-1" data-testid="assign-summary-save-template-label">
+                Zapisz kopie planu pacjenta jako moj szablon
+              </p>
+            </div>
+            <Switch
+              checked={saveAsTemplate}
+              onCheckedChange={onSaveAsTemplateChange}
+              data-testid="assign-summary-save-template-toggle"
+            />
           </div>
         </div>
 

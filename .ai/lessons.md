@@ -14,6 +14,22 @@ Dziennik wniosków z pracy AI agentów. Po każdej korekcie dodaj nowy wpis.
 
 ## Wpisy
 
+### 2026-03-07 - Hybrid assignment zapobiega fałszywym zerom na szablonach
+
+- **Kategoria**: `UI/UX`
+- **Problem**: Przypisanie z drobną personalizacją zawsze tworzyło nowy `PATIENT_PLAN`, przez co szablon źródłowy pokazywał `0` przypisań i mylił terapeutę.
+- **Przyczyna**: Brak progu decyzyjnego; wizard materializował nowy zestaw niezależnie od rodzaju zmian.
+- **Rozwiązanie**: Wprowadzono klasyfikację zmian (`UNCHANGED_TEMPLATE`, `TEMPLATE_WITH_PARAM_OVERRIDES`, `PERSONALIZED_PLAN`) i rozdzielono submit na dwie ścieżki.
+- **Reguła**: Drobne zmiany parametrów/harmonogramu przypisuj bezpośrednio do szablonu przez assignment overrides; nowy `PATIENT_PLAN` twórz tylko przy zmianach strukturalnych lub tożsamościowych.
+
+### 2026-03-07 - ExerciseSet wymaga klasyfikacji additive-first
+
+- **Kategoria**: `GraphQL`
+- **Problem**: Pole `isTemplate` nie rozróżniało szablonów FiziYo, szablonów organizacji i planów pacjenta, co psuło filtry i logikę przypisań.
+- **Przyczyna**: Model domenowy był binarny (`template/non-template`) i nie przenosił informacji o pochodzeniu oraz statusie publikacji.
+- **Rozwiązanie**: Wprowadzono pola `kind`, `templateSource`, `reviewStatus`, `sourceExerciseSetId` w backendzie i klientach (admin + mobile) oraz utrzymano `isTemplate` dla kompatybilności wstecznej.
+- **Reguła**: Przy zmianach kontraktu domenowego stosuj additive-first: dodaj nowe pola klasyfikacji, zachowaj legacy pole mapowane po stronie backendu i migruj UI etapowo.
+
 ### 2026-03-07 - CTA przypisania musi ujawniać tworzenie planu
 
 - **Kategoria**: `UI/UX`

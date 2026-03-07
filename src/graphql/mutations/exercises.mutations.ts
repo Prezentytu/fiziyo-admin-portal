@@ -342,8 +342,26 @@ export const DELETE_TAG_MUTATION = gql`
  * Mutacja do aktualizacji zestawu ćwiczeń
  */
 export const UPDATE_EXERCISE_SET_MUTATION = gql`
-  mutation UpdateExerciseSet($exerciseSetId: String!, $name: String, $description: String) {
-    updateExerciseSet(exerciseSetId: $exerciseSetId, name: $name, description: $description) {
+  mutation UpdateExerciseSet(
+    $exerciseSetId: String!
+    $name: String
+    $description: String
+    $kind: ExerciseSetKind
+    $templateSource: ExerciseSetTemplateSource
+    $reviewStatus: ExerciseSetReviewStatus
+    $sourceExerciseSetId: String
+    $isTemplate: Boolean
+  ) {
+    updateExerciseSet(
+      exerciseSetId: $exerciseSetId
+      name: $name
+      description: $description
+      kind: $kind
+      templateSource: $templateSource
+      reviewStatus: $reviewStatus
+      sourceExerciseSetId: $sourceExerciseSetId
+      isTemplate: $isTemplate
+    ) {
       id
       name
       description
@@ -351,6 +369,10 @@ export const UPDATE_EXERCISE_SET_MUTATION = gql`
       isActive
       createdById
       isTemplate
+      kind
+      templateSource
+      reviewStatus
+      sourceExerciseSetId
     }
   }
 `;
@@ -377,6 +399,10 @@ export const DUPLICATE_EXERCISE_SET_MUTATION = gql`
       isActive
       createdById
       isTemplate
+      kind
+      templateSource
+      reviewStatus
+      sourceExerciseSetId
       creationTime
     }
   }
@@ -562,6 +588,10 @@ export const UPDATE_EXERCISE_SET_FREQUENCY_MUTATION = gql`
       isActive
       createdById
       isTemplate
+      kind
+      templateSource
+      reviewStatus
+      sourceExerciseSetId
       frequency {
         timesPerDay
         timesPerWeek
@@ -650,14 +680,36 @@ export const REMOVE_EXERCISE_FROM_SET_MUTATION = gql`
  * Mutacja do tworzenia zestawu ćwiczeń
  */
 export const CREATE_EXERCISE_SET_MUTATION = gql`
-  mutation CreateExerciseSet($organizationId: String!, $name: String!, $description: String) {
-    createExerciseSet(organizationId: $organizationId, name: $name, description: $description) {
+  mutation CreateExerciseSet(
+    $organizationId: String!
+    $name: String!
+    $description: String
+    $kind: ExerciseSetKind
+    $templateSource: ExerciseSetTemplateSource
+    $reviewStatus: ExerciseSetReviewStatus
+    $sourceExerciseSetId: String
+    $isTemplate: Boolean
+  ) {
+    createExerciseSet(
+      organizationId: $organizationId
+      name: $name
+      description: $description
+      kind: $kind
+      templateSource: $templateSource
+      reviewStatus: $reviewStatus
+      sourceExerciseSetId: $sourceExerciseSetId
+      isTemplate: $isTemplate
+    ) {
       id
       name
       description
       organizationId
       isActive
       isTemplate
+      kind
+      templateSource
+      reviewStatus
+      sourceExerciseSetId
       createdById
       creationTime
     }

@@ -258,9 +258,10 @@ await expect(page.getByTestId(/^exercise-card-/)).toHaveCount(5);
 | `set-page-title`                    | Tytuł strony                   | `exercise-sets/page.tsx`      |
 | `set-search-input`                  | Wyszukiwarka                   | `exercise-sets/page.tsx`      |
 | `set-tag-filter-btn`                | Dropdown filtra tagów          | `exercise-sets/page.tsx`      |
-| `set-filter-all-btn`                | Filtr: Wszystkie               | `exercise-sets/page.tsx`      |
-| `set-filter-recent-btn`             | Filtr: Ostatnio używane        | `exercise-sets/page.tsx`      |
-| `set-filter-templates-btn`          | Filtr: Szablony                | `exercise-sets/page.tsx`      |
+| `set-filter-all-templates-btn`      | Filtr: Wszystkie szablony      | `exercise-sets/page.tsx`      |
+| `set-filter-fiziyo-templates-btn`   | Filtr: Szablony FiziYo         | `exercise-sets/page.tsx`      |
+| `set-filter-my-templates-btn`       | Filtr: Moje szablony           | `exercise-sets/page.tsx`      |
+| `set-filter-patient-plans-btn`      | Filtr: Plany spersonalizowane  | `exercise-sets/page.tsx`      |
 | `set-create-btn`                    | Utwórz zestaw                  | `exercise-sets/page.tsx`      |
 | `set-create-wizard-btn`             | Kreator zestawu                | `exercise-sets/page.tsx`      |
 | `set-card-{id}`                     | Karta zestawu                  | `SetCard.tsx`                 |
@@ -389,26 +390,31 @@ await expect(page.getByTestId(/^exercise-card-/)).toHaveCount(5);
 
 ### 7. Przypisywanie zestawów (assign-)
 
-| data-testid                        | Element                   | Plik                         |
-| ---------------------------------- | ------------------------- | ---------------------------- |
-| `assign-wizard`                    | Kreator przypisywania     | `AssignmentWizard.tsx`       |
-| `assign-wizard-step-indicator`     | Wskaźnik kroków           | `AssignmentWizard.tsx`       |
-| `assign-wizard-close-btn`          | Zamknij kreator           | `AssignmentWizard.tsx`       |
-| `assign-wizard-back-btn`           | Wstecz                    | `AssignmentWizard.tsx`       |
-| `assign-wizard-next-btn`           | Dalej                     | `AssignmentWizard.tsx`       |
-| `assign-select-set-search`         | Wyszukaj zestaw           | `SelectSetStep.tsx`          |
-| `assign-select-set-{id}`           | Zestaw do wyboru          | `SelectSetStep.tsx`          |
-| `assign-select-patients-search`    | Wyszukaj pacjenta         | `SelectPatientsStep.tsx`     |
-| `assign-select-patient-{id}`       | Pacjent do wyboru         | `SelectPatientsStep.tsx`     |
-| `assign-select-all-btn`            | Zaznacz wszystkich        | `SelectPatientsStep.tsx`     |
-| `assign-customize-exercise-{id}`   | Ćwiczenie do dostosowania | `CustomizeExercisesStep.tsx` |
-| `assign-customize-{id}-sets-input` | Serie                     | `CustomizeExercisesStep.tsx` |
-| `assign-customize-{id}-reps-input` | Powtórzenia               | `CustomizeExercisesStep.tsx` |
-| `assign-schedule-start-date`       | Data rozpoczęcia          | `ScheduleStep.tsx`           |
-| `assign-schedule-end-date`         | Data zakończenia          | `ScheduleStep.tsx`           |
-| `assign-schedule-frequency`        | Częstotliwość             | `ScheduleStep.tsx`           |
-| `assign-summary`                   | Podsumowanie              | `SummaryStep.tsx`            |
-| `assign-summary-submit-btn`        | Przypisz zestaw           | `SummaryStep.tsx`            |
+| data-testid                            | Element                                   | Plik                         |
+| -------------------------------------- | ----------------------------------------- | ---------------------------- |
+| `assign-wizard`                        | Kreator przypisywania                     | `AssignmentWizard.tsx`       |
+| `assign-wizard-step-indicator`         | Wskaźnik kroków                           | `AssignmentWizard.tsx`       |
+| `assign-wizard-close-btn`              | Zamknij kreator                           | `AssignmentWizard.tsx`       |
+| `assign-wizard-back-btn`               | Wstecz                                    | `AssignmentWizard.tsx`       |
+| `assign-wizard-next-btn`               | Dalej                                     | `AssignmentWizard.tsx`       |
+| `assign-select-set-search`             | Wyszukaj zestaw                           | `SelectSetStep.tsx`          |
+| `assign-select-set-{id}`               | Zestaw do wyboru                          | `SelectSetStep.tsx`          |
+| `assign-select-patients-search`        | Wyszukaj pacjenta                         | `SelectPatientsStep.tsx`     |
+| `assign-select-patient-{id}`           | Pacjent do wyboru                         | `SelectPatientsStep.tsx`     |
+| `assign-select-all-btn`                | Zaznacz wszystkich                        | `SelectPatientsStep.tsx`     |
+| `assign-customize-exercise-{id}`       | Ćwiczenie do dostosowania                 | `CustomizeExercisesStep.tsx` |
+| `assign-customize-{id}-sets-input`     | Serie                                     | `CustomizeExercisesStep.tsx` |
+| `assign-customize-{id}-reps-input`     | Powtórzenia                               | `CustomizeExercisesStep.tsx` |
+| `assign-schedule-start-date`           | Data rozpoczęcia                          | `ScheduleStep.tsx`           |
+| `assign-schedule-end-date`             | Data zakończenia                          | `ScheduleStep.tsx`           |
+| `assign-schedule-frequency`            | Częstotliwość                             | `ScheduleStep.tsx`           |
+| `assign-schedule-save-template-toggle` | Kontener: zapisz jako szablon             | `AssignmentWizard.tsx`       |
+| `assign-schedule-save-template-switch` | Przełącznik: zapisz jako szablon          | `AssignmentWizard.tsx`       |
+| `assign-schedule-save-template-label`  | Etykieta: zapisz kopię jako szablon       | `AssignmentWizard.tsx`       |
+| `assign-summary-save-template-toggle`  | Przełącznik: zapisz jako szablon          | `SummaryStep.tsx`            |
+| `assign-summary-save-template-label`   | Etykieta: zapisz kopię planu jako szablon | `SummaryStep.tsx`            |
+| `assign-summary`                       | Podsumowanie                              | `SummaryStep.tsx`            |
+| `assign-summary-submit-btn`            | Przypisz zestaw                           | `SummaryStep.tsx`            |
 
 ### 8. AI Chat (ai-)
 

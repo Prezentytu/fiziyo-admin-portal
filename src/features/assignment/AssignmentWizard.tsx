@@ -8,6 +8,7 @@ import { addDays, differenceInDays, format } from 'date-fns';
 import { cn } from '@/lib/utils';
 
 import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
 import * as VisuallyHidden from '@radix-ui/react-visually-hidden';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
@@ -22,6 +23,7 @@ import { SummaryStep } from './SummaryStep';
 import { AssignmentSuccessDialog } from './AssignmentSuccessDialog';
 import type { ExerciseInstance, ExerciseParams } from '@/components/shared/ExerciseSetBuilder';
 import { canProceedFromStep } from './utils/assignmentWizardUtils';
+import { decideAssignmentPlanMode, type AssignmentExecutionMode } from './utils/assignmentPlanDecision';
 import { buildStructuredLoad, mapAvailableExercises } from './utils/availableExercisesMapper';
 import { calculateEstimatedTime } from '@/utils/exerciseTime';
 import {
@@ -62,6 +64,7 @@ import type { TherapistPatientsResponse } from '@/types/apollo';
 interface SuccessDialogData {
   patients: Array<{ id: string; name: string; email?: string }>;
   setName: string;
+  assignmentMode: AssignmentExecutionMode;
   premiumValidUntil: string | null;
   exerciseSet: ExerciseSet;
   frequency: Frequency;
@@ -143,6 +146,7 @@ export function AssignmentWizard(props: AssignmentWizardProps) {
           }}
           patients={successData.patients}
           setName={successData.setName}
+          assignmentMode={successData.assignmentMode}
           premiumValidUntil={successData.premiumValidUntil}
           therapistId={therapistId}
           organizationId={organizationId}
@@ -203,6 +207,7 @@ function AssignmentWizardContent({
   const [endDate, setEndDate] = useState<Date>(() => addDays(new Date(), 30));
   const [frequency, setFrequency] = useState<Frequency>(defaultFrequency as Frequency);
   const [isCreatingSet, setIsCreatingSet] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGeneratingName, setIsGeneratingName] = useState(false);
 
   // Ghost Copy state - lokalna tablica ćwiczeń (nie dotyka bazy)
@@ -210,7 +215,7 @@ function AssignmentWizardContent({
   // Nazwa planu dla pacjenta (Assignment name)
   const [planName, setPlanName] = useState<string>('');
   // Szablon - opcjonalny zapis do biblioteki
-  const [saveAsTemplate, _setSaveAsTemplate] = useState(false);
+  const [saveAsTemplate, setSaveAsTemplate] = useState(false);
   const [templateName, setTemplateName] = useState<string>('');
   // Wykluczone ćwiczenia (legacy - pustý Set bo customize step został usunięty)
   const [excludedExercises] = useState<Set<string>>(new Set());
@@ -277,6 +282,7 @@ function AssignmentWizardContent({
     const baseName = set?.name || 'Nowy Plan';
     setPlanName(baseName);
     setTemplateName(`${baseName} (szablon)`);
+    setSaveAsTemplate(false);
 
     // Smart Defaults: wypełnij frequency z szablonu jeśli dostępne
     if (set?.frequency) {
@@ -367,6 +373,10 @@ function AssignmentWizardContent({
       description: set.description,
       isActive: set.isActive,
       isTemplate: set.isTemplate,
+      kind: set.kind,
+      templateSource: set.templateSource,
+      reviewStatus: set.reviewStatus,
+      sourceExerciseSetId: set.sourceExerciseSetId,
       frequency: set.frequency,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       exerciseMappings: set.exerciseMappings?.map((m: any) => {
@@ -536,6 +546,7 @@ function AssignmentWizardContent({
     setBuilderParams(new Map());
     setPlanName(setNamePattern);
     setTemplateName(`${setNamePattern} (szablon)`);
+    setSaveAsTemplate(false);
 
     // Clear any previously selected set
     setSelectedSet(null);
@@ -621,6 +632,7 @@ function AssignmentWizardContent({
     }
     setPlanName(set.name || 'Nowy Plan');
     setTemplateName(`${set.name || 'Nowy Plan'} (szablon)`);
+    setSaveAsTemplate(false);
     if (set.frequency) {
       setFrequency({
         timesPerDay: set.frequency.timesPerDay || 1,
@@ -758,7 +770,10 @@ function AssignmentWizardContent({
       case 'summary':
         return {
           title: 'Podsumowanie',
-          description: 'Sprawdź i potwierdź utworzenie planu oraz przypisanie',
+          description:
+            assignmentPlanDecision.mode === 'PERSONALIZED_PLAN'
+              ? 'Sprawdź i potwierdź utworzenie planu oraz przypisanie'
+              : 'Sprawdź i potwierdź przypisanie szablonu z dostosowanymi parametrami',
         };
       default:
         return { title: '', description: '' };
@@ -837,96 +852,123 @@ function AssignmentWizardContent({
     }, 0);
   }, [availableExercises, builderInstances, builderParams]);
 
-  // Build exercise overrides JSON for backend (Ghost Copy model)
-  const buildExerciseOverridesJson = useCallback((): string | null => {
-    if (overrides.size === 0) return null;
+  const assignmentPlanDecision = useMemo(
+    () =>
+      decideAssignmentPlanMode({
+        sourceSet: selectedSet,
+        isCreatingNewSet,
+        planName,
+        saveAsTemplate,
+        builderInstances,
+        builderParams,
+      }),
+    [selectedSet, isCreatingNewSet, planName, saveAsTemplate, builderInstances, builderParams]
+  );
 
-    const result: Record<string, Record<string, unknown>> = {};
+  const buildAddExerciseVariables = useCallback(
+    (instance: ExerciseInstance, exerciseSetId: string, order: number) => {
+      const params = builderParams.get(instance.instanceId);
+      const exercise = availableExercises.find((item) => item.id === instance.exerciseId);
 
-    // Add overrides (without exerciseMappingId field)
-    overrides.forEach((override, mappingId) => {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { exerciseMappingId, ...rest } = override;
-      result[mappingId] = { ...rest };
-    });
+      const normalizeText = (value?: string) => {
+        if (!value) return null;
+        const trimmedValue = value.trim();
+        return trimmedValue.length > 0 ? trimmedValue : null;
+      };
 
-    return JSON.stringify(result);
-  }, [overrides]);
+      return {
+        exerciseId: instance.exerciseId,
+        exerciseSetId,
+        order,
+        sets: params?.sets ?? exercise?.defaultSets ?? 3,
+        reps: params?.reps ?? exercise?.defaultReps ?? 10,
+        duration: params?.duration ?? exercise?.defaultDuration ?? null,
+        restSets: params?.restSets ?? exercise?.defaultRestBetweenSets ?? null,
+        restReps: params?.restReps ?? exercise?.defaultRestBetweenReps ?? null,
+        preparationTime: params?.preparationTime ?? exercise?.preparationTime ?? null,
+        executionTime: params?.executionTime ?? exercise?.defaultExecutionTime ?? null,
+        tempo: normalizeText(params?.tempo),
+        notes: normalizeText(params?.notes),
+        customName: normalizeText(params?.customName),
+        customDescription: normalizeText(params?.customDescription),
+        loadType: normalizeText(params?.loadType),
+        loadValue: params?.loadValue ?? null,
+        loadUnit: normalizeText(params?.loadUnit),
+        loadText: normalizeText(params?.loadText),
+      };
+    },
+    [availableExercises, builderParams]
+  );
 
   const handleSubmit = async () => {
     // Need either: creating new set with exercises, or customizing existing set
     if (builderInstances.length === 0) return;
     if (selectedPatients.length === 0) return;
+    if (isSubmitting) return;
 
+    setIsSubmitting(true);
     try {
-      const overridesJson = buildExerciseOverridesJson();
+      const lightweightOverridesJson =
+        assignmentPlanDecision.mode === 'TEMPLATE_WITH_PARAM_OVERRIDES'
+          ? JSON.stringify(assignmentPlanDecision.overridesByMappingId)
+          : null;
       let lastPremiumValidUntil: string | null = null;
 
-      // Zawsze tworzymy NOWY zestaw z builderInstances (bo customize-set jest zawsze wykonywany)
-      let exerciseSetIdToAssign = '';
-      let createdSetForSuccess: ExerciseSet | null = null;
+      const shouldMaterializePlan = assignmentPlanDecision.mode === 'PERSONALIZED_PLAN';
 
-      setIsCreatingSet(true);
-      try {
-        // 1. Utwórz nowy Set (personalizowana kopia lub zupełnie nowy)
+      let exerciseSetIdToAssign = selectedSet?.id || '';
+      let effectiveSetForSuccess: ExerciseSet | null = selectedSet;
 
-        const createResult = await createExerciseSet({
-          variables: {
-            organizationId,
-            name: planName.trim(),
-            description: isCreatingNewSet ? null : `Plan pacjenta utworzony na bazie: ${selectedSet?.name || 'szablonu'}`,
-          },
-        });
+      if (shouldMaterializePlan) {
+        setIsCreatingSet(true);
+        try {
+          const createResult = await createExerciseSet({
+            variables: {
+              organizationId,
+              name: planName.trim(),
+              description: isCreatingNewSet ? null : `Plan pacjenta utworzony na bazie: ${selectedSet?.name || 'szablonu'}`,
+              kind: 'PATIENT_PLAN',
+              sourceExerciseSetId: selectedSet?.id ?? null,
+              isTemplate: false,
+            },
+          });
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const newSet = (createResult.data as any)?.createExerciseSet;
-        if (newSet?.id) {
-          // 2. Dodaj ćwiczenia do nowego setu
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const newSet = (createResult.data as any)?.createExerciseSet;
+          if (!newSet?.id) {
+            throw new Error('Nie udało się utworzyć planu pacjenta');
+          }
+
           for (let i = 0; i < builderInstances.length; i++) {
             const instance = builderInstances[i];
-            const params = builderParams.get(instance.instanceId);
-            const exercise = availableExercises.find((e) => e.id === instance.exerciseId);
+            const exercise = availableExercises.find((item) => item.id === instance.exerciseId);
 
-            await addExerciseToSet({
-              variables: {
-                exerciseId: instance.exerciseId,
-                exerciseSetId: newSet.id,
-                order: i + 1,
-                sets: params?.sets || exercise?.defaultSets || 3,
-                reps: params?.reps || exercise?.defaultReps || 10,
-                duration: params?.duration || exercise?.defaultDuration,
-                restSets: params?.restSets || exercise?.defaultRestBetweenSets || 60,
-                restReps: params?.restReps || 0,
-                executionTime: params?.executionTime || 0,
-                tempo: params?.tempo || null,
-                notes: params?.notes || null,
-                customName: params?.customName || null,
-                customDescription: params?.customDescription || null,
-                loadType: params?.loadType || null,
-                loadValue: params?.loadValue || null,
-                loadUnit: params?.loadUnit || null,
-                loadText: params?.loadText || null,
-              },
-            });
+            try {
+              await addExerciseToSet({
+                variables: buildAddExerciseVariables(instance, newSet.id, i + 1),
+              });
+            } catch (error) {
+              const exerciseName = exercise?.name || 'Nieznane cwiczenie';
+              console.error('Błąd dodawania ćwiczenia do planu:', error);
+              throw new Error(`Nie udalo sie dodac cwiczenia "${exerciseName}" do planu pacjenta`);
+            }
           }
 
           exerciseSetIdToAssign = newSet.id;
-          createdSetForSuccess = {
+          effectiveSetForSuccess = {
             id: newSet.id,
             name: planName.trim(),
             description: undefined,
             exerciseMappings: [],
           };
-        } else {
-          throw new Error('Nie udało się utworzyć planu pacjenta');
+        } catch (createError) {
+          console.error('Błąd tworzenia planu pacjenta:', createError);
+          toast.error('Nie udało się utworzyć planu pacjenta');
+          setIsCreatingSet(false);
+          return;
+        } finally {
+          setIsCreatingSet(false);
         }
-      } catch (createError) {
-        console.error('Błąd tworzenia planu pacjenta:', createError);
-        toast.error('Nie udało się utworzyć planu pacjenta');
-        setIsCreatingSet(false);
-        return;
-      } finally {
-        setIsCreatingSet(false);
       }
 
       // Jeśli saveAsTemplate - utwórz DODATKOWY szablon w bibliotece (kopia do ponownego użycia)
@@ -937,6 +979,11 @@ function AssignmentWizardContent({
               organizationId,
               name: templateName.trim(),
               description: `Szablon utworzony z planu: ${planName}`,
+              kind: 'TEMPLATE',
+              templateSource: 'ORG_PRIVATE',
+              reviewStatus: 'DRAFT',
+              sourceExerciseSetId: exerciseSetIdToAssign,
+              isTemplate: true,
             },
           });
 
@@ -945,30 +992,17 @@ function AssignmentWizardContent({
           if (templateSet?.id) {
             for (let i = 0; i < builderInstances.length; i++) {
               const instance = builderInstances[i];
-              const params = builderParams.get(instance.instanceId);
-              const exercise = availableExercises.find((e) => e.id === instance.exerciseId);
+              const exercise = availableExercises.find((item) => item.id === instance.exerciseId);
 
-              await addExerciseToSet({
-                variables: {
-                  exerciseId: instance.exerciseId,
-                  exerciseSetId: templateSet.id,
-                  order: i + 1,
-                  sets: params?.sets || exercise?.defaultSets || 3,
-                  reps: params?.reps || exercise?.defaultReps || 10,
-                  duration: params?.duration || exercise?.defaultDuration,
-                  restSets: params?.restSets || exercise?.defaultRestBetweenSets || 60,
-                  restReps: params?.restReps || 0,
-                  executionTime: params?.executionTime || 0,
-                  tempo: params?.tempo || null,
-                  notes: params?.notes || null,
-                  customName: params?.customName || null,
-                  customDescription: params?.customDescription || null,
-                  loadType: params?.loadType || null,
-                  loadValue: params?.loadValue || null,
-                  loadUnit: params?.loadUnit || null,
-                  loadText: params?.loadText || null,
-                },
-              });
+              try {
+                await addExerciseToSet({
+                  variables: buildAddExerciseVariables(instance, templateSet.id, i + 1),
+                });
+              } catch (error) {
+                const exerciseName = exercise?.name || 'Nieznane cwiczenie';
+                console.error('Błąd dodawania ćwiczenia do szablonu:', error);
+                throw new Error(`Nie udalo sie dodac cwiczenia "${exerciseName}" do szablonu`);
+              }
             }
             toast.success(`Zapisano szablon "${templateName}" do biblioteki`);
           }
@@ -1017,6 +1051,8 @@ function AssignmentWizardContent({
           refetchQueries: [
             // Billing status (aktywni pacjenci premium) - odświeża badge na dashboardzie
             { query: GET_CURRENT_BILLING_STATUS_QUERY, variables: { organizationId } },
+            // Refresh sets list to update assignment counters on cards
+            { query: GET_ORGANIZATION_EXERCISE_SETS_QUERY, variables: { organizationId } },
             // Always refetch patients list (premium status may change)
             { query: GET_ORGANIZATION_PATIENTS_QUERY, variables: { organizationId, filter: 'all' } },
             ...(mode === 'from-patient' && preselectedPatient
@@ -1045,13 +1081,13 @@ function AssignmentWizardContent({
           lastPremiumValidUntil = responseData.premiumValidUntil;
         }
 
-        // Step 2: If we have overrides or excluded exercises, update the assignment
+        // Step 2: Save assignment-level overrides only for lightweight template customization.
         const assignmentId = responseData?.id;
-        if (assignmentId && overridesJson) {
+        if (assignmentId && lightweightOverridesJson) {
           await updatePatientOverrides({
             variables: {
               assignmentId,
-              exerciseOverrides: overridesJson,
+              exerciseOverrides: lightweightOverridesJson,
             },
           });
         }
@@ -1059,16 +1095,16 @@ function AssignmentWizardContent({
 
       // 🎯 Beta Pilot Flow: Pokazuj QR dialog zamiast zamykać od razu
       // Call parent to show success dialog (lifted state to wrapper)
-      const effectiveSet = createdSetForSuccess || selectedSet;
       onAssignmentSuccess({
         patients: selectedPatients.map((p) => ({
           id: p.id,
           name: p.name,
           email: p.email,
         })),
-        setName: planName || effectiveSet?.name || 'Nowy plan pacjenta',
+        setName: planName || effectiveSetForSuccess?.name || 'Nowy plan pacjenta',
+        assignmentMode: assignmentPlanDecision.mode,
         premiumValidUntil: lastPremiumValidUntil,
-        exerciseSet: effectiveSet!,
+        exerciseSet: effectiveSetForSuccess!,
         frequency,
       });
 
@@ -1076,11 +1112,14 @@ function AssignmentWizardContent({
       onSuccess?.();
     } catch (error) {
       console.error('Błąd przypisywania:', error);
-      toast.error('Nie udało się utworzyć i przypisać planu');
+      const errorMessage = error instanceof Error ? error.message : null;
+      toast.error(errorMessage || 'Nie udało się utworzyć i przypisać planu');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  const isLoading = loadingSets || loadingPatients || assigning || removing || updatingOverrides;
+  const isLoading = loadingSets || loadingPatients || assigning || removing || updatingOverrides || isSubmitting;
   const isFirstStep = steps.length > 0 && currentStep === steps[0].id;
   const isLastStep = currentStep === 'summary';
 
@@ -1090,7 +1129,10 @@ function AssignmentWizardContent({
     const nextStep = steps[currentIndex + 1];
 
     if (isLastStep) {
-      return 'Utwórz plan i przypisz';
+      if (isSubmitting) {
+        return assignmentPlanDecision.mode === 'PERSONALIZED_PLAN' ? 'Tworzenie planu...' : 'Przypisywanie szablonu...';
+      }
+      return assignmentPlanDecision.mode === 'PERSONALIZED_PLAN' ? 'Utwórz plan i przypisz' : 'Przypisz szablon';
     }
 
     if (nextStep) {
@@ -1242,6 +1284,9 @@ function AssignmentWizardContent({
             frequency={frequency}
             overrides={overrides}
             excludedExercises={excludedExercises}
+            saveAsTemplate={saveAsTemplate}
+            assignmentMode={assignmentPlanDecision.mode}
+            onSaveAsTemplateChange={setSaveAsTemplate}
             onGoToStep={goToStep}
           />
         );
@@ -1390,6 +1435,21 @@ function AssignmentWizardContent({
 
           {/* Right side - Navigation */}
           <div className="flex items-center gap-3">
+            {currentStep === 'schedule' && (
+              <label
+                className="flex items-center gap-2.5 rounded-lg border border-border/60 bg-surface-light/40 px-3 py-2"
+                data-testid="assign-schedule-save-template-toggle"
+              >
+                <Switch
+                  checked={saveAsTemplate}
+                  onCheckedChange={setSaveAsTemplate}
+                  data-testid="assign-schedule-save-template-switch"
+                />
+                <span className="text-xs font-medium text-foreground" data-testid="assign-schedule-save-template-label">
+                  Zapisz kopie jako moj szablon
+                </span>
+              </label>
+            )}
             {!isFirstStep && (
               <Button
                 variant="ghost"
@@ -1412,7 +1472,7 @@ function AssignmentWizardContent({
               )}
               data-testid={isLastStep ? 'assign-summary-submit-btn' : 'assign-wizard-next-btn'}
             >
-              {assigning && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {getNextButtonText()}
               <ArrowRight className="ml-2 h-4 w-4" />
             </Button>

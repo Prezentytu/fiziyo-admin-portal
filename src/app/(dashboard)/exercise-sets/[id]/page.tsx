@@ -495,7 +495,7 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
             </div>
             <div className="min-w-0 flex-1">
               <h3 className="text-base font-bold text-white">Personalizuj i przypisz</h3>
-              <p className="text-sm text-white/70">Utwórz plan pacjenta na bazie zestawu</p>
+              <p className="text-sm text-white/70">Dostosuj i przypisz zestaw pacjentowi</p>
             </div>
             <Plus className="h-5 w-5 text-white/60 group-hover:text-white transition-colors shrink-0" />
           </div>
@@ -610,7 +610,7 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
             </div>
             <p className="text-xl font-semibold text-foreground">Brak przypisanych pacjentów</p>
             <p className="mt-2 text-sm text-muted-foreground">
-              Utwórz spersonalizowany plan i przypisz go pacjentom
+              Dostosuj ten zestaw i przypisz go pacjentom
             </p>
           </div>
         ) : (

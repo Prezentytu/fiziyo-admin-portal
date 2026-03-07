@@ -9,7 +9,23 @@ Wizard służy do **przypisywania zestawów ćwiczeń pacjentom**. Jest to głó
 3. Ustawić harmonogram (częstotliwość, okres)
 4. Przypisać jednocześnie do wielu pacjentów
 
-**Efekt końcowy:** Pacjent otrzymuje spersonalizowany zestaw ćwiczeń w aplikacji mobilnej.
+**Efekt końcowy:** Pacjent otrzymuje przypisanie zestawu (szablonu lub planu spersonalizowanego) w aplikacji mobilnej.
+
+## Aktualny model decyzyjny (hybryda)
+
+Wizard nie zawsze tworzy nowy plan spersonalizowany. Decyzja zależy od typu zmian:
+
+- **Przypisanie do istniejącego szablonu** (bez tworzenia `PATIENT_PLAN`):
+  - zmiana harmonogramu i dat
+  - zmiana parametrów wykonania istniejących ćwiczeń (serie, powtórzenia, czas, przerwy, tempo, obciążenie, notatki)
+- **Utworzenie nowego planu spersonalizowanego** (`PATIENT_PLAN`):
+  - zmiana kolejności ćwiczeń
+  - dodanie lub usunięcie ćwiczeń
+  - zmiana nazwy planu
+  - zmiana nazwy/opisu ćwiczenia
+  - włączenie „Zapisz kopię jako mój szablon”
+
+Wariant lekki zapisuje różnice na poziomie `PatientAssignment` (assignment-level customization), dzięki czemu przypisanie pozostaje na oryginalnym szablonie.
 
 ---
 
@@ -17,11 +33,11 @@ Wizard służy do **przypisywania zestawów ćwiczeń pacjentom**. Jest to głó
 
 Wizard można uruchomić z dwóch miejsc:
 
-| Miejsce | Tryb | Co jest predefiniowane |
-|---------|------|------------------------|
-| **Strona pacjenta** → "Przypisz zestaw" | from-patient | Pacjent jest już wybrany |
-| **Strona zestawu** → "Przypisz pacjentom" | from-set | Zestaw jest już wybrany |
-| **Dashboard** → "Przypisz zestaw" | from-patient | Nic nie jest predefiniowane |
+| Miejsce                                   | Tryb         | Co jest predefiniowane      |
+| ----------------------------------------- | ------------ | --------------------------- |
+| **Strona pacjenta** → "Przypisz zestaw"   | from-patient | Pacjent jest już wybrany    |
+| **Strona zestawu** → "Przypisz pacjentom" | from-set     | Zestaw jest już wybrany     |
+| **Dashboard** → "Przypisz zestaw"         | from-patient | Nic nie jest predefiniowane |
 
 ---
 
@@ -40,10 +56,12 @@ Wizard można uruchomić z dwóch miejsc:
 **Cel:** Fizjo wybiera zestaw ćwiczeń, który chce przypisać.
 
 **Opcje:**
+
 - **Wybór z biblioteki** - kliknięcie na istniejący szablon
 - **Stwórz nowy** - natychmiastowe utworzenie pustego zestawu (bez formularza!)
 
 **Layout:**
+
 ```
 ┌─────────────────────────┬───────────────────────────────────────┐
 │  LISTA ZESTAWÓW         │  PODGLĄD / BUILDER                    │
@@ -61,14 +79,16 @@ Wizard można uruchomić z dwóch miejsc:
 #### Tryby pracy w prawym panelu
 
 **A) Tryb SZABLON** (gdy wybrany zestaw ma ćwiczenia)
+
 - Nazwa zestawu: tylko do odczytu
 - Lista ćwiczeń: można tylko **ukrywać** (Eye/EyeOff), nie usuwać
 - Brak wyszukiwarki do dodawania
 - Przycisk **"Dostosuj"** → tworzy kopię do pełnej edycji
 
-*Dlaczego?* Szablony to "święte zasoby" - nie chcemy ich przypadkowo zepsuć podczas przypisywania.
+_Dlaczego?_ Szablony to "święte zasoby" - nie chcemy ich przypadkowo zepsuć podczas przypisywania.
 
 **B) Tryb DRAFT** (gdy stworzono nowy lub po "Dostosuj")
+
 - Nazwa zestawu: edytowalna
 - Lista ćwiczeń: pełny CRUD (dodaj, usuń)
 - **Rapid Builder** - wyszukiwarka z Enter do szybkiego dodawania
@@ -81,6 +101,7 @@ Wizard można uruchomić z dwóch miejsc:
 **Cel:** Fizjo wybiera pacjentów, którym przypisuje zestaw.
 
 **Funkcje:**
+
 - Wyszukiwanie pacjentów
 - Multi-select (można wybrać wielu naraz)
 - Widoczność już przypisanych (szare, z badge "Przypisany")
@@ -101,17 +122,21 @@ Wizard można uruchomić z dwóch miejsc:
 
 ---
 
-### Krok 3: Personalizacja ćwiczeń (opcjonalny)
+### Krok 3: Personalizacja ćwiczeń
 
-**Cel:** Dostosowanie parametrów ćwiczeń dla konkretnych pacjentów.
+**Cel:** Dostosowanie ćwiczeń i określenie, czy przypisanie zostaje na szablonie czy materializuje się jako plan spersonalizowany.
 
 **Co można zmienić:**
+
 - Liczba serii / powtórzeń
 - Czas trwania
 - Notatki dla pacjenta
 - Ukrycie pojedynczych ćwiczeń
 
-*Ten krok jest opcjonalny - można go pominąć i użyć domyślnych wartości.*
+Ten krok określa także tryb końcowy:
+
+- brak zmian strukturalnych -> przypisanie do szablonu
+- zmiany strukturalne/tożsamościowe -> utworzenie planu spersonalizowanego
 
 ---
 
@@ -120,6 +145,7 @@ Wizard można uruchomić z dwóch miejsc:
 **Cel:** Ustalenie okresu i częstotliwości wykonywania ćwiczeń.
 
 **Pola:**
+
 - **Data rozpoczęcia** (domyślnie: dziś)
 - **Data zakończenia** (domyślnie: +30 dni)
 - **Częstotliwość:**
@@ -147,12 +173,14 @@ Wizard można uruchomić z dwóch miejsc:
 **Cel:** Przegląd wszystkiego przed zatwierdzeniem.
 
 **Zawiera:**
+
 - Wybrany zestaw i liczba ćwiczeń
 - Lista wybranych pacjentów
 - Okres i częstotliwość
 - Przycisk "Przypisz do X pacjentów"
 
 **Po zatwierdzeniu:**
+
 1. Zestaw zostaje przypisany każdemu pacjentowi
 2. Pojawia się **dialog sukcesu** z QR kodem do pobrania aplikacji
 3. Pacjent widzi ćwiczenia w aplikacji mobilnej
@@ -166,6 +194,7 @@ Wizard można uruchomić z dwóch miejsc:
 **Problem:** Fizjo chce stworzyć nowy zestaw, ale nie chce wychodzić z wizarda.
 
 **Rozwiązanie:** Przycisk "Stwórz nowy" natychmiast tworzy pusty zestaw z nazwą:
+
 - `"Terapia dla {Pacjent} - {Data}"` (jeśli pacjent predefiniowany)
 - `"Nowy zestaw - {Data}"` (bez pacjenta)
 
@@ -178,6 +207,7 @@ Wizard można uruchomić z dwóch miejsc:
 **Problem:** Fizjo chce szybko zbudować zestaw bez przeklikiwania.
 
 **Rozwiązanie:** Command Bar z wyszukiwarką:
+
 1. Wpisz "Przysiad"
 2. Strzałka ↓ do nawigacji
 3. Enter → ćwiczenie ląduje na liście z domyślnymi parametrami
@@ -192,10 +222,10 @@ Wizard można uruchomić z dwóch miejsc:
 
 **Rozwiązanie:** Dwa tryby:
 
-| Tryb | Kiedy | Co można |
-|------|-------|----------|
+| Tryb         | Kiedy                | Co można                             |
+| ------------ | -------------------- | ------------------------------------ |
 | **Template** | Zestaw z ćwiczeniami | Tylko ukrywanie, przycisk "Dostosuj" |
-| **Draft** | Nowy/pusty zestaw | Pełna edycja CRUD |
+| **Draft**    | Nowy/pusty zestaw    | Pełna edycja CRUD                    |
 
 **Przycisk "Dostosuj":** Tworzy kopię szablonu do pełnej edycji (Fork). Oryginał zostaje nienaruszony.
 
@@ -251,12 +281,12 @@ Wizard można uruchomić z dwóch miejsc:
 
 ## Metryki sukcesu
 
-| Metryka | Cel |
-|---------|-----|
+| Metryka                        | Cel         |
+| ------------------------------ | ----------- |
 | Czas przypisania standardowego | < 30 sekund |
-| Czas tworzenia nowego zestawu | < 60 sekund |
-| Liczba kliknięć do przypisania | ≤ 5 |
-| Błędy "zniszczenia szablonu" | 0 |
+| Czas tworzenia nowego zestawu  | < 60 sekund |
+| Liczba kliknięć do przypisania | ≤ 5         |
+| Błędy "zniszczenia szablonu"   | 0           |
 
 ---
 

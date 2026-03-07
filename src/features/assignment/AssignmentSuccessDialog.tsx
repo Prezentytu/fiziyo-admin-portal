@@ -40,6 +40,7 @@ import { GET_ORGANIZATION_BY_ID_QUERY } from '@/graphql/queries/organizations.qu
 import { GET_USER_BY_CLERK_ID_QUERY } from '@/graphql/queries/users.queries';
 import type { OrganizationByIdResponse, UserByClerkIdResponse } from '@/types/apollo';
 import type { ExerciseSet, Frequency } from './types';
+import type { AssignmentExecutionMode } from './utils/assignmentPlanDecision';
 
 interface AssignmentSuccessDialogProps {
   open: boolean;
@@ -52,6 +53,8 @@ interface AssignmentSuccessDialogProps {
   }>;
   /** Nazwa planu pacjenta */
   setName: string;
+  /** Tryb przypisania: template override lub nowy plan */
+  assignmentMode?: AssignmentExecutionMode;
   /** Data wygaśnięcia Premium (z backendu) */
   premiumValidUntil?: string | null;
   /** ID terapeuty (dla QR) */
@@ -71,6 +74,7 @@ export function AssignmentSuccessDialog({
   onOpenChange,
   patients,
   setName,
+  assignmentMode = 'PERSONALIZED_PLAN',
   premiumValidUntil,
   therapistId,
   organizationId,
@@ -341,11 +345,17 @@ export function AssignmentSuccessDialog({
               <CheckCircle2 className="h-6 w-6 text-primary" />
             </div>
             <div>
-              <DialogTitle className="text-lg">Plan pacjenta przypisany!</DialogTitle>
+              <DialogTitle className="text-lg">
+                {assignmentMode === 'PERSONALIZED_PLAN' ? 'Plan spersonalizowany przypisany!' : 'Szablon przypisany!'}
+              </DialogTitle>
               <DialogDescription>
-                {isSinglePatient
-                  ? `Pacjent ${selectedPatient.name} otrzymał plan "${setName}"`
-                  : `${patients.length} pacjentów otrzymało plan "${setName}"`}
+                {assignmentMode === 'PERSONALIZED_PLAN'
+                  ? isSinglePatient
+                    ? `Pacjent ${selectedPatient.name} otrzymał plan "${setName}"`
+                    : `${patients.length} pacjentów otrzymało plan "${setName}"`
+                  : isSinglePatient
+                    ? `Pacjent ${selectedPatient.name} otrzymał szablon "${setName}" z dostosowanymi parametrami`
+                    : `${patients.length} pacjentów otrzymało szablon "${setName}" z dostosowanymi parametrami`}
               </DialogDescription>
             </div>
           </div>
