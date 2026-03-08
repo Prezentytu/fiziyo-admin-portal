@@ -69,7 +69,13 @@ export function ExercisePreviewDrawer({ open, onOpenChange, mapping, override, o
   const effectiveReps = override?.reps ?? mapping.reps ?? exercise?.reps;
   const effectiveDuration = override?.duration ?? mapping.duration ?? exercise?.duration;
   const effectiveName = override?.customName ?? mapping.customName ?? exercise?.name;
-  const effectiveDescription = override?.customDescription ?? mapping.customDescription ?? exercise?.description;
+  const effectivePatientDescription =
+    override?.customDescription ??
+    mapping.customDescription ??
+    exercise?.patientDescription ??
+    exercise?.description ??
+    '';
+  const effectiveClinicalDescription = exercise?.clinicalDescription ?? '';
   const effectiveSide = override?.exerciseSide ?? exercise?.exerciseSide;
 
   const hasOverride =
@@ -217,16 +223,29 @@ export function ExercisePreviewDrawer({ open, onOpenChange, mapping, override, o
               </div>
             )}
 
-            {/* Description */}
-            {effectiveDescription && (
+            {/* Patient description */}
+            {effectivePatientDescription && (
               <>
                 <Separator />
                 <div className="space-y-3">
                   <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-2">
                     <Info className="h-4 w-4" />
-                    Opis
+                    Opis dla pacjenta
                   </h3>
-                  <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">{effectiveDescription}</p>
+                  <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">{effectivePatientDescription}</p>
+                </div>
+              </>
+            )}
+
+            {effectiveClinicalDescription && (
+              <>
+                <Separator />
+                <div className="space-y-3">
+                  <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+                    <Info className="h-4 w-4" />
+                    Opis dla fizjoterapeuty
+                  </h3>
+                  <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">{effectiveClinicalDescription}</p>
                 </div>
               </>
             )}

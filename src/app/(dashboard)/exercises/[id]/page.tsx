@@ -420,7 +420,7 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
               <DropdownMenuItem asChild>
                 <a href={exercise.videoUrl} target="_blank" rel="noopener noreferrer">
                   <ExternalLink className="mr-2 h-4 w-4" />
-                  Otwórz wideo
+                  Otwórz film
                 </a>
               </DropdownMenuItem>
             )}

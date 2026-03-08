@@ -12,6 +12,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { ExerciseFieldLabelWithTooltip } from './ExerciseFieldLabelWithTooltip';
+import { EXERCISE_FIELD_TOOLTIPS } from './exerciseFieldTooltips';
 
 const exerciseFormSchema = z.object({
   name: z.string().min(2, 'Nazwa musi mieć min. 2 znaki').max(100, 'Nazwa może mieć max. 100 znaków'),
@@ -117,10 +119,14 @@ export function ExerciseForm({
           name="description"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Opis</FormLabel>
+              <ExerciseFieldLabelWithTooltip
+                label="Opis dla pacjenta"
+                tooltip={EXERCISE_FIELD_TOOLTIPS.patientDescription}
+                testId="exercise-form-description-info"
+              />
               <FormControl>
                 <Textarea
-                  placeholder="Opisz technikę wykonania ćwiczenia..."
+                  placeholder="Opisz ćwiczenie prostym językiem dla pacjenta..."
                   className="min-h-[100px]"
                   data-testid="exercise-form-description-input"
                   {...field}
@@ -137,7 +143,11 @@ export function ExerciseForm({
             name="exerciseSide"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Strona ciała</FormLabel>
+                <ExerciseFieldLabelWithTooltip
+                  label="Strona ciała"
+                  tooltip={EXERCISE_FIELD_TOOLTIPS.exerciseSide}
+                  testId="exercise-form-side-info"
+                />
                 <Select onValueChange={field.onChange} value={field.value ?? undefined}>
                   <FormControl>
                     <SelectTrigger data-testid="exercise-form-side-select">
@@ -164,7 +174,11 @@ export function ExerciseForm({
             name="sets"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Liczba serii</FormLabel>
+                <ExerciseFieldLabelWithTooltip
+                  label="Liczba serii"
+                  tooltip={EXERCISE_FIELD_TOOLTIPS.sets}
+                  testId="exercise-form-sets-info"
+                />
                 <FormControl>
                   <Input
                     type="number"
@@ -184,7 +198,11 @@ export function ExerciseForm({
             name="reps"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Liczba powtórzeń</FormLabel>
+                <ExerciseFieldLabelWithTooltip
+                  label="Liczba powtórzeń"
+                  tooltip={EXERCISE_FIELD_TOOLTIPS.reps}
+                  testId="exercise-form-reps-info"
+                />
                 <FormControl>
                   <Input
                     type="number"
@@ -204,7 +222,11 @@ export function ExerciseForm({
             name="duration"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Czas serii (sekundy)</FormLabel>
+                <ExerciseFieldLabelWithTooltip
+                  label="Czas serii (sekundy)"
+                  tooltip={EXERCISE_FIELD_TOOLTIPS.duration}
+                  testId="exercise-form-duration-info"
+                />
                 <FormControl>
                   <Input
                     type="number"
@@ -227,7 +249,11 @@ export function ExerciseForm({
             name="restSets"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Przerwa między seriami (s)</FormLabel>
+                <ExerciseFieldLabelWithTooltip
+                  label="Przerwa między seriami (s)"
+                  tooltip={EXERCISE_FIELD_TOOLTIPS.restSets}
+                  testId="exercise-form-rest-sets-info"
+                />
                 <FormControl>
                   <Input
                     type="number"
@@ -248,7 +274,11 @@ export function ExerciseForm({
             name="restReps"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Przerwa między powtórzeniami (s)</FormLabel>
+                <ExerciseFieldLabelWithTooltip
+                  label="Przerwa między powtórzeniami (s)"
+                  tooltip={EXERCISE_FIELD_TOOLTIPS.restReps}
+                  testId="exercise-form-rest-reps-info"
+                />
                 <FormControl>
                   <Input
                     type="number"
@@ -271,7 +301,11 @@ export function ExerciseForm({
             name="preparationTime"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Przygotowanie (s)</FormLabel>
+                <ExerciseFieldLabelWithTooltip
+                  label="Przygotowanie (s)"
+                  tooltip={EXERCISE_FIELD_TOOLTIPS.preparationTime}
+                  testId="exercise-form-preparation-time-info"
+                />
                 <FormControl>
                   <Input
                     type="number"
@@ -291,7 +325,11 @@ export function ExerciseForm({
             name="executionTime"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Czas powtórzenia (s)</FormLabel>
+                <ExerciseFieldLabelWithTooltip
+                  label="Czas powtórzenia (s)"
+                  tooltip={EXERCISE_FIELD_TOOLTIPS.executionTime}
+                  testId="exercise-form-execution-time-info"
+                />
                 <FormControl>
                   <Input
                     type="number"
@@ -312,9 +350,13 @@ export function ExerciseForm({
           name="videoUrl"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>URL wideo (Vimeo)</FormLabel>
+              <ExerciseFieldLabelWithTooltip
+                label="URL filmu"
+                tooltip={EXERCISE_FIELD_TOOLTIPS.videoUrl}
+                testId="exercise-form-video-url-info"
+              />
               <FormControl>
-                <Input placeholder="https://vimeo.com/..." {...field} />
+                <Input placeholder="https://..." {...field} data-testid="exercise-form-video-url-input" />
               </FormControl>
               <FormDescription>Link do filmiku instruktażowego</FormDescription>
               <FormMessage />
@@ -327,7 +369,11 @@ export function ExerciseForm({
           name="notes"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Notatki</FormLabel>
+              <ExerciseFieldLabelWithTooltip
+                label="Notatki"
+                tooltip={EXERCISE_FIELD_TOOLTIPS.notes}
+                testId="exercise-form-notes-info"
+              />
               <FormControl>
                 <Textarea placeholder="Dodatkowe uwagi dla fizjoterapeuty..." className="min-h-[80px]" {...field} />
               </FormControl>
@@ -354,7 +400,11 @@ export function ExerciseForm({
                 name="tempo"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Tempo (np. 3-0-1-0)</FormLabel>
+                    <ExerciseFieldLabelWithTooltip
+                      label="Tempo (np. 3-0-1-0)"
+                      tooltip={EXERCISE_FIELD_TOOLTIPS.tempo}
+                      testId="exercise-form-tempo-info"
+                    />
                     <FormControl>
                       <Input placeholder="np. 2-1-2-0" {...field} value={field.value ?? ''} />
                     </FormControl>
@@ -367,7 +417,11 @@ export function ExerciseForm({
                 name="rangeOfMotion"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Zakres ruchu (ROM)</FormLabel>
+                    <ExerciseFieldLabelWithTooltip
+                      label="Zakres ruchu (ROM)"
+                      tooltip={EXERCISE_FIELD_TOOLTIPS.rangeOfMotion}
+                      testId="exercise-form-range-of-motion-info"
+                    />
                     <FormControl>
                       <Input placeholder="np. 0–90°" {...field} value={field.value ?? ''} />
                     </FormControl>
@@ -380,7 +434,11 @@ export function ExerciseForm({
                 name="audioCue"
                 render={({ field }) => (
                   <FormItem className="sm:col-span-2">
-                    <FormLabel>Podpowiedź głosowa TTS</FormLabel>
+                    <ExerciseFieldLabelWithTooltip
+                      label="Podpowiedź głosowa TTS"
+                      tooltip={EXERCISE_FIELD_TOOLTIPS.audioCue}
+                      testId="exercise-form-audio-cue-info"
+                    />
                     <FormControl>
                       <Input placeholder="np. Proste plecy" {...field} value={field.value ?? ''} />
                     </FormControl>
@@ -393,11 +451,16 @@ export function ExerciseForm({
                 name="clinicalDescription"
                 render={({ field }) => (
                   <FormItem className="sm:col-span-2">
-                    <FormLabel>Opis kliniczny</FormLabel>
+                    <ExerciseFieldLabelWithTooltip
+                      label="Opis dla fizjoterapeuty"
+                      tooltip={EXERCISE_FIELD_TOOLTIPS.clinicalDescription}
+                      testId="exercise-form-clinical-description-info"
+                    />
                     <FormControl>
                       <Textarea
-                        placeholder="Opis dla fizjoterapeuty (język medyczny)"
-                        className="min-h-[80px]"
+                        placeholder="Opis kliniczny dla fizjoterapeuty (język medyczny)..."
+                        className="min-h-[100px]"
+                        data-testid="exercise-form-clinical-description-input"
                         {...field}
                         value={field.value ?? ''}
                       />

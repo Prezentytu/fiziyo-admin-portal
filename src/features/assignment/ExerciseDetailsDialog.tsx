@@ -125,14 +125,14 @@ export function ExerciseDetailsDialog({ open, mapping, onOpenChange }: Readonly<
 
             {viewModel?.videoUrl && (
               <div className="space-y-2" data-testid="assign-set-preview-exercise-details-video">
-                <p className="text-xs uppercase tracking-wide text-muted-foreground">Wideo</p>
+                <p className="text-xs uppercase tracking-wide text-muted-foreground">Film instruktażowy</p>
                 <a
                   href={viewModel.videoUrl}
                   target="_blank"
                   rel="noreferrer"
                   className="inline-flex items-center text-sm text-primary hover:underline"
                 >
-                  Otwórz wideo ćwiczenia
+                  Otwórz film
                 </a>
               </div>
             )}

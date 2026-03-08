@@ -3,13 +3,14 @@
 import { useState, useCallback, useMemo, useEffect } from 'react';
 import { Dumbbell, Gauge, User, Stethoscope, AlertCircle, ChevronDown } from 'lucide-react';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { cn } from '@/lib/utils';
+import { ExerciseFieldLabelWithTooltip } from '@/features/exercises/ExerciseFieldLabelWithTooltip';
+import { EXERCISE_FIELD_TOOLTIPS } from '@/features/exercises/exerciseFieldTooltips';
 
 // Sub-components
 import { VerificationStickyHeader } from './VerificationStickyHeader';
@@ -359,14 +360,16 @@ export function VerificationEditorPanel({
           <div className="flex gap-1.5">
             {/* Liczba serii */}
             <div className="flex-1 min-w-0 space-y-1">
-              <Label
-                className={cn(
-                  'text-[9px] uppercase tracking-wider text-center flex items-center justify-center gap-0.5 truncate',
+              <ExerciseFieldLabelWithTooltip
+                label="Serie"
+                tooltip={EXERCISE_FIELD_TOOLTIPS.sets}
+                className="justify-center"
+                labelClassName={cn(
+                  'text-[9px] uppercase tracking-wider text-center truncate',
                   isInvalid(localSets) ? 'text-destructive font-medium' : 'text-muted-foreground'
                 )}
-              >
-                <span>Serie</span>
-              </Label>
+                testId="verification-sets-info"
+              />
               <div
                 className={cn(
                   'relative h-12 rounded-lg transition-all duration-200',
@@ -392,9 +395,13 @@ export function VerificationEditorPanel({
 
             {/* Powtórzenia */}
             <div className="flex-1 min-w-0 space-y-1">
-              <Label className="text-[9px] uppercase tracking-wider text-center text-muted-foreground flex items-center justify-center gap-0.5 truncate">
-                <span>Powt.</span>
-              </Label>
+              <ExerciseFieldLabelWithTooltip
+                label="Powtórzenia"
+                tooltip={EXERCISE_FIELD_TOOLTIPS.reps}
+                className="justify-center"
+                labelClassName="text-[9px] uppercase tracking-wider text-center text-muted-foreground truncate"
+                testId="verification-reps-info"
+              />
               <div
                 className={cn(
                   'relative h-12 rounded-lg transition-all duration-200',
@@ -420,9 +427,13 @@ export function VerificationEditorPanel({
 
             {/* Czas wykonania (Time Under Tension) */}
             <div className="flex-1 min-w-0 space-y-1">
-              <Label className="text-[9px] uppercase tracking-wider text-center text-muted-foreground flex items-center justify-center gap-0.5 truncate">
-                <span>Czas powt.</span>
-              </Label>
+              <ExerciseFieldLabelWithTooltip
+                label="Czas serii"
+                tooltip={EXERCISE_FIELD_TOOLTIPS.duration}
+                className="justify-center"
+                labelClassName="text-[9px] uppercase tracking-wider text-center text-muted-foreground truncate"
+                testId="verification-duration-info"
+              />
               <div
                 className={cn(
                   'relative h-12 rounded-lg transition-all duration-200',
@@ -452,9 +463,13 @@ export function VerificationEditorPanel({
 
             {/* Przerwa między seriami */}
             <div className="flex-1 min-w-0 space-y-1">
-              <Label className="text-[9px] uppercase tracking-wider text-center text-muted-foreground flex items-center justify-center gap-0.5 truncate">
-                <span>Przerwa (serie)</span>
-              </Label>
+              <ExerciseFieldLabelWithTooltip
+                label="Przerwa (serie)"
+                tooltip={EXERCISE_FIELD_TOOLTIPS.restSets}
+                className="justify-center"
+                labelClassName="text-[9px] uppercase tracking-wider text-center text-muted-foreground truncate"
+                testId="verification-rest-sets-info"
+              />
               <div
                 className={cn(
                   'relative h-12 rounded-lg transition-all duration-200',
@@ -509,7 +524,12 @@ export function VerificationEditorPanel({
               <div className="grid grid-cols-3 gap-x-4 gap-y-4">
                 {/* Tempo */}
                 <div className="space-y-1.5">
-                  <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Tempo</Label>
+                  <ExerciseFieldLabelWithTooltip
+                    label="Tempo"
+                    tooltip={EXERCISE_FIELD_TOOLTIPS.tempo}
+                    labelClassName="text-[10px] uppercase tracking-wider text-muted-foreground"
+                    testId="verification-tempo-info"
+                  />
                   <Input
                     type="text"
                     value={localTempo}
@@ -529,7 +549,12 @@ export function VerificationEditorPanel({
 
                 {/* Trudność */}
                 <div className="space-y-1.5">
-                  <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Trudność</Label>
+                  <ExerciseFieldLabelWithTooltip
+                    label="Trudność"
+                    tooltip="Poziom złożoności ćwiczenia pomocny przy doborze progresji."
+                    labelClassName="text-[10px] uppercase tracking-wider text-muted-foreground"
+                    testId="verification-difficulty-info"
+                  />
                   <Select
                     value={localDifficulty}
                     onValueChange={(v) => {
@@ -554,7 +579,12 @@ export function VerificationEditorPanel({
 
                 {/* Strona ciała */}
                 <div className="space-y-1.5">
-                  <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Strona</Label>
+                  <ExerciseFieldLabelWithTooltip
+                    label="Strona"
+                    tooltip={EXERCISE_FIELD_TOOLTIPS.exerciseSide}
+                    labelClassName="text-[10px] uppercase tracking-wider text-muted-foreground"
+                    testId="verification-side-info"
+                  />
                   <Select
                     value={localSide}
                     onValueChange={(v) => {
@@ -579,7 +609,12 @@ export function VerificationEditorPanel({
 
                 {/* Zakres ruchu */}
                 <div className="space-y-1.5">
-                  <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Zakres ruchu</Label>
+                  <ExerciseFieldLabelWithTooltip
+                    label="Zakres ruchu"
+                    tooltip={EXERCISE_FIELD_TOOLTIPS.rangeOfMotion}
+                    labelClassName="text-[10px] uppercase tracking-wider text-muted-foreground"
+                    testId="verification-range-of-motion-info"
+                  />
                   <Select
                     value={localRangeOfMotion}
                     onValueChange={(v) => {
@@ -604,7 +639,12 @@ export function VerificationEditorPanel({
 
                 {/* Przerwa między powtórzeniami */}
                 <div className="space-y-1.5">
-                  <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Przerwa powt.</Label>
+                  <ExerciseFieldLabelWithTooltip
+                    label="Przerwa powt."
+                    tooltip={EXERCISE_FIELD_TOOLTIPS.restReps}
+                    labelClassName="text-[10px] uppercase tracking-wider text-muted-foreground"
+                    testId="verification-rest-reps-info"
+                  />
                   <div className="relative">
                     <Input
                       type="number"
@@ -627,7 +667,12 @@ export function VerificationEditorPanel({
 
                 {/* Czas przygotowania */}
                 <div className="space-y-1.5">
-                  <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Przygotowanie</Label>
+                  <ExerciseFieldLabelWithTooltip
+                    label="Przygotowanie"
+                    tooltip={EXERCISE_FIELD_TOOLTIPS.preparationTime}
+                    labelClassName="text-[10px] uppercase tracking-wider text-muted-foreground"
+                    testId="verification-preparation-time-info"
+                  />
                   <div className="relative">
                     <Input
                       type="number"
@@ -650,7 +695,12 @@ export function VerificationEditorPanel({
 
                 {/* Czas wykonania powtórzenia */}
                 <div className="space-y-1.5">
-                  <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Czas wyk. powt.</Label>
+                  <ExerciseFieldLabelWithTooltip
+                    label="Czas wyk. powt."
+                    tooltip={EXERCISE_FIELD_TOOLTIPS.executionTime}
+                    labelClassName="text-[10px] uppercase tracking-wider text-muted-foreground"
+                    testId="verification-execution-time-info"
+                  />
                   <div className="relative">
                     <Input
                       type="number"
@@ -673,7 +723,12 @@ export function VerificationEditorPanel({
 
                 {/* Sugerowany opór/obciążenie */}
                 <div className="space-y-1.5">
-                  <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Opór/obciążenie</Label>
+                  <ExerciseFieldLabelWithTooltip
+                    label="Opór/obciążenie"
+                    tooltip={EXERCISE_FIELD_TOOLTIPS.load}
+                    labelClassName="text-[10px] uppercase tracking-wider text-muted-foreground"
+                    testId="verification-load-info"
+                  />
                   <div className="flex gap-1">
                     <Input
                       type="text"
@@ -716,7 +771,12 @@ export function VerificationEditorPanel({
 
                 {/* Opis obciążenia - zajmuje 2 kolumny */}
                 <div className="space-y-1.5 col-span-2">
-                  <Label className="text-[10px] uppercase tracking-wider text-muted-foreground">Opis obciążenia</Label>
+                  <ExerciseFieldLabelWithTooltip
+                    label="Opis obciążenia"
+                    tooltip={EXERCISE_FIELD_TOOLTIPS.load}
+                    labelClassName="text-[10px] uppercase tracking-wider text-muted-foreground"
+                    testId="verification-load-text-info"
+                  />
                   <Input
                     type="text"
                     value={localLoadText}
