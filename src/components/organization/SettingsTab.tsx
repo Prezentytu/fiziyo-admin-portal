@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useMutation } from '@apollo/client/react';
-import { Building2, FileText, Image, Loader2, Pencil, Save, Trash2, ChevronDown } from 'lucide-react';
+import { Building2, Image, Loader2, Pencil, Save, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -12,10 +12,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { cn } from '@/lib/utils';
-import { ExerciseVisibilitySettings } from './ExerciseVisibilitySettings';
-import { DataManagementCard } from './DataManagementCard';
 import {
   UPDATE_ORGANIZATION_NAME_MUTATION,
   UPDATE_ORGANIZATION_LOGO_MUTATION,
@@ -40,61 +36,6 @@ interface SettingsTabProps {
   currentUserRole?: string;
   isLoading?: boolean;
   onRefresh?: () => void;
-}
-
-// Collapsible section component - Linear/Notion style
-interface SettingsSectionProps {
-  title: string;
-  description?: string;
-  icon: React.ElementType;
-  gradient: string;
-  defaultOpen?: boolean;
-  children: React.ReactNode;
-}
-
-function SettingsSection({
-  title,
-  description,
-  icon: Icon,
-  gradient,
-  defaultOpen = true,
-  children,
-}: SettingsSectionProps) {
-  const [isOpen, setIsOpen] = useState(defaultOpen);
-
-  return (
-    <Collapsible open={isOpen} onOpenChange={setIsOpen}>
-      <div className="space-y-4">
-        <CollapsibleTrigger asChild>
-          <button className="w-full group">
-            <div className="flex items-center justify-between p-4 rounded-xl bg-card/30 hover:bg-card/50 border border-border/50 transition-all cursor-pointer">
-              <div className="flex items-center gap-4">
-                <div
-                  className={cn(
-                    'flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br shadow-lg shadow-black/20',
-                    gradient
-                  )}
-                >
-                  <Icon className="h-5 w-5 text-white" />
-                </div>
-                <div className="text-left">
-                  <h3 className="text-lg font-semibold tracking-tight text-foreground">{title}</h3>
-                  {description && <p className="text-sm text-muted-foreground">{description}</p>}
-                </div>
-              </div>
-              <ChevronDown
-                className={cn(
-                  'h-5 w-5 text-muted-foreground transition-transform duration-300',
-                  isOpen && 'rotate-180'
-                )}
-              />
-            </div>
-          </button>
-        </CollapsibleTrigger>
-        <CollapsibleContent className="space-y-4 pt-2">{children}</CollapsibleContent>
-      </div>
-    </Collapsible>
-  );
 }
 
 export function SettingsTab({ organization, currentUserRole, isLoading = false, onRefresh }: SettingsTabProps) {
@@ -217,48 +158,40 @@ export function SettingsTab({ organization, currentUserRole, isLoading = false, 
   }
 
   return (
-    <div className="space-y-8">
-      {/* Section 1: Organization Profile */}
-      <SettingsSection
-        title="Profil organizacji"
-        description="Nazwa, opis i logo Twojej organizacji"
-        icon={Building2}
-        gradient="from-primary to-emerald-600"
-        defaultOpen={true}
-      >
-        <Card className="rounded-xl border border-border/50 bg-card/30">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-                  <Building2 className="h-5 w-5 text-primary" />
-                </div>
-                <div>
-                  <CardTitle className="text-lg font-semibold tracking-tight">Informacje podstawowe</CardTitle>
-                  <CardDescription className="text-sm text-muted-foreground">
-                    Nazwa, opis i logo organizacji
-                  </CardDescription>
-                </div>
+    <div className="space-y-6">
+      <Card className="rounded-xl border border-border/50 bg-card/30">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+                <Building2 className="h-5 w-5 text-primary" />
               </div>
-              {canEdit && !isEditingBasic && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setIsEditingBasic(true)}
-                  className="gap-2 rounded-xl border-border/50 hover:border-primary/50 transition-all"
-                >
-                  <Pencil className="h-4 w-4" />
-                  Edytuj
-                </Button>
-              )}
+              <div>
+                <CardTitle className="text-lg font-semibold tracking-tight">Informacje podstawowe</CardTitle>
+                <CardDescription className="text-sm text-muted-foreground">
+                  Nazwa, opis i logo organizacji
+                </CardDescription>
+              </div>
             </div>
-          </CardHeader>
-          <CardContent className="space-y-6">
+            {canEdit && !isEditingBasic && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsEditingBasic(true)}
+                className="gap-2 rounded-xl border-border/50 hover:border-primary/50 transition-all"
+              >
+                <Pencil className="h-4 w-4" />
+                Edytuj
+              </Button>
+            )}
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-6">
             {/* Logo section */}
             <div className="flex items-start gap-6">
               <Avatar className="h-20 w-20 ring-4 ring-zinc-100 dark:ring-zinc-800">
                 <AvatarImage src={organization.logoUrl} alt={organization.name} />
-                <AvatarFallback className="bg-gradient-to-br from-primary/80 to-primary-dark/80 text-primary-foreground text-2xl font-bold">
+              <AvatarFallback className="bg-linear-to-br from-primary/80 to-primary-dark/80 text-primary-foreground text-2xl font-bold">
                   {organization.name?.slice(0, 2).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
@@ -355,29 +288,8 @@ export function SettingsTab({ organization, currentUserRole, isLoading = false, 
                 </div>
               </div>
             )}
-          </CardContent>
-        </Card>
-
-        {/* Exercise visibility settings */}
-        <ExerciseVisibilitySettings
-          organizationId={organization.id}
-          allowPersonalExercises={organization.allowPersonalExercises}
-          sharedExercisesByDefault={organization.sharedExercisesByDefault}
-          canEdit={canEdit}
-          onSuccess={onRefresh}
-        />
-      </SettingsSection>
-
-      {/* Section 2: Data Management */}
-      <SettingsSection
-        title="Zarządzanie danymi"
-        description="Import, eksport i usuwanie danych"
-        icon={FileText}
-        gradient="from-amber-500 to-orange-600"
-        defaultOpen={false}
-      >
-        <DataManagementCard organizationId={organization.id} canEdit={canEdit} onRefresh={onRefresh} />
-      </SettingsSection>
+        </CardContent>
+      </Card>
     </div>
   );
 }
