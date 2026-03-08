@@ -137,7 +137,7 @@ export function BillingSummaryWidget({ variant, organizationId, className }: Bil
         data-testid="billing-summary-widget"
       >
         {/* Gradient accent bar */}
-        <div className="h-1 bg-gradient-to-r from-primary to-emerald-600" />
+        <div className="h-1 bg-linear-to-r from-primary to-emerald-600" />
 
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-3 text-base font-semibold">
@@ -199,7 +199,7 @@ export function BillingSummaryWidget({ variant, organizationId, className }: Bil
       data-testid="billing-summary-widget"
     >
       {/* Gradient accent bar */}
-      <div className="h-1 bg-gradient-to-r from-primary to-emerald-600" />
+      <div className="h-1 bg-linear-to-r from-primary to-emerald-600" />
 
       <CardHeader className="pb-4">
         <div className="flex items-center justify-between">
@@ -226,7 +226,7 @@ export function BillingSummaryWidget({ variant, organizationId, className }: Bil
       <CardContent className="pt-0">
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {/* Active Patients Card */}
-          <div className="rounded-xl border border-border/40 bg-gradient-to-br from-primary/5 via-transparent to-transparent p-5">
+          <div className="rounded-xl border border-border/40 bg-linear-to-br from-primary/5 via-transparent to-transparent p-5">
             <div className="flex items-center gap-2 mb-3">
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/20">
                 <TrendingUp className="h-4 w-4 text-primary" />
@@ -255,7 +255,7 @@ export function BillingSummaryWidget({ variant, organizationId, className }: Bil
           </div>
 
           {/* Total Amount Card */}
-          <div className="rounded-xl border border-primary/40 bg-gradient-to-br from-primary/10 to-emerald-600/5 p-5 sm:col-span-2 lg:col-span-1">
+          <div className="rounded-xl border border-primary/40 bg-linear-to-br from-primary/10 to-emerald-600/5 p-5 sm:col-span-2 lg:col-span-1">
             <div className="flex items-center gap-2 mb-3">
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/20">
                 <CreditCard className="h-4 w-4 text-primary" />

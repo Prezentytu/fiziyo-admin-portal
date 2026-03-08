@@ -2,9 +2,9 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { useMutation } from '@apollo/client/react';
-import { Mail, Phone, User, Loader2, Copy, Check, Link2, X, Ticket, QrCode, Send } from 'lucide-react';
+import { Mail, Phone, User, Loader2, Copy, Check, Link2, Ticket, QrCode, Send } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
-import { Dialog, DialogContent, DialogClose, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -27,10 +27,22 @@ interface PatientInviteDialogProps {
 // Helper Components
 // ========================================
 
-function SendButtonLabel({ email, phone }: { readonly email: string; readonly phone: string }) {
-  if (email) return <>Wyślij Email</>;
-  if (phone) return <>Wyślij SMS</>;
+function SendButtonLabel({ sendMode }: { readonly sendMode: 'email' | 'sms' | null }) {
+  if (sendMode === 'email') return <>Wyślij email</>;
+  if (sendMode === 'sms') return <>Wyślij SMS</>;
   return <>Wpisz dane kontaktowe</>;
+}
+
+function resolveSendMode(hasValidEmail: boolean, hasValidPhone: boolean): 'email' | 'sms' | null {
+  if (hasValidEmail) {
+    return 'email';
+  }
+
+  if (hasValidPhone) {
+    return 'sms';
+  }
+
+  return null;
 }
 
 // ========================================
@@ -39,6 +51,7 @@ function SendButtonLabel({ email, phone }: { readonly email: string; readonly ph
 
 export function PatientInviteDialog({ open, onOpenChange, organizationId }: PatientInviteDialogProps) {
   // State
+  const [activeTab, setActiveTab] = useState('link');
   const [generatedLink, setGeneratedLink] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [patientName, setPatientName] = useState('');
@@ -59,6 +72,13 @@ export function PatientInviteDialog({ open, onOpenChange, organizationId }: Pati
       return generatedLink;
     }
   }, [generatedLink, patientName]);
+
+  const normalizedEmail = patientEmail.trim();
+  const normalizedPhone = patientPhone.trim();
+  const hasValidEmail = normalizedEmail.length > 0 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail);
+  const phoneDigits = normalizedPhone.replaceAll(/\D/g, '');
+  const hasValidPhone = phoneDigits.length >= 9;
+  const sendMode = resolveSendMode(hasValidEmail, hasValidPhone);
 
   // Create invite mutation
   const [createInvite, { loading }] = useMutation<CreatePatientInviteLinkResponse>(
@@ -116,21 +136,21 @@ export function PatientInviteDialog({ open, onOpenChange, organizationId }: Pati
 
   // Handle send invite
   const handleSendInvite = async () => {
-    if (!organizationId || (!patientEmail && !patientPhone)) return;
+    if (!organizationId || !sendMode) return;
 
     try {
       await createInvite({
         variables: {
           organizationId,
           patientName: patientName || null,
-          patientEmail: patientEmail || null,
-          patientPhone: patientPhone || null,
-          linkType: patientEmail ? 'email' : 'sms',
+          patientEmail: sendMode === 'email' ? normalizedEmail : null,
+          patientPhone: sendMode === 'sms' ? normalizedPhone : null,
+          linkType: sendMode,
           expirationDays: 7,
         },
       });
 
-      setSentTo(patientEmail || patientPhone);
+      setSentTo(sendMode === 'email' ? normalizedEmail : normalizedPhone);
       setSendSuccess(true);
 
       // Auto-close after 1.5s
@@ -144,6 +164,7 @@ export function PatientInviteDialog({ open, onOpenChange, organizationId }: Pati
 
   // Handle close
   const handleClose = () => {
+    setActiveTab('link');
     setGeneratedLink(null);
     setCopied(false);
     setPatientName('');
@@ -155,202 +176,180 @@ export function PatientInviteDialog({ open, onOpenChange, organizationId }: Pati
   };
 
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
+    <Dialog
+      open={open}
+      onOpenChange={(nextOpen) => {
+        if (!nextOpen) {
+          handleClose();
+        }
+      }}
+    >
       <DialogContent
-        className="bg-zinc-950 border-white/10 shadow-2xl rounded-2xl max-w-md p-0 overflow-hidden gap-0"
-        hideCloseButton
+        className="max-w-[95vw] sm:max-w-xl overflow-hidden"
         data-testid="invite-dialog"
       >
-        {/* Accessibility: Hidden title for screen readers */}
-        <DialogTitle className="sr-only">Zaproś Pacjenta</DialogTitle>
-
-        {/* Gradient Header with overlapping icon */}
-        <div className="relative">
-          {/* Gradient background */}
-          <div className="h-20 bg-linear-to-br from-emerald-900/50 to-black" />
-
-          {/* Close button */}
-          <DialogClose
-            className="absolute right-3 top-3 rounded-full p-1.5 text-zinc-400 hover:text-white hover:bg-white/10 transition-colors z-10"
-            data-testid="invite-dialog-close-btn"
-          >
-            <X className="h-5 w-5" />
-            <span className="sr-only">Zamknij</span>
-          </DialogClose>
-
-          {/* Centered icon overlapping gradient */}
-          <div className="absolute left-1/2 -translate-x-1/2 -bottom-8">
-            <div className="bg-zinc-900 border border-emerald-500/30 rounded-full p-4 shadow-lg shadow-emerald-900/20">
-              <Ticket className="h-8 w-8 text-emerald-500" />
-            </div>
+        <div className="flex items-start gap-4 rounded-xl border border-border/50 bg-linear-to-r from-primary/5 via-emerald-500/5 to-primary/5 p-5">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary shadow-sm">
+            <Ticket className="h-6 w-6" />
           </div>
-        </div>
-
-        {/* Title section */}
-        <div className="flex flex-col items-center pt-12 px-6">
-          <h2 className="text-xl font-semibold text-white">Zaproś Pacjenta</h2>
-          <p className="text-sm text-zinc-400 mt-1 text-center">
-            Pacjent otrzyma dostęp do aplikacji i 30 dni Premium.
-          </p>
+          <DialogHeader className="space-y-1 text-left">
+            <DialogTitle>Zaproś pacjenta</DialogTitle>
+            <DialogDescription>
+              Wygeneruj link, pokaż kod QR albo wyślij zaproszenie bezpośrednio do pacjenta.
+            </DialogDescription>
+          </DialogHeader>
         </div>
 
         {/* Loading state */}
         {loading && !generatedLink ? (
-          <div className="flex flex-col items-center justify-center py-12 px-6">
-            <Loader2 className="h-8 w-8 text-emerald-500 animate-spin" />
-            <p className="text-sm text-zinc-400 mt-3">Generuję link...</p>
+          <div className="flex flex-col items-center justify-center py-12">
+            <Loader2 className="h-8 w-8 text-primary animate-spin" />
+            <p className="text-sm text-muted-foreground mt-3">Generuję link zaproszenia...</p>
           </div>
         ) : (
           /* Tabs */
-          <Tabs defaultValue="link" className="px-6 pb-6 pt-6">
-            <TabsList className="bg-zinc-900 p-1 rounded-lg w-full grid grid-cols-3 gap-1 mb-6 h-auto">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger
                 value="link"
-                className="flex items-center justify-center gap-1.5 py-2.5 text-sm data-[state=active]:bg-zinc-800 data-[state=active]:text-white data-[state=active]:shadow-sm text-zinc-500 hover:text-zinc-300 transition-colors rounded-md"
+                className="gap-2"
                 data-testid="invite-tab-link"
               >
                 <Link2 className="h-4 w-4 shrink-0" />
-                <span className="hidden sm:inline">Link</span>
+                Link
               </TabsTrigger>
               <TabsTrigger
                 value="qr"
-                className="flex items-center justify-center gap-1.5 py-2.5 text-sm data-[state=active]:bg-zinc-800 data-[state=active]:text-white data-[state=active]:shadow-sm text-zinc-500 hover:text-zinc-300 transition-colors rounded-md"
+                className="gap-2"
                 data-testid="invite-tab-qr"
               >
                 <QrCode className="h-4 w-4 shrink-0" />
-                <span className="hidden sm:inline">QR Kod</span>
+                QR kod
               </TabsTrigger>
               <TabsTrigger
                 value="send"
-                className="flex items-center justify-center gap-1.5 py-2.5 text-sm data-[state=active]:bg-zinc-800 data-[state=active]:text-white data-[state=active]:shadow-sm text-zinc-500 hover:text-zinc-300 transition-colors rounded-md"
+                className="gap-2"
                 data-testid="invite-tab-send"
               >
                 <Send className="h-4 w-4 shrink-0" />
-                <span className="hidden sm:inline">Wyślij</span>
+                Wyślij
               </TabsTrigger>
             </TabsList>
 
             {/* Tab: Link */}
-            <TabsContent
-              value="link"
-              className="space-y-4 animate-in fade-in-50 slide-in-from-left-2 duration-200 mt-0"
-            >
-              {/* Personalization input */}
+            <TabsContent value="link" className="mt-4 space-y-4">
               <div className="space-y-2">
-                <label htmlFor="invite-name-input" className="text-sm text-zinc-400">
-                  Personalizuj link
+                <label htmlFor="invite-name-input" className="text-sm text-muted-foreground">
+                  Personalizacja
                 </label>
                 <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-zinc-500" />
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                   <Input
                     id="invite-name-input"
                     value={patientName}
                     onChange={(e) => setPatientName(e.target.value)}
                     placeholder="Imię pacjenta (opcjonalne)"
-                    className="pl-10 bg-zinc-900/50 border-white/5 focus:border-emerald-500/50 focus:ring-emerald-500/20 rounded-xl h-12"
+                    className="pl-10 h-11"
                     data-testid="invite-name-input"
                   />
                 </div>
+                <p className="text-xs text-muted-foreground">
+                  Jeśli podasz imię, dodamy je do linku, żeby pacjent od razu widział bardziej osobiste zaproszenie.
+                </p>
               </div>
 
-              {/* Generated link display */}
-              <div className="relative">
-                <Input
-                  value={personalizedLink}
-                  readOnly
-                  className="pr-20 bg-zinc-900/50 border-white/5 rounded-xl h-12 text-sm text-zinc-300"
-                  data-testid="invite-link-display"
-                />
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="absolute right-2 top-1/2 -translate-y-1/2 text-emerald-500 hover:text-emerald-400 hover:bg-emerald-500/10"
-                  onClick={handleCopyLink}
-                  data-testid="invite-copy-inline-btn"
-                >
-                  {copied ? <Check className="h-4 w-4" /> : <span className="text-xs font-medium">Kopiuj</span>}
-                </Button>
+              <div className="rounded-xl border border-border/60 bg-surface/50 p-4 space-y-3">
+                <div className="relative">
+                  <Input value={personalizedLink} readOnly className="pr-20 h-11 text-sm" data-testid="invite-link-display" />
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-2 top-1/2 -translate-y-1/2"
+                    onClick={handleCopyLink}
+                    data-testid="invite-copy-inline-btn"
+                  >
+                    {copied ? <Check className="h-4 w-4" /> : 'Kopiuj'}
+                  </Button>
+                </div>
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-xs text-muted-foreground">
+                    Link otworzy ekran startowy pacjenta z dostępem do aktywacji Premium.
+                  </p>
+                  <Button onClick={handleCopyLink} className="shrink-0" data-testid="invite-copy-main-btn">
+                    {copied ? (
+                      <>
+                        <Check className="h-4 w-4 mr-2" />
+                        Skopiowano
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="h-4 w-4 mr-2" />
+                        Kopiuj link
+                      </>
+                    )}
+                  </Button>
+                </div>
               </div>
-
-              {/* Main copy button */}
-              <Button
-                onClick={handleCopyLink}
-                className="bg-emerald-600 hover:bg-emerald-500 text-white font-medium rounded-xl h-12 w-full shadow-lg shadow-emerald-900/20 transition-all"
-                data-testid="invite-copy-main-btn"
-              >
-                {copied ? (
-                  <>
-                    <Check className="h-4 w-4 mr-2" />
-                    Skopiowano!
-                  </>
-                ) : (
-                  <>
-                    <Copy className="h-4 w-4 mr-2" />
-                    Kopiuj Link
-                  </>
-                )}
-              </Button>
             </TabsContent>
 
             {/* Tab: QR Code */}
-            <TabsContent value="qr" className="flex flex-col items-center py-4 animate-in fade-in-50 duration-200 mt-0">
-              {/* Branded QR Code */}
-              <div className="bg-white p-4 rounded-2xl shadow-xl" data-testid="invite-qr-code">
-                <QRCodeSVG
-                  value={personalizedLink || 'https://fiziyo.app/invite'}
-                  size={200}
-                  level="H"
-                  imageSettings={{
-                    src: '/images/logo.png',
-                    x: undefined,
-                    y: undefined,
-                    height: 40,
-                    width: 40,
-                    excavate: true,
-                  }}
-                />
-              </div>
-
-              {/* Instructions */}
-              <div className="mt-6 text-center">
-                <p className="text-sm font-medium text-zinc-300">Pokaż pacjentowi do zeskanowania</p>
-                <p className="text-xs text-zinc-500 mt-1">Pacjent otworzy link bezpośrednio w przeglądarce</p>
+            <TabsContent value="qr" className="mt-4">
+              <div className="rounded-xl border border-border/60 bg-surface/50 p-5">
+                <div className="flex flex-col items-center gap-4">
+                  <div className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-black/5" data-testid="invite-qr-code">
+                    <QRCodeSVG
+                      value={personalizedLink || 'https://fiziyo.app/invite'}
+                      size={200}
+                      level="H"
+                      imageSettings={{
+                        src: '/images/logo.png',
+                        x: undefined,
+                        y: undefined,
+                        height: 40,
+                        width: 40,
+                        excavate: true,
+                      }}
+                    />
+                  </div>
+                  <div className="space-y-1 text-center">
+                    <p className="text-sm font-medium text-foreground">Pokaż pacjentowi kod do zeskanowania</p>
+                    <p className="text-xs text-muted-foreground">
+                      Kod prowadzi do tego samego linku co zakładka `Link`, więc możesz wygodnie przełączać kanał przekazania.
+                    </p>
+                  </div>
+                  <div className="w-full flex items-center justify-between gap-3 border-t border-border/50 pt-4">
+                    <p className="text-xs text-muted-foreground">Jeśli pacjent jest z Tobą w gabinecie, QR zwykle daje najmniejsze tarcie.</p>
+                    <Button variant="outline" onClick={handleCopyLink}>
+                      <Copy className="h-4 w-4 mr-2" />
+                      Kopiuj link
+                    </Button>
+                  </div>
+                </div>
               </div>
             </TabsContent>
 
             {/* Tab: Send */}
-            <TabsContent
-              value="send"
-              className="space-y-4 pt-2 animate-in fade-in-50 slide-in-from-right-2 duration-200 mt-0"
-            >
+            <TabsContent value="send" className="mt-4">
               {sendSuccess ? (
-                /* Success view */
-                <div
-                  className="flex flex-col items-center justify-center py-8 animate-in zoom-in-50 duration-300"
-                  data-testid="invite-success-view"
-                >
-                  <div className="h-16 w-16 rounded-full bg-emerald-500/20 flex items-center justify-center mb-4">
-                    <Check className="h-8 w-8 text-emerald-500" />
+                <div className="flex flex-col items-center justify-center rounded-xl border border-primary/20 bg-primary/5 px-6 py-10" data-testid="invite-success-view">
+                  <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/15">
+                    <Check className="h-8 w-8 text-primary" />
                   </div>
-                  <h3 className="text-lg font-semibold text-white">Wysłano!</h3>
-                  <p className="text-sm text-zinc-400 mt-1">Zaproszenie zostało wysłane do {sentTo}</p>
+                  <h3 className="text-lg font-semibold text-foreground">Zaproszenie wysłane</h3>
+                  <p className="mt-1 text-sm text-muted-foreground">Zaproszenie zostało wysłane do {sentTo}</p>
                 </div>
               ) : (
-                /* Form */
-                <>
-                  <div className="text-center text-xs text-zinc-500 mb-4">
-                    Wybierz kanał, którym chcesz dostarczyć zaproszenie.
+                <div className="space-y-4 rounded-xl border border-border/60 bg-surface/50 p-4">
+                  <div className="space-y-1">
+                    <p className="text-sm font-medium text-foreground">Wyślij zaproszenie bezpośrednio</p>
+                    <p className="text-xs text-muted-foreground">
+                      Wybierz jeden kanał kontaktu. Gdy wpiszesz email, pole telefonu zostanie wyłączone i odwrotnie.
+                    </p>
                   </div>
 
-                  {/* Input group - mutually exclusive */}
                   <div className="space-y-3">
-                    {/* Email input */}
-                    <div
-                      className={`relative transition-opacity duration-200 ${
-                        patientPhone ? 'opacity-40' : 'opacity-100'
-                      }`}
-                    >
-                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-emerald-500" />
+                    <div className={`relative transition-opacity duration-200 ${normalizedPhone ? 'opacity-50' : 'opacity-100'}`}>
+                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                       <Input
                         type="email"
                         value={patientEmail}
@@ -359,18 +358,13 @@ export function PatientInviteDialog({ open, onOpenChange, organizationId }: Pati
                           if (e.target.value) setPatientPhone('');
                         }}
                         placeholder="Adres email pacjenta"
-                        className="pl-10 bg-zinc-900/50 border-white/5 focus:border-emerald-500/50 rounded-xl h-11 text-sm"
+                        className="pl-10 h-11"
                         data-testid="invite-email-input"
                       />
                     </div>
 
-                    {/* Phone input */}
-                    <div
-                      className={`relative transition-opacity duration-200 ${
-                        patientEmail ? 'opacity-40' : 'opacity-100'
-                      }`}
-                    >
-                      <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-emerald-500" />
+                    <div className={`relative transition-opacity duration-200 ${normalizedEmail ? 'opacity-50' : 'opacity-100'}`}>
+                      <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                       <Input
                         type="tel"
                         value={patientPhone}
@@ -379,29 +373,28 @@ export function PatientInviteDialog({ open, onOpenChange, organizationId }: Pati
                           if (e.target.value) setPatientEmail('');
                         }}
                         placeholder="Numer telefonu (np. 500 600 700)"
-                        className="pl-10 bg-zinc-900/50 border-white/5 focus:border-emerald-500/50 rounded-xl h-11 text-sm"
+                        className="pl-10 h-11"
                         data-testid="invite-phone-input"
                       />
                     </div>
                   </div>
 
-                  {/* Dynamic button */}
-                  <Button
-                    onClick={handleSendInvite}
-                    disabled={(!patientEmail && !patientPhone) || loading}
-                    className="bg-emerald-600 hover:bg-emerald-500 text-white font-medium rounded-xl h-12 w-full mt-4 shadow-lg shadow-emerald-900/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                    data-testid="invite-send-btn"
-                  >
-                    {loading ? (
-                      <Loader2 className="h-5 w-5 animate-spin" />
-                    ) : (
-                      <>
-                        <Send className="h-4 w-4 mr-2" />
-                        <SendButtonLabel email={patientEmail} phone={patientPhone} />
-                      </>
-                    )}
-                  </Button>
-                </>
+                  <div className="flex items-center justify-between gap-3 border-t border-border/50 pt-4">
+                    <Button variant="outline" onClick={handleClose}>
+                      Anuluj
+                    </Button>
+                    <Button onClick={handleSendInvite} disabled={!sendMode || loading} data-testid="invite-send-btn">
+                      {loading ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <>
+                          <Send className="h-4 w-4 mr-2" />
+                          <SendButtonLabel sendMode={sendMode} />
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </div>
               )}
             </TabsContent>
           </Tabs>

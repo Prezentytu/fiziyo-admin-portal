@@ -2,7 +2,7 @@
 
 ## Cel biznesowy
 
-Zaproszenia członków zespołu (`sendInvitation`, `generateInviteLink`) nie mogą być blokowane przez nieaktywny model subskrypcji `Starter/Solo/Pro/Business`, bo aktywny model monetyzacji to revenue-share. Użytkownik ma widzieć neutralne błędy domenowe zamiast komunikatów o upgrade planu.
+Zaproszenia członków zespołu (`sendInvitation`, `generateInviteLink`) nie mogą być blokowane przez nieaktywny model subskrypcji `Starter/Solo/Pro/Business`, bo aktywny model monetyzacji to revenue-share. Użytkownik ma widzieć neutralne błędy domenowe zamiast komunikatów o upgrade planu. Dodatkowo wszystkie aktywne dialogi zaproszeń w panelu powinny używać jednego języka UX: wspólna hierarchia nagłówków, tabsów, sekcji linku/QR/wysyłki i theme-safe tokenów.
 
 ## Architektura
 
@@ -21,6 +21,7 @@ flowchart LR
 - `InviteMemberDialog` wyświetla tylko neutralne komunikaty błędów.
 - Dla legacy kodów limitu (`THERAPIST_LIMIT_REACHED`, `PATIENT_LIMIT_REACHED`, `EXERCISE_LIMIT_REACHED`, `CLINIC_LIMIT_REACHED`) pokazujemy ogólny komunikat techniczny bez słów `Starter`, `Pro`, `upgrade`.
 - Aktywne CTA finansowe prowadzą do `/finances` (bez pośrednich linków `/billing`).
+- `PatientInviteDialog` zachowuje odrębne kanały (`Link`, `QR kod`, `Wyślij`), ale wizualnie i strukturalnie odpowiada wzorcowi invite organizacyjnego.
 
 ## Interfejsy
 
@@ -37,18 +38,23 @@ flowchart LR
 
 ### Komponenty
 
-| Komponent          | Lokalizacja                                                                | Opis                                                         |
-| ------------------ | -------------------------------------------------------------------------- | ------------------------------------------------------------ |
-| InviteMemberDialog | `src/components/organization/InviteMemberDialog.tsx`                       | Neutralna obsługa błędów invite i brak legacy modalu limitów |
-| OrganizationPage   | `src/app/(dashboard)/organization/page.tsx`                                | Usunięcie nieużywanego pobierania planu z flow zespołu       |
-| TeamSection        | `src/components/organization/TeamSection.tsx`                              | Uproszczenie propsów o legacy limity                         |
-| InvitationMutation | `d:/Prezentytu/fizjo-app/backend/FizjoApp.Api/Types/InvitationMutation.cs` | Usunięcie checks `maxTherapists` z invite flow               |
+| Komponent           | Lokalizacja                                                                | Opis                                                                                   |
+| ------------------- | -------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| InviteMemberDialog  | `src/components/organization/InviteMemberDialog.tsx`                       | Neutralna obsługa błędów invite i brak legacy modalu limitów                           |
+| PatientInviteDialog | `src/components/finances/PatientInviteDialog.tsx`                          | Ujednolicony wizualnie dialog zaproszeń pacjenta z kanałami `Link`, `QR kod`, `Wyślij` |
+| OrganizationPage    | `src/app/(dashboard)/organization/page.tsx`                                | Usunięcie nieużywanego pobierania planu z flow zespołu                                 |
+| TeamSection         | `src/components/organization/TeamSection.tsx`                              | Uproszczenie propsów o legacy limity                                                   |
+| InvitationMutation  | `d:/Prezentytu/fizjo-app/backend/FizjoApp.Api/Types/InvitationMutation.cs` | Usunięcie checks `maxTherapists` z invite flow                                         |
 
 ## Data-testid
 
 - `org-invite-tab-link`
 - `org-invite-generate-link-btn`
 - `org-invite-send-btn`
+- `invite-tab-link`
+- `invite-tab-qr`
+- `invite-tab-send`
+- `invite-send-btn`
 
 ## Risk Assessment
 
@@ -64,6 +70,7 @@ flowchart LR
 | ------------------------------------------------------------------------------------ | --------------------- | --------- |
 | `generateInviteLink` zwraca stary kod limitu i UI pokazuje neutralny komunikat       | Frontend komponentowy | High      |
 | standardowy błąd GraphQL invite pokazuje message z API                               | Frontend komponentowy | Medium    |
+| dialog zaproszenia pacjenta zachowuje wspólną strukturę kanałów i walidację wysyłki  | Frontend komponentowy | Medium    |
 | `sendInvitation` i `generateInviteLink` nie rzucają limitu planu po stronie backendu | Backend integracyjny  | High      |
 | zaakceptowanie zaproszenia i lista zaproszeń działają po zmianie                     | E2E/regresja          | High      |
 
@@ -73,3 +80,4 @@ flowchart LR
 
 - Dodano spec dla usunięcia legacy limitów z invite flow.
 - Uporządkowano granicę między aktywnym modelem revenue-share a nieaktywnym modelem planów organizacji.
+- Ujednolicono aktywne dialogi zaproszeń, aby pacjent i członek zespołu korzystali z tego samego języka interfejsu.
