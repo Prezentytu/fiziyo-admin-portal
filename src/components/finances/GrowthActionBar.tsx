@@ -4,7 +4,6 @@ import { useState } from 'react';
 import { UserPlus, ArrowRight, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { PatientInviteDialog } from './PatientInviteDialog';
-import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
 // ========================================
@@ -23,30 +22,8 @@ interface GrowthActionBarProps {
 export function GrowthActionBar({ organizationId, className }: GrowthActionBarProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
 
-  // Handle invite action
-  const handleInvite = async () => {
-    // Prepare share data for mobile
-    const shareData = {
-      title: 'Plan ćwiczeń od FiziYo',
-      text: 'Cześć! Tu Twój fizjoterapeuta. Przesyłam Twój plan ćwiczeń. Pierwszy miesiąc masz w cenie wizyty!',
-      url: 'https://fiziyo.pl/start', // Default URL, will be personalized in dialog
-    };
-
-    // Check if native share is available (mobile)
-    if (typeof navigator !== 'undefined' && navigator.share && navigator.canShare && navigator.canShare(shareData)) {
-      try {
-        await navigator.share(shareData);
-        toast.success('Udostępniono!');
-      } catch (error) {
-        // User cancelled or error - open dialog as fallback
-        if ((error as Error).name !== 'AbortError') {
-          setDialogOpen(true);
-        }
-      }
-    } else {
-      // Desktop: open dialog
-      setDialogOpen(true);
-    }
+  const handleInvite = () => {
+    setDialogOpen(true);
   };
 
   return (
