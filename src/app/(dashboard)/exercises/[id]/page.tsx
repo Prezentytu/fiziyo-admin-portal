@@ -64,11 +64,11 @@ import {
 } from '@/graphql/mutations/exercises.mutations';
 import { createTagsMap, mapExerciseTagsToObjects } from '@/utils/tagUtils';
 import { useOrganization } from '@/contexts/OrganizationContext';
-import { useExerciseBuilder } from '@/contexts/ExerciseBuilderContext';
 import type { ExerciseByIdResponse, ExerciseTagsResponse, TagCategoriesResponse } from '@/types/apollo';
 import { translateExerciseTypeShort, translateExerciseSidePolish } from '@/components/pdf/polishUtils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { getNextExerciseCopyName } from '@/features/exercises/utils/getNextExerciseCopyName';
 
 interface ExerciseDetailPageProps {
   params: Promise<{ id: string }>;
@@ -88,7 +88,6 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
   const { id } = use(params);
   const router = useRouter();
   const { currentOrganization } = useOrganization();
-  const { setIsChatOpen } = useExerciseBuilder();
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isAddToSetDialogOpen, setIsAddToSetDialogOpen] = useState(false);
@@ -104,6 +103,10 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
   // Get exercise details
   const { data, loading, error } = useQuery(GET_EXERCISE_BY_ID_QUERY, {
     variables: { id },
+  });
+  const { data: organizationExercisesData } = useQuery(GET_ORGANIZATION_EXERCISES_QUERY, {
+    variables: { organizationId },
+    skip: !organizationId,
   });
 
   // Get tags for mapping
@@ -146,6 +149,11 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
   });
 
   const rawExercise = (data as ExerciseByIdResponse)?.exerciseById;
+  const organizationExerciseNames =
+    ((organizationExercisesData as { organizationExercises?: { name?: string | null }[] } | undefined)?.organizationExercises ??
+      [])
+      .map((organizationExercise) => organizationExercise.name?.trim())
+      .filter((name): name is string => Boolean(name));
   const tags = (tagsData as ExerciseTagsResponse)?.exerciseTags || [];
   const categories = (categoriesData as TagCategoriesResponse)?.tagsByOrganizationId || [];
 
@@ -212,13 +220,14 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
     const restBetweenSetsValue = exercise.defaultRestBetweenSets ?? exercise.restSets ?? null;
     const restBetweenRepsValue = exercise.defaultRestBetweenReps ?? exercise.restReps ?? null;
     const sideValue = exercise.side || exercise.exerciseSide;
+    const duplicatedExerciseName = getNextExerciseCopyName(exercise.name, organizationExerciseNames);
 
     try {
       const result = await createExercise({
         variables: {
           organizationId,
           scope: 'ORGANIZATION',
-          name: `Kopia ${exercise.name}`,
+          name: duplicatedExerciseName,
           description: (exercise.patientDescription || exercise.description || '').trim(),
           type: exercise.type || 'reps',
           sets: setsValue,
@@ -245,7 +254,7 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
       const duplicatedExerciseId = (result.data as { createExercise?: { id?: string } } | undefined)?.createExercise?.id;
 
       toast.success('Kopia ćwiczenia została utworzona', {
-        description: `Nowe ćwiczenie: "Kopia ${exercise.name}"`,
+        description: `Nowe ćwiczenie: "${duplicatedExerciseName}"`,
         action: duplicatedExerciseId
           ? {
               label: 'Zobacz kopię',
@@ -253,6 +262,9 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
             }
           : undefined,
       });
+      if (duplicatedExerciseId) {
+        router.push(`/exercises/${duplicatedExerciseId}`);
+      }
     } catch (err) {
       console.error('Błąd podczas duplikowania ćwiczenia:', err);
       toast.error('Nie udało się utworzyć kopii ćwiczenia');
@@ -403,10 +415,6 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
             >
               <Copy className="mr-2 h-4 w-4" />
               {duplicating ? 'Tworzenie kopii...' : 'Duplikuj'}
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setIsChatOpen(true)}>
-              <Sparkles className="mr-2 h-4 w-4" />
-              Asystent AI
             </DropdownMenuItem>
             {exercise.videoUrl && (
               <DropdownMenuItem asChild>
@@ -809,6 +817,11 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
           onOpenChange={setIsEditDialogOpen}
           exercise={exercise}
           organizationId={organizationId}
+          onSuccess={(event) => {
+            if (event?.action === 'copied' && event.exerciseId) {
+              router.push(`/exercises/${event.exerciseId}`);
+            }
+          }}
         />
       )}
 

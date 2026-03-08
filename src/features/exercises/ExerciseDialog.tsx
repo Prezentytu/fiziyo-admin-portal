@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { useState, useCallback } from 'react';
-import { useMutation } from '@apollo/client/react';
+import { useMutation, useQuery } from '@apollo/client/react';
 import { toast } from 'sonner';
 import { Clock, Lock, Sparkles, Copy, Rocket } from 'lucide-react';
 
@@ -16,13 +16,25 @@ import { FeedbackBanner } from './FeedbackBanner';
 import { UPDATE_EXERCISE_MUTATION, COPY_EXERCISE_TEMPLATE_MUTATION } from '@/graphql/mutations/exercises.mutations';
 import { GET_ORGANIZATION_EXERCISES_QUERY, GET_AVAILABLE_EXERCISES_QUERY } from '@/graphql/queries/exercises.queries';
 import type { Exercise } from './ExerciseCard';
+import { buildExerciseUpdateVariables } from './utils/buildExerciseUpdateVariables';
+import { getNextExerciseCopyName } from './utils/getNextExerciseCopyName';
+
+type ExerciseDialogSuccessEvent =
+  | {
+      action: 'updated';
+      exerciseId: string;
+    }
+  | {
+      action: 'copied';
+      exerciseId: string;
+    };
 
 interface ExerciseDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   exercise?: Exercise | null;
   organizationId: string;
-  onSuccess?: () => void;
+  onSuccess?: (event?: ExerciseDialogSuccessEvent) => void;
   /** Callback to resubmit exercise after fixing issues */
   onResubmit?: (exerciseId: string) => Promise<void>;
   /** Callback to submit exercise to global database */
@@ -42,6 +54,10 @@ export function ExerciseDialog({
   const [showCloseConfirm, setShowCloseConfirm] = useState(false);
   const [formIsDirty, setFormIsDirty] = useState(false);
   const [isResubmitting, setIsResubmitting] = useState(false);
+  const { data: organizationExercisesData } = useQuery(GET_ORGANIZATION_EXERCISES_QUERY, {
+    variables: { organizationId },
+    skip: !organizationId,
+  });
 
   // Scope-based modes
   const isGlobalExercise = exercise?.scope === 'GLOBAL';
@@ -88,20 +104,52 @@ export function ExerciseDialog({
   const [copyExercise, { loading: copying }] = useMutation(COPY_EXERCISE_TEMPLATE_MUTATION, {
     refetchQueries: [{ query: GET_AVAILABLE_EXERCISES_QUERY, variables: { organizationId } }],
   });
+  const organizationExerciseNames =
+    ((organizationExercisesData as { organizationExercises?: { name?: string | null }[] } | undefined)
+      ?.organizationExercises ?? [])
+      .map((organizationExercise) => organizationExercise.name?.trim())
+      .filter((name): name is string => Boolean(name));
 
   const handleForkExercise = async () => {
     if (!exercise) return;
 
     try {
-      await copyExercise({
+      const result = await copyExercise({
         variables: {
           templateExerciseId: exercise.id,
           targetOrganizationId: organizationId,
         },
       });
-      toast.success(`Utworzono kopię "${exercise.name}" w Twoich ćwiczeniach`);
+      const copiedExerciseId = (
+        result.data as
+          | {
+              copyExerciseTemplate?: {
+                id?: string;
+              };
+            }
+          | undefined
+      )?.copyExerciseTemplate?.id;
+
+      let copiedExerciseName = exercise.name;
+      if (copiedExerciseId) {
+        copiedExerciseName = getNextExerciseCopyName(exercise.name, organizationExerciseNames);
+        try {
+          await updateExercise({
+            variables: {
+              exerciseId: copiedExerciseId,
+              name: copiedExerciseName,
+            },
+          });
+        } catch (renameError: unknown) {
+          console.error('Błąd podczas nadawania nazwy nowej kopii:', renameError);
+        }
+      }
+
+      toast.success(`Utworzono kopię "${copiedExerciseName}" w Twoich ćwiczeniach`);
       onOpenChange(false);
-      onSuccess?.();
+      if (copiedExerciseId) {
+        onSuccess?.({ action: 'copied', exerciseId: copiedExerciseId });
+      }
     } catch (error: unknown) {
       console.error('Błąd podczas kopiowania ćwiczenia:', error);
       toast.error('Nie udało się skopiować ćwiczenia');
@@ -113,25 +161,10 @@ export function ExerciseDialog({
       if (isEditing && exercise) {
         // First save the changes
         await updateExercise({
-          variables: {
+          variables: buildExerciseUpdateVariables({
             exerciseId: exercise.id,
-            description: values.description || '',
-            type: values.type,
-            sets: values.sets,
-            reps: values.reps,
-            duration: values.duration,
-            restSets: values.restSets,
-            restReps: values.restReps,
-            preparationTime: values.preparationTime,
-            executionTime: values.executionTime,
-            videoUrl: values.videoUrl || null,
-            notes: values.notes || null,
-            exerciseSide: values.exerciseSide === 'none' ? null : values.exerciseSide,
-            tempo: values.tempo || null,
-            clinicalDescription: values.clinicalDescription || null,
-            audioCue: values.audioCue || null,
-            rangeOfMotion: values.rangeOfMotion || null,
-          },
+            values,
+          }),
         });
 
         // If in fix mode (CHANGES_REQUESTED), also resubmit for review
@@ -151,7 +184,7 @@ export function ExerciseDialog({
         }
 
         onOpenChange(false);
-        onSuccess?.();
+        onSuccess?.({ action: 'updated', exerciseId: exercise.id });
       }
     } catch (error: unknown) {
       console.error('Błąd podczas zapisywania ćwiczenia:', error);
@@ -238,7 +271,7 @@ export function ExerciseDialog({
             </Button>
             <Button onClick={handleForkExercise} disabled={copying}>
               <Copy className="mr-2 h-4 w-4" />
-              {copying ? 'Kopiowanie...' : 'Utwórz własną kopię'}
+              {copying ? 'Kopiowanie...' : 'Utwórz kopię do edycji'}
             </Button>
           </div>
         </DialogContent>

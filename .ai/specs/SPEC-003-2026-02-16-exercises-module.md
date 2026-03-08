@@ -4,6 +4,32 @@
 
 Moduł ćwiczeń jest centralnym elementem FiziYo Admin. Umożliwia fizjoterapeutom tworzenie, edytowanie, tagowanie i organizowanie ćwiczeń rehabilitacyjnych, które następnie są przypisywane pacjentom.
 
+## Zasady copy vs edit (2026-03-08)
+
+- `GLOBAL/FiziYo`:
+  - Oryginał pozostaje read-only.
+  - Akcja edycji uruchamia flow "Utwórz kopię do edycji".
+  - Po utworzeniu kopii użytkownik przechodzi do detalu nowej kopii.
+- `ORGANIZATION/PERSONAL`:
+  - Edycja działa in-place przez `UPDATE_EXERCISE_MUTATION`.
+  - Formularz edycji musi przekazywać `name` do payloadu update.
+- Jawna akcja `Duplikuj` pozostaje dostępna niezależnie od trybu.
+
+## Strategia nazewnictwa kopii
+
+- Dla nazwy bazowej `<nazwaBazowa>`:
+  - pierwsza kopia: `Kopia <nazwaBazowa>`
+  - kolejne: `Kopia 2 <nazwaBazowa>`, `Kopia 3 <nazwaBazowa>`, ...
+- Numeracja dotyczy tylko kopii tej samej nazwy bazowej.
+- System usuwa prefiks copy z nazwy źródła przed liczeniem kolejnej kopii (np. duplikacja `Kopia 2 X` bazuje na `X`).
+
+## Sortowanie listy ćwiczeń
+
+- Lista w zakładce `Ćwiczenia` ma sortowanie malejące po dacie utworzenia (najnowsze pierwsze).
+- Priorytet pola daty:
+  1. `createdAt` (aktualne pole API)
+  2. `creationTime` (fallback dla starszych rekordów/aliasów)
+
 ## Architektura
 
 ### Komponenty UI (16)
@@ -65,6 +91,13 @@ Prefiks: `exercise-`
 - `exercise-voice-input-btn`
 
 ## Changelog
+
+### 2026-03-08
+
+- Ujednolicono semantykę edycji i kopiowania: `GLOBAL` tworzy kopię do edycji, `ORGANIZATION` edytuje in-place.
+- Dodano zasady auto-nawigacji po utworzeniu kopii (przejście do nowego detalu).
+- Dodano politykę nazewnictwa kopii: `Kopia`, `Kopia 2`, `Kopia 3`...
+- Doprecyzowano sortowanie listy ćwiczeń jako newest-first oparte o `createdAt`.
 
 ### 2026-02-16
 

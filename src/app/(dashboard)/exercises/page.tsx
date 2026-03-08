@@ -32,6 +32,7 @@ import { createTagsMap, mapExercisesWithTags } from '@/utils/tagUtils';
 import { useDataManagement } from '@/hooks/useDataManagement';
 import { useRealtimeExercises } from '@/hooks/useRealtimeExercises';
 import type { AvailableExercisesResponse, ExerciseTagsResponse, TagCategoriesResponse } from '@/types/apollo';
+import { sortExercisesByNewest } from '@/features/exercises/utils/sortExercisesByNewest';
 
 // Typ dla filtra źródła ćwiczeń
 type ExerciseSourceFilter = 'all' | 'organization' | 'fiziyo';
@@ -173,11 +174,7 @@ export default function ExercisesPage() {
   });
 
   // Sort by creation date (newest first)
-  const filteredExercises = [...searchFilteredExercises].sort((a, b) => {
-    const aTime = a.creationTime ? new Date(a.creationTime).getTime() : 0;
-    const bTime = b.creationTime ? new Date(b.creationTime).getTime() : 0;
-    return bTime - aTime;
-  });
+  const filteredExercises = sortExercisesByNewest(searchFilteredExercises);
 
   const handleView = (exercise: Exercise) => {
     router.push(`/exercises/${exercise.id}`);
@@ -486,6 +483,11 @@ export default function ExercisesPage() {
           exercise={editingExercise}
           organizationId={organizationId}
           onSubmitToGlobal={(exercise) => setSubmitToGlobalExercise(exercise)}
+          onSuccess={(event) => {
+            if (event?.action === 'copied' && event.exerciseId) {
+              router.push(`/exercises/${event.exerciseId}`);
+            }
+          }}
         />
       )}
 

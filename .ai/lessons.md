@@ -14,6 +14,14 @@ Dziennik wniosków z pracy AI agentów. Po każdej korekcie dodaj nowy wpis.
 
 ## Wpisy
 
+### 2026-03-08 - Copy flow i edit payload muszą być spójne
+
+- **Kategoria**: `UI/UX`
+- **Problem**: Użytkownik widział pole nazwy w edycji ćwiczenia, ale zmiana nazwy kopii nie zapisywała się, a flow kopiowania miał niespójny routing i nazewnictwo.
+- **Przyczyna**: `UPDATE_EXERCISE_MUTATION` była wywoływana bez `name`, a ścieżki copy (`copyExerciseTemplate` vs ręczny duplicate) działały bez wspólnej strategii nazewnictwa i nawigacji.
+- **Rozwiązanie**: Dodano builder payloadu update z `name`, wspólny helper `getNextExerciseCopyName`, auto-przejście do nowej kopii po utworzeniu oraz sortowanie newest-first po `createdAt`.
+- **Reguła**: Gdy UI eksponuje pole edycyjne, payload mutacji musi zawierać to pole; dla wielościeżkowego copy obowiązuje jedna strategia nazewnictwa i spójny post-success routing.
+
 ### 2026-03-08 - Report ćwiczenia musi być osobnym bytem od review notes
 
 - **Kategoria**: `GraphQL`
