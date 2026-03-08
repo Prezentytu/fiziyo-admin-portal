@@ -1,12 +1,8 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
-import { Plus, Repeat, Dumbbell, Timer, Clock, Pencil } from 'lucide-react';
+import { Plus, Repeat, Dumbbell, Timer } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
 import { ExerciseActionSelect } from '../ExerciseActionSelect';
-import { translateExerciseTypeShort } from '@/components/pdf/polishUtils';
 import type { ExtractedExercise, ExerciseDecision } from '@/types/import.types';
 
 interface NewExerciseCardProps {
@@ -26,40 +22,7 @@ interface NewExerciseCardProps {
  * Default action: "Utwórz jako nowe"
  */
 export function NewExerciseCard({ exercise, decision, onDecisionChange, className }: NewExerciseCardProps) {
-  const [isEditingName, setIsEditingName] = useState(false);
-  const [editedName, setEditedName] = useState(decision.editedData?.name || exercise.name);
-  const inputRef = useRef<HTMLInputElement>(null);
-
   const isSkipped = decision.action === 'skip';
-
-  // Focus input when editing starts
-  useEffect(() => {
-    if (isEditingName && inputRef.current) {
-      inputRef.current.focus();
-      inputRef.current.select();
-    }
-  }, [isEditingName]);
-
-  const handleSaveName = () => {
-    if (editedName.trim() && editedName !== exercise.name) {
-      onDecisionChange({
-        editedData: {
-          ...decision.editedData,
-          name: editedName.trim(),
-        },
-      });
-    }
-    setIsEditingName(false);
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      handleSaveName();
-    } else if (e.key === 'Escape') {
-      setEditedName(decision.editedData?.name || exercise.name);
-      setIsEditingName(false);
-    }
-  };
 
   const handleActionChange = (action: 'create' | 'reuse' | 'skip', reuseExerciseId?: string) => {
     onDecisionChange({
@@ -68,7 +31,7 @@ export function NewExerciseCard({ exercise, decision, onDecisionChange, classNam
     });
   };
 
-  const displayName = decision.editedData?.name || exercise.name;
+  const displayName = decision.editedData?.name ?? exercise.name;
 
   return (
     <div
@@ -81,95 +44,45 @@ export function NewExerciseCard({ exercise, decision, onDecisionChange, classNam
       )}
       data-testid={`import-new-card-${exercise.tempId}`}
     >
-      {/* Header */}
-      <div className="p-4 pb-3">
+      <div className="p-4">
         <div className="flex items-start gap-3">
-          {/* Status icon */}
           <div
             className={cn(
-              'flex h-10 w-10 shrink-0 items-center justify-center rounded-lg',
+              'flex h-9 w-9 shrink-0 items-center justify-center rounded-lg',
               isSkipped ? 'bg-muted' : 'bg-blue-500/20'
             )}
           >
-            <Plus className={cn('h-5 w-5', isSkipped ? 'text-muted-foreground' : 'text-blue-500')} />
+            <Plus className={cn('h-4 w-4', isSkipped ? 'text-muted-foreground' : 'text-blue-500')} />
           </div>
-
-          {/* Title - inline editable */}
           <div className="min-w-0 flex-1">
-            {isEditingName ? (
-              <Input
-                ref={inputRef}
-                value={editedName}
-                onChange={(e) => setEditedName(e.target.value)}
-                onBlur={handleSaveName}
-                onKeyDown={handleKeyDown}
-                className="text-lg font-semibold h-8 px-2"
-                data-testid={`import-new-card-${exercise.tempId}-name-input`}
-              />
-            ) : (
-              <button
-                type="button"
-                onClick={() => setIsEditingName(true)}
-                className={cn(
-                  'group flex items-center gap-2 text-left rounded px-1 -mx-1 transition-colors',
-                  'hover:bg-surface-light cursor-text',
-                  isSkipped && 'line-through text-muted-foreground'
-                )}
-                title="Kliknij, aby edytować nazwę"
-                data-testid={`import-new-card-${exercise.tempId}-name-btn`}
-              >
-                <h3 className="text-lg font-semibold text-foreground truncate">{displayName}</h3>
-                <Pencil className="h-3.5 w-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
-              </button>
-            )}
+            <h3 className={cn('text-base font-semibold text-foreground truncate', isSkipped && 'line-through text-muted-foreground')}>
+              {displayName}
+            </h3>
 
-            {/* Type badge */}
-            <div className="flex items-center gap-2 mt-1">
-              <Badge
-                variant="secondary"
-                className={cn(
-                  'text-xs',
-                  exercise.type === 'time'
-                    ? 'bg-orange-500/20 text-orange-600 border-0'
-                    : 'bg-primary/20 text-primary border-0'
-                )}
-              >
-                {exercise.type === 'time' ? <Clock className="h-3 w-3 mr-1" /> : <Dumbbell className="h-3 w-3 mr-1" />}
-                {translateExerciseTypeShort(exercise.type)}
-              </Badge>
+            <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+              {exercise.sets && (
+                <span className="flex items-center gap-1 rounded-md bg-surface-light px-2 py-1">
+                  <Repeat className="h-3 w-3" />
+                  {exercise.sets} serii
+                </span>
+              )}
+              {exercise.reps && (
+                <span className="flex items-center gap-1 rounded-md bg-surface-light px-2 py-1">
+                  <Dumbbell className="h-3 w-3" />
+                  {exercise.reps} powt.
+                </span>
+              )}
+              {exercise.duration && (
+                <span className="flex items-center gap-1 rounded-md bg-surface-light px-2 py-1">
+                  <Timer className="h-3 w-3" />
+                  {exercise.duration}s
+                </span>
+              )}
             </div>
           </div>
         </div>
-
-        {/* Parameters */}
-        <div className="mt-3 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
-          {exercise.sets && (
-            <span className="flex items-center gap-1.5 bg-surface-light rounded-md px-2 py-1">
-              <Repeat className="h-3.5 w-3.5" />
-              {exercise.sets} serii
-            </span>
-          )}
-          {exercise.reps && (
-            <span className="flex items-center gap-1.5 bg-surface-light rounded-md px-2 py-1">
-              <Dumbbell className="h-3.5 w-3.5" />
-              {exercise.reps} powt.
-            </span>
-          )}
-          {exercise.duration && (
-            <span className="flex items-center gap-1.5 bg-surface-light rounded-md px-2 py-1">
-              <Timer className="h-3.5 w-3.5" />
-              {exercise.duration}s
-            </span>
-          )}
-        </div>
-
-        {/* Description if present */}
-        {exercise.description && (
-          <p className="mt-3 text-sm text-muted-foreground line-clamp-2">{exercise.description}</p>
-        )}
       </div>
 
-      {/* Footer with action select */}
       <div className="border-t border-border/40 px-4 py-3">
         <ExerciseActionSelect decision={decision} onActionChange={handleActionChange} className="w-full" />
       </div>

@@ -25,6 +25,9 @@ export interface DocumentAnalysisResult {
   /** Metadane dokumentu */
   documentInfo: DocumentInfo;
 
+  /** Diagnostyka procesu dopasowania (additive, opcjonalne) */
+  matchingDiagnostics?: MatchingDiagnostics;
+
   /** Surowy tekst (debug) */
   rawText?: string;
 }
@@ -94,6 +97,22 @@ export interface MatchSuggestion {
   confidence: number;
   matchReason: string;
   imageUrl?: string;
+  matchStatus?: MatchStatus;
+  matchingScope?: MatchingScope;
+  reasonCode?: string;
+  normalizedExtractedName?: string;
+  normalizedExistingName?: string;
+  source?: MatchSource;
+}
+
+export type MatchStatus = 'exact' | 'normalized_exact' | 'fuzzy' | 'semantic' | 'none';
+export type MatchingScope = 'organization' | 'available' | 'global' | 'unknown';
+export type MatchSource = 'backend' | 'frontend_fallback';
+
+export interface MatchingDiagnostics {
+  algorithmVersion?: string;
+  missingSuggestionsTempIds?: string[];
+  candidateCountByTempId?: Record<string, number>;
 }
 
 // ============================================

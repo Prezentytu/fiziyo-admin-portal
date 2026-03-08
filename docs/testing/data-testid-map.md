@@ -443,43 +443,44 @@ await expect(page.getByTestId(/^exercise-card-/)).toHaveCount(5);
 
 ### 9. Import dokumentów (import-)
 
-| data-testid                       | Element                           | Plik                      |
-| --------------------------------- | --------------------------------- | ------------------------- |
-| `import-page`                     | Kontener strony                   | `import/page.tsx`         |
-| `import-page-title`               | Tytuł strony                      | `import/page.tsx`         |
-| `import-experimental-badge`       | Badge eksperymentalne             | `import/page.tsx`         |
-| `import-experimental-note`        | Karta informacji eksperymentalnej | `import/page.tsx`         |
-| `import-step-indicator`           | Wskaźnik kroków                   | `import/page.tsx`         |
-| `import-analyze-btn`              | Analizuj dokument                 | `import/page.tsx`         |
-| `import-back-btn`                 | Wstecz                            | `import/page.tsx`         |
-| `import-next-btn`                 | Dalej                             | `import/page.tsx`         |
-| `import-execute-btn`              | Importuj                          | `import/page.tsx`         |
-| `import-input-mode-tabs`          | Tabs wyboru wejścia               | `import/page.tsx`         |
-| `import-mode-file-tab`            | Zakładka: prześlij plik           | `import/page.tsx`         |
-| `import-mode-text-tab`            | Zakładka: wklej tekst             | `import/page.tsx`         |
-| `import-dropzone`                 | Strefa upuszczania                | `DocumentDropzone.tsx`    |
-| `import-dropzone-input`           | Input pliku                       | `DocumentDropzone.tsx`    |
-| `import-dropzone-clear-btn`       | Usuń plik                         | `DocumentDropzone.tsx`    |
-| `import-text-panel`               | Panel wejścia tekstowego          | `TextImportPanel.tsx`     |
-| `import-textarea-input`           | Textarea importu tekstu           | `TextImportPanel.tsx`     |
-| `import-text-clipboard-btn`       | Wklej ze schowka                  | `TextImportPanel.tsx`     |
-| `import-text-char-count`          | Licznik znaków tekstu             | `TextImportPanel.tsx`     |
-| `import-exercise-{id}`            | Karta ćwiczenia                   | `ExerciseReviewCard.tsx`  |
-| `import-exercise-{id}-create-btn` | Utwórz                            | `ExerciseReviewCard.tsx`  |
-| `import-exercise-{id}-skip-btn`   | Pomiń                             | `ExerciseReviewCard.tsx`  |
-| `import-exercise-{id}-match-btn`  | Dopasuj                           | `ExerciseReviewCard.tsx`  |
-| `import-set-{id}`                 | Karta zestawu                     | `SetReviewCard.tsx`       |
-| `import-set-{id}-create-btn`      | Utwórz zestaw                     | `SetReviewCard.tsx`       |
-| `import-set-{id}-skip-btn`        | Pomiń zestaw                      | `SetReviewCard.tsx`       |
-| `import-note-{id}`                | Karta notatki                     | `NoteReviewCard.tsx`      |
-| `import-note-{id}-create-btn`     | Utwórz notatkę                    | `NoteReviewCard.tsx`      |
-| `import-bulk-create-all-btn`      | Utwórz wszystkie                  | `BulkActionsToolbar.tsx`  |
-| `import-bulk-skip-all-btn`        | Pomiń wszystkie                   | `BulkActionsToolbar.tsx`  |
-| `import-bulk-match-all-btn`       | Dopasuj wszystkie                 | `BulkActionsToolbar.tsx`  |
-| `import-patient-context`          | Panel kontekstu                   | `PatientContextPanel.tsx` |
-| `import-patient-select`           | Wybór pacjenta                    | `PatientContextPanel.tsx` |
-| `import-summary`                  | Podsumowanie                      | `ImportSummary.tsx`       |
-| `import-summary-close-btn`        | Zamknij                           | `ImportSummary.tsx`       |
+| data-testid                                   | Element                              | Plik                      |
+| --------------------------------------------- | ------------------------------------ | ------------------------- |
+| `import-page`                                 | Kontener strony                      | `import/page.tsx`         |
+| `import-page-title`                           | Tytuł strony                         | `import/page.tsx`         |
+| `import-experimental-badge`                   | Badge eksperymentalne                | `import/page.tsx`         |
+| `import-experimental-note`                    | Karta informacji eksperymentalnej    | `import/page.tsx`         |
+| `import-step-indicator`                       | Wskaźnik kroków                      | `import/page.tsx`         |
+| `import-analyze-btn`                          | Analizuj dokument                    | `import/page.tsx`         |
+| `import-back-btn`                             | Wstecz                               | `import/page.tsx`         |
+| `import-next-btn`                             | Dalej                                | `import/page.tsx`         |
+| `import-execute-btn`                          | Importuj                             | `import/page.tsx`         |
+| `import-input-mode-tabs`                      | Tabs wyboru wejścia                  | `import/page.tsx`         |
+| `import-mode-file-tab`                        | Zakładka: prześlij plik              | `import/page.tsx`         |
+| `import-mode-text-tab`                        | Zakładka: wklej tekst                | `import/page.tsx`         |
+| `import-dropzone`                             | Strefa upuszczania                   | `DocumentDropzone.tsx`    |
+| `import-dropzone-input`                       | Input pliku                          | `DocumentDropzone.tsx`    |
+| `import-dropzone-clear-btn`                   | Usuń plik                            | `DocumentDropzone.tsx`    |
+| `import-text-panel`                           | Panel wejścia tekstowego             | `TextImportPanel.tsx`     |
+| `import-textarea-input`                       | Textarea importu tekstu              | `TextImportPanel.tsx`     |
+| `import-text-clipboard-btn`                   | Wklej ze schowka                     | `TextImportPanel.tsx`     |
+| `import-text-char-count`                      | Licznik znaków tekstu                | `TextImportPanel.tsx`     |
+| `import-uncertain-card-{id}-alternatives-btn` | Przełącznik alternatywnych dopasowań | `UncertainMatchCard.tsx`  |
+| `import-exercise-{id}`                        | Karta ćwiczenia                      | `ExerciseReviewCard.tsx`  |
+| `import-exercise-{id}-create-btn`             | Utwórz                               | `ExerciseReviewCard.tsx`  |
+| `import-exercise-{id}-skip-btn`               | Pomiń                                | `ExerciseReviewCard.tsx`  |
+| `import-exercise-{id}-match-btn`              | Dopasuj                              | `ExerciseReviewCard.tsx`  |
+| `import-set-{id}`                             | Karta zestawu                        | `SetReviewCard.tsx`       |
+| `import-set-{id}-create-btn`                  | Utwórz zestaw                        | `SetReviewCard.tsx`       |
+| `import-set-{id}-skip-btn`                    | Pomiń zestaw                         | `SetReviewCard.tsx`       |
+| `import-note-{id}`                            | Karta notatki                        | `NoteReviewCard.tsx`      |
+| `import-note-{id}-create-btn`                 | Utwórz notatkę                       | `NoteReviewCard.tsx`      |
+| `import-bulk-create-all-btn`                  | Utwórz wszystkie                     | `BulkActionsToolbar.tsx`  |
+| `import-bulk-skip-all-btn`                    | Pomiń wszystkie                      | `BulkActionsToolbar.tsx`  |
+| `import-bulk-match-all-btn`                   | Dopasuj wszystkie                    | `BulkActionsToolbar.tsx`  |
+| `import-patient-context`                      | Panel kontekstu                      | `PatientContextPanel.tsx` |
+| `import-patient-select`                       | Wybór pacjenta                       | `PatientContextPanel.tsx` |
+| `import-summary`                              | Podsumowanie                         | `ImportSummary.tsx`       |
+| `import-summary-close-btn`                    | Zamknij                              | `ImportSummary.tsx`       |
 
 ### 10. Organizacja (org-)
 

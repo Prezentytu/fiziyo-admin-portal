@@ -2,10 +2,16 @@
 
 import { useState, useCallback, useMemo } from 'react';
 import { documentImportService } from '@/services/documentImportService';
+import { normalizeText } from '@/utils/textUtils';
+import {
+  IMPORT_CONFIDENT_MATCH_THRESHOLD,
+  IMPORT_FALLBACK_MATCH_CONFIDENCE,
+} from '@/features/import/importMatching.constants';
 import type {
   ImportState,
   ImportWizardStep,
   ImportInputMode,
+  DocumentAnalysisResult,
   ExerciseDecision,
   ExerciseSetDecision,
   ClinicalNoteDecision,
@@ -13,6 +19,7 @@ import type {
   ExerciseImportItem,
   ExerciseSetImportItem,
   ClinicalNoteImportItem,
+  MatchSuggestion,
 } from '@/types/import.types';
 
 type ExerciseFilterType = 'all' | 'create' | 'reuse' | 'skip' | 'matched';
@@ -23,6 +30,17 @@ interface ExtendedImportState extends ImportState {
   assignSetsToPatient: boolean;
   exerciseFilter: ExerciseFilterType;
   createSetAfterImport: boolean;
+}
+
+interface AvailableExerciseMatchCandidate {
+  id: string;
+  name: string;
+  imageUrl?: string;
+}
+
+interface AnalyzeInputOptions {
+  additionalContext?: string;
+  availableExercises?: AvailableExerciseMatchCandidate[];
 }
 
 const MIN_PASTED_TEXT_LENGTH = 30;
@@ -45,6 +63,59 @@ const initialState: ExtendedImportState = {
   exerciseFilter: 'all',
   createSetAfterImport: false,
 };
+
+function withFrontendFallbackMatches(
+  analysisResult: DocumentAnalysisResult,
+  availableExercises: AvailableExerciseMatchCandidate[] = []
+): DocumentAnalysisResult {
+  if (availableExercises.length === 0) {
+    return analysisResult;
+  }
+
+  const normalizedNameToExercise = new Map<string, AvailableExerciseMatchCandidate>();
+  for (const candidate of availableExercises) {
+    const normalizedName = normalizeText(candidate.name);
+    if (normalizedName && !normalizedNameToExercise.has(normalizedName)) {
+      normalizedNameToExercise.set(normalizedName, candidate);
+    }
+  }
+
+  const mergedMatchSuggestions: Record<string, MatchSuggestion[]> = { ...analysisResult.matchSuggestions };
+
+  for (const exercise of analysisResult.exercises) {
+    const existingSuggestions = analysisResult.matchSuggestions[exercise.tempId] ?? [];
+    if (existingSuggestions.length > 0) {
+      continue;
+    }
+
+    const normalizedExtractedName = normalizeText(exercise.name);
+    const exactCandidate = normalizedNameToExercise.get(normalizedExtractedName);
+    if (!exactCandidate) {
+      continue;
+    }
+
+    mergedMatchSuggestions[exercise.tempId] = [
+      {
+        existingExerciseId: exactCandidate.id,
+        existingExerciseName: exactCandidate.name,
+        confidence: IMPORT_FALLBACK_MATCH_CONFIDENCE,
+        matchReason: 'Lokalny fallback: nazwa 1:1 po normalizacji',
+        imageUrl: exactCandidate.imageUrl,
+        matchStatus: 'normalized_exact',
+        matchingScope: 'available',
+        reasonCode: 'frontend-normalized-exact-fallback',
+        normalizedExtractedName,
+        normalizedExistingName: normalizedExtractedName,
+        source: 'frontend_fallback',
+      },
+    ];
+  }
+
+  return {
+    ...analysisResult,
+    matchSuggestions: mergedMatchSuggestions,
+  };
+}
 
 /**
  * Hook do zarządzania procesem importu dokumentów
@@ -137,7 +208,8 @@ export function useDocumentImport() {
   // ============================================
 
   const analyzeInput = useCallback(
-    async (additionalContext?: string) => {
+    async (options?: AnalyzeInputOptions) => {
+      const additionalContext = options?.additionalContext;
       if (state.inputMode === 'file') {
         if (!state.file) {
           setState((prev) => ({ ...prev, error: 'Wybierz plik do analizy' }));
@@ -179,12 +251,18 @@ export function useDocumentImport() {
       }));
 
       try {
-        let result;
+        let analysisResult;
         if (state.inputMode === 'file' && state.file) {
-          result = await documentImportService.analyzeDocument(state.file, state.selectedPatientId, additionalContext);
+          analysisResult = await documentImportService.analyzeDocument(state.file, state.selectedPatientId, additionalContext);
         } else {
-          result = await documentImportService.analyzeText(state.pastedText.trim(), state.selectedPatientId, additionalContext);
+          analysisResult = await documentImportService.analyzeText(
+            state.pastedText.trim(),
+            state.selectedPatientId,
+            additionalContext
+          );
         }
+
+        const result = withFrontendFallbackMatches(analysisResult, options?.availableExercises);
 
         // Inicjalizuj domyślne decyzje
         const exerciseDecisions: Record<string, ExerciseDecision> = {};
@@ -194,9 +272,12 @@ export function useDocumentImport() {
 
           exerciseDecisions[exercise.tempId] = {
             tempId: exercise.tempId,
-            action: hasMatch && bestMatch && bestMatch.confidence >= 0.8 ? 'reuse' : 'create',
+            action:
+              hasMatch && bestMatch && bestMatch.confidence >= IMPORT_CONFIDENT_MATCH_THRESHOLD ? 'reuse' : 'create',
             reuseExerciseId:
-              hasMatch && bestMatch && bestMatch.confidence >= 0.8 ? bestMatch.existingExerciseId : undefined,
+              hasMatch && bestMatch && bestMatch.confidence >= IMPORT_CONFIDENT_MATCH_THRESHOLD
+                ? bestMatch.existingExerciseId
+                : undefined,
           };
         }
 
@@ -369,15 +450,13 @@ export function useDocumentImport() {
     setState((prev) => {
       if (!prev.analysisResult) return prev;
 
-      const CONFIDENT_THRESHOLD = 0.7;
       const newDecisions: Record<string, ExerciseDecision> = { ...prev.exerciseDecisions };
 
       for (const exercise of prev.analysisResult.exercises) {
         const suggestions = prev.analysisResult.matchSuggestions[exercise.tempId];
         const bestMatch = suggestions?.[0];
 
-        // Tylko pewne dopasowania (confidence >= 0.7)
-        if (bestMatch && bestMatch.confidence >= CONFIDENT_THRESHOLD) {
+        if (bestMatch && bestMatch.confidence >= IMPORT_CONFIDENT_MATCH_THRESHOLD) {
           newDecisions[exercise.tempId] = {
             tempId: exercise.tempId,
             action: 'reuse',

@@ -37,19 +37,17 @@ export function NewExercisesSection({
   const createCount = exercises.filter((e) => decisions[e.tempId]?.action === 'create').length;
 
   return (
-    <div className={cn('space-y-4', className)} data-testid="import-new-section">
-      {/* Header */}
+    <div className={cn('space-y-3', className)} data-testid="import-new-section">
       <div className="flex items-center gap-3">
         <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-500/20">
           <Plus className="h-5 w-5 text-blue-500" />
         </div>
         <div>
           <h3 className="font-semibold text-foreground">Nowe ćwiczenia ({exercises.length})</h3>
-          <p className="text-xs text-muted-foreground">{createCount} do utworzenia w bazie</p>
+          <p className="text-xs text-muted-foreground">{createCount} do utworzenia</p>
         </div>
       </div>
 
-      {/* Cards grid */}
       <div className="grid gap-4 sm:grid-cols-2">
         {exercises.map((exercise) => {
           const decision = decisions[exercise.tempId];

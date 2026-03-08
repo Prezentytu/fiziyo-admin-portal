@@ -86,4 +86,75 @@ describe('useDocumentImport', () => {
     expect(documentImportService.analyzeDocument).not.toHaveBeenCalled();
     expect(result.current.step).toBe('review-exercises');
   });
+
+  it('dodaje fallback normalized exact match, ale nie ustawia auto-reuse', async () => {
+    vi.mocked(documentImportService.analyzeText).mockResolvedValue(analysisResultFixture);
+
+    const { result } = renderHook(() => useDocumentImport());
+
+    act(() => {
+      result.current.setInputMode('text');
+      result.current.setPastedText(
+        'To jest wystarczajaco dlugi opis planu rehabilitacji, ktory powinien przejsc walidacje i uruchomic fallback.'
+      );
+    });
+
+    await act(async () => {
+      await result.current.analyzeInput({
+        availableExercises: [{ id: 'existing-1', name: 'Przysiad' }],
+      });
+    });
+
+    const suggestions = result.current.analysisResult?.matchSuggestions['tmp-1'];
+    expect(suggestions?.[0]?.existingExerciseId).toBe('existing-1');
+    expect(suggestions?.[0]?.source).toBe('frontend_fallback');
+    expect(suggestions?.[0]?.matchStatus).toBe('normalized_exact');
+    expect(result.current.exerciseDecisions['tmp-1']?.action).toBe('create');
+  });
+
+  it('zatwierdza confident match tylko od progu 0.8', async () => {
+    vi.mocked(documentImportService.analyzeDocument).mockResolvedValue({
+      ...analysisResultFixture,
+      exercises: [
+        { ...analysisResultFixture.exercises[0], tempId: 'tmp-70', name: 'A' },
+        { ...analysisResultFixture.exercises[0], tempId: 'tmp-80', name: 'B' },
+      ],
+      matchSuggestions: {
+        'tmp-70': [
+          {
+            existingExerciseId: 'existing-70',
+            existingExerciseName: 'A',
+            confidence: 0.7,
+            matchReason: 'fuzzy',
+          },
+        ],
+        'tmp-80': [
+          {
+            existingExerciseId: 'existing-80',
+            existingExerciseName: 'B',
+            confidence: 0.8,
+            matchReason: 'exact',
+          },
+        ],
+      },
+    });
+
+    const { result } = renderHook(() => useDocumentImport());
+    const file = new File(['plan terapii'], 'plan.pdf', { type: 'application/pdf' });
+
+    act(() => {
+      result.current.setFile(file);
+    });
+
+    await act(async () => {
+      await result.current.analyzeInput();
+    });
+
+    act(() => {
+      result.current.approveAllConfidentMatches();
+    });
+
+    expect(result.current.exerciseDecisions['tmp-70']?.action).toBe('create');
+    expect(result.current.exerciseDecisions['tmp-80']?.action).toBe('reuse');
+  });
 });

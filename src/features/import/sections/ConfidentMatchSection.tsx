@@ -20,8 +20,6 @@ interface ConfidentMatchSectionProps {
   onDecisionChange: (tempId: string, decision: Partial<ExerciseDecision>) => void;
   /** Callback to approve all confident matches */
   onApproveAll: () => void;
-  /** Callback when user wants to change a match (opens modal/drawer) */
-  onChangeMatch?: (tempId: string) => void;
   /** Whether section is disabled */
   disabled?: boolean;
   /** Additional class names */
@@ -40,7 +38,6 @@ export function ConfidentMatchSection({
   decisions,
   onDecisionChange,
   onApproveAll,
-  onChangeMatch,
   disabled = false,
   className,
 }: ConfidentMatchSectionProps) {
@@ -125,11 +122,6 @@ export function ConfidentMatchSection({
                       action: currentAction === 'skip' ? 'reuse' : 'skip',
                       reuseExerciseId: currentAction === 'skip' ? bestMatch.existingExerciseId : undefined,
                     });
-                  }}
-                  onChange={() => {
-                    if (onChangeMatch) {
-                      onChangeMatch(exercise.tempId);
-                    }
                   }}
                 />
               );

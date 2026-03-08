@@ -1,10 +1,10 @@
 'use client';
 
 import Image from 'next/image';
-import { AlertTriangle, Dumbbell, Repeat, Timer, HelpCircle } from 'lucide-react';
+import { useState } from 'react';
+import { AlertTriangle, Dumbbell, Repeat, Timer, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Badge } from '@/components/ui/badge';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Button } from '@/components/ui/button';
 import { ExerciseActionSelect } from '../ExerciseActionSelect';
 import type { ExtractedExercise, MatchSuggestion, ExerciseDecision } from '@/types/import.types';
 
@@ -33,8 +33,9 @@ export function UncertainMatchCard({
   onDecisionChange,
   className,
 }: UncertainMatchCardProps) {
+  const [showAlternatives, setShowAlternatives] = useState(false);
   const isSkipped = decision.action === 'skip';
-  const selectedMatch = matchSuggestions.find((m) => m.existingExerciseId === decision.reuseExerciseId);
+  const primarySuggestion = matchSuggestions[0];
 
   const handleActionChange = (action: 'create' | 'reuse' | 'skip', reuseExerciseId?: string) => {
     onDecisionChange({
@@ -43,21 +44,35 @@ export function UncertainMatchCard({
     });
   };
 
-  const handleSelectMatch = (matchId: string) => {
-    onDecisionChange({
-      action: 'reuse',
-      reuseExerciseId: matchId,
-    });
-  };
+  const renderSuggestion = (match: MatchSuggestion) => {
+    const isSelected = decision.reuseExerciseId === match.existingExerciseId;
+    return (
+      <button
+        key={match.existingExerciseId}
+        type="button"
+        onClick={() => handleActionChange('reuse', match.existingExerciseId)}
+        className={cn(
+          'flex w-full items-center gap-3 rounded-lg border p-2.5 text-left transition-colors',
+          isSelected ? 'border-yellow-500/40 bg-yellow-500/10' : 'border-border bg-surface hover:bg-surface-light'
+        )}
+        data-testid={`import-uncertain-card-${exercise.tempId}-match-${match.existingExerciseId}`}
+      >
+        {match.imageUrl ? (
+          <span className="relative block h-9 w-9 overflow-hidden rounded-lg shrink-0">
+            <Image src={match.imageUrl} alt={match.existingExerciseName} fill className="object-cover" sizes="36px" />
+          </span>
+        ) : (
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-surface-light shrink-0">
+            <Dumbbell className="h-4 w-4 text-muted-foreground" />
+          </div>
+        )}
 
-  const getConfidenceLabel = (confidence: number) => {
-    if (confidence >= 0.5) return 'Średnia zgodność';
-    return 'Niska zgodność';
-  };
-
-  const getConfidenceBadgeClass = (confidence: number) => {
-    if (confidence >= 0.5) return 'bg-yellow-500/20 text-yellow-600 border-0';
-    return 'bg-orange-500/20 text-orange-600 border-0';
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-medium text-foreground">{match.existingExerciseName}</p>
+          <p className="truncate text-xs text-muted-foreground">{match.matchReason}</p>
+        </div>
+      </button>
+    );
   };
 
   return (
@@ -71,58 +86,37 @@ export function UncertainMatchCard({
       )}
       data-testid={`import-uncertain-card-${exercise.tempId}`}
     >
-      {/* Header */}
-      <div className="p-4 pb-3">
+      <div className="p-4">
         <div className="flex items-start gap-3">
-          {/* Status icon */}
           <div
             className={cn(
-              'flex h-10 w-10 shrink-0 items-center justify-center rounded-lg',
+              'flex h-9 w-9 shrink-0 items-center justify-center rounded-lg',
               isSkipped ? 'bg-muted' : 'bg-yellow-500/20'
             )}
           >
-            <AlertTriangle className={cn('h-5 w-5', isSkipped ? 'text-muted-foreground' : 'text-yellow-500')} />
+            <AlertTriangle className={cn('h-4 w-4', isSkipped ? 'text-muted-foreground' : 'text-yellow-500')} />
           </div>
 
-          {/* Title with hover preview */}
           <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2">
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <h3
-                    className={cn(
-                      'text-lg font-semibold text-foreground truncate cursor-help',
-                      isSkipped && 'line-through text-muted-foreground'
-                    )}
-                  >
-                    {exercise.name}
-                  </h3>
-                </TooltipTrigger>
-                <TooltipContent side="top" className="max-w-sm">
-                  <p className="text-xs text-muted-foreground mb-1">Oryginalny tekst z PDF:</p>
-                  <p className="text-sm italic">&quot;{exercise.originalText || exercise.name}&quot;</p>
-                </TooltipContent>
-              </Tooltip>
-              <HelpCircle className="h-4 w-4 text-yellow-500 shrink-0" />
-            </div>
-
-            {/* Parameters */}
-            <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+            <h3 className={cn('text-base font-semibold text-foreground truncate', isSkipped && 'line-through text-muted-foreground')}>
+              {exercise.name}
+            </h3>
+            <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
               {exercise.sets && (
                 <span className="flex items-center gap-1">
-                  <Repeat className="h-3.5 w-3.5" />
+                  <Repeat className="h-3 w-3" />
                   {exercise.sets} serii
                 </span>
               )}
               {exercise.reps && (
                 <span className="flex items-center gap-1">
-                  <Dumbbell className="h-3.5 w-3.5" />
+                  <Dumbbell className="h-3 w-3" />
                   {exercise.reps} powt.
                 </span>
               )}
               {exercise.duration && (
                 <span className="flex items-center gap-1">
-                  <Timer className="h-3.5 w-3.5" />
+                  <Timer className="h-3 w-3" />
                   {exercise.duration}s
                 </span>
               )}
@@ -130,69 +124,29 @@ export function UncertainMatchCard({
           </div>
         </div>
 
-        {/* Suggestions section */}
-        <div className="mt-4">
-          <p className="text-sm font-medium text-yellow-600 mb-2">Czy chodziło Ci o jedno z tych ćwiczeń?</p>
-          <div className="space-y-2">
-            {matchSuggestions.slice(0, 3).map((match) => (
-              <button
-                key={match.existingExerciseId}
-                type="button"
-                onClick={() => handleSelectMatch(match.existingExerciseId)}
-                className={cn(
-                  'flex w-full items-center gap-3 rounded-lg p-2.5 text-left transition-all',
-                  decision.reuseExerciseId === match.existingExerciseId
-                    ? 'bg-yellow-500/20 border-2 border-yellow-500/50'
-                    : 'bg-surface hover:bg-surface-light border-2 border-transparent'
-                )}
-                data-testid={`import-uncertain-card-${exercise.tempId}-match-${match.existingExerciseId}`}
-              >
-                {/* Thumbnail */}
-                {match.imageUrl ? (
-                  <span className="relative block h-10 w-10 rounded-lg overflow-hidden shrink-0">
-                    <Image
-                      src={match.imageUrl}
-                      alt={match.existingExerciseName}
-                      fill
-                      className="object-cover"
-                      sizes="40px"
-                    />
-                  </span>
-                ) : (
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-surface-light shrink-0">
-                    <Dumbbell className="h-5 w-5 text-muted-foreground" />
-                  </div>
-                )}
-
-                {/* Match info */}
-                <div className="min-w-0 flex-1">
-                  <p className="font-medium text-foreground truncate">{match.existingExerciseName}</p>
-                  <p className="text-xs text-muted-foreground truncate">{match.matchReason}</p>
-                </div>
-
-                {/* Confidence badge */}
-                <Badge
-                  variant="secondary"
-                  className={cn('text-xs shrink-0', getConfidenceBadgeClass(match.confidence))}
+        {primarySuggestion && (
+          <div className="mt-4 space-y-2">
+            {renderSuggestion(primarySuggestion)}
+            {matchSuggestions.length > 1 && (
+              <>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowAlternatives((previousValue) => !previousValue)}
+                  className="h-8 px-2 text-xs text-muted-foreground"
+                  data-testid={`import-uncertain-card-${exercise.tempId}-alternatives-btn`}
                 >
-                  {getConfidenceLabel(match.confidence)}
-                </Badge>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Selected match info */}
-        {decision.action === 'reuse' && selectedMatch && (
-          <div className="mt-3 rounded-lg bg-yellow-500/10 border border-yellow-500/20 p-2.5">
-            <p className="text-sm text-yellow-600">
-              Użyjesz: <span className="font-medium">{selectedMatch.existingExerciseName}</span>
-            </p>
+                  {showAlternatives ? 'Ukryj alternatywy' : `Pokaż alternatywy (${matchSuggestions.length - 1})`}
+                  <ChevronDown className={cn('ml-1 h-3.5 w-3.5 transition-transform', showAlternatives && 'rotate-180')} />
+                </Button>
+                {showAlternatives && <div className="space-y-2">{matchSuggestions.slice(1, 3).map(renderSuggestion)}</div>}
+              </>
+            )}
           </div>
         )}
       </div>
 
-      {/* Footer with action select */}
       <div className="border-t border-border/40 px-4 py-3">
         <ExerciseActionSelect
           decision={decision}

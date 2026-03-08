@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import { Check, Trash2, RefreshCw, Dumbbell, ArrowRight } from 'lucide-react';
+import { Check, Trash2, Dumbbell, ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -16,8 +16,6 @@ interface ConfidentMatchRowProps {
   decision: ExerciseDecision;
   /** Callback when user wants to skip this exercise */
   onSkip: () => void;
-  /** Callback when user wants to change the match */
-  onChange: () => void;
   /** Additional class names */
   className?: string;
 }
@@ -27,13 +25,13 @@ interface ConfidentMatchRowProps {
  * Shows: [Check icon] [PDF name] → [Thumbnail + DB name]
  * With hover preview showing original PDF text
  */
-export function ConfidentMatchRow({ exercise, match, decision, onSkip, onChange, className }: ConfidentMatchRowProps) {
+export function ConfidentMatchRow({ exercise, match, decision, onSkip, className }: ConfidentMatchRowProps) {
   const isSkipped = decision.action === 'skip';
 
   return (
     <div
       className={cn(
-        'group flex items-center gap-3 rounded-lg border border-transparent px-3 py-2.5 transition-all duration-200',
+        'flex items-center gap-3 rounded-lg border border-transparent px-3 py-2.5 transition-all duration-200',
         isSkipped ? 'opacity-50 bg-muted/30' : 'hover:bg-green-500/5 hover:border-green-500/20',
         className
       )}
@@ -99,21 +97,7 @@ export function ConfidentMatchRow({ exercise, match, decision, onSkip, onChange,
         </span>
       </div>
 
-      {/* Actions - visible on hover */}
-      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-8 w-8"
-          onClick={(e) => {
-            e.stopPropagation();
-            onChange();
-          }}
-          title="Zmień dopasowanie"
-          data-testid={`import-confident-row-${exercise.tempId}-change-btn`}
-        >
-          <RefreshCw className="h-4 w-4 text-muted-foreground" />
-        </Button>
+      <div className="flex items-center gap-1 shrink-0">
         <Button
           variant="ghost"
           size="icon"

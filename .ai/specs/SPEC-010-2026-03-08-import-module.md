@@ -81,6 +81,30 @@ Brak bezposrednich zmian GraphQL po stronie frontendu. Modul importu korzysta z 
 - input: `DocumentImportRequest`
 - output: `DocumentImportResult`
 
+### Backend-first matching contract (additive)
+
+Zrodlem prawdy dla `matchSuggestions` jest backend AI/importu. Frontend ma traktowac dane backendu jako priorytet, a lokalny fallback jako warstwe ochronna.
+
+Rekomendowane pola addytywne (opcjonalne):
+
+- `matchStatus`: `exact | normalized_exact | fuzzy | semantic | none`
+- `matchingScope`: `organization | available | global | unknown`
+- `reasonCode`: kod przyczyny dopasowania/braku dopasowania
+- `normalizedExtractedName`: nazwa po normalizacji po stronie backendu
+- `normalizedExistingName`: nazwa encji po normalizacji
+- `source`: `backend | frontend_fallback`
+
+Dodatkowa diagnostyka odpowiedzi:
+
+- `matchingDiagnostics.algorithmVersion`
+- `matchingDiagnostics.missingSuggestionsTempIds`
+- `matchingDiagnostics.candidateCountByTempId`
+
+Zasada techniczna:
+
+- exact match i normalized-exact musza byc zwracane jawnie jako sugestia;
+- brak sugestii oznacza realny brak dopasowania, a nie cichy fallback backendu.
+
 ### Komponenty
 
 | Komponent               | Lokalizacja                                     | Opis                               |
@@ -128,3 +152,4 @@ Brak bezposrednich zmian GraphQL po stronie frontendu. Modul importu korzysta z 
 
 - Utworzenie specyfikacji modułu importu.
 - Dodanie architektury dla dual input (`file` + `text`) i statusu eksperymentalnego.
+- Dodanie backend-first kontraktu dopasowan (additive) i diagnostyki matchingu.

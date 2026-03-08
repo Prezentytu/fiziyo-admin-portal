@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useCallback } from 'react';
+import { useQuery } from '@apollo/client/react';
 import {
   FileUp,
   Sparkles,
@@ -11,7 +12,6 @@ import {
   Loader2,
   CheckCircle,
   X,
-  AlertTriangle,
   Check,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -20,6 +20,9 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useDocumentImport } from '@/hooks/useDocumentImport';
+import { useOrganization } from '@/contexts/OrganizationContext';
+import { GET_AVAILABLE_EXERCISES_QUERY } from '@/graphql/queries/exercises.queries';
+import type { AvailableExercisesResponse } from '@/types/apollo';
 import {
   DocumentDropzone,
   TextImportPanel,
@@ -46,6 +49,8 @@ const stepConfig: { id: StepId; label: string; icon: React.ElementType }[] = [
  * Uproszczony UI dla użytkowników 45+
  */
 export default function ImportPage() {
+  const { currentOrganization } = useOrganization();
+  const organizationId = currentOrganization?.organizationId;
   const {
     step,
     inputMode,
@@ -81,17 +86,27 @@ export default function ImportPage() {
     goToStep,
   } = useDocumentImport();
 
+  const { data: availableExercisesData } = useQuery<AvailableExercisesResponse>(GET_AVAILABLE_EXERCISES_QUERY, {
+    variables: { organizationId },
+    skip: !organizationId,
+  });
+
   // Current step index
   const currentStepIndex = useMemo(() => {
     return stepConfig.findIndex((s) => s.id === step);
   }, [step]);
 
-  // Czy pokazać warning o notatkach bez pacjenta
-  const showNotesWarning = stats.notesToCreate > 0 && !selectedPatientId;
   const hasSelectedPatient = Boolean(selectedPatientId);
   const skippedNotesCount = hasSelectedPatient ? 0 : stats.notesToCreate;
   const isUploadAnalyzeDisabled =
     isAnalyzing || (inputMode === 'file' ? !file : pastedText.trim().length < 30);
+  const availableExercisesForFallback = useMemo(() => {
+    return (availableExercisesData?.availableExercises ?? []).map((exercise) => ({
+      id: exercise.id,
+      name: exercise.name,
+      imageUrl: exercise.imageUrl || exercise.thumbnailUrl,
+    }));
+  }, [availableExercisesData]);
 
   // Handler kliknięcia w krok (nawigacja wstecz)
   const handleStepClick = useCallback(
@@ -121,15 +136,12 @@ export default function ImportPage() {
                 Eksperymentalne
               </Badge>
             </div>
-            <p className="text-muted-foreground">Wyciągnij ćwiczenia, zestawy i notatki z pliku lub wklejonego tekstu</p>
+            <p className="text-muted-foreground">Wybierz źródło i przejdź przez szybkie review.</p>
           </div>
         </div>
-        <Card className="border-warning/40 bg-warning/5 max-w-3xl mt-4" data-testid="import-experimental-note">
-          <CardContent className="p-4 text-sm text-foreground">
-            Funkcja jest w trybie eksperymentalnym. Przed zatwierdzeniem importu sprawdź dopasowania i opisy w krokach
-            review.
-          </CardContent>
-        </Card>
+        <p className="mt-2 text-xs text-muted-foreground" data-testid="import-experimental-note">
+          Wyniki AI wymagają potwierdzenia przed importem.
+        </p>
       </div>
 
       {/* Stepper - większy, czytelniejszy */}
@@ -210,7 +222,7 @@ export default function ImportPage() {
               <CardContent className="p-8">
                 <div className="text-center mb-8">
                   <h2 className="text-xl font-bold text-foreground mb-2">Wybierz dokument do analizy</h2>
-                  <p className="text-muted-foreground">AI przeanalizuje dane i znajdzie ćwiczenia, zestawy oraz notatki</p>
+                  <p className="text-muted-foreground">Plik albo tekst - dalszy proces będzie taki sam.</p>
                 </div>
 
                 <Tabs
@@ -272,23 +284,6 @@ export default function ImportPage() {
                 notesToCreateCount={stats.notesToCreate}
                 disabled={isImporting}
               />
-            )}
-
-            {/* Warning gdy notatki bez pacjenta */}
-            {showNotesWarning && (
-              <Card className="border-warning/50 bg-warning/5">
-                <CardContent className="flex items-start gap-4 p-5">
-                  <AlertTriangle className="h-6 w-6 text-warning shrink-0 mt-0.5" />
-                  <div>
-                    <p className="font-semibold text-foreground">Notatki nie zostaną zaimportowane</p>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      Wybierz pacjenta powyżej, aby zaimportować {stats.notesToCreate}{' '}
-                      {stats.notesToCreate === 1 ? 'notatkę' : 'notatki'}. Ćwiczenia i zestawy zostaną zaimportowane
-                      normalnie.
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
             )}
 
             {/* Exercise Sets */}
@@ -388,7 +383,7 @@ export default function ImportPage() {
             {step === 'upload' && (
               <Button
                 size="lg"
-                onClick={() => analyzeInput()}
+                onClick={() => analyzeInput({ availableExercises: availableExercisesForFallback })}
                 disabled={isUploadAnalyzeDisabled}
                 className="gap-2 h-12 px-8 bg-primary hover:bg-primary-dark"
                 data-testid="import-analyze-btn"

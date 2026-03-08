@@ -8,10 +8,8 @@ import { ConfidentMatchSection } from './sections/ConfidentMatchSection';
 import { NewExercisesSection } from './sections/NewExercisesSection';
 import { UncertainMatchSection } from './sections/UncertainMatchSection';
 import { ImportStickyFooter } from './ImportStickyFooter';
+import { IMPORT_CONFIDENT_MATCH_THRESHOLD } from './importMatching.constants';
 import type { ExtractedExercise, MatchSuggestion, ExerciseDecision } from '@/types/import.types';
-
-/** Confidence threshold for "confident" matches */
-const CONFIDENT_THRESHOLD = 0.7;
 
 interface ImportReviewDashboardProps {
   /** All extracted exercises */
@@ -71,7 +69,7 @@ export function ImportReviewDashboard({
       if (!suggestions || suggestions.length === 0) {
         // No matches -> new exercise
         newOnes.push(exercise);
-      } else if (bestMatch && bestMatch.confidence >= CONFIDENT_THRESHOLD) {
+      } else if (bestMatch && bestMatch.confidence >= IMPORT_CONFIDENT_MATCH_THRESHOLD) {
         // High confidence -> confident match
         confident.push(exercise);
       } else {
@@ -121,19 +119,23 @@ export function ImportReviewDashboard({
 
   return (
     <div className={cn('space-y-6 pb-24', className)} data-testid="import-review-dashboard">
-      {/* Section A: Confident Matches (collapsible) */}
-      {confidentMatches.length > 0 && (
-        <ConfidentMatchSection
-          exercises={confidentMatches}
+      <Card className="border-border/60">
+        <CardContent className="flex flex-wrap items-center gap-4 p-4 text-sm">
+          <span className="font-medium text-foreground">Najpierw sprawdź pozycje wymagające decyzji.</span>
+          <span className="text-muted-foreground">Potem zatwierdź nowe i pewne dopasowania.</span>
+        </CardContent>
+      </Card>
+
+      {uncertainMatches.length > 0 && (
+        <UncertainMatchSection
+          exercises={uncertainMatches}
           matchSuggestions={matchSuggestions}
           decisions={decisions}
           onDecisionChange={handleDecisionChange}
-          onApproveAll={onApproveAllConfident}
           disabled={disabled}
         />
       )}
 
-      {/* Section B: New Exercises */}
       {newExercises.length > 0 && (
         <NewExercisesSection
           exercises={newExercises}
@@ -143,13 +145,13 @@ export function ImportReviewDashboard({
         />
       )}
 
-      {/* Section C: Uncertain Matches */}
-      {uncertainMatches.length > 0 && (
-        <UncertainMatchSection
-          exercises={uncertainMatches}
+      {confidentMatches.length > 0 && (
+        <ConfidentMatchSection
+          exercises={confidentMatches}
           matchSuggestions={matchSuggestions}
           decisions={decisions}
           onDecisionChange={handleDecisionChange}
+          onApproveAll={onApproveAllConfident}
           disabled={disabled}
         />
       )}

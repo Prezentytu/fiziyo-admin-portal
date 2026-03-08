@@ -54,7 +54,7 @@ export function TextImportPanel({
   return (
     <div className={cn('space-y-4', className)} data-testid="import-text-panel">
       <div className="flex items-center justify-between gap-3">
-        <p className="text-sm text-muted-foreground">Wklej plan, notatkę lub treść z OCR. Formatowanie nie jest wymagane.</p>
+        <p className="text-sm text-muted-foreground">Wklej treść dokumentu lub fragment z ćwiczeniami.</p>
         <Button
           type="button"
           variant="outline"
@@ -72,16 +72,16 @@ export function TextImportPanel({
       <Textarea
         value={text}
         onChange={(event) => onTextChange(event.target.value)}
-        placeholder="Przykład: Plan terapii po urazie barku... (wklej pełną treść dokumentu lub sam fragment ćwiczeń)"
+        placeholder="Np. Plan terapii po urazie barku..."
         className="min-h-[220px]"
         disabled={disabled}
         data-testid="import-textarea-input"
       />
 
       <div className="flex items-center justify-between gap-3 text-xs">
-        <span className="text-muted-foreground">Możesz wkleić pełny tekst albo sam fragment dotyczący ćwiczeń.</span>
+        <span className="text-muted-foreground">Ctrl/Cmd + V działa jak zwykle.</span>
         <span
-          className={cn('font-medium', isReady ? 'text-foreground' : 'text-warning')}
+          className={cn('font-medium', isReady ? 'text-muted-foreground' : 'text-warning')}
           data-testid="import-text-char-count"
         >
           {textLength}/{minLength} znaków
