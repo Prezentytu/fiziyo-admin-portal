@@ -73,7 +73,7 @@ export function LowCreditsWarning({ threshold = 10, className }: LowCreditsWarni
 
       <div className="flex items-center gap-2 shrink-0">
         <Button asChild size="sm" variant={isZero ? 'destructive' : 'default'}>
-          <Link href="/billing">
+          <Link href="/finances">
             <Zap className="h-4 w-4 mr-1" />
             Doładuj
           </Link>

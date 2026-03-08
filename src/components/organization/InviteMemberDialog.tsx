@@ -6,6 +6,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useMutation } from '@apollo/client/react';
+import { CombinedGraphQLErrors } from '@apollo/client/errors';
 import { Loader2, Mail, Link2, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -14,8 +15,6 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
-import { LimitReachedDialog } from '@/components/shared/LimitReachedDialog';
-import { useLimitError } from '@/hooks/useLimitError';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -50,6 +49,37 @@ interface GeneratedLink {
   role: string;
 }
 
+const LEGACY_PLAN_LIMIT_CODES = new Set([
+  'THERAPIST_LIMIT_REACHED',
+  'PATIENT_LIMIT_REACHED',
+  'EXERCISE_LIMIT_REACHED',
+  'CLINIC_LIMIT_REACHED',
+]);
+
+function getInviteErrorMessage(error: unknown, fallbackMessage: string): string {
+  if (CombinedGraphQLErrors.is(error)) {
+    const legacyLimitError = error.errors.find((graphQLError) => {
+      const extensionCode = graphQLError.extensions?.code;
+      return typeof extensionCode === 'string' && LEGACY_PLAN_LIMIT_CODES.has(extensionCode);
+    });
+
+    if (legacyLimitError) {
+      return 'Nie można teraz wygenerować zaproszenia. Spróbuj ponownie później.';
+    }
+
+    const firstMessage = error.errors[0]?.message;
+    if (firstMessage) {
+      return firstMessage;
+    }
+  }
+
+  if (error instanceof Error && error.message) {
+    return error.message;
+  }
+
+  return fallbackMessage;
+}
+
 // ========================================
 // Component
 // ========================================
@@ -65,9 +95,6 @@ export function InviteMemberDialog({
   const [activeTab, setActiveTab] = useState('email');
   const [generatedLink, setGeneratedLink] = useState<GeneratedLink | null>(null);
   const [linkRole, setLinkRole] = useState<string>('therapist');
-
-  // Limit error handling
-  const { limitError, handleError: handleLimitError, clearError: clearLimitError } = useLimitError();
 
   const form = useForm<InviteFormValues>({
     resolver: zodResolver(inviteFormSchema),
@@ -125,14 +152,9 @@ export function InviteMemberDialog({
       onOpenChange(false);
       onSuccess?.();
     } catch (error: unknown) {
-      // Check if it's a limit error
-      if (handleLimitError(error)) {
-        return; // Dialog will show
-      }
-
-      const errorMessage = error instanceof Error ? error.message : 'Nieznany błąd';
+      const errorMessage = getInviteErrorMessage(error, 'Nie udało się wysłać zaproszenia');
       console.error('Błąd podczas wysyłania zaproszenia:', error);
-      toast.error(errorMessage || 'Nie udało się wysłać zaproszenia');
+      toast.error(errorMessage);
     }
   };
 
@@ -167,14 +189,9 @@ export function InviteMemberDialog({
         toast.success('Link został wygenerowany');
       }
     } catch (error: unknown) {
-      // Check if it's a limit error
-      if (handleLimitError(error)) {
-        return; // Dialog will show
-      }
-
-      const errorMessage = error instanceof Error ? error.message : 'Nieznany błąd';
+      const errorMessage = getInviteErrorMessage(error, 'Nie udało się wygenerować linku');
       console.error('Błąd podczas generowania linku:', error);
-      toast.error(errorMessage || 'Nie udało się wygenerować linku');
+      toast.error(errorMessage);
     }
   };
 
@@ -375,8 +392,6 @@ export function InviteMemberDialog({
         variant="destructive"
         onConfirm={handleConfirmClose}
       />
-
-      <LimitReachedDialog open={!!limitError} onClose={clearLimitError} limitInfo={limitError} />
     </Dialog>
   );
 }

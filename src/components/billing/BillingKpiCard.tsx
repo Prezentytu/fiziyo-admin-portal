@@ -67,7 +67,7 @@ export function BillingKpiCard({ organizationId, className }: BillingKpiCardProp
 
   return (
     <Link
-      href="/billing"
+      href="/finances"
       data-testid="dashboard-billing-kpi-card"
       className={cn(
         'group relative overflow-hidden rounded-2xl border border-border/60 bg-surface p-5',

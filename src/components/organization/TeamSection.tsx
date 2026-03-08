@@ -13,17 +13,6 @@ import { passesRoleFilter, isStaffRole, type RoleFilter } from './teamSectionUti
 import { matchesSearchQuery } from '@/utils/textUtils';
 import { cn } from '@/lib/utils';
 
-interface SubscriptionLimits {
-  maxTherapists?: number;
-  maxPatients?: number;
-  maxClinics?: number;
-}
-
-interface CurrentUsage {
-  therapists?: number;
-  patients?: number;
-}
-
 interface TeamSectionProps {
   members: OrganizationMember[];
   organizationId: string;
@@ -33,10 +22,6 @@ interface TeamSectionProps {
   canInvite?: boolean;
   onInviteClick: () => void;
   onRefresh?: () => void;
-  // Subscription limits for pre-emptive check
-  limits?: SubscriptionLimits;
-  currentUsage?: CurrentUsage;
-  planName?: string;
   /** Map of userId -> patient count (from billing/therapist breakdown) */
   therapistPatientCounts?: Map<string, number>;
 }

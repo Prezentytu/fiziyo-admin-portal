@@ -20,7 +20,6 @@ import { FIND_USER_BY_EMAIL_QUERY, FIND_USER_BY_PHONE_QUERY } from '@/graphql/qu
 import { ASSIGN_PATIENT_TO_THERAPIST_MUTATION } from '@/graphql/mutations/therapists.mutations';
 import { ADD_DIRECT_MEMBER_MUTATION } from '@/graphql/mutations/organizations.mutations';
 import { GET_THERAPIST_PATIENTS_QUERY, GET_ALL_THERAPIST_PATIENTS_QUERY } from '@/graphql/queries/therapists.queries';
-import { GET_CURRENT_ORGANIZATION_PLAN } from '@/graphql/queries/organizations.queries';
 import type { FindUserByEmailData, FindUserByPhoneData } from '@/graphql/types/user.types';
 
 // ============================================
@@ -214,7 +213,6 @@ export function UnifiedPatientInput({
     refetchQueries: [
       { query: GET_THERAPIST_PATIENTS_QUERY, variables: { therapistId, organizationId } },
       { query: GET_ALL_THERAPIST_PATIENTS_QUERY, variables: { therapistId, organizationId } },
-      { query: GET_CURRENT_ORGANIZATION_PLAN, variables: { organizationId } },
     ],
     awaitRefetchQueries: true,
   });

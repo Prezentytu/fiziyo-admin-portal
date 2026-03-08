@@ -19,7 +19,6 @@ import type { OrganizationMember } from '@/components/organization/MemberCard';
 import {
   GET_ORGANIZATION_BY_ID_QUERY,
   GET_ORGANIZATION_MEMBERS_QUERY,
-  GET_CURRENT_ORGANIZATION_PLAN,
   GET_ORGANIZATION_INVITATION_STATS_QUERY,
 } from '@/graphql/queries/organizations.queries';
 import { GET_USER_BY_CLERK_ID_QUERY, GET_USER_ORGANIZATIONS_QUERY } from '@/graphql/queries/users.queries';
@@ -44,28 +43,6 @@ interface ClinicFromQuery {
   contactInfo?: string;
   isActive?: boolean;
   organizationId?: string;
-}
-
-interface PlanResponse {
-  currentOrganizationPlan?: {
-    currentPlan?: string;
-    expiresAt?: string;
-    limits?: {
-      maxExercises?: number;
-      maxPatients?: number;
-      maxTherapists?: number;
-      maxClinics?: number;
-      allowQRCodes?: boolean;
-      allowReports?: boolean;
-      allowCustomBranding?: boolean;
-      allowSMSReminders?: boolean;
-    };
-    currentUsage?: {
-      exercises?: number;
-      patients?: number;
-      therapists?: number;
-    };
-  };
 }
 
 // Filter out patients - only show staff members
@@ -128,12 +105,6 @@ export default function OrganizationPage() {
     skip: !organizationId,
   });
 
-  // Get subscription plan info
-  const { data: planData } = useQuery(GET_CURRENT_ORGANIZATION_PLAN, {
-    variables: { organizationId },
-    skip: !organizationId,
-  });
-
   // Get billing status (for therapist patient counts)
   const { data: billingData } = useQuery<GetCurrentBillingStatusResponse>(GET_CURRENT_BILLING_STATUS_QUERY, {
     variables: { organizationId: organizationId || '' },
@@ -153,14 +124,11 @@ export default function OrganizationPage() {
   const organization = (orgData as OrganizationByIdResponse)?.organizationById;
   const members: OrganizationMember[] = (membersData as OrganizationMembersResponse)?.organizationMembers || [];
   const clinics: ClinicFromQuery[] = (clinicsData as OrganizationClinicsResponse)?.organizationClinics || [];
-  const planInfo = (planData as PlanResponse)?.currentOrganizationPlan;
 
   // Count only staff members (exclude patients)
   const staffMembers = members.filter((m) => STAFF_ROLES.has(m.role.toLowerCase()));
   const teamCount = staffMembers.length;
   const clinicsCount = clinics.length;
-  const planName = planInfo?.currentPlan || organization?.subscriptionPlan || 'Free';
-
   const canEdit = currentUserRole === 'owner' || currentUserRole === 'admin';
 
   // Billing data for patient counts
@@ -316,9 +284,6 @@ export default function OrganizationPage() {
                   canInvite={canEdit}
                   onInviteClick={() => setIsInviteDialogOpen(true)}
                   onRefresh={() => refetchMembers()}
-                  limits={planInfo?.limits}
-                  currentUsage={planInfo?.currentUsage}
-                  planName={planName}
                   therapistPatientCounts={therapistPatientCounts}
                 />
               </TabsContent>

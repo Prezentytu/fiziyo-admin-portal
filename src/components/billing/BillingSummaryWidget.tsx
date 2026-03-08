@@ -177,7 +177,7 @@ export function BillingSummaryWidget({ variant, organizationId, className }: Bil
           </div>
 
           {/* Details button */}
-          <Link href="/billing" className="block">
+          <Link href="/finances" className="block">
             <Button
               variant="outline"
               className="w-full group border-border/60 hover:border-primary/40 hover:bg-surface-light"

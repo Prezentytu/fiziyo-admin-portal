@@ -17,7 +17,6 @@ import {
   GET_ALL_THERAPIST_PATIENTS_QUERY,
   GET_ORGANIZATION_PATIENTS_QUERY,
 } from '@/graphql/queries/therapists.queries';
-import { GET_CURRENT_ORGANIZATION_PLAN } from '@/graphql/queries/organizations.queries';
 import { cn } from '@/lib/utils';
 import { getAvatarGradient, getInitials } from '@/utils/textUtils';
 import type { Patient } from '@/features/assignment/types';
@@ -104,7 +103,6 @@ export function PatientDialog({
       { query: GET_THERAPIST_PATIENTS_QUERY, variables: { therapistId, organizationId } },
       { query: GET_ALL_THERAPIST_PATIENTS_QUERY, variables: { therapistId, organizationId } },
       { query: GET_ORGANIZATION_PATIENTS_QUERY, variables: { organizationId, filter: 'all' } },
-      { query: GET_CURRENT_ORGANIZATION_PLAN, variables: { organizationId } },
     ],
   });
 

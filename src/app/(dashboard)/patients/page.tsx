@@ -42,7 +42,6 @@ import type { Patient as AssignmentPatient } from '@/features/assignment/types';
 import { cn } from '@/lib/utils';
 
 import { GET_ORGANIZATION_PATIENTS_QUERY } from '@/graphql/queries/therapists.queries';
-import { GET_CURRENT_ORGANIZATION_PLAN } from '@/graphql/queries/organizations.queries';
 import {
   REMOVE_PATIENT_FROM_THERAPIST_MUTATION,
   REMOVE_PATIENT_FROM_ORGANIZATION_MUTATION,
@@ -92,10 +91,7 @@ export default function PatientsPage() {
   const [removeFromOrganization, { loading: removingFromOrg }] = useMutation(
     REMOVE_PATIENT_FROM_ORGANIZATION_MUTATION,
     {
-      refetchQueries: [
-        { query: GET_ORGANIZATION_PATIENTS_QUERY, variables: { organizationId, filter: 'all' } },
-        { query: GET_CURRENT_ORGANIZATION_PLAN, variables: { organizationId } },
-      ],
+      refetchQueries: [{ query: GET_ORGANIZATION_PATIENTS_QUERY, variables: { organizationId, filter: 'all' } }],
     }
   );
 

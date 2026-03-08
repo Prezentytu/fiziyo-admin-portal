@@ -284,7 +284,7 @@ function getScreenNameFromPath(pathname: string): string {
     '/patients': 'Pacjenci',
     '/organization': 'Organizacja',
     '/settings': 'Ustawienia',
-    '/subscription': 'Subskrypcja',
+    '/finances': 'Finanse',
   };
 
   // Sprawdź dokładne dopasowanie

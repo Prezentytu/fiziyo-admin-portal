@@ -85,7 +85,7 @@ const navigationGroups: NavigationGroup[] = [
     adminOnly: true,
     items: [
       { name: 'Zespół', href: '/organization', icon: Building2, testId: 'nav-mobile-link-organization' },
-      { name: 'Rozliczenia', href: '/billing', icon: CreditCard, testId: 'nav-mobile-link-billing' },
+      { name: 'Rozliczenia', href: '/finances', icon: CreditCard, testId: 'nav-mobile-link-billing' },
       { name: 'Ustawienia', href: '/settings', icon: Settings, testId: 'nav-mobile-link-settings' },
     ],
   },

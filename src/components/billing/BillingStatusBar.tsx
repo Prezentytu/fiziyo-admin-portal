@@ -24,7 +24,7 @@ interface BillingStatusBarProps {
 
 /**
  * Płaski pasek statusu rozliczeń Pay-as-you-go.
- * Wyświetlany na dole dashboardu, działa jako separator i link do /billing.
+ * Wyświetlany na dole dashboardu, działa jako separator i link do /finances.
  */
 export function BillingStatusBar({ organizationId, className }: Readonly<BillingStatusBarProps>) {
   const { data, loading, error } = useQuery<GetCurrentBillingStatusResponse>(GET_CURRENT_BILLING_STATUS_QUERY, {
@@ -73,7 +73,7 @@ export function BillingStatusBar({ organizationId, className }: Readonly<Billing
 
   return (
     <Link
-      href="/billing"
+      href="/finances"
       data-testid="dashboard-billing-status-bar"
       className={cn(
         'group block rounded-xl border border-border/40 bg-surface/50 backdrop-blur-sm',
