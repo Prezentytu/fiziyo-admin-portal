@@ -132,6 +132,7 @@ export function DocumentDropzone({ file, onFileSelect, disabled = false, classNa
               onClick={handleRemove}
               disabled={disabled}
               className="h-9 w-9 text-muted-foreground hover:text-destructive"
+              data-testid="import-dropzone-clear-btn"
             >
               <X className="h-5 w-5" />
             </Button>
@@ -165,6 +166,7 @@ export function DocumentDropzone({ file, onFileSelect, disabled = false, classNa
           onChange={handleInputChange}
           disabled={disabled}
           className="absolute inset-0 cursor-pointer opacity-0"
+          data-testid="import-dropzone-input"
         />
 
         {/* Duża ikona */}

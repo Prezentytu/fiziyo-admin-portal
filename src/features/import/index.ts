@@ -1,4 +1,5 @@
 export { DocumentDropzone } from './DocumentDropzone';
+export { TextImportPanel } from './TextImportPanel';
 export { ImportProgress } from './ImportProgress';
 export { ExerciseReviewCard } from './ExerciseReviewCard';
 export { SetReviewCard } from './SetReviewCard';

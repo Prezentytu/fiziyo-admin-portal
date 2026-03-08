@@ -18,9 +18,11 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useDocumentImport } from '@/hooks/useDocumentImport';
 import {
   DocumentDropzone,
+  TextImportPanel,
   ImportProgress,
   SetReviewCard,
   NoteReviewCard,
@@ -46,7 +48,9 @@ const stepConfig: { id: StepId; label: string; icon: React.ElementType }[] = [
 export default function ImportPage() {
   const {
     step,
+    inputMode,
     file,
+    pastedText,
     isAnalyzing,
     isImporting,
     analysisResult,
@@ -60,10 +64,12 @@ export default function ImportPage() {
     importResult,
     stats,
     setFile,
+    setInputMode,
+    setPastedText,
     setPatientId,
     setAssignSetsToPatient,
     setCreateSetAfterImport,
-    analyzeDocument,
+    analyzeInput,
     updateExerciseDecision,
     updateSetDecision,
     updateNoteDecision,
@@ -82,6 +88,10 @@ export default function ImportPage() {
 
   // Czy pokazać warning o notatkach bez pacjenta
   const showNotesWarning = stats.notesToCreate > 0 && !selectedPatientId;
+  const hasSelectedPatient = Boolean(selectedPatientId);
+  const skippedNotesCount = hasSelectedPatient ? 0 : stats.notesToCreate;
+  const isUploadAnalyzeDisabled =
+    isAnalyzing || (inputMode === 'file' ? !file : pastedText.trim().length < 30);
 
   // Handler kliknięcia w krok (nawigacja wstecz)
   const handleStepClick = useCallback(
@@ -103,22 +113,36 @@ export default function ImportPage() {
             <Sparkles className="h-7 w-7 text-primary" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-foreground" data-testid="import-page-title">
-              Import dokumentów
-            </h1>
-            <p className="text-muted-foreground">Wyciągnij ćwiczenia, zestawy i notatki z dokumentów PDF lub Excel</p>
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="text-2xl font-bold text-foreground" data-testid="import-page-title">
+                Import dokumentów
+              </h1>
+              <Badge variant="outline" className="text-xs" data-testid="import-experimental-badge">
+                Eksperymentalne
+              </Badge>
+            </div>
+            <p className="text-muted-foreground">Wyciągnij ćwiczenia, zestawy i notatki z pliku lub wklejonego tekstu</p>
           </div>
         </div>
+        <Card className="border-warning/40 bg-warning/5 max-w-3xl mt-4" data-testid="import-experimental-note">
+          <CardContent className="p-4 text-sm text-foreground">
+            Funkcja jest w trybie eksperymentalnym. Przed zatwierdzeniem importu sprawdź dopasowania i opisy w krokach
+            review.
+          </CardContent>
+        </Card>
       </div>
 
       {/* Stepper - większy, czytelniejszy */}
-      <div className="mb-10">
+      <div className="mb-10" data-testid="import-step-indicator">
         <div className="flex items-center">
           {stepConfig.map((s, index) => {
             const Icon = s.icon;
             const isActive = index === currentStepIndex;
             const isCompleted = index < currentStepIndex;
             const isClickable = isCompleted && !isAnalyzing && !isImporting;
+            const stepCircleClass =
+              isActive || isCompleted ? 'bg-primary text-white' : 'bg-surface-light text-muted-foreground';
+            const stepLabelClass = isActive || isCompleted ? 'text-foreground' : 'text-muted-foreground';
 
             return (
               <div
@@ -145,11 +169,7 @@ export default function ImportPage() {
                   <div
                     className={cn(
                       'flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-colors duration-200',
-                      isActive
-                        ? 'bg-primary text-white'
-                        : isCompleted
-                          ? 'bg-primary text-white'
-                          : 'bg-surface-light text-muted-foreground'
+                      stepCircleClass
                     )}
                   >
                     {isCompleted ? <Check className="h-5 w-5" /> : <Icon className="h-5 w-5" />}
@@ -159,7 +179,7 @@ export default function ImportPage() {
                   <span
                     className={cn(
                       'text-sm font-medium transition-colors duration-200 hidden sm:block',
-                      isActive ? 'text-foreground' : isCompleted ? 'text-foreground' : 'text-muted-foreground'
+                      stepLabelClass
                     )}
                   >
                     {s.label}
@@ -190,12 +210,31 @@ export default function ImportPage() {
               <CardContent className="p-8">
                 <div className="text-center mb-8">
                   <h2 className="text-xl font-bold text-foreground mb-2">Wybierz dokument do analizy</h2>
-                  <p className="text-muted-foreground">
-                    AI przeanalizuje plik i znajdzie ćwiczenia, zestawy oraz notatki
-                  </p>
+                  <p className="text-muted-foreground">AI przeanalizuje dane i znajdzie ćwiczenia, zestawy oraz notatki</p>
                 </div>
 
-                <DocumentDropzone file={file} onFileSelect={setFile} disabled={isAnalyzing} />
+                <Tabs
+                  value={inputMode}
+                  onValueChange={(value) => setInputMode(value as 'file' | 'text')}
+                  data-testid="import-input-mode-tabs"
+                >
+                  <TabsList className="grid w-full grid-cols-2" data-testid="import-input-mode-tabs-list">
+                    <TabsTrigger value="file" data-testid="import-mode-file-tab">
+                      Prześlij plik
+                    </TabsTrigger>
+                    <TabsTrigger value="text" data-testid="import-mode-text-tab">
+                      Wklej tekst
+                    </TabsTrigger>
+                  </TabsList>
+
+                  <TabsContent value="file" className="mt-4">
+                    <DocumentDropzone file={file} onFileSelect={setFile} disabled={isAnalyzing} />
+                  </TabsContent>
+
+                  <TabsContent value="text" className="mt-4">
+                    <TextImportPanel text={pastedText} onTextChange={setPastedText} disabled={isAnalyzing} />
+                  </TabsContent>
+                </Tabs>
               </CardContent>
             </Card>
           </div>
@@ -324,8 +363,8 @@ export default function ImportPage() {
           <ImportSummary
             result={importResult}
             onReset={reset}
-            notesSkippedDueToNoPatient={!selectedPatientId && stats.notesToCreate > 0}
-            skippedNotesCount={!selectedPatientId ? stats.notesToCreate : 0}
+            notesSkippedDueToNoPatient={!hasSelectedPatient && stats.notesToCreate > 0}
+            skippedNotesCount={skippedNotesCount}
           />
         )}
       </div>
@@ -349,13 +388,13 @@ export default function ImportPage() {
             {step === 'upload' && (
               <Button
                 size="lg"
-                onClick={() => analyzeDocument()}
-                disabled={!file || isAnalyzing}
+                onClick={() => analyzeInput()}
+                disabled={isUploadAnalyzeDisabled}
                 className="gap-2 h-12 px-8 bg-primary hover:bg-primary-dark"
                 data-testid="import-analyze-btn"
               >
                 {isAnalyzing ? <Loader2 className="h-5 w-5 animate-spin" /> : <Sparkles className="h-5 w-5" />}
-                Analizuj dokument
+                {inputMode === 'file' ? 'Analizuj dokument' : 'Analizuj tekst'}
               </Button>
             )}
 

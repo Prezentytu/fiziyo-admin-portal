@@ -190,6 +190,11 @@ export interface DocumentImportResult {
 export type ImportWizardStep = 'upload' | 'processing' | 'review-exercises' | 'review-sets' | 'summary';
 
 /**
+ * Tryb wejścia dla analizy AI
+ */
+export type ImportInputMode = 'file' | 'text';
+
+/**
  * Decyzja użytkownika dla ćwiczenia
  */
 export interface ExerciseDecision {
@@ -224,7 +229,9 @@ export interface ClinicalNoteDecision {
  */
 export interface ImportState {
   step: ImportWizardStep;
+  inputMode: ImportInputMode;
   file: File | null;
+  pastedText: string;
   isAnalyzing: boolean;
   isImporting: boolean;
   analysisResult: DocumentAnalysisResult | null;

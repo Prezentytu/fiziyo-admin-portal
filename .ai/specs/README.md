@@ -54,6 +54,7 @@ Każda specyfikacja powinna mieć sekcję Changelog na końcu:
 | 006 | [Billing Details](SPEC-006-2026-03-04-billing-details.md)                                     | Dane firmy do fakturowania i rozliczeń          | Aktywny |
 | 007 | [Template vs Plan](SPEC-007-2026-03-07-template-vs-plan.md)                                   | Rozdzielenie szablonów i planów pacjenta        | Aktywny |
 | 008 | [Exercise Report Verification Flow](SPEC-008-2026-03-08-exercise-report-verification-flow.md) | Zgłaszanie ćwiczeń do kolejki verification      | Aktywny |
+| 010 | [Import Module](SPEC-010-2026-03-08-import-module.md)                                         | Import dokumentów (plik i plain text)           | Aktywny |
 
 ## Planowane specyfikacje
 
@@ -66,7 +67,7 @@ Tworzone stopniowo, przy okazji pracy nad danym modułem:
 | ~~005~~ | ~~Patients Module~~      | Przeniesione do aktywnych |
 | ~~006~~ | ~~Organization Module~~  | Przeniesione do aktywnych |
 | 009     | Chat/AI Module           | Chat AI, asystent         |
-| 010     | Import Module            | Import dokumentów         |
+| ~~010~~ | ~~Import Module~~        | Przeniesione do aktywnych |
 | 011     | Settings Module          | Ustawienia użytkownika    |
 
 ## Dla AI Agentów

@@ -5,6 +5,7 @@ import { documentImportService } from '@/services/documentImportService';
 import type {
   ImportState,
   ImportWizardStep,
+  ImportInputMode,
   ExerciseDecision,
   ExerciseSetDecision,
   ClinicalNoteDecision,
@@ -17,14 +18,20 @@ import type {
 type ExerciseFilterType = 'all' | 'create' | 'reuse' | 'skip' | 'matched';
 
 interface ExtendedImportState extends ImportState {
+  inputMode: ImportInputMode;
+  pastedText: string;
   assignSetsToPatient: boolean;
   exerciseFilter: ExerciseFilterType;
   createSetAfterImport: boolean;
 }
 
+const MIN_PASTED_TEXT_LENGTH = 30;
+
 const initialState: ExtendedImportState = {
   step: 'upload',
+  inputMode: 'file',
   file: null,
+  pastedText: '',
   isAnalyzing: false,
   isImporting: false,
   analysisResult: null,
@@ -46,13 +53,48 @@ export function useDocumentImport() {
   const [state, setState] = useState<ExtendedImportState>(initialState);
 
   // ============================================
-  // File Upload
+  // Input selection
   // ============================================
+
+  const setInputMode = useCallback((inputMode: ImportInputMode) => {
+    setState((prev) => ({
+      ...prev,
+      inputMode,
+      step: 'upload',
+      error: null,
+      analysisResult: null,
+      exerciseDecisions: {},
+      setDecisions: {},
+      noteDecisions: {},
+      importResult: null,
+      file: inputMode === 'file' ? prev.file : null,
+      pastedText: inputMode === 'text' ? prev.pastedText : '',
+    }));
+  }, []);
 
   const setFile = useCallback((file: File | null) => {
     setState((prev) => ({
       ...prev,
+      inputMode: 'file',
       file,
+      pastedText: '',
+      step: 'upload',
+      error: null,
+      analysisResult: null,
+      exerciseDecisions: {},
+      setDecisions: {},
+      noteDecisions: {},
+      importResult: null,
+    }));
+  }, []);
+
+  const setPastedText = useCallback((pastedText: string) => {
+    setState((prev) => ({
+      ...prev,
+      inputMode: 'text',
+      pastedText,
+      file: null,
+      step: 'upload',
       error: null,
       analysisResult: null,
       exerciseDecisions: {},
@@ -94,28 +136,39 @@ export function useDocumentImport() {
   // Analysis
   // ============================================
 
-  const analyzeDocument = useCallback(
+  const analyzeInput = useCallback(
     async (additionalContext?: string) => {
-      if (!state.file) {
-        setState((prev) => ({ ...prev, error: 'Wybierz plik do analizy' }));
-        return;
-      }
+      if (state.inputMode === 'file') {
+        if (!state.file) {
+          setState((prev) => ({ ...prev, error: 'Wybierz plik do analizy' }));
+          return;
+        }
 
-      // Walidacja
-      if (!documentImportService.isFormatSupported(state.file)) {
-        setState((prev) => ({
-          ...prev,
-          error: 'Nieobsługiwany format pliku. Obsługiwane: PDF, Excel, CSV, TXT',
-        }));
-        return;
-      }
+        // Walidacja pliku
+        if (!documentImportService.isFormatSupported(state.file)) {
+          setState((prev) => ({
+            ...prev,
+            error: 'Nieobsługiwany format pliku. Obsługiwane: PDF, Excel, CSV, TXT',
+          }));
+          return;
+        }
 
-      if (!documentImportService.isFileSizeValid(state.file)) {
-        setState((prev) => ({
-          ...prev,
-          error: `Plik jest za duży. Maksymalny rozmiar: ${documentImportService.getMaxFileSizeMB()}MB`,
-        }));
-        return;
+        if (!documentImportService.isFileSizeValid(state.file)) {
+          setState((prev) => ({
+            ...prev,
+            error: `Plik jest za duży. Maksymalny rozmiar: ${documentImportService.getMaxFileSizeMB()}MB`,
+          }));
+          return;
+        }
+      } else {
+        const textLength = state.pastedText.trim().length;
+        if (textLength < MIN_PASTED_TEXT_LENGTH) {
+          setState((prev) => ({
+            ...prev,
+            error: `Wklej dłuższy tekst do analizy (minimum ${MIN_PASTED_TEXT_LENGTH} znaków).`,
+          }));
+          return;
+        }
       }
 
       setState((prev) => ({
@@ -126,11 +179,12 @@ export function useDocumentImport() {
       }));
 
       try {
-        const result = await documentImportService.analyzeDocument(
-          state.file,
-          state.selectedPatientId,
-          additionalContext
-        );
+        let result;
+        if (state.inputMode === 'file' && state.file) {
+          result = await documentImportService.analyzeDocument(state.file, state.selectedPatientId, additionalContext);
+        } else {
+          result = await documentImportService.analyzeText(state.pastedText.trim(), state.selectedPatientId, additionalContext);
+        }
 
         // Inicjalizuj domyślne decyzje
         const exerciseDecisions: Record<string, ExerciseDecision> = {};
@@ -180,7 +234,7 @@ export function useDocumentImport() {
         }));
       }
     },
-    [state.file, state.selectedPatientId]
+    [state.file, state.inputMode, state.pastedText, state.selectedPatientId]
   );
 
   // ============================================
@@ -604,7 +658,7 @@ export function useDocumentImport() {
   const canProceed = useMemo(() => {
     switch (state.step) {
       case 'upload':
-        return !!state.file;
+        return state.inputMode === 'file' ? !!state.file : state.pastedText.trim().length >= MIN_PASTED_TEXT_LENGTH;
       case 'processing':
         return false;
       case 'review-exercises':
@@ -627,11 +681,14 @@ export function useDocumentImport() {
 
     // Actions
     setFile,
+    setInputMode,
+    setPastedText,
     setPatientId,
     setAssignSetsToPatient,
     setExerciseFilter,
     setCreateSetAfterImport,
-    analyzeDocument,
+    analyzeInput,
+    analyzeDocument: analyzeInput,
     updateExerciseDecision,
     updateSetDecision,
     updateNoteDecision,
