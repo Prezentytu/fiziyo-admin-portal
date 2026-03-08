@@ -3,9 +3,10 @@
 import { useMemo } from 'react';
 import { useQuery } from '@apollo/client/react';
 import CountUp from 'react-countup';
-import { Wallet, TrendingUp, Clock, CheckCircle, Sparkles, Users } from 'lucide-react';
+import { Wallet, TrendingUp, Clock, CheckCircle, Sparkles, Users, CircleHelp } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Logo } from '@/components/shared/Logo';
 import { GET_ORGANIZATION_EARNINGS_QUERY, GET_CURRENT_BILLING_STATUS_QUERY } from '@/graphql/queries';
 import type { GetOrganizationEarningsResponse, GetCurrentBillingStatusResponse } from '@/types/apollo';
@@ -123,14 +124,16 @@ export function WalletCard({ organizationId, className }: WalletCardProps) {
   const StatusIcon = isReady ? CheckCircle : Clock;
 
   return (
-    <div
-      className={cn(
-        'relative overflow-hidden rounded-2xl border border-border bg-surface',
-        'shadow-sm transition-all duration-300 hover:shadow-md hover:border-border/80',
-        'h-full min-h-[160px]',
-        className
-      )}
-    >
+    <TooltipProvider>
+      <div
+        className={cn(
+          'relative overflow-hidden rounded-2xl border border-border bg-surface',
+          'shadow-sm transition-all duration-300 hover:shadow-md hover:border-border/80',
+          'h-full min-h-[160px]',
+          className
+        )}
+        data-testid="finances-wallet-card"
+      >
       {/* Content */}
       <div className="relative z-10 p-6 flex flex-col h-full">
         {/* Header */}
@@ -142,7 +145,7 @@ export function WalletCard({ organizationId, className }: WalletCardProps) {
             <span className="text-base font-semibold text-foreground">Dostępne środki</span>
           </div>
           {displayData.isPilotMode && (
-            <Badge className="bg-slate-500/10 text-slate-400 border-slate-500/20 gap-1 px-3 py-1 text-xs">
+            <Badge className="gap-1 border-border bg-surface-elevated px-3 py-1 text-xs text-muted-foreground">
               <Sparkles className="h-3.5 w-3.5" />
               Pilot 100% gratis
             </Badge>
@@ -161,6 +164,24 @@ export function WalletCard({ organizationId, className }: WalletCardProps) {
               suffix=" zł"
               preserveValue
             />
+          </div>
+          <div className="mb-3 inline-flex items-center gap-1.5 rounded-md border border-border/60 bg-surface-elevated px-2 py-1 text-[11px] text-muted-foreground">
+            <span>Wpływy Premium</span>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  className="rounded-full text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                  data-testid="finances-wallet-helper-copy"
+                  aria-label="Wyjaśnienie wpływów Premium"
+                >
+                  <CircleHelp className="h-3.5 w-3.5" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" className="max-w-xs">
+                Środki pochodzą z aktywnych pacjentów Premium opłacających prowadzenie planu.
+              </TooltipContent>
+            </Tooltip>
           </div>
 
           {/* Secondary stats */}
@@ -206,7 +227,7 @@ export function WalletCard({ organizationId, className }: WalletCardProps) {
         <div className="flex items-center justify-between mt-5 pt-4 border-t border-border">
           <div className="flex items-center gap-2">
             <div className={cn('h-2 w-2 rounded-full', isReady ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]' : 'bg-slate-400')} />
-            <span className="text-xs font-medium text-muted-foreground">{statusText}</span>
+            <span className="text-xs font-medium text-muted-foreground">Status wypłat: {statusText}</span>
             <StatusIcon className={cn('h-3.5 w-3.5', isReady ? 'text-emerald-500' : 'text-slate-400')} />
           </div>
 
@@ -214,7 +235,7 @@ export function WalletCard({ organizationId, className }: WalletCardProps) {
           <div className="flex items-center gap-1.5 text-xs">
             <Users className="h-3.5 w-3.5 text-primary" />
             <span className={cn(displayData.premiumPatients > 0 ? 'text-primary font-semibold' : 'text-muted-foreground')}>
-              {displayData.premiumPatients} {displayData.premiumPatients === 1 ? 'pacjent' : 'pacjentów'} Premium
+              {displayData.premiumPatients} {displayData.premiumPatients === 1 ? 'aktywny pacjent' : 'aktywnych pacjentów'} Premium
             </span>
           </div>
         </div>
@@ -224,6 +245,7 @@ export function WalletCard({ organizationId, className }: WalletCardProps) {
       <div className="absolute right-6 top-8 opacity-[0.02] pointer-events-none">
         <Logo variant="icon" size="lg" />
       </div>
-    </div>
+      </div>
+    </TooltipProvider>
   );
 }

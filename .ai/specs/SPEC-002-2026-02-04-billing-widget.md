@@ -3,6 +3,7 @@
 ## Cel biznesowy
 
 Widget finansowy dla modelu rozliczeniowego "Pay-as-you-go":
+
 - **Gabinet płaci**: 15 PLN za każdego aktywnego pacjenta Premium w miesiącu
 - **Aktywacja**: Fizjoterapeuta ręcznie aktywuje dostęp Premium w panelu
 - **Widoczność**: Widget widoczny TYLKO dla Owner i Admin
@@ -10,26 +11,28 @@ Widget finansowy dla modelu rozliczeniowego "Pay-as-you-go":
 ## Psychologia nazewnictwa
 
 ✅ **Używamy neutralnego języka B2B:**
+
 - "Należność" / "Opłata licencyjna"
 - "Aktywne licencje" / "Aktywni Pacjenci Premium"
 
 ❌ **NIE używamy:**
+
 - "Koszt" - brzmi negatywnie
 
 ## Architektura
 
 ### Warianty widgetu
 
-| Wariant | Lokalizacja | Użycie |
-|---------|-------------|--------|
-| `compact` | Dashboard | Kompaktowa karta w sekcji głównej |
-| `full` | `/billing` | Pełny panel ze szczegółami |
+| Wariant   | Lokalizacja | Użycie                            |
+| --------- | ----------- | --------------------------------- |
+| `compact` | Dashboard   | Kompaktowa karta w sekcji głównej |
+| `full`    | `/billing`  | Pełny panel ze szczegółami        |
 
 ## Komponenty
 
-| Komponent | Lokalizacja | Opis |
-|-----------|-------------|------|
-| BillingSummaryWidget | `src/components/billing/BillingSummaryWidget.tsx` | Widget podsumowania |
+| Komponent             | Lokalizacja                                        | Opis                             |
+| --------------------- | -------------------------------------------------- | -------------------------------- |
+| BillingSummaryWidget  | `src/components/billing/BillingSummaryWidget.tsx`  | Widget podsumowania              |
 | TherapistBillingTable | `src/components/billing/TherapistBillingTable.tsx` | Tabela z podziałem na terapeutów |
 
 ## Interfejsy
@@ -86,7 +89,7 @@ interface TherapistBillingStats {
 
 ```typescript
 interface BillingSummaryWidgetProps {
-  variant: "compact" | "full";
+  variant: 'compact' | 'full';
   organizationId?: string;
   className?: string;
 }
@@ -129,12 +132,9 @@ billing-therapist-row-{therapistId}
 ### Dashboard
 
 ```tsx
-{canViewBilling && organizationId && (
-  <BillingSummaryWidget
-    variant="compact"
-    organizationId={organizationId}
-  />
-)}
+{
+  canViewBilling && organizationId && <BillingSummaryWidget variant="compact" organizationId={organizationId} />;
+}
 ```
 
 ### Billing Page
@@ -152,6 +152,12 @@ billing-therapist-row-{therapistId}
 
 ## Changelog
 
+### 2026-03-08
+
+- Dostosowano copy i hierarchię informacji na dashboardzie `finances`, aby użytkownik od razu rozumiał źródło środków i zależność od aktywnych pacjentów Premium.
+- Ujednolicono styl sekcji finansowej do wzorca Premium Utility (typografia, spacing, helper copy, czytelniejsze CTA następnej akcji).
+
 ### 2026-02-04
+
 - Migracja dokumentacji do formatu SPEC
 - Utworzenie specyfikacji na podstawie `docs/billing-widget-readme.md`

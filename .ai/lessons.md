@@ -14,6 +14,14 @@ Dziennik wniosków z pracy AI agentów. Po każdej korekcie dodaj nowy wpis.
 
 ## Wpisy
 
+### 2026-03-08 - Dashboard finansów wymaga mikrocopy kontekstowego
+
+- **Kategoria**: `UI/UX`
+- **Problem**: Użytkownicy widzieli metryki finansowe i poziomy partnerskie, ale bez jasnego wyjaśnienia źródła środków oraz wpływu liczby pacjentów na prowizję.
+- **Przyczyna**: Widok opierał się głównie na liczbach i kartach statusu, a nie na krótkich komunikatach „co to znaczy” i „co zrobić dalej”.
+- **Rozwiązanie**: Dodano panel kontekstowy, helper copy w kartach finansowych i model krokowy w banerze konfiguracji, utrzymując spójność typografii/odstępów.
+- **Reguła**: W dashboardach finansowych każda kluczowa metryka i CTA musi mieć 1-zdaniowe objaśnienie semantyki oraz następnego kroku użytkownika.
+
 ### 2026-03-08 - Copy flow i edit payload muszą być spójne
 
 - **Kategoria**: `UI/UX`

@@ -60,6 +60,7 @@ export function GrowthActionBar({ organizationId, className }: GrowthActionBarPr
           'group cursor-pointer',
           className
         )}
+        data-testid="finances-growth-action-bar"
       >
         {/* Left side - Icon + Text */}
         <div className="flex items-center gap-4">
@@ -71,8 +72,12 @@ export function GrowthActionBar({ organizationId, className }: GrowthActionBarPr
             <Sparkles className="absolute -top-1 -right-1 h-3.5 w-3.5 text-primary opacity-0 group-hover:opacity-100 transition-opacity" />
           </div>
           <div>
-            <p className="text-foreground text-base font-semibold tracking-tight">Zwiększ swoje zarobki zapraszając pacjentów</p>
-            <p className="text-xs text-muted-foreground mt-0.5">Każdy pacjent Premium = prowizja dla Ciebie</p>
+            <p className="text-foreground text-base font-semibold tracking-tight">
+              Zaproś pacjenta i aktywuj wzrost przychodów
+            </p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Każdy aktywny pacjent Premium zasila środki i przybliża kolejny poziom partnerski.
+            </p>
           </div>
         </div>
 
@@ -84,6 +89,7 @@ export function GrowthActionBar({ organizationId, className }: GrowthActionBarPr
             'group-hover:bg-primary/10 group-hover:text-primary',
             'transition-all duration-300'
           )}
+          data-testid="finances-growth-action-btn"
           onClick={(e) => {
             e.stopPropagation();
             handleInvite();

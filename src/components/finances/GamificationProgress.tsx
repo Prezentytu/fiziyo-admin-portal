@@ -2,7 +2,7 @@
 
 import { useMemo } from 'react';
 import { useQuery } from '@apollo/client/react';
-import { Trophy, Zap, Star, Crown, Users, Target } from 'lucide-react';
+import { Trophy, Zap, Star, Crown, Users, Target, CircleHelp } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { GET_COMMISSION_TIER_INFO_QUERY, GET_CURRENT_BILLING_STATUS_QUERY } from '@/graphql/queries';
@@ -185,18 +185,21 @@ export function GamificationProgress({ organizationId, className }: Gamification
           'rounded-2xl border border-emerald-500/20 bg-surface p-6 h-full shadow-sm',
           className
         )}
+        data-testid="finances-partner-level-card"
       >
         <div className="flex items-center gap-3 mb-5">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/10">
             <Crown className="h-5 w-5 text-emerald-500" />
           </div>
-          <h3 className="text-base font-semibold text-foreground">Status Partnera</h3>
+          <h3 className="text-base font-semibold text-foreground">Poziom partnerski</h3>
         </div>
         <div className="flex items-center gap-5 p-5 rounded-xl bg-emerald-500/5 border border-emerald-500/10">
           <Crown className="h-10 w-10 text-emerald-500" />
           <div>
             <p className="text-2xl font-bold text-foreground tracking-tight">PARTNER</p>
-            <p className="text-sm text-muted-foreground mt-0.5">Stały udział: {formatPercent(progressData.commissionRate)}</p>
+            <p className="text-sm text-muted-foreground mt-0.5">
+              Osiągnięty najwyższy poziom ze stałym udziałem {formatPercent(progressData.commissionRate)}.
+            </p>
           </div>
         </div>
       </div>
@@ -207,23 +210,42 @@ export function GamificationProgress({ organizationId, className }: Gamification
 
   return (
     <TooltipProvider>
-      <div className={cn('rounded-2xl border border-border/60 bg-surface shadow-sm p-6 h-full flex flex-col', className)}>
+      <div
+        className={cn('rounded-2xl border border-border/60 bg-surface shadow-sm p-6 h-full flex flex-col', className)}
+        data-testid="finances-partner-progress-card"
+      >
         {/* Header */}
         <div className="flex items-center justify-between mb-5">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-surface-elevated border border-border/60">
               <Trophy className="h-5 w-5 text-muted-foreground" />
             </div>
-            <h3 className="text-base font-semibold text-foreground">Twój Poziom Partnerski</h3>
+            <div className="flex items-center gap-1.5">
+              <h3 className="text-base font-semibold text-foreground">Poziom partnerski</h3>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    className="rounded-full text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                    data-testid="finances-partner-progress-helper-copy"
+                    aria-label="Wyjaśnienie poziomu partnerskiego"
+                  >
+                    <CircleHelp className="h-3.5 w-3.5" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="max-w-xs">
+                  Poziom i udział rosną wraz z liczbą aktywnych pacjentów Premium.
+                </TooltipContent>
+              </Tooltip>
+            </div>
           </div>
           <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground bg-surface-light px-2.5 py-1 rounded-md border border-border/50">
             <Users className="h-3.5 w-3.5" />
             <span>
-              {progressData.activeSubscribers} {progressData.activeSubscribers === 1 ? 'pacjent' : 'pacjentów'}
+              {progressData.activeSubscribers} {progressData.activeSubscribers === 1 ? 'aktywny pacjent' : 'aktywnych pacjentów'}
             </span>
           </div>
         </div>
-
         {/* Current tier badge */}
         <div className="flex items-end gap-3 mb-6 mt-1">
           <span className="text-3xl sm:text-4xl font-bold text-foreground tracking-tight leading-none">
@@ -235,7 +257,7 @@ export function GamificationProgress({ organizationId, className }: Gamification
           </div>
         </div>
 
-        {/* RPG Progress Bar */}
+        {/* Progress Bar */}
         <div className="relative h-4 bg-surface-elevated rounded-full overflow-visible mb-6 mt-auto">
           {/* Fill with gradient */}
           <div
@@ -273,11 +295,11 @@ export function GamificationProgress({ organizationId, className }: Gamification
                     </div>
                   </div>
                 </TooltipTrigger>
-                <TooltipContent side="top" className="bg-zinc-800 border-zinc-700">
+                <TooltipContent side="top" className="border-border bg-surface-elevated text-foreground">
                   <div className="text-center">
-                    <p className="font-bold text-white">{marker.tier}</p>
-                    <p className="text-sm text-emerald-400">Twój udział: {formatPercent(marker.rate)}</p>
-                    <p className="text-xs text-zinc-400">
+                    <p className="font-semibold">{marker.tier}</p>
+                    <p className="text-sm text-primary">Twój udział: {formatPercent(marker.rate)}</p>
+                    <p className="text-xs text-muted-foreground">
                       {marker.minSubscribers > 0 ? `od ${marker.minSubscribers} pacjentów` : 'Start'}
                     </p>
                   </div>
@@ -327,11 +349,11 @@ export function GamificationProgress({ organizationId, className }: Gamification
 
         {/* ELITE reached */}
         {progressData.currentTier === 'ELITE' && (
-          <div className="p-4 rounded-lg bg-gradient-to-r from-violet-500/10 to-purple-500/10 border border-violet-500/20">
+          <div className="p-4 rounded-xl border border-primary/20 bg-primary/5">
             <div className="flex items-center gap-2">
-              <Crown className="h-5 w-5 text-violet-400" />
-              <p className="text-white">
-                🎉 Gratulacje! Osiągnąłeś najwyższy poziom <span className="font-bold text-violet-400">ELITE</span>!
+              <Crown className="h-5 w-5 text-primary" />
+              <p className="text-foreground text-sm">
+                Osiągnięto najwyższy poziom <span className="font-semibold text-primary">ELITE</span> z maksymalnym udziałem.
               </p>
             </div>
           </div>

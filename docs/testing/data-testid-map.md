@@ -16,6 +16,7 @@
 - `ai-` - Funkcje AI
 - `org-` - Organizacja
 - `billing-` - Rozliczenia Pay-as-you-go
+- `finance-` / `finances-` - Dashboard finansów i konfiguracja wypłat
 - `settings-` - Ustawienia
 - `verification-` - Centrum weryfikacji ćwiczeń (ContentManager)
 - `common-` - Wspólne komponenty
@@ -539,6 +540,32 @@ await expect(page.getByTestId(/^exercise-card-/)).toHaveCount(5);
 | `billing-therapist-table`        | Tabela terapeutów                  | `TherapistBillingTable.tsx` |
 | `billing-therapist-search-input` | Wyszukiwarka terapeutów            | `TherapistBillingTable.tsx` |
 | `billing-therapist-row-{id}`     | Wiersz terapeuty                   | `TherapistBillingTable.tsx` |
+
+### 11A. Dashboard finansów (finance-/finances-)
+
+| data-testid                             | Element                                        | Plik                       |
+| --------------------------------------- | ---------------------------------------------- | -------------------------- |
+| `finances-dashboard-page`               | Kontener strony Finanse                        | `finances/page.tsx`        |
+| `finances-dashboard-context-panel`      | Panel objaśniający źródła przychodów i poziomy | `finances/page.tsx`        |
+| `finances-context-funds-info-btn`       | Tooltip: źródło środków                        | `finances/page.tsx`        |
+| `finances-context-tier-info-btn`        | Tooltip: wzrost poziomu partnerskiego          | `finances/page.tsx`        |
+| `finances-dashboard-hero-grid`          | Grid hero kart finansowych                     | `finances/page.tsx`        |
+| `finances-dashboard-tabs`               | Sekcja zakładek wykres/historia/wypłaty        | `finances/page.tsx`        |
+| `finances-tab-chart-trigger`            | Trigger zakładki: Wykres                       | `finances/page.tsx`        |
+| `finances-tab-history-trigger`          | Trigger zakładki: Historia                     | `finances/page.tsx`        |
+| `finances-tab-payouts-trigger`          | Trigger zakładki: Ustawienia wypłat            | `finances/page.tsx`        |
+| `finance-alert-banner`                  | Baner konfiguracji finansów                    | `StripeAlertBanner.tsx`    |
+| `finance-alert-step-label`              | Label kroku konfiguracji (1/2 lub 2/2)         | `StripeAlertBanner.tsx`    |
+| `finance-alert-info-btn`                | Tooltip: szczegóły kroku konfiguracji          | `StripeAlertBanner.tsx`    |
+| `finance-alert-configure-btn`           | CTA uruchamiające konfigurację                 | `StripeAlertBanner.tsx`    |
+| `finance-alert-dismiss-btn`             | Zamknięcie banera konfiguracji                 | `StripeAlertBanner.tsx`    |
+| `finances-wallet-card`                  | Karta środków i statusu wypłat                 | `WalletCard.tsx`           |
+| `finances-wallet-helper-copy`           | Mikrocopy wyjaśniający źródło środków          | `WalletCard.tsx`           |
+| `finances-partner-progress-card`        | Karta progresu poziomu partnerskiego           | `GamificationProgress.tsx` |
+| `finances-partner-progress-helper-copy` | Mikrocopy opisujący wpływ liczby pacjentów     | `GamificationProgress.tsx` |
+| `finances-partner-level-card`           | Karta poziomu PARTNER (stan maksymalny)        | `GamificationProgress.tsx` |
+| `finances-growth-action-bar`            | Pasek CTA zapraszania pacjentów                | `GrowthActionBar.tsx`      |
+| `finances-growth-action-btn`            | Przycisk CTA: Zaproś pacjenta                  | `GrowthActionBar.tsx`      |
 
 ### 12. Ustawienia (settings-)
 

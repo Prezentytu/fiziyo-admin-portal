@@ -2,10 +2,11 @@
 
 import { Suspense, useState } from 'react';
 import { useQuery } from '@apollo/client/react';
-import { Wallet, Lock, BarChart3, History, Settings } from 'lucide-react';
+import { Wallet, Lock, BarChart3, History, Settings, CircleHelp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { LoadingState } from '@/components/shared/LoadingState';
 import { AccessGuard } from '@/components/shared/AccessGuard';
 import { useOrganization } from '@/contexts/OrganizationContext';
@@ -111,23 +112,63 @@ export default function FinancesPage() {
         </Suspense>
       )}
 
-      <div className="mx-auto w-full max-w-screen-2xl space-y-4">
+      <TooltipProvider>
+        <div className="mx-auto w-full max-w-screen-2xl space-y-5 md:space-y-6" data-testid="finances-dashboard-page">
         {/* Header */}
-        <div className="flex items-center gap-3 mb-2">
+        <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 border border-primary/20">
             <Wallet className="h-5 w-5 text-primary" />
           </div>
           <div>
             <h1 className="text-2xl font-bold text-foreground tracking-tight">Twoje Finanse</h1>
-            <p className="text-xs text-muted-foreground mt-0.5">Przychody i rozliczenia z pacjentami</p>
+            <p className="text-sm text-muted-foreground mt-0.5">Przychody, poziom partnerski i rozliczenia.</p>
           </div>
         </div>
 
         {/* Stripe Alert Banner (conditional) */}
         <StripeAlertBanner organizationId={organizationId} />
 
+        <div className="flex flex-wrap gap-2.5" data-testid="finances-dashboard-context-panel">
+          <div className="inline-flex items-center gap-1.5 rounded-lg border border-border/60 bg-surface px-3 py-1.5 text-xs text-muted-foreground">
+            <span className="font-medium text-foreground">Źródło środków</span>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  className="rounded-full text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                  data-testid="finances-context-funds-info-btn"
+                  aria-label="Wyjaśnienie źródła środków"
+                >
+                  <CircleHelp className="h-3.5 w-3.5" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" className="max-w-xs">
+                Wpływy pojawiają się tutaj, gdy pacjenci opłacają prowadzenie planu Premium.
+              </TooltipContent>
+            </Tooltip>
+          </div>
+          <div className="inline-flex items-center gap-1.5 rounded-lg border border-border/60 bg-surface px-3 py-1.5 text-xs text-muted-foreground">
+            <span className="font-medium text-foreground">Wzrost poziomu</span>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  className="rounded-full text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                  data-testid="finances-context-tier-info-btn"
+                  aria-label="Wyjaśnienie wzrostu poziomu partnerskiego"
+                >
+                  <CircleHelp className="h-3.5 w-3.5" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" className="max-w-xs">
+                Im więcej aktywnych pacjentów Premium, tym wyższy poziom i udział partnerski.
+              </TooltipContent>
+            </Tooltip>
+          </div>
+        </div>
+
         {/* Hero Section - Grid 12 columns */}
-        <div className="grid grid-cols-1 xl:grid-cols-12 gap-4">
+        <div className="grid grid-cols-1 xl:grid-cols-12 gap-4" data-testid="finances-dashboard-hero-grid">
           {/* Wallet Card - 5/12 on desktop */}
           <div className="col-span-1 xl:col-span-5">
             <WalletCard organizationId={organizationId} />
@@ -143,11 +184,12 @@ export default function FinancesPage() {
         <GrowthActionBar organizationId={organizationId} />
 
         {/* Tabs Section */}
-        <Tabs defaultValue="chart" className="w-full mt-2">
+        <Tabs defaultValue="chart" className="w-full mt-1" data-testid="finances-dashboard-tabs">
           <TabsList className="bg-surface border border-border/60 p-1 rounded-xl h-auto shadow-sm">
             <TabsTrigger
               value="chart"
               className="gap-1.5 px-4 py-1.5 rounded-lg text-sm font-medium text-muted-foreground data-[state=active]:text-primary data-[state=active]:shadow-sm transition-all"
+              data-testid="finances-tab-chart-trigger"
             >
               <BarChart3 className="h-3.5 w-3.5" />
               Wykres
@@ -155,6 +197,7 @@ export default function FinancesPage() {
             <TabsTrigger
               value="history"
               className="gap-1.5 px-4 py-1.5 rounded-lg text-sm font-medium text-muted-foreground data-[state=active]:text-primary data-[state=active]:shadow-sm transition-all"
+              data-testid="finances-tab-history-trigger"
             >
               <History className="h-3.5 w-3.5" />
               Historia
@@ -163,6 +206,7 @@ export default function FinancesPage() {
               <TabsTrigger
                 value="payouts"
                 className="gap-1.5 px-4 py-1.5 rounded-lg text-sm font-medium text-muted-foreground data-[state=active]:text-primary data-[state=active]:shadow-sm transition-all"
+                data-testid="finances-tab-payouts-trigger"
               >
                 <Settings className="h-3.5 w-3.5" />
                 Ustawienia Wypłat
@@ -202,7 +246,8 @@ export default function FinancesPage() {
             </TabsContent>
           )}
         </Tabs>
-      </div>
+        </div>
+      </TooltipProvider>
 
       {/* Invite Dialog */}
       <PatientInviteDialog open={inviteDialogOpen} onOpenChange={setInviteDialogOpen} organizationId={organizationId} />

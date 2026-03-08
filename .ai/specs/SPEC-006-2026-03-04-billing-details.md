@@ -124,6 +124,11 @@ mutation UpdateBillingDetails($organizationId: String!, $input: BillingDetailsIn
 
 ## Changelog
 
+### 2026-03-08
+
+- Przebudowano `StripeAlertBanner` w `finances` do modelu krokowego (najpierw dane rozliczeniowe, potem Stripe payouts) z czytelniejszym copy i spójnym spacingiem.
+- Dodano jawne komunikaty kontekstowe i `data-testid` dla warstwy informacyjnej banera, aby poprawić testowalność i onboarding rozliczeń.
+
 ### 2026-03-04
 
 - Utworzenie specyfikacji Billing Details.
