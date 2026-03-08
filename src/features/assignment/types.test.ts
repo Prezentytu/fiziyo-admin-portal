@@ -35,18 +35,18 @@ describe('getWizardSteps', () => {
     expect(ids).toEqual(['customize-set', 'select-patients', 'schedule', 'summary']);
   });
 
-  it('customize-set label is "Nowy zestaw" when isCreatingNewSet is true', () => {
+  it('customize-set label is "Tworzenie planu" when isCreatingNewSet is true', () => {
     const steps = getWizardSteps('from-patient', false, false, true);
     const customize = steps.find((s) => s.id === 'customize-set');
-    expect(customize?.label).toBe('Nowy zestaw');
-    expect(customize?.description).toBe('Utwórz zestaw ćw.');
+    expect(customize?.label).toBe('Tworzenie planu');
+    expect(customize?.description).toBe('Utwórz plan pacjenta');
   });
 
-  it('customize-set label is "Personalizacja" when isCreatingNewSet is false', () => {
+  it('customize-set label is "Personalizacja planu" when isCreatingNewSet is false', () => {
     const steps = getWizardSteps('from-patient', true, false, false);
     const customize = steps.find((s) => s.id === 'customize-set');
-    expect(customize?.label).toBe('Personalizacja');
-    expect(customize?.description).toBe('Dostosuj ćwiczenia');
+    expect(customize?.label).toBe('Personalizacja planu');
+    expect(customize?.description).toBe('Dostosuj plan pacjenta');
   });
 
   it('summary is always the last step', () => {

@@ -55,7 +55,8 @@ function buildParams(overrides: Record<string, ExerciseParams> = {}): Map<string
   params.set('existing-m2', { sets: 4, reps: 12 });
 
   Object.entries(overrides).forEach(([instanceId, patch]) => {
-    params.set(instanceId, { ...(params.get(instanceId) || {}), ...patch });
+    const existingParams = params.get(instanceId);
+    params.set(instanceId, existingParams ? { ...existingParams, ...patch } : { ...patch });
   });
 
   return params;
@@ -89,6 +90,33 @@ describe('decideAssignmentPlanMode', () => {
     expect(result.mode).toBe('TEMPLATE_WITH_PARAM_OVERRIDES');
     expect(result.overridesByMappingId.m1?.sets).toBe(5);
     expect(result.overridesByMappingId.m1?.restSets).toBe(90);
+  });
+
+  it('returns TEMPLATE_WITH_PARAM_OVERRIDES and maps text/load fields for assignment overrides', () => {
+    const result = decideAssignmentPlanMode({
+      sourceSet: buildSourceSet(),
+      isCreatingNewSet: false,
+      planName: 'Szablon kregoslup',
+      saveAsTemplate: false,
+      builderInstances: buildInstances(),
+      builderParams: buildParams({
+        'existing-m2': {
+          notes: '  Delikatnie  ',
+          tempo: '2-1-2-1',
+          load: { type: 'weight', value: 5, unit: 'kg', text: '5 kg' },
+        },
+      }),
+    });
+
+    expect(result.mode).toBe('TEMPLATE_WITH_PARAM_OVERRIDES');
+    expect(result.overridesByMappingId.m2?.notes).toBe('Delikatnie');
+    expect(result.overridesByMappingId.m2?.tempo).toBe('2-1-2-1');
+    expect(result.overridesByMappingId.m2?.load).toEqual({
+      type: 'weight',
+      value: 5,
+      unit: 'kg',
+      text: '5 kg',
+    });
   });
 
   it('returns PERSONALIZED_PLAN when order is changed', () => {
@@ -130,6 +158,77 @@ describe('decideAssignmentPlanMode', () => {
       saveAsTemplate: false,
       builderInstances: buildInstances(),
       builderParams: buildParams({ 'existing-m1': { customName: 'Nowa nazwa cwiczenia' } }),
+    });
+
+    expect(result.mode).toBe('PERSONALIZED_PLAN');
+  });
+
+  it('returns PERSONALIZED_PLAN when custom description is changed', () => {
+    const result = decideAssignmentPlanMode({
+      sourceSet: buildSourceSet(),
+      isCreatingNewSet: false,
+      planName: 'Szablon kregoslup',
+      saveAsTemplate: false,
+      builderInstances: buildInstances(),
+      builderParams: buildParams({ 'existing-m1': { customDescription: 'Nowy opis cwiczenia' } }),
+    });
+
+    expect(result.mode).toBe('PERSONALIZED_PLAN');
+  });
+
+  it('returns PERSONALIZED_PLAN when user chooses saveAsTemplate', () => {
+    const result = decideAssignmentPlanMode({
+      sourceSet: buildSourceSet(),
+      isCreatingNewSet: false,
+      planName: 'Szablon kregoslup',
+      saveAsTemplate: true,
+      builderInstances: buildInstances(),
+      builderParams: buildParams(),
+    });
+
+    expect(result.mode).toBe('PERSONALIZED_PLAN');
+  });
+
+  it('returns PERSONALIZED_PLAN when source is not a template', () => {
+    const sourceSet: ExerciseSet = {
+      ...buildSourceSet(),
+      kind: 'PATIENT_PLAN',
+      isTemplate: false,
+    };
+
+    const result = decideAssignmentPlanMode({
+      sourceSet,
+      isCreatingNewSet: false,
+      planName: 'Szablon kregoslup',
+      saveAsTemplate: false,
+      builderInstances: buildInstances(),
+      builderParams: buildParams(),
+    });
+
+    expect(result.mode).toBe('PERSONALIZED_PLAN');
+  });
+
+  it('returns PERSONALIZED_PLAN when builder has added/removed exercise', () => {
+    const result = decideAssignmentPlanMode({
+      sourceSet: buildSourceSet(),
+      isCreatingNewSet: false,
+      planName: 'Szablon kregoslup',
+      saveAsTemplate: false,
+      builderInstances: [{ instanceId: 'existing-m1', exerciseId: 'e1' }],
+      builderParams: buildParams(),
+    });
+
+    expect(result.mode).toBe('PERSONALIZED_PLAN');
+  });
+
+  it('returns PERSONALIZED_PLAN for unsupported override fields (exerciseSide/preparationTime)', () => {
+    const result = decideAssignmentPlanMode({
+      sourceSet: buildSourceSet(),
+      isCreatingNewSet: false,
+      planName: 'Szablon kregoslup',
+      saveAsTemplate: false,
+      builderInstances: buildInstances(),
+      builderParams: buildParams({ 'existing-m1': { exerciseSide: 'left', preparationTime: 10 } }),
     });
 
     expect(result.mode).toBe('PERSONALIZED_PLAN');

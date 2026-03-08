@@ -727,7 +727,7 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
                 Dla fizjoterapeuty
               </TabsTrigger>
               <TabsTrigger value="audio" className="text-xs sm:text-sm" data-testid="exercise-detail-tab-audio">
-                Audio cue
+                Polecenia Audio
               </TabsTrigger>
               <TabsTrigger value="notes" className="text-xs sm:text-sm" data-testid="exercise-detail-tab-notes">
                 Notatki

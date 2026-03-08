@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { useQuery, useMutation } from '@apollo/client/react';
+import { useRouter } from 'next/navigation';
 import { Loader2, ArrowLeft, ArrowRight, Users, Calendar, Pencil, Sparkles, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { addDays, differenceInDays, format } from 'date-fns';
@@ -73,6 +74,7 @@ interface SuccessDialogData {
 // Wrapper component that handles dialog state - content remounts on each open
 export function AssignmentWizard(props: AssignmentWizardProps) {
   const { open, onOpenChange, therapistId, organizationId } = props;
+  const router = useRouter();
   const [showCloseConfirm, setShowCloseConfirm] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
 
@@ -97,12 +99,26 @@ export function AssignmentWizard(props: AssignmentWizardProps) {
   // Callback for AssignmentWizardContent to show success dialog
   const handleAssignmentSuccess = useCallback(
     (data: SuccessDialogData) => {
-      setSuccessData(data);
-      setShowSuccessDialog(true);
       // Close the wizard dialog
       onOpenChange(false);
+
+      if (data.assignmentMode === 'PERSONALIZED_PLAN') {
+        setShowSuccessDialog(false);
+        setSuccessData(null);
+        toast.success('Plan spersonalizowany został utworzony i przypisany');
+        const detailQuery = new URLSearchParams({
+          from: 'patient-plans',
+          filter: 'patient-plans',
+          highlight: data.exerciseSet.id,
+        });
+        router.push(`/exercise-sets/${data.exerciseSet.id}?${detailQuery.toString()}`);
+        return;
+      }
+
+      setSuccessData(data);
+      setShowSuccessDialog(true);
     },
-    [onOpenChange]
+    [onOpenChange, router]
   );
 
   // Reset when dialog opens
@@ -732,6 +748,19 @@ function AssignmentWizardContent({
     refetchSetAssignments,
   ]);
 
+  const assignmentPlanDecision = useMemo(
+    () =>
+      decideAssignmentPlanMode({
+        sourceSet: selectedSet,
+        isCreatingNewSet,
+        planName,
+        saveAsTemplate,
+        builderInstances,
+        builderParams,
+      }),
+    [selectedSet, isCreatingNewSet, planName, saveAsTemplate, builderInstances, builderParams]
+  );
+
   // Determine step title and description
   const getStepInfo = () => {
     switch (currentStep) {
@@ -851,19 +880,6 @@ function AssignmentWizardContent({
       );
     }, 0);
   }, [availableExercises, builderInstances, builderParams]);
-
-  const assignmentPlanDecision = useMemo(
-    () =>
-      decideAssignmentPlanMode({
-        sourceSet: selectedSet,
-        isCreatingNewSet,
-        planName,
-        saveAsTemplate,
-        builderInstances,
-        builderParams,
-      }),
-    [selectedSet, isCreatingNewSet, planName, saveAsTemplate, builderInstances, builderParams]
-  );
 
   const buildAddExerciseVariables = useCallback(
     (instance: ExerciseInstance, exerciseSetId: string, order: number) => {

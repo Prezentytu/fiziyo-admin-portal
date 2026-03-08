@@ -204,7 +204,7 @@ export const EXERCISE_FIELD_METADATA: Record<ExerciseFieldKey, ExerciseFieldMeta
   },
   audioCue: {
     key: 'audioCue',
-    label: 'Audio cue',
+    label: 'Polecenia Audio',
     tooltip: 'Krótka komenda głosowa, którą pacjent może usłyszeć podczas ćwiczenia.',
     group: 'content',
     isInlineVisible: true,

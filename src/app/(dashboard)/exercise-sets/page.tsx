@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useQuery, useMutation } from '@apollo/client/react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { useUser } from '@clerk/nextjs';
 import { Plus, FolderKanban, FolderPlus, Search, Sparkles, Filter, X, UserRound } from 'lucide-react';
 import { toast } from 'sonner';
@@ -40,18 +40,51 @@ import {
 
 type FilterType = 'all-templates' | 'fiziyo-templates' | 'my-templates' | 'patient-plans';
 
+const VALID_FILTERS: FilterType[] = ['all-templates', 'fiziyo-templates', 'my-templates', 'patient-plans'];
+
+function parseFilterFromUrl(rawFilter: string | null): FilterType {
+  if (!rawFilter) return 'all-templates';
+  return VALID_FILTERS.includes(rawFilter as FilterType) ? (rawFilter as FilterType) : 'all-templates';
+}
+
 export default function ExerciseSetsPage() {
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const { user } = useUser();
   const { currentOrganization } = useOrganization();
   const [searchQuery, setSearchQuery] = useState('');
-  const [filter, setFilter] = useState<FilterType>('all-templates');
+  const [filter, setFilter] = useState<FilterType>(() => parseFilterFromUrl(searchParams.get('filter')));
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [isCreateWizardOpen, setIsCreateWizardOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingSet, setEditingSet] = useState<ExerciseSet | null>(null);
   const [deletingSet, setDeletingSet] = useState<ExerciseSet | null>(null);
   const [assigningSet, setAssigningSet] = useState<ExerciseSet | null>(null);
+  const highlightedSetId = searchParams.get('highlight');
+  useEffect(() => {
+    const nextFilter = parseFilterFromUrl(searchParams.get('filter'));
+    setFilter((previousFilter) => (previousFilter === nextFilter ? previousFilter : nextFilter));
+  }, [searchParams]);
+
+  const applyFilter = useCallback(
+    (nextFilter: FilterType) => {
+      setFilter(nextFilter);
+      const params = new URLSearchParams(searchParams.toString());
+
+      if (nextFilter === 'all-templates') {
+        params.delete('filter');
+      } else {
+        params.set('filter', nextFilter);
+      }
+
+      params.delete('highlight');
+      const queryString = params.toString();
+      router.replace(queryString ? `${pathname}?${queryString}` : pathname, { scroll: false });
+    },
+    [pathname, router, searchParams]
+  );
+
 
   // Get organization ID from context (changes when user switches organization)
   const organizationId = currentOrganization?.organizationId;
@@ -187,7 +220,12 @@ export default function ExerciseSetsPage() {
   }, [searchFilteredSets]);
 
   const handleView = (set: ExerciseSet) => {
-    router.push(`/exercise-sets/${set.id}`);
+    const detailQuery = new URLSearchParams();
+    if (filter === 'patient-plans') {
+      detailQuery.set('from', 'patient-plans');
+    }
+    const queryString = detailQuery.toString();
+    router.push(queryString ? `/exercise-sets/${set.id}?${queryString}` : `/exercise-sets/${set.id}`);
   };
 
   const handleEdit = (set: ExerciseSet) => {
@@ -357,7 +395,7 @@ export default function ExerciseSetsPage() {
         {/* Quick Stats - Clickable filters */}
         <div className="grid grid-cols-2 gap-3 sm:col-span-1 lg:col-span-8 lg:grid-cols-4">
           <button
-            onClick={() => setFilter('all-templates')}
+            onClick={() => applyFilter('all-templates')}
             className={cn(
               'rounded-2xl border p-4 flex flex-col items-center justify-center text-center transition-all duration-200',
               filter === 'all-templates'
@@ -378,7 +416,7 @@ export default function ExerciseSetsPage() {
           </button>
 
           <button
-            onClick={() => setFilter('fiziyo-templates')}
+            onClick={() => applyFilter('fiziyo-templates')}
             className={cn(
               'rounded-2xl border p-4 flex flex-col items-center justify-center text-center transition-all duration-200',
               filter === 'fiziyo-templates'
@@ -399,7 +437,7 @@ export default function ExerciseSetsPage() {
           </button>
 
           <button
-            onClick={() => setFilter('my-templates')}
+            onClick={() => applyFilter('my-templates')}
             className={cn(
               'rounded-2xl border p-4 flex flex-col items-center justify-center text-center transition-all duration-200',
               filter === 'my-templates'
@@ -418,7 +456,7 @@ export default function ExerciseSetsPage() {
           </button>
 
           <button
-            onClick={() => setFilter('patient-plans')}
+            onClick={() => applyFilter('patient-plans')}
             className={cn(
               'rounded-2xl border p-4 flex flex-col items-center justify-center text-center transition-all duration-200',
               filter === 'patient-plans'
@@ -477,7 +515,7 @@ export default function ExerciseSetsPage() {
             </Button>
           )}
           {filter !== 'all-templates' && (
-            <Button variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={() => setFilter('all-templates')}>
+            <Button variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={() => applyFilter('all-templates')}>
               Pokaz wszystkie szablony
             </Button>
           )}
@@ -532,6 +570,10 @@ export default function ExerciseSetsPage() {
             <SetCard
               key={set.id}
               set={set}
+              className={cn(
+                highlightedSetId === set.id &&
+                  'ring-2 ring-primary/40 shadow-lg shadow-primary/10 transition-shadow duration-300'
+              )}
               tagsMap={tagsMap}
               onView={handleView}
               onEdit={handleEdit}

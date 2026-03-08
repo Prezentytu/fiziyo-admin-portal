@@ -2,7 +2,7 @@
 
 import { use, useState } from 'react';
 import { useQuery, useMutation } from '@apollo/client/react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useUser } from '@clerk/nextjs';
 import {
   ArrowLeft,
@@ -149,6 +149,7 @@ interface ExerciseSetData {
 export default function SetDetailPage({ params }: SetDetailPageProps) {
   const { id } = use(params);
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { user } = useUser();
   const { currentOrganization, isLoading: orgContextLoading } = useOrganization();
   const [isEditSetFullOpen, setIsEditSetFullOpen] = useState(false);
@@ -199,6 +200,7 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
   );
 
   const exerciseSet = (data as ExerciseSetData | undefined)?.exerciseSetById;
+  const backToListHref = searchParams.get('from') === 'patient-plans' ? '/exercise-sets?filter=patient-plans' : '/exercise-sets';
 
   if (orgContextLoading && !organizationId) {
     return (
@@ -214,7 +216,7 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
         variables: { exerciseSetId: id },
       });
       toast.success('Zestaw został usunięty');
-      router.push('/exercise-sets');
+      router.push(backToListHref);
     } catch (err) {
       console.error('Błąd podczas usuwania:', err);
       toast.error('Nie udało się usunąć zestawu');
@@ -415,7 +417,7 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
           <FolderKanban className="h-8 w-8 text-muted-foreground" />
         </div>
         <p className="text-destructive">{error ? `Błąd: ${error.message}` : 'Nie znaleziono zestawu'}</p>
-        <Button variant="outline" onClick={() => router.push('/exercise-sets')}>
+        <Button variant="outline" onClick={() => router.push(backToListHref)}>
           <ArrowLeft className="mr-2 h-4 w-4" />
           Wróć do listy
         </Button>
@@ -432,7 +434,7 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
       <div className="flex items-center justify-between">
         <Button
           variant="ghost"
-          onClick={() => router.push('/exercise-sets')}
+          onClick={() => router.push(backToListHref)}
           className="gap-2"
           data-testid="set-detail-back-btn"
         >

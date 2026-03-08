@@ -281,7 +281,7 @@ export function ExerciseDetailsPanel({
             </div>
 
             <div className="space-y-1">
-              <Label className="text-xs text-muted-foreground">Podpowiedź głosowa (audio cue)</Label>
+              <Label className="text-xs text-muted-foreground">Polecenia Audio</Label>
               <InlineEditField
                 value={exercise.audioCue || ''}
                 onCommit={handleFieldCommit('audioCue')}
