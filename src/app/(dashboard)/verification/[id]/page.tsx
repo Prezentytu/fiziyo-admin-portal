@@ -3,6 +3,7 @@
 import { use, useState, useCallback, useEffect, useMemo } from 'react';
 import { useQuery, useMutation } from '@apollo/client/react';
 import { useRouter } from 'next/navigation';
+import { useUser } from '@clerk/nextjs';
 import { ArrowLeft, FileText } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -21,6 +22,7 @@ import { useExerciseValidation } from '@/features/verification/PublishGuardrails
 
 import { useSystemRole } from '@/hooks/useSystemRole';
 import { useVerificationHotkeys } from '@/hooks/useVerificationHotkeys';
+import { getExerciseReports, resolveExerciseReports } from '@/services/exerciseReportService';
 
 import { GET_EXERCISE_BY_ID_QUERY } from '@/graphql/queries/exercises.queries';
 import { GET_PENDING_EXERCISES_QUERY, GET_VERIFICATION_STATS_QUERY } from '@/graphql/queries/adminExercises.queries';
@@ -39,6 +41,7 @@ import type {
   GetVerificationStatsResponse,
   ExerciseRelationTarget,
 } from '@/graphql/types/adminExercise.types';
+import type { ExerciseReport } from '@/types/exercise-report.types';
 
 interface VerificationDetailPageProps {
   params: Promise<{ id: string }>;
@@ -58,6 +61,7 @@ interface VerificationDetailPageProps {
 export default function VerificationDetailPage({ params }: VerificationDetailPageProps) {
   const { id } = use(params);
   const router = useRouter();
+  const { user } = useUser();
   const { canReviewExercises, isLoading: roleLoading } = useSystemRole();
 
   // ============================================
@@ -113,6 +117,7 @@ export default function VerificationDetailPage({ params }: VerificationDetailPag
 
   // Missing fields state (from new validation layer)
   const [missingFields, setMissingFields] = useState<string[]>([]);
+  const [openReports, setOpenReports] = useState<ExerciseReport[]>([]);
 
   // ============================================
   // QUERIES
@@ -144,11 +149,33 @@ export default function VerificationDetailPage({ params }: VerificationDetailPag
   // Query for stats
   const { data: statsData } = useQuery<GetVerificationStatsResponse>(GET_VERIFICATION_STATS_QUERY);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadReports = async () => {
+      const reports = await getExerciseReports({ exerciseId: id, status: 'OPEN' });
+      if (!cancelled) {
+        setOpenReports(reports);
+      }
+    };
+
+    loadReports();
+    return () => {
+      cancelled = true;
+    };
+  }, [id]);
+
   // ============================================
   // COMPUTED VALUES
   // ============================================
 
   const exercise = data?.exerciseById as unknown as AdminExercise | null;
+  const latestReport = useMemo(() => {
+    if (openReports.length === 0) {
+      return null;
+    }
+    return [...openReports].sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0];
+  }, [openReports]);
 
   // Progress tracking
   const pendingExercises = pendingData?.pendingReviewExercises || [];
@@ -296,6 +323,13 @@ export default function VerificationDetailPage({ params }: VerificationDetailPag
           variables: { exerciseId: id, reviewNotes: notes },
         });
         toast.success('Ćwiczenie zostało zatwierdzone i opublikowane!');
+        if (user?.id) {
+          await resolveExerciseReports({
+            exerciseId: id,
+            resolvedByUserId: user.id,
+            resolutionNote: notes || 'Resolved during approve flow',
+          }).catch(() => undefined);
+        }
         setIsApproveDialogOpen(false);
 
         // Auto-advance to next exercise or go back to list
@@ -312,7 +346,7 @@ export default function VerificationDetailPage({ params }: VerificationDetailPag
         setIsTransitioning(false); // Unlock on error
       }
     },
-    [approveExercise, id, router, getNextExerciseId]
+    [approveExercise, id, router, getNextExerciseId, user?.id]
   );
 
   // Approve & Next (with checkbox validation)
@@ -336,6 +370,13 @@ export default function VerificationDetailPage({ params }: VerificationDetailPag
           variables: { exerciseId: id, rejectionReason: reason, notes: notesText },
         });
         toast.success('Ćwiczenie zostało odrzucone z uwagami');
+        if (user?.id) {
+          await resolveExerciseReports({
+            exerciseId: id,
+            resolvedByUserId: user.id,
+            resolutionNote: notesText,
+          }).catch(() => undefined);
+        }
         setIsRejectDialogOpen(false);
 
         // Auto-advance to next exercise or go back to list
@@ -350,7 +391,7 @@ export default function VerificationDetailPage({ params }: VerificationDetailPag
         toast.error('Nie udało się odrzucić ćwiczenia');
       }
     },
-    [rejectExercise, id, router, getNextExerciseId]
+    [rejectExercise, id, router, getNextExerciseId, user?.id]
   );
 
   // Skip handler
@@ -565,6 +606,18 @@ export default function VerificationDetailPage({ params }: VerificationDetailPag
             isApproving={approving || isTransitioning}
             isRejecting={rejecting}
             remainingCount={remainingCount}
+            reportContext={
+              latestReport
+                ? {
+                    count: openReports.length,
+                    reasonCategory: latestReport.reasonCategory,
+                    description: latestReport.description,
+                    reporterName: latestReport.reportedBy.name,
+                    createdAt: latestReport.createdAt,
+                    routingTarget: latestReport.routingTarget,
+                  }
+                : undefined
+            }
             className="flex-1"
           />
         </div>

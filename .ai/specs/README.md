@@ -44,15 +44,16 @@ Każda specyfikacja powinna mieć sekcję Changelog na końcu:
 
 ## Indeks specyfikacji
 
-| Nr  | Tytuł                                                               | Opis                                            | Status  |
-| --- | ------------------------------------------------------------------- | ----------------------------------------------- | ------- |
-| 001 | [Assignment Wizard](SPEC-001-2026-02-04-assignment-wizard.md)       | Wizard przypisywania zestawów ćwiczeń pacjentom | Aktywny |
-| 002 | [Billing Widget](SPEC-002-2026-02-04-billing-widget.md)             | Widget rozliczeniowy Pay-as-you-go              | Aktywny |
-| 003 | [Exercises Module](SPEC-003-2026-02-16-exercises-module.md)         | Ćwiczenia — formularz, lista, filtrowanie       | Aktywny |
-| 004 | [Exercise Sets Module](SPEC-004-2026-02-16-exercise-sets-module.md) | Zestawy ćwiczeń                                 | Aktywny |
-| 005 | [Patients Module](SPEC-005-2026-02-16-patients-module.md)           | Pacjenci — lista, profil, przypisania           | Aktywny |
-| 006 | [Billing Details](SPEC-006-2026-03-04-billing-details.md)           | Dane firmy do fakturowania i rozliczeń          | Aktywny |
-| 007 | [Template vs Plan](SPEC-007-2026-03-07-template-vs-plan.md)         | Rozdzielenie szablonów i planów pacjenta        | Aktywny |
+| Nr  | Tytuł                                                                                         | Opis                                            | Status  |
+| --- | --------------------------------------------------------------------------------------------- | ----------------------------------------------- | ------- |
+| 001 | [Assignment Wizard](SPEC-001-2026-02-04-assignment-wizard.md)                                 | Wizard przypisywania zestawów ćwiczeń pacjentom | Aktywny |
+| 002 | [Billing Widget](SPEC-002-2026-02-04-billing-widget.md)                                       | Widget rozliczeniowy Pay-as-you-go              | Aktywny |
+| 003 | [Exercises Module](SPEC-003-2026-02-16-exercises-module.md)                                   | Ćwiczenia — formularz, lista, filtrowanie       | Aktywny |
+| 004 | [Exercise Sets Module](SPEC-004-2026-02-16-exercise-sets-module.md)                           | Zestawy ćwiczeń                                 | Aktywny |
+| 005 | [Patients Module](SPEC-005-2026-02-16-patients-module.md)                                     | Pacjenci — lista, profil, przypisania           | Aktywny |
+| 006 | [Billing Details](SPEC-006-2026-03-04-billing-details.md)                                     | Dane firmy do fakturowania i rozliczeń          | Aktywny |
+| 007 | [Template vs Plan](SPEC-007-2026-03-07-template-vs-plan.md)                                   | Rozdzielenie szablonów i planów pacjenta        | Aktywny |
+| 008 | [Exercise Report Verification Flow](SPEC-008-2026-03-08-exercise-report-verification-flow.md) | Zgłaszanie ćwiczeń do kolejki verification      | Aktywny |
 
 ## Planowane specyfikacje
 
@@ -64,9 +65,9 @@ Tworzone stopniowo, przy okazji pracy nad danym modułem:
 | ~~004~~ | ~~Exercise Sets Module~~ | Przeniesione do aktywnych |
 | ~~005~~ | ~~Patients Module~~      | Przeniesione do aktywnych |
 | ~~006~~ | ~~Organization Module~~  | Przeniesione do aktywnych |
-| 008     | Chat/AI Module           | Chat AI, asystent         |
-| 009     | Import Module            | Import dokumentów         |
-| 010     | Settings Module          | Ustawienia użytkownika    |
+| 009     | Chat/AI Module           | Chat AI, asystent         |
+| 010     | Import Module            | Import dokumentów         |
+| 011     | Settings Module          | Ustawienia użytkownika    |
 
 ## Dla AI Agentów
 

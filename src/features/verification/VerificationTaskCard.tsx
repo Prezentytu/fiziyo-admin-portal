@@ -3,7 +3,7 @@
 import { useState, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Clock, User, AlertCircle, ChevronRight, Undo2, Play, Building2 } from 'lucide-react';
+import { Clock, User, AlertCircle, ChevronRight, Undo2, Play, Building2, Flag } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -97,6 +97,7 @@ export function VerificationTaskCard({ exercise, className, onUnpublish, isUnpub
   const statusBadge = getStatusBadge(exercise.status);
   const qualityIndicators = getQualityIndicators(exercise);
   const hasWarnings = qualityIndicators.some((i) => i.type === 'warning');
+  const hasOpenReport = Boolean(exercise.hasOpenReport);
 
   const handleUnpublish = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -210,7 +211,19 @@ export function VerificationTaskCard({ exercise, className, onUnpublish, isUnpub
 
             {/* Status badge overlay */}
             <div className="absolute top-3 left-3">
-              <Badge className={cn('border', statusBadge.className)}>{statusBadge.label}</Badge>
+              <div className="flex items-center gap-2">
+                <Badge className={cn('border', statusBadge.className)}>{statusBadge.label}</Badge>
+                {hasOpenReport && (
+                  <Badge
+                    variant="outline"
+                    className="border-amber-500/30 bg-amber-500/15 text-amber-500"
+                    data-testid={`verification-card-${exercise.id}-reported-badge`}
+                  >
+                    <Flag className="mr-1 h-3 w-3" />
+                    Reported ({exercise.openReportCount ?? 1})
+                  </Badge>
+                )}
+              </div>
             </div>
 
             {/* Quality warnings overlay */}
@@ -279,6 +292,14 @@ export function VerificationTaskCard({ exercise, className, onUnpublish, isUnpub
                       {/* TODO: Replace with organization.name when backend provides it */}
                       Org: {exercise.organizationId.slice(0, 8)}...
                     </span>
+                  </div>
+                )}
+                {exercise.latestReport && (
+                  <div
+                    className="rounded-md border border-amber-500/20 bg-amber-500/5 px-2 py-1 text-[10px] text-amber-600"
+                    data-testid={`verification-card-${exercise.id}-report-context`}
+                  >
+                    {exercise.latestReport.reasonCategory}: {exercise.latestReport.description.slice(0, 72)}
                   </div>
                 )}
               </div>

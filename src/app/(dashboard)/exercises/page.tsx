@@ -16,6 +16,7 @@ import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { ExerciseCard, Exercise } from '@/features/exercises/ExerciseCard';
 import { ExerciseDialog } from '@/features/exercises/ExerciseDialog';
 import { SubmitToGlobalDialog } from '@/features/exercises/SubmitToGlobalDialog';
+import { ReportExerciseDialog } from '@/features/exercises/ReportExerciseDialog';
 import { ExerciseBuilderSidebar } from '@/components/exercise-builder/ExerciseBuilderSidebar';
 import { ExerciseBuilderFAB } from '@/components/exercise-builder/ExerciseBuilderFAB';
 import { cn } from '@/lib/utils';
@@ -46,6 +47,7 @@ export default function ExercisesPage() {
   const [editingExercise, setEditingExercise] = useState<Exercise | null>(null);
   const [deletingExercise, setDeletingExercise] = useState<Exercise | null>(null);
   const [submitToGlobalExercise, setSubmitToGlobalExercise] = useState<Exercise | null>(null);
+  const [reportExercise, setReportExercise] = useState<Exercise | null>(null);
 
   // Get organization ID from context (changes when user switches organization)
   const organizationId = currentOrganization?.organizationId;
@@ -442,6 +444,7 @@ export default function ExercisesPage() {
                   onDelete={(e) => setDeletingExercise(e)}
                   onAddToSet={() => {}}
                   onSubmitToGlobal={(e) => setSubmitToGlobalExercise(e)}
+                  onReportIssue={(e) => setReportExercise(e)}
                   isInBuilder={isInBuilder(exercise.id)}
                   onToggleBuilder={handleToggleBuilder}
                 />
@@ -459,6 +462,7 @@ export default function ExercisesPage() {
                   onDelete={(e) => setDeletingExercise(e)}
                   onAddToSet={() => {}}
                   onSubmitToGlobal={(e) => setSubmitToGlobalExercise(e)}
+                  onReportIssue={(e) => setReportExercise(e)}
                   isInBuilder={isInBuilder(exercise.id)}
                   onToggleBuilder={handleToggleBuilder}
                 />
@@ -495,6 +499,17 @@ export default function ExercisesPage() {
           isLoading={submittingToGlobal}
         />
       )}
+
+      <ReportExerciseDialog
+        open={!!reportExercise}
+        onOpenChange={(nextOpen) => {
+          if (!nextOpen) {
+            setReportExercise(null);
+          }
+        }}
+        exercise={reportExercise}
+        organizationId={organizationId}
+      />
 
       {/* Delete Confirmation */}
       <ConfirmDialog

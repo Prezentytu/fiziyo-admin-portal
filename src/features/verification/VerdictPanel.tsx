@@ -105,6 +105,15 @@ interface VerdictPanelProps {
   remainingCount?: number;
   /** Additional CSS classes */
   className?: string;
+  /** Optional context from therapist reports */
+  reportContext?: {
+    count: number;
+    reasonCategory: string;
+    description: string;
+    reporterName?: string;
+    createdAt: string;
+    routingTarget: 'PENDING_REVIEW' | 'UPDATE_PENDING';
+  };
 }
 
 /**
@@ -135,6 +144,7 @@ export function VerdictPanel({
   isUnpublishing = false,
   remainingCount = 0,
   className,
+  reportContext,
 }: VerdictPanelProps) {
   const anyLoading = isApproving || isRejecting || isUnpublishing;
 
@@ -274,6 +284,21 @@ export function VerdictPanel({
 
         {/* Comment for Author */}
         <div className="p-4 flex-1 overflow-y-auto">
+          {reportContext && (
+            <div
+              className="mb-3 rounded-lg border border-amber-500/25 bg-amber-500/10 p-2.5"
+              data-testid="verification-report-context"
+            >
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-amber-500">
+                Reported ({reportContext.count})
+              </p>
+              <p className="mt-1 text-xs text-amber-300">{reportContext.reasonCategory}</p>
+              <p className="mt-1 text-xs text-amber-200/90">{reportContext.description}</p>
+              <p className="mt-1 text-[10px] text-amber-300/80">
+                {reportContext.reporterName || 'Terapeuta'} • {reportContext.routingTarget}
+              </p>
+            </div>
+          )}
           <Label
             htmlFor="author-comment"
             className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2 flex items-center gap-1.5"

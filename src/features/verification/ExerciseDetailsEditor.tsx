@@ -274,7 +274,7 @@ export function ExerciseDetailsEditor({
             </div>
 
             <div className="space-y-1">
-              <Label className="text-xs">Polecenia Audio</Label>
+              <Label className="text-xs">Polecenia audio</Label>
               <Input
                 value={audioCue}
                 onChange={(e) => onAudioCueChange(e.target.value)}

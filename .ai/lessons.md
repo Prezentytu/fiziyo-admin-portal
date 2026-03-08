@@ -14,6 +14,14 @@ Dziennik wniosków z pracy AI agentów. Po każdej korekcie dodaj nowy wpis.
 
 ## Wpisy
 
+### 2026-03-08 - Report ćwiczenia musi być osobnym bytem od review notes
+
+- **Kategoria**: `GraphQL`
+- **Problem**: Zgłoszenia terapeutów były obsługiwane kanałem pomocniczym (Discord) i łatwo mieszały się semantycznie z `adminReviewNotes`, co utrudniało spięcie z kolejką verification.
+- **Przyczyna**: Brak dedykowanego modelu `ExerciseReport` i brak jawnego routingu `Published -> UpdatePending`.
+- **Rozwiązanie**: Wprowadzono addytywny model reportu, osobny kontekst reportowy w verification oraz dedykowany routing helper testowany jednostkowo.
+- **Reguła**: Feedback od użytkownika i notatki recenzenta to dwa różne strumienie danych; przechowuj je oddzielnie i łącz dopiero na warstwie widoku.
+
 ### 2026-03-07 - Hybrid assignment zapobiega fałszywym zerom na szablonach
 
 - **Kategoria**: `UI/UX`

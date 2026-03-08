@@ -190,7 +190,15 @@ export interface Exercise {
   videoUrl?: string;
   // Status i widoczność
   scope?: 'PERSONAL' | 'ORGANIZATION' | 'GLOBAL';
-  status?: 'DRAFT' | 'PENDING_REVIEW' | 'CHANGES_REQUESTED' | 'APPROVED' | 'PUBLISHED' | 'REJECTED';
+  status?:
+    | 'DRAFT'
+    | 'PENDING_REVIEW'
+    | 'CHANGES_REQUESTED'
+    | 'APPROVED'
+    | 'PUBLISHED'
+    | 'REJECTED'
+    | 'ARCHIVED_GLOBAL'
+    | 'UPDATE_PENDING';
   isActive: boolean;
   isPublicTemplate?: boolean;
   isSystem?: boolean;

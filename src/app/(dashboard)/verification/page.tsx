@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useQuery, useMutation } from '@apollo/client/react';
 import { useUser } from '@clerk/nextjs';
 import { ShieldCheck, Search, RefreshCw, LayoutGrid, List, Clock, User, ChevronRight } from 'lucide-react';
@@ -15,6 +15,7 @@ import { VerificationTaskCard } from '@/features/verification/VerificationTaskCa
 import { ReviewerAchievements } from '@/features/verification/ReviewerAchievements';
 import { VerificationIntro } from '@/features/verification/VerificationIntro';
 import { useSystemRole } from '@/hooks/useSystemRole';
+import { getExerciseReports } from '@/services/exerciseReportService';
 
 import { GET_USER_BY_CLERK_ID_QUERY } from '@/graphql/queries/users.queries';
 import {
@@ -44,6 +45,7 @@ import type {
   UnpublishExerciseResponse,
   AdminExercise,
 } from '@/graphql/types/adminExercise.types';
+import type { ExerciseReport } from '@/types/exercise-report.types';
 
 // Helper function
 function formatRelativeTime(dateString?: string): string {
@@ -130,10 +132,24 @@ function VerificationTaskRow({
               </span>
             )}
           </div>
+          {exercise.latestReport && (
+            <p className="mt-1 text-[11px] text-amber-600 line-clamp-1" data-testid={`verification-row-${exercise.id}-report-context`}>
+              {exercise.latestReport.reasonCategory}: {exercise.latestReport.description}
+            </p>
+          )}
         </div>
 
         {/* Actions */}
         <div className="flex items-center gap-2 shrink-0">
+          {exercise.hasOpenReport && (
+            <Badge
+              variant="outline"
+              className="text-[10px] border-amber-500/30 bg-amber-500/10 text-amber-600"
+              data-testid={`verification-row-${exercise.id}-reported-badge`}
+            >
+              Reported ({exercise.openReportCount ?? 1})
+            </Badge>
+          )}
           {onUnpublish && (
             <Button
               variant="ghost"
@@ -178,9 +194,13 @@ export default function VerificationPage() {
   const { user: clerkUser } = useUser();
   const { canReviewExercises, isLoading: roleLoading } = useSystemRole();
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeFilter, setActiveFilter] = useState<'pending' | 'changes' | 'published' | 'archived'>('pending');
+  const [activeFilter, setActiveFilter] = useState<'pending' | 'changes' | 'published' | 'archived' | 'reported'>(
+    'pending'
+  );
   const [scanResult, setScanResult] = useState<RepositoryScanResult | null>(null);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [openReports, setOpenReports] = useState<ExerciseReport[]>([]);
+  const [reportsLoading, setReportsLoading] = useState(false);
 
   // Get user data
   const { data: userData } = useQuery<UserByClerkIdResponse>(GET_USER_BY_CLERK_ID_QUERY, {
@@ -206,7 +226,7 @@ export default function VerificationPage() {
     loading: pendingLoading,
     refetch: refetchPending,
   } = useQuery<GetPendingReviewExercisesResponse>(GET_PENDING_EXERCISES_QUERY, {
-    skip: !canReviewExercises || activeFilter !== 'pending',
+    skip: !canReviewExercises || (activeFilter !== 'pending' && activeFilter !== 'reported'),
   });
 
   // Get exercises with changes requested
@@ -215,7 +235,7 @@ export default function VerificationPage() {
     loading: changesLoading,
     refetch: refetchChanges,
   } = useQuery<GetChangesRequestedExercisesResponse>(GET_CHANGES_REQUESTED_EXERCISES_QUERY, {
-    skip: !canReviewExercises || activeFilter !== 'changes',
+    skip: !canReviewExercises || (activeFilter !== 'changes' && activeFilter !== 'reported'),
   });
 
   // Get published exercises
@@ -224,7 +244,7 @@ export default function VerificationPage() {
     loading: publishedLoading,
     refetch: refetchPublished,
   } = useQuery<GetPublishedExercisesResponse>(GET_PUBLISHED_EXERCISES_QUERY, {
-    skip: !canReviewExercises || activeFilter !== 'published',
+    skip: !canReviewExercises || (activeFilter !== 'published' && activeFilter !== 'reported'),
   });
 
   // Get archived exercises (withdrawn from global)
@@ -233,8 +253,31 @@ export default function VerificationPage() {
     loading: archivedLoading,
     refetch: refetchArchived,
   } = useQuery<GetArchivedExercisesResponse>(GET_ARCHIVED_EXERCISES_QUERY, {
-    skip: !canReviewExercises || activeFilter !== 'archived',
+    skip: !canReviewExercises || (activeFilter !== 'archived' && activeFilter !== 'reported'),
   });
+
+  useEffect(() => {
+    if (!canReviewExercises) {
+      setOpenReports([]);
+      return;
+    }
+
+    let cancelled = false;
+
+    const loadReports = async () => {
+      setReportsLoading(true);
+      const reports = await getExerciseReports({ status: 'OPEN' });
+      if (!cancelled) {
+        setOpenReports(reports);
+        setReportsLoading(false);
+      }
+    };
+
+    loadReports();
+    return () => {
+      cancelled = true;
+    };
+  }, [canReviewExercises]);
 
   // Scan repository mutation
   const [scanRepository, { loading: scanning }] = useMutation<{ scanExerciseRepository: RepositoryScanResult }>(
@@ -310,6 +353,18 @@ export default function VerificationPage() {
   };
 
   // Combine and filter exercises based on active filter (cards)
+  const openReportsByExerciseId = useMemo(() => {
+    const grouped = new Map<string, ExerciseReport[]>();
+    for (const report of openReports) {
+      const current = grouped.get(report.exerciseId) || [];
+      current.push(report);
+      grouped.set(report.exerciseId, current);
+    }
+    return grouped;
+  }, [openReports]);
+
+  const reportedCount = openReportsByExerciseId.size;
+
   const exercises = useMemo(() => {
     let list: AdminExercise[] = [];
 
@@ -321,6 +376,58 @@ export default function VerificationPage() {
       list = publishedData?.exercisesByStatus || [];
     } else if (activeFilter === 'archived') {
       list = archivedData?.exercisesByStatus || [];
+    } else if (activeFilter === 'reported') {
+      const allKnownExercises = [
+        ...(pendingData?.pendingReviewExercises || []),
+        ...(changesData?.changesRequestedExercises || []),
+        ...(publishedData?.exercisesByStatus || []),
+        ...(archivedData?.exercisesByStatus || []),
+      ];
+      const byId = new Map<string, AdminExercise>();
+      for (const exercise of allKnownExercises) {
+        byId.set(exercise.id, exercise);
+      }
+
+      const reportedExercises: AdminExercise[] = [];
+      for (const [exerciseId, reports] of openReportsByExerciseId.entries()) {
+        const known = byId.get(exerciseId);
+        const latestReport = [...reports].sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0];
+
+        if (known) {
+          reportedExercises.push({
+            ...known,
+            hasOpenReport: true,
+            openReportCount: reports.length,
+            latestReport: {
+              reasonCategory: latestReport.reasonCategory,
+              description: latestReport.description,
+              reporterName: latestReport.reportedBy.name,
+              createdAt: latestReport.createdAt,
+              routingTarget: latestReport.routingTarget,
+            },
+          });
+          continue;
+        }
+
+        reportedExercises.push({
+          id: exerciseId,
+          name: latestReport.exerciseName,
+          type: 'REPS',
+          isActive: true,
+          status: latestReport.routingTarget === 'UPDATE_PENDING' ? 'PUBLISHED' : 'PENDING_REVIEW',
+          hasOpenReport: true,
+          openReportCount: reports.length,
+          latestReport: {
+            reasonCategory: latestReport.reasonCategory,
+            description: latestReport.description,
+            reporterName: latestReport.reportedBy.name,
+            createdAt: latestReport.createdAt,
+            routingTarget: latestReport.routingTarget,
+          },
+        });
+      }
+
+      list = reportedExercises;
     }
 
     // Deduplikacja po ID - usuwa duplikaty z backendu
@@ -336,19 +443,53 @@ export default function VerificationPage() {
     // Apply search filter
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
-      list = list.filter(
-        (ex) =>
-          ex.name.toLowerCase().includes(query) ||
-          ex.description?.toLowerCase().includes(query) ||
-          ex.createdBy?.fullname?.toLowerCase().includes(query) ||
-          ex.createdBy?.email?.toLowerCase().includes(query)
-      );
+      list = list.filter((exercise) => {
+        return (
+          exercise.name.toLowerCase().includes(query) ||
+          exercise.description?.toLowerCase().includes(query) ||
+          exercise.createdBy?.fullname?.toLowerCase().includes(query) ||
+          exercise.createdBy?.email?.toLowerCase().includes(query) ||
+          exercise.latestReport?.description.toLowerCase().includes(query) ||
+          exercise.latestReport?.reasonCategory.toLowerCase().includes(query)
+        );
+      });
+    }
+
+    if (activeFilter !== 'reported') {
+      list = list.map((exercise) => {
+        const reports = openReportsByExerciseId.get(exercise.id);
+        if (!reports || reports.length === 0) {
+          return exercise;
+        }
+
+        const latestReport = [...reports].sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0];
+        return {
+          ...exercise,
+          hasOpenReport: true,
+          openReportCount: reports.length,
+          latestReport: {
+            reasonCategory: latestReport.reasonCategory,
+            description: latestReport.description,
+            reporterName: latestReport.reportedBy.name,
+            createdAt: latestReport.createdAt,
+            routingTarget: latestReport.routingTarget,
+          },
+        };
+      });
     }
 
     return list;
-  }, [activeFilter, pendingData, changesData, publishedData, archivedData, searchQuery]);
+  }, [
+    activeFilter,
+    pendingData,
+    changesData,
+    publishedData,
+    archivedData,
+    searchQuery,
+    openReportsByExerciseId,
+  ]);
 
-  const isLoading = statsLoading || pendingLoading || changesLoading || publishedLoading || archivedLoading;
+  const isLoading = statsLoading || pendingLoading || changesLoading || publishedLoading || archivedLoading || reportsLoading;
 
   const handleRefresh = () => {
     refetchStats();
@@ -356,6 +497,9 @@ export default function VerificationPage() {
     refetchChanges();
     refetchPublished();
     refetchArchived();
+    getExerciseReports({ status: 'OPEN' }).then((reports) => {
+      setOpenReports(reports);
+    });
   };
 
   // Access denied for non-content managers
@@ -378,7 +522,7 @@ export default function VerificationPage() {
   const archivedCount = stats?.archivedGlobal || 0;
 
   // Check if there are tasks to do (pending or changes) or published/archived to manage
-  const hasTasks = pendingCount + changesCount > 0 || publishedCount > 0 || archivedCount > 0;
+  const hasTasks = pendingCount + changesCount > 0 || publishedCount > 0 || archivedCount > 0 || reportedCount > 0;
 
   // CLEAN VIEW: No tasks to verify - show simplified intro screen
   if (!statsLoading && !hasTasks) {
@@ -425,6 +569,7 @@ export default function VerificationPage() {
         isLoading={statsLoading}
         activeFilter={activeFilter}
         onFilterChange={setActiveFilter}
+        reportedCount={reportedCount}
       />
 
       {/* Search and View Mode */}
@@ -487,6 +632,8 @@ export default function VerificationPage() {
                 ? 'Wszystko zweryfikowane!'
                 : activeFilter === 'changes'
                   ? 'Brak ćwiczeń do poprawy'
+                  : activeFilter === 'reported'
+                    ? 'Brak aktywnych zgłoszeń'
                   : activeFilter === 'archived'
                     ? 'Brak wycofanych ćwiczeń'
                     : 'Brak opublikowanych ćwiczeń'
@@ -498,6 +645,8 @@ export default function VerificationPage() {
                 ? 'Nie ma ćwiczeń oczekujących na weryfikację. Świetna robota!'
                 : activeFilter === 'changes'
                   ? 'Wszystkie ćwiczenia wymagające poprawek zostały zaktualizowane.'
+                  : activeFilter === 'reported'
+                    ? 'Nie ma zgłoszeń oczekujących na obsługę.'
                   : activeFilter === 'archived'
                     ? 'Żadne ćwiczenie nie zostało wycofane z bazy globalnej.'
                     : "Zatwierdź ćwiczenia z karty 'Oczekujące' żeby je opublikować."

@@ -1,18 +1,19 @@
 'use client';
 
-import { Clock, AlertTriangle, FileCheck, Archive } from 'lucide-react';
+import { Clock, AlertTriangle, FileCheck, Archive, Flag } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import type { VerificationStats } from '@/graphql/types/adminExercise.types';
 
-type FilterType = 'pending' | 'changes' | 'published' | 'archived';
+type FilterType = 'pending' | 'changes' | 'published' | 'archived' | 'reported';
 
 interface VerificationStatsCardsProps {
   stats: VerificationStats | null;
   isLoading?: boolean;
   activeFilter: FilterType;
   onFilterChange: (filter: FilterType) => void;
+  reportedCount?: number;
 }
 
 interface StatCardProps {
@@ -87,10 +88,12 @@ export function VerificationStatsCards({
   isLoading,
   activeFilter,
   onFilterChange,
+  reportedCount = 0,
 }: VerificationStatsCardsProps) {
   if (isLoading || !stats) {
     return (
-      <div className="grid gap-3 grid-cols-4">
+      <div className="grid gap-3 grid-cols-5">
+        <StatCardSkeleton />
         <StatCardSkeleton />
         <StatCardSkeleton />
         <StatCardSkeleton />
@@ -100,7 +103,7 @@ export function VerificationStatsCards({
   }
 
   return (
-    <div className="grid gap-3 grid-cols-4">
+    <div className="grid gap-3 grid-cols-5">
       <StatCard
         testId="verification-stats-pending"
         label="Oczekujące"
@@ -136,6 +139,18 @@ export function VerificationStatsCards({
         activeBorderColor="border-primary/40"
         isActive={activeFilter === 'published'}
         onClick={() => onFilterChange('published')}
+      />
+      <StatCard
+        testId="verification-stats-reported"
+        label="Zgłoszone"
+        value={reportedCount}
+        icon={Flag}
+        color="text-amber-500"
+        bgColor="bg-amber-500/20"
+        activeBgColor="bg-amber-500/10"
+        activeBorderColor="border-amber-500/40"
+        isActive={activeFilter === 'reported'}
+        onClick={() => onFilterChange('reported')}
       />
       <StatCard
         testId="verification-stats-archived"

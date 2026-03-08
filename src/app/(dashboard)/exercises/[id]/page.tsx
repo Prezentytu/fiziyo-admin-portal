@@ -27,6 +27,7 @@ import {
   RefreshCw,
   Copy,
   ChevronDown,
+  Flag,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -38,6 +39,7 @@ import { ExerciseDialog } from '@/features/exercises/ExerciseDialog';
 import { AddExerciseToSetsDialog } from '@/features/exercises/AddExerciseToSetsDialog';
 import { SubmitToGlobalDialog } from '@/features/exercises/SubmitToGlobalDialog';
 import { FeedbackBanner } from '@/features/exercises/FeedbackBanner';
+import { ReportExerciseDialog } from '@/features/exercises/ReportExerciseDialog';
 import { ColorBadge } from '@/components/shared/ColorBadge';
 import { ImagePlaceholder } from '@/components/shared/ImagePlaceholder';
 import { ImageLightbox } from '@/components/shared/ImageLightbox';
@@ -91,6 +93,7 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isAddToSetDialogOpen, setIsAddToSetDialogOpen] = useState(false);
   const [isSubmitToGlobalDialogOpen, setIsSubmitToGlobalDialogOpen] = useState(false);
+  const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [isParametersOpen, setIsParametersOpen] = useState(false);
@@ -442,6 +445,14 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
             )}
             <DropdownMenuSeparator />
             <DropdownMenuItem
+              onClick={() => setIsReportDialogOpen(true)}
+              data-testid="exercise-detail-report-btn"
+            >
+              <Flag className="mr-2 h-4 w-4" />
+              Zgłoś do poprawki
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
               onClick={() => setIsDeleteDialogOpen(true)}
               className="text-destructive focus:text-destructive"
               data-testid="exercise-detail-delete-btn"
@@ -550,12 +561,12 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
         <FeedbackBanner adminReviewNotes={exercise.adminReviewNotes} updatedAt={exercise.updatedAt} />
       )}
       {hasMissingCoreInformation && (
-        <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4">
+        <div className="rounded-2xl border border-amber-500/30 bg-amber-50 dark:bg-amber-500/10 p-4">
           <div className="flex items-start gap-3">
             <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-amber-500" />
             <div>
-              <p className="text-sm font-semibold text-amber-200">Brak wszystkich informacji o ćwiczeniu</p>
-              <p className="text-sm text-amber-100/80">
+              <p className="text-sm font-semibold text-foreground">Brak wszystkich informacji o ćwiczeniu</p>
+              <p className="text-sm text-muted-foreground">
                 Uzupełnij opis dla pacjenta, opis kliniczny i media, aby ćwiczenie było kompletne.
               </p>
             </div>
@@ -586,10 +597,26 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
           </div>
         </button>
 
+        <button
+          onClick={() => setIsReportDialogOpen(true)}
+          className="group relative overflow-hidden rounded-2xl border border-amber-500/30 bg-amber-500/10 p-5 text-left transition-all duration-300 hover:shadow-lg hover:shadow-amber-500/20 hover:scale-[1.01] cursor-pointer sm:col-span-1 lg:col-span-4"
+          data-testid="exercise-detail-report-hero-btn"
+        >
+          <div className="relative flex items-center gap-4">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-amber-500/20 text-amber-600 shrink-0 group-hover:scale-110 transition-transform duration-300">
+              <Flag className="h-5 w-5" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <h3 className="text-base font-bold text-foreground">Zgłoś do poprawki</h3>
+              <p className="text-sm text-muted-foreground">Przekaż do weryfikacji</p>
+            </div>
+          </div>
+        </button>
+
         {/* Quick Stats */}
         <div
           className={cn(
-            'grid gap-3 sm:col-span-1 lg:col-span-8',
+            'grid gap-3 sm:col-span-1 lg:col-span-12',
             quickStats.length <= 2 ? 'grid-cols-2' : 'grid-cols-2 sm:grid-cols-4'
           )}
         >
@@ -727,7 +754,7 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
                 Dla fizjoterapeuty
               </TabsTrigger>
               <TabsTrigger value="audio" className="text-xs sm:text-sm" data-testid="exercise-detail-tab-audio">
-                Polecenia Audio
+                Polecenia audio
               </TabsTrigger>
               <TabsTrigger value="notes" className="text-xs sm:text-sm" data-testid="exercise-detail-tab-notes">
                 Notatki
@@ -820,6 +847,13 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
         exercise={exercise}
         onConfirm={handleSubmitToGlobal}
         isLoading={submittingToGlobal}
+      />
+
+      <ReportExerciseDialog
+        open={isReportDialogOpen}
+        onOpenChange={setIsReportDialogOpen}
+        exercise={exercise}
+        organizationId={organizationId}
       />
     </div>
   );

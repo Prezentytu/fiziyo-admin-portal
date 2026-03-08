@@ -1,32 +1,31 @@
+import { randomUUID } from 'crypto';
 import { NextRequest, NextResponse } from 'next/server';
 
-/**
- * API Route do wysyłania raportów o błędach w ćwiczeniach na Discord
- * Dedykowany kanał dla zespołu content do naprawy ćwiczeń
- */
+import { resolveExerciseReportRoutingTarget } from '@/features/exercises/utils/exerciseReportRouting';
+import type { CreateExerciseReportInput, ExerciseReport, ExerciseReportStatus } from '@/types/exercise-report.types';
 
 const DISCORD_WEBHOOK_URL = process.env.DISCORD_EXERCISE_REPORTS_WEBHOOK_URL;
 const ADMIN_BASE_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://admin.fiziyo.com';
 
-interface ExerciseInfo {
+interface LegacyExerciseInfo {
   id: string;
   name: string;
-  exerciseId?: string; // ID ćwiczenia (nie mappingu)
+  exerciseId?: string;
 }
 
-interface PatientInfo {
+interface LegacyPatientInfo {
   id: string;
   name: string;
 }
 
-interface ExerciseReportRequest {
+interface LegacyExerciseReportRequest {
   message: string;
   exerciseSet: {
     id: string;
     name: string;
-    exercises: ExerciseInfo[];
+    exercises: LegacyExerciseInfo[];
   };
-  patients: PatientInfo[];
+  patients: LegacyPatientInfo[];
   reporter: {
     userId: string;
     email: string;
@@ -35,42 +34,59 @@ interface ExerciseReportRequest {
   organizationId: string;
 }
 
+interface ExerciseReportRequest extends CreateExerciseReportInput {
+  type: 'EXERCISE_REPORT';
+}
+
+interface ResolveReportRequest {
+  exerciseId?: string;
+  reportId?: string;
+  resolvedByUserId: string;
+  resolutionNote?: string;
+}
+
+function getReportStore(): ExerciseReport[] {
+  const globalStore = globalThis as typeof globalThis & {
+    __exerciseReportStore?: ExerciseReport[];
+  };
+
+  if (!globalStore.__exerciseReportStore) {
+    globalStore.__exerciseReportStore = [];
+  }
+
+  return globalStore.__exerciseReportStore;
+}
+
+export async function GET(request: NextRequest) {
+  const searchParams = request.nextUrl.searchParams;
+  const exerciseId = searchParams.get('exerciseId');
+  const status = searchParams.get('status') as ExerciseReportStatus | null;
+
+  const reports = getReportStore().filter((report) => {
+    if (exerciseId && report.exerciseId !== exerciseId) {
+      return false;
+    }
+    if (status && report.status !== status) {
+      return false;
+    }
+    return true;
+  });
+
+  return NextResponse.json({
+    success: true,
+    reports,
+  });
+}
+
 export async function POST(request: NextRequest) {
   try {
-    const body: ExerciseReportRequest = await request.json();
+    const body = (await request.json()) as LegacyExerciseReportRequest | ExerciseReportRequest;
 
-    if (!body.message?.trim()) {
-      return NextResponse.json({ success: false, message: 'Treść zgłoszenia jest wymagana' }, { status: 400 });
+    if (isExerciseReportRequest(body)) {
+      return handleExerciseReport(body);
     }
 
-    if (!DISCORD_WEBHOOK_URL) {
-      console.error('[API/exercise-reports] No Discord webhook URL configured');
-      return NextResponse.json({ success: false, message: 'Webhook nie jest skonfigurowany' }, { status: 503 });
-    }
-
-    const embed = buildDiscordEmbed(body);
-    const discordPayload = {
-      username: 'FiziYo Exercise Reports',
-      avatar_url: 'https://i.imgur.com/AfFp7pu.png',
-      embeds: [embed],
-    };
-
-    const discordResponse = await fetch(DISCORD_WEBHOOK_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(discordPayload),
-    });
-
-    if (discordResponse.ok) {
-      return NextResponse.json({
-        success: true,
-        message: 'Zgłoszenie wysłane pomyślnie',
-      });
-    }
-
-    const errorText = await discordResponse.text();
-    console.error('[API/exercise-reports] Discord error:', discordResponse.status, errorText);
-    return NextResponse.json({ success: false, message: `Błąd Discord: ${discordResponse.status}` }, { status: 500 });
+    return handleLegacySetReport(body);
   } catch (error) {
     console.error('[API/exercise-reports] Error:', error);
     return NextResponse.json(
@@ -80,58 +96,165 @@ export async function POST(request: NextRequest) {
   }
 }
 
-function buildDiscordEmbed(report: ExerciseReportRequest) {
+export async function PATCH(request: NextRequest) {
+  try {
+    const body = (await request.json()) as ResolveReportRequest;
+    if (!body.resolvedByUserId) {
+      return NextResponse.json({ success: false, error: 'resolvedByUserId jest wymagane' }, { status: 400 });
+    }
+
+    const store = getReportStore();
+    const now = new Date().toISOString();
+    let affectedCount = 0;
+
+    for (const report of store) {
+      const matchesById = body.reportId ? report.id === body.reportId : false;
+      const matchesByExercise = body.exerciseId ? report.exerciseId === body.exerciseId : false;
+      if ((matchesById || matchesByExercise) && report.status === 'OPEN') {
+        report.status = 'RESOLVED';
+        report.resolvedAt = now;
+        report.resolvedByUserId = body.resolvedByUserId;
+        report.resolutionNote = body.resolutionNote;
+        affectedCount += 1;
+      }
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: `Zamknięto ${affectedCount} zgłoszeń`,
+    });
+  } catch (error) {
+    console.error('[API/exercise-reports] PATCH error:', error);
+    return NextResponse.json({ success: false, error: 'Nie udało się zamknąć zgłoszeń' }, { status: 500 });
+  }
+}
+
+async function handleExerciseReport(body: ExerciseReportRequest) {
+  if (!body.description?.trim()) {
+    return NextResponse.json({ success: false, error: 'Treść zgłoszenia jest wymagana' }, { status: 400 });
+  }
+
+  const report: ExerciseReport = {
+    id: randomUUID(),
+    exerciseId: body.exerciseId,
+    exerciseName: body.exerciseName,
+    exerciseScope: body.exerciseScope,
+    exerciseStatus: body.exerciseStatus,
+    organizationId: body.organizationId,
+    reasonCategory: body.reasonCategory,
+    description: body.description.trim(),
+    attachments: body.attachments ?? [],
+    status: 'OPEN',
+    routingTarget: resolveExerciseReportRoutingTarget({
+      status: body.exerciseStatus,
+      scope: body.exerciseScope,
+    }),
+    reportedBy: body.reportedBy,
+    createdAt: new Date().toISOString(),
+  };
+
+  getReportStore().unshift(report);
+  await sendDiscordReportNotification(report);
+
+  return NextResponse.json({
+    success: true,
+    message: 'Zgłoszenie zostało przyjęte do weryfikacji',
+    report,
+  });
+}
+
+async function handleLegacySetReport(body: LegacyExerciseReportRequest) {
+  if (!body.message?.trim()) {
+    return NextResponse.json({ success: false, message: 'Treść zgłoszenia jest wymagana' }, { status: 400 });
+  }
+
+  if (!DISCORD_WEBHOOK_URL) {
+    console.error('[API/exercise-reports] No Discord webhook URL configured');
+    return NextResponse.json({ success: false, message: 'Webhook nie jest skonfigurowany' }, { status: 503 });
+  }
+
+  const embed = buildDiscordEmbedForSetReport(body);
+  const discordPayload = {
+    username: 'FiziYo Exercise Reports',
+    avatar_url: 'https://i.imgur.com/AfFp7pu.png',
+    embeds: [embed],
+  };
+
+  const discordResponse = await fetch(DISCORD_WEBHOOK_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(discordPayload),
+  });
+
+  if (discordResponse.ok) {
+    return NextResponse.json({
+      success: true,
+      message: 'Zgłoszenie wysłane pomyślnie',
+    });
+  }
+
+  const errorText = await discordResponse.text();
+  console.error('[API/exercise-reports] Discord error:', discordResponse.status, errorText);
+  return NextResponse.json({ success: false, message: `Błąd Discord: ${discordResponse.status}` }, { status: 500 });
+}
+
+function isExerciseReportRequest(body: unknown): body is ExerciseReportRequest {
+  if (!body || typeof body !== 'object') {
+    return false;
+  }
+
+  return (body as { type?: string }).type === 'EXERCISE_REPORT';
+}
+
+function buildDiscordEmbedForSetReport(report: LegacyExerciseReportRequest) {
   const setUrl = `${ADMIN_BASE_URL}/exercise-sets/${report.exerciseSet.id}`;
 
-  // Lista ćwiczeń z linkami do edycji
   const exercisesList = report.exerciseSet.exercises
-    .map((ex, i) => {
-      const exerciseUrl = `${ADMIN_BASE_URL}/exercises/${ex.exerciseId || ex.id}`;
-      return `${i + 1}. **${ex.name}**\n   └ ID: \`${ex.exerciseId || ex.id}\` • [Edytuj](${exerciseUrl})`;
+    .map((exercise, index) => {
+      const exerciseUrl = `${ADMIN_BASE_URL}/exercises/${exercise.exerciseId || exercise.id}`;
+      return `${index + 1}. **${exercise.name}**\n   └ ID: \`${exercise.exerciseId || exercise.id}\` • [Edytuj](${exerciseUrl})`;
     })
     .join('\n');
 
-  // Lista pacjentów
-  const patientsList = report.patients.map((p) => `• ${p.name} (\`${p.id}\`)`).join('\n');
-
-  const fields = [
-    {
-      name: '📝 Treść zgłoszenia',
-      value: sanitizeText(report.message),
-      inline: false,
-    },
-    {
-      name: '📋 Zestaw ćwiczeń',
-      value: `**${report.exerciseSet.name}**\nID: \`${report.exerciseSet.id}\`\n[🔗 Otwórz w adminie](${setUrl})`,
-      inline: false,
-    },
-    {
-      name: `🏋️ Ćwiczenia w zestawie (${report.exerciseSet.exercises.length})`,
-      value: exercisesList || 'Brak ćwiczeń',
-      inline: false,
-    },
-    {
-      name: `👤 Pacjenci (${report.patients.length})`,
-      value: patientsList || 'Brak pacjentów',
-      inline: true,
-    },
-    {
-      name: '👨‍⚕️ Zgłaszający',
-      value: `${report.reporter.name || 'Terapeuta'}\n${report.reporter.email}\nUser ID: \`${report.reporter.userId}\``,
-      inline: true,
-    },
-    {
-      name: '🏢 Organizacja',
-      value: `\`${report.organizationId}\``,
-      inline: true,
-    },
-  ];
+  const patientsList = report.patients.map((patient) => `• ${patient.name} (\`${patient.id}\`)`).join('\n');
 
   return {
     title: '🚨 Raport błędu w ćwiczeniach',
-    description: `Terapeuta zgłosił problem z zestawem ćwiczeń.\n\n**Instrukcja obsługi:** Sprawdź ćwiczenia z listy poniżej, napraw błędy (zdjęcie/opis) i oznacz reakcją ✅`,
-    color: 0xff6b35, // Pomarańczowy
-    fields,
+    description:
+      'Terapeuta zgłosił problem z zestawem ćwiczeń.\n\n**Instrukcja obsługi:** Sprawdź ćwiczenia z listy poniżej i oznacz reakcją ✅',
+    color: 0xff6b35,
+    fields: [
+      {
+        name: '📝 Treść zgłoszenia',
+        value: sanitizeText(report.message),
+        inline: false,
+      },
+      {
+        name: '📋 Zestaw ćwiczeń',
+        value: `**${report.exerciseSet.name}**\nID: \`${report.exerciseSet.id}\`\n[🔗 Otwórz w adminie](${setUrl})`,
+        inline: false,
+      },
+      {
+        name: `🏋️ Ćwiczenia w zestawie (${report.exerciseSet.exercises.length})`,
+        value: exercisesList || 'Brak ćwiczeń',
+        inline: false,
+      },
+      {
+        name: `👤 Pacjenci (${report.patients.length})`,
+        value: patientsList || 'Brak pacjentów',
+        inline: true,
+      },
+      {
+        name: '👨‍⚕️ Zgłaszający',
+        value: `${report.reporter.name || 'Terapeuta'}\n${report.reporter.email}\nUser ID: \`${report.reporter.userId}\``,
+        inline: true,
+      },
+      {
+        name: '🏢 Organizacja',
+        value: `\`${report.organizationId}\``,
+        inline: true,
+      },
+    ],
     footer: {
       text: 'FiziYo Exercise Reports • Kliknij linki aby edytować',
     },
@@ -139,8 +262,59 @@ function buildDiscordEmbed(report: ExerciseReportRequest) {
   };
 }
 
+async function sendDiscordReportNotification(report: ExerciseReport): Promise<void> {
+  if (!DISCORD_WEBHOOK_URL) {
+    return;
+  }
+
+  const exerciseUrl = `${ADMIN_BASE_URL}/exercises/${report.exerciseId}`;
+  const payload = {
+    username: 'FiziYo Exercise Reports',
+    avatar_url: 'https://i.imgur.com/AfFp7pu.png',
+    embeds: [
+      {
+        title: '🛠️ Zgłoszenie ćwiczenia do poprawki',
+        color: 0xf59e0b,
+        fields: [
+          {
+            name: 'Ćwiczenie',
+            value: `**${report.exerciseName}**\nID: \`${report.exerciseId}\`\n[🔗 Otwórz ćwiczenie](${exerciseUrl})`,
+            inline: false,
+          },
+          {
+            name: 'Powód',
+            value: report.reasonCategory,
+            inline: true,
+          },
+          {
+            name: 'Routing',
+            value: report.routingTarget,
+            inline: true,
+          },
+          {
+            name: 'Zgłaszający',
+            value: `${report.reportedBy.name || 'Terapeuta'}\n${report.reportedBy.email}`,
+            inline: true,
+          },
+          {
+            name: 'Opis',
+            value: sanitizeText(report.description),
+            inline: false,
+          },
+        ],
+        timestamp: report.createdAt,
+      },
+    ],
+  };
+
+  await fetch(DISCORD_WEBHOOK_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+}
+
 function sanitizeText(text: string): string {
-  if (!text) return 'Brak treści';
   return text
     .replaceAll('<', '&lt;')
     .replaceAll('>', '&gt;')

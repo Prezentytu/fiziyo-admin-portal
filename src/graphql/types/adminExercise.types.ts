@@ -2,6 +2,7 @@
  * Types for Admin Exercise Verification Module (Centrum Weryfikacji)
  * Used by ContentManager and SiteSuperAdmin roles
  */
+import type { ExerciseReportReasonCategory } from '@/types/exercise-report.types';
 
 // ============================================
 // Enums
@@ -17,7 +18,8 @@ export type ContentStatus =
   | 'CHANGES_REQUESTED' // Odrzucone z uwagami
   | 'APPROVED' // Zatwierdzone
   | 'PUBLISHED' // Publiczne
-  | 'ARCHIVED_GLOBAL'; // Wycofane z bazy globalnej (soft delete)
+  | 'ARCHIVED_GLOBAL' // Wycofane z bazy globalnej (soft delete)
+  | 'UPDATE_PENDING'; // Shadow draft dla poprawki published
 
 /**
  * Predefiniowane powody odrzucenia ćwiczenia
@@ -104,6 +106,16 @@ export interface AdminExercise {
     fullname?: string;
     email?: string;
     image?: string;
+  };
+  // Local UI extensions for reported flow (additive-first read model)
+  hasOpenReport?: boolean;
+  openReportCount?: number;
+  latestReport?: {
+    reasonCategory: ExerciseReportReasonCategory;
+    description: string;
+    reporterName?: string;
+    createdAt: string;
+    routingTarget: 'PENDING_REVIEW' | 'UPDATE_PENDING';
   };
 }
 

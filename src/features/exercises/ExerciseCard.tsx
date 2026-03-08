@@ -17,6 +17,7 @@ import {
   Globe,
   AlertCircle,
   Sparkles,
+  Flag,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -59,7 +60,15 @@ export interface Exercise {
   gifUrl?: string;
   createdAt?: string;
   // Status and scope for verification workflow
-  status?: 'DRAFT' | 'PENDING_REVIEW' | 'CHANGES_REQUESTED' | 'APPROVED' | 'PUBLISHED' | 'REJECTED';
+  status?:
+    | 'DRAFT'
+    | 'PENDING_REVIEW'
+    | 'CHANGES_REQUESTED'
+    | 'APPROVED'
+    | 'PUBLISHED'
+    | 'REJECTED'
+    | 'ARCHIVED_GLOBAL'
+    | 'UPDATE_PENDING';
   scope?: 'PERSONAL' | 'ORGANIZATION' | 'GLOBAL';
   adminReviewNotes?: string;
   // Global submission tracking (nowy model weryfikacji)
@@ -96,6 +105,8 @@ interface ExerciseCardProps {
   onAddToSet?: (exercise: Exercise) => void;
   /** Callback to submit exercise to global database for verification */
   onSubmitToGlobal?: (exercise: Exercise) => void;
+  /** Callback to report exercise issue */
+  onReportIssue?: (exercise: Exercise) => void;
   /** Whether this exercise is currently in the builder */
   isInBuilder?: boolean;
   /** Toggle exercise in/out of builder */
@@ -150,6 +161,7 @@ export function ExerciseCard({
   onDelete,
   onAddToSet,
   onSubmitToGlobal,
+  onReportIssue,
   isInBuilder = false,
   onToggleBuilder,
   className,
@@ -190,6 +202,12 @@ export function ExerciseCard({
     },
     [exercise, onToggleBuilder]
   );
+
+  const runMenuAction = useCallback((event: Event | React.SyntheticEvent, action: () => void) => {
+    event.preventDefault();
+    event.stopPropagation();
+    action();
+  }, []);
 
   const rawImageUrl = exercise.thumbnailUrl || exercise.imageUrl || exercise.images?.[0];
   const imageUrl = getMediaUrl(rawImageUrl);
@@ -369,19 +387,19 @@ export function ExerciseCard({
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               {onView && (
-                <DropdownMenuItem onClick={() => onView(exercise)}>
+                <DropdownMenuItem onClick={(event) => runMenuAction(event, () => onView(exercise))}>
                   <Eye className="mr-2 h-4 w-4" />
                   Podgląd
                 </DropdownMenuItem>
               )}
               {onEdit && !isReadOnly && (
-                <DropdownMenuItem onClick={() => onEdit(exercise)}>
+                <DropdownMenuItem onClick={(event) => runMenuAction(event, () => onEdit(exercise))}>
                   <Pencil className="mr-2 h-4 w-4" />
                   Edytuj
                 </DropdownMenuItem>
               )}
               {onAddToSet && (
-                <DropdownMenuItem onClick={() => onAddToSet(exercise)}>
+                <DropdownMenuItem onClick={(event) => runMenuAction(event, () => onAddToSet(exercise))}>
                   <FolderPlus className="mr-2 h-4 w-4" />
                   Dodaj do zestawu
                 </DropdownMenuItem>
@@ -390,13 +408,22 @@ export function ExerciseCard({
                 <>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
-                    onClick={() => onSubmitToGlobal(exercise)}
+                    onClick={(event) => runMenuAction(event, () => onSubmitToGlobal(exercise))}
                     className="text-primary focus:text-primary"
                   >
                     <Rocket className="mr-2 h-4 w-4" />
                     Zgłoś do Bazy Globalnej
                   </DropdownMenuItem>
                 </>
+              )}
+              {onReportIssue && (
+                <DropdownMenuItem
+                  onClick={(event) => runMenuAction(event, () => onReportIssue(exercise))}
+                  data-testid={`exercise-card-${exercise.id}-report-btn`}
+                >
+                  <Flag className="mr-2 h-4 w-4" />
+                  Zgłoś do poprawki
+                </DropdownMenuItem>
               )}
               {isGlobalExercise && (
                 <div className="px-2 py-1.5 text-xs text-violet-600 flex items-center gap-1">
@@ -420,7 +447,7 @@ export function ExerciseCard({
                 <>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
-                    onClick={() => onDelete(exercise)}
+                    onClick={(event) => runMenuAction(event, () => onDelete(exercise))}
                     className="text-destructive focus:text-destructive"
                   >
                     <Trash2 className="mr-2 h-4 w-4" />
@@ -611,13 +638,13 @@ export function ExerciseCard({
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   {onView && (
-                    <DropdownMenuItem onClick={() => onView(exercise)}>
+                    <DropdownMenuItem onClick={(event) => runMenuAction(event, () => onView(exercise))}>
                       <Eye className="mr-2 h-4 w-4" />
                       Podgląd
                     </DropdownMenuItem>
                   )}
                   {onEdit && !isReadOnly && (
-                    <DropdownMenuItem onClick={() => onEdit(exercise)}>
+                    <DropdownMenuItem onClick={(event) => runMenuAction(event, () => onEdit(exercise))}>
                       <Pencil className="mr-2 h-4 w-4" />
                       Edytuj
                     </DropdownMenuItem>
@@ -626,13 +653,22 @@ export function ExerciseCard({
                     <>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem
-                        onClick={() => onSubmitToGlobal(exercise)}
+                        onClick={(event) => runMenuAction(event, () => onSubmitToGlobal(exercise))}
                         className="text-primary focus:text-primary"
                       >
                         <Rocket className="mr-2 h-4 w-4" />
                         Zgłoś do Bazy Globalnej
                       </DropdownMenuItem>
                     </>
+                  )}
+                  {onReportIssue && (
+                    <DropdownMenuItem
+                      onClick={(event) => runMenuAction(event, () => onReportIssue(exercise))}
+                      data-testid={`exercise-card-${exercise.id}-report-btn`}
+                    >
+                      <Flag className="mr-2 h-4 w-4" />
+                      Zgłoś do poprawki
+                    </DropdownMenuItem>
                   )}
                   {isGlobalExercise && (
                     <div className="px-2 py-1.5 text-xs text-violet-600 flex items-center gap-1">
@@ -656,7 +692,7 @@ export function ExerciseCard({
                     <>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem
-                        onClick={() => onDelete(exercise)}
+                        onClick={(event) => runMenuAction(event, () => onDelete(exercise))}
                         className="text-destructive focus:text-destructive"
                       >
                         <Trash2 className="mr-2 h-4 w-4" />
