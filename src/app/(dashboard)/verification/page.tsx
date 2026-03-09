@@ -147,7 +147,7 @@ function VerificationTaskRow({
               className="text-[10px] border-amber-500/30 bg-amber-500/10 text-amber-600"
               data-testid={`verification-row-${exercise.id}-reported-badge`}
             >
-              Reported ({exercise.openReportCount ?? 1})
+              Zgłoszenia ({exercise.openReportCount ?? 1})
             </Badge>
           )}
           {onUnpublish && (

@@ -95,6 +95,16 @@ export const CREATE_EXERCISE_MUTATION = gql`
       tempo
       audioCue
       rangeOfMotion
+      defaultLoad {
+        type
+        value
+        unit
+        text
+      }
+      loadType
+      loadValue
+      loadUnit
+      loadText
       isActive
       createdById
       scope

@@ -157,10 +157,10 @@ export function VerificationStatsCards({
         label="Wycofane"
         value={stats.archivedGlobal || 0}
         icon={Archive}
-        color="text-zinc-500"
-        bgColor="bg-zinc-500/20"
-        activeBgColor="bg-zinc-500/10"
-        activeBorderColor="border-zinc-500/40"
+        color="text-muted-foreground"
+        bgColor="bg-muted"
+        activeBgColor="bg-muted/70"
+        activeBorderColor="border-border"
         isActive={activeFilter === 'archived'}
         onClick={() => onFilterChange('archived')}
       />

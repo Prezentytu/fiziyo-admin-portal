@@ -29,6 +29,16 @@ export const ADMIN_EXERCISE_FRAGMENT = gql`
     notes
     audioCue
     tempo
+    defaultLoad {
+      type
+      value
+      unit
+      text
+    }
+    loadType
+    loadValue
+    loadUnit
+    loadText
     mainTags
     additionalTags
     scope

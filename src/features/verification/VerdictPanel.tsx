@@ -201,8 +201,8 @@ export function VerdictPanel({
     CHANGES_REQUESTED: { label: 'Do poprawy', color: 'bg-orange-500/20 text-orange-500 border-orange-500/30' },
     PUBLISHED: { label: 'Opublikowane', color: 'bg-emerald-500/20 text-emerald-500 border-emerald-500/30' },
     APPROVED: { label: 'Zatwierdzone', color: 'bg-blue-500/20 text-blue-500 border-blue-500/30' },
-    ARCHIVED_GLOBAL: { label: 'Wycofane', color: 'bg-zinc-500/20 text-zinc-400 border-zinc-500/30' },
-    DRAFT: { label: 'Szkic', color: 'bg-zinc-500/20 text-zinc-400 border-zinc-500/30' },
+    ARCHIVED_GLOBAL: { label: 'Wycofane', color: 'bg-muted text-muted-foreground border-border' },
+    DRAFT: { label: 'Szkic', color: 'bg-muted text-muted-foreground border-border' },
   };
 
   const currentStatus = statusConfig[status as keyof typeof statusConfig] || statusConfig.DRAFT;
@@ -210,17 +210,17 @@ export function VerdictPanel({
   return (
     <TooltipProvider>
       <div
-        className={cn('flex flex-col h-full bg-zinc-950/50 border-l border-zinc-800/50', className)}
+        className={cn('flex h-full flex-col border-l border-border/40 bg-card/70', className)}
         data-testid="verdict-panel"
       >
         {/* Header: Status */}
-        <div className="p-4 border-b border-zinc-800/50">
+        <div className="border-b border-border/40 p-4">
           <div className="flex items-center justify-between gap-2 mb-2">
             <Badge variant="outline" className={cn('text-xs font-medium', currentStatus.color)}>
               {currentStatus.label}
             </Badge>
             {waitTime && (
-              <span className="text-xs text-zinc-500 flex items-center gap-1">
+              <span className="flex items-center gap-1 text-xs text-muted-foreground">
                 <Clock className="h-3 w-3" />
                 {waitTime}
               </span>
@@ -234,7 +234,7 @@ export function VerdictPanel({
 
         {/* Safety Checklist (only for non-published) */}
         {!isPublished && (
-          <div className="p-4 border-b border-zinc-800/50">
+          <div className="border-b border-border/40 p-4">
             <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">
               Checklista bezpieczeństwa
             </h4>
@@ -244,7 +244,7 @@ export function VerdictPanel({
                   key={item.id}
                   className={cn(
                     'flex items-center gap-2.5 p-2 rounded-lg cursor-pointer transition-colors',
-                    'hover:bg-zinc-800/50',
+                    'hover:bg-accent/70',
                     item.checked && 'bg-emerald-500/5'
                   )}
                 >
@@ -253,10 +253,10 @@ export function VerdictPanel({
                     checked={item.checked}
                     onCheckedChange={(checked) => handleSafetyChange(item.id, checked === true)}
                     disabled={anyLoading}
-                    className={cn('border-zinc-600', item.checked && 'border-emerald-500 bg-emerald-500')}
+                    className={cn('border-border', item.checked && 'border-emerald-500 bg-emerald-500')}
                     data-testid={`safety-check-${item.id}`}
                   />
-                  <span className={cn('text-zinc-500', item.checked && 'text-emerald-400')}>{item.icon}</span>
+                  <span className={cn('text-muted-foreground', item.checked && 'text-emerald-500')}>{item.icon}</span>
                   <span className={cn('text-sm', item.checked ? 'text-foreground' : 'text-muted-foreground')}>
                     {item.label}
                   </span>
@@ -290,7 +290,7 @@ export function VerdictPanel({
               data-testid="verification-report-context"
             >
               <p className="text-[10px] font-semibold uppercase tracking-wide text-amber-500">
-                Reported ({reportContext.count})
+                Zgłoszone ({reportContext.count})
               </p>
               <p className="mt-1 text-xs text-amber-300">{reportContext.reasonCategory}</p>
               <p className="mt-1 text-xs text-amber-200/90">{reportContext.description}</p>
@@ -318,19 +318,19 @@ export function VerdictPanel({
             disabled={anyLoading}
             className={cn(
               'min-h-[100px] resize-none text-sm',
-              'bg-zinc-900/50 border-zinc-800 focus:border-zinc-700',
-              'placeholder:text-zinc-600'
+              'bg-card/70 border-border/70 focus:border-border',
+              'placeholder:text-muted-foreground/80'
             )}
             data-testid="verdict-comment-textarea"
           />
-          <p className="text-[10px] text-zinc-600 mt-1.5">
+          <p className="mt-1.5 text-[10px] text-muted-foreground">
             {isPublished ? 'Opcjonalne - wyjaśnienie dla autora' : 'Wymagane przy odrzuceniu lub odesłaniu do poprawki'}
           </p>
 
           {/* Quick Reject Chips */}
           {!isPublished && (
             <div className="mt-3">
-              <p className="text-[10px] text-zinc-500 mb-2">Szybkie powody:</p>
+              <p className="mb-2 text-[10px] text-muted-foreground">Szybkie powody:</p>
               <div className="flex flex-wrap gap-1.5">
                 {QUICK_REJECT_REASONS.map((reason) => (
                   <button
@@ -343,7 +343,7 @@ export function VerdictPanel({
                     disabled={anyLoading}
                     className={cn(
                       'px-2 py-1 text-[10px] font-medium rounded-md transition-colors',
-                      'bg-zinc-800/50 text-zinc-400 border border-zinc-700/50',
+                      'border border-border/70 bg-card/70 text-muted-foreground',
                       'hover:bg-amber-500/10 hover:text-amber-400 hover:border-amber-500/30',
                       'disabled:opacity-50 disabled:cursor-not-allowed'
                     )}
@@ -358,7 +358,7 @@ export function VerdictPanel({
         </div>
 
         {/* Action Buttons */}
-        <div className="p-4 border-t border-zinc-800/50 space-y-2.5">
+        <div className="space-y-2.5 border-t border-border/40 p-4">
           {/* Transition state: Show success message during approval */}
           {isApproving ? (
             <div className="flex flex-col items-center justify-center py-4 gap-3">
@@ -366,7 +366,7 @@ export function VerdictPanel({
                 <Loader2 className="h-5 w-5 text-emerald-500 animate-spin" />
               </div>
               <p className="text-sm text-emerald-400 font-medium">Publikuję...</p>
-              {hasMoreExercises && <p className="text-xs text-zinc-500">Przechodzę do następnego</p>}
+              {hasMoreExercises && <p className="text-xs text-muted-foreground">Przechodzę do następnego</p>}
             </div>
           ) : isPublished ? (
             /* Published state: Unpublish button */
@@ -395,8 +395,8 @@ export function VerdictPanel({
                       className={cn(
                         'w-full gap-2 font-semibold',
                         canApprove
-                          ? 'bg-emerald-600 hover:bg-emerald-700 text-white'
-                          : 'bg-zinc-800 text-zinc-500 cursor-not-allowed'
+                          ? 'bg-emerald-600 text-white hover:bg-emerald-700'
+                          : 'cursor-not-allowed bg-muted text-muted-foreground'
                       )}
                       data-testid="verdict-approve-btn"
                     >
@@ -407,7 +407,7 @@ export function VerdictPanel({
                   </span>
                 </TooltipTrigger>
                 {!canApprove && (
-                  <TooltipContent side="top" className="bg-zinc-900 border-zinc-700 max-w-xs">
+                  <TooltipContent side="top" className="max-w-xs border-border bg-popover text-popover-foreground">
                     <p className="text-xs">
                       {!allSafetyChecked ? 'Zaznacz wszystkie punkty checklisty' : 'Uzupełnij brakujące dane'}
                     </p>
@@ -437,7 +437,7 @@ export function VerdictPanel({
                 size="default"
                 onClick={onReject}
                 disabled={anyLoading || !comment.trim()}
-                className="w-full gap-2 text-zinc-500 hover:text-red-400 hover:bg-red-500/10"
+                className="w-full gap-2 text-muted-foreground hover:bg-red-500/10 hover:text-red-500"
                 data-testid="verdict-reject-btn"
               >
                 <XCircle className="h-4 w-4" />
@@ -452,14 +452,14 @@ export function VerdictPanel({
               type="button"
               onClick={onSkip}
               disabled={anyLoading}
-              className="w-full flex items-center justify-center gap-2 py-2 text-xs text-zinc-500 hover:text-zinc-300 transition-colors disabled:opacity-50"
+              className="flex w-full items-center justify-center gap-2 py-2 text-xs text-muted-foreground transition-colors hover:text-foreground disabled:opacity-50"
               data-testid="verdict-skip-btn"
             >
               <span>
-                Pozostało <span className="text-zinc-400 font-medium">{remainingCount}</span>
+                Pozostało do weryfikacji <span className="font-medium text-foreground">{remainingCount}</span>
               </span>
-              <span className="text-zinc-600">•</span>
-              <span className="flex items-center gap-1 text-zinc-400 hover:text-white">
+              <span className="text-muted-foreground">•</span>
+              <span className="flex items-center gap-1 text-muted-foreground hover:text-foreground">
                 Pomiń <SkipForward className="h-3 w-3" />
               </span>
             </button>

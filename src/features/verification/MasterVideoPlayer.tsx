@@ -65,7 +65,7 @@ export function MasterVideoPlayer({ exercise, className }: MasterVideoPlayerProp
   return (
     <TooltipProvider>
       <div
-        className={cn('relative flex flex-col h-full bg-zinc-950', className)}
+        className={cn('relative flex flex-col h-full bg-card', className)}
         onKeyDown={handleKeyDown}
         tabIndex={0}
         data-testid="master-video-player"
@@ -115,8 +115,8 @@ export function MasterVideoPlayer({ exercise, className }: MasterVideoPlayerProp
                 className={cn(
                   'absolute left-2 top-1/2 -translate-y-1/2 z-20',
                   'flex h-10 w-10 items-center justify-center rounded-full',
-                  'bg-black/50 text-white/80 backdrop-blur-sm',
-                  'transition-all hover:bg-black/70 hover:scale-110',
+                  'bg-background/85 text-foreground backdrop-blur-sm border border-border/70',
+                  'transition-all hover:bg-background hover:scale-110',
                   !hasPrev && 'opacity-30 cursor-not-allowed'
                 )}
                 data-testid="master-player-prev-btn"
@@ -129,8 +129,8 @@ export function MasterVideoPlayer({ exercise, className }: MasterVideoPlayerProp
                 className={cn(
                   'absolute right-2 top-1/2 -translate-y-1/2 z-20',
                   'flex h-10 w-10 items-center justify-center rounded-full',
-                  'bg-black/50 text-white/80 backdrop-blur-sm',
-                  'transition-all hover:bg-black/70 hover:scale-110',
+                  'bg-background/85 text-foreground backdrop-blur-sm border border-border/70',
+                  'transition-all hover:bg-background hover:scale-110',
                   !hasNext && 'opacity-30 cursor-not-allowed'
                 )}
                 data-testid="master-player-next-btn"
@@ -147,7 +147,7 @@ export function MasterVideoPlayer({ exercise, className }: MasterVideoPlayerProp
               <TooltipTrigger asChild>
                 <button
                   onClick={() => setLightboxOpen(true)}
-                  className="flex h-9 w-9 items-center justify-center rounded-lg bg-black/50 text-white/80 backdrop-blur-sm hover:bg-black/70 transition-all"
+                  className="flex h-9 w-9 items-center justify-center rounded-lg border border-border/70 bg-background/85 text-foreground backdrop-blur-sm hover:bg-background transition-all"
                   data-testid="master-player-fullscreen-btn"
                 >
                   <Maximize2 className="h-4 w-4" />
@@ -172,7 +172,7 @@ export function MasterVideoPlayer({ exercise, className }: MasterVideoPlayerProp
               </a>
               <button
                 onClick={() => setIsMuted(!isMuted)}
-                className="flex h-9 w-9 items-center justify-center rounded-lg bg-black/50 text-white/80 backdrop-blur-sm hover:bg-black/70 transition-all"
+                className="flex h-9 w-9 items-center justify-center rounded-lg border border-border/70 bg-background/85 text-foreground backdrop-blur-sm hover:bg-background transition-all"
                 data-testid="master-player-mute-btn"
               >
                 {isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
@@ -189,7 +189,7 @@ export function MasterVideoPlayer({ exercise, className }: MasterVideoPlayerProp
 
           {/* Image counter */}
           {allImages.length > 1 && (
-            <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 px-3 py-1 rounded-full bg-black/50 text-white/80 text-xs backdrop-blur-sm">
+            <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 rounded-full border border-border/70 bg-background/85 px-3 py-1 text-xs text-foreground backdrop-blur-sm dark:bg-black/45 dark:text-white/85">
               {selectedImageIndex + 1} / {allImages.length}
             </div>
           )}
@@ -197,7 +197,7 @@ export function MasterVideoPlayer({ exercise, className }: MasterVideoPlayerProp
 
         {/* Thumbnails strip (compact) */}
         {allImages.length > 1 && (
-          <div className="flex-shrink-0 px-3 py-2 bg-zinc-900/50 border-t border-zinc-800">
+          <div className="flex-shrink-0 border-t border-border/40 bg-card/80 px-3 py-2">
             <div className="flex gap-1.5 overflow-x-auto">
               {allImages.map((img, idx) => (
                 <button
@@ -207,7 +207,7 @@ export function MasterVideoPlayer({ exercise, className }: MasterVideoPlayerProp
                     'shrink-0 w-12 h-12 rounded-md overflow-hidden border-2 transition-all',
                     selectedImageIndex === idx
                       ? 'border-primary ring-1 ring-primary/50'
-                      : 'border-transparent opacity-60 hover:opacity-100 hover:border-zinc-600'
+                      : 'border-transparent opacity-60 hover:opacity-100 hover:border-border'
                   )}
                   data-testid={`master-player-thumb-${idx}`}
                 >

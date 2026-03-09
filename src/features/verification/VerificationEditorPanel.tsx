@@ -1,9 +1,23 @@
 'use client';
 
-import { useState, useCallback, useMemo, useEffect } from 'react';
-import { Dumbbell, Gauge, User, Stethoscope, AlertCircle, ChevronDown } from 'lucide-react';
+import { useState, useCallback, useMemo, useEffect, type ComponentType } from 'react';
+import {
+  Dumbbell,
+  Gauge,
+  User,
+  Stethoscope,
+  AlertCircle,
+  ChevronDown,
+  Activity,
+  ArrowLeftRight,
+  Clock,
+  FileText,
+  PauseCircle,
+  Volume2,
+} from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -11,6 +25,16 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { cn } from '@/lib/utils';
 import { ExerciseFieldLabelWithTooltip } from '@/features/exercises/ExerciseFieldLabelWithTooltip';
 import { EXERCISE_FIELD_TOOLTIPS } from '@/features/exercises/exerciseFieldTooltips';
+import {
+  EXERCISE_FIELD_METADATA,
+  type ExerciseFieldIconKey,
+  type ExerciseFieldKey,
+} from '@/features/assignment/exerciseFieldMetadata';
+import {
+  buildDefaultLoadUpdate,
+  resolveLoadPreset,
+  type LoadPresetKey,
+} from '@/features/verification/utils/loadPayload';
 
 // Sub-components
 import { VerificationStickyHeader } from './VerificationStickyHeader';
@@ -46,13 +70,29 @@ const RANGE_OF_MOTION_OPTIONS = [
   { value: 'CONCENTRIC', label: 'Koncentryczny' },
 ];
 
-const LOAD_UNITS = [
-  { value: 'kg', label: 'kg' },
-  { value: 'lb', label: 'lb' },
-  { value: 'band', label: 'Guma' },
+const LOAD_PRESETS = [
+  { value: 'kg', label: 'Ciężar (kg)' },
+  { value: 'lb', label: 'Ciężar (lb)' },
+  { value: 'band', label: 'Guma oporowa' },
   { value: 'bodyweight', label: 'Ciężar ciała' },
   { value: 'rpe', label: 'RPE' },
-];
+] as const;
+
+const FIELD_ICONS: Record<ExerciseFieldIconKey, ComponentType<{ className?: string }>> = {
+  sets: Dumbbell,
+  reps: Activity,
+  time: Clock,
+  pause: PauseCircle,
+  tempo: Gauge,
+  load: Dumbbell,
+  side: ArrowLeftRight,
+  range: Gauge,
+  difficulty: AlertCircle,
+  description: FileText,
+  audio: Volume2,
+  notes: FileText,
+};
+
 
 // ============================================
 // TYPES
@@ -120,7 +160,7 @@ export function VerificationEditorPanel({
   disabled = false,
   className,
   'data-testid': testId,
-}: VerificationEditorPanelProps) {
+}: Readonly<VerificationEditorPanelProps>) {
   // ============================================
   // LOCAL STATE FOR IMMEDIATE FEEDBACK
   // ============================================
@@ -139,9 +179,11 @@ export function VerificationEditorPanel({
   const [localPrepTime, setLocalPrepTime] = useState<number | null>(exercise.preparationTime ?? null);
   const [localExecTime, setLocalExecTime] = useState<number | null>(exercise.defaultExecutionTime ?? null);
   const [localRangeOfMotion, setLocalRangeOfMotion] = useState<string>(exercise.rangeOfMotion || '');
-  const [localLoadValue, setLocalLoadValue] = useState<string>(exercise.loadValue?.toString() || '');
-  const [localLoadUnit, setLocalLoadUnit] = useState<string>(exercise.loadUnit || 'kg');
-  const [localLoadText, setLocalLoadText] = useState<string>(exercise.loadText || '');
+  const [localLoadValue, setLocalLoadValue] = useState<string>(
+    exercise.defaultLoad?.value?.toString() || exercise.loadValue?.toString() || ''
+  );
+  const [localLoadUnit, setLocalLoadUnit] = useState<LoadPresetKey>(resolveLoadPreset(exercise));
+  const [localLoadText, setLocalLoadText] = useState<string>(exercise.defaultLoad?.text || exercise.loadText || '');
 
   // Collapsible state for technical details
   const [isTechnicalOpen, setIsTechnicalOpen] = useState(false);
@@ -172,9 +214,10 @@ export function VerificationEditorPanel({
     setLocalPrepTime(exercise.preparationTime ?? null);
     setLocalExecTime(exercise.defaultExecutionTime ?? null);
     setLocalRangeOfMotion(exercise.rangeOfMotion || '');
-    setLocalLoadValue(exercise.loadValue?.toString() || '');
-    setLocalLoadUnit(exercise.loadUnit || 'kg');
-    setLocalLoadText(exercise.loadText || '');
+    setLocalLoadValue(exercise.defaultLoad?.value?.toString() || exercise.loadValue?.toString() || '');
+    setLocalLoadUnit(resolveLoadPreset(exercise));
+    setLocalLoadText(exercise.defaultLoad?.text || exercise.loadText || '');
+    setTechnicalDetailsModified(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- sync only on exercise switch (id), not on every field update
   }, [exercise.id]);
 
@@ -285,6 +328,14 @@ export function VerificationEditorPanel({
     [onFieldChange]
   );
 
+  const handleLoadCommit = useCallback(
+    async (nextLoadPreset: LoadPresetKey, nextLoadValue: string, nextLoadText: string) => {
+      const defaultLoadUpdate = buildDefaultLoadUpdate(nextLoadPreset, nextLoadValue, nextLoadText);
+      await onFieldChange('defaultLoad', defaultLoadUpdate);
+    },
+    [onFieldChange]
+  );
+
   const handleDescriptionBlur = useCallback(
     async (field: string, value: string) => {
       setIsDescSaving(true);
@@ -304,6 +355,14 @@ export function VerificationEditorPanel({
   // ============================================
 
   const isInvalid = (value: number | null) => value === null || value <= 0;
+  const renderFieldIcon = (fieldKey: ExerciseFieldKey) => {
+    const iconKey = EXERCISE_FIELD_METADATA[fieldKey].iconKey;
+    if (!iconKey) {
+      return null;
+    }
+    const IconComponent = FIELD_ICONS[iconKey];
+    return <IconComponent className="h-3 w-3" />;
+  };
 
   return (
     <TooltipProvider>
@@ -363,6 +422,7 @@ export function VerificationEditorPanel({
               <ExerciseFieldLabelWithTooltip
                 label="Serie"
                 tooltip={EXERCISE_FIELD_TOOLTIPS.sets}
+                icon={renderFieldIcon('sets')}
                 className="justify-center"
                 labelClassName={cn(
                   'text-[9px] uppercase tracking-wider text-center truncate',
@@ -373,9 +433,9 @@ export function VerificationEditorPanel({
               <div
                 className={cn(
                   'relative h-12 rounded-lg transition-all duration-200',
-                  'bg-zinc-900/50 border',
-                  isInvalid(localSets) ? 'border-destructive/50' : 'border-zinc-800',
-                  'hover:border-zinc-700 focus-within:border-primary/50'
+                  'bg-card/70 border',
+                  isInvalid(localSets) ? 'border-destructive/50' : 'border-border/70',
+                  'hover:border-border focus-within:border-primary/50'
                 )}
               >
                 <input
@@ -383,11 +443,13 @@ export function VerificationEditorPanel({
                   min={1}
                   max={20}
                   value={localSets ?? ''}
-                  onChange={(e) => setLocalSets(e.target.value === '' ? null : parseInt(e.target.value, 10))}
+                  onChange={(e) =>
+                    setLocalSets(e.target.value === '' ? null : Number.parseInt(e.target.value, 10))
+                  }
                   onBlur={() => handleNumberBlur('defaultSets', localSets)}
                   disabled={disabled}
                   placeholder="0"
-                  className="w-full h-full bg-transparent text-lg font-bold text-center outline-none text-foreground placeholder:text-zinc-600 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                  className="w-full h-full bg-transparent text-lg font-bold text-center outline-none text-foreground placeholder:text-muted-foreground/80 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                   data-testid="core-metric-sets"
                 />
               </div>
@@ -398,6 +460,7 @@ export function VerificationEditorPanel({
               <ExerciseFieldLabelWithTooltip
                 label="Powtórzenia"
                 tooltip={EXERCISE_FIELD_TOOLTIPS.reps}
+                icon={renderFieldIcon('reps')}
                 className="justify-center"
                 labelClassName="text-[9px] uppercase tracking-wider text-center text-muted-foreground truncate"
                 testId="verification-reps-info"
@@ -405,8 +468,8 @@ export function VerificationEditorPanel({
               <div
                 className={cn(
                   'relative h-12 rounded-lg transition-all duration-200',
-                  'bg-zinc-900/50 border border-zinc-800',
-                  'hover:border-zinc-700 focus-within:border-primary/50',
+                  'bg-card/70 border border-border/70',
+                  'hover:border-border focus-within:border-primary/50',
                   localDuration && !localReps && 'opacity-40'
                 )}
               >
@@ -415,11 +478,13 @@ export function VerificationEditorPanel({
                   min={1}
                   max={100}
                   value={localReps ?? ''}
-                  onChange={(e) => setLocalReps(e.target.value === '' ? null : parseInt(e.target.value, 10))}
+                  onChange={(e) =>
+                    setLocalReps(e.target.value === '' ? null : Number.parseInt(e.target.value, 10))
+                  }
                   onBlur={() => handleNumberBlur('defaultReps', localReps)}
                   disabled={disabled}
                   placeholder="0"
-                  className="w-full h-full bg-transparent text-lg font-bold text-center outline-none text-foreground placeholder:text-zinc-600 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                  className="w-full h-full bg-transparent text-lg font-bold text-center outline-none text-foreground placeholder:text-muted-foreground/80 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                   data-testid="core-metric-reps"
                 />
               </div>
@@ -430,6 +495,7 @@ export function VerificationEditorPanel({
               <ExerciseFieldLabelWithTooltip
                 label="Czas serii"
                 tooltip={EXERCISE_FIELD_TOOLTIPS.duration}
+                icon={renderFieldIcon('duration')}
                 className="justify-center"
                 labelClassName="text-[9px] uppercase tracking-wider text-center text-muted-foreground truncate"
                 testId="verification-duration-info"
@@ -437,8 +503,8 @@ export function VerificationEditorPanel({
               <div
                 className={cn(
                   'relative h-12 rounded-lg transition-all duration-200',
-                  'bg-zinc-900/50 border border-zinc-800',
-                  'hover:border-zinc-700 focus-within:border-primary/50',
+                  'bg-card/70 border border-border/70',
+                  'hover:border-border focus-within:border-primary/50',
                   localReps && !localDuration && 'opacity-40'
                 )}
               >
@@ -448,11 +514,13 @@ export function VerificationEditorPanel({
                   max={600}
                   step={5}
                   value={localDuration ?? ''}
-                  onChange={(e) => setLocalDuration(e.target.value === '' ? null : parseInt(e.target.value, 10))}
+                  onChange={(e) =>
+                    setLocalDuration(e.target.value === '' ? null : Number.parseInt(e.target.value, 10))
+                  }
                   onBlur={() => handleNumberBlur('defaultDuration', localDuration)}
                   disabled={disabled}
                   placeholder="—"
-                  className="w-full h-full bg-transparent text-lg font-bold text-center outline-none text-foreground placeholder:text-zinc-600 pr-5 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                  className="w-full h-full bg-transparent text-lg font-bold text-center outline-none text-foreground placeholder:text-muted-foreground/80 pr-5 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                   data-testid="core-metric-duration"
                 />
                 <span className="absolute right-1.5 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground font-medium pointer-events-none">
@@ -466,6 +534,7 @@ export function VerificationEditorPanel({
               <ExerciseFieldLabelWithTooltip
                 label="Przerwa (serie)"
                 tooltip={EXERCISE_FIELD_TOOLTIPS.restSets}
+                icon={renderFieldIcon('restSets')}
                 className="justify-center"
                 labelClassName="text-[9px] uppercase tracking-wider text-center text-muted-foreground truncate"
                 testId="verification-rest-sets-info"
@@ -473,8 +542,8 @@ export function VerificationEditorPanel({
               <div
                 className={cn(
                   'relative h-12 rounded-lg transition-all duration-200',
-                  'bg-zinc-900/50 border border-zinc-800',
-                  'hover:border-zinc-700 focus-within:border-primary/50'
+                  'bg-card/70 border border-border/70',
+                  'hover:border-border focus-within:border-primary/50'
                 )}
               >
                 <input
@@ -483,11 +552,13 @@ export function VerificationEditorPanel({
                   max={300}
                   step={5}
                   value={localRest ?? ''}
-                  onChange={(e) => setLocalRest(e.target.value === '' ? null : parseInt(e.target.value, 10))}
+                  onChange={(e) =>
+                    setLocalRest(e.target.value === '' ? null : Number.parseInt(e.target.value, 10))
+                  }
                   onBlur={() => handleNumberBlur('defaultRestBetweenSets', localRest)}
                   disabled={disabled}
                   placeholder="60"
-                  className="w-full h-full bg-transparent text-lg font-bold text-center outline-none text-foreground placeholder:text-zinc-600 pr-5 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                  className="w-full h-full bg-transparent text-lg font-bold text-center outline-none text-foreground placeholder:text-muted-foreground/80 pr-5 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                   data-testid="core-metric-rest"
                 />
                 <span className="absolute right-1.5 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground font-medium pointer-events-none">
@@ -502,13 +573,30 @@ export function VerificationEditorPanel({
         {/* SECTION 3: SZCZEGÓŁY TECHNICZNE (Collapsible) */}
         {/* ============================================ */}
         <Collapsible open={isTechnicalOpen} onOpenChange={setIsTechnicalOpen} className="shrink-0 mb-5">
-          <CollapsibleTrigger className="flex items-center justify-between w-full p-3 rounded-t-lg bg-zinc-900/30 border border-zinc-800/50 hover:bg-zinc-900/50 transition-colors data-[state=open]:rounded-b-none data-[state=open]:border-b-0">
+          <CollapsibleTrigger className="flex w-full items-center justify-between rounded-t-lg border border-border/60 bg-card/60 p-3 transition-colors hover:bg-card data-[state=open]:rounded-b-none data-[state=open]:border-b-0">
             <div className="flex items-center gap-2">
               <Gauge className="h-3.5 w-3.5 text-muted-foreground" />
               <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
                 Szczegóły techniczne
               </span>
-              {technicalDetailsModified && <span className="w-2 h-2 rounded-full bg-emerald-500" />}
+              {technicalDetailsModified ? (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Badge
+                      variant="secondary"
+                      className="h-5 rounded-full bg-emerald-500/15 px-2 text-[10px] font-medium text-emerald-600"
+                      data-testid="verification-technical-status-badge"
+                    >
+                      Edytowano
+                    </Badge>
+                  </TooltipTrigger>
+                  <TooltipContent side="top">
+                    Zmiany techniczne są zapisywane po opuszczeniu pola.
+                  </TooltipContent>
+                </Tooltip>
+              ) : (
+                <span className="text-[10px] text-muted-foreground">Bez zmian</span>
+              )}
             </div>
             <ChevronDown
               className={cn(
@@ -519,40 +607,42 @@ export function VerificationEditorPanel({
           </CollapsibleTrigger>
 
           <CollapsibleContent>
-            <div className="p-4 rounded-b-lg bg-zinc-900/30 border border-t-0 border-zinc-800/50">
-              {/* Uniform 3-column grid for all parameters */}
-              <div className="grid grid-cols-3 gap-x-4 gap-y-4">
+            <div className="rounded-b-lg border border-border/60 border-t-0 bg-card/60 p-4">
+              {/* Responsive technical grid for stable alignment */}
+              <div className="grid grid-cols-2 gap-x-3 gap-y-4 2xl:grid-cols-3">
                 {/* Tempo */}
-                <div className="space-y-1.5">
+                <div className="min-w-0 space-y-1.5">
                   <ExerciseFieldLabelWithTooltip
                     label="Tempo"
                     tooltip={EXERCISE_FIELD_TOOLTIPS.tempo}
-                    labelClassName="text-[10px] uppercase tracking-wider text-muted-foreground"
+                    icon={renderFieldIcon('tempo')}
+                    labelClassName="min-h-4 truncate text-[10px] uppercase tracking-wider text-muted-foreground"
                     testId="verification-tempo-info"
                   />
                   <Input
                     type="text"
                     value={localTempo}
                     onChange={(e) => {
-                      const value = e.target.value.replace(/\D/g, '').slice(0, 4);
+                      const value = e.target.value.replaceAll(/\D/g, '').slice(0, 4);
                       setLocalTempo(value);
                       setTechnicalDetailsModified(true);
                     }}
                     onBlur={() => handleSelectChange('tempo', localTempo)}
                     disabled={disabled}
                     placeholder="3010"
-                    className="font-mono text-center h-9 bg-zinc-900/50 border-zinc-800"
+                    className="h-9 border-border/70 bg-card/70 text-center font-mono"
                     maxLength={4}
                     data-testid="property-tempo"
                   />
                 </div>
 
                 {/* Trudność */}
-                <div className="space-y-1.5">
+                <div className="min-w-0 space-y-1.5">
                   <ExerciseFieldLabelWithTooltip
                     label="Trudność"
                     tooltip="Poziom złożoności ćwiczenia pomocny przy doborze progresji."
-                    labelClassName="text-[10px] uppercase tracking-wider text-muted-foreground"
+                    icon={renderFieldIcon('difficultyLevel')}
+                    labelClassName="min-h-4 truncate text-[10px] uppercase tracking-wider text-muted-foreground"
                     testId="verification-difficulty-info"
                   />
                   <Select
@@ -564,7 +654,7 @@ export function VerificationEditorPanel({
                     }}
                     disabled={disabled}
                   >
-                    <SelectTrigger className="h-9 bg-zinc-900/50 border-zinc-800" data-testid="property-difficulty">
+                    <SelectTrigger className="h-9 border-border/70 bg-card/70" data-testid="property-difficulty">
                       <SelectValue placeholder="—" />
                     </SelectTrigger>
                     <SelectContent>
@@ -578,11 +668,12 @@ export function VerificationEditorPanel({
                 </div>
 
                 {/* Strona ciała */}
-                <div className="space-y-1.5">
+                <div className="min-w-0 space-y-1.5">
                   <ExerciseFieldLabelWithTooltip
                     label="Strona"
                     tooltip={EXERCISE_FIELD_TOOLTIPS.exerciseSide}
-                    labelClassName="text-[10px] uppercase tracking-wider text-muted-foreground"
+                    icon={renderFieldIcon('side')}
+                    labelClassName="min-h-4 truncate text-[10px] uppercase tracking-wider text-muted-foreground"
                     testId="verification-side-info"
                   />
                   <Select
@@ -594,7 +685,7 @@ export function VerificationEditorPanel({
                     }}
                     disabled={disabled}
                   >
-                    <SelectTrigger className="h-9 bg-zinc-900/50 border-zinc-800" data-testid="property-side">
+                    <SelectTrigger className="h-9 border-border/70 bg-card/70" data-testid="property-side">
                       <SelectValue placeholder="—" />
                     </SelectTrigger>
                     <SelectContent>
@@ -608,11 +699,12 @@ export function VerificationEditorPanel({
                 </div>
 
                 {/* Zakres ruchu */}
-                <div className="space-y-1.5">
+                <div className="min-w-0 space-y-1.5">
                   <ExerciseFieldLabelWithTooltip
                     label="Zakres ruchu"
                     tooltip={EXERCISE_FIELD_TOOLTIPS.rangeOfMotion}
-                    labelClassName="text-[10px] uppercase tracking-wider text-muted-foreground"
+                    icon={renderFieldIcon('rangeOfMotion')}
+                    labelClassName="min-h-4 truncate text-[10px] uppercase tracking-wider text-muted-foreground"
                     testId="verification-range-of-motion-info"
                   />
                   <Select
@@ -624,7 +716,7 @@ export function VerificationEditorPanel({
                     }}
                     disabled={disabled}
                   >
-                    <SelectTrigger className="h-9 bg-zinc-900/50 border-zinc-800" data-testid="property-rom">
+                    <SelectTrigger className="h-9 border-border/70 bg-card/70" data-testid="property-rom">
                       <SelectValue placeholder="—" />
                     </SelectTrigger>
                     <SelectContent>
@@ -638,11 +730,12 @@ export function VerificationEditorPanel({
                 </div>
 
                 {/* Przerwa między powtórzeniami */}
-                <div className="space-y-1.5">
+                <div className="min-w-0 space-y-1.5">
                   <ExerciseFieldLabelWithTooltip
                     label="Przerwa powt."
                     tooltip={EXERCISE_FIELD_TOOLTIPS.restReps}
-                    labelClassName="text-[10px] uppercase tracking-wider text-muted-foreground"
+                    icon={renderFieldIcon('restReps')}
+                    labelClassName="min-h-4 truncate text-[10px] uppercase tracking-wider text-muted-foreground"
                     testId="verification-rest-reps-info"
                   />
                   <div className="relative">
@@ -652,13 +745,15 @@ export function VerificationEditorPanel({
                       max={60}
                       value={localRestBetweenReps ?? ''}
                       onChange={(e) => {
-                        setLocalRestBetweenReps(e.target.value === '' ? null : parseInt(e.target.value, 10));
+                        setLocalRestBetweenReps(
+                          e.target.value === '' ? null : Number.parseInt(e.target.value, 10)
+                        );
                         setTechnicalDetailsModified(true);
                       }}
                       onBlur={() => handleNumberBlur('defaultRestBetweenReps', localRestBetweenReps)}
                       disabled={disabled}
                       placeholder="0"
-                      className="h-9 bg-zinc-900/50 border-zinc-800 pr-6 text-center"
+                      className="h-9 border-border/70 bg-card/70 pr-6 text-center"
                       data-testid="property-rest-reps"
                     />
                     <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">s</span>
@@ -666,11 +761,12 @@ export function VerificationEditorPanel({
                 </div>
 
                 {/* Czas przygotowania */}
-                <div className="space-y-1.5">
+                <div className="min-w-0 space-y-1.5">
                   <ExerciseFieldLabelWithTooltip
                     label="Przygotowanie"
                     tooltip={EXERCISE_FIELD_TOOLTIPS.preparationTime}
-                    labelClassName="text-[10px] uppercase tracking-wider text-muted-foreground"
+                    icon={renderFieldIcon('preparationTime')}
+                    labelClassName="min-h-4 truncate text-[10px] uppercase tracking-wider text-muted-foreground"
                     testId="verification-preparation-time-info"
                   />
                   <div className="relative">
@@ -680,13 +776,13 @@ export function VerificationEditorPanel({
                       max={120}
                       value={localPrepTime ?? ''}
                       onChange={(e) => {
-                        setLocalPrepTime(e.target.value === '' ? null : parseInt(e.target.value, 10));
+                        setLocalPrepTime(e.target.value === '' ? null : Number.parseInt(e.target.value, 10));
                         setTechnicalDetailsModified(true);
                       }}
                       onBlur={() => handleNumberBlur('preparationTime', localPrepTime)}
                       disabled={disabled}
                       placeholder="0"
-                      className="h-9 bg-zinc-900/50 border-zinc-800 pr-6 text-center"
+                      className="h-9 border-border/70 bg-card/70 pr-6 text-center"
                       data-testid="property-prep-time"
                     />
                     <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">s</span>
@@ -694,11 +790,12 @@ export function VerificationEditorPanel({
                 </div>
 
                 {/* Czas wykonania powtórzenia */}
-                <div className="space-y-1.5">
+                <div className="min-w-0 space-y-1.5">
                   <ExerciseFieldLabelWithTooltip
                     label="Czas wyk. powt."
                     tooltip={EXERCISE_FIELD_TOOLTIPS.executionTime}
-                    labelClassName="text-[10px] uppercase tracking-wider text-muted-foreground"
+                    icon={renderFieldIcon('executionTime')}
+                    labelClassName="min-h-4 truncate text-[10px] uppercase tracking-wider text-muted-foreground"
                     testId="verification-execution-time-info"
                   />
                   <div className="relative">
@@ -708,13 +805,13 @@ export function VerificationEditorPanel({
                       max={60}
                       value={localExecTime ?? ''}
                       onChange={(e) => {
-                        setLocalExecTime(e.target.value === '' ? null : parseInt(e.target.value, 10));
+                        setLocalExecTime(e.target.value === '' ? null : Number.parseInt(e.target.value, 10));
                         setTechnicalDetailsModified(true);
                       }}
                       onBlur={() => handleNumberBlur('defaultExecutionTime', localExecTime)}
                       disabled={disabled}
                       placeholder="0"
-                      className="h-9 bg-zinc-900/50 border-zinc-800 pr-6 text-center"
+                      className="h-9 border-border/70 bg-card/70 pr-6 text-center"
                       data-testid="property-exec-time"
                     />
                     <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">s</span>
@@ -722,11 +819,12 @@ export function VerificationEditorPanel({
                 </div>
 
                 {/* Sugerowany opór/obciążenie */}
-                <div className="space-y-1.5">
+                <div className="min-w-0 space-y-1.5">
                   <ExerciseFieldLabelWithTooltip
-                    label="Opór/obciążenie"
+                    label="Typ obciążenia"
                     tooltip={EXERCISE_FIELD_TOOLTIPS.load}
-                    labelClassName="text-[10px] uppercase tracking-wider text-muted-foreground"
+                    icon={renderFieldIcon('load')}
+                    labelClassName="min-h-4 truncate text-[10px] uppercase tracking-wider text-muted-foreground"
                     testId="verification-load-info"
                   />
                   <div className="flex gap-1">
@@ -737,29 +835,30 @@ export function VerificationEditorPanel({
                         setLocalLoadValue(e.target.value);
                         setTechnicalDetailsModified(true);
                       }}
-                      onBlur={() => handleSelectChange('loadValue', localLoadValue)}
+                      onBlur={() => handleLoadCommit(localLoadUnit, localLoadValue, localLoadText)}
                       disabled={disabled}
                       placeholder="10"
-                      className="h-9 bg-zinc-900/50 border-zinc-800 w-16 text-center"
+                      className="h-9 w-16 border-border/70 bg-card/70 text-center"
                       data-testid="property-load-value"
                     />
                     <Select
                       value={localLoadUnit}
                       onValueChange={(v) => {
-                        setLocalLoadUnit(v);
+                        const nextLoadPreset = v as LoadPresetKey;
+                        setLocalLoadUnit(nextLoadPreset);
                         setTechnicalDetailsModified(true);
-                        handleSelectChange('loadUnit', v);
+                        void handleLoadCommit(nextLoadPreset, localLoadValue, localLoadText);
                       }}
                       disabled={disabled}
                     >
                       <SelectTrigger
-                        className="h-9 bg-zinc-900/50 border-zinc-800 flex-1"
+                        className="h-9 flex-1 border-border/70 bg-card/70"
                         data-testid="property-load-unit"
                       >
                         <SelectValue placeholder="kg" />
                       </SelectTrigger>
                       <SelectContent>
-                        {LOAD_UNITS.map((opt) => (
+                        {LOAD_PRESETS.map((opt) => (
                           <SelectItem key={opt.value} value={opt.value}>
                             {opt.label}
                           </SelectItem>
@@ -770,11 +869,12 @@ export function VerificationEditorPanel({
                 </div>
 
                 {/* Opis obciążenia - zajmuje 2 kolumny */}
-                <div className="space-y-1.5 col-span-2">
+                <div className="col-span-2 space-y-1.5 2xl:col-span-3">
                   <ExerciseFieldLabelWithTooltip
                     label="Opis obciążenia"
                     tooltip={EXERCISE_FIELD_TOOLTIPS.load}
-                    labelClassName="text-[10px] uppercase tracking-wider text-muted-foreground"
+                    icon={renderFieldIcon('load')}
+                    labelClassName="min-h-4 truncate text-[10px] uppercase tracking-wider text-muted-foreground"
                     testId="verification-load-text-info"
                   />
                   <Input
@@ -784,10 +884,10 @@ export function VerificationEditorPanel({
                       setLocalLoadText(e.target.value);
                       setTechnicalDetailsModified(true);
                     }}
-                    onBlur={() => handleSelectChange('loadText', localLoadText)}
+                    onBlur={() => handleLoadCommit(localLoadUnit, localLoadValue, localLoadText)}
                     disabled={disabled}
                     placeholder="np. RPE 7, 60% 1RM, lekka guma..."
-                    className="h-9 bg-zinc-900/50 border-zinc-800"
+                    className="h-9 border-border/70 bg-card/70"
                     data-testid="property-load-text"
                   />
                 </div>
@@ -837,7 +937,7 @@ export function VerificationEditorPanel({
               <div
                 className={cn(
                   'h-full rounded-lg border transition-colors',
-                  activeDescTab === 'patient' ? 'border-emerald-500/30 bg-emerald-500/5' : 'border-zinc-800'
+                  activeDescTab === 'patient' ? 'border-emerald-500/30 bg-emerald-500/5' : 'border-border/70'
                 )}
               >
                 <Textarea
@@ -848,7 +948,7 @@ export function VerificationEditorPanel({
                   disabled={disabled || isDescSaving}
                   className={cn(
                     'h-full min-h-[120px] resize-none border-0 bg-transparent',
-                    'text-sm leading-relaxed placeholder:text-zinc-600'
+                    'text-sm leading-relaxed placeholder:text-muted-foreground/80'
                   )}
                   data-testid="desc-patient-textarea"
                 />
@@ -866,7 +966,7 @@ export function VerificationEditorPanel({
               <div
                 className={cn(
                   'h-full rounded-lg border transition-colors',
-                  activeDescTab === 'clinical' ? 'border-blue-500/30 bg-blue-500/5' : 'border-zinc-800'
+                  activeDescTab === 'clinical' ? 'border-blue-500/30 bg-blue-500/5' : 'border-border/70'
                 )}
               >
                 <Textarea
@@ -877,7 +977,7 @@ export function VerificationEditorPanel({
                   disabled={disabled || isDescSaving}
                   className={cn(
                     'h-full min-h-[120px] resize-none border-0 bg-transparent',
-                    'text-sm leading-relaxed placeholder:text-zinc-600'
+                    'text-sm leading-relaxed placeholder:text-muted-foreground/80'
                   )}
                   data-testid="desc-clinical-textarea"
                 />

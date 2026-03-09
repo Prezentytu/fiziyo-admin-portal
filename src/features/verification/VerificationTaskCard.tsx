@@ -203,9 +203,9 @@ export function VerificationTaskCard({ exercise, className, onUnpublish, isUnpub
 
             {/* Video indicator badge */}
             {hasVideoPreview && !isHovered && (
-              <div className="absolute bottom-3 left-3 flex items-center gap-1 px-2 py-1 rounded-md bg-black/60 backdrop-blur-sm">
-                <Play className="h-3 w-3 text-white fill-white" />
-                <span className="text-[10px] text-white font-medium">{gifUrl ? 'GIF' : 'Wideo'}</span>
+              <div className="absolute bottom-3 left-3 flex items-center gap-1 rounded-md border border-border/70 bg-background/85 px-2 py-1 backdrop-blur-sm dark:bg-black/45">
+                <Play className="h-3 w-3 fill-foreground text-foreground dark:fill-white dark:text-white" />
+                <span className="text-[10px] font-medium text-foreground dark:text-white">{gifUrl ? 'GIF' : 'Wideo'}</span>
               </div>
             )}
 
@@ -220,7 +220,7 @@ export function VerificationTaskCard({ exercise, className, onUnpublish, isUnpub
                     data-testid={`verification-card-${exercise.id}-reported-badge`}
                   >
                     <Flag className="mr-1 h-3 w-3" />
-                    Reported ({exercise.openReportCount ?? 1})
+                    Zgłoszenia ({exercise.openReportCount ?? 1})
                   </Badge>
                 )}
               </div>
@@ -236,8 +236,8 @@ export function VerificationTaskCard({ exercise, className, onUnpublish, isUnpub
                     className={cn(
                       'text-[10px] px-2 py-0.5 backdrop-blur-sm',
                       indicator.type === 'warning'
-                        ? 'bg-amber-500/80 text-white border-amber-600'
-                        : 'bg-info/80 text-white border-info'
+                        ? 'border-amber-600 bg-amber-500/80 text-white'
+                        : 'border-info bg-info/80 text-white'
                     )}
                   >
                     <AlertCircle className="h-3 w-3 mr-1" />

@@ -19,6 +19,7 @@ import { ApproveDialog } from '@/features/verification/ApproveDialog';
 import { VerificationEditorPanel } from '@/features/verification/VerificationEditorPanel';
 import { VerdictPanel } from '@/features/verification/VerdictPanel';
 import { useExerciseValidation } from '@/features/verification/PublishGuardrails';
+import { buildQueueProgressModel } from '@/features/verification/utils/queueProgress';
 
 import { useSystemRole } from '@/hooks/useSystemRole';
 import { useVerificationHotkeys } from '@/hooks/useVerificationHotkeys';
@@ -31,6 +32,7 @@ import {
   REJECT_EXERCISE_MUTATION,
   UPDATE_EXERCISE_FIELD_MUTATION,
 } from '@/graphql/mutations/adminExercises.mutations';
+import { UPDATE_EXERCISE_MUTATION as UPDATE_EXERCISE_DETAILS_MUTATION } from '@/graphql/mutations/exercises.mutations';
 import type { ExerciseByIdResponse } from '@/types/apollo';
 import type {
   AdminExercise,
@@ -47,6 +49,13 @@ interface VerificationDetailPageProps {
   params: Promise<{ id: string }>;
 }
 
+interface DefaultLoadUpdateInput {
+  type: string | null;
+  value: number | null;
+  unit: string | null;
+  text: string | null;
+}
+
 /**
  * VerificationDetailPage - Clinical Operator UI
  *
@@ -58,7 +67,7 @@ interface VerificationDetailPageProps {
  * - Checkbox bezpieczeństwa klinicznego w footerze
  * - Hotkeys dla power users
  */
-export default function VerificationDetailPage({ params }: VerificationDetailPageProps) {
+export default function VerificationDetailPage({ params }: Readonly<VerificationDetailPageProps>) {
   const { id } = use(params);
   const router = useRouter();
   const { user } = useUser();
@@ -93,12 +102,12 @@ export default function VerificationDetailPage({ params }: VerificationDetailPag
   const [additionalTags, setAdditionalTags] = useState<string[]>([]);
 
   // Relations state
-  const [_regressionExercise, setRegressionExercise] = useState<ExerciseRelationTarget | null>(null);
-  const [_progressionExercise, setProgressionExercise] = useState<ExerciseRelationTarget | null>(null);
+  const [, setRegressionExercise] = useState<ExerciseRelationTarget | null>(null);
+  const [, setProgressionExercise] = useState<ExerciseRelationTarget | null>(null);
 
   // Save tracking
-  const [_lastSavedTime, setLastSavedTime] = useState<Date | null>(null);
-  const [_isSavingDraft, setIsSavingDraft] = useState(false);
+  const [, setLastSavedTime] = useState<Date | null>(null);
+  const [, setIsSavingDraft] = useState(false);
 
   // Smart Validation completion state (from VerificationEditorPanel)
   const [completionData, setCompletionData] = useState<{
@@ -183,6 +192,9 @@ export default function VerificationDetailPage({ params }: VerificationDetailPag
   const totalPending = statsData?.verificationStats?.pendingReview || pendingExercises.length;
   const positionInQueue = currentIndex >= 0 ? currentIndex + 1 : null;
   const remainingCount = totalPending - (positionInQueue || 0);
+  const queueProgress = useMemo(() => {
+    return buildQueueProgressModel(positionInQueue, totalPending, remainingCount);
+  }, [positionInQueue, totalPending, remainingCount]);
 
   // Validation (using existing hook)
   const { canPublish: legacyCanPublish, errors: _validationErrorRules } = useExerciseValidation(
@@ -235,6 +247,14 @@ export default function VerificationDetailPage({ params }: VerificationDetailPag
       toast.error(`Błąd zapisu: ${error.message}`);
     },
   });
+  const [updateExerciseDetails] = useMutation(UPDATE_EXERCISE_DETAILS_MUTATION, {
+    onCompleted: () => {
+      setLastSavedTime(new Date());
+    },
+    onError: (error) => {
+      toast.error(`Błąd zapisu: ${error.message}`);
+    },
+  });
 
   // ============================================
   // HANDLERS
@@ -247,9 +267,31 @@ export default function VerificationDetailPage({ params }: VerificationDetailPag
 
       setIsSavingDraft(true);
       try {
+        if (field === 'defaultLoad') {
+          const loadUpdate = value as DefaultLoadUpdateInput | null;
+          await updateExerciseDetails({
+            variables: {
+              exerciseId: id,
+              loadType: loadUpdate?.type ?? null,
+              loadValue: loadUpdate?.value ?? null,
+              loadUnit: loadUpdate?.unit ?? null,
+              loadText: loadUpdate?.text ?? null,
+            },
+          });
+          return;
+        }
+
         // Convert value to string for backend (expects string?)
-        const stringValue =
-          value === null || value === undefined ? null : typeof value === 'string' ? value : JSON.stringify(value);
+        let stringValue: string | null = null;
+        if (value !== null && value !== undefined) {
+          if (Array.isArray(value)) {
+            stringValue = value.join(',');
+          } else if (typeof value === 'string') {
+            stringValue = value;
+          } else {
+            stringValue = JSON.stringify(value);
+          }
+        }
 
         await updateExerciseField({
           variables: {
@@ -264,7 +306,7 @@ export default function VerificationDetailPage({ params }: VerificationDetailPag
         setIsSavingDraft(false);
       }
     },
-    [exercise, id, updateExerciseField]
+    [exercise, id, updateExerciseField, updateExerciseDetails]
   );
 
   // Tags handlers
@@ -459,10 +501,10 @@ export default function VerificationDetailPage({ params }: VerificationDetailPag
   // Loading
   if (loading) {
     return (
-      <div className="h-[calc(100vh-4rem)] flex flex-col -m-6">
+      <div className="-m-4 flex h-full min-h-0 flex-col overflow-y-auto lg:-m-6 lg:overflow-hidden 2xl:-m-8">
         <div className="flex-1 flex flex-col lg:flex-row min-h-0">
           {/* Left: Video skeleton (40%) */}
-          <div className="lg:w-[40%] bg-zinc-950 p-3">
+          <div className="lg:w-[40%] bg-card p-3 border-r border-border/30">
             <div className="flex items-center justify-between mb-3">
               <Skeleton className="h-8 w-24" />
               <Skeleton className="h-4 w-16" />
@@ -477,7 +519,7 @@ export default function VerificationDetailPage({ params }: VerificationDetailPag
             <Skeleton className="h-16 w-full" />
           </div>
           {/* Right: Verdict skeleton (25%) */}
-          <div className="lg:w-[25%] p-3 space-y-3 border-l border-border/20 bg-zinc-950/50">
+          <div className="lg:w-[25%] p-3 space-y-3 border-l border-border/30 bg-card/70">
             <Skeleton className="h-6 w-24" />
             <Skeleton className="h-8 w-full" />
             <Skeleton className="h-8 w-full" />
@@ -511,18 +553,18 @@ export default function VerificationDetailPage({ params }: VerificationDetailPag
   // ============================================
 
   return (
-    <div className="h-[calc(100vh-4rem)] flex flex-col -m-6">
+    <div className="-m-4 flex h-full min-h-0 flex-col overflow-y-auto lg:-m-6 lg:overflow-hidden 2xl:-m-8">
       {/* Main content area - 3 column layout 40/35/25 */}
       <div className="flex-1 flex flex-col lg:flex-row min-h-0">
         {/* LEFT COLUMN: Media Player (40% on desktop) */}
-        <div className="h-[30vh] lg:h-auto lg:w-[40%] bg-zinc-950 border-b lg:border-b-0 lg:border-r border-border/20 flex flex-col min-h-0">
+        <div className="h-[30vh] lg:h-auto lg:w-[40%] bg-card border-b lg:border-b-0 lg:border-r border-border/30 flex flex-col min-h-0">
           {/* Compact Header: Back + Progress */}
-          <div className="flex items-center justify-between gap-3 px-4 py-2.5 border-b border-zinc-800/50 shrink-0">
+          <div className="flex items-center justify-between gap-3 px-4 py-2.5 border-b border-border/40 shrink-0">
             <Button
               variant="ghost"
               size="sm"
               onClick={() => router.push('/verification')}
-              className="text-zinc-400 hover:text-white -ml-2 h-8 px-3"
+              className="-ml-2 h-8 px-3 text-muted-foreground hover:text-foreground hover:bg-accent"
               data-testid="verification-back-btn"
             >
               <ArrowLeft className="mr-2 h-4 w-4" />
@@ -530,17 +572,16 @@ export default function VerificationDetailPage({ params }: VerificationDetailPag
             </Button>
 
             {/* Progress indicator */}
-            {positionInQueue && totalPending > 0 && (
-              <div className="flex items-center gap-3">
-                <span className="text-sm text-zinc-400">
-                  <span className="text-white font-semibold">{positionInQueue}</span>
-                  <span className="text-zinc-500 mx-1">/</span>
-                  <span className="text-white font-semibold">{totalPending}</span>
-                </span>
-                <div className="w-16 h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+            {queueProgress && (
+              <div className="flex items-center gap-3 rounded-md border border-border/60 bg-background/60 px-2 py-1.5">
+                <div className="min-w-0">
+                  <p className="truncate text-[11px] font-semibold text-foreground">{queueProgress.summary}</p>
+                  <p className="truncate text-[10px] text-muted-foreground">{queueProgress.details}</p>
+                </div>
+                <div className="h-1.5 w-16 overflow-hidden rounded-full bg-muted">
                   <div
-                    className="h-full bg-emerald-500 rounded-full transition-all duration-300"
-                    style={{ width: `${(positionInQueue / totalPending) * 100}%` }}
+                    className="h-full rounded-full bg-emerald-500 transition-all duration-300"
+                    style={{ width: `${queueProgress.progressPercent}%` }}
                   />
                 </div>
               </div>

@@ -1,6 +1,7 @@
 'use client';
 
 import { Info } from 'lucide-react';
+import type { ReactNode } from 'react';
 
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
@@ -8,6 +9,7 @@ import { cn } from '@/lib/utils';
 interface ExerciseFieldLabelWithTooltipProps {
   label: string;
   tooltip: string;
+  icon?: ReactNode;
   htmlFor?: string;
   className?: string;
   labelClassName?: string;
@@ -17,6 +19,7 @@ interface ExerciseFieldLabelWithTooltipProps {
 export function ExerciseFieldLabelWithTooltip({
   label,
   tooltip,
+  icon,
   htmlFor,
   className,
   labelClassName,
@@ -24,6 +27,11 @@ export function ExerciseFieldLabelWithTooltip({
 }: Readonly<ExerciseFieldLabelWithTooltipProps>) {
   return (
     <div className={cn('flex items-center gap-1.5', className)}>
+      {icon && (
+        <span className="inline-flex h-3.5 w-3.5 items-center justify-center text-muted-foreground" data-testid={`${testId}-icon`}>
+          {icon}
+        </span>
+      )}
       {htmlFor ? (
         <label htmlFor={htmlFor} className={labelClassName}>
           {label}
@@ -36,7 +44,7 @@ export function ExerciseFieldLabelWithTooltip({
           <TooltipTrigger asChild>
             <button
               type="button"
-              className="inline-flex h-4 w-4 items-center justify-center rounded-full text-muted-foreground transition-colors hover:text-foreground"
+              className="inline-flex h-4 w-4 items-center justify-center rounded-full text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
               aria-label={`Informacja o polu: ${label}`}
               data-testid={testId}
             >
