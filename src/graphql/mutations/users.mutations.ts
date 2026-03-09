@@ -104,10 +104,11 @@ export const UPDATE_USER_PROFILE_MUTATION = gql`
     $userId: String!
     $firstName: String
     $lastName: String
+    $email: String
     $phone: String
     $address: String
   ) {
-    updateUserProfile(userId: $userId, firstName: $firstName, lastName: $lastName, phone: $phone, address: $address) {
+    updateUserProfile(userId: $userId, firstName: $firstName, lastName: $lastName, email: $email, phone: $phone, address: $address) {
       id
       clerkId
       username

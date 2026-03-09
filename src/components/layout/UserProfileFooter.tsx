@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import { useUser, useClerk } from '@clerk/nextjs';
-import { User, Settings, HelpCircle, LogOut, ChevronUp } from 'lucide-react';
+import { Settings, HelpCircle, LogOut, ChevronUp } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -54,7 +54,7 @@ function truncateEmail(email: string, maxLength: number = 20): string {
 
 export function UserProfileFooter({ isCollapsed }: UserProfileFooterProps) {
   const { user, isLoaded } = useUser();
-  const { signOut, openUserProfile } = useClerk();
+  const { signOut } = useClerk();
   const { hasMultipleOrganizations, currentOrganization, organizations, switchOrganization, isSwitching } =
     useOrganization();
   const [isOpen, setIsOpen] = useState(false);
@@ -189,16 +189,6 @@ export function UserProfileFooter({ isCollapsed }: UserProfileFooterProps) {
             <DropdownMenuSeparator />
           </>
         )}
-
-        {/* Profile settings - opens Clerk modal */}
-        <DropdownMenuItem
-          onClick={() => openUserProfile()}
-          data-testid="nav-user-footer-profile"
-          className="gap-3 px-3 py-2.5 cursor-pointer"
-        >
-          <User className="h-4 w-4 text-muted-foreground" />
-          <span>Mój profil</span>
-        </DropdownMenuItem>
 
         {/* Settings link */}
         <DropdownMenuItem asChild className="gap-3 px-3 py-2.5 cursor-pointer">

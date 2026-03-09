@@ -2,7 +2,7 @@
 
 import { useMemo } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { useUser, useClerk } from '@clerk/nextjs';
 import {
@@ -111,8 +111,9 @@ interface MobileSidebarProps {
 
 export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
   const pathname = usePathname();
+  const router = useRouter();
   const { user, isLoaded } = useUser();
-  const { signOut, openUserProfile } = useClerk();
+  const { signOut } = useClerk();
   const { canManageOrganization } = useRoleAccess();
   const { hasMultipleOrganizations } = useOrganization();
 
@@ -147,7 +148,7 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
 
   const handleOpenProfile = () => {
     onClose();
-    openUserProfile();
+    router.push('/settings');
   };
 
   return (

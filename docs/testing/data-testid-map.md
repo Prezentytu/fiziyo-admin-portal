@@ -163,9 +163,8 @@ await expect(page.getByTestId(/^exercise-card-/)).toHaveCount(5);
 | data-testid                | Element                                    | Plik                    |
 | -------------------------- | ------------------------------------------ | ----------------------- |
 | `nav-user-footer-trigger`  | Trigger profilu użytkownika (dół sidebara) | `UserProfileFooter.tsx` |
-| `nav-user-footer-profile`  | Mój profil (Clerk modal)                   | `UserProfileFooter.tsx` |
+| `nav-user-footer-settings` | Ustawienia konta (nawigacja do /settings)  | `UserProfileFooter.tsx` |
 | `nav-user-footer-org-{id}` | Przełącz do organizacji                    | `UserProfileFooter.tsx` |
-| `nav-user-footer-settings` | Ustawienia konta                           | `UserProfileFooter.tsx` |
 | `nav-user-footer-help`     | Pomoc / Support                            | `UserProfileFooter.tsx` |
 | `nav-user-footer-logout`   | Wyloguj się                                | `UserProfileFooter.tsx` |
 

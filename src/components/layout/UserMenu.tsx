@@ -2,7 +2,7 @@
 
 import { useUser, useClerk } from '@clerk/nextjs';
 import Image from 'next/image';
-import { User, Settings, LogOut, ChevronDown } from 'lucide-react';
+import { Settings, LogOut, ChevronDown } from 'lucide-react';
 import Link from 'next/link';
 import {
   DropdownMenu,
@@ -16,7 +16,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 export function UserMenu() {
   const { user, isLoaded } = useUser();
-  const { signOut, openUserProfile } = useClerk();
+  const { signOut } = useClerk();
 
   const avatarUrl = user?.imageUrl;
   const fullName = user?.fullName || user?.firstName || 'Użytkownik';
@@ -45,7 +45,7 @@ export function UserMenu() {
             <Image src={avatarUrl} alt={fullName} fill className="object-cover" sizes="36px" />
           </span>
         ) : (
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary-dark text-sm font-semibold text-white">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-linear-to-br from-primary to-primary-dark text-sm font-semibold text-white">
             {initials}
           </div>
         )}
@@ -61,7 +61,7 @@ export function UserMenu() {
                 <Image src={avatarUrl} alt={fullName} fill className="object-cover" sizes="40px" />
               </span>
             ) : (
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary-dark text-sm font-semibold text-white">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-linear-to-br from-primary to-primary-dark text-sm font-semibold text-white">
                 {initials}
               </div>
             )}
@@ -75,16 +75,6 @@ export function UserMenu() {
         <DropdownMenuSeparator />
 
         {/* Menu items */}
-        <DropdownMenuItem
-          onClick={() => openUserProfile()}
-          data-testid="nav-user-menu-profile"
-          className="gap-3 px-3 py-2.5 cursor-pointer focus:outline-none focus-visible:outline-none"
-          style={{ outline: 'none' }}
-        >
-          <User className="h-4 w-4 text-muted-foreground" />
-          <span>Profil</span>
-        </DropdownMenuItem>
-
         <DropdownMenuItem
           asChild
           className="gap-3 px-3 py-2.5 cursor-pointer focus:outline-none focus-visible:outline-none"
