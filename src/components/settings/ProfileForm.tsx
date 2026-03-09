@@ -483,7 +483,7 @@ export function ProfileForm({ user, clerkId, onSuccess }: Readonly<ProfileFormPr
             <div className="relative overflow-hidden rounded-2xl border border-border bg-surface">
               {cropImageFile && (
               <AvatarEditor
-                ref={(ref) => {
+                ref={(ref: AvatarEditor | null) => {
                   avatarEditorRef.current = ref;
                 }}
                 image={cropImageFile}

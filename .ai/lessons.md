@@ -14,6 +14,14 @@ Dziennik wniosków z pracy AI agentów. Po każdej korekcie dodaj nowy wpis.
 
 ## Wpisy
 
+### 2026-03-09 - Callback ref wymaga jawnego typu w strict mode
+
+- **Kategoria**: `React`
+- **Problem**: Build TypeScript zatrzymał się na callback `ref`, bo parametr `ref` został wywnioskowany jako implicit `any`.
+- **Przyczyna**: W `strict` / `noImplicitAny` callback refs nie zawsze dziedziczą typ parametru z biblioteki zewnętrznej wystarczająco dobrze.
+- **Rozwiązanie**: Dodano jawne typowanie parametru callbacka `ref` zgodne z instancją komponentu.
+- **Reguła**: Przy callback refs do komponentów zewnętrznych zawsze jawnie typuj parametr albo używaj bezpośrednio obiektu `useRef`, jeśli biblioteka to wspiera.
+
 ### 2026-03-08 - Dashboard finansów wymaga mikrocopy kontekstowego
 
 - **Kategoria**: `UI/UX`
