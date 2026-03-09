@@ -22,7 +22,7 @@ const baseExercise: AdminExercise = {
   hasOpenReport: true,
   openReportCount: 3,
   latestReport: {
-    reasonCategory: 'BLEDNA_TECHNIKA',
+    reasonCategory: 'CLINICAL_RISK',
     description: 'Opis wymaga doprecyzowania toru ruchu.',
     createdAt: '2026-03-08T10:00:00.000Z',
     routingTarget: 'PENDING_REVIEW',

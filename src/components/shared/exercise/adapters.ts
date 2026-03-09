@@ -124,6 +124,12 @@ export function fromBuilderExercise(
     id: string;
     name: string;
     type?: string;
+    patientDescription?: string;
+    description?: string;
+    clinicalDescription?: string;
+    audioCue?: string;
+    rangeOfMotion?: string;
+    difficultyLevel?: string;
     thumbnailUrl?: string;
     imageUrl?: string;
     images?: string[];
@@ -136,6 +142,8 @@ export function fromBuilderExercise(
     preparationTime?: number;
     side?: string;
     exerciseSide?: string;
+    mainTags?: Array<{ name?: string } | string>;
+    additionalTags?: Array<{ name?: string } | string>;
   },
   params: {
     sets?: number;
@@ -186,14 +194,14 @@ export function fromBuilderExercise(
     loadDisplayText: loadDisplayText ?? (loadKg == null ? undefined : `${loadKg} kg`),
     notes: params.notes ?? '',
     patientDescription: exercise.patientDescription ?? exercise.description,
-    clinicalDescription: (exercise as { clinicalDescription?: string }).clinicalDescription,
-    audioCue: (exercise as { audioCue?: string }).audioCue,
-    rangeOfMotion: (exercise as { rangeOfMotion?: string }).rangeOfMotion,
-    difficultyLevel: (exercise as { difficultyLevel?: string }).difficultyLevel,
-    mainTags: (exercise as { mainTags?: Array<{ name?: string } | string> }).mainTags
+    clinicalDescription: exercise.clinicalDescription,
+    audioCue: exercise.audioCue,
+    rangeOfMotion: exercise.rangeOfMotion,
+    difficultyLevel: exercise.difficultyLevel,
+    mainTags: exercise.mainTags
       ?.map((tag) => (typeof tag === 'string' ? tag : tag.name))
       .filter((tag): tag is string => Boolean(tag)),
-    additionalTags: (exercise as { additionalTags?: Array<{ name?: string } | string> }).additionalTags
+    additionalTags: exercise.additionalTags
       ?.map((tag) => (typeof tag === 'string' ? tag : tag.name))
       .filter((tag): tag is string => Boolean(tag)),
     customName: params.customName,

@@ -88,6 +88,7 @@ export interface ExerciseMapping {
     // Nowe pola
     side?: string;
     patientDescription?: string;
+    clinicalDescription?: string;
     thumbnailUrl?: string;
     defaultSets?: number;
     defaultReps?: number;
