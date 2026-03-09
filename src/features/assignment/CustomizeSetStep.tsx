@@ -17,6 +17,25 @@ import type { ExerciseTagsResponse, TagCategoriesResponse, OrganizationExerciseS
 import type { Exercise, ExerciseMapping } from './types';
 import { ExerciseDetailsDialog } from './ExerciseDetailsDialog';
 
+type RawExerciseTag = string | { id: string; name: string; color?: string | null };
+type TaggableExercise = Exercise & { mainTags?: RawExerciseTag[]; additionalTags?: RawExerciseTag[] };
+
+function normalizeExerciseTags(tags?: RawExerciseTag[]): ExerciseTag[] | undefined {
+  if (!tags || tags.length === 0) {
+    return undefined;
+  }
+
+  return tags.map((tag) =>
+    typeof tag === 'string'
+      ? { id: tag, name: tag }
+      : {
+          id: tag.id,
+          name: tag.name,
+          color: tag.color ?? undefined,
+        }
+  );
+}
+
 interface CustomizeSetStepProps {
   // Set name
   planName: string;
@@ -96,7 +115,13 @@ export function CustomizeSetStep({
 
   // Map exercises with tags for filtering
   const exercisesWithTags: BuilderExercise[] = useMemo(() => {
-    return mapExercisesWithTags(availableExercises, tagsMap);
+    const exercisesWithResolvedTags = mapExercisesWithTags(availableExercises as TaggableExercise[], tagsMap);
+
+    return exercisesWithResolvedTags.map((exercise) => ({
+      ...exercise,
+      mainTags: normalizeExerciseTags(exercise.mainTags),
+      additionalTags: normalizeExerciseTags(exercise.additionalTags),
+    }));
   }, [availableExercises, tagsMap]);
 
   // Calculate exercise popularity from existing sets

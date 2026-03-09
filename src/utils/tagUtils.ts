@@ -14,7 +14,7 @@ export interface TagCategory {
 export interface ExerciseTag {
   id: string;
   name: string;
-  color?: string;
+  color?: string | null;
   description?: string;
   icon?: string;
   isMain?: boolean;
@@ -29,11 +29,6 @@ export interface ExerciseWithTags {
   mainTags?: (string | ExerciseTag)[];
   additionalTags?: (string | ExerciseTag)[];
 }
-
-type ExerciseWithResolvedTags<T extends ExerciseWithTags> = Omit<T, 'mainTags' | 'additionalTags'> & {
-  mainTags?: ExerciseTag[];
-  additionalTags?: ExerciseTag[];
-};
 
 /**
  * Gets the color for a tag - checks tag's own color first, then category color
@@ -96,20 +91,18 @@ export function createTagsMap(tags: ExerciseTag[], categories: TagCategory[] = [
 export function mapExerciseTagsToObjects<T extends ExerciseWithTags>(
   exercise: T,
   tagsMap: Map<string, ExerciseTag>
-): ExerciseWithResolvedTags<T> {
+): T {
   return {
     ...exercise,
     mainTags: exercise.mainTags?.map((tagId) => {
       if (typeof tagId === 'string') {
-        const mappedTag = tagsMap.get(tagId);
-        return mappedTag ?? { id: tagId, name: tagId };
+        return tagsMap.get(tagId) || tagId;
       }
       return tagId;
     }),
     additionalTags: exercise.additionalTags?.map((tagId) => {
       if (typeof tagId === 'string') {
-        const mappedTag = tagsMap.get(tagId);
-        return mappedTag ?? { id: tagId, name: tagId };
+        return tagsMap.get(tagId) || tagId;
       }
       return tagId;
     }),
@@ -122,6 +115,6 @@ export function mapExerciseTagsToObjects<T extends ExerciseWithTags>(
 export function mapExercisesWithTags<T extends ExerciseWithTags>(
   exercises: T[],
   tagsMap: Map<string, ExerciseTag>
-): ExerciseWithResolvedTags<T>[] {
+): T[] {
   return exercises.map((exercise) => mapExerciseTagsToObjects(exercise, tagsMap));
 }

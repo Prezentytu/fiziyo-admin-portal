@@ -14,6 +14,14 @@ Dziennik wniosków z pracy AI agentów. Po każdej korekcie dodaj nowy wpis.
 
 ## Wpisy
 
+### 2026-03-09 - Lokalna normalizacja tagów zamiast zmiany globalnego kontraktu
+
+- **Kategoria**: `TypeScript`
+- **Problem**: Poprawka typu w jednym ekranie (`CustomizeSetStep`) wywołała kaskadę błędów TS w innych widokach po zmianie sygnatury helpera `mapExercisesWithTags`.
+- **Przyczyna**: Globalny helper był używany w kilku modułach z różnymi oczekiwaniami co do typów `mainTags/additionalTags` (string IDs vs obiekty tagów).
+- **Rozwiązanie**: Przywrócono globalny kontrakt helpera i dodano lokalną normalizację tagów do formatu `BuilderExercise` tylko tam, gdzie była potrzebna.
+- **Reguła**: Przy naprawie typu w jednym module preferuj adapter lokalny; globalne helpery zmieniaj dopiero po audycie wszystkich callsite’ów.
+
 ### 2026-03-09 - Callback ref wymaga jawnego typu w strict mode
 
 - **Kategoria**: `React`
