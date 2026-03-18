@@ -185,6 +185,9 @@ export function AddToSetFromChatDialog({ open, onOpenChange, exercise }: AddToSe
           organizationId,
           name: newSetName.trim(),
           description: '',
+          kind: 'TEMPLATE',
+          templateSource: 'ORGANIZATION_PRIVATE',
+          isTemplate: true,
         },
       });
 

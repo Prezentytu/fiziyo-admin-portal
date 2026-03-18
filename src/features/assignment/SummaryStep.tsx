@@ -14,7 +14,6 @@ import { calculateEstimatedTime, formatEstimatedTime } from '@/utils/exerciseTim
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { sendExerciseReport } from '@/services/exerciseReportService';
 import type { ExerciseSet, Patient, Frequency, ExerciseOverride, ExerciseMapping, LocalExerciseMapping } from './types';
-import type { AssignmentExecutionMode } from './utils/assignmentPlanDecision';
 
 interface SummaryStepProps {
   exerciseSet: ExerciseSet;
@@ -26,7 +25,6 @@ interface SummaryStepProps {
   overrides: Map<string, ExerciseOverride>;
   excludedExercises: Set<string>;
   saveAsTemplate: boolean;
-  assignmentMode: AssignmentExecutionMode;
   onSaveAsTemplateChange: (value: boolean) => void;
   onGoToStep?: (step: 'select-set' | 'select-patients' | 'schedule') => void;
 }
@@ -70,7 +68,6 @@ export function SummaryStep({
   overrides,
   excludedExercises,
   saveAsTemplate,
-  assignmentMode,
   onSaveAsTemplateChange,
   onGoToStep,
 }: SummaryStepProps) {
@@ -507,15 +504,13 @@ export function SummaryStep({
 
         <div className="bg-surface border border-border/60 rounded-xl p-4 sm:p-5" data-testid="summary-template-save-card">
           <div className="mb-3 rounded-lg border border-border/50 bg-surface-light/30 px-3 py-2 text-xs text-muted-foreground">
-            {assignmentMode === 'PERSONALIZED_PLAN'
-              ? 'W tym wariancie zostanie utworzony nowy plan spersonalizowany.'
-              : 'W tym wariancie przypiszesz istniejacy szablon; modyfikacje parametrow zostana zapisane per pacjent.'}
+            W tym flow zawsze tworzymy nowy, spersonalizowany zestaw ćwiczeń dla pacjenta.
           </div>
           <div className="flex items-start justify-between gap-3">
             <div>
-              <h3 className="text-xs uppercase text-muted-foreground font-bold">Moj szablon</h3>
+              <h3 className="text-xs uppercase text-muted-foreground font-bold">Zestaw organizacji</h3>
               <p className="text-sm text-foreground mt-1" data-testid="assign-summary-save-template-label">
-                Zapisz kopie planu pacjenta jako moj szablon
+                Zapisz także jako osobny zestaw organizacji
               </p>
             </div>
             <Switch

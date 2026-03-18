@@ -691,6 +691,9 @@ export function CreateSetWizard({
           organizationId,
           name: name.trim(),
           description: description.trim() || null,
+          kind: 'TEMPLATE',
+          templateSource: 'ORGANIZATION_PRIVATE',
+          isTemplate: true,
         },
       });
 

@@ -14,6 +14,22 @@ Dziennik wniosków z pracy AI agentów. Po każdej korekcie dodaj nowy wpis.
 
 ## Wpisy
 
+### 2026-03-18 - Assignment semantics musi byc single-source
+
+- **Kategoria**: `UI/UX`
+- **Problem**: Logika przypisania i copy w wizardzie rozjechały się między modelem hybrydowym a modelem always-fork wymaganym przez biznes.
+- **Przyczyna**: Częściowa migracja domeny (`template vs patient plan`) bez jednoznacznego zablokowania alternatywnej ścieżki.
+- **Rozwiązanie**: Ujednolicono flow na always-fork (`PATIENT_PLAN` zawsze przed assign), zamknięto backend na direct-assign reusable zestawów i przestawiono toggle na „zapisz także jako zestaw organizacji”.
+- **Reguła**: Dla kluczowych flow domenowych utrzymuj jedną semantykę end-to-end (backend, UI, copy, specy); hybrydy wprowadzaj tylko przy świadomej decyzji produktowej.
+
+### 2026-03-18 - Domyślna klasyfikacja create-set musi być jawna
+
+- **Kategoria**: `GraphQL`
+- **Problem**: Kliknięcie „Utwórz nowy zestaw” tworzyło `PATIENT_PLAN`, mimo że intencją użytkownika był reusable szablon organizacji.
+- **Przyczyna**: Kilka flow frontendu wywoływało `createExerciseSet` bez `kind/templateSource`, a backend miał domyślną klasyfikację `PatientPlan`.
+- **Rozwiązanie**: Ujednolicono create-flow na jawne `TEMPLATE + ORG_PRIVATE` oraz domyślną klasyfikację backendu do `Template`; dodatkowo wdrożono hybrydę assignment (`reuse template + overrides` vs fork `PATIENT_PLAN`).
+- **Reguła**: Dla wieloznacznych kontraktów domenowych zawsze przekazuj klasyfikację encji jawnie (`kind`, `templateSource`) i nie polegaj na defaultach backendu.
+
 ### 2026-03-09 - Lokalna normalizacja tagów zamiast zmiany globalnego kontraktu
 
 - **Kategoria**: `TypeScript`

@@ -6,7 +6,7 @@ Obecny model `ExerciseSet` miesza trzy rozne intencje:
 
 - szablony FiziYo (biblioteka centralna),
 - szablony organizacji/terapeuty,
-- plany pacjenta tworzone podczas przypisania.
+- zestawy pacjenta tworzone podczas przypisania.
 
 To powoduje niejednoznacznosc UX i ryzyko bledow domenowych (np. plan pacjenta widoczny jako zwykly szablon).
 Celem jest pelne rozdzielenie tych bytow na poziomie backendu, GraphQL i UI, przy zachowaniu kompatybilnosci
@@ -27,23 +27,14 @@ Zasady:
 - Zmiana kolejnosci, skladu cwiczen lub tozsamosci planu oznacza plan spersonalizowany.
 - Zapis "Zapisz ten zestaw cwiczen jako moj szablon" tworzy `TEMPLATE + ORG_PRIVATE`.
 
-### Decyzja wykonania assignment (hybrid mode)
+### Decyzja wykonania assignment (always-fork mode)
 
-Wizard wybiera jedna z dwoch sciezek:
+Wizard zawsze uruchamia jedna sciezke:
 
-1. `assign existing template`
-   - bez tworzenia nowego `ExerciseSet`
-   - przypisanie bezposrednio do `selectedSet.id`
-   - roznice zapisywane jako assignment-level customization (`PatientAssignment.exerciseOverrides`)
-   - dozwolone tylko dla zmian harmonogramu i parametrow wykonania istniejacych cwiczen
-
-2. `create personalized plan`
+1. `create personalized plan`
    - tworzenie `ExerciseSet(kind: PATIENT_PLAN)` + mapowania + przypisanie
-   - uruchamiane dla zmian strukturalnych i tozsamosciowych:
-     - reorder/add/remove cwiczen
-     - zmiana nazwy planu
-     - zmiana nazwy/opisu cwiczenia
-     - zapis kopii jako `mój szablon`
+   - przypisanie nigdy nie trafia bezposrednio do reusable zestawu organizacji/FiziYo
+   - opcjonalny toggle tworzy dodatkowo osobny `TEMPLATE + ORG_PRIVATE` jako kopie do biblioteki
 
 ### Workflow publikacji templatek FiziYo
 
@@ -78,7 +69,7 @@ Filtry w kolejnosci:
 1. `Szablony FiziYo`
 2. `Moje szablony`
 3. `Ostatnio uzywane`
-4. `Plany pacjentow` (ostatni filtr)
+4. `zestawy pacjentow` (ostatni filtr)
 
 ## Interfejsy
 
@@ -147,7 +138,7 @@ Admin (`fiziyo-admin`) i mobile (`fizjo-app`) aktualizuja query/mutation oraz ty
 | -------------------------------------------------------------------------- | ------------ | --------- |
 | Utworzenie planu pacjenta bez zapisu szablonu                              | Integracyjny | High      |
 | Utworzenie planu pacjenta + zapis `ORG_PRIVATE TEMPLATE`                   | Integracyjny | High      |
-| Filtry listy: FiziYo templates / moje templates / plany spersonalizowane   | Integracyjny | High      |
+| Filtry listy: FiziYo templates / moje templates / Zestawy spersonalizowane | Integracyjny | High      |
 | Przypisanie do szablonu przy zmianie tylko parametrow i harmonogramu       | Integracyjny | High      |
 | Materializacja `PATIENT_PLAN` przy zmianach strukturalnych/tozsamosciowych | Integracyjny | High      |
 | Backward compatibility `isTemplate` dla starych rekordow                   | Integracyjny | High      |

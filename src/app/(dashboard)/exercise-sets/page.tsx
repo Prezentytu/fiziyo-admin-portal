@@ -20,9 +20,7 @@ import { CreateSetWizard } from '@/features/exercise-sets/CreateSetWizard';
 import { AssignmentWizard } from '@/features/assignment/AssignmentWizard';
 import { cn } from '@/lib/utils';
 
-import {
-  GET_ORGANIZATION_EXERCISE_SETS_QUERY,
-} from '@/graphql/queries/exerciseSets.queries';
+import { GET_ORGANIZATION_EXERCISE_SETS_QUERY } from '@/graphql/queries/exerciseSets.queries';
 import { GET_EXERCISE_TAGS_BY_ORGANIZATION_QUERY } from '@/graphql/queries/exerciseTags.queries';
 import { GET_USER_BY_CLERK_ID_QUERY } from '@/graphql/queries/users.queries';
 import { DELETE_EXERCISE_SET_MUTATION, DUPLICATE_EXERCISE_SET_MUTATION } from '@/graphql/mutations/exercises.mutations';
@@ -84,7 +82,6 @@ export default function ExerciseSetsPage() {
     },
     [pathname, router, searchParams]
   );
-
 
   // Get organization ID from context (changes when user switches organization)
   const organizationId = currentOrganization?.organizationId;
@@ -175,7 +172,8 @@ export default function ExerciseSetsPage() {
   const isTemplateSet = (set: ExerciseSet) => set.kind === 'TEMPLATE' || set.isTemplate === true;
   const isFiziyoTemplate = (set: ExerciseSet) => isTemplateSet(set) && set.templateSource === 'FIZIYO_VERIFIED';
   const isMyTemplate = (set: ExerciseSet) =>
-    isTemplateSet(set) && (set.templateSource === 'ORG_PRIVATE' || !set.templateSource);
+    isTemplateSet(set)
+    && (set.templateSource === 'ORGANIZATION_PRIVATE' || set.templateSource === 'ORG_PRIVATE' || !set.templateSource);
   const isPatientPlan = (set: ExerciseSet) => set.kind === 'PATIENT_PLAN';
 
   // Calculate stats
@@ -408,11 +406,13 @@ export default function ExerciseSetsPage() {
               <FolderKanban
                 className={cn('h-4 w-4', filter === 'all-templates' ? 'text-primary' : 'text-muted-foreground')}
               />
-              <span className={cn('text-2xl font-bold', filter === 'all-templates' ? 'text-primary' : 'text-foreground')}>
+              <span
+                className={cn('text-2xl font-bold', filter === 'all-templates' ? 'text-primary' : 'text-foreground')}
+              >
                 {allTemplatesCount}
               </span>
             </div>
-            <p className="text-xs text-muted-foreground mt-1">Wszystkie szablony</p>
+            <p className="text-xs text-muted-foreground mt-1">Wszystkie zestawy źródłowe</p>
           </button>
 
           <button
@@ -429,11 +429,13 @@ export default function ExerciseSetsPage() {
               <Sparkles
                 className={cn('h-4 w-4', filter === 'fiziyo-templates' ? 'text-info' : 'text-muted-foreground')}
               />
-              <span className={cn('text-2xl font-bold', filter === 'fiziyo-templates' ? 'text-info' : 'text-foreground')}>
+              <span
+                className={cn('text-2xl font-bold', filter === 'fiziyo-templates' ? 'text-info' : 'text-foreground')}
+              >
                 {fiziyoTemplatesCount}
               </span>
             </div>
-            <p className="text-xs text-muted-foreground mt-1">Szablony FiziYo</p>
+            <p className="text-xs text-muted-foreground mt-1">Zestawy FiziYo</p>
           </button>
 
           <button
@@ -447,12 +449,16 @@ export default function ExerciseSetsPage() {
             data-testid="set-filter-my-templates-btn"
           >
             <div className="flex items-center gap-2">
-              <UserRound className={cn('h-4 w-4', filter === 'my-templates' ? 'text-secondary' : 'text-muted-foreground')} />
-              <span className={cn('text-2xl font-bold', filter === 'my-templates' ? 'text-secondary' : 'text-foreground')}>
+              <UserRound
+                className={cn('h-4 w-4', filter === 'my-templates' ? 'text-secondary' : 'text-muted-foreground')}
+              />
+              <span
+                className={cn('text-2xl font-bold', filter === 'my-templates' ? 'text-secondary' : 'text-foreground')}
+              >
                 {myTemplatesCount}
               </span>
             </div>
-            <p className="text-xs text-muted-foreground mt-1">Moje szablony</p>
+            <p className="text-xs text-muted-foreground mt-1">Zestawy organizacji</p>
           </button>
 
           <button
@@ -466,12 +472,16 @@ export default function ExerciseSetsPage() {
             data-testid="set-filter-patient-plans-btn"
           >
             <div className="flex items-center gap-2">
-              <FolderPlus className={cn('h-4 w-4', filter === 'patient-plans' ? 'text-primary' : 'text-muted-foreground')} />
-              <span className={cn('text-2xl font-bold', filter === 'patient-plans' ? 'text-primary' : 'text-foreground')}>
+              <FolderPlus
+                className={cn('h-4 w-4', filter === 'patient-plans' ? 'text-primary' : 'text-muted-foreground')}
+              />
+              <span
+                className={cn('text-2xl font-bold', filter === 'patient-plans' ? 'text-primary' : 'text-foreground')}
+              >
                 {patientPlansCount}
               </span>
             </div>
-            <p className="text-xs text-muted-foreground mt-1">Plany spersonalizowane</p>
+            <p className="text-xs text-muted-foreground mt-1">Zestawy spersonalizowane</p>
           </button>
         </div>
       </div>
@@ -516,7 +526,7 @@ export default function ExerciseSetsPage() {
           )}
           {filter !== 'all-templates' && (
             <Button variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={() => applyFilter('all-templates')}>
-              Pokaz wszystkie szablony
+              Pokaz wszystkie zestawy zrodlowe
             </Button>
           )}
           {selectedTags.length > 0 && (
@@ -599,7 +609,9 @@ export default function ExerciseSetsPage() {
       {organizationId && editingSet && (
         <EditExerciseSetFullDialog
           open={isEditDialogOpen}
-          onOpenChange={(open) => { if (!open) handleCloseEditDialog(); }}
+          onOpenChange={(open) => {
+            if (!open) handleCloseEditDialog();
+          }}
           exerciseSetId={editingSet.id}
           organizationId={organizationId}
           set={editingSet}

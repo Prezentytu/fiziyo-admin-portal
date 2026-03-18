@@ -474,6 +474,9 @@ Zwróć wyłącznie propozycję nazwy zestawu.
           organizationId,
           name: newSetName.trim(),
           description: '',
+          kind: 'TEMPLATE',
+          templateSource: 'ORGANIZATION_PRIVATE',
+          isTemplate: true,
         },
       });
 

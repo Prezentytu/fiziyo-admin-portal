@@ -46,7 +46,7 @@ export interface ExerciseSet {
   isActive?: boolean;
   isTemplate?: boolean;
   kind?: 'TEMPLATE' | 'PATIENT_PLAN';
-  templateSource?: 'FIZIYO_VERIFIED' | 'ORG_PRIVATE';
+  templateSource?: 'FIZIYO_VERIFIED' | 'ORGANIZATION_PRIVATE' | 'ORG_PRIVATE';
   reviewStatus?: 'DRAFT' | 'PENDING_REVIEW' | 'CHANGES_REQUESTED' | 'PUBLISHED';
   sourceExerciseSetId?: string;
   creationTime?: string;
@@ -79,21 +79,21 @@ export function SetCard({ set, tagsMap, onView, onEdit, onDelete, onDuplicate, o
   const setTypeBadge = useMemo(() => {
     if (isPatientPlan) {
       return {
-        label: 'Plan spersonalizowany',
+        label: 'Spersonalizowany zestaw ćwiczeń',
         className: 'border-info/30 bg-info/10 text-info',
       };
     }
 
     if (isTemplateSet && set.templateSource === 'FIZIYO_VERIFIED') {
       return {
-        label: 'Szablon FiziYo',
+        label: 'Zestaw FiziYo',
         className: 'border-primary/30 bg-primary/10 text-primary',
       };
     }
 
     if (isTemplateSet) {
       return {
-        label: 'Moj szablon',
+        label: 'Zestaw organizacji',
         className: 'border-secondary/30 bg-secondary/10 text-secondary',
       };
     }
@@ -417,11 +417,13 @@ export function SetCard({ set, tagsMap, onView, onEdit, onDelete, onDuplicate, o
         {/* Footer - always at bottom with mt-auto */}
         <div className="flex items-center justify-between mt-auto pt-2">
           <span className="text-xs text-muted-foreground">
-            {assignmentCount > 0
-              ? `Przypisany do ${assignmentCount} ${assignmentCount === 1 ? 'pacjenta' : 'pacjentow'}`
-              : isPatientPlan
-                ? 'Oczekuje na przypisanie'
-                : 'Jeszcze nieprzypisany'}
+            {isTemplateSet
+              ? assignmentCount > 0
+                ? `Legacy przypisania: ${assignmentCount}`
+                : 'Zestaw zrodlowy'
+              : assignmentCount > 0
+                ? `Przypisany do ${assignmentCount} ${assignmentCount === 1 ? 'pacjenta' : 'pacjentow'}`
+                : 'Oczekuje na przypisanie'}
           </span>
           {set.isActive === false && (
             <Badge variant="outline" className="text-[10px] px-1.5 py-0">

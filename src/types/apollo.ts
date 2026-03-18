@@ -320,7 +320,7 @@ export interface ExerciseSet {
   isActive?: boolean;
   isTemplate?: boolean;
   kind?: 'TEMPLATE' | 'PATIENT_PLAN';
-  templateSource?: 'FIZIYO_VERIFIED' | 'ORG_PRIVATE';
+  templateSource?: 'FIZIYO_VERIFIED' | 'ORGANIZATION_PRIVATE' | 'ORG_PRIVATE';
   reviewStatus?: 'DRAFT' | 'PENDING_REVIEW' | 'CHANGES_REQUESTED' | 'PUBLISHED';
   sourceExerciseSetId?: string;
   createdById?: string;

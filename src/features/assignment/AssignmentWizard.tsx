@@ -52,7 +52,6 @@ import { GET_THERAPIST_PATIENTS_QUERY, GET_ORGANIZATION_PATIENTS_QUERY } from '@
 import {
   ASSIGN_EXERCISE_SET_TO_PATIENT_MUTATION,
   REMOVE_EXERCISE_SET_ASSIGNMENT_MUTATION,
-  UPDATE_PATIENT_EXERCISE_OVERRIDES_MUTATION,
   CREATE_EXERCISE_SET_MUTATION,
   ADD_EXERCISE_TO_EXERCISE_SET_MUTATION,
 } from '@/graphql/mutations/exercises.mutations';
@@ -230,9 +229,9 @@ function AssignmentWizardContent({
   const [localExercises, setLocalExercises] = useState<LocalExerciseMapping[]>([]);
   // Nazwa planu dla pacjenta (Assignment name)
   const [planName, setPlanName] = useState<string>('');
-  // Szablon - opcjonalny zapis do biblioteki
-  const [saveAsTemplate, setSaveAsTemplate] = useState(false);
-  const [templateName, setTemplateName] = useState<string>('');
+  // Opcjonalny zapis kopii do biblioteki organizacji
+  const [saveAsOrganizationSet, setSaveAsOrganizationSet] = useState(false);
+  const [organizationSetName, setOrganizationSetName] = useState<string>('');
   // Wykluczone ćwiczenia (legacy - pustý Set bo customize step został usunięty)
   const [excludedExercises] = useState<Set<string>>(new Set());
 
@@ -294,11 +293,11 @@ function AssignmentWizardContent({
       setBuilderParams(new Map());
     }
 
-    // Set plan name (dla pacjenta) i template name (dla biblioteki)
+    // Set plan name (dla pacjenta) i nazwa zestawu organizacji (dla biblioteki)
     const baseName = set?.name || 'Nowy Plan';
     setPlanName(baseName);
-    setTemplateName(`${baseName} (szablon)`);
-    setSaveAsTemplate(false);
+    setOrganizationSetName(`${baseName} (organizacja)`);
+    setSaveAsOrganizationSet(false);
 
     // Smart Defaults: wypełnij frequency z szablonu jeśli dostępne
     if (set?.frequency) {
@@ -360,9 +359,6 @@ function AssignmentWizardContent({
   // Mutations
   const [assignSet, { loading: assigning }] = useMutation(ASSIGN_EXERCISE_SET_TO_PATIENT_MUTATION);
   const [removeAssignment, { loading: removing }] = useMutation(REMOVE_EXERCISE_SET_ASSIGNMENT_MUTATION);
-  const [updatePatientOverrides, { loading: updatingOverrides }] = useMutation(
-    UPDATE_PATIENT_EXERCISE_OVERRIDES_MUTATION
-  );
   const [createExerciseSet] = useMutation(CREATE_EXERCISE_SET_MUTATION, {
     refetchQueries: [{ query: GET_ORGANIZATION_EXERCISE_SETS_QUERY, variables: { organizationId } }],
     awaitRefetchQueries: true,
@@ -488,6 +484,11 @@ function AssignmentWizardContent({
     }));
   }, [setsData]);
 
+  const assignableSourceSets = useMemo(
+    () => exerciseSets.filter((set) => set.kind === 'TEMPLATE' || set.isTemplate === true),
+    [exerciseSets]
+  );
+
   const patients: Patient[] = useMemo(() => {
     const data = patientsData as TherapistPatientsResponse | undefined;
     return (data?.therapistPatients || []).map((assignment) => ({
@@ -561,8 +562,8 @@ function AssignmentWizardContent({
     setBuilderInstances([]);
     setBuilderParams(new Map());
     setPlanName(setNamePattern);
-    setTemplateName(`${setNamePattern} (szablon)`);
-    setSaveAsTemplate(false);
+    setOrganizationSetName(`${setNamePattern} (organizacja)`);
+    setSaveAsOrganizationSet(false);
 
     // Clear any previously selected set
     setSelectedSet(null);
@@ -647,8 +648,8 @@ function AssignmentWizardContent({
       setBuilderParams(params);
     }
     setPlanName(set.name || 'Nowy Plan');
-    setTemplateName(`${set.name || 'Nowy Plan'} (szablon)`);
-    setSaveAsTemplate(false);
+    setOrganizationSetName(`${set.name || 'Nowy Plan'} (organizacja)`);
+    setSaveAsOrganizationSet(false);
     if (set.frequency) {
       setFrequency({
         timesPerDay: set.frequency.timesPerDay || 1,
@@ -754,11 +755,11 @@ function AssignmentWizardContent({
         sourceSet: selectedSet,
         isCreatingNewSet,
         planName,
-        saveAsTemplate,
+        saveAsTemplate: saveAsOrganizationSet,
         builderInstances,
         builderParams,
       }),
-    [selectedSet, isCreatingNewSet, planName, saveAsTemplate, builderInstances, builderParams]
+    [selectedSet, isCreatingNewSet, planName, saveAsOrganizationSet, builderInstances, builderParams]
   );
 
   // Determine step title and description
@@ -799,10 +800,7 @@ function AssignmentWizardContent({
       case 'summary':
         return {
           title: 'Podsumowanie',
-          description:
-            assignmentPlanDecision.mode === 'PERSONALIZED_PLAN'
-              ? 'Sprawdź i potwierdź utworzenie planu oraz przypisanie'
-              : 'Sprawdź i potwierdź przypisanie szablonu z dostosowanymi parametrami',
+          description: 'Sprawdź i potwierdź utworzenie planu oraz przypisanie',
         };
       default:
         return { title: '', description: '' };
@@ -924,79 +922,71 @@ function AssignmentWizardContent({
 
     setIsSubmitting(true);
     try {
-      const lightweightOverridesJson =
-        assignmentPlanDecision.mode === 'TEMPLATE_WITH_PARAM_OVERRIDES'
-          ? JSON.stringify(assignmentPlanDecision.overridesByMappingId)
-          : null;
       let lastPremiumValidUntil: string | null = null;
 
-      const shouldMaterializePlan = assignmentPlanDecision.mode === 'PERSONALIZED_PLAN';
+      let exerciseSetIdToAssign = '';
+      let effectiveSetForSuccess: ExerciseSet | null = null;
 
-      let exerciseSetIdToAssign = selectedSet?.id || '';
-      let effectiveSetForSuccess: ExerciseSet | null = selectedSet;
-
-      if (shouldMaterializePlan) {
-        setIsCreatingSet(true);
-        try {
-          const createResult = await createExerciseSet({
-            variables: {
-              organizationId,
-              name: planName.trim(),
-              description: isCreatingNewSet ? null : `Plan pacjenta utworzony na bazie: ${selectedSet?.name || 'szablonu'}`,
-              kind: 'PATIENT_PLAN',
-              sourceExerciseSetId: selectedSet?.id ?? null,
-              isTemplate: false,
-            },
-          });
-
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const newSet = (createResult.data as any)?.createExerciseSet;
-          if (!newSet?.id) {
-            throw new Error('Nie udało się utworzyć planu pacjenta');
-          }
-
-          for (let i = 0; i < builderInstances.length; i++) {
-            const instance = builderInstances[i];
-            const exercise = availableExercises.find((item) => item.id === instance.exerciseId);
-
-            try {
-              await addExerciseToSet({
-                variables: buildAddExerciseVariables(instance, newSet.id, i + 1),
-              });
-            } catch (error) {
-              const exerciseName = exercise?.name || 'Nieznane cwiczenie';
-              console.error('Błąd dodawania ćwiczenia do planu:', error);
-              throw new Error(`Nie udalo sie dodac cwiczenia "${exerciseName}" do planu pacjenta`);
-            }
-          }
-
-          exerciseSetIdToAssign = newSet.id;
-          effectiveSetForSuccess = {
-            id: newSet.id,
+      setIsCreatingSet(true);
+      try {
+        const createResult = await createExerciseSet({
+          variables: {
+            organizationId,
             name: planName.trim(),
-            description: undefined,
-            exerciseMappings: [],
-          };
-        } catch (createError) {
-          console.error('Błąd tworzenia planu pacjenta:', createError);
-          toast.error('Nie udało się utworzyć planu pacjenta');
-          setIsCreatingSet(false);
-          return;
-        } finally {
-          setIsCreatingSet(false);
+            description: isCreatingNewSet ? null : `Plan pacjenta utworzony na bazie: ${selectedSet?.name || 'zestawu'}`,
+            kind: 'PATIENT_PLAN',
+            sourceExerciseSetId: selectedSet?.id ?? null,
+            isTemplate: false,
+          },
+        });
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const newSet = (createResult.data as any)?.createExerciseSet;
+        if (!newSet?.id) {
+          throw new Error('Nie udało się utworzyć planu pacjenta');
         }
+
+        for (let i = 0; i < builderInstances.length; i++) {
+          const instance = builderInstances[i];
+          const exercise = availableExercises.find((item) => item.id === instance.exerciseId);
+
+          try {
+            await addExerciseToSet({
+              variables: buildAddExerciseVariables(instance, newSet.id, i + 1),
+            });
+          } catch (error) {
+            const exerciseName = exercise?.name || 'Nieznane cwiczenie';
+            console.error('Błąd dodawania ćwiczenia do planu:', error);
+            throw new Error(`Nie udalo sie dodac cwiczenia "${exerciseName}" do planu pacjenta`);
+          }
+        }
+
+        exerciseSetIdToAssign = newSet.id;
+        effectiveSetForSuccess = {
+          id: newSet.id,
+          name: planName.trim(),
+          description: undefined,
+          exerciseMappings: [],
+        };
+      } catch (createError) {
+        console.error('Błąd tworzenia planu pacjenta:', createError);
+        toast.error('Nie udało się utworzyć planu pacjenta');
+        setIsCreatingSet(false);
+        return;
+      } finally {
+        setIsCreatingSet(false);
       }
 
-      // Jeśli saveAsTemplate - utwórz DODATKOWY szablon w bibliotece (kopia do ponownego użycia)
-      if (saveAsTemplate && templateName.trim() && builderInstances.length > 0) {
+      // Jeśli saveAsOrganizationSet - utwórz DODATKOWY zestaw organizacji (kopia do ponownego użycia)
+      if (saveAsOrganizationSet && organizationSetName.trim() && builderInstances.length > 0) {
         try {
-          const templateResult = await createExerciseSet({
+          const organizationSetResult = await createExerciseSet({
             variables: {
               organizationId,
-              name: templateName.trim(),
-              description: `Szablon utworzony z planu: ${planName}`,
+              name: organizationSetName.trim(),
+              description: `Zestaw organizacji utworzony z planu: ${planName}`,
               kind: 'TEMPLATE',
-              templateSource: 'ORG_PRIVATE',
+              templateSource: 'ORGANIZATION_PRIVATE',
               reviewStatus: 'DRAFT',
               sourceExerciseSetId: exerciseSetIdToAssign,
               isTemplate: true,
@@ -1004,27 +994,27 @@ function AssignmentWizardContent({
           });
 
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const templateSet = (templateResult.data as any)?.createExerciseSet;
-          if (templateSet?.id) {
+          const organizationSet = (organizationSetResult.data as any)?.createExerciseSet;
+          if (organizationSet?.id) {
             for (let i = 0; i < builderInstances.length; i++) {
               const instance = builderInstances[i];
               const exercise = availableExercises.find((item) => item.id === instance.exerciseId);
 
               try {
                 await addExerciseToSet({
-                  variables: buildAddExerciseVariables(instance, templateSet.id, i + 1),
+                  variables: buildAddExerciseVariables(instance, organizationSet.id, i + 1),
                 });
               } catch (error) {
                 const exerciseName = exercise?.name || 'Nieznane cwiczenie';
-                console.error('Błąd dodawania ćwiczenia do szablonu:', error);
-                throw new Error(`Nie udalo sie dodac cwiczenia "${exerciseName}" do szablonu`);
+                console.error('Błąd dodawania ćwiczenia do zestawu organizacji:', error);
+                throw new Error(`Nie udalo sie dodac cwiczenia "${exerciseName}" do zestawu organizacji`);
               }
             }
-            toast.success(`Zapisano szablon "${templateName}" do biblioteki`);
+            toast.success(`Zapisano zestaw organizacji "${organizationSetName}"`);
           }
-        } catch (templateError) {
-          console.error('Błąd tworzenia szablonu:', templateError);
-          toast.error('Nie udało się zapisać szablonu, ale przypisanie będzie kontynuowane');
+        } catch (organizationSetError) {
+          console.error('Błąd tworzenia zestawu organizacji:', organizationSetError);
+          toast.error('Nie udało się zapisać zestawu organizacji, ale przypisanie będzie kontynuowane');
         }
       }
 
@@ -1097,16 +1087,10 @@ function AssignmentWizardContent({
           lastPremiumValidUntil = responseData.premiumValidUntil;
         }
 
-        // Step 2: Save assignment-level overrides only for lightweight template customization.
-        const assignmentId = responseData?.id;
-        if (assignmentId && lightweightOverridesJson) {
-          await updatePatientOverrides({
-            variables: {
-              assignmentId,
-              exerciseOverrides: lightweightOverridesJson,
-            },
-          });
-        }
+      }
+
+      if (!effectiveSetForSuccess) {
+        throw new Error('Nie udało się przygotować danych utworzonego planu');
       }
 
       // 🎯 Beta Pilot Flow: Pokazuj QR dialog zamiast zamykać od razu
@@ -1120,7 +1104,7 @@ function AssignmentWizardContent({
         setName: planName || effectiveSetForSuccess?.name || 'Nowy plan pacjenta',
         assignmentMode: assignmentPlanDecision.mode,
         premiumValidUntil: lastPremiumValidUntil,
-        exerciseSet: effectiveSetForSuccess!,
+        exerciseSet: effectiveSetForSuccess,
         frequency,
       });
 
@@ -1129,13 +1113,13 @@ function AssignmentWizardContent({
     } catch (error) {
       console.error('Błąd przypisywania:', error);
       const errorMessage = error instanceof Error ? error.message : null;
-      toast.error(errorMessage || 'Nie udało się utworzyć i przypisać planu');
+      toast.error(errorMessage || 'Nie udało się przypisać zestawu');
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const isLoading = loadingSets || loadingPatients || assigning || removing || updatingOverrides || isSubmitting;
+  const isLoading = loadingSets || loadingPatients || assigning || removing || isSubmitting;
   const isFirstStep = steps.length > 0 && currentStep === steps[0].id;
   const isLastStep = currentStep === 'summary';
 
@@ -1146,9 +1130,9 @@ function AssignmentWizardContent({
 
     if (isLastStep) {
       if (isSubmitting) {
-        return assignmentPlanDecision.mode === 'PERSONALIZED_PLAN' ? 'Tworzenie planu...' : 'Przypisywanie szablonu...';
+        return 'Tworzenie planu...';
       }
-      return assignmentPlanDecision.mode === 'PERSONALIZED_PLAN' ? 'Utwórz plan i przypisz' : 'Przypisz szablon';
+      return 'Utwórz plan i przypisz';
     }
 
     if (nextStep) {
@@ -1191,7 +1175,7 @@ function AssignmentWizardContent({
       case 'select-set':
         return (
           <SelectSetStep
-            exerciseSets={exerciseSets}
+            exerciseSets={assignableSourceSets}
             selectedSet={selectedSet}
             onSelectSet={handleSetChange}
             assignedSets={assignedSets}
@@ -1300,9 +1284,8 @@ function AssignmentWizardContent({
             frequency={frequency}
             overrides={overrides}
             excludedExercises={excludedExercises}
-            saveAsTemplate={saveAsTemplate}
-            assignmentMode={assignmentPlanDecision.mode}
-            onSaveAsTemplateChange={setSaveAsTemplate}
+            saveAsTemplate={saveAsOrganizationSet}
+            onSaveAsTemplateChange={setSaveAsOrganizationSet}
             onGoToStep={goToStep}
           />
         );
@@ -1457,12 +1440,12 @@ function AssignmentWizardContent({
                 data-testid="assign-schedule-save-template-toggle"
               >
                 <Switch
-                  checked={saveAsTemplate}
-                  onCheckedChange={setSaveAsTemplate}
+                  checked={saveAsOrganizationSet}
+                  onCheckedChange={setSaveAsOrganizationSet}
                   data-testid="assign-schedule-save-template-switch"
                 />
                 <span className="text-xs font-medium text-foreground" data-testid="assign-schedule-save-template-label">
-                  Zapisz kopie jako moj szablon
+                  Zapisz także jako zestaw organizacji
                 </span>
               </label>
             )}

@@ -2,7 +2,7 @@
 
 ## Zakres
 
-Wizard personalizacji i przypisania planu pacjenta. Flow zawsze kończy się utworzeniem nowego planu (kopii roboczej) i przypisaniem go pacjentowi/pacjentom.
+Wizard personalizacji i przypisania zestawu pacjentowi. Flow działa w trybie always-fork: każde przypisanie tworzy nowy plan pacjenta (`PATIENT_PLAN`) i dopiero ten byt jest przypisywany pacjentowi/pacjentom.
 
 ## Aktualna architektura flow
 
@@ -18,7 +18,8 @@ Kroki są dynamiczne zależnie od punktu wejścia:
 
 - Użytkownik wybiera zestaw źródłowy (lub tworzy od zera).
 - Użytkownik personalizuje nazwę planu i ćwiczenia.
-- Podczas `submit` tworzymy nowy `ExerciseSet` na bazie buildera i dopiero ten nowy plan przypisujemy pacjentom.
+- Podczas `submit` zawsze tworzymy nowy `ExerciseSet(kind: PATIENT_PLAN)` i dopiero ten nowy plan przypisujemy pacjentom.
+- Opcjonalny toggle zapisuje dodatkową, osobną kopię jako zestaw organizacji (`TEMPLATE + ORG_PRIVATE`) bez relacji do pacjentów.
 - Copy w UI musi jasno rozróżniać:
   - `zestaw źródłowy/szablon`
   - `plan pacjenta` (wynik personalizacji)
@@ -27,7 +28,7 @@ Kroki są dynamiczne zależnie od punktu wejścia:
 
 ### Template vs Draft Mode
 
-- **Template Mode**: wybrany zestaw jako źródło, ograniczona edycja, ochrona przed przypadkową zmianą szablonu.
+- **Source Set Mode**: wybrany zestaw jako źródło, personalizacja przed utworzeniem planu pacjenta.
 - **Draft Mode**: pełna edycja planu pacjenta (CRUD ćwiczeń + parametry + nazwa).
 
 ### Phantom Set

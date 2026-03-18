@@ -253,66 +253,66 @@ await expect(page.getByTestId(/^exercise-card-/)).toHaveCount(5);
 
 ### 5. Zestawy ćwiczeń (set-)
 
-| data-testid                         | Element                        | Plik                          |
-| ----------------------------------- | ------------------------------ | ----------------------------- |
-| `set-page-title`                    | Tytuł strony                   | `exercise-sets/page.tsx`      |
-| `set-search-input`                  | Wyszukiwarka                   | `exercise-sets/page.tsx`      |
-| `set-tag-filter-btn`                | Dropdown filtra tagów          | `exercise-sets/page.tsx`      |
-| `set-filter-all-templates-btn`      | Filtr: Wszystkie szablony      | `exercise-sets/page.tsx`      |
-| `set-filter-fiziyo-templates-btn`   | Filtr: Szablony FiziYo         | `exercise-sets/page.tsx`      |
-| `set-filter-my-templates-btn`       | Filtr: Moje szablony           | `exercise-sets/page.tsx`      |
-| `set-filter-patient-plans-btn`      | Filtr: Plany spersonalizowane  | `exercise-sets/page.tsx`      |
-| `set-create-btn`                    | Utwórz zestaw                  | `exercise-sets/page.tsx`      |
-| `set-create-wizard-btn`             | Kreator zestawu                | `exercise-sets/page.tsx`      |
-| `set-card-{id}`                     | Karta zestawu                  | `SetCard.tsx`                 |
-| `set-card-{id}-assign-btn`          | Przypisz do pacjenta           | `SetCard.tsx`                 |
-| `set-card-{id}-copy-link-btn`       | Kopiuj link publiczny          | `SetCard.tsx`                 |
-| `set-card-{id}-menu-trigger`        | Menu kontekstowe (3 kropki)    | `SetCard.tsx`                 |
-| `set-card-{id}-edit-btn`            | Edytuj (w menu)                | `SetCard.tsx`                 |
-| `set-card-{id}-duplicate-btn`       | Duplikuj (w menu)              | `SetCard.tsx`                 |
-| `set-card-{id}-delete-btn`          | Usuń (w menu)                  | `SetCard.tsx`                 |
-| `set-detail-back-btn`               | Przycisk wstecz                | `exercise-sets/[id]/page.tsx` |
-| `set-detail-name`                   | Nazwa zestawu                  | `exercise-sets/[id]/page.tsx` |
-| `set-detail-menu-trigger`           | Menu akcji                     | `exercise-sets/[id]/page.tsx` |
-| `set-detail-edit-btn`               | Edytuj zestaw                  | `exercise-sets/[id]/page.tsx` |
-| `set-detail-delete-btn`             | Usuń zestaw                    | `exercise-sets/[id]/page.tsx` |
-| `set-detail-edit-set-btn`           | Edytuj zestaw (sekcja ćwiczeń) | `exercise-sets/[id]/page.tsx` |
-| `set-detail-assign-btn`             | Przypisz pacjentom             | `exercise-sets/[id]/page.tsx` |
-| `set-detail-pdf-btn`                | Generuj PDF                    | `exercise-sets/[id]/page.tsx` |
-| `set-exercise-item-{id}`            | Ćwiczenie w zestawie           | `exercise-sets/[id]/page.tsx` |
-| `set-exercise-item-{id}-edit-btn`   | Edytuj w zestawie              | `exercise-sets/[id]/page.tsx` |
-| `set-exercise-item-{id}-remove-btn` | Usuń z zestawu                 | `exercise-sets/[id]/page.tsx` |
-| `set-form`                          | Formularz zestawu              | `SetForm.tsx`                 |
-| `set-form-name-input`               | Nazwa zestawu                  | `SetForm.tsx`                 |
-| `set-form-description-input`        | Opis zestawu                   | `SetForm.tsx`                 |
-| `set-form-submit-btn`               | Zapisz                         | `SetForm.tsx`                 |
-| `set-form-cancel-btn`               | Anuluj                         | `SetForm.tsx`                 |
-| `set-dialog`                        | Dialog zestawu                 | `SetDialog.tsx`               |
-| `set-dialog-title`                  | Tytuł dialogu                  | `SetDialog.tsx`               |
-| `set-wizard`                        | Kreator zestawu                | `CreateSetWizard.tsx`         |
-| `set-wizard-name-input`             | Nazwa w kreatorze              | `CreateSetWizard.tsx`         |
-| `set-wizard-description-input`      | Opis zestawu                   | `CreateSetWizard.tsx`         |
-| `set-wizard-search-input`           | Wyszukaj ćwiczenia             | `CreateSetWizard.tsx`         |
-| `set-wizard-exercise-{id}`          | Ćwiczenie do wyboru            | `CreateSetWizard.tsx`         |
-| `set-wizard-selected-{id}`          | Wybrane ćwiczenie              | `CreateSetWizard.tsx`         |
-| `set-wizard-next-btn`               | Dalej: Ćwiczenia               | `CreateSetWizard.tsx`         |
-| `set-wizard-back-btn`               | Wstecz                         | `CreateSetWizard.tsx`         |
-| `set-wizard-create-empty-btn`       | Utwórz pusty zestaw            | `CreateSetWizard.tsx`         |
-| `set-wizard-create-btn`             | Utwórz zestaw (z ćwiczeniami)  | `CreateSetWizard.tsx`         |
-| `set-add-exercise-dialog`           | Dialog dodawania               | `AddExerciseToSetDialog.tsx`  |
-| `set-add-exercise-search`           | Wyszukaj ćwiczenia             | `AddExerciseToSetDialog.tsx`  |
-| `set-add-exercise-{id}`             | Ćwiczenie do dodania           | `AddExerciseToSetDialog.tsx`  |
-| `set-add-exercise-submit-btn`       | Dodaj wybrane                  | `AddExerciseToSetDialog.tsx`  |
-| `set-edit-exercise-dialog`          | Dialog edycji                  | `EditExerciseInSetDialog.tsx` |
-| `set-edit-exercise-sets-input`      | Serie                          | `EditExerciseInSetDialog.tsx` |
-| `set-edit-exercise-reps-input`      | Powtórzenia                    | `EditExerciseInSetDialog.tsx` |
-| `set-edit-exercise-duration-input`  | Czas trwania                   | `EditExerciseInSetDialog.tsx` |
-| `set-edit-exercise-submit-btn`      | Zapisz zmiany                  | `EditExerciseInSetDialog.tsx` |
-| `set-frequency-times-per-day`       | Razy dziennie                  | `FrequencyPicker.tsx`         |
-| `set-frequency-times-per-week`      | Razy tygodniowo                | `FrequencyPicker.tsx`         |
-| `set-frequency-day-{day}`           | Dzień tygodnia                 | `FrequencyPicker.tsx`         |
-| `set-pdf-dialog`                    | Dialog PDF                     | `GeneratePDFDialog.tsx`       |
-| `set-pdf-download-btn`              | Pobierz PDF                    | `GeneratePDFDialog.tsx`       |
+| data-testid                         | Element                         | Plik                          |
+| ----------------------------------- | ------------------------------- | ----------------------------- |
+| `set-page-title`                    | Tytuł strony                    | `exercise-sets/page.tsx`      |
+| `set-search-input`                  | Wyszukiwarka                    | `exercise-sets/page.tsx`      |
+| `set-tag-filter-btn`                | Dropdown filtra tagów           | `exercise-sets/page.tsx`      |
+| `set-filter-all-templates-btn`      | Filtr: Wszystkie szablony       | `exercise-sets/page.tsx`      |
+| `set-filter-fiziyo-templates-btn`   | Filtr: Szablony FiziYo          | `exercise-sets/page.tsx`      |
+| `set-filter-my-templates-btn`       | Filtr: Moje szablony            | `exercise-sets/page.tsx`      |
+| `set-filter-patient-plans-btn`      | Filtr: Zestawy spersonalizowane | `exercise-sets/page.tsx`      |
+| `set-create-btn`                    | Utwórz zestaw                   | `exercise-sets/page.tsx`      |
+| `set-create-wizard-btn`             | Kreator zestawu                 | `exercise-sets/page.tsx`      |
+| `set-card-{id}`                     | Karta zestawu                   | `SetCard.tsx`                 |
+| `set-card-{id}-assign-btn`          | Przypisz do pacjenta            | `SetCard.tsx`                 |
+| `set-card-{id}-copy-link-btn`       | Kopiuj link publiczny           | `SetCard.tsx`                 |
+| `set-card-{id}-menu-trigger`        | Menu kontekstowe (3 kropki)     | `SetCard.tsx`                 |
+| `set-card-{id}-edit-btn`            | Edytuj (w menu)                 | `SetCard.tsx`                 |
+| `set-card-{id}-duplicate-btn`       | Duplikuj (w menu)               | `SetCard.tsx`                 |
+| `set-card-{id}-delete-btn`          | Usuń (w menu)                   | `SetCard.tsx`                 |
+| `set-detail-back-btn`               | Przycisk wstecz                 | `exercise-sets/[id]/page.tsx` |
+| `set-detail-name`                   | Nazwa zestawu                   | `exercise-sets/[id]/page.tsx` |
+| `set-detail-menu-trigger`           | Menu akcji                      | `exercise-sets/[id]/page.tsx` |
+| `set-detail-edit-btn`               | Edytuj zestaw                   | `exercise-sets/[id]/page.tsx` |
+| `set-detail-delete-btn`             | Usuń zestaw                     | `exercise-sets/[id]/page.tsx` |
+| `set-detail-edit-set-btn`           | Edytuj zestaw (sekcja ćwiczeń)  | `exercise-sets/[id]/page.tsx` |
+| `set-detail-assign-btn`             | Przypisz pacjentom              | `exercise-sets/[id]/page.tsx` |
+| `set-detail-pdf-btn`                | Generuj PDF                     | `exercise-sets/[id]/page.tsx` |
+| `set-exercise-item-{id}`            | Ćwiczenie w zestawie            | `exercise-sets/[id]/page.tsx` |
+| `set-exercise-item-{id}-edit-btn`   | Edytuj w zestawie               | `exercise-sets/[id]/page.tsx` |
+| `set-exercise-item-{id}-remove-btn` | Usuń z zestawu                  | `exercise-sets/[id]/page.tsx` |
+| `set-form`                          | Formularz zestawu               | `SetForm.tsx`                 |
+| `set-form-name-input`               | Nazwa zestawu                   | `SetForm.tsx`                 |
+| `set-form-description-input`        | Opis zestawu                    | `SetForm.tsx`                 |
+| `set-form-submit-btn`               | Zapisz                          | `SetForm.tsx`                 |
+| `set-form-cancel-btn`               | Anuluj                          | `SetForm.tsx`                 |
+| `set-dialog`                        | Dialog zestawu                  | `SetDialog.tsx`               |
+| `set-dialog-title`                  | Tytuł dialogu                   | `SetDialog.tsx`               |
+| `set-wizard`                        | Kreator zestawu                 | `CreateSetWizard.tsx`         |
+| `set-wizard-name-input`             | Nazwa w kreatorze               | `CreateSetWizard.tsx`         |
+| `set-wizard-description-input`      | Opis zestawu                    | `CreateSetWizard.tsx`         |
+| `set-wizard-search-input`           | Wyszukaj ćwiczenia              | `CreateSetWizard.tsx`         |
+| `set-wizard-exercise-{id}`          | Ćwiczenie do wyboru             | `CreateSetWizard.tsx`         |
+| `set-wizard-selected-{id}`          | Wybrane ćwiczenie               | `CreateSetWizard.tsx`         |
+| `set-wizard-next-btn`               | Dalej: Ćwiczenia                | `CreateSetWizard.tsx`         |
+| `set-wizard-back-btn`               | Wstecz                          | `CreateSetWizard.tsx`         |
+| `set-wizard-create-empty-btn`       | Utwórz pusty zestaw             | `CreateSetWizard.tsx`         |
+| `set-wizard-create-btn`             | Utwórz zestaw (z ćwiczeniami)   | `CreateSetWizard.tsx`         |
+| `set-add-exercise-dialog`           | Dialog dodawania                | `AddExerciseToSetDialog.tsx`  |
+| `set-add-exercise-search`           | Wyszukaj ćwiczenia              | `AddExerciseToSetDialog.tsx`  |
+| `set-add-exercise-{id}`             | Ćwiczenie do dodania            | `AddExerciseToSetDialog.tsx`  |
+| `set-add-exercise-submit-btn`       | Dodaj wybrane                   | `AddExerciseToSetDialog.tsx`  |
+| `set-edit-exercise-dialog`          | Dialog edycji                   | `EditExerciseInSetDialog.tsx` |
+| `set-edit-exercise-sets-input`      | Serie                           | `EditExerciseInSetDialog.tsx` |
+| `set-edit-exercise-reps-input`      | Powtórzenia                     | `EditExerciseInSetDialog.tsx` |
+| `set-edit-exercise-duration-input`  | Czas trwania                    | `EditExerciseInSetDialog.tsx` |
+| `set-edit-exercise-submit-btn`      | Zapisz zmiany                   | `EditExerciseInSetDialog.tsx` |
+| `set-frequency-times-per-day`       | Razy dziennie                   | `FrequencyPicker.tsx`         |
+| `set-frequency-times-per-week`      | Razy tygodniowo                 | `FrequencyPicker.tsx`         |
+| `set-frequency-day-{day}`           | Dzień tygodnia                  | `FrequencyPicker.tsx`         |
+| `set-pdf-dialog`                    | Dialog PDF                      | `GeneratePDFDialog.tsx`       |
+| `set-pdf-download-btn`              | Pobierz PDF                     | `GeneratePDFDialog.tsx`       |
 
 ### 6. Pacjenci (patient-)
 

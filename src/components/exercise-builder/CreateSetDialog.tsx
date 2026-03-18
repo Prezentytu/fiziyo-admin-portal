@@ -93,6 +93,9 @@ export function CreateSetDialog({ open, onOpenChange }: CreateSetDialogProps) {
           organizationId,
           name: values.name,
           description: values.description || null,
+          kind: 'TEMPLATE',
+          templateSource: 'ORGANIZATION_PRIVATE',
+          isTemplate: true,
         },
       });
 

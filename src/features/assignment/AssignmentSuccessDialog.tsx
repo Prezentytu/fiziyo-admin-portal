@@ -53,7 +53,7 @@ interface AssignmentSuccessDialogProps {
   }>;
   /** Nazwa planu pacjenta */
   setName: string;
-  /** Tryb przypisania: template override lub nowy plan */
+  /** Zachowane dla kompatybilności API komponentu (nie wpływa na UI). */
   assignmentMode?: AssignmentExecutionMode;
   /** Data wygaśnięcia Premium (z backendu) */
   premiumValidUntil?: string | null;
@@ -74,7 +74,7 @@ export function AssignmentSuccessDialog({
   onOpenChange,
   patients,
   setName,
-  assignmentMode = 'PERSONALIZED_PLAN',
+  assignmentMode: _assignmentMode = 'PERSONALIZED_PLAN',
   premiumValidUntil,
   therapistId,
   organizationId,
@@ -346,16 +346,12 @@ export function AssignmentSuccessDialog({
             </div>
             <div>
               <DialogTitle className="text-lg">
-                {assignmentMode === 'PERSONALIZED_PLAN' ? 'Plan spersonalizowany przypisany!' : 'Szablon przypisany!'}
+                Plan pacjenta utworzony i przypisany!
               </DialogTitle>
               <DialogDescription>
-                {assignmentMode === 'PERSONALIZED_PLAN'
-                  ? isSinglePatient
-                    ? `Pacjent ${selectedPatient.name} otrzymał plan "${setName}"`
-                    : `${patients.length} pacjentów otrzymało plan "${setName}"`
-                  : isSinglePatient
-                    ? `Pacjent ${selectedPatient.name} otrzymał szablon "${setName}" z dostosowanymi parametrami`
-                    : `${patients.length} pacjentów otrzymało szablon "${setName}" z dostosowanymi parametrami`}
+                {isSinglePatient
+                  ? `Pacjent ${selectedPatient.name} otrzymał plan "${setName}"`
+                  : `${patients.length} pacjentów otrzymało plan "${setName}"`}
               </DialogDescription>
             </div>
           </div>

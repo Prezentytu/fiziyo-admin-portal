@@ -2,9 +2,9 @@
 
 ## Cel biznesowy
 
-Wizard służy do szybkiego przygotowania i przypisania planu pacjentowi. Fizjoterapeuta nie przypina "surowego" zestawu 1:1, tylko personalizuje plan na bazie zestawu źródłowego.
+Wizard służy do szybkiego przygotowania i przypisania zestawu pacjentowi. Fizjoterapeuta zawsze tworzy plan pacjenta na bazie zestawu źródłowego.
 
-**Efekt końcowy:** powstaje nowy plan pacjenta (`ExerciseSet`) i zostaje przypisany do wybranych pacjentów.
+**Efekt końcowy:** zawsze powstaje nowy plan pacjenta (`PATIENT_PLAN`) i przypisanie do wybranych pacjentów.
 
 ## Punkty wejścia
 
@@ -36,10 +36,10 @@ Wizard ma do 5 kroków, ale kolejność zależy od kontekstu wejścia:
 
 W `handleSubmit`:
 
-1. Tworzymy nowy `ExerciseSet` z aktualnego stanu buildera (`planName`, ćwiczenia, parametry)
-2. Dodajemy ćwiczenia do nowego planu
-3. Przypisujemy nowy plan pacjentowi/pacjentom
-4. Opcjonalnie tworzymy dodatkowy szablon, jeśli użytkownik zaznaczy zapis jako template
+1. Zawsze tworzymy nowy `ExerciseSet(kind: PATIENT_PLAN)` na bazie aktualnego stanu buildera.
+2. Dodajemy ćwiczenia do nowego planu pacjenta.
+3. Przypisujemy nowy plan pacjentowi/pacjentom.
+4. Opcjonalnie toggle „zapisz także jako zestaw organizacji” tworzy dodatkowy `TEMPLATE + ORG_PRIVATE` jako osobny byt reusable (bez pacjentów).
 
 To zachowanie jest obowiązujące dla bieżącej implementacji.
 
@@ -97,6 +97,11 @@ assign-success-close-btn
 - Aktualizacja specyfikacji do realnego flow `personalizacja planu -> przypisanie`.
 - Doprecyzowanie kontraktu UX: użytkownik tworzy plan pacjenta na bazie zestawu źródłowego.
 - Ujednolicenie nomenklatury (`plan pacjenta` vs `zestaw źródłowy`).
+
+### 2026-03-18
+
+- Aktualizacja spec do modelu always-fork: każde przypisanie tworzy `PATIENT_PLAN`.
+- Doprecyzowanie toggle „zapisz także jako zestaw organizacji” jako osobnej kopii reusable bez pacjentów.
 
 ### 2026-02-21
 

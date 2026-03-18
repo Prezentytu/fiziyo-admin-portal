@@ -9,23 +9,15 @@ Wizard służy do **przypisywania zestawów ćwiczeń pacjentom**. Jest to głó
 3. Ustawić harmonogram (częstotliwość, okres)
 4. Przypisać jednocześnie do wielu pacjentów
 
-**Efekt końcowy:** Pacjent otrzymuje przypisanie zestawu (szablonu lub planu spersonalizowanego) w aplikacji mobilnej.
+**Efekt końcowy:** Pacjent otrzymuje przypisanie nowo utworzonego, spersonalizowanego zestawu ćwiczeń w aplikacji mobilnej.
 
-## Aktualny model decyzyjny (hybryda)
+## Aktualny model decyzyjny (always-fork)
 
-Wizard nie zawsze tworzy nowy plan spersonalizowany. Decyzja zależy od typu zmian:
+Wizard zawsze tworzy nowy plan spersonalizowany (`PATIENT_PLAN`) przed przypisaniem.
 
-- **Przypisanie do istniejącego szablonu** (bez tworzenia `PATIENT_PLAN`):
-  - zmiana harmonogramu i dat
-  - zmiana parametrów wykonania istniejących ćwiczeń (serie, powtórzenia, czas, przerwy, tempo, obciążenie, notatki)
-- **Utworzenie nowego planu spersonalizowanego** (`PATIENT_PLAN`):
-  - zmiana kolejności ćwiczeń
-  - dodanie lub usunięcie ćwiczeń
-  - zmiana nazwy planu
-  - zmiana nazwy/opisu ćwiczenia
-  - włączenie „Zapisz kopię jako mój szablon”
-
-Wariant lekki zapisuje różnice na poziomie `PatientAssignment` (assignment-level customization), dzięki czemu przypisanie pozostaje na oryginalnym szablonie.
+- Każde przypisanie materializuje osobny zestaw pacjenta.
+- Przypisanie nie trafia bezpośrednio do reusable zestawu organizacji.
+- Opcja „Zapisz także jako zestaw organizacji” tworzy dodatkową kopię reusable bez pacjentów.
 
 ---
 
@@ -58,7 +50,7 @@ Wizard można uruchomić z dwóch miejsc:
 **Opcje:**
 
 - **Wybór z biblioteki** - kliknięcie na istniejący szablon
-- **Stwórz nowy** - natychmiastowe utworzenie pustego zestawu (bez formularza!)
+- **Stwórz nowy** - natychmiastowe rozpoczęcie pustego planu w wizardze (bez osobnego formularza)
 
 **Layout:**
 
@@ -92,7 +84,7 @@ _Dlaczego?_ Szablony to "święte zasoby" - nie chcemy ich przypadkowo zepsuć p
 - Nazwa zestawu: edytowalna
 - Lista ćwiczeń: pełny CRUD (dodaj, usuń)
 - **Rapid Builder** - wyszukiwarka z Enter do szybkiego dodawania
-- Checkbox "Zapisz jako szablon" w stopce
+- Checkbox "Zapisz także jako zestaw organizacji" w stopce
 
 ---
 
@@ -124,7 +116,7 @@ _Dlaczego?_ Szablony to "święte zasoby" - nie chcemy ich przypadkowo zepsuć p
 
 ### Krok 3: Personalizacja ćwiczeń
 
-**Cel:** Dostosowanie ćwiczeń i określenie, czy przypisanie zostaje na szablonie czy materializuje się jako plan spersonalizowany.
+**Cel:** Dostosowanie ćwiczeń przed utworzeniem spersonalizowanego zestawu pacjenta.
 
 **Co można zmienić:**
 
@@ -135,8 +127,7 @@ _Dlaczego?_ Szablony to "święte zasoby" - nie chcemy ich przypadkowo zepsuć p
 
 Ten krok określa także tryb końcowy:
 
-- brak zmian strukturalnych -> przypisanie do szablonu
-- zmiany strukturalne/tożsamościowe -> utworzenie planu spersonalizowanego
+- zawsze -> utworzenie planu spersonalizowanego
 
 ---
 
@@ -193,7 +184,7 @@ Ten krok określa także tryb końcowy:
 
 **Problem:** Fizjo chce stworzyć nowy zestaw, ale nie chce wychodzić z wizarda.
 
-**Rozwiązanie:** Przycisk "Stwórz nowy" natychmiast tworzy pusty zestaw z nazwą:
+**Rozwiązanie:** Przycisk "Stwórz nowy" natychmiast tworzy pusty draft planu z nazwą:
 
 - `"Terapia dla {Pacjent} - {Data}"` (jeśli pacjent predefiniowany)
 - `"Nowy zestaw - {Data}"` (bez pacjenta)
@@ -301,5 +292,5 @@ A: Musi wejść na stronę zestawu ćwiczeń (poza wizardem) i tam dokonać zmia
 **Q: Czy ukryte ćwiczenia są trwale usunięte?**
 A: Nie. Są tylko "wyłączone" dla tego konkretnego przypisania. Szablon pozostaje pełny.
 
-**Q: Co oznacza checkbox "Zapisz jako szablon"?**
+**Q: Co oznacza checkbox "Zapisz także jako zestaw organizacji"?**
 A: Nowo utworzony zestaw zostanie dodany do biblioteki i będzie dostępny do ponownego użycia.
