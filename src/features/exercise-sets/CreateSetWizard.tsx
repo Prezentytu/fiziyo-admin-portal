@@ -694,6 +694,19 @@ export function CreateSetWizard({
           kind: 'TEMPLATE',
           templateSource: 'ORGANIZATION_PRIVATE',
           isTemplate: true,
+          frequency: {
+            timesPerDay: '1',
+            timesPerWeek: '3',
+            isFlexible: true,
+            breakBetweenSets: '24',
+            monday: false,
+            tuesday: false,
+            wednesday: false,
+            thursday: false,
+            friday: false,
+            saturday: false,
+            sunday: false,
+          },
         },
       });
 

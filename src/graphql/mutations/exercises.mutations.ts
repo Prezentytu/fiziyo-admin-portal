@@ -699,6 +699,7 @@ export const CREATE_EXERCISE_SET_MUTATION = gql`
     $reviewStatus: ExerciseSetReviewStatus
     $sourceExerciseSetId: String
     $isTemplate: Boolean
+    $frequency: FrequencyInput
   ) {
     createExerciseSet(
       organizationId: $organizationId
@@ -709,6 +710,7 @@ export const CREATE_EXERCISE_SET_MUTATION = gql`
       reviewStatus: $reviewStatus
       sourceExerciseSetId: $sourceExerciseSetId
       isTemplate: $isTemplate
+      frequency: $frequency
     ) {
       id
       name
@@ -722,6 +724,20 @@ export const CREATE_EXERCISE_SET_MUTATION = gql`
       sourceExerciseSetId
       createdById
       creationTime
+      frequency {
+        timesPerDay
+        timesPerWeek
+        minTimesPerWeek
+        isFlexible
+        breakBetweenSets
+        monday
+        tuesday
+        wednesday
+        thursday
+        friday
+        saturday
+        sunday
+      }
     }
   }
 `;

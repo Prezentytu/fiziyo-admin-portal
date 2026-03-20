@@ -60,6 +60,12 @@ Prefiks: `set-`
 
 ## Changelog
 
+### 2026-03-19
+
+- Dodano write-path defaultowego harmonogramu szablonu przez `UPDATE_EXERCISE_SET_FREQUENCY_MUTATION` na detalu zestawu.
+- Rozszerzono `CREATE_EXERCISE_SET_MUTATION` o opcjonalne `frequency`, aby ustawic default harmonogramu juz przy tworzeniu szablonu.
+- Utrzymano parity semantyczne z mobile/backend: tryb elastyczny (`timesPerWeek` bez dni) oraz tryb dokladnych dni (`monday..sunday`).
+
 ### 2026-02-16
 
 - Utworzenie specyfikacji na podstawie istniejącej implementacji

@@ -38,13 +38,14 @@ import { useRealtimePatients } from '@/hooks/useRealtimePatients';
 import { useRealtimeExerciseSets } from '@/hooks/useRealtimeExerciseSets';
 
 import { GET_ORGANIZATION_EXERCISE_SETS_QUERY } from '@/graphql/queries/exerciseSets.queries';
-import { GET_THERAPIST_PATIENTS_QUERY } from '@/graphql/queries/therapists.queries';
+import { GET_ORGANIZATION_PATIENTS_QUERY } from '@/graphql/queries/therapists.queries';
 import { GET_USER_BY_CLERK_ID_QUERY } from '@/graphql/queries/users.queries';
 import { GET_ALL_PATIENT_ASSIGNMENTS_QUERY } from '@/graphql/queries/patientAssignments.queries';
 import type {
   UserByClerkIdResponse,
   OrganizationExerciseSetsResponse,
-  TherapistPatientsResponse,
+  OrganizationPatientDto,
+  OrganizationPatientsResponse,
 } from '@/types/apollo';
 
 interface ExerciseSetItem {
@@ -66,6 +67,10 @@ interface ExerciseSetItem {
 
 interface PatientAssignmentData {
   id: string;
+  assignmentId?: string;
+  assignmentStatus?: string;
+  assignedAt?: string;
+  contextLabel?: string;
   patient?: {
     id: string;
     fullname?: string;
@@ -73,9 +78,7 @@ interface PatientAssignmentData {
     image?: string;
     isShadowUser?: boolean;
   };
-  contextLabel?: string;
-  status?: string;
-  assignedAt?: string;
+  lastActivity?: string;
 }
 
 interface ExerciseAssignment {
@@ -140,8 +143,26 @@ function getActivityStatus(lastCompletedAt?: string): { status: ActivityStatus; 
   return { status: 'inactive', text: `Nieaktywny od ${diffDays} dni`, date: lastDate };
 }
 
+function getGreeting(currentHour: number): string {
+  if (currentHour < 12) return 'Dzień dobry';
+  if (currentHour < 18) return 'Cześć';
+  return 'Dobry wieczór';
+}
+
+function getDashboardSubtitle(patientsCount: number, patientsNeedingAttentionCount: number): string {
+  if (patientsCount === 0) {
+    return 'Nie masz jeszcze przypisanych pacjentów';
+  }
+
+  if (patientsNeedingAttentionCount > 0) {
+    return `Sprawdź, co u ${patientsNeedingAttentionCount} pacjentów`;
+  }
+
+  return 'Wszyscy Twoi pacjenci są aktywni';
+}
+
 // Activity status indicator component - use design tokens
-function ActivityIndicator({ status }: { status: ActivityStatus }) {
+function ActivityIndicator({ status }: { readonly status: ActivityStatus }) {
   switch (status) {
     case 'active':
       return (
@@ -192,10 +213,10 @@ export default function DashboardPage() {
     skip: !organizationId,
   });
 
-  // Get patients
-  const { data: patientsData, loading: patientsLoading } = useQuery(GET_THERAPIST_PATIENTS_QUERY, {
-    variables: { therapistId, organizationId },
-    skip: !therapistId || !organizationId,
+  // Get patients assigned to the current therapist within the active organization
+  const { data: patientsData, loading: patientsLoading } = useQuery(GET_ORGANIZATION_PATIENTS_QUERY, {
+    variables: { organizationId, filter: 'my' },
+    skip: !organizationId,
   });
 
   // Get all assignments for activity data
@@ -225,7 +246,28 @@ export default function DashboardPage() {
     return dateB - dateA;
   });
 
-  const patients = (patientsData as TherapistPatientsResponse)?.therapistPatients || [];
+  const patients = useMemo<PatientAssignmentData[]>(
+    () => {
+      const organizationPatients = (patientsData as OrganizationPatientsResponse | undefined)?.organizationPatients ?? [];
+
+      return organizationPatients.map((item: OrganizationPatientDto) => ({
+        id: item.assignmentId ?? item.patient.id,
+        assignmentId: item.assignmentId,
+        assignmentStatus: item.assignmentStatus,
+        assignedAt: item.assignedAt,
+        contextLabel: item.contextLabel,
+        patient: {
+          id: item.patient.id,
+          fullname: item.patient.fullname,
+          email: item.patient.email,
+          image: item.patient.image,
+          isShadowUser: item.patient.isShadowUser,
+        },
+        lastActivity: item.lastActivity,
+      }));
+    },
+    [patientsData]
+  );
   const patientsCount = patients.length;
 
   // Get assignments with activity data
@@ -234,39 +276,15 @@ export default function DashboardPage() {
     (a) => a.exerciseSetId && a.assignedById === therapistId
   ).length;
 
-  // Create a map of patient activity (most recent lastCompletedAt per patient)
-  const patientActivityMap = useMemo(() => {
-    const map = new Map<string, { lastCompletedAt?: string; setName?: string }>();
-
-    for (const assignment of allAssignments) {
-      if (!assignment.userId) continue;
-
-      const existing = map.get(assignment.userId);
-      const currentDate = assignment.lastCompletedAt ? new Date(assignment.lastCompletedAt) : null;
-      const existingDate = existing?.lastCompletedAt ? new Date(existing.lastCompletedAt) : null;
-
-      if (!existingDate || (currentDate && currentDate > existingDate)) {
-        map.set(assignment.userId, {
-          lastCompletedAt: assignment.lastCompletedAt,
-          setName: assignment.exerciseSet?.name,
-        });
-      }
-    }
-
-    return map;
-  }, [allAssignments]);
-
   // Enhance patients with activity status and sort by priority
   const patientsWithActivity: PatientWithActivity[] = useMemo(() => {
     const enhanced = patients.map((assignment: PatientAssignmentData) => {
-      const patientId = assignment.patient?.id;
-      const activity = patientId ? patientActivityMap.get(patientId) : undefined;
-      const { status, text, date } = getActivityStatus(activity?.lastCompletedAt);
+      const { status, text, date } = getActivityStatus(assignment.lastActivity);
 
       return {
         ...assignment,
         activityStatus: status,
-        lastActivityText: activity?.setName ? `${text} • ${activity.setName}` : text,
+        lastActivityText: text,
         lastActivityDate: date,
       };
     });
@@ -299,16 +317,17 @@ export default function DashboardPage() {
       }
       return 0;
     });
-  }, [patients, patientActivityMap]);
+  }, [patients]);
 
   // Get current hour for greeting
   const currentHour = new Date().getHours();
-  const greeting = currentHour < 12 ? 'Dzień dobry' : currentHour < 18 ? 'Cześć' : 'Dobry wieczór';
+  const greeting = getGreeting(currentHour);
   const todayDate = formatPolishDate(new Date());
 
   // Patients needing attention (warning or inactive)
   const patientsNeedingAttention = patientsWithActivity.filter((p) => p.activityStatus !== 'active');
   const displayedPatients = patientsWithActivity.slice(0, 5);
+  const dashboardSubtitle = getDashboardSubtitle(patientsCount, patientsNeedingAttention.length);
 
   // Show skeleton while initial data is loading
   const isInitialLoading = !user || userLoading || (!organizationId && !userData);
@@ -337,9 +356,7 @@ export default function DashboardPage() {
             {greeting}, {userName}!
           </h1>
           <p className="mt-1 md:mt-2 text-sm text-muted-foreground">
-            {patientsNeedingAttention.length > 0
-              ? `Sprawdź, co u ${patientsNeedingAttention.length} pacjentów`
-              : 'Wszyscy pacjenci są aktywni'}
+            {dashboardSubtitle}
           </p>
         </div>
         <p className="text-sm text-muted-foreground hidden sm:block">{todayDate}</p>
@@ -564,8 +581,8 @@ export default function DashboardPage() {
                   <div className="h-14 w-14 rounded-2xl bg-surface-light flex items-center justify-center mb-3">
                     <UserPlus className="h-7 w-7 text-muted-foreground/50" />
                   </div>
-                  <p className="text-sm font-medium text-muted-foreground mb-1">Brak pacjentów</p>
-                  <p className="text-xs text-muted-foreground/70 mb-4">Dodaj pierwszego pacjenta</p>
+                  <p className="text-sm font-medium text-muted-foreground mb-1">Brak przypisanych pacjentów</p>
+                  <p className="text-xs text-muted-foreground/70 mb-4">Dodaj pacjenta lub przejmij opiekę na liście pacjentów</p>
                   <Button
                     size="sm"
                     className="h-8 text-xs"

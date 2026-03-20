@@ -1,6 +1,6 @@
 'use client';
 
-import { use, useState } from 'react';
+import { use, useEffect, useState } from 'react';
 import { useQuery, useMutation } from '@apollo/client/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useUser } from '@clerk/nextjs';
@@ -22,6 +22,7 @@ import {
   Wrench,
   UserPlus,
   FileDown,
+  ChevronDown,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import Link from 'next/link';
@@ -60,6 +61,7 @@ import {
   UPDATE_EXERCISE_IN_SET_MUTATION,
   UPDATE_EXERCISE_SET_ASSIGNMENT_MUTATION,
   REMOVE_EXERCISE_SET_ASSIGNMENT_MUTATION,
+  UPDATE_EXERCISE_SET_FREQUENCY_MUTATION,
 } from '@/graphql/mutations/exercises.mutations';
 import { GET_USER_BY_CLERK_ID_QUERY } from '@/graphql/queries/users.queries';
 import { useOrganization } from '@/contexts/OrganizationContext';
@@ -145,9 +147,28 @@ interface ExerciseSetData {
     frequency?: {
       timesPerWeek?: number;
       timesPerDay?: number;
+      breakBetweenSets?: number;
+      isFlexible?: boolean;
+      monday?: boolean;
+      tuesday?: boolean;
+      wednesday?: boolean;
+      thursday?: boolean;
+      friday?: boolean;
+      saturday?: boolean;
+      sunday?: boolean;
     };
   };
 }
+
+const WEEK_DAYS = [
+  { key: 'monday', short: 'Pn' },
+  { key: 'tuesday', short: 'Wt' },
+  { key: 'wednesday', short: 'Śr' },
+  { key: 'thursday', short: 'Cz' },
+  { key: 'friday', short: 'Pt' },
+  { key: 'saturday', short: 'So' },
+  { key: 'sunday', short: 'Nd' },
+] as const;
 
 export default function SetDetailPage({ params }: SetDetailPageProps) {
   const { id } = use(params);
@@ -163,6 +184,19 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
   const [removingExerciseId, setRemovingExerciseId] = useState<string | null>(null);
   const [removingAssignment, setRemovingAssignment] = useState<PatientAssignmentInSet | null>(null);
   const [localExercisePatches, setLocalExercisePatches] = useState<Record<string, Partial<ExerciseMapping>>>({});
+  const [isExactDaysExpanded, setIsExactDaysExpanded] = useState(false);
+  const [defaultTimesPerWeek, setDefaultTimesPerWeek] = useState(3);
+  const [defaultTimesPerDay, setDefaultTimesPerDay] = useState(1);
+  const [defaultBreakBetweenSets, setDefaultBreakBetweenSets] = useState(24);
+  const [defaultScheduleDays, setDefaultScheduleDays] = useState<Record<(typeof WEEK_DAYS)[number]['key'], boolean>>({
+    monday: false,
+    tuesday: false,
+    wednesday: false,
+    thursday: false,
+    friday: false,
+    saturday: false,
+    sunday: false,
+  });
 
   // Get organization ID from context (changes when user switches organization)
   const organizationId = currentOrganization?.organizationId;
@@ -201,8 +235,77 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
   const [removeAssignment, { loading: removingAssignmentLoading }] = useMutation(
     REMOVE_EXERCISE_SET_ASSIGNMENT_MUTATION
   );
+  const [updateDefaultSchedule, { loading: updatingDefaultSchedule }] = useMutation(
+    UPDATE_EXERCISE_SET_FREQUENCY_MUTATION
+  );
 
   const exerciseSet = (data as ExerciseSetData | undefined)?.exerciseSetById;
+  const selectedDefaultDaysCount = WEEK_DAYS.filter((day) => defaultScheduleDays[day.key]).length;
+  const effectiveDefaultTimesPerWeek =
+    selectedDefaultDaysCount > 0 ? Math.max(1, selectedDefaultDaysCount) : defaultTimesPerWeek;
+
+  const toggleDefaultScheduleDay = (dayKey: (typeof WEEK_DAYS)[number]['key']) => {
+    setDefaultScheduleDays((prev) => ({ ...prev, [dayKey]: !prev[dayKey] }));
+  };
+
+  const handleSaveDefaultSchedule = async () => {
+    if (!exerciseSet?.id) {
+      return;
+    }
+
+    try {
+      await updateDefaultSchedule({
+        variables: {
+          exerciseSetId: exerciseSet.id,
+          frequency: {
+            timesPerDay: String(Math.max(1, defaultTimesPerDay)),
+            timesPerWeek: String(Math.max(1, effectiveDefaultTimesPerWeek)),
+            isFlexible: selectedDefaultDaysCount === 0,
+            breakBetweenSets: String(Math.max(1, defaultBreakBetweenSets)),
+            monday: selectedDefaultDaysCount === 0 ? false : defaultScheduleDays.monday,
+            tuesday: selectedDefaultDaysCount === 0 ? false : defaultScheduleDays.tuesday,
+            wednesday: selectedDefaultDaysCount === 0 ? false : defaultScheduleDays.wednesday,
+            thursday: selectedDefaultDaysCount === 0 ? false : defaultScheduleDays.thursday,
+            friday: selectedDefaultDaysCount === 0 ? false : defaultScheduleDays.friday,
+            saturday: selectedDefaultDaysCount === 0 ? false : defaultScheduleDays.saturday,
+            sunday: selectedDefaultDaysCount === 0 ? false : defaultScheduleDays.sunday,
+          },
+        },
+      });
+
+      toast.success('Domyślny harmonogram zestawu został zapisany.');
+      void refetch();
+    } catch (error) {
+      console.error('Błąd zapisu domyślnego harmonogramu:', error);
+      toast.error('Nie udało się zapisać domyślnego harmonogramu.');
+    }
+  };
+
+  useEffect(() => {
+    if (!exerciseSet?.frequency) {
+      return;
+    }
+
+    const freq = exerciseSet.frequency;
+    const hasSpecificDays = Boolean(
+      freq.monday || freq.tuesday || freq.wednesday || freq.thursday || freq.friday || freq.saturday || freq.sunday
+    );
+
+    setDefaultTimesPerDay(Math.max(1, Number(freq.timesPerDay ?? 1)));
+    setDefaultTimesPerWeek(Math.max(1, Number(freq.timesPerWeek ?? 3)));
+    setDefaultBreakBetweenSets(Math.max(1, Number(freq.breakBetweenSets ?? 24)));
+    setDefaultScheduleDays({
+      monday: Boolean(freq.monday),
+      tuesday: Boolean(freq.tuesday),
+      wednesday: Boolean(freq.wednesday),
+      thursday: Boolean(freq.thursday),
+      friday: Boolean(freq.friday),
+      saturday: Boolean(freq.saturday),
+      sunday: Boolean(freq.sunday),
+    });
+    setIsExactDaysExpanded(hasSpecificDays);
+  }, [exerciseSet?.frequency]);
+
   const backToListHref = searchParams.get('from') === 'patient-plans' ? '/exercise-sets?filter=patient-plans' : '/exercise-sets';
 
   if (orgContextLoading && !organizationId) {
@@ -595,6 +698,130 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
                   </div>
                 );
               })}
+          </div>
+        )}
+      </div>
+
+      {/* Default schedule editor */}
+      <div className="rounded-2xl border border-border/50 bg-surface/50 p-5 space-y-4" data-testid="set-default-schedule-card">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <h2 className="text-lg font-semibold text-foreground">Domyślny harmonogram szablonu</h2>
+            <p className="text-sm text-muted-foreground">
+              Używany jako domyślna propozycja przy tworzeniu planów pacjenta.
+            </p>
+          </div>
+          <Button
+            size="sm"
+            onClick={() => void handleSaveDefaultSchedule()}
+            disabled={updatingDefaultSchedule}
+            data-testid="set-default-schedule-save-btn"
+          >
+            {updatingDefaultSchedule ? 'Zapisywanie...' : 'Zapisz harmonogram'}
+          </Button>
+        </div>
+
+        <div className="grid gap-3 md:grid-cols-3">
+          <label className="space-y-1 text-sm">
+            <span className="text-muted-foreground">Razy dziennie</span>
+            <input
+              type="number"
+              min={1}
+              max={5}
+              className="w-full rounded-lg border border-border bg-surface px-3 py-2"
+              value={defaultTimesPerDay}
+              onChange={(event) => setDefaultTimesPerDay(Math.max(1, Number(event.target.value || 1)))}
+              data-testid="set-default-schedule-times-per-day-input"
+            />
+          </label>
+
+          <label className="space-y-1 text-sm">
+            <span className="text-muted-foreground">Razy w tygodniu</span>
+            <input
+              type="number"
+              min={1}
+              max={7}
+              className="w-full rounded-lg border border-border bg-surface px-3 py-2"
+              value={effectiveDefaultTimesPerWeek}
+              onChange={(event) => setDefaultTimesPerWeek(Math.max(1, Number(event.target.value || 1)))}
+              data-testid="set-default-schedule-times-per-week-input"
+            />
+          </label>
+
+          <label className="space-y-1 text-sm">
+            <span className="text-muted-foreground">Przerwa (godziny)</span>
+            <input
+              type="number"
+              min={1}
+              max={168}
+              className="w-full rounded-lg border border-border bg-surface px-3 py-2"
+              value={defaultBreakBetweenSets}
+              onChange={(event) => setDefaultBreakBetweenSets(Math.max(1, Number(event.target.value || 1)))}
+              data-testid="set-default-schedule-break-input"
+            />
+          </label>
+        </div>
+
+        <button
+          type="button"
+          className="flex w-full items-center justify-between rounded-xl border border-border bg-surface px-4 py-3 text-left transition-colors hover:border-primary/40"
+          onClick={() => setIsExactDaysExpanded((prev) => !prev)}
+          data-testid="set-default-schedule-days-toggle"
+        >
+          <div>
+            <div className="text-sm font-medium text-foreground">Dokładne dni (opcjonalnie)</div>
+            <p className="text-xs text-muted-foreground mt-1">
+              {selectedDefaultDaysCount > 0
+                ? `Wybrane dni: ${selectedDefaultDaysCount}`
+                : 'Jeśli nic nie wybierzesz, harmonogram pozostanie elastyczny.'}
+            </p>
+          </div>
+          <ChevronDown className={cn('h-4 w-4 text-muted-foreground transition-transform', isExactDaysExpanded && 'rotate-180')} />
+        </button>
+
+        {(isExactDaysExpanded || selectedDefaultDaysCount > 0) && (
+          <div className="space-y-3">
+            <div className="flex flex-wrap gap-2" data-testid="set-default-schedule-days-grid">
+              {WEEK_DAYS.map((day) => {
+                const isActive = defaultScheduleDays[day.key];
+                return (
+                  <button
+                    key={day.key}
+                    type="button"
+                    onClick={() => toggleDefaultScheduleDay(day.key)}
+                    className={cn(
+                      'h-10 w-10 rounded-full border text-sm font-semibold transition-colors',
+                      isActive
+                        ? 'border-primary bg-primary text-primary-foreground'
+                        : 'border-border bg-surface text-muted-foreground hover:text-foreground'
+                    )}
+                    data-testid={`set-default-schedule-day-${day.key}`}
+                  >
+                    {day.short}
+                  </button>
+                );
+              })}
+            </div>
+
+            {selectedDefaultDaysCount > 0 && (
+              <button
+                type="button"
+                className="text-sm font-medium text-primary hover:underline"
+                onClick={() =>
+                  setDefaultScheduleDays({
+                    monday: false,
+                    tuesday: false,
+                    wednesday: false,
+                    thursday: false,
+                    friday: false,
+                    saturday: false,
+                    sunday: false,
+                  })
+                }
+              >
+                Wyczyść dokładne dni
+              </button>
+            )}
           </div>
         )}
       </div>
