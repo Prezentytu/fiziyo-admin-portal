@@ -174,4 +174,12 @@ Dziennik wniosków z pracy AI agentów. Po każdej korekcie dodaj nowy wpis.
 - **Rozwiązanie**: Wprowadzono osobny flow `BillingDetails` (schema, walidatory, dialog, kontrakt GraphQL) i priorytet banera na dane rozliczeniowe
 - **Reguła**: W obszarach płatności każdy etap (KYC/payout/faktura) musi mieć oddzielny komunikat i osobny stan ukończenia
 
+### 2026-03-27 - Design System migration wymaga centralnych tokenow
+
+- **Kategoria**: `UI/UX`
+- **Problem**: Hardcodowane hexy (#22c55e, #09090b, rgba(29,185,84,...)) w ~10 komponentach powodowaly niespojnosc po zmianie palety brand colors.
+- **Przyczyna**: Kolory wstawiane bezposrednio w JSX/Tailwind zamiast przez tokeny CSS.
+- **Rozwiazanie**: Migracja na centralny design system w globals.css (:root + .light-theme), mapowanie Tailwind v4 @theme inline, wymiana hardcoded wartosci na tokeny (`bg-dark`, `var(--primary)`, `#5bb89a`).
+- **Regula**: Nigdy nie hardcoduj kolorow brand w komponentach; uzywaj tokenow z design systemu. Przy zmianie palety wystarczy zaktualizowac globals.css.
+
 <!-- Dodawaj nowe wpisy powyżej tej linii -->

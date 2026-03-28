@@ -100,9 +100,9 @@ function CleanNumberInput({
       <div
         className={cn(
           'relative h-14 rounded-xl transition-all duration-200',
-          'bg-zinc-900/50 border border-zinc-800',
-          'hover:border-zinc-700 focus-within:border-primary/50 focus-within:bg-zinc-900',
-          dimmed && 'hover:border-zinc-800'
+          'bg-surface/50 border border-border',
+          'hover:border-border focus-within:border-primary/50 focus-within:bg-surface',
+          dimmed && 'hover:border-border'
         )}
       >
         <input
@@ -115,7 +115,7 @@ function CleanNumberInput({
           tabIndex={tabIndex}
           className={cn(
             'w-full h-full bg-transparent text-xl font-bold text-center outline-none',
-            'text-foreground placeholder:text-zinc-600',
+            'text-foreground placeholder:text-muted-foreground',
             '[appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none',
             suffix ? 'pr-6' : ''
           )}
@@ -314,7 +314,7 @@ function NameSuggestionHero({
   const hasSimilar = similarInDatabase?.similar && similarInDatabase.similar.length > 0;
 
   return (
-    <div className="border-b border-zinc-800" data-testid="ai-name-suggestion-hero">
+    <div className="border-b border-border" data-testid="ai-name-suggestion-hero">
       {/* Hero section - prominent name suggestion */}
       <div className="px-5 py-5 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent">
         <p className="text-[10px] font-semibold text-primary/70 uppercase tracking-widest mb-2">
@@ -325,7 +325,7 @@ function NameSuggestionHero({
           <div className="flex-1 min-w-0">
             {/* Current name (strikethrough) */}
             {currentName !== suggestedName && (
-              <p className="text-sm text-zinc-500 line-through mb-1 truncate">{currentName}</p>
+              <p className="text-sm text-muted-foreground line-through mb-1 truncate">{currentName}</p>
             )}
             {/* Suggested name - large and prominent */}
             <p className="text-xl font-bold text-foreground leading-tight">{suggestedName}</p>
@@ -413,7 +413,7 @@ function AIDiffDrawer({
 }: AIDiffDrawerProps) {
   if (isLoading) {
     return (
-      <div className="w-[420px] border-l border-border bg-[#09090b] p-6 flex flex-col items-center justify-center gap-4">
+      <div className="w-[420px] border-l border-border bg-dark p-6 flex flex-col items-center justify-center gap-4">
         <div className="relative">
           <Loader2 className="h-10 w-10 animate-spin text-secondary" />
           <Sparkles className="h-4 w-4 text-secondary absolute -top-1 -right-1 animate-pulse" />
@@ -428,7 +428,7 @@ function AIDiffDrawer({
 
   if (!suggestion) {
     return (
-      <div className="w-[420px] border-l border-border bg-[#09090b] p-6 flex flex-col items-center justify-center gap-4">
+      <div className="w-[420px] border-l border-border bg-dark p-6 flex flex-col items-center justify-center gap-4">
         <AlertTriangle className="h-8 w-8 text-warning" />
         <p className="text-sm text-muted-foreground text-center">
           Nie udało się wygenerować sugestii.
@@ -478,9 +478,9 @@ function AIDiffDrawer({
   ].filter(Boolean).length;
 
   return (
-    <div className="w-[420px] border-l border-zinc-800 bg-[#09090b] flex flex-col" data-testid="ai-diff-drawer">
+    <div className="w-[420px] border-l border-border bg-dark flex flex-col" data-testid="ai-diff-drawer">
       {/* Header - Asystent Redakcyjny */}
-      <div className="px-5 py-4 border-b border-zinc-800 bg-gradient-to-r from-secondary/5 to-transparent">
+      <div className="px-5 py-4 border-b border-border bg-gradient-to-r from-secondary/5 to-transparent">
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg bg-secondary/20 flex items-center justify-center">
@@ -491,7 +491,7 @@ function AIDiffDrawer({
               <p className="text-[10px] text-muted-foreground">Autouzupełnianie i porządek</p>
             </div>
           </div>
-          <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-zinc-800" onClick={onClose}>
+          <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-surface-hover" onClick={onClose}>
             <X className="h-4 w-4" />
           </Button>
         </div>
@@ -500,7 +500,7 @@ function AIDiffDrawer({
             {Math.round(suggestion.confidence * 100)}% pewności
           </Badge>
           {totalSuggestions > 0 && (
-            <Badge variant="outline" className="text-[10px] border-zinc-700 text-zinc-400">
+            <Badge variant="outline" className="text-[10px] border-border text-muted-foreground">
               {totalSuggestions} {totalSuggestions === 1 ? 'sugestia' : totalSuggestions < 5 ? 'sugestie' : 'sugestii'}
             </Badge>
           )}
@@ -592,7 +592,7 @@ function AIDiffDrawer({
                             ? 'bg-secondary/10 text-secondary border-0 cursor-pointer hover:bg-secondary/20'
                             : matchedTag && isAlreadyAdded
                               ? 'bg-secondary/30 text-secondary border-0 opacity-50 cursor-default'
-                              : 'border-zinc-700 text-zinc-500 cursor-not-allowed'
+                              : 'border-border text-muted-foreground cursor-not-allowed'
                         )}
                         style={matchedTag ? { borderLeftColor: matchedTag.color, borderLeftWidth: 2 } : undefined}
                         onClick={() => {
@@ -720,7 +720,7 @@ function AIDiffDrawer({
           <AISection icon="🎛️" title="Pro Tuning" priority="low" description="Dodatkowe pola do uzupełnienia">
             <div className="grid grid-cols-2 gap-2">
               {suggestion.advancedParams?.tempo && (
-                <div className="p-2.5 rounded-lg bg-zinc-900/50 border border-zinc-800">
+                <div className="p-2.5 rounded-lg bg-surface/50 border border-border">
                   <p className="text-[9px] text-muted-foreground uppercase mb-1">Tempo</p>
                   <p className="text-sm font-mono font-bold text-primary">{suggestion.advancedParams.tempo}</p>
                   <button
@@ -732,7 +732,7 @@ function AIDiffDrawer({
                 </div>
               )}
               {suggestion.advancedParams?.weight && (
-                <div className="p-2.5 rounded-lg bg-zinc-900/50 border border-zinc-800">
+                <div className="p-2.5 rounded-lg bg-surface/50 border border-border">
                   <p className="text-[9px] text-muted-foreground uppercase mb-1">Obciążenie</p>
                   <p className="text-sm font-medium text-foreground">{suggestion.advancedParams.weight}</p>
                   <button
@@ -744,7 +744,7 @@ function AIDiffDrawer({
                 </div>
               )}
               {suggestion.advancedParams?.rangeOfMotion && (
-                <div className="p-2.5 rounded-lg bg-zinc-900/50 border border-zinc-800 col-span-2">
+                <div className="p-2.5 rounded-lg bg-surface/50 border border-border col-span-2">
                   <p className="text-[9px] text-muted-foreground uppercase mb-1">Zakres ruchu</p>
                   <p className="text-sm font-medium text-foreground">{suggestion.advancedParams.rangeOfMotion}</p>
                   <button
@@ -776,9 +776,9 @@ function AIDiffDrawer({
       </div>
 
       {/* Footer */}
-      <div className="px-5 py-4 border-t border-zinc-800 bg-zinc-900/30">
+      <div className="px-5 py-4 border-t border-border bg-surface/30">
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={onClose} className="flex-1 border-zinc-700 hover:bg-zinc-800">
+          <Button variant="outline" size="sm" onClick={onClose} className="flex-1 border-border hover:bg-surface-hover">
             Zamknij
           </Button>
           {totalSuggestions > 0 && (
@@ -811,13 +811,13 @@ function AISection({ icon, title, description, priority, children }: AISectionPr
   const priorityColors = {
     high: 'border-l-destructive',
     medium: 'border-l-primary',
-    low: 'border-l-zinc-600',
+    low: 'border-l-border',
     warning: 'border-l-warning',
   };
 
   return (
-    <div className={cn('border-b border-zinc-800 border-l-2', priorityColors[priority])}>
-      <div className="px-5 py-3 bg-zinc-900/30">
+    <div className={cn('border-b border-border border-l-2', priorityColors[priority])}>
+      <div className="px-5 py-3 bg-surface/30">
         <div className="flex items-center gap-2 mb-0.5">
           <span className="text-sm">{icon}</span>
           <span className="text-xs font-semibold text-foreground uppercase tracking-wide">{title}</span>
@@ -853,10 +853,10 @@ function SuggestionCard({
 }: SuggestionCardProps) {
   if (inline) {
     return (
-      <div className="flex items-center justify-between p-2.5 rounded-lg bg-zinc-900/50 border border-zinc-800 hover:border-zinc-700 transition-colors">
+      <div className="flex items-center justify-between p-2.5 rounded-lg bg-surface/50 border border-border hover:border-border transition-colors">
         <div className="flex items-center gap-3">
           <span className="text-xs text-muted-foreground min-w-[80px]">{label}</span>
-          <span className="text-xs text-zinc-500 line-through">{currentValue}</span>
+          <span className="text-xs text-muted-foreground line-through">{currentValue}</span>
           <span className="text-xs text-primary font-medium">{suggestedValue}</span>
         </div>
         <Button
@@ -877,10 +877,10 @@ function SuggestionCard({
     <div
       className={cn(
         'rounded-lg border overflow-hidden',
-        priority === 'high' ? 'border-destructive/30 bg-destructive/5' : 'border-zinc-800 bg-zinc-900/30'
+        priority === 'high' ? 'border-destructive/30 bg-destructive/5' : 'border-border bg-surface/30'
       )}
     >
-      <div className="flex items-center justify-between px-3 py-2 border-b border-zinc-800/50">
+      <div className="flex items-center justify-between px-3 py-2 border-b border-border/50">
         <span className="text-[10px] font-semibold text-muted-foreground uppercase">{label}</span>
         <Button
           type="button"
@@ -896,9 +896,9 @@ function SuggestionCard({
       <div className="p-3 space-y-2">
         {isText ? (
           <>
-            <div className="p-2 rounded bg-zinc-800/30">
+            <div className="p-2 rounded bg-surface-light/30">
               <p className="text-[9px] text-muted-foreground mb-1 uppercase">Teraz</p>
-              <p className="text-xs text-zinc-500 line-clamp-2">{currentValue}</p>
+              <p className="text-xs text-muted-foreground line-clamp-2">{currentValue}</p>
             </div>
             <div className="p-2 rounded bg-secondary/5 border border-secondary/20">
               <p className="text-[9px] text-secondary mb-1 uppercase">Sugestia AI</p>
@@ -907,7 +907,7 @@ function SuggestionCard({
           </>
         ) : (
           <div className="flex items-center gap-3">
-            <span className="text-sm text-zinc-500 line-through">{currentValue}</span>
+            <span className="text-sm text-muted-foreground line-through">{currentValue}</span>
             <span className="text-lg font-bold text-primary">{suggestedValue}</span>
           </div>
         )}
@@ -1562,23 +1562,23 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
                     }
                   }}
                   className={cn(
-                    'w-full h-40 rounded-xl border-2 border-dashed border-zinc-700',
+                    'w-full h-40 rounded-xl border-2 border-dashed border-border',
                     'flex flex-col items-center justify-center gap-3 cursor-pointer',
-                    'bg-zinc-900/30 hover:bg-zinc-900/50 hover:border-zinc-600 hover:border-primary/30',
+                    'bg-surface/30 hover:bg-surface/50 hover:border-primary/30',
                     'transition-all duration-300 group'
                   )}
                   tabIndex={2}
                   data-testid="exercise-create-media-dropzone"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-full bg-zinc-800/50 flex items-center justify-center group-hover:bg-primary/10 transition-colors">
-                      <Upload className="h-6 w-6 text-zinc-500 group-hover:text-primary transition-colors" />
+                    <div className="w-12 h-12 rounded-full bg-surface-light/50 flex items-center justify-center group-hover:bg-primary/10 transition-colors">
+                      <Upload className="h-6 w-6 text-muted-foreground group-hover:text-primary transition-colors" />
                     </div>
                     <div className="text-left">
-                      <p className="text-sm text-zinc-400 group-hover:text-zinc-300 transition-colors font-medium">
+                      <p className="text-sm text-muted-foreground group-hover:text-foreground transition-colors font-medium">
                         Przeciągnij zdjęcia lub wideo
                       </p>
-                      <p className="text-xs text-zinc-600 group-hover:text-zinc-500 transition-colors">
+                      <p className="text-xs text-text-tertiary group-hover:text-muted-foreground transition-colors">
                         Start / Koniec ruchu • maks. 5 plików
                       </p>
                     </div>
@@ -1586,7 +1586,7 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
 
                   {/* Inline AI Generate hint */}
                   <div className="flex items-center gap-4 mt-1">
-                    <span className="text-[10px] text-zinc-600">lub</span>
+                    <span className="text-[10px] text-text-tertiary">lub</span>
                     <button
                       type="button"
                       onClick={(e) => {
@@ -1617,7 +1617,7 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
                     <div
                       key={idx}
                       className={cn(
-                        'relative aspect-video rounded-xl overflow-hidden border border-zinc-800',
+                        'relative aspect-video rounded-xl overflow-hidden border border-border',
                         'group animate-in fade-in zoom-in-95 duration-300'
                       )}
                       style={{ animationDelay: `${idx * 50}ms` }}
@@ -1658,16 +1658,16 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
                       type="button"
                       onClick={() => fileInputRef.current?.click()}
                       className={cn(
-                        'aspect-video rounded-xl border-2 border-dashed border-zinc-700',
+                        'aspect-video rounded-xl border-2 border-dashed border-border',
                         'flex flex-col items-center justify-center gap-2 cursor-pointer',
-                        'bg-zinc-900/30 hover:bg-zinc-900/50 hover:border-zinc-600 hover:border-primary/30',
+                        'bg-surface/30 hover:bg-surface/50 hover:border-primary/30',
                         'transition-all duration-200 group'
                       )}
                       tabIndex={2}
                       data-testid="exercise-create-media-add-btn"
                     >
-                      <Plus className="h-6 w-6 text-zinc-500 group-hover:text-primary transition-colors" />
-                      <span className="text-xs text-zinc-500 group-hover:text-zinc-400">Dodaj</span>
+                      <Plus className="h-6 w-6 text-muted-foreground group-hover:text-primary transition-colors" />
+                      <span className="text-xs text-muted-foreground group-hover:text-muted-foreground">Dodaj</span>
                     </button>
                   )}
 
@@ -1678,9 +1678,9 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
                       onClick={handleGenerateImage}
                       disabled={isGeneratingImage || !data.name.trim()}
                       className={cn(
-                        'aspect-video rounded-xl border border-dashed border-zinc-700',
+                        'aspect-video rounded-xl border border-dashed border-border',
                         'flex flex-col items-center justify-center gap-2 cursor-pointer',
-                        'bg-zinc-900/20 hover:bg-secondary/5 hover:border-secondary/40',
+                        'bg-surface/20 hover:bg-secondary/5 hover:border-secondary/40',
                         'transition-all duration-200 group',
                         'disabled:opacity-40 disabled:cursor-not-allowed'
                       )}
@@ -1689,9 +1689,9 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
                       {isGeneratingImage ? (
                         <Loader2 className="h-6 w-6 text-secondary animate-spin" />
                       ) : (
-                        <Wand2 className="h-6 w-6 text-zinc-500 group-hover:text-secondary transition-colors" />
+                        <Wand2 className="h-6 w-6 text-muted-foreground group-hover:text-secondary transition-colors" />
                       )}
-                      <span className="text-xs text-zinc-500 group-hover:text-secondary">AI</span>
+                      <span className="text-xs text-muted-foreground group-hover:text-secondary">AI</span>
                     </button>
                   )}
                 </div>
@@ -1722,7 +1722,7 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
                       type="button"
                       onClick={() => applyPreset(preset)}
                       className={cn(
-                        'text-[10px] bg-zinc-900/50 border border-zinc-800 text-zinc-400',
+                        'text-[10px] bg-surface/50 border border-border text-muted-foreground',
                         'hover:text-foreground hover:border-primary/50 px-2 py-1 rounded',
                         'transition-colors flex items-center gap-1'
                       )}
@@ -1800,7 +1800,7 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
                 value={data.description}
                 onChange={(e) => updateField('description', e.target.value)}
                 placeholder="Opisz ćwiczenie prostym językiem dla pacjenta..."
-                className="w-full h-20 bg-zinc-900/50 border-zinc-800 text-sm text-foreground rounded-xl resize-none placeholder:text-zinc-600 focus:border-primary/50"
+                className="w-full h-20 bg-surface/50 border-border text-sm text-foreground rounded-xl resize-none placeholder:text-muted-foreground focus:border-primary/50"
                 tabIndex={7}
                 data-testid="exercise-create-description-input"
               />

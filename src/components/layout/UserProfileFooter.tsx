@@ -98,7 +98,7 @@ export function UserProfileFooter({ isCollapsed }: UserProfileFooterProps) {
           {/* Avatar */}
           <Avatar className="h-9 w-9 shrink-0">
             <AvatarImage src={avatarUrl} alt={fullName} />
-            <AvatarFallback className="bg-linear-to-br from-primary to-primary-dark text-white text-sm font-semibold">
+            <AvatarFallback className="bg-linear-to-br from-primary to-primary-dark text-primary-foreground text-sm font-semibold">
               {initials}
             </AvatarFallback>
           </Avatar>
@@ -135,7 +135,7 @@ export function UserProfileFooter({ isCollapsed }: UserProfileFooterProps) {
           <div className="flex items-center gap-3">
             <Avatar className="h-10 w-10">
               <AvatarImage src={avatarUrl} alt={fullName} />
-              <AvatarFallback className="bg-linear-to-br from-primary to-primary-dark text-white text-sm font-semibold">
+              <AvatarFallback className="bg-linear-to-br from-primary to-primary-dark text-primary-foreground text-sm font-semibold">
                 {initials}
               </AvatarFallback>
             </Avatar>

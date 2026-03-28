@@ -36,10 +36,10 @@ const TAG_CATEGORY_COLORS: Record<string, string> = {
   stopa: 'bg-blue-500/10 text-blue-600 border-blue-500/20',
   kręgosłup: 'bg-blue-500/10 text-blue-600 border-blue-500/20',
   // Equipment - gray
-  piłka: 'bg-zinc-500/10 text-zinc-600 border-zinc-500/20',
-  taśma: 'bg-zinc-500/10 text-zinc-600 border-zinc-500/20',
-  hantle: 'bg-zinc-500/10 text-zinc-600 border-zinc-500/20',
-  mata: 'bg-zinc-500/10 text-zinc-600 border-zinc-500/20',
+  piłka: 'bg-muted text-muted-foreground border-border',
+  taśma: 'bg-muted text-muted-foreground border-border',
+  hantle: 'bg-muted text-muted-foreground border-border',
+  mata: 'bg-muted text-muted-foreground border-border',
   // Exercise type - purple
   rozciąganie: 'bg-purple-500/10 text-purple-600 border-purple-500/20',
   wzmacnianie: 'bg-purple-500/10 text-purple-600 border-purple-500/20',

@@ -86,7 +86,7 @@ export function StatsCard({
               variant === 'success' && 'bg-gradient-to-br from-primary/90 to-primary-dark/90'
             )}
           >
-            <Icon className={cn('text-white', isHero ? 'h-8 w-8' : 'h-6 w-6')} />
+            <Icon className={cn('text-primary-foreground', isHero ? 'h-8 w-8' : 'h-6 w-6')} />
           </div>
         </div>
 

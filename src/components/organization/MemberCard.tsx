@@ -226,7 +226,7 @@ export function MemberCard({
                       'gap-1.5 text-[10px] uppercase font-bold tracking-wider px-1.5 py-0 h-5 border shadow-xs',
                       assignedPatientsCount > 0
                         ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
-                        : 'bg-zinc-800/50 text-zinc-500 border-zinc-700/50'
+                        : 'bg-surface-light/50 text-muted-foreground border-border'
                     )}
                   >
                     <Users className="h-3 w-3" />

@@ -283,7 +283,7 @@ export function JoinOrganizationDialog({ open, onOpenChange, onSuccess }: JoinOr
           {/* Valid invitation preview */}
           {validationState === 'valid' && invitation && (
             <Card className="border-primary/30 bg-primary/5 overflow-hidden">
-              <div className="h-1 bg-gradient-to-r from-primary via-emerald-500 to-primary" />
+              <div className="h-1 bg-gradient-to-r from-primary via-primary to-primary" />
               <CardContent className="p-4 space-y-4">
                 {/* Organization info */}
                 <div className="flex items-center gap-4">
@@ -296,7 +296,7 @@ export function JoinOrganizationDialog({ open, onOpenChange, onSuccess }: JoinOr
                     </Avatar>
                   ) : (
                     <div className="flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-br from-primary to-primary-dark shadow-lg shadow-primary/20">
-                      <Building2 className="h-7 w-7 text-white" />
+                      <Building2 className="h-7 w-7 text-primary-foreground" />
                     </div>
                   )}
                   <div className="flex-1 min-w-0">
@@ -354,7 +354,7 @@ export function JoinOrganizationDialog({ open, onOpenChange, onSuccess }: JoinOr
               className={cn(
                 'gap-2',
                 validationState === 'valid' &&
-                  'bg-gradient-to-r from-primary to-emerald-600 hover:from-primary-dark hover:to-emerald-700'
+                  'bg-gradient-to-r from-primary to-primary-dark hover:from-primary-dark hover:to-accent-green'
               )}
               data-testid="settings-join-org-submit-btn"
             >

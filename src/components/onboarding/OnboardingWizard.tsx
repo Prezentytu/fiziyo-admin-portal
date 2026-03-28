@@ -260,7 +260,7 @@ export function OnboardingWizard({ open, onOpenChange, userName = 'Użytkowniku'
         {/* Celebration screen */}
         {showCelebration ? (
           <div className="p-8 text-center space-y-6">
-            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-primary to-primary-dark">
+            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-linear-to-br from-primary to-primary-dark">
               <PartyPopper className="h-10 w-10 text-white" />
             </div>
             <div className="space-y-2">
@@ -287,7 +287,7 @@ export function OnboardingWizard({ open, onOpenChange, userName = 'Użytkowniku'
         ) : (
           <>
             {/* Header */}
-            <div className="relative border-b border-border bg-gradient-to-br from-primary/5 to-transparent p-6">
+            <div className="relative border-b border-border bg-linear-to-br from-primary/5 to-transparent p-6">
               <button
                 onClick={handleSkip}
                 className="absolute top-4 right-4 text-muted-foreground hover:text-foreground transition-colors"
@@ -297,8 +297,8 @@ export function OnboardingWizard({ open, onOpenChange, userName = 'Użytkowniku'
               </button>
 
               <div className="flex items-center gap-4">
-                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-primary-dark shadow-lg">
-                  <Sparkles className="h-7 w-7 text-white" />
+                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-linear-to-br from-primary to-primary-dark shadow-lg">
+                  <Sparkles className="h-7 w-7 text-primary-foreground" />
                 </div>
                 <div>
                   <h2 className="text-xl font-bold text-foreground">Witaj, {userName}!</h2>
@@ -344,7 +344,7 @@ export function OnboardingWizard({ open, onOpenChange, userName = 'Użytkowniku'
                         className={cn(
                           'flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-colors',
                           isCompleted
-                            ? 'bg-primary text-white'
+                            ? 'bg-primary text-primary-foreground'
                             : isActive
                               ? 'bg-primary/20 text-primary'
                               : 'bg-surface-light text-muted-foreground'
@@ -389,7 +389,7 @@ export function OnboardingWizard({ open, onOpenChange, userName = 'Użytkowniku'
 
               {/* Current step details */}
               {currentStepData && !currentStepData.completed && (
-                <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
+                <Card className="border-primary/20 bg-linear-to-br from-primary/5 to-transparent">
                   <CardContent className="p-5 space-y-4">
                     <div className="flex items-start gap-3">
                       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/20">

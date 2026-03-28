@@ -33,7 +33,7 @@ export function AIChatButton() {
               'flex h-14 w-14 items-center justify-center',
               'rounded-full shadow-xl',
               'bg-gradient-to-br from-primary via-primary to-primary-dark',
-              'text-white',
+              'text-primary-foreground',
               'transition-all duration-300 ease-out',
               'hover:scale-110 hover:shadow-2xl hover:shadow-primary/30',
               'active:scale-95',

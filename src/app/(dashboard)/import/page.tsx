@@ -153,7 +153,7 @@ export default function ImportPage() {
             const isCompleted = index < currentStepIndex;
             const isClickable = isCompleted && !isAnalyzing && !isImporting;
             const stepCircleClass =
-              isActive || isCompleted ? 'bg-primary text-white' : 'bg-surface-light text-muted-foreground';
+              isActive || isCompleted ? 'bg-primary text-primary-foreground' : 'bg-surface-light text-muted-foreground';
             const stepLabelClass = isActive || isCompleted ? 'text-foreground' : 'text-muted-foreground';
 
             return (

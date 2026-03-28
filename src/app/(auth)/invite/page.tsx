@@ -240,7 +240,7 @@ function InvitePageContent() {
                 </Avatar>
               ) : (
                 <div className="flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-primary to-primary-dark shadow-xl shadow-primary/20">
-                  <Building2 className="h-10 w-10 text-white" />
+                  <Building2 className="h-10 w-10 text-primary-foreground" />
                 </div>
               )}
             </div>
@@ -374,7 +374,7 @@ function InvitePageContent() {
         )}
       >
         {/* Gradient accent top */}
-        <div className="h-1 bg-gradient-to-r from-primary via-emerald-500 to-primary" />
+        <div className="h-1 bg-gradient-to-r from-primary via-primary to-primary" />
 
         <CardHeader className="text-center pb-4 pt-6">
           <div
@@ -395,7 +395,7 @@ function InvitePageContent() {
               </Avatar>
             ) : (
               <div className="flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br from-primary to-primary-dark shadow-xl shadow-primary/30">
-                <Building2 className="h-12 w-12 text-white" />
+                <Building2 className="h-12 w-12 text-primary-foreground" />
               </div>
             )}
 
@@ -472,7 +472,7 @@ function InvitePageContent() {
               onClick={handleAccept}
               className={cn(
                 'w-full gap-2 h-12 text-base font-semibold',
-                'bg-gradient-to-r from-primary to-emerald-600 hover:from-primary-dark hover:to-emerald-700',
+                'bg-gradient-to-r from-primary to-primary-dark hover:from-primary-dark hover:to-primary',
                 'shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30',
                 'transition-all duration-300 hover:scale-[1.02]',
                 !isAccepting && 'animate-pulse'
@@ -508,10 +508,10 @@ function PageWrapper({ children }: { children: React.ReactNode }) {
       <div className="absolute inset-0 -z-10 bg-background">
         <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl animate-pulse" />
         <div
-          className="absolute bottom-0 right-1/4 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl animate-pulse"
+          className="absolute bottom-0 right-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl animate-pulse"
           style={{ animationDelay: '1s' }}
         />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-br from-primary/5 to-emerald-500/5 rounded-full blur-3xl" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-br from-primary/5 to-primary/5 rounded-full blur-3xl" />
       </div>
 
       {children}

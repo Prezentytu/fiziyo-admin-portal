@@ -89,7 +89,7 @@ export function StepperFooter({
             <Button
               onClick={onSignAndComplete}
               disabled={isLoading || !canSign}
-              className="gap-2 bg-gradient-to-r from-primary to-emerald-600 hover:from-primary-dark hover:to-emerald-700 min-w-[180px]"
+              className="gap-2 bg-gradient-to-r from-primary to-primary-dark hover:from-primary-dark hover:to-accent-green min-w-[180px]"
               data-testid="clinical-note-sign-btn"
             >
               {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle className="h-4 w-4" />}

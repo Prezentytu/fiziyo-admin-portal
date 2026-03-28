@@ -30,7 +30,7 @@ export function ExerciseCard({ exercise, onAddToSet, className }: ExerciseCardPr
       )}
     >
       {/* Gradient header */}
-      <div className="h-1 bg-gradient-to-r from-primary to-emerald-600" />
+      <div className="h-1 bg-gradient-to-r from-primary to-primary-dark" />
 
       {/* Add to set button - visible on hover */}
       {onAddToSet && (

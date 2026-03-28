@@ -344,7 +344,7 @@ export function SetCard({ set, tagsMap, onView, onEdit, onDelete, onDuplicate, o
               )}
             >
               <Button
-                className="h-9 px-5 bg-primary/90 hover:bg-primary text-white backdrop-blur-sm shadow-lg rounded-full font-medium"
+                className="h-9 px-5 bg-primary/90 hover:bg-primary text-primary-foreground backdrop-blur-sm shadow-lg rounded-full font-medium"
                 onClick={(e) => handleAction(e, () => onAssign(set))}
                 data-testid={`set-card-${set.id}-assign-btn`}
               >

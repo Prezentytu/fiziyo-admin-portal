@@ -193,7 +193,7 @@ export function PatientDialog({
   const successInitials = createdPatient ? getInitials(createdPatient.firstName, createdPatient.lastName) : '?';
   const successGradient = createdPatient
     ? getAvatarGradient(createdPatient.firstName, createdPatient.lastName)
-    : 'linear-gradient(135deg, #22c55e, #10b981)';
+    : 'linear-gradient(135deg, #5bb89a, #449b80)';
 
   return (
     <>
@@ -318,8 +318,8 @@ export function PatientDialog({
             <>
               <DialogHeader className="px-8 py-6 border-b border-border shrink-0 bg-linear-to-r from-surface to-surface-light/50">
                 <div className="flex items-center gap-4">
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-linear-to-br from-primary to-primary-dark shadow-lg shadow-primary/25">
-                    <UserPlus className="h-6 w-6 text-white" />
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-linear-to-br from-primary to-primary-dark shadow-lg shadow-primary/25">
+                    <UserPlus className="h-6 w-6 text-primary-foreground" />
                   </div>
                   <div className="min-w-0 flex-1">
                     <DialogTitle className="text-xl font-bold" data-testid="patient-dialog-title">

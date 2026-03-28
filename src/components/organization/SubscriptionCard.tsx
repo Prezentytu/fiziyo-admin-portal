@@ -72,7 +72,7 @@ const allPlans = [
     monthlyPrice: 99,
     yearlyPrice: 990,
     icon: Rocket,
-    gradient: 'from-primary to-emerald-600',
+    gradient: 'from-primary to-primary-dark',
     features: ['50 pacjentów', '1 terapeuta', '∞ ćwiczeń', '1 gabinet', '150 kredytów AI'],
   },
   {
@@ -108,7 +108,7 @@ const allPlans = [
 const planConfig: Record<string, { label: string; icon: React.ElementType; gradient: string }> = {
   STARTER: { label: 'Starter', icon: Sparkles, gradient: 'from-slate-500 to-slate-600' },
   FREE: { label: 'Starter', icon: Sparkles, gradient: 'from-slate-500 to-slate-600' },
-  SOLO: { label: 'Solo', icon: Rocket, gradient: 'from-primary to-emerald-600' },
+  SOLO: { label: 'Solo', icon: Rocket, gradient: 'from-primary to-primary-dark' },
   PRO: { label: 'Pro', icon: Zap, gradient: 'from-orange-500 to-red-500' },
   BUSINESS: { label: 'Business', icon: Crown, gradient: 'from-violet-500 to-indigo-600' },
 };
@@ -327,13 +327,13 @@ export function SubscriptionCard({
               onClick={() => setIsUpgradeDialogOpen(true)}
               className={cn(
                 'w-full group rounded-xl p-4 text-left transition-all cursor-pointer',
-                'bg-gradient-to-r from-primary/10 to-emerald-500/10 border border-primary/30',
-                'hover:from-primary/15 hover:to-emerald-500/15 hover:border-primary/50'
+                'bg-gradient-to-r from-primary/10 to-primary/10 border border-primary/30',
+                'hover:from-primary/15 hover:to-primary/15 hover:border-primary/50'
               )}
             >
               <div className="flex items-center gap-4">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-emerald-600">
-                  <Rocket className="h-5 w-5 text-white" />
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary-dark">
+                  <Rocket className="h-5 w-5 text-primary-foreground" />
                 </div>
                 <div className="flex-1">
                   <p className="font-semibold text-foreground">Przejdź na Solo</p>

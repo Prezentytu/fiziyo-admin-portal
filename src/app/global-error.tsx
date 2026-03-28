@@ -16,7 +16,7 @@ export default function GlobalError({ error, reset }: GlobalErrorProps) {
 
   return (
     <html lang="pl">
-      <body style={{ margin: 0, fontFamily: 'system-ui, sans-serif', background: '#000', color: '#fff' }}>
+      <body style={{ margin: 0, fontFamily: '"Outfit", system-ui, -apple-system, "Segoe UI", sans-serif', background: '#0f1a15', color: '#e8ede9' }}>
         <div
           style={{
             display: 'flex',
@@ -56,7 +56,7 @@ export default function GlobalError({ error, reset }: GlobalErrorProps) {
             onClick={reset}
             style={{
               padding: '0.75rem 1.5rem',
-              background: '#22c55e',
+              background: '#5bb89a',
               color: '#000',
               border: 'none',
               borderRadius: 12,

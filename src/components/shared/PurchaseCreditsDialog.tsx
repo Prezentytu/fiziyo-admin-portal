@@ -184,7 +184,7 @@ export function PurchaseCreditsDialog({ isOpen, onClose, organizationId }: Purch
                   )}
                   {pkg.popular && !pkg.best && (
                     <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-10">
-                      <Badge className="bg-gradient-to-r from-primary to-emerald-600 text-white border-0 shadow-lg px-3 py-1">
+                      <Badge className="bg-gradient-to-r from-primary to-primary-dark text-primary-foreground border-0 shadow-lg px-3 py-1">
                         Popularne
                       </Badge>
                     </div>
@@ -198,7 +198,7 @@ export function PurchaseCreditsDialog({ isOpen, onClose, organizationId }: Purch
                       pkg.best
                         ? 'from-orange-500 to-red-500'
                         : pkg.popular
-                          ? 'from-primary to-emerald-600'
+                          ? 'from-primary to-primary-dark'
                           : 'from-slate-500 to-slate-600'
                     )}
                   >

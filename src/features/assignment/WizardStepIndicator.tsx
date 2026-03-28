@@ -64,7 +64,7 @@ export function WizardStepIndicator({
         <div className="relative px-3 py-1.5">
           <div className="h-1 w-full rounded-full bg-surface-light overflow-hidden">
             <div
-              className="h-full rounded-full bg-gradient-to-r from-primary via-primary to-emerald-400 transition-all duration-500 ease-out"
+              className="h-full rounded-full bg-gradient-to-r from-primary via-primary to-primary-light transition-all duration-500 ease-out"
               style={{ width: `${progressPercent}%` }}
             />
           </div>
@@ -118,7 +118,7 @@ export function WizardStepIndicator({
       <div className="relative px-4 py-3">
         <div className="h-1.5 w-full rounded-full bg-surface-light overflow-hidden">
           <div
-            className="h-full rounded-full bg-gradient-to-r from-primary via-primary to-emerald-400 transition-all duration-500 ease-out"
+            className="h-full rounded-full bg-gradient-to-r from-primary via-primary to-primary-light transition-all duration-500 ease-out"
             style={{ width: `${progressPercent}%` }}
           />
         </div>

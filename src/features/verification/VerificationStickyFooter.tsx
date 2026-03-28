@@ -121,7 +121,7 @@ export function VerificationStickyFooter({
                 disabled={anyLoading || !canApprove}
                 className={cn(
                   'gap-2 px-6 font-bold shadow-lg transition-all',
-                  'bg-gradient-to-r from-primary to-emerald-600 hover:from-primary/90 hover:to-emerald-600/90',
+                  'bg-gradient-to-r from-primary to-primary-dark hover:from-primary/90 hover:to-primary-dark/90',
                   'hover:shadow-xl hover:shadow-primary/20 hover:scale-[1.02]'
                 )}
                 data-testid="verification-approve-btn"

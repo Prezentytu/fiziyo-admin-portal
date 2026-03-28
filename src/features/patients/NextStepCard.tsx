@@ -96,7 +96,7 @@ export function NextStepCard({
 
   return (
     <div
-      className={cn('rounded-2xl border border-border bg-surface dark:bg-zinc-900/50 p-6 flex flex-col justify-between', className)}
+      className={cn('rounded-2xl border border-border bg-surface dark:bg-surface/50 p-6 flex flex-col justify-between', className)}
     >
       <div>
         <h3 className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground mb-2">Rekomendacja</h3>

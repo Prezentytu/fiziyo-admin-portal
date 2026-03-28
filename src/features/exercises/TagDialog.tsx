@@ -45,7 +45,7 @@ interface TagDialogProps {
 }
 
 const colorPresets = [
-  '#22c55e',
+  '#5bb89a',
   '#3b82f6',
   '#f59e0b',
   '#ef4444',
@@ -66,7 +66,7 @@ export function TagDialog({ open, onOpenChange, tag, organizationId, onSuccess }
     defaultValues: {
       name: tag?.name || '',
       description: tag?.description || '',
-      color: tag?.color || '#22c55e',
+      color: tag?.color || '#5bb89a',
       icon: tag?.icon || '',
       isMain: tag?.isMain || false,
     },
@@ -93,7 +93,7 @@ export function TagDialog({ open, onOpenChange, tag, organizationId, onSuccess }
       form.reset({
         name: tag.name,
         description: tag.description || '',
-        color: tag.color || '#22c55e',
+        color: tag.color || '#5bb89a',
         icon: tag.icon || '',
         isMain: tag.isMain || false,
       });
@@ -101,7 +101,7 @@ export function TagDialog({ open, onOpenChange, tag, organizationId, onSuccess }
       form.reset({
         name: '',
         description: '',
-        color: '#22c55e',
+        color: '#5bb89a',
         icon: '',
         isMain: false,
       });
@@ -208,7 +208,7 @@ export function TagDialog({ open, onOpenChange, tag, organizationId, onSuccess }
                           className="h-8 w-8 rounded border border-border"
                           style={{ backgroundColor: field.value }}
                         />
-                        <Input placeholder="#22c55e" {...field} className="flex-1" />
+                        <Input placeholder="#5bb89a" {...field} className="flex-1" />
                       </div>
                       <div className="flex flex-wrap gap-2">
                         {colorPresets.map((color) => (

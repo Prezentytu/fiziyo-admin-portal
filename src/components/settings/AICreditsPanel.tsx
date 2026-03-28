@@ -179,9 +179,9 @@ export function AICreditsPanel({ compact = false }: AICreditsReadonlyPanelProps)
     return (
       <Card className="relative overflow-hidden rounded-xl border border-border/50 bg-card/30 h-full group">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary via-emerald-500 to-cyan-500" />
+        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary via-primary to-cyan-500" />
         <CardContent className="relative p-8 text-center">
-          <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-primary/20 to-emerald-500/20 mb-4 shadow-lg shadow-primary/10">
+          <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-primary/20 to-primary/20 mb-4 shadow-lg shadow-primary/10">
             <Sparkles className="h-6 w-6 text-primary" />
           </div>
           <h3 className="text-lg font-bold text-foreground mb-1 tracking-tight">Kredyty AI</h3>
@@ -236,7 +236,7 @@ export function AICreditsPanel({ compact = false }: AICreditsReadonlyPanelProps)
                       ? 'bg-gradient-to-br from-destructive to-red-600 shadow-destructive/25'
                       : isLow
                         ? 'bg-gradient-to-br from-warning to-orange-600 shadow-warning/25'
-                        : 'bg-gradient-to-br from-primary to-emerald-600 shadow-primary/25'
+                        : 'bg-gradient-to-br from-primary to-primary-dark shadow-primary/25'
                   )}
                 >
                   <Sparkles className="h-6 w-6 text-white" />
@@ -256,7 +256,7 @@ export function AICreditsPanel({ compact = false }: AICreditsReadonlyPanelProps)
                     ? 'bg-destructive text-white hover:bg-destructive/90 shadow-destructive/20'
                     : isLow
                       ? 'bg-warning text-white hover:bg-warning/90 shadow-warning/20'
-                      : 'bg-primary text-white hover:bg-primary/90 shadow-primary/20'
+                      : 'bg-primary text-primary-foreground hover:bg-primary/90 shadow-primary/20'
                 )}
               >
                 <Zap className="h-4 w-4" />
@@ -288,7 +288,7 @@ export function AICreditsPanel({ compact = false }: AICreditsReadonlyPanelProps)
                       ? 'from-destructive to-red-600'
                       : isLow
                         ? 'from-warning to-orange-500'
-                        : 'from-primary to-emerald-500'
+                        : 'from-primary to-primary'
                   )}
                   style={{ width: `${Math.min(availablePercent, 100)}%` }}
                 />
@@ -358,7 +358,7 @@ export function AICreditsPanel({ compact = false }: AICreditsReadonlyPanelProps)
               ? 'bg-gradient-to-br from-destructive/5 via-transparent to-red-500/5'
               : isLow
                 ? 'bg-gradient-to-br from-warning/5 via-transparent to-orange-500/5'
-                : 'bg-gradient-to-br from-primary/5 via-transparent to-emerald-500/5'
+                : 'bg-gradient-to-br from-primary/5 via-transparent to-primary/5'
           )}
         />
         <div
@@ -368,7 +368,7 @@ export function AICreditsPanel({ compact = false }: AICreditsReadonlyPanelProps)
               ? 'bg-gradient-to-r from-destructive via-red-500 to-orange-500'
               : isLow
                 ? 'bg-gradient-to-r from-warning via-orange-500 to-yellow-500'
-                : 'bg-gradient-to-r from-primary via-emerald-500 to-cyan-500'
+                : 'bg-gradient-to-r from-primary via-primary to-cyan-500'
           )}
         />
 
@@ -382,7 +382,7 @@ export function AICreditsPanel({ compact = false }: AICreditsReadonlyPanelProps)
                     ? 'bg-gradient-to-br from-destructive to-red-600 shadow-destructive/25'
                     : isLow
                       ? 'bg-gradient-to-br from-warning to-orange-600 shadow-warning/25'
-                      : 'bg-gradient-to-br from-primary to-emerald-600 shadow-primary/25'
+                      : 'bg-gradient-to-br from-primary to-primary-dark shadow-primary/25'
                 )}
               >
                 <Sparkles className="h-5 w-5 text-white" />
@@ -420,7 +420,7 @@ export function AICreditsPanel({ compact = false }: AICreditsReadonlyPanelProps)
                     ? 'from-destructive to-red-600'
                     : isLow
                       ? 'from-warning to-orange-500'
-                      : 'from-primary to-emerald-500'
+                      : 'from-primary to-primary'
                 )}
                 style={{ width: `${Math.min(availablePercent, 100)}%` }}
               />
@@ -436,7 +436,7 @@ export function AICreditsPanel({ compact = false }: AICreditsReadonlyPanelProps)
               <p className="text-3xl font-bold tabular-nums text-foreground">{credits.monthlyRemaining}</p>
               <p className="text-xs text-muted-foreground mt-1">Z planu</p>
             </div>
-            <div className="rounded-xl bg-gradient-to-br from-primary/10 to-emerald-500/10 p-4 text-center border border-primary/20 hover:border-primary/40 transition-colors">
+            <div className="rounded-xl bg-gradient-to-br from-primary/10 to-primary/10 p-4 text-center border border-primary/20 hover:border-primary/40 transition-colors">
               <p className="text-3xl font-bold text-primary tabular-nums">{credits.addonCredits}</p>
               <p className="text-xs text-muted-foreground mt-1">Dokupione</p>
             </div>
@@ -520,8 +520,8 @@ export function AICreditsPanel({ compact = false }: AICreditsReadonlyPanelProps)
         <Card id="purchase-section" className="border-border/60">
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-3 text-lg">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-emerald-600 shadow-lg shadow-primary/25">
-                <Zap className="h-5 w-5 text-white" />
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary-dark shadow-lg shadow-primary/25">
+                <Zap className="h-5 w-5 text-primary-foreground" />
               </div>
               Doładuj kredyty
             </CardTitle>
@@ -546,7 +546,7 @@ export function AICreditsPanel({ compact = false }: AICreditsReadonlyPanelProps)
                 >
                   {(popular || best) && (
                     <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-10">
-                      <Badge className="bg-gradient-to-r from-primary to-emerald-600 text-white border-0 shadow-lg shadow-primary/25 px-3">
+                      <Badge className="bg-gradient-to-r from-primary to-primary-dark text-primary-foreground border-0 shadow-lg shadow-primary/25 px-3">
                         {best ? (
                           <>
                             <Star className="h-3 w-3 mr-1 fill-current" />
@@ -564,10 +564,10 @@ export function AICreditsPanel({ compact = false }: AICreditsReadonlyPanelProps)
                       <div
                         className={cn(
                           'flex h-10 w-10 items-center justify-center rounded-xl transition-transform group-hover:scale-110',
-                          popular || best ? 'bg-gradient-to-br from-primary to-emerald-600' : 'bg-surface-light'
+                          popular || best ? 'bg-gradient-to-br from-primary to-primary-dark' : 'bg-surface-light'
                         )}
                       >
-                        <Icon className={cn('h-5 w-5', popular || best ? 'text-white' : 'text-muted-foreground')} />
+                        <Icon className={cn('h-5 w-5', popular || best ? 'text-primary-foreground' : 'text-muted-foreground')} />
                       </div>
                       <span className="font-medium text-foreground">{label}</span>
                     </div>
@@ -614,8 +614,8 @@ export function AICreditsPanel({ compact = false }: AICreditsReadonlyPanelProps)
               <CardHeader className="pb-3 hover:bg-surface-light/30 transition-colors rounded-t-xl cursor-pointer">
                 <div className="flex items-center justify-between">
                   <CardTitle className="flex items-center gap-3 text-lg">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-emerald-600 shadow-lg shadow-primary/25">
-                      <TrendingUp className="h-5 w-5 text-white" />
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary-dark shadow-lg shadow-primary/25">
+                      <TrendingUp className="h-5 w-5 text-primary-foreground" />
                     </div>
                     Historia zużycia
                     <Badge variant="secondary" className="text-xs">

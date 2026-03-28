@@ -262,7 +262,7 @@ export function SettingsTab({ organization, currentUserRole, isLoading = false, 
                   <Button
                     onClick={handleSaveBasicInfo}
                     disabled={isUpdating}
-                    className="gap-2 rounded-xl bg-primary text-white font-bold h-11 px-8 shadow-lg shadow-primary/20 transition-all"
+                    className="gap-2 rounded-xl bg-primary text-primary-foreground font-bold h-11 px-8 shadow-lg shadow-primary/20 transition-all"
                   >
                     {updatingName ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                     Zapisz zmiany

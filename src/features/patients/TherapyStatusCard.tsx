@@ -65,7 +65,7 @@ export function TherapyStatusCard({ statusResult, lastActivityLabel, className }
 
   return (
     <div
-      className={cn('relative overflow-hidden rounded-2xl border border-border bg-surface dark:bg-zinc-900/50 p-6', config.borderColor, className)}
+      className={cn('relative overflow-hidden rounded-2xl border border-border bg-surface dark:bg-surface/50 p-6', config.borderColor, className)}
     >
       {/* Background glow */}
       <div className={cn('absolute inset-0 pointer-events-none', config.bgColor)} />

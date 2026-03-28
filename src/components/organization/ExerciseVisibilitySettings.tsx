@@ -157,7 +157,7 @@ export function ExerciseVisibilitySettings({
             <Button
               onClick={handleSave}
               disabled={loading}
-              className="gap-2 bg-primary text-white font-bold h-10 px-6 rounded-xl shadow-lg shadow-primary/20 transition-all"
+              className="gap-2 bg-primary text-primary-foreground font-bold h-10 px-6 rounded-xl shadow-lg shadow-primary/20 transition-all"
             >
               {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
               Zapisz zmiany

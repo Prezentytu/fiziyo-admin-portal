@@ -104,7 +104,7 @@ export function FeelingsHeatmap({ data, className, title }: FeelingsHeatmapProps
   };
 
   return (
-    <div className={cn('rounded-2xl border border-border bg-surface dark:bg-zinc-900/50 p-6', className)}>
+    <div className={cn('rounded-2xl border border-border bg-surface dark:bg-surface/50 p-6', className)}>
       <div className="flex justify-between items-center mb-6">
         <h3 className="font-bold text-foreground text-sm">{title ?? `Regularność (Ostatnie ${data.length} dni)`}</h3>
         <div className="flex gap-3 text-[10px] text-muted-foreground uppercase tracking-wider font-medium">

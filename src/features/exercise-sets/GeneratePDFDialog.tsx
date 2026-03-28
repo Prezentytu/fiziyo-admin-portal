@@ -304,7 +304,7 @@ export function GeneratePDFDialog({
                     <div
                       className={cn(
                         'h-10 w-10 rounded-lg flex items-center justify-center',
-                        viewMode === 'full' ? 'bg-primary text-white' : 'bg-surface-light'
+                        viewMode === 'full' ? 'bg-primary text-primary-foreground' : 'bg-surface-light'
                       )}
                     >
                       <Eye className="h-5 w-5" />
@@ -331,7 +331,7 @@ export function GeneratePDFDialog({
                     <div
                       className={cn(
                         'h-10 w-10 rounded-lg flex items-center justify-center',
-                        viewMode === 'compact' ? 'bg-primary text-white' : 'bg-surface-light'
+                        viewMode === 'compact' ? 'bg-primary text-primary-foreground' : 'bg-surface-light'
                       )}
                     >
                       <List className="h-5 w-5" />

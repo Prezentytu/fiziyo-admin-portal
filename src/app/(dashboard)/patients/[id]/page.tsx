@@ -255,7 +255,7 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
                 'text-sm font-semibold',
                 patient.isShadowUser
                   ? 'bg-muted-foreground/60 text-white'
-                  : 'bg-linear-to-br from-primary to-primary-dark text-white'
+                  : 'bg-linear-to-br from-primary to-primary-dark text-primary-foreground'
               )}
             >
               {initials}

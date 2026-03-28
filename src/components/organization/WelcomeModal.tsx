@@ -159,15 +159,15 @@ export function WelcomeModal({
         </button>
 
         {/* Gradient header */}
-        <div className="relative h-32 bg-gradient-to-br from-primary via-primary to-emerald-600 overflow-hidden">
+        <div className="relative h-32 bg-gradient-to-br from-primary via-primary to-primary-dark overflow-hidden">
           {/* Decorative circles */}
-          <div className="absolute -top-10 -right-10 w-40 h-40 bg-white/10 rounded-full blur-2xl" />
-          <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-white/10 rounded-full blur-2xl" />
+          <div className="absolute -top-10 -right-10 w-40 h-40 bg-primary-foreground/10 rounded-full blur-2xl" />
+          <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-primary-foreground/10 rounded-full blur-2xl" />
 
           {/* Sparkles */}
-          <Sparkles className="absolute top-4 left-6 h-6 w-6 text-white/40 animate-pulse" />
+          <Sparkles className="absolute top-4 left-6 h-6 w-6 text-primary-foreground/40 animate-pulse" />
           <Sparkles
-            className="absolute bottom-6 right-12 h-4 w-4 text-white/30 animate-pulse"
+            className="absolute bottom-6 right-12 h-4 w-4 text-primary-foreground/30 animate-pulse"
             style={{ animationDelay: '0.5s' }}
           />
         </div>
@@ -191,7 +191,7 @@ export function WelcomeModal({
                 />
               </span>
             ) : (
-              <div className="flex h-24 w-24 items-center justify-center rounded-2xl border-4 border-surface bg-gradient-to-br from-primary to-primary-dark text-white text-2xl font-bold shadow-xl">
+              <div className="flex h-24 w-24 items-center justify-center rounded-2xl border-4 border-surface bg-gradient-to-br from-primary to-primary-dark text-primary-foreground text-2xl font-bold shadow-xl">
                 {getInitials(organizationName)}
               </div>
             )}
@@ -270,7 +270,7 @@ export function WelcomeModal({
             <Button
               onClick={handleContinue}
               size="lg"
-              className="w-full gap-2 bg-gradient-to-r from-primary to-emerald-600 hover:from-primary-dark hover:to-emerald-700 text-white font-semibold shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 transition-all duration-300"
+              className="w-full gap-2 bg-gradient-to-r from-primary to-primary-dark hover:from-primary-dark hover:to-accent-green text-primary-foreground font-semibold shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 transition-all duration-300"
             >
               Zaczynamy!
               <ArrowRight className="h-4 w-4" />

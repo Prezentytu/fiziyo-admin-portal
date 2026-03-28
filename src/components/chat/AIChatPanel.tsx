@@ -234,7 +234,7 @@ export function AIChatPanel({ className }: AIChatPanelProps) {
         <div className="flex items-center justify-between border-b border-border/60 px-4 py-3 min-h-[60px]">
           <div className="flex items-center gap-3">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary-dark shadow-lg shadow-primary/20">
-              <Sparkles className="h-4 w-4 text-white" />
+              <Sparkles className="h-4 w-4 text-primary-foreground" />
             </div>
             <div>
               <h2 className="text-base font-semibold text-foreground">Asystent AI</h2>

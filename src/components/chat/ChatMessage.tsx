@@ -45,7 +45,7 @@ export function ChatMessage({ message, onAddExerciseToSet, className }: ChatMess
             className={cn(
               'max-w-[85%] rounded-2xl px-4 py-2.5 text-sm',
               isUser
-                ? 'bg-gradient-to-br from-primary to-primary-dark text-white rounded-tr-md'
+                ? 'bg-gradient-to-br from-primary to-primary-dark text-primary-foreground rounded-tr-md'
                 : 'bg-surface-light text-foreground rounded-tl-md'
             )}
           >

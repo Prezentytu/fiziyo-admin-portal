@@ -194,7 +194,7 @@ export function RelationSlot({
           onClick={() => setIsPreviewOpen(true)}
         >
           {/* Thumbnail */}
-          <div className="relative aspect-video bg-zinc-900">
+          <div className="relative aspect-video bg-surface">
             {mediaUrl ? (
               <Image
                 src={isHovering && exercise?.gifUrl ? exercise.gifUrl : exercise?.thumbnailUrl || mediaUrl}
@@ -335,7 +335,7 @@ function ExercisePreviewDialog({ exercise, open, onOpenChange }: ExercisePreview
         <div className="space-y-4">
           {/* Media */}
           {mediaUrl && (
-            <div className="relative aspect-video rounded-lg overflow-hidden bg-zinc-900">
+            <div className="relative aspect-video rounded-lg overflow-hidden bg-surface">
               <Image
                 src={mediaUrl}
                 alt={exercise.name}

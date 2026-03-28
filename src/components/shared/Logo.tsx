@@ -39,7 +39,7 @@ export function Logo({ variant = 'default', size = 'md', asLink = false, href = 
     <div className={cn('flex items-center gap-3', className)}>
       {/* Logo Icon */}
       <div className="relative shrink-0" style={{ width: config.icon, height: config.icon }}>
-        <Image src="/images/logo.png" alt="FiziYo" fill className="object-contain" priority />
+        <Image src="/images/logo_new.png" alt="FiziYo" fill className="object-contain" priority />
       </div>
 
       {/* Text */}

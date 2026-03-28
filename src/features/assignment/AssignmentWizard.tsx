@@ -1467,7 +1467,7 @@ function AssignmentWizardContent({
               className={cn(
                 'shadow-lg shadow-primary/20 min-w-[160px] transition-all duration-300',
                 isLastStep &&
-                  'bg-linear-to-r from-primary to-emerald-500 hover:from-primary-dark hover:to-emerald-600'
+                  'bg-linear-to-r from-primary to-primary hover:from-primary-dark hover:to-primary-dark'
               )}
               data-testid={isLastStep ? 'assign-summary-submit-btn' : 'assign-wizard-next-btn'}
             >

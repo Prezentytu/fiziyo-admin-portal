@@ -142,7 +142,7 @@ export function EventJournal({ progress, maxEvents = 5, className }: Readonly<Ev
 
   if (events.length === 0) {
     return (
-      <div className={cn('rounded-2xl border border-border bg-surface dark:bg-zinc-900/50 p-6', className)}>
+      <div className={cn('rounded-2xl border border-border bg-surface dark:bg-surface/50 p-6', className)}>
         <h3 className="font-bold text-foreground mb-6">Dziennik Zdarzeń</h3>
         <p className="text-sm text-muted-foreground text-center py-8">Brak zdarzeń do wyświetlenia</p>
       </div>
@@ -150,7 +150,7 @@ export function EventJournal({ progress, maxEvents = 5, className }: Readonly<Ev
   }
 
   return (
-    <div className={cn('rounded-2xl border border-border bg-surface dark:bg-zinc-900/50 p-6 flex flex-col h-full', className)}>
+    <div className={cn('rounded-2xl border border-border bg-surface dark:bg-surface/50 p-6 flex flex-col h-full', className)}>
       <h3 className="font-bold text-foreground mb-6">Dziennik Zdarzeń</h3>
 
       <div className="space-y-6 overflow-y-auto pr-2 flex-1">

@@ -30,7 +30,7 @@ export function ExerciseBuilderFAB({ className }: ExerciseBuilderFABProps) {
           'fixed bottom-6 right-6 z-50',
           'flex items-center gap-2 px-4 py-3',
           'rounded-full shadow-2xl',
-          'bg-gradient-to-r from-primary to-primary-dark text-white',
+          'bg-gradient-to-r from-primary to-primary-dark text-primary-foreground',
           'transition-all duration-300 ease-out',
           'hover:shadow-primary/30 hover:scale-105',
           'lg:hidden', // Hide on desktop

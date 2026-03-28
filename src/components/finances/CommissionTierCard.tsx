@@ -45,19 +45,19 @@ function TierBadge({
       className={cn(
         'relative flex flex-col items-center gap-1 p-2 rounded-lg transition-all duration-300',
         isCurrent
-          ? `bg-gradient-to-br ${config.gradientFrom} ${config.gradientTo} text-white shadow-lg`
+          ? `bg-gradient-to-br ${config.gradientFrom} ${config.gradientTo} text-primary-foreground shadow-lg`
           : isActive
             ? 'bg-surface-light border border-border/60'
             : 'bg-muted/30 opacity-50'
       )}
     >
-      <Icon className={cn('h-4 w-4', isCurrent ? 'text-white' : 'text-muted-foreground')} />
-      <span className={cn('text-xs font-bold', isCurrent ? 'text-white' : 'text-foreground')}>{tier}</span>
-      <span className={cn('text-[10px]', isCurrent ? 'text-white/80' : 'text-muted-foreground')}>
+      <Icon className={cn('h-4 w-4', isCurrent ? 'text-primary-foreground' : 'text-muted-foreground')} />
+      <span className={cn('text-xs font-bold', isCurrent ? 'text-primary-foreground' : 'text-foreground')}>{tier}</span>
+      <span className={cn('text-[10px]', isCurrent ? 'text-primary-foreground/80' : 'text-muted-foreground')}>
         {formatPercent(rate)}
       </span>
       {isCurrent && (
-        <div className="absolute -top-1 -right-1 w-3 h-3 bg-white rounded-full flex items-center justify-center">
+        <div className="absolute -top-1 -right-1 w-3 h-3 bg-primary-foreground rounded-full flex items-center justify-center">
           <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
         </div>
       )}
@@ -168,11 +168,11 @@ export function CommissionTierCard({ organizationId, className }: CommissionTier
         </CardHeader>
         <CardContent className="space-y-4">
           {/* Partner Badge */}
-          <div className="flex items-center gap-3 p-4 rounded-xl bg-gradient-to-br from-primary to-emerald-600 text-white">
+          <div className="flex items-center gap-3 p-4 rounded-xl bg-gradient-to-br from-primary to-primary-dark text-primary-foreground">
             <Crown className="h-8 w-8" />
             <div>
               <p className="font-bold text-lg">PARTNER</p>
-              <p className="text-sm text-white/80">Stała prowizja: {formatPercent(progressData.commissionRate)}</p>
+              <p className="text-sm text-primary-foreground/80">Stała prowizja: {formatPercent(progressData.commissionRate)}</p>
             </div>
           </div>
 
@@ -200,7 +200,7 @@ export function CommissionTierCard({ organizationId, className }: CommissionTier
           <div className="flex items-center gap-2">
             <Badge
               className={cn(
-                'px-3 py-1 font-bold text-white border-0',
+                'px-3 py-1 font-bold text-primary-foreground border-0',
                 `bg-gradient-to-r ${progressData.currentConfig.gradientFrom} ${progressData.currentConfig.gradientTo}`
               )}
             >

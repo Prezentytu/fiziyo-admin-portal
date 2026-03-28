@@ -262,7 +262,7 @@ export function GamificationProgress({ organizationId, className }: Gamification
           {/* Fill with gradient */}
           <div
             className={cn(
-              'h-full bg-primary rounded-full transition-all duration-1000 ease-out shadow-[0_0_15px_rgba(50,150,93,0.3)]',
+              'h-full bg-primary rounded-full transition-all duration-1000 ease-out shadow-[0_0_15px_rgba(91,184,154,0.3)]',
               progressData.isCloseToNextTier && 'animate-pulse'
             )}
             style={{ width: `${progressData.progressPercent}%` }}

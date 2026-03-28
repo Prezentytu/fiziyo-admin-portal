@@ -203,7 +203,7 @@ export function TherapistBillingTable({ organizationId, className }: TherapistBi
                     )}
                   >
                     <AvatarImage src={therapist.therapistImage} />
-                    <AvatarFallback className="bg-gradient-to-br from-primary to-primary-dark text-white text-sm font-medium">
+                    <AvatarFallback className="bg-gradient-to-br from-primary to-primary-dark text-primary-foreground text-sm font-medium">
                       {getInitials(therapist.therapistName)}
                     </AvatarFallback>
                   </Avatar>

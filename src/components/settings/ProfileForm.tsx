@@ -456,7 +456,7 @@ export function ProfileForm({ user, clerkId, onSuccess }: Readonly<ProfileFormPr
             <Button
               type="submit"
               disabled={loading}
-              className="bg-primary hover:bg-primary/90 text-white font-bold h-11 px-8 rounded-xl shadow-lg shadow-primary/20 transition-all"
+              className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold h-11 px-8 rounded-xl shadow-lg shadow-primary/20 transition-all"
               data-testid="settings-profile-submit-btn"
             >
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

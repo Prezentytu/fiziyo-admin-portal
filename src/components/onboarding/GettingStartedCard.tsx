@@ -302,7 +302,7 @@ export function GettingStartedCard({
                   className={cn(
                     'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-colors',
                     isCompleted
-                      ? 'bg-primary text-white'
+                      ? 'bg-primary text-primary-foreground'
                       : isNext
                         ? 'bg-primary/20 text-primary'
                         : 'bg-surface-light text-muted-foreground'

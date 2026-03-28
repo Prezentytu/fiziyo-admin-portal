@@ -28,24 +28,31 @@ Zastosuj te zasady w każdym komponencie, który generujesz:
 
 ## 2. Redukcja Szumu (Border & Backgrounds)
 
-- **Zabij zbędne ramki:** Młodsi projektanci oddzielają wszystko ramkami (`border`). Ty używasz ramek tylko do inputów i ważnych kart. Do separacji wizualnej używaj subtelnych różnic w tle (np. tło aplikacji `bg-gray-50/bg-slate-50`, tło komponentu `bg-white`).
-- **Miękkie cienie (Soft Shadows):** Jeśli element musi się wyróżnić (np. dropdown, modal, karta notatki na wierzchu), użyj bardzo rozmytego cienia o niskim kryciu (np. w Tailwind: `shadow-sm` dla małych elementów, `shadow-lg border border-gray-100/50` dla unoszących się warstw).
+- **Zabij zbędne ramki:** Młodsi projektanci oddzielają wszystko ramkami (`border`). Ty używasz ramek tylko do inputów i ważnych kart. Do separacji wizualnej używaj subtelnych różnic w tle (np. tło aplikacji `bg-background`, tło komponentu `bg-surface`).
+- **Miękkie cienie (Soft Shadows):** Jeśli element musi się wyróżnić (np. dropdown, modal, karta notatki na wierzchu), użyj bardzo rozmytego cienia o niskim kryciu (np. w Tailwind: `shadow-sm` dla małych elementów, `shadow-lg border border-border` dla unoszących się warstw).
 - **Progressive Disclosure:** Zaawansowane funkcje, drugorzędne akcje i przypadki brzegowe ujawniaj tylko wtedy, gdy stają się potrzebne (np. ukryte akcje na `:hover`, rozwijane panele zaawansowane), przeciwdziałając przeładowaniu informacyjnemu u użytkownika.
 
 ## 3. Mistrzowska Typografia (Typography)
 
-- **Hierarchia przez grubość i kolor, nie tylko rozmiar:** Zamiast robić gigantyczne nagłówki, zrób je nieco mniejsze, ale grubsze (`font-semibold text-gray-900`).
-- **Wyciszanie metadanych:** Daty, labele inputów, tagi czy małe notatki muszą ustąpić miejsca głównej treści. Używaj dla nich mniejszych rozmiarów (`text-sm`, `text-xs`) i lżejszych kolorów (`text-gray-500`, `text-slate-400`).
-- **Font:** Zakładamy użycie nowoczesnych krojów sans-serif zoptymalizowanych pod ekrany (Inter, SF Pro, system-ui).
+- **Hierarchia przez grubość i kolor, nie tylko rozmiar:** Zamiast robić gigantyczne nagłówki, zrób je nieco mniejsze, ale grubsze (`font-semibold text-foreground`).
+- **Wyciszanie metadanych:** Daty, labele inputów, tagi czy małe notatki muszą ustąpić miejsca głównej treści. Używaj dla nich mniejszych rozmiarów (`text-sm`, `text-xs`) i lżejszych kolorów (`text-muted-foreground`, `text-text-tertiary`).
+- **Font:** Outfit (wagi 300-800) jako primary sans-serif, JetBrains Mono (wagi 400-500) jako mono dla labels, code, overlines. Ładowane przez `next/font/google` w `layout.tsx`.
 - **Dostępność i Kontrast:** Estetyka nie może obniżać czytelności. Stosuj wzorce wysokiego kontrastu jako baseline operacyjny, szczególnie w aplikacjach MedTech (konta starszych stażem terapeutów czy wyświetlanie wyników w słabym oświetleniu klinik).
 
 ## 4. Inteligentny Kolor (Intentional Color)
 
-- **Monochromatyczna Baza:** 90% interfejsu powinno być czarno-biało-szare (użyj chłodnych szarości np. `slate` lub `zinc` dla bardziej profesjonalnego, medycznego sznytu).
-- **Kolor to Funkcja:** Używaj głównego koloru marki (Primary Color) WYŁĄCZNIE do elementów interaktywnych (przyciski akcji, aktywne zakładki, linki).
+Pełna dokumentacja systemu kolorów i palety referencyjne: [references/color-system.md](references/color-system.md)
+
+- **Zasada 60-30-10:** 60% UI to neutralne tło (canvas), 30% to struktura (karty, sidebar, headery), 10% to akcent (CTA, aktywne stany, focus ring). Raycast explicite mówi: "gdy accent pokrywa 40% UI, sygnał staje się szumem". Przekroczenie 10% zabija hierarchię wizualną.
+- **Neutralna baza (zinc scale):** Dark mode opiera się na czystych szarościach ze skali zinc (Tailwind), NIE na odcieniach koloru akcentu. Tła, karty, bordery i tekst NIGDY nie mają podtonu primary. Zinc jest prawie neutralny z minimalnym cool cast — idealny partner dla miętowego akcentu (nie konkuruje). Slate ma niebieski podton (lepszy z blue/indigo), neutral to zero podtonu.
+- **Kolor to Funkcja:** Używaj głównego koloru marki (Primary / Mint `#5bb89a`) WYŁĄCZNIE do elementów interaktywnych: przyciski CTA, aktywne zakładki, focus ring, linki. Nigdy na tła kart ani surface.
+- **Hierarchia powierzchni przez luminancję:** Minimum 4-5 poziomów z 6-8 pkt luminancji między nimi (background → elevated → surface → surface-light → hover). Twórz głębię jasnością, nie kolorem.
+- **Tekst — 3 poziomy, czyste neutrale:** Primary (pełne krycie, `text-foreground`), secondary (55-65% / zinc-400, `text-muted-foreground`), tertiary (30-40% / zinc-500, `text-text-tertiary`). Tekst NIGDY nie ma podtonu koloru akcentu.
 - **Statusy:** Sukces (zielony), Błąd (czerwony), Ostrzeżenie (żółty) stosuj w bardzo rozbielonych pastelowych wersjach jako tła (np. `bg-green-50 text-green-700`), nigdy jako jaskrawe, nasycone bloki koloru.
+- **Dark mode cienie:** 2x mocniejsze niż w light mode (rgba 0.4-0.5 zamiast 0.05-0.1), bo cienie giną na ciemnym tle. Często lepiej użyć subtelnego borderu (`border-border`) niż cienia.
+- **Light mode projektuj oddzielnie:** Nie odwracaj ciemnej palety. Off-white (`#FAFAFA`) zamiast czystej bieli. Tekst `#18181b` zamiast czystego czarnego. Multi-layer shadows (umbra + penumbra + ambient) dla realistycznej głębi.
 - **Theme-safe first:** Każdy komponent musi być zaprojektowany równolegle dla light/dark mode. Nie kończ pracy na jednym motywie.
-- **Semantyczne tokeny > palety na sztywno:** Dla bazy UI preferuj `bg-surface`, `bg-card`, `text-foreground`, `text-muted-foreground`, `border-border` zamiast `zinc/gray/slate`.
+- **Semantyczne tokeny > palety na sztywno:** Dla bazy UI preferuj `bg-surface`, `bg-card`, `text-foreground`, `text-muted-foreground`, `border-border` zamiast `zinc/gray/slate`. Nigdy nie hardcoduj kolorów brand w komponentach.
 - **Overlaye i akcje na media:** Jeśli używasz warstw na zdjęciach/wideo, zawsze dawaj varianty motywu (np. `bg-background/90 dark:bg-black/40`) i sprawdzaj kontrast ikon/tekstu.
 
 ## 5. Mikro-interakcje bez spowalniania (Performance first)

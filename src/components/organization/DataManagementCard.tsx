@@ -85,7 +85,7 @@ export function DataManagementCard({ organizationId, canEdit = false, onRefresh 
             <Button
               onClick={importExampleSets}
               disabled={isImporting || hasImportedExamples}
-              className="gap-2 bg-primary text-white font-bold h-11 px-8 rounded-xl shadow-lg shadow-primary/20 transition-all"
+              className="gap-2 bg-primary text-primary-foreground font-bold h-11 px-8 rounded-xl shadow-lg shadow-primary/20 transition-all"
             >
               {isImporting ? (
                 <Loader2 className="h-4 w-4 animate-spin" />

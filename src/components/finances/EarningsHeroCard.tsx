@@ -105,7 +105,7 @@ export function EarningsHeroCard({ organizationId, className }: EarningsHeroCard
       data-testid="earnings-hero-card"
     >
       {/* Top accent line */}
-      <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary via-emerald-500 to-cyan-500" />
+      <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary via-primary to-cyan-500" />
 
       {/* Background decorations */}
       <div className="absolute -top-32 -right-32 w-64 h-64 bg-primary/5 rounded-full blur-3xl" />

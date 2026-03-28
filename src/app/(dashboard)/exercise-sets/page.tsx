@@ -354,7 +354,7 @@ export default function ExerciseSetsPage() {
                     <div className="flex items-center gap-2">
                       <div
                         className="w-3 h-3 rounded-full shrink-0"
-                        style={{ backgroundColor: tag.color || '#22c55e' }}
+                        style={{ backgroundColor: tag.color || '#5bb89a' }}
                       />
                       <span className="truncate">{tag.name}</span>
                     </div>
@@ -376,17 +376,17 @@ export default function ExerciseSetsPage() {
           data-testid="set-create-wizard-btn"
         >
           <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-          <div className="absolute -top-24 -right-24 w-48 h-48 bg-white/10 rounded-full blur-3xl group-hover:bg-white/20 transition-all duration-500" />
+          <div className="absolute -top-24 -right-24 w-48 h-48 bg-primary-foreground/10 rounded-full blur-3xl group-hover:bg-primary-foreground/20 transition-all duration-500" />
 
           <div className="relative flex items-center gap-4">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm shrink-0 group-hover:scale-110 transition-transform duration-300">
-              <FolderPlus className="h-5 w-5 text-white" />
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary-foreground/20 backdrop-blur-sm shrink-0 group-hover:scale-110 transition-transform duration-300">
+              <FolderPlus className="h-5 w-5 text-primary-foreground" />
             </div>
             <div className="min-w-0 flex-1">
-              <h3 className="text-base font-bold text-white">Nowy zestaw</h3>
-              <p className="text-sm text-white/70">Utwórz program ćwiczeń</p>
+              <h3 className="text-base font-bold text-primary-foreground">Nowy zestaw</h3>
+              <p className="text-sm text-primary-foreground/70">Utwórz program ćwiczeń</p>
             </div>
-            <Plus className="h-5 w-5 text-white/60 group-hover:text-white transition-colors shrink-0" />
+            <Plus className="h-5 w-5 text-primary-foreground/60 group-hover:text-primary-foreground transition-colors shrink-0" />
           </div>
         </button>
 
@@ -505,9 +505,9 @@ export default function ExerciseSetsPage() {
                     key={tag.id}
                     className="text-xs px-2 py-0.5 gap-1 cursor-pointer hover:opacity-80"
                     style={{
-                      backgroundColor: `${tag.color || '#22c55e'}20`,
-                      color: tag.color || '#22c55e',
-                      borderColor: `${tag.color || '#22c55e'}40`,
+                      backgroundColor: `${tag.color || '#5bb89a'}20`,
+                      color: tag.color || '#5bb89a',
+                      borderColor: `${tag.color || '#5bb89a'}40`,
                     }}
                     onClick={() => setSelectedTags((prev) => prev.filter((id) => id !== tag.id))}
                   >

@@ -55,7 +55,7 @@ export function AccessibilitySettings() {
               )}
               data-testid="settings-theme-dark"
             >
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-[#1a1a1a] border border-border">
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-surface border border-border">
                 <Moon className="h-6 w-6 text-white" />
               </div>
               <span className="text-sm font-medium">Ciemny</span>

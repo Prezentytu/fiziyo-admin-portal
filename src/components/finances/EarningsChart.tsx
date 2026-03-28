@@ -76,11 +76,11 @@ export function EarningsChart({ organizationId, className }: EarningsChartProps)
   // Loading state
   if (loading) {
     return (
-      <div className={cn('rounded-xl border border-white/5 bg-zinc-900/50 p-6', className)}>
-        <Skeleton className="h-5 w-40 bg-zinc-800 mb-6" />
+      <div className={cn('rounded-xl border border-border bg-surface/50 p-6', className)}>
+        <Skeleton className="h-5 w-40 bg-surface-light mb-6" />
         <div className="flex items-end gap-2 h-48">
           {Array.from({ length: 12 }).map((_, i) => (
-            <Skeleton key={i} className="flex-1 bg-zinc-800" style={{ height: `${Math.random() * 60 + 20}%` }} />
+            <Skeleton key={i} className="flex-1 bg-surface-light" style={{ height: `${Math.random() * 60 + 20}%` }} />
           ))}
         </div>
       </div>
@@ -90,14 +90,14 @@ export function EarningsChart({ organizationId, className }: EarningsChartProps)
   // Error or no data
   if (error || !chartData) {
     return (
-      <div className={cn('rounded-xl border border-white/5 bg-zinc-900/50 p-6', className)}>
+      <div className={cn('rounded-xl border border-border bg-surface/50 p-6', className)}>
         <div className="flex items-center gap-2 mb-6">
-          <BarChart3 className="h-5 w-5 text-zinc-500" />
-          <h3 className="text-lg font-semibold text-white">Historia Zarobków</h3>
+          <BarChart3 className="h-5 w-5 text-muted-foreground" />
+          <h3 className="text-lg font-semibold text-foreground">Historia Zarobków</h3>
         </div>
         <div className="flex flex-col items-center justify-center h-48 text-center">
-          <BarChart3 className="h-8 w-8 text-zinc-600 mb-3" />
-          <p className="text-sm text-zinc-500">{error ? 'Nie udało się pobrać danych' : 'Brak danych o zarobkach'}</p>
+          <BarChart3 className="h-8 w-8 text-text-tertiary mb-3" />
+          <p className="text-sm text-muted-foreground">{error ? 'Nie udało się pobrać danych' : 'Brak danych o zarobkach'}</p>
         </div>
       </div>
     );
@@ -105,12 +105,12 @@ export function EarningsChart({ organizationId, className }: EarningsChartProps)
 
   return (
     <TooltipProvider>
-      <div className={cn('rounded-xl border border-white/5 bg-zinc-900/50 p-6', className)}>
+      <div className={cn('rounded-xl border border-border bg-surface/50 p-6', className)}>
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-2">
             <BarChart3 className="h-5 w-5 text-emerald-400" />
-            <h3 className="text-lg font-semibold text-white">Historia Zarobków</h3>
+            <h3 className="text-lg font-semibold text-foreground">Historia Zarobków</h3>
           </div>
           <div className="flex items-center gap-3">
             {/* Trend badge */}
@@ -132,8 +132,8 @@ export function EarningsChart({ organizationId, className }: EarningsChartProps)
               </Badge>
             )}
             {/* Total */}
-            <span className="text-sm text-zinc-400">
-              Suma: <span className="font-medium text-white">{formatCurrency(chartData.totalEarnings)}</span>
+            <span className="text-sm text-muted-foreground">
+              Suma: <span className="font-medium text-foreground">{formatCurrency(chartData.totalEarnings)}</span>
             </span>
           </div>
         </div>
@@ -152,7 +152,7 @@ export function EarningsChart({ organizationId, className }: EarningsChartProps)
                         'w-full rounded-t-md transition-all duration-300',
                         month.earnings > 0
                           ? 'bg-gradient-to-t from-emerald-600 to-emerald-400 group-hover:from-emerald-500 group-hover:to-emerald-300 group-hover:shadow-lg group-hover:shadow-emerald-500/20'
-                          : 'bg-zinc-800'
+                          : 'bg-surface-light'
                       )}
                       style={{
                         height: `${Math.max(month.heightPercent, 2)}%`,
@@ -166,19 +166,19 @@ export function EarningsChart({ organizationId, className }: EarningsChartProps)
                     className={cn(
                       'text-[10px] sm:text-xs transition-colors',
                       index === chartData.months.length - 1
-                        ? 'font-medium text-white'
-                        : 'text-zinc-500 group-hover:text-zinc-300'
+                        ? 'font-medium text-foreground'
+                        : 'text-muted-foreground group-hover:text-foreground'
                     )}
                   >
                     {month.label}
                   </span>
                 </div>
               </TooltipTrigger>
-              <TooltipContent side="top" className="bg-zinc-800 border-zinc-700">
+              <TooltipContent side="top" className="bg-surface-light border-border">
                 <div className="text-center">
-                  <p className="font-bold text-white">{formatCurrency(month.earnings)}</p>
-                  <p className="text-xs text-zinc-400">{month.subscribers} pacjentów</p>
-                  <p className="text-xs text-zinc-500">
+                  <p className="font-bold text-foreground">{formatCurrency(month.earnings)}</p>
+                  <p className="text-xs text-muted-foreground">{month.subscribers} pacjentów</p>
+                  <p className="text-xs text-text-tertiary">
                     {month.label} {month.year}
                   </p>
                 </div>
@@ -188,12 +188,12 @@ export function EarningsChart({ organizationId, className }: EarningsChartProps)
         </div>
 
         {/* Legend */}
-        <div className="mt-6 pt-4 border-t border-white/5 flex items-center justify-center gap-6 text-xs text-zinc-500">
+        <div className="mt-6 pt-4 border-t border-border flex items-center justify-center gap-6 text-xs text-muted-foreground">
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 rounded-sm bg-gradient-to-t from-emerald-600 to-emerald-400" />
             <span>Zarobki (prowizje)</span>
           </div>
-          <span className="text-zinc-700">|</span>
+          <span className="text-text-tertiary">|</span>
           <span>Ostatnie 12 miesięcy</span>
         </div>
       </div>

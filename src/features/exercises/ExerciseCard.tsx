@@ -485,7 +485,7 @@ export function ExerciseCard({
           }}
         >
           {/* Image section with Atlas pattern (Blurred backdrop + Contain) */}
-          <div className="relative aspect-4/3 overflow-hidden bg-muted/60 dark:bg-zinc-950">
+          <div className="relative aspect-4/3 overflow-hidden bg-muted/60 dark:bg-background">
             {imageUrl ? (
               <>
                 {/* Blurred background */}
@@ -614,7 +614,7 @@ export function ExerciseCard({
                   className={cn(
                     'h-9 w-9 backdrop-blur-md transition-all duration-300 rounded-xl shadow-lg',
                     isInBuilder
-                      ? 'bg-primary text-white border-primary/50'
+                      ? 'bg-primary text-primary-foreground border-primary/50'
                       : 'bg-background/90 dark:bg-black/40 hover:bg-background dark:hover:bg-black/60 text-foreground dark:text-white border border-border/70 dark:border-white/10 hover:scale-105',
                     isBouncing && 'animate-bounce-once'
                   )}

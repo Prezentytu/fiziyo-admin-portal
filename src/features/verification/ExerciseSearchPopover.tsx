@@ -251,7 +251,7 @@ function ExerciseCommandItem({
       className="flex items-center gap-3 py-2 cursor-pointer"
     >
       {/* Thumbnail */}
-      <div className="relative w-12 h-12 rounded-md overflow-hidden bg-zinc-900 shrink-0">
+      <div className="relative w-12 h-12 rounded-md overflow-hidden bg-surface shrink-0">
         {thumbnailSource ? (
           <Image
             src={thumbnailSource}
@@ -309,7 +309,7 @@ function ExercisePreviewPanel({ exercise }: { exercise: ExerciseRelationTarget }
     <div className="absolute right-0 top-0 translate-x-full w-[200px] ml-2 p-2 bg-popover border border-border rounded-lg shadow-lg">
       {/* Media */}
       {mediaUrl && (
-        <div className="relative aspect-video rounded-md overflow-hidden bg-zinc-900 mb-2">
+        <div className="relative aspect-video rounded-md overflow-hidden bg-surface mb-2">
           <Image
             src={mediaUrl}
             alt={exercise.name}

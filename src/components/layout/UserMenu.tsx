@@ -45,7 +45,7 @@ export function UserMenu() {
             <Image src={avatarUrl} alt={fullName} fill className="object-cover" sizes="36px" />
           </span>
         ) : (
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-linear-to-br from-primary to-primary-dark text-sm font-semibold text-white">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-linear-to-br from-primary to-primary-dark text-sm font-semibold text-primary-foreground">
             {initials}
           </div>
         )}
@@ -61,7 +61,7 @@ export function UserMenu() {
                 <Image src={avatarUrl} alt={fullName} fill className="object-cover" sizes="40px" />
               </span>
             ) : (
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-linear-to-br from-primary to-primary-dark text-sm font-semibold text-white">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-linear-to-br from-primary to-primary-dark text-sm font-semibold text-primary-foreground">
                 {initials}
               </div>
             )}

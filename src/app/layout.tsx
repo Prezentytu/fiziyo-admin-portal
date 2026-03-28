@@ -1,9 +1,24 @@
 import type { Metadata } from 'next';
+import { Outfit, JetBrains_Mono } from 'next/font/google';
 import { ClerkProvider } from '@clerk/nextjs';
 import { ApolloWrapper } from '@/lib/apollo/provider';
 import { Toaster } from '@/components/ui/sonner';
 import { AccessibilityProvider } from '@/contexts/AccessibilityContext';
 import './globals.css';
+
+const outfit = Outfit({
+  subsets: ['latin', 'latin-ext'],
+  weight: ['300', '400', '500', '600', '700', '800'],
+  variable: '--font-sans',
+  display: 'swap',
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ['latin', 'latin-ext'],
+  weight: ['400', '500'],
+  variable: '--font-mono',
+  display: 'swap',
+});
 
 export const metadata: Metadata = {
   title: 'FiziYo Admin',
@@ -49,11 +64,11 @@ export default function RootLayout({
 }>) {
   return (
     <ClerkProvider>
-      <html lang="pl" suppressHydrationWarning>
+      <html lang="pl" suppressHydrationWarning className={`${outfit.variable} ${jetbrainsMono.variable}`}>
         <head>
           <script dangerouslySetInnerHTML={{ __html: accessibilityScript }} />
         </head>
-        <body className="font-sans antialiased text-foreground bg-background selection:bg-primary/20 selection:text-primary">
+        <body className="font-sans antialiased text-foreground bg-background">
           <AccessibilityProvider>
             <ApolloWrapper>{children}</ApolloWrapper>
           </AccessibilityProvider>

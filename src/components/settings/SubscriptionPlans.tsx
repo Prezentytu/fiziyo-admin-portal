@@ -82,7 +82,7 @@ const plans: Plan[] = [
     price: 219,
     priceYearly: 2190,
     icon: <Users className="h-5 w-5" />,
-    color: 'from-primary to-emerald-600',
+    color: 'from-primary to-primary-dark',
     popular: true,
     limits: {
       patients: 200,
@@ -147,7 +147,7 @@ export function SubscriptionPlans({
         <div className="flex items-center gap-3">
           <div
             className={cn(
-              'flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br text-white',
+              'flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br text-primary-foreground',
               currentPlanData.color
             )}
           >
@@ -229,7 +229,7 @@ export function SubscriptionPlans({
               {/* Popular badge */}
               {plan.popular && (
                 <div className="absolute top-0 right-0">
-                  <div className="bg-primary text-white text-[10px] font-bold px-3 py-1 rounded-bl-xl flex items-center gap-1 shadow-lg shadow-primary/20">
+                  <div className="bg-primary text-primary-foreground text-[10px] font-bold px-3 py-1 rounded-bl-xl flex items-center gap-1 shadow-lg shadow-primary/20">
                     <Star className="h-3 w-3 fill-current" />
                     POPULARNY
                   </div>
@@ -241,7 +241,7 @@ export function SubscriptionPlans({
                 <div className="flex items-center gap-3 mb-4">
                   <div
                     className={cn(
-                      'flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br text-white shadow-lg',
+                      'flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br text-primary-foreground shadow-lg',
                       plan.color
                     )}
                   >
@@ -322,7 +322,7 @@ export function SubscriptionPlans({
                     className={cn(
                       'w-full rounded-xl font-bold h-11 shadow-lg transition-all',
                       plan.popular
-                        ? 'bg-primary text-white hover:bg-primary/90 shadow-primary/20'
+                        ? 'bg-primary text-primary-foreground hover:bg-primary/90 shadow-primary/20'
                         : 'bg-foreground text-background hover:opacity-90 shadow-black/10'
                     )}
                     onClick={() => onUpgrade?.(plan.id)}

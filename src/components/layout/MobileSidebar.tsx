@@ -236,7 +236,7 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
               <div className="flex items-center gap-3 p-2">
                 <Avatar className="h-10 w-10">
                   <AvatarImage src={avatarUrl} alt={fullName} />
-                  <AvatarFallback className="bg-linear-to-br from-primary to-primary-dark text-white text-sm font-semibold">
+                  <AvatarFallback className="bg-linear-to-br from-primary to-primary-dark text-primary-foreground text-sm font-semibold">
                     {initials}
                   </AvatarFallback>
                 </Avatar>

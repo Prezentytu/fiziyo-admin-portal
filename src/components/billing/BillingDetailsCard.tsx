@@ -115,7 +115,7 @@ export function BillingDetailsCard({ organizationId, className }: Readonly<Billi
             <div className="flex items-center gap-3">
               <Avatar className="h-12 w-12 rounded-xl">
                 <AvatarImage src={organization.logoUrl} className="object-cover" />
-                <AvatarFallback className="rounded-xl bg-linear-to-br from-primary to-primary-dark text-white text-lg font-bold">
+                <AvatarFallback className="rounded-xl bg-linear-to-br from-primary to-primary-dark text-primary-foreground text-lg font-bold">
                   {organization.name?.[0] || 'F'}
                 </AvatarFallback>
               </Avatar>

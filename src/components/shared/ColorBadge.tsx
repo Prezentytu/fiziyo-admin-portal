@@ -2,7 +2,7 @@
 
 import { cn } from '@/lib/utils';
 
-const DEFAULT_TAG_COLOR = '#22c55e'; // primary color
+const DEFAULT_TAG_COLOR = '#5bb89a';
 
 interface ColorBadgeProps {
   color?: string | null;

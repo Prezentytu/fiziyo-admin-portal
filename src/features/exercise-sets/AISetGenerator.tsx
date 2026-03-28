@@ -487,9 +487,9 @@ export function AISetGenerator({
       </ScrollArea>
 
       {/* Footer */}
-      <div className="px-5 py-4 border-t border-zinc-800 bg-zinc-900/30">
+      <div className="px-5 py-4 border-t border-border bg-surface/30">
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={onCancel} className="flex-1 border-zinc-700 hover:bg-zinc-800">
+          <Button variant="outline" size="sm" onClick={onCancel} className="flex-1 border-border hover:bg-surface-light">
             Zamknij
           </Button>
           {generatedMatches.length > 0 && (
