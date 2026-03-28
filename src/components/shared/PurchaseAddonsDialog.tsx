@@ -180,7 +180,7 @@ export function PurchaseAddonsDialog({
                 key={config.type}
                 className={cn(
                   'rounded-xl border p-4 transition-all duration-200',
-                  isSelected ? 'border-cyan-500/50 bg-cyan-500/5' : 'border-border/60 hover:border-border'
+                  isSelected ? 'border-violet/50 bg-violet/5' : 'border-border/60 hover:border-border'
                 )}
               >
                 <div className="flex items-center gap-4">
@@ -198,7 +198,7 @@ export function PurchaseAddonsDialog({
                   <div
                     className={cn(
                       'flex h-10 w-10 items-center justify-center rounded-xl shrink-0',
-                      isSelected ? 'bg-gradient-to-br from-cyan-500 to-blue-600' : 'bg-surface-light'
+                      isSelected ? 'bg-gradient-to-br from-violet to-violet-dark' : 'bg-surface-light'
                     )}
                   >
                     <Icon className={cn('h-5 w-5', isSelected ? 'text-white' : 'text-muted-foreground')} />
@@ -255,7 +255,7 @@ export function PurchaseAddonsDialog({
                           ? 'terapeutów'
                           : 'gabinetów'}
                     </span>
-                    <span className="font-medium text-cyan-500">{quantity * config.price} zł/mies.</span>
+                    <span className="font-medium text-violet">{quantity * config.price} zł/mies.</span>
                   </div>
                 )}
               </div>
@@ -295,7 +295,7 @@ export function PurchaseAddonsDialog({
             <Button
               onClick={handlePurchase}
               disabled={!hasSelection || loading}
-              className="gap-2 min-w-[120px] bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700"
+              className="gap-2 min-w-[120px] bg-gradient-to-r from-violet to-violet-dark hover:from-violet-dark hover:to-violet-dark"
               data-testid="addons-dialog-purchase-btn"
             >
               {loading ? (

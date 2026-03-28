@@ -94,7 +94,7 @@ export function SetCard({ set, tagsMap, onView, onEdit, onDelete, onDuplicate, o
     if (isTemplateSet) {
       return {
         label: 'Zestaw organizacji',
-        className: 'border-secondary/30 bg-secondary/10 text-secondary',
+        className: 'border-info/30 bg-info/10 text-info',
       };
     }
 

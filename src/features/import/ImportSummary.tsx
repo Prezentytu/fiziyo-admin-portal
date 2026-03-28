@@ -89,8 +89,8 @@ export function ImportSummary({
 
               {result.exerciseSetsCreated > 0 && (
                 <li className="flex items-center gap-3 text-foreground">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-500/20">
-                    <Layers className="h-5 w-5 text-purple-500" />
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-violet/20">
+                    <Layers className="h-5 w-5 text-violet" />
                   </div>
                   <span className="text-base">
                     Utworzono <strong>{result.exerciseSetsCreated}</strong>{' '}

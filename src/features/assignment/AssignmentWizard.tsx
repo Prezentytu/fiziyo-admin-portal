@@ -48,7 +48,7 @@ import {
   GET_ORGANIZATION_EXERCISE_SETS_QUERY,
   GET_EXERCISE_SET_WITH_ASSIGNMENTS_QUERY,
 } from '@/graphql/queries/exerciseSets.queries';
-import { GET_THERAPIST_PATIENTS_QUERY, GET_ORGANIZATION_PATIENTS_QUERY } from '@/graphql/queries/therapists.queries';
+import { GET_ORGANIZATION_PATIENTS_QUERY } from '@/graphql/queries/therapists.queries';
 import {
   ASSIGN_EXERCISE_SET_TO_PATIENT_MUTATION,
   REMOVE_EXERCISE_SET_ASSIGNMENT_MUTATION,
@@ -58,7 +58,7 @@ import {
 import { GET_AVAILABLE_EXERCISES_QUERY } from '@/graphql/queries/exercises.queries';
 import { GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY } from '@/graphql/queries/patientAssignments.queries';
 import { GET_CURRENT_BILLING_STATUS_QUERY } from '@/graphql/queries/billing.queries';
-import type { TherapistPatientsResponse } from '@/types/apollo';
+import type { OrganizationPatientsResponse } from '@/types/apollo';
 
 // Success dialog data type
 interface SuccessDialogData {
@@ -194,7 +194,7 @@ function AssignmentWizardContent({
   preselectedSet,
   preselectedPatient,
   organizationId,
-  therapistId,
+  therapistId: _therapistId,
   onSuccess,
   onCloseAttempt,
   onHasChanges,
@@ -325,9 +325,9 @@ function AssignmentWizardContent({
 
   // Load patients if needed (from-set mode or no preselected patient)
   const needsPatients = !preselectedPatient;
-  const { data: patientsData, loading: loadingPatients } = useQuery(GET_THERAPIST_PATIENTS_QUERY, {
-    variables: { therapistId, organizationId },
-    skip: !therapistId || !organizationId || !open || !needsPatients,
+  const { data: patientsData, loading: loadingPatients } = useQuery(GET_ORGANIZATION_PATIENTS_QUERY, {
+    variables: { organizationId, filter: 'all' },
+    skip: !organizationId || !open || !needsPatients,
   });
 
   // Load patient's existing assignments (for from-patient mode - to show which sets are already assigned)
@@ -490,14 +490,16 @@ function AssignmentWizardContent({
   );
 
   const patients: Patient[] = useMemo(() => {
-    const data = patientsData as TherapistPatientsResponse | undefined;
-    return (data?.therapistPatients || []).map((assignment) => ({
-      id: assignment.patient?.id || assignment.patientId,
-      name: assignment.patient?.fullname || 'Nieznany',
-      email: assignment.patient?.email,
-      image: assignment.patient?.image,
-      isShadowUser: assignment.patient?.isShadowUser,
-    }));
+    const data = patientsData as OrganizationPatientsResponse | undefined;
+    return (data?.organizationPatients || [])
+      .filter((entry) => !!entry.patient?.id)
+      .map((entry) => ({
+        id: entry.patient.id,
+        name: entry.patient.fullname || 'Nieznany',
+        email: entry.patient.email,
+        image: entry.patient.image,
+        isShadowUser: entry.patient.isShadowUser,
+      }));
   }, [patientsData]);
 
   // Process patient's assigned sets (for from-patient mode)

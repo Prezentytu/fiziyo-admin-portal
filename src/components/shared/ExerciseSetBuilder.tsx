@@ -664,7 +664,7 @@ export function ExerciseSetBuilder({
                 className={cn(
                   'px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all border flex items-center gap-1.5',
                   sourceFilter === 'organization'
-                    ? 'border-secondary/40 bg-secondary/10 ring-1 ring-secondary/20 text-secondary'
+                    ? 'border-info/40 bg-info/10 ring-1 ring-info/20 text-info'
                     : 'border-border/40 bg-surface/50 text-muted-foreground hover:bg-surface-light hover:text-foreground hover:border-border'
                 )}
                 data-testid={`${testIdPrefix}-filter-organization`}
@@ -679,7 +679,7 @@ export function ExerciseSetBuilder({
                 className={cn(
                   'px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all border flex items-center gap-1.5',
                   sourceFilter === 'fiziyo'
-                    ? 'border-violet-500/40 bg-violet-500/10 ring-1 ring-violet-500/20 text-violet-500'
+                    ? 'border-violet/40 bg-violet/10 ring-1 ring-violet/20 text-violet'
                     : 'border-border/40 bg-surface/50 text-muted-foreground hover:bg-surface-light hover:text-foreground hover:border-border'
                 )}
                 data-testid={`${testIdPrefix}-filter-fiziyo`}

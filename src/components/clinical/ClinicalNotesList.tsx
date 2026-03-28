@@ -144,7 +144,7 @@ export function ClinicalNotesList({
         <CardHeader className="pb-3">
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2 text-base font-medium">
-              <FileText className="h-4 w-4 text-secondary" />
+              <FileText className="h-4 w-4 text-info" />
               Dokumentacja
               {notes.length > 0 && (
                 <Badge variant="secondary" className="ml-1">

@@ -120,8 +120,8 @@ export function ExerciseVisibilitySettings({
           className={cn(
             'flex items-start gap-4 p-4 rounded-xl border transition-all',
             sharedByDefault
-              ? 'border-secondary/30 bg-secondary/5 ring-1 ring-secondary/10'
-              : 'border-border/50 bg-background/50 hover:bg-background hover:border-secondary/30'
+              ? 'border-info/30 bg-info/5 ring-1 ring-info/10'
+              : 'border-border/50 bg-background/50 hover:bg-background hover:border-info/30'
           )}
         >
           <Checkbox

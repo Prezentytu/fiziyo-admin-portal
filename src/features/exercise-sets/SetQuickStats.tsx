@@ -55,8 +55,8 @@ export function SetQuickStats({
               <div className="text-3xl font-bold text-foreground mt-1">{activeSets}</div>
               <p className="text-xs text-muted-foreground mt-1">z {totalSets} wszystkich</p>
             </div>
-            <div className="h-14 w-14 rounded-xl bg-secondary/10 flex items-center justify-center">
-              <FolderKanban className="h-7 w-7 text-secondary" />
+            <div className="h-14 w-14 rounded-xl bg-info/10 flex items-center justify-center">
+              <FolderKanban className="h-7 w-7 text-info" />
             </div>
           </div>
           <div className="flex items-center gap-2 mt-4">

@@ -358,7 +358,7 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
       label: 'Tempo',
       value: exercise.tempo ?? null,
       icon: RefreshCw,
-      color: 'text-violet-500',
+      color: 'text-violet',
     },
     {
       id: 'side',
@@ -488,7 +488,7 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
           {isGlobalExercise && (
             <Badge
               variant="outline"
-              className="text-[10px] uppercase font-bold tracking-wider bg-violet-500/10 text-violet-600 border-violet-500/20"
+              className="text-[10px] uppercase font-bold tracking-wider bg-violet/10 text-violet border-violet/20"
             >
               <Sparkles className="mr-1 h-3 w-3" />
               FiziYo

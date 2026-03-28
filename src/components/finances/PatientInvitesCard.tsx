@@ -81,7 +81,7 @@ function LinkTypeIcon({ type }: { type: string }) {
     case 'sms':
       return <Phone className="h-4 w-4 text-emerald-500" />;
     case 'qr':
-      return <QrCode className="h-4 w-4 text-violet-500" />;
+      return <QrCode className="h-4 w-4 text-violet" />;
     default:
       return <Mail className="h-4 w-4 text-muted-foreground" />;
   }

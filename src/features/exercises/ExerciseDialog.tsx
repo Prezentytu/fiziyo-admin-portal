@@ -241,7 +241,7 @@ export function ExerciseDialog({
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Sparkles className="h-5 w-5 text-violet-500" />
+              <Sparkles className="h-5 w-5 text-violet" />
               Ćwiczenie z bazy FiziYo
             </DialogTitle>
             <DialogDescription>
@@ -250,10 +250,10 @@ export function ExerciseDialog({
           </DialogHeader>
 
           <div className="py-6">
-            <div className="flex items-start gap-3 p-6 rounded-lg bg-violet-500/10 border border-violet-500/20">
-              <Lock className="h-8 w-8 text-violet-500 shrink-0 mt-0.5" />
+            <div className="flex items-start gap-3 p-6 rounded-lg bg-violet/10 border border-violet/20">
+              <Lock className="h-8 w-8 text-violet shrink-0 mt-0.5" />
               <div>
-                <p className="font-medium text-violet-600">Ćwiczenie tylko do odczytu</p>
+                <p className="font-medium text-violet">Ćwiczenie tylko do odczytu</p>
                 <p className="text-sm text-muted-foreground mt-1">
                   To jest zweryfikowane ćwiczenie z globalnej bazy FiziYo. Możesz je używać w zestawach, ale nie możesz
                   go edytować ani usunąć.

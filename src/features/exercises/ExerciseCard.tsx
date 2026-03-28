@@ -275,7 +275,7 @@ export function ExerciseCard({
                   <TooltipTrigger asChild>
                     <Badge
                       variant="outline"
-                      className="text-[9px] bg-violet-500/10 text-violet-600 border-violet-500/20 shrink-0"
+                      className="text-[9px] bg-violet/10 text-violet border-violet/20 shrink-0"
                     >
                       <Sparkles className="h-2.5 w-2.5 mr-0.5" />
                       FiziYo
@@ -426,7 +426,7 @@ export function ExerciseCard({
                 </DropdownMenuItem>
               )}
               {isGlobalExercise && (
-                <div className="px-2 py-1.5 text-xs text-violet-600 flex items-center gap-1">
+                <div className="px-2 py-1.5 text-xs text-violet flex items-center gap-1">
                   <Sparkles className="h-3 w-3" />
                   Ćwiczenie z bazy FiziYo
                 </div>
@@ -545,7 +545,7 @@ export function ExerciseCard({
                       variant="outline"
                       className={cn(
                         'text-[10px] font-semibold backdrop-blur-md border shadow-lg cursor-help',
-                        isGlobalExercise && 'bg-violet-500/90 text-white border-violet-600',
+                        isGlobalExercise && 'bg-violet/90 text-white border-violet-dark',
                         isSubmittedToGlobal &&
                           !isPendingReview &&
                           !isChangesRequested &&
@@ -671,7 +671,7 @@ export function ExerciseCard({
                     </DropdownMenuItem>
                   )}
                   {isGlobalExercise && (
-                    <div className="px-2 py-1.5 text-xs text-violet-600 flex items-center gap-1">
+                    <div className="px-2 py-1.5 text-xs text-violet flex items-center gap-1">
                       <Sparkles className="h-3 w-3" />
                       Ćwiczenie z bazy FiziYo
                     </div>

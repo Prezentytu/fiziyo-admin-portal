@@ -173,8 +173,8 @@ export function AIAnalysisHeader({
     <div
       className={cn(
         'flex items-center justify-between p-3 rounded-lg border transition-all',
-        status === 'idle' && 'bg-purple-500/5 border-purple-500/20',
-        status === 'loading' && 'bg-purple-500/10 border-purple-500/30 animate-pulse',
+        status === 'idle' && 'bg-violet/5 border-violet/20',
+        status === 'loading' && 'bg-violet/10 border-violet/30 animate-pulse',
         status === 'complete' && 'bg-emerald-500/5 border-emerald-500/20',
         status === 'error' && 'bg-destructive/5 border-destructive/20',
         className
@@ -186,14 +186,14 @@ export function AIAnalysisHeader({
         <div
           className={cn(
             'flex items-center justify-center w-8 h-8 rounded-lg',
-            status === 'idle' && 'bg-purple-500/20',
-            status === 'loading' && 'bg-purple-500/30',
+            status === 'idle' && 'bg-violet/20',
+            status === 'loading' && 'bg-violet/30',
             status === 'complete' && 'bg-emerald-500/20',
             status === 'error' && 'bg-destructive/20'
           )}
         >
-          {status === 'idle' && <Sparkles className="h-4 w-4 text-purple-400" />}
-          {status === 'loading' && <Loader2 className="h-4 w-4 text-purple-400 animate-spin" />}
+          {status === 'idle' && <Sparkles className="h-4 w-4 text-violet-light" />}
+          {status === 'loading' && <Loader2 className="h-4 w-4 text-violet-light animate-spin" />}
           {status === 'complete' && <CheckCircle2 className="h-4 w-4 text-emerald-500" />}
           {status === 'error' && <AlertCircle className="h-4 w-4 text-destructive" />}
         </div>
@@ -210,7 +210,7 @@ export function AIAnalysisHeader({
 
           {status === 'loading' && (
             <>
-              <span className="text-sm font-medium text-purple-400">Analizuję biomechanikę...</span>
+              <span className="text-sm font-medium text-violet-light">Analizuję biomechanikę...</span>
               <span className="text-xs text-muted-foreground">To może zająć kilka sekund</span>
             </>
           )}
@@ -237,7 +237,7 @@ export function AIAnalysisHeader({
       <div className="flex items-center gap-2">
         {/* AI Fields counter (when complete) */}
         {status === 'complete' && aiFieldsCount > 0 && (
-          <Badge variant="outline" className="text-[10px] bg-purple-500/10 text-purple-400 border-purple-500/30">
+          <Badge variant="outline" className="text-[10px] bg-violet/10 text-violet-light border-violet/30">
             <Zap className="h-3 w-3 mr-1" />
             {aiFieldsCount} AI
           </Badge>
@@ -248,7 +248,7 @@ export function AIAnalysisHeader({
           <Button
             onClick={handleAnalyze}
             disabled={disabled || !canAnalyze}
-            className="bg-purple-600 hover:bg-purple-500 text-white gap-2"
+            className="bg-violet-dark hover:bg-violet text-white gap-2"
             size="sm"
             data-testid="ai-analysis-trigger-btn"
           >
@@ -258,7 +258,7 @@ export function AIAnalysisHeader({
         )}
 
         {status === 'loading' && (
-          <Button disabled variant="outline" size="sm" className="border-purple-500/30 text-purple-400">
+          <Button disabled variant="outline" size="sm" className="border-violet/30 text-violet-light">
             <Loader2 className="h-4 w-4 mr-2 animate-spin" />
             Analizuję...
           </Button>

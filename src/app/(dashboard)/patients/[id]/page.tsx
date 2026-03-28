@@ -420,8 +420,8 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
         <Card className="bg-surface border-border shadow-md overflow-hidden rounded-xl md:rounded-2xl lg:col-span-12">
           <CardHeader className="p-4 md:px-6 md:pt-6 md:pb-4">
             <CardTitle className="flex items-center gap-2 md:gap-3 text-sm md:text-base font-semibold">
-              <div className="flex h-8 w-8 md:h-9 md:w-9 items-center justify-center rounded-lg md:rounded-xl bg-secondary/10">
-                <Activity className="h-4 w-4 text-secondary" />
+              <div className="flex h-8 w-8 md:h-9 md:w-9 items-center justify-center rounded-lg md:rounded-xl bg-info/10">
+                <Activity className="h-4 w-4 text-info" />
               </div>
               Aktywność i postępy
             </CardTitle>

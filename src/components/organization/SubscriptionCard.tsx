@@ -194,7 +194,7 @@ export function SubscriptionCard({
     currentPlanKey === 'PRO'
       ? 'text-orange-500'
       : currentPlanKey === 'BUSINESS'
-        ? 'text-violet-500'
+        ? 'text-violet'
         : currentPlanKey === 'SOLO'
           ? 'text-primary'
           : 'text-slate-400';
@@ -369,8 +369,8 @@ export function SubscriptionCard({
               onClick={() => setIsUpgradeDialogOpen(true)}
               className={cn(
                 'w-full group rounded-xl p-4 text-left transition-all cursor-pointer',
-                'bg-gradient-to-r from-violet-500/10 to-indigo-500/10 border border-violet-500/30',
-                'hover:from-violet-500/15 hover:to-indigo-500/15 hover:border-violet-500/50'
+                'bg-gradient-to-r from-violet/10 to-indigo-500/10 border border-violet/30',
+                'hover:from-violet/15 hover:to-indigo-500/15 hover:border-violet/50'
               )}
             >
               <div className="flex items-center gap-4">
@@ -383,7 +383,7 @@ export function SubscriptionCard({
                     Nielimitowani pacjenci, 20 terapeutów, 1000 kredytów AI
                   </p>
                 </div>
-                <ArrowRight className="h-5 w-5 text-violet-500 group-hover:translate-x-1 transition-transform" />
+                <ArrowRight className="h-5 w-5 text-violet group-hover:translate-x-1 transition-transform" />
               </div>
             </button>
           ) : null}
@@ -584,7 +584,7 @@ export function SubscriptionCard({
             </div>
 
             {/* Enterprise */}
-            <div className="mt-6 rounded-xl border border-violet-500/30 bg-violet-500/5 p-4 flex items-center justify-between">
+            <div className="mt-6 rounded-xl border border-violet/30 bg-violet/5 p-4 flex items-center justify-between">
               <div className="flex items-center gap-4">
                 <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-violet-500 to-purple-600">
                   <Building2 className="h-6 w-6 text-white" />
@@ -594,7 +594,7 @@ export function SubscriptionCard({
                   <p className="text-sm text-muted-foreground">Potrzebujesz więcej? Skontaktuj się z nami.</p>
                 </div>
               </div>
-              <Button variant="outline" className="gap-2 border-violet-500/50 text-violet-400 hover:bg-violet-500/10">
+              <Button variant="outline" className="gap-2 border-violet/50 text-violet-light hover:bg-violet/10">
                 Kontakt
                 <ExternalLink className="h-4 w-4" />
               </Button>

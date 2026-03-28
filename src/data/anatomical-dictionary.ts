@@ -351,7 +351,7 @@ export function getTagCategoryColor(tag: string): string {
     case 'Mięśnie':
       return 'bg-purple-500/10 text-purple-600 border-purple-500/20';
     case 'Stawy':
-      return 'bg-cyan-500/10 text-cyan-600 border-cyan-500/20';
+      return 'bg-info/10 text-info border-info/20';
     case 'Sprzęt':
       return 'bg-zinc-500/10 text-zinc-600 border-zinc-500/20';
     case 'Cele':

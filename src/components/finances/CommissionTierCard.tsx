@@ -251,10 +251,10 @@ export function CommissionTierCard({ organizationId, className }: CommissionTier
 
         {/* ELITE tier reached */}
         {progressData.currentTier === 'ELITE' && (
-          <div className="flex items-center gap-2 p-3 rounded-lg bg-violet-500/10 border border-violet-500/20">
-            <Crown className="h-5 w-5 text-violet-500 shrink-0" />
+          <div className="flex items-center gap-2 p-3 rounded-lg bg-violet/10 border border-violet/20">
+            <Crown className="h-5 w-5 text-violet shrink-0" />
             <div className="text-sm text-foreground">
-              🎉 Gratulacje! Osiągnąłeś najwyższy poziom <span className="font-bold text-violet-500">ELITE</span>!
+              🎉 Gratulacje! Osiągnąłeś najwyższy poziom <span className="font-bold text-violet">ELITE</span>!
             </div>
           </div>
         )}

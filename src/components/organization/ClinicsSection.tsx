@@ -178,8 +178,8 @@ export function ClinicsSection({
                 <div className="space-y-4">
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex items-center gap-3 min-w-0">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-secondary/10 shrink-0 group-hover:scale-110 transition-transform">
-                        <MapPin className="h-5 w-5 text-secondary" />
+                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-info/10 shrink-0 group-hover:scale-110 transition-transform">
+                        <MapPin className="h-5 w-5 text-info" />
                       </div>
                       <div>
                         <h4 className="font-bold text-foreground truncate group-hover:text-primary transition-colors">

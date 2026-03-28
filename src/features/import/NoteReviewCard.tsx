@@ -44,7 +44,7 @@ export function NoteReviewCard({ note, decision, onDecisionChange, disabled = fa
       case 'interview':
         return 'bg-blue-500/20 text-blue-600';
       case 'examination':
-        return 'bg-purple-500/20 text-purple-600';
+        return 'bg-violet/20 text-violet';
       case 'diagnosis':
         return 'bg-orange-500/20 text-orange-600';
       case 'procedure':

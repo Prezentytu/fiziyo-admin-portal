@@ -53,7 +53,7 @@ function TransactionTypeBadge({ type }: { type: RevenueTransactionType }) {
       );
     case 'Payout':
       return (
-        <Badge variant="outline" className="text-xs border-violet-500/30 text-violet-500">
+        <Badge variant="outline" className="text-xs border-violet/30 text-violet">
           <ArrowUpRight className="h-3 w-3 mr-1" />
           Wypłata
         </Badge>

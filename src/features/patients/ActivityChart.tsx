@@ -33,13 +33,13 @@ export function ActivityChart({
 
   const colorClasses = {
     primary: 'bg-primary',
-    secondary: 'bg-secondary',
+    secondary: 'bg-info',
     info: 'bg-info',
   };
 
   const bgColorClasses = {
     primary: 'bg-primary/20',
-    secondary: 'bg-secondary/20',
+    secondary: 'bg-info/20',
     info: 'bg-info/20',
   };
 

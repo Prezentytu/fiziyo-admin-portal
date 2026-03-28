@@ -62,22 +62,22 @@ export function SubscriptionBanner({ variant, limitType = 'patients', planName =
   return (
     <Link
       href="/subscription"
-      className="group relative block rounded-xl border border-violet-500/25 bg-gradient-to-r from-violet-500/10 via-indigo-500/8 to-violet-500/10 p-4 overflow-hidden transition-all duration-300 hover:scale-[1.01] hover:shadow-xl hover:shadow-violet-500/10 hover:border-violet-500/40 cursor-pointer"
+      className="group relative block rounded-xl border border-violet/25 bg-gradient-to-r from-violet-500/10 via-indigo-500/8 to-violet-500/10 p-4 overflow-hidden transition-all duration-300 hover:scale-[1.01] hover:shadow-xl hover:shadow-violet/10 hover:border-violet/40 cursor-pointer"
     >
       {/* Animated background glow */}
       <div className="absolute inset-0 bg-gradient-to-br from-violet-500/10 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-      <div className="absolute -top-12 -right-12 w-40 h-40 bg-violet-500/15 rounded-full blur-2xl group-hover:bg-violet-500/25 transition-all duration-500" />
+      <div className="absolute -top-12 -right-12 w-40 h-40 bg-violet/15 rounded-full blur-2xl group-hover:bg-violet/25 transition-all duration-500" />
       <div className="absolute -bottom-8 -left-8 w-32 h-32 bg-indigo-500/10 rounded-full blur-2xl group-hover:bg-indigo-500/20 transition-all duration-500" />
 
       <div className="relative flex items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-violet-500 to-indigo-500 text-white shadow-lg shadow-violet-500/20 shrink-0 group-hover:scale-110 transition-transform duration-300">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-violet-500 to-indigo-500 text-white shadow-lg shadow-violet/20 shrink-0 group-hover:scale-110 transition-transform duration-300">
             <Crown className="h-5 w-5" />
           </div>
           <div>
             <p className="text-sm font-semibold text-foreground flex items-center gap-1.5">
               Odkryj pełnię możliwości
-              <Sparkles className="h-3.5 w-3.5 text-violet-500 group-hover:text-violet-400 transition-colors" />
+              <Sparkles className="h-3.5 w-3.5 text-violet group-hover:text-violet-light transition-colors" />
             </p>
             <p className="text-xs text-muted-foreground group-hover:text-muted-foreground/80 transition-colors">
               {planName === 'FREE'
@@ -86,7 +86,7 @@ export function SubscriptionBanner({ variant, limitType = 'patients', planName =
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-violet-500/30 text-violet-400 text-sm font-medium shrink-0 group-hover:bg-violet-500/10 group-hover:border-violet-500/50 group-hover:text-violet-300 transition-all duration-300">
+        <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-violet/30 text-violet-light text-sm font-medium shrink-0 group-hover:bg-violet/10 group-hover:border-violet/50 transition-all duration-300">
           <Crown className="h-3.5 w-3.5" />
           <span className="hidden sm:inline">Zobacz plany</span>
           <ArrowRight className="h-3.5 w-3.5 group-hover:translate-x-1 transition-transform duration-300" />

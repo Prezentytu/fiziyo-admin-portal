@@ -10,7 +10,7 @@ interface QuickLinkCardProps {
   label: string;
   count?: number;
   description: string;
-  color: 'primary' | 'secondary' | 'info';
+  color: 'primary' | 'info';
 }
 
 const colorVariants = {
@@ -19,12 +19,6 @@ const colorVariants = {
     icon: 'text-primary',
     hover: 'hover:bg-primary/15 hover:border-primary/30',
     count: 'text-primary',
-  },
-  secondary: {
-    bg: 'bg-secondary/10',
-    icon: 'text-secondary',
-    hover: 'hover:bg-secondary/15 hover:border-secondary/30',
-    count: 'text-secondary',
   },
   info: {
     bg: 'bg-info/10',
@@ -81,7 +75,7 @@ export function QuickLinksSection({ patientsCount, exercisesCount, setsCount, cl
           label="Pacjenci"
           count={patientsCount}
           description="Zarządzaj pacjentami"
-          color="secondary"
+          color="info"
         />
         <QuickLinkCard
           href="/exercises"

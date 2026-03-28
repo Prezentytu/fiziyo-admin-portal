@@ -41,10 +41,10 @@ const TAG_CATEGORY_COLORS: Record<string, string> = {
   hantle: 'bg-muted text-muted-foreground border-border',
   mata: 'bg-muted text-muted-foreground border-border',
   // Exercise type - purple
-  rozciąganie: 'bg-purple-500/10 text-purple-600 border-purple-500/20',
-  wzmacnianie: 'bg-purple-500/10 text-purple-600 border-purple-500/20',
-  mobilizacja: 'bg-purple-500/10 text-purple-600 border-purple-500/20',
-  oddychanie: 'bg-purple-500/10 text-purple-600 border-purple-500/20',
+  rozciąganie: 'bg-violet/10 text-violet border-violet/20',
+  wzmacnianie: 'bg-violet/10 text-violet border-violet/20',
+  mobilizacja: 'bg-violet/10 text-violet border-violet/20',
+  oddychanie: 'bg-violet/10 text-violet border-violet/20',
   // Difficulty - amber
   początkujący: 'bg-amber-500/10 text-amber-600 border-amber-500/20',
   średniozaawansowany: 'bg-amber-500/10 text-amber-600 border-amber-500/20',

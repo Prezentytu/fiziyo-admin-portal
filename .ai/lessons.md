@@ -182,4 +182,28 @@ Dziennik wniosków z pracy AI agentów. Po każdej korekcie dodaj nowy wpis.
 - **Rozwiazanie**: Migracja na centralny design system w globals.css (:root + .light-theme), mapowanie Tailwind v4 @theme inline, wymiana hardcoded wartosci na tokeny (`bg-dark`, `var(--primary)`, `#5bb89a`).
 - **Regula**: Nigdy nie hardcoduj kolorow brand w komponentach; uzywaj tokenow z design systemu. Przy zmianie palety wystarczy zaktualizowac globals.css.
 
+### 2026-03-28 - Paleta akcentow wymaga separacji na kole barw (min 25°)
+
+- **Kategoria**: `UI/UX`
+- **Problem**: Cztery kolory w zakresie 142-190° (success green, primary mint, secondary teal, cyan) — uzytkownik nie moglrozroznic akcji od statusu. Violet (AI/premium) uzyty w ~67 instancjach bez tokena CSS.
+- **Przyczyna**: Dodawanie kolorow ad-hoc bez analizy distribucji na kole barw. Brak formalizacji de facto kolorow.
+- **Rozwiazanie**: (1) Secondary teal → violet (#8b5cf6). (2) Dodano --violet token family z @theme mapping. (3) Success #4ade80 → #22c55e (ciemniejszy). (4) Cyan premium gradients → violet→blue. (5) Org scope secondary → info (blue). (6) Tokenizacja ~60 instancji hardcoded violet/purple.
+- **Regula**: Kazdy kolor akcentowy musi miec min 25° separacji na kole barw od sasiada. Kazdy kolor uzywany w >5 plikach MUSI miec token CSS. Nie dodawaj nowego koloru bez sprawdzenia hue wheel distribution.
+
+### 2026-03-28 - Primary foreground: bialy tekst na przyciskach wymaga ciemniejszego primary
+
+- **Kategoria**: `UI/UX`
+- **Problem**: Czarny tekst na mietowym tle wygladal jak badge sukcesu, nie premium CTA. Biale text-white nadpisywane ad-hoc w ~30 komponentach.
+- **Przyczyna**: Primary #5bb89a zbyt jasny (kontrast z bialym 2.4:1). primary-foreground ustawiony na czarny.
+- **Rozwiazanie**: Przesuniecie skali: primary #5bb89a → #449b80, primary-foreground → #ffffff. Hover #378570 (4.4:1 z bialym). Oryginalny #5bb89a jako primary-light.
+- **Regula**: Przy definiowaniu primary-foreground sprawdz kontrast WCAG: min 3:1 dla buttonow (large text), 4.5:1 dla small text. Bialy tekst na CTA = standard premium; czarny = badge.
+
+### 2026-03-28 - organizationPatients source of truth: OrganizationMembers, nie TherapistPatients
+
+- **Kategoria**: `Backend / Data Model`
+- **Problem**: Assignment Wizard nie wyswietlal pacjentow, bo uzywal `GET_THERAPIST_PATIENTS_QUERY` (scope: przypisani do terapeuty). Backend `GetOrganizationPatients` bral patientIds z `TherapistPatients` zamiast `OrganizationMembers`, przez co pacjenci bez terapeuty byli niewidoczni.
+- **Przyczyna**: Historyczny shortcut — lista pacjentow organizacji budowana z TherapistPatients (relacja n:n), a nie z OrganizationMembers (source of truth dla Premium/billing).
+- **Rozwiazanie**: (1) Backend: `GetOrganizationPatients` bazuje na `OrganizationMembers(role=patient, status=active)`. (2) Admin: Assignment Wizard przelaczony na `GET_ORGANIZATION_PATIENTS_QUERY` z `filter: 'all'`. (3) 8 testow regresyjnych (filtry all/my/unassigned, Premium, inactive, tenant isolation).
+- **Regula**: Dla listy pacjentow organizacji ZAWSZE uzywaj `OrganizationMembers` jako source of truth — jest spojne z `BillingService.ActivatePatientPremium`. `TherapistPatients` to dane pomocnicze (przypisania), nie zrodlo listy.
+
 <!-- Dodawaj nowe wpisy powyżej tej linii -->

@@ -69,10 +69,10 @@ interface AICreditsReadonlyPanelProps {
 // Action type config with icons
 const actionTypeConfig: Record<string, { label: string; icon: React.ElementType; color: string }> = {
   chat: { label: 'Chat AI', icon: MessageSquare, color: 'text-blue-400' },
-  set_generate: { label: 'Generowanie zestawu', icon: Bot, color: 'text-purple-400' },
+  set_generate: { label: 'Generowanie zestawu', icon: Bot, color: 'text-violet-light' },
   exercise_suggest: { label: 'Sugestia ćwiczenia', icon: Sparkles, color: 'text-primary' },
   clinical_notes: { label: 'Notatki', icon: FileText, color: 'text-amber-400' },
-  document_import: { label: 'Import dokumentu', icon: FileUp, color: 'text-cyan-400' },
+  document_import: { label: 'Import dokumentu', icon: FileUp, color: 'text-violet-light' },
   voice_parse: { label: 'Rozpoznawanie mowy', icon: Mic, color: 'text-pink-400' },
 };
 
@@ -179,7 +179,7 @@ export function AICreditsPanel({ compact = false }: AICreditsReadonlyPanelProps)
     return (
       <Card className="relative overflow-hidden rounded-xl border border-border/50 bg-card/30 h-full group">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary via-primary to-cyan-500" />
+        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary via-primary to-violet" />
         <CardContent className="relative p-8 text-center">
           <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-primary/20 to-primary/20 mb-4 shadow-lg shadow-primary/10">
             <Sparkles className="h-6 w-6 text-primary" />
@@ -368,7 +368,7 @@ export function AICreditsPanel({ compact = false }: AICreditsReadonlyPanelProps)
               ? 'bg-gradient-to-r from-destructive via-red-500 to-orange-500'
               : isLow
                 ? 'bg-gradient-to-r from-warning via-orange-500 to-yellow-500'
-                : 'bg-gradient-to-r from-primary via-primary to-cyan-500'
+                : 'bg-gradient-to-r from-primary via-primary to-violet'
           )}
         />
 

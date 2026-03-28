@@ -218,7 +218,7 @@ export function DualDescriptionTabs({
               >
                 <User className="h-3.5 w-3.5" />
                 Pacjent
-                {isAiSuggested('patientDescription') && <Zap className="h-3 w-3 text-purple-400" />}
+                {isAiSuggested('patientDescription') && <Zap className="h-3 w-3 text-violet-light" />}
               </TabsTrigger>
               <TabsTrigger
                 value="clinical"
@@ -227,7 +227,7 @@ export function DualDescriptionTabs({
               >
                 <Stethoscope className="h-3.5 w-3.5" />
                 Kliniczny
-                {isAiSuggested('clinicalDescription') && <Zap className="h-3 w-3 text-purple-400" />}
+                {isAiSuggested('clinicalDescription') && <Zap className="h-3 w-3 text-violet-light" />}
               </TabsTrigger>
             </TabsList>
 
@@ -241,7 +241,7 @@ export function DualDescriptionTabs({
                       size="sm"
                       onClick={handleTranslateToPatient}
                       disabled={disabled || isTranslating}
-                      className="h-7 text-xs gap-1.5 text-purple-400 hover:text-purple-300 hover:bg-purple-500/10"
+                      className="h-7 text-xs gap-1.5 text-violet-light hover:text-violet-light hover:bg-violet/10"
                       data-testid="dual-desc-translate-btn"
                     >
                       {isTranslating ? (

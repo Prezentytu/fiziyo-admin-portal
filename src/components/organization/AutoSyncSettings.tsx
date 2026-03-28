@@ -57,15 +57,15 @@ export function AutoSyncSettings({
     <Card className="rounded-xl border border-border/50 bg-card/30">
       <CardHeader>
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-secondary/10">
-            <Github className="h-5 w-5 text-secondary" />
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-info/10">
+            <Github className="h-5 w-5 text-info" />
           </div>
           <div className="flex-1">
             <div className="flex items-center gap-2">
               <CardTitle className="text-lg font-semibold tracking-tight">Auto-sync ćwiczeń</CardTitle>
               <Badge
                 variant="outline"
-                className="text-[10px] uppercase font-bold tracking-wider bg-secondary/10 text-secondary border-secondary/20"
+                className="text-[10px] uppercase font-bold tracking-wider bg-info/10 text-info border-info/20"
               >
                 Beta
               </Badge>

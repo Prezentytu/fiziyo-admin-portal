@@ -607,8 +607,8 @@ export default function DashboardPage() {
           <CardHeader className="p-4 md:px-6 md:pt-6 md:pb-4">
             <div className="flex items-center justify-between">
               <CardTitle className="flex items-center gap-2 md:gap-3 text-sm md:text-base font-semibold">
-                <div className="flex h-8 w-8 md:h-9 md:w-9 items-center justify-center rounded-lg md:rounded-xl bg-secondary/10">
-                  <FolderKanban className="h-4 w-4 md:h-4.5 md:w-4.5 text-secondary" />
+                <div className="flex h-8 w-8 md:h-9 md:w-9 items-center justify-center rounded-lg md:rounded-xl bg-info/10">
+                  <FolderKanban className="h-4 w-4 md:h-4.5 md:w-4.5 text-info" />
                 </div>
                 <span>Szybki wybór</span>
               </CardTitle>

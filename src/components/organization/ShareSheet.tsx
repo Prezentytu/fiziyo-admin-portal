@@ -78,8 +78,8 @@ const shareOptions: ShareOption[] = [
   {
     name: 'Messenger',
     icon: MessageCircle,
-    gradient: 'from-purple-500 to-purple-600',
-    hoverGradient: 'hover:from-purple-600 hover:to-purple-700',
+    gradient: 'from-violet to-violet-dark',
+    hoverGradient: 'hover:from-violet-dark hover:to-violet-dark',
     getUrl: (url) => `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`,
   },
   {

@@ -138,7 +138,7 @@ export function LimitReachedDialog({ open, onClose, limitInfo }: LimitReachedDia
 
           {/* Promo hint */}
           <div className="flex items-center gap-1.5 mt-4 text-xs text-muted-foreground">
-            <Sparkles className="h-3 w-3 text-violet-500" />
+            <Sparkles className="h-3 w-3 text-violet" />
             <span>14 dni gwarancji zwrotu pieniędzy</span>
           </div>
         </div>

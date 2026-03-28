@@ -172,9 +172,9 @@ interface MacroChipProps {
 function MacroChip({ macro, onClick, disabled = false, showCategory = true }: MacroChipProps) {
   const categoryColors: Record<MacroCategory, string> = {
     posture: 'bg-blue-500/10 text-blue-600 hover:bg-blue-500/20 border-blue-500/20',
-    breathing: 'bg-cyan-500/10 text-cyan-600 hover:bg-cyan-500/20 border-cyan-500/20',
+    breathing: 'bg-violet-muted text-violet hover:bg-violet/20 border-violet/20',
     safety: 'bg-amber-500/10 text-amber-600 hover:bg-amber-500/20 border-amber-500/20',
-    tempo: 'bg-purple-500/10 text-purple-600 hover:bg-purple-500/20 border-purple-500/20',
+    tempo: 'bg-violet/10 text-violet hover:bg-violet/20 border-violet/20',
     range: 'bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20 border-emerald-500/20',
   };
 

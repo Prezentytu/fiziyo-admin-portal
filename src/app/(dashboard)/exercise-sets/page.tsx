@@ -443,17 +443,17 @@ export default function ExerciseSetsPage() {
             className={cn(
               'rounded-2xl border p-4 flex flex-col items-center justify-center text-center transition-all duration-200',
               filter === 'my-templates'
-                ? 'border-secondary/40 bg-secondary/10 ring-1 ring-secondary/20'
+                ? 'border-info/40 bg-info/10 ring-1 ring-info/20'
                 : 'border-border/40 bg-surface/50 hover:bg-surface-light hover:border-border'
             )}
             data-testid="set-filter-my-templates-btn"
           >
             <div className="flex items-center gap-2">
               <UserRound
-                className={cn('h-4 w-4', filter === 'my-templates' ? 'text-secondary' : 'text-muted-foreground')}
+                className={cn('h-4 w-4', filter === 'my-templates' ? 'text-info' : 'text-muted-foreground')}
               />
               <span
-                className={cn('text-2xl font-bold', filter === 'my-templates' ? 'text-secondary' : 'text-foreground')}
+                className={cn('text-2xl font-bold', filter === 'my-templates' ? 'text-info' : 'text-foreground')}
               >
                 {myTemplatesCount}
               </span>

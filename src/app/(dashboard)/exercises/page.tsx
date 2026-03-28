@@ -336,7 +336,7 @@ export default function ExercisesPage() {
                 className={cn(
                   'rounded-2xl border p-4 flex flex-col items-center justify-center text-center transition-all duration-200',
                   sourceFilter === 'organization'
-                    ? 'border-secondary/40 bg-secondary/10 ring-1 ring-secondary/20'
+                    ? 'border-info/40 bg-info/10 ring-1 ring-info/20'
                     : 'border-border/40 bg-surface/50 hover:bg-surface-light hover:border-border'
                 )}
               >
@@ -344,13 +344,13 @@ export default function ExercisesPage() {
                   <Dumbbell
                     className={cn(
                       'h-4 w-4',
-                      sourceFilter === 'organization' ? 'text-secondary' : 'text-muted-foreground'
+                      sourceFilter === 'organization' ? 'text-info' : 'text-muted-foreground'
                     )}
                   />
                   <span
                     className={cn(
                       'text-2xl font-bold',
-                      sourceFilter === 'organization' ? 'text-secondary' : 'text-foreground'
+                      sourceFilter === 'organization' ? 'text-info' : 'text-foreground'
                     )}
                   >
                     {organizationCount}
@@ -366,18 +366,18 @@ export default function ExercisesPage() {
                 className={cn(
                   'rounded-2xl border p-4 flex flex-col items-center justify-center text-center transition-all duration-200',
                   sourceFilter === 'fiziyo'
-                    ? 'border-violet-500/40 bg-violet-500/10 ring-1 ring-violet-500/20'
+                    ? 'border-violet/40 bg-violet/10 ring-1 ring-violet/20'
                     : 'border-border/40 bg-surface/50 hover:bg-surface-light hover:border-border'
                 )}
               >
                 <div className="flex items-center gap-2">
                   <Sparkles
-                    className={cn('h-4 w-4', sourceFilter === 'fiziyo' ? 'text-violet-500' : 'text-muted-foreground')}
+                    className={cn('h-4 w-4', sourceFilter === 'fiziyo' ? 'text-violet' : 'text-muted-foreground')}
                   />
                   <span
                     className={cn(
                       'text-2xl font-bold',
-                      sourceFilter === 'fiziyo' ? 'text-violet-500' : 'text-foreground'
+                      sourceFilter === 'fiziyo' ? 'text-violet' : 'text-foreground'
                     )}
                   >
                     {fiziyoCount}

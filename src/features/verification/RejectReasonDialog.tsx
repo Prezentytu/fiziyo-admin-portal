@@ -230,7 +230,7 @@ export function RejectReasonDialog({
                 size="sm"
                 onClick={handleGenerateNote}
                 disabled={!reason || isGeneratingNote}
-                className="h-7 text-xs gap-1.5 text-purple-400 hover:text-purple-300 hover:bg-purple-500/10"
+                className="h-7 text-xs gap-1.5 text-violet-light hover:text-violet-light hover:bg-violet/10"
                 data-testid="verification-reject-ai-suggest-btn"
               >
                 {isGeneratingNote ? (

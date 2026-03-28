@@ -138,7 +138,7 @@ export function BillingHeroCard({ organizationId, className }: BillingHeroCardPr
       <div className="absolute -bottom-32 -left-32 w-64 h-64 bg-emerald-500/5 rounded-full blur-3xl" />
 
       {/* Top accent line */}
-      <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary via-primary to-cyan-500" />
+      <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary via-primary to-violet" />
 
       <div className="relative flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
         {/* Left side - Main amount */}

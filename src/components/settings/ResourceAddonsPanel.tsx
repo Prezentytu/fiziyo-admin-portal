@@ -137,13 +137,13 @@ export function ResourceAddonsPanel({ compact = false }: ResourceAddonsPanelProp
           <CardHeader className="pb-6">
             <div className="flex items-center justify-between">
               <CardTitle className="flex items-center gap-4">
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 shadow-lg shadow-cyan-500/25 transition-transform group-hover:scale-110 duration-300">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-violet to-violet-dark shadow-lg shadow-violet/25 transition-transform group-hover:scale-110 duration-300">
                   <TrendingUp className="h-6 w-6 text-white" />
                 </div>
                 <div>
                   <span className="text-lg font-bold tracking-tight text-foreground">Rozszerzenia zasobów</span>
                   {hasAnyAddons && (
-                    <p className="text-sm text-cyan-500 font-bold uppercase tracking-wider mt-0.5">
+                    <p className="text-sm text-violet font-bold uppercase tracking-wider mt-0.5">
                       +{status.monthlyAddonsCost.toFixed(0)} zł / m
                     </p>
                   )}
@@ -169,8 +169,8 @@ export function ResourceAddonsPanel({ compact = false }: ResourceAddonsPanelProp
                   className={cn(
                     'group flex items-center gap-4 py-4 px-5 rounded-xl w-full text-left',
                     'transition-all duration-300 cursor-pointer border',
-                    'hover:bg-background hover:shadow-lg hover:border-cyan-500/30',
-                    hasAddon ? 'bg-cyan-500/5 border-cyan-500/30 shadow-sm' : 'bg-background/50 border-border/40'
+                    'hover:bg-background hover:shadow-lg hover:border-violet/30',
+                    hasAddon ? 'bg-violet/5 border-violet/30 shadow-sm' : 'bg-background/50 border-border/40'
                   )}
                 >
                   {/* Icon */}
@@ -178,7 +178,7 @@ export function ResourceAddonsPanel({ compact = false }: ResourceAddonsPanelProp
                     className={cn(
                       'flex h-11 w-11 items-center justify-center rounded-xl shrink-0 transition-transform duration-300 group-hover:scale-110',
                       hasAddon
-                        ? 'bg-gradient-to-br from-cyan-500 to-blue-600 shadow-lg shadow-cyan-500/25'
+                        ? 'bg-gradient-to-br from-violet to-violet-dark shadow-lg shadow-violet/25'
                         : 'bg-surface-light'
                     )}
                   >
@@ -190,7 +190,7 @@ export function ResourceAddonsPanel({ compact = false }: ResourceAddonsPanelProp
                     <div className="flex items-center justify-between mb-1">
                       <span className="text-sm font-bold text-foreground">{config.label}</span>
                       {hasAddon && (
-                        <Badge className="bg-cyan-500 text-white border-0 text-[10px] font-bold h-5 shadow-sm shadow-cyan-500/20">
+                        <Badge className="bg-violet text-white border-0 text-[10px] font-bold h-5 shadow-sm shadow-violet/20">
                           +{currentAmount}
                         </Badge>
                       )}
@@ -199,12 +199,12 @@ export function ResourceAddonsPanel({ compact = false }: ResourceAddonsPanelProp
                       <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
                         Limit: <span className="text-foreground font-bold">{effectiveLimit}</span>
                       </p>
-                      <p className="text-xs font-bold text-cyan-600 dark:text-cyan-400">{price} zł/m</p>
+                      <p className="text-xs font-bold text-violet">{price} zł/m</p>
                     </div>
                   </div>
 
                   {/* Chevron */}
-                  <ChevronRight className="h-4 w-4 text-muted-foreground/30 group-hover:text-cyan-500 group-hover:translate-x-1 transition-all duration-300 shrink-0" />
+                  <ChevronRight className="h-4 w-4 text-muted-foreground/30 group-hover:text-violet group-hover:translate-x-1 transition-all duration-300 shrink-0" />
                 </button>
               );
             })}
@@ -231,32 +231,32 @@ export function ResourceAddonsPanel({ compact = false }: ResourceAddonsPanelProp
     <>
       <div className="space-y-4">
         {hasAnyAddons && (
-          <div className="rounded-xl border border-cyan-500/30 bg-cyan-500/5 p-4">
+          <div className="rounded-xl border border-violet/30 bg-violet/5 p-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <TrendingUp className="h-5 w-5 text-cyan-500" />
+                <TrendingUp className="h-5 w-5 text-violet" />
                 <div>
                   <p className="font-medium">Aktywne rozszerzenia</p>
                   <div className="flex gap-2 mt-1">
                     {status.additionalPatients > 0 && (
-                      <Badge className="bg-cyan-500/20 text-cyan-500 border-0 text-xs">
+                      <Badge className="bg-violet/20 text-violet border-0 text-xs">
                         +{status.additionalPatients} pacjentów
                       </Badge>
                     )}
                     {status.additionalTherapists > 0 && (
-                      <Badge className="bg-cyan-500/20 text-cyan-500 border-0 text-xs">
+                      <Badge className="bg-violet/20 text-violet border-0 text-xs">
                         +{status.additionalTherapists} terapeutów
                       </Badge>
                     )}
                     {status.additionalClinics > 0 && (
-                      <Badge className="bg-cyan-500/20 text-cyan-500 border-0 text-xs">
+                      <Badge className="bg-violet/20 text-violet border-0 text-xs">
                         +{status.additionalClinics} gabinetów
                       </Badge>
                     )}
                   </div>
                 </div>
               </div>
-              <p className="text-xl font-bold text-cyan-500">+{status.monthlyAddonsCost.toFixed(0)} zł/m</p>
+              <p className="text-xl font-bold text-violet">+{status.monthlyAddonsCost.toFixed(0)} zł/m</p>
             </div>
           </div>
         )}
@@ -278,11 +278,11 @@ export function ResourceAddonsPanel({ compact = false }: ResourceAddonsPanelProp
                 className={cn(
                   'rounded-xl border p-4 transition-all text-left',
                   'hover:shadow-lg hover:-translate-y-0.5 cursor-pointer',
-                  hasAddon ? 'border-cyan-500/50 bg-cyan-500/5' : 'border-border/60 hover:border-cyan-500/30'
+                  hasAddon ? 'border-violet/50 bg-violet/5' : 'border-border/60 hover:border-violet/30'
                 )}
               >
                 <div className="flex items-center gap-3 mb-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-violet to-violet-dark">
                     <Icon className="h-5 w-5 text-white" />
                   </div>
                   <div>
@@ -296,7 +296,7 @@ export function ResourceAddonsPanel({ compact = false }: ResourceAddonsPanelProp
                   <span className="font-bold">{price} zł/m</span>
                 </div>
 
-                {hasAddon && <div className="text-xs text-cyan-500">Aktywne: +{currentAmount}</div>}
+                {hasAddon && <div className="text-xs text-violet">Aktywne: +{currentAmount}</div>}
               </button>
             );
           })}

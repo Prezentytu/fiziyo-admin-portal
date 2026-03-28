@@ -573,8 +573,8 @@ Zwróć wyłącznie propozycję nazwy zestawu.
             {recommendedSets.length > 0 && (
               <div className="space-y-1.5">
                 <div className="flex items-center gap-2">
-                  <div className="flex h-5 w-5 items-center justify-center rounded-full bg-violet-500/10">
-                    <Sparkles className="h-3 w-3 text-violet-400" />
+                  <div className="flex h-5 w-5 items-center justify-center rounded-full bg-violet/10">
+                    <Sparkles className="h-3 w-3 text-violet-light" />
                   </div>
                   <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Asystent AI rekomenduje</span>
                 </div>
@@ -593,8 +593,8 @@ Zwróć wyłącznie propozycję nazwy zestawu.
                         <p className="truncate text-xs text-muted-foreground">{ranked.reasoning}</p>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="text-xs font-medium text-violet-300">{ranked.score}%</span>
-                        <TrendingUp className="h-4 w-4 text-violet-400 opacity-0 transition-opacity group-hover:opacity-100" />
+                        <span className="text-xs font-medium text-violet-light">{ranked.score}%</span>
+                        <TrendingUp className="h-4 w-4 text-violet-light opacity-0 transition-opacity group-hover:opacity-100" />
                       </div>
                     </button>
                   ))}
@@ -747,7 +747,7 @@ Zwróć wyłącznie propozycję nazwy zestawu.
               </div>
 
               {aiSuggestedName && newSetName === aiSuggestedName && (
-                <div className="flex items-center gap-2 text-xs text-violet-400">
+                <div className="flex items-center gap-2 text-xs text-violet-light">
                   <Sparkles className="h-3 w-3" />
                   <span>Sugestia AI</span>
                 </div>
