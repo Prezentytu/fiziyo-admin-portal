@@ -55,7 +55,7 @@ export function AccessibilitySettings() {
               )}
               data-testid="settings-theme-dark"
             >
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-surface border border-border">
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-border/70 bg-dark shadow-sm">
                 <Moon className="h-6 w-6 text-white" />
               </div>
               <span className="text-sm font-medium">Ciemny</span>
@@ -99,7 +99,7 @@ export function AccessibilitySettings() {
               )}
               data-testid="settings-theme-system"
             >
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-white to-[#1a1a1a] border border-border">
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-border bg-linear-to-br from-white to-[#1a1a1a]">
                 <Monitor className="h-6 w-6 text-gray-500" />
               </div>
               <span className="text-sm font-medium">Systemowy</span>

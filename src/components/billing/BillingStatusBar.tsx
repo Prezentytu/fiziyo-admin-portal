@@ -116,8 +116,11 @@ export function BillingStatusBar({ organizationId, className }: Readonly<Billing
 
           {/* Pilot mode badge */}
           {isPilotMode && hasActivity && (
-            <Badge variant="outline" className="bg-slate-500/10 text-slate-700 dark:text-slate-300 border-slate-500/20 gap-1 text-xs">
-              <Gift className="h-3 w-3" />
+            <Badge
+              variant="outline"
+              className="gap-1 border-border/80 bg-muted px-2.5 py-1 text-xs font-medium text-foreground shadow-sm"
+            >
+              <Gift className="h-3 w-3 text-primary" />
               Wczesny dostęp
             </Badge>
           )}

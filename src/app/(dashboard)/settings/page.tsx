@@ -108,7 +108,7 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="flex h-full -m-4 lg:-m-6 2xl:-m-8 overflow-hidden bg-background">
+    <div className="flex min-h-full -m-4 lg:-m-6 2xl:-m-8 bg-background">
       <Tabs
         value={activeTab}
         onValueChange={setActiveTab}
@@ -170,7 +170,7 @@ export default function SettingsPage() {
         </div>
 
         {/* Content Area */}
-        <div className="flex-1 overflow-y-auto bg-background/30">
+        <div className="flex-1 bg-background/30">
           <div className="max-w-4xl mx-auto p-8 lg:p-12 pb-24">
             <TabsContent value="profile" className="mt-0 outline-none">
               <ProfileForm user={userProfile} clerkId={clerkUser?.id || ''} onSuccess={() => refetchUser()} />
