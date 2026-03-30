@@ -168,13 +168,13 @@ export function computeExerciseSetDiff(input: ExerciseSetDiffInput): ExerciseSet
 
   selectedInstances.forEach((instance, index) => {
     const order = index + 1;
-    const params = exerciseParams.get(instance.instanceId) ?? {};
     const parsed = parseExistingInstanceId(instance.instanceId);
 
     if (parsed) {
       finalExistingIds.add(parsed.mappingId);
       const initial = initialById.get(parsed.mappingId);
       if (!initial) return;
+      const params = exerciseParams.get(instance.instanceId) ?? mappingToParams(initial);
       const initialParams = mappingToParams(initial);
       const initialOrder = initial.order ?? order;
       const orderChanged = initialOrder !== order;
@@ -188,6 +188,7 @@ export function computeExerciseSetDiff(input: ExerciseSetDiffInput): ExerciseSet
         });
       }
     } else {
+      const params = exerciseParams.get(instance.instanceId) ?? {};
       toAdd.push({ order, exerciseId: instance.exerciseId, params });
     }
   });

@@ -4,11 +4,11 @@ import { billingDetailsSchema } from '@/types/billing-details.types';
 
 describe('validateNIP', () => {
   it('accepts valid NIP', () => {
-    expect(validateNIP('7681958983').valid).toBe(true);
+    expect(validateNIP('5250001003').valid).toBe(true);
   });
 
   it('accepts valid NIP with dashes', () => {
-    expect(validateNIP('768-195-89-83').valid).toBe(true);
+    expect(validateNIP('525-000-10-03').valid).toBe(true);
   });
 
   it('rejects invalid checksum', () => {
@@ -55,7 +55,7 @@ describe('billingDetailsSchema', () => {
   it('accepts valid payload', () => {
     const result = billingDetailsSchema.safeParse({
       companyName: 'Fizjo Sp. z o.o.',
-      nip: '7681958983',
+      nip: '5250001003',
       address: 'ul. Rehabilitacyjna 12/4',
       postalCode: '00-123',
       city: 'Warszawa',

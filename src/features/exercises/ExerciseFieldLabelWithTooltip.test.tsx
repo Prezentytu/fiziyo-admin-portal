@@ -22,6 +22,6 @@ describe('ExerciseFieldLabelWithTooltip', () => {
 
     await user.hover(screen.getByTestId('verification-duration-info'));
 
-    expect(await screen.findByText('Łączny czas jednej serii.')).toBeInTheDocument();
+    expect(await screen.findByRole('tooltip')).toHaveTextContent('Łączny czas jednej serii.');
   });
 });

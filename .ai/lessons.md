@@ -14,6 +14,14 @@ Dziennik wniosków z pracy AI agentów. Po każdej korekcie dodaj nowy wpis.
 
 ## Wpisy
 
+### 2026-03-30 - Radix Select w happy-dom wymaga polyfill pointer capture
+
+- **Kategoria**: `Build/Tooling`
+- **Problem**: Testy komponentów z `@radix-ui/react-select` wywalały `TypeError: target.hasPointerCapture is not a function`, przez co nie otwierały się opcje i testy E2E UI kończyły się błędem.
+- **Przyczyna**: Środowisko `happy-dom` nie implementuje API `hasPointerCapture` / `setPointerCapture` / `releasePointerCapture`, którego używa Radix podczas obsługi pointer events.
+- **Rozwiązanie**: Dodano bezpieczne polyfille tych metod w `vitest.setup.ts`.
+- **Reguła**: Przy testach Radix w `happy-dom` zawsze zapewnij polyfill pointer-capture API w global setup, zanim zaczniesz debugować logikę komponentu.
+
 ### 2026-03-30 - ApolloError import nie jest stabilny w Apollo Client 4
 
 - **Kategoria**: `TypeScript`
