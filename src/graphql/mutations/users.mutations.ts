@@ -377,3 +377,34 @@ export const ACTIVATE_PATIENT_PREMIUM_MUTATION = gql`
     }
   }
 `;
+
+/**
+ * Mutacja do pełnego zarządzania dostępem Premium pacjenta.
+ * Umożliwia przedłużenie, ustawienie konkretnej daty końca lub natychmiastowe cofnięcie.
+ */
+export const UPDATE_PATIENT_PREMIUM_ACCESS_MUTATION = gql`
+  mutation UpdatePatientPremiumAccess(
+    $patientId: String!
+    $organizationId: String!
+    $action: PremiumAccessManagementAction!
+    $durationDays: Int
+    $targetExpiry: DateTime
+    $reason: String
+  ) {
+    updatePatientPremiumAccess(
+      patientId: $patientId
+      organizationId: $organizationId
+      action: $action
+      durationDays: $durationDays
+      targetExpiry: $targetExpiry
+      reason: $reason
+    ) {
+      success
+      patientId
+      action
+      previousPremiumValidUntil
+      premiumValidUntil
+      message
+    }
+  }
+`;

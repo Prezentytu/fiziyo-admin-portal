@@ -57,6 +57,7 @@ export interface Frequency {
   timesPerDay?: number;
   timesPerWeek?: number;
   breakBetweenSets?: number;
+  isFlexible?: boolean;
   monday?: boolean;
   tuesday?: boolean;
   wednesday?: boolean;

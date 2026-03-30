@@ -4,7 +4,7 @@ import { useState, useCallback } from 'react';
 import { useMutation } from '@apollo/client/react';
 import { toast } from 'sonner';
 
-import { ACTIVATE_PATIENT_PREMIUM_MUTATION } from '@/graphql/mutations/users.mutations';
+import { UPDATE_PATIENT_PREMIUM_ACCESS_MUTATION } from '@/graphql/mutations/users.mutations';
 import { GET_ORGANIZATION_PATIENTS_QUERY } from '@/graphql/queries/therapists.queries';
 
 // ========================================
@@ -20,13 +20,23 @@ interface UsePatientPremiumOptions {
 interface ActivationTarget {
   patientId: string;
   patientName: string;
+  premiumValidUntil?: string | null;
+}
+
+export type PremiumAccessManagementAction = 'ExtendByDuration' | 'SetExactExpiry' | 'RevokeNow';
+
+export interface PremiumAccessUpdatePayload {
+  action: PremiumAccessManagementAction;
+  durationDays?: number;
+  targetExpiry?: string;
+  reason?: string;
 }
 
 export interface UsePatientPremiumResult {
-  /** Rozpocznij proces aktywacji Premium (może pokazać dialog potwierdzenia) */
-  initiateActivation: (patientId: string, patientName: string) => void;
-  /** Potwierdź aktywację po pokazaniu dialogu */
-  confirmActivation: () => Promise<void>;
+  /** Rozpocznij proces aktywacji/rozszerzenia Premium */
+  initiateActivation: (patientId: string, patientName: string, premiumValidUntil?: string | null) => void;
+  /** Potwierdź zarządzanie dostępem po pokazaniu dialogu */
+  confirmActivation: (payload: PremiumAccessUpdatePayload) => Promise<void>;
   /** Anuluj aktywację */
   cancelActivation: () => void;
   /** Czy mutacja jest w trakcie wykonywania */
@@ -36,36 +46,6 @@ export interface UsePatientPremiumResult {
   /** Dane pacjenta do aktywacji (dla dialogu) */
   activationTarget: ActivationTarget | null;
 }
-
-// ========================================
-// Helpers
-// ========================================
-
-/**
- * Generuje klucz localStorage dla śledzenia pierwszej aktywacji w miesiącu
- */
-const getMonthKey = (orgId: string): string => {
-  const now = new Date();
-  return `fiziyo_premium_activation_${orgId}_${now.getFullYear()}_${now.getMonth()}`;
-};
-
-/**
- * Sprawdza czy to pierwsza aktywacja w tym miesiącu (pokaż ostrzeżenie o koszcie)
- */
-const shouldShowConfirmation = (orgId: string): boolean => {
-  if (globalThis.window === undefined) return true;
-  const key = getMonthKey(orgId);
-  return !localStorage.getItem(key);
-};
-
-/**
- * Oznacza że ostrzeżenie zostało już pokazane w tym miesiącu
- */
-const markConfirmationShown = (orgId: string): void => {
-  if (globalThis.window === undefined) return;
-  const key = getMonthKey(orgId);
-  localStorage.setItem(key, 'true');
-};
 
 /**
  * Sprawdza czy Premium jest aktywne
@@ -104,7 +84,7 @@ export const getDaysUntilExpiry = (premiumActiveUntil: string | null | undefined
 // ========================================
 
 /**
- * Hook do zarządzania aktywacją Premium pacjenta
+ * Hook do zarządzania dostępem Premium pacjenta
  *
  * @example
  * ```tsx
@@ -118,13 +98,13 @@ export const getDaysUntilExpiry = (premiumActiveUntil: string | null | undefined
  * } = usePatientPremium({ organizationId });
  *
  * // Rozpocznij aktywację
- * initiateActivation(patientId, patientName);
+ * initiateActivation(patientId, patientName, premiumValidUntil);
  *
  * // W dialogu potwierdzenia
  * <ActivatePremiumDialog
  *   open={showConfirmDialog}
  *   patientName={activationTarget?.patientName}
- *   onConfirm={confirmActivation}
+ *   onConfirm={(payload) => confirmActivation(payload)}
  *   onCancel={cancelActivation}
  *   isLoading={isActivating}
  * />
@@ -134,7 +114,7 @@ export function usePatientPremium({ organizationId, onSuccess }: UsePatientPremi
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [activationTarget, setActivationTarget] = useState<ActivationTarget | null>(null);
 
-  const [activateMutation, { loading: isActivating }] = useMutation(ACTIVATE_PATIENT_PREMIUM_MUTATION, {
+  const [updatePremiumAccessMutation, { loading: isActivating }] = useMutation(UPDATE_PATIENT_PREMIUM_ACCESS_MUTATION, {
     refetchQueries: [
       {
         query: GET_ORGANIZATION_PATIENTS_QUERY,
@@ -142,60 +122,53 @@ export function usePatientPremium({ organizationId, onSuccess }: UsePatientPremi
       },
     ],
     onCompleted: () => {
-      toast.success('Dostęp Premium został aktywowany na 30 dni');
+      toast.success('Dostęp Premium został zaktualizowany');
       onSuccess?.();
     },
     onError: (error) => {
-      toast.error(`Błąd aktywacji: ${error.message}`);
+      toast.error(`Błąd aktualizacji dostępu: ${error.message}`);
     },
   });
 
   /**
-   * Wykonaj aktywację Premium
+   * Wykonaj zarządzanie dostępem Premium
    */
-  const executeActivation = useCallback(
-    async (patientId: string) => {
-      await activateMutation({
+  const executePremiumAccessUpdate = useCallback(
+    async (patientId: string, payload: PremiumAccessUpdatePayload) => {
+      await updatePremiumAccessMutation({
         variables: {
           patientId,
           organizationId,
-          durationDays: 30,
+          action: payload.action,
+          durationDays: payload.durationDays ?? null,
+          targetExpiry: payload.targetExpiry ?? null,
+          reason: payload.reason ?? null,
         },
       });
     },
-    [activateMutation, organizationId]
+    [organizationId, updatePremiumAccessMutation]
   );
 
-  /**
-   * Rozpocznij proces aktywacji - pokaż dialog jeśli to pierwsza aktywacja w miesiącu
-   */
+  /** Rozpocznij proces aktywacji/przedłużenia - zawsze wymagamy dialogu potwierdzenia */
   const initiateActivation = useCallback(
-    (patientId: string, patientName: string) => {
-      setActivationTarget({ patientId, patientName });
-
-      if (shouldShowConfirmation(organizationId)) {
-        setShowConfirmDialog(true);
-      } else {
-        // Bezpośrednia aktywacja bez dialogu (już widziano ostrzeżenie w tym miesiącu)
-        executeActivation(patientId);
-        setActivationTarget(null);
-      }
+    (patientId: string, patientName: string, premiumValidUntil?: string | null) => {
+      setActivationTarget({ patientId, patientName, premiumValidUntil });
+      setShowConfirmDialog(true);
     },
-    [organizationId, executeActivation]
+    []
   );
 
   /**
-   * Potwierdź aktywację po dialogu
+   * Potwierdź zarządzanie dostępem po dialogu
    */
-  const confirmActivation = useCallback(async () => {
+  const confirmActivation = useCallback(async (payload: PremiumAccessUpdatePayload) => {
     if (!activationTarget) return;
 
-    markConfirmationShown(organizationId);
     setShowConfirmDialog(false);
 
-    await executeActivation(activationTarget.patientId);
+    await executePremiumAccessUpdate(activationTarget.patientId, payload);
     setActivationTarget(null);
-  }, [activationTarget, organizationId, executeActivation]);
+  }, [activationTarget, executePremiumAccessUpdate]);
 
   /**
    * Anuluj aktywację

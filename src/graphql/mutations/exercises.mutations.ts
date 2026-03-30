@@ -557,6 +557,7 @@ export const UPDATE_EXERCISE_SET_ASSIGNMENT_MUTATION = gql`
         timesPerDay
         timesPerWeek
         breakBetweenSets
+        isFlexible
         monday
         tuesday
         wednesday

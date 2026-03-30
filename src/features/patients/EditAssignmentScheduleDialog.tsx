@@ -411,6 +411,7 @@ export function EditAssignmentScheduleDialog({
             timesPerDay: frequency.timesPerDay,
             timesPerWeek: frequencyType === 'SPECIFIC_DAYS' ? selectedDaysCount : frequency.timesPerWeek,
             breakBetweenSets: frequency.breakBetweenSets,
+            isFlexible: frequencyType !== 'SPECIFIC_DAYS',
             monday: frequency.monday,
             tuesday: frequency.tuesday,
             wednesday: frequency.wednesday,

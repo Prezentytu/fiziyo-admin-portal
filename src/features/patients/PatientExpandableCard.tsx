@@ -106,19 +106,19 @@ export interface Patient {
 }
 
 interface PatientExpandableCardProps {
-  patient: Patient;
-  onAssignSet: (patient: Patient) => void;
+  readonly patient: Patient;
+  readonly onAssignSet: (patient: Patient) => void;
   /** Pokaż QR kod / receptę dla pacjenta */
-  onShowQR?: (patient: Patient) => void;
+  readonly onShowQR?: (patient: Patient) => void;
   /** Odpięcie pacjenta od fizjoterapeuty - tylko Admin/Owner */
-  onUnassign: (patient: Patient) => void;
+  readonly onUnassign: (patient: Patient) => void;
   /** Usunięcie pacjenta z organizacji - tylko Admin/Owner */
-  onRemoveFromOrganization: (patient: Patient) => void;
-  onTakeOver?: (patient: Patient) => void;
-  organizationId: string;
-  therapistId: string;
+  readonly onRemoveFromOrganization: (patient: Patient) => void;
+  readonly onTakeOver?: (patient: Patient) => void;
+  readonly organizationId: string;
+  readonly therapistId: string;
   /** Show therapist badge (Collaborative Care mode) */
-  showTherapistBadge?: boolean;
+  readonly showTherapistBadge?: boolean;
 }
 
 export function PatientExpandableCard({
@@ -207,7 +207,7 @@ export function PatientExpandableCard({
                         'font-semibold text-sm',
                         patient.isShadowUser
                           ? 'bg-muted-foreground/60 text-white'
-                          : 'bg-gradient-to-br from-info to-blue-600 text-white'
+                          : 'bg-linear-to-br from-info to-blue-600 text-white'
                       )}
                     >
                       {initials}
@@ -302,7 +302,7 @@ export function PatientExpandableCard({
             <PremiumStatusBadge
               premiumActiveUntil={patient.premiumValidUntil}
               patientId={patient.id}
-              onActivate={() => initiateActivation(patient.id, displayName)}
+              onActivate={() => initiateActivation(patient.id, displayName, patient.premiumValidUntil)}
               isShadowUser={patient.isShadowUser}
               isActivating={isActivating && activationTarget?.patientId === patient.id}
               showActivateButton={true}
@@ -415,11 +415,13 @@ export function PatientExpandableCard({
                         Pokaż zalecenia (QR)
                       </DropdownMenuItem>
                     )}
-                    <DropdownMenuItem onClick={() => initiateActivation(patient.id, displayName)}>
+                    <DropdownMenuItem
+                      onClick={() => initiateActivation(patient.id, displayName, patient.premiumValidUntil)}
+                    >
                       <Sparkles className="mr-2 h-4 w-4" />
                       {patient.premiumValidUntil && new Date(patient.premiumValidUntil) > new Date()
-                        ? 'Przedłuż dostęp (+30 dni)'
-                        : 'Odblokuj dostęp (30 dni)'}
+                        ? 'Zarządzaj Premium'
+                        : 'Aktywuj Premium'}
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => setIsEditLabelOpen(true)}>
                       <Tag className="mr-2 h-4 w-4" />
@@ -478,6 +480,7 @@ export function PatientExpandableCard({
         open={showConfirmDialog}
         onOpenChange={(open) => !open && cancelActivation()}
         patientName={activationTarget?.patientName}
+        currentPremiumValidUntil={activationTarget?.premiumValidUntil}
         onConfirm={confirmActivation}
         onCancel={cancelActivation}
         isLoading={isActivating}

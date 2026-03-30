@@ -42,6 +42,7 @@ export const PATIENT_ASSIGNMENT_FULL_FRAGMENT = gql`
       timesPerDay
       timesPerWeek
       breakBetweenSets
+      isFlexible
       monday
       tuesday
       wednesday
@@ -244,6 +245,7 @@ export const PATIENT_ASSIGNMENT_DETAILS_FRAGMENT = gql`
       timesPerDay
       timesPerWeek
       breakBetweenSets
+      isFlexible
       monday
       tuesday
       wednesday

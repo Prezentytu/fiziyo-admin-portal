@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useMutation } from '@apollo/client/react';
+import type { ApolloError } from '@apollo/client';
 import { CalendarPlus, Loader2, Edit3, Clock } from 'lucide-react';
 import { format, addDays } from 'date-fns';
 import { pl } from 'date-fns/locale';
@@ -19,15 +20,15 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
-import { ASSIGN_EXERCISE_SET_TO_PATIENT_MUTATION } from '@/graphql/mutations/exercises.mutations';
+import { UPDATE_EXERCISE_SET_ASSIGNMENT_MUTATION } from '@/graphql/mutations/exercises.mutations';
 import { GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY } from '@/graphql/queries/patientAssignments.queries';
 import { GET_CURRENT_BILLING_STATUS_QUERY } from '@/graphql/queries/billing.queries';
 
 interface ExtendSetDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
+  readonly open: boolean;
+  readonly onOpenChange: (open: boolean) => void;
   /** Dane przypisania do przedłużenia */
-  assignment: {
+  readonly assignment: {
     id: string;
     exerciseSetId: string;
     exerciseSetName: string;
@@ -37,6 +38,7 @@ interface ExtendSetDialogProps {
       timesPerDay?: number | string;
       timesPerWeek?: number | string;
       breakBetweenSets?: number | string;
+      isFlexible?: boolean;
       monday?: boolean;
       tuesday?: boolean;
       wednesday?: boolean;
@@ -47,16 +49,16 @@ interface ExtendSetDialogProps {
     };
   };
   /** Dane pacjenta */
-  patient: {
+  readonly patient: {
     id: string;
     name: string;
   };
   /** ID organizacji (do odświeżenia billing status) */
-  organizationId: string;
+  readonly organizationId: string;
   /** Callback do otworzenia wizarda ze zmianami */
-  onEditWithWizard?: () => void;
+  readonly onEditWithWizard?: () => void;
   /** Callback po udanym przedłużeniu */
-  onSuccess?: () => void;
+  readonly onSuccess?: () => void;
 }
 
 const DURATION_OPTIONS = [
@@ -79,7 +81,7 @@ export function ExtendSetDialog({
 }: ExtendSetDialogProps) {
   const [durationDays, setDurationDays] = useState('30');
 
-  const [assignSet, { loading }] = useMutation(ASSIGN_EXERCISE_SET_TO_PATIENT_MUTATION, {
+  const [updateAssignment, { loading }] = useMutation(UPDATE_EXERCISE_SET_ASSIGNMENT_MUTATION, {
     refetchQueries: [
       // Billing status (aktywni pacjenci premium) - odświeża badge na dashboardzie
       { query: GET_CURRENT_BILLING_STATUS_QUERY, variables: { organizationId } },
@@ -94,42 +96,42 @@ export function ExtendSetDialog({
   const currentEndDate = new Date(assignment.endDate);
   const isExpired = currentEndDate < new Date();
   const newStartDate = isExpired ? new Date() : currentEndDate;
-  const newEndDate = addDays(newStartDate, parseInt(durationDays));
+  const newEndDate = addDays(newStartDate, Number.parseInt(durationDays, 10));
+
+  const getGraphQLErrorMessage = (error: unknown): string | null => {
+    if (!(error instanceof Error)) {
+      return null;
+    }
+
+    const maybeApolloError = error as ApolloError & { graphQLErrors?: Array<{ message?: string }> };
+    const serverMessage = maybeApolloError.graphQLErrors?.[0]?.message;
+    return serverMessage ?? null;
+  };
+
+  const mapExtendErrorMessage = (error: unknown): string => {
+    const serverMessage = getGraphQLErrorMessage(error);
+
+    if (serverMessage?.includes('Data zakończenia nie może być wcześniejsza')) {
+      return 'Nieprawidłowe daty. Data zakończenia musi być późniejsza od rozpoczęcia.';
+    }
+
+    if (serverMessage?.includes('Pacjent nie ma aktywnego członkostwa')) {
+      return 'Pacjent nie ma aktywnego członkostwa w organizacji.';
+    }
+
+    if (serverMessage?.includes('Nie znaleziono przypisania')) {
+      return 'Nie znaleziono przypisania do przedłużenia. Odśwież stronę i spróbuj ponownie.';
+    }
+
+    return serverMessage ?? 'Nie udało się przedłużyć zestawu';
+  };
 
   const handleExtend = async () => {
     try {
-      // Zachowaj obecną częstotliwość lub użyj domyślnej
-      const frequency = assignment.frequency || {
-        timesPerDay: '1',
-        timesPerWeek: '7',
-        breakBetweenSets: '30',
-        monday: true,
-        tuesday: true,
-        wednesday: true,
-        thursday: true,
-        friday: true,
-        saturday: true,
-        sunday: true,
-      };
-
-      await assignSet({
+      await updateAssignment({
         variables: {
-          exerciseSetId: assignment.exerciseSetId,
-          patientId: patient.id,
-          startDate: newStartDate.toISOString(),
+          assignmentId: assignment.id,
           endDate: newEndDate.toISOString(),
-          frequency: {
-            timesPerDay: String(frequency.timesPerDay || '1'),
-            timesPerWeek: String(frequency.timesPerWeek || '7'),
-            breakBetweenSets: String(frequency.breakBetweenSets || '30'),
-            monday: frequency.monday ?? true,
-            tuesday: frequency.tuesday ?? true,
-            wednesday: frequency.wednesday ?? true,
-            thursday: frequency.thursday ?? true,
-            friday: frequency.friday ?? true,
-            saturday: frequency.saturday ?? true,
-            sunday: frequency.sunday ?? true,
-          },
         },
       });
 
@@ -144,7 +146,7 @@ export function ExtendSetDialog({
       onSuccess?.();
     } catch (error) {
       console.error('Błąd przedłużania zestawu:', error);
-      toast.error('Nie udało się przedłużyć zestawu');
+      toast.error(mapExtendErrorMessage(error));
     }
   };
 

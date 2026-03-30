@@ -14,6 +14,30 @@ Dziennik wniosków z pracy AI agentów. Po każdej korekcie dodaj nowy wpis.
 
 ## Wpisy
 
+### 2026-03-30 - Premium access wymaga pełnego manage flow
+
+- **Kategoria**: `Billing`
+- **Problem**: UI pozwalał szybko aktywować/przedłużać Premium, ale bez równorzędnych narzędzi korekty (skrócenie/cofnięcie), co utrudniało naprawę błędnych kliknięć.
+- **Przyczyna**: Model operacji był jednostronny (`activate/extend`), a korekty były poza codziennym flow fizjoterapeuty lub zależne od roli admina.
+- **Rozwiązanie**: Dodano kontrakt `updatePatientPremiumAccess` (extend/set exact expiry/revoke), wymaganie powodu dla korekt oraz panel zarządzania Premium na kaflach pacjentów.
+- **Reguła**: Operacje z konsekwencją billingową/dostępową projektuj jako „manage lifecycle”, nie pojedyncze CTA; każdy write-path musi mieć bezpieczną ścieżkę korekty.
+
+### 2026-03-30 - Operacje billingowe nie mogą omijać dialogu potwierdzenia
+
+- **Kategoria**: `Billing`
+- **Problem**: Na kaflach pacjentów przedłużenie Premium wykonywało się czasem od razu (bez dialogu), co wyglądało jak przypadkowy auto-submit i prowadziło do niezamierzonej zmiany dostępu.
+- **Przyczyna**: Hook `usePatientPremium` miał branch bypassu dialogu oparty o localStorage („pierwsza aktywacja w miesiącu”), który uruchamiał mutację `activatePatientPremium` bez dodatkowej decyzji użytkownika.
+- **Rozwiązanie**: Usunięto bypass i wymuszono każdorazowy dialog z wyborem okresu (`durationDays`) oraz zablokowanym CTA do czasu wyboru.
+- **Reguła**: Dla operacji z konsekwencją billingową lub dostępową nigdy nie stosuj localStorage-based auto-confirm; każda akcja musi mieć jawne potwierdzenie i wybór kluczowego parametru.
+
+### 2026-03-30 - Przedłużenie assignmentu wymaga update, nie assign
+
+- **Kategoria**: `GraphQL`
+- **Problem**: Akcja „Przedłuż zestaw” wywoływała `assignExerciseSetToPatient`, co przy aktywnym przypisaniu kończyło się błędem wykonania i brakiem przedłużenia.
+- **Przyczyna**: Pomylona semantyka write-path: flow rozszerzenia istniejącego assignmentu używał mutacji tworzenia nowego assignmentu.
+- **Rozwiązanie**: Przepięto frontend na `updateExerciseSetAssignment` po `assignmentId`, dodano czytelniejsze mapowanie błędów GraphQL i zsynchronizowano backendową logikę Premium przy realnym wydłużeniu `EndDate`.
+- **Reguła**: Dla operacji na istniejącym przypisaniu zawsze używaj mutacji update po `assignmentId`; `assign` służy wyłącznie do tworzenia nowego przypisania.
+
 ### 2026-03-18 - Assignment semantics musi byc single-source
 
 - **Kategoria**: `UI/UX`

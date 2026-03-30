@@ -13,23 +13,23 @@ import { isPremiumActive, formatPremiumExpiry, getDaysUntilExpiry } from '@/hook
 
 interface PremiumStatusBadgeProps {
   /** Data wygaśnięcia Premium (ISO string) */
-  premiumActiveUntil: string | null | undefined;
+  readonly premiumActiveUntil: string | null | undefined;
   /** ID pacjenta (dla data-testid) */
-  patientId: string;
+  readonly patientId: string;
   /** Callback do aktywacji/przedłużenia Premium */
-  onActivate?: () => void;
+  readonly onActivate?: () => void;
   /** Callback do generowania QR kodu (dla shadow users) */
-  onGenerateQR?: () => void;
+  readonly onGenerateQR?: () => void;
   /** Czy pacjent jest tymczasowy (shadow user) */
-  isShadowUser?: boolean;
+  readonly isShadowUser?: boolean;
   /** Czy aktywacja jest w trakcie */
-  isActivating?: boolean;
+  readonly isActivating?: boolean;
   /** Czy pokazać przycisk akcji */
-  showActivateButton?: boolean;
+  readonly showActivateButton?: boolean;
   /** Rozmiar badge'a */
-  size?: 'sm' | 'default';
+  readonly size?: 'sm' | 'default';
   /** Dodatkowe klasy CSS */
-  className?: string;
+  readonly className?: string;
 }
 
 // ========================================
@@ -39,7 +39,7 @@ interface PremiumStatusBadgeProps {
 /**
  * Badge wyświetlający status Premium pacjenta z ulepszoną narracją
  *
- * - Aktywny: Zielony badge "Premium (X dni)" + hover "Przedłuż"
+ * - Aktywny: Zielony badge "Premium (X dni)" + hover "Zarządzaj" (otwiera dialog)
  * - Nieaktywny: Przycisk "Odblokuj dostęp"
  * - Shadow User: Przycisk "Generuj QR"
  */
@@ -127,14 +127,14 @@ export function PremiumStatusBadge({
                   data-testid={`patient-premium-extend-btn-${patientId}`}
                 >
                   <Sparkles className={cn('h-3 w-3', size === 'sm' && 'h-2.5 w-2.5')} />
-                  {isActivating ? '...' : 'Przedłuż'}
+                  {isActivating ? '...' : 'Zarządzaj'}
                 </Button>
               )}
             </div>
           </TooltipTrigger>
           <TooltipContent>
             <p>Wygasa: {expiryDate}</p>
-            {showActivateButton && <p className="text-xs text-muted-foreground">Kliknij aby przedłużyć</p>}
+            {showActivateButton && <p className="text-xs text-muted-foreground">Kliknij aby otworzyć panel zarządzania</p>}
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>
