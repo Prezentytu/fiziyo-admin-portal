@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { useMutation } from '@apollo/client/react';
-import type { ApolloError } from '@apollo/client';
 import { CalendarPlus, Loader2, Edit3, Clock } from 'lucide-react';
 import { format, addDays } from 'date-fns';
 import { pl } from 'date-fns/locale';
@@ -99,11 +98,11 @@ export function ExtendSetDialog({
   const newEndDate = addDays(newStartDate, Number.parseInt(durationDays, 10));
 
   const getGraphQLErrorMessage = (error: unknown): string | null => {
-    if (!(error instanceof Error)) {
+    if (typeof error !== 'object' || error === null) {
       return null;
     }
 
-    const maybeApolloError = error as ApolloError & { graphQLErrors?: Array<{ message?: string }> };
+    const maybeApolloError = error as { graphQLErrors?: Array<{ message?: string }> };
     const serverMessage = maybeApolloError.graphQLErrors?.[0]?.message;
     return serverMessage ?? null;
   };

@@ -14,6 +14,14 @@ Dziennik wniosków z pracy AI agentów. Po każdej korekcie dodaj nowy wpis.
 
 ## Wpisy
 
+### 2026-03-30 - ApolloError import nie jest stabilny w Apollo Client 4
+
+- **Kategoria**: `TypeScript`
+- **Problem**: Build TypeScript zatrzymał się na imporcie `ApolloError` z `@apollo/client` w komponencie dialogu pacjenta.
+- **Przyczyna**: W używanym setupie Apollo Client 4 typ `ApolloError` nie jest eksportowany z głównego entrypointu, mimo że kod opierał na nim mapowanie błędów GraphQL.
+- **Rozwiązanie**: Usunięto zależność od `ApolloError` i zastosowano bezpieczne mapowanie `unknown` -> `graphQLErrors` przez lokalny guard obiektowy.
+- **Reguła**: W obsłudze błędów Apollo preferuj defensywny parsing `unknown` i lokalne type guards zamiast twardego importu `ApolloError` z root package.
+
 ### 2026-03-30 - Premium access wymaga pełnego manage flow
 
 - **Kategoria**: `Billing`
