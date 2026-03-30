@@ -41,12 +41,7 @@ export function StepperFooter({
   const showOnlyNavigation = readOnly || isSigned;
 
   return (
-    <div
-      className={cn(
-        'shrink-0 bg-surface border-t border-border py-4 px-6 rounded-b-lg',
-        className
-      )}
-    >
+    <div className={cn('shrink-0 bg-surface border-t border-border py-4 px-6 rounded-b-lg', className)}>
       <div className="flex items-center justify-between gap-4">
         {/* Left side - Back button */}
         <div className="flex-1">
@@ -74,14 +69,8 @@ export function StepperFooter({
               className="gap-2"
               data-testid="clinical-note-save-draft-btn"
             >
-              {isSaving ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Save className="h-4 w-4" />
-              )}
-              <span className="hidden sm:inline">
-                {isSaving ? 'Zapisywanie...' : 'Zapisz'}
-              </span>
+              {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+              <span className="hidden sm:inline">{isSaving ? 'Zapisywanie...' : 'Zapisz'}</span>
             </Button>
           </div>
         )}
@@ -91,36 +80,23 @@ export function StepperFooter({
           {showOnlyNavigation ? (
             // W trybie read-only tylko przycisk Dalej (nawigacja)
             !isLastStep && (
-              <Button
-                variant="outline"
-                onClick={onNext}
-                className="gap-2"
-              >
+              <Button variant="outline" onClick={onNext} className="gap-2">
                 <span className="hidden sm:inline">Dalej</span>
                 <ArrowRight className="h-4 w-4" />
               </Button>
             )
-          ) :           isSummaryStep ? (
+          ) : isSummaryStep ? (
             <Button
               onClick={onSignAndComplete}
               disabled={isLoading || !canSign}
-              className="gap-2 bg-gradient-to-r from-primary to-emerald-600 hover:from-primary-dark hover:to-emerald-700 min-w-[180px]"
+              className="gap-2 bg-gradient-to-r from-primary to-primary-dark hover:from-primary-dark hover:to-accent-green min-w-[180px]"
               data-testid="clinical-note-sign-btn"
             >
-              {isLoading ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <CheckCircle className="h-4 w-4" />
-              )}
+              {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle className="h-4 w-4" />}
               Podpisz i zakończ
             </Button>
           ) : (
-            <Button
-              onClick={onNext}
-              disabled={isLoading}
-              className="gap-2"
-              data-testid="clinical-note-next-btn"
-            >
+            <Button onClick={onNext} disabled={isLoading} className="gap-2" data-testid="clinical-note-next-btn">
               <span className="hidden sm:inline">Dalej</span>
               <ArrowRight className="h-4 w-4" />
             </Button>

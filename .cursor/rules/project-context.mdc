@@ -1,0 +1,12 @@
+---
+description: Globalny kontekst produktu, architektury i domeny FiziYo
+alwaysApply: true
+---
+
+- FiziYo Admin to panel dla fizjoterapeutow do zarzadzania cwiczeniami, zestawami cwiczen, pacjentami, organizacja i rozliczeniami.
+- Aplikacja webowa i aplikacja mobilna korzystaja z tego samego backendu .NET 9 + HotChocolate GraphQL oraz wspolnej bazy danych.
+- Stack frontendowy: Next.js App Router, React 19, TypeScript strict, Apollo Client 4, Tailwind 4, shadcn/ui, react-hook-form, zod.
+- Najwazniejsze obszary domenowe: `exercises`, `exercise-sets`, `assignment`, `patients`, `billing`, `organization`.
+- Wiekszosc operacji jest scope'owana organizacja; przy zmianach danych zawsze sprawdzaj kontekst `organizationId`.
+- Przy zmianach kontraktow GraphQL lub modeli danych zakladaj, ze wplyw moze obejmowac admin, mobile i backend.
+- Zamiast zgadywac, czytaj dokumentacje projektu: `AGENTS.md`, `.ai/ECOSYSTEM.md`, `.ai/DOMAIN_MODEL.md`, `.ai/DATA_FLOWS.md`, `.ai/STRUCTURE.md`.

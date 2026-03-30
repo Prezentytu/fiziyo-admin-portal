@@ -6,18 +6,18 @@
  * Enum dla ról systemowych
  */
 export enum SystemRole {
-  SITE_SUPER_ADMIN = "site_super_admin",
-  SITE_ADMIN = "site_admin",
+  SITE_SUPER_ADMIN = 'site_super_admin',
+  SITE_ADMIN = 'site_admin',
 }
 
 /**
  * Enum dla ról w organizacji (lowercase - zgodne z bazą danych)
  */
 export enum OrganizationRole {
-  OWNER = "owner",
-  ADMIN = "admin",
-  THERAPIST = "therapist",
-  STAFF = "staff",
+  OWNER = 'owner',
+  ADMIN = 'admin',
+  THERAPIST = 'therapist',
+  STAFF = 'staff',
 }
 
 /**

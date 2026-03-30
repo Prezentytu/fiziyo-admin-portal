@@ -1,61 +1,46 @@
-"use client";
+'use client';
 
-import { useState, useMemo, useEffect } from "react";
-import { useMutation } from "@apollo/client/react";
-import {
-  Users,
-  UserPlus,
-  Building2,
-  Loader2,
-  Key,
-  ArrowRight,
-  Minus,
-  Plus,
-} from "lucide-react";
-import { toast } from "sonner";
+import { useState, useMemo, useEffect } from 'react';
+import { useMutation } from '@apollo/client/react';
+import { Users, UserPlus, Building2, Loader2, Key, ArrowRight, Minus, Plus } from 'lucide-react';
+import { toast } from 'sonner';
 
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { cn } from "@/lib/utils";
-import { ADD_MULTIPLE_ADDONS_WITH_CODE } from "@/graphql/mutations/aiCredits.mutations";
-import { triggerCreditsRefresh } from "@/components/settings/AICreditsPanel";
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { cn } from '@/lib/utils';
+import { ADD_MULTIPLE_ADDONS_WITH_CODE } from '@/graphql/mutations/aiCredits.mutations';
+import { triggerCreditsRefresh } from '@/components/settings/AICreditsPanel';
 
 // Addon configurations
 const addonConfigs = [
   {
-    type: "patients" as const,
+    type: 'patients' as const,
     icon: Users,
-    label: "Pacjenci",
-    unit: "+10",
+    label: 'Pacjenci',
+    unit: '+10',
     unitValue: 10,
     price: 25,
-    description: "Zwiększ limit pacjentów o 10",
+    description: 'Zwiększ limit pacjentów o 10',
   },
   {
-    type: "therapists" as const,
+    type: 'therapists' as const,
     icon: UserPlus,
-    label: "Terapeuci",
-    unit: "+1",
+    label: 'Terapeuci',
+    unit: '+1',
     unitValue: 1,
     price: 35,
-    description: "Dodaj kolejnego terapeutę",
+    description: 'Dodaj kolejnego terapeutę',
   },
   {
-    type: "clinics" as const,
+    type: 'clinics' as const,
     icon: Building2,
-    label: "Gabinety",
-    unit: "+1",
+    label: 'Gabinety',
+    unit: '+1',
     unitValue: 1,
     price: 29,
-    description: "Dodaj kolejny gabinet",
+    description: 'Dodaj kolejny gabinet',
   },
 ];
 
@@ -63,7 +48,7 @@ interface PurchaseAddonsDialogProps {
   isOpen: boolean;
   onClose: () => void;
   organizationId: string | undefined;
-  initialAddonType?: "patients" | "therapists" | "clinics";
+  initialAddonType?: 'patients' | 'therapists' | 'clinics';
   onSuccess?: () => void;
 }
 
@@ -85,12 +70,12 @@ export function PurchaseAddonsDialog({
     therapists: 0,
     clinics: 0,
   });
-  const [promoCode, setPromoCode] = useState("");
+  const [promoCode, setPromoCode] = useState('');
 
   // Set initial addon when dialog opens
   useEffect(() => {
     if (isOpen && initialAddonType) {
-      setQuantities(prev => ({
+      setQuantities((prev) => ({
         ...prev,
         [initialAddonType]: 1,
       }));
@@ -109,12 +94,12 @@ export function PurchaseAddonsDialog({
   }>(ADD_MULTIPLE_ADDONS_WITH_CODE, {
     onCompleted: (data) => {
       if (data.addMultipleAddonsWithCode.success) {
-        toast.success(data.addMultipleAddonsWithCode.message || "Rozszerzenia zostały dodane!");
+        toast.success(data.addMultipleAddonsWithCode.message || 'Rozszerzenia zostały dodane!');
         handleClose();
         triggerCreditsRefresh();
         onSuccess?.();
       } else {
-        toast.error(data.addMultipleAddonsWithCode.message || "Błąd podczas dodawania rozszerzeń");
+        toast.error(data.addMultipleAddonsWithCode.message || 'Błąd podczas dodawania rozszerzeń');
       }
     },
     onError: (error) => {
@@ -125,7 +110,7 @@ export function PurchaseAddonsDialog({
   const handleClose = () => {
     onClose();
     setQuantities({ patients: 0, therapists: 0, clinics: 0 });
-    setPromoCode("");
+    setPromoCode('');
   };
 
   const handlePurchase = () => {
@@ -146,18 +131,18 @@ export function PurchaseAddonsDialog({
     }
 
     // TODO: Stripe flow - na razie wymagamy kodu
-    toast.error("Płatności Stripe będą dostępne wkrótce. Użyj kodu promocyjnego.");
+    toast.error('Płatności Stripe będą dostępne wkrótce. Użyj kodu promocyjnego.');
   };
 
   const updateQuantity = (type: keyof AddonQuantities, delta: number) => {
-    setQuantities(prev => ({
+    setQuantities((prev) => ({
       ...prev,
       [type]: Math.max(0, Math.min(10, prev[type] + delta)),
     }));
   };
 
   const toggleAddon = (type: keyof AddonQuantities, checked: boolean) => {
-    setQuantities(prev => ({
+    setQuantities((prev) => ({
       ...prev,
       [type]: checked ? 1 : 0,
     }));
@@ -179,9 +164,7 @@ export function PurchaseAddonsDialog({
         <div className="p-6 pb-4 border-b border-border/60">
           <DialogHeader className="space-y-2">
             <DialogTitle className="text-xl font-bold">Rozszerzenia zasobów</DialogTitle>
-            <DialogDescription>
-              Zwiększ limity swojego planu
-            </DialogDescription>
+            <DialogDescription>Zwiększ limity swojego planu</DialogDescription>
           </DialogHeader>
         </div>
 
@@ -196,10 +179,8 @@ export function PurchaseAddonsDialog({
               <div
                 key={config.type}
                 className={cn(
-                  "rounded-xl border p-4 transition-all duration-200",
-                  isSelected
-                    ? "border-cyan-500/50 bg-cyan-500/5"
-                    : "border-border/60 hover:border-border"
+                  'rounded-xl border p-4 transition-all duration-200',
+                  isSelected ? 'border-violet/50 bg-violet/5' : 'border-border/60 hover:border-border'
                 )}
               >
                 <div className="flex items-center gap-4">
@@ -214,20 +195,17 @@ export function PurchaseAddonsDialog({
                   />
 
                   {/* Icon */}
-                  <div className={cn(
-                    "flex h-10 w-10 items-center justify-center rounded-xl shrink-0",
-                    isSelected
-                      ? "bg-gradient-to-br from-cyan-500 to-blue-600"
-                      : "bg-surface-light"
-                  )}>
-                    <Icon className={cn("h-5 w-5", isSelected ? "text-white" : "text-muted-foreground")} />
+                  <div
+                    className={cn(
+                      'flex h-10 w-10 items-center justify-center rounded-xl shrink-0',
+                      isSelected ? 'bg-gradient-to-br from-violet to-violet-dark' : 'bg-surface-light'
+                    )}
+                  >
+                    <Icon className={cn('h-5 w-5', isSelected ? 'text-white' : 'text-muted-foreground')} />
                   </div>
 
                   {/* Content */}
-                  <label
-                    htmlFor={`addon-${config.type}`}
-                    className="flex-1 cursor-pointer"
-                  >
+                  <label htmlFor={`addon-${config.type}`} className="flex-1 cursor-pointer">
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="font-medium text-foreground">{config.label}</p>
@@ -270,11 +248,14 @@ export function PurchaseAddonsDialog({
                 {isSelected && quantity > 0 && (
                   <div className="mt-3 pt-3 border-t border-border/40 flex justify-between text-sm">
                     <span className="text-muted-foreground">
-                      {config.label}: +{quantity * config.unitValue} {config.type === "patients" ? "pacjentów" : config.type === "therapists" ? "terapeutów" : "gabinetów"}
+                      {config.label}: +{quantity * config.unitValue}{' '}
+                      {config.type === 'patients'
+                        ? 'pacjentów'
+                        : config.type === 'therapists'
+                          ? 'terapeutów'
+                          : 'gabinetów'}
                     </span>
-                    <span className="font-medium text-cyan-500">
-                      {quantity * config.price} zł/mies.
-                    </span>
+                    <span className="font-medium text-violet">{quantity * config.price} zł/mies.</span>
                   </div>
                 )}
               </div>
@@ -314,7 +295,7 @@ export function PurchaseAddonsDialog({
             <Button
               onClick={handlePurchase}
               disabled={!hasSelection || loading}
-              className="gap-2 min-w-[120px] bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700"
+              className="gap-2 min-w-[120px] bg-gradient-to-r from-violet to-violet-dark hover:from-violet-dark hover:to-violet-dark"
               data-testid="addons-dialog-purchase-btn"
             >
               {loading ? (

@@ -1,8 +1,8 @@
-import { getBackendToken } from "@/lib/tokenCache";
-import { triggerCreditsRefresh } from "@/components/settings/AICreditsPanel";
-import type { ChatQuestionRequest, ChatDataContainer } from "@/types/chat.types";
+import { getBackendToken } from '@/lib/tokenCache';
+import { triggerCreditsRefresh } from '@/components/settings/AICreditsPanel';
+import type { ChatQuestionRequest, ChatDataContainer } from '@/types/chat.types';
 
-const isDev = process.env.NODE_ENV === "development";
+const isDev = process.env.NODE_ENV === 'development';
 
 /**
  * Serwis do komunikacji z AI Chat API
@@ -12,7 +12,7 @@ class ChatService {
   private baseUrl: string;
 
   constructor() {
-    this.baseUrl = process.env.NEXT_PUBLIC_API_URL || "";
+    this.baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
   }
 
   /**
@@ -21,17 +21,14 @@ class ChatService {
    * @param sessionId - Opcjonalne ID sesji (dla kontynuacji rozmowy)
    * @returns Odpowiedź z AI
    */
-  async sendMessage(
-    question: string,
-    sessionId?: string
-  ): Promise<ChatDataContainer> {
+  async sendMessage(question: string, sessionId?: string): Promise<ChatDataContainer> {
     const url = `${this.baseUrl}/api/chat/simple`;
 
     // Pobierz token z cache
     const token = getBackendToken();
 
     if (!token) {
-      throw new Error("Brak tokenu autoryzacji. Zaloguj się ponownie.");
+      throw new Error('Brak tokenu autoryzacji. Zaloguj się ponownie.');
     }
 
     try {
@@ -41,9 +38,9 @@ class ChatService {
       };
 
       const response = await fetch(url, {
-        method: "POST",
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(request),
@@ -51,18 +48,16 @@ class ChatService {
 
       if (!response.ok) {
         if (response.status === 401) {
-          throw new Error("Sesja wygasła. Odśwież stronę i spróbuj ponownie.");
+          throw new Error('Sesja wygasła. Odśwież stronę i spróbuj ponownie.');
         }
         const errorText = await response.text();
-        throw new Error(
-          `Błąd komunikacji z AI: ${response.status} - ${errorText}`
-        );
+        throw new Error(`Błąd komunikacji z AI: ${response.status} - ${errorText}`);
       }
 
       const data: ChatDataContainer = await response.json();
 
       if (isDev) {
-        console.log("[ChatService] Odpowiedź AI:", {
+        console.log('[ChatService] Odpowiedź AI:', {
           sessionId: data.sessionId,
           responseLength: data.response?.response?.length,
           usage: data.usage,
@@ -75,7 +70,7 @@ class ChatService {
       return data;
     } catch (error) {
       if (isDev) {
-        console.error("[ChatService] Błąd wysyłania wiadomości:", error);
+        console.error('[ChatService] Błąd wysyłania wiadomości:', error);
       }
       throw error;
     }

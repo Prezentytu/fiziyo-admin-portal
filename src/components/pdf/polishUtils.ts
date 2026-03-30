@@ -36,10 +36,10 @@ export function formatDurationPolish(seconds: number): string {
   if (seconds < 60) {
     return formatSeconds(seconds);
   }
-  
+
   const minutes = Math.floor(seconds / 60);
   const remainingSeconds = seconds % 60;
-  
+
   let result = '';
   if (minutes === 1) {
     result = '1 minuta';
@@ -48,11 +48,11 @@ export function formatDurationPolish(seconds: number): string {
   } else {
     result = `${minutes} minut`;
   }
-  
+
   if (remainingSeconds > 0) {
     result += ` ${formatSeconds(remainingSeconds)}`;
   }
-  
+
   return result;
 }
 
@@ -96,7 +96,7 @@ export function formatDaysPolish(frequency: {
   };
 
   const activeDays: string[] = [];
-  
+
   if (frequency.monday) activeDays.push(dayNames.monday);
   if (frequency.tuesday) activeDays.push(dayNames.tuesday);
   if (frequency.wednesday) activeDays.push(dayNames.wednesday);
@@ -110,26 +110,42 @@ export function formatDaysPolish(frequency: {
   if (activeDays.length === 5 && !frequency.saturday && !frequency.sunday) {
     return 'Od poniedziałku do piątku';
   }
-  
+
   return activeDays.join(', ');
 }
 
 /**
- * Tłumaczenie typu ćwiczenia
+ * Tłumaczenie typu ćwiczenia (wersja pełna)
+ * Obsługuje zarówno REPS/TIME jak i reps/time
  */
 export function translateExerciseTypePolish(type?: string): string {
+  if (!type) return '';
   const types: Record<string, string> = {
     reps: 'Na powtórzenia',
     time: 'Na czas',
-    hold: 'Utrzymanie pozycji',
   };
-  return type ? types[type] || type : '';
+  return types[type.toLowerCase()] || type;
+}
+
+/**
+ * Tłumaczenie typu ćwiczenia (wersja krótka dla badge'y)
+ * Obsługuje zarówno REPS/TIME jak i reps/time
+ */
+export function translateExerciseTypeShort(type?: string): string {
+  if (!type) return '';
+  const types: Record<string, string> = {
+    reps: 'Na powt.',
+    time: 'Na czas',
+  };
+  return types[type.toLowerCase()] || type;
 }
 
 /**
  * Tłumaczenie strony ćwiczenia
+ * Obsługuje zarówno LEFT/RIGHT/etc jak i left/right/etc
  */
 export function translateExerciseSidePolish(side?: string): string {
+  if (!side) return '';
   const sides: Record<string, string> = {
     left: 'Lewa strona',
     right: 'Prawa strona',
@@ -137,7 +153,5 @@ export function translateExerciseSidePolish(side?: string): string {
     both: 'Obie strony jednocześnie',
     none: '',
   };
-  return side ? sides[side] || '' : '';
+  return sides[side.toLowerCase()] || '';
 }
-
-

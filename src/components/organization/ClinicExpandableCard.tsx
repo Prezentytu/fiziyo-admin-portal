@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { useMutation } from "@apollo/client/react";
+import { useState } from 'react';
+import { useMutation } from '@apollo/client/react';
 import {
   ChevronDown,
   MapPin,
@@ -13,33 +13,26 @@ import {
   Trash2,
   UserPlus,
   Users,
-} from "lucide-react";
-import { toast } from "sonner";
+} from 'lucide-react';
+import { toast } from 'sonner';
 
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { pluralize } from "@/utils/textUtils";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { pluralize } from '@/utils/textUtils';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
-import {
-  UPDATE_CLINIC_MUTATION,
-  DELETE_CLINIC_MUTATION,
-} from "@/graphql/mutations/clinics.mutations";
-import { GET_ORGANIZATION_CLINICS_QUERY } from "@/graphql/queries/clinics.queries";
-import { cn } from "@/lib/utils";
+} from '@/components/ui/dropdown-menu';
+import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
+import { UPDATE_CLINIC_MUTATION, DELETE_CLINIC_MUTATION } from '@/graphql/mutations/clinics.mutations';
+import { GET_ORGANIZATION_CLINICS_QUERY } from '@/graphql/queries/clinics.queries';
+import { cn } from '@/lib/utils';
 
 export interface Clinic {
   id: string;
@@ -55,7 +48,7 @@ interface AssignedPerson {
   fullname?: string;
   email?: string;
   image?: string;
-  role?: "therapist" | "patient";
+  role?: 'therapist' | 'patient';
 }
 
 interface ClinicExpandableCardProps {
@@ -84,15 +77,11 @@ export function ClinicExpandableCard({
   const [isToggleStatusDialogOpen, setIsToggleStatusDialogOpen] = useState(false);
 
   const [updateClinic, { loading: updating }] = useMutation(UPDATE_CLINIC_MUTATION, {
-    refetchQueries: [
-      { query: GET_ORGANIZATION_CLINICS_QUERY, variables: { organizationId } },
-    ],
+    refetchQueries: [{ query: GET_ORGANIZATION_CLINICS_QUERY, variables: { organizationId } }],
   });
 
   const [deleteClinic, { loading: deleting }] = useMutation(DELETE_CLINIC_MUTATION, {
-    refetchQueries: [
-      { query: GET_ORGANIZATION_CLINICS_QUERY, variables: { organizationId } },
-    ],
+    refetchQueries: [{ query: GET_ORGANIZATION_CLINICS_QUERY, variables: { organizationId } }],
   });
 
   const handleToggleStatus = async () => {
@@ -103,16 +92,12 @@ export function ClinicExpandableCard({
           isActive: !clinic.isActive,
         },
       });
-      toast.success(
-        clinic.isActive
-          ? "Gabinet został dezaktywowany"
-          : "Gabinet został aktywowany"
-      );
+      toast.success(clinic.isActive ? 'Gabinet został dezaktywowany' : 'Gabinet został aktywowany');
       setIsToggleStatusDialogOpen(false);
       onRefresh?.();
     } catch (error) {
-      console.error("Błąd podczas zmiany statusu:", error);
-      toast.error("Nie udało się zmienić statusu gabinetu");
+      console.error('Błąd podczas zmiany statusu:', error);
+      toast.error('Nie udało się zmienić statusu gabinetu');
     }
   };
 
@@ -121,12 +106,12 @@ export function ClinicExpandableCard({
       await deleteClinic({
         variables: { clinicId: clinic.id },
       });
-      toast.success("Gabinet został usunięty");
+      toast.success('Gabinet został usunięty');
       setIsDeleteDialogOpen(false);
       onRefresh?.();
     } catch (error) {
-      console.error("Błąd podczas usuwania:", error);
-      toast.error("Nie udało się usunąć gabinetu");
+      console.error('Błąd podczas usuwania:', error);
+      toast.error('Nie udało się usunąć gabinetu');
     }
   };
 
@@ -136,9 +121,9 @@ export function ClinicExpandableCard({
     <>
       <Card
         className={cn(
-          "group border-border/60 transition-all duration-200",
-          isOpen && "border-border shadow-md",
-          !isOpen && "hover:border-border hover:shadow-sm"
+          'group border-border/60 transition-all duration-200',
+          isOpen && 'border-border shadow-md',
+          !isOpen && 'hover:border-border hover:shadow-sm'
         )}
       >
         <Collapsible open={isOpen} onOpenChange={setIsOpen}>
@@ -148,10 +133,8 @@ export function ClinicExpandableCard({
               {/* Icon */}
               <div
                 className={cn(
-                  "flex h-14 w-14 shrink-0 items-center justify-center rounded-xl transition-colors",
-                  clinic.isActive
-                    ? "bg-primary/10 text-primary"
-                    : "bg-muted text-muted-foreground"
+                  'flex h-14 w-14 shrink-0 items-center justify-center rounded-xl transition-colors',
+                  clinic.isActive ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'
                 )}
               >
                 <MapPin className="h-7 w-7" />
@@ -160,21 +143,12 @@ export function ClinicExpandableCard({
               {/* Info */}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
-                  <h3 className="font-semibold text-foreground text-lg truncate">
-                    {clinic.name}
-                  </h3>
-                  <Badge
-                    variant={clinic.isActive ? "success" : "secondary"}
-                    className="shrink-0"
-                  >
-                    {clinic.isActive ? "Aktywny" : "Nieaktywny"}
+                  <h3 className="font-semibold text-foreground text-lg truncate">{clinic.name}</h3>
+                  <Badge variant={clinic.isActive ? 'success' : 'secondary'} className="shrink-0">
+                    {clinic.isActive ? 'Aktywny' : 'Nieaktywny'}
                   </Badge>
                 </div>
-                {clinic.address && (
-                  <p className="text-sm text-muted-foreground line-clamp-1">
-                    {clinic.address}
-                  </p>
-                )}
+                {clinic.address && <p className="text-sm text-muted-foreground line-clamp-1">{clinic.address}</p>}
                 <div className="flex items-center gap-4 mt-2">
                   {clinic.contactInfo && (
                     <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
@@ -186,7 +160,7 @@ export function ClinicExpandableCard({
                     <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                       <Users className="h-3 w-3" />
                       <span>
-                        {pluralize(assignedTherapists.length, 'terapeuta')},{" "}
+                        {pluralize(assignedTherapists.length, 'terapeuta')},{' '}
                         {pluralize(assignedPatients.length, 'pacjent')}
                       </span>
                     </div>
@@ -228,9 +202,7 @@ export function ClinicExpandableCard({
                         <Pencil className="mr-2 h-4 w-4" />
                         Edytuj
                       </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => setIsToggleStatusDialogOpen(true)}
-                      >
+                      <DropdownMenuItem onClick={() => setIsToggleStatusDialogOpen(true)}>
                         {clinic.isActive ? (
                           <>
                             <PowerOff className="mr-2 h-4 w-4" />
@@ -257,12 +229,7 @@ export function ClinicExpandableCard({
 
                 <CollapsibleTrigger asChild>
                   <Button variant="ghost" size="icon" className="h-9 w-9">
-                    <ChevronDown
-                      className={cn(
-                        "h-5 w-5 transition-transform duration-200",
-                        isOpen && "rotate-180"
-                      )}
-                    />
+                    <ChevronDown className={cn('h-5 w-5 transition-transform duration-200', isOpen && 'rotate-180')} />
                   </Button>
                 </CollapsibleTrigger>
               </div>
@@ -280,28 +247,19 @@ export function ClinicExpandableCard({
                     {assignedTherapists.length > 0 ? (
                       <div className="space-y-2">
                         {assignedTherapists.map((person) => (
-                          <div
-                            key={person.id}
-                            className="flex items-center gap-3 p-2 rounded-lg bg-surface"
-                          >
+                          <div key={person.id} className="flex items-center gap-3 p-2 rounded-lg bg-surface">
                             <Avatar className="h-8 w-8">
                               <AvatarImage src={person.image} />
                               <AvatarFallback className="text-xs">
-                                {(person.fullname || person.email || "?")
-                                  .slice(0, 2)
-                                  .toUpperCase()}
+                                {(person.fullname || person.email || '?').slice(0, 2).toUpperCase()}
                               </AvatarFallback>
                             </Avatar>
-                            <span className="text-sm truncate">
-                              {person.fullname || person.email || "Nieznany"}
-                            </span>
+                            <span className="text-sm truncate">{person.fullname || person.email || 'Nieznany'}</span>
                           </div>
                         ))}
                       </div>
                     ) : (
-                      <p className="text-sm text-muted-foreground italic">
-                        Brak przypisanych terapeutów
-                      </p>
+                      <p className="text-sm text-muted-foreground italic">Brak przypisanych terapeutów</p>
                     )}
                   </div>
 
@@ -313,33 +271,22 @@ export function ClinicExpandableCard({
                     {assignedPatients.length > 0 ? (
                       <div className="space-y-2">
                         {assignedPatients.slice(0, 5).map((person) => (
-                          <div
-                            key={person.id}
-                            className="flex items-center gap-3 p-2 rounded-lg bg-surface"
-                          >
+                          <div key={person.id} className="flex items-center gap-3 p-2 rounded-lg bg-surface">
                             <Avatar className="h-8 w-8">
                               <AvatarImage src={person.image} />
                               <AvatarFallback className="text-xs">
-                                {(person.fullname || person.email || "?")
-                                  .slice(0, 2)
-                                  .toUpperCase()}
+                                {(person.fullname || person.email || '?').slice(0, 2).toUpperCase()}
                               </AvatarFallback>
                             </Avatar>
-                            <span className="text-sm truncate">
-                              {person.fullname || person.email || "Nieznany"}
-                            </span>
+                            <span className="text-sm truncate">{person.fullname || person.email || 'Nieznany'}</span>
                           </div>
                         ))}
                         {assignedPatients.length > 5 && (
-                          <p className="text-xs text-muted-foreground pl-2">
-                            + {assignedPatients.length - 5} więcej
-                          </p>
+                          <p className="text-xs text-muted-foreground pl-2">+ {assignedPatients.length - 5} więcej</p>
                         )}
                       </div>
                     ) : (
-                      <p className="text-sm text-muted-foreground italic">
-                        Brak przypisanych pacjentów
-                      </p>
+                      <p className="text-sm text-muted-foreground italic">Brak przypisanych pacjentów</p>
                     )}
                   </div>
                 </div>
@@ -353,14 +300,14 @@ export function ClinicExpandableCard({
       <ConfirmDialog
         open={isToggleStatusDialogOpen}
         onOpenChange={setIsToggleStatusDialogOpen}
-        title={clinic.isActive ? "Dezaktywuj gabinet" : "Aktywuj gabinet"}
+        title={clinic.isActive ? 'Dezaktywuj gabinet' : 'Aktywuj gabinet'}
         description={
           clinic.isActive
             ? `Czy na pewno chcesz dezaktywować gabinet "${clinic.name}"? Nieaktywne gabinety nie będą widoczne przy planowaniu wizyt.`
             : `Czy na pewno chcesz aktywować gabinet "${clinic.name}"?`
         }
-        confirmText={clinic.isActive ? "Dezaktywuj" : "Aktywuj"}
-        variant={clinic.isActive ? "destructive" : "default"}
+        confirmText={clinic.isActive ? 'Dezaktywuj' : 'Aktywuj'}
+        variant={clinic.isActive ? 'destructive' : 'default'}
         onConfirm={handleToggleStatus}
         isLoading={updating}
       />
@@ -379,19 +326,3 @@ export function ClinicExpandableCard({
     </>
   );
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

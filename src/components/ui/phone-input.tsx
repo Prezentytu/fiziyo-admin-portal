@@ -1,10 +1,9 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { cn } from "@/lib/utils";
+import * as React from 'react';
+import { cn } from '@/lib/utils';
 
-interface PhoneInputProps
-  extends Omit<React.ComponentProps<"input">, "onChange" | "value" | "type"> {
+interface PhoneInputProps extends Omit<React.ComponentProps<'input'>, 'onChange' | 'value' | 'type'> {
   value: string;
   onChange: (value: string) => void;
   countryCode?: string;
@@ -15,7 +14,7 @@ interface PhoneInputProps
  */
 function formatPhoneNumber(value: string): string {
   // Usuń wszystko poza cyframi
-  const digits = value.replaceAll(/\D/g, "");
+  const digits = value.replaceAll(/\D/g, '');
 
   // Ogranicz do 9 cyfr (polski numer bez kierunkowego)
   const limited = digits.slice(0, 9);
@@ -34,11 +33,11 @@ function formatPhoneNumber(value: string): string {
  * Wyciąga same cyfry z sformatowanego numeru
  */
 function extractDigits(value: string): string {
-  return value.replaceAll(/\D/g, "").slice(0, 9);
+  return value.replaceAll(/\D/g, '').slice(0, 9);
 }
 
 const PhoneInput = React.forwardRef<HTMLInputElement, PhoneInputProps>(
-  ({ className, value, onChange, countryCode = "+48", ...props }, ref) => {
+  ({ className, value, onChange, countryCode = '+48', ...props }, ref) => {
     const inputRef = React.useRef<HTMLInputElement>(null);
 
     // Połącz zewnętrzny ref z wewnętrznym
@@ -56,24 +55,21 @@ const PhoneInput = React.forwardRef<HTMLInputElement, PhoneInputProps>(
     const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
       // Dozwolone klawisze: cyfry, backspace, delete, tab, escape, enter, strzałki
       const allowedKeys = [
-        "Backspace",
-        "Delete",
-        "Tab",
-        "Escape",
-        "Enter",
-        "ArrowLeft",
-        "ArrowRight",
-        "ArrowUp",
-        "ArrowDown",
-        "Home",
-        "End",
+        'Backspace',
+        'Delete',
+        'Tab',
+        'Escape',
+        'Enter',
+        'ArrowLeft',
+        'ArrowRight',
+        'ArrowUp',
+        'ArrowDown',
+        'Home',
+        'End',
       ];
 
       // Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+X
-      if (
-        (e.ctrlKey || e.metaKey) &&
-        ["a", "c", "v", "x"].includes(e.key.toLowerCase())
-      ) {
+      if ((e.ctrlKey || e.metaKey) && ['a', 'c', 'v', 'x'].includes(e.key.toLowerCase())) {
         return;
       }
 
@@ -90,8 +86,7 @@ const PhoneInput = React.forwardRef<HTMLInputElement, PhoneInputProps>(
       // Blokuj jeśli już mamy 9 cyfr (chyba że coś jest zaznaczone)
       const input = inputRef.current;
       if (input) {
-        const selectionLength =
-          (input.selectionEnd ?? 0) - (input.selectionStart ?? 0);
+        const selectionLength = (input.selectionEnd ?? 0) - (input.selectionStart ?? 0);
         const currentDigits = extractDigits(value);
         if (currentDigits.length >= 9 && selectionLength === 0) {
           e.preventDefault();
@@ -101,13 +96,13 @@ const PhoneInput = React.forwardRef<HTMLInputElement, PhoneInputProps>(
 
     const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
       e.preventDefault();
-      const pastedText = e.clipboardData.getData("text");
+      const pastedText = e.clipboardData.getData('text');
 
       // Wyciągnij tylko cyfry z wklejonego tekstu
-      let digits = pastedText.replaceAll(/\D/g, "");
+      let digits = pastedText.replaceAll(/\D/g, '');
 
       // Usuń prefiks kraju jeśli jest (+48 lub 48)
-      if (digits.startsWith("48") && digits.length > 9) {
+      if (digits.startsWith('48') && digits.length > 9) {
         digits = digits.slice(2);
       }
 
@@ -126,9 +121,9 @@ const PhoneInput = React.forwardRef<HTMLInputElement, PhoneInputProps>(
         {/* Prefiks kraju */}
         <div
           className={cn(
-            "flex items-center justify-center rounded-l-md border border-r-0 border-border bg-surface px-3 text-sm font-medium text-muted-foreground select-none shrink-0",
+            'flex items-center justify-center rounded-l-md border border-r-0 border-border bg-surface px-3 text-sm font-medium text-muted-foreground select-none shrink-0',
             heightClass,
-            props.disabled && "cursor-not-allowed opacity-50"
+            props.disabled && 'cursor-not-allowed opacity-50'
           )}
         >
           {countryCode}
@@ -141,11 +136,11 @@ const PhoneInput = React.forwardRef<HTMLInputElement, PhoneInputProps>(
           inputMode="numeric"
           autoComplete="tel-national"
           className={cn(
-            "flex w-full rounded-r-md border border-border bg-input px-3 py-1 shadow-sm transition-colors",
+            'flex w-full rounded-r-md border border-border bg-input px-3 py-1 shadow-sm transition-colors',
             heightClass,
-            "placeholder:text-muted-foreground",
-            "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
-            "disabled:cursor-not-allowed disabled:opacity-50",
+            'placeholder:text-muted-foreground',
+            'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring',
+            'disabled:cursor-not-allowed disabled:opacity-50',
             className
           )}
           value={displayValue}
@@ -160,13 +155,6 @@ const PhoneInput = React.forwardRef<HTMLInputElement, PhoneInputProps>(
   }
 );
 
-PhoneInput.displayName = "PhoneInput";
+PhoneInput.displayName = 'PhoneInput';
 
 export { PhoneInput };
-
-
-
-
-
-
-

@@ -1,12 +1,12 @@
-import { gql } from "@apollo/client";
+import { gql } from '@apollo/client';
 
 /**
  * ============================================================================
  * UWAGA: Wszystkie queries w tym pliku są NIEAKTYWNE
- * 
+ *
  * Schema backendu nie zawiera żadnych queries dla appointments.
  * Plik zachowany dla kompatybilności wstecznej i przyszłej implementacji.
- * 
+ *
  * TODO: Czeka na implementację w backendzie
  * ============================================================================
  */

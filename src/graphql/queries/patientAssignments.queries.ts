@@ -1,4 +1,4 @@
-import { gql } from "@apollo/client";
+import { gql } from '@apollo/client';
 
 // Fragment dla podstawowych danych przypisania pacjenta
 export const PATIENT_ASSIGNMENT_BASIC_FRAGMENT = gql`
@@ -28,10 +28,21 @@ export const PATIENT_ASSIGNMENT_FULL_FRAGMENT = gql`
     startDate
     status
     userId
+    assignedSets
+    assignedReps
+    assignedDuration
+    assignedExecutionTime
+    assignedRestBetweenSets
+    assignedRestBetweenReps
+    assignedTempo
+    hasCustomization
+    patientRPE
+    patientPainLevel
     frequency {
       timesPerDay
       timesPerWeek
       breakBetweenSets
+      isFlexible
       monday
       tuesday
       wednesday
@@ -57,6 +68,8 @@ export const PATIENT_ASSIGNMENT_FULL_FRAGMENT = gql`
         duration
         restSets
         restReps
+        executionTime
+        tempo
         notes
         customName
         customDescription
@@ -64,19 +77,20 @@ export const PATIENT_ASSIGNMENT_FULL_FRAGMENT = gql`
           id
           name
           type
-          exerciseSide
+          side
           imageUrl
           images
-          description
+          thumbnailUrl
+          patientDescription
           notes
           videoUrl
           preparationTime
-          executionTime
-          sets
-          reps
-          duration
-          restSets
-          restReps
+          defaultExecutionTime
+          defaultSets
+          defaultReps
+          defaultDuration
+          defaultRestBetweenSets
+          defaultRestBetweenReps
         }
       }
     }
@@ -84,19 +98,20 @@ export const PATIENT_ASSIGNMENT_FULL_FRAGMENT = gql`
       id
       name
       type
-      exerciseSide
+      side
       imageUrl
       images
-      description
+      thumbnailUrl
+      patientDescription
       notes
       videoUrl
       preparationTime
-      executionTime
-      sets
-      reps
-      duration
-      restSets
-      restReps
+      defaultExecutionTime
+      defaultSets
+      defaultReps
+      defaultDuration
+      defaultRestBetweenSets
+      defaultRestBetweenReps
     }
   }
 `;
@@ -216,10 +231,21 @@ export const PATIENT_ASSIGNMENT_DETAILS_FRAGMENT = gql`
     startDate
     status
     userId
+    assignedSets
+    assignedReps
+    assignedDuration
+    assignedExecutionTime
+    assignedRestBetweenSets
+    assignedRestBetweenReps
+    assignedTempo
+    hasCustomization
+    patientRPE
+    patientPainLevel
     frequency {
       timesPerDay
       timesPerWeek
       breakBetweenSets
+      isFlexible
       monday
       tuesday
       wednesday
@@ -257,6 +283,8 @@ export const PATIENT_ASSIGNMENT_DETAILS_FRAGMENT = gql`
         duration
         restSets
         restReps
+        executionTime
+        tempo
         notes
         customName
         customDescription
@@ -264,19 +292,20 @@ export const PATIENT_ASSIGNMENT_DETAILS_FRAGMENT = gql`
           id
           name
           type
-          exerciseSide
+          side
           imageUrl
           images
-          description
+          thumbnailUrl
+          patientDescription
           notes
           videoUrl
           preparationTime
-          executionTime
-          sets
-          reps
-          duration
-          restSets
-          restReps
+          defaultExecutionTime
+          defaultSets
+          defaultReps
+          defaultDuration
+          defaultRestBetweenSets
+          defaultRestBetweenReps
         }
       }
     }
@@ -284,19 +313,20 @@ export const PATIENT_ASSIGNMENT_DETAILS_FRAGMENT = gql`
       id
       name
       type
-      exerciseSide
+      side
       imageUrl
       images
-      description
+      thumbnailUrl
+      patientDescription
       notes
       videoUrl
       preparationTime
-      executionTime
-      sets
-      reps
-      duration
-      restSets
-      restReps
+      defaultExecutionTime
+      defaultSets
+      defaultReps
+      defaultDuration
+      defaultRestBetweenSets
+      defaultRestBetweenReps
     }
   }
 `;

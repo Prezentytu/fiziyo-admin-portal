@@ -34,5 +34,3 @@ export function registerPolishFonts() {
 
 // Automatycznie rejestruj fonty przy imporcie
 registerPolishFonts();
-
-

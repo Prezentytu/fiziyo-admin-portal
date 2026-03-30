@@ -3,8 +3,8 @@
  * Zastępuje exerciseAIService.ts - teraz backend gwarantuje JSON
  */
 
-import { getBackendToken } from "@/lib/tokenCache";
-import { triggerCreditsRefresh } from "@/components/settings/AICreditsPanel";
+import { getBackendToken } from '@/lib/tokenCache';
+import { triggerCreditsRefresh } from '@/components/settings/AICreditsPanel';
 import type {
   ExerciseSuggestionRequest,
   ExerciseSuggestionResponse,
@@ -19,9 +19,9 @@ import type {
   ExerciseImageRequest,
   ExerciseImageResponse,
   ImageStyle,
-} from "@/types/ai.types";
+} from '@/types/ai.types';
 
-const isDev = process.env.NODE_ENV === "development";
+const isDev = process.env.NODE_ENV === 'development';
 
 /**
  * Centralny serwis AI z dedykowanymi endpointami
@@ -30,7 +30,7 @@ class AIService {
   private baseUrl: string;
 
   constructor() {
-    this.baseUrl = process.env.NEXT_PUBLIC_API_URL || "";
+    this.baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
   }
 
   /**
@@ -40,7 +40,7 @@ class AIService {
     const token = getBackendToken();
 
     if (!token) {
-      throw new Error("Brak tokenu autoryzacji. Zaloguj się ponownie.");
+      throw new Error('Brak tokenu autoryzacji. Zaloguj się ponownie.');
     }
 
     const url = `${this.baseUrl}/api/ai/${endpoint}`;
@@ -50,9 +50,9 @@ class AIService {
     }
 
     const response = await fetch(url, {
-      method: "POST",
+      method: 'POST',
       headers: {
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
         Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify(body),
@@ -60,7 +60,7 @@ class AIService {
 
     if (!response.ok) {
       if (response.status === 401) {
-        throw new Error("Sesja wygasła. Odśwież stronę i spróbuj ponownie.");
+        throw new Error('Sesja wygasła. Odśwież stronę i spróbuj ponownie.');
       }
       const errorText = await response.text();
       throw new Error(`Błąd AI: ${response.status} - ${errorText}`);
@@ -86,11 +86,13 @@ class AIService {
    * Generuje sugestie parametrów dla ćwiczenia na podstawie nazwy
    * @param exerciseName - nazwa ćwiczenia (min. 2 znaki)
    * @param availableTags - opcjonalna lista dostępnych tagów
+   * @param existingExerciseNames - opcjonalna lista nazw istniejących ćwiczeń (do wykrywania duplikatów)
    * @returns sugestia lub null w przypadku błędu
    */
   async getExerciseSuggestion(
     exerciseName: string,
-    availableTags?: string[]
+    availableTags?: string[],
+    existingExerciseNames?: string[]
   ): Promise<ExerciseSuggestionResponse | null> {
     if (!exerciseName.trim() || exerciseName.length < 2) {
       return null;
@@ -100,15 +102,13 @@ class AIService {
       const request: ExerciseSuggestionRequest = {
         exerciseName: exerciseName.trim(),
         availableTags,
+        existingExerciseNames,
       };
 
-      return await this.request<ExerciseSuggestionResponse>(
-        "exercise-suggest",
-        request
-      );
+      return await this.request<ExerciseSuggestionResponse>('exercise-suggest', request);
     } catch (error) {
       if (isDev) {
-        console.error("[AIService] getExerciseSuggestion error:", error);
+        console.error('[AIService] getExerciseSuggestion error:', error);
       }
       return null;
     }
@@ -117,6 +117,35 @@ class AIService {
   // ============================================
   // 2. Set Generation
   // ============================================
+
+  /**
+   * Generuje zoptymalizowaną nazwę dla zestawu ćwiczeń
+   * @param currentName - aktualnie wpisana nazwa (lub domyślna np. "Nowy zestaw")
+   * @param exerciseNames - lista nazw ćwiczeń w zestawie
+   * @returns sugerowana nazwa zestawu
+   */
+  async suggestSetName(
+    currentName: string,
+    exerciseNames: string[]
+  ): Promise<{ suggestedName: string } | null> {
+    if (!exerciseNames || exerciseNames.length === 0) {
+      return null;
+    }
+
+    try {
+      const request = {
+        currentName: currentName.trim(),
+        exerciseNames,
+      };
+
+      return await this.request<{ suggestedName: string }>('set-name-suggest', request);
+    } catch (error) {
+      if (isDev) {
+        console.error('[AIService] suggestSetName error:', error);
+      }
+      return null;
+    }
+  }
 
   /**
    * Generuje zestaw ćwiczeń na podstawie opisu potrzeb
@@ -143,10 +172,10 @@ class AIService {
         availableExerciseNames: exerciseNames,
       };
 
-      return await this.request<SetGenerationResponse>("set-generate", request);
+      return await this.request<SetGenerationResponse>('set-generate', request);
     } catch (error) {
       if (isDev) {
-        console.error("[AIService] generateExerciseSet error:", error);
+        console.error('[AIService] generateExerciseSet error:', error);
       }
       return null;
     }
@@ -178,10 +207,10 @@ class AIService {
         exerciseSetContext,
       };
 
-      return await this.request<ClinicalNoteResponse>("clinical-notes", request);
+      return await this.request<ClinicalNoteResponse>('clinical-notes', request);
     } catch (error) {
       if (isDev) {
-        console.error("[AIService] assistClinicalNote error:", error);
+        console.error('[AIService] assistClinicalNote error:', error);
       }
       return null;
     }
@@ -206,10 +235,10 @@ class AIService {
         voiceText: voiceText.trim(),
       };
 
-      return await this.request<VoiceParseResponse>("voice-parse", request);
+      return await this.request<VoiceParseResponse>('voice-parse', request);
     } catch (error) {
       if (isDev) {
-        console.error("[AIService] parseVoiceInput error:", error);
+        console.error('[AIService] parseVoiceInput error:', error);
       }
       return null;
     }
@@ -237,7 +266,7 @@ class AIService {
   async generateExerciseImage(
     exerciseName: string,
     exerciseDescription?: string,
-    exerciseType?: 'reps' | 'time' | 'hold',
+    exerciseType?: 'reps' | 'time',
     style: ImageStyle = 'illustration'
   ): Promise<{ file?: File; response: ExerciseImageResponse } | null> {
     if (!exerciseName.trim() || exerciseName.length < 2) {
@@ -252,12 +281,12 @@ class AIService {
         style,
       };
 
-      const response = await this.request<ExerciseImageResponse>("generate-image", request);
+      const response = await this.request<ExerciseImageResponse>('generate-image', request);
 
       // Przypadek 1: Model zwrócił tekst zamiast obrazu
       if (response.success && response.isTextOnly && response.textDescription) {
         if (isDev) {
-          console.info("[AIService] generateExerciseImage returned text description");
+          console.info('[AIService] generateExerciseImage returned text description');
         }
         return { response }; // Zwracamy response bez pliku
       }
@@ -265,7 +294,7 @@ class AIService {
       // Przypadek 2: Błąd
       if (!response.success || !response.imageBase64) {
         if (isDev) {
-          console.error("[AIService] generateExerciseImage failed:", response.errorMessage);
+          console.error('[AIService] generateExerciseImage failed:', response.errorMessage);
         }
         return null;
       }
@@ -280,8 +309,11 @@ class AIService {
       const byteArray = new Uint8Array(byteNumbers);
 
       // Określ rozszerzenie pliku na podstawie content type
-      const extension = response.contentType.includes('png') ? 'png' :
-                       response.contentType.includes('jpeg') ? 'jpg' : 'png';
+      const extension = response.contentType.includes('png')
+        ? 'png'
+        : response.contentType.includes('jpeg')
+          ? 'jpg'
+          : 'png';
 
       const blob = new Blob([byteArray], { type: response.contentType });
       const fileName = `ai-generated-${exerciseName.toLowerCase().replace(/\s+/g, '-')}.${extension}`;
@@ -290,7 +322,7 @@ class AIService {
       return { file, response };
     } catch (error) {
       if (isDev) {
-        console.error("[AIService] generateExerciseImage error:", error);
+        console.error('[AIService] generateExerciseImage error:', error);
       }
       return null;
     }
@@ -305,45 +337,127 @@ export const aiService = new AIService();
 // TOP 6 (wyświetlane domyślnie w wizardzie) są na początku listy
 export const QUICK_TEMPLATES = [
   // === TOP 6 - najpopularniejsze dla fizjoterapii ===
-  { id: "plank", label: "Plank (Deska)", icon: "🧘", category: "Plank - ćwiczenie izometryczne wzmacniające mięśnie głębokie tułowia" },
-  { id: "glute-bridge", label: "Glute Bridge (Mostek)", icon: "🌉", category: "Glute Bridge - unoszenie bioder w leżeniu, wzmocnienie pośladków" },
-  { id: "bird-dog", label: "Bird Dog", icon: "🐕", category: "Bird Dog - stabilizacja tułowia z unoszeniem przeciwległych kończyn" },
-  { id: "cat-cow", label: "Cat-Cow (Kot-Krowa)", icon: "🐱", category: "Cat-Cow - mobilizacja kręgosłupa w klęku podpartym" },
-  { id: "hip-flexor-stretch", label: "Rozciąganie zginaczy biodra", icon: "🧘", category: "Rozciąganie mięśnia biodrowo-lędźwiowego w wykroku" },
-  { id: "shoulder-external-rotation", label: "Rotacja zewnętrzna barku", icon: "💪", category: "Rotacja zewnętrzna barku z gumą oporową" },
+  {
+    id: 'plank',
+    label: 'Plank (Deska)',
+    icon: '🧘',
+    category: 'Plank - ćwiczenie izometryczne wzmacniające mięśnie głębokie tułowia',
+  },
+  {
+    id: 'glute-bridge',
+    label: 'Glute Bridge (Mostek)',
+    icon: '🌉',
+    category: 'Glute Bridge - unoszenie bioder w leżeniu, wzmocnienie pośladków',
+  },
+  {
+    id: 'bird-dog',
+    label: 'Bird Dog',
+    icon: '🐕',
+    category: 'Bird Dog - stabilizacja tułowia z unoszeniem przeciwległych kończyn',
+  },
+  {
+    id: 'cat-cow',
+    label: 'Cat-Cow (Kot-Krowa)',
+    icon: '🐱',
+    category: 'Cat-Cow - mobilizacja kręgosłupa w klęku podpartym',
+  },
+  {
+    id: 'hip-flexor-stretch',
+    label: 'Rozciąganie zginaczy biodra',
+    icon: '🧘',
+    category: 'Rozciąganie mięśnia biodrowo-lędźwiowego w wykroku',
+  },
+  {
+    id: 'shoulder-external-rotation',
+    label: 'Rotacja zewnętrzna barku',
+    icon: '💪',
+    category: 'Rotacja zewnętrzna barku z gumą oporową',
+  },
 
   // === Pozostałe ćwiczenia ===
   // Core & Stabilizacja
-  { id: "dead-bug", label: "Dead Bug", icon: "🪲", category: "Dead Bug - ćwiczenie stabilizacyjne w leżeniu na plecach" },
+  {
+    id: 'dead-bug',
+    label: 'Dead Bug',
+    icon: '🪲',
+    category: 'Dead Bug - ćwiczenie stabilizacyjne w leżeniu na plecach',
+  },
 
   // Biodra & Pośladki
-  { id: "clamshell", label: "Clamshell (Muszla)", icon: "🐚", category: "Clamshell - rotacja zewnętrzna biodra w leżeniu bokiem" },
-  { id: "hip-thrust", label: "Hip Thrust", icon: "🦵", category: "Hip Thrust - wypychanie bioder z oparciem o ławkę" },
-  { id: "side-lying-leg-raise", label: "Wznosy nóg bokiem", icon: "🦿", category: "Wznosy nóg w leżeniu bokiem - wzmocnienie odwodzicieli" },
+  {
+    id: 'clamshell',
+    label: 'Clamshell (Muszla)',
+    icon: '🐚',
+    category: 'Clamshell - rotacja zewnętrzna biodra w leżeniu bokiem',
+  },
+  { id: 'hip-thrust', label: 'Hip Thrust', icon: '🦵', category: 'Hip Thrust - wypychanie bioder z oparciem o ławkę' },
+  {
+    id: 'side-lying-leg-raise',
+    label: 'Wznosy nóg bokiem',
+    icon: '🦿',
+    category: 'Wznosy nóg w leżeniu bokiem - wzmocnienie odwodzicieli',
+  },
 
   // Nogi & Kolana
-  { id: "squat", label: "Przysiad", icon: "🏋️", category: "Przysiad - podstawowe ćwiczenie wzmacniające nogi" },
-  { id: "lunge", label: "Wykrok", icon: "🚶", category: "Wykrok do przodu - wzmocnienie nóg i równowagi" },
-  { id: "wall-sit", label: "Wall Sit (Krzesełko)", icon: "🪑", category: "Wall Sit - izometryczne ćwiczenie przy ścianie" },
-  { id: "step-up", label: "Step Up", icon: "🪜", category: "Step Up - wchodzenie na stopień, wzmocnienie nóg" },
+  { id: 'squat', label: 'Przysiad', icon: '🏋️', category: 'Przysiad - podstawowe ćwiczenie wzmacniające nogi' },
+  { id: 'lunge', label: 'Wykrok', icon: '🚶', category: 'Wykrok do przodu - wzmocnienie nóg i równowagi' },
+  {
+    id: 'wall-sit',
+    label: 'Wall Sit (Krzesełko)',
+    icon: '🪑',
+    category: 'Wall Sit - izometryczne ćwiczenie przy ścianie',
+  },
+  { id: 'step-up', label: 'Step Up', icon: '🪜', category: 'Step Up - wchodzenie na stopień, wzmocnienie nóg' },
 
   // Plecy & Kręgosłup
-  { id: "superman", label: "Superman", icon: "🦸", category: "Superman - unoszenie kończyn w leżeniu na brzuchu" },
-  { id: "child-pose", label: "Child's Pose", icon: "🧒", category: "Child's Pose - pozycja dziecka, rozciąganie pleców" },
-  { id: "back-extension", label: "Ekstensja pleców", icon: "🔙", category: "Ekstensja pleców w leżeniu na brzuchu" },
+  { id: 'superman', label: 'Superman', icon: '🦸', category: 'Superman - unoszenie kończyn w leżeniu na brzuchu' },
+  {
+    id: 'child-pose',
+    label: "Child's Pose",
+    icon: '🧒',
+    category: "Child's Pose - pozycja dziecka, rozciąganie pleców",
+  },
+  { id: 'back-extension', label: 'Ekstensja pleców', icon: '🔙', category: 'Ekstensja pleców w leżeniu na brzuchu' },
 
   // Barki & Ramiona
-  { id: "wall-angels", label: "Wall Angels", icon: "👼", category: "Wall Angels - ślizg ramion po ścianie" },
-  { id: "band-pull-apart", label: "Band Pull Apart", icon: "🎯", category: "Band Pull Apart - rozciąganie gumy przed sobą" },
+  { id: 'wall-angels', label: 'Wall Angels', icon: '👼', category: 'Wall Angels - ślizg ramion po ścianie' },
+  {
+    id: 'band-pull-apart',
+    label: 'Band Pull Apart',
+    icon: '🎯',
+    category: 'Band Pull Apart - rozciąganie gumy przed sobą',
+  },
 
   // Rozciąganie
-  { id: "hamstring-stretch", label: "Rozciąganie tylnej grupy uda", icon: "🦵", category: "Rozciąganie mięśni kulszowo-goleniowych" },
-  { id: "piriformis-stretch", label: "Rozciąganie gruszkowatego", icon: "🍐", category: "Rozciąganie mięśnia gruszkowatego" },
-  { id: "chest-stretch", label: "Rozciąganie klatki piersiowej", icon: "🫁", category: "Rozciąganie mięśni piersiowych przy ścianie" },
+  {
+    id: 'hamstring-stretch',
+    label: 'Rozciąganie tylnej grupy uda',
+    icon: '🦵',
+    category: 'Rozciąganie mięśni kulszowo-goleniowych',
+  },
+  {
+    id: 'piriformis-stretch',
+    label: 'Rozciąganie gruszkowatego',
+    icon: '🍐',
+    category: 'Rozciąganie mięśnia gruszkowatego',
+  },
+  {
+    id: 'chest-stretch',
+    label: 'Rozciąganie klatki piersiowej',
+    icon: '🫁',
+    category: 'Rozciąganie mięśni piersiowych przy ścianie',
+  },
 ];
 
 // Top 6 templates IDs for quick access in wizard
-export const TOP_QUICK_TEMPLATES_IDS = ["plank", "glute-bridge", "bird-dog", "cat-cow", "hip-flexor-stretch", "shoulder-external-rotation"];
+export const TOP_QUICK_TEMPLATES_IDS = [
+  'plank',
+  'glute-bridge',
+  'bird-dog',
+  'cat-cow',
+  'hip-flexor-stretch',
+  'shoulder-external-rotation',
+];
 
 // Re-export types for convenience
 export type {
@@ -356,4 +470,4 @@ export type {
   ClinicalNoteAction,
   ExerciseImageResponse,
   ImageStyle,
-} from "@/types/ai.types";
+} from '@/types/ai.types';

@@ -1,14 +1,14 @@
-"use client";
+'use client';
 
-import { useQuery } from "@apollo/client/react";
-import { Users, Building2, UserPlus, AlertTriangle, Plus, TrendingUp, X } from "lucide-react";
-import { useOrganization } from "@/contexts/OrganizationContext";
-import { useState } from "react";
-import Link from "next/link";
+import { useQuery } from '@apollo/client/react';
+import { Users, Building2, UserPlus, AlertTriangle, Plus, TrendingUp, X } from 'lucide-react';
+import { useOrganization } from '@/contexts/OrganizationContext';
+import { useState } from 'react';
+import Link from 'next/link';
 
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
-import { GET_RESOURCE_ADDONS_STATUS } from "@/graphql/queries/aiCredits.queries";
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+import { GET_RESOURCE_ADDONS_STATUS } from '@/graphql/queries/aiCredits.queries';
 
 interface ResourceAddonsStatus {
   additionalPatients: number;
@@ -21,7 +21,7 @@ interface ResourceAddonsStatus {
 }
 
 interface LimitWarningProps {
-  type: "patients" | "therapists" | "clinics";
+  type: 'patients' | 'therapists' | 'clinics';
   currentUsage: number;
   threshold?: number;
   className?: string;
@@ -30,39 +30,31 @@ interface LimitWarningProps {
 const configs = {
   patients: {
     icon: Users,
-    label: "pacjentów",
-    limitKey: "effectiveMaxPatients" as keyof ResourceAddonsStatus,
+    label: 'pacjentów',
+    limitKey: 'effectiveMaxPatients' as keyof ResourceAddonsStatus,
   },
   therapists: {
     icon: UserPlus,
-    label: "terapeutów",
-    limitKey: "effectiveMaxTherapists" as keyof ResourceAddonsStatus,
+    label: 'terapeutów',
+    limitKey: 'effectiveMaxTherapists' as keyof ResourceAddonsStatus,
   },
   clinics: {
     icon: Building2,
-    label: "gabinetów",
-    limitKey: "effectiveMaxClinics" as keyof ResourceAddonsStatus,
+    label: 'gabinetów',
+    limitKey: 'effectiveMaxClinics' as keyof ResourceAddonsStatus,
   },
 };
 
-export function LimitWarning({
-  type,
-  currentUsage,
-  threshold = 0.9,
-  className,
-}: LimitWarningProps) {
+export function LimitWarning({ type, currentUsage, threshold = 0.9, className }: LimitWarningProps) {
   const { currentOrganization } = useOrganization();
   const organizationId = currentOrganization?.organizationId;
   const [dismissed, setDismissed] = useState(false);
 
-  const { data, error } = useQuery<{ resourceAddonsStatus: ResourceAddonsStatus }>(
-    GET_RESOURCE_ADDONS_STATUS,
-    {
-      variables: { organizationId: organizationId || "" },
-      skip: !organizationId,
-      errorPolicy: "ignore",
-    }
-  );
+  const { data, error } = useQuery<{ resourceAddonsStatus: ResourceAddonsStatus }>(GET_RESOURCE_ADDONS_STATUS, {
+    variables: { organizationId: organizationId || '' },
+    skip: !organizationId,
+    errorPolicy: 'ignore',
+  });
 
   if (dismissed || error) return null;
 
@@ -82,17 +74,15 @@ export function LimitWarning({
   return (
     <div
       className={cn(
-        "relative flex items-center gap-3 rounded-lg border p-4 transition-all",
-        isAtLimit
-          ? "bg-destructive/10 border-destructive/50"
-          : "bg-yellow-500/10 border-yellow-500/50",
+        'relative flex items-center gap-3 rounded-lg border p-4 transition-all',
+        isAtLimit ? 'bg-destructive/10 border-destructive/50' : 'bg-yellow-500/10 border-yellow-500/50',
         className
       )}
     >
       <div
         className={cn(
-          "flex h-10 w-10 items-center justify-center rounded-lg shrink-0",
-          isAtLimit ? "bg-destructive/20" : "bg-yellow-500/20"
+          'flex h-10 w-10 items-center justify-center rounded-lg shrink-0',
+          isAtLimit ? 'bg-destructive/20' : 'bg-yellow-500/20'
         )}
       >
         {isAtLimit ? (
@@ -103,15 +93,13 @@ export function LimitWarning({
       </div>
 
       <div className="flex-1 min-w-0">
-        <p className={cn("text-sm font-medium", isAtLimit ? "text-destructive" : "text-yellow-600")}>
-          {isAtLimit
-            ? `Osiągnięto limit ${config.label}`
-            : `Zbliżasz się do limitu ${config.label}`}
+        <p className={cn('text-sm font-medium', isAtLimit ? 'text-destructive' : 'text-yellow-600')}>
+          {isAtLimit ? `Osiągnięto limit ${config.label}` : `Zbliżasz się do limitu ${config.label}`}
         </p>
         <p className="text-xs text-muted-foreground mt-0.5">
           {currentUsage}/{limit} {config.label}
           {isAtLimit
-            ? " - rozszerz limit lub przejdź na wyższy plan"
+            ? ' - rozszerz limit lub przejdź na wyższy plan'
             : ` (${Math.round(usagePercent * 100)}% wykorzystania)`}
         </p>
       </div>
@@ -123,18 +111,13 @@ export function LimitWarning({
             Rozszerz
           </Link>
         </Button>
-        <Button asChild size="sm" variant={isAtLimit ? "destructive" : "default"}>
+        <Button asChild size="sm" variant={isAtLimit ? 'destructive' : 'default'}>
           <Link href="/settings?tab=plan">
             <TrendingUp className="h-4 w-4 mr-1" />
             Plany
           </Link>
         </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-8 w-8"
-          onClick={() => setDismissed(true)}
-        >
+        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setDismissed(true)}>
           <X className="h-4 w-4" />
         </Button>
       </div>

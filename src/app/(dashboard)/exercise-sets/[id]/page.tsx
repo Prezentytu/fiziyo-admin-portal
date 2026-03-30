@@ -1,8 +1,8 @@
 'use client';
 
-import { use, useState } from 'react';
+import { use, useEffect, useState } from 'react';
 import { useQuery, useMutation } from '@apollo/client/react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useUser } from '@clerk/nextjs';
 import {
   ArrowLeft,
@@ -11,7 +11,6 @@ import {
   Users,
   Dumbbell,
   Plus,
-  X,
   Calendar,
   Clock,
   FolderKanban,
@@ -23,6 +22,7 @@ import {
   Wrench,
   UserPlus,
   FileDown,
+  ChevronDown,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import Link from 'next/link';
@@ -43,14 +43,13 @@ import {
 import { LoadingState } from '@/components/shared/LoadingState';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
-import { SetDialog } from '@/components/exercise-sets/SetDialog';
-import { AddExerciseToSetDialog } from '@/components/exercise-sets/AddExerciseToSetDialog';
-import { EditExerciseInSetDialog } from '@/components/exercise-sets/EditExerciseInSetDialog';
-import { GeneratePDFDialog } from '@/components/exercise-sets/GeneratePDFDialog';
-import { AssignmentWizard } from '@/components/assignment/AssignmentWizard';
-import type { ExerciseSet as AssignmentExerciseSet } from '@/components/assignment/types';
-import { ImagePlaceholder } from '@/components/shared/ImagePlaceholder';
-import { getMediaUrl } from '@/utils/mediaUrl';
+import { ExerciseExecutionCard } from '@/components/shared/exercise';
+import type { ExerciseExecutionCardData } from '@/components/shared/exercise';
+import { EditExerciseSetFullDialog } from '@/features/exercise-sets/EditExerciseSetFullDialog';
+import { EditExerciseInSetDialog } from '@/features/exercise-sets/EditExerciseInSetDialog';
+import { GeneratePDFDialog } from '@/features/exercise-sets/GeneratePDFDialog';
+import { AssignmentWizard } from '@/features/assignment/AssignmentWizard';
+import type { ExerciseSet as AssignmentExerciseSet } from '@/features/assignment/types';
 
 import {
   GET_EXERCISE_SET_WITH_ASSIGNMENTS_QUERY,
@@ -59,21 +58,14 @@ import {
 import {
   DELETE_EXERCISE_SET_MUTATION,
   REMOVE_EXERCISE_FROM_SET_MUTATION,
+  UPDATE_EXERCISE_IN_SET_MUTATION,
   UPDATE_EXERCISE_SET_ASSIGNMENT_MUTATION,
   REMOVE_EXERCISE_SET_ASSIGNMENT_MUTATION,
+  UPDATE_EXERCISE_SET_FREQUENCY_MUTATION,
 } from '@/graphql/mutations/exercises.mutations';
 import { GET_USER_BY_CLERK_ID_QUERY } from '@/graphql/queries/users.queries';
 import { useOrganization } from '@/contexts/OrganizationContext';
-
-// Tłumaczenie typów na polski
-const translateType = (type?: string) => {
-  const types: Record<string, string> = {
-    time: 'czasowe',
-    reps: 'powtórzenia',
-    hold: 'utrzymanie',
-  };
-  return type ? types[type] || type : '';
-};
+import { DashboardRouteLoading } from '@/components/layout/DashboardRouteLoading';
 
 interface SetDetailPageProps {
   params: Promise<{ id: string }>;
@@ -86,14 +78,26 @@ interface ExerciseMapping {
   sets?: number;
   reps?: number;
   duration?: number;
+  executionTime?: number;
   restSets?: number;
   restReps?: number;
+  preparationTime?: number;
+  tempo?: string;
   notes?: string;
   customName?: string;
   customDescription?: string;
   exercise?: {
     id: string;
     name: string;
+    // Nowe pola
+    patientDescription?: string;
+    side?: string;
+    thumbnailUrl?: string;
+    defaultSets?: number;
+    defaultReps?: number;
+    defaultDuration?: number;
+    defaultExecutionTime?: number;
+    // Legacy aliasy
     description?: string;
     type?: string;
     imageUrl?: string;
@@ -135,28 +139,64 @@ interface ExerciseSetData {
     id: string;
     name: string;
     description?: string;
+    kind?: 'TEMPLATE' | 'PATIENT_PLAN';
+    isTemplate?: boolean;
+    templateSource?: 'FIZIYO_VERIFIED' | 'ORGANIZATION_PRIVATE' | 'ORG_PRIVATE';
     exerciseMappings?: ExerciseMapping[];
     patientAssignments?: PatientAssignmentInSet[];
     frequency?: {
       timesPerWeek?: number;
       timesPerDay?: number;
+      breakBetweenSets?: number;
+      isFlexible?: boolean;
+      monday?: boolean;
+      tuesday?: boolean;
+      wednesday?: boolean;
+      thursday?: boolean;
+      friday?: boolean;
+      saturday?: boolean;
+      sunday?: boolean;
     };
   };
 }
 
+const WEEK_DAYS = [
+  { key: 'monday', short: 'Pn' },
+  { key: 'tuesday', short: 'Wt' },
+  { key: 'wednesday', short: 'Śr' },
+  { key: 'thursday', short: 'Cz' },
+  { key: 'friday', short: 'Pt' },
+  { key: 'saturday', short: 'So' },
+  { key: 'sunday', short: 'Nd' },
+] as const;
+
 export default function SetDetailPage({ params }: SetDetailPageProps) {
   const { id } = use(params);
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { user } = useUser();
-  const { currentOrganization } = useOrganization();
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const { currentOrganization, isLoading: orgContextLoading } = useOrganization();
+  const [isEditSetFullOpen, setIsEditSetFullOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [isAddExerciseDialogOpen, setIsAddExerciseDialogOpen] = useState(false);
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
   const [isPDFDialogOpen, setIsPDFDialogOpen] = useState(false);
   const [editingExercise, setEditingExercise] = useState<ExerciseMapping | null>(null);
   const [removingExerciseId, setRemovingExerciseId] = useState<string | null>(null);
   const [removingAssignment, setRemovingAssignment] = useState<PatientAssignmentInSet | null>(null);
+  const [localExercisePatches, setLocalExercisePatches] = useState<Record<string, Partial<ExerciseMapping>>>({});
+  const [isExactDaysExpanded, setIsExactDaysExpanded] = useState(false);
+  const [defaultTimesPerWeek, setDefaultTimesPerWeek] = useState(3);
+  const [defaultTimesPerDay, setDefaultTimesPerDay] = useState(1);
+  const [defaultBreakBetweenSets, setDefaultBreakBetweenSets] = useState(24);
+  const [defaultScheduleDays, setDefaultScheduleDays] = useState<Record<(typeof WEEK_DAYS)[number]['key'], boolean>>({
+    monday: false,
+    tuesday: false,
+    wednesday: false,
+    thursday: false,
+    friday: false,
+    saturday: false,
+    sunday: false,
+  });
 
   // Get organization ID from context (changes when user switches organization)
   const organizationId = currentOrganization?.organizationId;
@@ -188,14 +228,93 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
   });
 
   const [removeExercise, { loading: removingExercise }] = useMutation(REMOVE_EXERCISE_FROM_SET_MUTATION);
+  const [updateExerciseInSet] = useMutation(UPDATE_EXERCISE_IN_SET_MUTATION);
 
   const [updateAssignment, { loading: updatingAssignment }] = useMutation(UPDATE_EXERCISE_SET_ASSIGNMENT_MUTATION);
 
   const [removeAssignment, { loading: removingAssignmentLoading }] = useMutation(
     REMOVE_EXERCISE_SET_ASSIGNMENT_MUTATION
   );
+  const [updateDefaultSchedule, { loading: updatingDefaultSchedule }] = useMutation(
+    UPDATE_EXERCISE_SET_FREQUENCY_MUTATION
+  );
 
   const exerciseSet = (data as ExerciseSetData | undefined)?.exerciseSetById;
+  const selectedDefaultDaysCount = WEEK_DAYS.filter((day) => defaultScheduleDays[day.key]).length;
+  const effectiveDefaultTimesPerWeek =
+    selectedDefaultDaysCount > 0 ? Math.max(1, selectedDefaultDaysCount) : defaultTimesPerWeek;
+
+  const toggleDefaultScheduleDay = (dayKey: (typeof WEEK_DAYS)[number]['key']) => {
+    setDefaultScheduleDays((prev) => ({ ...prev, [dayKey]: !prev[dayKey] }));
+  };
+
+  const handleSaveDefaultSchedule = async () => {
+    if (!exerciseSet?.id) {
+      return;
+    }
+
+    try {
+      await updateDefaultSchedule({
+        variables: {
+          exerciseSetId: exerciseSet.id,
+          frequency: {
+            timesPerDay: String(Math.max(1, defaultTimesPerDay)),
+            timesPerWeek: String(Math.max(1, effectiveDefaultTimesPerWeek)),
+            isFlexible: selectedDefaultDaysCount === 0,
+            breakBetweenSets: String(Math.max(1, defaultBreakBetweenSets)),
+            monday: selectedDefaultDaysCount === 0 ? false : defaultScheduleDays.monday,
+            tuesday: selectedDefaultDaysCount === 0 ? false : defaultScheduleDays.tuesday,
+            wednesday: selectedDefaultDaysCount === 0 ? false : defaultScheduleDays.wednesday,
+            thursday: selectedDefaultDaysCount === 0 ? false : defaultScheduleDays.thursday,
+            friday: selectedDefaultDaysCount === 0 ? false : defaultScheduleDays.friday,
+            saturday: selectedDefaultDaysCount === 0 ? false : defaultScheduleDays.saturday,
+            sunday: selectedDefaultDaysCount === 0 ? false : defaultScheduleDays.sunday,
+          },
+        },
+      });
+
+      toast.success('Domyślny harmonogram zestawu został zapisany.');
+      void refetch();
+    } catch (error) {
+      console.error('Błąd zapisu domyślnego harmonogramu:', error);
+      toast.error('Nie udało się zapisać domyślnego harmonogramu.');
+    }
+  };
+
+  useEffect(() => {
+    if (!exerciseSet?.frequency) {
+      return;
+    }
+
+    const freq = exerciseSet.frequency;
+    const hasSpecificDays = Boolean(
+      freq.monday || freq.tuesday || freq.wednesday || freq.thursday || freq.friday || freq.saturday || freq.sunday
+    );
+
+    setDefaultTimesPerDay(Math.max(1, Number(freq.timesPerDay ?? 1)));
+    setDefaultTimesPerWeek(Math.max(1, Number(freq.timesPerWeek ?? 3)));
+    setDefaultBreakBetweenSets(Math.max(1, Number(freq.breakBetweenSets ?? 24)));
+    setDefaultScheduleDays({
+      monday: Boolean(freq.monday),
+      tuesday: Boolean(freq.tuesday),
+      wednesday: Boolean(freq.wednesday),
+      thursday: Boolean(freq.thursday),
+      friday: Boolean(freq.friday),
+      saturday: Boolean(freq.saturday),
+      sunday: Boolean(freq.sunday),
+    });
+    setIsExactDaysExpanded(hasSpecificDays);
+  }, [exerciseSet?.frequency]);
+
+  const backToListHref = searchParams.get('from') === 'patient-plans' ? '/exercise-sets?filter=patient-plans' : '/exercise-sets';
+
+  if (orgContextLoading && !organizationId) {
+    return (
+      <div className="space-y-6">
+        <DashboardRouteLoading />
+      </div>
+    );
+  }
 
   const handleDelete = async () => {
     try {
@@ -203,7 +322,7 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
         variables: { exerciseSetId: id },
       });
       toast.success('Zestaw został usunięty');
-      router.push('/exercise-sets');
+      router.push(backToListHref);
     } catch (err) {
       console.error('Błąd podczas usuwania:', err);
       toast.error('Nie udało się usunąć zestawu');
@@ -243,6 +362,74 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
     } catch (err) {
       console.error('Błąd zmiany statusu:', err);
       toast.error('Nie udało się zmienić statusu');
+    }
+  };
+
+  const handleQuickExerciseUpdate = async (
+    mapping: ExerciseMapping,
+    patch: Partial<ExerciseExecutionCardData>
+  ) => {
+    const mappingPatch: Partial<ExerciseMapping> = {};
+    if (patch.sets !== undefined) mappingPatch.sets = patch.sets;
+    if (patch.reps !== undefined) mappingPatch.reps = patch.reps;
+    if (patch.duration !== undefined) mappingPatch.duration = patch.duration;
+    if (patch.executionTime !== undefined) mappingPatch.executionTime = patch.executionTime;
+    if (patch.restSets !== undefined) mappingPatch.restSets = patch.restSets;
+    if (patch.restReps !== undefined) mappingPatch.restReps = patch.restReps;
+    if (patch.preparationTime !== undefined) mappingPatch.preparationTime = patch.preparationTime;
+    if (patch.tempo !== undefined) mappingPatch.tempo = patch.tempo;
+    if (patch.notes !== undefined) mappingPatch.notes = patch.notes;
+    if (patch.customName !== undefined) mappingPatch.customName = patch.customName;
+    if (patch.customDescription !== undefined) mappingPatch.customDescription = patch.customDescription;
+
+    if (Object.keys(mappingPatch).length === 0) return;
+    const previousPatch = localExercisePatches[mapping.id];
+    const mergedMapping: ExerciseMapping = {
+      ...mapping,
+      ...(previousPatch ?? {}),
+      ...mappingPatch,
+    };
+
+    // Optimistic UI update - no full-page refetch/flicker.
+    setLocalExercisePatches((prev) => ({
+      ...prev,
+      [mapping.id]: {
+        ...prev[mapping.id],
+        ...mappingPatch,
+      },
+    }));
+
+    try {
+      await updateExerciseInSet({
+        variables: {
+          exerciseId: mapping.exerciseId,
+          exerciseSetId: id,
+          sets: mergedMapping.sets ?? null,
+          reps: mergedMapping.reps ?? null,
+          duration: mergedMapping.duration ?? null,
+          restSets: mergedMapping.restSets ?? null,
+          restReps: mergedMapping.restReps ?? null,
+          preparationTime: mergedMapping.preparationTime ?? null,
+          executionTime: mergedMapping.executionTime ?? null,
+          notes: mergedMapping.notes ?? null,
+          customName: mergedMapping.customName ?? null,
+          customDescription: mergedMapping.customDescription ?? null,
+          tempo: mergedMapping.tempo ?? null,
+        },
+      });
+    } catch (err) {
+      console.error('Błąd szybkiej aktualizacji ćwiczenia:', err);
+      toast.error('Nie udało się zapisać zmian ćwiczenia');
+      // Rollback optimistic patch for this mapping.
+      setLocalExercisePatches((prev) => {
+        const next = { ...prev };
+        if (previousPatch) {
+          next[mapping.id] = previousPatch;
+        } else {
+          delete next[mapping.id];
+        }
+        return next;
+      });
     }
   };
 
@@ -304,6 +491,23 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
     return days.join(', ');
   };
 
+  const toExecutionCardData = (mapping: ExerciseMapping): ExerciseExecutionCardData => ({
+    id: mapping.id,
+    displayName: mapping.customName || mapping.exercise?.name || 'Nieznane ćwiczenie',
+    thumbnailUrl: mapping.exercise?.thumbnailUrl ?? mapping.exercise?.imageUrl ?? mapping.exercise?.images?.[0],
+    sets: mapping.sets ?? mapping.exercise?.defaultSets ?? 3,
+    reps: mapping.reps ?? mapping.exercise?.defaultReps ?? 10,
+    duration: mapping.duration ?? mapping.exercise?.defaultDuration,
+    executionTime: mapping.executionTime ?? mapping.exercise?.defaultExecutionTime,
+    restSets: mapping.restSets,
+    restReps: mapping.restReps,
+    notes: mapping.notes,
+    customName: mapping.customName,
+    customDescription: mapping.customDescription,
+    side: (mapping.exercise?.side ?? mapping.exercise?.exerciseSide ?? 'none')?.toLowerCase(),
+    isTimeBased: false,
+  });
+
   if (loading) {
     return (
       <div className="space-y-6">
@@ -319,7 +523,7 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
           <FolderKanban className="h-8 w-8 text-muted-foreground" />
         </div>
         <p className="text-destructive">{error ? `Błąd: ${error.message}` : 'Nie znaleziono zestawu'}</p>
-        <Button variant="outline" onClick={() => router.push('/exercise-sets')}>
+        <Button variant="outline" onClick={() => router.push(backToListHref)}>
           <ArrowLeft className="mr-2 h-4 w-4" />
           Wróć do listy
         </Button>
@@ -329,12 +533,19 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
 
   const exercises = exerciseSet?.exerciseMappings || [];
   const assignments = exerciseSet?.patientAssignments || [];
+  const isTemplateSet = exerciseSet.kind === 'TEMPLATE' || exerciseSet.isTemplate === true;
+  const hasUnexpectedAssignments = isTemplateSet && assignments.length > 0;
 
   return (
     <div className="space-y-6">
       {/* Compact Header */}
       <div className="flex items-center justify-between">
-        <Button variant="ghost" onClick={() => router.push('/exercise-sets')} className="gap-2" data-testid="set-detail-back-btn">
+        <Button
+          variant="ghost"
+          onClick={() => router.push(backToListHref)}
+          className="gap-2"
+          data-testid="set-detail-back-btn"
+        >
           <ArrowLeft className="h-4 w-4" />
           Powrót do zestawów
         </Button>
@@ -352,7 +563,7 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
               Pobierz PDF
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => setIsEditDialogOpen(true)} data-testid="set-detail-edit-btn">
+            <DropdownMenuItem onClick={() => setIsEditSetFullOpen(true)} data-testid="set-detail-edit-btn">
               <Pencil className="mr-2 h-4 w-4" />
               Edytuj zestaw
             </DropdownMenuItem>
@@ -371,36 +582,32 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
 
       {/* Hero Section: Title + Description */}
       <div className="space-y-2">
-        <h1 className="text-2xl font-bold text-foreground" data-testid="set-detail-name">{exerciseSet.name}</h1>
-        {exerciseSet.description && (
-          <p className="text-muted-foreground">{exerciseSet.description}</p>
-        )}
+        <h1 className="text-2xl font-bold text-foreground" data-testid="set-detail-name">
+          {exerciseSet.name}
+        </h1>
+        {exerciseSet.description && <p className="text-muted-foreground">{exerciseSet.description}</p>}
       </div>
 
       {/* Hero Action + Quick Stats */}
       <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-12">
-        {/* Hero Action - Przypisz pacjenta */}
+        {/* Hero Action - Personalizacja i przypisanie */}
         <button
           onClick={() => setIsAssignDialogOpen(true)}
           className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary via-primary to-primary-dark p-5 text-left transition-all duration-300 hover:shadow-xl hover:shadow-primary/20 hover:scale-[1.02] cursor-pointer sm:col-span-1 lg:col-span-4"
           data-testid="set-detail-assign-btn"
         >
           <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-          <div className="absolute -top-24 -right-24 w-48 h-48 bg-white/10 rounded-full blur-3xl group-hover:bg-white/20 transition-all duration-500" />
+          <div className="absolute -top-24 -right-24 w-48 h-48 bg-primary-foreground/10 rounded-full blur-3xl group-hover:bg-primary-foreground/20 transition-all duration-500" />
 
           <div className="relative flex items-center gap-4">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm shrink-0 group-hover:scale-110 transition-transform duration-300">
-              <UserPlus className="h-5 w-5 text-white" />
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary-foreground/20 backdrop-blur-sm shrink-0 group-hover:scale-110 transition-transform duration-300">
+              <UserPlus className="h-5 w-5 text-primary-foreground" />
             </div>
             <div className="min-w-0 flex-1">
-              <h3 className="text-base font-bold text-white">
-                Przypisz pacjenta
-              </h3>
-              <p className="text-sm text-white/70">
-                Dodaj do programu
-              </p>
+              <h3 className="text-base font-bold text-primary-foreground">Personalizuj i przypisz</h3>
+              <p className="text-sm text-primary-foreground/70">Dostosuj i przypisz zestaw pacjentowi</p>
             </div>
-            <Plus className="h-5 w-5 text-white/60 group-hover:text-white transition-colors shrink-0" />
+            <Plus className="h-5 w-5 text-primary-foreground/60 group-hover:text-primary-foreground transition-colors shrink-0" />
           </div>
         </button>
 
@@ -421,7 +628,9 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
               <Users className="h-4 w-4 text-secondary" />
               <span className="text-2xl font-bold text-foreground">{assignments.length}</span>
             </div>
-            <p className="text-xs text-muted-foreground mt-1">{pluralize(assignments.length, 'pacjent', false)}</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              {isTemplateSet ? 'Przypisania (historyczne)' : pluralize(assignments.length, 'pacjent', false)}
+            </p>
           </div>
 
           {/* Frequency */}
@@ -433,9 +642,7 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
               </span>
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              {exerciseSet?.frequency?.timesPerDay
-                ? `${exerciseSet.frequency.timesPerDay}x/dzień`
-                : 'tygodniowo'}
+              {exerciseSet?.frequency?.timesPerDay ? `${exerciseSet.frequency.timesPerDay}x/dzień` : 'tygodniowo'}
             </p>
           </div>
         </div>
@@ -448,9 +655,9 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
             <Dumbbell className="h-5 w-5 text-primary" />
             Ćwiczenia ({exercises.length})
           </h2>
-          <Button size="sm" onClick={() => setIsAddExerciseDialogOpen(true)} data-testid="set-detail-add-exercise-btn">
-            <Plus className="mr-2 h-4 w-4" />
-            Dodaj
+          <Button size="sm" onClick={() => setIsEditSetFullOpen(true)} data-testid="set-detail-edit-set-btn">
+            <Pencil className="mr-2 h-4 w-4" />
+            Edytuj zestaw
           </Button>
         </div>
 
@@ -460,109 +667,161 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
               icon={Dumbbell}
               title="Brak ćwiczeń"
               description="Dodaj ćwiczenia do tego zestawu"
-              actionLabel="Dodaj ćwiczenie"
-              onAction={() => setIsAddExerciseDialogOpen(true)}
+              actionLabel="Edytuj zestaw"
+              onAction={() => setIsEditSetFullOpen(true)}
             />
           </div>
         ) : (
           <div className="space-y-2 animate-stagger">
             {[...exercises]
               .sort((a, b) => (a.order || 0) - (b.order || 0))
-              .map((mapping, index) => {
-                const imageUrl = getMediaUrl(mapping.exercise?.imageUrl || mapping.exercise?.images?.[0]);
-                const hasParams = mapping.sets || mapping.reps || mapping.duration;
+              .map((mapping) => {
+                const patchedMapping: ExerciseMapping = {
+                  ...mapping,
+                  ...(localExercisePatches[mapping.id] ?? {}),
+                };
+                const cardData = toExecutionCardData(patchedMapping);
                 return (
-                  <div
-                    key={mapping.id}
-                    className="group flex items-center gap-4 rounded-xl border border-border/60 bg-surface p-4 transition-all duration-200 hover:border-primary/30 hover:bg-surface-light cursor-pointer"
-                    onClick={() => setEditingExercise(mapping)}
-                  >
-                    {/* Order number */}
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-surface-light text-lg font-semibold text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary transition-colors shrink-0">
-                      {index + 1}
-                    </div>
-
-                    {/* Thumbnail */}
-                    <div className="h-14 w-14 rounded-lg overflow-hidden shrink-0 bg-surface-light">
-                      {imageUrl ? (
-                        <img
-                          src={imageUrl}
-                          alt={mapping.exercise?.name}
-                          loading="lazy"
-                          className="h-full w-full object-cover"
-                        />
-                      ) : (
-                        <ImagePlaceholder type="exercise" iconClassName="h-5 w-5" />
-                      )}
-                    </div>
-
-                    {/* Info */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <p className="font-semibold truncate">{mapping.customName || mapping.exercise?.name || 'Nieznane ćwiczenie'}</p>
-                        {mapping.customName && (
-                          <Badge variant="outline" className="text-[10px] shrink-0 border-primary/30 text-primary">
-                            zmieniona
-                          </Badge>
-                        )}
-                        {mapping.exercise?.type && (
-                          <Badge variant="secondary" className="text-[10px] shrink-0">
-                            {translateType(mapping.exercise.type)}
-                          </Badge>
-                        )}
-                      </div>
-                      {hasParams ? (
-                        <div className="flex items-center gap-3 text-sm mt-1.5">
-                          {mapping.sets && (
-                            <span className="text-xs text-muted-foreground">
-                              <span className="font-semibold text-foreground">{mapping.sets}</span> serii
-                            </span>
-                          )}
-                          {mapping.reps && (
-                            <span className="text-xs text-muted-foreground">
-                              <span className="font-semibold text-foreground">{mapping.reps}</span> powt.
-                            </span>
-                          )}
-                          {mapping.duration && (
-                            <span className="text-xs text-muted-foreground flex items-center gap-1">
-                              <Clock className="h-3 w-3" />
-                              <span className="font-semibold text-foreground">{mapping.duration}s</span>
-                            </span>
-                          )}
-                        </div>
-                      ) : (
-                        <p className="text-xs text-muted-foreground mt-1">Kliknij aby ustawić parametry</p>
-                      )}
-                    </div>
-
-                    {/* Actions */}
-                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 hover:bg-primary/10 hover:text-primary"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setEditingExercise(mapping);
-                        }}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 hover:bg-destructive/10 hover:text-destructive"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setRemovingExerciseId(mapping.exerciseId);
-                        }}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
+                  <div key={mapping.id} data-testid={`set-detail-exercise-row-${mapping.id}`}>
+                    <ExerciseExecutionCard
+                      mode="edit"
+                      exercise={cardData}
+                      hideTimerBadge
+                      onChange={(patch: Partial<ExerciseExecutionCardData>) =>
+                        handleQuickExerciseUpdate(mapping, patch)
+                      }
+                      onExpand={() => setEditingExercise(mapping)}
+                      onRemove={() => setRemovingExerciseId(mapping.exerciseId)}
+                      className="transition-all duration-200 hover:border-primary/30 hover:bg-surface-light"
+                      testIdPrefix="set-detail-exercise-row"
+                    />
                   </div>
                 );
               })}
+          </div>
+        )}
+      </div>
+
+      {/* Default schedule editor */}
+      <div className="rounded-2xl border border-border/50 bg-surface/50 p-5 space-y-4" data-testid="set-default-schedule-card">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <h2 className="text-lg font-semibold text-foreground">Domyślny harmonogram szablonu</h2>
+            <p className="text-sm text-muted-foreground">
+              Używany jako domyślna propozycja przy tworzeniu planów pacjenta.
+            </p>
+          </div>
+          <Button
+            size="sm"
+            onClick={() => void handleSaveDefaultSchedule()}
+            disabled={updatingDefaultSchedule}
+            data-testid="set-default-schedule-save-btn"
+          >
+            {updatingDefaultSchedule ? 'Zapisywanie...' : 'Zapisz harmonogram'}
+          </Button>
+        </div>
+
+        <div className="grid gap-3 md:grid-cols-3">
+          <label className="space-y-1 text-sm">
+            <span className="text-muted-foreground">Razy dziennie</span>
+            <input
+              type="number"
+              min={1}
+              max={5}
+              className="w-full rounded-lg border border-border bg-surface px-3 py-2"
+              value={defaultTimesPerDay}
+              onChange={(event) => setDefaultTimesPerDay(Math.max(1, Number(event.target.value || 1)))}
+              data-testid="set-default-schedule-times-per-day-input"
+            />
+          </label>
+
+          <label className="space-y-1 text-sm">
+            <span className="text-muted-foreground">Razy w tygodniu</span>
+            <input
+              type="number"
+              min={1}
+              max={7}
+              className="w-full rounded-lg border border-border bg-surface px-3 py-2"
+              value={effectiveDefaultTimesPerWeek}
+              onChange={(event) => setDefaultTimesPerWeek(Math.max(1, Number(event.target.value || 1)))}
+              data-testid="set-default-schedule-times-per-week-input"
+            />
+          </label>
+
+          <label className="space-y-1 text-sm">
+            <span className="text-muted-foreground">Przerwa (godziny)</span>
+            <input
+              type="number"
+              min={1}
+              max={168}
+              className="w-full rounded-lg border border-border bg-surface px-3 py-2"
+              value={defaultBreakBetweenSets}
+              onChange={(event) => setDefaultBreakBetweenSets(Math.max(1, Number(event.target.value || 1)))}
+              data-testid="set-default-schedule-break-input"
+            />
+          </label>
+        </div>
+
+        <button
+          type="button"
+          className="flex w-full items-center justify-between rounded-xl border border-border bg-surface px-4 py-3 text-left transition-colors hover:border-primary/40"
+          onClick={() => setIsExactDaysExpanded((prev) => !prev)}
+          data-testid="set-default-schedule-days-toggle"
+        >
+          <div>
+            <div className="text-sm font-medium text-foreground">Dokładne dni (opcjonalnie)</div>
+            <p className="text-xs text-muted-foreground mt-1">
+              {selectedDefaultDaysCount > 0
+                ? `Wybrane dni: ${selectedDefaultDaysCount}`
+                : 'Jeśli nic nie wybierzesz, harmonogram pozostanie elastyczny.'}
+            </p>
+          </div>
+          <ChevronDown className={cn('h-4 w-4 text-muted-foreground transition-transform', isExactDaysExpanded && 'rotate-180')} />
+        </button>
+
+        {(isExactDaysExpanded || selectedDefaultDaysCount > 0) && (
+          <div className="space-y-3">
+            <div className="flex flex-wrap gap-2" data-testid="set-default-schedule-days-grid">
+              {WEEK_DAYS.map((day) => {
+                const isActive = defaultScheduleDays[day.key];
+                return (
+                  <button
+                    key={day.key}
+                    type="button"
+                    onClick={() => toggleDefaultScheduleDay(day.key)}
+                    className={cn(
+                      'h-10 w-10 rounded-full border text-sm font-semibold transition-colors',
+                      isActive
+                        ? 'border-primary bg-primary text-primary-foreground'
+                        : 'border-border bg-surface text-muted-foreground hover:text-foreground'
+                    )}
+                    data-testid={`set-default-schedule-day-${day.key}`}
+                  >
+                    {day.short}
+                  </button>
+                );
+              })}
+            </div>
+
+            {selectedDefaultDaysCount > 0 && (
+              <button
+                type="button"
+                className="text-sm font-medium text-primary hover:underline"
+                onClick={() =>
+                  setDefaultScheduleDays({
+                    monday: false,
+                    tuesday: false,
+                    wednesday: false,
+                    thursday: false,
+                    friday: false,
+                    saturday: false,
+                    sunday: false,
+                  })
+                }
+              >
+                Wyczyść dokładne dni
+              </button>
+            )}
           </div>
         )}
       </div>
@@ -572,25 +831,38 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
             <Users className="h-5 w-5 text-secondary" />
-            Przypisani pacjenci ({assignments.length})
+            {isTemplateSet ? 'Pacjenci (historyczne)' : `Przypisani pacjenci (${assignments.length})`}
           </h2>
-          <Button size="sm" variant="outline" onClick={() => setIsAssignDialogOpen(true)}>
-            <Plus className="mr-2 h-4 w-4" />
-            Przypisz
-          </Button>
+          {!isTemplateSet && (
+            <Button size="sm" onClick={() => setIsAssignDialogOpen(true)}>
+              <Plus className="mr-2 h-4 w-4" />
+              Personalizuj i przypisz zestaw
+            </Button>
+          )}
         </div>
 
-        {assignments.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-border/60 bg-surface/30 p-12">
-            <EmptyState
-              icon={Users}
-              title="Brak przypisanych pacjentów"
-              description="Przypisz ten zestaw do pacjentów"
-              actionLabel="Przypisz pacjenta"
-              onAction={() => setIsAssignDialogOpen(true)}
-            />
+        {isTemplateSet && !hasUnexpectedAssignments && (
+          <div className="py-10 text-center rounded-xl border border-border/60 bg-surface/40">
+            <p className="text-xl font-semibold text-foreground">
+              Ten zestaw organizacji nie przechowuje przypisanych pacjentów
+            </p>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Każde przypisanie tworzy osobny, spersonalizowany zestaw ćwiczeń dla pacjenta.
+            </p>
           </div>
-        ) : (
+        )}
+
+        {assignments.length === 0 && !isTemplateSet ? (
+          <div className="py-10 text-center">
+            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-surface-light">
+              <Users className="h-6 w-6 text-muted-foreground" />
+            </div>
+            <p className="text-xl font-semibold text-foreground">Brak przypisanych pacjentów</p>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Dostosuj ten zestaw i przypisz go pacjentom
+            </p>
+          </div>
+        ) : assignments.length > 0 ? (
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 animate-stagger">
             {assignments.map((assignment) => {
               const statusInfo = getStatusInfo(assignment.status);
@@ -653,9 +925,7 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
                         </div>
                       )}
                       {assignment.completionCount !== undefined && assignment.completionCount > 0 && (
-                        <p className="text-xs text-muted-foreground mt-1">
-                          Wykonano: {assignment.completionCount}x
-                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">Wykonano: {assignment.completionCount}x</p>
                       )}
                     </div>
                     <DropdownMenu>
@@ -713,16 +983,17 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
               );
             })}
           </div>
-        )}
+        ) : null}
       </div>
 
-      {/* Edit Dialog */}
-      {organizationId && (
-        <SetDialog
-          open={isEditDialogOpen}
-          onOpenChange={setIsEditDialogOpen}
-          set={exerciseSet}
+      {/* Full Edit Set Dialog */}
+      {organizationId && exerciseSet && (
+        <EditExerciseSetFullDialog
+          open={isEditSetFullOpen}
+          onOpenChange={setIsEditSetFullOpen}
+          exerciseSetId={id}
           organizationId={organizationId}
+          set={exerciseSet}
           onSuccess={() => refetch()}
         />
       )}
@@ -751,19 +1022,7 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
         isLoading={removingExercise}
       />
 
-      {/* Add Exercise Dialog */}
-      {organizationId && (
-        <AddExerciseToSetDialog
-          open={isAddExerciseDialogOpen}
-          onOpenChange={setIsAddExerciseDialogOpen}
-          exerciseSetId={id}
-          organizationId={organizationId}
-          existingExerciseIds={exercises.map((m) => m.exerciseId)}
-          onSuccess={() => refetch()}
-        />
-      )}
-
-      {/* Edit Exercise Dialog */}
+      {/* Edit Exercise Dialog (inline expand) */}
       <EditExerciseInSetDialog
         open={!!editingExercise}
         onOpenChange={(open) => !open && setEditingExercise(null)}
@@ -778,31 +1037,38 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
           open={isAssignDialogOpen}
           onOpenChange={setIsAssignDialogOpen}
           mode="from-set"
-          preselectedSet={{
-            id: exerciseSet.id,
-            name: exerciseSet.name,
-            description: exerciseSet.description,
-            exerciseMappings: exerciseSet.exerciseMappings?.map((m) => ({
-              id: m.id,
-              exerciseId: m.exerciseId,
-              order: m.order,
-              sets: m.sets,
-              reps: m.reps,
-              duration: m.duration,
-              restSets: m.restSets,
-              restReps: m.restReps,
-              notes: m.notes,
-              exercise: m.exercise ? {
-                id: m.exercise.id,
-                name: m.exercise.name,
-                description: m.exercise.description,
-                type: m.exercise.type,
-                imageUrl: m.exercise.imageUrl,
-                images: m.exercise.images,
-                exerciseSide: m.exercise.exerciseSide,
-              } : undefined,
-            })),
-          } as AssignmentExerciseSet}
+          preselectedSet={
+            {
+              id: exerciseSet.id,
+              name: exerciseSet.name,
+              description: exerciseSet.description,
+              exerciseMappings: exerciseSet.exerciseMappings?.map((m) => ({
+                id: m.id,
+                exerciseId: m.exerciseId,
+                order: m.order,
+                sets: m.sets,
+                reps: m.reps,
+                duration: m.duration,
+                restSets: m.restSets,
+                restReps: m.restReps,
+                notes: m.notes,
+                exercise: m.exercise
+                  ? {
+                      id: m.exercise.id,
+                      name: m.exercise.name,
+                      description: m.exercise.patientDescription || m.exercise.description,
+                      patientDescription: m.exercise.patientDescription,
+                      type: m.exercise.type,
+                      imageUrl: m.exercise.thumbnailUrl || m.exercise.imageUrl,
+                      thumbnailUrl: m.exercise.thumbnailUrl,
+                      images: m.exercise.images,
+                      side: m.exercise.side,
+                      exerciseSide: m.exercise.side?.toLowerCase() || m.exercise.exerciseSide,
+                    }
+                  : undefined,
+              })),
+            } as AssignmentExerciseSet
+          }
           organizationId={organizationId}
           therapistId={therapistId}
           onSuccess={() => refetch()}

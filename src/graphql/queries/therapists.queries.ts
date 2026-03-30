@@ -1,4 +1,4 @@
-import { gql } from "@apollo/client";
+import { gql } from '@apollo/client';
 
 /**
  * Query do pobierania pacjentów przypisanych do fizjoterapeuty
@@ -55,9 +55,7 @@ export const GET_THERAPIST_PATIENTS_QUERY = gql`
  */
 export const GET_ALL_THERAPIST_PATIENTS_QUERY = gql`
   query GetAllTherapistPatients($therapistId: String!, $organizationId: String!) {
-    therapistPatients(
-      where: { therapistId: { eq: $therapistId }, organizationId: { eq: $organizationId } }
-    ) {
+    therapistPatients(where: { therapistId: { eq: $therapistId }, organizationId: { eq: $organizationId } }) {
       id
       therapistId
       patientId
@@ -230,6 +228,7 @@ export const GET_THERAPIST_PATIENT_ASSIGNMENTS_QUERY = gql`
 /**
  * Query do pobierania WSZYSTKICH pacjentów organizacji (Collaborative Care Model)
  * Zwraca pacjentów z informacją o przypisanym fizjoterapeucie (lub null jeśli brak)
+ * oraz statusem Premium (Pay-as-you-go Billing)
  * Filter: "all" | "my" | "unassigned"
  */
 export const GET_ORGANIZATION_PATIENTS_QUERY = gql`
@@ -252,6 +251,10 @@ export const GET_ORGANIZATION_PATIENTS_QUERY = gql`
           address
         }
       }
+      # Premium Access (Pay-as-you-go Billing)
+      premiumValidUntil
+      premiumActivatedAt
+      premiumStatus
       therapist {
         id
         fullname
@@ -263,6 +266,8 @@ export const GET_ORGANIZATION_PATIENTS_QUERY = gql`
       assignedAt
       contextLabel
       contextColor
+      # Activity Tracking
+      lastActivity
     }
   }
 `;

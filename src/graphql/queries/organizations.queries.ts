@@ -1,4 +1,4 @@
-import { gql } from "@apollo/client";
+import { gql } from '@apollo/client';
 
 // Fragment dla podstawowych danych organizacji
 export const ORGANIZATION_BASIC_FRAGMENT = gql`

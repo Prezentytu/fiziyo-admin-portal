@@ -200,8 +200,8 @@ export function AssignToClinicDialog({
                 isAlreadyAssigned
                   ? 'bg-surface opacity-60 cursor-not-allowed'
                   : isSelected
-                  ? 'bg-primary/10 border-primary/30'
-                  : 'bg-surface hover:bg-surface-light'
+                    ? 'bg-primary/10 border-primary/30'
+                    : 'bg-surface hover:bg-surface-light'
               )}
               onClick={() => !isAlreadyAssigned && onToggle(person.id)}
             >
@@ -308,7 +308,12 @@ export function AssignToClinicDialog({
           <Button variant="outline" onClick={handleCloseAttempt} data-testid="org-assign-clinic-cancel-btn">
             Anuluj
           </Button>
-          <Button onClick={handleAssign} disabled={isLoading || totalSelected === 0} className="gap-2" data-testid="org-assign-clinic-submit-btn">
+          <Button
+            onClick={handleAssign}
+            disabled={isLoading || totalSelected === 0}
+            className="gap-2"
+            data-testid="org-assign-clinic-submit-btn"
+          >
             {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
             Przypisz {totalSelected > 0 ? `(${totalSelected})` : ''}
           </Button>

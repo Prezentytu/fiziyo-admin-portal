@@ -1,6 +1,6 @@
-import { Loader2, LucideIcon } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { Loader2, LucideIcon } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 
 interface EmptyStateProps {
   icon: LucideIcon;
@@ -30,20 +30,13 @@ export function EmptyState({
   return (
     <div
       data-testid="common-empty-state"
-      className={cn(
-        "flex flex-col items-center justify-center py-12 text-center",
-        className
-      )}
+      className={cn('flex flex-col items-center justify-center py-12 text-center', className)}
     >
       <div className="mb-4 rounded-full bg-surface-light p-4">
         <Icon className="h-8 w-8 text-muted-foreground" />
       </div>
       <h3 className="mb-1 text-lg font-semibold">{title}</h3>
-      {description && (
-        <p className="mb-4 max-w-sm text-sm text-muted-foreground">
-          {description}
-        </p>
-      )}
+      {description && <p className="mb-4 max-w-sm text-sm text-muted-foreground">{description}</p>}
       {(actionLabel || secondaryActionLabel) && (
         <div className="flex flex-col sm:flex-row items-center gap-2">
           {actionLabel && onAction && (
@@ -53,11 +46,7 @@ export function EmptyState({
             </Button>
           )}
           {secondaryActionLabel && onSecondaryAction && (
-            <Button
-              variant="outline"
-              onClick={onSecondaryAction}
-              disabled={secondaryActionLoading}
-            >
+            <Button variant="outline" onClick={onSecondaryAction} disabled={secondaryActionLoading}>
               {secondaryActionLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {secondaryActionLabel}
             </Button>

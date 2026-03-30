@@ -1,31 +1,31 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { useQuery, useMutation } from "@apollo/client/react";
-import { Plus, Tag, FolderOpen } from "lucide-react";
-import { toast } from "sonner";
+import { useState } from 'react';
+import { useQuery, useMutation } from '@apollo/client/react';
+import { Plus, Tag, FolderOpen } from 'lucide-react';
+import { toast } from 'sonner';
 
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { SearchInput } from "@/components/shared/SearchInput";
-import { LoadingState } from "@/components/shared/LoadingState";
-import { EmptyState } from "@/components/shared/EmptyState";
-import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
-import { TagCard, CategoryCard, ExerciseTag, TagCategory } from "@/components/exercises/TagCard";
-import { TagDialog } from "@/components/exercises/TagDialog";
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { SearchInput } from '@/components/shared/SearchInput';
+import { LoadingState } from '@/components/shared/LoadingState';
+import { EmptyState } from '@/components/shared/EmptyState';
+import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
+import { TagCard, CategoryCard, ExerciseTag, TagCategory } from '@/features/exercises/TagCard';
+import { TagDialog } from '@/features/exercises/TagDialog';
 
-import { GET_EXERCISE_TAGS_BY_ORGANIZATION_QUERY } from "@/graphql/queries/exerciseTags.queries";
-import { GET_TAG_CATEGORIES_BY_ORGANIZATION_QUERY } from "@/graphql/queries/tagCategories.queries";
-import { DELETE_TAG_MUTATION, DELETE_TAG_CATEGORY_MUTATION } from "@/graphql/mutations/exercises.mutations";
-import { matchesSearchQuery } from "@/utils/textUtils";
-import { useOrganization } from "@/contexts/OrganizationContext";
-import type { ExerciseTagsResponse, TagCategoriesResponse } from "@/types/apollo";
+import { GET_EXERCISE_TAGS_BY_ORGANIZATION_QUERY } from '@/graphql/queries/exerciseTags.queries';
+import { GET_TAG_CATEGORIES_BY_ORGANIZATION_QUERY } from '@/graphql/queries/tagCategories.queries';
+import { DELETE_TAG_MUTATION, DELETE_TAG_CATEGORY_MUTATION } from '@/graphql/mutations/exercises.mutations';
+import { matchesSearchQuery } from '@/utils/textUtils';
+import { useOrganization } from '@/contexts/OrganizationContext';
+import type { ExerciseTagsResponse, TagCategoriesResponse } from '@/types/apollo';
 
 export default function TagsPage() {
   const { currentOrganization } = useOrganization();
-  const [searchQuery, setSearchQuery] = useState("");
-  const [activeTab, setActiveTab] = useState<"tags" | "categories">("tags");
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeTab, setActiveTab] = useState<'tags' | 'categories'>('tags');
   const [isTagDialogOpen, setIsTagDialogOpen] = useState(false);
   const [editingTag, setEditingTag] = useState<ExerciseTag | null>(null);
   const [deletingTag, setDeletingTag] = useState<ExerciseTag | null>(null);
@@ -35,51 +35,36 @@ export default function TagsPage() {
   const organizationId = currentOrganization?.organizationId;
 
   // Get tags
-  const { data: tagsData, loading: tagsLoading } = useQuery(
-    GET_EXERCISE_TAGS_BY_ORGANIZATION_QUERY,
-    {
-      variables: { organizationId },
-      skip: !organizationId,
-    }
-  );
+  const { data: tagsData, loading: tagsLoading } = useQuery(GET_EXERCISE_TAGS_BY_ORGANIZATION_QUERY, {
+    variables: { organizationId },
+    skip: !organizationId,
+  });
 
   // Get categories
-  const { data: categoriesData, loading: categoriesLoading } = useQuery(
-    GET_TAG_CATEGORIES_BY_ORGANIZATION_QUERY,
-    {
-      variables: { organizationId },
-      skip: !organizationId,
-    }
-  );
+  const { data: categoriesData, loading: categoriesLoading } = useQuery(GET_TAG_CATEGORIES_BY_ORGANIZATION_QUERY, {
+    variables: { organizationId },
+    skip: !organizationId,
+  });
 
   // Delete mutations
   const [deleteTag, { loading: deletingTagLoading }] = useMutation(DELETE_TAG_MUTATION, {
-    refetchQueries: [
-      { query: GET_EXERCISE_TAGS_BY_ORGANIZATION_QUERY, variables: { organizationId } },
-    ],
+    refetchQueries: [{ query: GET_EXERCISE_TAGS_BY_ORGANIZATION_QUERY, variables: { organizationId } }],
   });
 
-  const [deleteCategory, { loading: deletingCategoryLoading }] = useMutation(
-    DELETE_TAG_CATEGORY_MUTATION,
-    {
-      refetchQueries: [
-        { query: GET_TAG_CATEGORIES_BY_ORGANIZATION_QUERY, variables: { organizationId } },
-      ],
-    }
-  );
+  const [deleteCategory, { loading: deletingCategoryLoading }] = useMutation(DELETE_TAG_CATEGORY_MUTATION, {
+    refetchQueries: [{ query: GET_TAG_CATEGORIES_BY_ORGANIZATION_QUERY, variables: { organizationId } }],
+  });
 
   const tags: ExerciseTag[] = (tagsData as ExerciseTagsResponse)?.exerciseTags || [];
   const categories: TagCategory[] = (categoriesData as TagCategoriesResponse)?.tagsByOrganizationId || [];
 
   // Filter
-  const filteredTags = tags.filter((tag) =>
-    matchesSearchQuery(tag.name, searchQuery) ||
-    matchesSearchQuery(tag.description, searchQuery)
+  const filteredTags = tags.filter(
+    (tag) => matchesSearchQuery(tag.name, searchQuery) || matchesSearchQuery(tag.description, searchQuery)
   );
 
-  const filteredCategories = categories.filter((cat) =>
-    matchesSearchQuery(cat.name, searchQuery) ||
-    matchesSearchQuery(cat.description, searchQuery)
+  const filteredCategories = categories.filter(
+    (cat) => matchesSearchQuery(cat.name, searchQuery) || matchesSearchQuery(cat.description, searchQuery)
   );
 
   const handleEditTag = (tag: ExerciseTag) => {
@@ -91,11 +76,11 @@ export default function TagsPage() {
     if (!deletingTag) return;
     try {
       await deleteTag({ variables: { tagId: deletingTag.id } });
-      toast.success("Tag został usunięty");
+      toast.success('Tag został usunięty');
       setDeletingTag(null);
     } catch (error) {
-      console.error("Błąd podczas usuwania:", error);
-      toast.error("Nie udało się usunąć tagu");
+      console.error('Błąd podczas usuwania:', error);
+      toast.error('Nie udało się usunąć tagu');
     }
   };
 
@@ -103,11 +88,11 @@ export default function TagsPage() {
     if (!deletingCategory) return;
     try {
       await deleteCategory({ variables: { categoryId: deletingCategory.id } });
-      toast.success("Kategoria została usunięta");
+      toast.success('Kategoria została usunięta');
       setDeletingCategory(null);
     } catch (error) {
-      console.error("Błąd podczas usuwania:", error);
-      toast.error("Nie udało się usunąć kategorii");
+      console.error('Błąd podczas usuwania:', error);
+      toast.error('Nie udało się usunąć kategorii');
     }
   };
 
@@ -124,9 +109,7 @@ export default function TagsPage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-3xl font-bold">Tagi i kategorie</h1>
-          <p className="text-muted-foreground">
-            Zarządzaj tagami dla ćwiczeń
-          </p>
+          <p className="text-muted-foreground">Zarządzaj tagami dla ćwiczeń</p>
         </div>
         <Button onClick={() => setIsTagDialogOpen(true)} disabled={!organizationId}>
           <Plus className="mr-2 h-4 w-4" />
@@ -135,15 +118,10 @@ export default function TagsPage() {
       </div>
 
       {/* Search */}
-      <SearchInput
-        value={searchQuery}
-        onChange={setSearchQuery}
-        placeholder="Szukaj tagów..."
-        className="max-w-sm"
-      />
+      <SearchInput value={searchQuery} onChange={setSearchQuery} placeholder="Szukaj tagów..." className="max-w-sm" />
 
       {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "tags" | "categories")}>
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'tags' | 'categories')}>
         <TabsList>
           <TabsTrigger value="tags" className="flex items-center gap-2">
             <Tag className="h-4 w-4" />
@@ -163,13 +141,11 @@ export default function TagsPage() {
               <CardContent className="py-12">
                 <EmptyState
                   icon={Tag}
-                  title={searchQuery ? "Nie znaleziono tagów" : "Brak tagów"}
+                  title={searchQuery ? 'Nie znaleziono tagów' : 'Brak tagów'}
                   description={
-                    searchQuery
-                      ? "Spróbuj zmienić kryteria wyszukiwania"
-                      : "Dodaj pierwszy tag do biblioteki"
+                    searchQuery ? 'Spróbuj zmienić kryteria wyszukiwania' : 'Dodaj pierwszy tag do biblioteki'
                   }
-                  actionLabel={!searchQuery ? "Dodaj tag" : undefined}
+                  actionLabel={!searchQuery ? 'Dodaj tag' : undefined}
                   onAction={!searchQuery ? () => setIsTagDialogOpen(true) : undefined}
                 />
               </CardContent>
@@ -177,12 +153,7 @@ export default function TagsPage() {
           ) : (
             <div className="grid gap-2">
               {filteredTags.map((tag) => (
-                <TagCard
-                  key={tag.id}
-                  tag={tag}
-                  onEdit={handleEditTag}
-                  onDelete={(t) => setDeletingTag(t)}
-                />
+                <TagCard key={tag.id} tag={tag} onEdit={handleEditTag} onDelete={(t) => setDeletingTag(t)} />
               ))}
             </div>
           )}
@@ -196,11 +167,9 @@ export default function TagsPage() {
               <CardContent className="py-12">
                 <EmptyState
                   icon={FolderOpen}
-                  title={searchQuery ? "Nie znaleziono kategorii" : "Brak kategorii"}
+                  title={searchQuery ? 'Nie znaleziono kategorii' : 'Brak kategorii'}
                   description={
-                    searchQuery
-                      ? "Spróbuj zmienić kryteria wyszukiwania"
-                      : "Kategorie pomagają organizować tagi"
+                    searchQuery ? 'Spróbuj zmienić kryteria wyszukiwania' : 'Kategorie pomagają organizować tagi'
                   }
                 />
               </CardContent>
@@ -208,11 +177,7 @@ export default function TagsPage() {
           ) : (
             <div className="grid gap-2">
               {filteredCategories.map((category) => (
-                <CategoryCard
-                  key={category.id}
-                  category={category}
-                  onDelete={(c) => setDeletingCategory(c)}
-                />
+                <CategoryCard key={category.id} category={category} onDelete={(c) => setDeletingCategory(c)} />
               ))}
             </div>
           )}

@@ -1,4 +1,4 @@
-import { gql } from "@apollo/client";
+import { gql } from '@apollo/client';
 
 // Fragment dla podstawowych danych ćwiczenia
 export const EXERCISE_BASIC_FRAGMENT = gql`
@@ -7,11 +7,11 @@ export const EXERCISE_BASIC_FRAGMENT = gql`
     name
     type
     isActive
-    sets
-    reps
-    duration
-    exerciseSide
-    description
+    defaultSets
+    defaultReps
+    defaultDuration
+    side
+    patientDescription
     createdById
     organizationId
   }
@@ -22,31 +22,53 @@ export const EXERCISE_FULL_FRAGMENT = gql`
   fragment ExerciseFullFragment on Exercise {
     additionalTags
     createdById
-    creationTime
-    description
-    duration
-    executionTime
-    exerciseSide
+    createdAt
+    updatedAt
+    patientDescription
+    clinicalDescription
+    defaultDuration
+    defaultExecutionTime
+    side
     gifUrl
     id
     images
     imageUrl
+    thumbnailUrl
     isActive
-    isGlobal
     scope
     isPublicTemplate
+    isSystem
+    isSystemExample
+    status
+    adminReviewNotes
+    audioCue
+    tempo
+    rangeOfMotion
+    defaultLoad {
+      type
+      value
+      unit
+      text
+    }
+    difficultyLevel
+    progressionFamilyId
+    contributorId
     mainTags
+    additionalTags
     name
     notes
     organizationId
-    ownerId
     preparationTime
-    reps
-    restReps
-    restSets
-    sets
+    defaultReps
+    defaultRestBetweenReps
+    defaultRestBetweenSets
+    defaultSets
     type
     videoUrl
+    # Global submission tracking (nowy model weryfikacji)
+    globalSubmissionId
+    sourceOrganizationExerciseId
+    submittedToGlobalAt
   }
 `;
 
@@ -94,15 +116,15 @@ export const GET_EXERCISES_FULL_QUERY = gql`
       name
       type
       isActive
-      sets
-      reps
-      duration
-      description
+      defaultSets
+      defaultReps
+      defaultDuration
+      patientDescription
       createdById
       organizationId
-      exerciseSide
-      isGlobal
-      creationTime
+      side
+      scope
+      createdAt
     }
   }
 `;

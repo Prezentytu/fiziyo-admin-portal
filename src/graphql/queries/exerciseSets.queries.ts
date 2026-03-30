@@ -1,4 +1,4 @@
-import { gql } from "@apollo/client";
+import { gql } from '@apollo/client';
 
 // Fragment dla podstawowych danych zestawu ćwiczeń
 export const EXERCISE_SET_BASIC_FRAGMENT = gql`
@@ -7,6 +7,11 @@ export const EXERCISE_SET_BASIC_FRAGMENT = gql`
     name
     description
     isActive
+    isTemplate
+    kind
+    templateSource
+    reviewStatus
+    sourceExerciseSetId
     createdById
     organizationId
     creationTime
@@ -39,26 +44,47 @@ export const EXERCISE_SET_WITH_EXERCISES_FRAGMENT = gql`
       duration
       restSets
       restReps
+      preparationTime
+      executionTime
+      tempo
+      loadType
+      loadValue
+      loadUnit
+      loadText
       notes
       customName
       customDescription
+      videoUrl
+      imageUrl
+      images
       exercise {
         id
         name
         type
-        exerciseSide
+        side
+        gifUrl
         imageUrl
         images
-        description
+        thumbnailUrl
+        patientDescription
+        clinicalDescription
         notes
         videoUrl
+        audioCue
         preparationTime
-        executionTime
-        sets
-        reps
-        duration
-        restSets
-        restReps
+        defaultExecutionTime
+        tempo
+        rangeOfMotion
+        defaultSets
+        defaultReps
+        defaultDuration
+        defaultRestBetweenSets
+        defaultRestBetweenReps
+        mainTags
+        additionalTags
+        scope
+        status
+        difficultyLevel
       }
     }
   }
@@ -73,6 +99,10 @@ export const GET_EXERCISE_SETS_QUERY = gql`
       name
       isActive
       isTemplate
+      kind
+      templateSource
+      reviewStatus
+      sourceExerciseSetId
     }
   }
 `;
@@ -99,6 +129,10 @@ export const GET_PATIENT_EXERCISE_SETS_QUERY = gql`
       organizationId
       creationTime
       isTemplate
+      kind
+      templateSource
+      reviewStatus
+      sourceExerciseSetId
     }
   }
 `;
@@ -108,9 +142,25 @@ export const GET_ORGANIZATION_EXERCISE_SETS_QUERY = gql`
   query GetOrganizationExerciseSets($organizationId: String!) {
     exerciseSets(where: { organizationId: { eq: $organizationId }, isActive: { eq: true } }) {
       ...ExerciseSetWithExercisesFragment
+      patientAssignments {
+        id
+      }
     }
   }
   ${EXERCISE_SET_WITH_EXERCISES_FRAGMENT}
+`;
+
+// Query do pobierania ostatnio używanych zestawów (na podstawie przypisań)
+export const GET_RECENTLY_USED_SETS_QUERY = gql`
+  query GetRecentlyUsedSets($organizationId: String!) {
+    patientAssignments(
+      where: { exerciseSet: { organizationId: { eq: $organizationId } } }
+      order: [{ assignedAt: DESC }]
+    ) {
+      exerciseSetId
+      assignedAt
+    }
+  }
 `;
 
 // Query do pobierania zestawu z przypisaniami

@@ -1,52 +1,61 @@
 // Eksport wszystkich queries i fragmentów
 
 // Appointments
-export * from "./appointments.queries";
+export * from './appointments.queries';
 
 // Patient Assignments
-export * from "./patientAssignments.queries";
+export * from './patientAssignments.queries';
 
 // Clinics
-export * from "./clinics.queries";
+export * from './clinics.queries';
 
 // Exercise Progress
-export * from "./exerciseProgress.queries";
+export * from './exerciseProgress.queries';
 
 // Exercises
-export * from "./exercises.queries";
+export * from './exercises.queries';
 
 // Exercise Set Mappings
-export * from "./exerciseSetMappings.queries";
+export * from './exerciseSetMappings.queries';
 
 // Exercise Sets
-export * from "./exerciseSets.queries";
+export * from './exerciseSets.queries';
 
 // Exercise Tags
-export * from "./exerciseTags.queries";
+export * from './exerciseTags.queries';
 
 // Mock Data
-export * from "./mockData.queries";
+export * from './mockData.queries';
 
 // Organizations
-export * from "./organizations.queries";
+export * from './organizations.queries';
 
 // Patient Dashboard
-export * from "./patientDashboard.queries";
+export * from './patientDashboard.queries';
 
 // Tag Categories
-export * from "./tagCategories.queries";
+export * from './tagCategories.queries';
 
 // Therapists
-export * from "./therapists.queries";
+export * from './therapists.queries';
 
 // Users
-export * from "./users.queries";
+export * from './users.queries';
 
 // Health Points (gamifikacja)
-export * from "./healthPoints.queries";
+export * from './healthPoints.queries';
 
 // Weekly Progress (progres tygodniowy)
-export * from "./weeklyProgress.queries";
+export * from './weeklyProgress.queries';
 
 // Onboarding Stats
-export * from "./onboardingStats.queries";
+export * from './onboardingStats.queries';
+
+// Revenue Share (zarobki, Stripe Connect, zaproszenia pacjentów)
+export * from './revenue.queries';
+
+// Billing (Pay-as-you-go, Pilot Mode)
+export * from './billing.queries';
+
+// Admin Exercises (weryfikacja ćwiczeń - Centrum Weryfikacji)
+export * from './adminExercises.queries';

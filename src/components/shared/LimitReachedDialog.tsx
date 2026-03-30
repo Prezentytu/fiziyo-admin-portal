@@ -1,23 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import {
-  ArrowRight,
-  Crown,
-  Dumbbell,
-  Rocket,
-  Sparkles,
-  Users,
-  MapPin,
-  X,
-} from 'lucide-react';
+import { ArrowRight, Crown, Dumbbell, Rocket, Sparkles, Users, MapPin } from 'lucide-react';
 
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 
 // ========================================
@@ -43,35 +29,38 @@ interface LimitReachedDialogProps {
 // Config
 // ========================================
 
-const limitConfig: Record<LimitType, {
-  label: string;
-  labelGenitive: string;
-  icon: typeof Users;
-  description: string;
-}> = {
+const limitConfig: Record<
+  LimitType,
+  {
+    label: string;
+    labelGenitive: string;
+    icon: typeof Users;
+    description: string;
+  }
+> = {
   patients: {
     label: 'pacjentów',
     labelGenitive: 'pacjentów',
     icon: Users,
-    description: 'Ulepsz plan aby dodać więcej pacjentów i rozwijać swoją praktykę.'
+    description: 'Ulepsz plan aby dodać więcej pacjentów i rozwijać swoją praktykę.',
   },
   exercises: {
     label: 'ćwiczeń',
     labelGenitive: 'ćwiczeń',
     icon: Dumbbell,
-    description: 'Ulepsz plan aby tworzyć więcej własnych ćwiczeń.'
+    description: 'Ulepsz plan aby tworzyć więcej własnych ćwiczeń.',
   },
   therapists: {
     label: 'fizjoterapeutów',
     labelGenitive: 'fizjoterapeutów',
     icon: Users,
-    description: 'Ulepsz plan aby zaprosić więcej fizjoterapeutów do zespołu.'
+    description: 'Ulepsz plan aby zaprosić więcej fizjoterapeutów do zespołu.',
   },
   clinics: {
     label: 'gabinetów',
     labelGenitive: 'gabinetów',
     icon: MapPin,
-    description: 'Ulepsz plan aby dodać więcej gabinetów.'
+    description: 'Ulepsz plan aby dodać więcej gabinetów.',
   },
 };
 
@@ -85,11 +74,7 @@ const planPricing: Record<string, { nextPlan: string; price: string }> = {
 // Component
 // ========================================
 
-export function LimitReachedDialog({
-  open,
-  onClose,
-  limitInfo,
-}: LimitReachedDialogProps) {
+export function LimitReachedDialog({ open, onClose, limitInfo }: LimitReachedDialogProps) {
   if (!limitInfo) return null;
 
   const config = limitConfig[limitInfo.type] || limitConfig.patients;
@@ -115,9 +100,7 @@ export function LimitReachedDialog({
           </div>
 
           {/* Title */}
-          <h2 className="text-xl font-bold text-foreground mb-2">
-            Osiągnięto limit {config.label}
-          </h2>
+          <h2 className="text-xl font-bold text-foreground mb-2">Osiągnięto limit {config.label}</h2>
 
           {/* Stats */}
           <div className="flex items-center gap-3 mb-4 px-4 py-2 rounded-lg bg-surface-light border border-border/60">
@@ -133,9 +116,7 @@ export function LimitReachedDialog({
           </div>
 
           {/* Description */}
-          <p className="text-sm text-muted-foreground mb-6 max-w-xs">
-            {config.description}
-          </p>
+          <p className="text-sm text-muted-foreground mb-6 max-w-xs">{config.description}</p>
 
           {/* Actions */}
           <div className="flex flex-col sm:flex-row gap-3 w-full">
@@ -157,7 +138,7 @@ export function LimitReachedDialog({
 
           {/* Promo hint */}
           <div className="flex items-center gap-1.5 mt-4 text-xs text-muted-foreground">
-            <Sparkles className="h-3 w-3 text-violet-500" />
+            <Sparkles className="h-3 w-3 text-violet" />
             <span>14 dni gwarancji zwrotu pieniędzy</span>
           </div>
         </div>

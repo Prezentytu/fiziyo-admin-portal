@@ -14,10 +14,10 @@ export interface AccessibilityPreferences {
 }
 
 export const FONT_SIZE_VALUES: Record<FontSize, { label: string; scale: number; css: string }> = {
-  small: { label: 'Mały', scale: 0.875, css: '14px' },
-  normal: { label: 'Normalny', scale: 1, css: '16px' },
-  large: { label: 'Duży', scale: 1.125, css: '18px' },
-  xlarge: { label: 'Bardzo duży', scale: 1.25, css: '20px' },
+  small: { label: 'Mały', scale: 1, css: '16px' },
+  normal: { label: 'Normalny', scale: 1.125, css: '18px' },
+  large: { label: 'Duży', scale: 1.25, css: '20px' },
+  xlarge: { label: 'Bardzo duży', scale: 1.375, css: '22px' },
 };
 
 export const DEFAULT_PREFERENCES: AccessibilityPreferences = {
@@ -31,10 +31,7 @@ export const STORAGE_KEY = 'fiziyo-accessibility';
 
 interface AccessibilityContextValue {
   preferences: AccessibilityPreferences;
-  updatePreference: <K extends keyof AccessibilityPreferences>(
-    key: K,
-    value: AccessibilityPreferences[K]
-  ) => void;
+  updatePreference: <K extends keyof AccessibilityPreferences>(key: K, value: AccessibilityPreferences[K]) => void;
   resetToDefaults: () => void;
   isHydrated: boolean;
 }
@@ -91,21 +88,24 @@ export function AccessibilityProvider({ children }: { children: React.ReactNode 
   const [isHydrated, setIsHydrated] = useState(false);
 
   // Wczytanie preferencji z localStorage przy montowaniu (client-side)
+  // Odłożone do mikrotaska, żeby uniknąć synchronicznego setState w efekcie (cascading renders)
   useEffect(() => {
     const saved = localStorage.getItem(STORAGE_KEY);
+    let prefsToApply = DEFAULT_PREFERENCES;
     if (saved) {
       try {
         const parsed = JSON.parse(saved) as AccessibilityPreferences;
-        setPreferences(parsed);
-        applyPreferences(parsed);
+        prefsToApply = parsed;
       } catch {
-        // Ignore invalid JSON, use defaults
-        applyPreferences(DEFAULT_PREFERENCES);
+        // Ignore invalid JSON
       }
-    } else {
-      applyPreferences(DEFAULT_PREFERENCES);
     }
-    setIsHydrated(true);
+    applyPreferences(prefsToApply);
+    const prefsForState = prefsToApply;
+    queueMicrotask(() => {
+      setPreferences(prefsForState);
+      setIsHydrated(true);
+    });
   }, []);
 
   // Nasłuchiwanie na zmiany systemowego motywu (dla opcji "system")
@@ -122,17 +122,17 @@ export function AccessibilityProvider({ children }: { children: React.ReactNode 
   }, [preferences]);
 
   // Aktualizacja pojedynczej preferencji
-  const updatePreference = useCallback(<K extends keyof AccessibilityPreferences>(
-    key: K,
-    value: AccessibilityPreferences[K]
-  ) => {
-    setPreferences((prev) => {
-      const newPrefs = { ...prev, [key]: value };
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(newPrefs));
-      applyPreferences(newPrefs);
-      return newPrefs;
-    });
-  }, []);
+  const updatePreference = useCallback(
+    <K extends keyof AccessibilityPreferences>(key: K, value: AccessibilityPreferences[K]) => {
+      setPreferences((prev) => {
+        const newPrefs = { ...prev, [key]: value };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(newPrefs));
+        applyPreferences(newPrefs);
+        return newPrefs;
+      });
+    },
+    []
+  );
 
   // Reset do domyślnych
   const resetToDefaults = useCallback(() => {
@@ -142,18 +142,17 @@ export function AccessibilityProvider({ children }: { children: React.ReactNode 
   }, []);
 
   // Memoizacja wartości kontekstu
-  const value = useMemo<AccessibilityContextValue>(() => ({
-    preferences,
-    updatePreference,
-    resetToDefaults,
-    isHydrated,
-  }), [preferences, updatePreference, resetToDefaults, isHydrated]);
-
-  return (
-    <AccessibilityContext.Provider value={value}>
-      {children}
-    </AccessibilityContext.Provider>
+  const value = useMemo<AccessibilityContextValue>(
+    () => ({
+      preferences,
+      updatePreference,
+      resetToDefaults,
+      isHydrated,
+    }),
+    [preferences, updatePreference, resetToDefaults, isHydrated]
   );
+
+  return <AccessibilityContext.Provider value={value}>{children}</AccessibilityContext.Provider>;
 }
 
 // Hook do korzystania z kontekstu
@@ -164,6 +163,3 @@ export function useAccessibility() {
   }
   return context;
 }
-
-
-

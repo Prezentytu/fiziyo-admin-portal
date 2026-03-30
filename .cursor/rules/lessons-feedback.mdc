@@ -1,0 +1,11 @@
+---
+description: Przypomnienie o lessons.md podczas napraw i korekt
+globs:
+  - "src/**/*.ts"
+  - "src/**/*.tsx"
+alwaysApply: false
+---
+
+- Gdy poprawiasz blad lub regresje, sprawdz czy podobny przypadek jest juz w `.ai/lessons.md`.
+- Po istotnej korekcie dodaj nowy wpis w `.ai/lessons.md` (problem, przyczyna, rozwiazanie, regula).
+- Preferuj zasady zapobiegajace powtorce bledu zamiast jednorazowego fixu.

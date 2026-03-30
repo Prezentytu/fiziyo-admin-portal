@@ -3,11 +3,7 @@
 import { ReactNode } from 'react';
 import { ChevronDown, Check, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from '@/components/ui/collapsible';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 interface SectionAccordionProps {
   title: string;
@@ -49,8 +45,8 @@ export function SectionAccordion({
                 isComplete
                   ? 'bg-primary/20 text-primary'
                   : hasContent
-                  ? 'bg-warning/20 text-warning'
-                  : 'bg-surface-light text-muted-foreground'
+                    ? 'bg-warning/20 text-warning'
+                    : 'bg-surface-light text-muted-foreground'
               )}
             >
               {icon}
@@ -70,19 +66,13 @@ export function SectionAccordion({
             </div>
           </div>
           <ChevronDown
-            className={cn(
-              'h-4 w-4 text-muted-foreground transition-transform duration-200',
-              isOpen && 'rotate-180'
-            )}
+            className={cn('h-4 w-4 text-muted-foreground transition-transform duration-200', isOpen && 'rotate-180')}
           />
         </button>
       </CollapsibleTrigger>
       <CollapsibleContent className="pt-3">
-        <div className="rounded-xl border border-border/40 bg-surface/30 p-4">
-          {children}
-        </div>
+        <div className="rounded-xl border border-border/40 bg-surface/30 p-4">{children}</div>
       </CollapsibleContent>
     </Collapsible>
   );
 }
-

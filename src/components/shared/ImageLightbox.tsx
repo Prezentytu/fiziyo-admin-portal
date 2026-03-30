@@ -1,8 +1,9 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import Image from 'next/image';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
-import { X, ChevronLeft, ChevronRight, ZoomIn } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface ImageLightboxProps {
@@ -130,13 +131,15 @@ export function ImageLightbox({
 
           {/* Image container */}
           <div
-            className="relative max-h-[90vh] max-w-[90vw] flex items-center justify-center"
+            className="relative w-[90vw] h-[90vh] max-w-[90vw] max-h-[90vh] flex items-center justify-center"
             onClick={(e) => e.stopPropagation()}
           >
-            <img
+            <Image
               src={currentImage}
               alt={alt}
-              className="max-h-[90vh] max-w-[90vw] object-contain rounded-lg shadow-2xl"
+              fill
+              className="object-contain rounded-lg shadow-2xl"
+              sizes="90vw"
             />
           </div>
 
@@ -174,9 +177,7 @@ export function ImageLightbox({
                   }}
                   className={cn(
                     'h-2 w-2 rounded-full transition-all',
-                    index === activeIndex
-                      ? 'bg-white w-4'
-                      : 'bg-white/40 hover:bg-white/60'
+                    index === activeIndex ? 'bg-white w-4' : 'bg-white/40 hover:bg-white/60'
                   )}
                   aria-label={`Przejdź do zdjęcia ${index + 1}`}
                 />
@@ -192,9 +193,7 @@ export function ImageLightbox({
           )}
 
           {/* Hidden title for accessibility */}
-          <DialogPrimitive.Title className="sr-only">
-            Podgląd zdjęcia{alt ? `: ${alt}` : ''}
-          </DialogPrimitive.Title>
+          <DialogPrimitive.Title className="sr-only">Podgląd zdjęcia{alt ? `: ${alt}` : ''}</DialogPrimitive.Title>
           <DialogPrimitive.Description className="sr-only">
             {hasMultiple
               ? `Zdjęcie ${activeIndex + 1} z ${allImages.length}. Użyj strzałek do nawigacji.`
@@ -203,91 +202,5 @@ export function ImageLightbox({
         </DialogPrimitive.Content>
       </DialogPrimitive.Portal>
     </DialogPrimitive.Root>
-  );
-}
-
-// Helper component for clickable image with zoom icon
-interface ClickableImageProps {
-  src: string;
-  alt?: string;
-  className?: string;
-  containerClassName?: string;
-  images?: string[];
-  currentIndex?: number;
-  showZoomIcon?: boolean;
-  onClick?: () => void;
-}
-
-export function ClickableImage({
-  src,
-  alt = '',
-  className,
-  containerClassName,
-  images,
-  currentIndex = 0,
-  showZoomIcon = true,
-  onClick,
-}: ClickableImageProps) {
-  const [lightboxOpen, setLightboxOpen] = useState(false);
-  const [activeIndex, setActiveIndex] = useState(currentIndex);
-
-  const handleClick = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (onClick) {
-      onClick();
-    } else {
-      setActiveIndex(currentIndex);
-      setLightboxOpen(true);
-    }
-  };
-
-  return (
-    <>
-      <button
-        type="button"
-        onClick={handleClick}
-        className={cn(
-          'group relative overflow-hidden cursor-zoom-in',
-          containerClassName
-        )}
-      >
-        <img
-          src={src}
-          alt={alt}
-          className={cn('transition-transform duration-300', className)}
-        />
-        {showZoomIcon && (
-          <div
-            className={cn(
-              'absolute inset-0 flex items-center justify-center',
-              'bg-black/0 group-hover:bg-black/30 transition-colors duration-200'
-            )}
-          >
-            <div
-              className={cn(
-                'flex h-10 w-10 items-center justify-center rounded-full',
-                'bg-black/60 text-white opacity-0 group-hover:opacity-100',
-                'transform scale-90 group-hover:scale-100',
-                'transition-all duration-200'
-              )}
-            >
-              <ZoomIn className="h-5 w-5" />
-            </div>
-          </div>
-        )}
-      </button>
-
-      {!onClick && (
-        <ImageLightbox
-          src={src}
-          alt={alt}
-          open={lightboxOpen}
-          onOpenChange={setLightboxOpen}
-          images={images}
-          currentIndex={activeIndex}
-          onIndexChange={setActiveIndex}
-        />
-      )}
-    </>
   );
 }

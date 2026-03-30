@@ -1,8 +1,9 @@
-"use client";
+'use client';
 
-import { Building2, ChevronDown } from "lucide-react";
-import { useOrganization } from "@/contexts/OrganizationContext";
-import { Skeleton } from "@/components/ui/skeleton";
+import Image from 'next/image';
+import { ChevronDown } from 'lucide-react';
+import { useOrganization } from '@/contexts/OrganizationContext';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,30 +11,30 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Check, Loader2 } from "lucide-react";
-import { cn } from "@/lib/utils";
+} from '@/components/ui/dropdown-menu';
+import { Check, Loader2 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 // ========================================
 // Helpers
 // ========================================
 
 const roleLabels: Record<string, string> = {
-  OWNER: "Właściciel",
-  owner: "Właściciel",
-  ADMIN: "Admin",
-  admin: "Admin",
-  THERAPIST: "Fizjo",
-  therapist: "Fizjo",
-  MEMBER: "Członek",
-  member: "Członek",
+  OWNER: 'Właściciel',
+  owner: 'Właściciel',
+  ADMIN: 'Admin',
+  admin: 'Admin',
+  THERAPIST: 'Fizjo',
+  therapist: 'Fizjo',
+  MEMBER: 'Członek',
+  member: 'Członek',
 };
 
 function getInitials(name: string): string {
   return name
-    .split(" ")
+    .split(' ')
     .map((word) => word[0])
-    .join("")
+    .join('')
     .toUpperCase()
     .slice(0, 2);
 }
@@ -43,14 +44,8 @@ function getInitials(name: string): string {
 // ========================================
 
 export function MobileOrgIndicator() {
-  const {
-    currentOrganization,
-    organizations,
-    isLoading,
-    isSwitching,
-    switchOrganization,
-    hasMultipleOrganizations,
-  } = useOrganization();
+  const { currentOrganization, organizations, isLoading, isSwitching, switchOrganization, hasMultipleOrganizations } =
+    useOrganization();
 
   // Loading state
   if (isLoading) {
@@ -66,20 +61,24 @@ export function MobileOrgIndicator() {
   const triggerContent = (
     <button
       className={cn(
-        "flex items-center gap-2 px-2 py-1.5 rounded-lg transition-colors",
-        "hover:bg-surface-light",
-        "text-sm font-medium text-foreground",
-        isSwitching && "opacity-60 pointer-events-none"
+        'flex items-center gap-2 px-2 py-1.5 rounded-lg transition-colors',
+        'hover:bg-surface-light',
+        'text-sm font-medium text-foreground',
+        isSwitching && 'opacity-60 pointer-events-none'
       )}
       disabled={isSwitching}
     >
       {/* Avatar */}
       {currentOrganization.logoUrl ? (
-        <img
-          src={currentOrganization.logoUrl}
-          alt={currentOrganization.organizationName}
-          className="h-6 w-6 rounded-md object-cover"
-        />
+        <span className="relative block h-6 w-6 rounded-md overflow-hidden shrink-0">
+          <Image
+            src={currentOrganization.logoUrl}
+            alt={currentOrganization.organizationName}
+            fill
+            className="object-cover"
+            sizes="24px"
+          />
+        </span>
       ) : (
         <div className="flex h-6 w-6 items-center justify-center rounded-md bg-primary/20 text-primary text-[10px] font-bold">
           {getInitials(currentOrganization.organizationName)}
@@ -87,9 +86,7 @@ export function MobileOrgIndicator() {
       )}
 
       {/* Name (truncated) */}
-      <span className="max-w-[100px] truncate">
-        {currentOrganization.organizationName}
-      </span>
+      <span className="max-w-[100px] truncate">{currentOrganization.organizationName}</span>
 
       {/* Chevron or loader */}
       {isSwitching ? (
@@ -118,8 +115,7 @@ export function MobileOrgIndicator() {
         <DropdownMenuSeparator />
 
         {organizations.map((org) => {
-          const isActive =
-            org.organizationId === currentOrganization.organizationId;
+          const isActive = org.organizationId === currentOrganization.organizationId;
 
           return (
             <DropdownMenuItem
@@ -129,18 +125,13 @@ export function MobileOrgIndicator() {
                   switchOrganization(org.organizationId);
                 }
               }}
-              className={cn(
-                "flex items-center gap-3 p-2 cursor-pointer",
-                isActive && "bg-primary/10"
-              )}
+              className={cn('flex items-center gap-3 p-2 cursor-pointer', isActive && 'bg-primary/10')}
             >
               {/* Avatar */}
               {org.logoUrl ? (
-                <img
-                  src={org.logoUrl}
-                  alt={org.organizationName}
-                  className="h-7 w-7 rounded-md object-cover shrink-0"
-                />
+                <span className="relative block h-7 w-7 rounded-md overflow-hidden shrink-0">
+                  <Image src={org.logoUrl} alt={org.organizationName} fill className="object-cover" sizes="28px" />
+                </span>
               ) : (
                 <div className="flex h-7 w-7 items-center justify-center rounded-md bg-surface-light text-[10px] font-semibold text-muted-foreground shrink-0">
                   {getInitials(org.organizationName)}
@@ -149,12 +140,8 @@ export function MobileOrgIndicator() {
 
               {/* Info */}
               <div className="flex-1 min-w-0">
-                <div className="text-sm font-medium text-foreground truncate">
-                  {org.organizationName}
-                </div>
-                <div className="text-[10px] text-muted-foreground">
-                  {roleLabels[org.role] || org.role}
-                </div>
+                <div className="text-sm font-medium text-foreground truncate">{org.organizationName}</div>
+                <div className="text-[10px] text-muted-foreground">{roleLabels[org.role] || org.role}</div>
               </div>
 
               {/* Check mark */}
@@ -166,8 +153,3 @@ export function MobileOrgIndicator() {
     </DropdownMenu>
   );
 }
-
-
-
-
-

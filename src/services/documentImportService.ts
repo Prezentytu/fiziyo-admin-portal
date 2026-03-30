@@ -1,12 +1,8 @@
-import { getBackendToken } from "@/lib/tokenCache";
-import { triggerCreditsRefresh } from "@/components/settings/AICreditsPanel";
-import type {
-  DocumentAnalysisResult,
-  DocumentImportRequest,
-  DocumentImportResult,
-} from "@/types/import.types";
+import { getBackendToken } from '@/lib/tokenCache';
+import { triggerCreditsRefresh } from '@/components/settings/AICreditsPanel';
+import type { DocumentAnalysisResult, DocumentImportRequest, DocumentImportResult } from '@/types/import.types';
 
-const isDev = process.env.NODE_ENV === "development";
+const isDev = process.env.NODE_ENV === 'development';
 
 /**
  * Serwis do importu dokumentów fizjoterapeutycznych przez AI
@@ -15,7 +11,7 @@ class DocumentImportService {
   private baseUrl: string;
 
   constructor() {
-    this.baseUrl = process.env.NEXT_PUBLIC_API_URL || "";
+    this.baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
   }
 
   /**
@@ -24,7 +20,7 @@ class DocumentImportService {
   private getAuthHeaders(): HeadersInit {
     const token = getBackendToken();
     if (!token) {
-      throw new Error("Brak tokenu autoryzacji. Zaloguj się ponownie.");
+      throw new Error('Brak tokenu autoryzacji. Zaloguj się ponownie.');
     }
     return {
       Authorization: `Bearer ${token}`,
@@ -34,24 +30,20 @@ class DocumentImportService {
   /**
    * Analizuje plik dokumentu (PDF, Excel, CSV, TXT)
    */
-  async analyzeDocument(
-    file: File,
-    patientId?: string,
-    additionalContext?: string
-  ): Promise<DocumentAnalysisResult> {
+  async analyzeDocument(file: File, patientId?: string, additionalContext?: string): Promise<DocumentAnalysisResult> {
     const url = `${this.baseUrl}/api/ai/document-analyze`;
 
     const formData = new FormData();
-    formData.append("file", file);
+    formData.append('file', file);
     if (patientId) {
-      formData.append("patientId", patientId);
+      formData.append('patientId', patientId);
     }
     if (additionalContext) {
-      formData.append("additionalContext", additionalContext);
+      formData.append('additionalContext', additionalContext);
     }
 
     if (isDev) {
-      console.log("[DocumentImportService] Analyzing document:", {
+      console.log('[DocumentImportService] Analyzing document:', {
         fileName: file.name,
         fileSize: file.size,
         fileType: file.type,
@@ -61,26 +53,23 @@ class DocumentImportService {
 
     try {
       const response = await fetch(url, {
-        method: "POST",
+        method: 'POST',
         headers: this.getAuthHeaders(),
         body: formData,
       });
 
       if (!response.ok) {
         if (response.status === 401) {
-          throw new Error("Sesja wygasła. Odśwież stronę i spróbuj ponownie.");
+          throw new Error('Sesja wygasła. Odśwież stronę i spróbuj ponownie.');
         }
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(
-          errorData.message ||
-            `Błąd analizy dokumentu: ${response.status}`
-        );
+        throw new Error(errorData.message || `Błąd analizy dokumentu: ${response.status}`);
       }
 
       const data: DocumentAnalysisResult = await response.json();
 
       if (isDev) {
-        console.log("[DocumentImportService] Analysis result:", {
+        console.log('[DocumentImportService] Analysis result:', {
           exercises: data.exercises.length,
           sets: data.exerciseSets.length,
           notes: data.clinicalNotes.length,
@@ -94,7 +83,7 @@ class DocumentImportService {
       return data;
     } catch (error) {
       if (isDev) {
-        console.error("[DocumentImportService] Analysis error:", error);
+        console.error('[DocumentImportService] Analysis error:', error);
       }
       throw error;
     }
@@ -103,15 +92,11 @@ class DocumentImportService {
   /**
    * Analizuje tekst bezpośrednio (bez pliku)
    */
-  async analyzeText(
-    text: string,
-    patientId?: string,
-    additionalContext?: string
-  ): Promise<DocumentAnalysisResult> {
+  async analyzeText(text: string, patientId?: string, additionalContext?: string): Promise<DocumentAnalysisResult> {
     const url = `${this.baseUrl}/api/ai/document-analyze-text`;
 
     if (isDev) {
-      console.log("[DocumentImportService] Analyzing text:", {
+      console.log('[DocumentImportService] Analyzing text:', {
         textLength: text.length,
         patientId,
       });
@@ -119,10 +104,10 @@ class DocumentImportService {
 
     try {
       const response = await fetch(url, {
-        method: "POST",
+        method: 'POST',
         headers: {
           ...this.getAuthHeaders(),
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           text,
@@ -133,19 +118,16 @@ class DocumentImportService {
 
       if (!response.ok) {
         if (response.status === 401) {
-          throw new Error("Sesja wygasła. Odśwież stronę i spróbuj ponownie.");
+          throw new Error('Sesja wygasła. Odśwież stronę i spróbuj ponownie.');
         }
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(
-          errorData.message ||
-            `Błąd analizy tekstu: ${response.status}`
-        );
+        throw new Error(errorData.message || `Błąd analizy tekstu: ${response.status}`);
       }
 
       const data: DocumentAnalysisResult = await response.json();
 
       if (isDev) {
-        console.log("[DocumentImportService] Text analysis result:", {
+        console.log('[DocumentImportService] Text analysis result:', {
           exercises: data.exercises.length,
           sets: data.exerciseSets.length,
           notes: data.clinicalNotes.length,
@@ -158,7 +140,7 @@ class DocumentImportService {
       return data;
     } catch (error) {
       if (isDev) {
-        console.error("[DocumentImportService] Text analysis error:", error);
+        console.error('[DocumentImportService] Text analysis error:', error);
       }
       throw error;
     }
@@ -167,13 +149,11 @@ class DocumentImportService {
   /**
    * Importuje dane do bazy
    */
-  async importData(
-    request: DocumentImportRequest
-  ): Promise<DocumentImportResult> {
+  async importData(request: DocumentImportRequest): Promise<DocumentImportResult> {
     const url = `${this.baseUrl}/api/ai/document-import`;
 
     if (isDev) {
-      console.log("[DocumentImportService] Importing data:", {
+      console.log('[DocumentImportService] Importing data:', {
         exercisesToCreate: request.exercisesToCreate.length,
         exercisesToReuse: Object.keys(request.exercisesToReuse).length,
         setsToCreate: request.exerciseSetsToCreate.length,
@@ -183,10 +163,10 @@ class DocumentImportService {
 
     try {
       const response = await fetch(url, {
-        method: "POST",
+        method: 'POST',
         headers: {
           ...this.getAuthHeaders(),
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify(request),
       });
@@ -198,7 +178,7 @@ class DocumentImportService {
       }
 
       if (isDev) {
-        console.log("[DocumentImportService] Import result:", {
+        console.log('[DocumentImportService] Import result:', {
           success: data.success,
           exercisesCreated: data.exercisesCreated,
           exercisesReused: data.exercisesReused,
@@ -210,7 +190,7 @@ class DocumentImportService {
       return data;
     } catch (error) {
       if (isDev) {
-        console.error("[DocumentImportService] Import error:", error);
+        console.error('[DocumentImportService] Import error:', error);
       }
       throw error;
     }
@@ -220,23 +200,16 @@ class DocumentImportService {
    * Obsługiwane formaty plików
    */
   getSupportedFormats(): string[] {
-    return [
-      ".pdf",
-      ".xlsx",
-      ".xls",
-      ".csv",
-      ".txt",
-      ".md",
-    ];
+    return ['.pdf', '.xlsx', '.xls', '.csv', '.txt', '.md'];
   }
 
   /**
    * Sprawdza czy format pliku jest obsługiwany
    */
   isFormatSupported(file: File): boolean {
-    const extension = file.name.toLowerCase().split(".").pop();
-    const supportedExtensions = ["pdf", "xlsx", "xls", "csv", "txt", "md"];
-    return supportedExtensions.includes(extension || "");
+    const extension = file.name.toLowerCase().split('.').pop();
+    const supportedExtensions = ['pdf', 'xlsx', 'xls', 'csv', 'txt', 'md'];
+    return supportedExtensions.includes(extension || '');
   }
 
   /**

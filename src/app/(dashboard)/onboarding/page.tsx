@@ -1,33 +1,14 @@
-"use client";
+'use client';
 
-import { useState, useCallback, useEffect } from "react";
-import { useUser, useClerk, useAuth } from "@clerk/nextjs";
-import { useRouter } from "next/navigation";
-import {
-  Building2,
-  RefreshCw,
-  LogOut,
-  Mail,
-  Loader2,
-  CheckCircle,
-  AlertTriangle,
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { clearBackendToken } from "@/lib/tokenCache";
+import { useState, useCallback, useEffect } from 'react';
+import { useUser, useClerk, useAuth } from '@clerk/nextjs';
+import { useRouter } from 'next/navigation';
+import { Building2, RefreshCw, LogOut, Mail, Loader2, CheckCircle, AlertTriangle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { clearBackendToken } from '@/lib/tokenCache';
 
-type OnboardingStatus =
-  | "checking"
-  | "creating"
-  | "success"
-  | "error"
-  | "waiting";
+type OnboardingStatus = 'checking' | 'creating' | 'success' | 'error' | 'waiting';
 
 /**
  * Strona onboardingu - automatycznie tworzy organizację dla nowego użytkownika
@@ -39,7 +20,7 @@ export default function OnboardingPage() {
   const { getToken } = useAuth();
   const router = useRouter();
 
-  const [status, setStatus] = useState<OnboardingStatus>("checking");
+  const [status, setStatus] = useState<OnboardingStatus>('checking');
   const [error, setError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
 
@@ -53,10 +34,7 @@ export default function OnboardingPage() {
     | undefined;
 
   const organizationName =
-    metadata?.companyName ||
-    `${metadata?.firstName || ""} ${
-      metadata?.lastName || ""
-    } - Fizjoterapia`.trim();
+    metadata?.companyName || `${metadata?.firstName || ''} ${metadata?.lastName || ''} - Fizjoterapia`.trim();
 
   /**
    * Tworzy organizację w backendzie używając GraphQL mutation
@@ -66,18 +44,18 @@ export default function OnboardingPage() {
     try {
       const clerkToken = await getToken();
       if (!clerkToken) {
-        throw new Error("Nie można pobrać tokenu autoryzacji");
+        throw new Error('Nie można pobrać tokenu autoryzacji');
       }
 
       const apiUrl = process.env.NEXT_PUBLIC_API_URL;
       if (!apiUrl) {
-        throw new Error("Brak konfiguracji API");
+        throw new Error('Brak konfiguracji API');
       }
 
       const response = await fetch(`${apiUrl}/graphql`, {
-        method: "POST",
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
           Authorization: `Bearer ${clerkToken}`,
         },
         body: JSON.stringify({
@@ -91,10 +69,8 @@ export default function OnboardingPage() {
           `,
           variables: {
             name: organizationName,
-            description: `Organizacja utworzona automatycznie dla ${
-              metadata?.organizationType || "individual"
-            }`,
-            plan: "FREE",
+            description: `Organizacja utworzona automatycznie dla ${metadata?.organizationType || 'individual'}`,
+            plan: 'FREE',
           },
         }),
       });
@@ -103,28 +79,22 @@ export default function OnboardingPage() {
 
       if (result.errors) {
         // Sprawdź czy organizacja już istnieje (możliwe że webhook ją utworzył)
-        const errorMessage = result.errors[0]?.message || "";
-        if (
-          errorMessage.includes("already exists") ||
-          errorMessage.includes("already has")
-        ) {
-          console.log("[Onboarding] Organizacja już istnieje - kontynuuję...");
+        const errorMessage = result.errors[0]?.message || '';
+        if (errorMessage.includes('already exists') || errorMessage.includes('already has')) {
+          console.log('[Onboarding] Organizacja już istnieje - kontynuuję...');
           return true;
         }
         throw new Error(errorMessage);
       }
 
       if (result.data?.createOrganization?.id) {
-        console.log(
-          "[Onboarding] Organizacja utworzona:",
-          result.data.createOrganization.id
-        );
+        console.log('[Onboarding] Organizacja utworzona:', result.data.createOrganization.id);
         return true;
       }
 
       return false;
     } catch (err) {
-      console.error("[Onboarding] Błąd tworzenia organizacji:", err);
+      console.error('[Onboarding] Błąd tworzenia organizacji:', err);
       throw err;
     }
   }, [getToken, organizationName, metadata?.organizationType]);
@@ -141,9 +111,9 @@ export default function OnboardingPage() {
       if (!apiUrl) return false;
 
       const response = await fetch(`${apiUrl}/api/token-exchange/clerk`, {
-        method: "POST",
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({ token: clerkToken }),
       });
@@ -158,35 +128,35 @@ export default function OnboardingPage() {
    * Główny flow onboardingu
    */
   const runOnboarding = useCallback(async () => {
-    setStatus("checking");
+    setStatus('checking');
     setError(null);
 
     try {
       // 1. Sprawdź czy token exchange już działa
       const tokenWorks = await checkTokenExchange();
       if (tokenWorks) {
-        setStatus("success");
+        setStatus('success');
         clearBackendToken();
         setTimeout(() => {
-          globalThis.location.href = "/";
+          globalThis.location.href = '/';
         }, 1500);
         return;
       }
 
       // 2. Spróbuj utworzyć organizację
-      setStatus("creating");
+      setStatus('creating');
       await createOrganization();
 
       // 3. Poczekaj chwilę i sprawdź ponownie
-      setStatus("waiting");
+      setStatus('waiting');
       await new Promise((resolve) => setTimeout(resolve, 2000));
 
       const tokenWorksNow = await checkTokenExchange();
       if (tokenWorksNow) {
-        setStatus("success");
+        setStatus('success');
         clearBackendToken();
         setTimeout(() => {
-          globalThis.location.href = "/";
+          globalThis.location.href = '/';
         }, 1500);
         return;
       }
@@ -196,25 +166,21 @@ export default function OnboardingPage() {
 
       const finalCheck = await checkTokenExchange();
       if (finalCheck) {
-        setStatus("success");
+        setStatus('success');
         clearBackendToken();
         setTimeout(() => {
-          globalThis.location.href = "/";
+          globalThis.location.href = '/';
         }, 1500);
         return;
       }
 
       // 5. Ostateczny błąd
-      setStatus("error");
-      setError("Konfiguracja konta trwa dłużej niż zwykle. Spróbuj ponownie.");
+      setStatus('error');
+      setError('Konfiguracja konta trwa dłużej niż zwykle. Spróbuj ponownie.');
     } catch (err) {
-      console.error("[Onboarding] Error:", err);
-      setStatus("error");
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Wystąpił błąd podczas konfiguracji konta"
-      );
+      console.error('[Onboarding] Error:', err);
+      setStatus('error');
+      setError(err instanceof Error ? err.message : 'Wystąpił błąd podczas konfiguracji konta');
     }
   }, [checkTokenExchange, createOrganization]);
 
@@ -233,36 +199,35 @@ export default function OnboardingPage() {
   const handleSignOut = async () => {
     clearBackendToken();
     await signOut();
-    router.push("/login");
+    router.push('/login');
   };
 
   // Status messages
   const statusConfig = {
     checking: {
       icon: <Loader2 className="h-8 w-8 animate-spin text-primary" />,
-      title: "Sprawdzam konto...",
-      description: "Weryfikuję konfigurację Twojego konta",
+      title: 'Sprawdzam konto...',
+      description: 'Weryfikuję konfigurację Twojego konta',
     },
     creating: {
       icon: <Loader2 className="h-8 w-8 animate-spin text-primary" />,
-      title: "Tworzę organizację...",
-      description: "Konfiguruję Twoją przestrzeń roboczą",
+      title: 'Tworzę organizację...',
+      description: 'Konfiguruję Twoją przestrzeń roboczą',
     },
     waiting: {
       icon: <Loader2 className="h-8 w-8 animate-spin text-primary" />,
-      title: "Finalizuję konfigurację...",
-      description: "To może potrwać kilka sekund",
+      title: 'Finalizuję konfigurację...',
+      description: 'To może potrwać kilka sekund',
     },
     success: {
       icon: <CheckCircle className="h-8 w-8 text-primary" />,
-      title: "Konto skonfigurowane!",
-      description: "Za chwilę zostaniesz przekierowany...",
+      title: 'Konto skonfigurowane!',
+      description: 'Za chwilę zostaniesz przekierowany...',
     },
     error: {
       icon: <AlertTriangle className="h-8 w-8 text-warning" />,
-      title: "Konfiguracja konta",
-      description:
-        error || "Wystąpił problem podczas konfiguracji. Spróbuj ponownie.",
+      title: 'Konfiguracja konta',
+      description: error || 'Wystąpił problem podczas konfiguracji. Spróbuj ponownie.',
     },
   };
 
@@ -286,28 +251,23 @@ export default function OnboardingPage() {
                 <Building2 className="h-5 w-5 text-primary" />
               </div>
               <div>
-                <p className="font-medium text-foreground">
-                  {organizationName}
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  {user?.primaryEmailAddress?.emailAddress}
-                </p>
+                <p className="font-medium text-foreground">{organizationName}</p>
+                <p className="text-sm text-muted-foreground">{user?.primaryEmailAddress?.emailAddress}</p>
               </div>
             </div>
             <p className="text-sm text-muted-foreground">
-              Typ:{" "}
+              Typ:{' '}
               <span className="text-foreground">
-                {metadata?.organizationType === "individual" &&
-                  "Praktyka Indywidualna"}
-                {metadata?.organizationType === "small" && "Mały Gabinet"}
-                {metadata?.organizationType === "large" && "Duża Klinika"}
-                {!metadata?.organizationType && "Praktyka Indywidualna"}
+                {metadata?.organizationType === 'individual' && 'Praktyka Indywidualna'}
+                {metadata?.organizationType === 'small' && 'Mały Gabinet'}
+                {metadata?.organizationType === 'large' && 'Duża Klinika'}
+                {!metadata?.organizationType && 'Praktyka Indywidualna'}
               </span>
             </p>
           </div>
 
           {/* Actions - show only on error */}
-          {status === "error" && (
+          {status === 'error' && (
             <div className="space-y-3">
               <Button onClick={handleRetry} className="w-full" size="lg">
                 <RefreshCw className="mr-2 h-4 w-4" />
@@ -316,20 +276,14 @@ export default function OnboardingPage() {
 
               <Button
                 variant="outline"
-                onClick={() =>
-                  window.open("mailto:support@fiziyo.pl", "_blank")
-                }
+                onClick={() => window.open('mailto:support@fiziyo.pl', '_blank')}
                 className="w-full"
               >
                 <Mail className="mr-2 h-4 w-4" />
                 Kontakt z pomocą
               </Button>
 
-              <Button
-                variant="ghost"
-                onClick={handleSignOut}
-                className="w-full text-muted-foreground"
-              >
+              <Button variant="ghost" onClick={handleSignOut} className="w-full text-muted-foreground">
                 <LogOut className="mr-2 h-4 w-4" />
                 Wyloguj się
               </Button>
@@ -337,26 +291,12 @@ export default function OnboardingPage() {
           )}
 
           {/* Progress indicator for loading states */}
-          {(status === "checking" ||
-            status === "creating" ||
-            status === "waiting") && (
+          {(status === 'checking' || status === 'creating' || status === 'waiting') && (
             <div className="flex justify-center">
               <div className="flex gap-1">
-                <div
-                  className={`h-2 w-2 rounded-full ${
-                    status === "checking" ? "bg-primary" : "bg-border"
-                  }`}
-                />
-                <div
-                  className={`h-2 w-2 rounded-full ${
-                    status === "creating" ? "bg-primary" : "bg-border"
-                  }`}
-                />
-                <div
-                  className={`h-2 w-2 rounded-full ${
-                    status === "waiting" ? "bg-primary" : "bg-border"
-                  }`}
-                />
+                <div className={`h-2 w-2 rounded-full ${status === 'checking' ? 'bg-primary' : 'bg-border'}`} />
+                <div className={`h-2 w-2 rounded-full ${status === 'creating' ? 'bg-primary' : 'bg-border'}`} />
+                <div className={`h-2 w-2 rounded-full ${status === 'waiting' ? 'bg-primary' : 'bg-border'}`} />
               </div>
             </div>
           )}
@@ -365,20 +305,3 @@ export default function OnboardingPage() {
     </div>
   );
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

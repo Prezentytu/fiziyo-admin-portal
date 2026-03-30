@@ -1,40 +1,25 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { useMutation } from "@apollo/client/react";
-import {
-  Crown,
-  Mail,
-  MoreVertical,
-  Shield,
-  ShieldCheck,
-  Trash2,
-  User,
-  UserCog,
-  Calendar,
-} from "lucide-react";
-import { toast } from "sonner";
-import { format } from "date-fns";
-import { pl } from "date-fns/locale";
+import { useState } from 'react';
+import { useMutation } from '@apollo/client/react';
+import { Crown, Mail, MoreVertical, ShieldCheck, Trash2, User, Users } from 'lucide-react';
+import { toast } from 'sonner';
 
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
-import {
-  REMOVE_MEMBER_MUTATION,
-  UPDATE_MEMBER_ROLE_MUTATION,
-} from "@/graphql/mutations/organizations.mutations";
-import { GET_ORGANIZATION_MEMBERS_QUERY } from "@/graphql/queries/organizations.queries";
-import { cn } from "@/lib/utils";
+} from '@/components/ui/dropdown-menu';
+import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
+import { REMOVE_MEMBER_MUTATION, UPDATE_MEMBER_ROLE_MUTATION } from '@/graphql/mutations/organizations.mutations';
+import { GET_ORGANIZATION_MEMBERS_QUERY } from '@/graphql/queries/organizations.queries';
+import { cn } from '@/lib/utils';
 
 export interface OrganizationMember {
   id: string;
@@ -57,6 +42,8 @@ interface MemberCardProps {
   currentUserId?: string;
   currentUserRole?: string;
   onRefresh?: () => void;
+  /** Number of patients assigned to this team member (from billing data) */
+  assignedPatientsCount?: number;
 }
 
 const roleConfig: Record<
@@ -64,33 +51,33 @@ const roleConfig: Record<
   {
     label: string;
     icon: React.ElementType;
-    variant: "default" | "secondary" | "outline";
+    variant: 'default' | 'secondary' | 'outline';
     color: string;
   }
 > = {
   owner: {
-    label: "Właściciel",
+    label: 'Właściciel',
     icon: Crown,
-    variant: "default",
-    color: "text-amber-500",
+    variant: 'default',
+    color: 'text-amber-500',
   },
   admin: {
-    label: "Administrator",
+    label: 'Administrator',
     icon: ShieldCheck,
-    variant: "secondary",
-    color: "text-blue-500",
+    variant: 'secondary',
+    color: 'text-blue-500',
   },
   therapist: {
-    label: "Fizjoterapeuta",
+    label: 'Fizjoterapeuta',
     icon: User,
-    variant: "outline",
-    color: "text-primary",
+    variant: 'outline',
+    color: 'text-primary',
   },
   member: {
-    label: "Członek",
+    label: 'Członek',
     icon: User,
-    variant: "outline",
-    color: "text-muted-foreground",
+    variant: 'outline',
+    color: 'text-muted-foreground',
   },
 };
 
@@ -100,36 +87,31 @@ export function MemberCard({
   currentUserId,
   currentUserRole,
   onRefresh,
+  assignedPatientsCount,
 }: MemberCardProps) {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isChangeRoleDialogOpen, setIsChangeRoleDialogOpen] = useState(false);
   const [pendingRole, setPendingRole] = useState<string | null>(null);
 
-  const [removeMember, { loading: removing }] = useMutation(
-    REMOVE_MEMBER_MUTATION,
-    {
-      refetchQueries: [
-        {
-          query: GET_ORGANIZATION_MEMBERS_QUERY,
-          variables: { organizationId },
-        },
-      ],
-    }
-  );
+  const [removeMember, { loading: removing }] = useMutation(REMOVE_MEMBER_MUTATION, {
+    refetchQueries: [
+      {
+        query: GET_ORGANIZATION_MEMBERS_QUERY,
+        variables: { organizationId },
+      },
+    ],
+  });
 
-  const [updateRole, { loading: updatingRole }] = useMutation(
-    UPDATE_MEMBER_ROLE_MUTATION,
-    {
-      refetchQueries: [
-        {
-          query: GET_ORGANIZATION_MEMBERS_QUERY,
-          variables: { organizationId },
-        },
-      ],
-    }
-  );
+  const [updateRole, { loading: updatingRole }] = useMutation(UPDATE_MEMBER_ROLE_MUTATION, {
+    refetchQueries: [
+      {
+        query: GET_ORGANIZATION_MEMBERS_QUERY,
+        variables: { organizationId },
+      },
+    ],
+  });
 
-  const displayName = member.user?.fullname || member.user?.email || "Nieznany";
+  const displayName = member.user?.fullname || member.user?.email || 'Nieznany';
   const initials = displayName.slice(0, 2).toUpperCase();
   const isCurrentUser = member.userId === currentUserId;
   const role = member.role.toLowerCase();
@@ -138,9 +120,8 @@ export function MemberCard({
 
   const canManageMember = () => {
     if (isCurrentUser) return false;
-    if (currentUserRole === "owner") return true;
-    if (currentUserRole === "admin" && role !== "owner" && role !== "admin")
-      return true;
+    if (currentUserRole === 'owner') return true;
+    if (currentUserRole === 'admin' && role !== 'owner' && role !== 'admin') return true;
     return false;
   };
 
@@ -149,12 +130,12 @@ export function MemberCard({
       await removeMember({
         variables: { memberId: member.id },
       });
-      toast.success("Członek został usunięty z organizacji");
+      toast.success('Członek został usunięty z organizacji');
       setIsDeleteDialogOpen(false);
       onRefresh?.();
     } catch (error) {
-      console.error("Błąd podczas usuwania:", error);
-      toast.error("Nie udało się usunąć użytkownika");
+      console.error('Błąd podczas usuwania:', error);
+      toast.error('Nie udało się usunąć użytkownika');
     }
   };
 
@@ -165,13 +146,13 @@ export function MemberCard({
       await updateRole({
         variables: { memberId: member.id, role: pendingRole },
       });
-      toast.success("Rola została zmieniona");
+      toast.success('Rola została zmieniona');
       setIsChangeRoleDialogOpen(false);
       setPendingRole(null);
       onRefresh?.();
     } catch (error) {
-      console.error("Błąd podczas zmiany roli:", error);
-      toast.error("Nie udało się zmienić roli");
+      console.error('Błąd podczas zmiany roli:', error);
+      toast.error('Nie udało się zmienić roli');
     }
   };
 
@@ -185,16 +166,17 @@ export function MemberCard({
       <Card
         data-testid={`org-member-card-${member.id}`}
         className={cn(
-          "group border-border/60 transition-all duration-200 hover:border-border hover:shadow-md",
-          isCurrentUser && "ring-1 ring-primary/20"
+          'group rounded-xl border border-border/50 bg-card/30 transition-all duration-300',
+          'hover:bg-card/50 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5',
+          isCurrentUser && 'ring-1 ring-primary/20 bg-primary/5 border-primary/20'
         )}
       >
         <CardContent className="p-5">
           <div className="flex items-center gap-4">
             {/* Avatar */}
-            <Avatar className="h-14 w-14 border-2 border-surface-light shadow-md">
+            <Avatar className="h-14 w-14 border border-border/50 shadow-sm transition-transform duration-300 group-hover:scale-105">
               <AvatarImage src={member.user?.image} alt={displayName} />
-              <AvatarFallback className="bg-gradient-to-br from-primary/80 to-primary-dark/80 text-primary-foreground text-lg font-semibold">
+              <AvatarFallback className="bg-linear-to-br from-primary/20 to-primary-dark/20 text-primary text-lg font-bold">
                 {initials}
               </AvatarFallback>
             </Avatar>
@@ -202,11 +184,14 @@ export function MemberCard({
             {/* Info */}
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-1">
-                <span className="font-semibold text-foreground truncate">
+                <span className="font-bold text-foreground truncate group-hover:text-primary transition-colors">
                   {displayName}
                 </span>
                 {isCurrentUser && (
-                  <Badge variant="outline" className="text-xs shrink-0">
+                  <Badge
+                    variant="outline"
+                    className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0 h-5 bg-primary/10 text-primary border-primary/20"
+                  >
                     Ty
                   </Badge>
                 )}
@@ -214,29 +199,39 @@ export function MemberCard({
 
               {/* Email */}
               {member.user?.email && (
-                <div className="flex items-center gap-1.5 text-sm text-muted-foreground mb-2">
-                  <Mail className="h-3.5 w-3.5 shrink-0" />
+                <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-3">
+                  <Mail className="h-3 w-3 shrink-0" />
                   <span className="truncate">{member.user.email}</span>
                 </div>
               )}
 
               {/* Meta info */}
-              <div className="flex flex-wrap items-center gap-3">
-                <Badge variant={config.variant} className="gap-1.5">
-                  <RoleIcon className={cn("h-3.5 w-3.5", config.color)} />
+              <div className="flex flex-wrap items-center gap-2">
+                <Badge
+                  variant="outline"
+                  className={cn(
+                    'gap-1.5 text-[10px] uppercase font-bold tracking-wider px-1.5 py-0 h-5 bg-background/50 border-border/50',
+                    config.color
+                  )}
+                >
+                  <RoleIcon className="h-3 w-3" />
                   {config.label}
                 </Badge>
 
-                {member.joinedAt && (
-                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                    <Calendar className="h-3 w-3" />
-                    <span>
-                      Dołączył{" "}
-                      {format(new Date(member.joinedAt), "d MMM yyyy", {
-                        locale: pl,
-                      })}
-                    </span>
-                  </div>
+                {/* Patients count badge - shows workload */}
+                {assignedPatientsCount !== undefined && (
+                  <Badge
+                    variant="secondary"
+                    className={cn(
+                      'gap-1.5 text-[10px] uppercase font-bold tracking-wider px-1.5 py-0 h-5 border shadow-xs',
+                      assignedPatientsCount > 0
+                        ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20'
+                        : 'bg-surface-light/50 text-muted-foreground border-border'
+                    )}
+                  >
+                    <Users className="h-3 w-3" />
+                    {assignedPatientsCount} {assignedPatientsCount === 1 ? 'pacjent' : 'pacjentów'}
+                  </Badge>
                 )}
               </div>
             </div>
@@ -248,49 +243,52 @@ export function MemberCard({
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-9 w-9 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="h-9 w-9 shrink-0 rounded-xl hover:bg-background border border-transparent hover:border-border/50 transition-all opacity-0 group-hover:opacity-100"
                     data-testid={`org-member-menu-${member.id}`}
                   >
                     <MoreVertical className="h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-52">
+                <DropdownMenuContent align="end" className="w-56 rounded-xl">
                   {/* Role change options */}
-                  {currentUserRole === "owner" && (
+                  {currentUserRole === 'owner' && (
                     <>
-                      {role !== "admin" && (
+                      {role !== 'admin' && (
                         <DropdownMenuItem
-                          onClick={() => initiateRoleChange("admin")}
+                          onClick={() => initiateRoleChange('admin')}
+                          className="rounded-lg"
                           data-testid={`org-member-set-admin-${member.id}`}
                         >
                           <ShieldCheck className="mr-2 h-4 w-4 text-blue-500" />
                           Ustaw jako Administrator
                         </DropdownMenuItem>
                       )}
-                      {role !== "therapist" && (
+                      {role !== 'therapist' && (
                         <DropdownMenuItem
-                          onClick={() => initiateRoleChange("therapist")}
+                          onClick={() => initiateRoleChange('therapist')}
+                          className="rounded-lg"
                           data-testid={`org-member-set-therapist-${member.id}`}
                         >
                           <User className="mr-2 h-4 w-4 text-primary" />
                           Ustaw jako Fizjoterapeuta
                         </DropdownMenuItem>
                       )}
-                      {role !== "member" && (
+                      {role !== 'member' && (
                         <DropdownMenuItem
-                          onClick={() => initiateRoleChange("member")}
+                          onClick={() => initiateRoleChange('member')}
+                          className="rounded-lg"
                           data-testid={`org-member-set-member-${member.id}`}
                         >
                           <User className="mr-2 h-4 w-4" />
                           Ustaw jako Członek
                         </DropdownMenuItem>
                       )}
-                      <DropdownMenuSeparator />
+                      <DropdownMenuSeparator className="bg-border/50" />
                     </>
                   )}
                   <DropdownMenuItem
                     onClick={() => setIsDeleteDialogOpen(true)}
-                    className="text-destructive focus:text-destructive"
+                    className="text-destructive focus:text-destructive rounded-lg"
                     data-testid={`org-member-remove-${member.id}`}
                   >
                     <Trash2 className="mr-2 h-4 w-4" />
@@ -321,7 +319,7 @@ export function MemberCard({
         onOpenChange={setIsChangeRoleDialogOpen}
         title="Zmień rolę"
         description={`Czy na pewno chcesz zmienić rolę ${displayName} na "${
-          pendingRole ? roleConfig[pendingRole]?.label || pendingRole : ""
+          pendingRole ? roleConfig[pendingRole]?.label || pendingRole : ''
         }"?`}
         confirmText="Zmień rolę"
         variant="default"

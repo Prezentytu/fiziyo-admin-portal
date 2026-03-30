@@ -166,35 +166,82 @@ export interface OrganizationClinicsResponse {
 export interface Exercise {
   id: string;
   name: string;
-  description?: string;
+  // Opisy
+  patientDescription?: string;
+  clinicalDescription?: string;
+  audioCue?: string;
+  notes?: string;
+  // Parametry wykonania
   type: string;
+  side?: string;
+  defaultSets?: number;
+  defaultReps?: number;
+  defaultDuration?: number;
+  defaultExecutionTime?: number;
+  defaultRestBetweenSets?: number;
+  defaultRestBetweenReps?: number;
+  preparationTime?: number;
+  tempo?: string;
+  // Media
+  imageUrl?: string;
+  thumbnailUrl?: string;
+  images?: string[];
+  gifUrl?: string;
+  videoUrl?: string;
+  // Status i widoczność
+  scope?: 'PERSONAL' | 'ORGANIZATION' | 'GLOBAL';
+  status?:
+    | 'DRAFT'
+    | 'PENDING_REVIEW'
+    | 'CHANGES_REQUESTED'
+    | 'APPROVED'
+    | 'PUBLISHED'
+    | 'REJECTED'
+    | 'ARCHIVED_GLOBAL'
+    | 'UPDATE_PENDING';
+  isActive: boolean;
+  isPublicTemplate?: boolean;
+  isSystem?: boolean;
+  isSystemExample?: boolean;
+  adminReviewNotes?: string;
+  // Tagi
+  mainTags?: string[];
+  additionalTags?: string[];
+  // Progresja
+  progressionFamilyId?: string;
+  difficultyLevel?: string;
+  // Metadane
+  createdById?: string;
+  contributorId?: string;
+  organizationId?: string;
+  createdAt?: string;
+  updatedAt?: string;
+
+  // Global submission tracking (nowy model weryfikacji)
+  globalSubmissionId?: string;
+  sourceOrganizationExerciseId?: string;
+  submittedToGlobalAt?: string;
+
+  // Legacy aliasy (dla kompatybilności wstecznej)
+  description?: string;
+  exerciseSide?: string;
+  executionTime?: number;
   sets?: number;
   reps?: number;
   duration?: number;
   restSets?: number;
   restReps?: number;
-  preparationTime?: number;
-  executionTime?: number;
-  exerciseSide?: string;
-  imageUrl?: string;
-  images?: string[];
-  gifUrl?: string;
-  videoUrl?: string;
-  notes?: string;
-  mainTags?: string[];
-  additionalTags?: string[];
-  scope?: string;
-  isActive: boolean;
-  isGlobal?: boolean;
-  isPublicTemplate?: boolean;
-  createdById?: string;
-  organizationId?: string;
-  ownerId?: string;
   creationTime?: string;
+  isGlobal?: boolean;
+  ownerId?: string;
 }
 
 export interface OrganizationExercisesResponse {
   organizationExercises: Exercise[];
+}
+
+export interface AvailableExercisesResponse {
+  availableExercises: Exercise[];
 }
 
 export interface ExerciseByIdResponse {
@@ -228,6 +275,8 @@ export interface ExerciseSetMapping {
   duration?: number;
   restSets?: number;
   restReps?: number;
+  executionTime?: number;
+  tempo?: string;
   notes?: string;
   customName?: string;
   customDescription?: string;
@@ -235,13 +284,26 @@ export interface ExerciseSetMapping {
     id: string;
     name: string;
     imageUrl?: string;
+    thumbnailUrl?: string;
     images?: string[];
     type?: string;
-    exerciseSide?: string;
-    description?: string;
+    side?: string;
+    patientDescription?: string;
     notes?: string;
     videoUrl?: string;
     preparationTime?: number;
+    defaultExecutionTime?: number;
+    defaultSets?: number;
+    defaultReps?: number;
+    defaultDuration?: number;
+    defaultRestBetweenSets?: number;
+    defaultRestBetweenReps?: number;
+    scope?: string;
+    status?: string;
+    difficultyLevel?: string;
+    // Legacy aliasy
+    exerciseSide?: string;
+    description?: string;
     executionTime?: number;
     sets?: number;
     reps?: number;
@@ -257,6 +319,10 @@ export interface ExerciseSet {
   description?: string;
   isActive?: boolean;
   isTemplate?: boolean;
+  kind?: 'TEMPLATE' | 'PATIENT_PLAN';
+  templateSource?: 'FIZIYO_VERIFIED' | 'ORGANIZATION_PRIVATE' | 'ORG_PRIVATE';
+  reviewStatus?: 'DRAFT' | 'PENDING_REVIEW' | 'CHANGES_REQUESTED' | 'PUBLISHED';
+  sourceExerciseSetId?: string;
   createdById?: string;
   organizationId?: string;
   creationTime?: string;
@@ -357,6 +423,12 @@ export interface OrganizationPatientDto {
   assignedAt?: string;
   contextLabel?: string;
   contextColor?: string;
+  // Premium Access (Pay-as-you-go Billing)
+  premiumValidUntil?: string;
+  premiumActivatedAt?: string;
+  premiumStatus?: 'FREE' | 'ACTIVE' | 'EXPIRED';
+  // Activity Tracking
+  lastActivity?: string;
 }
 
 export interface OrganizationPatientsResponse {
@@ -437,4 +509,143 @@ export interface GenerateInviteLinkResponse {
 
 export interface ResendInvitationResponse {
   resendInvitation: OrganizationInvitation;
+}
+
+// ========================================
+// Billing Types - Pay-as-you-go Model
+// ========================================
+
+export interface TherapistBillingStats {
+  therapistId: string;
+  therapistName?: string;
+  therapistEmail?: string;
+  therapistImage?: string;
+  activePatientsCount: number;
+  estimatedAmount: number;
+}
+
+export interface CurrentBillingStatus {
+  organizationId: string;
+  month: number;
+  year: number;
+  /** Liczba pacjentów którzy mieli aktywne Premium w tym miesiącu */
+  activePatientsInMonth: number;
+  /** Liczba pacjentów którzy mają aktywne Premium teraz */
+  currentlyActivePremium: number;
+  pricePerPatient: number;
+  estimatedTotal: number;
+  currency: string;
+  partnerCode?: string;
+  /** Czy organizacja jest w trybie pilotażowym (bez opłat) */
+  isPilotMode?: boolean;
+  /** Podział na terapeutów - kto aktywował ilu pacjentów */
+  therapistBreakdown: TherapistBillingStats[];
+}
+
+export interface GetCurrentBillingStatusResponse {
+  currentBillingStatus: CurrentBillingStatus;
+}
+
+export interface GetBillingDetailsResponse {
+  billingDetails: import('./billing-details.types').BillingDetails | null;
+}
+
+export interface UpdateBillingDetailsResponse {
+  updateBillingDetails: import('./billing-details.types').UpdateBillingDetailsResult;
+}
+
+// ========================================
+// Revenue Share Types (zarobki organizacji)
+// ========================================
+
+// Re-export types from revenue.types.ts for convenience
+export type {
+  CommissionTier,
+  PatientSubscriptionStatus,
+  RevenueTransactionType,
+  InviteLinkStatus,
+  InviteLinkType,
+  OrganizationEarnings,
+  CommissionTierInfo,
+  StripeConnectStatus,
+  PatientInviteLink,
+  PatientSubscription,
+  MonthlyEarningsSummary,
+  RevenueTransaction,
+  PartnershipCode,
+  StripeConnectOnboardingResult,
+  CreatePatientInviteLinkResult,
+  RedeemPartnerCodeResult,
+  CancelSubscriptionResult,
+  SetCommissionResult,
+} from './revenue.types';
+
+// Response types for GraphQL queries
+export interface GetOrganizationEarningsResponse {
+  organizationEarnings: import('./revenue.types').OrganizationEarnings;
+}
+
+export interface GetCommissionTierInfoResponse {
+  commissionTierInfo: import('./revenue.types').CommissionTierInfo;
+}
+
+export interface GetStripeConnectStatusResponse {
+  stripeConnectStatus: import('./revenue.types').StripeConnectStatus;
+}
+
+export interface GetMonthlyEarningsSummaryResponse {
+  monthlyEarningsSummary: import('./revenue.types').MonthlyEarningsSummary[];
+}
+
+export interface GetRevenueHistoryResponse {
+  revenueHistory: import('./revenue.types').RevenueTransaction[];
+}
+
+export interface GetPatientInviteLinksResponse {
+  patientInviteLinks: import('./revenue.types').PatientInviteLink[];
+}
+
+export interface GetPatientSubscriptionsResponse {
+  patientSubscriptions: import('./revenue.types').PatientSubscription[];
+}
+
+export interface GetAllPartnershipCodesResponse {
+  allPartnershipCodes: import('./revenue.types').PartnershipCode[];
+}
+
+// Response types for GraphQL mutations
+export interface InitiateStripeConnectOnboardingResponse {
+  initiateStripeConnectOnboarding: import('./revenue.types').StripeConnectOnboardingResult;
+}
+
+export interface RefreshStripeConnectLinkResponse {
+  refreshStripeConnectOnboardingLink: import('./revenue.types').StripeConnectOnboardingResult;
+}
+
+export interface CreatePatientInviteLinkResponse {
+  createPatientInviteLink: import('./revenue.types').CreatePatientInviteLinkResult;
+}
+
+export interface CancelPatientInviteLinkResponse {
+  cancelPatientInviteLink: boolean;
+}
+
+export interface RedeemPartnershipCodeResponse {
+  redeemPartnershipCode: import('./revenue.types').RedeemPartnerCodeResult;
+}
+
+export interface CancelPatientSubscriptionResponse {
+  cancelPatientSubscription: import('./revenue.types').CancelSubscriptionResult;
+}
+
+export interface SetOrganizationCommissionRateResponse {
+  setOrganizationCommissionRate: import('./revenue.types').SetCommissionResult;
+}
+
+export interface CreatePartnershipCodeResponse {
+  createPartnershipCode: import('./revenue.types').PartnershipCode;
+}
+
+export interface DeactivatePartnershipCodeResponse {
+  deactivatePartnershipCode: boolean;
 }

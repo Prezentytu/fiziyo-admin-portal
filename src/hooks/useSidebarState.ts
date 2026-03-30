@@ -1,21 +1,22 @@
-"use client";
+'use client';
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback } from 'react';
 
-const STORAGE_KEY = "fiziyo-sidebar-collapsed";
+const STORAGE_KEY = 'fiziyo-sidebar-collapsed';
 
 export function useSidebarState() {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [isHydrated, setIsHydrated] = useState(false);
 
-  // Load state from localStorage after hydration
+  // Load state from localStorage after hydration (defer setState to avoid set-state-in-effect)
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored !== null) {
-      setIsCollapsed(stored === "true");
-    }
-    setIsHydrated(true);
+    const collapsed = stored !== null ? stored === 'true' : false;
+    queueMicrotask(() => {
+      setIsCollapsed(collapsed);
+      setIsHydrated(true);
+    });
   }, []);
 
   // Persist collapsed state to localStorage
@@ -44,20 +45,3 @@ export function useSidebarState() {
     closeMobile,
   };
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

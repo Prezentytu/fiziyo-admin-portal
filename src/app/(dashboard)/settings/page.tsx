@@ -1,29 +1,31 @@
-"use client";
+'use client';
 
-import { useQuery } from "@apollo/client/react";
-import { useUser } from "@clerk/nextjs";
-import { User, Building2, Eye, Settings } from "lucide-react";
+import { useState } from 'react';
+import { useQuery } from '@apollo/client/react';
+import { useUser } from '@clerk/nextjs';
+import { User, Building2, Eye, Settings } from 'lucide-react';
 
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent } from "@/components/ui/card";
-import { LoadingState } from "@/components/shared/LoadingState";
-import { EmptyState } from "@/components/shared/EmptyState";
-import { ProfileForm, UserProfile } from "@/components/settings/ProfileForm";
-import { OrganizationsList, UserOrganization } from "@/components/settings/OrganizationsList";
-import { AccessibilitySettings } from "@/components/settings/AccessibilitySettings";
-import { SettingsTab } from "@/components/organization/SettingsTab";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Card, CardContent } from '@/components/ui/card';
+import { LoadingState } from '@/components/shared/LoadingState';
+import { EmptyState } from '@/components/shared/EmptyState';
+import { ProfileForm, UserProfile } from '@/components/settings/ProfileForm';
+import { OrganizationsList, UserOrganization } from '@/components/settings/OrganizationsList';
+import { AccessibilitySettings } from '@/components/settings/AccessibilitySettings';
+import { SettingsTab } from '@/components/organization/SettingsTab';
 
-import { GET_USER_BY_CLERK_ID_QUERY, GET_USER_ORGANIZATIONS_QUERY } from "@/graphql/queries/users.queries";
-import { GET_ORGANIZATION_BY_ID_QUERY } from "@/graphql/queries/organizations.queries";
-import { useOrganization } from "@/contexts/OrganizationContext";
-import { useRoleAccess } from "@/hooks/useRoleAccess";
-import type { UserByClerkIdResponse, UserOrganizationsResponse, OrganizationByIdResponse } from "@/types/apollo";
+import { GET_USER_BY_CLERK_ID_QUERY, GET_USER_ORGANIZATIONS_QUERY } from '@/graphql/queries/users.queries';
+import { GET_ORGANIZATION_BY_ID_QUERY } from '@/graphql/queries/organizations.queries';
+import { useOrganization } from '@/contexts/OrganizationContext';
+import { useRoleAccess } from '@/hooks/useRoleAccess';
+import type { UserByClerkIdResponse, UserOrganizationsResponse, OrganizationByIdResponse } from '@/types/apollo';
 
 export default function SettingsPage() {
   const { user: clerkUser } = useUser();
-  const { currentOrganization } = useOrganization();
+  const { currentOrganization, isLoading: orgContextLoading } = useOrganization();
   const { canManageOrganization } = useRoleAccess();
   const organizationId = currentOrganization?.organizationId;
+  const [activeTab, setActiveTab] = useState('profile');
 
   // Get user data
   const {
@@ -36,7 +38,11 @@ export default function SettingsPage() {
   });
 
   // Get user organizations
-  const { data: orgsData, loading: orgsLoading, refetch: refetchOrganizations } = useQuery(GET_USER_ORGANIZATIONS_QUERY, {
+  const {
+    data: orgsData,
+    loading: orgsLoading,
+    refetch: refetchOrganizations,
+  } = useQuery(GET_USER_ORGANIZATIONS_QUERY, {
     skip: !clerkUser?.id,
   });
 
@@ -59,7 +65,7 @@ export default function SettingsPage() {
     .find((o: { organizationId: string; role: string }) => o.organizationId === organizationId)
     ?.role?.toLowerCase();
 
-  const isLoading = userLoading || !clerkUser?.id;
+  const isLoading = userLoading || !clerkUser?.id || orgContextLoading;
 
   if (isLoading) {
     return (
@@ -102,80 +108,117 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="space-y-4">
-      {/* Tabs with inline header */}
-      <Tabs defaultValue="profile" className="space-y-4">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <h1 className="text-2xl font-bold text-foreground" data-testid="settings-page-title">Ustawienia</h1>
-          <TabsList className="h-9">
-            <TabsTrigger value="profile" className="flex items-center gap-2 text-xs sm:text-sm" data-testid="settings-tab-profile">
-              <User className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Mój profil</span>
-            </TabsTrigger>
-            {/* Only show "Profil firmy" tab for owners and admins */}
-            {canManageOrganization && (
-              <TabsTrigger value="organization" className="flex items-center gap-2 text-xs sm:text-sm" data-testid="settings-tab-organization">
-                <Settings className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">Profil firmy</span>
+    <div className="flex min-h-full -m-4 lg:-m-6 2xl:-m-8 bg-background">
+      <Tabs
+        value={activeTab}
+        onValueChange={setActiveTab}
+        className="flex w-full overflow-hidden"
+        orientation="vertical"
+      >
+        {/* Inner Sidebar */}
+        <div className="w-64 border-r border-border/40 bg-transparent flex flex-col shrink-0">
+          <div className="p-6">
+            <h1 className="text-xl font-bold text-foreground mb-6" data-testid="settings-page-title">
+              Ustawienia
+            </h1>
+
+            <TabsList className="flex flex-col h-auto bg-transparent p-0 items-stretch gap-1">
+              <TabsTrigger
+                value="profile"
+                activeVariant="subtle"
+                className="justify-start gap-3 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-all hover:bg-accent/30 hover:text-foreground data-[state=active]:font-medium"
+                data-testid="settings-tab-profile"
+              >
+                <User className="h-4 w-4" />
+                Mój profil
               </TabsTrigger>
-            )}
-            <TabsTrigger value="organizations" className="flex items-center gap-2 text-xs sm:text-sm" data-testid="settings-tab-organizations">
-              <Building2 className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Organizacje</span>
-              <span className="text-muted-foreground">({organizations.length})</span>
-            </TabsTrigger>
-            <TabsTrigger value="accessibility" className="flex items-center gap-2 text-xs sm:text-sm" data-testid="settings-tab-accessibility">
-              <Eye className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Wygląd</span>
-            </TabsTrigger>
-          </TabsList>
+
+              {canManageOrganization && (
+                <TabsTrigger
+                  value="organization"
+                  activeVariant="subtle"
+                  className="justify-start gap-3 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-all hover:bg-accent/30 hover:text-foreground data-[state=active]:font-medium"
+                  data-testid="settings-tab-organization"
+                >
+                  <Settings className="h-4 w-4" />
+                  Profil firmy
+                </TabsTrigger>
+              )}
+
+              <TabsTrigger
+                value="organizations"
+                activeVariant="subtle"
+                className="justify-start gap-3 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-all hover:bg-accent/30 hover:text-foreground data-[state=active]:font-medium"
+                data-testid="settings-tab-organizations"
+              >
+                <Building2 className="h-4 w-4" />
+                <span>Organizacje</span>
+                <span className="ml-auto text-xs text-muted-foreground/60">{organizations.length}</span>
+              </TabsTrigger>
+
+              <TabsTrigger
+                value="accessibility"
+                activeVariant="subtle"
+                className="justify-start gap-3 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-all hover:bg-accent/30 hover:text-foreground data-[state=active]:font-medium"
+                data-testid="settings-tab-accessibility"
+              >
+                <Eye className="h-4 w-4" />
+                Wygląd
+              </TabsTrigger>
+            </TabsList>
+          </div>
         </div>
 
-        <TabsContent value="profile" className="mt-4">
-          <ProfileForm user={userProfile} clerkId={clerkUser?.id || ""} onSuccess={() => refetchUser()} />
-        </TabsContent>
+        {/* Content Area */}
+        <div className="flex-1 bg-background/30">
+          <div className="max-w-4xl mx-auto p-8 lg:p-12 pb-24">
+            <TabsContent value="profile" className="mt-0 outline-none">
+              <ProfileForm user={userProfile} clerkId={clerkUser?.id || ''} onSuccess={() => refetchUser()} />
+            </TabsContent>
 
-        {/* Only render organization settings tab content for owners and admins */}
-        {canManageOrganization && (
-          <TabsContent value="organization" className="mt-4">
-            {orgLoading ? (
-              <LoadingState type="text" count={2} />
-            ) : organization ? (
-              <SettingsTab
-                organization={organization}
-                currentUserRole={currentUserRole}
-                isLoading={orgLoading}
-                onRefresh={() => refetchOrg()}
-              />
-            ) : (
-              <Card className="border-border/60">
-                <CardContent className="py-12">
-                  <EmptyState
-                    icon={Building2}
-                    title="Brak aktywnej organizacji"
-                    description="Wybierz organizację, aby zarządzać jej ustawieniami"
+            {canManageOrganization && (
+              <TabsContent value="organization" className="mt-0 outline-none">
+                {orgLoading ? (
+                  <LoadingState type="text" count={2} />
+                ) : organization ? (
+                  <SettingsTab
+                    organization={organization}
+                    currentUserRole={currentUserRole}
+                    isLoading={orgLoading}
+                    onRefresh={() => refetchOrg()}
                   />
-                </CardContent>
-              </Card>
+                ) : (
+                  <Card className="rounded-xl border border-border/50 bg-card/30">
+                    <CardContent className="py-12">
+                      <EmptyState
+                        icon={Building2}
+                        title="Brak aktywnej organizacji"
+                        description="Wybierz organizację, aby zarządzać jej ustawieniami"
+                      />
+                    </CardContent>
+                  </Card>
+                )}
+              </TabsContent>
             )}
-          </TabsContent>
-        )}
 
-        <TabsContent value="organizations" className="mt-4">
-          {orgsLoading ? (
-            <LoadingState type="row" count={3} />
-          ) : (
-            <OrganizationsList
-              organizations={organizations as UserOrganization[]}
-              defaultOrganizationId={userByClerkId.organizationIds?.[0]}
-              onOrganizationsChange={() => refetchOrganizations()}
-            />
-          )}
-        </TabsContent>
+            <TabsContent value="organizations" className="mt-0 outline-none">
+              {orgsLoading ? (
+                <LoadingState type="row" count={3} />
+              ) : (
+                <OrganizationsList
+                  organizations={organizations as UserOrganization[]}
+                  defaultOrganizationId={userByClerkId.organizationIds?.[0]}
+                  onOrganizationsChange={() => refetchOrganizations()}
+                  onNavigateToOrganization={() => setActiveTab('organization')}
+                />
+              )}
+            </TabsContent>
 
-        <TabsContent value="accessibility" className="mt-4">
-          <AccessibilitySettings />
-        </TabsContent>
+            <TabsContent value="accessibility" className="mt-0 outline-none">
+              <AccessibilitySettings />
+            </TabsContent>
+          </div>
+        </div>
       </Tabs>
     </div>
   );

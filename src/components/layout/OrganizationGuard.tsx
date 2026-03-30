@@ -1,10 +1,11 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import { useAuth } from "@clerk/nextjs";
-import { useRouter, usePathname } from "next/navigation";
-import { getBackendToken, clearBackendToken } from "@/lib/tokenCache";
-import { tokenExchangeService } from "@/services/tokenExchangeService";
+import { useEffect, useState } from 'react';
+import { useAuth } from '@clerk/nextjs';
+import { useRouter, usePathname } from 'next/navigation';
+import { getBackendToken, clearBackendToken } from '@/lib/tokenCache';
+import { tokenExchangeService } from '@/services/tokenExchangeService';
+import { DashboardRouteLoading } from '@/components/layout/DashboardRouteLoading';
 
 interface OrganizationGuardProps {
   children: React.ReactNode;
@@ -13,8 +14,9 @@ interface OrganizationGuardProps {
 /**
  * Guard component sprawdzający czy użytkownik ma organizację w backendzie.
  * Jeśli token exchange zwróci błąd o braku organizacji, przekieruje na /onboarding.
+ * Zawsze renderuje widoczny fallback (nigdy null), żeby uniknąć pustego ekranu.
  */
-export function OrganizationGuard({ children }: OrganizationGuardProps) {
+export function OrganizationGuard({ children }: Readonly<OrganizationGuardProps>) {
   const { getToken, isLoaded, isSignedIn } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
@@ -24,7 +26,7 @@ export function OrganizationGuard({ children }: OrganizationGuardProps) {
   useEffect(() => {
     async function checkOrganization() {
       // Pomiń sprawdzanie na stronie onboardingu
-      if (pathname === "/onboarding") {
+      if (pathname === '/onboarding') {
         setIsChecking(false);
         setHasOrganization(true);
         return;
@@ -54,20 +56,19 @@ export function OrganizationGuard({ children }: OrganizationGuardProps) {
         await tokenExchangeService.exchangeClerkToken(clerkToken);
         setHasOrganization(true);
       } catch (error) {
-        console.error("[OrganizationGuard] Token exchange error:", error);
+        console.error('[OrganizationGuard] Token exchange error:', error);
 
-        const errorMessage =
-          error instanceof Error ? error.message : String(error);
+        const errorMessage = error instanceof Error ? error.message : String(error);
 
         // Jeśli błąd dotyczy braku organizacji - przekieruj na onboarding
         if (
-          errorMessage.includes("does not belong to") ||
-          errorMessage.includes("organization") ||
-          errorMessage.includes("401")
+          errorMessage.includes('does not belong to') ||
+          errorMessage.includes('organization') ||
+          errorMessage.includes('401')
         ) {
           clearBackendToken();
           setHasOrganization(false);
-          router.replace("/onboarding");
+          router.replace('/onboarding');
           return;
         }
 
@@ -81,36 +82,27 @@ export function OrganizationGuard({ children }: OrganizationGuardProps) {
     checkOrganization();
   }, [isLoaded, isSignedIn, getToken, router, pathname]);
 
-  // Loading state
+  // Loading state – spójny skeleton zamiast surowego spinnera
   if (isChecking) {
     return (
-      <div className="flex h-full items-center justify-center">
-        <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+      <div className="min-h-screen w-full bg-background" data-testid="organization-guard-loading">
+        <div className="p-4 lg:p-6">
+          <DashboardRouteLoading />
+        </div>
       </div>
     );
   }
 
-  // Jeśli nie ma organizacji i nie jesteśmy na onboardingu - nie renderuj
-  if (hasOrganization === false && pathname !== "/onboarding") {
-    return null;
+  // Redirect w toku (hasOrganization === false) – pokazuj fallback zamiast null
+  if (hasOrganization === false && pathname !== '/onboarding') {
+    return (
+      <div className="min-h-screen w-full bg-background" data-testid="organization-guard-redirecting">
+        <div className="p-4 lg:p-6">
+          <DashboardRouteLoading />
+        </div>
+      </div>
+    );
   }
 
   return <>{children}</>;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

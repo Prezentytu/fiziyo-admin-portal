@@ -13,7 +13,7 @@ export class WebUrlConfig implements IUrlConfig {
   constructor(baseUrl?: string) {
     const url = baseUrl || process.env.NEXT_PUBLIC_API_URL;
     if (!url) {
-      throw new Error("NEXT_PUBLIC_API_URL environment variable is required");
+      throw new Error('NEXT_PUBLIC_API_URL environment variable is required');
     }
     this.baseUrl = url;
   }

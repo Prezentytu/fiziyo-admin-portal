@@ -1,13 +1,13 @@
-"use client";
+'use client';
 
-import { useMemo } from "react";
-import { useOrganization } from "@/contexts/OrganizationContext";
+import { useMemo } from 'react';
+import { useOrganization } from '@/contexts/OrganizationContext';
 
 // ========================================
 // Types
 // ========================================
 
-export type OrganizationRole = "owner" | "admin" | "therapist" | "member" | "staff";
+export type OrganizationRole = 'owner' | 'admin' | 'therapist' | 'member' | 'staff';
 
 export interface RoleAccessResult {
   /** Current user's role in the organization (lowercase) */
@@ -50,9 +50,9 @@ export function useRoleAccess(): RoleAccessResult {
   return useMemo(() => {
     const role = (currentOrganization?.role?.toLowerCase() as OrganizationRole) || null;
 
-    const isOwner = role === "owner";
-    const isAdmin = role === "admin";
-    const isTherapist = role === "therapist";
+    const isOwner = role === 'owner';
+    const isAdmin = role === 'admin';
+    const isTherapist = role === 'therapist';
 
     // Owner and Admin can manage organization settings
     const canManageOrganization = isOwner || isAdmin;

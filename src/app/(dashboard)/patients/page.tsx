@@ -3,8 +3,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation } from '@apollo/client/react';
 import { useUser } from '@clerk/nextjs';
-import { useRouter } from 'next/navigation';
-import { Plus, Users, UserPlus, UserCheck, UserX, Search } from 'lucide-react';
+import { Plus, Users, UserPlus, UserCheck, AlertTriangle, Sparkles, Search } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
@@ -12,18 +11,37 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
-import { PatientExpandableCard, Patient } from '@/components/patients/PatientExpandableCard';
-import { PatientDialog } from '@/components/patients/PatientDialog';
-import { TakeOverDialog } from '@/components/patients/TakeOverDialog';
-import type { PatientFilterType } from '@/components/patients/PatientFilter';
-import { AssignmentWizard } from '@/components/assignment/AssignmentWizard';
-import type { Patient as AssignmentPatient } from '@/components/assignment/types';
+import { PatientExpandableCard, Patient } from '@/features/patients/PatientExpandableCard';
+import { PatientDialog } from '@/features/patients/PatientDialog';
+import { PatientQRCodeDialog } from '@/features/patients/PatientQRCodeDialog';
+import { TakeOverDialog } from '@/features/patients/TakeOverDialog';
+import { AssignmentWizard } from '@/features/assignment/AssignmentWizard';
+
+// Extended filter type for Therapy Management View
+type TherapyFilterType = 'my' | 'all' | 'needs_attention' | 'subscription';
+
+// Helper: Check if patient needs attention (inactive > 7 days)
+const needsAttention = (patient: Patient): boolean => {
+  if (!patient.lastActivity) return true; // Never active = needs attention
+  const lastActivityDate = new Date(patient.lastActivity);
+  const daysSinceActivity = Math.floor((Date.now() - lastActivityDate.getTime()) / (1000 * 60 * 60 * 24));
+  return daysSinceActivity >= 7;
+};
+
+// Helper: Check if patient has subscription issues (expired or expiring soon)
+const hasSubscriptionIssue = (patient: Patient): boolean => {
+  if (!patient.premiumValidUntil) return true; // No premium = issue
+  const expiryDate = new Date(patient.premiumValidUntil);
+  const daysUntilExpiry = Math.floor((expiryDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+  return daysUntilExpiry <= 7; // Expiring within 7 days or already expired
+};
+import type { Patient as AssignmentPatient } from '@/features/assignment/types';
 import { cn } from '@/lib/utils';
 
 import { GET_ORGANIZATION_PATIENTS_QUERY } from '@/graphql/queries/therapists.queries';
-import { GET_CURRENT_ORGANIZATION_PLAN } from '@/graphql/queries/organizations.queries';
 import {
   REMOVE_PATIENT_FROM_THERAPIST_MUTATION,
   REMOVE_PATIENT_FROM_ORGANIZATION_MUTATION,
@@ -31,20 +49,21 @@ import {
 import { GET_USER_BY_CLERK_ID_QUERY } from '@/graphql/queries/users.queries';
 import { matchesSearchQuery } from '@/utils/textUtils';
 import { useOrganization } from '@/contexts/OrganizationContext';
+import { DashboardRouteLoading } from '@/components/layout/DashboardRouteLoading';
 import type { UserByClerkIdResponse, OrganizationPatientsResponse, OrganizationPatientDto } from '@/types/apollo';
 
 export default function PatientsPage() {
   const { user } = useUser();
-  const router = useRouter();
-  const { currentOrganization } = useOrganization();
+  const { currentOrganization, isLoading: orgContextLoading } = useOrganization();
   const [searchQuery, setSearchQuery] = useState('');
-  const [patientFilter, setPatientFilter] = useState<PatientFilterType>('my');
+  const [patientFilter, setPatientFilter] = useState<TherapyFilterType>('my');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
   const [unassigningPatient, setUnassigningPatient] = useState<Patient | null>(null);
   const [removingFromOrgPatient, setRemovingFromOrgPatient] = useState<Patient | null>(null);
   const [takeOverPatient, setTakeOverPatient] = useState<Patient | null>(null);
+  const [qrPatient, setQrPatient] = useState<Patient | null>(null);
 
   // Get organization ID from context (changes when user switches organization)
   const organizationId = currentOrganization?.organizationId;
@@ -66,17 +85,15 @@ export default function PatientsPage() {
 
   // Mutations
   const [unassignPatient, { loading: unassigning }] = useMutation(REMOVE_PATIENT_FROM_THERAPIST_MUTATION, {
-    refetchQueries: [
-      { query: GET_ORGANIZATION_PATIENTS_QUERY, variables: { organizationId, filter: 'all' } },
-    ],
+    refetchQueries: [{ query: GET_ORGANIZATION_PATIENTS_QUERY, variables: { organizationId, filter: 'all' } }],
   });
 
-  const [removeFromOrganization, { loading: removingFromOrg }] = useMutation(REMOVE_PATIENT_FROM_ORGANIZATION_MUTATION, {
-    refetchQueries: [
-      { query: GET_ORGANIZATION_PATIENTS_QUERY, variables: { organizationId, filter: 'all' } },
-      { query: GET_CURRENT_ORGANIZATION_PLAN, variables: { organizationId } },
-    ],
-  });
+  const [removeFromOrganization, { loading: removingFromOrg }] = useMutation(
+    REMOVE_PATIENT_FROM_ORGANIZATION_MUTATION,
+    {
+      refetchQueries: [{ query: GET_ORGANIZATION_PATIENTS_QUERY, variables: { organizationId, filter: 'all' } }],
+    }
+  );
 
   // Transform data from OrganizationPatients query
   const organizationPatients = (data as OrganizationPatientsResponse)?.organizationPatients || [];
@@ -95,20 +112,32 @@ export default function PatientsPage() {
     assignedAt: item.assignedAt,
     // Collaborative Care fields
     therapist: item.therapist,
+    // Premium Access (Pay-as-you-go Billing)
+    premiumValidUntil: item.premiumValidUntil,
+    premiumActivatedAt: item.premiumActivatedAt,
+    premiumStatus: item.premiumStatus,
+    // Activity Tracking
+    lastActivity: item.lastActivity,
   }));
 
   // Calculate stats for filter counts (from all patients)
-  const myCount = allPatients.filter((p) => p.therapist?.id === therapistId).length;
-  const unassignedCount = allPatients.filter((p) => !p.therapist).length;
+  const myPatients = allPatients.filter((p) => p.therapist?.id === therapistId);
+  const myCount = myPatients.length;
   const totalCount = allPatients.length;
+  // Needs attention: my patients who are inactive > 7 days
+  const needsAttentionCount = myPatients.filter(needsAttention).length;
+  // Subscription issues: my patients with expired/expiring premium
+  const subscriptionIssueCount = myPatients.filter(hasSubscriptionIssue).length;
 
   // Filter by selected filter (client-side)
   const filterByType = (patients: Patient[]) => {
     switch (patientFilter) {
       case 'my':
         return patients.filter((p) => p.therapist?.id === therapistId);
-      case 'unassigned':
-        return patients.filter((p) => !p.therapist);
+      case 'needs_attention':
+        return patients.filter((p) => p.therapist?.id === therapistId && needsAttention(p));
+      case 'subscription':
+        return patients.filter((p) => p.therapist?.id === therapistId && hasSubscriptionIssue(p));
       default:
         return patients;
     }
@@ -128,21 +157,34 @@ export default function PatientsPage() {
     );
   });
 
-  // Sort: my patients first, then by name
+  // Sort: my patients first, then by recent activity/assignment date, then by name
   const filteredPatients = [...searchFilteredPatients].sort((a, b) => {
     const aIsMine = a.therapist?.id === therapistId;
     const bIsMine = b.therapist?.id === therapistId;
+
+    // 1. My patients first
     if (aIsMine && !bIsMine) return -1;
     if (!aIsMine && bIsMine) return 1;
-    // Secondary sort by name
+
+    // 2. Sort by most recent activity (lastActivity or assignedAt)
+    // Use the more recent of lastActivity and assignedAt for each patient
+    const getRecentDate = (patient: Patient): number => {
+      const activity = patient.lastActivity ? new Date(patient.lastActivity).getTime() : 0;
+      const assigned = patient.assignedAt ? new Date(patient.assignedAt).getTime() : 0;
+      return Math.max(activity, assigned);
+    };
+
+    const aRecent = getRecentDate(a);
+    const bRecent = getRecentDate(b);
+
+    // Newest first (descending)
+    if (aRecent !== bRecent) return bRecent - aRecent;
+
+    // 3. Fallback: alphabetically by name
     const aName = a.fullname || '';
     const bName = b.fullname || '';
     return aName.localeCompare(bName);
   });
-
-  const handleViewReport = (patient: Patient) => {
-    router.push(`/patients/${patient.id}`);
-  };
 
   const handleAssignSet = (patient: Patient) => {
     setSelectedPatient(patient);
@@ -151,6 +193,10 @@ export default function PatientsPage() {
 
   const handleTakeOver = (patient: Patient) => {
     setTakeOverPatient(patient);
+  };
+
+  const handleShowQR = (patient: Patient) => {
+    setQrPatient(patient);
   };
 
   const handleUnassign = async () => {
@@ -210,27 +256,35 @@ export default function PatientsPage() {
     : undefined;
 
   // Helper functions for empty state messages
-  const getEmptyStateTitle = (filter: PatientFilterType) => {
+  const getEmptyStateTitle = (filter: TherapyFilterType) => {
     switch (filter) {
       case 'my':
         return 'Brak Twoich pacjentów';
-      case 'unassigned':
-        return 'Brak nieprzypisanych pacjentów';
+      case 'needs_attention':
+        return 'Wszyscy pacjenci są aktywni!';
+      case 'subscription':
+        return 'Brak problemów z subskrypcją';
       default:
         return 'Brak pacjentów w organizacji';
     }
   };
 
-  const getEmptyStateDescription = (filter: PatientFilterType) => {
+  const getEmptyStateDescription = (filter: TherapyFilterType) => {
     switch (filter) {
       case 'my':
         return 'Dodaj pierwszego pacjenta lub przejmij opiekę nad istniejącym';
-      case 'unassigned':
-        return 'Wszyscy pacjenci mają przypisanego fizjoterapeutę';
+      case 'needs_attention':
+        return 'Wszyscy Twoi pacjenci regularnie wykonują ćwiczenia';
+      case 'subscription':
+        return 'Wszyscy Twoi pacjenci mają aktywny dostęp Premium';
       default:
         return 'Dodaj pierwszego pacjenta do organizacji';
     }
   };
+
+  if (orgContextLoading && !organizationId) {
+    return <DashboardRouteLoading />;
+  }
 
   if (error) {
     return (
@@ -241,10 +295,12 @@ export default function PatientsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="mx-auto w-full max-w-screen-2xl space-y-6">
       {/* Compact Header with Search */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-2xl font-bold text-foreground" data-testid="patient-page-title">Pacjenci</h1>
+        <h1 className="text-2xl font-bold text-foreground" data-testid="patient-page-title">
+          Pacjenci
+        </h1>
         <div className="relative w-full sm:w-72">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
@@ -257,97 +313,99 @@ export default function PatientsPage() {
         </div>
       </div>
 
-      {/* Hero Action + Quick Stats */}
-      <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-12">
-        {/* Hero Action - Dodaj pacjenta */}
-        <button
-          onClick={() => setIsDialogOpen(true)}
-          disabled={!organizationId}
-          className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary via-primary to-primary-dark p-5 text-left transition-all duration-300 hover:shadow-xl hover:shadow-primary/20 hover:scale-[1.02] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 sm:col-span-1 lg:col-span-5"
-          data-testid="patient-create-btn"
-        >
-          <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-          <div className="absolute -top-24 -right-24 w-48 h-48 bg-white/10 rounded-full blur-3xl group-hover:bg-white/20 transition-all duration-500" />
+      {/* Hero Action - Add Patient */}
+      <button
+        onClick={() => setIsDialogOpen(true)}
+        disabled={!organizationId}
+        className="group relative overflow-hidden rounded-2xl bg-linear-to-br from-primary via-primary to-primary-dark p-5 text-left transition-all duration-300 hover:shadow-xl hover:shadow-primary/20 hover:scale-[1.02] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 w-full sm:w-auto sm:max-w-md"
+        data-testid="patient-create-btn"
+      >
+        <div className="absolute inset-0 bg-linear-to-br from-white/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+        <div className="absolute -top-24 -right-24 w-48 h-48 bg-primary-foreground/10 rounded-full blur-3xl group-hover:bg-primary-foreground/20 transition-all duration-500" />
 
-          <div className="relative flex items-center gap-4">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm shrink-0 group-hover:scale-110 transition-transform duration-300">
-              <UserPlus className="h-5 w-5 text-white" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <h3 className="text-base font-bold text-white">
-                Dodaj pacjenta
-              </h3>
-              <p className="text-sm text-white/70">
-                Nowy pacjent w systemie
-              </p>
-            </div>
-            <Plus className="h-5 w-5 text-white/60 group-hover:text-white transition-colors shrink-0" />
+        <div className="relative flex items-center gap-4">
+          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary-foreground/20 backdrop-blur-sm shrink-0 group-hover:scale-110 transition-transform duration-300">
+            <UserPlus className="h-5 w-5 text-primary-foreground" />
           </div>
-        </button>
+          <div className="min-w-0 flex-1">
+            <h3 className="text-base font-bold text-primary-foreground">Dodaj pacjenta</h3>
+            <p className="text-sm text-primary-foreground/70">Nowy pacjent w systemie</p>
+          </div>
+          <Plus className="h-5 w-5 text-primary-foreground/60 group-hover:text-primary-foreground transition-colors shrink-0" />
+        </div>
+      </button>
 
-        {/* Quick Stats - Clickable filters (Collaborative Care) */}
-        <div className="grid grid-cols-3 gap-3 sm:col-span-1 lg:col-span-7">
-          {/* My patients */}
-          <button
-            onClick={() => setPatientFilter('my')}
-            className={cn(
-              'rounded-2xl border p-4 flex flex-col items-center justify-center text-center transition-all duration-200',
-              patientFilter === 'my'
-                ? 'border-primary/40 bg-primary/10 ring-1 ring-primary/20'
-                : 'border-border/40 bg-surface/50 hover:bg-surface-light hover:border-border'
-            )}
+      {/* Therapy Management Tabs */}
+      <Tabs
+        value={patientFilter}
+        onValueChange={(value) => setPatientFilter(value as TherapyFilterType)}
+        className="w-full"
+      >
+        <TabsList className="w-full sm:w-auto grid grid-cols-2 sm:grid-cols-4 2xl:grid-cols-4 h-auto p-1 bg-surface-light/50 rounded-xl">
+          <TabsTrigger
+            value="my"
+            activeVariant="accent"
+            className="cursor-pointer gap-2 px-4 py-2.5 transition-all duration-200 hover:bg-background/50"
             data-testid="patient-filter-my-btn"
           >
-            <div className="flex items-center gap-2">
-              <UserCheck className={cn('h-4 w-4', patientFilter === 'my' ? 'text-primary' : 'text-muted-foreground')} />
-              <span className={cn('text-2xl font-bold', patientFilter === 'my' ? 'text-primary' : 'text-foreground')}>
-                {myCount}
-              </span>
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">Moi</p>
-          </button>
-
-          {/* All patients */}
-          <button
-            onClick={() => setPatientFilter('all')}
-            className={cn(
-              'rounded-2xl border p-4 flex flex-col items-center justify-center text-center transition-all duration-200',
-              patientFilter === 'all'
-                ? 'border-secondary/40 bg-secondary/10 ring-1 ring-secondary/20'
-                : 'border-border/40 bg-surface/50 hover:bg-surface-light hover:border-border'
-            )}
+            <UserCheck className="h-4 w-4" />
+            <span className="hidden sm:inline">Moi pacjenci</span>
+            <span className="sm:hidden">Moi</span>
+            <Badge variant="secondary" className="ml-1 text-xs bg-primary/20 text-primary">
+              {myCount}
+            </Badge>
+          </TabsTrigger>
+          <TabsTrigger
+            value="all"
+            activeVariant="accent"
+            className="cursor-pointer gap-2 px-4 py-2.5 transition-all duration-200 hover:bg-background/50"
             data-testid="patient-filter-all-btn"
           >
-            <div className="flex items-center gap-2">
-              <Users className={cn('h-4 w-4', patientFilter === 'all' ? 'text-secondary' : 'text-muted-foreground')} />
-              <span className={cn('text-2xl font-bold', patientFilter === 'all' ? 'text-secondary' : 'text-foreground')}>
-                {totalCount}
-              </span>
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">Wszyscy</p>
-          </button>
-
-          {/* Unassigned patients */}
-          <button
-            onClick={() => setPatientFilter('unassigned')}
+            <Users className="h-4 w-4" />
+            <span className="hidden sm:inline">Wszyscy</span>
+            <span className="sm:hidden">Wszyscy</span>
+            <Badge variant="secondary" className="ml-1 text-xs">
+              {totalCount}
+            </Badge>
+          </TabsTrigger>
+          <TabsTrigger
+            value="needs_attention"
+            activeVariant="warning"
             className={cn(
-              'rounded-2xl border p-4 flex flex-col items-center justify-center text-center transition-all duration-200',
-              patientFilter === 'unassigned'
-                ? 'border-warning/40 bg-warning/10 ring-1 ring-warning/20'
-                : 'border-border/40 bg-surface/50 hover:bg-surface-light hover:border-border'
+              'cursor-pointer gap-2 px-4 py-2.5 transition-all duration-200 hover:bg-background/50',
+              needsAttentionCount > 0 && 'data-[state=inactive]:text-warning/80'
             )}
-            data-testid="patient-filter-unassigned-btn"
+            data-testid="patient-filter-attention-btn"
           >
-            <div className="flex items-center gap-2">
-              <UserX className={cn('h-4 w-4', patientFilter === 'unassigned' ? 'text-warning' : 'text-muted-foreground')} />
-              <span className={cn('text-2xl font-bold', patientFilter === 'unassigned' ? 'text-warning' : 'text-foreground')}>
-                {unassignedCount}
-              </span>
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">Nieprzypisani</p>
-          </button>
-        </div>
-      </div>
+            <AlertTriangle className="h-4 w-4" />
+            <span className="hidden sm:inline">Brak aktywności</span>
+            <span className="sm:hidden">Brak akt.</span>
+            {needsAttentionCount > 0 && (
+              <Badge variant="secondary" className="ml-1 text-xs bg-warning/20 text-warning">
+                {needsAttentionCount}
+              </Badge>
+            )}
+          </TabsTrigger>
+          <TabsTrigger
+            value="subscription"
+            activeVariant="destructive"
+            className={cn(
+              'cursor-pointer gap-2 px-4 py-2.5 transition-all duration-200 hover:bg-background/50',
+              subscriptionIssueCount > 0 && 'data-[state=inactive]:text-destructive/80'
+            )}
+            data-testid="patient-filter-subscription-btn"
+          >
+            <Sparkles className="h-4 w-4" />
+            <span className="hidden sm:inline">Subskrypcja</span>
+            <span className="sm:hidden">Sub.</span>
+            {subscriptionIssueCount > 0 && (
+              <Badge variant="secondary" className="ml-1 text-xs bg-destructive/20 text-destructive">
+                {subscriptionIssueCount}
+              </Badge>
+            )}
+          </TabsTrigger>
+        </TabsList>
+      </Tabs>
 
       {/* Results info */}
       {searchQuery && (
@@ -356,12 +414,7 @@ export default function PatientsPage() {
           <Badge variant="secondary" className="text-xs">
             {filteredPatients.length} z {filteredByType.length}
           </Badge>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-6 px-2 text-xs"
-            onClick={() => setSearchQuery('')}
-          >
+          <Button variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={() => setSearchQuery('')}>
             Wyczyść wyszukiwanie
           </Button>
         </div>
@@ -390,7 +443,9 @@ export default function PatientsPage() {
             <EmptyState
               icon={Users}
               title={searchQuery ? 'Nie znaleziono pacjentów' : getEmptyStateTitle(patientFilter)}
-              description={searchQuery ? 'Spróbuj zmienić kryteria wyszukiwania' : getEmptyStateDescription(patientFilter)}
+              description={
+                searchQuery ? 'Spróbuj zmienić kryteria wyszukiwania' : getEmptyStateDescription(patientFilter)
+              }
               actionLabel={!searchQuery && patientFilter === 'my' ? 'Dodaj pacjenta' : undefined}
               onAction={!searchQuery && patientFilter === 'my' ? () => setIsDialogOpen(true) : undefined}
             />
@@ -403,7 +458,7 @@ export default function PatientsPage() {
               key={patient.id}
               patient={patient}
               onAssignSet={handleAssignSet}
-              onViewReport={handleViewReport}
+              onShowQR={handleShowQR}
               onUnassign={(p) => setUnassigningPatient(p)}
               onRemoveFromOrganization={(p) => setRemovingFromOrgPatient(p)}
               onTakeOver={handleTakeOver}
@@ -483,6 +538,25 @@ export default function PatientsPage() {
         organizationId={organizationId || ''}
         onSuccess={() => setTakeOverPatient(null)}
       />
+
+      {/* QR Code / Recepta Dialog */}
+      {therapistId && organizationId && (
+        <PatientQRCodeDialog
+          open={!!qrPatient}
+          onOpenChange={(open) => !open && setQrPatient(null)}
+          patient={
+            qrPatient
+              ? {
+                  id: qrPatient.id,
+                  name: qrPatient.fullname || 'Nieznany pacjent',
+                  email: qrPatient.email,
+                }
+              : null
+          }
+          therapistId={therapistId}
+          organizationId={organizationId}
+        />
+      )}
     </div>
   );
 }

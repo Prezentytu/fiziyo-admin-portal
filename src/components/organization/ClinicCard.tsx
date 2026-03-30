@@ -1,37 +1,25 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { useMutation } from "@apollo/client/react";
-import {
-  MapPin,
-  Phone,
-  MoreVertical,
-  Pencil,
-  Trash2,
-  Power,
-  PowerOff,
-  Users,
-} from "lucide-react";
-import { toast } from "sonner";
+import { useState } from 'react';
+import { useMutation } from '@apollo/client/react';
+import { MapPin, Phone, MoreVertical, Pencil, Trash2, Power, PowerOff, Users } from 'lucide-react';
+import { toast } from 'sonner';
 
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
-import { pluralize } from "@/utils/textUtils";
-import {
-  UPDATE_CLINIC_MUTATION,
-  DELETE_CLINIC_MUTATION,
-} from "@/graphql/mutations/clinics.mutations";
-import { GET_ORGANIZATION_CLINICS_QUERY } from "@/graphql/queries/clinics.queries";
-import type { Clinic } from "./ClinicDialog";
+} from '@/components/ui/dropdown-menu';
+import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
+import { pluralize } from '@/utils/textUtils';
+import { UPDATE_CLINIC_MUTATION, DELETE_CLINIC_MUTATION } from '@/graphql/mutations/clinics.mutations';
+import { GET_ORGANIZATION_CLINICS_QUERY } from '@/graphql/queries/clinics.queries';
+import type { Clinic } from './ClinicDialog';
 
 interface ClinicCardProps {
   clinic: Clinic;
@@ -53,23 +41,13 @@ export function ClinicCard({
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isToggleStatusDialogOpen, setIsToggleStatusDialogOpen] = useState(false);
 
-  const [updateClinic, { loading: updating }] = useMutation(
-    UPDATE_CLINIC_MUTATION,
-    {
-      refetchQueries: [
-        { query: GET_ORGANIZATION_CLINICS_QUERY, variables: { organizationId } },
-      ],
-    }
-  );
+  const [updateClinic, { loading: updating }] = useMutation(UPDATE_CLINIC_MUTATION, {
+    refetchQueries: [{ query: GET_ORGANIZATION_CLINICS_QUERY, variables: { organizationId } }],
+  });
 
-  const [deleteClinic, { loading: deleting }] = useMutation(
-    DELETE_CLINIC_MUTATION,
-    {
-      refetchQueries: [
-        { query: GET_ORGANIZATION_CLINICS_QUERY, variables: { organizationId } },
-      ],
-    }
-  );
+  const [deleteClinic, { loading: deleting }] = useMutation(DELETE_CLINIC_MUTATION, {
+    refetchQueries: [{ query: GET_ORGANIZATION_CLINICS_QUERY, variables: { organizationId } }],
+  });
 
   const handleToggleStatus = async () => {
     try {
@@ -79,16 +57,12 @@ export function ClinicCard({
           isActive: !clinic.isActive,
         },
       });
-      toast.success(
-        clinic.isActive
-          ? "Gabinet został dezaktywowany"
-          : "Gabinet został aktywowany"
-      );
+      toast.success(clinic.isActive ? 'Gabinet został dezaktywowany' : 'Gabinet został aktywowany');
       setIsToggleStatusDialogOpen(false);
       onRefresh?.();
     } catch (error) {
-      console.error("Błąd podczas zmiany statusu:", error);
-      toast.error("Nie udało się zmienić statusu gabinetu");
+      console.error('Błąd podczas zmiany statusu:', error);
+      toast.error('Nie udało się zmienić statusu gabinetu');
     }
   };
 
@@ -97,18 +71,21 @@ export function ClinicCard({
       await deleteClinic({
         variables: { clinicId: clinic.id },
       });
-      toast.success("Gabinet został usunięty");
+      toast.success('Gabinet został usunięty');
       setIsDeleteDialogOpen(false);
       onRefresh?.();
     } catch (error) {
-      console.error("Błąd podczas usuwania:", error);
-      toast.error("Nie udało się usunąć gabinetu");
+      console.error('Błąd podczas usuwania:', error);
+      toast.error('Nie udało się usunąć gabinetu');
     }
   };
 
   return (
     <>
-      <Card data-testid={`org-clinic-card-${clinic.id}`} className="group border-border/60 transition-all duration-200 hover:border-border hover:shadow-sm">
+      <Card
+        data-testid={`org-clinic-card-${clinic.id}`}
+        className="group border-border/60 transition-all duration-200 hover:border-border hover:shadow-sm"
+      >
         <CardContent className="p-4">
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-start gap-4 min-w-0 flex-1">
@@ -117,21 +94,12 @@ export function ClinicCard({
               </div>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2 mb-1">
-                  <h3 className="font-semibold text-foreground truncate">
-                    {clinic.name}
-                  </h3>
-                  <Badge
-                    variant={clinic.isActive ? "success" : "secondary"}
-                    className="shrink-0"
-                  >
-                    {clinic.isActive ? "Aktywny" : "Nieaktywny"}
+                  <h3 className="font-semibold text-foreground truncate">{clinic.name}</h3>
+                  <Badge variant={clinic.isActive ? 'success' : 'secondary'} className="shrink-0">
+                    {clinic.isActive ? 'Aktywny' : 'Nieaktywny'}
                   </Badge>
                 </div>
-                {clinic.address && (
-                  <p className="text-sm text-muted-foreground line-clamp-2">
-                    {clinic.address}
-                  </p>
-                )}
+                {clinic.address && <p className="text-sm text-muted-foreground line-clamp-2">{clinic.address}</p>}
                 <div className="flex items-center gap-4 mt-2">
                   {clinic.contactInfo && (
                     <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
@@ -202,14 +170,14 @@ export function ClinicCard({
       <ConfirmDialog
         open={isToggleStatusDialogOpen}
         onOpenChange={setIsToggleStatusDialogOpen}
-        title={clinic.isActive ? "Dezaktywuj gabinet" : "Aktywuj gabinet"}
+        title={clinic.isActive ? 'Dezaktywuj gabinet' : 'Aktywuj gabinet'}
         description={
           clinic.isActive
             ? `Czy na pewno chcesz dezaktywować gabinet "${clinic.name}"? Nieaktywne gabinety nie będą widoczne przy planowaniu wizyt.`
             : `Czy na pewno chcesz aktywować gabinet "${clinic.name}"?`
         }
-        confirmText={clinic.isActive ? "Dezaktywuj" : "Aktywuj"}
-        variant={clinic.isActive ? "destructive" : "default"}
+        confirmText={clinic.isActive ? 'Dezaktywuj' : 'Aktywuj'}
+        variant={clinic.isActive ? 'destructive' : 'default'}
         onConfirm={handleToggleStatus}
         isLoading={updating}
       />

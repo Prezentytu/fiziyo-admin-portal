@@ -1,15 +1,10 @@
-"use client";
+'use client';
 
-import { Mic, MicOff, Loader2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-  TooltipProvider,
-} from "@/components/ui/tooltip";
-import { cn } from "@/lib/utils";
-import type { VoiceInputState } from "@/hooks/useVoiceInput";
+import { Mic, MicOff, Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
+import { cn } from '@/lib/utils';
+import type { VoiceInputState } from '@/hooks/useVoiceInput';
 
 interface VoiceMicButtonProps {
   state: VoiceInputState;
@@ -22,24 +17,18 @@ interface VoiceMicButtonProps {
 /**
  * Przycisk mikrofonu do voice input
  */
-export function VoiceMicButton({
-  state,
-  isSupported,
-  onClick,
-  disabled = false,
-  className,
-}: VoiceMicButtonProps) {
+export function VoiceMicButton({ state, isSupported, onClick, disabled = false, className }: VoiceMicButtonProps) {
   if (!isSupported) {
     return null;
   }
 
-  const isListening = state === "listening";
-  const isProcessing = state === "processing";
+  const isListening = state === 'listening';
+  const isProcessing = state === 'processing';
 
   const getTooltipText = () => {
-    if (isListening) return "Kliknij aby zakończyć";
-    if (isProcessing) return "Przetwarzanie...";
-    return "Mów do mikrofonu";
+    if (isListening) return 'Kliknij aby zakończyć';
+    if (isProcessing) return 'Przetwarzanie...';
+    return 'Mów do mikrofonu';
   };
 
   return (
@@ -53,10 +42,10 @@ export function VoiceMicButton({
             onClick={onClick}
             disabled={disabled || isProcessing}
             className={cn(
-              "h-8 w-8 shrink-0 rounded-lg transition-all duration-200",
-              isListening && "bg-destructive/10 text-destructive hover:bg-destructive/20",
-              !isListening && !isProcessing && "text-muted-foreground hover:text-foreground hover:bg-surface-hover",
-              isProcessing && "text-muted-foreground",
+              'h-8 w-8 shrink-0 rounded-lg transition-all duration-200',
+              isListening && 'bg-destructive/10 text-destructive hover:bg-destructive/20',
+              !isListening && !isProcessing && 'text-muted-foreground hover:text-foreground hover:bg-surface-hover',
+              isProcessing && 'text-muted-foreground',
               className
             )}
             data-testid="ai-chat-voice-btn"

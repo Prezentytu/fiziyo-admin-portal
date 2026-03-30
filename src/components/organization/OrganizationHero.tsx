@@ -1,37 +1,27 @@
-"use client";
+'use client';
 
-import { useState, useRef } from "react";
-import { useMutation } from "@apollo/client/react";
-import {
-  Camera,
-  Check,
-  Crown,
-  Loader2,
-  Pencil,
-  Shield,
-  Trash2,
-  User,
-  X,
-} from "lucide-react";
-import { toast } from "sonner";
+import { useState, useRef } from 'react';
+import { useMutation } from '@apollo/client/react';
+import { Camera, Check, Crown, Loader2, Pencil, Shield, Trash2, User, X } from 'lucide-react';
+import { toast } from 'sonner';
 
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from '@/components/ui/dropdown-menu';
 import {
   UPDATE_ORGANIZATION_NAME_MUTATION,
   UPDATE_ORGANIZATION_LOGO_MUTATION,
   REMOVE_ORGANIZATION_LOGO_MUTATION,
-} from "@/graphql/mutations/organizations.mutations";
-import { GET_ORGANIZATION_BY_ID_QUERY } from "@/graphql/queries/organizations.queries";
+} from '@/graphql/mutations/organizations.mutations';
+import { GET_ORGANIZATION_BY_ID_QUERY } from '@/graphql/queries/organizations.queries';
 
 interface Organization {
   id: string;
@@ -50,52 +40,32 @@ interface OrganizationHeroProps {
 }
 
 const roleConfig: Record<string, { label: string; icon: React.ElementType; color: string }> = {
-  owner: { label: "Właściciel", icon: Crown, color: "text-amber-500" },
-  admin: { label: "Administrator", icon: Shield, color: "text-blue-500" },
-  therapist: { label: "Fizjoterapeuta", icon: User, color: "text-primary" },
-  member: { label: "Członek", icon: User, color: "text-muted-foreground" },
+  owner: { label: 'Właściciel', icon: Crown, color: 'text-amber-500' },
+  admin: { label: 'Administrator', icon: Shield, color: 'text-blue-500' },
+  therapist: { label: 'Fizjoterapeuta', icon: User, color: 'text-primary' },
+  member: { label: 'Członek', icon: User, color: 'text-muted-foreground' },
 };
 
-export function OrganizationHero({
-  organization,
-  currentUserRole,
-  planName,
-  onRefresh,
-}: OrganizationHeroProps) {
+export function OrganizationHero({ organization, currentUserRole, planName, onRefresh }: OrganizationHeroProps) {
   const [isEditingName, setIsEditingName] = useState(false);
   const [newName, setNewName] = useState(organization.name);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const canEdit = currentUserRole === "owner" || currentUserRole === "admin";
-  const roleInfo = roleConfig[currentUserRole || "member"] || roleConfig.member;
+  const canEdit = currentUserRole === 'owner' || currentUserRole === 'admin';
+  const roleInfo = roleConfig[currentUserRole || 'member'] || roleConfig.member;
   const RoleIcon = roleInfo.icon;
 
-  const [updateName, { loading: updatingName }] = useMutation(
-    UPDATE_ORGANIZATION_NAME_MUTATION,
-    {
-      refetchQueries: [
-        { query: GET_ORGANIZATION_BY_ID_QUERY, variables: { id: organization.id } },
-      ],
-    }
-  );
+  const [updateName, { loading: updatingName }] = useMutation(UPDATE_ORGANIZATION_NAME_MUTATION, {
+    refetchQueries: [{ query: GET_ORGANIZATION_BY_ID_QUERY, variables: { id: organization.id } }],
+  });
 
-  const [updateLogo, { loading: updatingLogo }] = useMutation(
-    UPDATE_ORGANIZATION_LOGO_MUTATION,
-    {
-      refetchQueries: [
-        { query: GET_ORGANIZATION_BY_ID_QUERY, variables: { id: organization.id } },
-      ],
-    }
-  );
+  const [updateLogo, { loading: updatingLogo }] = useMutation(UPDATE_ORGANIZATION_LOGO_MUTATION, {
+    refetchQueries: [{ query: GET_ORGANIZATION_BY_ID_QUERY, variables: { id: organization.id } }],
+  });
 
-  const [removeLogo, { loading: removingLogo }] = useMutation(
-    REMOVE_ORGANIZATION_LOGO_MUTATION,
-    {
-      refetchQueries: [
-        { query: GET_ORGANIZATION_BY_ID_QUERY, variables: { id: organization.id } },
-      ],
-    }
-  );
+  const [removeLogo, { loading: removingLogo }] = useMutation(REMOVE_ORGANIZATION_LOGO_MUTATION, {
+    refetchQueries: [{ query: GET_ORGANIZATION_BY_ID_QUERY, variables: { id: organization.id } }],
+  });
 
   const isLogoLoading = updatingLogo || removingLogo;
 
@@ -109,12 +79,12 @@ export function OrganizationHero({
       await updateName({
         variables: { organizationId: organization.id, name: newName.trim() },
       });
-      toast.success("Nazwa została zaktualizowana");
+      toast.success('Nazwa została zaktualizowana');
       setIsEditingName(false);
       onRefresh?.();
     } catch (err) {
-      console.error("Błąd podczas aktualizacji:", err);
-      toast.error("Nie udało się zaktualizować nazwy");
+      console.error('Błąd podczas aktualizacji:', err);
+      toast.error('Nie udało się zaktualizować nazwy');
     }
   };
 
@@ -127,13 +97,13 @@ export function OrganizationHero({
     const file = event.target.files?.[0];
     if (!file) return;
 
-    if (!file.type.startsWith("image/")) {
-      toast.error("Proszę wybrać plik obrazu");
+    if (!file.type.startsWith('image/')) {
+      toast.error('Proszę wybrać plik obrazu');
       return;
     }
 
     if (file.size > 2 * 1024 * 1024) {
-      toast.error("Plik jest zbyt duży. Maksymalny rozmiar to 2MB");
+      toast.error('Plik jest zbyt duży. Maksymalny rozmiar to 2MB');
       return;
     }
 
@@ -144,17 +114,17 @@ export function OrganizationHero({
         await updateLogo({
           variables: { organizationId: organization.id, logoUrl: dataUrl },
         });
-        toast.success("Logo zostało zaktualizowane");
+        toast.success('Logo zostało zaktualizowane');
         onRefresh?.();
       } catch (err) {
-        console.error("Błąd podczas aktualizacji logo:", err);
-        toast.error("Nie udało się zaktualizować logo");
+        console.error('Błąd podczas aktualizacji logo:', err);
+        toast.error('Nie udało się zaktualizować logo');
       }
     };
     reader.readAsDataURL(file);
 
     if (fileInputRef.current) {
-      fileInputRef.current.value = "";
+      fileInputRef.current.value = '';
     }
   };
 
@@ -163,11 +133,11 @@ export function OrganizationHero({
       await removeLogo({
         variables: { organizationId: organization.id },
       });
-      toast.success("Logo zostało usunięte");
+      toast.success('Logo zostało usunięte');
       onRefresh?.();
     } catch (err) {
-      console.error("Błąd podczas usuwania logo:", err);
-      toast.error("Nie udało się usunąć logo");
+      console.error('Błąd podczas usuwania logo:', err);
+      toast.error('Nie udało się usunąć logo');
     }
   };
 
@@ -194,18 +164,14 @@ export function OrganizationHero({
               ) : (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-12 w-12 rounded-full text-white hover:bg-white/20"
-                    >
+                    <Button variant="ghost" size="icon" className="h-12 w-12 rounded-full text-white hover:bg-white/20">
                       <Camera className="h-5 w-5" />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="center">
                     <DropdownMenuItem onClick={() => fileInputRef.current?.click()}>
                       <Camera className="mr-2 h-4 w-4" />
-                      {organization.logoUrl ? "Zmień logo" : "Dodaj logo"}
+                      {organization.logoUrl ? 'Zmień logo' : 'Dodaj logo'}
                     </DropdownMenuItem>
                     {organization.logoUrl && (
                       <>
@@ -225,13 +191,7 @@ export function OrganizationHero({
             </div>
           )}
 
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={handleLogoUpload}
-          />
+          <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} />
         </div>
 
         {/* Organization details */}
@@ -244,36 +204,20 @@ export function OrganizationHero({
                 className="h-10 text-xl font-bold max-w-sm bg-surface"
                 autoFocus
                 onKeyDown={(e) => {
-                  if (e.key === "Enter") handleSaveName();
-                  if (e.key === "Escape") handleCancelEdit();
+                  if (e.key === 'Enter') handleSaveName();
+                  if (e.key === 'Escape') handleCancelEdit();
                 }}
               />
-              <Button
-                size="icon"
-                onClick={handleSaveName}
-                disabled={updatingName}
-                className="h-9 w-9"
-              >
-                {updatingName ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Check className="h-4 w-4" />
-                )}
+              <Button size="icon" onClick={handleSaveName} disabled={updatingName} className="h-9 w-9">
+                {updatingName ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
               </Button>
-              <Button
-                size="icon"
-                variant="ghost"
-                onClick={handleCancelEdit}
-                className="h-9 w-9"
-              >
+              <Button size="icon" variant="ghost" onClick={handleCancelEdit} className="h-9 w-9">
                 <X className="h-4 w-4" />
               </Button>
             </div>
           ) : (
             <div className="flex items-center gap-3">
-              <h2 className="text-2xl font-bold text-foreground truncate">
-                {organization.name}
-              </h2>
+              <h2 className="text-2xl font-bold text-foreground truncate">{organization.name}</h2>
               {canEdit && (
                 <Button
                   variant="ghost"
@@ -291,14 +235,12 @@ export function OrganizationHero({
           )}
 
           {organization.description && (
-            <p className="text-sm text-muted-foreground line-clamp-2">
-              {organization.description}
-            </p>
+            <p className="text-sm text-muted-foreground line-clamp-2">{organization.description}</p>
           )}
 
           <div className="flex flex-wrap items-center gap-2">
-            <Badge variant={organization.isActive ? "success" : "secondary"}>
-              {organization.isActive ? "Aktywna" : "Nieaktywna"}
+            <Badge variant={organization.isActive ? 'success' : 'secondary'}>
+              {organization.isActive ? 'Aktywna' : 'Nieaktywna'}
             </Badge>
             <Badge variant="outline" className="gap-1.5 bg-surface/50">
               <RoleIcon className={`h-3 w-3 ${roleInfo.color}`} />
@@ -315,6 +257,3 @@ export function OrganizationHero({
     </div>
   );
 }
-
-
-

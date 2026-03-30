@@ -34,10 +34,7 @@ export interface ExerciseWithTags {
  * Gets the color for a tag - checks tag's own color first, then category color
  * This mirrors the logic from mobile app TagsDisplay.tsx getTagColor()
  */
-export function getTagColor(
-  tag: ExerciseTag,
-  categoriesMap: Map<string, TagCategory>
-): string {
+export function getTagColor(tag: ExerciseTag, categoriesMap: Map<string, TagCategory>): string {
   // First check if tag has its own color
   if (tag.color) {
     return tag.color;
@@ -60,25 +57,20 @@ export function getTagColor(
   }
 
   // Default color (primary green)
-  return "#22c55e";
+  return '#22c55e';
 }
 
 /**
  * Creates a Map from category ID to category object for quick lookups
  */
-export function createCategoriesMap(
-  categories: TagCategory[]
-): Map<string, TagCategory> {
+export function createCategoriesMap(categories: TagCategory[]): Map<string, TagCategory> {
   return new Map(categories.map((cat) => [cat.id, cat]));
 }
 
 /**
  * Creates a Map from tag ID to tag object with resolved color
  */
-export function createTagsMap(
-  tags: ExerciseTag[],
-  categories: TagCategory[] = []
-): Map<string, ExerciseTag> {
+export function createTagsMap(tags: ExerciseTag[], categories: TagCategory[] = []): Map<string, ExerciseTag> {
   const categoriesMap = createCategoriesMap(categories);
 
   return new Map(
@@ -103,13 +95,13 @@ export function mapExerciseTagsToObjects<T extends ExerciseWithTags>(
   return {
     ...exercise,
     mainTags: exercise.mainTags?.map((tagId) => {
-      if (typeof tagId === "string") {
+      if (typeof tagId === 'string') {
         return tagsMap.get(tagId) || tagId;
       }
       return tagId;
     }),
     additionalTags: exercise.additionalTags?.map((tagId) => {
-      if (typeof tagId === "string") {
+      if (typeof tagId === 'string') {
         return tagsMap.get(tagId) || tagId;
       }
       return tagId;
@@ -124,11 +116,5 @@ export function mapExercisesWithTags<T extends ExerciseWithTags>(
   exercises: T[],
   tagsMap: Map<string, ExerciseTag>
 ): T[] {
-  return exercises.map((exercise) =>
-    mapExerciseTagsToObjects(exercise, tagsMap)
-  );
+  return exercises.map((exercise) => mapExerciseTagsToObjects(exercise, tagsMap));
 }
-
-
-
-

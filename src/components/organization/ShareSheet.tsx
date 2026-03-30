@@ -1,19 +1,12 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
-import { QRCodeSVG } from "qrcode.react";
-import {
-  Copy,
-  Check,
-  Mail,
-  MessageCircle,
-  Smartphone,
-  Share2,
-} from "lucide-react";
-import { toast } from "sonner";
+import { useState, useEffect } from 'react';
+import { QRCodeSVG } from 'qrcode.react';
+import { Copy, Check, Mail, MessageCircle, Smartphone, Share2 } from 'lucide-react';
+import { toast } from 'sonner';
 
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 
 // ========================================
 // Types
@@ -61,41 +54,40 @@ function TelegramIcon({ className }: { className?: string }) {
 
 const shareOptions: ShareOption[] = [
   {
-    name: "WhatsApp",
+    name: 'WhatsApp',
     icon: WhatsAppIcon,
-    gradient: "from-green-500 to-green-600",
-    hoverGradient: "hover:from-green-600 hover:to-green-700",
-    getUrl: (url, text) => `https://wa.me/?text=${encodeURIComponent(text + "\n\n" + url)}`,
+    gradient: 'from-green-500 to-green-600',
+    hoverGradient: 'hover:from-green-600 hover:to-green-700',
+    getUrl: (url, text) => `https://wa.me/?text=${encodeURIComponent(text + '\n\n' + url)}`,
   },
   {
-    name: "Email",
+    name: 'Email',
     icon: Mail,
-    gradient: "from-blue-500 to-blue-600",
-    hoverGradient: "hover:from-blue-600 hover:to-blue-700",
+    gradient: 'from-blue-500 to-blue-600',
+    hoverGradient: 'hover:from-blue-600 hover:to-blue-700',
     getUrl: (url, text) =>
-      `mailto:?subject=${encodeURIComponent("Zaproszenie do FiziYo")}&body=${encodeURIComponent(text + "\n\n" + url)}`,
+      `mailto:?subject=${encodeURIComponent('Zaproszenie do FiziYo')}&body=${encodeURIComponent(text + '\n\n' + url)}`,
   },
   {
-    name: "Telegram",
+    name: 'Telegram',
     icon: TelegramIcon,
-    gradient: "from-sky-500 to-sky-600",
-    hoverGradient: "hover:from-sky-600 hover:to-sky-700",
-    getUrl: (url, text) =>
-      `https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`,
+    gradient: 'from-sky-500 to-sky-600',
+    hoverGradient: 'hover:from-sky-600 hover:to-sky-700',
+    getUrl: (url, text) => `https://t.me/share/url?url=${encodeURIComponent(url)}&text=${encodeURIComponent(text)}`,
   },
   {
-    name: "Messenger",
+    name: 'Messenger',
     icon: MessageCircle,
-    gradient: "from-purple-500 to-purple-600",
-    hoverGradient: "hover:from-purple-600 hover:to-purple-700",
+    gradient: 'from-violet to-violet-dark',
+    hoverGradient: 'hover:from-violet-dark hover:to-violet-dark',
     getUrl: (url) => `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`,
   },
   {
-    name: "SMS",
+    name: 'SMS',
     icon: Smartphone,
-    gradient: "from-emerald-500 to-emerald-600",
-    hoverGradient: "hover:from-emerald-600 hover:to-emerald-700",
-    getUrl: (url, text) => `sms:?body=${encodeURIComponent(text + " " + url)}`,
+    gradient: 'from-emerald-500 to-emerald-600',
+    hoverGradient: 'hover:from-emerald-600 hover:to-emerald-700',
+    getUrl: (url, text) => `sms:?body=${encodeURIComponent(text + ' ' + url)}`,
   },
 ];
 
@@ -104,29 +96,23 @@ const shareOptions: ShareOption[] = [
 // ========================================
 
 const roleLabels: Record<string, string> = {
-  OWNER: "Właściciel",
-  ADMIN: "Administrator",
-  THERAPIST: "Fizjoterapeuta",
-  MEMBER: "Członek",
-  STAFF: "Personel",
+  OWNER: 'Właściciel',
+  ADMIN: 'Administrator',
+  THERAPIST: 'Fizjoterapeuta',
+  MEMBER: 'Członek',
+  STAFF: 'Personel',
 };
 
 // ========================================
 // Component
 // ========================================
 
-export function ShareSheet({
-  url,
-  organizationName,
-  role,
-  expiresAt,
-  className,
-}: ShareSheetProps) {
+export function ShareSheet({ url, organizationName, role, expiresAt, className }: ShareSheetProps) {
   const [copied, setCopied] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
 
   // Check for native share support (computed once on mount)
-  const supportsNativeShare = typeof globalThis.window !== "undefined" && !!navigator?.share;
+  const supportsNativeShare = typeof globalThis.window !== 'undefined' && !!navigator?.share;
 
   // Animate in on mount
   useEffect(() => {
@@ -140,46 +126,46 @@ export function ShareSheet({
     try {
       await navigator.clipboard.writeText(url);
       setCopied(true);
-      toast.success("Link skopiowany!");
+      toast.success('Link skopiowany!');
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      toast.error("Nie udało się skopiować linku");
+      toast.error('Nie udało się skopiować linku');
     }
   };
 
   const handleNativeShare = async () => {
     try {
       await navigator.share({
-        title: "Zaproszenie do FiziYo",
+        title: 'Zaproszenie do FiziYo',
         text: shareText,
         url: url,
       });
     } catch (error) {
-      if (error instanceof Error && error.name !== "AbortError") {
-        toast.error("Nie udało się udostępnić");
+      if (error instanceof Error && error.name !== 'AbortError') {
+        toast.error('Nie udało się udostępnić');
       }
     }
   };
 
   const handleShareOption = (option: ShareOption) => {
     const shareUrl = option.getUrl(url, shareText);
-    window.open(shareUrl, "_blank", "noopener,noreferrer");
+    window.open(shareUrl, '_blank', 'noopener,noreferrer');
   };
 
   const formattedExpiry = expiresAt
-    ? new Date(expiresAt).toLocaleDateString("pl-PL", {
-        day: "numeric",
-        month: "long",
-        year: "numeric",
+    ? new Date(expiresAt).toLocaleDateString('pl-PL', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
       })
     : null;
 
   return (
     <div
       className={cn(
-        "rounded-xl border border-border/60 bg-surface overflow-hidden",
-        "transition-all duration-500",
-        isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4",
+        'rounded-xl border border-border/60 bg-surface overflow-hidden',
+        'transition-all duration-500',
+        isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4',
         className
       )}
       data-testid="org-share-sheet"
@@ -207,29 +193,19 @@ export function ShareSheet({
           <div className="flex flex-col items-center sm:items-start">
             <div
               className={cn(
-                "p-4 rounded-2xl bg-white shadow-lg ring-1 ring-black/5",
-                "transition-all duration-500 delay-100",
-                isVisible ? "opacity-100 scale-100" : "opacity-0 scale-90"
+                'p-4 rounded-2xl bg-white shadow-lg ring-1 ring-black/5',
+                'transition-all duration-500 delay-100',
+                isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-90'
               )}
             >
-              <QRCodeSVG
-                value={url}
-                size={160}
-                level="M"
-                bgColor="#ffffff"
-                fgColor="#000000"
-              />
+              <QRCodeSVG value={url} size={160} level="M" bgColor="#ffffff" fgColor="#000000" />
             </div>
-            <p className="text-xs text-muted-foreground mt-3 text-center sm:text-left">
-              Zeskanuj kod QR telefonem
-            </p>
+            <p className="text-xs text-muted-foreground mt-3 text-center sm:text-left">Zeskanuj kod QR telefonem</p>
           </div>
 
           {/* Right side - Share options */}
           <div className="flex-1 flex flex-col">
-            <p className="text-sm text-muted-foreground mb-4">
-              Lub wybierz sposób udostępnienia:
-            </p>
+            <p className="text-sm text-muted-foreground mb-4">Lub wybierz sposób udostępnienia:</p>
 
             {/* Share options grid */}
             <div className="grid grid-cols-3 gap-2">
@@ -238,13 +214,13 @@ export function ShareSheet({
                   key={option.name}
                   onClick={() => handleShareOption(option)}
                   className={cn(
-                    "flex flex-col items-center justify-center gap-2 p-4 rounded-xl",
-                    "bg-gradient-to-br text-white",
-                    "transition-all duration-200 hover:scale-105 hover:shadow-lg",
-                    "active:scale-95",
+                    'flex flex-col items-center justify-center gap-2 p-4 rounded-xl',
+                    'bg-gradient-to-br text-white',
+                    'transition-all duration-200 hover:scale-105 hover:shadow-lg',
+                    'active:scale-95',
                     option.gradient,
                     option.hoverGradient,
-                    isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"
+                    isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
                   )}
                   style={{ transitionDelay: `${100 + index * 40}ms` }}
                   data-testid={`org-share-${option.name.toLowerCase()}-btn`}
@@ -258,26 +234,20 @@ export function ShareSheet({
               <button
                 onClick={handleCopyLink}
                 className={cn(
-                  "flex flex-col items-center justify-center gap-2 p-4 rounded-xl",
-                  "bg-gradient-to-br text-white",
-                  "transition-all duration-200 hover:scale-105 hover:shadow-lg",
-                  "active:scale-95",
+                  'flex flex-col items-center justify-center gap-2 p-4 rounded-xl',
+                  'bg-gradient-to-br text-white',
+                  'transition-all duration-200 hover:scale-105 hover:shadow-lg',
+                  'active:scale-95',
                   copied
-                    ? "from-primary to-emerald-600"
-                    : "from-zinc-600 to-zinc-700 hover:from-zinc-500 hover:to-zinc-600",
-                  isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"
+                    ? 'from-primary to-emerald-600'
+                    : 'from-zinc-600 to-zinc-700 hover:from-zinc-500 hover:to-zinc-600',
+                  isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
                 )}
                 style={{ transitionDelay: `${100 + shareOptions.length * 40}ms` }}
                 data-testid="org-share-copy-btn"
               >
-                {copied ? (
-                  <Check className="h-6 w-6" />
-                ) : (
-                  <Copy className="h-6 w-6" />
-                )}
-                <span className="text-xs font-medium">
-                  {copied ? "Skopiowano!" : "Kopiuj link"}
-                </span>
+                {copied ? <Check className="h-6 w-6" /> : <Copy className="h-6 w-6" />}
+                <span className="text-xs font-medium">{copied ? 'Skopiowano!' : 'Kopiuj link'}</span>
               </button>
             </div>
 
@@ -288,11 +258,11 @@ export function ShareSheet({
                 variant="outline"
                 size="sm"
                 className={cn(
-                  "w-full gap-2 mt-3",
-                  "transition-all duration-500",
-                  isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"
+                  'w-full gap-2 mt-3',
+                  'transition-all duration-500',
+                  isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
                 )}
-                style={{ transitionDelay: "350ms" }}
+                style={{ transitionDelay: '350ms' }}
               >
                 <Share2 className="h-4 w-4" />
                 Więcej opcji...
@@ -304,27 +274,21 @@ export function ShareSheet({
         {/* URL Preview */}
         <div
           className={cn(
-            "flex items-center gap-2 p-3 mt-5 rounded-xl bg-surface-light/50 border border-border/40",
-            "transition-all duration-500 delay-300",
-            isVisible ? "opacity-100" : "opacity-0"
+            'flex items-center gap-2 p-3 mt-5 rounded-xl bg-surface-light/50 border border-border/40',
+            'transition-all duration-500 delay-300',
+            isVisible ? 'opacity-100' : 'opacity-0'
           )}
         >
-          <code className="flex-1 text-xs text-muted-foreground truncate font-mono">
-            {url}
-          </code>
+          <code className="flex-1 text-xs text-muted-foreground truncate font-mono">{url}</code>
           <button
             onClick={handleCopyLink}
             className={cn(
-              "shrink-0 p-2 rounded-lg transition-all duration-200",
-              "hover:bg-surface-hover",
-              copied && "text-primary"
+              'shrink-0 p-2 rounded-lg transition-all duration-200',
+              'hover:bg-surface-hover',
+              copied && 'text-primary'
             )}
           >
-            {copied ? (
-              <Check className="h-4 w-4" />
-            ) : (
-              <Copy className="h-4 w-4 text-muted-foreground" />
-            )}
+            {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4 text-muted-foreground" />}
           </button>
         </div>
       </div>

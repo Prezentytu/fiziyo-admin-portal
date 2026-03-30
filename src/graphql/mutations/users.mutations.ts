@@ -1,4 +1,4 @@
-import { gql } from "@apollo/client";
+import { gql } from '@apollo/client';
 
 /**
  * Mutacja do tworzenia nowego użytkownika
@@ -104,10 +104,11 @@ export const UPDATE_USER_PROFILE_MUTATION = gql`
     $userId: String!
     $firstName: String
     $lastName: String
+    $email: String
     $phone: String
     $address: String
   ) {
-    updateUserProfile(userId: $userId, firstName: $firstName, lastName: $lastName, phone: $phone, address: $address) {
+    updateUserProfile(userId: $userId, firstName: $firstName, lastName: $lastName, email: $email, phone: $phone, address: $address) {
       id
       clerkId
       username
@@ -251,7 +252,7 @@ export const SET_DEFAULT_ORGANIZATION_MUTATION = gql`
  * Mutacja do tworzenia shadow patient (rozszerzona wersja shadow user)
  * Używana podczas dodawania pacjenta przed jego rejestracją w systemie
  * Tworzy usera + dodaje do organizacji + przypisuje do terapeuty w jednym kroku
- * 
+ *
  * UWAGA: Backend wymaga phone jako wymagane, ale email jest opcjonalny.
  * Fizjoterapeuta musi podać przynajmniej jedno z nich.
  */
@@ -344,13 +345,7 @@ export const UPDATE_SHADOW_PATIENT_MUTATION = gql`
     $lastName: String
     $phone: String
   ) {
-    updateShadowPatient(
-      userId: $userId
-      email: $email
-      firstName: $firstName
-      lastName: $lastName
-      phone: $phone
-    ) {
+    updateShadowPatient(userId: $userId, email: $email, firstName: $firstName, lastName: $lastName, phone: $phone) {
       id
       fullname
       email
@@ -363,6 +358,53 @@ export const UPDATE_SHADOW_PATIENT_MUTATION = gql`
         phone
         address
       }
+    }
+  }
+`;
+
+/**
+ * Mutacja do aktywacji dostępu Premium dla pacjenta
+ * Aktywuje dostęp do aplikacji mobilnej na określoną liczbę dni (domyślnie 30)
+ * Model Pay-as-you-go: Gabinet płaci za każdego aktywnego pacjenta w cyklu rozliczeniowym
+ */
+export const ACTIVATE_PATIENT_PREMIUM_MUTATION = gql`
+  mutation ActivatePatientPremium($patientId: String!, $organizationId: String!, $durationDays: Int = 30) {
+    activatePatientPremium(patientId: $patientId, organizationId: $organizationId, durationDays: $durationDays) {
+      success
+      patientId
+      premiumValidUntil
+      message
+    }
+  }
+`;
+
+/**
+ * Mutacja do pełnego zarządzania dostępem Premium pacjenta.
+ * Umożliwia przedłużenie, ustawienie konkretnej daty końca lub natychmiastowe cofnięcie.
+ */
+export const UPDATE_PATIENT_PREMIUM_ACCESS_MUTATION = gql`
+  mutation UpdatePatientPremiumAccess(
+    $patientId: String!
+    $organizationId: String!
+    $action: PremiumAccessManagementAction!
+    $durationDays: Int
+    $targetExpiry: DateTime
+    $reason: String
+  ) {
+    updatePatientPremiumAccess(
+      patientId: $patientId
+      organizationId: $organizationId
+      action: $action
+      durationDays: $durationDays
+      targetExpiry: $targetExpiry
+      reason: $reason
+    ) {
+      success
+      patientId
+      action
+      previousPremiumValidUntil
+      premiumValidUntil
+      message
     }
   }
 `;

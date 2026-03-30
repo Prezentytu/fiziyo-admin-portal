@@ -25,6 +25,9 @@ export interface DocumentAnalysisResult {
   /** Metadane dokumentu */
   documentInfo: DocumentInfo;
 
+  /** Diagnostyka procesu dopasowania (additive, opcjonalne) */
+  matchingDiagnostics?: MatchingDiagnostics;
+
   /** Surowy tekst (debug) */
   rawText?: string;
 }
@@ -47,11 +50,10 @@ export interface ExtractedExercise {
   tempId: string;
   name: string;
   description?: string;
-  type: 'reps' | 'time' | 'hold';
+  type: 'reps' | 'time';
   sets?: number;
   reps?: number;
   duration?: number;
-  holdTime?: number;
   restBetweenSets?: number;
   restBetweenReps?: number;
   exerciseSide?: 'none' | 'left' | 'right' | 'both' | 'alternating';
@@ -95,6 +97,22 @@ export interface MatchSuggestion {
   confidence: number;
   matchReason: string;
   imageUrl?: string;
+  matchStatus?: MatchStatus;
+  matchingScope?: MatchingScope;
+  reasonCode?: string;
+  normalizedExtractedName?: string;
+  normalizedExistingName?: string;
+  source?: MatchSource;
+}
+
+export type MatchStatus = 'exact' | 'normalized_exact' | 'fuzzy' | 'semantic' | 'none';
+export type MatchingScope = 'organization' | 'available' | 'global' | 'unknown';
+export type MatchSource = 'backend' | 'frontend_fallback';
+
+export interface MatchingDiagnostics {
+  algorithmVersion?: string;
+  missingSuggestionsTempIds?: string[];
+  candidateCountByTempId?: Record<string, number>;
 }
 
 // ============================================
@@ -188,12 +206,12 @@ export interface DocumentImportResult {
 /**
  * Kroki wizarda importu
  */
-export type ImportWizardStep =
-  | 'upload'
-  | 'processing'
-  | 'review-exercises'
-  | 'review-sets'
-  | 'summary';
+export type ImportWizardStep = 'upload' | 'processing' | 'review-exercises' | 'review-sets' | 'summary';
+
+/**
+ * Tryb wejścia dla analizy AI
+ */
+export type ImportInputMode = 'file' | 'text';
 
 /**
  * Decyzja użytkownika dla ćwiczenia
@@ -230,7 +248,9 @@ export interface ClinicalNoteDecision {
  */
 export interface ImportState {
   step: ImportWizardStep;
+  inputMode: ImportInputMode;
   file: File | null;
+  pastedText: string;
   isAnalyzing: boolean;
   isImporting: boolean;
   analysisResult: DocumentAnalysisResult | null;

@@ -11,11 +11,7 @@ interface AutoSaveIndicatorProps {
   className?: string;
 }
 
-export function AutoSaveIndicator({
-  status,
-  lastSavedAt,
-  className,
-}: AutoSaveIndicatorProps) {
+export function AutoSaveIndicator({ status, lastSavedAt, className }: AutoSaveIndicatorProps) {
   const formatTime = (date: Date) => {
     return date.toLocaleTimeString('pl-PL', {
       hour: '2-digit',
@@ -24,18 +20,11 @@ export function AutoSaveIndicator({
   };
 
   return (
-    <div
-      className={cn(
-        'flex items-center gap-2 text-xs transition-opacity',
-        className
-      )}
-    >
+    <div className={cn('flex items-center gap-2 text-xs transition-opacity', className)}>
       {status === 'idle' && lastSavedAt && (
         <>
           <span className="h-2 w-2 rounded-full bg-muted-foreground/40" />
-          <span className="text-muted-foreground">
-            Zapisano o {formatTime(lastSavedAt)}
-          </span>
+          <span className="text-muted-foreground">Zapisano o {formatTime(lastSavedAt)}</span>
         </>
       )}
 
@@ -65,15 +54,3 @@ export function AutoSaveIndicator({
     </div>
   );
 }
-
-
-
-
-
-
-
-
-
-
-
-

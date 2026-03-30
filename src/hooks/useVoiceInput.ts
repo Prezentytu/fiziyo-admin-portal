@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback, useEffect, useRef } from 'react';
 
 // Rozszerzenie typów dla Web Speech API
 interface SpeechRecognitionEvent extends Event {
@@ -33,7 +33,7 @@ declare global {
   }
 }
 
-export type VoiceInputState = "idle" | "listening" | "processing";
+export type VoiceInputState = 'idle' | 'listening' | 'processing';
 
 interface UseVoiceInputOptions {
   /** Język rozpoznawania mowy (domyślnie pl-PL) */
@@ -70,34 +70,24 @@ interface UseVoiceInputReturn {
 /**
  * Hook do obsługi voice input z Web Speech API
  */
-export function useVoiceInput(
-  options: UseVoiceInputOptions = {}
-): UseVoiceInputReturn {
-  const {
-    language = "pl-PL",
-    autoSend = true,
-    onTranscript,
-    onSend,
-    silenceTimeout = 1500,
-  } = options;
+export function useVoiceInput(options: UseVoiceInputOptions = {}): UseVoiceInputReturn {
+  const { language = 'pl-PL', autoSend = true, onTranscript, onSend, silenceTimeout = 1500 } = options;
 
-  const [state, setState] = useState<VoiceInputState>("idle");
+  const [state, setState] = useState<VoiceInputState>('idle');
   const [isSupported, setIsSupported] = useState(false);
-  const [interimTranscript, setInterimTranscript] = useState("");
-  const [finalTranscript, setFinalTranscript] = useState("");
+  const [interimTranscript, setInterimTranscript] = useState('');
+  const [finalTranscript, setFinalTranscript] = useState('');
   const [error, setError] = useState<string | null>(null);
 
   const recognitionRef = useRef<SpeechRecognition | null>(null);
   const silenceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const finalTranscriptRef = useRef("");
+  const finalTranscriptRef = useRef('');
 
-  // Sprawdź wsparcie dla Web Speech API
+  // Sprawdź wsparcie dla Web Speech API (defer setState to avoid set-state-in-effect)
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const SpeechRecognitionAPI =
-        window.SpeechRecognition || window.webkitSpeechRecognition;
-      setIsSupported(!!SpeechRecognitionAPI);
-    }
+    if (typeof window === 'undefined') return;
+    const supported = !!(window.SpeechRecognition || window.webkitSpeechRecognition);
+    queueMicrotask(() => setIsSupported(supported));
   }, []);
 
   // Cleanup przy unmount
@@ -114,29 +104,28 @@ export function useVoiceInput(
 
   const startListening = useCallback(async () => {
     if (!isSupported) {
-      setError("Twoja przeglądarka nie wspiera rozpoznawania mowy");
+      setError('Twoja przeglądarka nie wspiera rozpoznawania mowy');
       return;
     }
 
     // Test czy mikrofon w ogóle działa
     try {
-      console.log("Testing microphone access...");
+      console.log('Testing microphone access...');
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      console.log("Microphone access OK, stopping stream...");
+      console.log('Microphone access OK, stopping stream...');
       stream.getTracks().forEach((track) => track.stop());
     } catch (e) {
-      console.error("getUserMedia failed:", e);
-      setError("Nie można uzyskać dostępu do mikrofonu. Sprawdź ustawienia.");
+      console.error('getUserMedia failed:', e);
+      setError('Nie można uzyskać dostępu do mikrofonu. Sprawdź ustawienia.');
       return;
     }
 
     setError(null);
-    setInterimTranscript("");
-    setFinalTranscript("");
-    finalTranscriptRef.current = "";
+    setInterimTranscript('');
+    setFinalTranscript('');
+    finalTranscriptRef.current = '';
 
-    const SpeechRecognitionAPI =
-      window.SpeechRecognition || window.webkitSpeechRecognition;
+    const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
     const recognition = new SpeechRecognitionAPI();
 
     recognition.continuous = true;
@@ -144,14 +133,14 @@ export function useVoiceInput(
     recognition.lang = language;
 
     recognition.onstart = () => {
-      console.log("🎤 Speech recognition started");
-      setState("listening");
+      console.log('🎤 Speech recognition started');
+      setState('listening');
     };
 
     recognition.onresult = (event: SpeechRecognitionEvent) => {
-      console.log("🎤 Speech result received:", event.results);
-      let interim = "";
-      let final = "";
+      console.log('🎤 Speech result received:', event.results);
+      let interim = '';
+      let final = '';
 
       for (let i = event.resultIndex; i < event.results.length; i++) {
         const result = event.results[i];
@@ -170,7 +159,7 @@ export function useVoiceInput(
       if (final) {
         finalTranscriptRef.current += final;
         setFinalTranscript(finalTranscriptRef.current);
-        console.log("  Calling onTranscript with:", finalTranscriptRef.current);
+        console.log('  Calling onTranscript with:', finalTranscriptRef.current);
         onTranscript?.(finalTranscriptRef.current);
       }
 
@@ -185,7 +174,7 @@ export function useVoiceInput(
       if (autoSend && finalTranscriptRef.current) {
         silenceTimeoutRef.current = setTimeout(() => {
           if (finalTranscriptRef.current.trim()) {
-            setState("processing");
+            setState('processing');
             onSend?.(finalTranscriptRef.current.trim());
             recognition.stop();
           }
@@ -194,28 +183,28 @@ export function useVoiceInput(
     };
 
     recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
-      console.error("Speech recognition error:", event.error);
+      console.error('Speech recognition error:', event.error);
 
       switch (event.error) {
-        case "no-speech":
-          setError("Nie wykryto mowy. Spróbuj ponownie.");
+        case 'no-speech':
+          setError('Nie wykryto mowy. Spróbuj ponownie.');
           break;
-        case "audio-capture":
-          setError("Brak dostępu do mikrofonu.");
+        case 'audio-capture':
+          setError('Brak dostępu do mikrofonu.');
           break;
-        case "not-allowed":
+        case 'not-allowed':
           setError(
-            "Dostęp do mikrofonu został zablokowany. Kliknij ikonę kłódki w pasku adresu, aby zmienić ustawienia."
+            'Dostęp do mikrofonu został zablokowany. Kliknij ikonę kłódki w pasku adresu, aby zmienić ustawienia.'
           );
           break;
-        case "network":
-          setError("Błąd sieci. Sprawdź połączenie.");
+        case 'network':
+          setError('Błąd sieci. Sprawdź połączenie.');
           break;
         default:
-          setError("Wystąpił błąd podczas rozpoznawania mowy.");
+          setError('Wystąpił błąd podczas rozpoznawania mowy.');
       }
 
-      setState("idle");
+      setState('idle');
     };
 
     recognition.onend = () => {
@@ -224,15 +213,11 @@ export function useVoiceInput(
       }
 
       // Jeśli jest transkrypt i nie był wysłany automatycznie
-      if (
-        !autoSend &&
-        finalTranscriptRef.current.trim() &&
-        state === "listening"
-      ) {
+      if (!autoSend && finalTranscriptRef.current.trim() && state === 'listening') {
         onTranscript?.(finalTranscriptRef.current.trim());
       }
 
-      setState("idle");
+      setState('idle');
       recognitionRef.current = null;
     };
 
@@ -241,9 +226,9 @@ export function useVoiceInput(
     try {
       recognition.start();
     } catch (e) {
-      console.error("Failed to start speech recognition:", e);
-      setError("Nie udało się uruchomić rozpoznawania mowy.");
-      setState("idle");
+      console.error('Failed to start speech recognition:', e);
+      setError('Nie udało się uruchomić rozpoznawania mowy.');
+      setState('idle');
     }
   }, [isSupported, language, autoSend, onTranscript, onSend, silenceTimeout, state]);
 
@@ -258,17 +243,17 @@ export function useVoiceInput(
 
     // Jeśli jest transkrypt, wyślij go
     if (autoSend && finalTranscriptRef.current.trim()) {
-      setState("processing");
+      setState('processing');
       onSend?.(finalTranscriptRef.current.trim());
     }
 
-    setState("idle");
+    setState('idle');
   }, [autoSend, onSend]);
 
   const toggleListening = useCallback(() => {
-    if (state === "listening") {
+    if (state === 'listening') {
       stopListening();
-    } else if (state === "idle") {
+    } else if (state === 'idle') {
       startListening();
     }
   }, [state, startListening, stopListening]);
@@ -284,4 +269,3 @@ export function useVoiceInput(
     toggleListening,
   };
 }
-

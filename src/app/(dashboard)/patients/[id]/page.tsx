@@ -15,18 +15,15 @@ import {
   MoreHorizontal,
   UserX,
   Wrench,
-  ChevronDown,
-  ChevronRight,
   CheckCircle2,
   Send,
   QrCode,
-  Target,
   User,
 } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
@@ -36,17 +33,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from '@/components/ui/collapsible';
 import { LoadingState } from '@/components/shared/LoadingState';
 import { EmptyState } from '@/components/shared/EmptyState';
-import { ActivityReport } from '@/components/patients/ActivityReport';
-import { PatientAssignmentCard } from '@/components/patients/PatientAssignmentCard';
+import { ActivityReport } from '@/features/patients/ActivityReport';
+import { PatientAssignmentCard } from '@/features/patients/PatientAssignmentCard';
+import { PatientDetailSkeleton } from '@/features/patients/PatientDetailSkeleton';
 import { ClinicalNotesList } from '@/components/clinical/ClinicalNotesList';
-import type { PatientAssignment, ExerciseMapping, ExerciseOverride } from '@/components/patients/PatientAssignmentCard';
+import type { PatientAssignment, ExerciseMapping, ExerciseOverride } from '@/features/patients/PatientAssignmentCard';
 
 import { GET_USER_BY_ID_QUERY, GET_USER_BY_CLERK_ID_QUERY } from '@/graphql/queries/users.queries';
 import { useOrganization } from '@/contexts/OrganizationContext';
@@ -54,20 +47,18 @@ import { GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY } from '@/graphql/queries/patient
 import type { UserByIdResponse } from '@/types/apollo';
 
 // Dialogs
-import { AssignmentWizard } from '@/components/assignment/AssignmentWizard';
-import type { Patient as AssignmentPatient } from '@/components/assignment/types';
-import { EditAssignmentScheduleDialog } from '@/components/patients/EditAssignmentScheduleDialog';
-import { EditExerciseOverrideDialog } from '@/components/patients/EditExerciseOverrideDialog';
-import { AddExerciseToPatientDialog } from '@/components/patients/AddExerciseToPatientDialog';
-import { ExercisePreviewDrawer } from '@/components/patients/ExercisePreviewDrawer';
-import { GeneratePDFDialog } from '@/components/exercise-sets/GeneratePDFDialog';
-import { PatientQRCodeDialog } from '@/components/patients/PatientQRCodeDialog';
-import { EditPatientDialog } from '@/components/patients/EditPatientDialog';
-import { BodyMap } from '@/components/patients/bodymap/index';
-import { FEATURE_FLAGS } from '@/lib/featureFlags';
-
+import { AssignmentWizard } from '@/features/assignment/AssignmentWizard';
+import type { Patient as AssignmentPatient } from '@/features/assignment/types';
+import { EditAssignmentScheduleDialog } from '@/features/patients/EditAssignmentScheduleDialog';
+import { EditExerciseOverrideDialog } from '@/features/patients/EditExerciseOverrideDialog';
+import { AddExerciseToPatientDialog } from '@/features/patients/AddExerciseToPatientDialog';
+import { ExercisePreviewDrawer } from '@/features/patients/ExercisePreviewDrawer';
+import { ExtendSetDialog } from '@/features/patients/ExtendSetDialog';
+import { GeneratePDFDialog } from '@/features/exercise-sets/GeneratePDFDialog';
+import { PatientQRCodeDialog } from '@/features/patients/PatientQRCodeDialog';
+import { EditPatientDialog } from '@/features/patients/EditPatientDialog';
 interface PatientDetailPageProps {
-  params: Promise<{ id: string }>;
+  readonly params: Promise<{ id: string }>;
 }
 
 interface PatientAssignmentsData {
@@ -79,9 +70,6 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
   const router = useRouter();
   const { user } = useUser();
   const { currentOrganization } = useOrganization();
-
-  // Collapsible sections state
-  const [isActivityOpen, setIsActivityOpen] = useState(false);
 
   // Dialog states
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
@@ -95,7 +83,11 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
   } | null>(null);
   const [pdfAssignment, setPdfAssignment] = useState<PatientAssignment | null>(null);
   const [addExerciseAssignment, setAddExerciseAssignment] = useState<PatientAssignment | null>(null);
-  const [previewExercise, setPreviewExercise] = useState<{ mapping: ExerciseMapping; override?: ExerciseOverride } | null>(null);
+  const [previewExercise, setPreviewExercise] = useState<{
+    mapping: ExerciseMapping;
+    override?: ExerciseOverride;
+  } | null>(null);
+  const [extendingAssignment, setExtendingAssignment] = useState<PatientAssignment | null>(null);
 
   // Get organization ID from context (changes when user switches organization)
   const organizationId = currentOrganization?.organizationId;
@@ -134,11 +126,7 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
   const setAssignments = assignments.filter((a) => a.exerciseSetId);
 
   if (userLoading) {
-    return (
-      <div className="space-y-6">
-        <LoadingState type="text" count={3} />
-      </div>
-    );
+    return <PatientDetailSkeleton />;
   }
 
   if (userError || !patient) {
@@ -191,23 +179,131 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
     setPdfAssignment(assignment);
   };
 
+  const handleExtend = (assignment: PatientAssignment) => {
+    setExtendingAssignment(assignment);
+  };
+
+  const assignmentsSectionContent = (() => {
+    if (assignmentsLoading) {
+      return (
+        <div className="space-y-3 animate-stagger">
+          <LoadingState type="row" count={3} />
+        </div>
+      );
+    }
+
+    if (setAssignments.length === 0) {
+      return (
+        <Card className="border-dashed border-border/60">
+          <CardContent className="py-12">
+            <EmptyState
+              icon={FolderKanban}
+              title="Brak przypisanych zestawów"
+              description="Przypisz pacjentowi zestaw ćwiczeń, aby mógł rozpocząć rehabilitację"
+              actionLabel="Przypisz zestaw"
+              onAction={() => setIsAssignDialogOpen(true)}
+            />
+          </CardContent>
+        </Card>
+      );
+    }
+
+    return (
+      <div className="space-y-3 animate-stagger">
+        {setAssignments.map((assignment) => (
+          <PatientAssignmentCard
+            key={assignment.id}
+            assignment={assignment}
+            patientId={id}
+            onEditSchedule={handleEditSchedule}
+            onEditExercise={handleEditExercise}
+            onPreviewExercise={handlePreviewExercise}
+            onAddExercise={handleAddExerciseToAssignment}
+            onExtend={handleExtend}
+            onGeneratePDF={handleGeneratePDF}
+            onRefresh={() => refetchAssignments()}
+          />
+        ))}
+      </div>
+    );
+  })();
+
   return (
     <div className="space-y-6">
-      {/* Compact Header - Back + Options */}
-      <div className="flex items-center justify-between">
+      {/* Patient Header — back, info & menu in one row */}
+      <div className="flex items-center gap-4">
         <Button
           variant="ghost"
-          size="sm"
+          size="icon"
           onClick={() => router.push('/patients')}
-          className="gap-2 text-muted-foreground hover:text-foreground"
+          className="h-9 w-9 shrink-0 text-muted-foreground hover:text-foreground"
           data-testid="patient-detail-back-btn"
         >
           <ArrowLeft className="h-4 w-4" />
-          Powrót
         </Button>
+
+        <div className="relative shrink-0">
+          <Avatar
+            className={cn(
+              'h-11 w-11 ring-2 transition-all',
+              patient.isShadowUser ? 'ring-muted-foreground/20' : 'ring-primary/20'
+            )}
+          >
+            <AvatarImage src={patient.image} alt={displayName} />
+            <AvatarFallback
+              className={cn(
+                'text-sm font-semibold',
+                patient.isShadowUser
+                  ? 'bg-muted-foreground/60 text-white'
+                  : 'bg-linear-to-br from-primary to-primary-dark text-primary-foreground'
+              )}
+            >
+              {initials}
+            </AvatarFallback>
+          </Avatar>
+          {patient.isShadowUser && (
+            <div className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-muted-foreground/80 flex items-center justify-center ring-2 ring-background">
+              <Wrench className="h-2.5 w-2.5 text-white" />
+            </div>
+          )}
+        </div>
+
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <h1 className="text-lg font-bold text-foreground truncate" data-testid="patient-detail-name">
+              {displayName}
+            </h1>
+            {patient.isShadowUser && (
+              <Badge variant="secondary" className="text-[10px] shrink-0">
+                Tymczasowe
+              </Badge>
+            )}
+          </div>
+          <div className="flex items-center gap-3 text-sm text-muted-foreground">
+            {patient.email && (
+              <a
+                href={`mailto:${patient.email}`}
+                className="flex items-center gap-1 hover:text-foreground transition-colors"
+              >
+                <Mail className="h-3.5 w-3.5 shrink-0" />
+                {patient.email}
+              </a>
+            )}
+            {patient.contactData?.phone && (
+              <a
+                href={`tel:${patient.contactData.phone}`}
+                className="flex items-center gap-1 hover:text-foreground transition-colors"
+              >
+                <Phone className="h-3.5 w-3.5 shrink-0" />
+                {patient.contactData.phone}
+              </a>
+            )}
+          </div>
+        </div>
+
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-8 w-8" data-testid="patient-detail-menu-trigger">
+            <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" data-testid="patient-detail-menu-trigger">
               <MoreHorizontal className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
@@ -229,117 +325,46 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
         </DropdownMenu>
       </div>
 
-      {/* Patient Info - Compact */}
-      <div className="flex items-center gap-4">
-        <div className="relative shrink-0">
-          <Avatar
-            className={cn(
-              'h-14 w-14 ring-2 transition-all',
-              patient.isShadowUser ? 'ring-muted-foreground/20' : 'ring-primary/20'
-            )}
-          >
-            <AvatarImage src={patient.image} alt={displayName} />
-            <AvatarFallback
-              className={cn(
-                'text-lg font-semibold',
-                patient.isShadowUser ? 'bg-muted-foreground/60 text-white' : 'bg-gradient-to-br from-primary to-primary-dark text-white'
-              )}
-            >
-              {initials}
-            </AvatarFallback>
-          </Avatar>
-          {patient.isShadowUser && (
-            <div className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-muted-foreground/80 flex items-center justify-center ring-2 ring-background">
-              <Wrench className="h-3 w-3 text-white" />
-            </div>
-          )}
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <h1 className="text-xl font-bold text-foreground truncate" data-testid="patient-detail-name">{displayName}</h1>
-            {patient.isShadowUser && (
-              <Badge variant="secondary" className="text-[10px] shrink-0">
-                Tymczasowe
-              </Badge>
-            )}
-          </div>
-          <div className="flex items-center gap-3 mt-1 text-sm text-muted-foreground flex-wrap">
-            {patient.email && (
-              <a
-                href={`mailto:${patient.email}`}
-                className="flex items-center gap-1 hover:text-foreground transition-colors"
-              >
-                <Mail className="h-3.5 w-3.5 shrink-0" />
-                {patient.email}
-              </a>
-            )}
-            {patient.contactData?.phone && (
-              <a
-                href={`tel:${patient.contactData.phone}`}
-                className="flex items-center gap-1 hover:text-foreground transition-colors"
-              >
-                <Phone className="h-3.5 w-3.5 shrink-0" />
-                {patient.contactData.phone}
-              </a>
-            )}
-          </div>
-        </div>
-      </div>
-
       {/* Hero Actions + Quick Stats */}
-      <div className="grid gap-3 grid-cols-1 sm:grid-cols-12">
-        {/* Hero Action - Przypisz zestaw */}
+      <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-12">
         <button
           onClick={() => setIsAssignDialogOpen(true)}
           disabled={!organizationId || !therapistId}
-          className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary via-primary to-primary-dark p-5 text-left transition-all duration-300 hover:shadow-xl hover:shadow-primary/20 hover:scale-[1.02] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 sm:col-span-4"
+          className="group relative overflow-hidden rounded-2xl bg-linear-to-br from-primary via-primary to-primary-dark p-5 text-left transition-all duration-300 hover:shadow-xl hover:shadow-primary/20 hover:scale-[1.02] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 sm:col-span-1 lg:col-span-4"
           data-testid="patient-detail-assign-btn"
         >
-          <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+          <div className="absolute inset-0 bg-linear-to-br from-white/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
           <div className="absolute -top-24 -right-24 w-48 h-48 bg-white/10 rounded-full blur-3xl group-hover:bg-white/20 transition-all duration-500" />
-
           <div className="relative flex items-center gap-4">
             <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm shrink-0 group-hover:scale-110 transition-transform duration-300">
               <Send className="h-5 w-5 text-white" />
             </div>
             <div className="min-w-0 flex-1">
-              <h3 className="text-base font-bold text-white">
-                Przypisz zestaw
-              </h3>
-              <p className="text-sm text-white/70">
-                Program ćwiczeń
-              </p>
+              <h3 className="text-base font-bold text-white">Przypisz zestaw</h3>
+              <p className="text-sm text-white/70">Program ćwiczeń</p>
             </div>
             <Plus className="h-5 w-5 text-white/60 group-hover:text-white transition-colors shrink-0" />
           </div>
         </button>
 
-        {/* Hero Action - QR Code */}
         <button
           onClick={() => setIsQRCodeDialogOpen(true)}
           disabled={!organizationId || !therapistId}
-          className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-info via-info to-cyan-600 p-5 text-left transition-all duration-300 hover:shadow-xl hover:shadow-info/20 hover:scale-[1.02] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 sm:col-span-4"
+          className="group relative overflow-hidden rounded-2xl border border-border/20 bg-surface-elevated p-5 text-left transition-all duration-150 hover:border-info/30 hover:bg-surface hover:shadow-lg cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed sm:col-span-1 lg:col-span-4"
+          data-testid="patient-detail-qr-btn-hero"
         >
-          <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-          <div className="absolute -top-24 -right-24 w-48 h-48 bg-white/10 rounded-full blur-3xl group-hover:bg-white/20 transition-all duration-500" />
-
           <div className="relative flex items-center gap-4">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm shrink-0 group-hover:scale-110 transition-transform duration-300">
-              <QrCode className="h-5 w-5 text-white" />
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-info/10 shrink-0 group-hover:bg-info/20 group-hover:scale-110 transition-all duration-150">
+              <QrCode className="h-5 w-5 text-info" />
             </div>
             <div className="min-w-0 flex-1">
-              <h3 className="text-base font-bold text-white">
-                QR kod
-              </h3>
-              <p className="text-sm text-white/70">
-                Połącz z aplikacją
-              </p>
+              <h3 className="text-base font-semibold text-foreground group-hover:text-info transition-colors duration-150">QR kod</h3>
+              <p className="text-sm text-muted-foreground">Połącz z aplikacją</p>
             </div>
           </div>
         </button>
 
-        {/* Quick Stats */}
-        <div className="grid grid-cols-2 gap-3 sm:col-span-4">
+        <div className="grid grid-cols-2 gap-3 sm:col-span-2 lg:col-span-4">
           <div className="rounded-2xl border border-border/40 bg-surface/50 p-4 flex flex-col items-center justify-center text-center">
             <div className="flex items-center gap-2">
               <FolderKanban className="h-4 w-4 text-primary" />
@@ -357,111 +382,54 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
         </div>
       </div>
 
-      {/* Main Content - Exercise Sets */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-base font-semibold text-foreground flex items-center gap-2">
-            <FolderKanban className="h-4 w-4 text-muted-foreground" />
-            Przypisane zestawy
-            <Badge variant="secondary" className="ml-1 text-xs">
-              {setAssignments.length}
-            </Badge>
-          </h2>
-        </div>
+      {/* Main Content - Bento grid */}
+      <div className="grid gap-4 md:gap-5 lg:grid-cols-12">
+        {/* Row 1: Assignments + Documentation */}
+        <Card className={cn(
+          'bg-surface border-border shadow-md overflow-hidden rounded-xl md:rounded-2xl',
+          therapistId && organizationId ? 'lg:col-span-8' : 'lg:col-span-12'
+        )}>
+          <CardHeader className="p-4 md:px-6 md:pt-6 md:pb-4">
+            <CardTitle className="flex items-center gap-2 md:gap-3 text-sm md:text-base font-semibold">
+              <div className="flex h-8 w-8 md:h-9 md:w-9 items-center justify-center rounded-lg md:rounded-xl bg-primary/10">
+                <FolderKanban className="h-4 w-4 text-primary" />
+              </div>
+              Przypisane zestawy
+              <Badge variant="secondary" className="ml-1 text-xs">
+                {setAssignments.length}
+              </Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0">
+            {assignmentsSectionContent}
+          </CardContent>
+        </Card>
 
-        {assignmentsLoading ? (
-          <div className="space-y-3 animate-stagger">
-            <LoadingState type="row" count={3} />
-          </div>
-        ) : setAssignments.length === 0 ? (
-          <Card className="border-dashed border-border/60">
-            <CardContent className="py-12">
-              <EmptyState
-                icon={FolderKanban}
-                title="Brak przypisanych zestawów"
-                description="Przypisz pacjentowi zestaw ćwiczeń, aby mógł rozpocząć rehabilitację"
-                actionLabel="Przypisz zestaw"
-                onAction={() => setIsAssignDialogOpen(true)}
-              />
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="space-y-3 animate-stagger">
-            {setAssignments.map((assignment) => (
-              <PatientAssignmentCard
-                key={assignment.id}
-                assignment={assignment}
-                patientId={id}
-                onEditSchedule={handleEditSchedule}
-                onEditExercise={handleEditExercise}
-                onPreviewExercise={handlePreviewExercise}
-                onAddExercise={handleAddExerciseToAssignment}
-                onGeneratePDF={handleGeneratePDF}
-                onRefresh={() => refetchAssignments()}
-              />
-            ))}
+        {therapistId && organizationId && (
+          <div className="lg:col-span-4">
+            <ClinicalNotesList
+              patientId={id}
+              therapistId={therapistId}
+              organizationId={organizationId}
+              patientName={patient?.fullname}
+            />
           </div>
         )}
-      </div>
 
-      {/* Pain Body Map Section - Hidden behind feature flag */}
-      {FEATURE_FLAGS.BODY_PAIN_MAP && (
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-base font-semibold text-foreground flex items-center gap-2">
-              <Target className="h-4 w-4 text-warning" />
-              Mapa bólu
-              <Badge variant="outline" className="ml-1 text-xs border-warning/40 text-warning">
-                Profesjonalna
-              </Badge>
-            </h2>
-          </div>
-          <Card className="border-border/40 overflow-hidden">
-            <div className="h-1 bg-gradient-to-r from-warning via-orange-500 to-red-500" />
-            <CardContent className="p-4 sm:p-6">
-              <BodyMap
-                patientId={id}
-                onSave={(session) => {
-                  console.log('Zapisano sesję mapy bólu:', session);
-                }}
-              />
-            </CardContent>
-          </Card>
-        </div>
-      )}
-
-      {/* Clinical Documentation Section */}
-      {therapistId && organizationId && (
-        <ClinicalNotesList
-          patientId={id}
-          therapistId={therapistId}
-          organizationId={organizationId}
-          patientName={patient?.fullname}
-        />
-      )}
-
-      {/* Collapsible Activity Section */}
-      <div className="space-y-3 pt-4 border-t border-border/40">
-        <Collapsible open={isActivityOpen} onOpenChange={setIsActivityOpen}>
-          <CollapsibleTrigger asChild>
-            <button className="w-full flex items-center justify-between p-4 rounded-xl bg-surface/50 border border-border/40 hover:bg-surface-light transition-colors">
-              <div className="flex items-center gap-3">
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-secondary/10">
-                  <Activity className="h-4 w-4 text-secondary" />
-                </div>
-                <span className="font-medium text-sm">Aktywność i postępy</span>
+        {/* Row 2: Activity - full width */}
+        <Card className="bg-surface border-border shadow-md overflow-hidden rounded-xl md:rounded-2xl lg:col-span-12">
+          <CardHeader className="p-4 md:px-6 md:pt-6 md:pb-4">
+            <CardTitle className="flex items-center gap-2 md:gap-3 text-sm md:text-base font-semibold">
+              <div className="flex h-8 w-8 md:h-9 md:w-9 items-center justify-center rounded-lg md:rounded-xl bg-info/10">
+                <Activity className="h-4 w-4 text-info" />
               </div>
-              {isActivityOpen ? (
-                <ChevronDown className="h-4 w-4 text-muted-foreground" />
-              ) : (
-                <ChevronRight className="h-4 w-4 text-muted-foreground" />
-              )}
-            </button>
-          </CollapsibleTrigger>
-          <CollapsibleContent className="pt-3">
-            <ActivityReport patientId={id} patientName={displayName} />
-          </CollapsibleContent>
-        </Collapsible>
+              Aktywność i postępy
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <ActivityReport patientId={id} patientName={displayName} heatmapDays={21} journalDays={3} />
+          </CardContent>
+        </Card>
       </div>
 
       {/* Assignment Wizard */}
@@ -470,13 +438,15 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
           open={isAssignDialogOpen}
           onOpenChange={setIsAssignDialogOpen}
           mode="from-patient"
-          preselectedPatient={{
-            id: patient.id,
-            name: displayName,
-            email: patient.email,
-            image: patient.image,
-            isShadowUser: patient.isShadowUser,
-          } as AssignmentPatient}
+          preselectedPatient={
+            {
+              id: patient.id,
+              name: displayName,
+              email: patient.email,
+              image: patient.image,
+              isShadowUser: patient.isShadowUser,
+            } as AssignmentPatient
+          }
           organizationId={organizationId}
           therapistId={therapistId}
           onSuccess={() => refetchAssignments()}
@@ -562,12 +532,30 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
         override={previewExercise?.override}
       />
 
+      {/* Extend Set Dialog */}
+      {extendingAssignment?.exerciseSet && organizationId && (
+        <ExtendSetDialog
+          open={!!extendingAssignment}
+          onOpenChange={(open) => !open && setExtendingAssignment(null)}
+          assignment={{
+            id: extendingAssignment.id,
+            exerciseSetId: extendingAssignment.exerciseSetId || '',
+            exerciseSetName: extendingAssignment.exerciseSet.name,
+            startDate: extendingAssignment.startDate || new Date().toISOString(),
+            endDate: extendingAssignment.endDate || new Date().toISOString(),
+            frequency: extendingAssignment.frequency,
+          }}
+          patient={{
+            id: patient.id,
+            name: displayName,
+          }}
+          organizationId={organizationId}
+          onSuccess={() => refetchAssignments()}
+        />
+      )}
+
       {/* Edit Patient Dialog */}
-      <EditPatientDialog
-        open={isEditPatientOpen}
-        onOpenChange={setIsEditPatientOpen}
-        patient={patient}
-      />
+      <EditPatientDialog open={isEditPatientOpen} onOpenChange={setIsEditPatientOpen} patient={patient} />
     </div>
   );
 }

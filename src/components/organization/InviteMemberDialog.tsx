@@ -1,63 +1,34 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { useState, useCallback } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
-import { useMutation } from "@apollo/client/react";
-import {
-  Loader2,
-  Mail,
-  Link2,
-  RefreshCw,
-} from "lucide-react";
-import { toast } from "sonner";
+import * as React from 'react';
+import { useState, useCallback } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import { useMutation } from '@apollo/client/react';
+import { CombinedGraphQLErrors } from '@apollo/client/errors';
+import { Loader2, Mail, Link2, RefreshCw } from 'lucide-react';
+import { toast } from 'sonner';
 
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
-import { LimitReachedDialog } from "@/components/shared/LimitReachedDialog";
-import { useLimitError } from "@/hooks/useLimitError";
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ShareSheet } from "@/components/organization/ShareSheet";
-import {
-  SEND_INVITATION_MUTATION,
-  GENERATE_INVITE_LINK_MUTATION,
-} from "@/graphql/mutations/organizations.mutations";
-import type { GenerateInviteLinkResponse } from "@/types/apollo";
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ShareSheet } from '@/components/organization/ShareSheet';
+import { SEND_INVITATION_MUTATION, GENERATE_INVITE_LINK_MUTATION } from '@/graphql/mutations/organizations.mutations';
+import type { GenerateInviteLinkResponse } from '@/types/apollo';
 
 // ========================================
 // Schema & Types
 // ========================================
 
 const inviteFormSchema = z.object({
-  email: z.string().email("Podaj prawidłowy adres email"),
-  role: z.enum(["admin", "therapist"]),
+  email: z.string().email('Podaj prawidłowy adres email'),
+  role: z.enum(['admin', 'therapist']),
   message: z.string().optional(),
 });
 
@@ -78,6 +49,37 @@ interface GeneratedLink {
   role: string;
 }
 
+const LEGACY_PLAN_LIMIT_CODES = new Set([
+  'THERAPIST_LIMIT_REACHED',
+  'PATIENT_LIMIT_REACHED',
+  'EXERCISE_LIMIT_REACHED',
+  'CLINIC_LIMIT_REACHED',
+]);
+
+function getInviteErrorMessage(error: unknown, fallbackMessage: string): string {
+  if (CombinedGraphQLErrors.is(error)) {
+    const legacyLimitError = error.errors.find((graphQLError) => {
+      const extensionCode = graphQLError.extensions?.code;
+      return typeof extensionCode === 'string' && LEGACY_PLAN_LIMIT_CODES.has(extensionCode);
+    });
+
+    if (legacyLimitError) {
+      return 'Nie można teraz wygenerować zaproszenia. Spróbuj ponownie później.';
+    }
+
+    const firstMessage = error.errors[0]?.message;
+    if (firstMessage) {
+      return firstMessage;
+    }
+  }
+
+  if (error instanceof Error && error.message) {
+    return error.message;
+  }
+
+  return fallbackMessage;
+}
+
 // ========================================
 // Component
 // ========================================
@@ -86,25 +88,20 @@ export function InviteMemberDialog({
   open,
   onOpenChange,
   organizationId,
-  organizationName = "organizacji",
+  organizationName = 'organizacji',
   onSuccess,
 }: InviteMemberDialogProps) {
   const [showCloseConfirm, setShowCloseConfirm] = useState(false);
-  const [activeTab, setActiveTab] = useState("email");
-  const [generatedLink, setGeneratedLink] = useState<GeneratedLink | null>(
-    null
-  );
-  const [linkRole, setLinkRole] = useState<string>("therapist");
-
-  // Limit error handling
-  const { limitError, handleError: handleLimitError, clearError: clearLimitError } = useLimitError();
+  const [activeTab, setActiveTab] = useState('email');
+  const [generatedLink, setGeneratedLink] = useState<GeneratedLink | null>(null);
+  const [linkRole, setLinkRole] = useState<string>('therapist');
 
   const form = useForm<InviteFormValues>({
     resolver: zodResolver(inviteFormSchema),
     defaultValues: {
-      email: "",
-      role: "therapist",
-      message: "",
+      email: '',
+      role: 'therapist',
+      message: '',
     },
   });
 
@@ -134,13 +131,10 @@ export function InviteMemberDialog({
   }, [open, form]);
 
   // Mutations
-  const [sendInvitation, { loading: sendingEmail }] = useMutation(
-    SEND_INVITATION_MUTATION
-  );
+  const [sendInvitation, { loading: sendingEmail }] = useMutation(SEND_INVITATION_MUTATION);
 
-  const [generateLink, { loading: generatingLink }] = useMutation<GenerateInviteLinkResponse>(
-    GENERATE_INVITE_LINK_MUTATION
-  );
+  const [generateLink, { loading: generatingLink }] =
+    useMutation<GenerateInviteLinkResponse>(GENERATE_INVITE_LINK_MUTATION);
 
   // Email submission
   const handleSubmit = async (values: InviteFormValues) => {
@@ -153,20 +147,14 @@ export function InviteMemberDialog({
           message: values.message || null,
         },
       });
-      toast.success("Zaproszenie zostało wysłane");
+      toast.success('Zaproszenie zostało wysłane');
       form.reset();
       onOpenChange(false);
       onSuccess?.();
     } catch (error: unknown) {
-      // Check if it's a limit error
-      if (handleLimitError(error)) {
-        return; // Dialog will show
-      }
-
-      const errorMessage =
-        error instanceof Error ? error.message : "Nieznany błąd";
-      console.error("Błąd podczas wysyłania zaproszenia:", error);
-      toast.error(errorMessage || "Nie udało się wysłać zaproszenia");
+      const errorMessage = getInviteErrorMessage(error, 'Nie udało się wysłać zaproszenia');
+      console.error('Błąd podczas wysyłania zaproszenia:', error);
+      toast.error(errorMessage);
     }
   };
 
@@ -185,13 +173,10 @@ export function InviteMemberDialog({
         const invitation = data.generateInviteLink;
         const token = invitation.invitationToken;
         if (!token) {
-          toast.error("Brak tokenu w odpowiedzi");
+          toast.error('Brak tokenu w odpowiedzi');
           return;
         }
-        const baseUrl =
-          typeof window !== "undefined"
-            ? window.location.origin
-            : "https://app.fizjo.pl";
+        const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://app.fizjo.pl';
         const url = `${baseUrl}/invite?token=${token}`;
 
         setGeneratedLink({
@@ -201,25 +186,19 @@ export function InviteMemberDialog({
           role: invitation.role,
         });
 
-        toast.success("Link został wygenerowany");
+        toast.success('Link został wygenerowany');
       }
     } catch (error: unknown) {
-      // Check if it's a limit error
-      if (handleLimitError(error)) {
-        return; // Dialog will show
-      }
-
-      const errorMessage =
-        error instanceof Error ? error.message : "Nieznany błąd";
-      console.error("Błąd podczas generowania linku:", error);
-      toast.error(errorMessage || "Nie udało się wygenerować linku");
+      const errorMessage = getInviteErrorMessage(error, 'Nie udało się wygenerować linku');
+      console.error('Błąd podczas generowania linku:', error);
+      toast.error(errorMessage);
     }
   };
 
   const roleLabels: Record<string, string> = {
-    OWNER: "Właściciel",
-    ADMIN: "Administrator",
-    THERAPIST: "Fizjoterapeuta",
+    OWNER: 'Właściciel',
+    ADMIN: 'Administrator',
+    THERAPIST: 'Fizjoterapeuta',
   };
 
   return (
@@ -235,9 +214,7 @@ export function InviteMemberDialog({
       >
         <DialogHeader>
           <DialogTitle>Zaproś osobę</DialogTitle>
-          <DialogDescription>
-            Wyślij zaproszenie emailem lub wygeneruj link do udostępnienia
-          </DialogDescription>
+          <DialogDescription>Wyślij zaproszenie emailem lub wygeneruj link do udostępnienia</DialogDescription>
         </DialogHeader>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -255,10 +232,7 @@ export function InviteMemberDialog({
           {/* Email Tab */}
           <TabsContent value="email" className="mt-4">
             <Form {...form}>
-              <form
-                onSubmit={form.handleSubmit(handleSubmit)}
-                className="space-y-4"
-              >
+              <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
                 <FormField
                   control={form.control}
                   name="email"
@@ -266,15 +240,9 @@ export function InviteMemberDialog({
                     <FormItem>
                       <FormLabel>Email *</FormLabel>
                       <FormControl>
-                        <Input
-                          placeholder="jan.kowalski@email.com"
-                          data-testid="org-invite-email-input"
-                          {...field}
-                        />
+                        <Input placeholder="jan.kowalski@email.com" data-testid="org-invite-email-input" {...field} />
                       </FormControl>
-                      <FormDescription>
-                        Na ten adres zostanie wysłane zaproszenie
-                      </FormDescription>
+                      <FormDescription>Na ten adres zostanie wysłane zaproszenie</FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -286,10 +254,7 @@ export function InviteMemberDialog({
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Rola *</FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
-                      >
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl>
                           <SelectTrigger data-testid="org-invite-role-select">
                             <SelectValue placeholder="Wybierz rolę" />
@@ -299,13 +264,12 @@ export function InviteMemberDialog({
                           <SelectItem value="therapist" data-testid="org-invite-role-therapist">
                             Fizjoterapeuta
                           </SelectItem>
-                          <SelectItem value="admin" data-testid="org-invite-role-admin">Administrator</SelectItem>
+                          <SelectItem value="admin" data-testid="org-invite-role-admin">
+                            Administrator
+                          </SelectItem>
                         </SelectContent>
                       </Select>
-                      <FormDescription>
-                        Fizjoterapeuci mogą tworzyć ćwiczenia i zarządzać
-                        pacjentami
-                      </FormDescription>
+                      <FormDescription>Fizjoterapeuci mogą tworzyć ćwiczenia i zarządzać pacjentami</FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -339,9 +303,7 @@ export function InviteMemberDialog({
                     Anuluj
                   </Button>
                   <Button type="submit" disabled={sendingEmail} data-testid="org-invite-send-btn">
-                    {sendingEmail && (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    )}
+                    {sendingEmail && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     Wyślij zaproszenie
                   </Button>
                 </div>
@@ -366,8 +328,7 @@ export function InviteMemberDialog({
                     </SelectContent>
                   </Select>
                   <p className="text-xs text-muted-foreground">
-                    Każda osoba z tym linkiem dołączy jako{" "}
-                    {roleLabels[linkRole.toUpperCase()] || linkRole}
+                    Każda osoba z tym linkiem dołączy jako {roleLabels[linkRole.toUpperCase()] || linkRole}
                   </p>
                 </div>
               )}
@@ -430,12 +391,6 @@ export function InviteMemberDialog({
         cancelText="Kontynuuj edycję"
         variant="destructive"
         onConfirm={handleConfirmClose}
-      />
-
-      <LimitReachedDialog
-        open={!!limitError}
-        onClose={clearLimitError}
-        limitInfo={limitError}
       />
     </Dialog>
   );

@@ -178,16 +178,7 @@ export const QUICK_PHRASES = {
     'Nadgarstek',
     'Łokieć',
   ],
-  painCharacter: [
-    'Ostry',
-    'Tępy',
-    'Promieniujący',
-    'Stały',
-    'Okresowy',
-    'Kłujący',
-    'Palący',
-    'Pulsujący',
-  ],
+  painCharacter: ['Ostry', 'Tępy', 'Promieniujący', 'Stały', 'Okresowy', 'Kłujący', 'Palący', 'Pulsujący'],
   aggravatingFactors: [
     'Długotrwałe siedzenie',
     'Chodzenie po schodach',

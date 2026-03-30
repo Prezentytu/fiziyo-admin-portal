@@ -1,10 +1,17 @@
-"use client";
+'use client';
 
-import { useState, useCallback, useMemo } from "react";
-import { documentImportService } from "@/services/documentImportService";
+import { useState, useCallback, useMemo } from 'react';
+import { documentImportService } from '@/services/documentImportService';
+import { normalizeText } from '@/utils/textUtils';
+import {
+  IMPORT_CONFIDENT_MATCH_THRESHOLD,
+  IMPORT_FALLBACK_MATCH_CONFIDENCE,
+} from '@/features/import/importMatching.constants';
 import type {
   ImportState,
   ImportWizardStep,
+  ImportInputMode,
+  DocumentAnalysisResult,
   ExerciseDecision,
   ExerciseSetDecision,
   ClinicalNoteDecision,
@@ -12,18 +19,37 @@ import type {
   ExerciseImportItem,
   ExerciseSetImportItem,
   ClinicalNoteImportItem,
-} from "@/types/import.types";
+  MatchSuggestion,
+} from '@/types/import.types';
 
 type ExerciseFilterType = 'all' | 'create' | 'reuse' | 'skip' | 'matched';
 
 interface ExtendedImportState extends ImportState {
+  inputMode: ImportInputMode;
+  pastedText: string;
   assignSetsToPatient: boolean;
   exerciseFilter: ExerciseFilterType;
+  createSetAfterImport: boolean;
 }
 
+interface AvailableExerciseMatchCandidate {
+  id: string;
+  name: string;
+  imageUrl?: string;
+}
+
+interface AnalyzeInputOptions {
+  additionalContext?: string;
+  availableExercises?: AvailableExerciseMatchCandidate[];
+}
+
+const MIN_PASTED_TEXT_LENGTH = 30;
+
 const initialState: ExtendedImportState = {
-  step: "upload",
+  step: 'upload',
+  inputMode: 'file',
   file: null,
+  pastedText: '',
   isAnalyzing: false,
   isImporting: false,
   analysisResult: null,
@@ -35,7 +61,61 @@ const initialState: ExtendedImportState = {
   importResult: null,
   assignSetsToPatient: false,
   exerciseFilter: 'all',
+  createSetAfterImport: false,
 };
+
+function withFrontendFallbackMatches(
+  analysisResult: DocumentAnalysisResult,
+  availableExercises: AvailableExerciseMatchCandidate[] = []
+): DocumentAnalysisResult {
+  if (availableExercises.length === 0) {
+    return analysisResult;
+  }
+
+  const normalizedNameToExercise = new Map<string, AvailableExerciseMatchCandidate>();
+  for (const candidate of availableExercises) {
+    const normalizedName = normalizeText(candidate.name);
+    if (normalizedName && !normalizedNameToExercise.has(normalizedName)) {
+      normalizedNameToExercise.set(normalizedName, candidate);
+    }
+  }
+
+  const mergedMatchSuggestions: Record<string, MatchSuggestion[]> = { ...analysisResult.matchSuggestions };
+
+  for (const exercise of analysisResult.exercises) {
+    const existingSuggestions = analysisResult.matchSuggestions[exercise.tempId] ?? [];
+    if (existingSuggestions.length > 0) {
+      continue;
+    }
+
+    const normalizedExtractedName = normalizeText(exercise.name);
+    const exactCandidate = normalizedNameToExercise.get(normalizedExtractedName);
+    if (!exactCandidate) {
+      continue;
+    }
+
+    mergedMatchSuggestions[exercise.tempId] = [
+      {
+        existingExerciseId: exactCandidate.id,
+        existingExerciseName: exactCandidate.name,
+        confidence: IMPORT_FALLBACK_MATCH_CONFIDENCE,
+        matchReason: 'Lokalny fallback: nazwa 1:1 po normalizacji',
+        imageUrl: exactCandidate.imageUrl,
+        matchStatus: 'normalized_exact',
+        matchingScope: 'available',
+        reasonCode: 'frontend-normalized-exact-fallback',
+        normalizedExtractedName,
+        normalizedExistingName: normalizedExtractedName,
+        source: 'frontend_fallback',
+      },
+    ];
+  }
+
+  return {
+    ...analysisResult,
+    matchSuggestions: mergedMatchSuggestions,
+  };
+}
 
 /**
  * Hook do zarządzania procesem importu dokumentów
@@ -44,13 +124,48 @@ export function useDocumentImport() {
   const [state, setState] = useState<ExtendedImportState>(initialState);
 
   // ============================================
-  // File Upload
+  // Input selection
   // ============================================
+
+  const setInputMode = useCallback((inputMode: ImportInputMode) => {
+    setState((prev) => ({
+      ...prev,
+      inputMode,
+      step: 'upload',
+      error: null,
+      analysisResult: null,
+      exerciseDecisions: {},
+      setDecisions: {},
+      noteDecisions: {},
+      importResult: null,
+      file: inputMode === 'file' ? prev.file : null,
+      pastedText: inputMode === 'text' ? prev.pastedText : '',
+    }));
+  }, []);
 
   const setFile = useCallback((file: File | null) => {
     setState((prev) => ({
       ...prev,
+      inputMode: 'file',
       file,
+      pastedText: '',
+      step: 'upload',
+      error: null,
+      analysisResult: null,
+      exerciseDecisions: {},
+      setDecisions: {},
+      noteDecisions: {},
+      importResult: null,
+    }));
+  }, []);
+
+  const setPastedText = useCallback((pastedText: string) => {
+    setState((prev) => ({
+      ...prev,
+      inputMode: 'text',
+      pastedText,
+      file: null,
+      step: 'upload',
       error: null,
       analysisResult: null,
       exerciseDecisions: {},
@@ -81,63 +196,86 @@ export function useDocumentImport() {
     }));
   }, []);
 
+  const setCreateSetAfterImport = useCallback((create: boolean) => {
+    setState((prev) => ({
+      ...prev,
+      createSetAfterImport: create,
+    }));
+  }, []);
+
   // ============================================
   // Analysis
   // ============================================
 
-  const analyzeDocument = useCallback(
-    async (additionalContext?: string) => {
-      if (!state.file) {
-        setState((prev) => ({ ...prev, error: "Wybierz plik do analizy" }));
-        return;
-      }
+  const analyzeInput = useCallback(
+    async (options?: AnalyzeInputOptions) => {
+      const additionalContext = options?.additionalContext;
+      if (state.inputMode === 'file') {
+        if (!state.file) {
+          setState((prev) => ({ ...prev, error: 'Wybierz plik do analizy' }));
+          return;
+        }
 
-      // Walidacja
-      if (!documentImportService.isFormatSupported(state.file)) {
-        setState((prev) => ({
-          ...prev,
-          error: "Nieobsługiwany format pliku. Obsługiwane: PDF, Excel, CSV, TXT",
-        }));
-        return;
-      }
+        // Walidacja pliku
+        if (!documentImportService.isFormatSupported(state.file)) {
+          setState((prev) => ({
+            ...prev,
+            error: 'Nieobsługiwany format pliku. Obsługiwane: PDF, Excel, CSV, TXT',
+          }));
+          return;
+        }
 
-      if (!documentImportService.isFileSizeValid(state.file)) {
-        setState((prev) => ({
-          ...prev,
-          error: `Plik jest za duży. Maksymalny rozmiar: ${documentImportService.getMaxFileSizeMB()}MB`,
-        }));
-        return;
+        if (!documentImportService.isFileSizeValid(state.file)) {
+          setState((prev) => ({
+            ...prev,
+            error: `Plik jest za duży. Maksymalny rozmiar: ${documentImportService.getMaxFileSizeMB()}MB`,
+          }));
+          return;
+        }
+      } else {
+        const textLength = state.pastedText.trim().length;
+        if (textLength < MIN_PASTED_TEXT_LENGTH) {
+          setState((prev) => ({
+            ...prev,
+            error: `Wklej dłuższy tekst do analizy (minimum ${MIN_PASTED_TEXT_LENGTH} znaków).`,
+          }));
+          return;
+        }
       }
 
       setState((prev) => ({
         ...prev,
-        step: "processing",
+        step: 'processing',
         isAnalyzing: true,
         error: null,
       }));
 
       try {
-        const result = await documentImportService.analyzeDocument(
-          state.file,
-          state.selectedPatientId,
-          additionalContext
-        );
+        let analysisResult;
+        if (state.inputMode === 'file' && state.file) {
+          analysisResult = await documentImportService.analyzeDocument(state.file, state.selectedPatientId, additionalContext);
+        } else {
+          analysisResult = await documentImportService.analyzeText(
+            state.pastedText.trim(),
+            state.selectedPatientId,
+            additionalContext
+          );
+        }
+
+        const result = withFrontendFallbackMatches(analysisResult, options?.availableExercises);
 
         // Inicjalizuj domyślne decyzje
         const exerciseDecisions: Record<string, ExerciseDecision> = {};
         for (const exercise of result.exercises) {
-          const hasMatch =
-            result.matchSuggestions[exercise.tempId]?.length > 0;
+          const hasMatch = result.matchSuggestions[exercise.tempId]?.length > 0;
           const bestMatch = result.matchSuggestions[exercise.tempId]?.[0];
 
           exerciseDecisions[exercise.tempId] = {
             tempId: exercise.tempId,
             action:
-              hasMatch && bestMatch && bestMatch.confidence >= 0.8
-                ? "reuse"
-                : "create",
+              hasMatch && bestMatch && bestMatch.confidence >= IMPORT_CONFIDENT_MATCH_THRESHOLD ? 'reuse' : 'create',
             reuseExerciseId:
-              hasMatch && bestMatch && bestMatch.confidence >= 0.8
+              hasMatch && bestMatch && bestMatch.confidence >= IMPORT_CONFIDENT_MATCH_THRESHOLD
                 ? bestMatch.existingExerciseId
                 : undefined,
           };
@@ -147,7 +285,7 @@ export function useDocumentImport() {
         for (const set of result.exerciseSets) {
           setDecisions[set.tempId] = {
             tempId: set.tempId,
-            action: "create",
+            action: 'create',
           };
         }
 
@@ -155,13 +293,13 @@ export function useDocumentImport() {
         for (const note of result.clinicalNotes) {
           noteDecisions[note.tempId] = {
             tempId: note.tempId,
-            action: "create",
+            action: 'create',
           };
         }
 
         setState((prev) => ({
           ...prev,
-          step: "review-exercises",
+          step: 'review-exercises',
           isAnalyzing: false,
           analysisResult: result,
           exerciseDecisions,
@@ -171,72 +309,60 @@ export function useDocumentImport() {
       } catch (error) {
         setState((prev) => ({
           ...prev,
-          step: "upload",
+          step: 'upload',
           isAnalyzing: false,
-          error:
-            error instanceof Error
-              ? error.message
-              : "Błąd podczas analizy dokumentu",
+          error: error instanceof Error ? error.message : 'Błąd podczas analizy dokumentu',
         }));
       }
     },
-    [state.file, state.selectedPatientId]
+    [state.file, state.inputMode, state.pastedText, state.selectedPatientId]
   );
 
   // ============================================
   // Individual Decisions
   // ============================================
 
-  const updateExerciseDecision = useCallback(
-    (tempId: string, decision: Partial<ExerciseDecision>) => {
-      setState((prev) => ({
-        ...prev,
-        exerciseDecisions: {
-          ...prev.exerciseDecisions,
-          [tempId]: {
-            ...prev.exerciseDecisions[tempId],
-            ...decision,
-            tempId,
-          },
+  const updateExerciseDecision = useCallback((tempId: string, decision: Partial<ExerciseDecision>) => {
+    setState((prev) => ({
+      ...prev,
+      exerciseDecisions: {
+        ...prev.exerciseDecisions,
+        [tempId]: {
+          ...prev.exerciseDecisions[tempId],
+          ...decision,
+          tempId,
         },
-      }));
-    },
-    []
-  );
+      },
+    }));
+  }, []);
 
-  const updateSetDecision = useCallback(
-    (tempId: string, decision: Partial<ExerciseSetDecision>) => {
-      setState((prev) => ({
-        ...prev,
-        setDecisions: {
-          ...prev.setDecisions,
-          [tempId]: {
-            ...prev.setDecisions[tempId],
-            ...decision,
-            tempId,
-          },
+  const updateSetDecision = useCallback((tempId: string, decision: Partial<ExerciseSetDecision>) => {
+    setState((prev) => ({
+      ...prev,
+      setDecisions: {
+        ...prev.setDecisions,
+        [tempId]: {
+          ...prev.setDecisions[tempId],
+          ...decision,
+          tempId,
         },
-      }));
-    },
-    []
-  );
+      },
+    }));
+  }, []);
 
-  const updateNoteDecision = useCallback(
-    (tempId: string, decision: Partial<ClinicalNoteDecision>) => {
-      setState((prev) => ({
-        ...prev,
-        noteDecisions: {
-          ...prev.noteDecisions,
-          [tempId]: {
-            ...prev.noteDecisions[tempId],
-            ...decision,
-            tempId,
-          },
+  const updateNoteDecision = useCallback((tempId: string, decision: Partial<ClinicalNoteDecision>) => {
+    setState((prev) => ({
+      ...prev,
+      noteDecisions: {
+        ...prev.noteDecisions,
+        [tempId]: {
+          ...prev.noteDecisions[tempId],
+          ...decision,
+          tempId,
         },
-      }));
-    },
-    []
-  );
+      },
+    }));
+  }, []);
 
   // ============================================
   // Bulk Actions
@@ -253,7 +379,7 @@ export function useDocumentImport() {
       for (const exercise of prev.analysisResult.exercises) {
         newDecisions[exercise.tempId] = {
           tempId: exercise.tempId,
-          action: "create",
+          action: 'create',
           reuseExerciseId: undefined,
         };
       }
@@ -276,7 +402,7 @@ export function useDocumentImport() {
       for (const exercise of prev.analysisResult.exercises) {
         newDecisions[exercise.tempId] = {
           tempId: exercise.tempId,
-          action: "skip",
+          action: 'skip',
           reuseExerciseId: undefined,
         };
       }
@@ -303,7 +429,37 @@ export function useDocumentImport() {
           const bestMatch = suggestions[0];
           newDecisions[exercise.tempId] = {
             tempId: exercise.tempId,
-            action: "reuse",
+            action: 'reuse',
+            reuseExerciseId: bestMatch.existingExerciseId,
+          };
+        }
+      }
+
+      return {
+        ...prev,
+        exerciseDecisions: newDecisions,
+      };
+    });
+  }, []);
+
+  /**
+   * Zatwierdź wszystkie pewne dopasowania (confidence >= 0.7)
+   * Używane przez sekcję A w Review Dashboard
+   */
+  const approveAllConfidentMatches = useCallback(() => {
+    setState((prev) => {
+      if (!prev.analysisResult) return prev;
+
+      const newDecisions: Record<string, ExerciseDecision> = { ...prev.exerciseDecisions };
+
+      for (const exercise of prev.analysisResult.exercises) {
+        const suggestions = prev.analysisResult.matchSuggestions[exercise.tempId];
+        const bestMatch = suggestions?.[0];
+
+        if (bestMatch && bestMatch.confidence >= IMPORT_CONFIDENT_MATCH_THRESHOLD) {
+          newDecisions[exercise.tempId] = {
+            tempId: exercise.tempId,
+            action: 'reuse',
             reuseExerciseId: bestMatch.existingExerciseId,
           };
         }
@@ -326,13 +482,7 @@ export function useDocumentImport() {
 
   const goNext = useCallback(() => {
     setState((prev) => {
-      const stepOrder: ImportWizardStep[] = [
-        "upload",
-        "processing",
-        "review-exercises",
-        "review-sets",
-        "summary",
-      ];
+      const stepOrder: ImportWizardStep[] = ['upload', 'processing', 'review-exercises', 'review-sets', 'summary'];
       const currentIndex = stepOrder.indexOf(prev.step);
       const nextStep = stepOrder[currentIndex + 1] || prev.step;
       return { ...prev, step: nextStep };
@@ -341,13 +491,7 @@ export function useDocumentImport() {
 
   const goBack = useCallback(() => {
     setState((prev) => {
-      const stepOrder: ImportWizardStep[] = [
-        "upload",
-        "processing",
-        "review-exercises",
-        "review-sets",
-        "summary",
-      ];
+      const stepOrder: ImportWizardStep[] = ['upload', 'processing', 'review-exercises', 'review-sets', 'summary'];
       const currentIndex = stepOrder.indexOf(prev.step);
       const prevStep = stepOrder[currentIndex - 1] || prev.step;
       return { ...prev, step: prevStep };
@@ -377,11 +521,11 @@ export function useDocumentImport() {
 
     for (const exercise of analysisResult.exercises) {
       const decision = exerciseDecisions[exercise.tempId];
-      if (!decision || decision.action === "skip") continue;
+      if (!decision || decision.action === 'skip') continue;
 
-      if (decision.action === "reuse" && decision.reuseExerciseId) {
+      if (decision.action === 'reuse' && decision.reuseExerciseId) {
         exercisesToReuse[exercise.tempId] = decision.reuseExerciseId;
-      } else if (decision.action === "create") {
+      } else if (decision.action === 'create') {
         const editedData = decision.editedData || {};
         exercisesToCreate.push({
           tempId: exercise.tempId,
@@ -405,12 +549,12 @@ export function useDocumentImport() {
 
     for (const set of analysisResult.exerciseSets) {
       const decision = setDecisions[set.tempId];
-      if (!decision || decision.action === "skip") continue;
+      if (!decision || decision.action === 'skip') continue;
 
       // Filtruj ćwiczenia które nie są pominięte
       const validExerciseTempIds = set.exerciseTempIds.filter((tempId) => {
         const exDecision = exerciseDecisions[tempId];
-        return exDecision && exDecision.action !== "skip";
+        return exDecision && exDecision.action !== 'skip';
       });
 
       if (validExerciseTempIds.length === 0) continue;
@@ -433,7 +577,7 @@ export function useDocumentImport() {
     if (selectedPatientId) {
       for (const note of analysisResult.clinicalNotes) {
         const decision = noteDecisions[note.tempId];
-        if (!decision || decision.action === "skip") continue;
+        if (!decision || decision.action === 'skip') continue;
 
         clinicalNotesToCreate.push({
           tempId: note.tempId,
@@ -465,7 +609,7 @@ export function useDocumentImport() {
         ...prev,
         isImporting: false,
         importResult: result,
-        step: "summary",
+        step: 'summary',
       }));
 
       return result;
@@ -473,8 +617,7 @@ export function useDocumentImport() {
       setState((prev) => ({
         ...prev,
         isImporting: false,
-        error:
-          error instanceof Error ? error.message : "Błąd podczas importu",
+        error: error instanceof Error ? error.message : 'Błąd podczas importu',
       }));
       return null;
     }
@@ -493,8 +636,7 @@ export function useDocumentImport() {
   // ============================================
 
   const stats = useMemo(() => {
-    const { analysisResult, exerciseDecisions, setDecisions, noteDecisions } =
-      state;
+    const { analysisResult, exerciseDecisions, setDecisions, noteDecisions } = state;
 
     if (!analysisResult) {
       return {
@@ -514,8 +656,8 @@ export function useDocumentImport() {
 
     const exerciseStats = Object.values(exerciseDecisions).reduce(
       (acc, d) => {
-        if (d.action === "create") acc.create++;
-        else if (d.action === "reuse") acc.reuse++;
+        if (d.action === 'create') acc.create++;
+        else if (d.action === 'reuse') acc.reuse++;
         else acc.skip++;
         return acc;
       },
@@ -532,7 +674,7 @@ export function useDocumentImport() {
 
     const setStats = Object.values(setDecisions).reduce(
       (acc, d) => {
-        if (d.action === "create") acc.create++;
+        if (d.action === 'create') acc.create++;
         else acc.skip++;
         return acc;
       },
@@ -541,7 +683,7 @@ export function useDocumentImport() {
 
     const noteStats = Object.values(noteDecisions).reduce(
       (acc, d) => {
-        if (d.action === "create") acc.create++;
+        if (d.action === 'create') acc.create++;
         else acc.skip++;
         return acc;
       },
@@ -594,15 +736,15 @@ export function useDocumentImport() {
 
   const canProceed = useMemo(() => {
     switch (state.step) {
-      case "upload":
-        return !!state.file;
-      case "processing":
+      case 'upload':
+        return state.inputMode === 'file' ? !!state.file : state.pastedText.trim().length >= MIN_PASTED_TEXT_LENGTH;
+      case 'processing':
         return false;
-      case "review-exercises":
+      case 'review-exercises':
         return stats.exercisesToCreate + stats.exercisesToReuse > 0;
-      case "review-sets":
+      case 'review-sets':
         return true; // Zestawy są opcjonalne
-      case "summary":
+      case 'summary':
         return !!state.importResult?.success;
       default:
         return false;
@@ -618,10 +760,14 @@ export function useDocumentImport() {
 
     // Actions
     setFile,
+    setInputMode,
+    setPastedText,
     setPatientId,
     setAssignSetsToPatient,
     setExerciseFilter,
-    analyzeDocument,
+    setCreateSetAfterImport,
+    analyzeInput,
+    analyzeDocument: analyzeInput,
     updateExerciseDecision,
     updateSetDecision,
     updateNoteDecision,
@@ -630,6 +776,7 @@ export function useDocumentImport() {
     setAllExercisesCreate,
     setAllExercisesSkip,
     useAllMatchedExercises,
+    approveAllConfidentMatches,
 
     // Navigation
     goToStep,

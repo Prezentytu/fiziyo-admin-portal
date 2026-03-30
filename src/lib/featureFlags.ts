@@ -3,19 +3,6 @@
 
 export const FEATURE_FLAGS = {
   /**
-   * Professional Body Pain Map (NEW)
-   * - 4 views (front, back, left, right)
-   * - Clinical pain types (sharp, dull, radiating, etc.)
-   * - Touch support for tablets
-   * - Exercise suggestions based on pain regions
-   * - Export to PNG/PDF
-   * - Session history with comparison
-   *
-   * Set to true to enable, false to hide completely
-   */
-  BODY_PAIN_MAP: false,
-
-  /**
    * AI-powered exercise set generator
    */
   AI_SET_GENERATOR: true,
@@ -24,6 +11,18 @@ export const FEATURE_FLAGS = {
    * Clinical notes integration
    */
   CLINICAL_NOTES: true,
+
+  /**
+   * Billing details GraphQL API (billingDetails / updateBillingDetails)
+   * Enable only after backend migration and schema deployment.
+   */
+  BILLING_DETAILS_API: process.env.NEXT_PUBLIC_BILLING_DETAILS_ENABLED !== 'false',
+
+  /**
+   * Stripe Connect rollout in Finances module.
+   * TODO: Set to true when payout onboarding flow is enabled for customers.
+   */
+  STRIPE_CONNECT_ROLLOUT: process.env.NEXT_PUBLIC_STRIPE_CONNECT_ENABLED === 'true',
 } as const;
 
 // Type-safe feature flag getter

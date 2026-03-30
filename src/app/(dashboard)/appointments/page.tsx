@@ -1,31 +1,31 @@
-"use client";
+'use client';
 
-import { Calendar, Clock, Bell, Users, ArrowRight, Sparkles } from "lucide-react";
+import { Calendar, Clock, Bell, Users, ArrowRight, Sparkles } from 'lucide-react';
 
-import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 
 const upcomingFeatures = [
   {
     icon: Calendar,
-    title: "Widok kalendarza",
-    description: "Przeglądaj wizyty w wygodnym widoku miesiąca, tygodnia lub dnia",
+    title: 'Widok kalendarza',
+    description: 'Przeglądaj wizyty w wygodnym widoku miesiąca, tygodnia lub dnia',
   },
   {
     icon: Clock,
-    title: "Planowanie wizyt",
-    description: "Twórz i zarządzaj wizytami z wyborem pacjenta, gabinetu i godziny",
+    title: 'Planowanie wizyt',
+    description: 'Twórz i zarządzaj wizytami z wyborem pacjenta, gabinetu i godziny',
   },
   {
     icon: Bell,
-    title: "Powiadomienia",
-    description: "Automatyczne przypomnienia dla pacjentów o nadchodzących wizytach",
+    title: 'Powiadomienia',
+    description: 'Automatyczne przypomnienia dla pacjentów o nadchodzących wizytach',
   },
   {
     icon: Users,
-    title: "Prośby o wizyty",
-    description: "Pacjenci mogą prosić o wizyty, a Ty zatwierdzasz lub odrzucasz",
+    title: 'Prośby o wizyty',
+    description: 'Pacjenci mogą prosić o wizyty, a Ty zatwierdzasz lub odrzucasz',
   },
 ];
 
@@ -35,9 +35,7 @@ export default function AppointmentsPage() {
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold">Kalendarz wizyt</h1>
-        <p className="text-muted-foreground mt-1">
-          Zarządzaj harmonogramem wizyt z pacjentami
-        </p>
+        <p className="text-muted-foreground mt-1">Zarządzaj harmonogramem wizyt z pacjentami</p>
       </div>
 
       {/* Coming Soon Hero */}
@@ -51,12 +49,10 @@ export default function AppointmentsPage() {
             <Sparkles className="h-3 w-3" />
             Wkrótce dostępne
           </Badge>
-          <h2 className="text-2xl font-bold text-foreground mb-3">
-            Kalendarz wizyt w przygotowaniu
-          </h2>
+          <h2 className="text-2xl font-bold text-foreground mb-3">Kalendarz wizyt w przygotowaniu</h2>
           <p className="text-muted-foreground max-w-md mx-auto mb-8">
-            Pracujemy nad funkcjonalnością kalendarza wizyt, która pozwoli Ci
-            efektywnie zarządzać harmonogramem spotkań z pacjentami.
+            Pracujemy nad funkcjonalnością kalendarza wizyt, która pozwoli Ci efektywnie zarządzać harmonogramem spotkań
+            z pacjentami.
           </p>
           <div className="flex flex-wrap justify-center gap-3">
             <Button variant="outline" className="rounded-xl" disabled>
@@ -75,22 +71,15 @@ export default function AppointmentsPage() {
         </h3>
         <div className="grid gap-4 sm:grid-cols-2">
           {upcomingFeatures.map((feature, index) => (
-            <Card
-              key={index}
-              className="border-border/60 bg-surface/50 transition-all hover:bg-surface"
-            >
+            <Card key={index} className="border-border/60 bg-surface/50 transition-all hover:bg-surface">
               <CardContent className="p-5">
                 <div className="flex items-start gap-4">
                   <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-surface-light">
                     <feature.icon className="h-5 w-5 text-muted-foreground" />
                   </div>
                   <div>
-                    <h4 className="font-medium text-foreground mb-1">
-                      {feature.title}
-                    </h4>
-                    <p className="text-sm text-muted-foreground">
-                      {feature.description}
-                    </p>
+                    <h4 className="font-medium text-foreground mb-1">{feature.title}</h4>
+                    <p className="text-sm text-muted-foreground">{feature.description}</p>
                   </div>
                 </div>
               </CardContent>
@@ -107,12 +96,10 @@ export default function AppointmentsPage() {
               <Clock className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <h4 className="font-medium text-foreground mb-1">
-                Tymczasowo
-              </h4>
+              <h4 className="font-medium text-foreground mb-1">Tymczasowo</h4>
               <p className="text-sm text-muted-foreground">
-                Do czasu uruchomienia kalendarza, możesz kontaktować się z pacjentami
-                bezpośrednio przez dane kontaktowe dostępne w ich profilach.
+                Do czasu uruchomienia kalendarza, możesz kontaktować się z pacjentami bezpośrednio przez dane kontaktowe
+                dostępne w ich profilach.
               </p>
             </div>
           </div>

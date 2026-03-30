@@ -97,4 +97,3 @@ export const COPY_FROM_PREVIOUS_NOTE_MUTATION = gql`
   }
   ${CLINICAL_NOTE_FULL_FRAGMENT}
 `;
-

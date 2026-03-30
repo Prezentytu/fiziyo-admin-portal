@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import React, { useState, useMemo, useEffect } from "react";
-import { useQuery } from "@apollo/client/react";
+import React, { useState, useMemo, useEffect } from 'react';
+import { useQuery } from '@apollo/client/react';
 import {
   Sparkles,
   Zap,
@@ -17,25 +17,21 @@ import {
   FileUp,
   RefreshCw,
   Star,
-} from "lucide-react";
-import { useOrganization } from "@/contexts/OrganizationContext";
+} from 'lucide-react';
+import { useOrganization } from '@/contexts/OrganizationContext';
 
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
-import { cn } from "@/lib/utils";
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { cn } from '@/lib/utils';
 import {
   GET_AI_CREDITS_STATUS,
   GET_AI_CREDITS_HISTORY,
   GET_AI_CREDITS_PACKAGE_PRICING,
-} from "@/graphql/queries/aiCredits.queries";
-import { PurchaseCreditsDialog } from "@/components/shared/PurchaseCreditsDialog";
+} from '@/graphql/queries/aiCredits.queries';
+import { PurchaseCreditsDialog } from '@/components/shared/PurchaseCreditsDialog';
 
 interface AICreditsStatus {
   monthlyLimit: number;
@@ -72,22 +68,25 @@ interface AICreditsReadonlyPanelProps {
 
 // Action type config with icons
 const actionTypeConfig: Record<string, { label: string; icon: React.ElementType; color: string }> = {
-  chat: { label: "Chat AI", icon: MessageSquare, color: "text-blue-400" },
-  set_generate: { label: "Generowanie zestawu", icon: Bot, color: "text-purple-400" },
-  exercise_suggest: { label: "Sugestia ćwiczenia", icon: Sparkles, color: "text-primary" },
-  clinical_notes: { label: "Notatki", icon: FileText, color: "text-amber-400" },
-  document_import: { label: "Import dokumentu", icon: FileUp, color: "text-cyan-400" },
-  voice_parse: { label: "Rozpoznawanie mowy", icon: Mic, color: "text-pink-400" },
+  chat: { label: 'Chat AI', icon: MessageSquare, color: 'text-blue-400' },
+  set_generate: { label: 'Generowanie zestawu', icon: Bot, color: 'text-violet-light' },
+  exercise_suggest: { label: 'Sugestia ćwiczenia', icon: Sparkles, color: 'text-primary' },
+  clinical_notes: { label: 'Notatki', icon: FileText, color: 'text-amber-400' },
+  document_import: { label: 'Import dokumentu', icon: FileUp, color: 'text-violet-light' },
+  voice_parse: { label: 'Rozpoznawanie mowy', icon: Mic, color: 'text-pink-400' },
 };
 
 // Grupowanie logów po dacie
 function groupLogsByDate(logs: AICreditsLog[]): Record<string, AICreditsLog[]> {
-  return logs.reduce((acc, log) => {
-    const date = new Date(log.createdAt).toLocaleDateString("pl-PL");
-    if (!acc[date]) acc[date] = [];
-    acc[date].push(log);
-    return acc;
-  }, {} as Record<string, AICreditsLog[]>);
+  return logs.reduce(
+    (acc, log) => {
+      const date = new Date(log.createdAt).toLocaleDateString('pl-PL');
+      if (!acc[date]) acc[date] = [];
+      acc[date].push(log);
+      return acc;
+    },
+    {} as Record<string, AICreditsLog[]>
+  );
 }
 
 // Custom event do odświeżania kredytów z dowolnego miejsca w aplikacji
@@ -104,12 +103,17 @@ export function AICreditsPanel({ compact = false }: AICreditsReadonlyPanelProps)
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [isPurchaseDialogOpen, setIsPurchaseDialogOpen] = useState(false);
 
-  const { data: statusData, loading: statusLoading, error: statusError, refetch } = useQuery<{
+  const {
+    data: statusData,
+    loading: statusLoading,
+    error: statusError,
+    refetch,
+  } = useQuery<{
     aiCreditsStatus: AICreditsStatus;
   }>(GET_AI_CREDITS_STATUS, {
-    variables: { organizationId: organizationId || "" },
+    variables: { organizationId: organizationId || '' },
     skip: !organizationId,
-    errorPolicy: "ignore",
+    errorPolicy: 'ignore',
     // Bez pollInterval - refetch tylko gdy potrzebne
   });
 
@@ -128,16 +132,16 @@ export function AICreditsPanel({ compact = false }: AICreditsReadonlyPanelProps)
   const { data: historyData, loading: historyLoading } = useQuery<{
     aiCreditsHistory: AICreditsLog[];
   }>(GET_AI_CREDITS_HISTORY, {
-    variables: { organizationId: organizationId || "", days: 30 },
+    variables: { organizationId: organizationId || '', days: 30 },
     skip: !organizationId || compact,
-    errorPolicy: "ignore",
+    errorPolicy: 'ignore',
   });
 
   const { data: pricingData, error: pricingError } = useQuery<{
     aiCreditsPackagePricing: PackagePricing;
   }>(GET_AI_CREDITS_PACKAGE_PRICING, {
     skip: compact,
-    errorPolicy: "ignore",
+    errorPolicy: 'ignore',
   });
 
   // Get data references
@@ -146,10 +150,7 @@ export function AICreditsPanel({ compact = false }: AICreditsReadonlyPanelProps)
   const aiCreditsHistory = historyData?.aiCreditsHistory;
 
   // Calculate derived values
-  const groupedHistory = useMemo(() =>
-    aiCreditsHistory ? groupLogsByDate(aiCreditsHistory) : {},
-    [aiCreditsHistory]
-  );
+  const groupedHistory = useMemo(() => (aiCreditsHistory ? groupLogsByDate(aiCreditsHistory) : {}), [aiCreditsHistory]);
 
   // Progi "niskiego stanu" - poniżej 20% lub poniżej 50 kredytów
   const LOW_THRESHOLD_PERCENT = 20;
@@ -176,17 +177,15 @@ export function AICreditsPanel({ compact = false }: AICreditsReadonlyPanelProps)
   // Error state
   if (statusError || (!compact && pricingError)) {
     return (
-      <Card className="relative overflow-hidden border-border/60 h-full">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent" />
-        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary via-emerald-500 to-cyan-500" />
-        <CardContent className="relative p-6 text-center">
-          <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-primary/20 to-emerald-500/20 mb-3">
+      <Card className="relative overflow-hidden rounded-xl border border-border/50 bg-card/30 h-full group">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-primary via-primary to-violet" />
+        <CardContent className="relative p-8 text-center">
+          <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-primary/20 to-primary/20 mb-4 shadow-lg shadow-primary/10">
             <Sparkles className="h-6 w-6 text-primary" />
           </div>
-          <h3 className="text-base font-semibold text-foreground mb-1">Kredyty AI</h3>
-          <p className="text-xs text-muted-foreground">
-            Wkrótce dostępne
-          </p>
+          <h3 className="text-lg font-bold text-foreground mb-1 tracking-tight">Kredyty AI</h3>
+          <p className="text-sm text-muted-foreground">Wkrótce dostępne</p>
         </CardContent>
       </Card>
     );
@@ -195,25 +194,25 @@ export function AICreditsPanel({ compact = false }: AICreditsReadonlyPanelProps)
   // Pokazuj skeleton tylko przy pierwszym ładowaniu (nie przy refetch)
   if (statusLoading && !credits) {
     return (
-      <Card className="border-border/40 bg-surface/50 backdrop-blur-sm overflow-hidden">
-        <CardHeader className="pb-4">
+      <Card className="rounded-xl border border-border/50 bg-card/30 backdrop-blur-sm overflow-hidden">
+        <CardHeader className="pb-6">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-4">
               <Skeleton className="h-12 w-12 rounded-xl" />
               <div>
-                <Skeleton className="h-5 w-24 mb-1" />
-                <Skeleton className="h-4 w-32" />
+                <Skeleton className="h-6 w-32 mb-2" />
+                <Skeleton className="h-4 w-40" />
               </div>
             </div>
-            <Skeleton className="h-10 w-24 rounded-lg" />
+            <Skeleton className="h-11 w-32 rounded-xl" />
           </div>
         </CardHeader>
-        <CardContent className="pt-0 space-y-4">
-          <Skeleton className="h-16 w-full rounded-lg" />
-          <div className="grid grid-cols-3 gap-3">
-            <Skeleton className="h-16 rounded-lg" />
-            <Skeleton className="h-16 rounded-lg" />
-            <Skeleton className="h-16 rounded-lg" />
+        <CardContent className="pt-0 space-y-6">
+          <Skeleton className="h-24 w-full rounded-xl" />
+          <div className="grid grid-cols-3 gap-4">
+            <Skeleton className="h-20 rounded-xl" />
+            <Skeleton className="h-20 rounded-xl" />
+            <Skeleton className="h-20 rounded-xl" />
           </div>
         </CardContent>
       </Card>
@@ -226,34 +225,38 @@ export function AICreditsPanel({ compact = false }: AICreditsReadonlyPanelProps)
   if (compact) {
     return (
       <>
-        <Card className="border-border/40 bg-surface/50 backdrop-blur-sm overflow-hidden">
-          <CardHeader className="pb-4">
+        <Card className="rounded-xl border border-border/50 bg-card/30 backdrop-blur-sm overflow-hidden group">
+          <CardHeader className="pb-6">
             <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-3 text-lg font-semibold">
-                <div className={cn(
-                  "flex h-12 w-12 items-center justify-center rounded-xl",
-                  isEmpty
-                    ? "bg-gradient-to-br from-destructive to-red-600"
-                    : isLow
-                    ? "bg-gradient-to-br from-warning to-orange-600"
-                    : "bg-gradient-to-br from-primary to-emerald-600"
-                )}>
+              <CardTitle className="flex items-center gap-4">
+                <div
+                  className={cn(
+                    'flex h-12 w-12 items-center justify-center rounded-xl shadow-lg transition-transform group-hover:scale-110 duration-300',
+                    isEmpty
+                      ? 'bg-gradient-to-br from-destructive to-red-600 shadow-destructive/25'
+                      : isLow
+                        ? 'bg-gradient-to-br from-warning to-orange-600 shadow-warning/25'
+                        : 'bg-gradient-to-br from-primary to-primary-dark shadow-primary/25'
+                  )}
+                >
                   <Sparkles className="h-6 w-6 text-white" />
                 </div>
                 <div>
-                  <span className="text-lg font-bold">Kredyty AI</span>
-                  <p className="text-sm text-muted-foreground font-normal">Reset za {daysUntilReset} dni</p>
+                  <span className="text-lg font-bold tracking-tight">Kredyty AI</span>
+                  <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
+                    Reset za {daysUntilReset} dni
+                  </p>
                 </div>
               </CardTitle>
               <Button
                 onClick={() => setIsPurchaseDialogOpen(true)}
                 className={cn(
-                  "gap-2",
+                  'gap-2 rounded-xl font-bold h-10 px-6 shadow-lg transition-all',
                   isEmpty
-                    ? "bg-gradient-to-r from-destructive to-red-600 hover:opacity-90"
+                    ? 'bg-destructive text-white hover:bg-destructive/90 shadow-destructive/20'
                     : isLow
-                    ? "bg-gradient-to-r from-warning to-orange-600 hover:opacity-90"
-                    : "bg-gradient-to-r from-primary to-emerald-600 hover:opacity-90"
+                      ? 'bg-warning text-white hover:bg-warning/90 shadow-warning/20'
+                      : 'bg-primary text-primary-foreground hover:bg-primary/90 shadow-primary/20'
                 )}
               >
                 <Zap className="h-4 w-4" />
@@ -264,22 +267,28 @@ export function AICreditsPanel({ compact = false }: AICreditsReadonlyPanelProps)
 
           <CardContent className="pt-0 space-y-4">
             {/* Main credits display - pokazuje DOSTĘPNE */}
-            <div className="rounded-lg bg-surface-light/50 p-4">
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-sm font-medium text-muted-foreground">Dostępne kredyty</span>
-                <span className={cn(
-                  "text-3xl font-bold tabular-nums",
-                  isEmpty ? "text-destructive" : isLow ? "text-warning" : "text-primary"
-                )}>
+            <div className="rounded-xl bg-background/50 p-6 border border-border/40">
+              <div className="flex items-center justify-between mb-4">
+                <span className="text-sm font-bold uppercase tracking-widest text-muted-foreground">Dostępne</span>
+                <span
+                  className={cn(
+                    'text-4xl font-bold tabular-nums tracking-tighter',
+                    isEmpty ? 'text-destructive' : isLow ? 'text-warning' : 'text-primary'
+                  )}
+                >
                   {remaining}
                 </span>
               </div>
               {/* Pasek pokazuje stan DOSTĘPNYCH (pełny = dużo) */}
-              <div className="h-2 w-full overflow-hidden rounded-full bg-surface">
+              <div className="h-3 w-full overflow-hidden rounded-full bg-surface">
                 <div
                   className={cn(
-                    "h-full rounded-full transition-all duration-500",
-                    isEmpty ? "bg-destructive" : isLow ? "bg-warning" : "bg-primary"
+                    'h-full rounded-full transition-all duration-700 ease-out bg-gradient-to-r shadow-inner',
+                    isEmpty
+                      ? 'from-destructive to-red-600'
+                      : isLow
+                        ? 'from-warning to-orange-500'
+                        : 'from-primary to-primary'
                   )}
                   style={{ width: `${Math.min(availablePercent, 100)}%` }}
                 />
@@ -289,9 +298,7 @@ export function AICreditsPanel({ compact = false }: AICreditsReadonlyPanelProps)
             {/* Stats row - Breakdown skąd masz kredyty */}
             <div className="grid grid-cols-3 gap-3">
               <div className="rounded-lg bg-surface-light/50 p-3 text-center">
-                <p className="text-2xl font-bold tabular-nums text-foreground">
-                  {credits.monthlyRemaining}
-                </p>
+                <p className="text-2xl font-bold tabular-nums text-foreground">{credits.monthlyRemaining}</p>
                 <p className="text-xs text-muted-foreground">Z planu</p>
               </div>
               <div className="rounded-lg bg-primary/10 p-3 text-center border border-primary/20">
@@ -299,10 +306,12 @@ export function AICreditsPanel({ compact = false }: AICreditsReadonlyPanelProps)
                 <p className="text-xs text-muted-foreground">Dokupione</p>
               </div>
               <div className="rounded-lg bg-surface-light/50 p-3 text-center">
-                <p className={cn(
-                  "text-2xl font-bold tabular-nums",
-                  isEmpty ? "text-destructive" : isLow ? "text-warning" : "text-foreground"
-                )}>
+                <p
+                  className={cn(
+                    'text-2xl font-bold tabular-nums',
+                    isEmpty ? 'text-destructive' : isLow ? 'text-warning' : 'text-foreground'
+                  )}
+                >
                   {credits.totalRemaining}
                 </p>
                 <p className="text-xs text-muted-foreground">Razem</p>
@@ -311,14 +320,16 @@ export function AICreditsPanel({ compact = false }: AICreditsReadonlyPanelProps)
 
             {/* Warning only when actually low or empty */}
             {(isEmpty || isLow) && (
-              <div className={cn(
-                "flex items-center gap-3 rounded-lg p-3",
-                isEmpty ? "bg-destructive/10 text-destructive" : "bg-warning/10 text-warning"
-              )}>
+              <div
+                className={cn(
+                  'flex items-center gap-3 rounded-lg p-3',
+                  isEmpty ? 'bg-destructive/10 text-destructive' : 'bg-warning/10 text-warning'
+                )}
+              >
                 <Zap className="h-5 w-5 shrink-0" />
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium text-sm">{isEmpty ? "Brak kredytów AI!" : "Niski stan kredytów"}</p>
-                  <p className="text-xs opacity-80">{isEmpty ? "Doładuj aby korzystać z AI" : "Rozważ doładowanie"}</p>
+                  <p className="font-medium text-sm">{isEmpty ? 'Brak kredytów AI!' : 'Niski stan kredytów'}</p>
+                  <p className="text-xs opacity-80">{isEmpty ? 'Doładuj aby korzystać z AI' : 'Rozważ doładowanie'}</p>
                 </div>
               </div>
             )}
@@ -340,34 +351,40 @@ export function AICreditsPanel({ compact = false }: AICreditsReadonlyPanelProps)
     <div className="space-y-4">
       {/* Main Credits Status Card */}
       <Card className="relative overflow-hidden border-border/60 group">
-        <div className={cn(
-          "absolute inset-0 opacity-50 group-hover:opacity-70 transition-opacity",
-          isEmpty
-            ? "bg-gradient-to-br from-destructive/5 via-transparent to-red-500/5"
-            : isLow
-            ? "bg-gradient-to-br from-warning/5 via-transparent to-orange-500/5"
-            : "bg-gradient-to-br from-primary/5 via-transparent to-emerald-500/5"
-        )} />
-        <div className={cn(
-          "absolute top-0 left-0 right-0 h-1",
-          isEmpty
-            ? "bg-gradient-to-r from-destructive via-red-500 to-orange-500"
-            : isLow
-            ? "bg-gradient-to-r from-warning via-orange-500 to-yellow-500"
-            : "bg-gradient-to-r from-primary via-emerald-500 to-cyan-500"
-        )} />
+        <div
+          className={cn(
+            'absolute inset-0 opacity-50 group-hover:opacity-70 transition-opacity',
+            isEmpty
+              ? 'bg-gradient-to-br from-destructive/5 via-transparent to-red-500/5'
+              : isLow
+                ? 'bg-gradient-to-br from-warning/5 via-transparent to-orange-500/5'
+                : 'bg-gradient-to-br from-primary/5 via-transparent to-primary/5'
+          )}
+        />
+        <div
+          className={cn(
+            'absolute top-0 left-0 right-0 h-1',
+            isEmpty
+              ? 'bg-gradient-to-r from-destructive via-red-500 to-orange-500'
+              : isLow
+                ? 'bg-gradient-to-r from-warning via-orange-500 to-yellow-500'
+                : 'bg-gradient-to-r from-primary via-primary to-violet'
+          )}
+        />
 
         <CardHeader className="relative pb-2">
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-3 text-lg">
-              <div className={cn(
-                "flex h-10 w-10 items-center justify-center rounded-xl shadow-lg",
-                isEmpty
-                  ? "bg-gradient-to-br from-destructive to-red-600 shadow-destructive/25"
-                  : isLow
-                  ? "bg-gradient-to-br from-warning to-orange-600 shadow-warning/25"
-                  : "bg-gradient-to-br from-primary to-emerald-600 shadow-primary/25"
-              )}>
+              <div
+                className={cn(
+                  'flex h-10 w-10 items-center justify-center rounded-xl shadow-lg',
+                  isEmpty
+                    ? 'bg-gradient-to-br from-destructive to-red-600 shadow-destructive/25'
+                    : isLow
+                      ? 'bg-gradient-to-br from-warning to-orange-600 shadow-warning/25'
+                      : 'bg-gradient-to-br from-primary to-primary-dark shadow-primary/25'
+                )}
+              >
                 <Sparkles className="h-5 w-5 text-white" />
               </div>
               Kredyty AI
@@ -384,10 +401,12 @@ export function AICreditsPanel({ compact = false }: AICreditsReadonlyPanelProps)
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-sm text-muted-foreground">Dostępne kredyty</span>
-              <span className={cn(
-                "text-4xl font-bold tabular-nums",
-                isEmpty ? "text-destructive" : isLow ? "text-warning" : "text-primary"
-              )}>
+              <span
+                className={cn(
+                  'text-4xl font-bold tabular-nums',
+                  isEmpty ? 'text-destructive' : isLow ? 'text-warning' : 'text-primary'
+                )}
+              >
                 {remaining}
               </span>
             </div>
@@ -396,10 +415,12 @@ export function AICreditsPanel({ compact = false }: AICreditsReadonlyPanelProps)
             <div className="relative h-3 w-full overflow-hidden rounded-full bg-surface">
               <div
                 className={cn(
-                  "h-full rounded-full transition-all duration-700 ease-out bg-gradient-to-r",
-                  isEmpty ? "from-destructive to-red-600"
-                    : isLow ? "from-warning to-orange-500"
-                    : "from-primary to-emerald-500"
+                  'h-full rounded-full transition-all duration-700 ease-out bg-gradient-to-r',
+                  isEmpty
+                    ? 'from-destructive to-red-600'
+                    : isLow
+                      ? 'from-warning to-orange-500'
+                      : 'from-primary to-primary'
                 )}
                 style={{ width: `${Math.min(availablePercent, 100)}%` }}
               />
@@ -412,27 +433,29 @@ export function AICreditsPanel({ compact = false }: AICreditsReadonlyPanelProps)
           {/* Stats grid - breakdown */}
           <div className="grid grid-cols-3 gap-3">
             <div className="rounded-xl bg-surface-light/50 p-4 text-center border border-border/40 hover:border-primary/30 transition-colors">
-              <p className="text-3xl font-bold tabular-nums text-foreground">
-                {credits.monthlyRemaining}
-              </p>
+              <p className="text-3xl font-bold tabular-nums text-foreground">{credits.monthlyRemaining}</p>
               <p className="text-xs text-muted-foreground mt-1">Z planu</p>
             </div>
-            <div className="rounded-xl bg-gradient-to-br from-primary/10 to-emerald-500/10 p-4 text-center border border-primary/20 hover:border-primary/40 transition-colors">
+            <div className="rounded-xl bg-gradient-to-br from-primary/10 to-primary/10 p-4 text-center border border-primary/20 hover:border-primary/40 transition-colors">
               <p className="text-3xl font-bold text-primary tabular-nums">{credits.addonCredits}</p>
               <p className="text-xs text-muted-foreground mt-1">Dokupione</p>
             </div>
-            <div className={cn(
-              "rounded-xl p-4 text-center border transition-colors",
-              isEmpty
-                ? "bg-destructive/10 border-destructive/30"
-                : isLow
-                ? "bg-warning/10 border-warning/30"
-                : "bg-surface-light/50 border-border/40 hover:border-primary/30"
-            )}>
-              <p className={cn(
-                "text-3xl font-bold tabular-nums",
-                isEmpty ? "text-destructive" : isLow ? "text-warning" : "text-foreground"
-              )}>
+            <div
+              className={cn(
+                'rounded-xl p-4 text-center border transition-colors',
+                isEmpty
+                  ? 'bg-destructive/10 border-destructive/30'
+                  : isLow
+                    ? 'bg-warning/10 border-warning/30'
+                    : 'bg-surface-light/50 border-border/40 hover:border-primary/30'
+              )}
+            >
+              <p
+                className={cn(
+                  'text-3xl font-bold tabular-nums',
+                  isEmpty ? 'text-destructive' : isLow ? 'text-warning' : 'text-foreground'
+                )}
+              >
                 {credits.totalRemaining}
               </p>
               <p className="text-xs text-muted-foreground mt-1">Razem</p>
@@ -443,37 +466,44 @@ export function AICreditsPanel({ compact = false }: AICreditsReadonlyPanelProps)
           <div className="flex items-center gap-3 text-sm text-muted-foreground bg-surface-light/30 rounded-lg p-3">
             <Calendar className="h-4 w-4 text-primary" />
             <span>
-              Następny reset: <span className="text-foreground font-medium">{resetDate.toLocaleDateString("pl-PL", { day: "numeric", month: "long", year: "numeric" })}</span>
+              Następny reset:{' '}
+              <span className="text-foreground font-medium">
+                {resetDate.toLocaleDateString('pl-PL', { day: 'numeric', month: 'long', year: 'numeric' })}
+              </span>
             </span>
           </div>
 
           {/* Low credits warning - only when actually low */}
           {(isLow || isEmpty) && (
-            <div className={cn(
-              "flex items-center gap-4 rounded-xl p-4 border",
-              isEmpty ? "bg-destructive/10 border-destructive/30" : "bg-warning/10 border-warning/30"
-            )}>
-              <div className={cn(
-                "flex h-10 w-10 items-center justify-center rounded-xl shrink-0",
-                isEmpty ? "bg-destructive/20" : "bg-warning/20"
-              )}>
-                <Zap className={cn("h-5 w-5", isEmpty ? "text-destructive" : "text-warning")} />
+            <div
+              className={cn(
+                'flex items-center gap-4 rounded-xl p-4 border',
+                isEmpty ? 'bg-destructive/10 border-destructive/30' : 'bg-warning/10 border-warning/30'
+              )}
+            >
+              <div
+                className={cn(
+                  'flex h-10 w-10 items-center justify-center rounded-xl shrink-0',
+                  isEmpty ? 'bg-destructive/20' : 'bg-warning/20'
+                )}
+              >
+                <Zap className={cn('h-5 w-5', isEmpty ? 'text-destructive' : 'text-warning')} />
               </div>
               <div className="flex-1">
-                <p className={cn("font-medium", isEmpty ? "text-destructive" : "text-warning")}>
-                  {isEmpty ? "Brak kredytów" : "Niski stan kredytów"}
+                <p className={cn('font-medium', isEmpty ? 'text-destructive' : 'text-warning')}>
+                  {isEmpty ? 'Brak kredytów' : 'Niski stan kredytów'}
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  {isEmpty ? "Doładuj kredyty, aby korzystać z funkcji AI" : "Pozostało mniej niż 20% lub 50 kredytów"}
+                  {isEmpty ? 'Doładuj kredyty, aby korzystać z funkcji AI' : 'Pozostało mniej niż 20% lub 50 kredytów'}
                 </p>
               </div>
               <Button
                 size="sm"
                 className={cn(
-                  "gap-2 shrink-0",
+                  'gap-2 shrink-0',
                   isEmpty
-                    ? "bg-gradient-to-r from-destructive to-red-600"
-                    : "bg-gradient-to-r from-warning to-orange-600"
+                    ? 'bg-gradient-to-r from-destructive to-red-600'
+                    : 'bg-gradient-to-r from-warning to-orange-600'
                 )}
                 onClick={() => setIsPurchaseDialogOpen(true)}
               >
@@ -490,8 +520,8 @@ export function AICreditsPanel({ compact = false }: AICreditsReadonlyPanelProps)
         <Card id="purchase-section" className="border-border/60">
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-3 text-lg">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-emerald-600 shadow-lg shadow-primary/25">
-                <Zap className="h-5 w-5 text-white" />
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary-dark shadow-lg shadow-primary/25">
+                <Zap className="h-5 w-5 text-primary-foreground" />
               </div>
               Doładuj kredyty
             </CardTitle>
@@ -499,39 +529,45 @@ export function AICreditsPanel({ compact = false }: AICreditsReadonlyPanelProps)
           <CardContent>
             <div className="grid gap-4 sm:grid-cols-3">
               {[
-                { type: "small", pkg: packages.smallPackage, label: "Starter", icon: Package },
-                { type: "medium", pkg: packages.mediumPackage, label: "Popular", icon: Zap, popular: true },
-                { type: "large", pkg: packages.largePackage, label: "Power", icon: Star, best: true },
+                { type: 'small', pkg: packages.smallPackage, label: 'Starter', icon: Package },
+                { type: 'medium', pkg: packages.mediumPackage, label: 'Popular', icon: Zap, popular: true },
+                { type: 'large', pkg: packages.largePackage, label: 'Power', icon: Star, best: true },
               ].map(({ type, pkg, label, icon: Icon, popular, best }) => (
                 <button
                   key={type}
                   onClick={() => setIsPurchaseDialogOpen(true)}
                   className={cn(
-                    "group relative rounded-2xl border-2 p-5 text-left transition-all duration-300",
-                    "hover:-translate-y-1 hover:shadow-xl cursor-pointer",
-                    popular ? "border-primary shadow-lg shadow-primary/20 bg-primary/5" : "border-border/60 hover:border-primary/50"
+                    'group relative rounded-2xl border-2 p-5 text-left transition-all duration-300',
+                    'hover:-translate-y-1 hover:shadow-xl cursor-pointer',
+                    popular
+                      ? 'border-primary shadow-lg shadow-primary/20 bg-primary/5'
+                      : 'border-border/60 hover:border-primary/50'
                   )}
                 >
                   {(popular || best) && (
                     <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-10">
-                      <Badge className="bg-gradient-to-r from-primary to-emerald-600 text-white border-0 shadow-lg shadow-primary/25 px-3">
+                      <Badge className="bg-gradient-to-r from-primary to-primary-dark text-primary-foreground border-0 shadow-lg shadow-primary/25 px-3">
                         {best ? (
                           <>
                             <Star className="h-3 w-3 mr-1 fill-current" />
                             Najlepsza cena
                           </>
-                        ) : "Popularne"}
+                        ) : (
+                          'Popularne'
+                        )}
                       </Badge>
                     </div>
                   )}
 
                   <div className="space-y-4">
                     <div className="flex items-center gap-3">
-                      <div className={cn(
-                        "flex h-10 w-10 items-center justify-center rounded-xl transition-transform group-hover:scale-110",
-                        popular || best ? "bg-gradient-to-br from-primary to-emerald-600" : "bg-surface-light"
-                      )}>
-                        <Icon className={cn("h-5 w-5", popular || best ? "text-white" : "text-muted-foreground")} />
+                      <div
+                        className={cn(
+                          'flex h-10 w-10 items-center justify-center rounded-xl transition-transform group-hover:scale-110',
+                          popular || best ? 'bg-gradient-to-br from-primary to-primary-dark' : 'bg-surface-light'
+                        )}
+                      >
+                        <Icon className={cn('h-5 w-5', popular || best ? 'text-primary-foreground' : 'text-muted-foreground')} />
                       </div>
                       <span className="font-medium text-foreground">{label}</span>
                     </div>
@@ -551,10 +587,14 @@ export function AICreditsPanel({ compact = false }: AICreditsReadonlyPanelProps)
                       </p>
                     </div>
 
-                    <div className={cn(
-                      "flex items-center justify-center gap-2 py-2 rounded-lg transition-colors",
-                      popular ? "bg-primary text-primary-foreground" : "bg-surface-light text-foreground group-hover:bg-primary group-hover:text-primary-foreground"
-                    )}>
+                    <div
+                      className={cn(
+                        'flex items-center justify-center gap-2 py-2 rounded-lg transition-colors',
+                        popular
+                          ? 'bg-primary text-primary-foreground'
+                          : 'bg-surface-light text-foreground group-hover:bg-primary group-hover:text-primary-foreground'
+                      )}
+                    >
                       <Zap className="h-4 w-4" />
                       <span className="text-sm font-medium">Kup teraz</span>
                     </div>
@@ -574,16 +614,20 @@ export function AICreditsPanel({ compact = false }: AICreditsReadonlyPanelProps)
               <CardHeader className="pb-3 hover:bg-surface-light/30 transition-colors rounded-t-xl cursor-pointer">
                 <div className="flex items-center justify-between">
                   <CardTitle className="flex items-center gap-3 text-lg">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-emerald-600 shadow-lg shadow-primary/25">
-                      <TrendingUp className="h-5 w-5 text-white" />
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary-dark shadow-lg shadow-primary/25">
+                      <TrendingUp className="h-5 w-5 text-primary-foreground" />
                     </div>
                     Historia zużycia
-                    <Badge variant="secondary" className="text-xs">30 dni</Badge>
+                    <Badge variant="secondary" className="text-xs">
+                      30 dni
+                    </Badge>
                   </CardTitle>
-                  <ChevronDown className={cn(
-                    "h-5 w-5 text-muted-foreground transition-transform duration-200",
-                    isHistoryOpen && "rotate-180"
-                  )} />
+                  <ChevronDown
+                    className={cn(
+                      'h-5 w-5 text-muted-foreground transition-transform duration-200',
+                      isHistoryOpen && 'rotate-180'
+                    )}
+                  />
                 </div>
               </CardHeader>
             </button>
@@ -619,7 +663,7 @@ export function AICreditsPanel({ compact = false }: AICreditsReadonlyPanelProps)
                           const config = actionTypeConfig[log.actionType] || {
                             label: log.actionType,
                             icon: Sparkles,
-                            color: "text-muted-foreground",
+                            color: 'text-muted-foreground',
                           };
                           const LogIcon = config.icon;
 
@@ -630,18 +674,20 @@ export function AICreditsPanel({ compact = false }: AICreditsReadonlyPanelProps)
                             >
                               <div className="flex items-center gap-3">
                                 <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-surface transition-colors group-hover:bg-surface-light">
-                                  <LogIcon className={cn("h-4 w-4", config.color)} />
+                                  <LogIcon className={cn('h-4 w-4', config.color)} />
                                 </div>
                                 <div>
                                   <p className="text-sm font-medium text-foreground">{config.label}</p>
                                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
                                     <Clock className="h-3 w-3" />
-                                    {new Date(log.createdAt).toLocaleTimeString("pl-PL", {
-                                      hour: "2-digit",
-                                      minute: "2-digit",
+                                    {new Date(log.createdAt).toLocaleTimeString('pl-PL', {
+                                      hour: '2-digit',
+                                      minute: '2-digit',
                                     })}
-                                    {log.source === "addon" && (
-                                      <Badge variant="outline" className="text-[10px] h-4 px-1.5">addon</Badge>
+                                    {log.source === 'addon' && (
+                                      <Badge variant="outline" className="text-[10px] h-4 px-1.5">
+                                        addon
+                                      </Badge>
                                     )}
                                   </div>
                                 </div>

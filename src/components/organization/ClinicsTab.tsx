@@ -1,19 +1,19 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { MapPin, Plus, Search, X } from "lucide-react";
+import { useState } from 'react';
+import { MapPin, Plus, Search, X } from 'lucide-react';
 
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
-import { EmptyState } from "@/components/shared/EmptyState";
-import { ClinicExpandableCard, Clinic } from "./ClinicExpandableCard";
-import { matchesSearchQuery } from "@/utils/textUtils";
-import { cn } from "@/lib/utils";
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
+import { EmptyState } from '@/components/shared/EmptyState';
+import { ClinicExpandableCard, Clinic } from './ClinicExpandableCard';
+import { matchesSearchQuery } from '@/utils/textUtils';
+import { cn } from '@/lib/utils';
 
-type StatusFilter = "all" | "active" | "inactive";
+type StatusFilter = 'all' | 'active' | 'inactive';
 
 interface AssignedPerson {
   id: string;
@@ -48,34 +48,31 @@ export function ClinicsTab({
   onAssignPeople,
   onRefresh,
 }: ClinicsTabProps) {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
 
   // Filter clinics
   const filteredClinics = clinics.filter((clinic) => {
     // Status filter
-    if (statusFilter !== "all") {
+    if (statusFilter !== 'all') {
       const isActive = clinic.isActive ?? true;
-      if (statusFilter === "active" && !isActive) return false;
-      if (statusFilter === "inactive" && isActive) return false;
+      if (statusFilter === 'active' && !isActive) return false;
+      if (statusFilter === 'inactive' && isActive) return false;
     }
 
     // Search filter
     if (searchQuery) {
-      return (
-        matchesSearchQuery(clinic.name, searchQuery) ||
-        matchesSearchQuery(clinic.address, searchQuery)
-      );
+      return matchesSearchQuery(clinic.name, searchQuery) || matchesSearchQuery(clinic.address, searchQuery);
     }
 
     return true;
   });
 
-  const hasActiveFilters = searchQuery || statusFilter !== "all";
+  const hasActiveFilters = searchQuery || statusFilter !== 'all';
 
   const clearFilters = () => {
-    setSearchQuery("");
-    setStatusFilter("all");
+    setSearchQuery('');
+    setStatusFilter('all');
   };
 
   if (isLoading) {
@@ -122,9 +119,7 @@ export function ClinicsTab({
       <CardHeader className="flex flex-row items-center justify-between pb-4">
         <div>
           <CardTitle className="text-xl">Gabinety</CardTitle>
-          <CardDescription>
-            Lokalizacje prowadzenia działalności fizjoterapeutycznej
-          </CardDescription>
+          <CardDescription>Lokalizacje prowadzenia działalności fizjoterapeutycznej</CardDescription>
         </div>
         {canEdit && (
           <Button onClick={onAddClick} className="gap-2 shadow-lg shadow-primary/20">
@@ -151,7 +146,7 @@ export function ClinicsTab({
                   variant="ghost"
                   size="icon"
                   className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8"
-                  onClick={() => setSearchQuery("")}
+                  onClick={() => setSearchQuery('')}
                 >
                   <X className="h-4 w-4" />
                 </Button>
@@ -160,22 +155,20 @@ export function ClinicsTab({
 
             {/* Status filters */}
             <div className="flex gap-2">
-              {(["all", "active", "inactive"] as StatusFilter[]).map((status) => (
+              {(['all', 'active', 'inactive'] as StatusFilter[]).map((status) => (
                 <Button
                   key={status}
-                  variant={statusFilter === status ? "default" : "outline"}
+                  variant={statusFilter === status ? 'default' : 'outline'}
                   size="sm"
                   onClick={() => setStatusFilter(status)}
                   className={cn(
-                    "h-9 transition-all",
-                    statusFilter === status
-                      ? "shadow-lg shadow-primary/20"
-                      : "border-border/60 hover:border-border"
+                    'h-9 transition-all',
+                    statusFilter === status ? 'shadow-lg shadow-primary/20' : 'border-border/60 hover:border-border'
                   )}
                 >
-                  {status === "all" && "Wszystkie"}
-                  {status === "active" && "Aktywne"}
-                  {status === "inactive" && "Nieaktywne"}
+                  {status === 'all' && 'Wszystkie'}
+                  {status === 'active' && 'Aktywne'}
+                  {status === 'inactive' && 'Nieaktywne'}
                 </Button>
               ))}
             </div>
@@ -187,33 +180,19 @@ export function ClinicsTab({
               <span className="text-sm text-muted-foreground">
                 {hasActiveFilters ? (
                   <>
-                    Znaleziono{" "}
-                    <span className="font-medium text-foreground">
-                      {filteredClinics.length}
-                    </span>{" "}
-                    z{" "}
-                    <span className="font-medium text-foreground">
-                      {clinics.length}
-                    </span>{" "}
-                    gabinetów
+                    Znaleziono <span className="font-medium text-foreground">{filteredClinics.length}</span> z{' '}
+                    <span className="font-medium text-foreground">{clinics.length}</span> gabinetów
                   </>
                 ) : (
                   <>
-                    Łącznie{" "}
-                    <span className="font-medium text-foreground">
-                      {clinics.length}
-                    </span>{" "}
-                    gabinetów
+                    Łącznie <span className="font-medium text-foreground">{clinics.length}</span> gabinetów
                   </>
                 )}
               </span>
               {hasActiveFilters && (
                 <Badge variant="secondary" className="gap-1.5">
                   Aktywne filtry
-                  <button
-                    onClick={clearFilters}
-                    className="ml-1 hover:text-foreground transition-colors"
-                  >
+                  <button onClick={clearFilters} className="ml-1 hover:text-foreground transition-colors">
                     <X className="h-3 w-3" />
                   </button>
                 </Badge>
@@ -226,15 +205,13 @@ export function ClinicsTab({
         {filteredClinics.length === 0 ? (
           <EmptyState
             icon={MapPin}
-            title={
-              hasActiveFilters ? "Nie znaleziono gabinetów" : "Brak gabinetów"
-            }
+            title={hasActiveFilters ? 'Nie znaleziono gabinetów' : 'Brak gabinetów'}
             description={
               hasActiveFilters
-                ? "Spróbuj zmienić kryteria wyszukiwania lub filtry"
-                : "Dodaj pierwszy gabinet do organizacji"
+                ? 'Spróbuj zmienić kryteria wyszukiwania lub filtry'
+                : 'Dodaj pierwszy gabinet do organizacji'
             }
-            actionLabel={!hasActiveFilters && canEdit ? "Dodaj gabinet" : undefined}
+            actionLabel={!hasActiveFilters && canEdit ? 'Dodaj gabinet' : undefined}
             onAction={!hasActiveFilters && canEdit ? onAddClick : undefined}
           />
         ) : (
@@ -258,19 +235,3 @@ export function ClinicsTab({
     </Card>
   );
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

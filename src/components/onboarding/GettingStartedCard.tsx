@@ -3,16 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
-import {
-  Users,
-  FolderKanban,
-  Send,
-  CheckCircle2,
-  ChevronRight,
-  X,
-  Check,
-  ArrowRight,
-} from 'lucide-react';
+import { Users, FolderKanban, Send, CheckCircle2, ChevronRight, X, Check, ArrowRight } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -54,10 +45,12 @@ export function GettingStartedCard({
   // Sprawdź czy onboarding został ukryty (z Clerk metadata)
   useEffect(() => {
     if (user) {
-      const metadata = user.unsafeMetadata as {
-        onboardingDismissed?: boolean;
-        onboardingCompletedAt?: string;
-      } | undefined;
+      const metadata = user.unsafeMetadata as
+        | {
+            onboardingDismissed?: boolean;
+            onboardingCompletedAt?: string;
+          }
+        | undefined;
 
       if (metadata?.onboardingDismissed) {
         setIsDismissed(true);
@@ -97,7 +90,7 @@ export function GettingStartedCard({
     },
   ];
 
-  const completedCount = steps.filter(s => s.completed).length;
+  const completedCount = steps.filter((s) => s.completed).length;
   const progress = (completedCount / steps.length) * 100;
   const allCompleted = completedCount === steps.length;
 
@@ -194,7 +187,7 @@ export function GettingStartedCard({
     return (
       <div
         className={cn(
-          'relative overflow-hidden rounded-2xl border border-primary/30 bg-gradient-to-r from-primary/5 to-surface',
+          'relative overflow-hidden rounded-2xl border border-primary/30 bg-linear-to-r from-primary/5 to-surface',
           className
         )}
       >
@@ -207,9 +200,7 @@ export function GettingStartedCard({
 
             {/* Content */}
             <div className="flex-1 min-w-0">
-              <h3 className="text-base font-semibold text-foreground">
-                Konto skonfigurowane
-              </h3>
+              <h3 className="text-base font-semibold text-foreground">Konto skonfigurowane</h3>
               <p className="text-sm text-muted-foreground">
                 Wszystko gotowe. Możesz teraz w pełni korzystać z aplikacji.
               </p>
@@ -239,14 +230,14 @@ export function GettingStartedCard({
   return (
     <div
       data-testid="onboarding-getting-started-card"
-      className={cn(
-        'relative overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/5 via-surface to-surface',
-        className
-      )}
+        className={cn(
+          'relative overflow-hidden rounded-2xl border border-border/30 bg-linear-to-br from-surface-elevated via-surface to-surface',
+          className
+        )}
     >
-      {/* Decorative glow */}
-      <div className="absolute -top-20 -right-20 w-40 h-40 bg-primary/10 rounded-full blur-3xl" />
-      <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-secondary/10 rounded-full blur-3xl" />
+      {/* Decorative glow - subtle */}
+      <div className="absolute -top-20 -right-20 w-40 h-40 bg-primary/5 rounded-full blur-3xl pointer-events-none" aria-hidden="true" />
+      <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-secondary/5 rounded-full blur-3xl pointer-events-none" aria-hidden="true" />
 
       <div className="relative p-5 sm:p-6">
         {/* Header */}
@@ -256,18 +247,16 @@ export function GettingStartedCard({
               <CheckCircle2 className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <h3 className="text-base font-semibold text-foreground">
-                Rozpocznij pracę
-              </h3>
-              <p className="text-sm text-muted-foreground">
-                3 kroki do pełnej konfiguracji
-              </p>
+              <h3 className="text-base font-semibold text-foreground">Rozpocznij pracę</h3>
+              <p className="text-sm text-muted-foreground">3 kroki do pełnej konfiguracji</p>
             </div>
           </div>
           <button
+            type="button"
             onClick={handleDismiss}
-            className="shrink-0 p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-surface-light transition-colors"
+            className="shrink-0 p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-surface-light transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
             title="Nie pokazuj więcej"
+            aria-label="Nie pokazuj więcej"
             data-testid="onboarding-dismiss-btn"
           >
             <X className="h-4 w-4" />
@@ -278,7 +267,9 @@ export function GettingStartedCard({
         <div className="mb-5">
           <div className="flex items-center justify-between text-xs mb-2">
             <span className="text-muted-foreground">Postęp</span>
-            <span className="font-medium text-primary">{completedCount} z {steps.length}</span>
+            <span className="font-medium text-primary">
+              {completedCount} z {steps.length}
+            </span>
           </div>
           <Progress value={progress} className="h-2" />
         </div>
@@ -288,58 +279,59 @@ export function GettingStartedCard({
           {steps.map((step, index) => {
             const Icon = step.icon;
             const isCompleted = step.completed;
-            const isNext = !isCompleted && steps.slice(0, index).every(s => s.completed);
+            const isNext = !isCompleted && steps.slice(0, index).every((s) => s.completed);
 
             return (
               <button
+                type="button"
                 key={step.id}
                 onClick={() => handleStepClick(step)}
                 disabled={isCompleted}
                 data-testid={`onboarding-getting-started-step-${step.id}`}
                 className={cn(
-                  'w-full flex items-center gap-3 p-3 rounded-xl text-left transition-all duration-200',
+                  'w-full flex items-center gap-3 p-3 rounded-xl text-left transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface',
                   isCompleted
                     ? 'bg-primary/5 cursor-default'
                     : isNext
-                      ? 'bg-surface-light hover:bg-surface-hover border border-primary/30 cursor-pointer'
+                      ? 'bg-surface-light hover:bg-surface-hover border border-border/30 hover:border-primary/30 cursor-pointer'
                       : 'bg-surface/50 hover:bg-surface-light cursor-pointer'
                 )}
               >
                 {/* Status icon */}
-                <div className={cn(
-                  'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-colors',
-                  isCompleted
-                    ? 'bg-primary text-white'
-                    : isNext
-                      ? 'bg-primary/20 text-primary'
-                      : 'bg-surface-light text-muted-foreground'
-                )}>
-                  {isCompleted ? (
-                    <CheckCircle2 className="h-4 w-4" />
-                  ) : (
-                    <Icon className="h-4 w-4" />
+                <div
+                  className={cn(
+                    'flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-colors',
+                    isCompleted
+                      ? 'bg-primary text-primary-foreground'
+                      : isNext
+                        ? 'bg-primary/20 text-primary'
+                        : 'bg-surface-light text-muted-foreground'
                   )}
+                >
+                  {isCompleted ? <CheckCircle2 className="h-4 w-4" /> : <Icon className="h-4 w-4" />}
                 </div>
 
                 {/* Content */}
                 <div className="flex-1 min-w-0">
-                  <span className={cn(
-                    'text-sm font-medium block',
-                    isCompleted ? 'text-muted-foreground line-through' : 'text-foreground'
-                  )}>
+                  <span
+                    className={cn(
+                      'text-sm font-medium block',
+                      isCompleted ? 'text-muted-foreground line-through' : 'text-foreground'
+                    )}
+                  >
                     {step.title}
                   </span>
-                  <span className="text-xs text-muted-foreground">
-                    {step.description}
-                  </span>
+                  <span className="text-xs text-muted-foreground">{step.description}</span>
                 </div>
 
                 {/* Arrow */}
                 {!isCompleted && (
-                  <ChevronRight className={cn(
-                    'h-4 w-4 shrink-0 transition-colors',
-                    isNext ? 'text-primary' : 'text-muted-foreground/50'
-                  )} />
+                  <ChevronRight
+                    className={cn(
+                      'h-4 w-4 shrink-0 transition-colors',
+                      isNext ? 'text-primary' : 'text-muted-foreground/50'
+                    )}
+                  />
                 )}
               </button>
             );
@@ -350,9 +342,7 @@ export function GettingStartedCard({
         {completedCount === 2 && (
           <div className="mt-4 flex items-center gap-2 p-3 rounded-lg bg-primary/5 border border-primary/20">
             <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />
-            <p className="text-xs text-muted-foreground">
-              Ostatni krok do pełnej konfiguracji
-            </p>
+            <p className="text-xs text-muted-foreground">Ostatni krok do pełnej konfiguracji</p>
           </div>
         )}
       </div>

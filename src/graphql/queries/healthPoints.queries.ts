@@ -1,4 +1,4 @@
-import { gql } from "@apollo/client";
+import { gql } from '@apollo/client';
 
 /**
  * Query do pobierania statystyk punktów zdrowia użytkownika
@@ -88,16 +88,3 @@ export interface HealthPointsEntry {
   pointType: string;
   exerciseId?: string;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-

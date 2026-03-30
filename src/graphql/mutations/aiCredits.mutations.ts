@@ -1,4 +1,4 @@
-import { gql } from "@apollo/client";
+import { gql } from '@apollo/client';
 
 /**
  * Zakup pakietu kredytów AI
@@ -77,8 +77,18 @@ export const ADD_CREDITS_WITH_CODE = gql`
  * Dodanie addonu zasobów z kodem Early Access (bypass Stripe)
  */
 export const ADD_RESOURCE_ADDON_WITH_CODE = gql`
-  mutation AddResourceAddonWithCode($organizationId: String!, $addonType: String!, $quantity: Int!, $bypassCode: String!) {
-    addResourceAddonWithCode(organizationId: $organizationId, addonType: $addonType, quantity: $quantity, bypassCode: $bypassCode) {
+  mutation AddResourceAddonWithCode(
+    $organizationId: String!
+    $addonType: String!
+    $quantity: Int!
+    $bypassCode: String!
+  ) {
+    addResourceAddonWithCode(
+      organizationId: $organizationId
+      addonType: $addonType
+      quantity: $quantity
+      bypassCode: $bypassCode
+    ) {
       success
       message
       newLimit

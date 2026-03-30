@@ -1,9 +1,10 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { Upload, X, Image, Film, FileIcon } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import * as React from 'react';
+import NextImage from 'next/image';
+import { Upload, X, Image, Film, FileIcon } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 
 interface FileUploadProps {
   accept?: string;
@@ -19,7 +20,7 @@ interface FileUploadProps {
 }
 
 export function FileUpload({
-  accept = "image/*,video/*",
+  accept = 'image/*,video/*',
   multiple = false,
   maxFiles = 5,
   maxSizeMB = 10,
@@ -65,9 +66,9 @@ export function FileUpload({
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (e.type === "dragenter" || e.type === "dragover") {
+    if (e.type === 'dragenter' || e.type === 'dragover') {
       setDragActive(true);
-    } else if (e.type === "dragleave") {
+    } else if (e.type === 'dragleave') {
       setDragActive(false);
     }
   };
@@ -84,7 +85,7 @@ export function FileUpload({
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     handleFiles(e.target.files);
     // Reset input value so same file can be selected again
-    e.target.value = "";
+    e.target.value = '';
   };
 
   const handleRemove = (index: number) => {
@@ -93,26 +94,26 @@ export function FileUpload({
   };
 
   const getFileIcon = (file: File) => {
-    if (file.type.startsWith("image/")) return Image;
-    if (file.type.startsWith("video/")) return Film;
+    if (file.type.startsWith('image/')) return Image;
+    if (file.type.startsWith('video/')) return Film;
     return FileIcon;
   };
 
   const getFilePreview = (file: File) => {
-    if (file.type.startsWith("image/")) {
+    if (file.type.startsWith('image/')) {
       return URL.createObjectURL(file);
     }
     return null;
   };
 
   return (
-    <div className={cn("space-y-4", className)}>
+    <div className={cn('space-y-4', className)}>
       <div
         className={cn(
-          "relative flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-border p-6 transition-colors",
-          dragActive && "border-primary bg-primary/5",
-          disabled && "cursor-not-allowed opacity-50",
-          !disabled && "cursor-pointer hover:border-primary/50"
+          'relative flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-border p-6 transition-colors',
+          dragActive && 'border-primary bg-primary/5',
+          disabled && 'cursor-not-allowed opacity-50',
+          !disabled && 'cursor-pointer hover:border-primary/50'
         )}
         onDragEnter={handleDrag}
         onDragLeave={handleDrag}
@@ -131,9 +132,7 @@ export function FileUpload({
           data-testid="common-file-upload-input"
         />
         <Upload className="mb-2 h-8 w-8 text-muted-foreground" />
-        <p className="mb-1 text-sm font-medium">
-          Przeciągnij pliki lub kliknij, aby wybrać
-        </p>
+        <p className="mb-1 text-sm font-medium">Przeciągnij pliki lub kliknij, aby wybrać</p>
         <p className="text-xs text-muted-foreground">
           Maksymalnie {maxFiles} plików, do {maxSizeMB}MB każdy
         </p>
@@ -153,11 +152,9 @@ export function FileUpload({
                 className="relative flex items-center gap-2 rounded-lg border border-border bg-surface p-2"
               >
                 {previewUrl ? (
-                  <img
-                    src={previewUrl}
-                    alt={file.name}
-                    className="h-12 w-12 rounded object-cover"
-                  />
+                  <span className="relative block h-12 w-12 rounded overflow-hidden shrink-0">
+                    <NextImage src={previewUrl} alt={file.name} fill className="object-cover" sizes="48px" unoptimized />
+                  </span>
                 ) : (
                   <div className="flex h-12 w-12 items-center justify-center rounded bg-surface-light">
                     <Icon className="h-6 w-6 text-muted-foreground" />
@@ -165,9 +162,7 @@ export function FileUpload({
                 )}
                 <div className="flex-1 overflow-hidden">
                   <p className="truncate text-sm font-medium">{file.name}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {(file.size / 1024 / 1024).toFixed(2)} MB
-                  </p>
+                  <p className="text-xs text-muted-foreground">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
                 </div>
                 <Button
                   variant="ghost"

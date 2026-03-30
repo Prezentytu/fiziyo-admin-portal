@@ -1,16 +1,16 @@
-"use client";
+'use client';
 
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { ShieldAlert } from "lucide-react";
-import { useRoleAccess } from "@/hooks/useRoleAccess";
-import { LoadingState } from "./LoadingState";
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { ShieldAlert } from 'lucide-react';
+import { useRoleAccess } from '@/hooks/useRoleAccess';
+import { LoadingState } from './LoadingState';
 
 // ========================================
 // Types
 // ========================================
 
-export type RequiredAccess = "admin" | "owner";
+export type RequiredAccess = 'admin' | 'owner';
 
 interface AccessGuardProps {
   readonly children: React.ReactNode;
@@ -34,9 +34,7 @@ function AccessDenied() {
       </div>
       <div>
         <h2 className="text-xl font-semibold text-foreground">Brak dostępu</h2>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Nie masz uprawnień do wyświetlenia tej strony.
-        </p>
+        <p className="mt-2 text-sm text-muted-foreground">Nie masz uprawnień do wyświetlenia tej strony.</p>
         <p className="text-sm text-muted-foreground">
           Skontaktuj się z administratorem organizacji, aby uzyskać dostęp.
         </p>
@@ -67,15 +65,15 @@ function AccessDenied() {
  */
 export function AccessGuard({
   children,
-  requiredAccess = "admin",
-  fallbackUrl = "/",
+  requiredAccess = 'admin',
+  fallbackUrl = '/',
   showAccessDenied = false,
 }: AccessGuardProps) {
   const router = useRouter();
   const { isOwner, isLoading, canManageOrganization } = useRoleAccess();
 
   // Determine if user has required access
-  const hasAccess = requiredAccess === "owner" ? isOwner : canManageOrganization;
+  const hasAccess = requiredAccess === 'owner' ? isOwner : canManageOrganization;
 
   // Handle redirect when access is denied
   useEffect(() => {

@@ -1,0 +1,16 @@
+---
+description: Globalny workflow AI Agentic Engineering dla FiziYo
+alwaysApply: true
+---
+
+- Pracuj retrieval-first: najpierw czytaj `AGENTS.md` i pasujace guide'y z Task Routera, potem dopiero implementuj.
+- Dla zadan nietrywialnych pracuj spec-first: sprawdz `.ai/specs/`, a przy nowych funkcjonalnosciach tworz lub aktualizuj spec.
+- Przed implementacja przeczytaj `.ai/lessons.md`, aby unikac znanych regresji i antywzorcow.
+- Skille projektowe sa udostepnione w `.cursor/skills` i odpowiadaja za kluczowe tryby pracy:
+  - `product-designer` dla UI/UX i accessibility
+  - `code-review` dla review zmian
+  - `spec-writing` dla nowych i aktualizowanych specyfikacji
+  - `pre-implement-spec` dla analizy ryzyk i luk przed kodowaniem
+  - `implement-spec` dla etapowej implementacji ze specyfikacji
+- Po zmianach zawsze wykonaj weryfikacje proporcjonalna do zakresu: minimum `npm run lint` i `npm run test:run`, a dla wiekszych zmian `npm run validate`.
+- Po kazdej istotnej korekcie dopisz wniosek do `.ai/lessons.md`, jesli wykryto nowa powtarzalna pulapke.

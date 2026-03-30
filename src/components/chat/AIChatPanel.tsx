@@ -156,55 +156,61 @@ export function AIChatPanel({ className }: AIChatPanelProps) {
   }, []);
 
   // Obsługa uploadu pliku
-  const handleFileUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const handleFileUpload = useCallback(
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
 
-    // Reset input
-    e.target.value = '';
+      // Reset input
+      e.target.value = '';
 
-    // Walidacja
-    if (!documentImportService.isFormatSupported(file)) {
-      toast.error('Nieobsługiwany format pliku. Obsługiwane: PDF, Excel, CSV, TXT');
-      return;
-    }
+      // Walidacja
+      if (!documentImportService.isFormatSupported(file)) {
+        toast.error('Nieobsługiwany format pliku. Obsługiwane: PDF, Excel, CSV, TXT');
+        return;
+      }
 
-    if (!documentImportService.isFileSizeValid(file)) {
-      toast.error(`Plik za duży. Max: ${documentImportService.getMaxFileSizeMB()}MB`);
-      return;
-    }
+      if (!documentImportService.isFileSizeValid(file)) {
+        toast.error(`Plik za duży. Max: ${documentImportService.getMaxFileSizeMB()}MB`);
+        return;
+      }
 
-    setIsAnalyzingFile(true);
-    setAnalysisResult(null);
+      setIsAnalyzingFile(true);
+      setAnalysisResult(null);
 
-    try {
-      const result = await documentImportService.analyzeDocument(file);
-      setAnalysisResult(result);
+      try {
+        const result = await documentImportService.analyzeDocument(file);
+        setAnalysisResult(result);
 
-      // Wyślij informację do czatu
-      const exerciseCount = result.exercises.length;
-      const setCount = result.exerciseSets.length;
-      const noteCount = result.clinicalNotes.length;
+        // Wyślij informację do czatu
+        const exerciseCount = result.exercises.length;
+        const setCount = result.exerciseSets.length;
+        const noteCount = result.clinicalNotes.length;
 
-      sendMessage(
-        `Przeanalizowałem plik "${file.name}". Znalazłem: ${exerciseCount} ćwiczeń, ${setCount} zestawów, ${noteCount} notatek. ` +
-        `Czy chcesz przejść do strony importu, aby przejrzeć i zaimportować dane?`
-      );
+        sendMessage(
+          `Przeanalizowałem plik "${file.name}". Znalazłem: ${exerciseCount} ćwiczeń, ${setCount} zestawów, ${noteCount} notatek. ` +
+            `Czy chcesz przejść do strony importu, aby przejrzeć i zaimportować dane?`
+        );
 
-      toast.success(`Znaleziono ${exerciseCount} ćwiczeń w dokumencie`);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Błąd analizy dokumentu';
-      toast.error(message);
-    } finally {
-      setIsAnalyzingFile(false);
-    }
-  }, [sendMessage]);
+        toast.success(`Znaleziono ${exerciseCount} ćwiczeń w dokumencie`);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'Błąd analizy dokumentu';
+        toast.error(message);
+      } finally {
+        setIsAnalyzingFile(false);
+      }
+    },
+    [sendMessage]
+  );
 
   const hasMessages = messages.length > 0;
   const isVoiceListening = voiceState === 'listening';
 
   return (
-    <div className={cn('chat-panel flex h-full flex-col relative overflow-hidden', className)} data-testid="ai-chat-panel">
+    <div
+      className={cn('chat-panel flex h-full flex-col relative overflow-hidden', className)}
+      data-testid="ai-chat-panel"
+    >
       {/* History Panel (sliding) */}
       <div
         className={cn(
@@ -228,7 +234,7 @@ export function AIChatPanel({ className }: AIChatPanelProps) {
         <div className="flex items-center justify-between border-b border-border/60 px-4 py-3 min-h-[60px]">
           <div className="flex items-center gap-3">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary-dark shadow-lg shadow-primary/20">
-              <Sparkles className="h-4 w-4 text-white" />
+              <Sparkles className="h-4 w-4 text-primary-foreground" />
             </div>
             <div>
               <h2 className="text-base font-semibold text-foreground">Asystent AI</h2>
@@ -390,11 +396,7 @@ export function AIChatPanel({ className }: AIChatPanelProps) {
               title="Zaimportuj dokument"
               data-testid="ai-chat-upload-btn"
             >
-              {isAnalyzingFile ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <FileUp className="h-4 w-4" />
-              )}
+              {isAnalyzingFile ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileUp className="h-4 w-4" />}
             </Button>
 
             {/* Voice button */}

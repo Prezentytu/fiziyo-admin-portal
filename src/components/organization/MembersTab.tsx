@@ -1,15 +1,15 @@
-"use client";
+'use client';
 
-import { useState, useMemo } from "react";
-import { Users, UserPlus } from "lucide-react";
+import { useState, useMemo } from 'react';
+import { Users, UserPlus } from 'lucide-react';
 
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
-import { EmptyState } from "@/components/shared/EmptyState";
-import { MemberFilters, RoleFilter } from "./MemberFilters";
-import { MemberCard, OrganizationMember } from "./MemberCard";
-import { matchesSearchQuery } from "@/utils/textUtils";
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
+import { EmptyState } from '@/components/shared/EmptyState';
+import { MemberFilters, RoleFilter } from './MemberFilters';
+import { MemberCard, OrganizationMember } from './MemberCard';
+import { matchesSearchQuery } from '@/utils/textUtils';
 
 interface MembersTabProps {
   members: OrganizationMember[];
@@ -32,26 +32,23 @@ export function MembersTab({
   onInviteClick,
   onRefresh,
 }: MembersTabProps) {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [roleFilter, setRoleFilter] = useState<RoleFilter>("all");
+  const [searchQuery, setSearchQuery] = useState('');
+  const [roleFilter, setRoleFilter] = useState<RoleFilter>('all');
 
   // Filter members
   const filteredMembers = useMemo(() => {
     return members.filter((member) => {
       // Role filter
-      if (roleFilter !== "all") {
+      if (roleFilter !== 'all') {
         const memberRole = member.role.toLowerCase();
         if (memberRole !== roleFilter) return false;
       }
 
       // Search filter
       if (searchQuery) {
-        const fullName = member.user?.fullname || "";
-        const email = member.user?.email || "";
-        return (
-          matchesSearchQuery(fullName, searchQuery) ||
-          matchesSearchQuery(email, searchQuery)
-        );
+        const fullName = member.user?.fullname || '';
+        const email = member.user?.email || '';
+        return matchesSearchQuery(fullName, searchQuery) || matchesSearchQuery(email, searchQuery);
       }
 
       return true;
@@ -119,12 +116,14 @@ export function MembersTab({
       <CardHeader className="flex flex-row items-center justify-between pb-4">
         <div>
           <CardTitle className="text-xl">Personel</CardTitle>
-          <CardDescription>
-            Zarządzaj użytkownikami organizacji i ich uprawnieniami
-          </CardDescription>
+          <CardDescription>Zarządzaj użytkownikami organizacji i ich uprawnieniami</CardDescription>
         </div>
         {canInvite && (
-          <Button onClick={onInviteClick} className="gap-2 shadow-lg shadow-primary/20" data-testid="org-members-invite-btn">
+          <Button
+            onClick={onInviteClick}
+            className="gap-2 shadow-lg shadow-primary/20"
+            data-testid="org-members-invite-btn"
+          >
             <UserPlus className="h-4 w-4" />
             Zaproś użytkownika
           </Button>
@@ -145,26 +144,14 @@ export function MembersTab({
         {sortedMembers.length === 0 ? (
           <EmptyState
             icon={Users}
-            title={
-              searchQuery || roleFilter !== "all"
-                ? "Nie znaleziono członków"
-                : "Brak członków"
-            }
+            title={searchQuery || roleFilter !== 'all' ? 'Nie znaleziono członków' : 'Brak członków'}
             description={
-              searchQuery || roleFilter !== "all"
-                ? "Spróbuj zmienić kryteria wyszukiwania lub filtry"
-                : "Zaproś pierwszego użytkownika do organizacji"
+              searchQuery || roleFilter !== 'all'
+                ? 'Spróbuj zmienić kryteria wyszukiwania lub filtry'
+                : 'Zaproś pierwszego użytkownika do organizacji'
             }
-            actionLabel={
-              !searchQuery && roleFilter === "all" && canInvite
-                ? "Zaproś użytkownika"
-                : undefined
-            }
-            onAction={
-              !searchQuery && roleFilter === "all" && canInvite
-                ? onInviteClick
-                : undefined
-            }
+            actionLabel={!searchQuery && roleFilter === 'all' && canInvite ? 'Zaproś użytkownika' : undefined}
+            onAction={!searchQuery && roleFilter === 'all' && canInvite ? onInviteClick : undefined}
           />
         ) : (
           <div className="grid gap-3 sm:grid-cols-1 lg:grid-cols-2">

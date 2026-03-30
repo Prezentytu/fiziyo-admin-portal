@@ -1,16 +1,16 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { Building2, Shield, ShieldCheck, User, Star, UserPlus, ArrowRight, Check, Loader2 } from "lucide-react";
-import { format } from "date-fns";
-import { pl } from "date-fns/locale";
+import { useState } from 'react';
+import Image from 'next/image';
+import { Building2, Shield, ShieldCheck, User, Star, UserPlus, ArrowRight, Check, Loader2 } from 'lucide-react';
+import { format } from 'date-fns';
+import { pl } from 'date-fns/locale';
 
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { JoinOrganizationDialog } from "@/components/settings/JoinOrganizationDialog";
-import { useOrganization } from "@/contexts/OrganizationContext";
-import { cn } from "@/lib/utils";
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { JoinOrganizationDialog } from '@/components/settings/JoinOrganizationDialog';
+import { useOrganization } from '@/contexts/OrganizationContext';
+import { cn } from '@/lib/utils';
 
 export interface UserOrganization {
   organizationId: string;
@@ -24,14 +24,15 @@ interface OrganizationsListProps {
   organizations: UserOrganization[];
   defaultOrganizationId?: string;
   onOrganizationsChange?: () => void;
+  onNavigateToOrganization?: () => void;
 }
 
 const roleLabels: Record<string, string> = {
-  OWNER: "Właściciel",
-  ADMIN: "Administrator",
-  THERAPIST: "Fizjoterapeuta",
-  MEMBER: "Członek",
-  STAFF: "Personel",
+  OWNER: 'Właściciel',
+  ADMIN: 'Administrator',
+  THERAPIST: 'Fizjoterapeuta',
+  MEMBER: 'Członek',
+  STAFF: 'Personel',
 };
 
 const roleIcons: Record<string, React.ReactNode> = {
@@ -46,12 +47,20 @@ export function OrganizationsList({
   organizations,
   defaultOrganizationId,
   onOrganizationsChange,
+  onNavigateToOrganization,
 }: OrganizationsListProps) {
   const { currentOrganization, switchOrganization, isSwitching } = useOrganization();
   const [showJoinDialog, setShowJoinDialog] = useState(false);
 
   const handleJoinSuccess = () => {
     onOrganizationsChange?.();
+  };
+
+  const handleOrganizationClick = async (organizationId: string, isActive: boolean) => {
+    if (!isActive) {
+      await switchOrganization(organizationId);
+    }
+    onNavigateToOrganization?.();
   };
 
   if (organizations.length === 0) {
@@ -63,18 +72,18 @@ export function OrganizationsList({
           className="group relative w-full overflow-hidden rounded-2xl bg-gradient-to-br from-primary via-primary to-primary-dark p-5 text-left transition-all duration-300 hover:shadow-xl hover:shadow-primary/20 hover:scale-[1.01] cursor-pointer"
           data-testid="settings-orgs-join-btn"
         >
-          <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-          <div className="absolute -top-24 -right-24 w-48 h-48 bg-white/10 rounded-full blur-3xl group-hover:bg-white/20 transition-all duration-500" />
+          <div className="absolute inset-0 bg-gradient-to-br from-primary-foreground/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+          <div className="absolute -top-24 -right-24 w-48 h-48 bg-primary-foreground/10 rounded-full blur-3xl group-hover:bg-primary-foreground/20 transition-all duration-500" />
 
           <div className="relative flex items-center gap-4">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm shrink-0 group-hover:scale-110 transition-transform duration-300">
-              <UserPlus className="h-5 w-5 text-white" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-foreground/20 backdrop-blur-sm shrink-0 group-hover:scale-110 transition-transform duration-300">
+              <UserPlus className="h-5 w-5 text-primary-foreground" />
             </div>
             <div className="min-w-0 flex-1">
-              <h3 className="text-base font-bold text-white">Dołącz do organizacji</h3>
-              <p className="text-sm text-white/80">Poproś o zaproszenie od właściciela gabinetu</p>
+              <h3 className="text-base font-bold text-primary-foreground">Dołącz do organizacji</h3>
+              <p className="text-sm text-primary-foreground/80">Poproś o zaproszenie od właściciela gabinetu</p>
             </div>
-            <ArrowRight className="h-5 w-5 text-white/60 group-hover:text-white group-hover:translate-x-1 transition-all duration-300 shrink-0" />
+            <ArrowRight className="h-5 w-5 text-primary-foreground/60 group-hover:text-primary-foreground group-hover:translate-x-1 transition-all duration-300 shrink-0" />
           </div>
         </button>
 
@@ -83,17 +92,11 @@ export function OrganizationsList({
             <div className="mx-auto h-10 w-10 rounded-full bg-surface-light flex items-center justify-center mb-3">
               <Building2 className="h-5 w-5 text-muted-foreground" />
             </div>
-            <p className="text-sm text-muted-foreground">
-              Nie należysz jeszcze do żadnej organizacji
-            </p>
+            <p className="text-sm text-muted-foreground">Nie należysz jeszcze do żadnej organizacji</p>
           </CardContent>
         </Card>
 
-        <JoinOrganizationDialog
-          open={showJoinDialog}
-          onOpenChange={setShowJoinDialog}
-          onSuccess={handleJoinSuccess}
-        />
+        <JoinOrganizationDialog open={showJoinDialog} onOpenChange={setShowJoinDialog} onSuccess={handleJoinSuccess} />
       </div>
     );
   }
@@ -108,31 +111,31 @@ export function OrganizationsList({
           className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary via-primary to-primary-dark p-5 text-left transition-all duration-300 hover:shadow-xl hover:shadow-primary/20 hover:scale-[1.01] cursor-pointer lg:col-span-8"
           data-testid="settings-orgs-join-hero-btn"
         >
-          <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-          <div className="absolute -top-24 -right-24 w-48 h-48 bg-white/10 rounded-full blur-3xl group-hover:bg-white/20 transition-all duration-500" />
+          <div className="absolute inset-0 bg-gradient-to-br from-primary-foreground/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+          <div className="absolute -top-24 -right-24 w-48 h-48 bg-primary-foreground/10 rounded-full blur-3xl group-hover:bg-primary-foreground/20 transition-all duration-500" />
 
           <div className="relative flex items-center gap-4">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm shrink-0 group-hover:scale-110 transition-transform duration-300">
-              <UserPlus className="h-5 w-5 text-white" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary-foreground/20 backdrop-blur-sm shrink-0 group-hover:scale-110 transition-transform duration-300">
+              <UserPlus className="h-5 w-5 text-primary-foreground" />
             </div>
             <div className="min-w-0 flex-1">
-              <h3 className="text-base font-bold text-white">Dołącz do organizacji</h3>
-              <p className="text-sm text-white/80">Poproś o zaproszenie od właściciela gabinetu</p>
+              <h3 className="text-base font-bold text-primary-foreground">Dołącz do organizacji</h3>
+              <p className="text-sm text-primary-foreground/80">Poproś o zaproszenie od właściciela gabinetu</p>
             </div>
-            <ArrowRight className="h-5 w-5 text-white/60 group-hover:text-white group-hover:translate-x-1 transition-all duration-300 shrink-0" />
+            <ArrowRight className="h-5 w-5 text-primary-foreground/60 group-hover:text-primary-foreground group-hover:translate-x-1 transition-all duration-300 shrink-0" />
           </div>
         </button>
 
         {/* Stat Card */}
-        <Card className="border-border/60 lg:col-span-4">
+        <Card className="rounded-xl border border-border/50 bg-card/30 lg:col-span-4">
           <CardContent className="p-4 flex items-center gap-4">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/10">
               <Building2 className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-foreground">{organizations.length}</p>
-              <p className="text-xs text-muted-foreground">
-                {organizations.length === 1 ? "Organizacja" : "Organizacje"}
+              <p className="text-2xl font-bold text-foreground tabular-nums">{organizations.length}</p>
+              <p className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground mt-0.5">
+                {organizations.length === 1 ? 'Organizacja' : 'Organizacje'}
               </p>
             </div>
           </CardContent>
@@ -140,33 +143,39 @@ export function OrganizationsList({
       </div>
 
       {/* Organizations List - Compact with Switch Action */}
-      <Card className="border-border/60">
-        <CardContent className="p-3">
-          <div className="space-y-2">
+      <Card className="rounded-xl border border-border/50 bg-card/30">
+        <CardContent className="p-4">
+          <div className="space-y-3">
             {organizations.map((org) => {
               const isDefault = org.organizationId === defaultOrganizationId;
               const isActive = org.organizationId === currentOrganization?.organizationId;
-              const roleKey = org.role?.toUpperCase() || "MEMBER";
+              const roleKey = org.role?.toUpperCase() || 'MEMBER';
 
               return (
-                <div
+                <button
                   key={org.organizationId}
+                  onClick={() => handleOrganizationClick(org.organizationId, isActive)}
+                  disabled={isSwitching}
                   className={cn(
-                    "flex items-center justify-between rounded-lg border bg-surface p-3 transition-all duration-200",
+                    'flex w-full items-center justify-between rounded-xl border p-4 transition-all duration-200 text-left cursor-pointer',
                     isActive
-                      ? "border-primary/50 bg-primary/5"
-                      : "border-border/60 hover:bg-surface-light hover:border-border"
+                      ? 'border-primary/50 bg-primary/5 ring-1 ring-primary/20'
+                      : 'border-border/50 bg-background/50 hover:bg-background hover:border-primary/30'
                   )}
                   data-testid={`settings-org-item-${org.organizationId}`}
                 >
                   <div className="flex items-center gap-3">
                     {/* Logo/Avatar */}
                     {org.logoUrl ? (
-                      <img
-                        src={org.logoUrl}
-                        alt={org.organizationName || "Organizacja"}
-                        className="h-9 w-9 rounded-lg object-cover shrink-0"
-                      />
+                      <span className="relative block h-9 w-9 rounded-lg overflow-hidden shrink-0">
+                        <Image
+                          src={org.logoUrl}
+                          alt={org.organizationName || 'Organizacja'}
+                          fill
+                          className="object-cover"
+                          sizes="36px"
+                        />
+                      </span>
                     ) : (
                       <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-surface-light shrink-0">
                         <Building2 className="h-4 w-4 text-muted-foreground" />
@@ -175,10 +184,13 @@ export function OrganizationsList({
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
                         <span className="font-medium text-sm text-foreground truncate">
-                          {org.organizationName || "Nieznana organizacja"}
+                          {org.organizationName || 'Nieznana organizacja'}
                         </span>
                         {isActive && (
-                          <Badge variant="default" className="gap-1 text-[10px] px-1.5 py-0 bg-primary/20 text-primary border-0">
+                          <Badge
+                            variant="default"
+                            className="gap-1 text-[10px] px-1.5 py-0 bg-primary/20 text-primary border-0"
+                          >
                             <Check className="h-2.5 w-2.5" />
                             Aktywna
                           </Badge>
@@ -191,8 +203,8 @@ export function OrganizationsList({
                         )}
                       </div>
                       {org.joinedAt && (
-                        <p className="text-xs text-muted-foreground">
-                          {format(new Date(org.joinedAt), "d MMM yyyy", {
+                        <p className="text-xs text-muted-foreground text-left">
+                          {format(new Date(org.joinedAt), 'd MMM yyyy', {
                             locale: pl,
                           })}
                         </p>
@@ -204,35 +216,16 @@ export function OrganizationsList({
                       {roleIcons[roleKey]}
                       {roleLabels[roleKey] || org.role}
                     </Badge>
-                    {!isActive && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => switchOrganization(org.organizationId)}
-                        disabled={isSwitching}
-                        className="text-xs h-7"
-                        data-testid={`settings-org-switch-${org.organizationId}`}
-                      >
-                        {isSwitching ? (
-                          <Loader2 className="h-3 w-3 animate-spin" />
-                        ) : (
-                          "Przełącz"
-                        )}
-                      </Button>
-                    )}
+                    {isSwitching && !isActive && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />}
                   </div>
-                </div>
+                </button>
               );
             })}
           </div>
         </CardContent>
       </Card>
 
-      <JoinOrganizationDialog
-        open={showJoinDialog}
-        onOpenChange={setShowJoinDialog}
-        onSuccess={handleJoinSuccess}
-      />
+      <JoinOrganizationDialog open={showJoinDialog} onOpenChange={setShowJoinDialog} onSuccess={handleJoinSuccess} />
     </div>
   );
 }

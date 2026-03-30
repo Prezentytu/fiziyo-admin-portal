@@ -1,0 +1,388 @@
+'use client';
+
+import * as React from 'react';
+import { useState, useCallback } from 'react';
+import { useMutation, useQuery } from '@apollo/client/react';
+import { toast } from 'sonner';
+import { Clock, Lock, Sparkles, Copy, Rocket } from 'lucide-react';
+
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
+import { ExerciseForm, ExerciseFormValues } from './ExerciseForm';
+import { CreateExerciseWizard } from './CreateExerciseWizard';
+import { FeedbackBanner } from './FeedbackBanner';
+import { UPDATE_EXERCISE_MUTATION, COPY_EXERCISE_TEMPLATE_MUTATION } from '@/graphql/mutations/exercises.mutations';
+import { GET_ORGANIZATION_EXERCISES_QUERY, GET_AVAILABLE_EXERCISES_QUERY } from '@/graphql/queries/exercises.queries';
+import type { Exercise } from './ExerciseCard';
+import { buildExerciseUpdateVariables } from './utils/buildExerciseUpdateVariables';
+import { getNextExerciseCopyName } from './utils/getNextExerciseCopyName';
+
+type ExerciseDialogSuccessEvent =
+  | {
+      action: 'updated';
+      exerciseId: string;
+    }
+  | {
+      action: 'copied';
+      exerciseId: string;
+    };
+
+interface ExerciseDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  exercise?: Exercise | null;
+  organizationId: string;
+  onSuccess?: (event?: ExerciseDialogSuccessEvent) => void;
+  /** Callback to resubmit exercise after fixing issues */
+  onResubmit?: (exerciseId: string) => Promise<void>;
+  /** Callback to submit exercise to global database */
+  onSubmitToGlobal?: (exercise: Exercise) => void;
+}
+
+export function ExerciseDialog({
+  open,
+  onOpenChange,
+  exercise,
+  organizationId,
+  onSuccess,
+  onResubmit,
+  onSubmitToGlobal,
+}: ExerciseDialogProps) {
+  const isEditing = !!exercise;
+  const [showCloseConfirm, setShowCloseConfirm] = useState(false);
+  const [formIsDirty, setFormIsDirty] = useState(false);
+  const [isResubmitting, setIsResubmitting] = useState(false);
+  const { data: organizationExercisesData } = useQuery(GET_ORGANIZATION_EXERCISES_QUERY, {
+    variables: { organizationId },
+    skip: !organizationId,
+  });
+
+  // Scope-based modes
+  const isGlobalExercise = exercise?.scope === 'GLOBAL';
+
+  // Status-based modes
+  const isPendingReview = exercise?.status === 'PENDING_REVIEW';
+  const isChangesRequested = exercise?.status === 'CHANGES_REQUESTED';
+  const isFixMode = isChangesRequested; // Enable editing to fix issues
+
+  // Can submit to global: ORGANIZATION scope, no existing submission, not in review
+  const canSubmitToGlobal =
+    onSubmitToGlobal &&
+    exercise?.scope === 'ORGANIZATION' &&
+    !exercise?.globalSubmissionId &&
+    !isPendingReview &&
+    !isChangesRequested;
+
+  const handleCloseAttempt = useCallback(() => {
+    if (formIsDirty) {
+      setShowCloseConfirm(true);
+    } else {
+      onOpenChange(false);
+    }
+  }, [formIsDirty, onOpenChange]);
+
+  const handleConfirmClose = useCallback(() => {
+    setShowCloseConfirm(false);
+    setFormIsDirty(false);
+    onOpenChange(false);
+  }, [onOpenChange]);
+
+  // Reset dirty state when dialog closes
+  React.useEffect(() => {
+    if (!open) {
+      setFormIsDirty(false);
+    }
+  }, [open]);
+
+  const [updateExercise, { loading: updating }] = useMutation(UPDATE_EXERCISE_MUTATION, {
+    refetchQueries: [{ query: GET_ORGANIZATION_EXERCISES_QUERY, variables: { organizationId } }],
+  });
+
+  // Fork mutation - copy global exercise to organization
+  const [copyExercise, { loading: copying }] = useMutation(COPY_EXERCISE_TEMPLATE_MUTATION, {
+    refetchQueries: [{ query: GET_AVAILABLE_EXERCISES_QUERY, variables: { organizationId } }],
+  });
+  const organizationExerciseNames =
+    ((organizationExercisesData as { organizationExercises?: { name?: string | null }[] } | undefined)
+      ?.organizationExercises ?? [])
+      .map((organizationExercise) => organizationExercise.name?.trim())
+      .filter((name): name is string => Boolean(name));
+
+  const handleForkExercise = async () => {
+    if (!exercise) return;
+
+    try {
+      const result = await copyExercise({
+        variables: {
+          templateExerciseId: exercise.id,
+          targetOrganizationId: organizationId,
+        },
+      });
+      const copiedExerciseId = (
+        result.data as
+          | {
+              copyExerciseTemplate?: {
+                id?: string;
+              };
+            }
+          | undefined
+      )?.copyExerciseTemplate?.id;
+
+      let copiedExerciseName = exercise.name;
+      if (copiedExerciseId) {
+        copiedExerciseName = getNextExerciseCopyName(exercise.name, organizationExerciseNames);
+        try {
+          await updateExercise({
+            variables: {
+              exerciseId: copiedExerciseId,
+              name: copiedExerciseName,
+            },
+          });
+        } catch (renameError: unknown) {
+          console.error('Błąd podczas nadawania nazwy nowej kopii:', renameError);
+        }
+      }
+
+      toast.success(`Utworzono kopię "${copiedExerciseName}" w Twoich ćwiczeniach`);
+      onOpenChange(false);
+      if (copiedExerciseId) {
+        onSuccess?.({ action: 'copied', exerciseId: copiedExerciseId });
+      }
+    } catch (error: unknown) {
+      console.error('Błąd podczas kopiowania ćwiczenia:', error);
+      toast.error('Nie udało się skopiować ćwiczenia');
+    }
+  };
+
+  const handleSubmit = async (values: ExerciseFormValues) => {
+    try {
+      if (isEditing && exercise) {
+        // First save the changes
+        await updateExercise({
+          variables: buildExerciseUpdateVariables({
+            exerciseId: exercise.id,
+            values,
+          }),
+        });
+
+        // If in fix mode (CHANGES_REQUESTED), also resubmit for review
+        if (isFixMode && onResubmit) {
+          setIsResubmitting(true);
+          try {
+            await onResubmit(exercise.id);
+            toast.success('Poprawki wysłane do weryfikacji!');
+          } catch {
+            toast.error('Nie udało się wysłać poprawek');
+            return;
+          } finally {
+            setIsResubmitting(false);
+          }
+        } else {
+          toast.success('Ćwiczenie zostało zaktualizowane');
+        }
+
+        onOpenChange(false);
+        onSuccess?.({ action: 'updated', exerciseId: exercise.id });
+      }
+    } catch (error: unknown) {
+      console.error('Błąd podczas zapisywania ćwiczenia:', error);
+      toast.error('Nie udało się zaktualizować ćwiczenia');
+    }
+  };
+
+  // For creating new exercises, use the wizard
+  if (!isEditing) {
+    return (
+      <CreateExerciseWizard
+        open={open}
+        onOpenChange={onOpenChange}
+        organizationId={organizationId}
+        onSuccess={onSuccess}
+      />
+    );
+  }
+
+  // For editing, use the simple form
+  // Support both new and legacy field names
+  const defaultValues = exercise
+    ? {
+        name: exercise.name,
+        description: exercise.patientDescription || exercise.description || '',
+        type: (exercise.type?.toLowerCase() as 'reps' | 'time') || 'reps',
+        sets: exercise.defaultSets ?? exercise.sets,
+        reps: exercise.defaultReps ?? exercise.reps,
+        duration: exercise.defaultDuration ?? exercise.duration,
+        restSets: exercise.defaultRestBetweenSets ?? exercise.restSets ?? 60,
+        restReps: exercise.defaultRestBetweenReps ?? exercise.restReps ?? null,
+        preparationTime: exercise.preparationTime ?? 5,
+        executionTime: exercise.defaultExecutionTime ?? exercise.executionTime ?? null,
+        exerciseSide:
+          ((exercise.side?.toLowerCase() || exercise.exerciseSide) as
+            | 'none'
+            | 'left'
+            | 'right'
+            | 'both'
+            | 'alternating') || 'none',
+        videoUrl: exercise.videoUrl ?? '',
+        notes: exercise.notes ?? '',
+        tempo: exercise.tempo ?? '',
+        clinicalDescription: exercise.clinicalDescription ?? '',
+        audioCue: exercise.audioCue ?? '',
+        rangeOfMotion: exercise.rangeOfMotion ?? '',
+      }
+    : undefined;
+
+  // Read-only view for GLOBAL exercises from FiziYo database
+  if (isGlobalExercise) {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-violet" />
+              Ćwiczenie z bazy FiziYo
+            </DialogTitle>
+            <DialogDescription>
+              &quot;{exercise?.name}&quot; pochodzi z globalnej bazy FiziYo i nie może być edytowane.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="py-6">
+            <div className="flex items-start gap-3 p-6 rounded-lg bg-violet/10 border border-violet/20">
+              <Lock className="h-8 w-8 text-violet shrink-0 mt-0.5" />
+              <div>
+                <p className="font-medium text-violet">Ćwiczenie tylko do odczytu</p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  To jest zweryfikowane ćwiczenie z globalnej bazy FiziYo. Możesz je używać w zestawach, ale nie możesz
+                  go edytować ani usunąć.
+                </p>
+                <p className="text-sm text-muted-foreground mt-2">
+                  Jeśli chcesz wprowadzić zmiany, utwórz własną kopię tego ćwiczenia.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-3">
+            <Button variant="outline" onClick={() => onOpenChange(false)}>
+              Zamknij
+            </Button>
+            <Button onClick={handleForkExercise} disabled={copying}>
+              <Copy className="mr-2 h-4 w-4" />
+              {copying ? 'Kopiowanie...' : 'Utwórz kopię do edycji'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  // Edit locked state for PENDING_REVIEW
+  if (isPendingReview) {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Lock className="h-5 w-5 text-amber-500" />
+              Ćwiczenie oczekuje na weryfikację
+            </DialogTitle>
+            <DialogDescription>
+              &quot;{exercise?.name}&quot; zostało zgłoszone do bazy globalnej i oczekuje na weryfikację.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="py-6">
+            <div className="flex items-center justify-center gap-3 p-6 rounded-lg bg-amber-500/10 border border-amber-500/20">
+              <Clock className="h-8 w-8 text-amber-500" />
+              <div>
+                <p className="font-medium text-amber-600">Edycja zablokowana</p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Nie możesz edytować ćwiczenia podczas weryfikacji. Poczekaj na decyzję weryfikatora.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-3">
+            <Button variant="outline" onClick={() => onOpenChange(false)}>
+              Zamknij
+            </Button>
+            {/* TODO: Add "Withdraw submission" button when backend supports it */}
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={() => handleCloseAttempt()}>
+      <DialogContent
+        className="max-w-2xl max-h-[90vh] overflow-y-auto"
+        onInteractOutside={(e) => e.preventDefault()}
+        onEscapeKeyDown={(e) => {
+          e.preventDefault();
+          handleCloseAttempt();
+        }}
+      >
+        <DialogHeader>
+          <div className="flex items-center gap-2">
+            <DialogTitle>{isFixMode ? 'Popraw ćwiczenie' : 'Edytuj ćwiczenie'}</DialogTitle>
+            {isFixMode && (
+              <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/20">
+                Do poprawy
+              </Badge>
+            )}
+          </div>
+          <DialogDescription>
+            {isFixMode
+              ? `Wprowadź poprawki do "${exercise?.name}" i wyślij ponownie do weryfikacji`
+              : `Zmień parametry ćwiczenia "${exercise?.name}"`}
+          </DialogDescription>
+        </DialogHeader>
+
+        {/* Feedback Banner for CHANGES_REQUESTED */}
+        {isFixMode && exercise?.adminReviewNotes && (
+          <FeedbackBanner adminReviewNotes={exercise.adminReviewNotes} updatedAt={exercise.createdAt} />
+        )}
+
+        <ExerciseForm
+          defaultValues={defaultValues}
+          onSubmit={handleSubmit}
+          onCancel={handleCloseAttempt}
+          isLoading={updating || isResubmitting}
+          submitLabel={isFixMode ? 'Wyślij poprawki' : 'Zapisz zmiany'}
+          onDirtyChange={setFormIsDirty}
+          secondaryAction={
+            canSubmitToGlobal && exercise ? (
+              <Button
+                type="button"
+                onClick={() => {
+                  onOpenChange(false);
+                  onSubmitToGlobal(exercise);
+                }}
+                className="gap-2 bg-gradient-to-r from-primary to-emerald-600 hover:from-primary/90 hover:to-emerald-600/90"
+              >
+                <Rocket className="h-4 w-4" />
+                Wyślij do weryfikacji
+              </Button>
+            ) : undefined
+          }
+        />
+      </DialogContent>
+
+      <ConfirmDialog
+        open={showCloseConfirm}
+        onOpenChange={setShowCloseConfirm}
+        title="Porzucić zmiany?"
+        description="Masz niezapisane zmiany. Czy na pewno chcesz zamknąć bez zapisywania?"
+        confirmText="Tak, zamknij"
+        cancelText="Kontynuuj edycję"
+        variant="destructive"
+        onConfirm={handleConfirmClose}
+      />
+    </Dialog>
+  );
+}

@@ -14,12 +14,7 @@ import { memo, useState, useCallback } from 'react';
 import { Bug, ChevronRight } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-  TooltipProvider,
-} from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { isFeedbackEnabled } from '@/lib/featureFlags';
 import { FeedbackDialog } from './FeedbackDialog';
@@ -96,11 +91,7 @@ function FeedbackButtonComponent({
           <span className="hidden sm:inline">Zgłoś uwagę</span>
         </Button>
 
-        <FeedbackDialog
-          isOpen={isDialogOpen}
-          onClose={handleClose}
-          screenName={screenName}
-        />
+        <FeedbackDialog isOpen={isDialogOpen} onClose={handleClose} screenName={screenName} />
       </>
     );
   }
@@ -130,11 +121,7 @@ function FeedbackButtonComponent({
           </TooltipContent>
         </Tooltip>
 
-        <FeedbackDialog
-          isOpen={isDialogOpen}
-          onClose={handleClose}
-          screenName={screenName}
-        />
+        <FeedbackDialog isOpen={isDialogOpen} onClose={handleClose} screenName={screenName} />
       </>
     );
   }
@@ -155,21 +142,13 @@ function FeedbackButtonComponent({
           <Bug className="h-4 w-4 text-info" />
         </div>
         <div className="flex flex-1 flex-col items-start overflow-hidden">
-          <span className="font-medium text-foreground group-hover:text-info transition-colors">
-            Zgłoś uwagę
-          </span>
-        <span className="text-xs text-muted-foreground truncate">
-          Błąd, sugestia lub pytanie
-        </span>
+          <span className="font-medium text-foreground group-hover:text-info transition-colors">Zgłoś uwagę</span>
+          <span className="text-xs text-muted-foreground truncate">Błąd, sugestia lub pytanie</span>
         </div>
         <ChevronRight className="h-4 w-4 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
       </button>
 
-      <FeedbackDialog
-        isOpen={isDialogOpen}
-        onClose={handleClose}
-        screenName={screenName}
-      />
+      <FeedbackDialog isOpen={isDialogOpen} onClose={handleClose} screenName={screenName} />
     </>
   );
 }

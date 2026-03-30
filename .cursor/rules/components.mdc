@@ -1,0 +1,14 @@
+---
+description: Reguly komponentow React UI i shared
+globs:
+  - "src/components/**/*.ts"
+  - "src/components/**/*.tsx"
+  - "src/features/**/*.tsx"
+alwaysApply: false
+---
+
+- Komponenty deklaruj jako zwykle funkcje, nie `React.FC`.
+- Jesli plik uzywa hookow klienta, `"use client"` musi byc pierwsza linia.
+- Kazdy interaktywny element musi miec `data-testid` zgodny z konwencja projektu.
+- Preferuj reuzycie komponentow z `@/components/ui/` i `@/components/shared/` przed tworzeniem nowych.
+- UI musi byc theme-safe (light i dark) i oparty na tokenach semantycznych (`bg-surface`, `text-foreground`, `border-border`).

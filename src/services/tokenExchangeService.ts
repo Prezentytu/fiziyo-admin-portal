@@ -2,9 +2,9 @@ import {
   TokenExchangeResponse,
   ChangeOrganizationResponse,
   ExchangeClerkTokenRequest,
-} from "@/types/tokenExchange.types";
+} from '@/types/tokenExchange.types';
 
-const isDev = process.env.NODE_ENV === "development";
+const isDev = process.env.NODE_ENV === 'development';
 
 /**
  * Serwis do wymiany tokenów z backendem
@@ -14,7 +14,7 @@ export class TokenExchangeService {
   private baseUrl: string;
 
   constructor() {
-    this.baseUrl = process.env.NEXT_PUBLIC_API_URL || "";
+    this.baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
   }
 
   /**
@@ -31,18 +31,16 @@ export class TokenExchangeService {
       };
 
       const response = await fetch(url, {
-        method: "POST",
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify(request),
       });
 
       if (!response.ok) {
         const errorText = await response.text();
-        throw new Error(
-          `Token exchange failed: ${response.status} ${response.statusText} - ${errorText}`
-        );
+        throw new Error(`Token exchange failed: ${response.status} ${response.statusText} - ${errorText}`);
       }
 
       const data: TokenExchangeResponse = await response.json();
@@ -50,7 +48,7 @@ export class TokenExchangeService {
       return data;
     } catch (error) {
       if (isDev) {
-        console.error("[TokenExchange] Błąd wymiany tokenu:", error);
+        console.error('[TokenExchange] Błąd wymiany tokenu:', error);
       }
       throw error;
     }
@@ -62,26 +60,21 @@ export class TokenExchangeService {
    * @param organizationId - ID nowej organizacji
    * @returns Nowy backend JWT token z nową organizacją
    */
-  async changeOrganization(
-    backendToken: string,
-    organizationId: string
-  ): Promise<ChangeOrganizationResponse> {
+  async changeOrganization(backendToken: string, organizationId: string): Promise<ChangeOrganizationResponse> {
     const url = `${this.baseUrl}/api/token-exchange/change-organization/${organizationId}`;
 
     try {
       const response = await fetch(url, {
-        method: "GET",
+        method: 'GET',
         headers: {
           Authorization: `Bearer ${backendToken}`,
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
       });
 
       if (!response.ok) {
         const errorText = await response.text();
-        throw new Error(
-          `Change organization failed: ${response.status} ${response.statusText} - ${errorText}`
-        );
+        throw new Error(`Change organization failed: ${response.status} ${response.statusText} - ${errorText}`);
       }
 
       const data: ChangeOrganizationResponse = await response.json();
@@ -89,7 +82,7 @@ export class TokenExchangeService {
       return data;
     } catch (error) {
       if (isDev) {
-        console.error("[TokenExchange] Błąd zmiany organizacji:", error);
+        console.error('[TokenExchange] Błąd zmiany organizacji:', error);
       }
       throw error;
     }
@@ -98,20 +91,3 @@ export class TokenExchangeService {
 
 // Singleton instance
 export const tokenExchangeService = new TokenExchangeService();
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

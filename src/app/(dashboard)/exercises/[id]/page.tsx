@@ -1,6 +1,7 @@
 'use client';
 
 import { use, useState } from 'react';
+import Image from 'next/image';
 import { useQuery, useMutation } from '@apollo/client/react';
 import { useRouter } from 'next/navigation';
 import {
@@ -11,14 +12,22 @@ import {
   Repeat,
   Dumbbell,
   Play,
-  ExternalLink,
   FolderPlus,
   ArrowLeftRight,
   FileText,
   MoreHorizontal,
-  ChevronDown,
   Timer,
   ZoomIn,
+  Sparkles,
+  Plus,
+  ExternalLink,
+  Rocket,
+  AlertCircle,
+  Globe,
+  RefreshCw,
+  Copy,
+  ChevronDown,
+  Flag,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -26,12 +35,15 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { LoadingState } from '@/components/shared/LoadingState';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
-import { ExerciseDialog } from '@/components/exercises/ExerciseDialog';
-import { AddExerciseToSetsDialog } from '@/components/exercises/AddExerciseToSetsDialog';
+import { ExerciseDialog } from '@/features/exercises/ExerciseDialog';
+import { AddExerciseToSetsDialog } from '@/features/exercises/AddExerciseToSetsDialog';
+import { SubmitToGlobalDialog } from '@/features/exercises/SubmitToGlobalDialog';
+import { FeedbackBanner } from '@/features/exercises/FeedbackBanner';
+import { ReportExerciseDialog } from '@/features/exercises/ReportExerciseDialog';
 import { ColorBadge } from '@/components/shared/ColorBadge';
 import { ImagePlaceholder } from '@/components/shared/ImagePlaceholder';
 import { ImageLightbox } from '@/components/shared/ImageLightbox';
-import { getMediaUrl, getMediaUrls } from '@/utils/mediaUrl';
+import { getMediaUrls } from '@/utils/mediaUrl';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -39,24 +51,24 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from '@/components/ui/collapsible';
 import { cn } from '@/lib/utils';
 
 import { GET_EXERCISE_BY_ID_QUERY, GET_ORGANIZATION_EXERCISES_QUERY } from '@/graphql/queries/exercises.queries';
 import { GET_EXERCISE_TAGS_BY_ORGANIZATION_QUERY } from '@/graphql/queries/exerciseTags.queries';
 import { GET_TAG_CATEGORIES_BY_ORGANIZATION_QUERY } from '@/graphql/queries/tagCategories.queries';
-import { DELETE_EXERCISE_MUTATION } from '@/graphql/mutations/exercises.mutations';
+import {
+  DELETE_EXERCISE_MUTATION,
+  SUBMIT_TO_GLOBAL_REVIEW_MUTATION,
+  RESUBMIT_FROM_ORIGINAL_MUTATION,
+  CREATE_EXERCISE_MUTATION,
+} from '@/graphql/mutations/exercises.mutations';
 import { createTagsMap, mapExerciseTagsToObjects } from '@/utils/tagUtils';
 import { useOrganization } from '@/contexts/OrganizationContext';
-import type {
-  ExerciseByIdResponse,
-  ExerciseTagsResponse,
-  TagCategoriesResponse,
-} from '@/types/apollo';
+import type { ExerciseByIdResponse, ExerciseTagsResponse, TagCategoriesResponse } from '@/types/apollo';
+import { translateExerciseTypeShort, translateExerciseSidePolish } from '@/components/pdf/polishUtils';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { getNextExerciseCopyName } from '@/features/exercises/utils/getNextExerciseCopyName';
 
 interface ExerciseDetailPageProps {
   params: Promise<{ id: string }>;
@@ -79,10 +91,11 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isAddToSetDialogOpen, setIsAddToSetDialogOpen] = useState(false);
+  const [isSubmitToGlobalDialogOpen, setIsSubmitToGlobalDialogOpen] = useState(false);
+  const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
-  const [isTimesOpen, setIsTimesOpen] = useState(false);
-  const [isNotesOpen, setIsNotesOpen] = useState(false);
+  const [isParametersOpen, setIsParametersOpen] = useState(false);
 
   // Get organization ID from context (changes when user switches organization)
   const organizationId = currentOrganization?.organizationId;
@@ -90,6 +103,10 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
   // Get exercise details
   const { data, loading, error } = useQuery(GET_EXERCISE_BY_ID_QUERY, {
     variables: { id },
+  });
+  const { data: organizationExercisesData } = useQuery(GET_ORGANIZATION_EXERCISES_QUERY, {
+    variables: { organizationId },
+    skip: !organizationId,
   });
 
   // Get tags for mapping
@@ -116,7 +133,27 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
       : [],
   });
 
+  // Submit to global review mutation
+  const [submitToGlobalReview, { loading: submittingToGlobal }] = useMutation(SUBMIT_TO_GLOBAL_REVIEW_MUTATION, {
+    refetchQueries: [{ query: GET_EXERCISE_BY_ID_QUERY, variables: { id } }],
+  });
+
+  // Resubmit after changes mutation
+  const [resubmitFromOriginal, { loading: resubmitting }] = useMutation(RESUBMIT_FROM_ORIGINAL_MUTATION, {
+    refetchQueries: [{ query: GET_EXERCISE_BY_ID_QUERY, variables: { id } }],
+  });
+  const [createExercise, { loading: duplicating }] = useMutation(CREATE_EXERCISE_MUTATION, {
+    refetchQueries: organizationId
+      ? [{ query: GET_ORGANIZATION_EXERCISES_QUERY, variables: { organizationId } }]
+      : [],
+  });
+
   const rawExercise = (data as ExerciseByIdResponse)?.exerciseById;
+  const organizationExerciseNames =
+    ((organizationExercisesData as { organizationExercises?: { name?: string | null }[] } | undefined)?.organizationExercises ??
+      [])
+      .map((organizationExercise) => organizationExercise.name?.trim())
+      .filter((name): name is string => Boolean(name));
   const tags = (tagsData as ExerciseTagsResponse)?.exerciseTags || [];
   const categories = (categoriesData as TagCategoriesResponse)?.tagsByOrganizationId || [];
 
@@ -141,31 +178,96 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
     setIsAddToSetDialogOpen(true);
   };
 
-  const getTypeLabel = (type?: string) => {
-    switch (type) {
-      case 'reps':
-        return 'Powtórzenia';
-      case 'time':
-        return 'Czasowe';
-      case 'hold':
-        return 'Utrzymywanie';
-      default:
-        return type || 'Inne';
+  const handleSubmitToGlobal = async (exerciseId: string) => {
+    try {
+      await submitToGlobalReview({
+        variables: { exerciseId },
+      });
+      toast.success('Ćwiczenie zostało zgłoszone do weryfikacji');
+    } catch (err) {
+      console.error('Błąd podczas zgłaszania:', err);
+      toast.error('Nie udało się zgłosić ćwiczenia do weryfikacji');
     }
   };
 
-  const getSideLabel = (side?: string) => {
-    switch (side) {
-      case 'left':
-        return 'Lewa strona';
-      case 'right':
-        return 'Prawa strona';
-      case 'both':
-        return 'Obie strony';
-      case 'alternating':
-        return 'Naprzemiennie';
-      default:
-        return 'Bez podziału';
+  const handleResubmit = async () => {
+    try {
+      await resubmitFromOriginal({
+        variables: { originalExerciseId: id },
+      });
+      toast.success('Ćwiczenie zostało ponownie zgłoszone do weryfikacji');
+    } catch (err) {
+      console.error('Błąd podczas ponownego zgłaszania:', err);
+      toast.error('Nie udało się ponownie zgłosić ćwiczenia');
+    }
+  };
+
+  const normalizeTagIds = (tagValues: (string | ExerciseTag)[] | undefined) => {
+    if (!tagValues || tagValues.length === 0) return null;
+    const tagIds = tagValues
+      .map((tag) => (isTagObject(tag) ? tag.id : tag))
+      .filter((tag): tag is string => Boolean(tag));
+
+    return tagIds.length > 0 ? tagIds : null;
+  };
+
+  const handleDuplicateExercise = async () => {
+    if (!organizationId || !exercise) return;
+
+    const setsValue = exercise.defaultSets ?? exercise.sets ?? null;
+    const repsValue = exercise.defaultReps ?? exercise.reps ?? null;
+    const durationValue = exercise.defaultDuration ?? exercise.duration ?? null;
+    const restBetweenSetsValue = exercise.defaultRestBetweenSets ?? exercise.restSets ?? null;
+    const restBetweenRepsValue = exercise.defaultRestBetweenReps ?? exercise.restReps ?? null;
+    const sideValue = exercise.side || exercise.exerciseSide;
+    const duplicatedExerciseName = getNextExerciseCopyName(exercise.name, organizationExerciseNames);
+
+    try {
+      const result = await createExercise({
+        variables: {
+          organizationId,
+          scope: 'ORGANIZATION',
+          name: duplicatedExerciseName,
+          description: (exercise.patientDescription || exercise.description || '').trim(),
+          type: exercise.type || 'reps',
+          sets: setsValue,
+          reps: repsValue,
+          duration: durationValue,
+          restSets: restBetweenSetsValue,
+          restReps: restBetweenRepsValue,
+          preparationTime: exercise.preparationTime ?? null,
+          executionTime: exercise.defaultExecutionTime ?? exercise.executionTime ?? null,
+          videoUrl: exercise.videoUrl || null,
+          images: exercise.images?.length ? exercise.images : null,
+          notes: exercise.notes || null,
+          exerciseSide: sideValue && sideValue !== 'none' ? sideValue : null,
+          mainTags: normalizeTagIds(exercise.mainTags),
+          additionalTags: normalizeTagIds(exercise.additionalTags),
+          tempo: exercise.tempo || null,
+          clinicalDescription: exercise.clinicalDescription || null,
+          audioCue: (exercise as { audioCue?: string }).audioCue || null,
+          rangeOfMotion: (exercise as { rangeOfMotion?: string }).rangeOfMotion || null,
+          isActive: true,
+        },
+      });
+
+      const duplicatedExerciseId = (result.data as { createExercise?: { id?: string } } | undefined)?.createExercise?.id;
+
+      toast.success('Kopia ćwiczenia została utworzona', {
+        description: `Nowe ćwiczenie: "${duplicatedExerciseName}"`,
+        action: duplicatedExerciseId
+          ? {
+              label: 'Zobacz kopię',
+              onClick: () => router.push(`/exercises/${duplicatedExerciseId}`),
+            }
+          : undefined,
+      });
+      if (duplicatedExerciseId) {
+        router.push(`/exercises/${duplicatedExerciseId}`);
+      }
+    } catch (err) {
+      console.error('Błąd podczas duplikowania ćwiczenia:', err);
+      toast.error('Nie udało się utworzyć kopii ćwiczenia');
     }
   };
 
@@ -179,8 +281,8 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
 
   if (error || !exercise) {
     return (
-      <div className="flex h-full flex-col items-center justify-center gap-4">
-        <div className="h-16 w-16 rounded-full bg-surface-light flex items-center justify-center mb-2">
+      <div className="flex h-full flex-col items-center justify-center gap-4 py-16">
+        <div className="h-16 w-16 rounded-2xl bg-surface-light flex items-center justify-center">
           <Dumbbell className="h-8 w-8 text-muted-foreground" />
         </div>
         <p className="text-destructive">{error ? `Błąd: ${error.message}` : 'Nie znaleziono ćwiczenia'}</p>
@@ -195,304 +297,518 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
   const allImages = getMediaUrls([exercise.imageUrl, ...(exercise.images || [])]);
   const currentImage = allImages[selectedImageIndex] || null;
 
-  const hasRestTimes =
-    (exercise.restSets && exercise.restSets > 0) ||
-    (exercise.restReps && exercise.restReps > 0) ||
-    (exercise.preparationTime && exercise.preparationTime > 0);
-
   const hasTags = (exercise.mainTags?.length ?? 0) > 0 || (exercise.additionalTags?.length ?? 0) > 0;
+
+  // Check if exercise can be submitted to global review
+  // Only for ORGANIZATION scope exercises that don't have an active global submission
+  const canSubmitToGlobal = exercise.scope === 'ORGANIZATION' && !exercise.globalSubmissionId;
+
+  // Status checks for verification workflow
+  const isGlobalExercise = exercise.scope === 'GLOBAL';
+  const hasGlobalSubmission = !!exercise.globalSubmissionId;
+  const isPendingReview = exercise.status === 'PENDING_REVIEW';
+  const isChangesRequested = exercise.status === 'CHANGES_REQUESTED';
+  const isSubmittedToGlobal = hasGlobalSubmission && exercise.scope === 'ORGANIZATION';
+
+  // Can resubmit when changes were requested
+  const canResubmit = isChangesRequested && hasGlobalSubmission;
+
+  const setsValue = exercise.defaultSets ?? exercise.sets;
+  const repsValue = exercise.defaultReps ?? exercise.reps;
+  const executionTimeValue = exercise.defaultExecutionTime ?? exercise.executionTime;
+  const restBetweenSetsValue = exercise.defaultRestBetweenSets ?? exercise.restSets;
+  const restBetweenRepsValue = exercise.defaultRestBetweenReps ?? exercise.restReps;
+
+  const quickStats = [
+    { id: 'sets', label: 'Serie', value: setsValue, icon: Repeat, color: 'text-primary' },
+    { id: 'reps', label: 'Powtórzenia', value: repsValue, icon: Dumbbell, color: 'text-secondary' },
+    {
+      id: 'executionTime',
+      label: 'Czas powtórzenia',
+      value: executionTimeValue ? `${executionTimeValue}s` : null,
+      icon: Clock,
+      color: 'text-info',
+    },
+    {
+      id: 'restBetweenSets',
+      label: 'Przerwa między seriami',
+      value: restBetweenSetsValue ? `${restBetweenSetsValue}s` : null,
+      icon: Timer,
+      color: 'text-orange-500',
+    },
+  ].filter((metric) => metric.value);
+
+  const detailStats = [
+    {
+      id: 'prep',
+      label: 'Przygotowanie',
+      value: exercise.preparationTime ? `${exercise.preparationTime}s` : null,
+      icon: Clock,
+      color: 'text-emerald-500',
+    },
+    {
+      id: 'restBetweenReps',
+      label: 'Przerwa między powt.',
+      value: restBetweenRepsValue ? `${restBetweenRepsValue}s` : null,
+      icon: Timer,
+      color: 'text-cyan-500',
+    },
+    {
+      id: 'tempo',
+      label: 'Tempo',
+      value: exercise.tempo ?? null,
+      icon: RefreshCw,
+      color: 'text-violet',
+    },
+    {
+      id: 'side',
+      label: 'Strona ciała',
+      value: translateExerciseSidePolish(exercise.side || exercise.exerciseSide) || null,
+      icon: ArrowLeftRight,
+      color: 'text-sky-500',
+    },
+    {
+      id: 'difficulty',
+      label: 'Poziom trudności',
+      value: exercise.difficultyLevel ?? null,
+      icon: Dumbbell,
+      color: 'text-amber-500',
+    },
+  ].filter((metric) => metric.value);
+
+  const patientDescription = exercise.patientDescription || exercise.description || '';
+  const physiotherapistDescription = exercise.clinicalDescription || '';
+  const audioCue = (exercise as { audioCue?: string }).audioCue || '';
+  const notes = exercise.notes || '';
+  const hasMissingCoreInformation = !patientDescription.trim() || !physiotherapistDescription.trim() || allImages.length === 0;
 
   return (
     <div className="space-y-6">
       {/* Compact Header */}
       <div className="flex items-center justify-between">
-        <Button variant="ghost" onClick={() => router.push('/exercises')} className="gap-2">
+        <Button
+          variant="ghost"
+          onClick={() => router.push('/exercises')}
+          className="gap-2"
+          data-testid="exercise-detail-back-btn"
+        >
           <ArrowLeft className="h-4 w-4" />
           Powrót do ćwiczeń
         </Button>
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm" className="gap-2">
+            <Button variant="outline" size="sm" className="gap-2" data-testid="exercise-detail-menu-trigger">
               Opcje
               <MoreHorizontal className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => setIsEditDialogOpen(true)}>
+            <DropdownMenuItem onClick={() => setIsEditDialogOpen(true)} data-testid="exercise-detail-edit-btn">
               <Pencil className="mr-2 h-4 w-4" />
-              Edytuj
+              Edytuj ćwiczenie
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={handleDuplicateExercise}
+              disabled={duplicating}
+              data-testid="exercise-detail-duplicate-btn"
+            >
+              <Copy className="mr-2 h-4 w-4" />
+              {duplicating ? 'Tworzenie kopii...' : 'Duplikuj'}
+            </DropdownMenuItem>
+            {exercise.videoUrl && (
+              <DropdownMenuItem asChild>
+                <a href={exercise.videoUrl} target="_blank" rel="noopener noreferrer">
+                  <ExternalLink className="mr-2 h-4 w-4" />
+                  Otwórz film
+                </a>
+              </DropdownMenuItem>
+            )}
+            {canSubmitToGlobal && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={() => setIsSubmitToGlobalDialogOpen(true)}
+                  className="text-primary focus:text-primary"
+                  data-testid="exercise-detail-submit-global-btn"
+                >
+                  <Rocket className="mr-2 h-4 w-4" />
+                  Zgłoś do bazy globalnej
+                </DropdownMenuItem>
+              </>
+            )}
+            {canResubmit && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={handleResubmit}
+                  disabled={resubmitting}
+                  className="text-primary focus:text-primary"
+                  data-testid="exercise-detail-resubmit-btn"
+                >
+                  <RefreshCw className={cn('mr-2 h-4 w-4', resubmitting && 'animate-spin')} />
+                  Zgłoś ponownie do weryfikacji
+                </DropdownMenuItem>
+              </>
+            )}
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onClick={() => setIsReportDialogOpen(true)}
+              data-testid="exercise-detail-report-btn"
+            >
+              <Flag className="mr-2 h-4 w-4" />
+              Zgłoś do poprawki
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
               onClick={() => setIsDeleteDialogOpen(true)}
               className="text-destructive focus:text-destructive"
+              data-testid="exercise-detail-delete-btn"
             >
               <Trash2 className="mr-2 h-4 w-4" />
-              Usuń
+              Usuń ćwiczenie
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
 
-      {/* Hero Section: Image + Action + Stats */}
-      <div className="grid gap-4 lg:grid-cols-12">
-        {/* Hero Image */}
-        <div className="lg:col-span-7 space-y-3">
-          <div className="relative aspect-video rounded-2xl overflow-hidden bg-surface-light group/hero">
-            {currentImage ? (
-              <>
-                <img
-                  src={currentImage}
-                  alt={exercise.name}
-                  className="w-full h-full object-contain"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
-
-                {/* Zoom button */}
-                <button
-                  type="button"
-                  onClick={() => setLightboxOpen(true)}
-                  className={cn(
-                    "absolute top-4 right-4 z-10",
-                    "flex h-10 w-10 items-center justify-center rounded-full",
-                    "bg-black/50 text-white/80 backdrop-blur-sm",
-                    "opacity-0 group-hover/hero:opacity-100 transition-all duration-200",
-                    "hover:bg-black/70 hover:text-white hover:scale-110"
-                  )}
-                  aria-label="Powiększ zdjęcie"
+      {/* Hero Section: Title + Meta */}
+      <div className="space-y-2">
+        <div className="flex flex-wrap items-center gap-2">
+          {exercise.type && (
+            <Badge variant="default" className="text-[10px] uppercase font-bold tracking-wider">
+              {translateExerciseTypeShort(exercise.type)}
+            </Badge>
+          )}
+          <Badge variant="secondary" className="text-[10px] uppercase font-bold tracking-wider">
+            <ArrowLeftRight className="mr-1 h-3 w-3" />
+            {translateExerciseSidePolish(exercise.side || exercise.exerciseSide) || 'Bez podziału'}
+          </Badge>
+          {/* Verification Status Badges */}
+          {isGlobalExercise && (
+            <Badge
+              variant="outline"
+              className="text-[10px] uppercase font-bold tracking-wider bg-violet/10 text-violet border-violet/20"
+            >
+              <Sparkles className="mr-1 h-3 w-3" />
+              FiziYo
+            </Badge>
+          )}
+          {isSubmittedToGlobal && !isPendingReview && !isChangesRequested && !isGlobalExercise && (
+            <Badge
+              variant="outline"
+              className="text-[10px] uppercase font-bold tracking-wider bg-blue-500/10 text-blue-600 border-blue-500/20"
+            >
+              <Globe className="mr-1 h-3 w-3" />W FiziYo
+            </Badge>
+          )}
+          {isPendingReview && (
+            <Badge
+              variant="outline"
+              className="text-[10px] uppercase font-bold tracking-wider bg-amber-500/10 text-amber-600 border-amber-500/20"
+            >
+              <Clock className="mr-1 h-3 w-3" />
+              Weryfikacja
+            </Badge>
+          )}
+          {isChangesRequested && (
+            <Badge
+              variant="outline"
+              className="text-[10px] uppercase font-bold tracking-wider bg-orange-500/10 text-orange-600 border-orange-500/20"
+            >
+              <AlertCircle className="mr-1 h-3 w-3" />
+              Do poprawy
+            </Badge>
+          )}
+        </div>
+        <h1 className="text-2xl font-bold text-foreground" data-testid="exercise-detail-name">
+          {exercise.name}
+        </h1>
+        {hasTags && (
+          <div className="flex flex-wrap gap-2 pt-1">
+            {exercise.mainTags?.map((tag) =>
+              isTagObject(tag) ? (
+                <ColorBadge key={tag.id} color={tag.color} className="text-[10px] uppercase font-medium tracking-wider">
+                  {tag.name}
+                </ColorBadge>
+              ) : (
+                <Badge
+                  key={tag}
+                  variant="outline"
+                  className="text-[10px] uppercase font-medium tracking-wider opacity-60"
                 >
-                  <ZoomIn className="h-5 w-5" />
-                </button>
-              </>
-            ) : (
-              <ImagePlaceholder type="exercise" className="h-full" iconClassName="h-16 w-16" />
-            )}
-
-            {/* Title overlay */}
-            <div className="absolute bottom-0 left-0 right-0 p-5">
-              <div className="flex items-center gap-2 mb-2">
-                {exercise.type && (
-                  <Badge className="bg-primary/90 text-primary-foreground border-0">
-                    {getTypeLabel(exercise.type)}
-                  </Badge>
-                )}
-                <Badge variant="outline" className="bg-black/40 text-white border-white/20 backdrop-blur-sm">
-                  <ArrowLeftRight className="mr-1 h-3 w-3" />
-                  {getSideLabel(exercise.exerciseSide)}
+                  {tag}
                 </Badge>
-              </div>
-              <h1 className="text-2xl font-bold text-white">{exercise.name}</h1>
+              )
+            )}
+            {exercise.additionalTags?.map((tag) =>
+              isTagObject(tag) ? (
+                <ColorBadge
+                  key={tag.id}
+                  color={tag.color}
+                  className="text-[10px] uppercase font-medium tracking-wider opacity-60"
+                >
+                  {tag.name}
+                </ColorBadge>
+              ) : (
+                <Badge
+                  key={tag}
+                  variant="outline"
+                  className="text-[10px] uppercase font-medium tracking-wider opacity-40"
+                >
+                  {tag}
+                </Badge>
+              )
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Feedback Banner for CHANGES_REQUESTED */}
+      {isChangesRequested && exercise.adminReviewNotes && (
+        <FeedbackBanner adminReviewNotes={exercise.adminReviewNotes} updatedAt={exercise.updatedAt} />
+      )}
+      {hasMissingCoreInformation && (
+        <div className="rounded-2xl border border-amber-500/30 bg-amber-50 dark:bg-amber-500/10 p-4">
+          <div className="flex items-start gap-3">
+            <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-amber-500" />
+            <div>
+              <p className="text-sm font-semibold text-foreground">Brak wszystkich informacji o ćwiczeniu</p>
+              <p className="text-sm text-muted-foreground">
+                Uzupełnij opis dla pacjenta, opis kliniczny i media, aby ćwiczenie było kompletne.
+              </p>
             </div>
           </div>
+        </div>
+      )}
 
-          {/* Thumbnails + Video */}
-          {(allImages.length > 1 || exercise.videoUrl) && (
-            <div className="flex gap-2 overflow-x-auto pb-1">
-              {allImages.map((img, index) => (
-                <button
-                  key={index}
-                  onClick={() => setSelectedImageIndex(index)}
-                  className={cn(
-                    'shrink-0 w-14 h-14 rounded-lg overflow-hidden border-2 transition-all',
-                    selectedImageIndex === index
-                      ? 'border-primary ring-2 ring-primary/20'
-                      : 'border-border/40 opacity-60 hover:opacity-100 hover:border-border'
-                  )}
-                >
-                  <img src={img} alt={`${exercise.name} ${index + 1}`} className="w-full h-full object-cover" />
-                </button>
-              ))}
-              {exercise.videoUrl && (
-                <a
-                  href={exercise.videoUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="shrink-0 w-14 h-14 rounded-lg overflow-hidden border-2 border-border/40 bg-surface flex items-center justify-center hover:border-primary hover:bg-primary/10 transition-all group"
-                >
-                  <Play className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
-                </a>
+      {/* Hero Action + Quick Stats */}
+      <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-12">
+        {/* Hero Action - Dodaj do zestawu */}
+        <button
+          onClick={handleAddToSet}
+          className="group relative overflow-hidden rounded-2xl bg-linear-to-br from-primary via-primary to-primary-dark p-5 text-left transition-all duration-300 hover:shadow-xl hover:shadow-primary/20 hover:scale-[1.02] cursor-pointer sm:col-span-1 lg:col-span-4"
+          data-testid="exercise-detail-add-to-set-btn"
+        >
+          <div className="absolute inset-0 bg-linear-to-br from-white/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+          <div className="absolute -top-24 -right-24 w-48 h-48 bg-primary-foreground/10 rounded-full blur-3xl group-hover:bg-primary-foreground/20 transition-all duration-500" />
+
+          <div className="relative flex items-center gap-4">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary-foreground/20 backdrop-blur-sm shrink-0 group-hover:scale-110 transition-transform duration-300">
+              <FolderPlus className="h-5 w-5 text-primary-foreground" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <h3 className="text-base font-bold text-primary-foreground">Dodaj do zestawu</h3>
+              <p className="text-sm text-primary-foreground/70">Użyj w programie</p>
+            </div>
+            <Plus className="h-5 w-5 text-primary-foreground/60 group-hover:text-primary-foreground transition-colors shrink-0" />
+          </div>
+        </button>
+
+        <button
+          onClick={() => setIsReportDialogOpen(true)}
+          className="group relative overflow-hidden rounded-2xl border border-amber-500/30 bg-amber-500/10 p-5 text-left transition-all duration-300 hover:shadow-lg hover:shadow-amber-500/20 hover:scale-[1.01] cursor-pointer sm:col-span-1 lg:col-span-4"
+          data-testid="exercise-detail-report-hero-btn"
+        >
+          <div className="relative flex items-center gap-4">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-amber-500/20 text-amber-600 shrink-0 group-hover:scale-110 transition-transform duration-300">
+              <Flag className="h-5 w-5" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <h3 className="text-base font-bold text-foreground">Zgłoś do poprawki</h3>
+              <p className="text-sm text-muted-foreground">Przekaż do weryfikacji</p>
+            </div>
+          </div>
+        </button>
+
+        {/* Quick Stats */}
+        <div
+          className={cn(
+            'grid gap-3 sm:col-span-1 lg:col-span-12',
+            quickStats.length <= 2 ? 'grid-cols-2' : 'grid-cols-2 sm:grid-cols-4'
+          )}
+        >
+          {quickStats.map((metric) => (
+            <div
+              key={metric.id}
+              className="rounded-2xl border border-border/40 bg-surface/50 p-4 flex flex-col items-center justify-center text-center"
+            >
+              <div className="flex items-center gap-2">
+                <metric.icon className={cn('h-4 w-4', metric.color)} />
+                <span className="text-2xl font-bold text-foreground tabular-nums">{metric.value}</span>
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">{metric.label}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+      <Collapsible open={isParametersOpen} onOpenChange={setIsParametersOpen}>
+        <div className="rounded-2xl border border-border/40 bg-surface/50">
+          <CollapsibleTrigger
+            className="flex w-full items-center justify-between p-4 text-left hover:bg-surface-light/40 transition-colors"
+            data-testid="exercise-detail-advanced-params-toggle"
+          >
+            <div>
+              <p className="text-sm font-semibold text-foreground">Szczegóły parametrów</p>
+              <p className="text-xs text-muted-foreground">Rozwiń, aby zobaczyć wszystkie parametry wykonania</p>
+            </div>
+            <ChevronDown className={cn('h-4 w-4 text-muted-foreground transition-transform', isParametersOpen && 'rotate-180')} />
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <div className="grid gap-3 border-t border-border/40 p-4 sm:grid-cols-2 lg:grid-cols-3">
+              {detailStats.length > 0 ? (
+                detailStats.map((metric) => (
+                  <div key={metric.id} className="rounded-xl bg-surface-light/40 p-3">
+                    <p className="text-xs text-muted-foreground">{metric.label}</p>
+                    <div className="mt-1 flex items-center gap-2">
+                      <metric.icon className={cn('h-4 w-4', metric.color)} />
+                      <span className="text-sm font-semibold text-foreground">{metric.value}</span>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <p className="text-sm text-muted-foreground sm:col-span-2 lg:col-span-3">
+                  Brak dodatkowych parametrów dla tego ćwiczenia.
+                </p>
               )}
             </div>
+          </CollapsibleContent>
+        </div>
+      </Collapsible>
+
+      {/* Media Gallery Section */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-base font-semibold text-foreground flex items-center gap-2">
+            <Dumbbell className="h-4 w-4 text-muted-foreground" />
+            Zdjęcia i media
+          </h2>
+          {currentImage && (
+            <Button variant="ghost" size="sm" onClick={() => setLightboxOpen(true)} className="gap-2">
+              <ZoomIn className="h-4 w-4" />
+              Powiększ
+            </Button>
           )}
         </div>
 
-        {/* Hero Action + Quick Stats */}
-        <div className="lg:col-span-5 flex flex-col gap-3">
-          {/* Hero Action - Dodaj do zestawu */}
-          <button
-            onClick={handleAddToSet}
-            className="group relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary via-primary to-primary-dark p-5 text-left transition-all duration-300 hover:shadow-xl hover:shadow-primary/20 hover:scale-[1.02] cursor-pointer"
-          >
-            <div className="absolute inset-0 bg-gradient-to-br from-white/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-            <div className="absolute -top-24 -right-24 w-48 h-48 bg-white/10 rounded-full blur-3xl group-hover:bg-white/20 transition-all duration-500" />
+        <div className="rounded-2xl border border-border/40 bg-surface/50 overflow-hidden">
+          {currentImage ? (
+            <div className="relative group">
+              {/* Main Image */}
+              <button
+                type="button"
+                className="relative aspect-video w-full bg-black/5 dark:bg-black/20 cursor-pointer"
+                onClick={() => setLightboxOpen(true)}
+              >
+                <Image src={currentImage} alt={exercise.name} fill className="object-contain" sizes="(max-width: 1024px) 100vw, 800px" />
+                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/20">
+                  <div className="flex h-14 w-14 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-sm">
+                    <ZoomIn className="h-6 w-6" />
+                  </div>
+                </div>
+              </button>
 
-            <div className="relative flex items-center gap-4">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm shrink-0 group-hover:scale-110 transition-transform duration-300">
-                <FolderPlus className="h-6 w-6 text-white" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <h3 className="text-lg font-bold text-white">
-                  Dodaj do zestawu
-                </h3>
-                <p className="text-sm text-white/70">
-                  Przypisz ćwiczenie do programu
-                </p>
-              </div>
+              {/* Thumbnails */}
+              {(allImages.length > 1 || exercise.videoUrl) && (
+                <div className="flex gap-2 p-3 border-t border-border/40 overflow-x-auto">
+                  {allImages.map((img, idx) => (
+                    <button
+                      key={img}
+                      onClick={() => setSelectedImageIndex(idx)}
+                      className={cn(
+                        'relative shrink-0 w-16 h-16 rounded-xl overflow-hidden border-2 transition-all',
+                        selectedImageIndex === idx
+                          ? 'border-primary ring-2 ring-primary/20'
+                          : 'border-transparent hover:border-border'
+                      )}
+                    >
+                      <Image src={img} alt={`${exercise.name} - ${idx + 1}`} fill className="object-cover" sizes="64px" />
+                    </button>
+                  ))}
+                  {exercise.videoUrl && (
+                    <a
+                      href={exercise.videoUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="shrink-0 w-16 h-16 rounded-xl overflow-hidden border-2 border-transparent bg-surface-light flex items-center justify-center hover:border-primary hover:bg-primary/5 transition-all"
+                    >
+                      <Play className="h-6 w-6 text-muted-foreground" />
+                    </a>
+                  )}
+                </div>
+              )}
             </div>
-          </button>
-
-          {/* Quick Stats */}
-          <div className="grid grid-cols-3 gap-2">
-            <div className="rounded-xl border border-border/40 bg-surface/50 p-4 text-center">
-              <Repeat className="h-5 w-5 text-primary mx-auto mb-1" />
-              <p className="text-xl font-bold text-foreground">
-                {exercise.sets !== undefined && exercise.sets > 0 ? exercise.sets : '—'}
-              </p>
-              <p className="text-xs text-muted-foreground">Serii</p>
+          ) : (
+            <div className="aspect-video flex items-center justify-center">
+              <ImagePlaceholder type="exercise" className="h-24 w-24 opacity-30" iconClassName="h-16 w-16" />
             </div>
-            <div className="rounded-xl border border-border/40 bg-surface/50 p-4 text-center">
-              <Dumbbell className="h-5 w-5 text-secondary mx-auto mb-1" />
-              <p className="text-xl font-bold text-foreground">
-                {exercise.reps !== undefined && exercise.reps > 0 ? exercise.reps : '—'}
-              </p>
-              <p className="text-xs text-muted-foreground">Powtórzeń</p>
-            </div>
-            <div className="rounded-xl border border-border/40 bg-surface/50 p-4 text-center">
-              <Clock className="h-5 w-5 text-info mx-auto mb-1" />
-              <p className="text-xl font-bold text-foreground">
-                {exercise.duration !== undefined && exercise.duration > 0 ? `${exercise.duration}s` : '—'}
-              </p>
-              <p className="text-xs text-muted-foreground">Czas</p>
-            </div>
-          </div>
-
-          {/* Video link (if no thumbnails shown) */}
-          {exercise.videoUrl && allImages.length <= 1 && (
-            <a
-              href={exercise.videoUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-3 p-4 rounded-xl border border-border/40 bg-surface/50 hover:bg-surface-light hover:border-primary/30 transition-all group"
-            >
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 group-hover:bg-primary/20 transition-colors">
-                <Play className="h-5 w-5 text-primary" />
-              </div>
-              <div className="flex-1">
-                <p className="text-sm font-medium text-foreground">Obejrzyj wideo</p>
-                <p className="text-xs text-muted-foreground">Instrukcja wykonania</p>
-              </div>
-              <ExternalLink className="h-4 w-4 text-muted-foreground" />
-            </a>
           )}
         </div>
       </div>
 
-      {/* Description */}
-      {exercise.description && (
-        <div className="rounded-xl border border-border/40 bg-surface/50 p-5">
-          <p className="text-muted-foreground leading-relaxed">{exercise.description}</p>
-        </div>
-      )}
-
-      {/* Tags */}
-      {hasTags && (
-        <div className="flex flex-wrap gap-2">
-          {exercise.mainTags?.map((tag: string | ExerciseTag, index: number) => {
-            if (isTagObject(tag)) {
-              return (
-                <ColorBadge key={tag.id} color={tag.color}>
-                  {tag.name}
-                </ColorBadge>
-              );
-            }
-            return (
-              <Badge key={index} variant="secondary">
-                {tag}
-              </Badge>
-            );
-          })}
-          {exercise.additionalTags?.map((tag: string | ExerciseTag, index: number) => {
-            if (isTagObject(tag)) {
-              return (
-                <ColorBadge key={tag.id} color={tag.color}>
-                  {tag.name}
-                </ColorBadge>
-              );
-            }
-            return (
-              <Badge key={index} variant="outline">
-                {tag}
-              </Badge>
-            );
-          })}
-        </div>
-      )}
-
-      {/* Collapsible: Times & Rests */}
-      {hasRestTimes && (
-        <Collapsible open={isTimesOpen} onOpenChange={setIsTimesOpen}>
-          <CollapsibleTrigger className="flex items-center justify-between w-full p-4 rounded-xl border border-border/40 bg-surface/50 hover:bg-surface-light transition-colors group">
-            <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-info/10">
-                <Timer className="h-4 w-4 text-info" />
+      {/* Information Sections */}
+      <div className="space-y-4">
+        <h2 className="text-base font-semibold text-foreground flex items-center gap-2">
+          <FileText className="h-4 w-4 text-muted-foreground" />
+          Informacje o ćwiczeniu
+        </h2>
+        <div className="rounded-2xl border border-border/40 bg-surface/50 p-4 sm:p-6">
+          <Tabs defaultValue="patient" className="w-full">
+            <TabsList className="grid h-auto w-full grid-cols-2 gap-1 bg-surface-light/60 p-1 sm:grid-cols-4">
+              <TabsTrigger value="patient" className="text-xs sm:text-sm" data-testid="exercise-detail-tab-patient">
+                Dla pacjenta
+              </TabsTrigger>
+              <TabsTrigger value="physio" className="text-xs sm:text-sm" data-testid="exercise-detail-tab-physio">
+                Dla fizjoterapeuty
+              </TabsTrigger>
+              <TabsTrigger value="audio" className="text-xs sm:text-sm" data-testid="exercise-detail-tab-audio">
+                Polecenia audio
+              </TabsTrigger>
+              <TabsTrigger value="notes" className="text-xs sm:text-sm" data-testid="exercise-detail-tab-notes">
+                Notatki
+              </TabsTrigger>
+            </TabsList>
+            <TabsContent value="patient">
+              <div className="rounded-xl bg-surface-light/30 p-4">
+                {patientDescription ? (
+                  <p className="whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground">{patientDescription}</p>
+                ) : (
+                  <p className="text-sm text-muted-foreground">Brak opisu dla pacjenta.</p>
+                )}
               </div>
-              <span className="font-medium text-foreground">Czasy i przerwy</span>
-            </div>
-            <ChevronDown className={cn(
-              'h-5 w-5 text-muted-foreground transition-transform duration-200',
-              isTimesOpen && 'rotate-180'
-            )} />
-          </CollapsibleTrigger>
-          <CollapsibleContent className="mt-2">
-            <div className="grid gap-2 sm:grid-cols-3 p-4 rounded-xl border border-border/40 bg-surface/30">
-              {exercise.restSets !== undefined && exercise.restSets > 0 && (
-                <div className="p-3 rounded-lg bg-surface-light">
-                  <p className="text-xs text-muted-foreground">Przerwa między seriami</p>
-                  <p className="font-semibold text-foreground">{exercise.restSets}s</p>
-                </div>
-              )}
-              {exercise.restReps !== undefined && exercise.restReps > 0 && (
-                <div className="p-3 rounded-lg bg-surface-light">
-                  <p className="text-xs text-muted-foreground">Przerwa między powtórzeniami</p>
-                  <p className="font-semibold text-foreground">{exercise.restReps}s</p>
-                </div>
-              )}
-              {exercise.preparationTime !== undefined && exercise.preparationTime > 0 && (
-                <div className="p-3 rounded-lg bg-surface-light">
-                  <p className="text-xs text-muted-foreground">Czas przygotowania</p>
-                  <p className="font-semibold text-foreground">{exercise.preparationTime}s</p>
-                </div>
-              )}
-            </div>
-          </CollapsibleContent>
-        </Collapsible>
-      )}
-
-      {/* Collapsible: Notes */}
-      {exercise.notes && (
-        <Collapsible open={isNotesOpen} onOpenChange={setIsNotesOpen}>
-          <CollapsibleTrigger className="flex items-center justify-between w-full p-4 rounded-xl border border-border/40 bg-surface/50 hover:bg-surface-light transition-colors group">
-            <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-secondary/10">
-                <FileText className="h-4 w-4 text-secondary" />
+            </TabsContent>
+            <TabsContent value="physio">
+              <div className="rounded-xl bg-surface-light/30 p-4">
+                {physiotherapistDescription ? (
+                  <p className="whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground">
+                    {physiotherapistDescription}
+                  </p>
+                ) : (
+                  <p className="text-sm text-muted-foreground">Brak opisu klinicznego dla fizjoterapeuty.</p>
+                )}
               </div>
-              <span className="font-medium text-foreground">Notatki</span>
-            </div>
-            <ChevronDown className={cn(
-              'h-5 w-5 text-muted-foreground transition-transform duration-200',
-              isNotesOpen && 'rotate-180'
-            )} />
-          </CollapsibleTrigger>
-          <CollapsibleContent className="mt-2">
-            <div className="p-4 rounded-xl border border-border/40 bg-surface/30">
-              <p className="text-muted-foreground whitespace-pre-wrap text-sm leading-relaxed">
-                {exercise.notes}
-              </p>
-            </div>
-          </CollapsibleContent>
-        </Collapsible>
-      )}
+            </TabsContent>
+            <TabsContent value="audio">
+              <div className="rounded-xl bg-surface-light/30 p-4">
+                {audioCue ? (
+                  <p className="whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground">{audioCue}</p>
+                ) : (
+                  <p className="text-sm text-muted-foreground">Brak podpowiedzi głosowej.</p>
+                )}
+              </div>
+            </TabsContent>
+            <TabsContent value="notes">
+              <div className="rounded-xl bg-surface-light/30 p-4">
+                {notes ? (
+                  <p className="whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground">{notes}</p>
+                ) : (
+                  <p className="text-sm text-muted-foreground">Brak notatek.</p>
+                )}
+              </div>
+            </TabsContent>
+          </Tabs>
+        </div>
+      </div>
 
       {/* Edit Dialog */}
       {organizationId && (
@@ -501,6 +817,11 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
           onOpenChange={setIsEditDialogOpen}
           exercise={exercise}
           organizationId={organizationId}
+          onSuccess={(event) => {
+            if (event?.action === 'copied' && event.exerciseId) {
+              router.push(`/exercises/${event.exerciseId}`);
+            }
+          }}
         />
       )}
 
@@ -517,11 +838,7 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
       />
 
       {/* Add to Set Dialog with AI */}
-      <AddExerciseToSetsDialog
-        open={isAddToSetDialogOpen}
-        onOpenChange={setIsAddToSetDialogOpen}
-        exercise={exercise}
-      />
+      <AddExerciseToSetsDialog open={isAddToSetDialogOpen} onOpenChange={setIsAddToSetDialogOpen} exercise={exercise} />
 
       {/* Image Lightbox */}
       {currentImage && (
@@ -535,6 +852,22 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
           onIndexChange={setSelectedImageIndex}
         />
       )}
+
+      {/* Submit to Global Dialog */}
+      <SubmitToGlobalDialog
+        open={isSubmitToGlobalDialogOpen}
+        onOpenChange={setIsSubmitToGlobalDialogOpen}
+        exercise={exercise}
+        onConfirm={handleSubmitToGlobal}
+        isLoading={submittingToGlobal}
+      />
+
+      <ReportExerciseDialog
+        open={isReportDialogOpen}
+        onOpenChange={setIsReportDialogOpen}
+        exercise={exercise}
+        organizationId={organizationId}
+      />
     </div>
   );
 }

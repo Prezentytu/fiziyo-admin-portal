@@ -11,15 +11,8 @@ interface VisitProgressSectionFormProps {
   disabled?: boolean;
 }
 
-export function VisitProgressSectionForm({
-  data,
-  onChange,
-  disabled = false,
-}: VisitProgressSectionFormProps) {
-  const updateField = <K extends keyof VisitProgressSection>(
-    field: K,
-    value: VisitProgressSection[K]
-  ) => {
+export function VisitProgressSectionForm({ data, onChange, disabled = false }: VisitProgressSectionFormProps) {
+  const updateField = <K extends keyof VisitProgressSection>(field: K, value: VisitProgressSection[K]) => {
     onChange({ ...data, [field]: value });
   };
 
@@ -40,9 +33,7 @@ export function VisitProgressSectionForm({
             disabled={disabled}
           />
           <div className="flex-1 h-2 rounded-full bg-gradient-to-r from-green-500 via-yellow-500 to-red-500 opacity-50" />
-          <span className="text-sm text-muted-foreground w-8 text-right">
-            {data.currentPainLevel ?? '-'}/10
-          </span>
+          <span className="text-sm text-muted-foreground w-8 text-right">{data.currentPainLevel ?? '-'}/10</span>
         </div>
       </div>
 
@@ -126,4 +117,3 @@ export function VisitProgressSectionForm({
     </div>
   );
 }
-

@@ -1,6 +1,20 @@
 import type { NextConfig } from "next";
+import bundleAnalyzer from "@next/bundle-analyzer";
+
+const withBundleAnalyzer = bundleAnalyzer({
+  enabled: process.env.ANALYZE === "true",
+});
 
 const nextConfig: NextConfig = {
+  images: {
+    remotePatterns: [
+      { protocol: "https", hostname: "**.azurefd.net", pathname: "/**" },
+      { protocol: "https", hostname: "images.fiziyo.com", pathname: "/**" },
+      { protocol: "https", hostname: "**.blob.core.windows.net", pathname: "/**" },
+      { protocol: "https", hostname: "img.clerk.com", pathname: "/**" },
+      { protocol: "http", hostname: "localhost", pathname: "/**" },
+    ],
+  },
   compiler: {
     reactRemoveProperties:
       process.env.NODE_ENV === "production"
@@ -38,4 +52,4 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+export default withBundleAnalyzer(nextConfig);

@@ -1,4 +1,4 @@
-import { gql } from "@apollo/client";
+import { gql } from '@apollo/client';
 
 /**
  * Query do pobierania kompletnych danych dashboardu pacjenta
@@ -34,10 +34,10 @@ export const GET_PATIENT_DASHBOARD_QUERY = gql`
           id
           name
           type
-          exerciseSide
-          sets
-          reps
-          duration
+          side
+          defaultSets
+          defaultReps
+          defaultDuration
           imageUrl
           scope
         }
@@ -100,10 +100,10 @@ export interface PatientExerciseSet {
     id: string;
     name: string;
     type: string;
-    exerciseSide?: string;
-    sets?: number;
-    reps?: number;
-    duration?: number;
+    side?: string;
+    defaultSets?: number;
+    defaultReps?: number;
+    defaultDuration?: number;
     imageUrl?: string;
     scope: string;
   }>;
@@ -148,17 +148,3 @@ export interface PatientDashboardData {
 export interface GetPatientDashboardData {
   patientDashboard: PatientDashboardData;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
