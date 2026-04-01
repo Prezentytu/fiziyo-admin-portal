@@ -25,15 +25,18 @@ import { useSystemRole } from '@/hooks/useSystemRole';
 import { useVerificationHotkeys } from '@/hooks/useVerificationHotkeys';
 import { getExerciseReports, resolveExerciseReports } from '@/services/exerciseReportService';
 
-import { GET_EXERCISE_BY_ID_QUERY } from '@/graphql/queries/exercises.queries';
-import { GET_PENDING_EXERCISES_QUERY, GET_VERIFICATION_STATS_QUERY } from '@/graphql/queries/adminExercises.queries';
+import {
+  GET_EXERCISE_BY_ID_FOR_ADMIN_QUERY,
+  GET_PENDING_EXERCISES_QUERY,
+  GET_VERIFICATION_STATS_QUERY,
+} from '@/graphql/queries/adminExercises.queries';
 import {
   APPROVE_EXERCISE_MUTATION,
   REJECT_EXERCISE_MUTATION,
   UPDATE_EXERCISE_FIELD_MUTATION,
 } from '@/graphql/mutations/adminExercises.mutations';
 import { UPDATE_EXERCISE_MUTATION as UPDATE_EXERCISE_DETAILS_MUTATION } from '@/graphql/mutations/exercises.mutations';
-import type { ExerciseByIdResponse } from '@/types/apollo';
+import type { ExerciseByIdForAdminResponse } from '@/types/apollo';
 import type {
   AdminExercise,
   RejectionReason,
@@ -132,14 +135,14 @@ export default function VerificationDetailPage({ params }: Readonly<Verification
   // QUERIES
   // ============================================
 
-  const { data, loading, error } = useQuery<ExerciseByIdResponse>(GET_EXERCISE_BY_ID_QUERY, {
+  const { data, loading, error } = useQuery<ExerciseByIdForAdminResponse>(GET_EXERCISE_BY_ID_FOR_ADMIN_QUERY, {
     variables: { id },
   });
 
   // Initialize tags when data loads
   useEffect(() => {
-    if (data?.exerciseById) {
-      const ex = data.exerciseById as unknown as AdminExercise;
+    if (data?.exerciseByIdForAdmin) {
+      const ex = data.exerciseByIdForAdmin as unknown as AdminExercise;
       setMainTags(ex.mainTags || []);
       setAdditionalTags(ex.additionalTags || []);
       // Reset safety checklist when switching exercises
@@ -150,7 +153,7 @@ export default function VerificationDetailPage({ params }: Readonly<Verification
       });
       setAuthorComment('');
     }
-  }, [data?.exerciseById]);
+  }, [data?.exerciseByIdForAdmin]);
 
   // Query for pending exercises (for progress indicator and auto-advance)
   const { data: pendingData } = useQuery<GetPendingReviewExercisesResponse>(GET_PENDING_EXERCISES_QUERY);
@@ -178,7 +181,7 @@ export default function VerificationDetailPage({ params }: Readonly<Verification
   // COMPUTED VALUES
   // ============================================
 
-  const exercise = data?.exerciseById as unknown as AdminExercise | null;
+  const exercise = data?.exerciseByIdForAdmin as unknown as AdminExercise | null;
   const latestReport = useMemo(() => {
     if (openReports.length === 0) {
       return null;

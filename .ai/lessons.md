@@ -14,6 +14,14 @@ Dziennik wniosków z pracy AI agentów. Po każdej korekcie dodaj nowy wpis.
 
 ## Wpisy
 
+### 2026-04-01 - Verification detail wymaga dedykowanego resolvera admin
+
+- **Kategoria**: `GraphQL`
+- **Problem**: W produkcji lista ćwiczeń w Centrum Weryfikacji działała, ale wejście w detal zwracało "Nie znaleziono".
+- **Przyczyna**: Lista korzystała z resolvera admin bez filtra `Scope/OrganizationId`, a detal z `exerciseById`, który wymusza tenant-aware filtrację; te dwa endpointy miały inną semantykę dostępu.
+- **Rozwiązanie**: Dodano dedykowany resolver `exerciseByIdForAdmin` z autoryzacją `RequireContentManagerPermission` i przepięto detal verification na ten endpoint.
+- **Reguła**: Dla widoków administracyjnych nie używaj user-facing resolverów scope-aware do detalu, jeśli lista pochodzi z endpointu admin; semantyka listy i detalu musi być identyczna.
+
 ### 2026-03-30 - Radix Select w happy-dom wymaga polyfill pointer capture
 
 - **Kategoria**: `Build/Tooling`

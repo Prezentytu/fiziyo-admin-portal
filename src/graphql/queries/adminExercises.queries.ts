@@ -1,4 +1,5 @@
 import { gql } from '@apollo/client';
+import { EXERCISE_FULL_FRAGMENT } from './exercises.queries';
 
 /**
  * GraphQL Queries for Admin Exercise Verification Module
@@ -79,6 +80,15 @@ export const GET_PENDING_EXERCISES_QUERY = gql`
     }
   }
   ${ADMIN_EXERCISE_FRAGMENT}
+`;
+
+export const GET_EXERCISE_BY_ID_FOR_ADMIN_QUERY = gql`
+  query GetExerciseByIdForAdmin($id: String!) {
+    exerciseByIdForAdmin(id: $id) {
+      ...ExerciseFullFragment
+    }
+  }
+  ${EXERCISE_FULL_FRAGMENT}
 `;
 
 /**

@@ -248,6 +248,10 @@ export interface ExerciseByIdResponse {
   exerciseById: Exercise | null;
 }
 
+export interface ExerciseByIdForAdminResponse {
+  exerciseByIdForAdmin: Exercise | null;
+}
+
 // ========================================
 // Exercise Set Types
 // ========================================
