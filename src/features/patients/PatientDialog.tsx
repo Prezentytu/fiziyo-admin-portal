@@ -17,6 +17,7 @@ import {
   GET_ALL_THERAPIST_PATIENTS_QUERY,
   GET_ORGANIZATION_PATIENTS_QUERY,
 } from '@/graphql/queries/therapists.queries';
+import { GET_ALL_PATIENT_ASSIGNMENTS_QUERY } from '@/graphql/queries/patientAssignments.queries';
 import { cn } from '@/lib/utils';
 import { getAvatarGradient, getInitials } from '@/utils/textUtils';
 import type { Patient } from '@/features/assignment/types';
@@ -103,6 +104,8 @@ export function PatientDialog({
       { query: GET_THERAPIST_PATIENTS_QUERY, variables: { therapistId, organizationId } },
       { query: GET_ALL_THERAPIST_PATIENTS_QUERY, variables: { therapistId, organizationId } },
       { query: GET_ORGANIZATION_PATIENTS_QUERY, variables: { organizationId, filter: 'all' } },
+      { query: GET_ORGANIZATION_PATIENTS_QUERY, variables: { organizationId, filter: 'my' } },
+      { query: GET_ALL_PATIENT_ASSIGNMENTS_QUERY },
     ],
   });
 
@@ -264,14 +267,6 @@ export function PatientDialog({
               </div>
 
               {/* Next Steps */}
-              <p
-                className={cn(
-                  'text-sm text-muted-foreground mb-6',
-                  showSuccessAnimation && 'animate-in fade-in duration-300 delay-200'
-                )}
-              >
-                Co chcesz zrobić dalej?
-              </p>
 
               {/* Action Buttons */}
               <div

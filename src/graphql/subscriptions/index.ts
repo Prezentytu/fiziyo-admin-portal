@@ -34,6 +34,7 @@ export {
 
 // Assignments
 export { ON_ASSIGNMENT_CREATED, ON_ASSIGNMENT_UPDATED, ON_ASSIGNMENT_DELETED } from './assignments.subscriptions';
+export { ON_THERAPIST_ASSIGNMENT_CREATED, ON_THERAPIST_ASSIGNMENT_UPDATED } from './therapistAssignments.subscriptions';
 
 // Tags
 export {
@@ -47,6 +48,7 @@ export {
 
 // Patients
 export { ON_PATIENT_CREATED, ON_PATIENT_UPDATED, ON_PATIENT_DELETED } from './patients.subscriptions';
+export { ON_MEMBER_CREATED } from './members.subscriptions';
 
 // Clinics
 export { ON_CLINIC_CREATED, ON_CLINIC_UPDATED, ON_CLINIC_DELETED } from './clinics.subscriptions';

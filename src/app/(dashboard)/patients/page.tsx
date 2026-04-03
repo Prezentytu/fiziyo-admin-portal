@@ -51,6 +51,7 @@ import { matchesSearchQuery } from '@/utils/textUtils';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { DashboardRouteLoading } from '@/components/layout/DashboardRouteLoading';
 import type { UserByClerkIdResponse, OrganizationPatientsResponse, OrganizationPatientDto } from '@/types/apollo';
+import { useRealtimePatients } from '@/hooks/useRealtimePatients';
 
 export default function PatientsPage() {
   const { user } = useUser();
@@ -76,6 +77,11 @@ export default function PatientsPage() {
 
   const userByClerkId = (userData as UserByClerkIdResponse)?.userByClerkId;
   const therapistId = userByClerkId?.id;
+
+  useRealtimePatients({
+    organizationId: organizationId ?? null,
+    enabled: !!organizationId,
+  });
 
   // Get ALL organization patients (always fetch all, filter client-side)
   const { data, loading, error } = useQuery(GET_ORGANIZATION_PATIENTS_QUERY, {

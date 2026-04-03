@@ -19,7 +19,12 @@ import { getAvatarGradient, getInitials } from '@/utils/textUtils';
 import { FIND_USER_BY_EMAIL_QUERY, FIND_USER_BY_PHONE_QUERY } from '@/graphql/queries/users.queries';
 import { ASSIGN_PATIENT_TO_THERAPIST_MUTATION } from '@/graphql/mutations/therapists.mutations';
 import { ADD_DIRECT_MEMBER_MUTATION } from '@/graphql/mutations/organizations.mutations';
-import { GET_THERAPIST_PATIENTS_QUERY, GET_ALL_THERAPIST_PATIENTS_QUERY } from '@/graphql/queries/therapists.queries';
+import {
+  GET_THERAPIST_PATIENTS_QUERY,
+  GET_ALL_THERAPIST_PATIENTS_QUERY,
+  GET_ORGANIZATION_PATIENTS_QUERY,
+} from '@/graphql/queries/therapists.queries';
+import { GET_ALL_PATIENT_ASSIGNMENTS_QUERY } from '@/graphql/queries/patientAssignments.queries';
 import type { FindUserByEmailData, FindUserByPhoneData } from '@/graphql/types/user.types';
 
 // ============================================
@@ -213,6 +218,9 @@ export function UnifiedPatientInput({
     refetchQueries: [
       { query: GET_THERAPIST_PATIENTS_QUERY, variables: { therapistId, organizationId } },
       { query: GET_ALL_THERAPIST_PATIENTS_QUERY, variables: { therapistId, organizationId } },
+      { query: GET_ORGANIZATION_PATIENTS_QUERY, variables: { organizationId, filter: 'all' } },
+      { query: GET_ORGANIZATION_PATIENTS_QUERY, variables: { organizationId, filter: 'my' } },
+      { query: GET_ALL_PATIENT_ASSIGNMENTS_QUERY },
     ],
     awaitRefetchQueries: true,
   });
