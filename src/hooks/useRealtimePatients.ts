@@ -1,6 +1,12 @@
 import { useSubscription, useApolloClient } from '@apollo/client/react';
 import { useCallback } from 'react';
-import { ON_PATIENT_CREATED, ON_PATIENT_UPDATED, ON_PATIENT_DELETED } from '@/graphql/subscriptions';
+import {
+  ON_PATIENT_CREATED,
+  ON_PATIENT_UPDATED,
+  ON_PATIENT_DELETED,
+  ON_MEMBER_CREATED,
+  ON_THERAPIST_ASSIGNMENT_CREATED,
+} from '@/graphql/subscriptions';
 
 interface UseRealtimePatientsOptions {
   /** ID organizacji do subskrypcji */
@@ -36,7 +42,7 @@ export function useRealtimePatients({
   const refetch = useCallback(() => {
     if (!organizationId) return;
     client.refetchQueries({
-      include: ['GetOrganizationPatients', 'GetTherapistPatients'],
+      include: ['GetOrganizationPatients', 'GetTherapistPatients', 'GetAllTherapistPatients', 'GetAllPatientAssignments'],
     });
   }, [client, organizationId]);
 
@@ -81,6 +87,30 @@ export function useRealtimePatients({
       client.cache.gc();
 
       onDeleted?.(patientId);
+    },
+  });
+
+  // Subskrypcja na nowego członka organizacji (np. istniejący user dodany jako pacjent)
+  useSubscription<{ onMemberCreated: string }>(ON_MEMBER_CREATED, {
+    skip,
+    variables: { organizationId: organizationId! },
+    onData: ({ data }) => {
+      const memberId = data.data?.onMemberCreated;
+      if (!memberId) return;
+
+      refetch();
+    },
+  });
+
+  // Subskrypcja na nowe przypisanie pacjent->fizjoterapeuta
+  useSubscription<{ onTherapistAssignmentCreated: string }>(ON_THERAPIST_ASSIGNMENT_CREATED, {
+    skip,
+    variables: { organizationId: organizationId! },
+    onData: ({ data }) => {
+      const assignmentId = data.data?.onTherapistAssignmentCreated;
+      if (!assignmentId) return;
+
+      refetch();
     },
   });
 
