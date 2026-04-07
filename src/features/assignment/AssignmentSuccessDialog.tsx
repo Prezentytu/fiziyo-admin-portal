@@ -15,7 +15,6 @@ import {
   Share2,
   Calendar,
   Sparkles,
-  ArrowRight,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { pl } from 'date-fns/locale';
@@ -67,6 +66,8 @@ interface AssignmentSuccessDialogProps {
   frequency?: Frequency;
   /** Callback do przypisania kolejnemu pacjentowi */
   onAssignAnother?: () => void;
+  /** Przejście do nowo utworzonego planu */
+  onViewPlan?: () => void;
 }
 
 export function AssignmentSuccessDialog({
@@ -81,6 +82,7 @@ export function AssignmentSuccessDialog({
   exerciseSet,
   frequency,
   onAssignAnother,
+  onViewPlan,
 }: AssignmentSuccessDialogProps) {
   const { user } = useUser();
   const [copied, setCopied] = useState(false);
@@ -481,21 +483,6 @@ export function AssignmentSuccessDialog({
               <Download className="h-3 w-3 mr-1.5" />
               Pobierz kod QR
             </Button>
-            {onAssignAnother && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  onOpenChange(false);
-                  onAssignAnother();
-                }}
-                className="text-xs text-muted-foreground h-8 gap-1.5"
-                data-testid="assign-success-another-btn"
-              >
-                <ArrowRight className="h-3 w-3" />
-                Utwórz i przypisz kolejny plan
-              </Button>
-            )}
           </div>
         </div>
 
@@ -503,10 +490,35 @@ export function AssignmentSuccessDialog({
           <QRCodeCanvas value={`https://app.fiziyo.pl/sets/${exerciseSet?.id || ''}`} size={200} level="M" />
         </div>
 
-        <div className="flex justify-end pt-4 border-t border-border">
-          <Button onClick={() => onOpenChange(false)} data-testid="assign-success-close-btn">
-            Gotowe
+        <div className="flex items-center justify-between pt-4 border-t border-border">
+          <Button variant="ghost" onClick={() => onOpenChange(false)} data-testid="assign-success-close-btn">
+            Zamknij
           </Button>
+          <div className="flex items-center gap-2">
+            {onViewPlan && (
+              <Button
+                variant="outline"
+                onClick={() => {
+                  onOpenChange(false);
+                  onViewPlan();
+                }}
+                data-testid="assign-success-view-plan-btn"
+              >
+                Zobacz utworzony plan
+              </Button>
+            )}
+            {onAssignAnother && (
+              <Button
+                onClick={() => {
+                  onOpenChange(false);
+                  onAssignAnother();
+                }}
+                data-testid="assign-success-assign-another-primary-btn"
+              >
+                Przypisz kolejny
+              </Button>
+            )}
+          </div>
         </div>
       </DialogContent>
     </Dialog>

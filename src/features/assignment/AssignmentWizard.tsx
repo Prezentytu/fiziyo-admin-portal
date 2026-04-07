@@ -13,6 +13,8 @@ import { Switch } from '@/components/ui/switch';
 import * as VisuallyHidden from '@radix-ui/react-visually-hidden';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
+import { ExerciseDialog } from '@/features/exercises/ExerciseDialog';
+import { PatientDialog } from '@/features/patients/PatientDialog';
 import { defaultFrequency } from '@/features/exercise-sets/FrequencyPicker';
 
 import { WizardStepIndicator } from './WizardStepIndicator';
@@ -26,6 +28,7 @@ import type { ExerciseInstance, ExerciseParams } from '@/components/shared/Exerc
 import { canProceedFromStep } from './utils/assignmentWizardUtils';
 import { decideAssignmentPlanMode, type AssignmentExecutionMode } from './utils/assignmentPlanDecision';
 import { buildStructuredLoad, mapAvailableExercises } from './utils/availableExercisesMapper';
+import { appendPatientIfMissing } from './utils/patientSelectionUtils';
 import { calculateEstimatedTime } from '@/utils/exerciseTime';
 import {
   getWizardSteps,
@@ -100,24 +103,10 @@ export function AssignmentWizard(props: AssignmentWizardProps) {
     (data: SuccessDialogData) => {
       // Close the wizard dialog
       onOpenChange(false);
-
-      if (data.assignmentMode === 'PERSONALIZED_PLAN') {
-        setShowSuccessDialog(false);
-        setSuccessData(null);
-        toast.success('Plan spersonalizowany został utworzony i przypisany');
-        const detailQuery = new URLSearchParams({
-          from: 'patient-plans',
-          filter: 'patient-plans',
-          highlight: data.exerciseSet.id,
-        });
-        router.push(`/exercise-sets/${data.exerciseSet.id}?${detailQuery.toString()}`);
-        return;
-      }
-
       setSuccessData(data);
       setShowSuccessDialog(true);
     },
-    [onOpenChange, router]
+    [onOpenChange]
   );
 
   // Reset when dialog opens
@@ -167,6 +156,14 @@ export function AssignmentWizard(props: AssignmentWizardProps) {
           organizationId={organizationId}
           exerciseSet={successData.exerciseSet}
           frequency={successData.frequency}
+          onViewPlan={() => {
+            const detailQuery = new URLSearchParams({
+              from: 'patient-plans',
+              filter: 'patient-plans',
+              highlight: successData.exerciseSet.id,
+            });
+            router.push(`/exercise-sets/${successData.exerciseSet.id}?${detailQuery.toString()}`);
+          }}
           onAssignAnother={() => {
             // Reset success state and reopen wizard
             setSuccessData(null);
@@ -238,6 +235,8 @@ function AssignmentWizardContent({
   // State for CustomizeSetStep builder
   const [builderInstances, setBuilderInstances] = useState<ExerciseInstance[]>([]);
   const [builderParams, setBuilderParams] = useState<Map<string, ExerciseParams>>(new Map());
+  const [isExerciseDialogOpen, setIsExerciseDialogOpen] = useState(false);
+  const [isPatientDialogOpen, setIsPatientDialogOpen] = useState(false);
 
   // Track changes for close confirmation
   const hasChanges = !preselectedSet ? selectedSet !== null : selectedPatients.length > (preselectedPatient ? 1 : 0);
@@ -325,10 +324,11 @@ function AssignmentWizardContent({
 
   // Load patients if needed (from-set mode or no preselected patient)
   const needsPatients = !preselectedPatient;
-  const { data: patientsData, loading: loadingPatients } = useQuery(GET_ORGANIZATION_PATIENTS_QUERY, {
+  const { data: patientsData, loading: loadingPatients, refetch: refetchPatientsList } = useQuery(GET_ORGANIZATION_PATIENTS_QUERY, {
     variables: { organizationId, filter: 'all' },
     skip: !organizationId || !open || !needsPatients,
   });
+  const isLoadingPatientsInitially = loadingPatients && !patientsData;
 
   // Load patient's existing assignments (for from-patient mode - to show which sets are already assigned)
   const { data: patientAssignmentsData, refetch: refetchPatientAssignments } = useQuery(
@@ -351,7 +351,7 @@ function AssignmentWizardContent({
   );
 
   // Load available exercises for Rapid Builder (includes global FiziYo exercises)
-  const { data: exercisesData } = useQuery(GET_AVAILABLE_EXERCISES_QUERY, {
+  const { data: exercisesData, refetch: refetchAvailableExercises } = useQuery(GET_AVAILABLE_EXERCISES_QUERY, {
     variables: { organizationId },
     skip: !organizationId || !open,
   });
@@ -575,6 +575,91 @@ function AssignmentWizardContent({
     setIsCreatingNewSet(true);
     setCurrentStep('customize-set');
   }, [preselectedPatient]);
+
+  const restoreFocusAfterDialog = useCallback((selector: string) => {
+    window.setTimeout(() => {
+      const element = document.querySelector<HTMLElement>(selector);
+      element?.focus();
+    }, 80);
+  }, []);
+
+  const handleExerciseDialogSuccess = useCallback(
+    async (event?: { action: 'updated' | 'copied' | 'created'; exerciseId: string }) => {
+      if (!event || event.action !== 'created') {
+        return;
+      }
+
+      const refetchResult = await refetchAvailableExercises();
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const refreshedData = refetchResult.data as { availableExercises?: any[] } | undefined;
+      const refreshedExercises = mapAvailableExercises(refreshedData?.availableExercises);
+      const createdExercise = refreshedExercises.find((exercise) => exercise.id === event.exerciseId);
+
+      if (!createdExercise) {
+        toast.success('Ćwiczenie utworzone. Możesz dodać je z listy wyszukiwarki.');
+        restoreFocusAfterDialog('[data-testid="create-set-step"], [data-testid="customize-set-step"]');
+        return;
+      }
+
+      const alreadyExists = builderInstances.some((instance) => instance.exerciseId === createdExercise.id);
+      if (alreadyExists) {
+        toast.success(`Ćwiczenie "${createdExercise.name}" jest już w planie`);
+        restoreFocusAfterDialog('[data-testid="create-set-step"], [data-testid="customize-set-step"]');
+        return;
+      }
+
+      const newInstanceId = `new-${createdExercise.id}-${Date.now()}`;
+      setBuilderInstances((previous) => [
+        ...previous,
+        {
+          instanceId: newInstanceId,
+          exerciseId: createdExercise.id,
+        },
+      ]);
+
+      setBuilderParams((previous) => {
+        const next = new Map(previous);
+        next.set(newInstanceId, {
+          sets: createdExercise.defaultSets ?? undefined,
+          reps: createdExercise.defaultReps ?? undefined,
+          duration: createdExercise.defaultDuration ?? undefined,
+          restSets: createdExercise.defaultRestBetweenSets ?? undefined,
+          restReps: createdExercise.defaultRestBetweenReps ?? undefined,
+          executionTime: createdExercise.defaultExecutionTime ?? undefined,
+          preparationTime: createdExercise.preparationTime ?? undefined,
+          tempo: createdExercise.tempo ?? '',
+          load: buildStructuredLoad({
+            type: createdExercise.loadType ?? undefined,
+            value: createdExercise.loadValue ?? undefined,
+            unit: createdExercise.loadUnit ?? undefined,
+            text: createdExercise.loadText ?? undefined,
+          }),
+          notes: createdExercise.notes ?? '',
+          customName: '',
+          customDescription: '',
+        });
+        return next;
+      });
+
+      toast.success(`Dodano ćwiczenie "${createdExercise.name}" do planu`);
+      restoreFocusAfterDialog('[data-testid="create-set-step"], [data-testid="customize-set-step"]');
+    },
+    [builderInstances, refetchAvailableExercises, restoreFocusAfterDialog]
+  );
+
+  const handlePatientCreated = useCallback(
+    (patient: Patient) => {
+      setSelectedPatients((previous) => appendPatientIfMissing(previous, patient));
+      toast.success(`Pacjent "${patient.name}" został dodany i zaznaczony`);
+      restoreFocusAfterDialog('[data-testid="assign-patient-search"]');
+
+      // Keep list freshness, but never block selection UX on network.
+      void refetchPatientsList().catch((error) => {
+        console.error('Nie udało się odświeżyć listy pacjentów po dodaniu:', error);
+      });
+    },
+    [refetchPatientsList, restoreFocusAfterDialog]
+  );
 
   // AI: Generowanie ulepszonej nazwy planu na podstawie wybranych ćwiczeń
   const handleGenerateAIName = useCallback(async () => {
@@ -1207,6 +1292,8 @@ function AssignmentWizardContent({
             patientName={preselectedPatient?.name}
             showAI={true}
             hideNameSection
+            onCreateExercise={() => setIsExerciseDialogOpen(true)}
+            isCreatingExercise={isExerciseDialogOpen}
           />
         );
 
@@ -1218,7 +1305,9 @@ function AssignmentWizardContent({
             onSelectPatients={setSelectedPatients}
             assignedPatients={assignedPatients}
             onUnassign={(assignmentId, patientName) => handleUnassignRequest(assignmentId, patientName, 'patient')}
-            loading={loadingPatients}
+            loading={isLoadingPatientsInitially}
+            onCreatePatient={_therapistId ? () => setIsPatientDialogOpen(true) : undefined}
+            isCreatingPatient={isPatientDialogOpen}
           />
         );
 
@@ -1497,6 +1586,24 @@ function AssignmentWizardContent({
           isLoading={removing}
         />
       </DialogContent>
+
+      <ExerciseDialog
+        open={isExerciseDialogOpen}
+        onOpenChange={setIsExerciseDialogOpen}
+        organizationId={organizationId}
+        onSuccess={handleExerciseDialogSuccess}
+      />
+
+      {_therapistId && (
+        <PatientDialog
+          open={isPatientDialogOpen}
+          onOpenChange={setIsPatientDialogOpen}
+          organizationId={organizationId}
+          therapistId={_therapistId}
+          embeddedMode="assignment"
+          onPatientCreated={handlePatientCreated}
+        />
+      )}
     </>
   );
 }

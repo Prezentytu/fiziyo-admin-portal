@@ -70,6 +70,9 @@ interface CustomizeSetStepProps {
 
   // Preview exercise callback
   onPreviewExercise?: (exercise: BuilderExercise) => void;
+  // Quick action - create exercise without leaving wizard
+  onCreateExercise?: () => void;
+  isCreatingExercise?: boolean;
 }
 
 export function CustomizeSetStep({
@@ -89,6 +92,8 @@ export function CustomizeSetStep({
   onAIClick,
   hideNameSection = false,
   onPreviewExercise,
+  onCreateExercise,
+  isCreatingExercise = false,
 }: CustomizeSetStepProps) {
   const [detailsMapping, setDetailsMapping] = useState<ExerciseMapping | null>(null);
   // Load tags for filtering
@@ -222,6 +227,9 @@ export function CustomizeSetStep({
         aiButtonLabel="Dobierz za mnie"
         hideNameSection={hideNameSection}
         onPreviewExercise={handlePreviewExercise}
+        onCreateExercise={onCreateExercise}
+        isCreatingExercise={isCreatingExercise}
+        createExerciseTestId="assignment-create-exercise-tile-btn"
         testIdPrefix={testIdPrefix}
       />
       {!onPreviewExercise && (

@@ -196,7 +196,12 @@ interface CreateExerciseWizardProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   organizationId: string;
-  onSuccess?: () => void;
+  onSuccess?: (event: CreateExerciseWizardSuccessEvent) => void;
+}
+
+export interface CreateExerciseWizardSuccessEvent {
+  action: 'created';
+  exerciseId: string;
 }
 
 const DEFAULT_DATA: ExerciseData = {
@@ -1368,7 +1373,9 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
 
       toast.success('Ćwiczenie utworzone!');
       onOpenChange(false);
-      onSuccess?.();
+      if (exerciseId) {
+        onSuccess?.({ action: 'created', exerciseId });
+      }
     } catch (error) {
       console.error('Error creating exercise:', error);
       toast.error('Nie udało się utworzyć ćwiczenia');

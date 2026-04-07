@@ -14,6 +14,14 @@ Dziennik wniosków z pracy AI agentów. Po każdej korekcie dodaj nowy wpis.
 
 ## Wpisy
 
+### 2026-04-04 - Optimistic selection po create w wizardze nie moze czekac na refetch
+
+- **Kategoria**: `UI/UX`
+- **Problem**: Po dodaniu pacjenta w Assignment Wizard zaznaczenie pojawialo sie z opoznieniem i wygladalo jak problem sieci.
+- **Przyczyna**: Callback `handlePatientCreated` wykonywal `await refetchPatientsList()` przed aktualizacja `selectedPatients`, przez co UX byl blokowany przez round-trip do backendu; dodatkowo create-flow mial ryzyko podwojnego odswiezania listy.
+- **Rozwiazanie**: Przelaczono flow na optimistic selection (natychmiastowy update wyboru), refetch przeniesiono do tla bez blokowania i ograniczono koszt odswiezania w trybie `embeddedMode="assignment"`.
+- **Regula**: W flow create+select selection state aktualizuj od razu po sukcesie mutacji, a synchronizacje listy wykonuj asynchronicznie w tle; nigdy nie uzalezniaj podstawowego feedbacku UX od refetcha.
+
 ### 2026-04-01 - Verification detail wymaga dedykowanego resolvera admin
 
 - **Kategoria**: `GraphQL`

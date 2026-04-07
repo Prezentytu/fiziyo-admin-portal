@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { ExerciseForm, ExerciseFormValues } from './ExerciseForm';
-import { CreateExerciseWizard } from './CreateExerciseWizard';
+import { CreateExerciseWizard, type CreateExerciseWizardSuccessEvent } from './CreateExerciseWizard';
 import { FeedbackBanner } from './FeedbackBanner';
 import { UPDATE_EXERCISE_MUTATION, COPY_EXERCISE_TEMPLATE_MUTATION } from '@/graphql/mutations/exercises.mutations';
 import { GET_ORGANIZATION_EXERCISES_QUERY, GET_AVAILABLE_EXERCISES_QUERY } from '@/graphql/queries/exercises.queries';
@@ -19,7 +19,8 @@ import type { Exercise } from './ExerciseCard';
 import { buildExerciseUpdateVariables } from './utils/buildExerciseUpdateVariables';
 import { getNextExerciseCopyName } from './utils/getNextExerciseCopyName';
 
-type ExerciseDialogSuccessEvent =
+export type ExerciseDialogSuccessEvent =
+  | CreateExerciseWizardSuccessEvent
   | {
       action: 'updated';
       exerciseId: string;
