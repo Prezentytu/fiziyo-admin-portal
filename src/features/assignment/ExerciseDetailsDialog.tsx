@@ -13,9 +13,11 @@ import { buildExerciseDetailsViewModel } from './exerciseDetailsViewModel';
 import {
   DIALOG_EXERCISE_FIELD_ORDER,
   EXERCISE_FIELD_METADATA,
+  HIDE_EXERCISE_TAGS,
+  formatFieldValueWithPlaceholder,
   type ExerciseFieldGroup,
   type ExerciseFieldMetadata,
-} from './exerciseFieldMetadata';
+} from '@/components/shared/exercise';
 
 interface ExerciseDetailsDialogProps {
   open: boolean;
@@ -76,8 +78,7 @@ export function ExerciseDetailsDialog({ open, mapping, onOpenChange }: Readonly<
       : DIALOG_EXERCISE_FIELD_ORDER.map((fieldKey) => {
           const field = EXERCISE_FIELD_METADATA[fieldKey];
           if (!field.isDialogVisible) return null;
-          const value = field.formatValue(viewModel);
-          if (!value) return null;
+          const value = formatFieldValueWithPlaceholder(field, viewModel, field.group === 'content' ? 'Nie ustawiono' : '—');
           return { field, value };
         }).filter((item): item is { field: ExerciseFieldMetadata; value: string } => item !== null);
 
@@ -170,7 +171,7 @@ export function ExerciseDetailsDialog({ open, mapping, onOpenChange }: Readonly<
               </div>
             </div>
 
-            {(viewModel?.mainTags.length || viewModel?.additionalTags.length) ? (
+            {!HIDE_EXERCISE_TAGS && (viewModel?.mainTags.length || viewModel?.additionalTags.length) ? (
               <>
                 <Separator />
                 <div className="space-y-2">

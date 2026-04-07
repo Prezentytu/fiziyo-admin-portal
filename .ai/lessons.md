@@ -14,6 +14,14 @@ Dziennik wniosków z pracy AI agentów. Po każdej korekcie dodaj nowy wpis.
 
 ## Wpisy
 
+### 2026-04-07 - Spójność detalu ćwiczenia wymaga jednego registry prezentacji
+
+- **Kategoria**: `UI/UX`
+- **Problem**: Różne widoki ćwiczeń pokazywały inny zakres pól, różne etykiety czasu (`Czas` vs `Czas serii`/`Czas powtórzenia`) i ukrywały brakujące dane, przez co UX był niespójny.
+- **Przyczyna**: Formatowanie i kolejność pól były rozproszone między lokalnymi rendererami zamiast jednego wspólnego kontraktu.
+- **Rozwiązanie**: Wyodrębniono wspólny `displayRegistry` i normalizer dla pól ćwiczenia, przepięto kluczowe widoki na wspólne metadane oraz wdrożono jednolite placeholdery; dodatkowo wprowadzono tymczasowy feature-flag ukrycia tagów (`HIDE_EXERCISE_TAGS`) na warstwie UI.
+- **Reguła**: Dla danych domenowych renderowanych w wielu miejscach utrzymuj jedno źródło prawdy dla etykiet, kolejności i fallbacków; różnicuj tylko layout, nigdy semantykę pól.
+
 ### 2026-04-04 - Optimistic selection po create w wizardze nie moze czekac na refetch
 
 - **Kategoria**: `UI/UX`

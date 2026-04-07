@@ -1,4 +1,4 @@
-import { EXERCISE_FIELD_METADATA } from '@/features/assignment/exerciseFieldMetadata';
+import { EXERCISE_FIELD_METADATA } from '@/components/shared/exercise';
 
 export const EXERCISE_FIELD_TOOLTIPS = {
   patientDescription: EXERCISE_FIELD_METADATA.patientDescription.tooltip,

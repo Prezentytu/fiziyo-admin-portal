@@ -27,9 +27,10 @@ import { ExerciseFieldLabelWithTooltip } from '@/features/exercises/ExerciseFiel
 import { EXERCISE_FIELD_TOOLTIPS } from '@/features/exercises/exerciseFieldTooltips';
 import {
   EXERCISE_FIELD_METADATA,
+  HIDE_EXERCISE_TAGS,
   type ExerciseFieldIconKey,
   type ExerciseFieldKey,
-} from '@/features/assignment/exerciseFieldMetadata';
+} from '@/components/shared/exercise';
 import {
   buildDefaultLoadUpdate,
   resolveLoadPreset,
@@ -243,7 +244,7 @@ export function VerificationEditorPanel({
     const hasReps = (localReps ?? 0) > 0;
     const hasDuration = (localDuration ?? 0) > 0;
     const hasVolume = hasReps || hasDuration;
-    const hasTags = mainTags.length > 0;
+    const hasTags = HIDE_EXERCISE_TAGS ? true : mainTags.length > 0;
 
     return {
       isValid: hasSets && hasVolume && hasTags,
@@ -271,7 +272,7 @@ export function VerificationEditorPanel({
     if (!dataValidation.hasVolume) {
       missing.push('Powtórzenia lub czas');
     }
-    if (!dataValidation.hasTags) {
+    if (!HIDE_EXERCISE_TAGS && !dataValidation.hasTags) {
       missing.push('Tagi główne');
     }
     if (!exercise.name?.trim() || exercise.name.trim().length < 2) {
@@ -381,20 +382,21 @@ export function VerificationEditorPanel({
           data-testid="verification-editor-header"
         />
 
-        {/* Tags under header */}
-        <div className="shrink-0 mb-5 min-w-0">
-          <TagSmartChips
-            exerciseId={exercise.id}
-            exerciseName={exercise.name}
-            exerciseDescription={descriptionValue}
-            tags={mainTags}
-            onTagsChange={onMainTagsChange}
-            tagType="main"
-            label="Tagi"
-            disabled={disabled}
-            data-testid="verification-editor-main-tags"
-          />
-        </div>
+        {!HIDE_EXERCISE_TAGS && (
+          <div className="shrink-0 mb-5 min-w-0">
+            <TagSmartChips
+              exerciseId={exercise.id}
+              exerciseName={exercise.name}
+              exerciseDescription={descriptionValue}
+              tags={mainTags}
+              onTagsChange={onMainTagsChange}
+              tagType="main"
+              label="Tagi"
+              disabled={disabled}
+              data-testid="verification-editor-main-tags"
+            />
+          </div>
+        )}
 
         {/* ============================================ */}
         {/* SECTION 2: CORE METRICS (Tier 1) */}

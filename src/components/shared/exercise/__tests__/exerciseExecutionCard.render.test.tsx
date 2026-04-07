@@ -31,6 +31,8 @@ describe('ExerciseExecutionCard inline read-only source info', () => {
           rangeOfMotion: 'Pełny zakres',
           clinicalDescription: 'Opis kliniczny',
           audioCue: 'Oddychaj',
+          mainTags: ['nogi'],
+          additionalTags: ['mobilizacja'],
         }}
       />
     );
@@ -52,6 +54,8 @@ describe('ExerciseExecutionCard inline read-only source info', () => {
     expect(screen.getByTestId('exercise-card-exercise-1-help-customName')).toBeInTheDocument();
     expect(screen.getByTestId('exercise-card-exercise-1-help-customDescription')).toBeInTheDocument();
     expect(screen.getByTestId('exercise-card-exercise-1-open-details-btn')).toBeInTheDocument();
+    expect(screen.getByText('Obciążenie')).toBeInTheDocument();
+    expect(screen.queryByText('nogi')).not.toBeInTheDocument();
 
     await user.click(screen.getByTestId('exercise-card-exercise-1-open-details-btn'));
 

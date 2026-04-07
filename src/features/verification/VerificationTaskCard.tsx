@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { ImagePlaceholder } from '@/components/shared/ImagePlaceholder';
 import { cn } from '@/lib/utils';
 import { getMediaUrl } from '@/utils/mediaUrl';
+import { HIDE_EXERCISE_TAGS } from '@/components/shared/exercise';
 import type { AdminExercise, ContentStatus } from '@/graphql/types/adminExercise.types';
 
 interface VerificationTaskCardProps {
@@ -62,7 +63,7 @@ function getQualityIndicators(exercise: AdminExercise) {
   if (!exercise.description || exercise.description.length < 50) {
     indicators.push({ label: 'Krótki opis', type: 'warning' });
   }
-  if (!exercise.mainTags || exercise.mainTags.length === 0) {
+  if (!HIDE_EXERCISE_TAGS && (!exercise.mainTags || exercise.mainTags.length === 0)) {
     indicators.push({ label: 'Brak tagów', type: 'warning' });
   }
 

@@ -2,13 +2,18 @@
 
 import { useState } from 'react';
 import Image from 'next/image';
-import { Play, Clock, Dumbbell, Info, ArrowLeftRight, ChevronLeft, ChevronRight, ImageIcon } from 'lucide-react';
+import { Play, Info, ArrowLeftRight, ChevronLeft, ChevronRight, ImageIcon } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
 import { ImagePlaceholder } from '@/components/shared/ImagePlaceholder';
+import {
+  EXERCISE_FIELD_METADATA,
+  formatFieldValueWithPlaceholder,
+  normalizeExerciseFieldValues,
+} from '@/components/shared/exercise';
 import { getMediaUrl } from '@/utils/mediaUrl';
 import type { ExerciseMapping, ExerciseOverride } from './PatientAssignmentCard';
 import { translateExerciseSidePolish } from '@/components/pdf/polishUtils';
@@ -65,9 +70,19 @@ export function ExercisePreviewDrawer({ open, onOpenChange, mapping, override, o
   };
 
   // Get effective params (with overrides)
-  const effectiveSets = override?.sets ?? mapping.sets ?? exercise?.sets;
-  const effectiveReps = override?.reps ?? mapping.reps ?? exercise?.reps;
-  const effectiveDuration = override?.duration ?? mapping.duration ?? exercise?.duration;
+  const effectiveSets = override?.sets ?? mapping.sets ?? exercise?.defaultSets ?? exercise?.sets;
+  const effectiveReps = override?.reps ?? mapping.reps ?? exercise?.defaultReps ?? exercise?.reps;
+  const effectiveDuration = override?.duration ?? mapping.duration ?? exercise?.defaultDuration ?? exercise?.duration;
+  const effectiveExecutionTime =
+    override?.executionTime ?? mapping.executionTime ?? exercise?.defaultExecutionTime ?? exercise?.executionTime;
+  const effectiveRestSets =
+    override?.restSets ?? mapping.restSets ?? exercise?.defaultRestBetweenSets ?? exercise?.restSets;
+  const effectiveRestReps =
+    override?.restReps ?? mapping.restReps ?? exercise?.defaultRestBetweenReps ?? exercise?.restReps;
+  const effectivePreparationTime = override?.preparationTime ?? mapping.preparationTime ?? exercise?.preparationTime;
+  const effectiveTempo = override?.tempo ?? mapping.tempo ?? exercise?.tempo;
+  const effectiveLoadDisplayText =
+    mapping.loadText ?? exercise?.defaultLoad?.text ?? exercise?.loadText;
   const effectiveName = override?.customName ?? mapping.customName ?? exercise?.name;
   const effectivePatientDescription =
     override?.customDescription ??
@@ -77,6 +92,39 @@ export function ExercisePreviewDrawer({ open, onOpenChange, mapping, override, o
     '';
   const effectiveClinicalDescription = exercise?.clinicalDescription ?? '';
   const effectiveSide = override?.exerciseSide ?? exercise?.exerciseSide;
+  const normalizedFields = normalizeExerciseFieldValues({
+    defaultSets: effectiveSets,
+    defaultReps: effectiveReps,
+    defaultDuration: effectiveDuration,
+    defaultExecutionTime: effectiveExecutionTime,
+    defaultRestBetweenSets: effectiveRestSets,
+    defaultRestBetweenReps: effectiveRestReps,
+    preparationTime: effectivePreparationTime,
+    tempo: effectiveTempo,
+    side: effectiveSide,
+    rangeOfMotion: exercise?.rangeOfMotion,
+    difficultyLevel: exercise?.difficultyLevel,
+    patientDescription: effectivePatientDescription,
+    clinicalDescription: effectiveClinicalDescription,
+    audioCue: exercise?.audioCue,
+    notes: override?.notes || mapping.notes,
+    loadText: effectiveLoadDisplayText,
+    defaultLoad: exercise?.defaultLoad,
+  });
+  const parameterFieldOrder = [
+    EXERCISE_FIELD_METADATA.sets,
+    EXERCISE_FIELD_METADATA.reps,
+    EXERCISE_FIELD_METADATA.duration,
+    EXERCISE_FIELD_METADATA.executionTime,
+    EXERCISE_FIELD_METADATA.restSets,
+    EXERCISE_FIELD_METADATA.restReps,
+    EXERCISE_FIELD_METADATA.preparationTime,
+    EXERCISE_FIELD_METADATA.tempo,
+    EXERCISE_FIELD_METADATA.load,
+    EXERCISE_FIELD_METADATA.side,
+    EXERCISE_FIELD_METADATA.rangeOfMotion,
+    EXERCISE_FIELD_METADATA.difficultyLevel,
+  ];
 
   const hasOverride =
     override &&
@@ -187,28 +235,15 @@ export function ExercisePreviewDrawer({ open, onOpenChange, mapping, override, o
             {/* Parameters */}
             <div className="space-y-3">
               <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Parametry</h3>
-              <div className="grid grid-cols-3 gap-3">
-                {effectiveSets && (
-                  <div className="rounded-xl border border-border/40 bg-surface/30 p-4 text-center">
-                    <Dumbbell className="h-5 w-5 text-primary mx-auto mb-2" />
-                    <p className="text-2xl font-bold">{effectiveSets}</p>
-                    <p className="text-xs text-muted-foreground">serii</p>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {parameterFieldOrder.map((field) => (
+                  <div key={field.key} className="rounded-xl border border-border/40 bg-surface/30 p-3">
+                    <p className="text-xs text-muted-foreground">{field.label}</p>
+                    <p className="mt-1 text-sm font-semibold text-foreground">
+                      {formatFieldValueWithPlaceholder(field, normalizedFields, field.group === 'content' ? 'Nie ustawiono' : '—')}
+                    </p>
                   </div>
-                )}
-                {effectiveReps && (
-                  <div className="rounded-xl border border-border/40 bg-surface/30 p-4 text-center">
-                    <span className="text-primary text-lg font-bold block mb-1">×</span>
-                    <p className="text-2xl font-bold">{effectiveReps}</p>
-                    <p className="text-xs text-muted-foreground">powtórzeń</p>
-                  </div>
-                )}
-                {effectiveDuration && (
-                  <div className="rounded-xl border border-border/40 bg-surface/30 p-4 text-center">
-                    <Clock className="h-5 w-5 text-primary mx-auto mb-2" />
-                    <p className="text-2xl font-bold">{effectiveDuration}</p>
-                    <p className="text-xs text-muted-foreground">sekund</p>
-                  </div>
-                )}
+                ))}
               </div>
             </div>
 

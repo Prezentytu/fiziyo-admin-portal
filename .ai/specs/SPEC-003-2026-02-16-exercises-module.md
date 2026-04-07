@@ -30,6 +30,49 @@ Moduł ćwiczeń jest centralnym elementem FiziYo Admin. Umożliwia fizjoterapeu
   1. `createdAt` (aktualne pole API)
   2. `creationTime` (fallback dla starszych rekordów/aliasów)
 
+## Kontrakt prezentacji szczegółów (2026-04-07)
+
+Wszystkie powierzchnie UI wyświetlające szczegóły ćwiczenia muszą korzystać ze wspólnego kontraktu prezentacji pól.
+
+### Powierzchnie objęte standaryzacją
+
+- `app/(dashboard)/exercises/[id]/page.tsx` (detal ćwiczenia)
+- `features/exercises/ExerciseCard.tsx` (karta listy/grid)
+- `components/shared/exercise/ExerciseExecutionCard.tsx` (widok współdzielony)
+- `features/assignment/ExerciseDetailsDialog.tsx` i widoki assignment korzystające ze shared card
+- `features/patients/ExercisePreviewDrawer.tsx`
+- `features/verification/ExerciseDetailsPanel.tsx`
+
+### Kanoniczna kolejność pól
+
+1. **Dawkowanie**: `Serie`, `Powtórzenia`, `Czas serii`, `Czas powtórzenia`
+2. **Wykonanie**: `Przerwa między seriami`, `Przerwa między powt.`, `Czas przygotowania`, `Tempo`, `Obciążenie`, `Strona ciała`, `Zakres ruchu (ROM)`, `Poziom trudności`
+3. **Treść**: `Opis dla pacjenta`, `Opis kliniczny`, `Polecenia audio`, `Notatki`
+
+### Zasady etykiet
+
+- Etykiety czasu i przerw muszą być precyzyjne:
+  - `Czas serii` (`duration`)
+  - `Czas powtórzenia` (`executionTime`)
+  - `Przerwa między seriami` (`restSets`)
+  - `Przerwa między powt.` (`restReps`)
+- Nie używamy ogólnych etykiet typu `Czas` lub `Przerwa` bez doprecyzowania.
+- Nie eksponujemy terapeucie pojęcia „typ ćwiczenia” jako głównego parametru semantycznego; timer wynika z `executionTime`.
+
+### Polityka pustych stanów
+
+- Dla widoków szczegółowych (`full`) pole jest zawsze renderowane w kanonicznej kolejności.
+- Brak wartości nie ukrywa pola; renderujemy placeholder:
+  - `Nie ustawiono` dla treści opisowych,
+  - `—` dla liczb i wartości technicznych.
+- Dla widoków kompaktowych (`compact`/`readable`) dopuszcza się gęstszy layout, ale bez zmiany kolejności logicznej i bez zmiany znaczenia pól.
+
+### Tymczasowa polityka tagów
+
+- Tagi ćwiczeń (`mainTags`, `additionalTags`) pozostają w modelu danych i API.
+- W warstwie UI są tymczasowo ukryte na wszystkich objętych powierzchniach, aby utrzymać maksymalną spójność i zmniejszyć szum poznawczy.
+- To decyzja prezentacyjna (UI-only), bez zmian kontraktów GraphQL.
+
 ## Architektura
 
 ### Komponenty UI (16)
@@ -91,6 +134,12 @@ Prefiks: `exercise-`
 - `exercise-voice-input-btn`
 
 ## Changelog
+
+### 2026-04-07
+
+- Dodano kanoniczny kontrakt prezentacji szczegółów ćwiczenia (zakres powierzchni, kolejność pól, polityka pustych stanów).
+- Doprecyzowano precyzyjne etykiety czasów i przerw (`Czas serii` vs `Czas powtórzenia`).
+- Dodano decyzję produktową o tymczasowym ukryciu tagów w UI bez zmian w modelu danych.
 
 ### 2026-03-08
 

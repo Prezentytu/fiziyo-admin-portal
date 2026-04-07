@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { ColorBadge } from '@/components/shared/ColorBadge';
 import { cn } from '@/lib/utils';
+import { HIDE_EXERCISE_TAGS } from '@/components/shared/exercise';
 
 interface ExerciseTag {
   id: string;
@@ -112,6 +113,8 @@ export function TagPicker({
   };
 
   const getTag = (tagId: string) => availableTags.find((t) => t.id === tagId);
+
+  if (HIDE_EXERCISE_TAGS) return null;
 
   return (
     <div className="space-y-4">

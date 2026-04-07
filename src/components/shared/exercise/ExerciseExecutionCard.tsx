@@ -19,7 +19,12 @@ import {
   isTimerExercise,
   isFieldEditable,
 } from './types';
-import { EXERCISE_FIELD_METADATA, INLINE_EXERCISE_FIELD_ORDER } from '@/features/assignment/exerciseFieldMetadata';
+import {
+  EXERCISE_FIELD_METADATA,
+  HIDE_EXERCISE_TAGS,
+  INLINE_EXERCISE_FIELD_ORDER,
+  formatFieldValueWithPlaceholder,
+} from './displayRegistry';
 
 const SIDE_OPTIONS = [
   { value: 'none', label: 'Bez podziału' },
@@ -139,10 +144,12 @@ export function ExerciseExecutionCard({
       INLINE_EXERCISE_FIELD_ORDER.map((fieldKey) => {
         const field = EXERCISE_FIELD_METADATA[fieldKey];
         if (!field.isInlineVisible) return null;
-        const value = field.formatValue(exercise);
-        if (!value) return null;
+        const value = formatFieldValueWithPlaceholder(field, exercise, field.group === 'content' ? 'Nie ustawiono' : '—');
         return { field, value };
-      }).filter((fieldData): fieldData is { field: (typeof EXERCISE_FIELD_METADATA)[keyof typeof EXERCISE_FIELD_METADATA]; value: string } => fieldData !== null),
+      }).filter(
+        (fieldData): fieldData is { field: (typeof EXERCISE_FIELD_METADATA)[keyof typeof EXERCISE_FIELD_METADATA]; value: string } =>
+          fieldData !== null
+      ),
     [exercise]
   );
   const handlePreviewTrigger = useCallback(() => {
@@ -481,7 +488,9 @@ export function ExerciseExecutionCard({
                   <>
                     <div className="hidden sm:block text-muted-foreground/30 h-4 w-px bg-border/50"></div>
                     <div className="flex items-center justify-between sm:justify-start gap-3 sm:gap-1.5 w-full sm:w-auto">
-                      <span className="text-[10px] sm:hidden text-muted-foreground uppercase font-bold tracking-wide">Czas</span>
+                      <span className="text-[10px] sm:hidden text-muted-foreground uppercase font-bold tracking-wide">
+                        Czas powtórzenia
+                      </span>
                       <span className="text-primary tabular-nums">{exercise.executionTime}s</span>
                     </div>
                   </>
@@ -769,7 +778,7 @@ export function ExerciseExecutionCard({
                         </p>
                       )}
 
-                      {(exercise.mainTags?.length || exercise.additionalTags?.length) ? (
+                      {!HIDE_EXERCISE_TAGS && (exercise.mainTags?.length || exercise.additionalTags?.length) ? (
                         <div className="flex flex-wrap gap-1.5">
                           {exercise.mainTags?.map((tag) => (
                             <span

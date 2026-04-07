@@ -28,7 +28,7 @@ import type { AdminExercise } from '@/graphql/types/adminExercise.types';
 
 // Types & Options
 const EXERCISE_SIDES = [
-  { value: 'none', label: 'Brak strony', icon: <span className="w-4" /> },
+  { value: 'none', label: 'Bez podziału', icon: <span className="w-4" /> },
   { value: 'left', label: 'Lewa strona', icon: <ArrowLeftRight className="h-4 w-4" /> },
   { value: 'right', label: 'Prawa strona', icon: <ArrowLeftRight className="h-4 w-4 rotate-180" /> },
   { value: 'both', label: 'Obie strony', icon: <ArrowLeftRight className="h-4 w-4" /> },
@@ -147,7 +147,7 @@ export function ExerciseDetailsPanel({
             />
             <ClickableStat
               value={exercise.defaultDuration ?? null}
-              label="Czas"
+              label="Czas serii"
               unit="s"
               min={0}
               max={600}
@@ -156,6 +156,18 @@ export function ExerciseDetailsPanel({
               icon={<Timer className="h-4 w-4" />}
               disabled={disabled}
               data-testid="verification-details-duration"
+            />
+            <ClickableStat
+              value={exercise.defaultExecutionTime ?? null}
+              label="Czas powtórzenia"
+              unit="s"
+              min={0}
+              max={120}
+              step={1}
+              onCommit={handleFieldCommit('defaultExecutionTime')}
+              icon={<Timer className="h-4 w-4" />}
+              disabled={disabled}
+              data-testid="verification-details-execution-time"
             />
           </ClickableStatGroup>
         </div>

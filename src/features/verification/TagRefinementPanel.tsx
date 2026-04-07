@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
+import { HIDE_EXERCISE_TAGS } from '@/components/shared/exercise';
 import { GET_SUGGESTED_TAGS_QUERY } from '@/graphql/queries/adminExercises.queries';
 import type {
   AdminExercise,
@@ -159,6 +160,8 @@ export function TagRefinementPanel({
   const handleRemoveAdditionalTag = (tag: string) => {
     onAdditionalTagsChange(additionalTags.filter((t) => t !== tag));
   };
+
+  if (HIDE_EXERCISE_TAGS) return null;
 
   return (
     <Card className={cn('border-border/60', className)}>
