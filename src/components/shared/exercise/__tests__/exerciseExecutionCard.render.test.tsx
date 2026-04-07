@@ -61,5 +61,29 @@ describe('ExerciseExecutionCard inline read-only source info', () => {
 
     expect(onOpenDetails).toHaveBeenCalledTimes(1);
   });
+
+  it('opens exercise preview dialog after thumbnail click', async () => {
+    const user = userEvent.setup();
+
+    render(
+      <ExerciseExecutionCard
+        mode="view"
+        testIdPrefix="exercise-card"
+        exercise={{
+          id: 'exercise-preview-1',
+          displayName: 'Przysiad',
+          sets: 3,
+          reps: 10,
+          executionTime: 8,
+          imageUrls: ['/image-1.jpg', '/image-2.jpg'],
+        }}
+      />
+    );
+
+    await user.click(screen.getByTestId('exercise-card-exercise-preview-1-thumbnail-btn'));
+
+    expect(screen.getByTestId('exercise-preview-dialog')).toBeInTheDocument();
+    expect(screen.getByTestId('exercise-preview-title')).toHaveTextContent('Przysiad');
+  });
 });
 

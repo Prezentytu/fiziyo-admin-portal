@@ -85,6 +85,7 @@ export interface BuilderExercise {
   description?: string;
   imageUrl?: string;
   images?: string[];
+  videoUrl?: string;
   sets?: number;
   reps?: number;
   duration?: number;
@@ -160,7 +161,7 @@ export interface ExerciseSetBuilderProps {
   hideNameSection?: boolean;
 
   // Preview exercise callback
-  onPreviewExercise?: (exercise: BuilderExercise) => void;
+  onPreviewExercise?: (exercise: BuilderExercise, params?: ExerciseParams) => void;
 
   // Test IDs prefix
   testIdPrefix?: string;
@@ -207,7 +208,7 @@ function ExercisePickerItem({
         type="button"
         onClick={onPreview}
         className="h-9 w-9 rounded-lg overflow-hidden shrink-0 relative group bg-surface-light border border-border/60 cursor-pointer"
-        aria-label={`Podgląd galerii ćwiczenia: ${exercise.name}`}
+        aria-label={`Podgląd ćwiczenia: ${exercise.name}`}
       >
         {imageUrl ? (
           <Image src={imageUrl} alt="" fill className="object-cover" sizes="36px" />
@@ -882,7 +883,7 @@ export function ExerciseSetBuilder({
                         params={exerciseParams.get(data.instanceId) || getDefaultParams(data.exercise)}
                         onUpdateParams={(field, value) => updateExerciseParams(data.instanceId, field, value)}
                         onRemove={() => setInstanceToRemove(data.instanceId)}
-                        onPreview={() => onPreviewExercise?.(data.exercise)}
+                        onPreview={() => onPreviewExercise?.(data.exercise, exerciseParams.get(data.instanceId))}
                         testIdPrefix={testIdPrefix}
                         isReadonly={readonlyInstanceIds?.has(data.instanceId) ?? false}
                       />

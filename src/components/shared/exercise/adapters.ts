@@ -3,18 +3,68 @@ import type { ExerciseMapping, ExerciseOverride, ExerciseLoad } from '@/features
 import { formatLoad } from '@/utils/loadParser';
 import { getMediaUrl, getMediaUrls } from '@/utils/mediaUrl';
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
+function pickImageUrlFromUnknown(value: unknown): string | null {
+  if (typeof value === 'string') {
+    const normalized = value.trim();
+    return normalized.length > 0 ? normalized : null;
+  }
+
+  if (!isRecord(value)) return null;
+
+  const urlCandidateKeys = ['url', 'imageUrl', 'thumbnailUrl', 'src', 'path', 'value'];
+  for (const candidateKey of urlCandidateKeys) {
+    const maybeUrl = value[candidateKey];
+    if (typeof maybeUrl === 'string' && maybeUrl.trim().length > 0) {
+      return maybeUrl.trim();
+    }
+  }
+
+  return null;
+}
+
+function normalizeUnknownImages(images: unknown): string[] {
+  if (Array.isArray(images)) {
+    return images
+      .map((imageValue) => pickImageUrlFromUnknown(imageValue))
+      .filter((imageUrl): imageUrl is string => imageUrl !== null);
+  }
+
+  if (typeof images === 'string') {
+    const trimmedImages = images.trim();
+    if (!trimmedImages) return [];
+
+    if (trimmedImages.startsWith('[')) {
+      try {
+        const parsed = JSON.parse(trimmedImages) as unknown;
+        return normalizeUnknownImages(parsed);
+      } catch {
+        return [trimmedImages];
+      }
+    }
+
+    return [trimmedImages];
+  }
+
+  return [];
+}
+
 export function buildExerciseImageUrls(exercise: {
   thumbnailUrl?: string;
   imageUrl?: string;
-  images?: string[];
+  images?: unknown;
 }): string[] {
-  const first = getMediaUrl(exercise.thumbnailUrl ?? exercise.imageUrl ?? exercise.images?.[0]);
-  if (!first) return getMediaUrls(exercise.images ?? []);
-  const rest = getMediaUrls(exercise.images ?? []).filter((url) => url !== first);
+  const normalizedImages = normalizeUnknownImages(exercise.images);
+  const first = getMediaUrl(exercise.thumbnailUrl ?? exercise.imageUrl ?? normalizedImages[0]);
+  if (!first) return getMediaUrls(normalizedImages);
+  const rest = getMediaUrls(normalizedImages).filter((url) => url !== first);
   return [first, ...rest];
 }
 
-function buildImageUrls(thumbnailUrl?: string, imageUrl?: string, images?: string[]): string[] {
+function buildImageUrls(thumbnailUrl?: string, imageUrl?: string, images?: unknown): string[] {
   return buildExerciseImageUrls({ thumbnailUrl, imageUrl, images });
 }
 
@@ -90,6 +140,7 @@ export function fromExerciseMapping(
     displayName: resolveDisplayName(mapping.customName, exercise?.name),
     thumbnailUrl: thumb ?? undefined,
     imageUrls: buildImageUrls(exercise?.thumbnailUrl, exercise?.imageUrl, exercise?.images),
+    videoUrl: mapping.videoUrl ?? exercise?.videoUrl ?? undefined,
     sets,
     reps,
     duration: mapping.duration ?? override?.duration ?? exercise?.defaultDuration,
@@ -132,7 +183,8 @@ export function fromBuilderExercise(
     difficultyLevel?: string;
     thumbnailUrl?: string;
     imageUrl?: string;
-    images?: string[];
+    images?: unknown;
+    videoUrl?: string;
     defaultSets?: number;
     defaultReps?: number;
     defaultDuration?: number;
@@ -182,6 +234,7 @@ export function fromBuilderExercise(
     displayName: resolveDisplayName(params.customName, exercise.name),
     thumbnailUrl: thumb ?? undefined,
     imageUrls: buildImageUrls(exercise.thumbnailUrl, exercise.imageUrl, exercise.images),
+    videoUrl: exercise.videoUrl,
     sets: params.sets ?? exercise.defaultSets ?? 3,
     reps: params.reps ?? exercise.defaultReps ?? 10,
     duration: params.duration ?? exercise.defaultDuration,

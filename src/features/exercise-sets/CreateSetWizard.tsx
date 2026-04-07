@@ -50,8 +50,7 @@ import { getMediaUrl } from '@/utils/mediaUrl';
 import { countBySource, filterExercisesBySource, type ExerciseSourceFilter } from '@/utils/exerciseSourceFilter';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { ColorBadge } from '@/components/shared/ColorBadge';
-import { ImageLightbox } from '@/components/shared/ImageLightbox';
-import { ExerciseExecutionCard, fromBuilderExercise, buildExerciseImageUrls } from '@/components/shared/exercise';
+import { ExerciseExecutionCard, ExercisePreviewDialog, fromBuilderExercise } from '@/components/shared/exercise';
 import type { ExerciseExecutionCardData } from '@/components/shared/exercise';
 import { cn } from '@/lib/utils';
 import { aiService } from '@/services/aiService';
@@ -101,6 +100,7 @@ interface Exercise {
   description?: string;
   imageUrl?: string;
   images?: string[];
+  videoUrl?: string;
   sets?: number;
   reps?: number;
   duration?: number;
@@ -181,7 +181,7 @@ function ExercisePickerItem({
         type="button"
         onClick={onPreview}
         className="h-9 w-9 rounded-lg overflow-hidden shrink-0 relative group bg-surface-light border border-border/60 cursor-pointer"
-        aria-label={`Podgląd galerii ćwiczenia: ${exercise.name}`}
+        aria-label={`Podgląd ćwiczenia: ${exercise.name}`}
       >
         {imageUrl ? (
           <Image src={imageUrl} alt="" fill className="object-cover" sizes="36px" />
@@ -337,7 +337,7 @@ export function CreateSetWizard({
   const [showCloseConfirm, setShowCloseConfirm] = useState(false);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [instanceToRemove, setInstanceToRemove] = useState<string | null>(null);
-  const [previewExercise, setPreviewExercise] = useState<Exercise | null>(null);
+  const [previewExercise, setPreviewExercise] = useState<ExerciseExecutionCardData | null>(null);
   const [isGeneratingName, setIsGeneratingName] = useState(false);
 
   // DnD sensors
@@ -378,13 +378,6 @@ export function CreateSetWizard({
       setIsGeneratingName(false);
     }
   }, [open, patientName]);
-
-  // Clear preview when exercise has no images (avoid leaving lightbox closed but state set)
-  useEffect(() => {
-    if (previewExercise && buildExerciseImageUrls(previewExercise).length === 0) {
-      setPreviewExercise(null);
-    }
-  }, [previewExercise]);
 
   // GraphQL queries
   const { data: exercisesData, loading: loadingExercises } = useQuery(GET_AVAILABLE_EXERCISES_QUERY, {
@@ -593,6 +586,13 @@ export function CreateSetWizard({
       return next;
     });
   }, []);
+
+  const openExercisePreview = useCallback(
+    (exercise: Exercise, params?: ExerciseParams) => {
+      setPreviewExercise(fromBuilderExercise(exercise, params ?? getDefaultParams(exercise)));
+    },
+    [getDefaultParams]
+  );
 
   const handleConfirmClear = useCallback(() => {
     setSelectedInstances([]);
@@ -984,7 +984,7 @@ export function CreateSetWizard({
                               exercise={exercise}
                               instanceCount={selectedInstances.filter((si) => si.exerciseId === exercise.id).length}
                               onAdd={() => addExerciseToSet(exercise)}
-                              onPreview={() => setPreviewExercise(exercise)}
+                              onPreview={() => openExercisePreview(exercise)}
                               getExerciseTags={getExerciseTags}
                               badge={`${exercisePopularity[exercise.id]}x`}
                             />
@@ -1016,7 +1016,7 @@ export function CreateSetWizard({
                               exercise={exercise}
                               instanceCount={selectedInstances.filter((si) => si.exerciseId === exercise.id).length}
                               onAdd={() => addExerciseToSet(exercise)}
-                              onPreview={() => setPreviewExercise(exercise)}
+                              onPreview={() => openExercisePreview(exercise)}
                               getExerciseTags={getExerciseTags}
                             />
                           ));
@@ -1089,7 +1089,12 @@ export function CreateSetWizard({
                           params={exerciseParams.get(data.instanceId) || getDefaultParams(data.exercise)}
                           onUpdateParams={(field, value) => updateExerciseParams(data.instanceId, field, value)}
                           onRemove={() => setInstanceToRemove(data.instanceId)}
-                          onPreview={() => setPreviewExercise(data.exercise)}
+                          onPreview={() =>
+                            openExercisePreview(
+                              data.exercise,
+                              exerciseParams.get(data.instanceId) ?? getDefaultParams(data.exercise)
+                            )
+                          }
                         />
                       ))}
                     </div>
@@ -1167,20 +1172,14 @@ export function CreateSetWizard({
         onConfirm={handleConfirmRemoveInstance}
       />
 
-      {/* Exercise image gallery lightbox */}
-      {previewExercise && (() => {
-        const gallery = buildExerciseImageUrls(previewExercise);
-        if (gallery.length === 0) return null;
-        return (
-          <ImageLightbox
-            src={gallery[0]}
-            alt={previewExercise.name}
-            open={true}
-            onOpenChange={(open) => !open && setPreviewExercise(null)}
-            images={gallery}
-          />
-        );
-      })()}
+      <ExercisePreviewDialog
+        open={previewExercise !== null}
+        exercise={previewExercise}
+        onOpenChange={(isOpen) => {
+          if (!isOpen) setPreviewExercise(null);
+        }}
+        testIdPrefix="set-create-wizard-preview"
+      />
     </Dialog>
   );
 }

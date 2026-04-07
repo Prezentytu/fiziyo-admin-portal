@@ -14,6 +14,14 @@ Dziennik wniosków z pracy AI agentów. Po każdej korekcie dodaj nowy wpis.
 
 ## Wpisy
 
+### 2026-04-07 - Preview detalu musi fallbackowac do miniatury
+
+- **Kategoria**: `UI/UX`
+- **Problem**: W części flow miniatura ćwiczenia była widoczna, ale po kliknięciu nowy podgląd detalu czasem pokazywał pusty media-state.
+- **Przyczyna**: Podgląd bazował głównie na `imageUrls`, podczas gdy niektóre rekordy miały tylko `thumbnailUrl` albo mieszane URL-e wymagające defensywnego mapowania.
+- **Rozwiązanie**: Wspólny `ExercisePreviewDialog` dostał fallback do `thumbnailUrl` i bezpieczne mapowanie URL-i (`getMediaUrl(...) ?? raw`), dzięki czemu media są spójne między miniaturą a podglądem.
+- **Reguła**: Jeśli UI używa miniatury jako punktu wejścia do detalu, detal musi dziedziczyć ten sam fallback obrazu (thumbnail-first), a nie polegać wyłącznie na oddzielnej liście galerii.
+
 ### 2026-04-07 - Spójność detalu ćwiczenia wymaga jednego registry prezentacji
 
 - **Kategoria**: `UI/UX`

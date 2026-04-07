@@ -17,7 +17,13 @@ vi.mock('@apollo/client/react', () => ({
 describe('AddExerciseToSetDialog', () => {
   beforeEach(() => {
     mockUseQuery.mockReturnValue({
-      data: { availableExercises: [] },
+      data: {
+        availableExercises: [],
+        exerciseTags: [],
+        tagsByOrganizationId: [],
+        exerciseSets: [],
+        exerciseSetById: { exerciseMappings: [] },
+      },
       loading: false,
     });
     mockUseMutation.mockReturnValue(vi.fn().mockResolvedValue({}));
@@ -81,5 +87,44 @@ describe('AddExerciseToSetDialog', () => {
     );
 
     expect(screen.queryByTestId('set-add-exercise-dialog')).not.toBeInTheDocument();
+  });
+
+  it('opens unified exercise preview when thumbnail is clicked', async () => {
+    const user = userEvent.setup();
+
+    mockUseQuery.mockReturnValue({
+      data: {
+        availableExercises: [
+          {
+            id: 'exercise-1',
+            name: 'Mostek',
+            imageUrl: '/image-1.jpg',
+            images: ['/image-1.jpg', '/image-2.jpg'],
+            defaultSets: 3,
+            defaultReps: 10,
+            scope: 'ORGANIZATION',
+          },
+        ],
+        exerciseTags: [],
+        tagsByOrganizationId: [],
+        exerciseSets: [],
+        exerciseSetById: { exerciseMappings: [] },
+      },
+      loading: false,
+    });
+
+    render(
+      <AddExerciseToSetDialog
+        open
+        onOpenChange={() => {}}
+        exerciseSetId="set-1"
+        organizationId="org-1"
+      />
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Podgląd ćwiczenia: Mostek' }));
+
+    expect(screen.getByTestId('set-add-exercise-preview-dialog')).toBeInTheDocument();
+    expect(screen.getByTestId('set-add-exercise-preview-params')).toBeInTheDocument();
   });
 });
