@@ -1,3 +1,5 @@
+import { formatDurationPolish } from '@/utils/durationPolish';
+
 export type ExerciseFieldGroup = 'dosage' | 'execution' | 'content' | 'classification';
 
 export type ExerciseFieldIconKey =
@@ -88,6 +90,11 @@ const asPositiveSeconds = (value?: number): string | null => {
   return `${value}s`;
 };
 
+const asReadableDuration = (value?: number): string | null => {
+  if (value == null || value <= 0) return null;
+  return formatDurationPolish(value);
+};
+
 const asPositiveNumber = (value?: number): string | null => {
   if (value == null || value <= 0) return null;
   return String(value);
@@ -148,7 +155,7 @@ export const EXERCISE_FIELD_METADATA: Record<ExerciseFieldKey, ExerciseFieldMeta
     group: 'dosage',
     isInlineVisible: true,
     isDialogVisible: true,
-    formatValue: (viewModel) => asPositiveSeconds(viewModel.duration),
+    formatValue: (viewModel) => asReadableDuration(viewModel.duration),
   },
   executionTime: {
     key: 'executionTime',
@@ -300,8 +307,8 @@ export const INLINE_EXERCISE_FIELD_ORDER: ExerciseFieldKey[] = [
 export const DIALOG_EXERCISE_FIELD_ORDER: ExerciseFieldKey[] = [
   'sets',
   'reps',
-  'duration',
   'executionTime',
+  'duration',
   'restSets',
   'restReps',
   'preparationTime',

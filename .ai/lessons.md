@@ -14,6 +14,14 @@ Dziennik wniosków z pracy AI agentów. Po każdej korekcie dodaj nowy wpis.
 
 ## Wpisy
 
+### 2026-04-08 - Czas serii w odczycie nie może być surową liczbą sekund
+
+- **Kategoria**: `UI/UX`
+- **Problem**: W wielu ekranach `duration` (`Czas serii`) był renderowany jako `300s` lub `300 sekund`, co utrudniało szybkie zrozumienie dawkowania.
+- **Przyczyna**: Rozproszone, lokalne formatowanie czasu (`${value}s`) bez wspólnego formattera dla odczytowego `Czasu serii`.
+- **Rozwiązanie**: Wprowadzono wspólny formatter czasu trwania po polsku i przepięto na niego wszystkie odczytowe powierzchnie `duration`, pozostawiając inputy edycyjne w sekundach.
+- **Reguła**: Dla pól czasu o znaczeniu biznesowym (`Czas serii`) w odczycie używaj human-readable formatu (minuty/sekundy), a nie surowych sekund.
+
 ### 2026-04-08 - Jedna semantyka czasu dla całego flow ćwiczeń
 
 - **Kategoria**: `UI/UX`

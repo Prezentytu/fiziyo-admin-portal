@@ -1,3 +1,5 @@
+import { formatDurationPolish as formatDurationPolishShared, formatSecondsPolish } from '@/utils/durationPolish';
+
 /**
  * Funkcje pomocnicze do polskiej odmiany i formatowania
  */
@@ -24,36 +26,14 @@ export function formatReps(count: number): string {
  * Odmiana polska dla sekund
  */
 export function formatSeconds(count: number): string {
-  if (count === 1) return '1 sekunda';
-  if (count >= 2 && count <= 4) return `${count} sekundy`;
-  return `${count} sekund`;
+  return formatSecondsPolish(count);
 }
 
 /**
  * Formatowanie czasu trwania w czytelnej formie
  */
 export function formatDurationPolish(seconds: number): string {
-  if (seconds < 60) {
-    return formatSeconds(seconds);
-  }
-
-  const minutes = Math.floor(seconds / 60);
-  const remainingSeconds = seconds % 60;
-
-  let result = '';
-  if (minutes === 1) {
-    result = '1 minuta';
-  } else if (minutes >= 2 && minutes <= 4) {
-    result = `${minutes} minuty`;
-  } else {
-    result = `${minutes} minut`;
-  }
-
-  if (remainingSeconds > 0) {
-    result += ` ${formatSeconds(remainingSeconds)}`;
-  }
-
-  return result;
+  return formatDurationPolishShared(seconds);
 }
 
 /**

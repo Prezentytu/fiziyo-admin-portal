@@ -5,6 +5,7 @@ import { Check, Trash2, Dumbbell, ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { formatDurationPolish } from '@/utils/durationPolish';
 import type { ExtractedExercise, MatchSuggestion, ExerciseDecision } from '@/types/import.types';
 
 interface ConfidentMatchRowProps {
@@ -66,7 +67,7 @@ export function ConfidentMatchRow({ exercise, match, decision, onSkip, className
             <p className="text-xs text-muted-foreground mt-2">
               Serie: {exercise.sets}
               {exercise.reps && `, Powtórzenia: ${exercise.reps}`}
-              {exercise.duration && `, Czas serii: ${exercise.duration}s`}
+              {exercise.duration && `, Czas serii: ${formatDurationPolish(exercise.duration)}`}
             </p>
           )}
         </TooltipContent>

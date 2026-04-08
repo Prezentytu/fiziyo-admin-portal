@@ -47,6 +47,7 @@ import { useVoiceInput } from '@/hooks/useVoiceInput';
 import { aiService } from '@/services/aiService';
 import type { ExerciseSuggestionResponse } from '@/services/aiService';
 import { calculateSeriesTimeSeconds } from './utils/calculateSeriesTime';
+import { formatDurationPolish } from '@/utils/durationPolish';
 
 // ============================================================
 // CLEAN NUMBER INPUT - Pure number, no steppers (Linear/Vercel style)
@@ -701,8 +702,8 @@ function AIDiffDrawer({
             {hasDifferentDuration && suggestion.duration && (
               <SuggestionCard
                 label="Czas serii"
-                currentValue={`${currentData.duration || 0}s`}
-                suggestedValue={`${suggestion.duration}s`}
+                currentValue={currentData.duration ? formatDurationPolish(currentData.duration) : '—'}
+                suggestedValue={formatDurationPolish(suggestion.duration)}
                 reason="Sugerowany czas serii dla wariantu time-based"
                 onAccept={() => onAcceptField('duration', suggestion.duration)}
                 priority="low"
@@ -1917,7 +1918,7 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
               >
                 <span className="font-medium text-foreground">Czas serii (wyliczany): </span>
                 <span data-testid="exercise-create-series-time-value">
-                  {computedSeriesDurationSeconds != null ? `${computedSeriesDurationSeconds}s` : '—'}
+                  {computedSeriesDurationSeconds != null ? formatDurationPolish(computedSeriesDurationSeconds) : '—'}
                 </span>
                 {data.duration && data.duration > 0 && (
                   <span className="ml-2 text-text-tertiary">(tryb czasowy: ręcznie ustawiony czas serii)</span>

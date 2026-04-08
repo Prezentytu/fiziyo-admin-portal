@@ -26,6 +26,7 @@ import { ImagePlaceholder } from '@/components/shared/ImagePlaceholder';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { cn } from '@/lib/utils';
 import { getMediaUrl } from '@/utils/mediaUrl';
+import { formatDurationPolish } from '@/utils/durationPolish';
 import { translateExerciseSidePolish } from '@/components/pdf/polishUtils';
 import type { ExerciseSet, ExerciseMapping, ExerciseOverride } from './types';
 
@@ -316,8 +317,11 @@ export function CustomizeExercisesStep({
                       {getEffectiveValue<number | undefined>(mapping, 'reps') && (
                         <span>• {getEffectiveValue<number>(mapping, 'reps')} powt.</span>
                       )}
+                      {getEffectiveValue<number | undefined>(mapping, 'executionTime') && (
+                        <span>• Czas powt.: {getEffectiveValue<number>(mapping, 'executionTime')}s</span>
+                      )}
                       {getEffectiveValue<number | undefined>(mapping, 'duration') && (
-                        <span>• {getEffectiveValue<number>(mapping, 'duration')}s</span>
+                        <span>• Czas serii: {formatDurationPolish(getEffectiveValue<number>(mapping, 'duration'))}</span>
                       )}
                     </div>
                   </div>
@@ -406,7 +410,7 @@ export function CustomizeExercisesStep({
                 {/* Main parameters - vertical, full width, clear labels */}
                 {renderFullWidthStepper(selectedMapping, 'Serie', 'sets')}
                 {renderFullWidthStepper(selectedMapping, 'Powtórzenia', 'reps')}
-                {renderFullWidthStepper(selectedMapping, 'Czas trwania ćwiczenia', 'duration', 's', 5)}
+                {renderFullWidthStepper(selectedMapping, 'Czas powtórzenia', 'executionTime', 's', 5)}
                 {renderFullWidthStepper(selectedMapping, 'Przerwa między seriami', 'restSets', 's', 5)}
 
                 {/* Notes - always visible, bigger */}
@@ -493,7 +497,7 @@ export function CustomizeExercisesStep({
                       <div className="space-y-2 p-3 rounded-xl bg-surface-light/30 border border-border/30">
                         {renderSmallInput(selectedMapping, 'Przerwa między powtórzeniami', 'restReps', 's', 1)}
                         {renderSmallInput(selectedMapping, 'Czas przygotowania', 'preparationTime', 's', 5)}
-                        {renderSmallInput(selectedMapping, 'Czas wykonania powtórzenia', 'executionTime', 's', 5)}
+                        {renderSmallInput(selectedMapping, 'Czas serii (override)', 'duration', 's', 5)}
                       </div>
                     </div>
                   </CollapsibleContent>
