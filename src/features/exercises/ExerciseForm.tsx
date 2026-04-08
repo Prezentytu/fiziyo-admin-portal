@@ -90,6 +90,7 @@ export function ExerciseForm({
 
   const handleSubmit = async (values: ExerciseFormValues) => {
     try {
+      // Keep backend-compatible inference: explicit duration override means time-based.
       const inferredType: ExerciseFormValues['type'] = (values.duration ?? 0) > 0 ? 'time' : 'reps';
       await onSubmit({ ...values, type: inferredType });
     } catch (error) {
@@ -219,24 +220,24 @@ export function ExerciseForm({
 
           <FormField
             control={form.control}
-            name="duration"
+            name="executionTime"
             render={({ field }) => (
               <FormItem>
                 <ExerciseFieldLabelWithTooltip
-                  label="Czas serii (sekundy)"
-                  tooltip={EXERCISE_FIELD_TOOLTIPS.duration}
-                  testId="exercise-form-duration-info"
+                  label="Czas powtórzenia (s)"
+                  tooltip={EXERCISE_FIELD_TOOLTIPS.executionTime}
+                  testId="exercise-form-execution-time-info"
                 />
                 <FormControl>
                   <Input
                     type="number"
                     min="0"
-                    max="3600"
+                    max="300"
                     value={field.value ?? ''}
                     onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : null)}
                   />
                 </FormControl>
-                <FormDescription>Opcjonalne. Jeśli ustawione, zapis zostanie oznaczony technicznie jako tryb czasu.</FormDescription>
+                <FormDescription>Wartość {`>`} 0 uruchamia timer w aplikacji pacjenta.</FormDescription>
                 <FormMessage />
               </FormItem>
             )}
@@ -322,23 +323,24 @@ export function ExerciseForm({
 
           <FormField
             control={form.control}
-            name="executionTime"
+            name="duration"
             render={({ field }) => (
               <FormItem>
                 <ExerciseFieldLabelWithTooltip
-                  label="Czas powtórzenia (s)"
-                  tooltip={EXERCISE_FIELD_TOOLTIPS.executionTime}
-                  testId="exercise-form-execution-time-info"
+                  label="Czas serii (tryb czasowy, s)"
+                  tooltip={EXERCISE_FIELD_TOOLTIPS.duration}
+                  testId="exercise-form-duration-info"
                 />
                 <FormControl>
                   <Input
                     type="number"
                     min="0"
-                    max="300"
+                    max="3600"
                     value={field.value ?? ''}
                     onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : null)}
                   />
                 </FormControl>
+                <FormDescription>Opcjonalne pole dla ćwiczeń liczonych czasem zamiast powtórzeń.</FormDescription>
                 <FormMessage />
               </FormItem>
             )}

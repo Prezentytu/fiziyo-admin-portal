@@ -146,18 +146,6 @@ export function ExerciseDetailsPanel({
               data-testid="verification-details-reps"
             />
             <ClickableStat
-              value={exercise.defaultDuration ?? null}
-              label="Czas serii"
-              unit="s"
-              min={0}
-              max={600}
-              step={5}
-              onCommit={handleFieldCommit('defaultDuration')}
-              icon={<Timer className="h-4 w-4" />}
-              disabled={disabled}
-              data-testid="verification-details-duration"
-            />
-            <ClickableStat
               value={exercise.defaultExecutionTime ?? null}
               label="Czas powtórzenia"
               unit="s"
@@ -168,6 +156,18 @@ export function ExerciseDetailsPanel({
               icon={<Timer className="h-4 w-4" />}
               disabled={disabled}
               data-testid="verification-details-execution-time"
+            />
+            <ClickableStat
+              value={exercise.defaultDuration ?? null}
+              label="Czas serii"
+              unit="s"
+              min={0}
+              max={600}
+              step={5}
+              onCommit={handleFieldCommit('defaultDuration')}
+              icon={<Timer className="h-4 w-4" />}
+              disabled={disabled}
+              data-testid="verification-details-duration"
             />
           </ClickableStatGroup>
         </div>

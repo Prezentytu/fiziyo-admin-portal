@@ -15,8 +15,8 @@ describe('displayRegistry', () => {
     expect(DIALOG_EXERCISE_FIELD_ORDER).toEqual([
       'sets',
       'reps',
-      'duration',
       'executionTime',
+      'duration',
       'restSets',
       'restReps',
       'preparationTime',
@@ -36,7 +36,7 @@ describe('displayRegistry', () => {
     const source = normalizeExerciseFieldValues({
       defaultSets: 3,
       defaultReps: 10,
-      defaultDuration: null,
+      defaultDuration: 300,
       defaultExecutionTime: 12,
       defaultRestBetweenSets: 60,
       side: 'LEFT',
@@ -44,7 +44,7 @@ describe('displayRegistry', () => {
 
     expect(formatFieldValueWithPlaceholder(EXERCISE_FIELD_METADATA.sets, source)).toBe('3');
     expect(formatFieldValueWithPlaceholder(EXERCISE_FIELD_METADATA.reps, source)).toBe('10');
-    expect(formatFieldValueWithPlaceholder(EXERCISE_FIELD_METADATA.duration, source)).toBe(EMPTY_NUMERIC_VALUE);
+    expect(formatFieldValueWithPlaceholder(EXERCISE_FIELD_METADATA.duration, source)).toBe('5 minut');
     expect(formatFieldValueWithPlaceholder(EXERCISE_FIELD_METADATA.executionTime, source)).toBe('12s');
     expect(formatFieldValueWithPlaceholder(EXERCISE_FIELD_METADATA.side, source, 'Nie ustawiono')).toBe('Lewa strona');
   });

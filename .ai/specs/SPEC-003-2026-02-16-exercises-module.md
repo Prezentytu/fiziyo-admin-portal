@@ -45,15 +45,15 @@ Wszystkie powierzchnie UI wyświetlające szczegóły ćwiczenia muszą korzysta
 
 ### Kanoniczna kolejność pól
 
-1. **Dawkowanie**: `Serie`, `Powtórzenia`, `Czas serii`, `Czas powtórzenia`
+1. **Dawkowanie**: `Serie`, `Powtórzenia`, `Czas powtórzenia`, `Czas serii`
 2. **Wykonanie**: `Przerwa między seriami`, `Przerwa między powt.`, `Czas przygotowania`, `Tempo`, `Obciążenie`, `Strona ciała`, `Zakres ruchu (ROM)`, `Poziom trudności`
 3. **Treść**: `Opis dla pacjenta`, `Opis kliniczny`, `Polecenia audio`, `Notatki`
 
 ### Zasady etykiet
 
 - Etykiety czasu i przerw muszą być precyzyjne:
-  - `Czas serii` (`duration`)
-  - `Czas powtórzenia` (`executionTime`)
+  - `Czas powtórzenia` (`executionTime`) — główny parametr wejściowy timera
+  - `Czas serii` (`duration`) — pole time-based; w kreatorze może być prezentowane jako wartość wyliczana
   - `Przerwa między seriami` (`restSets`)
   - `Przerwa między powt.` (`restReps`)
 - Nie używamy ogólnych etykiet typu `Czas` lub `Przerwa` bez doprecyzowania.
@@ -134,6 +134,12 @@ Prefiks: `exercise-`
 - `exercise-voice-input-btn`
 
 ## Changelog
+
+### 2026-04-08
+
+- Zaktualizowano semantykę dawkowania: `Czas powtórzenia` jest głównym parametrem wejściowym, a `Czas serii` opisano jako pole time-based / computed display w kreatorze.
+- Doprecyzowano zasady etykiet czasowych pod kątem spójności create/edit/detail.
+- Dodano odwołanie do `SPEC-012` jako single source of truth dla modelu `sets × reps × executionTime` oraz roli `duration` jako override time-based.
 
 ### 2026-04-07
 

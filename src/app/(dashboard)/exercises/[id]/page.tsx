@@ -74,6 +74,8 @@ import { translateExerciseSidePolish } from '@/components/pdf/polishUtils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { getNextExerciseCopyName } from '@/features/exercises/utils/getNextExerciseCopyName';
+import { calculateSeriesTimeSeconds } from '@/features/exercises/utils/calculateSeriesTime';
+import { formatDurationPolish } from '@/utils/durationPolish';
 
 interface ExerciseDetailPageProps {
   params: Promise<{ id: string }>;
@@ -318,6 +320,13 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
 
   const normalizedFields = normalizeExerciseFieldValues(exercise);
 
+  const computedSeriesTimeSeconds = calculateSeriesTimeSeconds({
+    duration: normalizedFields.duration,
+    reps: normalizedFields.reps,
+    executionTime: normalizedFields.executionTime,
+    restReps: normalizedFields.restReps,
+  });
+
   const quickStats = [
     {
       id: 'sets',
@@ -333,20 +342,29 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
       icon: Dumbbell,
       color: 'text-secondary',
     },
-    {
-      id: 'duration',
-      label: EXERCISE_FIELD_METADATA.duration.label,
-      value: formatFieldValueWithPlaceholder(EXERCISE_FIELD_METADATA.duration, normalizedFields),
-      icon: Timer,
-      color: 'text-info',
-    },
-    {
-      id: 'executionTime',
-      label: EXERCISE_FIELD_METADATA.executionTime.label,
-      value: formatFieldValueWithPlaceholder(EXERCISE_FIELD_METADATA.executionTime, normalizedFields),
-      icon: Clock,
-      color: 'text-info',
-    },
+    ...(normalizedFields.executionTime
+      ? [
+          {
+            id: 'executionTime',
+            label: EXERCISE_FIELD_METADATA.executionTime.label,
+            value: formatFieldValueWithPlaceholder(EXERCISE_FIELD_METADATA.executionTime, normalizedFields),
+            icon: Clock,
+            color: 'text-info',
+          },
+        ]
+      : []),
+    ...(computedSeriesTimeSeconds != null
+      ? [
+          {
+            id: 'seriesTime',
+            label:
+              normalizedFields.duration && !normalizedFields.executionTime ? 'Czas serii' : 'Czas serii (wyliczany)',
+            value: formatDurationPolish(computedSeriesTimeSeconds),
+            icon: Timer,
+            color: 'text-info',
+          },
+        ]
+      : []),
   ];
 
   const detailStats = [

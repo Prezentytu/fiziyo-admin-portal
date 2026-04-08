@@ -1,29 +1,35 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useQuery, useMutation } from '@apollo/client/react';
 import { useUser } from '@clerk/nextjs';
 import { ShieldCheck, Search, RefreshCw, LayoutGrid, List, Clock, User, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { VerificationStatsCards } from '@/features/verification/VerificationStatsCards';
 import { VerificationTaskCard } from '@/features/verification/VerificationTaskCard';
 import { ReviewerAchievements } from '@/features/verification/ReviewerAchievements';
 import { VerificationIntro } from '@/features/verification/VerificationIntro';
 import { useSystemRole } from '@/hooks/useSystemRole';
-import { getExerciseReports } from '@/services/exerciseReportService';
+import { getExerciseReports, getExerciseReportsPage } from '@/services/exerciseReportService';
+import {
+  buildVerificationSearchParams,
+  clampVerificationPageSize,
+  parsePositiveInt,
+  parseVerificationFilter,
+  parseVerificationView,
+} from '@/features/verification/utils/verificationPagination';
 
 import { GET_USER_BY_CLERK_ID_QUERY } from '@/graphql/queries/users.queries';
 import {
-  GET_PENDING_EXERCISES_QUERY,
-  GET_CHANGES_REQUESTED_EXERCISES_QUERY,
-  GET_PUBLISHED_EXERCISES_QUERY,
-  GET_ARCHIVED_EXERCISES_QUERY,
   GET_VERIFICATION_STATS_QUERY,
+  GET_VERIFICATION_QUEUE_PAGE_QUERY,
 } from '@/graphql/queries/adminExercises.queries';
 import {
   SCAN_EXERCISE_REPOSITORY_MUTATION,
@@ -37,11 +43,9 @@ import { getMediaUrl } from '@/utils/mediaUrl';
 import { cn } from '@/lib/utils';
 import type { UserByClerkIdResponse } from '@/types/apollo';
 import type {
-  GetPendingReviewExercisesResponse,
-  GetChangesRequestedExercisesResponse,
-  GetPublishedExercisesResponse,
-  GetArchivedExercisesResponse,
   GetVerificationStatsResponse,
+  GetVerificationQueuePageResponse,
+  GetVerificationQueuePageVariables,
   UnpublishExerciseResponse,
   AdminExercise,
 } from '@/graphql/types/adminExercise.types';
@@ -67,10 +71,12 @@ function VerificationTaskRow({
   exercise,
   onUnpublish,
   isUnpublishing,
+  detailHref,
 }: {
   exercise: AdminExercise;
   onUnpublish?: (id: string) => void;
   isUnpublishing?: boolean;
+  detailHref?: string;
 }) {
   const imageUrl = getMediaUrl(exercise.thumbnailUrl || exercise.imageUrl || exercise.images?.[0]);
 
@@ -82,7 +88,7 @@ function VerificationTaskRow({
   const status = statusConfig[exercise.status] || { label: 'Szkic', className: 'bg-muted text-muted-foreground' };
 
   return (
-    <Link href={`/verification/${exercise.id}`}>
+    <Link href={detailHref ?? `/verification/${exercise.id}`}>
       <div
         className={cn(
           'group flex items-center gap-4 p-3 rounded-lg border border-border/60 bg-surface/50',
@@ -193,14 +199,72 @@ interface ImportToReviewResult {
 export default function VerificationPage() {
   const { user: clerkUser } = useUser();
   const { canReviewExercises, isLoading: roleLoading } = useSystemRole();
-  const [searchQuery, setSearchQuery] = useState('');
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  const initialFilter = parseVerificationFilter(searchParams.get('filter'));
+  const initialView = parseVerificationView(searchParams.get('view'));
+  const initialSearch = searchParams.get('search') ?? '';
+  const initialPage = parsePositiveInt(searchParams.get('page'), 1);
+  const initialPageSize = clampVerificationPageSize(parsePositiveInt(searchParams.get('pageSize'), 20));
+
+  const [searchQuery, setSearchQuery] = useState(initialSearch);
+  const [debouncedSearch, setDebouncedSearch] = useState(initialSearch);
   const [activeFilter, setActiveFilter] = useState<'pending' | 'changes' | 'published' | 'archived' | 'reported'>(
-    'pending'
+    initialFilter
   );
   const [scanResult, setScanResult] = useState<RepositoryScanResult | null>(null);
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  const [openReports, setOpenReports] = useState<ExerciseReport[]>([]);
-  const [reportsLoading, setReportsLoading] = useState(false);
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>(initialView);
+  const [page, setPage] = useState(initialPage);
+  const [pageSize, setPageSize] = useState(initialPageSize);
+  const [pageOpenReports, setPageOpenReports] = useState<ExerciseReport[]>([]);
+  const [pageReportsLoading, setPageReportsLoading] = useState(false);
+  const [reportedExercises, setReportedExercises] = useState<AdminExercise[]>([]);
+  const [reportedLoading, setReportedLoading] = useState(false);
+  const [reportedPageMeta, setReportedPageMeta] = useState({
+    totalCount: 0,
+    page: 1,
+    pageSize: initialPageSize,
+    totalPages: 0,
+    hasPreviousPage: false,
+    hasNextPage: false,
+  });
+  const [reportedCount, setReportedCount] = useState(0);
+
+  const updateUrlState = useCallback(
+    (nextState: {
+      filter?: 'pending' | 'changes' | 'published' | 'archived' | 'reported';
+      search?: string;
+      page?: number;
+      pageSize?: number;
+      view?: 'grid' | 'list';
+    }) => {
+      const nextFilter = nextState.filter ?? activeFilter;
+      const nextSearch = nextState.search ?? searchQuery;
+      const nextPage = nextState.page ?? page;
+      const nextPageSize = nextState.pageSize ?? pageSize;
+      const nextView = nextState.view ?? viewMode;
+
+      const params = buildVerificationSearchParams({
+        filter: nextFilter,
+        search: nextSearch,
+        page: nextPage,
+        pageSize: nextPageSize,
+        view: nextView,
+      });
+
+      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+    },
+    [activeFilter, searchQuery, page, pageSize, viewMode, router, pathname]
+  );
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery.trim());
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   // Get user data
   const { data: userData } = useQuery<UserByClerkIdResponse>(GET_USER_BY_CLERK_ID_QUERY, {
@@ -220,64 +284,25 @@ export default function VerificationPage() {
     refetch: refetchStats,
   } = useQuery<GetVerificationStatsResponse>(GET_VERIFICATION_STATS_QUERY, { skip: !canReviewExercises });
 
-  // Get pending exercises
+  const queueVariables = useMemo<GetVerificationQueuePageVariables>(
+    () => ({
+      filter: activeFilter,
+      search: debouncedSearch || null,
+      page,
+      pageSize,
+    }),
+    [activeFilter, debouncedSearch, page, pageSize]
+  );
+
   const {
-    data: pendingData,
-    loading: pendingLoading,
-    refetch: refetchPending,
-  } = useQuery<GetPendingReviewExercisesResponse>(GET_PENDING_EXERCISES_QUERY, {
-    skip: !canReviewExercises || (activeFilter !== 'pending' && activeFilter !== 'reported'),
+    data: queueData,
+    loading: queueLoading,
+    refetch: refetchQueue,
+  } = useQuery<GetVerificationQueuePageResponse, GetVerificationQueuePageVariables>(GET_VERIFICATION_QUEUE_PAGE_QUERY, {
+    variables: queueVariables,
+    skip: !canReviewExercises || activeFilter === 'reported',
+    fetchPolicy: 'cache-and-network',
   });
-
-  // Get exercises with changes requested
-  const {
-    data: changesData,
-    loading: changesLoading,
-    refetch: refetchChanges,
-  } = useQuery<GetChangesRequestedExercisesResponse>(GET_CHANGES_REQUESTED_EXERCISES_QUERY, {
-    skip: !canReviewExercises || (activeFilter !== 'changes' && activeFilter !== 'reported'),
-  });
-
-  // Get published exercises
-  const {
-    data: publishedData,
-    loading: publishedLoading,
-    refetch: refetchPublished,
-  } = useQuery<GetPublishedExercisesResponse>(GET_PUBLISHED_EXERCISES_QUERY, {
-    skip: !canReviewExercises || (activeFilter !== 'published' && activeFilter !== 'reported'),
-  });
-
-  // Get archived exercises (withdrawn from global)
-  const {
-    data: archivedData,
-    loading: archivedLoading,
-    refetch: refetchArchived,
-  } = useQuery<GetArchivedExercisesResponse>(GET_ARCHIVED_EXERCISES_QUERY, {
-    skip: !canReviewExercises || (activeFilter !== 'archived' && activeFilter !== 'reported'),
-  });
-
-  useEffect(() => {
-    if (!canReviewExercises) {
-      setOpenReports([]);
-      return;
-    }
-
-    let cancelled = false;
-
-    const loadReports = async () => {
-      setReportsLoading(true);
-      const reports = await getExerciseReports({ status: 'OPEN' });
-      if (!cancelled) {
-        setOpenReports(reports);
-        setReportsLoading(false);
-      }
-    };
-
-    loadReports();
-    return () => {
-      cancelled = true;
-    };
-  }, [canReviewExercises]);
 
   // Scan repository mutation
   const [scanRepository, { loading: scanning }] = useMutation<{ scanExerciseRepository: RepositoryScanResult }>(
@@ -312,9 +337,8 @@ export default function VerificationPage() {
         if (result.success) {
           toast.success(result.message || `Zaimportowano ${result.importedCount} ćwiczeń do weryfikacji.`);
           setScanResult(null); // Reset scan result
-          // Refetch queries
           refetchStats();
-          refetchPending();
+          refetchQueue();
         } else {
           toast.error(result.message || 'Błąd importowania');
         }
@@ -340,7 +364,7 @@ export default function VerificationPage() {
       onCompleted: () => {
         toast.success('Ćwiczenie zostało cofnięte do wersji roboczej.');
         refetchStats();
-        refetchPublished();
+        refetchQueue();
       },
       onError: (error) => {
         toast.error(`Błąd cofania publikacji: ${error.message}`);
@@ -352,50 +376,67 @@ export default function VerificationPage() {
     unpublishExercise({ variables: { exerciseId, reason } });
   };
 
-  // Combine and filter exercises based on active filter (cards)
-  const openReportsByExerciseId = useMemo(() => {
-    const grouped = new Map<string, ExerciseReport[]>();
-    for (const report of openReports) {
-      const current = grouped.get(report.exerciseId) || [];
-      current.push(report);
-      grouped.set(report.exerciseId, current);
+  useEffect(() => {
+    if (!canReviewExercises) {
+      setReportedCount(0);
+      return;
     }
-    return grouped;
-  }, [openReports]);
 
-  const reportedCount = openReportsByExerciseId.size;
-
-  const exercises = useMemo(() => {
-    let list: AdminExercise[] = [];
-
-    if (activeFilter === 'pending') {
-      list = pendingData?.pendingReviewExercises || [];
-    } else if (activeFilter === 'changes') {
-      list = changesData?.changesRequestedExercises || [];
-    } else if (activeFilter === 'published') {
-      list = publishedData?.exercisesByStatus || [];
-    } else if (activeFilter === 'archived') {
-      list = archivedData?.exercisesByStatus || [];
-    } else if (activeFilter === 'reported') {
-      const allKnownExercises = [
-        ...(pendingData?.pendingReviewExercises || []),
-        ...(changesData?.changesRequestedExercises || []),
-        ...(publishedData?.exercisesByStatus || []),
-        ...(archivedData?.exercisesByStatus || []),
-      ];
-      const byId = new Map<string, AdminExercise>();
-      for (const exercise of allKnownExercises) {
-        byId.set(exercise.id, exercise);
+    let cancelled = false;
+    getExerciseReportsPage({ status: 'OPEN', page: 1, pageSize: 1 }).then((response) => {
+      if (!cancelled) {
+        setReportedCount(response.totalCount);
       }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [canReviewExercises]);
 
-      const reportedExercises: AdminExercise[] = [];
-      for (const [exerciseId, reports] of openReportsByExerciseId.entries()) {
-        const known = byId.get(exerciseId);
-        const latestReport = [...reports].sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0];
+  useEffect(() => {
+    if (!canReviewExercises || activeFilter !== 'reported') {
+      setReportedExercises([]);
+      return;
+    }
 
-        if (known) {
-          reportedExercises.push({
-            ...known,
+    let cancelled = false;
+    setReportedLoading(true);
+
+    getExerciseReportsPage({
+      status: 'OPEN',
+      search: debouncedSearch || undefined,
+      page,
+      pageSize,
+    })
+      .then((response) => {
+        if (cancelled) {
+          return;
+        }
+
+        setReportedPageMeta({
+          totalCount: response.totalCount,
+          page: response.page,
+          pageSize: response.pageSize,
+          totalPages: response.totalPages,
+          hasPreviousPage: response.hasPreviousPage,
+          hasNextPage: response.hasNextPage,
+        });
+
+        const grouped = new Map<string, ExerciseReport[]>();
+        for (const report of response.reports) {
+          const current = grouped.get(report.exerciseId) || [];
+          current.push(report);
+          grouped.set(report.exerciseId, current);
+        }
+
+        const mappedExercises: AdminExercise[] = Array.from(grouped.entries()).map(([exerciseId, reports]) => {
+          const latestReport = [...reports].sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0];
+          return {
+            id: exerciseId,
+            name: latestReport.exerciseName,
+            type: 'REPS',
+            isActive: true,
+            status: latestReport.routingTarget === 'UPDATE_PENDING' ? 'PUBLISHED' : 'PENDING_REVIEW',
             hasOpenReport: true,
             openReportCount: reports.length,
             latestReport: {
@@ -405,58 +446,73 @@ export default function VerificationPage() {
               createdAt: latestReport.createdAt,
               routingTarget: latestReport.routingTarget,
             },
-          });
-          continue;
-        }
-
-        reportedExercises.push({
-          id: exerciseId,
-          name: latestReport.exerciseName,
-          type: 'REPS',
-          isActive: true,
-          status: latestReport.routingTarget === 'UPDATE_PENDING' ? 'PUBLISHED' : 'PENDING_REVIEW',
-          hasOpenReport: true,
-          openReportCount: reports.length,
-          latestReport: {
-            reasonCategory: latestReport.reasonCategory,
-            description: latestReport.description,
-            reporterName: latestReport.reportedBy.name,
-            createdAt: latestReport.createdAt,
-            routingTarget: latestReport.routingTarget,
-          },
+          };
         });
-      }
-
-      list = reportedExercises;
-    }
-
-    // Deduplikacja po ID - usuwa duplikaty z backendu
-    const seenIds = new Set<string>();
-    list = list.filter((ex) => {
-      if (seenIds.has(ex.id)) {
-        return false;
-      }
-      seenIds.add(ex.id);
-      return true;
-    });
-
-    // Apply search filter
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      list = list.filter((exercise) => {
-        return (
-          exercise.name.toLowerCase().includes(query) ||
-          exercise.description?.toLowerCase().includes(query) ||
-          exercise.createdBy?.fullname?.toLowerCase().includes(query) ||
-          exercise.createdBy?.email?.toLowerCase().includes(query) ||
-          exercise.latestReport?.description.toLowerCase().includes(query) ||
-          exercise.latestReport?.reasonCategory.toLowerCase().includes(query)
-        );
+        setReportedExercises(mappedExercises);
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setReportedLoading(false);
+        }
       });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [canReviewExercises, activeFilter, debouncedSearch, page, pageSize]);
+
+  useEffect(() => {
+    if (!canReviewExercises || activeFilter === 'reported') {
+      setPageOpenReports([]);
+      return;
     }
 
-    if (activeFilter !== 'reported') {
-      list = list.map((exercise) => {
+    const queueItems = queueData?.verificationQueuePage.items ?? [];
+    if (queueItems.length === 0) {
+      setPageOpenReports([]);
+      return;
+    }
+
+    let cancelled = false;
+    setPageReportsLoading(true);
+
+    getExerciseReports({
+      status: 'OPEN',
+      exerciseIds: queueItems.map((exercise) => exercise.id),
+    })
+      .then((reports) => {
+        if (!cancelled) {
+          setPageOpenReports(reports);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setPageReportsLoading(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [canReviewExercises, activeFilter, queueData]);
+
+  const openReportsByExerciseId = useMemo(() => {
+    const grouped = new Map<string, ExerciseReport[]>();
+    for (const report of pageOpenReports) {
+      const current = grouped.get(report.exerciseId) || [];
+      current.push(report);
+      grouped.set(report.exerciseId, current);
+    }
+    return grouped;
+  }, [pageOpenReports]);
+
+  const exercises = useMemo(() => {
+    if (activeFilter === 'reported') {
+      return reportedExercises;
+    }
+
+    const queueItems = queueData?.verificationQueuePage.items ?? [];
+    return queueItems.map((exercise) => {
         const reports = openReportsByExerciseId.get(exercise.id);
         if (!reports || reports.length === 0) {
           return exercise;
@@ -476,30 +532,94 @@ export default function VerificationPage() {
           },
         };
       });
+  }, [activeFilter, queueData, reportedExercises, openReportsByExerciseId]);
+
+  const pageMeta = useMemo(() => {
+    if (activeFilter === 'reported') {
+      return reportedPageMeta;
     }
+    const queuePage = queueData?.verificationQueuePage;
+    return {
+      totalCount: queuePage?.totalCount ?? 0,
+      page: queuePage?.page ?? page,
+      pageSize: queuePage?.pageSize ?? pageSize,
+      totalPages: queuePage?.totalPages ?? 0,
+      hasPreviousPage: queuePage?.hasPreviousPage ?? false,
+      hasNextPage: queuePage?.hasNextPage ?? false,
+    };
+  }, [activeFilter, reportedPageMeta, queueData, page, pageSize]);
 
-    return list;
-  }, [
-    activeFilter,
-    pendingData,
-    changesData,
-    publishedData,
-    archivedData,
-    searchQuery,
-    openReportsByExerciseId,
-  ]);
+  const isLoading = statsLoading || queueLoading || reportedLoading || pageReportsLoading;
 
-  const isLoading = statsLoading || pendingLoading || changesLoading || publishedLoading || archivedLoading || reportsLoading;
+  const detailQueryString = useMemo(() => {
+    const params = new URLSearchParams();
+    params.set('filter', activeFilter);
+    if (debouncedSearch) {
+      params.set('search', debouncedSearch);
+    }
+    params.set('page', String(pageMeta.page));
+    params.set('pageSize', String(pageMeta.pageSize));
+    params.set('view', viewMode);
+    return params.toString();
+  }, [activeFilter, debouncedSearch, pageMeta.page, pageMeta.pageSize, viewMode]);
 
   const handleRefresh = () => {
     refetchStats();
-    refetchPending();
-    refetchChanges();
-    refetchPublished();
-    refetchArchived();
-    getExerciseReports({ status: 'OPEN' }).then((reports) => {
-      setOpenReports(reports);
+    refetchQueue();
+    getExerciseReportsPage({ status: 'OPEN', page: 1, pageSize: 1 }).then((response) => {
+      setReportedCount(response.totalCount);
     });
+    if (activeFilter === 'reported') {
+      setReportedLoading(true);
+      getExerciseReportsPage({
+        status: 'OPEN',
+        search: debouncedSearch || undefined,
+        page: pageMeta.page,
+        pageSize: pageMeta.pageSize,
+      })
+        .then((response) => {
+          setReportedPageMeta({
+            totalCount: response.totalCount,
+            page: response.page,
+            pageSize: response.pageSize,
+            totalPages: response.totalPages,
+            hasPreviousPage: response.hasPreviousPage,
+            hasNextPage: response.hasNextPage,
+          });
+        })
+        .finally(() => {
+          setReportedLoading(false);
+        });
+    }
+  };
+
+  const handleFilterChange = (nextFilter: 'pending' | 'changes' | 'published' | 'archived' | 'reported') => {
+    setActiveFilter(nextFilter);
+    setPage(1);
+    updateUrlState({ filter: nextFilter, page: 1, search: searchQuery });
+  };
+
+  const handleSearchChange = (value: string) => {
+    setSearchQuery(value);
+    setPage(1);
+    updateUrlState({ search: value, page: 1 });
+  };
+
+  const handleViewModeChange = (nextView: 'grid' | 'list') => {
+    setViewMode(nextView);
+    updateUrlState({ view: nextView });
+  };
+
+  const handlePageChange = (nextPage: number) => {
+    const safeNextPage = Math.max(nextPage, 1);
+    setPage(safeNextPage);
+    updateUrlState({ page: safeNextPage });
+  };
+
+  const handlePageSizeChange = (nextPageSize: number) => {
+    setPageSize(nextPageSize);
+    setPage(1);
+    updateUrlState({ pageSize: nextPageSize, page: 1 });
   };
 
   // Access denied for non-content managers
@@ -568,7 +688,7 @@ export default function VerificationPage() {
         stats={stats}
         isLoading={statsLoading}
         activeFilter={activeFilter}
-        onFilterChange={setActiveFilter}
+        onFilterChange={handleFilterChange}
         reportedCount={reportedCount}
       />
 
@@ -580,7 +700,7 @@ export default function VerificationPage() {
             placeholder="Szukaj ćwiczenia..."
             className="pl-9 bg-surface border-border/60"
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) => handleSearchChange(e.target.value)}
             data-testid="verification-search-input"
           />
         </div>
@@ -591,7 +711,7 @@ export default function VerificationPage() {
             variant={viewMode === 'grid' ? 'default' : 'ghost'}
             size="icon"
             className="h-8 w-8"
-            onClick={() => setViewMode('grid')}
+            onClick={() => handleViewModeChange('grid')}
             data-testid="verification-view-grid"
           >
             <LayoutGrid className="h-4 w-4" />
@@ -600,7 +720,7 @@ export default function VerificationPage() {
             variant={viewMode === 'list' ? 'default' : 'ghost'}
             size="icon"
             className="h-8 w-8"
-            onClick={() => setViewMode('list')}
+            onClick={() => handleViewModeChange('list')}
             data-testid="verification-view-list"
           >
             <List className="h-4 w-4" />
@@ -661,6 +781,7 @@ export default function VerificationPage() {
               exercise={exercise}
               onUnpublish={activeFilter === 'published' ? handleUnpublish : undefined}
               isUnpublishing={unpublishing}
+              detailHref={`/verification/${exercise.id}?${detailQueryString}`}
             />
           ))}
         </div>
@@ -673,8 +794,52 @@ export default function VerificationPage() {
               exercise={exercise}
               onUnpublish={activeFilter === 'published' ? handleUnpublish : undefined}
               isUnpublishing={unpublishing}
+              detailHref={`/verification/${exercise.id}?${detailQueryString}`}
             />
           ))}
+        </div>
+      )}
+
+      {exercises.length > 0 && (
+        <div className="flex flex-col gap-3 rounded-lg border border-border/60 bg-surface p-3 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-sm text-muted-foreground">
+            Wyświetlono {exercises.length} z {pageMeta.totalCount} wyników
+          </p>
+          <div className="flex flex-wrap items-center gap-2">
+            <Select value={String(pageMeta.pageSize)} onValueChange={(value) => handlePageSizeChange(Number(value))}>
+              <SelectTrigger className="h-8 w-[86px] bg-background" data-testid="verification-page-size-select">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {[10, 20, 30, 50].map((option) => (
+                  <SelectItem key={option} value={String(option)}>
+                    {option}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handlePageChange(pageMeta.page - 1)}
+              disabled={!pageMeta.hasPreviousPage}
+              data-testid="verification-pagination-prev"
+            >
+              Poprzednia
+            </Button>
+            <span className="text-sm text-muted-foreground" data-testid="verification-pagination-indicator">
+              Strona {pageMeta.page} z {Math.max(pageMeta.totalPages, 1)}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handlePageChange(pageMeta.page + 1)}
+              disabled={!pageMeta.hasNextPage}
+              data-testid="verification-pagination-next"
+            >
+              Następna
+            </Button>
+          </div>
         </div>
       )}
     </div>

@@ -3,6 +3,7 @@
 import { Plus, Repeat, Dumbbell, Timer } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ExerciseActionSelect } from '../ExerciseActionSelect';
+import { formatDurationPolish } from '@/utils/durationPolish';
 import type { ExtractedExercise, ExerciseDecision } from '@/types/import.types';
 
 interface NewExerciseCardProps {
@@ -75,7 +76,7 @@ export function NewExerciseCard({ exercise, decision, onDecisionChange, classNam
               {exercise.duration && (
                 <span className="flex items-center gap-1 rounded-md bg-surface-light px-2 py-1">
                   <Timer className="h-3 w-3" />
-                  {exercise.duration}s
+                  Czas serii: {formatDurationPolish(exercise.duration)}
                 </span>
               )}
             </div>

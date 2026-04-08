@@ -5,6 +5,7 @@ import { Sparkles, Wand2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { formatDurationPolish } from '@/utils/durationPolish';
 
 import type { ExerciseSuggestionResponse } from '@/types/ai.types';
 
@@ -101,7 +102,7 @@ export function AIExerciseSuggestions({
             )}
             {suggestion.type !== 'reps' && suggestion.duration && (
               <Badge variant="outline" className="text-xs">
-                {suggestion.duration}s
+                Czas serii: {formatDurationPolish(suggestion.duration)}
               </Badge>
             )}
             {suggestion.suggestedTags.map((tag) => (

@@ -2,7 +2,7 @@
 
 import { use, useState, useCallback, useEffect, useMemo } from 'react';
 import { useQuery, useMutation } from '@apollo/client/react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useUser } from '@clerk/nextjs';
 import { ArrowLeft, FileText } from 'lucide-react';
 import { toast } from 'sonner';
@@ -24,10 +24,15 @@ import { buildQueueProgressModel } from '@/features/verification/utils/queueProg
 import { useSystemRole } from '@/hooks/useSystemRole';
 import { useVerificationHotkeys } from '@/hooks/useVerificationHotkeys';
 import { getExerciseReports, resolveExerciseReports } from '@/services/exerciseReportService';
+import {
+  buildVerificationDetailHref,
+  buildVerificationListHref,
+  parseVerificationFilter,
+} from '@/features/verification/utils/verificationPagination';
 
 import {
   GET_EXERCISE_BY_ID_FOR_ADMIN_QUERY,
-  GET_PENDING_EXERCISES_QUERY,
+  GET_VERIFICATION_QUEUE_NAVIGATOR_QUERY,
   GET_VERIFICATION_STATS_QUERY,
 } from '@/graphql/queries/adminExercises.queries';
 import {
@@ -42,7 +47,8 @@ import type {
   RejectionReason,
   ApproveExerciseResponse,
   RejectExerciseResponse,
-  GetPendingReviewExercisesResponse,
+  GetVerificationQueueNavigatorResponse,
+  GetVerificationQueueNavigatorVariables,
   GetVerificationStatsResponse,
   ExerciseRelationTarget,
 } from '@/graphql/types/adminExercise.types';
@@ -73,6 +79,7 @@ interface DefaultLoadUpdateInput {
 export default function VerificationDetailPage({ params }: Readonly<VerificationDetailPageProps>) {
   const { id } = use(params);
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { user } = useUser();
   const { canReviewExercises, isLoading: roleLoading } = useSystemRole();
 
@@ -155,8 +162,53 @@ export default function VerificationDetailPage({ params }: Readonly<Verification
     }
   }, [data?.exerciseByIdForAdmin]);
 
-  // Query for pending exercises (for progress indicator and auto-advance)
-  const { data: pendingData } = useQuery<GetPendingReviewExercisesResponse>(GET_PENDING_EXERCISES_QUERY);
+  const queueFilter = useMemo(() => {
+    const normalized = parseVerificationFilter(searchParams.get('filter'));
+    return normalized === 'reported' ? 'pending' : normalized;
+  }, [searchParams]);
+  const queueSearch = useMemo(() => searchParams.get('search') || null, [searchParams]);
+  const listQueryString = useMemo(() => searchParams.toString(), [searchParams]);
+  const listUrl = useMemo(() => {
+    if (!listQueryString) {
+      return '/verification';
+    }
+    const params = new URLSearchParams(listQueryString);
+    const normalizedFilter = parseVerificationFilter(params.get('filter'));
+    params.set('filter', normalizedFilter === 'reported' ? 'pending' : normalizedFilter);
+    return buildVerificationListHref({
+      filter: parseVerificationFilter(params.get('filter')),
+      search: params.get('search') ?? '',
+      page: Number(params.get('page') ?? '1'),
+      pageSize: Number(params.get('pageSize') ?? '20'),
+      view: params.get('view') === 'list' ? 'list' : 'grid',
+    });
+  }, [listQueryString]);
+  const buildDetailUrl = useCallback(
+    (exerciseId: string) =>
+      listQueryString
+        ? buildVerificationDetailHref(exerciseId, {
+            filter: queueFilter,
+            search: searchParams.get('search') ?? '',
+            page: Number(searchParams.get('page') ?? '1'),
+            pageSize: Number(searchParams.get('pageSize') ?? '20'),
+            view: searchParams.get('view') === 'list' ? 'list' : 'grid',
+          })
+        : `/verification/${exerciseId}`,
+    [listQueryString, queueFilter, searchParams]
+  );
+
+  const { data: queueNavigatorData } = useQuery<GetVerificationQueueNavigatorResponse, GetVerificationQueueNavigatorVariables>(
+    GET_VERIFICATION_QUEUE_NAVIGATOR_QUERY,
+    {
+      variables: {
+        currentExerciseId: id,
+        filter: queueFilter,
+        search: queueSearch,
+      },
+      skip: !canReviewExercises || !id,
+      fetchPolicy: 'cache-and-network',
+    }
+  );
 
   // Query for stats
   const { data: statsData } = useQuery<GetVerificationStatsResponse>(GET_VERIFICATION_STATS_QUERY);
@@ -190,11 +242,10 @@ export default function VerificationDetailPage({ params }: Readonly<Verification
   }, [openReports]);
 
   // Progress tracking
-  const pendingExercises = pendingData?.pendingReviewExercises || [];
-  const currentIndex = pendingExercises.findIndex((ex) => ex.id === id);
-  const totalPending = statsData?.verificationStats?.pendingReview || pendingExercises.length;
-  const positionInQueue = currentIndex >= 0 ? currentIndex + 1 : null;
-  const remainingCount = totalPending - (positionInQueue || 0);
+  const navigator = queueNavigatorData?.verificationQueueNavigator;
+  const totalPending = navigator?.totalInQueue ?? statsData?.verificationStats?.pendingReview ?? 0;
+  const positionInQueue = navigator?.positionInQueue ?? null;
+  const remainingCount = navigator?.remainingCount ?? Math.max(totalPending - (positionInQueue || 0), 0);
   const queueProgress = useMemo(() => {
     return buildQueueProgressModel(positionInQueue, totalPending, remainingCount);
   }, [positionInQueue, totalPending, remainingCount]);
@@ -216,30 +267,27 @@ export default function VerificationDetailPage({ params }: Readonly<Verification
   // ============================================
 
   const getNextExerciseId = useCallback((): string | null => {
-    if (currentIndex < 0 || currentIndex >= pendingExercises.length - 1) {
-      return null;
-    }
-    return pendingExercises[currentIndex + 1]?.id || null;
-  }, [currentIndex, pendingExercises]);
+    return navigator?.nextExerciseId ?? null;
+  }, [navigator?.nextExerciseId]);
 
   // Prefetch next exercise
   const nextExerciseId = useMemo(() => getNextExerciseId(), [getNextExerciseId]);
   useEffect(() => {
     if (nextExerciseId) {
-      router.prefetch(`/verification/${nextExerciseId}`);
+      router.prefetch(buildDetailUrl(nextExerciseId));
     }
-  }, [nextExerciseId, router]);
+  }, [nextExerciseId, router, buildDetailUrl]);
 
   // ============================================
   // MUTATIONS
   // ============================================
 
   const [approveExercise, { loading: approving }] = useMutation<ApproveExerciseResponse>(APPROVE_EXERCISE_MUTATION, {
-    refetchQueries: [{ query: GET_PENDING_EXERCISES_QUERY }, { query: GET_VERIFICATION_STATS_QUERY }],
+    refetchQueries: [{ query: GET_VERIFICATION_STATS_QUERY }],
   });
 
   const [rejectExercise, { loading: rejecting }] = useMutation<RejectExerciseResponse>(REJECT_EXERCISE_MUTATION, {
-    refetchQueries: [{ query: GET_PENDING_EXERCISES_QUERY }, { query: GET_VERIFICATION_STATS_QUERY }],
+    refetchQueries: [{ query: GET_VERIFICATION_STATS_QUERY }],
   });
 
   const [updateExerciseField] = useMutation(UPDATE_EXERCISE_FIELD_MUTATION, {
@@ -381,9 +429,9 @@ export default function VerificationDetailPage({ params }: Readonly<Verification
         // Note: isTransitioning stays true - redirect will unmount component
         const nextId = getNextExerciseId();
         if (nextId) {
-          router.push(`/verification/${nextId}`);
+          router.push(buildDetailUrl(nextId));
         } else {
-          router.push('/verification');
+          router.push(listUrl);
         }
       } catch (err) {
         console.error('Błąd zatwierdzania:', err);
@@ -391,7 +439,7 @@ export default function VerificationDetailPage({ params }: Readonly<Verification
         setIsTransitioning(false); // Unlock on error
       }
     },
-    [approveExercise, id, router, getNextExerciseId, user?.id]
+    [approveExercise, id, router, getNextExerciseId, user?.id, buildDetailUrl, listUrl]
   );
 
   // Approve & Next (with checkbox validation)
@@ -427,27 +475,27 @@ export default function VerificationDetailPage({ params }: Readonly<Verification
         // Auto-advance to next exercise or go back to list
         const nextId = getNextExerciseId();
         if (nextId) {
-          router.push(`/verification/${nextId}`);
+          router.push(buildDetailUrl(nextId));
         } else {
-          router.push('/verification');
+          router.push(listUrl);
         }
       } catch (err) {
         console.error('Błąd odrzucania:', err);
         toast.error('Nie udało się odrzucić ćwiczenia');
       }
     },
-    [rejectExercise, id, router, getNextExerciseId, user?.id]
+    [rejectExercise, id, router, getNextExerciseId, user?.id, buildDetailUrl, listUrl]
   );
 
   // Skip handler
   const handleSkip = useCallback(() => {
     const nextId = getNextExerciseId();
     if (nextId) {
-      router.push(`/verification/${nextId}`);
+      router.push(buildDetailUrl(nextId));
     } else {
-      router.push('/verification');
+      router.push(listUrl);
     }
-  }, [router, getNextExerciseId]);
+  }, [router, getNextExerciseId, buildDetailUrl, listUrl]);
 
   // Save draft handler
   const handleSaveDraft = useCallback(() => {
@@ -545,7 +593,7 @@ export default function VerificationDetailPage({ params }: Readonly<Verification
           title="Nie znaleziono"
           description={error ? `Błąd: ${error.message}` : 'Ćwiczenie nie istnieje.'}
           actionLabel="Wróć do listy"
-          onAction={() => router.push('/verification')}
+          onAction={() => router.push(listUrl)}
         />
       </div>
     );
@@ -566,7 +614,7 @@ export default function VerificationDetailPage({ params }: Readonly<Verification
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => router.push('/verification')}
+              onClick={() => router.push(listUrl)}
               className="-ml-2 h-8 px-3 text-muted-foreground hover:text-foreground hover:bg-accent"
               data-testid="verification-back-btn"
             >

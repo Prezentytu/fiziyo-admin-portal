@@ -28,6 +28,7 @@ import { Switch } from '@/components/ui/switch';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { getMediaUrl } from '@/utils/mediaUrl';
+import { formatDurationPolish } from '@/utils/durationPolish';
 import type { Exercise, ExerciseOverride, LocalExerciseMapping } from './types';
 import { createLocalMapping } from './types';
 import { ExerciseRow } from './ExerciseRow';
@@ -301,7 +302,7 @@ export function RapidExerciseBuilder({
                       <p className="font-medium truncate">{ex.name}</p>
                       <p className="text-xs text-muted-foreground">
                         {ex.defaultSets || 3}×{ex.defaultReps || 10}
-                        {ex.defaultDuration && ` • ${ex.defaultDuration}s`}
+                        {ex.defaultDuration && ` • Czas serii: ${formatDurationPolish(ex.defaultDuration)}`}
                       </p>
                     </div>
                     <kbd

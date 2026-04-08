@@ -1,3 +1,5 @@
+import { formatDurationPolish } from '@/utils/durationPolish';
+
 export type ExerciseFieldGroup = 'dosage' | 'execution' | 'content' | 'classification';
 
 export type ExerciseFieldIconKey =
@@ -88,6 +90,11 @@ const asPositiveSeconds = (value?: number): string | null => {
   return `${value}s`;
 };
 
+const asReadableDuration = (value?: number): string | null => {
+  if (value == null || value <= 0) return null;
+  return formatDurationPolish(value);
+};
+
 const asPositiveNumber = (value?: number): string | null => {
   if (value == null || value <= 0) return null;
   return String(value);
@@ -142,17 +149,18 @@ export const EXERCISE_FIELD_METADATA: Record<ExerciseFieldKey, ExerciseFieldMeta
   duration: {
     key: 'duration',
     label: 'Czas serii',
-    tooltip: 'Łączny czas jednej serii w sekundach. Użyj, gdy ćwiczenie liczymy czasem zamiast powtórzeń.',
+    tooltip:
+      'Łączny czas jednej serii w sekundach. Pole techniczne dla ćwiczeń liczonych czasem zamiast powtórzeń.',
     iconKey: 'time',
     group: 'dosage',
     isInlineVisible: true,
     isDialogVisible: true,
-    formatValue: (viewModel) => asPositiveSeconds(viewModel.duration),
+    formatValue: (viewModel) => asReadableDuration(viewModel.duration),
   },
   executionTime: {
     key: 'executionTime',
     label: 'Czas powtórzenia',
-    tooltip: 'Czas pojedynczego powtórzenia. Wartość > 0 uruchamia timer w aplikacji pacjenta.',
+    tooltip: 'Czas pojedynczego powtórzenia. To główny parametr timera; wartość > 0 uruchamia timer w aplikacji pacjenta.',
     iconKey: 'time',
     group: 'execution',
     isInlineVisible: true,
@@ -299,8 +307,8 @@ export const INLINE_EXERCISE_FIELD_ORDER: ExerciseFieldKey[] = [
 export const DIALOG_EXERCISE_FIELD_ORDER: ExerciseFieldKey[] = [
   'sets',
   'reps',
-  'duration',
   'executionTime',
+  'duration',
   'restSets',
   'restReps',
   'preparationTime',

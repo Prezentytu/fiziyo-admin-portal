@@ -44,6 +44,7 @@ import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { cn } from '@/lib/utils';
 import { translateAssignmentStatus, type AssignmentStatus } from '@/utils/statusUtils';
 import { getMediaUrl } from '@/utils/mediaUrl';
+import { formatDurationPolish } from '@/utils/durationPolish';
 
 import {
   UPDATE_EXERCISE_SET_ASSIGNMENT_MUTATION,
@@ -113,6 +114,7 @@ export interface ExerciseOverride {
   sets?: number;
   reps?: number;
   duration?: number;
+  executionTime?: number;
   restSets?: number;
   restReps?: number;
   hidden?: boolean;
@@ -354,6 +356,7 @@ export function PatientAssignmentCard({
       sets: override?.sets ?? mapping.sets ?? mapping.exercise?.sets,
       reps: override?.reps ?? mapping.reps ?? mapping.exercise?.reps,
       duration: override?.duration ?? mapping.duration ?? mapping.exercise?.duration,
+      executionTime: override?.executionTime ?? mapping.executionTime ?? mapping.exercise?.defaultExecutionTime,
       customName: override?.customName ?? mapping.customName,
       customImages: override?.customImages ?? [],
       hidden: override?.hidden ?? false,
@@ -610,9 +613,16 @@ export function PatientAssignmentCard({
                                     <span className="font-medium text-foreground">{params.reps}</span> powt.
                                   </span>
                                 )}
+                                {params.executionTime && (
+                                  <span className="flex items-center gap-1">
+                                    <span className="text-muted-foreground">Czas powt.:</span>
+                                    <span className="font-medium text-foreground">{params.executionTime}</span>s
+                                  </span>
+                                )}
                                 {params.duration && (
                                   <span className="flex items-center gap-1">
-                                    <span className="font-medium text-foreground">{params.duration}</span>s
+                                    <span className="text-muted-foreground">Czas serii:</span>
+                                    <span className="font-medium text-foreground">{formatDurationPolish(params.duration)}</span>
                                   </span>
                                 )}
                               </div>

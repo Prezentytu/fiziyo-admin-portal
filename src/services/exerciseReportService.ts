@@ -1,6 +1,7 @@
 import type {
   CreateExerciseReportInput,
   ExerciseReport,
+  ExerciseReportPage,
   ExerciseReportApiResponse,
 } from '@/types/exercise-report.types';
 
@@ -133,6 +134,7 @@ export async function createExerciseReport(input: CreateExerciseReportInput): Pr
 export async function getExerciseReports(params?: {
   exerciseId?: string;
   status?: 'OPEN' | 'RESOLVED';
+  exerciseIds?: string[];
 }): Promise<ExerciseReport[]> {
   const queryParams = new URLSearchParams();
   if (params?.exerciseId) {
@@ -140,6 +142,9 @@ export async function getExerciseReports(params?: {
   }
   if (params?.status) {
     queryParams.set('status', params.status);
+  }
+  if (params?.exerciseIds && params.exerciseIds.length > 0) {
+    queryParams.set('exerciseIds', params.exerciseIds.join(','));
   }
 
   const query = queryParams.toString();
@@ -157,6 +162,65 @@ export async function getExerciseReports(params?: {
     return result.reports ?? [];
   } catch {
     return [];
+  }
+}
+
+export async function getExerciseReportsPage(params?: {
+  status?: 'OPEN' | 'RESOLVED';
+  search?: string;
+  page?: number;
+  pageSize?: number;
+}): Promise<ExerciseReportPage> {
+  const queryParams = new URLSearchParams();
+  if (params?.status) {
+    queryParams.set('status', params.status);
+  }
+  if (params?.search) {
+    queryParams.set('search', params.search);
+  }
+  if (params?.page) {
+    queryParams.set('page', String(params.page));
+  }
+  if (params?.pageSize) {
+    queryParams.set('pageSize', String(params.pageSize));
+  }
+
+  const query = queryParams.toString();
+  const url = query ? `/api/exercise-reports?${query}` : '/api/exercise-reports';
+
+  try {
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      cache: 'no-store',
+    });
+    const result = await parseApiResponse(response);
+    if (result.page) {
+      return result.page;
+    }
+
+    const reports = result.reports ?? [];
+    return {
+      reports,
+      totalCount: reports.length,
+      page: 1,
+      pageSize: reports.length > 0 ? reports.length : 20,
+      totalPages: reports.length > 0 ? 1 : 0,
+      hasPreviousPage: false,
+      hasNextPage: false,
+    };
+  } catch {
+    return {
+      reports: [],
+      totalCount: 0,
+      page: 1,
+      pageSize: 20,
+      totalPages: 0,
+      hasPreviousPage: false,
+      hasNextPage: false,
+    };
   }
 }
 

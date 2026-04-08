@@ -6,6 +6,7 @@ import { AlertTriangle, Dumbbell, Repeat, Timer, ChevronDown } from 'lucide-reac
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { ExerciseActionSelect } from '../ExerciseActionSelect';
+import { formatDurationPolish } from '@/utils/durationPolish';
 import type { ExtractedExercise, MatchSuggestion, ExerciseDecision } from '@/types/import.types';
 
 interface UncertainMatchCardProps {
@@ -117,7 +118,7 @@ export function UncertainMatchCard({
               {exercise.duration && (
                 <span className="flex items-center gap-1">
                   <Timer className="h-3 w-3" />
-                  {exercise.duration}s
+                  Czas serii: {formatDurationPolish(exercise.duration)}
                 </span>
               )}
             </div>

@@ -190,6 +190,50 @@ export interface GetVerificationStatsResponse {
   verificationStats: VerificationStats;
 }
 
+export interface VerificationQueuePage {
+  items: AdminExercise[];
+  totalCount: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+  hasPreviousPage: boolean;
+  hasNextPage: boolean;
+  filter: string;
+  search?: string | null;
+}
+
+export interface VerificationQueueNavigator {
+  currentExerciseId: string;
+  positionInQueue?: number | null;
+  totalInQueue: number;
+  remainingCount: number;
+  nextExerciseId?: string | null;
+  previousExerciseId?: string | null;
+  filter: string;
+  search?: string | null;
+}
+
+export interface GetVerificationQueuePageVariables {
+  filter: string;
+  search?: string | null;
+  page: number;
+  pageSize: number;
+}
+
+export interface GetVerificationQueuePageResponse {
+  verificationQueuePage: VerificationQueuePage;
+}
+
+export interface GetVerificationQueueNavigatorVariables {
+  currentExerciseId: string;
+  filter: string;
+  search?: string | null;
+}
+
+export interface GetVerificationQueueNavigatorResponse {
+  verificationQueueNavigator: VerificationQueueNavigator;
+}
+
 // ============================================
 // Mutation Responses
 // ============================================

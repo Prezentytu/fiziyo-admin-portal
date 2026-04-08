@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
+import { formatDurationPolish } from '@/utils/durationPolish';
 import type { ExtractedExercise, MatchSuggestion, ExerciseDecision } from '@/types/import.types';
 import { translateExerciseTypeShort } from '@/components/pdf/polishUtils';
 
@@ -116,7 +117,7 @@ export function ExerciseReviewCard({
               {exercise.duration && (
                 <span className="flex items-center gap-1.5">
                   <Timer className="h-4 w-4" />
-                  {exercise.duration} sekund
+                  Czas serii: {formatDurationPolish(exercise.duration)}
                 </span>
               )}
             </div>

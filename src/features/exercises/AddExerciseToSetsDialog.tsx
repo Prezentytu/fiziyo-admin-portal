@@ -24,6 +24,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 import { getMediaUrl } from '@/utils/mediaUrl';
+import { formatDurationPolish } from '@/utils/durationPolish';
 import { ImagePlaceholder } from '@/components/shared/ImagePlaceholder';
 
 import { useOrganization } from '@/contexts/OrganizationContext';
@@ -546,9 +547,10 @@ Zwróć wyłącznie propozycję nazwy zestawu.
   const repsValue = exercise.defaultReps ?? exercise.reps ?? null;
   const durationValue = exercise.defaultDuration ?? exercise.duration ?? null;
   const executionTimeValue = exercise.defaultExecutionTime ?? exercise.executionTime ?? null;
-  const exerciseMeta = `${setsValue ?? '—'} serii • ${repsValue ?? '—'} powt. • Czas serii: ${durationValue ?? '—'} • Czas powtórzenia: ${
+  const durationLabel = durationValue ? formatDurationPolish(durationValue) : '—';
+  const exerciseMeta = `${setsValue ?? '—'} serii • ${repsValue ?? '—'} powt. • Czas powtórzenia: ${
     executionTimeValue ?? '—'
-  }`;
+  } • Czas serii: ${durationLabel}`;
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
