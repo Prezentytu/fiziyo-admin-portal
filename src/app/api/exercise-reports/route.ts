@@ -61,20 +61,60 @@ export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const exerciseId = searchParams.get('exerciseId');
   const status = searchParams.get('status') as ExerciseReportStatus | null;
+  const search = searchParams.get('search')?.trim().toLowerCase();
+  const pageParam = Number(searchParams.get('page') ?? '1');
+  const pageSizeParam = Number(searchParams.get('pageSize') ?? '20');
+  const exerciseIdsParam = searchParams.get('exerciseIds');
+  const exerciseIds = exerciseIdsParam
+    ? new Set(
+        exerciseIdsParam
+          .split(',')
+          .map((id) => id.trim())
+          .filter(Boolean)
+      )
+    : null;
+  const page = Number.isFinite(pageParam) ? Math.max(pageParam, 1) : 1;
+  const pageSize = Number.isFinite(pageSizeParam) ? Math.min(Math.max(pageSizeParam, 1), 100) : 20;
 
   const reports = getReportStore().filter((report) => {
     if (exerciseId && report.exerciseId !== exerciseId) {
       return false;
     }
+    if (exerciseIds && !exerciseIds.has(report.exerciseId)) {
+      return false;
+    }
     if (status && report.status !== status) {
       return false;
+    }
+    if (search) {
+      const searchable = `${report.exerciseName} ${report.description} ${report.reasonCategory} ${report.reportedBy.name || ''} ${
+        report.reportedBy.email
+      }`.toLowerCase();
+      if (!searchable.includes(search)) {
+        return false;
+      }
     }
     return true;
   });
 
+  const totalCount = reports.length;
+  const totalPages = totalCount === 0 ? 0 : Math.ceil(totalCount / pageSize);
+  const safePage = totalPages === 0 ? 1 : Math.min(page, totalPages);
+  const offset = (safePage - 1) * pageSize;
+  const pageReports = reports.slice(offset, offset + pageSize);
+
   return NextResponse.json({
     success: true,
-    reports,
+    reports: pageReports,
+    page: {
+      reports: pageReports,
+      totalCount,
+      page: safePage,
+      pageSize,
+      totalPages,
+      hasPreviousPage: safePage > 1 && totalPages > 0,
+      hasNextPage: safePage < totalPages,
+    },
   });
 }
 

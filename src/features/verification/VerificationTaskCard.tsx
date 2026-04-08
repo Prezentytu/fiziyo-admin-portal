@@ -18,6 +18,7 @@ interface VerificationTaskCardProps {
   className?: string;
   onUnpublish?: (exerciseId: string, reason?: string) => void;
   isUnpublishing?: boolean;
+  detailHref?: string;
 }
 
 function getStatusBadge(status: ContentStatus) {
@@ -86,7 +87,13 @@ function formatRelativeTime(dateString?: string): string {
   return `${Math.floor(diffDays / 7)} tyg. temu`;
 }
 
-export function VerificationTaskCard({ exercise, className, onUnpublish, isUnpublishing }: VerificationTaskCardProps) {
+export function VerificationTaskCard({
+  exercise,
+  className,
+  onUnpublish,
+  isUnpublishing,
+  detailHref,
+}: VerificationTaskCardProps) {
   const [isHovered, setIsHovered] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
 
@@ -127,7 +134,7 @@ export function VerificationTaskCard({ exercise, className, onUnpublish, isUnpub
   };
 
   return (
-    <Link href={`/verification/${exercise.id}`}>
+    <Link href={detailHref ?? `/verification/${exercise.id}`}>
       <Card
         data-testid={`verification-card-${exercise.id}`}
         className={cn(

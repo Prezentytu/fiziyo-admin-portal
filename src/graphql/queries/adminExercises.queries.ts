@@ -69,6 +69,26 @@ export const ADMIN_EXERCISE_FRAGMENT = gql`
   }
 `;
 
+export const VERIFICATION_QUEUE_ITEM_FRAGMENT = gql`
+  fragment VerificationQueueItemFragment on Exercise {
+    id
+    name
+    status
+    thumbnailUrl
+    imageUrl
+    images
+    patientDescription
+    createdAt
+    updatedAt
+    createdBy {
+      id
+      fullname
+      email
+      image
+    }
+  }
+`;
+
 /**
  * Get exercises pending review (Status = PendingReview)
  * Used in verification queue
@@ -155,6 +175,40 @@ export const GET_VERIFICATION_STATS_QUERY = gql`
       published
       archivedGlobal
       total
+    }
+  }
+`;
+
+export const GET_VERIFICATION_QUEUE_PAGE_QUERY = gql`
+  query GetVerificationQueuePage($filter: String!, $search: String, $page: Int!, $pageSize: Int!) {
+    verificationQueuePage(filter: $filter, search: $search, page: $page, pageSize: $pageSize) {
+      items {
+        ...VerificationQueueItemFragment
+      }
+      totalCount
+      page
+      pageSize
+      totalPages
+      hasPreviousPage
+      hasNextPage
+      filter
+      search
+    }
+  }
+  ${VERIFICATION_QUEUE_ITEM_FRAGMENT}
+`;
+
+export const GET_VERIFICATION_QUEUE_NAVIGATOR_QUERY = gql`
+  query GetVerificationQueueNavigator($currentExerciseId: String!, $filter: String!, $search: String) {
+    verificationQueueNavigator(currentExerciseId: $currentExerciseId, filter: $filter, search: $search) {
+      currentExerciseId
+      positionInQueue
+      totalInQueue
+      remainingCount
+      nextExerciseId
+      previousExerciseId
+      filter
+      search
     }
   }
 `;

@@ -61,10 +61,21 @@ export interface ExerciseReport {
   resolutionNote?: string;
 }
 
+export interface ExerciseReportPage {
+  reports: ExerciseReport[];
+  totalCount: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+  hasPreviousPage: boolean;
+  hasNextPage: boolean;
+}
+
 export interface ExerciseReportApiResponse {
   success: boolean;
   message?: string;
   report?: ExerciseReport;
   reports?: ExerciseReport[];
+  page?: ExerciseReportPage;
   error?: string;
 }

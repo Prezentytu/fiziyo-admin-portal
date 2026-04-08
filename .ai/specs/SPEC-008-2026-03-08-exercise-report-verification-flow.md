@@ -30,6 +30,26 @@ decision -->|Request changes| feedbackLoop[adminReviewNotes plus resolve report]
 feedbackLoop --> therapistSignal[Reporter sees accepted signal]
 ```
 
+### Verification pagination architecture (2026-04)
+
+Wraz ze wzrostem kolejki verification do tysięcy rekordów, endpointy listowe muszą być stronicowane po stronie serwera.
+
+Założenia:
+- pagination jest **server-side** (nie tylko UI slice),
+- stan listy (`filter`, `search`, `page`, `pageSize`) jest utrzymywany w URL,
+- detail queue (`/verification/[id]`) nie zależy od pełnej listy klientowej, tylko od dedykowanego navigatora kolejki.
+
+```mermaid
+flowchart LR
+verificationPage[VerificationPage] --> verificationConnection[verificationQueueConnection]
+verificationConnection --> pageInfo[pageInfo]
+verificationConnection --> totalCount[totalCount]
+verificationConnection --> queueItems[light list items]
+verificationDetail[VerificationDetailPage] --> queueNavigator[verificationQueueNavigator]
+queueNavigator --> queueMeta[position total nextId previousId]
+reportedFilter[reported] --> reportedConnection[reportedVerificationQueueConnection]
+```
+
 ## UI/UX Wireframes
 
 ### Entry points
@@ -75,6 +95,28 @@ feedbackLoop --> therapistSignal[Reporter sees accepted signal]
 - `GET_REPORTED_EXERCISES_QUERY` (alternatywnie rozszerzenie istniejących query verification)
 - `RESOLVE_EXERCISE_REPORT_MUTATION`
 - opcjonalnie `CREATE_UPDATE_PENDING_FROM_REPORT_MUTATION`
+- `GET_VERIFICATION_QUEUE_CONNECTION_QUERY` (nowe paginowane źródło danych dla listy verification)
+- `GET_VERIFICATION_QUEUE_NAVIGATOR_QUERY` (next/prev/position dla detalu)
+
+### GraphQL contracts for pagination
+
+Docelowy kontrakt (additive-first, bez łamania istniejących pól listowych):
+- `verificationQueueConnection(filter, search, first, after)`
+- `reportedVerificationQueueConnection(search, first, after)`
+- `verificationQueueNavigator(currentExerciseId, filter, search)`
+
+Minimalny shape odpowiedzi listowej:
+- `edges[].node` (lekki read model: `id`, `name`, `status`, `thumbnailUrl`, `createdAt`, `createdBy`, `hasOpenReport`, `openReportCount`, `latestReportSummary`)
+- `pageInfo` (`startCursor`, `endCursor`, `hasNextPage`, `hasPreviousPage`)
+- `totalCount`
+
+Minimalny shape navigatora:
+- `currentExerciseId`
+- `positionInQueue`
+- `totalInQueue`
+- `remainingCount`
+- `nextExerciseId`
+- `previousExerciseId`
 
 ### API pomocnicze w adminie (warstwa web)
 
@@ -138,6 +180,9 @@ feedbackLoop --> therapistSignal[Reporter sees accepted signal]
 | Duplikaty tasków dla jednego ćwiczenia                            | Szum w kolejce                   | Agregacja OPEN reportów per `exerciseId`                |
 | Brak backend kontraktu reportowego                                | Niespójność admin/mobile/backend | Additive-first spec + etapowa migracja kontraktu        |
 | Regression w `SubmitToGlobal` i `CHANGES_REQUESTED`               | Krytyczne flow autora ćwiczeń    | Testy regresyjne i brak zmian semantyki statusów        |
+| Rozjazd kolejności lista vs detal                                 | Błędne auto-advance / progress   | Jeden kanoniczny sort i dedykowany `verificationQueueNavigator` |
+| Brak server-side search w paginacji                               | Niejednoznaczne wyniki i UX      | Search wykonywany po stronie backendu                   |
+| Migracja na paginowany kontrakt złamie starych klientów           | Breaking change                  | Additive-first: nowe pola + deprecacja starych endpointów |
 
 ## Integration Test Coverage
 
@@ -149,6 +194,9 @@ feedbackLoop --> therapistSignal[Reporter sees accepted signal]
 | `Published` route -> `UPDATE_PENDING` target      | Jednostkowy + integracyjny | High      |
 | Decyzja recenzenta zamyka report                  | Integracyjny               | High      |
 | `SubmitToGlobalDialog` bez regresji               | Regresyjny                 | High      |
+| Paginacja listy verification + search + filter    | Integracyjny               | High      |
+| Deep-link listy (`filter/search/page`)            | Integracyjny               | High      |
+| Detail queue navigator (`next/prev/position`)     | Integracyjny               | High      |
 
 ## Changelog
 
@@ -156,3 +204,9 @@ feedbackLoop --> therapistSignal[Reporter sees accepted signal]
 
 - Utworzenie specyfikacji flow zgłaszania ćwiczenia do weryfikacji.
 - Dodanie kontraktów, ryzyk i planu testów dla modelu `ExerciseReport`.
+
+### 2026-04-08
+
+- Dodanie architektury server-side pagination dla Centrum Weryfikacji.
+- Rozszerzenie kontraktów o `verificationQueueConnection` i `verificationQueueNavigator`.
+- Doprecyzowanie ryzyk i testów dla paginacji, deep-linków i spójności lista/detal.
