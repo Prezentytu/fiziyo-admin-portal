@@ -159,6 +159,8 @@ function EditExerciseOverrideDialogContent({
   const initialSets = currentOverride?.sets ?? mapping.sets ?? exercise?.sets ?? 0;
   const initialReps = currentOverride?.reps ?? mapping.reps ?? exercise?.reps ?? 0;
   const initialDuration = currentOverride?.duration ?? mapping.duration ?? exercise?.duration ?? 0;
+  const initialExecutionTime =
+    currentOverride?.executionTime ?? mapping.executionTime ?? exercise?.defaultExecutionTime ?? 0;
   const initialRestSets = currentOverride?.restSets ?? mapping.restSets ?? 0;
   const initialRestReps = currentOverride?.restReps ?? mapping.restReps ?? 0;
   const initialCustomName = currentOverride?.customName ?? mapping.customName ?? '';
@@ -178,6 +180,7 @@ function EditExerciseOverrideDialogContent({
   const [sets, setSets] = useState<number>(initialSets);
   const [reps, setReps] = useState<number>(initialReps);
   const [duration, setDuration] = useState<number>(initialDuration);
+  const [executionTime, setExecutionTime] = useState<number>(initialExecutionTime);
   const [restSets, setRestSets] = useState<number>(initialRestSets);
   const [restReps, setRestReps] = useState<number>(initialRestReps);
   const [customName, setCustomName] = useState(initialCustomName);
@@ -195,6 +198,7 @@ function EditExerciseOverrideDialogContent({
     sets !== initialSets ||
     reps !== initialReps ||
     duration !== initialDuration ||
+    executionTime !== initialExecutionTime ||
     restSets !== initialRestSets ||
     restReps !== initialRestReps ||
     customName !== initialCustomName ||
@@ -317,6 +321,9 @@ function EditExerciseOverrideDialogContent({
       if (duration !== (mappingDefaults.duration ?? exerciseDefaults?.duration ?? 0)) {
         newOverride.duration = duration;
       }
+      if (executionTime !== (mappingDefaults.executionTime ?? exerciseDefaults?.defaultExecutionTime ?? 0)) {
+        newOverride.executionTime = executionTime;
+      }
       if (restSets !== (mappingDefaults.restSets ?? 0)) {
         newOverride.restSets = restSets;
       }
@@ -382,6 +389,7 @@ function EditExerciseOverrideDialogContent({
     setSets(mapping.sets ?? exercise?.defaultSets ?? exercise?.sets ?? 0);
     setReps(mapping.reps ?? exercise?.defaultReps ?? exercise?.reps ?? 0);
     setDuration(mapping.duration ?? exercise?.defaultDuration ?? exercise?.duration ?? 0);
+    setExecutionTime(mapping.executionTime ?? exercise?.defaultExecutionTime ?? 0);
     setRestSets(mapping.restSets ?? exercise?.defaultRestBetweenSets ?? 0);
     setRestReps(mapping.restReps ?? exercise?.defaultRestBetweenReps ?? 0);
     setCustomName(mapping.customName ?? '');
@@ -513,41 +521,80 @@ function EditExerciseOverrideDialogContent({
               </div>
             </div>
 
-            {/* Duration */}
-            <div className="space-y-2">
-              <Label className="text-sm flex items-center gap-2">
-                <Clock className="h-4 w-4 text-muted-foreground" />
-                Czas serii (sekundy)
-              </Label>
-              <div className="flex items-center gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  className="h-11 w-11 shrink-0"
-                  onClick={() => setDuration(Math.max(0, duration - 5))}
-                >
-                  <Minus className="h-4 w-4" />
-                </Button>
-                <Input
-                  type="number"
-                  value={duration}
-                  onChange={(e) => setDuration(Math.max(0, parseInt(e.target.value) || 0))}
-                  className="h-11 text-center text-lg font-semibold"
-                  step={5}
-                  data-testid="patient-exercise-override-duration-input"
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  className="h-11 w-11 shrink-0"
-                  onClick={() => setDuration(duration + 5)}
-                >
-                  <Plus className="h-4 w-4" />
-                </Button>
+            <div className="grid grid-cols-2 gap-4">
+              {/* Duration */}
+              <div className="space-y-2">
+                <Label className="text-sm flex items-center gap-2">
+                  <Clock className="h-4 w-4 text-muted-foreground" />
+                  Czas serii (sekundy)
+                </Label>
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    className="h-11 w-11 shrink-0"
+                    onClick={() => setDuration(Math.max(0, duration - 5))}
+                  >
+                    <Minus className="h-4 w-4" />
+                  </Button>
+                  <Input
+                    type="number"
+                    value={duration}
+                    onChange={(e) => setDuration(Math.max(0, parseInt(e.target.value) || 0))}
+                    className="h-11 text-center text-lg font-semibold"
+                    step={5}
+                    data-testid="patient-exercise-override-duration-input"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    className="h-11 w-11 shrink-0"
+                    onClick={() => setDuration(duration + 5)}
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">Użyj dla ćwiczeń time-based (override czasu serii)</p>
               </div>
-              <p className="text-xs text-muted-foreground">Użyj dla ćwiczeń czasowych (np. deska, rozciąganie)</p>
+
+              {/* Execution time */}
+              <div className="space-y-2">
+                <Label className="text-sm flex items-center gap-2">
+                  <Clock className="h-4 w-4 text-muted-foreground" />
+                  Czas powtórzenia (sekundy)
+                </Label>
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    className="h-11 w-11 shrink-0"
+                    onClick={() => setExecutionTime(Math.max(0, executionTime - 5))}
+                  >
+                    <Minus className="h-4 w-4" />
+                  </Button>
+                  <Input
+                    type="number"
+                    value={executionTime}
+                    onChange={(e) => setExecutionTime(Math.max(0, parseInt(e.target.value) || 0))}
+                    className="h-11 text-center text-lg font-semibold"
+                    step={5}
+                    data-testid="patient-exercise-override-execution-time-input"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    className="h-11 w-11 shrink-0"
+                    onClick={() => setExecutionTime(executionTime + 5)}
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">Główny timer pojedynczego powtórzenia</p>
+              </div>
             </div>
 
             {/* Rest parameters */}

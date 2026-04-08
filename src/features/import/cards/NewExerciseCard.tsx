@@ -75,7 +75,7 @@ export function NewExerciseCard({ exercise, decision, onDecisionChange, classNam
               {exercise.duration && (
                 <span className="flex items-center gap-1 rounded-md bg-surface-light px-2 py-1">
                   <Timer className="h-3 w-3" />
-                  {exercise.duration}s
+                  Czas serii: {exercise.duration}s
                 </span>
               )}
             </div>

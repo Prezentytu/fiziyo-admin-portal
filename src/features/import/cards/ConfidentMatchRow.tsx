@@ -66,7 +66,7 @@ export function ConfidentMatchRow({ exercise, match, decision, onSkip, className
             <p className="text-xs text-muted-foreground mt-2">
               Serie: {exercise.sets}
               {exercise.reps && `, Powtórzenia: ${exercise.reps}`}
-              {exercise.duration && `, Czas: ${exercise.duration}s`}
+              {exercise.duration && `, Czas serii: ${exercise.duration}s`}
             </p>
           )}
         </TooltipContent>

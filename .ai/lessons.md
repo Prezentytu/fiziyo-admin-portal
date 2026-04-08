@@ -14,6 +14,14 @@ Dziennik wniosków z pracy AI agentów. Po każdej korekcie dodaj nowy wpis.
 
 ## Wpisy
 
+### 2026-04-08 - Jedna semantyka czasu dla całego flow ćwiczeń
+
+- **Kategoria**: `UI/UX`
+- **Problem**: W różnych ekranach (kreator, AI drawer, override pacjenta, import) `duration` bywało opisywane jak `Czas powtórzenia`, a czasem bez etykiety, co powodowało błędny model mentalny terapeuty.
+- **Przyczyna**: Brak jednego źródła prawdy dla modelu dawkowania i rozproszone mapowania pól `duration`/`executionTime` w wielu komponentach.
+- **Rozwiązanie**: Utworzono `SPEC-012` jako canonical model (`sets × reps × executionTime`), poprawiono kluczowe etykiety i mapowania AI oraz doprecyzowano rolę `duration` jako time-based override.
+- **Reguła**: Jeśli dwa pola brzmią podobnie (`duration` vs `executionTime`), utrzymuj jedno źródło prawdy na poziomie spec i wymuszaj zgodność etykiet/payloadów we wszystkich powierzchniach UI.
+
 ### 2026-04-07 - Preview detalu musi fallbackowac do miniatury
 
 - **Kategoria**: `UI/UX`

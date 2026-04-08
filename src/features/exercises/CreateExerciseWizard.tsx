@@ -30,6 +30,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
+import { ImageLightbox } from '@/components/shared/ImageLightbox';
 import { TagPicker } from './TagPicker';
 import { ExerciseFieldLabelWithTooltip } from './ExerciseFieldLabelWithTooltip';
 import { EXERCISE_FIELD_TOOLTIPS } from './exerciseFieldTooltips';
@@ -45,6 +46,7 @@ import type { CreateExerciseMutationResult, CreateExerciseVariables } from '@/gr
 import { useVoiceInput } from '@/hooks/useVoiceInput';
 import { aiService } from '@/services/aiService';
 import type { ExerciseSuggestionResponse } from '@/services/aiService';
+import { calculateSeriesTimeSeconds } from './utils/calculateSeriesTime';
 
 // ============================================================
 // CLEAN NUMBER INPUT - Pure number, no steppers (Linear/Vercel style)
@@ -135,11 +137,11 @@ function CleanNumberInput({
 // QUICK PRESETS (Unified - shows all params)
 // ============================================================
 const QUICK_PRESETS = [
-  { label: '3×10', sets: 3, reps: 10, duration: null, rest: 60 },
-  { label: '3×15', sets: 3, reps: 15, duration: null, rest: 45 },
-  { label: '4×8', sets: 4, reps: 8, duration: null, rest: 90 },
-  { label: '30s×3', sets: 3, reps: null, duration: 30, rest: 30 },
-  { label: '45s×3', sets: 3, reps: null, duration: 45, rest: 30 },
+  { label: '3×10', sets: 3, reps: 10, executionTime: null, duration: null, rest: 60 },
+  { label: '3×15', sets: 3, reps: 15, executionTime: null, duration: null, rest: 45 },
+  { label: '4×8', sets: 4, reps: 8, executionTime: null, duration: null, rest: 90 },
+  { label: '30s×3', sets: 3, reps: 1, executionTime: 30, duration: null, rest: 30 },
+  { label: '45s×3', sets: 3, reps: 1, executionTime: 45, duration: null, rest: 30 },
 ];
 
 // ============================================================
@@ -453,12 +455,20 @@ function AIDiffDrawer({
   const hasHints = suggestion.warnings && suggestion.warnings.length > 0;
   const hasAdvancedParams =
     suggestion.advancedParams &&
-    (suggestion.advancedParams.tempo || suggestion.advancedParams.weight || suggestion.advancedParams.rangeOfMotion);
+    (suggestion.advancedParams.tempo ||
+      suggestion.advancedParams.weight ||
+      suggestion.advancedParams.rangeOfMotion ||
+      suggestion.advancedParams.executionTime ||
+      suggestion.advancedParams.preparationTime);
 
   // Standard diff checks
   const hasDifferentSets = suggestion.sets !== currentData.sets;
   const hasDifferentReps = suggestion.reps !== currentData.reps;
   const hasDifferentDuration = suggestion.duration !== currentData.duration;
+  const hasDifferentExecutionTime =
+    (suggestion.advancedParams?.executionTime ?? null) !== (currentData.executionTime ?? null);
+  const hasDifferentPreparationTime =
+    (suggestion.advancedParams?.preparationTime ?? null) !== (currentData.preparationTime ?? null);
   const hasDifferentRest = suggestion.restSets !== currentData.restSets;
   const hasDifferentSide = suggestion.exerciseSide !== currentData.exerciseSide;
   const hasSuggestedTags = suggestion.suggestedTags && suggestion.suggestedTags.length > 0;
@@ -477,6 +487,8 @@ function AIDiffDrawer({
     hasDifferentSets,
     hasDifferentReps,
     hasDifferentDuration,
+    hasDifferentExecutionTime,
+    hasDifferentPreparationTime,
     hasDifferentRest,
     hasDifferentSide,
     hasSuggestedTags, // Liczymy tagi nawet bez dopasowań w bazie
@@ -648,7 +660,13 @@ function AIDiffDrawer({
         )}
 
         {/* === SEKCJA 4: PARAMETRY (⚡ Parameters - tylko jeśli różne) === */}
-        {(hasDifferentSets || hasDifferentReps || hasDifferentDuration || hasDifferentRest || hasDifferentSide) && (
+        {(hasDifferentSets ||
+          hasDifferentReps ||
+          hasDifferentDuration ||
+          hasDifferentExecutionTime ||
+          hasDifferentPreparationTime ||
+          hasDifferentRest ||
+          hasDifferentSide) && (
           <AISection icon="⚡" title="Parametry" priority="low" description="Optymalizacja pod cel treningowy">
             {hasDifferentSets && (
               <SuggestionCard
@@ -682,11 +700,35 @@ function AIDiffDrawer({
 
             {hasDifferentDuration && suggestion.duration && (
               <SuggestionCard
-                label="Czas powtórzenia"
+                label="Czas serii"
                 currentValue={`${currentData.duration || 0}s`}
                 suggestedValue={`${suggestion.duration}s`}
-                reason="Optymalny czas dla ćwiczenia izometrycznego"
+                reason="Sugerowany czas serii dla wariantu time-based"
                 onAccept={() => onAcceptField('duration', suggestion.duration)}
+                priority="low"
+                inline
+              />
+            )}
+
+            {hasDifferentExecutionTime && suggestion.advancedParams?.executionTime != null && (
+              <SuggestionCard
+                label="Czas powtórzenia"
+                currentValue={`${currentData.executionTime || 0}s`}
+                suggestedValue={`${suggestion.advancedParams.executionTime}s`}
+                reason="Sugerowany timer dla pojedynczego powtórzenia"
+                onAccept={() => onAcceptField('executionTime', suggestion.advancedParams?.executionTime)}
+                priority="low"
+                inline
+              />
+            )}
+
+            {hasDifferentPreparationTime && suggestion.advancedParams?.preparationTime != null && (
+              <SuggestionCard
+                label="Czas przygotowania"
+                currentValue={`${currentData.preparationTime || 0}s`}
+                suggestedValue={`${suggestion.advancedParams.preparationTime}s`}
+                reason="Sugerowany czas na przygotowanie pozycji"
+                onAccept={() => onAcceptField('preparationTime', suggestion.advancedParams?.preparationTime)}
                 priority="low"
                 inline
               />
@@ -754,6 +796,30 @@ function AIDiffDrawer({
                   <p className="text-sm font-medium text-foreground">{suggestion.advancedParams.rangeOfMotion}</p>
                   <button
                     onClick={() => onAcceptField('rangeOfMotion', suggestion.advancedParams?.rangeOfMotion)}
+                    className="text-[9px] text-secondary hover:text-secondary/80 mt-1"
+                  >
+                    ← Użyj
+                  </button>
+                </div>
+              )}
+              {suggestion.advancedParams?.executionTime != null && (
+                <div className="p-2.5 rounded-lg bg-surface/50 border border-border">
+                  <p className="text-[9px] text-muted-foreground uppercase mb-1">Czas powtórzenia</p>
+                  <p className="text-sm font-medium text-foreground">{suggestion.advancedParams.executionTime}s</p>
+                  <button
+                    onClick={() => onAcceptField('executionTime', suggestion.advancedParams?.executionTime)}
+                    className="text-[9px] text-secondary hover:text-secondary/80 mt-1"
+                  >
+                    ← Użyj
+                  </button>
+                </div>
+              )}
+              {suggestion.advancedParams?.preparationTime != null && (
+                <div className="p-2.5 rounded-lg bg-surface/50 border border-border">
+                  <p className="text-[9px] text-muted-foreground uppercase mb-1">Czas przygotowania</p>
+                  <p className="text-sm font-medium text-foreground">{suggestion.advancedParams.preparationTime}s</p>
+                  <button
+                    onClick={() => onAcceptField('preparationTime', suggestion.advancedParams?.preparationTime)}
                     className="text-[9px] text-secondary hover:text-secondary/80 mt-1"
                   >
                     ← Użyj
@@ -932,6 +998,8 @@ function SuggestionCard({
 export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuccess }: CreateExerciseWizardProps) {
   const [data, setData] = useState<ExerciseData>(DEFAULT_DATA);
   const [mediaFiles, setMediaFiles] = useState<File[]>([]);
+  const [activeMediaPreviewIndex, setActiveMediaPreviewIndex] = useState(0);
+  const [isMediaLightboxOpen, setIsMediaLightboxOpen] = useState(false);
   const [showCloseConfirm, setShowCloseConfirm] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
@@ -999,6 +1067,17 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
     });
   }, [tagsData, categoriesData]);
 
+  const mediaPreviewUrls = useMemo(
+    () => mediaFiles.map((file) => URL.createObjectURL(file)),
+    [mediaFiles]
+  );
+
+  useEffect(() => {
+    return () => {
+      mediaPreviewUrls.forEach((previewUrl) => URL.revokeObjectURL(previewUrl));
+    };
+  }, [mediaPreviewUrls]);
+
   // Mutations
   const [createExercise] = useMutation<CreateExerciseMutationResult, CreateExerciseVariables>(
     CREATE_EXERCISE_MUTATION,
@@ -1020,10 +1099,21 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
     );
   }, [data, mediaFiles]);
 
+  const computedSeriesDurationSeconds = useMemo(() => {
+    return calculateSeriesTimeSeconds({
+      duration: data.duration,
+      reps: data.reps,
+      executionTime: data.executionTime,
+      restReps: data.restReps,
+    });
+  }, [data.duration, data.executionTime, data.reps, data.restReps]);
+
   // Reset form
   const resetForm = useCallback(() => {
     setData(DEFAULT_DATA);
     setMediaFiles([]);
+    setActiveMediaPreviewIndex(0);
+    setIsMediaLightboxOpen(false);
     setShowTagPicker(false);
     setShowAdvanced(false);
     setShowAIDiff(false);
@@ -1067,11 +1157,18 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
 
   // Apply preset (One-Tap Setup) - works with new unified presets
   const applyPreset = useCallback(
-    (preset: { sets: number; reps: number | null; duration: number | null; rest: number }) => {
+    (preset: {
+      sets: number;
+      reps: number | null;
+      executionTime: number | null;
+      duration: number | null;
+      rest: number;
+    }) => {
       setData((prev) => ({
         ...prev,
         sets: preset.sets,
         reps: preset.reps,
+        executionTime: preset.executionTime,
         duration: preset.duration,
         restSets: preset.rest,
       }));
@@ -1139,7 +1236,7 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
 
     setIsGeneratingImage(true);
     try {
-      // Determine type from data: if duration is set, it's time-based
+      // Explicit duration override means strict time-based exercise
       const inferredType = data.duration ? 'time' : 'reps';
       const result = await aiService.generateExerciseImage(data.name, data.description, inferredType, 'illustration');
 
@@ -1159,6 +1256,11 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
   // Remove image
   const handleRemoveImage = useCallback((index: number) => {
     setMediaFiles((prev) => prev.filter((_, i) => i !== index));
+  }, []);
+
+  const handleOpenMediaPreview = useCallback((index: number) => {
+    setActiveMediaPreviewIndex(index);
+    setIsMediaLightboxOpen(true);
   }, []);
 
   // Handle use existing exercise (from duplicate detection)
@@ -1222,6 +1324,8 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
       restSets: aiSuggestion.restSets,
       exerciseSide: aiSuggestion.exerciseSide as ExerciseSide,
       // Pro Tuning fields
+      preparationTime: aiSuggestion.advancedParams?.preparationTime ?? prev.preparationTime,
+      executionTime: aiSuggestion.advancedParams?.executionTime ?? prev.executionTime,
       tempo: aiSuggestion.advancedParams?.tempo || prev.tempo,
       weight: aiSuggestion.advancedParams?.weight || prev.weight,
       rangeOfMotion: aiSuggestion.advancedParams?.rangeOfMotion || prev.rangeOfMotion,
@@ -1281,7 +1385,7 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
 
     setIsSaving(true);
 
-    // Implicit type detection: if duration is filled, it's time-based; otherwise reps-based
+    // Keep backend-compatible inference: explicit duration override means time-based
     const inferredType = data.duration ? 'time' : 'reps';
 
     try {
@@ -1622,35 +1726,49 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
                   {/* Media thumbnails - panoramiczne (16:9) */}
                   {mediaFiles.map((file, idx) => (
                     <div
-                      key={idx}
+                      key={`${file.name}-${file.lastModified}-${file.size}-${idx}`}
                       className={cn(
                         'relative aspect-video rounded-xl overflow-hidden border border-border',
                         'group animate-in fade-in zoom-in-95 duration-300'
                       )}
                       style={{ animationDelay: `${idx * 50}ms` }}
                     >
-                      <Image
-                        src={URL.createObjectURL(file)}
-                        alt={`Media ${idx + 1}`}
-                        fill
-                        className="object-cover"
-                        unoptimized
-                      />
+                      <button
+                        type="button"
+                        onClick={() => handleOpenMediaPreview(idx)}
+                        className="absolute inset-0 z-10 cursor-zoom-in"
+                        data-testid={`exercise-create-media-preview-${idx}`}
+                      >
+                        <div
+                          className="absolute inset-0 bg-cover bg-center blur-2xl opacity-35 scale-110"
+                          style={{ backgroundImage: `url(${mediaPreviewUrls[idx]})` }}
+                        />
+                        <Image
+                          src={mediaPreviewUrls[idx]}
+                          alt={`Media ${idx + 1}`}
+                          fill
+                          className="object-contain"
+                          unoptimized
+                        />
+                      </button>
                       {/* Overlay gradient */}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                       {/* Index badge */}
-                      <span className="absolute bottom-2 left-2 text-[10px] font-medium text-white/80 bg-black/40 px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity">
+                      <span className="pointer-events-none absolute bottom-2 left-2 text-[10px] font-medium text-white/80 bg-black/40 px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity">
                         {idx === 0 ? 'Start' : idx === 1 ? 'Koniec' : `#${idx + 1}`}
                       </span>
                       {/* Remove button */}
                       <button
                         type="button"
-                        onClick={() => handleRemoveImage(idx)}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          handleRemoveImage(idx);
+                        }}
                         className={cn(
                           'absolute top-2 right-2 w-7 h-7 rounded-full',
                           'bg-black/60 backdrop-blur-sm flex items-center justify-center',
                           'opacity-0 group-hover:opacity-100 transition-all',
-                          'hover:bg-destructive hover:scale-110'
+                          'hover:bg-destructive hover:scale-110 z-20'
                         )}
                         data-testid={`exercise-create-media-remove-${idx}`}
                       >
@@ -1742,7 +1860,7 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
                 </div>
               </div>
 
-              {/* THE MATRIX: 4 kolumny - Serie | Powt | Czas | Przerwa */}
+              {/* THE MATRIX: 4 kolumny - Serie | Powt | Czas powt. | Przerwa */}
               <div className="grid grid-cols-4 gap-3">
                 <CleanNumberInput
                   label="SERIE"
@@ -1768,16 +1886,16 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
                 />
 
                 <CleanNumberInput
-                  label="CZAS SERII"
-                  tooltip={EXERCISE_FIELD_TOOLTIPS.duration}
-                  value={data.duration}
-                  onChange={(v) => updateField('duration', v)}
+                  label="CZAS POWT."
+                  tooltip={EXERCISE_FIELD_TOOLTIPS.executionTime}
+                  value={data.executionTime}
+                  onChange={(v) => updateField('executionTime', v)}
                   placeholder="—"
                   suffix="s"
-                  dimmed={!!data.reps && !data.duration}
+                  dimmed={!!data.duration && !data.reps}
                   tabIndex={5}
-                  testId="exercise-duration"
-                  infoTestId="exercise-create-duration-info"
+                  testId="exercise-create-exec-time-input"
+                  infoTestId="exercise-create-execution-time-info"
                 />
 
                 <CleanNumberInput
@@ -1791,6 +1909,19 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
                   testId="exercise-rest"
                   infoTestId="exercise-create-rest-sets-info"
                 />
+              </div>
+
+              <div
+                className="mt-3 rounded-lg border border-border bg-surface/60 px-3 py-2 text-xs text-muted-foreground"
+                data-testid="exercise-create-series-time-summary"
+              >
+                <span className="font-medium text-foreground">Czas serii (wyliczany): </span>
+                <span data-testid="exercise-create-series-time-value">
+                  {computedSeriesDurationSeconds != null ? `${computedSeriesDurationSeconds}s` : '—'}
+                </span>
+                {data.duration && data.duration > 0 && (
+                  <span className="ml-2 text-text-tertiary">(tryb czasowy: ręcznie ustawiony czas serii)</span>
+                )}
               </div>
             </section>
 
@@ -1831,7 +1962,7 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
                     <span>Zaawansowane</span>
                     {(data.exerciseSide !== 'none' ||
                       data.restReps ||
-                      data.executionTime ||
+                      data.duration ||
                       data.tempo ||
                       data.weight ||
                       data.rangeOfMotion) && (
@@ -1923,26 +2054,26 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
                       />
                     </div>
 
-                    {/* Czas wykonania powtórzenia */}
+                    {/* Czas serii (tylko dla time-based fallbacku) */}
                     <div className="space-y-2">
                       <ExerciseFieldLabelWithTooltip
-                        htmlFor="exec-time-input"
-                        label="Czas powtórzenia (s)"
-                        tooltip={EXERCISE_FIELD_TOOLTIPS.executionTime}
+                        htmlFor="series-duration-input"
+                        label="Czas serii (s)"
+                        tooltip={EXERCISE_FIELD_TOOLTIPS.duration}
                         labelClassName="text-[10px] font-semibold text-muted-foreground uppercase"
                         className="gap-2"
-                        testId="exercise-create-execution-time-info"
+                        testId="exercise-create-duration-info"
                       />
                       <Input
                         type="number"
-                        id="exec-time-input"
-                        value={data.executionTime || ''}
-                        onChange={(e) => updateField('executionTime', e.target.value ? Number(e.target.value) : null)}
-                        placeholder="Bez limitu"
+                        id="series-duration-input"
+                        value={data.duration || ''}
+                        onChange={(e) => updateField('duration', e.target.value ? Number(e.target.value) : null)}
+                        placeholder="Tylko dla serii czasowych"
                         className="bg-surface border-border text-foreground placeholder:text-muted-foreground/50 text-sm"
                         min={0}
-                        max={600}
-                        data-testid="exercise-create-exec-time-input"
+                        max={3600}
+                        data-testid="exercise-create-duration-input"
                       />
                     </div>
                   </div>
@@ -2104,6 +2235,16 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
           )}
         </div>
         {/* END OF MAIN CONTENT WRAPPER */}
+
+        <ImageLightbox
+          src={mediaPreviewUrls[activeMediaPreviewIndex] ?? ''}
+          alt={data.name || 'Podgląd zdjęcia ćwiczenia'}
+          open={isMediaLightboxOpen}
+          onOpenChange={setIsMediaLightboxOpen}
+          images={mediaPreviewUrls.length > 0 ? mediaPreviewUrls : undefined}
+          currentIndex={activeMediaPreviewIndex}
+          onIndexChange={setActiveMediaPreviewIndex}
+        />
 
         {/* ========== FOOTER ========== */}
         <div className="px-6 py-4 border-t border-border bg-surface flex items-center justify-end gap-3">

@@ -56,6 +56,7 @@ Każda specyfikacja powinna mieć sekcję Changelog na końcu:
 | 008 | [Exercise Report Verification Flow](SPEC-008-2026-03-08-exercise-report-verification-flow.md) | Zgłaszanie ćwiczeń do kolejki verification      | Aktywny |
 | 010 | [Import Module](SPEC-010-2026-03-08-import-module.md)                                         | Import dokumentów (plik i plain text)           | Aktywny |
 | 011 | [Invite Flow Without Legacy Plan Limits](SPEC-011-2026-03-08-invite-flow-no-legacy-limits.md) | Invite flow bez limitów starego modelu planów   | Aktywny |
+| 012 | [Exercise Dosage Model](SPEC-012-2026-04-08-exercise-dosage-model.md)                         | Single source of truth dla semantyki dawkowania | Aktywny |
 
 ## Planowane specyfikacje
 
@@ -69,7 +70,7 @@ Tworzone stopniowo, przy okazji pracy nad danym modułem:
 | ~~006~~ | ~~Organization Module~~  | Przeniesione do aktywnych |
 | 009     | Chat/AI Module           | Chat AI, asystent         |
 | ~~010~~ | ~~Import Module~~        | Przeniesione do aktywnych |
-| 012     | Settings Module          | Ustawienia użytkownika    |
+| 013     | Settings Module          | Ustawienia użytkownika    |
 
 ## Dla AI Agentów
 

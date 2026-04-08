@@ -113,6 +113,7 @@ export interface ExerciseOverride {
   sets?: number;
   reps?: number;
   duration?: number;
+  executionTime?: number;
   restSets?: number;
   restReps?: number;
   hidden?: boolean;
@@ -354,6 +355,7 @@ export function PatientAssignmentCard({
       sets: override?.sets ?? mapping.sets ?? mapping.exercise?.sets,
       reps: override?.reps ?? mapping.reps ?? mapping.exercise?.reps,
       duration: override?.duration ?? mapping.duration ?? mapping.exercise?.duration,
+      executionTime: override?.executionTime ?? mapping.executionTime ?? mapping.exercise?.defaultExecutionTime,
       customName: override?.customName ?? mapping.customName,
       customImages: override?.customImages ?? [],
       hidden: override?.hidden ?? false,
@@ -612,7 +614,14 @@ export function PatientAssignmentCard({
                                 )}
                                 {params.duration && (
                                   <span className="flex items-center gap-1">
+                                    <span className="text-muted-foreground">Czas serii:</span>
                                     <span className="font-medium text-foreground">{params.duration}</span>s
+                                  </span>
+                                )}
+                                {params.executionTime && (
+                                  <span className="flex items-center gap-1">
+                                    <span className="text-muted-foreground">Czas powt.:</span>
+                                    <span className="font-medium text-foreground">{params.executionTime}</span>s
                                   </span>
                                 )}
                               </div>

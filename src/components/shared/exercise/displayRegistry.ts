@@ -142,7 +142,8 @@ export const EXERCISE_FIELD_METADATA: Record<ExerciseFieldKey, ExerciseFieldMeta
   duration: {
     key: 'duration',
     label: 'Czas serii',
-    tooltip: 'Łączny czas jednej serii w sekundach. Użyj, gdy ćwiczenie liczymy czasem zamiast powtórzeń.',
+    tooltip:
+      'Łączny czas jednej serii w sekundach. Pole techniczne dla ćwiczeń liczonych czasem zamiast powtórzeń.',
     iconKey: 'time',
     group: 'dosage',
     isInlineVisible: true,
@@ -152,7 +153,7 @@ export const EXERCISE_FIELD_METADATA: Record<ExerciseFieldKey, ExerciseFieldMeta
   executionTime: {
     key: 'executionTime',
     label: 'Czas powtórzenia',
-    tooltip: 'Czas pojedynczego powtórzenia. Wartość > 0 uruchamia timer w aplikacji pacjenta.',
+    tooltip: 'Czas pojedynczego powtórzenia. To główny parametr timera; wartość > 0 uruchamia timer w aplikacji pacjenta.',
     iconKey: 'time',
     group: 'execution',
     isInlineVisible: true,

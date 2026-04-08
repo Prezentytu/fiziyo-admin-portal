@@ -117,7 +117,7 @@ export function UncertainMatchCard({
               {exercise.duration && (
                 <span className="flex items-center gap-1">
                   <Timer className="h-3 w-3" />
-                  {exercise.duration}s
+                  Czas serii: {exercise.duration}s
                 </span>
               )}
             </div>

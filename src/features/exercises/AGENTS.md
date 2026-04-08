@@ -34,6 +34,7 @@ Moduł szablonów ćwiczeń: formularz create/edit, lista, filtrowanie, hierarch
 | ------------------------ | ------------- | ---------------------------------- | ---------------------- | ------- |
 | `DefaultSets`            | decimal       | Domyślna liczba serii              | Serie                  | 3       |
 | `DefaultReps`            | decimal?      | Domyślna liczba powtórzeń          | Powtórzenia            | 10      |
+| `DefaultDuration`        | decimal?      | Czas serii dla ćwiczeń time-based  | Czas serii             | -       |
 | `DefaultRestBetweenSets` | decimal       | Przerwa między SERIAMI (sekundy)   | Przerwa między seriami | 60      |
 | `DefaultRestBetweenReps` | decimal       | Mikro-przerwa między POWTÓRZENIAMI | Przerwa między powt.   | 0       |
 | `DefaultLoad`            | ExerciseLoad? | Domyślne obciążenie/opór           | Obciążenie             | -       |
@@ -82,6 +83,7 @@ Serie × Powtórzenia [× Czas powtórzenia]
 - `executionTime` > 0 → timer w aplikacji pacjenta
 - `executionTime` = 0/null → bez timera
 - NIE eksponuj terapeucie „typu ćwiczenia” jako osobnej etykiety; UI ma pokazywać parametry wykonania, a semantyka timera wynika z `executionTime`
+- W `CreateExerciseWizard` pole wejściowe TIER 1 to `Czas powtórzenia`; `Czas serii` jest pokazywany jako wartość wyliczana, a `duration` pozostaje w sekcji zaawansowanej dla ćwiczeń liczonych czasem.
 
 Przykłady: `3 × 10`, `3 × 10 × 10s`, `3 × 1 × 30s`
 
@@ -90,6 +92,7 @@ Przykłady: `3 × 10`, `3 × 10 × 10s`, `3 × 1 × 30s`
 - Główny formularz: `ExerciseForm.tsx`
 - Lista: strona `app/(dashboard)/exercises/`
 - GraphQL: `src/graphql/queries/`, `src/graphql/mutations/`
+- Single source of truth dawkowania: `.ai/specs/SPEC-012-2026-04-08-exercise-dosage-model.md`
 
 ## Konwencje data-testid
 

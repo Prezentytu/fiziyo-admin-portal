@@ -13,8 +13,9 @@ export function calculateEstimatedTime(params: {
   duration?: number;
   executionTime?: number;
   rest?: number;
+  restReps?: number;
 }): number {
-  const { sets, reps, duration, executionTime, rest = 60 } = params;
+  const { sets, reps, duration, executionTime, rest = 60, restReps = 0 } = params;
 
   if (duration && duration > 0) {
     // Ćwiczenie czasowe (TIME): serie * czas + przerwy między seriami
@@ -24,10 +25,12 @@ export function calculateEstimatedTime(params: {
   // Ćwiczenie na powtórzenia (REPS)
   // Domyślnie 3 sekundy na powtórzenie jeśli nie podano executionTime
   const repTime = executionTime || 3;
-  const exerciseTime = sets * (reps || 10) * repTime;
+  const repsPerSet = reps || 10;
+  const exerciseTime = sets * repsPerSet * repTime;
+  const microBreakTime = sets * Math.max(0, repsPerSet - 1) * Math.max(0, restReps);
   const restTime = Math.max(0, sets - 1) * rest;
 
-  return exerciseTime + restTime;
+  return exerciseTime + microBreakTime + restTime;
 }
 
 /**
