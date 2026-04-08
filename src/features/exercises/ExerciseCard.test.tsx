@@ -36,6 +36,8 @@ describe('ExerciseCard menu actions', () => {
 
     expect(screen.getByText('Zgłoś do Bazy Globalnej')).toBeInTheDocument();
     expect(screen.getByText('Zgłoś do poprawki')).toBeInTheDocument();
+    expect(screen.queryByText('nogi')).not.toBeInTheDocument();
+    expect(screen.queryByText(/Czas powtórzenia:/)).not.toBeInTheDocument();
 
     await user.click(screen.getByTestId('exercise-card-exercise-1-report-btn'));
     expect(onReportIssue).toHaveBeenCalledTimes(1);

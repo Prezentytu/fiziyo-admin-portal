@@ -17,6 +17,7 @@ import {
 } from '@/components/ui/command';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import { HIDE_EXERCISE_TAGS } from '@/components/shared/exercise';
 import {
   MAIN_TAGS,
   ADDITIONAL_TAGS,
@@ -194,6 +195,8 @@ export function TagSmartChips({
 
     return groups;
   }, [filteredTags]);
+
+  if (HIDE_EXERCISE_TAGS) return null;
 
   return (
     <div className={cn('space-y-3', className)} data-testid={testId}>
@@ -378,6 +381,8 @@ interface TagSmartChipsReadOnlyProps {
 }
 
 export function TagSmartChipsReadOnly({ tags, label, className }: TagSmartChipsReadOnlyProps) {
+  if (HIDE_EXERCISE_TAGS) return null;
+
   return (
     <div className={cn('space-y-2', className)}>
       {label && (

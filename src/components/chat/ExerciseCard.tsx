@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import type { ParsedExercise } from '@/types/chat.types';
+import { HIDE_EXERCISE_TAGS } from '@/components/shared/exercise';
 
 interface ExerciseCardProps {
   exercise: ParsedExercise;
@@ -64,7 +65,7 @@ export function ExerciseCard({ exercise, onAddToSet, className }: ExerciseCardPr
         <h4 className="font-semibold text-foreground leading-tight pr-8">{exercise.name}</h4>
 
         {/* Tagi */}
-        {exercise.tags.length > 0 && (
+        {!HIDE_EXERCISE_TAGS && exercise.tags.length > 0 && (
           <div className="flex flex-wrap gap-1.5">
             {exercise.tags.map((tag, index) => (
               <Badge

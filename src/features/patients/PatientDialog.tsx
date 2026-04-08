@@ -37,6 +37,8 @@ interface PatientDialogProps {
   readonly therapistId: string;
   readonly clinicId?: string;
   readonly onSuccess?: () => void;
+  readonly embeddedMode?: 'default' | 'assignment';
+  readonly onPatientCreated?: (patient: Patient) => void;
 }
 
 export function PatientDialog({
@@ -46,6 +48,8 @@ export function PatientDialog({
   therapistId,
   clinicId,
   onSuccess,
+  embeddedMode = 'default',
+  onPatientCreated,
 }: PatientDialogProps) {
   const [showCloseConfirm, setShowCloseConfirm] = useState(false);
   const [formIsDirty, setFormIsDirty] = useState(false);
@@ -98,15 +102,20 @@ export function PatientDialog({
     }
   }, [open]);
 
+  const shouldRefetchAfterCreate = embeddedMode !== 'assignment';
+  const patientCreateRefetchQueries = shouldRefetchAfterCreate
+    ? [
+        { query: GET_THERAPIST_PATIENTS_QUERY, variables: { therapistId, organizationId } },
+        { query: GET_ALL_THERAPIST_PATIENTS_QUERY, variables: { therapistId, organizationId } },
+        { query: GET_ORGANIZATION_PATIENTS_QUERY, variables: { organizationId, filter: 'all' } },
+        { query: GET_ORGANIZATION_PATIENTS_QUERY, variables: { organizationId, filter: 'my' } },
+        { query: GET_ALL_PATIENT_ASSIGNMENTS_QUERY },
+      ]
+    : [];
+
   // Create shadow patient - creates user + adds to organization + assigns to therapist in one step
   const [createPatient, { loading }] = useMutation(CREATE_SHADOW_PATIENT_MUTATION, {
-    refetchQueries: [
-      { query: GET_THERAPIST_PATIENTS_QUERY, variables: { therapistId, organizationId } },
-      { query: GET_ALL_THERAPIST_PATIENTS_QUERY, variables: { therapistId, organizationId } },
-      { query: GET_ORGANIZATION_PATIENTS_QUERY, variables: { organizationId, filter: 'all' } },
-      { query: GET_ORGANIZATION_PATIENTS_QUERY, variables: { organizationId, filter: 'my' } },
-      { query: GET_ALL_PATIENT_ASSIGNMENTS_QUERY },
-    ],
+    refetchQueries: patientCreateRefetchQueries,
   });
 
   // Helper to format phone with +48 prefix
@@ -143,6 +152,22 @@ export function PatientDialog({
         throw new Error('Nie udało się utworzyć pacjenta');
       }
 
+      if (embeddedMode === 'assignment') {
+        onPatientCreated?.({
+          id: patient.id,
+          name: patient.fullname || `${values.firstName} ${values.lastName}`,
+          email: patient.email,
+          isShadowUser: true,
+        });
+        setCreatedPatient(null);
+        setFormIsDirty(false);
+        setShowSuccessAnimation(false);
+        onOpenChange(false);
+        onSuccess?.();
+        toast.success('Pacjent został dodany');
+        return;
+      }
+
       // Trigger success animation
       setShowSuccessAnimation(true);
 
@@ -165,6 +190,20 @@ export function PatientDialog({
   const handleLookupSuccess = useCallback(
     (patient: { id: string; fullname: string; email?: string; firstName?: string; lastName?: string }) => {
       if (patient.id) {
+        if (embeddedMode === 'assignment') {
+          onPatientCreated?.({
+            id: patient.id,
+            name: patient.fullname,
+            email: patient.email,
+            isShadowUser: true,
+          });
+          setCreatedPatient(null);
+          setFormIsDirty(false);
+          setShowSuccessAnimation(false);
+          onOpenChange(false);
+          onSuccess?.();
+          return;
+        }
         // Existing patient was added via SmartPatientLookup
         setShowSuccessAnimation(true);
         setCreatedPatient({
@@ -179,7 +218,7 @@ export function PatientDialog({
       // Note: If id is empty, SmartPatientLookup's PatientForm will handle submission
       // through onSubmit prop which we'll wire to handleCreateNewPatient
     },
-    []
+    [embeddedMode, onOpenChange, onPatientCreated, onSuccess]
   );
 
   // Convert created patient to AssignmentWizard format
@@ -276,14 +315,16 @@ export function PatientDialog({
                 )}
               >
                 {/* Primary Action - Assign Set */}
-                <Button
-                  onClick={handleAssignSet}
-                  className="w-full h-12 text-base gap-2 bg-linear-to-r from-primary to-primary-dark shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 transition-all duration-200"
-                  data-testid="patient-dialog-assign-btn"
-                >
-                  <Send className="h-5 w-5" />
-                  Przypisz zestaw ćwiczeń
-                </Button>
+                {embeddedMode !== 'assignment' && (
+                  <Button
+                    onClick={handleAssignSet}
+                    className="w-full h-12 text-base gap-2 bg-linear-to-r from-primary to-primary-dark shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 transition-all duration-200"
+                    data-testid="patient-dialog-assign-btn"
+                  >
+                    <Send className="h-5 w-5" />
+                    Przypisz zestaw ćwiczeń
+                  </Button>
+                )}
 
                 {/* Secondary Action - Add Another */}
                 <Button
@@ -356,7 +397,7 @@ export function PatientDialog({
       </Dialog>
 
       {/* Assignment Wizard */}
-      {wizardPatient && (
+      {embeddedMode !== 'assignment' && wizardPatient && (
         <AssignmentWizard
           open={showAssignWizard}
           onOpenChange={(isOpen) => {

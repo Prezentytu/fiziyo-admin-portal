@@ -40,7 +40,6 @@ import { AddExerciseToSetsDialog } from '@/features/exercises/AddExerciseToSetsD
 import { SubmitToGlobalDialog } from '@/features/exercises/SubmitToGlobalDialog';
 import { FeedbackBanner } from '@/features/exercises/FeedbackBanner';
 import { ReportExerciseDialog } from '@/features/exercises/ReportExerciseDialog';
-import { ColorBadge } from '@/components/shared/ColorBadge';
 import { ImagePlaceholder } from '@/components/shared/ImagePlaceholder';
 import { ImageLightbox } from '@/components/shared/ImageLightbox';
 import { getMediaUrls } from '@/utils/mediaUrl';
@@ -52,6 +51,12 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
+import {
+  EMPTY_NUMERIC_VALUE,
+  EXERCISE_FIELD_METADATA,
+  formatFieldValueWithPlaceholder,
+  normalizeExerciseFieldValues,
+} from '@/components/shared/exercise';
 
 import { GET_EXERCISE_BY_ID_QUERY, GET_ORGANIZATION_EXERCISES_QUERY } from '@/graphql/queries/exercises.queries';
 import { GET_EXERCISE_TAGS_BY_ORGANIZATION_QUERY } from '@/graphql/queries/exerciseTags.queries';
@@ -65,7 +70,7 @@ import {
 import { createTagsMap, mapExerciseTagsToObjects } from '@/utils/tagUtils';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import type { ExerciseByIdResponse, ExerciseTagsResponse, TagCategoriesResponse } from '@/types/apollo';
-import { translateExerciseTypeShort, translateExerciseSidePolish } from '@/components/pdf/polishUtils';
+import { translateExerciseSidePolish } from '@/components/pdf/polishUtils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { getNextExerciseCopyName } from '@/features/exercises/utils/getNextExerciseCopyName';
@@ -297,8 +302,6 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
   const allImages = getMediaUrls([exercise.imageUrl, ...(exercise.images || [])]);
   const currentImage = allImages[selectedImageIndex] || null;
 
-  const hasTags = (exercise.mainTags?.length ?? 0) > 0 || (exercise.additionalTags?.length ?? 0) > 0;
-
   // Check if exercise can be submitted to global review
   // Only for ORGANIZATION scope exercises that don't have an active global submission
   const canSubmitToGlobal = exercise.scope === 'ORGANIZATION' && !exercise.globalSubmissionId;
@@ -313,68 +316,97 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
   // Can resubmit when changes were requested
   const canResubmit = isChangesRequested && hasGlobalSubmission;
 
-  const setsValue = exercise.defaultSets ?? exercise.sets;
-  const repsValue = exercise.defaultReps ?? exercise.reps;
-  const executionTimeValue = exercise.defaultExecutionTime ?? exercise.executionTime;
-  const restBetweenSetsValue = exercise.defaultRestBetweenSets ?? exercise.restSets;
-  const restBetweenRepsValue = exercise.defaultRestBetweenReps ?? exercise.restReps;
+  const normalizedFields = normalizeExerciseFieldValues(exercise);
 
   const quickStats = [
-    { id: 'sets', label: 'Serie', value: setsValue, icon: Repeat, color: 'text-primary' },
-    { id: 'reps', label: 'Powtórzenia', value: repsValue, icon: Dumbbell, color: 'text-secondary' },
     {
-      id: 'executionTime',
-      label: 'Czas powtórzenia',
-      value: executionTimeValue ? `${executionTimeValue}s` : null,
-      icon: Clock,
+      id: 'sets',
+      label: EXERCISE_FIELD_METADATA.sets.label,
+      value: formatFieldValueWithPlaceholder(EXERCISE_FIELD_METADATA.sets, normalizedFields),
+      icon: Repeat,
+      color: 'text-primary',
+    },
+    {
+      id: 'reps',
+      label: EXERCISE_FIELD_METADATA.reps.label,
+      value: formatFieldValueWithPlaceholder(EXERCISE_FIELD_METADATA.reps, normalizedFields),
+      icon: Dumbbell,
+      color: 'text-secondary',
+    },
+    {
+      id: 'duration',
+      label: EXERCISE_FIELD_METADATA.duration.label,
+      value: formatFieldValueWithPlaceholder(EXERCISE_FIELD_METADATA.duration, normalizedFields),
+      icon: Timer,
       color: 'text-info',
     },
     {
-      id: 'restBetweenSets',
-      label: 'Przerwa między seriami',
-      value: restBetweenSetsValue ? `${restBetweenSetsValue}s` : null,
-      icon: Timer,
-      color: 'text-orange-500',
+      id: 'executionTime',
+      label: EXERCISE_FIELD_METADATA.executionTime.label,
+      value: formatFieldValueWithPlaceholder(EXERCISE_FIELD_METADATA.executionTime, normalizedFields),
+      icon: Clock,
+      color: 'text-info',
     },
-  ].filter((metric) => metric.value);
+  ];
 
   const detailStats = [
     {
+      id: 'restBetweenSets',
+      label: EXERCISE_FIELD_METADATA.restSets.label,
+      value: formatFieldValueWithPlaceholder(EXERCISE_FIELD_METADATA.restSets, normalizedFields),
+      icon: Timer,
+      color: 'text-orange-500',
+    },
+    {
       id: 'prep',
-      label: 'Przygotowanie',
-      value: exercise.preparationTime ? `${exercise.preparationTime}s` : null,
+      label: EXERCISE_FIELD_METADATA.preparationTime.label,
+      value: formatFieldValueWithPlaceholder(EXERCISE_FIELD_METADATA.preparationTime, normalizedFields),
       icon: Clock,
       color: 'text-emerald-500',
     },
     {
       id: 'restBetweenReps',
-      label: 'Przerwa między powt.',
-      value: restBetweenRepsValue ? `${restBetweenRepsValue}s` : null,
+      label: EXERCISE_FIELD_METADATA.restReps.label,
+      value: formatFieldValueWithPlaceholder(EXERCISE_FIELD_METADATA.restReps, normalizedFields),
       icon: Timer,
       color: 'text-cyan-500',
     },
     {
       id: 'tempo',
-      label: 'Tempo',
-      value: exercise.tempo ?? null,
+      label: EXERCISE_FIELD_METADATA.tempo.label,
+      value: formatFieldValueWithPlaceholder(EXERCISE_FIELD_METADATA.tempo, normalizedFields, 'Nie ustawiono'),
       icon: RefreshCw,
       color: 'text-violet',
     },
     {
+      id: 'load',
+      label: EXERCISE_FIELD_METADATA.load.label,
+      value: formatFieldValueWithPlaceholder(EXERCISE_FIELD_METADATA.load, normalizedFields, 'Nie ustawiono'),
+      icon: Dumbbell,
+      color: 'text-primary',
+    },
+    {
       id: 'side',
-      label: 'Strona ciała',
-      value: translateExerciseSidePolish(exercise.side || exercise.exerciseSide) || null,
+      label: EXERCISE_FIELD_METADATA.side.label,
+      value: formatFieldValueWithPlaceholder(EXERCISE_FIELD_METADATA.side, normalizedFields, 'Nie ustawiono'),
       icon: ArrowLeftRight,
       color: 'text-sky-500',
     },
     {
+      id: 'rangeOfMotion',
+      label: EXERCISE_FIELD_METADATA.rangeOfMotion.label,
+      value: formatFieldValueWithPlaceholder(EXERCISE_FIELD_METADATA.rangeOfMotion, normalizedFields, 'Nie ustawiono'),
+      icon: Repeat,
+      color: 'text-indigo-500',
+    },
+    {
       id: 'difficulty',
-      label: 'Poziom trudności',
-      value: exercise.difficultyLevel ?? null,
+      label: EXERCISE_FIELD_METADATA.difficultyLevel.label,
+      value: formatFieldValueWithPlaceholder(EXERCISE_FIELD_METADATA.difficultyLevel, normalizedFields, 'Nie ustawiono'),
       icon: Dumbbell,
       color: 'text-amber-500',
     },
-  ].filter((metric) => metric.value);
+  ];
 
   const patientDescription = exercise.patientDescription || exercise.description || '';
   const physiotherapistDescription = exercise.clinicalDescription || '';
@@ -475,11 +507,6 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
       {/* Hero Section: Title + Meta */}
       <div className="space-y-2">
         <div className="flex flex-wrap items-center gap-2">
-          {exercise.type && (
-            <Badge variant="default" className="text-[10px] uppercase font-bold tracking-wider">
-              {translateExerciseTypeShort(exercise.type)}
-            </Badge>
-          )}
           <Badge variant="secondary" className="text-[10px] uppercase font-bold tracking-wider">
             <ArrowLeftRight className="mr-1 h-3 w-3" />
             {translateExerciseSidePolish(exercise.side || exercise.exerciseSide) || 'Bez podziału'}
@@ -524,44 +551,6 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
         <h1 className="text-2xl font-bold text-foreground" data-testid="exercise-detail-name">
           {exercise.name}
         </h1>
-        {hasTags && (
-          <div className="flex flex-wrap gap-2 pt-1">
-            {exercise.mainTags?.map((tag) =>
-              isTagObject(tag) ? (
-                <ColorBadge key={tag.id} color={tag.color} className="text-[10px] uppercase font-medium tracking-wider">
-                  {tag.name}
-                </ColorBadge>
-              ) : (
-                <Badge
-                  key={tag}
-                  variant="outline"
-                  className="text-[10px] uppercase font-medium tracking-wider opacity-60"
-                >
-                  {tag}
-                </Badge>
-              )
-            )}
-            {exercise.additionalTags?.map((tag) =>
-              isTagObject(tag) ? (
-                <ColorBadge
-                  key={tag.id}
-                  color={tag.color}
-                  className="text-[10px] uppercase font-medium tracking-wider opacity-60"
-                >
-                  {tag.name}
-                </ColorBadge>
-              ) : (
-                <Badge
-                  key={tag}
-                  variant="outline"
-                  className="text-[10px] uppercase font-medium tracking-wider opacity-40"
-                >
-                  {tag}
-                </Badge>
-              )
-            )}
-          </div>
-        )}
       </div>
 
       {/* Feedback Banner for CHANGES_REQUESTED */}
@@ -656,21 +645,22 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
           </CollapsibleTrigger>
           <CollapsibleContent>
             <div className="grid gap-3 border-t border-border/40 p-4 sm:grid-cols-2 lg:grid-cols-3">
-              {detailStats.length > 0 ? (
-                detailStats.map((metric) => (
-                  <div key={metric.id} className="rounded-xl bg-surface-light/40 p-3">
-                    <p className="text-xs text-muted-foreground">{metric.label}</p>
-                    <div className="mt-1 flex items-center gap-2">
-                      <metric.icon className={cn('h-4 w-4', metric.color)} />
-                      <span className="text-sm font-semibold text-foreground">{metric.value}</span>
-                    </div>
+              {detailStats.map((metric) => (
+                <div key={metric.id} className="rounded-xl bg-surface-light/40 p-3">
+                  <p className="text-xs text-muted-foreground">{metric.label}</p>
+                  <div className="mt-1 flex items-center gap-2">
+                    <metric.icon className={cn('h-4 w-4', metric.color)} />
+                    <span
+                      className={cn(
+                        'text-sm font-semibold',
+                        metric.value === EMPTY_NUMERIC_VALUE ? 'text-muted-foreground' : 'text-foreground'
+                      )}
+                    >
+                      {metric.value}
+                    </span>
                   </div>
-                ))
-              ) : (
-                <p className="text-sm text-muted-foreground sm:col-span-2 lg:col-span-3">
-                  Brak dodatkowych parametrów dla tego ćwiczenia.
-                </p>
-              )}
+                </div>
+              ))}
             </div>
           </CollapsibleContent>
         </div>

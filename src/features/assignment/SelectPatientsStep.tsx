@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Search, Users, Check, Wrench, X } from 'lucide-react';
+import { Search, Users, Check, Wrench, X, UserPlus, Plus, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -17,6 +17,8 @@ interface SelectPatientsStepProps {
   assignedPatients?: AssignedPatientInfo[];
   onUnassign?: (assignmentId: string, patientName: string) => void;
   loading?: boolean;
+  onCreatePatient?: () => void;
+  isCreatingPatient?: boolean;
 }
 
 export function SelectPatientsStep({
@@ -26,6 +28,8 @@ export function SelectPatientsStep({
   assignedPatients = [],
   onUnassign,
   loading = false,
+  onCreatePatient,
+  isCreatingPatient = false,
 }: SelectPatientsStepProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [patientsToUnassign, setPatientsToUnassign] = useState<Set<string>>(new Set());
@@ -109,6 +113,31 @@ export function SelectPatientsStep({
     }
   };
 
+  const renderCreatePatientTile = () => {
+    if (!onCreatePatient) return null;
+
+    return (
+      <button
+        type="button"
+        className="w-full flex items-center gap-3 rounded-xl p-3 cursor-pointer transition-all border-2 border-transparent hover:bg-surface-light"
+        onClick={onCreatePatient}
+        disabled={isCreatingPatient}
+        data-testid="assignment-create-patient-tile-btn"
+      >
+        <div className="flex h-10 w-10 items-center justify-center rounded-full text-sm font-semibold bg-primary/10 text-primary shrink-0">
+          {isCreatingPatient ? <Loader2 className="h-4 w-4 animate-spin" /> : <UserPlus className="h-4 w-4" />}
+        </div>
+        <div className="flex-1 min-w-0 text-left">
+          <p className="font-medium truncate">Dodaj nowego pacjenta</p>
+          <p className="text-xs text-muted-foreground truncate">Utwórz pacjenta i zaznacz go do przypisania</p>
+        </div>
+        <div className="h-8 w-8 rounded-lg bg-surface-light border border-border flex items-center justify-center transition-all shrink-0">
+          {isCreatingPatient ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+        </div>
+      </button>
+    );
+  };
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full min-h-0 p-6">
       {/* Left column - Patient list */}
@@ -154,6 +183,7 @@ export function SelectPatientsStep({
             </div>
           ) : sortedPatients.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-center px-4">
+              {onCreatePatient && <div className="w-full max-w-md mb-6">{renderCreatePatientTile()}</div>}
               <Users className="h-12 w-12 text-muted-foreground/50 mb-3" />
               <p className="text-sm font-medium text-foreground mb-1">
                 {searchQuery ? 'Nie znaleziono pacjentów' : 'Brak pacjentów'}
@@ -164,6 +194,7 @@ export function SelectPatientsStep({
             </div>
           ) : (
             <div className="p-2 space-y-1">
+              {renderCreatePatientTile()}
               {sortedPatients.map((patient) => {
                 const isAssigned = assignedPatientsMap.has(patient.id);
                 const isSelectedForAssign = selectedIds.has(patient.id);

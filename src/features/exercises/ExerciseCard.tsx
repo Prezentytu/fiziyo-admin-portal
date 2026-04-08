@@ -30,10 +30,12 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
-import { ColorBadge } from '@/components/shared/ColorBadge';
 import { ImagePlaceholder } from '@/components/shared/ImagePlaceholder';
 import { ImageLightbox } from '@/components/shared/ImageLightbox';
 import { getMediaUrl } from '@/utils/mediaUrl';
+import {
+  HIDE_EXERCISE_TAGS,
+} from '@/components/shared/exercise';
 
 export interface ExerciseTag {
   id: string;
@@ -115,45 +117,6 @@ interface ExerciseCardProps {
   compact?: boolean;
 }
 
-function isTagObject(tag: string | ExerciseTag): tag is ExerciseTag {
-  return typeof tag === 'object' && 'name' in tag;
-}
-
-function renderTags(tags: (string | ExerciseTag)[] | undefined, limit: number = 3) {
-  if (!tags || tags.length === 0) return null;
-
-  const visibleTags = tags.slice(0, limit);
-  const remainingCount = tags.length - limit;
-
-  return (
-    <div className="flex flex-wrap gap-1.5">
-      {visibleTags.map((tag, index) => {
-        if (isTagObject(tag)) {
-          return (
-            <ColorBadge key={tag.id} color={tag.color} size="sm">
-              {tag.name}
-            </ColorBadge>
-          );
-        }
-        return (
-          <Badge key={index} variant="secondary" className="text-[10px] px-2 py-0.5">
-            {tag}
-          </Badge>
-        );
-      })}
-      {remainingCount > 0 && (
-        <Badge variant="outline" className="text-[10px] px-2 py-0.5">
-          +{remainingCount}
-        </Badge>
-      )}
-    </div>
-  );
-}
-
-function normalizeTagLabel(tag: string | ExerciseTag): string {
-  return isTagObject(tag) ? tag.name : tag;
-}
-
 export function ExerciseCard({
   exercise,
   onView,
@@ -218,10 +181,10 @@ export function ExerciseCard({
     .map((img) => getMediaUrl(img))
     .filter((img): img is string => !!img);
 
-  // Support both new and legacy field names
-  const sets = exercise.defaultSets ?? exercise.sets;
-  const reps = exercise.defaultReps ?? exercise.reps;
-  const duration = exercise.defaultDuration ?? exercise.duration;
+  // Lightweight card params for list view only
+  const setsValue = exercise.defaultSets ?? exercise.sets;
+  const repsValue = exercise.defaultReps ?? exercise.reps;
+  const executionTimeValue = exercise.defaultExecutionTime ?? exercise.executionTime;
 
   // Compact list view
   if (compact) {
@@ -335,24 +298,24 @@ export function ExerciseCard({
               )}
             </div>
             <div className="flex items-center gap-3 text-xs text-muted-foreground">
-              {sets && sets > 0 && (
+              {setsValue && setsValue > 0 && (
                 <span className="flex items-center gap-1">
                   <Repeat className="h-3 w-3" />
-                  {sets} serii
+                  {setsValue} serii
                 </span>
               )}
-              {reps && reps > 0 && <span>{reps} powt.</span>}
-              {duration && duration > 0 && (
+              {repsValue && repsValue > 0 && <span>{repsValue} powt.</span>}
+              {executionTimeValue && executionTimeValue > 0 && (
                 <span className="flex items-center gap-1">
                   <Clock className="h-3 w-3" />
-                  {duration}s
+                  {executionTimeValue}s
                 </span>
               )}
             </div>
           </div>
 
-          {/* Tags */}
-          <div className="hidden sm:block">{renderTags(exercise.mainTags, 2)}</div>
+          {/* Tags are intentionally hidden in current UX iteration */}
+          {!HIDE_EXERCISE_TAGS && <div className="hidden sm:block" />}
 
           {/* Add to builder button */}
           {onToggleBuilder && (
@@ -711,15 +674,7 @@ export function ExerciseCard({
               {exercise.name}
             </h3>
 
-            {/* Primary Metadata: Focus on Type & Body Parts */}
-            <div className="flex items-center gap-2 text-[10px] sm:text-[11px] text-muted-foreground/80 font-medium">
-              {exercise.mainTags && exercise.mainTags.length > 0 && (
-                <>
-                  <span className="w-1 h-1 rounded-full bg-border" />
-                  <span className="truncate">{exercise.mainTags.slice(0, 2).map(normalizeTagLabel).join(', ')}</span>
-                </>
-              )}
-            </div>
+            {/* List/grid card should stay lightweight; full params are shown in detail views */}
           </div>
         </div>
 

@@ -14,6 +14,30 @@ Dziennik wniosków z pracy AI agentów. Po każdej korekcie dodaj nowy wpis.
 
 ## Wpisy
 
+### 2026-04-07 - Preview detalu musi fallbackowac do miniatury
+
+- **Kategoria**: `UI/UX`
+- **Problem**: W części flow miniatura ćwiczenia była widoczna, ale po kliknięciu nowy podgląd detalu czasem pokazywał pusty media-state.
+- **Przyczyna**: Podgląd bazował głównie na `imageUrls`, podczas gdy niektóre rekordy miały tylko `thumbnailUrl` albo mieszane URL-e wymagające defensywnego mapowania.
+- **Rozwiązanie**: Wspólny `ExercisePreviewDialog` dostał fallback do `thumbnailUrl` i bezpieczne mapowanie URL-i (`getMediaUrl(...) ?? raw`), dzięki czemu media są spójne między miniaturą a podglądem.
+- **Reguła**: Jeśli UI używa miniatury jako punktu wejścia do detalu, detal musi dziedziczyć ten sam fallback obrazu (thumbnail-first), a nie polegać wyłącznie na oddzielnej liście galerii.
+
+### 2026-04-07 - Spójność detalu ćwiczenia wymaga jednego registry prezentacji
+
+- **Kategoria**: `UI/UX`
+- **Problem**: Różne widoki ćwiczeń pokazywały inny zakres pól, różne etykiety czasu (`Czas` vs `Czas serii`/`Czas powtórzenia`) i ukrywały brakujące dane, przez co UX był niespójny.
+- **Przyczyna**: Formatowanie i kolejność pól były rozproszone między lokalnymi rendererami zamiast jednego wspólnego kontraktu.
+- **Rozwiązanie**: Wyodrębniono wspólny `displayRegistry` i normalizer dla pól ćwiczenia, przepięto kluczowe widoki na wspólne metadane oraz wdrożono jednolite placeholdery; dodatkowo wprowadzono tymczasowy feature-flag ukrycia tagów (`HIDE_EXERCISE_TAGS`) na warstwie UI.
+- **Reguła**: Dla danych domenowych renderowanych w wielu miejscach utrzymuj jedno źródło prawdy dla etykiet, kolejności i fallbacków; różnicuj tylko layout, nigdy semantykę pól.
+
+### 2026-04-04 - Optimistic selection po create w wizardze nie moze czekac na refetch
+
+- **Kategoria**: `UI/UX`
+- **Problem**: Po dodaniu pacjenta w Assignment Wizard zaznaczenie pojawialo sie z opoznieniem i wygladalo jak problem sieci.
+- **Przyczyna**: Callback `handlePatientCreated` wykonywal `await refetchPatientsList()` przed aktualizacja `selectedPatients`, przez co UX byl blokowany przez round-trip do backendu; dodatkowo create-flow mial ryzyko podwojnego odswiezania listy.
+- **Rozwiazanie**: Przelaczono flow na optimistic selection (natychmiastowy update wyboru), refetch przeniesiono do tla bez blokowania i ograniczono koszt odswiezania w trybie `embeddedMode="assignment"`.
+- **Regula**: W flow create+select selection state aktualizuj od razu po sukcesie mutacji, a synchronizacje listy wykonuj asynchronicznie w tle; nigdy nie uzalezniaj podstawowego feedbacku UX od refetcha.
+
 ### 2026-04-01 - Verification detail wymaga dedykowanego resolvera admin
 
 - **Kategoria**: `GraphQL`

@@ -55,6 +55,11 @@ interface Exercise {
   sets?: number;
   reps?: number;
   duration?: number;
+  executionTime?: number;
+  defaultSets?: number;
+  defaultReps?: number;
+  defaultDuration?: number;
+  defaultExecutionTime?: number;
   mainTags?: (string | ExerciseTag)[];
   additionalTags?: (string | ExerciseTag)[];
 }
@@ -433,9 +438,9 @@ Zwróć wyłącznie propozycję nazwy zestawu.
             exerciseId: exercise.id,
             exerciseSetId: setId,
             order: 1,
-            sets: exercise.sets || null,
-            reps: exercise.reps || null,
-            duration: exercise.duration || null,
+            sets: exercise.defaultSets ?? exercise.sets ?? null,
+            reps: exercise.defaultReps ?? exercise.reps ?? null,
+            duration: exercise.defaultDuration ?? exercise.duration ?? null,
           },
           refetchQueries: [
             {
@@ -489,9 +494,9 @@ Zwróć wyłącznie propozycję nazwy zestawu.
           exerciseId: exercise.id,
           exerciseSetId: newSetId,
           order: 1,
-          sets: exercise.sets || null,
-          reps: exercise.reps || null,
-          duration: exercise.duration || null,
+          sets: exercise.defaultSets ?? exercise.sets ?? null,
+          reps: exercise.defaultReps ?? exercise.reps ?? null,
+          duration: exercise.defaultDuration ?? exercise.duration ?? null,
         },
       });
 
@@ -537,7 +542,13 @@ Zwróć wyłącznie propozycję nazwy zestawu.
     emptySetsMessage = 'Brak zestawów - utwórz pierwszy!';
   }
 
-  const exerciseMeta = `${exercise.sets ?? '-'} serii • ${exercise.reps ?? '-'} powt. • ${exercise.duration ?? '-'} s`;
+  const setsValue = exercise.defaultSets ?? exercise.sets ?? null;
+  const repsValue = exercise.defaultReps ?? exercise.reps ?? null;
+  const durationValue = exercise.defaultDuration ?? exercise.duration ?? null;
+  const executionTimeValue = exercise.defaultExecutionTime ?? exercise.executionTime ?? null;
+  const exerciseMeta = `${setsValue ?? '—'} serii • ${repsValue ?? '—'} powt. • Czas serii: ${durationValue ?? '—'} • Czas powtórzenia: ${
+    executionTimeValue ?? '—'
+  }`;
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>

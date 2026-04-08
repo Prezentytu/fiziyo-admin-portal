@@ -53,6 +53,7 @@ describe('ExerciseDetailsDialog', () => {
     expect(screen.getByTestId('assign-set-preview-exercise-details-params')).toHaveTextContent('3');
     expect(screen.getByTestId('assign-set-preview-exercise-details-params')).toHaveTextContent('Tempo');
     expect(screen.getByTestId('assign-set-preview-exercise-details-params')).toHaveTextContent('3-1-2-0');
+    expect(screen.queryByText('Tagi')).not.toBeInTheDocument();
     expect(screen.getByTestId('assign-set-preview-exercise-details-help-tempo')).toBeInTheDocument();
     expect(screen.getByTestId('assign-set-preview-exercise-details-video')).toBeInTheDocument();
     expect(screen.getByTestId('assign-set-preview-exercise-details-dialog')).toHaveClass('max-h-[90vh]');
@@ -79,6 +80,8 @@ describe('ExerciseDetailsDialog', () => {
     expect(screen.getByTestId('assign-set-preview-exercise-details-description')).toHaveTextContent(
       'Brak opisu ćwiczenia.'
     );
+    expect(screen.getByTestId('assign-set-preview-exercise-details-params')).toHaveTextContent('Czas serii');
+    expect(screen.getByTestId('assign-set-preview-exercise-details-params')).toHaveTextContent('—');
   });
 
   it('calls onOpenChange(false) when close button is clicked', async () => {

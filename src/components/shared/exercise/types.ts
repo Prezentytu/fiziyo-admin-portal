@@ -11,6 +11,8 @@ export interface ExerciseExecutionCardData {
   thumbnailUrl?: string;
   /** Full list of image URLs for gallery/lightbox (thumbnail first, then rest). */
   imageUrls?: string[];
+  /** Optional video URL displayed in exercise preview. */
+  videoUrl?: string;
   /** Main dosage */
   sets: number;
   reps: number;

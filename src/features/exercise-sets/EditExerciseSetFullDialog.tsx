@@ -17,8 +17,11 @@ import {
   type BuilderExercise,
   type ExerciseTag,
 } from '@/components/shared/ExerciseSetBuilder';
-import { ImageLightbox } from '@/components/shared/ImageLightbox';
-import { buildExerciseImageUrls } from '@/components/shared/exercise';
+import {
+  ExercisePreviewDialog,
+  fromBuilderExercise,
+  type ExerciseExecutionCardData,
+} from '@/components/shared/exercise';
 
 import { GET_AVAILABLE_EXERCISES_QUERY } from '@/graphql/queries/exercises.queries';
 import {
@@ -93,7 +96,7 @@ export function EditExerciseSetFullDialog({
   const [selectedInstances, setSelectedInstances] = useState<ExerciseInstance[]>([]);
   const [exerciseParams, setExerciseParams] = useState<Map<string, ExerciseParams>>(new Map());
   const [showCloseConfirm, setShowCloseConfirm] = useState(false);
-  const [previewExercise, setPreviewExercise] = useState<BuilderExercise | null>(null);
+  const [previewExercise, setPreviewExercise] = useState<ExerciseExecutionCardData | null>(null);
   const initialMappingsRef = React.useRef<InitialMapping[]>([]);
   const initialNameRef = React.useRef('');
   const initialDescriptionRef = React.useRef('');
@@ -238,6 +241,7 @@ export function EditExerciseSetFullDialog({
         thumbnailUrl: raw.thumbnailUrl as string | undefined,
         imageUrl: raw.imageUrl as string | undefined,
         images: raw.images as string[] | undefined,
+        videoUrl: raw.videoUrl as string | undefined,
         defaultSets: raw.defaultSets as number | undefined,
         defaultReps: raw.defaultReps as number | undefined,
         defaultDuration: raw.defaultDuration as number | undefined,
@@ -408,12 +412,9 @@ export function EditExerciseSetFullDialog({
     onSuccess,
   ]);
 
-  const handlePreviewExercise = useCallback((exercise: BuilderExercise) => {
-    setPreviewExercise(exercise);
+  const handlePreviewExercise = useCallback((exercise: BuilderExercise, params?: ExerciseParams) => {
+    setPreviewExercise(fromBuilderExercise(exercise, params ?? {}));
   }, []);
-
-  const previewGallery = previewExercise ? buildExerciseImageUrls(previewExercise) : [];
-  const showLightbox = previewExercise !== null && previewGallery.length > 0;
 
   const canSave = name.trim().length > 0;
 
@@ -499,17 +500,14 @@ export function EditExerciseSetFullDialog({
         onConfirm={handleConfirmClose}
       />
 
-      {showLightbox && previewExercise && (
-        <ImageLightbox
-          src={previewGallery[0]}
-          alt={previewExercise.name}
-          open={showLightbox}
-          onOpenChange={(isOpen) => {
-            if (!isOpen) setPreviewExercise(null);
-          }}
-          images={previewGallery}
-        />
-      )}
+      <ExercisePreviewDialog
+        open={previewExercise !== null}
+        exercise={previewExercise}
+        onOpenChange={(isOpen) => {
+          if (!isOpen) setPreviewExercise(null);
+        }}
+        testIdPrefix="set-edit-full-preview"
+      />
     </>
   );
 }

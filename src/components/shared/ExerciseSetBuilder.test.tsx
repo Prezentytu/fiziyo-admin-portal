@@ -99,3 +99,51 @@ describe('ExerciseSetBuilder description field', () => {
     expect(onDescriptionChange).toHaveBeenCalled();
   });
 });
+
+describe('ExerciseSetBuilder preview semantics', () => {
+  it('triggers exercise preview from thumbnails', async () => {
+    const user = userEvent.setup();
+    const onPreviewExercise = vi.fn();
+    const paramsMap = new Map([
+      [
+        'instance-1',
+        {
+          sets: 4,
+          reps: 12,
+          duration: 30,
+          restSets: 40,
+          restReps: 5,
+          preparationTime: 10,
+          executionTime: 6,
+          exerciseSide: 'both',
+          notes: 'Oddychaj',
+        },
+      ],
+    ]);
+
+    const exercise = {
+      id: 'exercise-1',
+      name: 'Mostek',
+      imageUrl: '/image-1.jpg',
+      defaultSets: 3,
+      defaultReps: 10,
+    };
+
+    render(
+      <ExerciseSetBuilder
+        {...createProps({
+          availableExercises: [exercise],
+          selectedInstances: [{ instanceId: 'instance-1', exerciseId: 'exercise-1' }],
+          exerciseParams: paramsMap,
+          onPreviewExercise,
+        })}
+      />
+    );
+
+    await user.click(screen.getByTestId('set-builder-exercise-1-thumbnail-btn'));
+    expect(onPreviewExercise).toHaveBeenCalledWith(exercise, paramsMap.get('instance-1'));
+
+    await user.click(screen.getByRole('button', { name: 'Podgląd ćwiczenia: Mostek' }));
+    expect(onPreviewExercise).toHaveBeenCalledWith(exercise);
+  });
+});

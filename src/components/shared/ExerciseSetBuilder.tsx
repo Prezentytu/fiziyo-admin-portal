@@ -85,6 +85,7 @@ export interface BuilderExercise {
   description?: string;
   imageUrl?: string;
   images?: string[];
+  videoUrl?: string;
   sets?: number;
   reps?: number;
   duration?: number;
@@ -160,13 +161,19 @@ export interface ExerciseSetBuilderProps {
   hideNameSection?: boolean;
 
   // Preview exercise callback
-  onPreviewExercise?: (exercise: BuilderExercise) => void;
+  onPreviewExercise?: (exercise: BuilderExercise, params?: ExerciseParams) => void;
 
   // Test IDs prefix
   testIdPrefix?: string;
 
   /** When set, instances with these IDs are shown read-only (e.g. already in set). */
   readonlyInstanceIds?: Set<string>;
+  /** Optional quick action rendered in exercise library list. */
+  onCreateExercise?: () => void;
+  isCreatingExercise?: boolean;
+  createExerciseLabel?: string;
+  createExerciseDescription?: string;
+  createExerciseTestId?: string;
 }
 
 // ============================================================
@@ -201,7 +208,7 @@ function ExercisePickerItem({
         type="button"
         onClick={onPreview}
         className="h-9 w-9 rounded-lg overflow-hidden shrink-0 relative group bg-surface-light border border-border/60 cursor-pointer"
-        aria-label={`Podgląd galerii ćwiczenia: ${exercise.name}`}
+        aria-label={`Podgląd ćwiczenia: ${exercise.name}`}
       >
         {imageUrl ? (
           <Image src={imageUrl} alt="" fill className="object-cover" sizes="36px" />
@@ -242,6 +249,41 @@ function ExercisePickerItem({
         </Button>
       </div>
     </div>
+  );
+}
+
+function ExerciseLibraryActionItem({
+  label,
+  description,
+  onClick,
+  isLoading = false,
+  testId,
+}: {
+  label: string;
+  description: string;
+  onClick: () => void;
+  isLoading?: boolean;
+  testId?: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={isLoading}
+      className="w-full flex items-center gap-3 p-2.5 rounded-xl text-left transition-all duration-200 border bg-surface/50 hover:bg-surface-light border-border/50 hover:border-border disabled:opacity-50 disabled:pointer-events-none"
+      data-testid={testId}
+    >
+      <div className="h-9 w-9 rounded-lg shrink-0 relative bg-surface-light border border-border/60 flex items-center justify-center">
+        {isLoading ? <Loader2 className="h-4 w-4 text-primary animate-spin" /> : <Plus className="h-4 w-4 text-muted-foreground" />}
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="font-medium text-sm truncate">{label}</p>
+        <p className="text-xs text-muted-foreground truncate">{description}</p>
+      </div>
+      <div className="h-8 w-8 rounded-lg bg-surface-light border border-border flex items-center justify-center transition-all">
+        {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+      </div>
+    </button>
   );
 }
 
@@ -379,6 +421,11 @@ export function ExerciseSetBuilder({
   onPreviewExercise,
   testIdPrefix = 'set-builder',
   readonlyInstanceIds,
+  onCreateExercise,
+  isCreatingExercise = false,
+  createExerciseLabel = 'Utwórz nowe ćwiczenie',
+  createExerciseDescription = 'Dodaj ćwiczenie i od razu wstaw je do planu',
+  createExerciseTestId = 'assignment-create-exercise-tile-btn',
 }: Readonly<ExerciseSetBuilderProps>) {
   const [searchQuery, setSearchQuery] = useState('');
   const [sourceFilter, setSourceFilter] = useState<ExerciseSourceFilter>('all');
@@ -694,6 +741,17 @@ export function ExerciseSetBuilder({
           {/* Exercise list */}
           <ScrollArea className="flex-1">
             <div className="p-4">
+              {onCreateExercise && (
+                <div className="mb-3">
+                  <ExerciseLibraryActionItem
+                    label={createExerciseLabel}
+                    description={createExerciseDescription}
+                    onClick={onCreateExercise}
+                    isLoading={isCreatingExercise}
+                    testId={createExerciseTestId}
+                  />
+                </div>
+              )}
               {loadingExercises ? (
                 <div className="flex items-center justify-center py-16">
                   <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -825,7 +883,7 @@ export function ExerciseSetBuilder({
                         params={exerciseParams.get(data.instanceId) || getDefaultParams(data.exercise)}
                         onUpdateParams={(field, value) => updateExerciseParams(data.instanceId, field, value)}
                         onRemove={() => setInstanceToRemove(data.instanceId)}
-                        onPreview={() => onPreviewExercise?.(data.exercise)}
+                        onPreview={() => onPreviewExercise?.(data.exercise, exerciseParams.get(data.instanceId))}
                         testIdPrefix={testIdPrefix}
                         isReadonly={readonlyInstanceIds?.has(data.instanceId) ?? false}
                       />

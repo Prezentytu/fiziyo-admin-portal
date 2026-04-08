@@ -9,13 +9,13 @@ import {
   CheckCircle2,
   Download,
   Printer,
+  ChevronDown,
   Copy,
   Check,
   Smartphone,
   Share2,
   Calendar,
   Sparkles,
-  ArrowRight,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { pl } from 'date-fns/locale';
@@ -24,6 +24,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { toast } from 'sonner';
 
 import { ExerciseSetPDF } from '@/components/pdf';
@@ -67,6 +68,8 @@ interface AssignmentSuccessDialogProps {
   frequency?: Frequency;
   /** Callback do przypisania kolejnemu pacjentowi */
   onAssignAnother?: () => void;
+  /** Przejście do nowo utworzonego planu */
+  onViewPlan?: () => void;
 }
 
 export function AssignmentSuccessDialog({
@@ -81,11 +84,13 @@ export function AssignmentSuccessDialog({
   exerciseSet,
   frequency,
   onAssignAnother,
+  onViewPlan,
 }: AssignmentSuccessDialogProps) {
   const { user } = useUser();
   const [copied, setCopied] = useState(false);
   const [selectedPatientIndex, setSelectedPatientIndex] = useState(0);
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
+  const [isMoreOptionsOpen, setIsMoreOptionsOpen] = useState(false);
   const qrContainerRef = useRef<HTMLDivElement>(null);
   const qrCanvasRef = useRef<HTMLDivElement>(null);
 
@@ -339,16 +344,16 @@ export function AssignmentSuccessDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md" data-testid="assign-success-dialog">
-        <DialogHeader className="pb-4 border-b border-border">
+        <DialogHeader className="pb-3 border-b border-border">
           <div className="flex items-center gap-3">
-            <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center border border-primary/20">
-              <CheckCircle2 className="h-6 w-6 text-primary" />
+            <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center border border-primary/20">
+              <CheckCircle2 className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <DialogTitle className="text-lg">
+              <DialogTitle className="text-base font-semibold">
                 Plan pacjenta utworzony i przypisany!
               </DialogTitle>
-              <DialogDescription>
+              <DialogDescription className="text-sm">
                 {isSinglePatient
                   ? `Pacjent ${selectedPatient.name} otrzymał plan "${setName}"`
                   : `${patients.length} pacjentów otrzymało plan "${setName}"`}
@@ -357,15 +362,15 @@ export function AssignmentSuccessDialog({
           </div>
         </DialogHeader>
 
-        <div className="space-y-5 py-4">
+        <div className="space-y-4 py-4">
           {formattedPremiumDate && (
-            <div className="flex items-center gap-3 p-3 rounded-xl bg-primary/10 border border-primary/20">
-              <Sparkles className="h-5 w-5 text-primary shrink-0" />
+            <div className="flex items-center gap-3 p-3 rounded-xl bg-surface border border-border">
+              <Sparkles className="h-4 w-4 text-primary shrink-0" />
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-foreground">Dostęp Premium aktywny</p>
                 <p className="text-xs text-muted-foreground">Pacjent ma dostęp do {formattedPremiumDate}</p>
               </div>
-              <Badge variant="secondary" className="shrink-0 bg-primary/20 text-primary border-0">
+              <Badge variant="secondary" className="shrink-0 bg-surface-light text-muted-foreground border-border">
                 <Calendar className="h-3 w-3 mr-1" />
                 {formattedPremiumDate}
               </Badge>
@@ -377,10 +382,10 @@ export function AssignmentSuccessDialog({
               {patients.map((patient, index) => (
                 <Button
                   key={patient.id}
-                  variant={index === selectedPatientIndex ? 'default' : 'outline'}
+                  variant={index === selectedPatientIndex ? 'secondary' : 'ghost'}
                   size="sm"
                   onClick={() => setSelectedPatientIndex(index)}
-                  className="shrink-0"
+                  className="shrink-0 h-8"
                 >
                   {patient.name}
                 </Button>
@@ -388,11 +393,10 @@ export function AssignmentSuccessDialog({
             </div>
           )}
 
-          {/* Standardowy krok: Aplikacja Mobilna */}
-          <div className="flex flex-col items-center rounded-xl bg-surface/50 p-5">
+          <div className="flex flex-col items-center rounded-xl bg-surface/50 p-4 border border-border/60">
             <div
               ref={qrContainerRef}
-              className="mb-4 p-3 bg-white rounded-xl shadow-sm border border-border/40"
+              className="mb-3 p-3 bg-white rounded-xl shadow-sm border border-border/40"
             >
               <QRCodeSVG
                 value={appDeepLink}
@@ -412,7 +416,7 @@ export function AssignmentSuccessDialog({
               <Smartphone className="h-4 w-4 text-muted-foreground" />
               Aplikacja Mobilna
             </h3>
-            <p className="text-xs text-muted-foreground text-center mb-4">
+            <p className="text-xs text-muted-foreground text-center mb-3">
               Wideo, timer i historia postępów.
             </p>
             <div className="w-full space-y-2">
@@ -447,66 +451,96 @@ export function AssignmentSuccessDialog({
             </div>
           </div>
 
-          {/* Opcje dodatkowe – subtelne ghost */}
-          <div className="flex flex-wrap items-center justify-center gap-2 pt-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handlePrintCard}
-              disabled={isGeneratingPDF || !organization || !exerciseSet}
-              className="text-xs text-muted-foreground h-8"
-              data-testid="assign-success-print-btn"
-            >
-              <Printer className="h-3 w-3 mr-1.5" />
-              Drukuj kartę
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleDownloadPDF}
-              disabled={isGeneratingPDF || !organization || !exerciseSet}
-              className="text-xs text-muted-foreground h-8"
-              data-testid="assign-success-download-pdf-btn"
-            >
-              <Download className="h-3 w-3 mr-1.5" />
-              Pobierz PDF
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleDownloadQR}
-              className="text-xs text-muted-foreground h-8"
-              data-testid="assign-success-download-qr-btn"
-            >
-              <Download className="h-3 w-3 mr-1.5" />
-              Pobierz kod QR
-            </Button>
-            {onAssignAnother && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  onOpenChange(false);
-                  onAssignAnother();
-                }}
-                className="text-xs text-muted-foreground h-8 gap-1.5"
-                data-testid="assign-success-another-btn"
+          <Collapsible
+            open={isMoreOptionsOpen}
+            onOpenChange={setIsMoreOptionsOpen}
+            className="rounded-xl border border-border bg-surface/30"
+            data-testid="assign-success-more-options-collapsible"
+          >
+            <CollapsibleTrigger asChild>
+              <button
+                type="button"
+                className="w-full flex items-center justify-between px-3 py-2.5 text-sm font-medium text-foreground hover:bg-surface-light transition-colors rounded-xl"
+                data-testid="assign-success-more-options-trigger"
               >
-                <ArrowRight className="h-3 w-3" />
-                Utwórz i przypisz kolejny plan
-              </Button>
-            )}
-          </div>
+                <span>Więcej opcji</span>
+                <ChevronDown
+                  className={`h-4 w-4 text-muted-foreground transition-transform ${isMoreOptionsOpen ? 'rotate-180' : ''}`}
+                />
+              </button>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="px-3 pb-3">
+              <div className="flex flex-wrap items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handlePrintCard}
+                  disabled={isGeneratingPDF || !organization || !exerciseSet}
+                  className="text-xs text-muted-foreground h-8"
+                  data-testid="assign-success-print-btn"
+                >
+                  <Printer className="h-3 w-3 mr-1.5" />
+                  Drukuj kartę
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleDownloadPDF}
+                  disabled={isGeneratingPDF || !organization || !exerciseSet}
+                  className="text-xs text-muted-foreground h-8"
+                  data-testid="assign-success-download-pdf-btn"
+                >
+                  <Download className="h-3 w-3 mr-1.5" />
+                  Pobierz PDF
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleDownloadQR}
+                  className="text-xs text-muted-foreground h-8"
+                  data-testid="assign-success-download-qr-btn"
+                >
+                  <Download className="h-3 w-3 mr-1.5" />
+                  Pobierz kod QR
+                </Button>
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
         </div>
 
         <div ref={qrCanvasRef} className="hidden">
           <QRCodeCanvas value={`https://app.fiziyo.pl/sets/${exerciseSet?.id || ''}`} size={200} level="M" />
         </div>
 
-        <div className="flex justify-end pt-4 border-t border-border">
-          <Button onClick={() => onOpenChange(false)} data-testid="assign-success-close-btn">
-            Gotowe
+        <div className="flex items-center justify-between pt-4 border-t border-border">
+          <Button variant="ghost" onClick={() => onOpenChange(false)} data-testid="assign-success-close-btn">
+            Zamknij
           </Button>
+          <div className="flex items-center gap-2">
+            {onViewPlan && (
+              <Button
+                variant="outline"
+                onClick={() => {
+                  onOpenChange(false);
+                  onViewPlan();
+                }}
+                data-testid="assign-success-view-plan-btn"
+              >
+                Zobacz utworzony plan
+              </Button>
+            )}
+            {onAssignAnother && (
+              <Button
+                onClick={() => {
+                  onOpenChange(false);
+                  onAssignAnother();
+                }}
+                data-testid="assign-success-assign-another-primary-btn"
+              >
+                Przypisz kolejny
+              </Button>
+            )}
+          </div>
         </div>
       </DialogContent>
     </Dialog>

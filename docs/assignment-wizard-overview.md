@@ -98,6 +98,7 @@ _Dlaczego?_ Szablony to "święte zasoby" - nie chcemy ich przypadkowo zepsuć p
 - Multi-select (można wybrać wielu naraz)
 - Widoczność już przypisanych (szare, z badge "Przypisany")
 - Możliwość odpisania bezpośrednio z listy
+- Szybka akcja: **„Dodaj nowego pacjenta”** (otwiera istniejący modal dodawania pacjenta i po sukcesie auto-zaznacza go w wizardzie)
 
 ```
 ┌─────────────────────────┬───────────────────────────────────────┐
@@ -124,6 +125,7 @@ _Dlaczego?_ Szablony to "święte zasoby" - nie chcemy ich przypadkowo zepsuć p
 - Czas trwania
 - Notatki dla pacjenta
 - Ukrycie pojedynczych ćwiczeń
+- Szybka akcja: **„Utwórz nowe ćwiczenie”** (otwiera istniejący modal ćwiczenia i po sukcesie automatycznie dodaje ćwiczenie do planu)
 
 Ten krok określa także tryb końcowy:
 

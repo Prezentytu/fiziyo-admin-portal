@@ -10,7 +10,6 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { LabeledStepper } from '@/components/shared/LabeledStepper';
 import Image from 'next/image';
 import { ImagePlaceholder } from '@/components/shared/ImagePlaceholder';
-import { ImageLightbox } from '@/components/shared/ImageLightbox';
 import { getMediaUrl } from '@/utils/mediaUrl';
 import { cn } from '@/lib/utils';
 import {
@@ -19,7 +18,13 @@ import {
   isTimerExercise,
   isFieldEditable,
 } from './types';
-import { EXERCISE_FIELD_METADATA, INLINE_EXERCISE_FIELD_ORDER } from '@/features/assignment/exerciseFieldMetadata';
+import {
+  EXERCISE_FIELD_METADATA,
+  HIDE_EXERCISE_TAGS,
+  INLINE_EXERCISE_FIELD_ORDER,
+  formatFieldValueWithPlaceholder,
+} from './displayRegistry';
+import { ExercisePreviewDialog } from './ExercisePreviewDialog';
 
 const SIDE_OPTIONS = [
   { value: 'none', label: 'Bez podziału' },
@@ -115,11 +120,7 @@ export function ExerciseExecutionCard({
   const id = exercise.id;
   const testId = `${testIdPrefix}-${id}`;
   const imageUrl = getMediaUrl(exercise.thumbnailUrl ?? exercise.imageUrls?.[0]);
-  const galleryImages = useMemo(() => {
-    if (exercise.imageUrls && exercise.imageUrls.length > 0) return exercise.imageUrls;
-    return imageUrl ? [imageUrl] : [];
-  }, [exercise.imageUrls, imageUrl]);
-  const hasGallery = galleryImages.length > 0;
+  const canUseInternalPreview = !onPreview;
 
   const canEditField = (field: EditableField) => canEdit && isFieldEditable(field, mode, editableFields);
   const setsField = EXERCISE_FIELD_METADATA.sets;
@@ -139,20 +140,21 @@ export function ExerciseExecutionCard({
       INLINE_EXERCISE_FIELD_ORDER.map((fieldKey) => {
         const field = EXERCISE_FIELD_METADATA[fieldKey];
         if (!field.isInlineVisible) return null;
-        const value = field.formatValue(exercise);
-        if (!value) return null;
+        const value = formatFieldValueWithPlaceholder(field, exercise, field.group === 'content' ? 'Nie ustawiono' : '—');
         return { field, value };
-      }).filter((fieldData): fieldData is { field: (typeof EXERCISE_FIELD_METADATA)[keyof typeof EXERCISE_FIELD_METADATA]; value: string } => fieldData !== null),
+      }).filter(
+        (fieldData): fieldData is { field: (typeof EXERCISE_FIELD_METADATA)[keyof typeof EXERCISE_FIELD_METADATA]; value: string } =>
+          fieldData !== null
+      ),
     [exercise]
   );
   const handlePreviewTrigger = useCallback(() => {
-    if (!hasGallery) return;
     if (onPreview) {
       onPreview();
       return;
     }
     setInternalPreviewOpen(true);
-  }, [hasGallery, onPreview]);
+  }, [onPreview]);
 
   const handleChange = useCallback(
     (patch: Partial<typeof exercise>) => {
@@ -192,36 +194,31 @@ export function ExerciseExecutionCard({
                   type="button"
                   className={cn(
                     'h-10 w-10 shrink-0 overflow-hidden rounded-lg bg-surface-light border border-border/60 relative group/thumb',
-                    hasGallery ? 'cursor-pointer' : 'cursor-default'
+                    'cursor-pointer'
                   )}
                   onClick={handlePreviewTrigger}
-                  disabled={!hasGallery}
-                  aria-label={hasGallery ? 'Otwórz galerię ćwiczenia' : 'Miniatura ćwiczenia'}
-                  data-testid={hasGallery ? `${testId}-thumbnail-btn` : undefined}
+                  aria-label="Otwórz podgląd ćwiczenia"
+                  data-testid={`${testId}-thumbnail-btn`}
                 >
                   {imageUrl ? (
                     <>
                       <Image src={imageUrl} alt="" fill className="object-cover" sizes="40px" />
-                      {hasGallery && (
-                        <div
-                          className="absolute inset-0 bg-black/50 opacity-0 group-hover/thumb:opacity-100 transition-opacity flex items-center justify-center pointer-events-none"
-                          data-testid={`${testId}-preview-btn`}
-                        >
-                          <Eye className="h-4 w-4 text-white" />
-                        </div>
-                      )}
+                      <div
+                        className="absolute inset-0 bg-black/50 opacity-0 group-hover/thumb:opacity-100 transition-opacity flex items-center justify-center pointer-events-none"
+                        data-testid={`${testId}-preview-btn`}
+                      >
+                        <Eye className="h-4 w-4 text-white" />
+                      </div>
                     </>
                   ) : (
                     <>
                       <ImagePlaceholder type="exercise" iconClassName="h-4 w-4" />
-                      {hasGallery && (
-                        <div
-                          className="absolute inset-0 bg-black/50 opacity-0 group-hover/thumb:opacity-100 transition-opacity flex items-center justify-center pointer-events-none"
-                          data-testid={`${testId}-preview-btn`}
-                        >
-                          <Eye className="h-4 w-4 text-white" />
-                        </div>
-                      )}
+                      <div
+                        className="absolute inset-0 bg-black/50 opacity-0 group-hover/thumb:opacity-100 transition-opacity flex items-center justify-center pointer-events-none"
+                        data-testid={`${testId}-preview-btn`}
+                      >
+                        <Eye className="h-4 w-4 text-white" />
+                      </div>
                     </>
                   )}
                 </button>
@@ -385,36 +382,31 @@ export function ExerciseExecutionCard({
                 type="button"
                 className={cn(
                   'h-12 w-12 shrink-0 overflow-hidden rounded-lg bg-surface-light border border-border/60 relative group/thumb',
-                  hasGallery ? 'cursor-pointer' : 'cursor-default'
+                  'cursor-pointer'
                 )}
                 onClick={handlePreviewTrigger}
-                disabled={!hasGallery}
-                aria-label={hasGallery ? 'Otwórz galerię ćwiczenia' : 'Miniatura ćwiczenia'}
-                data-testid={hasGallery ? `${testId}-thumbnail-btn` : undefined}
+                aria-label="Otwórz podgląd ćwiczenia"
+                data-testid={`${testId}-thumbnail-btn`}
               >
                 {imageUrl ? (
                   <>
                     <Image src={imageUrl} alt="" fill className="object-cover" sizes="48px" />
-                    {hasGallery && (
-                      <div
-                        className="absolute inset-0 bg-black/50 opacity-0 group-hover/thumb:opacity-100 transition-opacity flex items-center justify-center pointer-events-none"
-                        data-testid={`${testId}-preview-btn`}
-                      >
-                        <Eye className="h-4 w-4 text-white" />
-                      </div>
-                    )}
+                    <div
+                      className="absolute inset-0 bg-black/50 opacity-0 group-hover/thumb:opacity-100 transition-opacity flex items-center justify-center pointer-events-none"
+                      data-testid={`${testId}-preview-btn`}
+                    >
+                      <Eye className="h-4 w-4 text-white" />
+                    </div>
                   </>
                 ) : (
                   <>
                     <ImagePlaceholder type="exercise" iconClassName="h-4 w-4" />
-                    {hasGallery && (
-                      <div
-                        className="absolute inset-0 bg-black/50 opacity-0 group-hover/thumb:opacity-100 transition-opacity flex items-center justify-center pointer-events-none"
-                        data-testid={`${testId}-preview-btn`}
-                      >
-                        <Eye className="h-4 w-4 text-white" />
-                      </div>
-                    )}
+                    <div
+                      className="absolute inset-0 bg-black/50 opacity-0 group-hover/thumb:opacity-100 transition-opacity flex items-center justify-center pointer-events-none"
+                      data-testid={`${testId}-preview-btn`}
+                    >
+                      <Eye className="h-4 w-4 text-white" />
+                    </div>
                   </>
                 )}
               </button>
@@ -481,7 +473,9 @@ export function ExerciseExecutionCard({
                   <>
                     <div className="hidden sm:block text-muted-foreground/30 h-4 w-px bg-border/50"></div>
                     <div className="flex items-center justify-between sm:justify-start gap-3 sm:gap-1.5 w-full sm:w-auto">
-                      <span className="text-[10px] sm:hidden text-muted-foreground uppercase font-bold tracking-wide">Czas</span>
+                      <span className="text-[10px] sm:hidden text-muted-foreground uppercase font-bold tracking-wide">
+                        Czas powtórzenia
+                      </span>
                       <span className="text-primary tabular-nums">{exercise.executionTime}s</span>
                     </div>
                   </>
@@ -769,7 +763,7 @@ export function ExerciseExecutionCard({
                         </p>
                       )}
 
-                      {(exercise.mainTags?.length || exercise.additionalTags?.length) ? (
+                      {!HIDE_EXERCISE_TAGS && (exercise.mainTags?.length || exercise.additionalTags?.length) ? (
                         <div className="flex flex-wrap gap-1.5">
                           {exercise.mainTags?.map((tag) => (
                             <span
@@ -806,14 +800,8 @@ export function ExerciseExecutionCard({
           </div>
         )}
 
-        {!onPreview && hasGallery && (
-          <ImageLightbox
-            src={galleryImages[0]}
-            alt={exercise.displayName}
-            open={internalPreviewOpen}
-            onOpenChange={setInternalPreviewOpen}
-            images={galleryImages}
-          />
+        {canUseInternalPreview && (
+          <ExercisePreviewDialog open={internalPreviewOpen} onOpenChange={setInternalPreviewOpen} exercise={exercise} />
         )}
       </div>
     </Collapsible>
