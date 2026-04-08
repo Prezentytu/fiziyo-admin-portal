@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 
 import { UPDATE_PATIENT_PREMIUM_ACCESS_MUTATION } from '@/graphql/mutations/users.mutations';
 import { GET_ORGANIZATION_PATIENTS_QUERY } from '@/graphql/queries/therapists.queries';
+import type { OrganizationPatientDto, OrganizationPatientsResponse } from '@/types/apollo';
 
 // ========================================
 // Types
@@ -24,6 +25,7 @@ interface ActivationTarget {
 }
 
 export type PremiumAccessManagementAction = 'ExtendByDuration' | 'SetExactExpiry' | 'RevokeNow';
+export type PremiumAccessManagementActionGraphQL = 'EXTEND_BY_DURATION' | 'SET_EXACT_EXPIRY' | 'REVOKE_NOW';
 
 export interface PremiumAccessUpdatePayload {
   action: PremiumAccessManagementAction;
@@ -31,6 +33,60 @@ export interface PremiumAccessUpdatePayload {
   targetExpiry?: string;
   reason?: string;
 }
+
+interface UpdatePremiumAccessMutationResponse {
+  updatePatientPremiumAccess?: {
+    premiumValidUntil?: string;
+  };
+}
+
+export const mapPremiumAccessActionToGraphQL = (
+  action: PremiumAccessManagementAction
+): PremiumAccessManagementActionGraphQL => {
+  switch (action) {
+    case 'ExtendByDuration':
+      return 'EXTEND_BY_DURATION';
+    case 'SetExactExpiry':
+      return 'SET_EXACT_EXPIRY';
+    case 'RevokeNow':
+      return 'REVOKE_NOW';
+  }
+};
+
+const toIsoDate = (date: Date): string => date.toISOString();
+
+const calculateNextPremiumValidUntil = (
+  payload: PremiumAccessUpdatePayload,
+  currentPremiumValidUntil?: string | null
+): string | null => {
+  const now = new Date();
+
+  if (payload.action === 'RevokeNow') {
+    return toIsoDate(now);
+  }
+
+  if (payload.action === 'SetExactExpiry') {
+    if (!payload.targetExpiry) return null;
+    const targetDate = new Date(payload.targetExpiry);
+    return Number.isNaN(targetDate.getTime()) ? null : toIsoDate(targetDate);
+  }
+
+  if (!payload.durationDays || payload.durationDays <= 0) {
+    return null;
+  }
+
+  const currentExpiryDate = currentPremiumValidUntil ? new Date(currentPremiumValidUntil) : null;
+  const hasFutureExpiry = currentExpiryDate && !Number.isNaN(currentExpiryDate.getTime()) && currentExpiryDate > now;
+  const effectiveStart = hasFutureExpiry ? currentExpiryDate : now;
+  return toIsoDate(new Date(effectiveStart.getTime() + payload.durationDays * 24 * 60 * 60 * 1000));
+};
+
+const inferPremiumStatus = (premiumValidUntil?: string | null): 'FREE' | 'ACTIVE' | 'EXPIRED' => {
+  if (!premiumValidUntil) return 'FREE';
+  const parsedDate = new Date(premiumValidUntil);
+  if (Number.isNaN(parsedDate.getTime())) return 'FREE';
+  return parsedDate > new Date() ? 'ACTIVE' : 'EXPIRED';
+};
 
 export interface UsePatientPremiumResult {
   /** Rozpocznij proces aktywacji/rozszerzenia Premium */
@@ -120,6 +176,14 @@ export function usePatientPremium({ organizationId, onSuccess }: UsePatientPremi
         query: GET_ORGANIZATION_PATIENTS_QUERY,
         variables: { organizationId, filter: 'all' },
       },
+      {
+        query: GET_ORGANIZATION_PATIENTS_QUERY,
+        variables: { organizationId, filter: 'my' },
+      },
+      {
+        query: GET_ORGANIZATION_PATIENTS_QUERY,
+        variables: { organizationId, filter: 'unassigned' },
+      },
     ],
     onCompleted: () => {
       toast.success('Dostęp Premium został zaktualizowany');
@@ -134,15 +198,76 @@ export function usePatientPremium({ organizationId, onSuccess }: UsePatientPremi
    * Wykonaj zarządzanie dostępem Premium
    */
   const executePremiumAccessUpdate = useCallback(
-    async (patientId: string, payload: PremiumAccessUpdatePayload) => {
+    async (patientId: string, payload: PremiumAccessUpdatePayload, currentPremiumValidUntil?: string | null) => {
+      const graphQlAction = mapPremiumAccessActionToGraphQL(payload.action);
+      const optimisticPremiumValidUntil = calculateNextPremiumValidUntil(payload, currentPremiumValidUntil);
+
       await updatePremiumAccessMutation({
         variables: {
           patientId,
           organizationId,
-          action: payload.action,
+          action: graphQlAction,
           durationDays: payload.durationDays ?? null,
           targetExpiry: payload.targetExpiry ?? null,
           reason: payload.reason ?? null,
+        },
+        optimisticResponse: optimisticPremiumValidUntil
+          ? {
+              updatePatientPremiumAccess: {
+                __typename: 'UpdatePremiumAccessResult',
+                success: true,
+                patientId,
+                action: graphQlAction,
+                previousPremiumValidUntil: currentPremiumValidUntil ?? null,
+                premiumValidUntil: optimisticPremiumValidUntil,
+                message: 'Dostęp Premium został zaktualizowany.',
+              },
+            }
+          : undefined,
+        update: (cache, mutationResult) => {
+          const response = mutationResult.data as UpdatePremiumAccessMutationResponse | undefined;
+          const resolvedPremiumValidUntil =
+            response?.updatePatientPremiumAccess?.premiumValidUntil ?? optimisticPremiumValidUntil;
+
+          if (!resolvedPremiumValidUntil) {
+            return;
+          }
+
+          const updatePatientCollection = (filter: 'all' | 'my' | 'unassigned') => {
+            cache.updateQuery<OrganizationPatientsResponse>(
+              {
+                query: GET_ORGANIZATION_PATIENTS_QUERY,
+                variables: { organizationId, filter },
+              },
+              (existingData) => {
+                if (!existingData?.organizationPatients?.length) {
+                  return existingData;
+                }
+
+                const nextOrganizationPatients = existingData.organizationPatients.map((organizationPatient) => {
+                  if (organizationPatient.patient.id !== patientId) {
+                    return organizationPatient;
+                  }
+
+                  return {
+                    ...organizationPatient,
+                    premiumValidUntil: resolvedPremiumValidUntil,
+                    premiumActivatedAt: toIsoDate(new Date()),
+                    premiumStatus: inferPremiumStatus(resolvedPremiumValidUntil),
+                  } as OrganizationPatientDto;
+                });
+
+                return {
+                  ...existingData,
+                  organizationPatients: nextOrganizationPatients,
+                };
+              }
+            );
+          };
+
+          updatePatientCollection('all');
+          updatePatientCollection('my');
+          updatePatientCollection('unassigned');
         },
       });
     },
@@ -166,7 +291,7 @@ export function usePatientPremium({ organizationId, onSuccess }: UsePatientPremi
 
     setShowConfirmDialog(false);
 
-    await executePremiumAccessUpdate(activationTarget.patientId, payload);
+    await executePremiumAccessUpdate(activationTarget.patientId, payload, activationTarget.premiumValidUntil);
     setActivationTarget(null);
   }, [activationTarget, executePremiumAccessUpdate]);
 

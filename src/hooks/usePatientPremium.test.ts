@@ -1,10 +1,12 @@
 import { act, renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { usePatientPremium } from './usePatientPremium';
+import { mapPremiumAccessActionToGraphQL, usePatientPremium } from './usePatientPremium';
 
-const activateMutationMock = vi.fn();
-const useMutationMock = vi.fn();
+const { activateMutationMock, useMutationMock } = vi.hoisted(() => ({
+  activateMutationMock: vi.fn(),
+  useMutationMock: vi.fn(),
+}));
 
 vi.mock('@apollo/client/react', () => ({
   useMutation: (...args: unknown[]) => useMutationMock(...args),
@@ -59,18 +61,90 @@ describe('usePatientPremium', () => {
     });
 
     expect(activateMutationMock).toHaveBeenCalledTimes(1);
-    expect(activateMutationMock).toHaveBeenCalledWith({
-      variables: {
-        patientId: 'patient-2',
-        organizationId: 'org-1',
-        action: 'ExtendByDuration',
-        durationDays: 60,
-        targetExpiry: null,
-        reason: null,
-      },
-    });
+    expect(activateMutationMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        variables: {
+          patientId: 'patient-2',
+          organizationId: 'org-1',
+          action: 'EXTEND_BY_DURATION',
+          durationDays: 60,
+          targetExpiry: null,
+          reason: null,
+        },
+      })
+    );
     expect(result.current.showConfirmDialog).toBe(false);
     expect(result.current.activationTarget).toBeNull();
+  });
+
+  it('wysyła poprawny payload dla ustawienia dokładnej daty wygaśnięcia', async () => {
+    const { result } = renderHook(() => usePatientPremium({ organizationId: 'org-1' }));
+    const targetExpiry = '2026-12-20T00:00:00.000Z';
+
+    act(() => {
+      result.current.initiateActivation('patient-3', 'Maria Nowak');
+    });
+
+    await act(async () => {
+      await result.current.confirmActivation({
+        action: 'SetExactExpiry',
+        targetExpiry,
+        reason: 'Korekta dostępu po zmianie planu',
+      });
+    });
+
+    expect(activateMutationMock).toHaveBeenCalledTimes(1);
+    expect(activateMutationMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        variables: {
+          patientId: 'patient-3',
+          organizationId: 'org-1',
+          action: 'SET_EXACT_EXPIRY',
+          durationDays: null,
+          targetExpiry,
+          reason: 'Korekta dostępu po zmianie planu',
+        },
+      })
+    );
+  });
+
+  it('wysyła poprawny payload dla cofnięcia dostępu premium', async () => {
+    const { result } = renderHook(() => usePatientPremium({ organizationId: 'org-1' }));
+
+    act(() => {
+      result.current.initiateActivation('patient-4', 'Piotr Kowalski');
+    });
+
+    await act(async () => {
+      await result.current.confirmActivation({
+        action: 'RevokeNow',
+        reason: 'Zwrot płatności',
+      });
+    });
+
+    expect(activateMutationMock).toHaveBeenCalledTimes(1);
+    expect(activateMutationMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        variables: {
+          patientId: 'patient-4',
+          organizationId: 'org-1',
+          action: 'REVOKE_NOW',
+          durationDays: null,
+          targetExpiry: null,
+          reason: 'Zwrot płatności',
+        },
+      })
+    );
+  });
+});
+
+describe('mapPremiumAccessActionToGraphQL', () => {
+  it.each([
+    ['ExtendByDuration', 'EXTEND_BY_DURATION'],
+    ['SetExactExpiry', 'SET_EXACT_EXPIRY'],
+    ['RevokeNow', 'REVOKE_NOW'],
+  ] as const)('mapuje %s -> %s', (inputAction, expectedGraphqlAction) => {
+    expect(mapPremiumAccessActionToGraphQL(inputAction)).toBe(expectedGraphqlAction);
   });
 });
 

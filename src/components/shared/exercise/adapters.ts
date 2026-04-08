@@ -228,7 +228,7 @@ export function fromBuilderExercise(
     (load && 'text' in load ? load.text : params.loadText) ??
     (loadKg == null ? undefined : `${loadKg} kg`);
 
-  const thumb = exercise.thumbnailUrl ?? exercise.imageUrl ?? exercise.images?.[0];
+  const thumb = buildImageUrls(exercise.thumbnailUrl, exercise.imageUrl, exercise.images)[0];
   return {
     id: exercise.id,
     displayName: resolveDisplayName(params.customName, exercise.name),

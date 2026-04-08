@@ -16,6 +16,7 @@ import {
 } from '@/components/shared/exercise';
 import { getMediaUrl } from '@/utils/mediaUrl';
 import type { ExerciseMapping, ExerciseOverride } from './PatientAssignmentCard';
+import type { ExerciseLoad } from '@/features/assignment/types';
 import { translateExerciseSidePolish } from '@/components/pdf/polishUtils';
 
 interface ExercisePreviewDrawerProps {
@@ -26,12 +27,38 @@ interface ExercisePreviewDrawerProps {
   onEdit?: () => void;
 }
 
+type ExerciseWithPreviewFields = NonNullable<ExerciseMapping['exercise']> & {
+  executionTime?: number;
+  restSets?: number;
+  restReps?: number;
+  preparationTime?: number;
+  tempo?: string;
+  loadText?: string;
+  defaultLoad?: ExerciseLoad;
+  rangeOfMotion?: string;
+  difficultyLevel?: string;
+  audioCue?: string;
+};
+
+type ExerciseOverrideWithPreviewFields = ExerciseOverride & {
+  executionTime?: number;
+  preparationTime?: number;
+  tempo?: string;
+};
+
+type ExerciseMappingWithPreviewFields = ExerciseMapping & {
+  preparationTime?: number;
+  loadText?: string;
+};
+
 export function ExercisePreviewDrawer({ open, onOpenChange, mapping, override, onEdit }: ExercisePreviewDrawerProps) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   if (!mapping) return null;
 
-  const exercise = mapping.exercise;
+  const normalizedMapping = mapping as ExerciseMappingWithPreviewFields;
+  const exercise = normalizedMapping.exercise as ExerciseWithPreviewFields | undefined;
+  const normalizedOverride = override as ExerciseOverrideWithPreviewFields | undefined;
   const videoUrl = getMediaUrl(exercise?.videoUrl);
 
   // Build array of all images (original + custom)
@@ -52,8 +79,8 @@ export function ExercisePreviewDrawer({ open, onOpenChange, mapping, override, o
   }
 
   // Add custom images from override
-  if (override?.customImages) {
-    for (const img of override.customImages) {
+  if (normalizedOverride?.customImages) {
+    for (const img of normalizedOverride.customImages) {
       allImages.push({ url: img, isCustom: true });
     }
   }
@@ -70,28 +97,38 @@ export function ExercisePreviewDrawer({ open, onOpenChange, mapping, override, o
   };
 
   // Get effective params (with overrides)
-  const effectiveSets = override?.sets ?? mapping.sets ?? exercise?.defaultSets ?? exercise?.sets;
-  const effectiveReps = override?.reps ?? mapping.reps ?? exercise?.defaultReps ?? exercise?.reps;
-  const effectiveDuration = override?.duration ?? mapping.duration ?? exercise?.defaultDuration ?? exercise?.duration;
+  const effectiveSets = normalizedOverride?.sets ?? normalizedMapping.sets ?? exercise?.defaultSets ?? exercise?.sets;
+  const effectiveReps = normalizedOverride?.reps ?? normalizedMapping.reps ?? exercise?.defaultReps ?? exercise?.reps;
+  const effectiveDuration =
+    normalizedOverride?.duration ?? normalizedMapping.duration ?? exercise?.defaultDuration ?? exercise?.duration;
   const effectiveExecutionTime =
-    override?.executionTime ?? mapping.executionTime ?? exercise?.defaultExecutionTime ?? exercise?.executionTime;
+    normalizedOverride?.executionTime ??
+    normalizedMapping.executionTime ??
+    exercise?.defaultExecutionTime ??
+    exercise?.executionTime;
   const effectiveRestSets =
-    override?.restSets ?? mapping.restSets ?? exercise?.defaultRestBetweenSets ?? exercise?.restSets;
+    normalizedOverride?.restSets ??
+    normalizedMapping.restSets ??
+    exercise?.defaultRestBetweenSets ??
+    exercise?.restSets;
   const effectiveRestReps =
-    override?.restReps ?? mapping.restReps ?? exercise?.defaultRestBetweenReps ?? exercise?.restReps;
-  const effectivePreparationTime = override?.preparationTime ?? mapping.preparationTime ?? exercise?.preparationTime;
-  const effectiveTempo = override?.tempo ?? mapping.tempo ?? exercise?.tempo;
-  const effectiveLoadDisplayText =
-    mapping.loadText ?? exercise?.defaultLoad?.text ?? exercise?.loadText;
-  const effectiveName = override?.customName ?? mapping.customName ?? exercise?.name;
+    normalizedOverride?.restReps ??
+    normalizedMapping.restReps ??
+    exercise?.defaultRestBetweenReps ??
+    exercise?.restReps;
+  const effectivePreparationTime =
+    normalizedOverride?.preparationTime ?? normalizedMapping.preparationTime ?? exercise?.preparationTime;
+  const effectiveTempo = normalizedOverride?.tempo ?? normalizedMapping.tempo ?? exercise?.tempo;
+  const effectiveLoadDisplayText = normalizedMapping.loadText ?? exercise?.defaultLoad?.text ?? exercise?.loadText;
+  const effectiveName = normalizedOverride?.customName ?? normalizedMapping.customName ?? exercise?.name;
   const effectivePatientDescription =
-    override?.customDescription ??
-    mapping.customDescription ??
+    normalizedOverride?.customDescription ??
+    normalizedMapping.customDescription ??
     exercise?.patientDescription ??
     exercise?.description ??
     '';
   const effectiveClinicalDescription = exercise?.clinicalDescription ?? '';
-  const effectiveSide = override?.exerciseSide ?? exercise?.exerciseSide;
+  const effectiveSide = normalizedOverride?.exerciseSide ?? exercise?.exerciseSide;
   const normalizedFields = normalizeExerciseFieldValues({
     defaultSets: effectiveSets,
     defaultReps: effectiveReps,
@@ -107,7 +144,7 @@ export function ExercisePreviewDrawer({ open, onOpenChange, mapping, override, o
     patientDescription: effectivePatientDescription,
     clinicalDescription: effectiveClinicalDescription,
     audioCue: exercise?.audioCue,
-    notes: override?.notes || mapping.notes,
+    notes: normalizedOverride?.notes || normalizedMapping.notes,
     loadText: effectiveLoadDisplayText,
     defaultLoad: exercise?.defaultLoad,
   });
@@ -127,12 +164,12 @@ export function ExercisePreviewDrawer({ open, onOpenChange, mapping, override, o
   ];
 
   const hasOverride =
-    override &&
-    (override.sets !== undefined ||
-      override.reps !== undefined ||
-      override.duration !== undefined ||
-      override.customName ||
-      override.customImages?.length);
+    normalizedOverride &&
+    (normalizedOverride.sets !== undefined ||
+      normalizedOverride.reps !== undefined ||
+      normalizedOverride.duration !== undefined ||
+      normalizedOverride.customName ||
+      normalizedOverride.customImages?.length);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -286,7 +323,7 @@ export function ExercisePreviewDrawer({ open, onOpenChange, mapping, override, o
             )}
 
             {/* Notes */}
-            {(override?.notes || mapping.notes) && (
+            {(normalizedOverride?.notes || normalizedMapping.notes) && (
               <>
                 <Separator />
                 <div className="space-y-3">
@@ -294,7 +331,9 @@ export function ExercisePreviewDrawer({ open, onOpenChange, mapping, override, o
                     Notatki dla pacjenta
                   </h3>
                   <div className="rounded-xl bg-primary/5 border border-primary/20 p-4">
-                    <p className="text-sm text-foreground whitespace-pre-wrap">{override?.notes || mapping.notes}</p>
+                    <p className="text-sm text-foreground whitespace-pre-wrap">
+                      {normalizedOverride?.notes || normalizedMapping.notes}
+                    </p>
                   </div>
                 </div>
               </>
