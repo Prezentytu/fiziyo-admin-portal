@@ -16,6 +16,7 @@ import {
 import { cn } from '@/lib/utils';
 import { ImagePlaceholder } from '@/components/shared/ImagePlaceholder';
 import { getMediaUrl } from '@/utils/mediaUrl';
+import { HIDE_EXERCISE_TAGS } from '@/components/shared/exercise';
 import type { ExerciseTag } from '@/types/apollo';
 
 interface ExerciseMapping {
@@ -360,7 +361,7 @@ export function SetCard({ set, tagsMap, onView, onEdit, onDelete, onDuplicate, o
       <div className="flex flex-col flex-1 p-4 bg-surface">
         {/* Tags row - fixed height h-5, single line with fade */}
         <div className="h-5 flex items-center overflow-hidden relative">
-          {aggregatedTags.length > 0 ? (
+          {!HIDE_EXERCISE_TAGS && aggregatedTags.length > 0 ? (
             <>
               <div className="flex items-center gap-1.5 whitespace-nowrap text-[11px]">
                 {aggregatedTags.slice(0, 2).map((tag, index) => (
