@@ -23,7 +23,12 @@
  */
 
 // Exercises
-export { ON_EXERCISE_CREATED, ON_EXERCISE_UPDATED, ON_EXERCISE_DELETED } from './exercises.subscriptions';
+export {
+  ON_EXERCISE_CREATED,
+  ON_EXERCISE_UPDATED,
+  ON_EXERCISE_DELETED,
+  ON_GLOBAL_EXERCISE_PUBLISHED,
+} from './exercises.subscriptions';
 
 // Exercise Sets
 export {

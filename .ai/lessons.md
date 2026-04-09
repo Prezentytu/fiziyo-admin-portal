@@ -14,6 +14,14 @@ Dziennik wniosków z pracy AI agentów. Po każdej korekcie dodaj nowy wpis.
 
 ## Wpisy
 
+### 2026-04-09 - Globalne publikacje cwiczen musza miec osobny kanal realtime
+
+- **Kategoria**: `GraphQL`
+- **Problem**: Opublikowane cwiczenia z Centrum Weryfikacji nie pojawialy sie od razu w zakladce `Baza FiziYo` u innych fizjoterapeutow.
+- **Przyczyna**: `ApproveExercise` nie emitowalo eventu po publikacji globalnej, a frontend nasluchiwal tylko kanalow per-organization (`{organizationId}:exercise:*`), wiec globalne rekordy (`OrganizationId = null`) nie triggerowaly odswiezenia cache.
+- **Rozwiązanie**: Dodano globalny topic `global:exercise:published`, nowa subskrypcje `onGlobalExercisePublished` (backend + frontend), podpiecie do `useRealtimeExercises` oraz `fetchPolicy: 'cache-and-network'` na liscie cwiczen jako safety net.
+- **Reguła**: Dla zdarzen cross-organizational nie uzywaj kanalow scope'owanych `organizationId`; zapewnij osobny globalny topic i trigger refetchu list zaleznych od danych globalnych.
+
 ### 2026-04-09 - Szybki wybór na dashboardzie pokazuje tylko zestawy źródłowe
 
 - **Kategoria**: `UI/UX`

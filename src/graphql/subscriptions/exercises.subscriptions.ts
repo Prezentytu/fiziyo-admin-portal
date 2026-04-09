@@ -37,3 +37,13 @@ export const ON_EXERCISE_DELETED = gql`
     onExerciseDeleted(organizationId: $organizationId)
   }
 `;
+
+/**
+ * Subskrypcja na publikację globalnego ćwiczenia
+ * Zwraca ID opublikowanego ćwiczenia
+ */
+export const ON_GLOBAL_EXERCISE_PUBLISHED = gql`
+  subscription OnGlobalExercisePublished {
+    onGlobalExercisePublished
+  }
+`;

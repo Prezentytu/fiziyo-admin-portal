@@ -81,6 +81,7 @@ export default function ExercisesPage() {
   const { data, loading, error } = useQuery(GET_AVAILABLE_EXERCISES_QUERY, {
     variables: { organizationId },
     skip: !organizationId,
+    fetchPolicy: 'cache-and-network',
   });
 
   // Real-time updates dla ćwiczeń (WebSocket subscriptions)
