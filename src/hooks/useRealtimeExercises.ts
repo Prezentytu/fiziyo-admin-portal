@@ -1,6 +1,11 @@
 import { useSubscription, useApolloClient } from '@apollo/client/react';
 import { useCallback } from 'react';
-import { ON_EXERCISE_CREATED, ON_EXERCISE_UPDATED, ON_EXERCISE_DELETED } from '@/graphql/subscriptions';
+import {
+  ON_EXERCISE_CREATED,
+  ON_EXERCISE_UPDATED,
+  ON_EXERCISE_DELETED,
+  ON_GLOBAL_EXERCISE_PUBLISHED,
+} from '@/graphql/subscriptions';
 import { GET_AVAILABLE_EXERCISES_QUERY } from '@/graphql/queries/exercises.queries';
 
 interface UseRealtimeExercisesOptions {
@@ -12,6 +17,8 @@ interface UseRealtimeExercisesOptions {
   onUpdated?: (exerciseId: string) => void;
   /** Callback wywoływany po usunięciu ćwiczenia (otrzymuje ID) */
   onDeleted?: (exerciseId: string) => void;
+  /** Callback wywoływany po publikacji globalnego ćwiczenia (otrzymuje ID) */
+  onGlobalPublished?: (exerciseId: string) => void;
   /** Czy subskrypcje są włączone (domyślnie true) */
   enabled?: boolean;
 }
@@ -36,6 +43,7 @@ export function useRealtimeExercises({
   onCreated,
   onUpdated,
   onDeleted,
+  onGlobalPublished,
   enabled = true,
 }: UseRealtimeExercisesOptions) {
   const client = useApolloClient();
@@ -92,6 +100,19 @@ export function useRealtimeExercises({
       client.cache.gc();
 
       onDeleted?.(exerciseId);
+    },
+  });
+
+  // Subskrypcja na publikacje globalnych ćwiczeń
+  useSubscription<{ onGlobalExercisePublished: string }>(ON_GLOBAL_EXERCISE_PUBLISHED, {
+    skip: !enabled,
+    onData: ({ data }) => {
+      const exerciseId = data.data?.onGlobalExercisePublished;
+      if (!exerciseId) return;
+
+      // Refetch, żeby odświeżyć listę (w tym zakładkę "Baza FiziYo")
+      refetch();
+      onGlobalPublished?.(exerciseId);
     },
   });
 
