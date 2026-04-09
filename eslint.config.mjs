@@ -30,6 +30,13 @@ const config = [
   ...nextTs,
   { ignores },
   { name: "project/rule-overrides", rules: ruleOverrides },
+  {
+    name: "project/test-rule-overrides",
+    files: ["**/*.{test,spec}.{ts,tsx}"],
+    rules: {
+      "@next/next/no-img-element": "off",
+    },
+  },
   eslintConfigPrettier,
 ];
 

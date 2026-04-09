@@ -94,11 +94,11 @@ const DEFAULT_STEPS: Omit<OnboardingStep, 'completed'>[] = [
   },
   {
     id: 'assign-set',
-    title: 'Przypisz zestaw pacjentowi',
-    description: 'Przypisz gotowy zestaw ćwiczeń do pacjenta, aby mógł go wykonywać.',
+    title: 'Personalizuj i przypisz',
+    description: 'Personalizuj zestaw i przypisz go pacjentowi.',
     icon: Send,
     action: {
-      label: 'Przypisz zestaw',
+      label: 'Personalizuj i przypisz',
       path: '/patients',
     },
     tip: 'Po przypisaniu pacjent otrzyma powiadomienie w aplikacji mobilnej.',

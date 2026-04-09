@@ -60,6 +60,12 @@ Prefiks: `set-`
 
 ## Changelog
 
+### 2026-04-09
+
+- Ulepszono UX tworzenia zestawu w `CreateSetWizard`: główne CTA nie jest blokowane przez pustą nazwę, a walidacja uruchamia się przy próbie zapisu.
+- Dodano naprowadzanie na brakujące pole nazwy (focus + inline error + `aria-invalid` / `aria-describedby`) zamiast cichego `disabled`.
+- Dodano skrót `Cmd/Ctrl + Enter` do potwierdzania tworzenia zestawu w głównym wizardzie i dialogu `CreateSetDialog`.
+
 ### 2026-03-19
 
 - Dodano write-path defaultowego harmonogramu szablonu przez `UPDATE_EXERCISE_SET_FREQUENCY_MUTATION` na detalu zestawu.

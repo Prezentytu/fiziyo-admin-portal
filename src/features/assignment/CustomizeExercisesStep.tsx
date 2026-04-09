@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import Image from 'next/image';
 import {
   Dumbbell,
@@ -53,7 +53,7 @@ export function CustomizeExercisesStep({
     name: string;
   } | null>(null);
 
-  const mappings = exerciseSet.exerciseMappings || [];
+  const mappings = useMemo(() => exerciseSet.exerciseMappings || [], [exerciseSet.exerciseMappings]);
   const selectedMapping = mappings.find((m) => m.id === selectedMappingId);
 
   // Get effective value (override → mapping → exercise)

@@ -119,8 +119,14 @@ export default function ExerciseSetsPage() {
     refetchQueries: [{ query: GET_ORGANIZATION_EXERCISE_SETS_QUERY, variables: { organizationId } }],
   });
 
-  const exerciseSets: ExerciseSet[] = (data as OrganizationExerciseSetsResponse)?.exerciseSets || [];
-  const exerciseTags: ExerciseTag[] = (tagsData as { exerciseTags?: ExerciseTag[] })?.exerciseTags || [];
+  const exerciseSets: ExerciseSet[] = useMemo(
+    () => (data as OrganizationExerciseSetsResponse)?.exerciseSets || [],
+    [data]
+  );
+  const exerciseTags: ExerciseTag[] = useMemo(
+    () => (tagsData as { exerciseTags?: ExerciseTag[] })?.exerciseTags || [],
+    [tagsData]
+  );
 
   // Create map of tags by ID for quick lookup
   const tagsMap = useMemo(() => {

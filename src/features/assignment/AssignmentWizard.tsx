@@ -897,13 +897,16 @@ function AssignmentWizardContent({
   const stepInfo = getStepInfo();
 
   // Navigation
-  const canProceed = () =>
-    canProceedFromStep(currentStep, {
-      selectedSet,
-      builderInstancesLength: builderInstances.length,
-      planNameTrimLength: planName.trim().length,
-      selectedPatientsCount: selectedPatients.length,
-    });
+  const canProceed = useCallback(
+    () =>
+      canProceedFromStep(currentStep, {
+        selectedSet,
+        builderInstancesLength: builderInstances.length,
+        planNameTrimLength: planName.trim().length,
+        selectedPatientsCount: selectedPatients.length,
+      }),
+    [currentStep, selectedSet, builderInstances.length, planName, selectedPatients.length]
+  );
 
   // Track animation direction
   const [slideDirection, setSlideDirection] = useState<'left' | 'right'>('right');
@@ -918,7 +921,7 @@ function AssignmentWizardContent({
     setCurrentStep(step);
   };
 
-  const goNext = () => {
+  const goNext = useCallback(() => {
     const currentIndex = steps.findIndex((s) => s.id === currentStep);
     if (currentIndex < steps.length - 1) {
       setSlideDirection('right');
@@ -926,16 +929,16 @@ function AssignmentWizardContent({
       setCompletedSteps((prev) => new Set([...prev, currentStep]));
       setCurrentStep(steps[currentIndex + 1].id);
     }
-  };
+  }, [steps, currentStep]);
 
-  const goBack = () => {
+  const goBack = useCallback(() => {
     const currentIndex = steps.findIndex((s) => s.id === currentStep);
     if (currentIndex > 0) {
       setSlideDirection('left');
       animationKey.current += 1;
       setCurrentStep(steps[currentIndex - 1].id);
     }
-  };
+  }, [steps, currentStep]);
 
   // Calculate duration for context summary
   const durationDays = differenceInDays(endDate, startDate);
@@ -1209,6 +1212,11 @@ function AssignmentWizardContent({
   const isLoading = loadingSets || loadingPatients || assigning || removing || isSubmitting;
   const isFirstStep = steps.length > 0 && currentStep === steps[0].id;
   const isLastStep = currentStep === 'summary';
+  const handleSubmitRef = useRef(handleSubmit);
+
+  useEffect(() => {
+    handleSubmitRef.current = handleSubmit;
+  }, [handleSubmit]);
 
   // Get contextual next button text
   const getNextButtonText = () => {
@@ -1240,7 +1248,7 @@ function AssignmentWizardContent({
       if (e.key === 'Enter' && !e.shiftKey && canProceed()) {
         e.preventDefault();
         if (isLastStep) {
-          handleSubmit();
+          handleSubmitRef.current();
         } else {
           goNext();
         }
@@ -1254,7 +1262,7 @@ function AssignmentWizardContent({
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [currentStep, isFirstStep, isLastStep, canProceed, goNext, goBack, handleSubmit]);
+  }, [isFirstStep, isLastStep, canProceed, goNext, goBack]);
 
   // Render step content
   const renderStepContent = () => {

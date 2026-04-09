@@ -209,19 +209,19 @@ await expect(page.getByTestId(/^exercise-card-/)).toHaveCount(5);
 
 ### 3. Dashboard (dashboard-)
 
-| data-testid                     | Element                                | Plik       |
-| ------------------------------- | -------------------------------------- | ---------- |
-| `dashboard-greeting`            | Powitanie                              | `page.tsx` |
-| `dashboard-hero-assign-set-btn` | Przypisz zestaw (główna akcja)         | `page.tsx` |
-| `dashboard-create-set-btn`      | Utwórz zestaw                          | `page.tsx` |
-| `dashboard-add-patient-btn`     | Dodaj pacjenta                         | `page.tsx` |
-| `dashboard-activity-section`    | Sekcja "Wymagają uwagi"                | `page.tsx` |
-| `dashboard-patients-view-all`   | Link: Wszyscy pacjenci                 | `page.tsx` |
-| `dashboard-patient-item-{id}`   | Element listy pacjentów z aktywnością  | `page.tsx` |
-| `dashboard-sets-section`        | Sekcja "Szybki wybór"                  | `page.tsx` |
-| `dashboard-sets-view-all`       | Link: Wszystkie zestawy                | `page.tsx` |
-| `dashboard-set-item-{id}`       | Element listy zestawów                 | `page.tsx` |
-| `dashboard-quick-assign-{id}`   | Przycisk szybkiego przypisania zestawu | `page.tsx` |
+| data-testid                     | Element                                        | Plik       |
+| ------------------------------- | ---------------------------------------------- | ---------- |
+| `dashboard-greeting`            | Powitanie                                      | `page.tsx` |
+| `dashboard-hero-assign-set-btn` | Personalizuj i przypisz (główna akcja)         | `page.tsx` |
+| `dashboard-create-set-btn`      | Utwórz zestaw                                  | `page.tsx` |
+| `dashboard-add-patient-btn`     | Dodaj pacjenta                                 | `page.tsx` |
+| `dashboard-activity-section`    | Sekcja "Wymagają uwagi"                        | `page.tsx` |
+| `dashboard-patients-view-all`   | Link: Wszyscy pacjenci                         | `page.tsx` |
+| `dashboard-patient-item-{id}`   | Element listy pacjentów z aktywnością          | `page.tsx` |
+| `dashboard-sets-section`        | Sekcja "Szybki wybór"                          | `page.tsx` |
+| `dashboard-sets-view-all`       | Link: Wszystkie zestawy                        | `page.tsx` |
+| `dashboard-set-item-{id}`       | Element listy zestawów                         | `page.tsx` |
+| `dashboard-quick-assign-{id}`   | Przycisk szybkiej personalizacji i przypisania | `page.tsx` |
 
 ### 4. Ćwiczenia (exercise-)
 
@@ -265,7 +265,7 @@ await expect(page.getByTestId(/^exercise-card-/)).toHaveCount(5);
 | `set-create-btn`                    | Utwórz zestaw                   | `exercise-sets/page.tsx`      |
 | `set-create-wizard-btn`             | Kreator zestawu                 | `exercise-sets/page.tsx`      |
 | `set-card-{id}`                     | Karta zestawu                   | `SetCard.tsx`                 |
-| `set-card-{id}-assign-btn`          | Przypisz do pacjenta            | `SetCard.tsx`                 |
+| `set-card-{id}-assign-btn`          | Personalizuj i przypisz         | `SetCard.tsx`                 |
 | `set-card-{id}-copy-link-btn`       | Kopiuj link publiczny           | `SetCard.tsx`                 |
 | `set-card-{id}-menu-trigger`        | Menu kontekstowe (3 kropki)     | `SetCard.tsx`                 |
 | `set-card-{id}-edit-btn`            | Edytuj (w menu)                 | `SetCard.tsx`                 |
@@ -277,7 +277,7 @@ await expect(page.getByTestId(/^exercise-card-/)).toHaveCount(5);
 | `set-detail-edit-btn`               | Edytuj zestaw                   | `exercise-sets/[id]/page.tsx` |
 | `set-detail-delete-btn`             | Usuń zestaw                     | `exercise-sets/[id]/page.tsx` |
 | `set-detail-edit-set-btn`           | Edytuj zestaw (sekcja ćwiczeń)  | `exercise-sets/[id]/page.tsx` |
-| `set-detail-assign-btn`             | Przypisz pacjentom              | `exercise-sets/[id]/page.tsx` |
+| `set-detail-assign-btn`             | Personalizuj i przypisz         | `exercise-sets/[id]/page.tsx` |
 | `set-detail-pdf-btn`                | Generuj PDF                     | `exercise-sets/[id]/page.tsx` |
 | `set-exercise-item-{id}`            | Ćwiczenie w zestawie            | `exercise-sets/[id]/page.tsx` |
 | `set-exercise-item-{id}-edit-btn`   | Edytuj w zestawie               | `exercise-sets/[id]/page.tsx` |
@@ -332,7 +332,7 @@ await expect(page.getByTestId(/^exercise-card-/)).toHaveCount(5);
 | `patient-card-{id}-menu-trigger`             | Menu kontekstowe                     | `PatientCard.tsx`                  |
 | `patient-card-{id}-view-btn`                 | Podgląd                              | `PatientCard.tsx`                  |
 | `patient-card-{id}-edit-btn`                 | Edytuj                               | `PatientCard.tsx`                  |
-| `patient-card-{id}-assign-btn`               | Przypisz zestaw                      | `PatientCard.tsx`                  |
+| `patient-card-{id}-assign-btn`               | Personalizuj i przypisz              | `PatientCard.tsx`                  |
 | `patient-card-{id}-delete-btn`               | Usuń                                 | `PatientCard.tsx`                  |
 | `patient-card-therapist-badge`               | Badge fizjoterapeuty                 | `TherapistBadge.tsx`               |
 | `patient-card-therapist-badge-unassigned`    | Badge nieprzypisany                  | `TherapistBadge.tsx`               |
@@ -340,12 +340,12 @@ await expect(page.getByTestId(/^exercise-card-/)).toHaveCount(5);
 | `patient-takeover-dialog`                    | Dialog przejmowania opieki           | `TakeOverDialog.tsx`               |
 | `patient-takeover-confirm-btn`               | Potwierdź przejęcie                  | `TakeOverDialog.tsx`               |
 | `patient-expandable-{id}`                    | Karta rozwijana                      | `PatientExpandableCard.tsx`        |
-| `patient-expandable-{id}-assign-btn`         | Przypisz zestaw                      | `PatientExpandableCard.tsx`        |
+| `patient-expandable-{id}-assign-btn`         | Personalizuj i przypisz              | `PatientExpandableCard.tsx`        |
 | `patient-expandable-{id}-menu-trigger`       | Menu kontekstowe                     | `PatientExpandableCard.tsx`        |
 | `patient-detail-back-btn`                    | Przycisk wstecz                      | `patients/[id]/page.tsx`           |
 | `patient-detail-name`                        | Imię i nazwisko                      | `patients/[id]/page.tsx`           |
 | `patient-detail-menu-trigger`                | Menu akcji                           | `patients/[id]/page.tsx`           |
-| `patient-detail-assign-btn`                  | Przypisz zestaw                      | `patients/[id]/page.tsx`           |
+| `patient-detail-assign-btn`                  | Personalizuj i przypisz              | `patients/[id]/page.tsx`           |
 | `patient-detail-qr-btn`                      | Kod QR                               | `patients/[id]/page.tsx`           |
 | `patient-detail-edit-btn`                    | Edytuj dane                          | `patients/[id]/page.tsx`           |
 | `patient-form`                               | Formularz pacjenta                   | `PatientForm.tsx`                  |
@@ -414,7 +414,7 @@ await expect(page.getByTestId(/^exercise-card-/)).toHaveCount(5);
 | `assign-summary-save-template-toggle`  | Przełącznik: zapisz jako szablon          | `SummaryStep.tsx`            |
 | `assign-summary-save-template-label`   | Etykieta: zapisz kopię planu jako szablon | `SummaryStep.tsx`            |
 | `assign-summary`                       | Podsumowanie                              | `SummaryStep.tsx`            |
-| `assign-summary-submit-btn`            | Przypisz zestaw                           | `SummaryStep.tsx`            |
+| `assign-summary-submit-btn`            | Utwórz plan i przypisz                    | `SummaryStep.tsx`            |
 
 ### 8. AI Chat (ai-)
 

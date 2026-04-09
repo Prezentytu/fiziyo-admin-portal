@@ -1,4 +1,4 @@
-import { View, Text, Image } from '@react-pdf/renderer';
+import { View, Text, Image as PdfImage } from '@react-pdf/renderer';
 import { pdfStyles } from './styles';
 import { getMediaUrl } from '@/utils/mediaUrl';
 import { formatDurationPolish, formatSeconds, translateExerciseSidePolish } from './polishUtils';
@@ -51,7 +51,7 @@ export function ExercisePDFItem({ exercise, index, showImage, compact }: Exercis
       {showImage && (
         <View style={pdfStyles.exerciseColImageClean}>
           {imageUrl ? (
-            <Image src={imageUrl} style={pdfStyles.exerciseThumbnailClean} />
+            <PdfImage src={imageUrl} style={pdfStyles.exerciseThumbnailClean} />
           ) : (
             <View style={pdfStyles.exerciseThumbnailPlaceholderClean}>
               <Text style={pdfStyles.exerciseThumbnailPlaceholderText}>Rysunek</Text>

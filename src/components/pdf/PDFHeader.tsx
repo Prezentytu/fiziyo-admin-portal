@@ -1,4 +1,4 @@
-import { View, Text, Image } from '@react-pdf/renderer';
+import { View, Text, Image as PdfImage } from '@react-pdf/renderer';
 import { pdfStyles } from './styles';
 import type { PDFOrganization } from './types';
 
@@ -20,7 +20,7 @@ export function PDFHeader({ organization, date }: PDFHeaderProps) {
       {/* LEWA STRONA: Logo + Nazwa */}
       <View style={pdfStyles.headerLeft}>
         {organization.logoUrl ? (
-          <Image src={organization.logoUrl} style={pdfStyles.logo} />
+          <PdfImage src={organization.logoUrl} style={pdfStyles.logo} />
         ) : (
           <View style={pdfStyles.logoPlaceholder}>
             <Text style={pdfStyles.logoPlaceholderText}>{initials}</Text>

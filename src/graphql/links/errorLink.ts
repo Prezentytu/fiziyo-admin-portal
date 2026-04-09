@@ -1,8 +1,6 @@
 import { ErrorLink } from '@apollo/client/link/error';
 import { CombinedGraphQLErrors, CombinedProtocolErrors } from '@apollo/client/errors';
 
-const isDev = process.env.NODE_ENV === 'development';
-
 /**
  * Error Link do obsługi błędów GraphQL i Network
  * Loguje błędy w development mode i pomaga w debugowaniu
@@ -11,9 +9,6 @@ const isDev = process.env.NODE_ENV === 'development';
 export class ErrorLinkFactory {
   create(): ErrorLink {
     return new ErrorLink(({ error, operation }) => {
-      // Logowanie tylko w development mode
-      if (!isDev) return;
-
       if (CombinedGraphQLErrors.is(error)) {
         // GraphQL errors
         error.errors.forEach(({ message, locations, path, extensions }) => {

@@ -166,7 +166,7 @@ export function PatientCard({
                 data-testid={`patient-card-${patient.id}-assign-btn`}
               >
                 <FolderKanban className="mr-2 h-4 w-4" />
-                Przypisz zestaw
+                Personalizuj i przypisz
               </DropdownMenuItem>
             )}
             {onDelete && (
@@ -267,7 +267,7 @@ export function PatientCard({
                   data-testid={`patient-card-${patient.id}-assign-btn`}
                 >
                   <FolderKanban className="mr-2 h-4 w-4" />
-                  Przypisz zestaw
+                Personalizuj i przypisz
                 </DropdownMenuItem>
               )}
               {onDelete && (

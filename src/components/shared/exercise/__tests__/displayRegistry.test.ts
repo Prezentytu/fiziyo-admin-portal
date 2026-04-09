@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
   DIALOG_EXERCISE_FIELD_ORDER,
-  EMPTY_NUMERIC_VALUE,
   EXERCISE_FIELD_METADATA,
   HIDE_EXERCISE_TAGS,
   formatDifficultyLabel,

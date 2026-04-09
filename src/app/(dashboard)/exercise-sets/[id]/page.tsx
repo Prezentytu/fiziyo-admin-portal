@@ -531,10 +531,9 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
     );
   }
 
-  const exercises = exerciseSet?.exerciseMappings || [];
-  const assignments = exerciseSet?.patientAssignments || [];
   const isTemplateSet = exerciseSet.kind === 'TEMPLATE' || exerciseSet.isTemplate === true;
-  const hasUnexpectedAssignments = isTemplateSet && assignments.length > 0;
+  const exercises = exerciseSet?.exerciseMappings || [];
+  const assignments = isTemplateSet ? [] : exerciseSet?.patientAssignments || [];
 
   return (
     <div className="space-y-6">
@@ -629,7 +628,7 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
               <span className="text-2xl font-bold text-foreground">{assignments.length}</span>
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              {isTemplateSet ? 'Przypisania (historyczne)' : pluralize(assignments.length, 'pacjent', false)}
+              {pluralize(assignments.length, 'pacjent', false)}
             </p>
           </div>
 
@@ -827,42 +826,21 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
       </div>
 
       {/* Patients Section */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
-            <Users className="h-5 w-5 text-secondary" />
-            {isTemplateSet ? 'Pacjenci (historyczne)' : `Przypisani pacjenci (${assignments.length})`}
-          </h2>
-          {!isTemplateSet && (
-            <Button size="sm" onClick={() => setIsAssignDialogOpen(true)}>
-              <Plus className="mr-2 h-4 w-4" />
-              Personalizuj i przypisz zestaw
-            </Button>
-          )}
-        </div>
-
-        {isTemplateSet && !hasUnexpectedAssignments && (
-          <div className="py-10 text-center rounded-xl border border-border/60 bg-surface/40">
-            <p className="text-xl font-semibold text-foreground">
-              Ten zestaw organizacji nie przechowuje przypisanych pacjentów
-            </p>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Każde przypisanie tworzy osobny, spersonalizowany zestaw ćwiczeń dla pacjenta.
-            </p>
+      {assignments.length > 0 && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
+              <Users className="h-5 w-5 text-secondary" />
+              {`Przypisani pacjenci (${assignments.length})`}
+            </h2>
+            {!isTemplateSet && (
+              <Button size="sm" onClick={() => setIsAssignDialogOpen(true)}>
+                <Plus className="mr-2 h-4 w-4" />
+                Personalizuj i przypisz
+              </Button>
+            )}
           </div>
-        )}
 
-        {assignments.length === 0 && !isTemplateSet ? (
-          <div className="py-10 text-center">
-            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-surface-light">
-              <Users className="h-6 w-6 text-muted-foreground" />
-            </div>
-            <p className="text-xl font-semibold text-foreground">Brak przypisanych pacjentów</p>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Dostosuj ten zestaw i przypisz go pacjentom
-            </p>
-          </div>
-        ) : assignments.length > 0 ? (
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 animate-stagger">
             {assignments.map((assignment) => {
               const statusInfo = getStatusInfo(assignment.status);
@@ -983,8 +961,8 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
               );
             })}
           </div>
-        ) : null}
-      </div>
+        </div>
+      )}
 
       {/* Full Edit Set Dialog */}
       {organizationId && exerciseSet && (

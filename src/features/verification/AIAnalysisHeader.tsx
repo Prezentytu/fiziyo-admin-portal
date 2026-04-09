@@ -152,7 +152,7 @@ export function AIAnalysisHeader({
         description: 'Spróbuj ponownie lub wypełnij pola ręcznie',
       });
     }
-  }, [disabled, canAnalyze, exercise, onAIAnalysisComplete, status]);
+  }, [disabled, canAnalyze, exercise, onAIAnalysisComplete]);
 
   const handleUndo = useCallback(() => {
     onAIAnalysisUndo();

@@ -114,8 +114,11 @@ export function CustomizeSetStep({
   });
 
   // Process tags
-  const tags = (tagsData as ExerciseTagsResponse)?.exerciseTags || [];
-  const categories = (categoriesData as TagCategoriesResponse)?.tagsByOrganizationId || [];
+  const tags = useMemo(() => (tagsData as ExerciseTagsResponse)?.exerciseTags || [], [tagsData]);
+  const categories = useMemo(
+    () => (categoriesData as TagCategoriesResponse)?.tagsByOrganizationId || [],
+    [categoriesData]
+  );
   const tagsMap = useMemo(() => createTagsMap(tags, categories), [tags, categories]);
 
   // Map exercises with tags for filtering
@@ -130,7 +133,10 @@ export function CustomizeSetStep({
   }, [availableExercises, tagsMap]);
 
   // Calculate exercise popularity from existing sets
-  const exerciseSets = (exerciseSetsData as OrganizationExerciseSetsResponse)?.exerciseSets || [];
+  const exerciseSets = useMemo(
+    () => (exerciseSetsData as OrganizationExerciseSetsResponse)?.exerciseSets || [],
+    [exerciseSetsData]
+  );
   const exercisePopularity = useMemo(() => {
     const popularity: Record<string, number> = {};
     for (const set of exerciseSets) {

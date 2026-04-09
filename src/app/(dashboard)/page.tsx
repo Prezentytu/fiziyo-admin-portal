@@ -53,6 +53,8 @@ interface ExerciseSetItem {
   name: string;
   description?: string;
   creationTime?: string;
+  kind?: 'TEMPLATE' | 'PATIENT_PLAN';
+  isTemplate?: boolean;
   exerciseMappings?: Array<{
     id: string;
     exerciseId: string;
@@ -236,15 +238,23 @@ export default function DashboardPage() {
     enabled: !!organizationId,
   });
 
-  const exerciseSets = (setsData as OrganizationExerciseSetsResponse)?.exerciseSets || [];
+  const exerciseSets = useMemo(
+    () => ((setsData as OrganizationExerciseSetsResponse | undefined)?.exerciseSets ?? []) as ExerciseSetItem[],
+    [setsData]
+  );
   const setsCount = exerciseSets.length;
 
-  // Sort exercise sets by creation time (newest first)
-  const sortedExerciseSets = [...exerciseSets].sort((a: ExerciseSetItem, b: ExerciseSetItem) => {
-    const dateA = new Date(a.creationTime || 0).getTime();
-    const dateB = new Date(b.creationTime || 0).getTime();
-    return dateB - dateA;
-  });
+  const quickSelectionSets = useMemo(
+    () =>
+      exerciseSets
+        .filter((set: ExerciseSetItem) => set.kind === 'TEMPLATE' || set.isTemplate === true)
+        .sort((a: ExerciseSetItem, b: ExerciseSetItem) => {
+          const dateA = new Date(a.creationTime || 0).getTime();
+          const dateB = new Date(b.creationTime || 0).getTime();
+          return dateB - dateA;
+        }),
+    [exerciseSets]
+  );
 
   const patients = useMemo<PatientAssignmentData[]>(
     () => {
@@ -371,12 +381,12 @@ export default function DashboardPage() {
 
       {/* Quick Actions - spójna hierarchia: Primary + Secondary + Tertiary */}
       <div className="grid gap-3 md:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-        {/* Action 1 - Przypisz zestaw (zielona - główna akcja) */}
+        {/* Action 1 - Personalizuj i przypisz (zielona - główna akcja) */}
         <button
           type="button"
           onClick={() => setIsAssignWizardOpen(true)}
           disabled={!organizationId || !therapistId}
-          aria-label="Przypisz zestaw ćwiczeń pacjentowi"
+          aria-label="Personalizuj i przypisz zestaw ćwiczeń pacjentowi"
           data-testid="dashboard-hero-assign-set-btn"
           className="group relative overflow-hidden rounded-xl md:rounded-2xl bg-linear-to-br from-primary via-primary to-primary-dark p-4 md:p-5 text-left transition-all duration-150 hover:shadow-xl hover:shadow-primary/20 hover:scale-[1.02] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
         >
@@ -388,7 +398,9 @@ export default function DashboardPage() {
               <Send className="h-4 w-4 md:h-5 md:w-5 text-primary-foreground" />
             </div>
             <div className="min-w-0 flex-1">
-              <h3 className="text-sm md:text-base font-bold text-primary-foreground mb-0.5 md:mb-1">Przypisz zestaw</h3>
+              <h3 className="text-sm md:text-base font-bold text-primary-foreground mb-0.5 md:mb-1">
+                Personalizuj i przypisz
+              </h3>
               <p className="text-xs text-primary-foreground/80">Dla obecnych pacjentów</p>
             </div>
             <ArrowRight className="h-4 w-4 md:h-5 md:w-5 text-primary-foreground/60 group-hover:text-primary-foreground group-hover:translate-x-1 transition-all duration-150 shrink-0" />
@@ -647,9 +659,9 @@ export default function DashboardPage() {
                   </div>
                 ))}
               </div>
-            ) : sortedExerciseSets.length > 0 ? (
+            ) : quickSelectionSets.length > 0 ? (
               <div className="space-y-2 animate-stagger">
-                {sortedExerciseSets.slice(0, 5).map((set: ExerciseSetItem) => (
+                {quickSelectionSets.slice(0, 5).map((set: ExerciseSetItem) => (
                   <div
                     key={set.id}
                     className="group flex items-center gap-3 p-3 rounded-xl transition-all duration-150 hover:bg-surface-light"
@@ -674,6 +686,7 @@ export default function DashboardPage() {
                       className="h-8 w-8 p-0 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-primary/10 hover:text-primary"
                       onClick={(e) => handleQuickAssign(set, e)}
                       disabled={!organizationId || !therapistId}
+                      aria-label={`Personalizuj i przypisz ${set.name}`}
                       data-testid={`dashboard-quick-assign-${set.id}`}
                     >
                       <Plus className="h-4 w-4" />
@@ -686,8 +699,8 @@ export default function DashboardPage() {
                 <div className="h-14 w-14 rounded-2xl bg-surface-light flex items-center justify-center mb-3">
                   <Sparkles className="h-7 w-7 text-muted-foreground/50" />
                 </div>
-                <p className="text-sm font-medium text-muted-foreground mb-1">Brak zestawów</p>
-                <p className="text-xs text-muted-foreground/70 mb-4">Stwórz pierwszy zestaw</p>
+                <p className="text-sm font-medium text-muted-foreground mb-1">Brak zestawów do szybkiego wyboru</p>
+                <p className="text-xs text-muted-foreground/70 mb-4">Utwórz niespersonalizowany zestaw</p>
                 <Button
                   size="sm"
                   variant="secondary"

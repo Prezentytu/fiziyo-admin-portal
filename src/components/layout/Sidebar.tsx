@@ -218,7 +218,7 @@ export function Sidebar({ isCollapsed, onToggleCollapse }: SidebarProps) {
           <OrganizationSwitcher isCollapsed={isCollapsed} />
         </div>
 
-        {/* Navigation groups – większy pt, żeby dół zaznaczenia „Panel” był na tej samej wysokości co dół przycisku „Przypisz zestaw” */}
+        {/* Navigation groups – większy pt, żeby dół zaznaczenia „Panel” był na tej samej wysokości co dół przycisku „Personalizuj i przypisz” */}
         <div className="relative flex-1 min-h-0">
           {showTopFade && (
             <div className="pointer-events-none absolute inset-x-0 top-0 z-10 h-6 bg-linear-to-b from-surface to-transparent" />

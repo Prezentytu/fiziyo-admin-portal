@@ -186,7 +186,7 @@ function DocumentPreview({ exerciseCount = 0 }: Readonly<{ exerciseCount?: numbe
  * 1. LEWA: Aplikacja mobilna (QR kod) - ZAWSZE aktywna
  * 2. PRAWA: Wydruk karty - kontekstowa:
  *    - Ma plany: Selector + Preview + Drukuj
- *    - Brak planów: CTA "Przypisz nowy zestaw"
+ *    - Brak planów: CTA "Personalizuj i przypisz"
  */
 export function PatientQRCodeDialog({
   open,
@@ -696,7 +696,7 @@ export function PatientQRCodeDialog({
 
                     <h3 className="text-sm font-bold text-muted-foreground mb-1">Brak aktywnego planu</h3>
                     <p className="text-xs text-muted-foreground max-w-[180px]">
-                      Przypisz zestaw ćwiczeń, aby wygenerować kartę.
+                      Personalizuj i przypisz zestaw, aby wygenerować kartę.
                     </p>
                   </div>
 
@@ -709,7 +709,7 @@ export function PatientQRCodeDialog({
                       data-testid="patient-qr-create-plan-btn"
                     >
                       <FilePlus className="h-3.5 w-3.5" />
-                      Przypisz nowy zestaw
+                      Personalizuj i przypisz
                     </Button>
                     <Button variant="ghost" size="sm" className="w-full gap-2 invisible">
                       Placeholder

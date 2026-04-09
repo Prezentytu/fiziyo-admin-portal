@@ -349,7 +349,7 @@ export function SetCard({ set, tagsMap, onView, onEdit, onDelete, onDuplicate, o
                 data-testid={`set-card-${set.id}-assign-btn`}
               >
                 <Send className="h-3.5 w-3.5 mr-1.5" />
-                Przypisz
+                Personalizuj i przypisz
               </Button>
             </div>
           )}

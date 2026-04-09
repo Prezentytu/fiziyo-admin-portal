@@ -82,7 +82,7 @@ export function GettingStartedCard({
     },
     {
       id: 'assign',
-      title: 'Przypisz zestaw pacjentowi',
+      title: 'Personalizuj i przypisz',
       description: 'Wyślij program do pacjenta',
       icon: Send,
       path: '/patients',

@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useMutation } from '@apollo/client/react';
-import { Building2, Image, Loader2, Pencil, Save, Trash2 } from 'lucide-react';
+import { Building2, Image as ImageIcon, Loader2, Pencil, Save, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -202,7 +202,7 @@ export function SettingsTab({ organization, currentUserRole, isLoading = false, 
                       htmlFor="logo-upload"
                       className="cursor-pointer inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-border/50 bg-background/50 hover:bg-background hover:border-primary/50 transition-all text-sm font-medium"
                     >
-                      {updatingLogo ? <Loader2 className="h-4 w-4 animate-spin" /> : <Image className="h-4 w-4" />}
+                      {updatingLogo ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImageIcon className="h-4 w-4" />}
                       {organization.logoUrl ? 'Zmień logo' : 'Dodaj logo'}
                     </Label>
                     <input

@@ -103,15 +103,17 @@ export function ExercisePreviewDialog({
     setCurrentMediaIndex(0);
   }, [exercise?.id, open]);
 
+  const mediaItems = useMemo<ExerciseMediaItem[]>(() => {
+    if (!exercise) return [];
+    const imageItems: ExerciseMediaItem[] = galleryImages.map((image) => ({ kind: 'image', url: image }));
+    const videoUrl = getMediaUrl(exercise.videoUrl);
+    if (!videoUrl) return imageItems;
+    return [...imageItems, { kind: 'video', url: videoUrl }];
+  }, [exercise, galleryImages]);
+
   if (!exercise) return null;
 
   const currentImage = galleryImages[0] ?? null;
-  const videoUrl = getMediaUrl(exercise.videoUrl);
-  const mediaItems = useMemo<ExerciseMediaItem[]>(() => {
-    const imageItems: ExerciseMediaItem[] = galleryImages.map((image) => ({ kind: 'image', url: image }));
-    if (!videoUrl) return imageItems;
-    return [...imageItems, { kind: 'video', url: videoUrl }];
-  }, [galleryImages, videoUrl]);
   const hasMultipleMedia = mediaItems.length > 1;
   const currentMedia = mediaItems[currentMediaIndex] ?? null;
 

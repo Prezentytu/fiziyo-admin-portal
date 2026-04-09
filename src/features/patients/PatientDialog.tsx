@@ -322,7 +322,7 @@ export function PatientDialog({
                     data-testid="patient-dialog-assign-btn"
                   >
                     <Send className="h-5 w-5" />
-                    Przypisz zestaw ćwiczeń
+                    Personalizuj i przypisz
                   </Button>
                 )}
 

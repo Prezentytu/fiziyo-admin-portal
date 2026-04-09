@@ -14,6 +14,30 @@ Dziennik wniosków z pracy AI agentów. Po każdej korekcie dodaj nowy wpis.
 
 ## Wpisy
 
+### 2026-04-09 - Szybki wybór na dashboardzie pokazuje tylko zestawy źródłowe
+
+- **Kategoria**: `UI/UX`
+- **Problem**: Sekcja `Szybki wybór` na dashboardzie pokazywała także plany pacjenta (`PATIENT_PLAN`), przez co szybkie przypisanie mieszało zestawy reużywalne z już spersonalizowanymi.
+- **Przyczyna**: Lista była budowana ze wszystkich `exerciseSets` bez filtra po klasyfikacji (`kind`/`isTemplate`).
+- **Rozwiązanie**: Dodano filtr do widoku dashboardu (`kind === TEMPLATE` lub `isTemplate === true`) i pozostawiono sortowanie tylko dla tej odfiltrowanej listy.
+- **Reguła**: W powierzchniach typu „quick pick” dla przypisań pokazuj wyłącznie zestawy źródłowe (template), nigdy istniejące plany pacjenta.
+
+### 2026-04-09 - Disabled CTA bez wskazania przyczyny blokuje flow tworzenia
+
+- **Kategoria**: `UI/UX`
+- **Problem**: W kreatorze tworzenia zestawu przycisk `Utwórz zestaw` był wyszarzony przy pustej nazwie, ale UI nie wskazywał jasno co trzeba uzupełnić.
+- **Przyczyna**: Walidacja była zaszyta wyłącznie w warunku `disabled`, bez błędu inline i bez przeniesienia fokusu do wymaganej kontrolki.
+- **Rozwiązanie**: Przełączono flow na aktywne CTA + walidację przy próbie submitu, dodano `focus()` na pole nazwy, komunikat inline oraz atrybuty `aria-invalid` i `aria-describedby`.
+- **Reguła**: Dla kluczowych CTA w formularzach nie ukrywaj walidacji wyłącznie w stanie `disabled`; po akcji użytkownika zawsze wskaż pierwszy brakujący krok (focus + czytelny komunikat przy polu).
+
+### 2026-04-09 - Hooki musza byc przed return null
+
+- **Kategoria**: `React`
+- **Problem**: `npm run lint` konczyl sie bledem `react-hooks/rules-of-hooks` w dialogu podgladu cwiczenia.
+- **Przyczyna**: `useMemo` bylo wywolane dopiero po wczesnym `if (!exercise) return null`, wiec hook uruchamial sie warunkowo.
+- **Rozwiązanie**: Przeniesiono `useMemo` ponad warunek wyjscia i dodano guard `if (!exercise) return []` wewnatrz callbacka.
+- **Reguła**: W komponentach React wszystkie hooki (`useMemo`, `useCallback`, `useEffect`) musza byc wywolane przed jakimkolwiek `return` warunkowym.
+
 ### 2026-04-08 - Czas serii w odczycie nie może być surową liczbą sekund
 
 - **Kategoria**: `UI/UX`

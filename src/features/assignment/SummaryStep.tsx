@@ -504,7 +504,7 @@ export function SummaryStep({
 
         <div className="bg-surface border border-border/60 rounded-xl p-4 sm:p-5" data-testid="summary-template-save-card">
           <div className="mb-3 rounded-lg border border-border/50 bg-surface-light/30 px-3 py-2 text-xs text-muted-foreground">
-            W tym flow zawsze tworzymy nowy, spersonalizowany zestaw ćwiczeń dla pacjenta.
+            W tym flow zawsze tworzymy nowy, spersonalizowany plan ćwiczeń dla pacjenta.
           </div>
           <div className="flex items-start justify-between gap-3">
             <div>
@@ -527,7 +527,8 @@ export function SummaryStep({
         {/* Compliance Shield - "Pieczątka prawna" */}
         <div className="p-3 sm:p-4 rounded-xl bg-surface border border-border/40">
           <p className="text-[11px] sm:text-xs text-muted-foreground leading-relaxed">
-            Przypisując zestaw ćwiczeń potwierdzasz, że dobór ćwiczeń jest odpowiedni dla stanu zdrowia pacjenta i
+            Personalizując i przypisując plan ćwiczeń potwierdzasz, że dobór ćwiczeń jest odpowiedni dla stanu zdrowia
+            pacjenta i
             został ustalony na podstawie przeprowadzonej diagnostyki. FiziYo nie ponosi odpowiedzialności za skutki
             nieprawidłowego doboru ćwiczeń.
           </p>

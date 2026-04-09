@@ -41,11 +41,11 @@ Wyszukiwarka + Enter dodaje ćwiczenia do planu pacjenta.
 
 ## Punkty wejścia
 
-| Miejsce                                    | Tryb         | Predefiniowane |
-| ------------------------------------------ | ------------ | -------------- |
-| Strona pacjenta → "Przypisz zestaw"        | from-patient | Pacjent        |
-| Strona zestawu → "Personalizuj i przypisz" | from-set     | Zestaw         |
-| Dashboard → "Przypisz zestaw"              | from-patient | Nic            |
+| Miejsce                                     | Tryb         | Predefiniowane |
+| ------------------------------------------- | ------------ | -------------- |
+| Strona pacjenta → "Personalizuj i przypisz" | from-patient | Pacjent        |
+| Strona zestawu → "Personalizuj i przypisz"  | from-set     | Zestaw         |
+| Dashboard → "Personalizuj i przypisz"       | from-patient | Nic            |
 
 ## Struktura folderu
 

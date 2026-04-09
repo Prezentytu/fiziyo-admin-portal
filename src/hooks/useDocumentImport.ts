@@ -749,7 +749,7 @@ export function useDocumentImport() {
       default:
         return false;
     }
-  }, [state.step, state.file, state.importResult, stats]);
+  }, [state.step, state.file, state.inputMode, state.pastedText, state.importResult, stats]);
 
   return {
     // State
