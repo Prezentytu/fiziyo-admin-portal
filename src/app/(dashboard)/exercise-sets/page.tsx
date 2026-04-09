@@ -19,13 +19,13 @@ import { EditExerciseSetFullDialog } from '@/features/exercise-sets/EditExercise
 import { CreateSetWizard } from '@/features/exercise-sets/CreateSetWizard';
 import { AssignmentWizard } from '@/features/assignment/AssignmentWizard';
 import { cn } from '@/lib/utils';
+import { HIDE_EXERCISE_TAGS } from '@/components/shared/exercise';
 
 import { GET_ORGANIZATION_EXERCISE_SETS_QUERY } from '@/graphql/queries/exerciseSets.queries';
 import { GET_EXERCISE_TAGS_BY_ORGANIZATION_QUERY } from '@/graphql/queries/exerciseTags.queries';
 import { GET_USER_BY_CLERK_ID_QUERY } from '@/graphql/queries/users.queries';
 import { DELETE_EXERCISE_SET_MUTATION, DUPLICATE_EXERCISE_SET_MUTATION } from '@/graphql/mutations/exercises.mutations';
 import { matchesSearchQuery } from '@/utils/textUtils';
-import { useDataManagement } from '@/hooks/useDataManagement';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import type { OrganizationExerciseSetsResponse, ExerciseTag, UserByClerkIdResponse } from '@/types/apollo';
 import {
@@ -93,11 +93,6 @@ export default function ExerciseSetsPage() {
   });
   const therapistId = (userData as UserByClerkIdResponse)?.userByClerkId?.id;
 
-  // Data management hook for importing examples
-  const { importExampleSets, isImporting, hasImportedExamples } = useDataManagement({
-    organizationId,
-  });
-
   // Get exercise sets
   const { data, loading, error } = useQuery(GET_ORGANIZATION_EXERCISE_SETS_QUERY, {
     variables: { organizationId },
@@ -107,7 +102,7 @@ export default function ExerciseSetsPage() {
   // Get exercise tags for filtering
   const { data: tagsData } = useQuery(GET_EXERCISE_TAGS_BY_ORGANIZATION_QUERY, {
     variables: { organizationId },
-    skip: !organizationId,
+    skip: !organizationId || HIDE_EXERCISE_TAGS,
   });
 
   // Mutations
@@ -124,7 +119,7 @@ export default function ExerciseSetsPage() {
     [data]
   );
   const exerciseTags: ExerciseTag[] = useMemo(
-    () => (tagsData as { exerciseTags?: ExerciseTag[] })?.exerciseTags || [],
+    () => (HIDE_EXERCISE_TAGS ? [] : (tagsData as { exerciseTags?: ExerciseTag[] })?.exerciseTags || []),
     [tagsData]
   );
 
@@ -139,6 +134,8 @@ export default function ExerciseSetsPage() {
 
   // Get all unique tags used in exercise sets (aggregated from exercises)
   const availableTags = useMemo(() => {
+    if (HIDE_EXERCISE_TAGS) return [];
+
     const tagIds = new Set<string>();
     for (const set of exerciseSets) {
       for (const mapping of set.exerciseMappings || []) {
@@ -318,57 +315,59 @@ export default function ExerciseSetsPage() {
           </div>
 
           {/* Tag Filter Dropdown */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="outline"
-                className={cn('gap-2 shrink-0', selectedTags.length > 0 && 'border-primary/40 bg-primary/5')}
-                data-testid="set-tag-filter-btn"
-              >
-                <Filter className="h-4 w-4" />
-                <span className="hidden sm:inline">Tagi</span>
+          {!HIDE_EXERCISE_TAGS && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn('gap-2 shrink-0', selectedTags.length > 0 && 'border-primary/40 bg-primary/5')}
+                  data-testid="set-tag-filter-btn"
+                >
+                  <Filter className="h-4 w-4" />
+                  <span className="hidden sm:inline">Tagi</span>
+                  {selectedTags.length > 0 && (
+                    <Badge variant="secondary" className="ml-1 px-1.5 py-0 text-xs">
+                      {selectedTags.length}
+                    </Badge>
+                  )}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-64 max-h-80 overflow-auto">
                 {selectedTags.length > 0 && (
-                  <Badge variant="secondary" className="ml-1 px-1.5 py-0 text-xs">
-                    {selectedTags.length}
-                  </Badge>
+                  <>
+                    <button
+                      onClick={() => setSelectedTags([])}
+                      className="w-full px-2 py-1.5 text-xs text-muted-foreground hover:text-foreground text-left"
+                    >
+                      Wyczyść filtry ({selectedTags.length})
+                    </button>
+                    <DropdownMenuSeparator />
+                  </>
                 )}
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-64 max-h-80 overflow-auto">
-              {selectedTags.length > 0 && (
-                <>
-                  <button
-                    onClick={() => setSelectedTags([])}
-                    className="w-full px-2 py-1.5 text-xs text-muted-foreground hover:text-foreground text-left"
-                  >
-                    Wyczyść filtry ({selectedTags.length})
-                  </button>
-                  <DropdownMenuSeparator />
-                </>
-              )}
-              {availableTags.length === 0 ? (
-                <div className="px-2 py-3 text-sm text-muted-foreground text-center">Brak tagów</div>
-              ) : (
-                availableTags.map((tag) => (
-                  <DropdownMenuCheckboxItem
-                    key={tag.id}
-                    checked={selectedTags.includes(tag.id)}
-                    onCheckedChange={(checked) => {
-                      setSelectedTags((prev) => (checked ? [...prev, tag.id] : prev.filter((id) => id !== tag.id)));
-                    }}
-                  >
-                    <div className="flex items-center gap-2">
-                      <div
-                        className="w-3 h-3 rounded-full shrink-0"
-                        style={{ backgroundColor: tag.color || '#5bb89a' }}
-                      />
-                      <span className="truncate">{tag.name}</span>
-                    </div>
-                  </DropdownMenuCheckboxItem>
-                ))
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
+                {availableTags.length === 0 ? (
+                  <div className="px-2 py-3 text-sm text-muted-foreground text-center">Brak tagów</div>
+                ) : (
+                  availableTags.map((tag) => (
+                    <DropdownMenuCheckboxItem
+                      key={tag.id}
+                      checked={selectedTags.includes(tag.id)}
+                      onCheckedChange={(checked) => {
+                        setSelectedTags((prev) => (checked ? [...prev, tag.id] : prev.filter((id) => id !== tag.id)));
+                      }}
+                    >
+                      <div className="flex items-center gap-2">
+                        <div
+                          className="w-3 h-3 rounded-full shrink-0"
+                          style={{ backgroundColor: tag.color || '#5bb89a' }}
+                        />
+                        <span className="truncate">{tag.name}</span>
+                      </div>
+                    </DropdownMenuCheckboxItem>
+                  ))
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </div>
       </div>
 
@@ -501,7 +500,7 @@ export default function ExerciseSetsPage() {
           </Badge>
 
           {/* Selected tags display */}
-          {selectedTags.length > 0 && (
+          {!HIDE_EXERCISE_TAGS && selectedTags.length > 0 && (
             <div className="flex flex-wrap items-center gap-1.5">
               {selectedTags.map((tagId) => {
                 const tag = tagsMap.get(tagId);
@@ -535,7 +534,7 @@ export default function ExerciseSetsPage() {
               Pokaz wszystkie zestawy zrodlowe
             </Button>
           )}
-          {selectedTags.length > 0 && (
+          {!HIDE_EXERCISE_TAGS && selectedTags.length > 0 && (
             <Button variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={() => setSelectedTags([])}>
               Wyczyść tagi
             </Button>
@@ -566,17 +565,10 @@ export default function ExerciseSetsPage() {
               description={
                 searchQuery || filter !== 'all-templates'
                   ? 'Spróbuj zmienić kryteria wyszukiwania lub filtry'
-                  : 'Utwórz pierwszy zestaw lub załaduj przykładowe zestawy ćwiczeń'
+                  : 'Utwórz pierwszy zestaw ćwiczeń'
               }
               actionLabel={!searchQuery && filter === 'all-templates' ? 'Nowy zestaw' : undefined}
               onAction={!searchQuery && filter === 'all-templates' ? () => setIsCreateWizardOpen(true) : undefined}
-              secondaryActionLabel={
-                !searchQuery && filter === 'all-templates' && !hasImportedExamples ? 'Załaduj przykłady' : undefined
-              }
-              onSecondaryAction={
-                !searchQuery && filter === 'all-templates' && !hasImportedExamples ? importExampleSets : undefined
-              }
-              secondaryActionLoading={isImporting}
             />
           </CardContent>
         </Card>

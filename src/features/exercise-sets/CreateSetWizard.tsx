@@ -50,7 +50,12 @@ import { getMediaUrl } from '@/utils/mediaUrl';
 import { countBySource, filterExercisesBySource, type ExerciseSourceFilter } from '@/utils/exerciseSourceFilter';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { ColorBadge } from '@/components/shared/ColorBadge';
-import { ExerciseExecutionCard, ExercisePreviewDialog, fromBuilderExercise } from '@/components/shared/exercise';
+import {
+  ExerciseExecutionCard,
+  ExercisePreviewDialog,
+  fromBuilderExercise,
+  HIDE_EXERCISE_TAGS,
+} from '@/components/shared/exercise';
 import type { ExerciseExecutionCardData } from '@/components/shared/exercise';
 import { cn } from '@/lib/utils';
 import { aiService } from '@/services/aiService';
@@ -195,15 +200,17 @@ function ExercisePickerItem({
 
       <div className="flex-1 min-w-0">
         <p className="font-medium text-sm truncate">{exercise.name}</p>
-        <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
-          {getExerciseTags(exercise)
-            .slice(0, 1)
-            .map((tag) => (
-              <ColorBadge key={tag.id} color={tag.color} size="sm">
-                {tag.name}
-              </ColorBadge>
-            ))}
-        </div>
+        {!HIDE_EXERCISE_TAGS && (
+          <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+            {getExerciseTags(exercise)
+              .slice(0, 1)
+              .map((tag) => (
+                <ColorBadge key={tag.id} color={tag.color} size="sm">
+                  {tag.name}
+                </ColorBadge>
+              ))}
+          </div>
+        )}
       </div>
 
       <div className="flex items-center gap-2">

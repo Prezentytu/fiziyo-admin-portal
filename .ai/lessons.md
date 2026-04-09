@@ -14,6 +14,14 @@ Dziennik wniosków z pracy AI agentów. Po każdej korekcie dodaj nowy wpis.
 
 ## Wpisy
 
+### 2026-04-09 - Ukrywanie tagow musi obejmowac wszystkie powierzchnie UI
+
+- **Kategoria**: `UI/UX`
+- **Problem**: Na produkcji czesc widokow nadal pokazywala tagi (np. lista i filtry zestawow), mimo wlaczonego tymczasowego ukrycia tagow.
+- **Przyczyna**: Flaga `HIDE_EXERCISE_TAGS` byla podpieta tylko pod wybrane komponenty, bez egzekwowania w ekranach agregujacych i dedykowanej stronie tagow.
+- **Rozwiązanie**: Ujednolicono guard `HIDE_EXERCISE_TAGS` w listach/zestawach, kartach, kreatorach oraz na stronie `/exercises/tags`, aby caly admin respektowal to samo zachowanie.
+- **Reguła**: Gdy funkcja jest tymczasowo ukrywana feature-flagiem, przepnij flage na wszystkich entry-pointach (widoki, filtry, karty i strony dedykowane), nie tylko w pojedynczych komponentach.
+
 ### 2026-04-09 - Globalne publikacje cwiczen musza miec osobny kanal realtime
 
 - **Kategoria**: `GraphQL`

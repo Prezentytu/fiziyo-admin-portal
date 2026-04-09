@@ -14,6 +14,7 @@ import { EmptyState } from '@/components/shared/EmptyState';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { TagCard, CategoryCard, ExerciseTag, TagCategory } from '@/features/exercises/TagCard';
 import { TagDialog } from '@/features/exercises/TagDialog';
+import { HIDE_EXERCISE_TAGS } from '@/components/shared/exercise';
 
 import { GET_EXERCISE_TAGS_BY_ORGANIZATION_QUERY } from '@/graphql/queries/exerciseTags.queries';
 import { GET_TAG_CATEGORIES_BY_ORGANIZATION_QUERY } from '@/graphql/queries/tagCategories.queries';
@@ -102,6 +103,20 @@ export default function TagsPage() {
   };
 
   const loading = tagsLoading || categoriesLoading;
+
+  if (HIDE_EXERCISE_TAGS) {
+    return (
+      <Card>
+        <CardContent className="py-16">
+          <EmptyState
+            icon={Tag}
+            title="Tagi są tymczasowo ukryte"
+            description="Ten obszar został wyłączony do czasu ponownego uruchomienia funkcji tagów."
+          />
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <div className="space-y-6">
