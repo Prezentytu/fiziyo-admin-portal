@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useEffect, useCallback } from 'react';
+import { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import Image from 'next/image';
 import { useQuery, useMutation } from '@apollo/client/react';
 import {
@@ -339,6 +339,8 @@ export function CreateSetWizard({
   const [instanceToRemove, setInstanceToRemove] = useState<string | null>(null);
   const [previewExercise, setPreviewExercise] = useState<ExerciseExecutionCardData | null>(null);
   const [isGeneratingName, setIsGeneratingName] = useState(false);
+  const [showNameError, setShowNameError] = useState(false);
+  const nameInputRef = useRef<HTMLInputElement | null>(null);
 
   // DnD sensors
   const sensors = useSensors(
@@ -376,6 +378,7 @@ export function CreateSetWizard({
       setInstanceToRemove(null);
       setPreviewExercise(null);
       setIsGeneratingName(false);
+      setShowNameError(false);
     }
   }, [open, patientName]);
 
@@ -634,6 +637,9 @@ export function CreateSetWizard({
       const response = await aiService.suggestSetName(name, exerciseNames);
       if (response?.suggestedName) {
         setName(response.suggestedName);
+        if (response.suggestedName.trim().length >= 2) {
+          setShowNameError(false);
+        }
         toast.success('Nazwa została wygenerowana');
         return;
       }
@@ -650,6 +656,13 @@ export function CreateSetWizard({
   // Create set
   const canCreate = name.trim().length >= 2;
   const isLoading = creatingSet || addingExercises || assigning;
+
+  const focusNameInput = useCallback(() => {
+    if (!nameInputRef.current) return;
+
+    nameInputRef.current.focus();
+    nameInputRef.current.scrollIntoView?.({ block: 'center', inline: 'nearest' });
+  }, []);
 
   const selectedInstancesData = useMemo(() => {
     return selectedInstances
@@ -683,13 +696,18 @@ export function CreateSetWizard({
   }, [selectedInstancesData, exerciseParams, getDefaultParams]);
 
   const handleCreateSet = async () => {
-    if (!canCreate) return;
+    if (!canCreate) {
+      setShowNameError(true);
+      focusNameInput();
+      return;
+    }
 
     try {
+      const sanitizedName = name.trim();
       const result = await createSet({
         variables: {
           organizationId,
-          name: name.trim(),
+          name: sanitizedName,
           description: description.trim() || null,
           kind: 'TEMPLATE',
           templateSource: 'ORGANIZATION_PRIVATE',
@@ -755,9 +773,9 @@ export function CreateSetWizard({
             patientId,
           },
         });
-        toast.success(`Zestaw "${name}" utworzony i przypisany do pacjenta`);
+        toast.success(`Zestaw "${sanitizedName}" utworzony i przypisany do pacjenta`);
       } else {
-        toast.success(`Zestaw "${name}" utworzony`);
+        toast.success(`Zestaw "${sanitizedName}" utworzony`);
       }
       onOpenChange(false);
       onSuccess?.(newSetId);
@@ -773,6 +791,13 @@ export function CreateSetWizard({
         className="max-w-7xl w-[98vw] max-h-[95vh] h-[90vh] md:h-[85vh] flex flex-col p-0 gap-0 overflow-hidden bg-surface border-border"
         hideCloseButton
         data-testid="set-composer"
+        onKeyDown={(event) => {
+          if (event.key !== 'Enter') return;
+          if (!event.metaKey && !event.ctrlKey) return;
+          event.preventDefault();
+          if (isLoading) return;
+          void handleCreateSet();
+        }}
         onInteractOutside={(e) => e.preventDefault()}
         onEscapeKeyDown={(e) => {
           e.preventDefault();
@@ -790,16 +815,32 @@ export function CreateSetWizard({
                 Nazwa zestawu
               </span>
             </div>
-            <div className="h-11 flex items-center gap-0 -mx-1">
-              <div className="w-full lg:w-[40%] min-w-0 pr-3 flex items-center gap-1">
-                <label className="flex-1 flex h-9 items-center min-w-0 rounded-md border border-transparent px-1.5 focus-within:bg-surface focus-within:border-border focus-within:ring-1 focus-within:ring-primary/20 transition-colors cursor-text hover:bg-surface-light/50">
+            <div className="min-h-11 py-1 flex items-start gap-0 -mx-1">
+              <div className="w-full lg:w-[40%] min-w-0 pr-3 flex flex-col">
+                <label
+                  className={cn(
+                    'flex-1 flex h-9 items-center min-w-0 rounded-md border border-transparent px-1.5 focus-within:bg-surface transition-colors cursor-text hover:bg-surface-light/50',
+                    showNameError
+                      ? 'bg-destructive/5 border-destructive/50 ring-1 ring-destructive/30 focus-within:border-destructive/60 focus-within:ring-destructive/40'
+                      : 'focus-within:border-border focus-within:ring-1 focus-within:ring-primary/20'
+                  )}
+                >
                   <input
                     type="text"
                     value={name}
-                    onChange={(event) => setName(event.target.value)}
+                    onChange={(event) => {
+                      const nextName = event.target.value;
+                      setName(nextName);
+                      if (showNameError && nextName.trim().length >= 2) {
+                        setShowNameError(false);
+                      }
+                    }}
                     placeholder="np. Rehabilitacja kolana - tydzień 1"
                     autoFocus
                     autoComplete="off"
+                    ref={nameInputRef}
+                    aria-invalid={showNameError}
+                    aria-describedby={showNameError ? 'set-composer-name-error' : undefined}
                     data-testid="set-composer-name-input"
                     className="peer flex-1 min-w-0 bg-transparent text-base font-semibold text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-0 border-none p-0 cursor-text"
                   />
@@ -825,6 +866,15 @@ export function CreateSetWizard({
                     )}
                   </button>
                 </label>
+                {showNameError && (
+                  <p
+                    id="set-composer-name-error"
+                    className="mt-1 px-1.5 text-[11px] font-medium text-destructive"
+                    data-testid="set-composer-name-error"
+                  >
+                    Podaj nazwę zestawu (minimum 2 znaki), aby utworzyć zestaw.
+                  </p>
+                )}
               </div>
               <div className="flex-1 flex items-center justify-end gap-3 min-w-0 pl-3">
                 {patientContext && (
@@ -1123,7 +1173,7 @@ export function CreateSetWizard({
           <Button
             type="button"
             onClick={handleCreateSet}
-            disabled={!canCreate || isLoading}
+            disabled={isLoading}
             className={cn(
               'px-8 bg-primary hover:bg-primary-dark text-primary-foreground font-semibold',
               'disabled:opacity-50 disabled:cursor-not-allowed'

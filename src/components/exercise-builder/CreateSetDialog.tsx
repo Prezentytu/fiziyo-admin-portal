@@ -166,7 +166,17 @@ export function CreateSetDialog({ open, onOpenChange }: CreateSetDialogProps) {
         </DialogHeader>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+          <form
+            onSubmit={form.handleSubmit(handleSubmit)}
+            onKeyDown={(event) => {
+              if (event.key !== 'Enter') return;
+              if (!event.metaKey && !event.ctrlKey) return;
+              event.preventDefault();
+              if (isCreating) return;
+              void form.handleSubmit(handleSubmit)();
+            }}
+            className="space-y-4"
+          >
             <FormField
               control={form.control}
               name="name"
