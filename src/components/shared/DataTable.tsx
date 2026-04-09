@@ -50,6 +50,7 @@ export function DataTable<TData, TValue>({
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = React.useState({});
 
+  // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Table hook is intentionally stateful and recommended by the library
   const table = useReactTable({
     data,
     columns,

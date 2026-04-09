@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useRef, useCallback } from 'react';
+import { useState, useMemo, useRef, useCallback, useEffect } from 'react';
 import {
   DndContext,
   closestCenter,
@@ -138,8 +138,8 @@ export function RapidExerciseBuilder({
       .slice(0, 6);
   }, [searchQuery, availableExercises, addedExerciseIds]);
 
-  // Reset selected index
-  useMemo(() => {
+  // Reset highlighted search result whenever result set changes
+  useEffect(() => {
     setSelectedIndex(0);
   }, [searchResults.length]);
 

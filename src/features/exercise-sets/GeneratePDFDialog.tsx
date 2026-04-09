@@ -5,7 +5,7 @@ import { useQuery } from '@apollo/client/react';
 import { useUser } from '@clerk/nextjs';
 import { pdf } from '@react-pdf/renderer';
 import { QRCodeCanvas } from 'qrcode.react';
-import { FileDown, Image, Calendar, QrCode, Loader2, Download, Eye, List } from 'lucide-react';
+import { FileDown, Image as ImageIcon, Calendar, QrCode, Loader2, Download, Eye, List } from 'lucide-react';
 
 import {
   Dialog,
@@ -354,7 +354,7 @@ export function GeneratePDFDialog({
                 <label className="flex items-center gap-3 cursor-pointer group">
                   <Checkbox checked={showImages} onCheckedChange={(checked) => setShowImages(checked === true)} />
                   <div className="flex items-center gap-2 text-sm group-hover:text-foreground transition-colors">
-                    <Image className="h-4 w-4 text-muted-foreground" />
+                    <ImageIcon className="h-4 w-4 text-muted-foreground" />
                     <span>Zdjęcia ćwiczeń</span>
                   </div>
                 </label>

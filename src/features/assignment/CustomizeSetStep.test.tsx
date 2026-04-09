@@ -45,7 +45,7 @@ describe('CustomizeSetStep preview details flow', () => {
       />
     );
 
-    await user.click(screen.getByRole('button', { name: 'Podgląd galerii ćwiczenia: Przysiad testowy' }));
+    await user.click(screen.getByRole('button', { name: 'Podgląd ćwiczenia: Przysiad testowy' }));
 
     expect(screen.getByTestId('assign-set-preview-exercise-details-dialog')).toBeInTheDocument();
     expect(screen.getByTestId('assign-set-preview-exercise-details-title')).toHaveTextContent('Przysiad testowy');

@@ -1,4 +1,4 @@
-import { View, Text, Image } from '@react-pdf/renderer';
+import { View, Text, Image as PdfImage } from '@react-pdf/renderer';
 import { pdfStyles } from './styles';
 
 interface PDFFooterProps {
@@ -23,7 +23,7 @@ export function PDFFooter({ generatedAt, qrCodeDataUrl, therapistName }: PDFFoot
       <View style={pdfStyles.appBanner} fixed>
         {/* QR Code */}
         <View style={pdfStyles.appBannerQR}>
-          <Image src={qrCodeDataUrl} style={pdfStyles.appBannerQRImage} />
+          <PdfImage src={qrCodeDataUrl} style={pdfStyles.appBannerQRImage} />
         </View>
 
         {/* Marketing Content */}

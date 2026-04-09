@@ -446,10 +446,16 @@ export function CreateSetWizard({
   const [assignSetToPatient, { loading: assigning }] = useMutation(ASSIGN_EXERCISE_SET_TO_PATIENT_MUTATION);
 
   // Process data
-  const tags = (tagsData as ExerciseTagsResponse)?.exerciseTags || [];
-  const categories = (categoriesData as TagCategoriesResponse)?.tagsByOrganizationId || [];
+  const tags = useMemo(() => (tagsData as ExerciseTagsResponse)?.exerciseTags || [], [tagsData]);
+  const categories = useMemo(
+    () => (categoriesData as TagCategoriesResponse)?.tagsByOrganizationId || [],
+    [categoriesData]
+  );
   const tagsMap = useMemo(() => createTagsMap(tags, categories), [tags, categories]);
-  const exerciseSets = (exerciseSetsData as OrganizationExerciseSetsResponse)?.exerciseSets || [];
+  const exerciseSets = useMemo(
+    () => (exerciseSetsData as OrganizationExerciseSetsResponse)?.exerciseSets || [],
+    [exerciseSetsData]
+  );
 
   const exercises: Exercise[] = useMemo(() => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
