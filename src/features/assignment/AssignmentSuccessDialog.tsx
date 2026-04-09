@@ -537,7 +537,7 @@ export function AssignmentSuccessDialog({
                 }}
                 data-testid="assign-success-assign-another-primary-btn"
               >
-                Przypisz kolejny
+                Personalizuj i przypisz
               </Button>
             )}
           </div>

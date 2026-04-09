@@ -117,8 +117,11 @@ export function OrganizationSwitcher({ isCollapsed = false }: OrganizationSwitch
     <div
       data-testid="nav-org-switcher-trigger"
       className={cn(
-        'group flex items-center rounded-2xl transition-all duration-200 cursor-pointer',
-        isCollapsed ? 'h-12 w-12 justify-center hover:bg-surface-light' : 'gap-4 p-3 hover:bg-surface-light w-full',
+        'group flex items-center rounded-2xl transition-all duration-200',
+        hasMultipleOrganizations ? 'cursor-pointer' : 'cursor-default',
+        isCollapsed
+          ? cn('h-12 w-12 justify-center', hasMultipleOrganizations && 'hover:bg-surface-light')
+          : cn('gap-4 p-3 w-full', hasMultipleOrganizations && 'hover:bg-surface-light'),
         isSwitching && 'opacity-60 pointer-events-none'
       )}
     >
@@ -186,23 +189,7 @@ export function OrganizationSwitcher({ isCollapsed = false }: OrganizationSwitch
 
   // Single organization - no dropdown
   if (!hasMultipleOrganizations) {
-    if (isCollapsed) {
-      return (
-        <div className="border-b border-border p-2">
-          <Tooltip>
-            <TooltipTrigger asChild>{triggerContent}</TooltipTrigger>
-            <TooltipContent side="right" className="font-medium">
-              <div className="text-sm">{currentOrganization.organizationName}</div>
-              <div className="text-xs text-muted-foreground">
-                {roleLabels[currentOrganization.role] || currentOrganization.role}
-              </div>
-            </TooltipContent>
-          </Tooltip>
-        </div>
-      );
-    }
-
-    return <div className="border-b border-border p-4">{triggerContent}</div>;
+    return <div className={cn('border-b border-border', isCollapsed ? 'p-2' : 'p-4')}>{triggerContent}</div>;
   }
 
   // Multiple organizations - with dropdown

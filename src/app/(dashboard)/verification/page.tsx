@@ -297,6 +297,7 @@ export default function VerificationPage() {
   const {
     data: queueData,
     loading: queueLoading,
+    error: queueError,
     refetch: refetchQueue,
   } = useQuery<GetVerificationQueuePageResponse, GetVerificationQueuePageVariables>(GET_VERIFICATION_QUEUE_PAGE_QUERY, {
     variables: queueVariables,
@@ -742,6 +743,16 @@ export default function VerificationPage() {
             </div>
           ))}
         </div>
+      ) : activeFilter !== 'reported' && queueError ? (
+        <EmptyState
+          icon={ShieldCheck}
+          title="Nie udało się pobrać kolejki weryfikacji"
+          description={queueError.message}
+          actionLabel="Spróbuj ponownie"
+          onAction={() => {
+            void refetchQueue();
+          }}
+        />
       ) : exercises.length === 0 ? (
         <EmptyState
           icon={ShieldCheck}

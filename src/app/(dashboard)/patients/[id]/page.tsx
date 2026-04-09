@@ -199,8 +199,8 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
             <EmptyState
               icon={FolderKanban}
               title="Brak przypisanych zestawów"
-              description="Przypisz pacjentowi zestaw ćwiczeń, aby mógł rozpocząć rehabilitację"
-              actionLabel="Przypisz zestaw"
+              description="Personalizuj i przypisz zestaw ćwiczeń, aby pacjent mógł rozpocząć rehabilitację"
+              actionLabel="Personalizuj i przypisz"
               onAction={() => setIsAssignDialogOpen(true)}
             />
           </CardContent>
@@ -340,7 +340,7 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
               <Send className="h-5 w-5 text-white" />
             </div>
             <div className="min-w-0 flex-1">
-              <h3 className="text-base font-bold text-white">Przypisz zestaw</h3>
+              <h3 className="text-base font-bold text-white">Personalizuj i przypisz</h3>
               <p className="text-sm text-white/70">Program ćwiczeń</p>
             </div>
             <Plus className="h-5 w-5 text-white/60 group-hover:text-white transition-colors shrink-0" />

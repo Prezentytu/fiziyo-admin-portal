@@ -836,7 +836,7 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
             {!isTemplateSet && (
               <Button size="sm" onClick={() => setIsAssignDialogOpen(true)}>
                 <Plus className="mr-2 h-4 w-4" />
-                Personalizuj i przypisz zestaw
+                Personalizuj i przypisz
               </Button>
             )}
           </div>

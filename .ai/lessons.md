@@ -14,6 +14,14 @@ Dziennik wniosków z pracy AI agentów. Po każdej korekcie dodaj nowy wpis.
 
 ## Wpisy
 
+### 2026-04-09 - Szybki wybór na dashboardzie pokazuje tylko zestawy źródłowe
+
+- **Kategoria**: `UI/UX`
+- **Problem**: Sekcja `Szybki wybór` na dashboardzie pokazywała także plany pacjenta (`PATIENT_PLAN`), przez co szybkie przypisanie mieszało zestawy reużywalne z już spersonalizowanymi.
+- **Przyczyna**: Lista była budowana ze wszystkich `exerciseSets` bez filtra po klasyfikacji (`kind`/`isTemplate`).
+- **Rozwiązanie**: Dodano filtr do widoku dashboardu (`kind === TEMPLATE` lub `isTemplate === true`) i pozostawiono sortowanie tylko dla tej odfiltrowanej listy.
+- **Reguła**: W powierzchniach typu „quick pick” dla przypisań pokazuj wyłącznie zestawy źródłowe (template), nigdy istniejące plany pacjenta.
+
 ### 2026-04-09 - Disabled CTA bez wskazania przyczyny blokuje flow tworzenia
 
 - **Kategoria**: `UI/UX`

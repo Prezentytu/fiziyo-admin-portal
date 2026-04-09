@@ -23,13 +23,13 @@ Wizard zawsze tworzy nowy plan spersonalizowany (`PATIENT_PLAN`) przed przypisan
 
 ## Kiedy otwiera się wizard?
 
-Wizard można uruchomić z dwóch miejsc:
+Wizard można uruchomić z trzech miejsc:
 
-| Miejsce                                   | Tryb         | Co jest predefiniowane      |
-| ----------------------------------------- | ------------ | --------------------------- |
-| **Strona pacjenta** → "Przypisz zestaw"   | from-patient | Pacjent jest już wybrany    |
-| **Strona zestawu** → "Przypisz pacjentom" | from-set     | Zestaw jest już wybrany     |
-| **Dashboard** → "Przypisz zestaw"         | from-patient | Nic nie jest predefiniowane |
+| Miejsce                                         | Tryb         | Co jest predefiniowane      |
+| ----------------------------------------------- | ------------ | --------------------------- |
+| **Strona pacjenta** → "Personalizuj i przypisz" | from-patient | Pacjent jest już wybrany    |
+| **Strona zestawu** → "Personalizuj i przypisz"  | from-set     | Zestaw jest już wybrany     |
+| **Dashboard** → "Personalizuj i przypisz"       | from-patient | Nic nie jest predefiniowane |
 
 ---
 
@@ -39,7 +39,7 @@ Wizard można uruchomić z dwóch miejsc:
 ┌─────────────────────────────────────────────────────────────────┐
 │  KROK 1        KROK 2         KROK 3        KROK 4      KROK 5  │
 │  ●────────────○────────────○────────────○────────────○          │
-│  Zestaw      Pacjenci    Personalizacja  Harmonogram  Podsumow. │
+│  Zestaw    Personalizacja   Pacjenci    Harmonogram  Podsumow.  │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -170,7 +170,7 @@ Ten krok określa także tryb końcowy:
 - Wybrany zestaw i liczba ćwiczeń
 - Lista wybranych pacjentów
 - Okres i częstotliwość
-- Przycisk "Przypisz do X pacjentów"
+- Przycisk "Utwórz plan i przypisz"
 
 **Po zatwierdzeniu:**
 
@@ -236,7 +236,7 @@ Ten krok określa także tryb końcowy:
 
 ### Scenariusz 1: Standardowe przypisanie
 
-1. Fizjo otwiera stronę pacjenta → "Przypisz zestaw"
+1. Fizjo otwiera stronę pacjenta → "Personalizuj i przypisz"
 2. Wybiera szablon "Kolano po operacji"
 3. Ukrywa 2 ćwiczenia (za trudne dla tego pacjenta)
 4. Ustawia harmonogram: 30 dni, 2x dziennie
@@ -248,7 +248,7 @@ Ten krok określa także tryb końcowy:
 
 ### Scenariusz 2: Tworzenie od zera
 
-1. Fizjo otwiera dashboard → "Przypisz zestaw"
+1. Fizjo otwiera dashboard → "Personalizuj i przypisz"
 2. Klika "Stwórz nowy"
 3. Wpisuje w wyszukiwarkę kolejne ćwiczenia (Enter, Enter, Enter)
 4. Zaznacza checkbox "Zapisz jako szablon"

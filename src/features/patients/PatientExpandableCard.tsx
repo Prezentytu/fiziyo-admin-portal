@@ -356,7 +356,7 @@ export function PatientExpandableCard({
                 size="icon"
                 className="h-8 w-8 hover:bg-primary/10 hover:text-primary"
                 onClick={(e) => handleAction(e, () => onAssignSet(patient))}
-                title="Przypisz zestaw"
+                title="Personalizuj i przypisz"
                 data-testid={`patient-expandable-${patient.id}-assign-btn`}
               >
                 <FolderKanban className="h-4 w-4" />
@@ -407,7 +407,7 @@ export function PatientExpandableCard({
                   <>
                     <DropdownMenuItem onClick={() => onAssignSet(patient)}>
                       <FolderKanban className="mr-2 h-4 w-4" />
-                      Przypisz zestaw
+                      Personalizuj i przypisz
                     </DropdownMenuItem>
                     {onShowQR && (
                       <DropdownMenuItem onClick={() => onShowQR(patient)}>

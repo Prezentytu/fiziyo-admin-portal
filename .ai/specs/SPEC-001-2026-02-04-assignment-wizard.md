@@ -8,11 +8,11 @@ Wizard służy do szybkiego przygotowania i przypisania zestawu pacjentowi. Fizj
 
 ## Punkty wejścia
 
-| Miejsce                                    | Tryb         | Co jest predefiniowane      |
-| ------------------------------------------ | ------------ | --------------------------- |
-| Strona pacjenta → "Przypisz zestaw"        | from-patient | Pacjent jest już wybrany    |
-| Strona zestawu → "Personalizuj i przypisz" | from-set     | Zestaw źródłowy             |
-| Dashboard → "Przypisz zestaw"              | from-patient | Nic nie jest predefiniowane |
+| Miejsce                                     | Tryb         | Co jest predefiniowane      |
+| ------------------------------------------- | ------------ | --------------------------- |
+| Strona pacjenta → "Personalizuj i przypisz" | from-patient | Pacjent jest już wybrany    |
+| Strona zestawu → "Personalizuj i przypisz"  | from-set     | Zestaw źródłowy             |
+| Dashboard → "Personalizuj i przypisz"       | from-patient | Nic nie jest predefiniowane |
 
 ## Architektura kroków (dynamiczna)
 
