@@ -6,6 +6,21 @@ import { Toaster } from '@/components/ui/sonner';
 import { AccessibilityProvider } from '@/contexts/AccessibilityContext';
 import './globals.css';
 
+const productionAppUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://portal.fiziyo.pl';
+const developmentAppUrl =
+  process.env.NEXT_PUBLIC_DEV_APP_URL ?? 'https://dev.portal.fiziyo.pl';
+const allowClerkPreviewRedirects =
+  process.env.NEXT_PUBLIC_ENABLE_CLERK_PREVIEW_REDIRECTS === 'true';
+
+const allowedRedirectOrigins: (string | RegExp)[] = [
+  productionAppUrl,
+  developmentAppUrl,
+];
+
+if (allowClerkPreviewRedirects) {
+  allowedRedirectOrigins.push(/^https:\/\/.*\.vercel\.app$/);
+}
+
 const outfit = Outfit({
   subsets: ['latin', 'latin-ext'],
   weight: ['300', '400', '500', '600', '700', '800'],
@@ -63,7 +78,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <ClerkProvider>
+    <ClerkProvider allowedRedirectOrigins={allowedRedirectOrigins}>
       <html lang="pl" suppressHydrationWarning className={`${outfit.variable} ${jetbrainsMono.variable}`}>
         <head>
           <script dangerouslySetInnerHTML={{ __html: accessibilityScript }} />

@@ -14,6 +14,14 @@ Dziennik wniosków z pracy AI agentów. Po każdej korekcie dodaj nowy wpis.
 
 ## Wpisy
 
+### 2026-04-09 - Preview redirecty Clerk trzeba kontrolowac w kodzie aplikacji
+
+- **Kategoria**: `Build/Tooling`
+- **Problem**: Konfiguracja E2E dla Vercel preview byla blokowana, bo szukano allowlisty redirectow wyłącznie w zakładce `Paths` w dashboardzie Clerk.
+- **Przyczyna**: W aktualnym setupie Next.js + Clerk redirect policy jest egzekwowana przez konfigurację `ClerkProvider`, a nie przez same ścieżki `Application paths`.
+- **Rozwiązanie**: Dodano konfigurację `allowedRedirectOrigins` w `src/app/layout.tsx`, flagę `NEXT_PUBLIC_ENABLE_CLERK_PREVIEW_REDIRECTS` oraz runbook z mapowaniem `dev/prod` dla Clerk i Vercel.
+- **Reguła**: Dla dynamicznych preview domen (`*.vercel.app`) konfiguruj allowlistę redirectów przez `ClerkProvider` i trzymaj ją aktywną tylko dla środowisk opartych o `dev Clerk`.
+
 ### 2026-04-09 - Ukrywanie tagow musi obejmowac wszystkie powierzchnie UI
 
 - **Kategoria**: `UI/UX`

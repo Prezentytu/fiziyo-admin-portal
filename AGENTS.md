@@ -18,6 +18,7 @@ Przed rozpoczęciem pracy dopasuj zadanie do tabeli i przeczytaj WSZYSTKIE pasuj
 | Analiza spec przed implementacją | `.ai/skills/pre-implement-spec/`                  |
 | Implementacja ze specyfikacji    | `.ai/skills/implement-spec/`                      |
 | Testy regresyjne / integracyjne  | `.ai/skills/integration-tests/`                   |
+| Pipeline E2E / cross-repo CI     | `docs/testing/e2e-cross-repo-pipeline.md`         |
 | Code review                      | `.ai/skills/code-review/`                         |
 | UI/UX / design / accessibility   | `.ai/skills/product-designer/SKILL.md`            |
 | Ustawienia/organizacja           | `src/components/settings/AGENTS.md`               |
@@ -63,6 +64,7 @@ Przed rozpoczęciem pracy dopasuj zadanie do tabeli i przeczytaj WSZYSTKIE pasuj
 - **Logika biznesowa** (filtry, reguły widoczności, walidacja): testy jednostkowe obowiązkowe. Wyciągaj czyste funkcje do helperów i testuj je (Vitest). Zobacz `docs/testing/testing-guidelines.md`.
 - Przed zakończeniem zadania uruchom `npm run test:run` i `npm run lint`; w razie potrzeby `npm run validate`.
 - Przy zmianie warunków lub filtrów: dodać/aktualizować testy dla tej logiki, żeby regresje były wykrywane.
+- Dla zmian UI i flow auth na PR-ach traktuj E2E z `fiziyo-tests` jako gate jakości. Szczegóły triggerów i sekretów: `docs/testing/e2e-cross-repo-pipeline.md`.
 
 ## Opis projektu
 
