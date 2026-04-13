@@ -95,8 +95,10 @@ W repo prywatnym bez platnego branch protection traktuj statusy jako manualny ga
 
 - `Production` -> `event_type=e2e-prod-run`, `project=smoke-tests`
 - `Preview` -> `event_type=e2e-dev-run`, `project=smoke-tests`
-- `devportal.fiziyo.pl` / `dev.portal.fiziyo.pl` / `Development` / `ref=dev` -> `event_type=e2e-dev-run`, `project=all`
+- `devportal.fiziyo.pl` / `dev.portal.fiziyo.pl` / `Development` / `SHA nalezy do brancha dev` -> `event_type=e2e-dev-run`, `project=all`
 - pozostale -> `event_type=e2e-dev-run`, `project=all`
+
+W praktyce Vercel dla `deployment_status` czesto przekazuje `target_url` jako techniczny preview URL `*.vercel.app`, a `deployment.ref` jako SHA zamiast nazwy brancha. Dlatego rozpoznanie `dev full` nie moze opierac sie tylko na nazwie environment lub `target_url`; trigger dodatkowo sprawdza, czy deployowany commit nalezy do brancha `dev`.
 
 ## Konfiguracja Vercel - krok po kroku
 

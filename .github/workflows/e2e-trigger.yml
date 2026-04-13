@@ -10,35 +10,70 @@ jobs:
     steps:
       - name: Determine scope and payload
         id: scope
-        shell: bash
-        run: |
-          environment_name="${{ github.event.deployment_status.environment }}"
-          target_url="${{ github.event.deployment_status.target_url }}"
-          deployment_ref="${{ github.event.deployment.ref }}"
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ github.token }}
+          script: |
+            const environmentName = context.payload.deployment_status?.environment ?? "";
+            const targetUrl = context.payload.deployment_status?.target_url ?? "";
+            const deploymentRef = context.payload.deployment?.ref ?? "";
+            const deploymentSha = context.payload.deployment?.sha ?? "";
 
-          if [[ "$environment_name" == "Production" || "$target_url" =~ ^https://portal\.fiziyo\.pl(/.*)?$ ]]; then
-            selected_project="smoke-tests"
-            selected_event_type="e2e-prod-run"
-          elif [[ "$target_url" =~ ^https://devportal\.fiziyo\.pl(/.*)?$ || "$target_url" =~ ^https://dev\.portal\.fiziyo\.pl(/.*)?$ || "$environment_name" == "Development" || "$deployment_ref" == "dev" || "$deployment_ref" == "refs/heads/dev" ]]; then
-            selected_project="all"
-            selected_event_type="e2e-dev-run"
-          elif [[ "$environment_name" == "Preview" ]]; then
-            selected_project="smoke-tests"
-            selected_event_type="e2e-dev-run"
-          else
-            selected_project="all"
-            selected_event_type="e2e-dev-run"
-          fi
+            let selectedProject = "all";
+            let selectedEventType = "e2e-dev-run";
+            let matchedReason = "fallback-non-preview";
+            let branchesForSha = [];
 
-          echo "project=$selected_project" >> "$GITHUB_OUTPUT"
-          echo "event_type=$selected_event_type" >> "$GITHUB_OUTPUT"
+            const isProductionUrl = /^https:\/\/portal\.fiziyo\.pl(\/.*)?$/.test(targetUrl);
+            const isDedicatedDevUrl =
+              /^https:\/\/devportal\.fiziyo\.pl(\/.*)?$/.test(targetUrl) ||
+              /^https:\/\/dev\.portal\.fiziyo\.pl(\/.*)?$/.test(targetUrl);
 
-          echo "Resolved E2E scope:"
-          echo "  environment_name=$environment_name"
-          echo "  target_url=$target_url"
-          echo "  deployment_ref=$deployment_ref"
-          echo "  project=$selected_project"
-          echo "  event_type=$selected_event_type"
+            let isDevBranch = deploymentRef === "dev" || deploymentRef === "refs/heads/dev";
+
+            if (deploymentSha) {
+              try {
+                const response = await github.rest.repos.listBranchesForHeadCommit({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  commit_sha: deploymentSha,
+                });
+
+                branchesForSha = response.data.map((branch) => branch.name);
+                isDevBranch = isDevBranch || branchesForSha.includes("dev");
+              } catch (error) {
+                core.warning(`Could not resolve branches for SHA ${deploymentSha}: ${error instanceof Error ? error.message : String(error)}`);
+              }
+            }
+
+            if (environmentName === "Production" || isProductionUrl) {
+              selectedProject = "smoke-tests";
+              selectedEventType = "e2e-prod-run";
+              matchedReason = "production";
+            } else if (isDedicatedDevUrl) {
+              selectedProject = "all";
+              selectedEventType = "e2e-dev-run";
+              matchedReason = "dedicated-dev-domain";
+            } else if (environmentName === "Development") {
+              selectedProject = "all";
+              selectedEventType = "e2e-dev-run";
+              matchedReason = "development-environment";
+            } else if (isDevBranch) {
+              selectedProject = "all";
+              selectedEventType = "e2e-dev-run";
+              matchedReason = "commit-on-dev-branch";
+            } else if (environmentName === "Preview") {
+              selectedProject = "smoke-tests";
+              selectedEventType = "e2e-dev-run";
+              matchedReason = "generic-preview";
+            }
+
+            core.setOutput("project", selectedProject);
+            core.setOutput("event_type", selectedEventType);
+
+            core.info(
+              `Resolved E2E scope: env=${environmentName || "<empty>"} url=${targetUrl || "<empty>"} branches=${branchesForSha.length > 0 ? branchesForSha.join(",") : "<none>"} reason=${matchedReason} project=${selectedProject} event=${selectedEventType}`,
+            );
 
       - name: Trigger fiziyo-tests repository
         uses: actions/github-script@v7
