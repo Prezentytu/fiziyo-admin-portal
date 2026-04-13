@@ -14,6 +14,14 @@ Dziennik wniosków z pracy AI agentów. Po każdej korekcie dodaj nowy wpis.
 
 ## Wpisy
 
+### 2026-04-13 - RegExp dla Clerk nie moze przechodzic przez granice Server -> Client
+
+- **Kategoria**: `Build/Tooling`
+- **Problem**: Build preview na Vercel wywalal sie podczas prerenderingu z bledem `Only plain objects ... RegExp` po wlaczeniu `NEXT_PUBLIC_ENABLE_CLERK_PREVIEW_REDIRECTS=true`.
+- **Przyczyna**: `allowedRedirectOrigins` z `RegExp` bylo budowane w serwerowym `src/app/layout.tsx` i przekazywane jako props do klientowego `ClerkProvider`.
+- **Rozwiązanie**: Przeniesiono budowanie `allowedRedirectOrigins` do klientowego wrappera `ClerkProviderWithRedirects` i zostawiono w serwerowym layoucie tylko serializowalne propsy (string + boolean).
+- **Reguła**: W Next.js App Router nigdy nie przekazuj `RegExp`/klas/funkcji z Server Components do Client Components; konfiguracje nie-serializowalne buduj po stronie klienta za granica `'use client'`.
+
 ### 2026-04-13 - Jeden status E2E nie moze oznaczac wielu gate'ow release
 
 - **Kategoria**: `Build/Tooling`
