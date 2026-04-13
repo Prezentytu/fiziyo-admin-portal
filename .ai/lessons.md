@@ -30,6 +30,14 @@ Dziennik wniosków z pracy AI agentów. Po każdej korekcie dodaj nowy wpis.
 - **Rozwiązanie**: Rozdzielono statusy na `E2E Preview Smoke`, `E2E Dev Full`, `E2E Prod Smoke` i przepieto routing triggera tak, aby dedykowana domena dev (`devportal.fiziyo.pl`, nawet jesli Vercel oznacza ja jako `Preview`) lub commit nalezacy do brancha `dev` zawsze uruchamial full run.
 - **Reguła**: Dla wieloetapowego pipeline release kazdy etap musi miec osobny, semantyczny status check, a routing srodowisk nie moze opierac sie wylacznie na nazwie environment ani `target_url` z Vercela, jesli dedykowany dev korzysta z typu `Preview`.
 
+### 2026-04-13 - Concurrency dla dispatch E2E musi byc oparta o SHA
+
+- **Kategoria**: `Build/Tooling`
+- **Problem**: Runy `e2e-dev-run` byly anulowane w trakcie (`context canceled`), a czesc commitow nie dostawala stabilnego wyniku E2E.
+- **Przyczyna**: Workflow-level concurrency grupowala runy po `github.ref` i `github.event_name`, co dla `repository_dispatch` dawalo ta sama grupe dla wielu deployow.
+- **Rozwiązanie**: W `fiziyo-tests` przepieto concurrency na `client_payload.sha` dla dispatch, osobne grupy dla `workflow_dispatch` i `schedule`, oraz ustawiono `cancel-in-progress: false`.
+- **Reguła**: Dla deploy-triggered testow E2E grupuj concurrency po identyfikatorze deployu (najczesciej SHA), nie po samym `event_name/ref`; priorytetem jest domkniety run i wiarygodny status commita.
+
 ### 2026-04-09 - Preview redirecty Clerk trzeba kontrolowac w kodzie aplikacji
 
 - **Kategoria**: `Build/Tooling`

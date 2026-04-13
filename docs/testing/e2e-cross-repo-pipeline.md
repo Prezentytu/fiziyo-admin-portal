@@ -100,6 +100,14 @@ W repo prywatnym bez platnego branch protection traktuj statusy jako manualny ga
 
 W praktyce Vercel dla `deployment_status` czesto przekazuje `target_url` jako techniczny preview URL `*.vercel.app`, a `deployment.ref` jako SHA zamiast nazwy brancha. Dlatego rozpoznanie `dev full` nie moze opierac sie tylko na nazwie environment lub `target_url`; trigger dodatkowo sprawdza, czy deployowany commit nalezy do brancha `dev`.
 
+## Concurrency strategy (`fiziyo-tests`)
+
+- `e2e-dev.yml` grupuje `repository_dispatch` po `client_payload.sha`, dzieki czemu rozne deploye (SHA-A, SHA-B) nie anuluja sie wzajemnie.
+- `e2e-prod.yml` stosuje ten sam wzorzec dla `e2e-prod-run`.
+- Manualne runy (`workflow_dispatch`) uzywaja unikalnej grupy po `github.run_id`.
+- `schedule` w `e2e-dev.yml` ma osobna stala grupe i nie koliduje z dispatch/manual.
+- `cancel-in-progress: false` jest celowe: dla gate'ow release wazniejsze jest domkniecie i zaraportowanie statusu commita niz przerywanie runu w polowie.
+
 ## Konfiguracja Vercel - krok po kroku
 
 ### Preview environment
