@@ -17,18 +17,28 @@ jobs:
           deployment_ref="${{ github.event.deployment.ref }}"
 
           if [[ "$environment_name" == "Production" || "$target_url" =~ ^https://portal\.fiziyo\.pl(/.*)?$ ]]; then
-            echo "project=smoke-tests" >> "$GITHUB_OUTPUT"
-            echo "event_type=e2e-prod-run" >> "$GITHUB_OUTPUT"
-          elif [[ "$target_url" =~ ^https://dev\.portal\.fiziyo\.pl(/.*)?$ || "$environment_name" == "Development" || "$deployment_ref" == "dev" ]]; then
-            echo "project=all" >> "$GITHUB_OUTPUT"
-            echo "event_type=e2e-dev-run" >> "$GITHUB_OUTPUT"
+            selected_project="smoke-tests"
+            selected_event_type="e2e-prod-run"
+          elif [[ "$target_url" =~ ^https://devportal\.fiziyo\.pl(/.*)?$ || "$target_url" =~ ^https://dev\.portal\.fiziyo\.pl(/.*)?$ || "$environment_name" == "Development" || "$deployment_ref" == "dev" || "$deployment_ref" == "refs/heads/dev" ]]; then
+            selected_project="all"
+            selected_event_type="e2e-dev-run"
           elif [[ "$environment_name" == "Preview" ]]; then
-            echo "project=smoke-tests" >> "$GITHUB_OUTPUT"
-            echo "event_type=e2e-dev-run" >> "$GITHUB_OUTPUT"
+            selected_project="smoke-tests"
+            selected_event_type="e2e-dev-run"
           else
-            echo "project=all" >> "$GITHUB_OUTPUT"
-            echo "event_type=e2e-dev-run" >> "$GITHUB_OUTPUT"
+            selected_project="all"
+            selected_event_type="e2e-dev-run"
           fi
+
+          echo "project=$selected_project" >> "$GITHUB_OUTPUT"
+          echo "event_type=$selected_event_type" >> "$GITHUB_OUTPUT"
+
+          echo "Resolved E2E scope:"
+          echo "  environment_name=$environment_name"
+          echo "  target_url=$target_url"
+          echo "  deployment_ref=$deployment_ref"
+          echo "  project=$selected_project"
+          echo "  event_type=$selected_event_type"
 
       - name: Trigger fiziyo-tests repository
         uses: actions/github-script@v7
