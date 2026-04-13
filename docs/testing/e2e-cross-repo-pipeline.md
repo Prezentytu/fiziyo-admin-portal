@@ -14,7 +14,10 @@ Ten runbook opisuje docelowy model dla `dev`, `preview` i `prod`, tak aby:
   - [`e2e-dev.yml`](../../../fiziyo-tests/.github/workflows/e2e-dev.yml) obsluguje `e2e-dev-run` (preview/dev),
   - [`e2e-prod.yml`](../../../fiziyo-tests/.github/workflows/e2e-prod.yml) obsluguje `e2e-prod-run` (production),
   - oba wrappery uruchamiaja wspolny reusable core [`e2e.yml`](../../../fiziyo-tests/.github/workflows/e2e.yml).
-- Wynik wraca jako commit status `E2E Tests (Playwright)` do commita w `fiziyo-admin`.
+- Wynik wraca jako semantyczny commit status do commita w `fiziyo-admin`:
+  - `E2E Preview Smoke`
+  - `E2E Dev Full`
+  - `E2E Prod Smoke`
 
 ## Docelowy model srodowisk
 
@@ -66,23 +69,24 @@ Secrets:
 - `USER_DISPLAY_NAME_PROD`
 - `ADMIN_STATUS_PAT` - token do ustawiania commit statusu w `fiziyo-admin-portal`
 
-## Branch protection (hard gates)
+## Release checks (manual gate)
 
-W `fiziyo-admin-portal` ustaw required checks dla `dev` i `main`:
+W repo prywatnym bez platnego branch protection traktuj statusy jako manualny gate release:
 
-- `CI`
-- `E2E Tests (Playwright)`
-
-To jest twarda blokada merge'a na PR.
+- candidate SHA do promocji `dev -> main` musi miec zielone:
+  - `CI`
+  - `E2E Dev Full`
+- po deployu `main` sprawdz status:
+  - `E2E Prod Smoke`
 
 ## Release policy (super-startup mode)
 
-1. PR -> `CI` + Vercel Preview + smoke E2E musza byc zielone.
+1. PR -> `CI` + Vercel Preview + `E2E Preview Smoke` musza byc zielone.
 2. Merge.
 3. Deploy na `dev`.
-4. Full E2E na `dev` musi byc zielone.
+4. `E2E Dev Full` na `dev` musi byc zielone.
 5. Dopiero wtedy promo na `prod`.
-6. Po deployu na `prod` odpal smoke sanity check.
+6. Po deployu na `prod` odpal `E2E Prod Smoke` sanity check.
 
 `prod smoke` jest sanity checkiem po wdrozeniu, a nie glownym gate'em.
 
@@ -90,7 +94,8 @@ To jest twarda blokada merge'a na PR.
 
 - `Production` -> `event_type=e2e-prod-run`, `project=smoke-tests`
 - `Preview` -> `event_type=e2e-dev-run`, `project=smoke-tests`
-- pozostale (`Development`) -> `event_type=e2e-dev-run`, `project=all`
+- `dev.portal.fiziyo.pl` / `Development` / `ref=dev` -> `event_type=e2e-dev-run`, `project=all`
+- pozostale -> `event_type=e2e-dev-run`, `project=all`
 
 ## Konfiguracja Vercel - krok po kroku
 
@@ -121,5 +126,5 @@ To jest twarda blokada merge'a na PR.
 
 - [ ] Ustaw env vars Vercel dla Preview/Development/Production zgodnie z tym dokumentem
 - [ ] Dodaj sekrety w `fiziyo-admin-portal` i `fiziyo-tests`
-- [ ] Ustaw branch protection (`CI` + `E2E Tests (Playwright)`) na `dev` i `main`
-- [ ] Zweryfikuj pierwszy przeplyw: `PR -> Preview -> Smoke -> Merge -> Dev full E2E -> Prod smoke`
+- [ ] Zweryfikuj pierwszy przeplyw: `PR -> Preview -> E2E Preview Smoke -> Merge -> Dev full E2E -> E2E Prod Smoke`
+- [ ] Przed promocja `dev -> main` sprawdz zielone `CI` + `E2E Dev Full` na tym samym SHA

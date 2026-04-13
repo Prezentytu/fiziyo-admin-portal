@@ -13,9 +13,15 @@ jobs:
         shell: bash
         run: |
           environment_name="${{ github.event.deployment_status.environment }}"
-          if [[ "$environment_name" == "Production" ]]; then
+          target_url="${{ github.event.deployment_status.target_url }}"
+          deployment_ref="${{ github.event.deployment.ref }}"
+
+          if [[ "$environment_name" == "Production" || "$target_url" =~ ^https://portal\.fiziyo\.pl(/.*)?$ ]]; then
             echo "project=smoke-tests" >> "$GITHUB_OUTPUT"
             echo "event_type=e2e-prod-run" >> "$GITHUB_OUTPUT"
+          elif [[ "$target_url" =~ ^https://dev\.portal\.fiziyo\.pl(/.*)?$ || "$environment_name" == "Development" || "$deployment_ref" == "dev" ]]; then
+            echo "project=all" >> "$GITHUB_OUTPUT"
+            echo "event_type=e2e-dev-run" >> "$GITHUB_OUTPUT"
           elif [[ "$environment_name" == "Preview" ]]; then
             echo "project=smoke-tests" >> "$GITHUB_OUTPUT"
             echo "event_type=e2e-dev-run" >> "$GITHUB_OUTPUT"
