@@ -20,9 +20,8 @@ import {
 import { format } from 'date-fns';
 import { pl } from 'date-fns/locale';
 
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { toast } from 'sonner';
@@ -343,7 +342,7 @@ export function AssignmentSuccessDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md" data-testid="assign-success-dialog">
+      <DialogContent className="w-[calc(100vw-1.5rem)] max-w-2xl p-4 sm:p-6" data-testid="assign-success-dialog">
         <DialogHeader className="pb-3 border-b border-border">
           <div className="flex items-center gap-3">
             <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center border border-primary/20">
@@ -353,24 +352,29 @@ export function AssignmentSuccessDialog({
               <DialogTitle className="text-base font-semibold">
                 Plan pacjenta utworzony i przypisany!
               </DialogTitle>
-              <DialogDescription className="text-sm">
-                {isSinglePatient
-                  ? `Pacjent ${selectedPatient.name} otrzymał plan "${setName}"`
-                  : `${patients.length} pacjentów otrzymało plan "${setName}"`}
-              </DialogDescription>
             </div>
           </div>
         </DialogHeader>
 
         <div className="space-y-4 py-4">
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge variant="secondary" className="bg-surface-light text-foreground border-border">
+              {isSinglePatient ? selectedPatient.name : `${patients.length} pacjentów`}
+            </Badge>
+            <Badge
+              variant="secondary"
+              className="max-w-full bg-surface-light text-foreground border-border"
+              title={setName}
+            >
+              <span className="truncate">{setName}</span>
+            </Badge>
+          </div>
+
           {formattedPremiumDate && (
-            <div className="flex items-center gap-3 p-3 rounded-xl bg-surface border border-border">
+            <div className="flex flex-wrap items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 sm:flex-nowrap sm:justify-between sm:gap-3">
               <Sparkles className="h-4 w-4 text-primary shrink-0" />
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-foreground">Dostęp Premium aktywny</p>
-                <p className="text-xs text-muted-foreground">Pacjent ma dostęp do {formattedPremiumDate}</p>
-              </div>
-              <Badge variant="secondary" className="shrink-0 bg-surface-light text-muted-foreground border-border">
+              <p className="text-sm font-medium text-foreground flex-1 min-w-0">Dostęp Premium aktywny</p>
+              <Badge variant="secondary" className="shrink-0 bg-surface-light text-foreground border-border">
                 <Calendar className="h-3 w-3 mr-1" />
                 {formattedPremiumDate}
               </Badge>
@@ -393,10 +397,10 @@ export function AssignmentSuccessDialog({
             </div>
           )}
 
-          <div className="flex flex-col items-center rounded-xl bg-surface/50 p-4 border border-border/60">
+          <div className="flex flex-col items-center rounded-xl bg-surface/50 p-5 border border-border/60">
             <div
               ref={qrContainerRef}
-              className="mb-3 p-3 bg-white rounded-xl shadow-sm border border-border/40"
+              className="p-3 bg-white rounded-xl shadow-sm border border-border/40"
             >
               <QRCodeSVG
                 value={appDeepLink}
@@ -412,42 +416,9 @@ export function AssignmentSuccessDialog({
                 }}
               />
             </div>
-            <h3 className="text-sm font-semibold text-foreground flex items-center gap-2 mb-1">
+            <div className="mt-3 inline-flex items-center gap-2 rounded-full border border-border bg-surface-light px-3 py-1.5 text-sm font-medium text-foreground">
               <Smartphone className="h-4 w-4 text-muted-foreground" />
-              Aplikacja Mobilna
-            </h3>
-            <p className="text-xs text-muted-foreground text-center mb-3">
-              Wideo, timer i historia postępów.
-            </p>
-            <div className="w-full space-y-2">
-              <div className="flex gap-2">
-                <Input
-                  readOnly
-                  value={webLink}
-                  className="text-xs bg-muted/30 border-border/60"
-                  data-testid="assign-success-link-input"
-                />
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleCopyLink}
-                  className="shrink-0 gap-1.5"
-                  data-testid="assign-success-copy-btn"
-                >
-                  {copied ? <Check className="h-3.5 w-3.5 text-primary" /> : <Copy className="h-3.5 w-3.5" />}
-                  {copied ? 'Skopiowano' : 'Kopiuj'}
-                </Button>
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleShare}
-                className="w-full gap-2"
-                data-testid="assign-success-share-btn"
-              >
-                <Share2 className="h-3.5 w-3.5" />
-                Wyślij link SMS-em
-              </Button>
+              Aplikacja mobilna
             </div>
           </div>
 
@@ -470,13 +441,33 @@ export function AssignmentSuccessDialog({
               </button>
             </CollapsibleTrigger>
             <CollapsibleContent className="px-3 pb-3">
-              <div className="flex flex-wrap items-center gap-2">
+              <div className="grid gap-2 sm:grid-cols-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleCopyLink}
+                  className="justify-start text-xs text-muted-foreground h-8"
+                  data-testid="assign-success-copy-btn"
+                >
+                  {copied ? <Check className="h-3 w-3 mr-1.5 text-primary" /> : <Copy className="h-3 w-3 mr-1.5" />}
+                  {copied ? 'Skopiowano link' : 'Kopiuj link'}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleShare}
+                  className="justify-start text-xs text-muted-foreground h-8"
+                  data-testid="assign-success-share-btn"
+                >
+                  <Share2 className="h-3 w-3 mr-1.5" />
+                  Wyślij link
+                </Button>
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={handlePrintCard}
                   disabled={isGeneratingPDF || !organization || !exerciseSet}
-                  className="text-xs text-muted-foreground h-8"
+                  className="justify-start text-xs text-muted-foreground h-8"
                   data-testid="assign-success-print-btn"
                 >
                   <Printer className="h-3 w-3 mr-1.5" />
@@ -487,7 +478,7 @@ export function AssignmentSuccessDialog({
                   size="sm"
                   onClick={handleDownloadPDF}
                   disabled={isGeneratingPDF || !organization || !exerciseSet}
-                  className="text-xs text-muted-foreground h-8"
+                  className="justify-start text-xs text-muted-foreground h-8"
                   data-testid="assign-success-download-pdf-btn"
                 >
                   <Download className="h-3 w-3 mr-1.5" />
@@ -497,7 +488,7 @@ export function AssignmentSuccessDialog({
                   variant="ghost"
                   size="sm"
                   onClick={handleDownloadQR}
-                  className="text-xs text-muted-foreground h-8"
+                  className="justify-start text-xs text-muted-foreground h-8"
                   data-testid="assign-success-download-qr-btn"
                 >
                   <Download className="h-3 w-3 mr-1.5" />
@@ -512,11 +503,16 @@ export function AssignmentSuccessDialog({
           <QRCodeCanvas value={`https://app.fiziyo.pl/sets/${exerciseSet?.id || ''}`} size={200} level="M" />
         </div>
 
-        <div className="flex items-center justify-between pt-4 border-t border-border">
-          <Button variant="ghost" onClick={() => onOpenChange(false)} data-testid="assign-success-close-btn">
+        <div className="flex flex-col gap-3 pt-4 border-t border-border sm:flex-row sm:items-center sm:justify-between">
+          <Button
+            variant="ghost"
+            onClick={() => onOpenChange(false)}
+            data-testid="assign-success-close-btn"
+            className="w-full sm:w-auto"
+          >
             Zamknij
           </Button>
-          <div className="flex items-center gap-2">
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
             {onViewPlan && (
               <Button
                 variant="outline"
@@ -525,6 +521,7 @@ export function AssignmentSuccessDialog({
                   onViewPlan();
                 }}
                 data-testid="assign-success-view-plan-btn"
+                className="w-full sm:w-auto"
               >
                 Zobacz utworzony plan
               </Button>
@@ -536,6 +533,7 @@ export function AssignmentSuccessDialog({
                   onAssignAnother();
                 }}
                 data-testid="assign-success-assign-another-primary-btn"
+                className="w-full sm:w-auto"
               >
                 Personalizuj i przypisz
               </Button>
