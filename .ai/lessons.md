@@ -14,6 +14,14 @@ Dziennik wniosków z pracy AI agentów. Po każdej korekcie dodaj nowy wpis.
 
 ## Wpisy
 
+### 2026-04-13 - Timeout i trace E2E trzeba stroic razem z workerami CI
+
+- **Kategoria**: `Build/Tooling`
+- **Problem**: Full regresja Playwright (57 testow) byla ubijana przez timeout joba i dawala niestabilne sygnaly (`context canceled`), mimo poprawnego triggerowania pipeline.
+- **Przyczyna**: Polaczenie zbyt krotkiego `timeout-minutes: 20`, kosztownego `trace: "on"` dla kazdego testu oraz braku jawnego skalowania workerow w CI.
+- **Rozwiązanie**: Podniesiono timeout reusable workflow do `30` minut, przeniesiono retry do `playwright.config.ts`, ustawiono `workers: "50%"` w CI i zmieniono trace na `on-first-retry`.
+- **Reguła**: Dla produkcyjnych E2E strojenie wydajnosci rob lacznie (timeout + workers + trace + retries) i trzymaj jeden punkt prawdy dla retry w configu Playwright, nie w CLI.
+
 ### 2026-04-13 - RegExp dla Clerk nie moze przechodzic przez granice Server -> Client
 
 - **Kategoria**: `Build/Tooling`
