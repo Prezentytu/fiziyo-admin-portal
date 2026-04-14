@@ -23,6 +23,42 @@ export function OrganizationGuard({ children }: Readonly<OrganizationGuardProps>
   const [isChecking, setIsChecking] = useState(true);
   const [hasOrganization, setHasOrganization] = useState<boolean | null>(null);
 
+  const getErrorStatusCode = (error: unknown): number | null => {
+    if (error && typeof error === 'object' && 'status' in error) {
+      const statusValue = (error as { status?: unknown }).status;
+      if (typeof statusValue === 'number') {
+        return statusValue;
+      }
+    }
+
+    if (error instanceof Error) {
+      const statusMatch = error.message.match(/\b(4\d{2}|5\d{2})\b/);
+      if (statusMatch) {
+        return Number(statusMatch[1]);
+      }
+    }
+
+    return null;
+  };
+
+  const getUserRoleFromToken = (token: string): string | null => {
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1])) as Record<string, unknown>;
+      const roleClaim = payload['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'];
+      if (typeof roleClaim === 'string') {
+        return roleClaim;
+      }
+
+      if (typeof payload.role === 'string') {
+        return payload.role;
+      }
+    } catch {
+      return null;
+    }
+
+    return null;
+  };
+
   useEffect(() => {
     async function checkOrganization() {
       // Pomiń sprawdzanie na stronie onboardingu
@@ -53,17 +89,31 @@ export function OrganizationGuard({ children }: Readonly<OrganizationGuardProps>
           return;
         }
 
-        await tokenExchangeService.exchangeClerkToken(clerkToken);
+        const exchangedToken = await tokenExchangeService.exchangeClerkToken(clerkToken);
+        const userRole = getUserRoleFromToken(exchangedToken.access_token);
+
+        if (userRole === 'patient') {
+          setHasOrganization(true);
+          return;
+        }
+
         setHasOrganization(true);
       } catch (error) {
         console.error('[OrganizationGuard] Token exchange error:', error);
 
         const errorMessage = error instanceof Error ? error.message : String(error);
+        const statusCode = getErrorStatusCode(error);
+
+        if (statusCode === 404) {
+          router.replace('/finalizing');
+          return;
+        }
 
         // Jeśli błąd dotyczy braku organizacji - przekieruj na onboarding
         if (
           errorMessage.includes('does not belong to') ||
           errorMessage.includes('organization') ||
+          statusCode === 401 ||
           errorMessage.includes('401')
         ) {
           clearBackendToken();

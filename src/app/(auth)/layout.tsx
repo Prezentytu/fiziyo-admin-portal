@@ -15,14 +15,15 @@ export default function AuthLayout({ children }: AuthLayoutProps) {
   const router = useRouter();
   const pathname = usePathname();
 
-  // Don't redirect if user is on invite page - they need to accept the invitation
+  // Don't redirect if user is on invite/finalizing page.
   const isInvitePage = pathname?.startsWith('/invite');
+  const isFinalizingPage = pathname?.startsWith('/finalizing');
 
   useEffect(() => {
-    if (isLoaded && isSignedIn && !isInvitePage) {
+    if (isLoaded && isSignedIn && !isInvitePage && !isFinalizingPage) {
       router.replace('/');
     }
-  }, [isLoaded, isSignedIn, router, isInvitePage]);
+  }, [isLoaded, isSignedIn, router, isInvitePage, isFinalizingPage]);
 
   if (!isLoaded) {
     return (
@@ -33,12 +34,12 @@ export default function AuthLayout({ children }: AuthLayoutProps) {
   }
 
   // For invite page, allow signed-in users to see the content
-  if (isSignedIn && !isInvitePage) {
+  if (isSignedIn && !isInvitePage && !isFinalizingPage) {
     return null;
   }
 
-  // For invite page with signed-in user, render just the children without the auth layout
-  if (isSignedIn && isInvitePage) {
+  // For invite/finalizing with signed-in user, render content directly.
+  if (isSignedIn && (isInvitePage || isFinalizingPage)) {
     return <>{children}</>;
   }
 
