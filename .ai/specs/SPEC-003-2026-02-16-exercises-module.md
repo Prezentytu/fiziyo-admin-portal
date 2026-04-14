@@ -15,6 +15,43 @@ Moduł ćwiczeń jest centralnym elementem FiziYo Admin. Umożliwia fizjoterapeu
   - Formularz edycji musi przekazywać `name` do payloadu update.
 - Jawna akcja `Duplikuj` pozostaje dostępna niezależnie od trybu.
 
+## Kontrakt edycji mediów w istniejącym ćwiczeniu (2026-04-14)
+
+### Zakres
+
+- Dotyczy wyłącznie edycji encji `Exercise` dla scope `ORGANIZATION` / `PERSONAL`.
+- Tryby `GLOBAL` i `PENDING_REVIEW` pozostają read-only (bez sekcji edycji mediów).
+
+### Źródło prawdy dla mediów
+
+- Dla encji `Exercise` obowiązuje kanał GraphQL:
+  - `uploadExerciseImage` dla nowych plików,
+  - `deleteExerciseImage` dla usuniętych URL-i,
+  - `updateExercise` wyłącznie dla pól formularza (tekst/parametry/wideo i metadane), bez mieszania semantyki uploadu.
+- Nie zapisujemy mediów encji `Exercise` przez `exerciseOverrides` (to kanał per pacjent w assignment).
+
+### Sekwencja zapisu (edit flow)
+
+1. Zapis pól formularza przez `updateExercise`.
+2. Usunięcie zdjęć oznaczonych do usunięcia przez `deleteExerciseImage`.
+3. Upload nowych plików przez `uploadExerciseImage`.
+4. Refetch detalu (`GET_EXERCISE_BY_ID_QUERY`) oraz listy organizacji dla spójności cache.
+
+### Polityka kompatybilności (legacy media fields)
+
+- UI detalu i preview musi respektować fallback chain:
+  - `thumbnailUrl` (legacy fallback),
+  - `imageUrl`,
+  - `images[]`.
+- Brak pojedynczego pola nie może powodować pustego stanu, jeśli pozostałe pola zawierają media.
+
+### Data-testid (media edit)
+
+- `exercise-form-media-upload-btn`
+- `exercise-form-media-ai-generate-btn`
+- `exercise-form-media-remove-btn-{index}`
+- `exercise-form-media-preview-{index}`
+
 ## Strategia nazewnictwa kopii
 
 - Dla nazwy bazowej `<nazwaBazowa>`:
@@ -134,6 +171,12 @@ Prefiks: `exercise-`
 - `exercise-voice-input-btn`
 
 ## Changelog
+
+### 2026-04-14
+
+- Dodano kontrakt edycji mediów dla istniejącego ćwiczenia (`ORGANIZATION` / `PERSONAL`) z sekwencją `update -> delete -> upload -> refetch`.
+- Ujednolicono zasady kompatybilności dla legacy pól mediów (`thumbnailUrl`, `imageUrl`, `images[]`) i fallback chain w detalu.
+- Dodano wymagane `data-testid` dla akcji media w formularzu edycji.
 
 ### 2026-04-08
 

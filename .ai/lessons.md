@@ -14,6 +14,14 @@ Dziennik wniosków z pracy AI agentów. Po każdej korekcie dodaj nowy wpis.
 
 ## Wpisy
 
+### 2026-04-14 - Flow create/edit musi dzielic ten sam kanal mediow
+
+- **Kategoria**: `UI/UX`
+- **Problem**: W widoku szczegolu cwiczenia nie dalo sie dodawac ani zmieniac zdjec, mimo ze tworzenie cwiczenia i personalizacja per pacjent obslugiwaly media.
+- **Przyczyna**: Rozjazd miedzy flow: `CreateExerciseWizard` korzysta z `uploadExerciseImage`, a `ExerciseDialog` (edit) zapisywal tylko pola tekstowe i parametry bez sekcji media i bez delete/upload.
+- **Rozwiązanie**: Ujednolicono model mediow (`existing + new + removed`) i podpieto w edit flow sekwencje `updateExercise -> deleteExerciseImage -> uploadExerciseImage` z refetchem detalu; dodatkowo detal korzysta z fallback chain `thumbnailUrl -> imageUrl -> images[]`.
+- **Reguła**: Dla funkcji domenowych dostepnych w create i edit (szczegolnie media) utrzymuj jeden wspolny model stanu i ten sam kanal persystencji; inaczej regresja funkcjonalna wraca mimo poprawnego backendowego kontraktu.
+
 ### 2026-04-13 - Timeout i trace E2E trzeba stroic razem z workerami CI
 
 - **Kategoria**: `Build/Tooling`

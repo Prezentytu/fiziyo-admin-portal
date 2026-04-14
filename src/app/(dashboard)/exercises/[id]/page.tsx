@@ -42,7 +42,6 @@ import { FeedbackBanner } from '@/features/exercises/FeedbackBanner';
 import { ReportExerciseDialog } from '@/features/exercises/ReportExerciseDialog';
 import { ImagePlaceholder } from '@/components/shared/ImagePlaceholder';
 import { ImageLightbox } from '@/components/shared/ImageLightbox';
-import { getMediaUrls } from '@/utils/mediaUrl';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -76,6 +75,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { getNextExerciseCopyName } from '@/features/exercises/utils/getNextExerciseCopyName';
 import { calculateSeriesTimeSeconds } from '@/features/exercises/utils/calculateSeriesTime';
 import { formatDurationPolish } from '@/utils/durationPolish';
+import { getExerciseMediaGalleryUrls } from '@/features/exercises/utils/exerciseMedia';
 
 interface ExerciseDetailPageProps {
   params: Promise<{ id: string }>;
@@ -301,7 +301,11 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
     );
   }
 
-  const allImages = getMediaUrls([exercise.imageUrl, ...(exercise.images || [])]);
+  const allImages = getExerciseMediaGalleryUrls({
+    thumbnailUrl: exercise.thumbnailUrl,
+    imageUrl: exercise.imageUrl,
+    images: exercise.images,
+  });
   const currentImage = allImages[selectedImageIndex] || null;
 
   // Check if exercise can be submitted to global review
