@@ -46,6 +46,8 @@ interface ExerciseFormProps {
   onDirtyChange?: (isDirty: boolean) => void;
   /** Optional secondary action button (e.g., "Submit to Global") */
   secondaryAction?: React.ReactNode;
+  /** Optional media section rendered in edit mode */
+  mediaSection?: React.ReactNode;
 }
 
 export function ExerciseForm({
@@ -56,7 +58,8 @@ export function ExerciseForm({
   submitLabel = 'Zapisz',
   onDirtyChange,
   secondaryAction,
-}: ExerciseFormProps) {
+  mediaSection,
+}: Readonly<ExerciseFormProps>) {
   const form = useForm<ExerciseFormValues>({
     resolver: zodResolver(exerciseFormSchema),
     defaultValues: {
@@ -90,8 +93,8 @@ export function ExerciseForm({
 
   const handleSubmit = async (values: ExerciseFormValues) => {
     try {
-      // Keep backend-compatible inference: explicit duration override means time-based.
-      const inferredType: ExerciseFormValues['type'] = (values.duration ?? 0) > 0 ? 'time' : 'reps';
+      // Timer semantics: executionTime > 0 means timed exercise for patient.
+      const inferredType: ExerciseFormValues['type'] = (values.executionTime ?? 0) > 0 ? 'time' : 'reps';
       await onSubmit({ ...values, type: inferredType });
     } catch (error) {
       console.error('Błąd podczas zapisywania:', error);
@@ -384,6 +387,8 @@ export function ExerciseForm({
           )}
         />
 
+        {mediaSection}
+
         <Collapsible>
           <CollapsibleTrigger asChild>
             <button
@@ -475,17 +480,19 @@ export function ExerciseForm({
           </CollapsibleContent>
         </Collapsible>
 
-        <div className="flex justify-end gap-3">
+        <div className="flex items-center justify-between gap-3">
           {onCancel && (
             <Button type="button" variant="outline" onClick={onCancel}>
               Anuluj
             </Button>
           )}
-          <Button type="submit" disabled={isLoading}>
-            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {submitLabel}
-          </Button>
-          {secondaryAction}
+          <div className="flex items-center gap-3">
+            {secondaryAction}
+            <Button type="submit" disabled={isLoading} data-testid="exercise-form-submit-btn">
+              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {submitLabel}
+            </Button>
+          </div>
         </div>
       </form>
     </Form>

@@ -51,6 +51,7 @@ import {
   UPDATE_PATIENT_EXERCISE_OVERRIDES_MUTATION,
   REMOVE_EXERCISE_SET_ASSIGNMENT_MUTATION,
 } from '@/graphql/mutations/exercises.mutations';
+import { GET_ORGANIZATION_EXERCISE_SETS_QUERY } from '@/graphql/queries/exerciseSets.queries';
 import { GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY } from '@/graphql/queries/patientAssignments.queries';
 
 // Types
@@ -142,6 +143,7 @@ export interface PatientAssignment {
     id: string;
     name: string;
     description?: string;
+    organizationId?: string;
     exerciseMappings?: ExerciseMapping[];
   };
 }
@@ -195,6 +197,15 @@ const getStatusVariant = (status?: string): 'success' | 'secondary' | 'warning' 
       return 'secondary';
   }
 };
+
+export function buildUnassignRefetchQueries(patientId: string, organizationId?: string) {
+  return [
+    { query: GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY, variables: { userId: patientId } },
+    ...(organizationId
+      ? [{ query: GET_ORGANIZATION_EXERCISE_SETS_QUERY, variables: { organizationId } }]
+      : []),
+  ];
+}
 
 export function PatientAssignmentCard({
   assignment,
@@ -332,13 +343,16 @@ export function PatientAssignmentCard({
 
   const handleDelete = async () => {
     if (!exerciseSet) return;
+
+    const refetchQueries = buildUnassignRefetchQueries(patientId, exerciseSet.organizationId);
+
     try {
       await removeAssignment({
         variables: {
           exerciseSetId: exerciseSet.id,
           patientId,
         },
-        refetchQueries: [{ query: GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY, variables: { userId: patientId } }],
+        refetchQueries,
       });
       toast.success('Przypisanie zostało usunięte');
       setIsDeleteDialogOpen(false);
@@ -726,7 +740,7 @@ export function PatientAssignmentCard({
         open={isDeleteDialogOpen}
         onOpenChange={setIsDeleteDialogOpen}
         title="Usuń przypisanie"
-        description={`Czy na pewno chcesz usunąć przypisanie zestawu "${exerciseSet?.name}" dla tego pacjenta? Ta operacja jest nieodwracalna.`}
+        description={`Czy na pewno chcesz usunąć przypisanie zestawu "${exerciseSet?.name}" dla tego pacjenta? Ta operacja jest nieodwracalna. Usunięcie przypisania może skrócić okres dostępu Premium pacjenta.`}
         confirmText="Usuń"
         variant="destructive"
         onConfirm={handleDelete}

@@ -233,7 +233,17 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
   const [updateAssignment, { loading: updatingAssignment }] = useMutation(UPDATE_EXERCISE_SET_ASSIGNMENT_MUTATION);
 
   const [removeAssignment, { loading: removingAssignmentLoading }] = useMutation(
-    REMOVE_EXERCISE_SET_ASSIGNMENT_MUTATION
+    REMOVE_EXERCISE_SET_ASSIGNMENT_MUTATION,
+    {
+      refetchQueries: organizationId
+        ? [
+            {
+              query: GET_ORGANIZATION_EXERCISE_SETS_QUERY,
+              variables: { organizationId },
+            },
+          ]
+        : [],
+    }
   );
   const [updateDefaultSchedule, { loading: updatingDefaultSchedule }] = useMutation(
     UPDATE_EXERCISE_SET_FREQUENCY_MUTATION
@@ -1060,7 +1070,7 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
         title="Usuń przypisanie"
         description={`Czy na pewno chcesz usunąć przypisanie zestawu dla pacjenta "${
           removingAssignment?.user?.fullname || 'Nieznany'
-        }"? Ta operacja jest nieodwracalna.`}
+        }"? Ta operacja jest nieodwracalna. Usunięcie przypisania może skrócić okres dostępu Premium pacjenta.`}
         confirmText="Usuń"
         variant="destructive"
         onConfirm={handleRemoveAssignment}

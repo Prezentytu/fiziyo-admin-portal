@@ -18,6 +18,12 @@ Krótki opis zmiany i jej cel.
 
 Jak przetestowano zmianę.
 
+## E2E Impact
+
+- [ ] Zmiana dotyka user-facing flow i wymaga aktualizacji/dopisania testu E2E
+- [ ] Zaktualizowano `fiziyo-tests/TEST_PLAN.md` (jeśli dotyczy)
+- [ ] Zaktualizowano Page Objecty w `fiziyo-tests` (jeśli zmieniono role/label/tekst wykorzystywany przez lokatory)
+
 ## Checklist
 
 - [ ] PR targetuje branch `dev`
@@ -25,3 +31,4 @@ Jak przetestowano zmianę.
 - [ ] Build przechodzi (`npm run build`)
 - [ ] data-testid dodane do nowych elementów interaktywnych
 - [ ] Zaktualizowano spec changelog (jeśli dotyczy)
+- [ ] PR ma zielony status `E2E Preview Smoke` przed merge

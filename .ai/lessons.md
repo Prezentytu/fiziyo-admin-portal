@@ -14,6 +14,70 @@ Dziennik wniosków z pracy AI agentów. Po każdej korekcie dodaj nowy wpis.
 
 ## Wpisy
 
+### 2026-04-14 - Timer pacjenta musi byc sterowany executionTime
+
+- **Kategoria**: `GraphQL`
+- **Problem**: Pacjent dostawal bledny timer lub brak timera, mimo poprawnie ustawionego czasu powtorzenia przez fizjoterapeute.
+- **Przyczyna**: Logika wykonania cwiczenia i estymacji czasu opierala sie na `type` oraz `duration` (czas serii), a nie na `executionTime` (czas powtorzenia); dodatkowo `executionTime` z mapping bywalo gubione w transformacji read-modelu.
+- **Rozwiązanie**: Ujednolicono regule `executionTime > 0 => timer`, dodano propagacje `mapping.executionTime`, przeniesiono estymacje czasu na helpery preferujace `executionTime`, a `duration` pozostawiono jako wtorny override.
+- **Reguła**: W calym flow (admin -> GraphQL -> mobile player) `executionTime` jest single source of truth dla timera; `duration` nie moze decydowac o trybie cwiczenia.
+
+### 2026-04-14 - Unassign PATIENT_PLAN wymaga domkniecia lifecycle po stronie backendu
+
+- **Kategoria**: `GraphQL`
+- **Problem**: Po usunieciu przypisania plan pacjenta znikal z widoku pacjenta, ale nadal byl widoczny na liscie "spersonalizowanych zestawow".
+- **Przyczyna**: `removeExerciseSetAssignment` usuwalo tylko rekord `PatientAssignment`; aktywny `ExerciseSet(kind=PATIENT_PLAN)` zostawal w organizacji i byl dalej zwracany przez listy oparte o `isActive`.
+- **Rozwiązanie**: Backend po usunieciu assignmentu sprawdza czy `PATIENT_PLAN` zostal osierocony i wtedy ustawia `IsActive=false` oraz emituje event `exerciseSet:updated`; adminowe flow unassign dopina refetch listy setow organizacji.
+- **Reguła**: Dla modelu `always-fork` operacja unassign musi zamykac lifecycle planu pacjenta (co najmniej deaktywacja po ostatnim assignment), a nie tylko usuwac relacje pacjent-zestaw.
+
+### 2026-04-14 - Flow create/edit musi dzielic ten sam kanal mediow
+
+- **Kategoria**: `UI/UX`
+- **Problem**: W widoku szczegolu cwiczenia nie dalo sie dodawac ani zmieniac zdjec, mimo ze tworzenie cwiczenia i personalizacja per pacjent obslugiwaly media.
+- **Przyczyna**: Rozjazd miedzy flow: `CreateExerciseWizard` korzysta z `uploadExerciseImage`, a `ExerciseDialog` (edit) zapisywal tylko pola tekstowe i parametry bez sekcji media i bez delete/upload.
+- **Rozwiązanie**: Ujednolicono model mediow (`existing + new + removed`) i podpieto w edit flow sekwencje `updateExercise -> deleteExerciseImage -> uploadExerciseImage` z refetchem detalu; dodatkowo detal korzysta z fallback chain `thumbnailUrl -> imageUrl -> images[]`.
+- **Reguła**: Dla funkcji domenowych dostepnych w create i edit (szczegolnie media) utrzymuj jeden wspolny model stanu i ten sam kanal persystencji; inaczej regresja funkcjonalna wraca mimo poprawnego backendowego kontraktu.
+
+### 2026-04-13 - Timeout i trace E2E trzeba stroic razem z workerami CI
+
+- **Kategoria**: `Build/Tooling`
+- **Problem**: Full regresja Playwright (57 testow) byla ubijana przez timeout joba i dawala niestabilne sygnaly (`context canceled`), mimo poprawnego triggerowania pipeline.
+- **Przyczyna**: Polaczenie zbyt krotkiego `timeout-minutes: 20`, kosztownego `trace: "on"` dla kazdego testu oraz braku jawnego skalowania workerow w CI.
+- **Rozwiązanie**: Podniesiono timeout reusable workflow do `30` minut, przeniesiono retry do `playwright.config.ts`, ustawiono `workers: "50%"` w CI i zmieniono trace na `on-first-retry`.
+- **Reguła**: Dla produkcyjnych E2E strojenie wydajnosci rob lacznie (timeout + workers + trace + retries) i trzymaj jeden punkt prawdy dla retry w configu Playwright, nie w CLI.
+
+### 2026-04-13 - RegExp dla Clerk nie moze przechodzic przez granice Server -> Client
+
+- **Kategoria**: `Build/Tooling`
+- **Problem**: Build preview na Vercel wywalal sie podczas prerenderingu z bledem `Only plain objects ... RegExp` po wlaczeniu `NEXT_PUBLIC_ENABLE_CLERK_PREVIEW_REDIRECTS=true`.
+- **Przyczyna**: `allowedRedirectOrigins` z `RegExp` bylo budowane w serwerowym `src/app/layout.tsx` i przekazywane jako props do klientowego `ClerkProvider`.
+- **Rozwiązanie**: Przeniesiono budowanie `allowedRedirectOrigins` do klientowego wrappera `ClerkProviderWithRedirects` i zostawiono w serwerowym layoucie tylko serializowalne propsy (string + boolean).
+- **Reguła**: W Next.js App Router nigdy nie przekazuj `RegExp`/klas/funkcji z Server Components do Client Components; konfiguracje nie-serializowalne buduj po stronie klienta za granica `'use client'`.
+
+### 2026-04-13 - Jeden status E2E nie moze oznaczac wielu gate'ow release
+
+- **Kategoria**: `Build/Tooling`
+- **Problem**: Ten sam commit status `E2E Tests (Playwright)` byl uzywany jednoczesnie dla preview smoke, dev full regression i prod smoke, przez co przed releasem nie bylo jasne, ktory etap jest faktycznie zielony.
+- **Przyczyna**: Reusable workflow raportowal staly `context` statusu, a wrappery dev/prod nie przekazywaly semantyki srodowiska do status checks.
+- **Rozwiązanie**: Rozdzielono statusy na `E2E Preview Smoke`, `E2E Dev Full`, `E2E Prod Smoke` i przepieto routing triggera tak, aby dedykowana domena dev (`devportal.fiziyo.pl`, nawet jesli Vercel oznacza ja jako `Preview`) lub commit nalezacy do brancha `dev` zawsze uruchamial full run.
+- **Reguła**: Dla wieloetapowego pipeline release kazdy etap musi miec osobny, semantyczny status check, a routing srodowisk nie moze opierac sie wylacznie na nazwie environment ani `target_url` z Vercela, jesli dedykowany dev korzysta z typu `Preview`.
+
+### 2026-04-13 - Concurrency dla dispatch E2E musi byc oparta o SHA
+
+- **Kategoria**: `Build/Tooling`
+- **Problem**: Runy `e2e-dev-run` byly anulowane w trakcie (`context canceled`), a czesc commitow nie dostawala stabilnego wyniku E2E.
+- **Przyczyna**: Workflow-level concurrency grupowala runy po `github.ref` i `github.event_name`, co dla `repository_dispatch` dawalo ta sama grupe dla wielu deployow.
+- **Rozwiązanie**: W `fiziyo-tests` przepieto concurrency na `client_payload.sha` dla dispatch, osobne grupy dla `workflow_dispatch` i `schedule`, oraz ustawiono `cancel-in-progress: false`.
+- **Reguła**: Dla deploy-triggered testow E2E grupuj concurrency po identyfikatorze deployu (najczesciej SHA), nie po samym `event_name/ref`; priorytetem jest domkniety run i wiarygodny status commita.
+
+### 2026-04-09 - Preview redirecty Clerk trzeba kontrolowac w kodzie aplikacji
+
+- **Kategoria**: `Build/Tooling`
+- **Problem**: Konfiguracja E2E dla Vercel preview byla blokowana, bo szukano allowlisty redirectow wyłącznie w zakładce `Paths` w dashboardzie Clerk.
+- **Przyczyna**: W aktualnym setupie Next.js + Clerk redirect policy jest egzekwowana przez konfigurację `ClerkProvider`, a nie przez same ścieżki `Application paths`.
+- **Rozwiązanie**: Dodano konfigurację `allowedRedirectOrigins` w `src/app/layout.tsx`, flagę `NEXT_PUBLIC_ENABLE_CLERK_PREVIEW_REDIRECTS` oraz runbook z mapowaniem `dev/prod` dla Clerk i Vercel.
+- **Reguła**: Dla dynamicznych preview domen (`*.vercel.app`) konfiguruj allowlistę redirectów przez `ClerkProvider` i trzymaj ją aktywną tylko dla środowisk opartych o `dev Clerk`.
+
 ### 2026-04-09 - Ukrywanie tagow musi obejmowac wszystkie powierzchnie UI
 
 - **Kategoria**: `UI/UX`

@@ -13,22 +13,26 @@ Panel administracyjny dla platformy FiziYo - aplikacji dla fizjoterapeutów.
 ## Getting Started
 
 1. Sklonuj repo:
+
 ```bash
 git clone https://github.com/Prezentytu/fiziyo-admin.git
 cd fiziyo-admin
 ```
 
 2. Zainstaluj zależności:
+
 ```bash
 npm install
 ```
 
 3. Skopiuj `.env.example` do `.env.local` i uzupełnij wartości:
+
 ```bash
 cp .env.example .env.local
 ```
 
 4. Uruchom dev server:
+
 ```bash
 npm run dev
 ```
@@ -37,11 +41,14 @@ npm run dev
 
 ## Environment Variables
 
-| Variable | Description |
-|----------|-------------|
-| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Clerk public key |
-| `CLERK_SECRET_KEY` | Clerk secret key |
-| `NEXT_PUBLIC_API_URL` | Backend API URL |
+| Variable                                     | Description                                                                                     |
+| -------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| `NEXT_PUBLIC_APP_URL`                        | Production app URL used for auth redirects                                                      |
+| `NEXT_PUBLIC_DEV_APP_URL`                    | Development app URL used for auth redirects                                                     |
+| `NEXT_PUBLIC_ENABLE_CLERK_PREVIEW_REDIRECTS` | Enables `*.vercel.app` redirect origins in ClerkProvider (recommended only with dev Clerk keys) |
+| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`          | Clerk public key                                                                                |
+| `CLERK_SECRET_KEY`                           | Clerk secret key                                                                                |
+| `NEXT_PUBLIC_API_URL`                        | Backend API URL                                                                                 |
 
 ## Project Structure
 
@@ -62,9 +69,18 @@ src/
 ## Deploy
 
 Deploy na Vercel:
+
 1. Połącz repo z Vercel
 2. Dodaj environment variables
 3. Deploy
+
+## E2E Tests (cross-repo)
+
+Testy E2E Playwright sa utrzymywane w osobnym repo `fiziyo-tests` i sa wyzwalane automatycznie po udanym deploymencie.
+
+Konfiguracja pipeline, sekrety, branch protection i Clerk preview redirects:
+
+- `docs/testing/e2e-cross-repo-pipeline.md`
 
 ## License
 

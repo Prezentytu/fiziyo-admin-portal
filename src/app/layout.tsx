@@ -1,10 +1,16 @@
 import type { Metadata } from 'next';
 import { Outfit, JetBrains_Mono } from 'next/font/google';
-import { ClerkProvider } from '@clerk/nextjs';
 import { ApolloWrapper } from '@/lib/apollo/provider';
 import { Toaster } from '@/components/ui/sonner';
+import { ClerkProviderWithRedirects } from '@/components/auth/ClerkProviderWithRedirects';
 import { AccessibilityProvider } from '@/contexts/AccessibilityContext';
 import './globals.css';
+
+const productionAppUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'https://portal.fiziyo.pl';
+const developmentAppUrl =
+  process.env.NEXT_PUBLIC_DEV_APP_URL ?? 'https://dev.portal.fiziyo.pl';
+const allowClerkPreviewRedirects =
+  process.env.NEXT_PUBLIC_ENABLE_CLERK_PREVIEW_REDIRECTS === 'true';
 
 const outfit = Outfit({
   subsets: ['latin', 'latin-ext'],
@@ -63,7 +69,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <ClerkProvider>
+    <ClerkProviderWithRedirects
+      productionAppUrl={productionAppUrl}
+      developmentAppUrl={developmentAppUrl}
+      allowPreviewRedirects={allowClerkPreviewRedirects}
+    >
       <html lang="pl" suppressHydrationWarning className={`${outfit.variable} ${jetbrainsMono.variable}`}>
         <head>
           <script dangerouslySetInnerHTML={{ __html: accessibilityScript }} />
@@ -75,6 +85,6 @@ export default function RootLayout({
           <Toaster />
         </body>
       </html>
-    </ClerkProvider>
+    </ClerkProviderWithRedirects>
   );
 }
