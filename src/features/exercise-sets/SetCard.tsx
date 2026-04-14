@@ -16,6 +16,7 @@ import {
 import { cn } from '@/lib/utils';
 import { ImagePlaceholder } from '@/components/shared/ImagePlaceholder';
 import { getMediaUrl } from '@/utils/mediaUrl';
+import { calculateEstimatedTime } from '@/utils/exerciseTime';
 import { HIDE_EXERCISE_TAGS } from '@/components/shared/exercise';
 import type { ExerciseTag } from '@/types/apollo';
 
@@ -26,6 +27,9 @@ interface ExerciseMapping {
   sets?: number;
   reps?: number;
   duration?: number;
+  executionTime?: number;
+  restSets?: number;
+  restReps?: number;
   exercise?: {
     id: string;
     name: string;
@@ -37,6 +41,12 @@ interface ExerciseMapping {
     sets?: number;
     reps?: number;
     duration?: number;
+    executionTime?: number;
+    defaultExecutionTime?: number;
+    restSets?: number;
+    restReps?: number;
+    defaultRestBetweenSets?: number;
+    defaultRestBetweenReps?: number;
   };
 }
 
@@ -117,19 +127,21 @@ export function SetCard({ set, tagsMap, onView, onEdit, onDelete, onDuplicate, o
     let totalSeconds = 0;
     for (const mapping of set.exerciseMappings || []) {
       const sets = mapping.sets || mapping.exercise?.sets || 3;
-      const duration = mapping.duration || mapping.exercise?.duration || 30;
+      const duration = mapping.duration || mapping.exercise?.duration || 0;
       const reps = mapping.reps || mapping.exercise?.reps || 10;
-      const type = mapping.exercise?.type;
+      const executionTime =
+        mapping.executionTime || mapping.exercise?.executionTime || mapping.exercise?.defaultExecutionTime || 0;
+      const restSets = mapping.restSets || mapping.exercise?.restSets || mapping.exercise?.defaultRestBetweenSets || 30;
+      const restReps = mapping.restReps || mapping.exercise?.restReps || mapping.exercise?.defaultRestBetweenReps || 0;
 
-      if (type === 'time') {
-        // Time-based exercise: sets * duration
-        totalSeconds += sets * duration;
-      } else {
-        // Reps-based exercise: ~3 sec/rep * reps * sets
-        totalSeconds += sets * reps * 3;
-      }
-      // Add rest between sets (~30s)
-      totalSeconds += (sets - 1) * 30;
+      totalSeconds += calculateEstimatedTime({
+        sets,
+        reps,
+        duration,
+        executionTime,
+        rest: restSets,
+        restReps,
+      });
     }
     return Math.round(totalSeconds / 60); // minutes
   }, [set.exerciseMappings]);

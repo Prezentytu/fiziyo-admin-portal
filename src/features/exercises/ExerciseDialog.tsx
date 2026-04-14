@@ -240,7 +240,8 @@ export function ExerciseDialog({
         'illustration'
       );
 
-      if (!generated?.file) {
+      const generatedFile = generated?.file;
+      if (!generatedFile) {
         toast.error('Nie udało się wygenerować obrazu');
         return;
       }
@@ -250,7 +251,7 @@ export function ExerciseDialog({
         toast.error('Maksymalna liczba zdjęć to 5');
         return;
       }
-      setNewMediaFiles((previousFiles) => [...previousFiles, generated.file]);
+      setNewMediaFiles((previousFiles) => [...previousFiles, generatedFile]);
       toast.success('Obraz został wygenerowany');
     } catch (error: unknown) {
       console.error('Błąd podczas generowania obrazu AI:', error);

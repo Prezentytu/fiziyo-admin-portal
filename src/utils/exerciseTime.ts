@@ -1,11 +1,10 @@
 /**
  * Oblicza szacowany czas wykonania ćwiczenia w sekundach.
  *
- * Dla ćwiczeń czasowych (TIME):
- *   serie * czas_trwania + (serie - 1) * przerwa
- *
- * Dla ćwiczeń na powtórzenia (REPS):
- *   serie * (powtórzenia * czas_jednego_powtórzenia) + (serie - 1) * przerwa
+ * Priorytet:
+ * 1) executionTime > 0: seria = reps * executionTime + mikroprzerwy
+ * 2) duration > 0: duration traktujemy jako override czasu jednej serii
+ * 3) fallback: 3 sekundy na powtórzenie
  */
 export function calculateEstimatedTime(params: {
   sets: number;
@@ -17,17 +16,23 @@ export function calculateEstimatedTime(params: {
 }): number {
   const { sets, reps, duration, executionTime, rest = 60, restReps = 0 } = params;
 
-  if (duration && duration > 0) {
-    // Ćwiczenie czasowe (TIME): serie * czas + przerwy między seriami
-    return sets * duration + Math.max(0, sets - 1) * rest;
+  const repsPerSet = reps || 10;
+  const normalizedExecutionTime = executionTime && executionTime > 0 ? executionTime : 0;
+  const durationOverride = duration && duration > 0 ? duration : 0;
+
+  let exerciseTime = 0;
+  let microBreakTime = 0;
+
+  if (normalizedExecutionTime > 0) {
+    exerciseTime = sets * repsPerSet * normalizedExecutionTime;
+    microBreakTime = sets * Math.max(0, repsPerSet - 1) * Math.max(0, restReps);
+  } else if (durationOverride > 0) {
+    exerciseTime = sets * durationOverride;
+  } else {
+    exerciseTime = sets * repsPerSet * 3;
+    microBreakTime = sets * Math.max(0, repsPerSet - 1) * Math.max(0, restReps);
   }
 
-  // Ćwiczenie na powtórzenia (REPS)
-  // Domyślnie 3 sekundy na powtórzenie jeśli nie podano executionTime
-  const repTime = executionTime || 3;
-  const repsPerSet = reps || 10;
-  const exerciseTime = sets * repsPerSet * repTime;
-  const microBreakTime = sets * Math.max(0, repsPerSet - 1) * Math.max(0, restReps);
   const restTime = Math.max(0, sets - 1) * rest;
 
   return exerciseTime + microBreakTime + restTime;

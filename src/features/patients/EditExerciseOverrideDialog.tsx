@@ -522,43 +522,6 @@ function EditExerciseOverrideDialogContent({
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              {/* Duration */}
-              <div className="space-y-2">
-                <Label className="text-sm flex items-center gap-2">
-                  <Clock className="h-4 w-4 text-muted-foreground" />
-                  Czas serii (sekundy)
-                </Label>
-                <div className="flex items-center gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon"
-                    className="h-11 w-11 shrink-0"
-                    onClick={() => setDuration(Math.max(0, duration - 5))}
-                  >
-                    <Minus className="h-4 w-4" />
-                  </Button>
-                  <Input
-                    type="number"
-                    value={duration}
-                    onChange={(e) => setDuration(Math.max(0, parseInt(e.target.value) || 0))}
-                    className="h-11 text-center text-lg font-semibold"
-                    step={5}
-                    data-testid="patient-exercise-override-duration-input"
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon"
-                    className="h-11 w-11 shrink-0"
-                    onClick={() => setDuration(duration + 5)}
-                  >
-                    <Plus className="h-4 w-4" />
-                  </Button>
-                </div>
-                <p className="text-xs text-muted-foreground">Użyj dla ćwiczeń time-based (override czasu serii)</p>
-              </div>
-
               {/* Execution time */}
               <div className="space-y-2">
                 <Label className="text-sm flex items-center gap-2">
@@ -594,6 +557,43 @@ function EditExerciseOverrideDialogContent({
                   </Button>
                 </div>
                 <p className="text-xs text-muted-foreground">Główny timer pojedynczego powtórzenia</p>
+              </div>
+
+              {/* Duration */}
+              <div className="space-y-2">
+                <Label className="text-sm flex items-center gap-2">
+                  <Clock className="h-4 w-4 text-muted-foreground" />
+                  Czas serii (sekundy)
+                </Label>
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    className="h-11 w-11 shrink-0"
+                    onClick={() => setDuration(Math.max(0, duration - 5))}
+                  >
+                    <Minus className="h-4 w-4" />
+                  </Button>
+                  <Input
+                    type="number"
+                    value={duration}
+                    onChange={(e) => setDuration(Math.max(0, parseInt(e.target.value) || 0))}
+                    className="h-11 text-center text-lg font-semibold"
+                    step={5}
+                    data-testid="patient-exercise-override-duration-input"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    className="h-11 w-11 shrink-0"
+                    onClick={() => setDuration(duration + 5)}
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">Użyj dla ćwiczeń time-based (override czasu serii)</p>
               </div>
             </div>
 

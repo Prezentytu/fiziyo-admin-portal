@@ -1237,8 +1237,8 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
 
     setIsGeneratingImage(true);
     try {
-      // Explicit duration override means strict time-based exercise
-      const inferredType = data.duration ? 'time' : 'reps';
+      // Timer semantics: executionTime > 0 means timed exercise.
+      const inferredType = (data.executionTime ?? 0) > 0 ? 'time' : 'reps';
       const result = await aiService.generateExerciseImage(data.name, data.description, inferredType, 'illustration');
 
       if (result?.file) {
@@ -1252,7 +1252,7 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
     } finally {
       setIsGeneratingImage(false);
     }
-  }, [data.name, data.description, data.duration]);
+  }, [data.name, data.description, data.executionTime]);
 
   // Remove image
   const handleRemoveImage = useCallback((index: number) => {
@@ -1386,8 +1386,8 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
 
     setIsSaving(true);
 
-    // Keep backend-compatible inference: explicit duration override means time-based
-    const inferredType = data.duration ? 'time' : 'reps';
+    // Timer semantics: executionTime > 0 means timed exercise.
+    const inferredType = (data.executionTime ?? 0) > 0 ? 'time' : 'reps';
 
     try {
       // Parse weight field into load components

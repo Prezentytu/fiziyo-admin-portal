@@ -14,6 +14,14 @@ Dziennik wniosków z pracy AI agentów. Po każdej korekcie dodaj nowy wpis.
 
 ## Wpisy
 
+### 2026-04-14 - Timer pacjenta musi byc sterowany executionTime
+
+- **Kategoria**: `GraphQL`
+- **Problem**: Pacjent dostawal bledny timer lub brak timera, mimo poprawnie ustawionego czasu powtorzenia przez fizjoterapeute.
+- **Przyczyna**: Logika wykonania cwiczenia i estymacji czasu opierala sie na `type` oraz `duration` (czas serii), a nie na `executionTime` (czas powtorzenia); dodatkowo `executionTime` z mapping bywalo gubione w transformacji read-modelu.
+- **Rozwiązanie**: Ujednolicono regule `executionTime > 0 => timer`, dodano propagacje `mapping.executionTime`, przeniesiono estymacje czasu na helpery preferujace `executionTime`, a `duration` pozostawiono jako wtorny override.
+- **Reguła**: W calym flow (admin -> GraphQL -> mobile player) `executionTime` jest single source of truth dla timera; `duration` nie moze decydowac o trybie cwiczenia.
+
 ### 2026-04-14 - Unassign PATIENT_PLAN wymaga domkniecia lifecycle po stronie backendu
 
 - **Kategoria**: `GraphQL`

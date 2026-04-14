@@ -44,6 +44,7 @@ import { ExerciseExecutionCard, fromBuilderExercise, HIDE_EXERCISE_TAGS } from '
 import type { ExerciseExecutionCardData } from '@/components/shared/exercise';
 import { ColorBadge } from '@/components/shared/ColorBadge';
 import { filterExercisesBySource, countBySource } from '@/utils/exerciseSourceFilter';
+import { calculateEstimatedTime } from '@/utils/exerciseTime';
 import type { ExerciseSourceFilter } from '@/utils/exerciseSourceFilter';
 import { cn } from '@/lib/utils';
 
@@ -486,7 +487,7 @@ export function ExerciseSetBuilder({
     (exercise: BuilderExercise): ExerciseParams => ({
       sets: exercise.defaultSets ?? exercise.sets ?? 3,
       reps: exercise.defaultReps ?? exercise.reps ?? 10,
-      duration: exercise.defaultDuration ?? exercise.duration ?? 30,
+      duration: exercise.defaultDuration ?? exercise.duration ?? 0,
       restSets: exercise.defaultRestBetweenSets ?? exercise.restSets ?? 60,
       restReps: exercise.defaultRestBetweenReps ?? exercise.restReps ?? 0,
       preparationTime: 0,
@@ -517,7 +518,7 @@ export function ExerciseSetBuilder({
           : {
               sets: 3,
               reps: 10,
-              duration: 30,
+              duration: 0,
               restSets: 60,
               restReps: 0,
               preparationTime: 0,
@@ -602,24 +603,23 @@ export function ExerciseSetBuilder({
 
     for (const { instanceId, exercise } of selectedInstancesData) {
       const params = exerciseParams.get(instanceId) || getDefaultParams(exercise);
-      const isTimeType = exercise.type === 'time';
 
       // Use defaults for undefined values
       const sets = params.sets ?? 3;
       const reps = params.reps ?? 10;
-      const duration = params.duration ?? 30;
+      const duration = params.duration ?? 0;
       const restSets = params.restSets ?? 60;
+      const restReps = params.restReps ?? 0;
       const executionTime = params.executionTime ?? 0;
 
-      if (isTimeType) {
-        totalSeconds += sets * duration;
-        totalSeconds += (sets - 1) * restSets;
-      } else {
-        const secondsPerRep = executionTime > 0 ? executionTime : 2;
-        const repTime = reps * secondsPerRep;
-        totalSeconds += sets * repTime;
-        totalSeconds += (sets - 1) * restSets;
-      }
+      totalSeconds += calculateEstimatedTime({
+        sets,
+        reps,
+        duration,
+        executionTime,
+        rest: restSets,
+        restReps,
+      });
     }
 
     return Math.round(totalSeconds / 60);

@@ -93,8 +93,8 @@ export function ExerciseForm({
 
   const handleSubmit = async (values: ExerciseFormValues) => {
     try {
-      // Keep backend-compatible inference: explicit duration override means time-based.
-      const inferredType: ExerciseFormValues['type'] = (values.duration ?? 0) > 0 ? 'time' : 'reps';
+      // Timer semantics: executionTime > 0 means timed exercise for patient.
+      const inferredType: ExerciseFormValues['type'] = (values.executionTime ?? 0) > 0 ? 'time' : 'reps';
       await onSubmit({ ...values, type: inferredType });
     } catch (error) {
       console.error('Błąd podczas zapisywania:', error);
