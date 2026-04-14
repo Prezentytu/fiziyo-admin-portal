@@ -40,7 +40,11 @@ export class TokenExchangeService {
 
       if (!response.ok) {
         const errorText = await response.text();
-        throw new Error(`Token exchange failed: ${response.status} ${response.statusText} - ${errorText}`);
+        const responseError = new Error(
+          `Token exchange failed: ${response.status} ${response.statusText} - ${errorText}`
+        ) as Error & { status?: number };
+        responseError.status = response.status;
+        throw responseError;
       }
 
       const data: TokenExchangeResponse = await response.json();

@@ -43,7 +43,7 @@ export default function VerifyEmailPage() {
 
         if (result.status === 'complete') {
           await setActive({ session: result.createdSessionId });
-          router.replace('/');
+          router.replace('/finalizing');
         } else {
           setError('Weryfikacja nie powiodła się. Spróbuj ponownie.');
         }
