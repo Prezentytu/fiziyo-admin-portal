@@ -740,7 +740,7 @@ export function PatientAssignmentCard({
         open={isDeleteDialogOpen}
         onOpenChange={setIsDeleteDialogOpen}
         title="Usuń przypisanie"
-        description={`Czy na pewno chcesz usunąć przypisanie zestawu "${exerciseSet?.name}" dla tego pacjenta? Ta operacja jest nieodwracalna.`}
+        description={`Czy na pewno chcesz usunąć przypisanie zestawu "${exerciseSet?.name}" dla tego pacjenta? Ta operacja jest nieodwracalna. Usunięcie przypisania może skrócić okres dostępu Premium pacjenta.`}
         confirmText="Usuń"
         variant="destructive"
         onConfirm={handleDelete}
