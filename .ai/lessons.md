@@ -14,6 +14,14 @@ Dziennik wniosków z pracy AI agentów. Po każdej korekcie dodaj nowy wpis.
 
 ## Wpisy
 
+### 2026-04-14 - Unassign PATIENT_PLAN wymaga domkniecia lifecycle po stronie backendu
+
+- **Kategoria**: `GraphQL`
+- **Problem**: Po usunieciu przypisania plan pacjenta znikal z widoku pacjenta, ale nadal byl widoczny na liscie "spersonalizowanych zestawow".
+- **Przyczyna**: `removeExerciseSetAssignment` usuwalo tylko rekord `PatientAssignment`; aktywny `ExerciseSet(kind=PATIENT_PLAN)` zostawal w organizacji i byl dalej zwracany przez listy oparte o `isActive`.
+- **Rozwiązanie**: Backend po usunieciu assignmentu sprawdza czy `PATIENT_PLAN` zostal osierocony i wtedy ustawia `IsActive=false` oraz emituje event `exerciseSet:updated`; adminowe flow unassign dopina refetch listy setow organizacji.
+- **Reguła**: Dla modelu `always-fork` operacja unassign musi zamykac lifecycle planu pacjenta (co najmniej deaktywacja po ostatnim assignment), a nie tylko usuwac relacje pacjent-zestaw.
+
 ### 2026-04-14 - Flow create/edit musi dzielic ten sam kanal mediow
 
 - **Kategoria**: `UI/UX`

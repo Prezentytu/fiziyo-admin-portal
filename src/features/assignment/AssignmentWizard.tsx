@@ -787,20 +787,30 @@ function AssignmentWizardContent({
         return;
       }
 
+      const refetchQueries = [
+        // Refetch patient's assignments (for patient detail page)
+        {
+          query: GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY,
+          variables: { userId: patientId },
+        },
+        // Refetch exercise set with assignments (for set detail page)
+        {
+          query: GET_EXERCISE_SET_WITH_ASSIGNMENTS_QUERY,
+          variables: { exerciseSetId },
+        },
+        ...(organizationId
+          ? [
+              {
+                query: GET_ORGANIZATION_EXERCISE_SETS_QUERY,
+                variables: { organizationId },
+              },
+            ]
+          : []),
+      ];
+
       await removeAssignment({
         variables: { exerciseSetId, patientId },
-        refetchQueries: [
-          // Refetch patient's assignments (for patient detail page)
-          {
-            query: GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY,
-            variables: { userId: patientId },
-          },
-          // Refetch exercise set with assignments (for set detail page)
-          {
-            query: GET_EXERCISE_SET_WITH_ASSIGNMENTS_QUERY,
-            variables: { exerciseSetId },
-          },
-        ],
+        refetchQueries,
       });
 
       toast.success(
@@ -830,6 +840,7 @@ function AssignmentWizardContent({
     preselectedSet?.id,
     selectedSet?.id,
     effectiveSetId,
+    organizationId,
     removeAssignment,
     mode,
     refetchPatientAssignments,
