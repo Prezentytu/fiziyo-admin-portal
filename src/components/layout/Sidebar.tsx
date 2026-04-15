@@ -183,7 +183,7 @@ export function Sidebar({ isCollapsed, onToggleCollapse }: SidebarProps) {
             isCollapsed ? 'justify-center px-3' : 'justify-start px-4 xl:px-6'
           )}
         >
-          <Logo variant={isCollapsed ? 'icon' : 'full'} size="sm" asLink href="/" />
+          <Logo variant={isCollapsed ? 'icon' : 'default'} size="sm" asLink href="/" />
 
           {!isCollapsed && (
             <button
