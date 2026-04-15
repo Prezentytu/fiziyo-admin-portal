@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import { useUser, useClerk } from '@clerk/nextjs';
+import { useQuery } from '@apollo/client/react';
 import { Settings, HelpCircle, LogOut, ChevronUp } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
@@ -18,6 +19,9 @@ import {
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useOrganization } from '@/contexts/OrganizationContext';
+import { GET_USER_BY_CLERK_ID_QUERY } from '@/graphql/queries/users.queries';
+import type { UserByClerkIdResponse } from '@/types/apollo';
+import { getCompactDisplayName, resolveDisplayName } from './userDisplayName';
 
 // ========================================
 // Types
@@ -40,14 +44,6 @@ function getInitials(name: string): string {
     .slice(0, 2);
 }
 
-function truncateEmail(email: string, maxLength: number = 20): string {
-  if (email.length <= maxLength) return email;
-  const [local, domain] = email.split('@');
-  if (!domain) return email;
-  const truncatedLocal = local.slice(0, 3) + '...';
-  return `${truncatedLocal}@${domain}`;
-}
-
 // ========================================
 // Component
 // ========================================
@@ -58,11 +54,20 @@ export function UserProfileFooter({ isCollapsed }: UserProfileFooterProps) {
   const { hasMultipleOrganizations, currentOrganization, organizations, switchOrganization, isSwitching } =
     useOrganization();
   const [isOpen, setIsOpen] = useState(false);
+  const { data } = useQuery<UserByClerkIdResponse>(GET_USER_BY_CLERK_ID_QUERY, {
+    variables: { clerkId: user?.id },
+    skip: !user?.id,
+  });
 
+  const backendUser = data?.userByClerkId;
   const avatarUrl = user?.imageUrl;
-  const fullName = user?.fullName || user?.firstName || 'Użytkownik';
-  const email = user?.primaryEmailAddress?.emailAddress || '';
-  const initials = getInitials(fullName);
+  const fullName =
+    resolveDisplayName(backendUser?.fullname, backendUser?.personalData?.firstName, backendUser?.personalData?.lastName) ||
+    resolveDisplayName(user?.fullName, user?.firstName, user?.lastName);
+  const email = user?.primaryEmailAddress?.emailAddress || backendUser?.email || '';
+  const displayName = fullName || email.split('@')[0] || 'Brak danych';
+  const compactDisplayName = getCompactDisplayName(displayName);
+  const initials = getInitials(displayName);
 
   // Loading state
   if (!isLoaded) {
@@ -97,7 +102,7 @@ export function UserProfileFooter({ isCollapsed }: UserProfileFooterProps) {
         >
           {/* Avatar */}
           <Avatar className="h-9 w-9 shrink-0">
-            <AvatarImage src={avatarUrl} alt={fullName} />
+            <AvatarImage src={avatarUrl} alt={displayName} />
             <AvatarFallback className="bg-linear-to-br from-primary to-primary-dark text-primary-foreground text-sm font-semibold">
               {initials}
             </AvatarFallback>
@@ -107,8 +112,9 @@ export function UserProfileFooter({ isCollapsed }: UserProfileFooterProps) {
           {!isCollapsed && (
             <>
               <div className="flex-1 min-w-0 text-left">
-                <div className="text-sm font-medium text-foreground truncate">{fullName}</div>
-                <div className="text-xs text-muted-foreground truncate">{truncateEmail(email)}</div>
+                <div className="text-sm font-medium text-foreground truncate leading-tight" title={displayName}>
+                  {compactDisplayName}
+                </div>
               </div>
 
               {/* Menu Icon - changes on hover/open */}
@@ -134,13 +140,13 @@ export function UserProfileFooter({ isCollapsed }: UserProfileFooterProps) {
           <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-2">Zalogowany jako</p>
           <div className="flex items-center gap-3">
             <Avatar className="h-10 w-10">
-              <AvatarImage src={avatarUrl} alt={fullName} />
+              <AvatarImage src={avatarUrl} alt={displayName} />
               <AvatarFallback className="bg-linear-to-br from-primary to-primary-dark text-primary-foreground text-sm font-semibold">
                 {initials}
               </AvatarFallback>
             </Avatar>
             <div className="flex-1 min-w-0">
-              <p className="font-semibold text-foreground truncate">{fullName}</p>
+              <p className="font-semibold text-foreground truncate">{displayName}</p>
               <p className="text-xs text-muted-foreground truncate">{email}</p>
             </div>
           </div>
@@ -235,7 +241,7 @@ export function UserProfileFooter({ isCollapsed }: UserProfileFooterProps) {
             <div>{menuContent}</div>
           </TooltipTrigger>
           <TooltipContent side="right" className="font-medium">
-            <div className="text-sm">{fullName}</div>
+            <div className="text-sm">{displayName}</div>
             <div className="text-xs text-muted-foreground">Kliknij dla opcji</div>
           </TooltipContent>
         </Tooltip>

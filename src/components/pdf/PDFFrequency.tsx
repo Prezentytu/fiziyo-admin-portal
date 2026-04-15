@@ -1,10 +1,11 @@
+import { formatFrequencyDisplay } from '@/utils/frequencyDisplay';
 import { View, Text } from '@react-pdf/renderer';
 import { pdfStyles } from './styles';
 import { formatTimes } from './polishUtils';
 import type { PDFFrequency as PDFFrequencyType } from './types';
 
 interface PDFFrequencyProps {
-  frequency: PDFFrequencyType;
+  readonly frequency: PDFFrequencyType;
 }
 
 const DAYS = [
@@ -21,10 +22,11 @@ const DAYS = [
  * Kompaktowy harmonogram ćwiczeń
  * LOGIKA DNI:
  * - Jeśli są wybrane konkretne dni -> pokaż kółka z dniami
- * - Jeśli brak wybranych dni -> pokaż "Codziennie / Wg uznania" (bez pustych kółek!)
+ * - Jeśli brak wybranych dni -> pokaż rekomendację tygodniową (jeśli istnieje)
  */
 export function PDFFrequency({ frequency }: PDFFrequencyProps) {
   const timesPerDayText = frequency.timesPerDay ? `${formatTimes(frequency.timesPerDay)} dziennie` : null;
+  const frequencyDisplay = formatFrequencyDisplay(frequency);
 
   // Sprawdź czy są wybrane konkretne dni
   const selectedDays = DAYS.filter((day) => frequency[day.key as keyof PDFFrequencyType] === true);
@@ -68,10 +70,10 @@ export function PDFFrequency({ frequency }: PDFFrequencyProps) {
             </View>
           </>
         ) : (
-          // Brak konkretnych dni lub wszystkie dni - elegancki napis
+          // Brak konkretnych dni lub wszystkie dni - czytelny fallback tekstowy
           <View style={pdfStyles.frequencyItem}>
             <Text style={pdfStyles.frequencyLabel}>Dni treningowe: </Text>
-            <Text style={pdfStyles.frequencyValueAccent}>{isEveryDay ? 'Codziennie' : 'Codziennie / Wg uznania'}</Text>
+            <Text style={pdfStyles.frequencyValueAccent}>{isEveryDay ? 'Codziennie' : frequencyDisplay}</Text>
           </View>
         )}
 

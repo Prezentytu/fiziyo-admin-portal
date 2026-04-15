@@ -1,10 +1,12 @@
 'use client';
 
+import { useCallback } from 'react';
 import { cn } from '@/lib/utils';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Plus, Minus } from 'lucide-react';
+import { useNumericDraft } from '@/hooks/useNumericDraft';
 
 const DAYS = [
   { key: 'monday', label: 'Pn', fullLabel: 'Poniedziałek' },
@@ -35,6 +37,38 @@ interface FrequencyPickerProps {
 }
 
 export function FrequencyPicker({ value, onChange, className }: FrequencyPickerProps) {
+  const commitTimesPerDay = useCallback(
+    (nextTimesPerDay: number) => {
+      onChange({ ...value, timesPerDay: nextTimesPerDay });
+    },
+    [onChange, value]
+  );
+
+  const commitBreakBetweenSets = useCallback(
+    (nextBreakBetweenSets: number) => {
+      onChange({ ...value, breakBetweenSets: nextBreakBetweenSets });
+    },
+    [onChange, value]
+  );
+
+  const timesPerDayField = useNumericDraft({
+    value: value.timesPerDay,
+    onCommit: commitTimesPerDay,
+    min: 1,
+    max: 10,
+    step: 1,
+    parseMode: 'int',
+  });
+
+  const breakBetweenSetsField = useNumericDraft({
+    value: value.breakBetweenSets,
+    onCommit: commitBreakBetweenSets,
+    min: 0,
+    max: 24,
+    step: 1,
+    parseMode: 'float',
+  });
+
   const toggleDay = (day: keyof FrequencyValue) => {
     if (typeof value[day] === 'boolean') {
       onChange({ ...value, [day]: !value[day] });
@@ -145,13 +179,8 @@ export function FrequencyPicker({ value, onChange, className }: FrequencyPickerP
               variant="outline"
               size="icon"
               className="h-11 w-11 shrink-0"
-              onClick={() =>
-                onChange({
-                  ...value,
-                  timesPerDay: Math.max(1, value.timesPerDay - 1),
-                })
-              }
-              disabled={value.timesPerDay <= 1}
+              onClick={timesPerDayField.decrement}
+              disabled={!timesPerDayField.canDecrement}
             >
               <Minus className="h-4 w-4" />
             </Button>
@@ -160,13 +189,11 @@ export function FrequencyPicker({ value, onChange, className }: FrequencyPickerP
               type="number"
               min={1}
               max={10}
-              value={value.timesPerDay}
-              onChange={(e) =>
-                onChange({
-                  ...value,
-                  timesPerDay: Math.max(1, parseInt(e.target.value) || 1),
-                })
-              }
+              value={timesPerDayField.draftValue}
+              onChange={(e) => timesPerDayField.setDraftValue(e.target.value)}
+              onFocus={timesPerDayField.handleFocus}
+              onBlur={timesPerDayField.handleBlur}
+              onKeyDown={timesPerDayField.handleKeyDown}
               className="h-11 text-center text-lg font-semibold"
               data-testid="set-frequency-times-per-day"
             />
@@ -175,13 +202,8 @@ export function FrequencyPicker({ value, onChange, className }: FrequencyPickerP
               variant="outline"
               size="icon"
               className="h-11 w-11 shrink-0"
-              onClick={() =>
-                onChange({
-                  ...value,
-                  timesPerDay: Math.min(10, value.timesPerDay + 1),
-                })
-              }
-              disabled={value.timesPerDay >= 10}
+              onClick={timesPerDayField.increment}
+              disabled={!timesPerDayField.canIncrement}
             >
               <Plus className="h-4 w-4" />
             </Button>
@@ -199,13 +221,8 @@ export function FrequencyPicker({ value, onChange, className }: FrequencyPickerP
               variant="outline"
               size="icon"
               className="h-11 w-11 shrink-0"
-              onClick={() =>
-                onChange({
-                  ...value,
-                  breakBetweenSets: Math.max(0, value.breakBetweenSets - 1),
-                })
-              }
-              disabled={value.breakBetweenSets <= 0}
+              onClick={breakBetweenSetsField.decrement}
+              disabled={!breakBetweenSetsField.canDecrement}
             >
               <Minus className="h-4 w-4" />
             </Button>
@@ -215,13 +232,11 @@ export function FrequencyPicker({ value, onChange, className }: FrequencyPickerP
               min={0}
               max={24}
               step={0.5}
-              value={value.breakBetweenSets}
-              onChange={(e) =>
-                onChange({
-                  ...value,
-                  breakBetweenSets: Math.max(0, parseFloat(e.target.value) || 0),
-                })
-              }
+              value={breakBetweenSetsField.draftValue}
+              onChange={(e) => breakBetweenSetsField.setDraftValue(e.target.value)}
+              onFocus={breakBetweenSetsField.handleFocus}
+              onBlur={breakBetweenSetsField.handleBlur}
+              onKeyDown={breakBetweenSetsField.handleKeyDown}
               className="h-11 text-center text-lg font-semibold"
             />
             <Button
@@ -229,13 +244,8 @@ export function FrequencyPicker({ value, onChange, className }: FrequencyPickerP
               variant="outline"
               size="icon"
               className="h-11 w-11 shrink-0"
-              onClick={() =>
-                onChange({
-                  ...value,
-                  breakBetweenSets: Math.min(24, value.breakBetweenSets + 1),
-                })
-              }
-              disabled={value.breakBetweenSets >= 24}
+              onClick={breakBetweenSetsField.increment}
+              disabled={!breakBetweenSetsField.canIncrement}
             >
               <Plus className="h-4 w-4" />
             </Button>

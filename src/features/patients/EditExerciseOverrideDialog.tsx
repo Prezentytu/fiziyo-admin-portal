@@ -31,6 +31,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { ImagePlaceholder } from '@/components/shared/ImagePlaceholder';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { getMediaUrl } from '@/utils/mediaUrl';
+import { useNumericDraft } from '@/hooks/useNumericDraft';
 
 import { UPDATE_PATIENT_EXERCISE_OVERRIDES_MUTATION } from '@/graphql/mutations/exercises.mutations';
 import { GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY } from '@/graphql/queries/patientAssignments.queries';
@@ -189,6 +190,50 @@ function EditExerciseOverrideDialogContent({
   const [exerciseSide, setExerciseSide] = useState(initialExerciseSide);
   const [customImages, setCustomImages] = useState<string[]>(initialCustomImages);
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
+
+  const setsField = useNumericDraft({
+    value: sets,
+    onCommit: setSets,
+    min: 0,
+    parseMode: 'int',
+  });
+
+  const repsField = useNumericDraft({
+    value: reps,
+    onCommit: setReps,
+    min: 0,
+    parseMode: 'int',
+  });
+
+  const executionTimeField = useNumericDraft({
+    value: executionTime,
+    onCommit: setExecutionTime,
+    min: 0,
+    step: 5,
+    parseMode: 'int',
+  });
+
+  const durationField = useNumericDraft({
+    value: duration,
+    onCommit: setDuration,
+    min: 0,
+    step: 5,
+    parseMode: 'int',
+  });
+
+  const restSetsField = useNumericDraft({
+    value: restSets,
+    onCommit: setRestSets,
+    min: 0,
+    parseMode: 'int',
+  });
+
+  const restRepsField = useNumericDraft({
+    value: restReps,
+    onCommit: setRestReps,
+    min: 0,
+    parseMode: 'int',
+  });
 
   // File input ref
   const fileInputRef = React.useRef<HTMLInputElement>(null);
@@ -466,14 +511,18 @@ function EditExerciseOverrideDialogContent({
                     variant="outline"
                     size="icon"
                     className="h-11 w-11 shrink-0"
-                    onClick={() => setSets(Math.max(0, sets - 1))}
+                    onClick={setsField.decrement}
+                    disabled={!setsField.canDecrement}
                   >
                     <Minus className="h-4 w-4" />
                   </Button>
                   <Input
                     type="number"
-                    value={sets}
-                    onChange={(e) => setSets(Math.max(0, parseInt(e.target.value) || 0))}
+                    value={setsField.draftValue}
+                    onChange={(e) => setsField.setDraftValue(e.target.value)}
+                    onFocus={setsField.handleFocus}
+                    onBlur={setsField.handleBlur}
+                    onKeyDown={setsField.handleKeyDown}
                     className="h-11 text-center text-lg font-semibold"
                     data-testid="patient-exercise-override-sets-input"
                   />
@@ -482,7 +531,7 @@ function EditExerciseOverrideDialogContent({
                     variant="outline"
                     size="icon"
                     className="h-11 w-11 shrink-0"
-                    onClick={() => setSets(sets + 1)}
+                    onClick={setsField.increment}
                   >
                     <Plus className="h-4 w-4" />
                   </Button>
@@ -497,14 +546,18 @@ function EditExerciseOverrideDialogContent({
                     variant="outline"
                     size="icon"
                     className="h-11 w-11 shrink-0"
-                    onClick={() => setReps(Math.max(0, reps - 1))}
+                    onClick={repsField.decrement}
+                    disabled={!repsField.canDecrement}
                   >
                     <Minus className="h-4 w-4" />
                   </Button>
                   <Input
                     type="number"
-                    value={reps}
-                    onChange={(e) => setReps(Math.max(0, parseInt(e.target.value) || 0))}
+                    value={repsField.draftValue}
+                    onChange={(e) => repsField.setDraftValue(e.target.value)}
+                    onFocus={repsField.handleFocus}
+                    onBlur={repsField.handleBlur}
+                    onKeyDown={repsField.handleKeyDown}
                     className="h-11 text-center text-lg font-semibold"
                     data-testid="patient-exercise-override-reps-input"
                   />
@@ -513,7 +566,7 @@ function EditExerciseOverrideDialogContent({
                     variant="outline"
                     size="icon"
                     className="h-11 w-11 shrink-0"
-                    onClick={() => setReps(reps + 1)}
+                    onClick={repsField.increment}
                   >
                     <Plus className="h-4 w-4" />
                   </Button>
@@ -534,14 +587,18 @@ function EditExerciseOverrideDialogContent({
                     variant="outline"
                     size="icon"
                     className="h-11 w-11 shrink-0"
-                    onClick={() => setExecutionTime(Math.max(0, executionTime - 5))}
+                    onClick={executionTimeField.decrement}
+                    disabled={!executionTimeField.canDecrement}
                   >
                     <Minus className="h-4 w-4" />
                   </Button>
                   <Input
                     type="number"
-                    value={executionTime}
-                    onChange={(e) => setExecutionTime(Math.max(0, parseInt(e.target.value) || 0))}
+                    value={executionTimeField.draftValue}
+                    onChange={(e) => executionTimeField.setDraftValue(e.target.value)}
+                    onFocus={executionTimeField.handleFocus}
+                    onBlur={executionTimeField.handleBlur}
+                    onKeyDown={executionTimeField.handleKeyDown}
                     className="h-11 text-center text-lg font-semibold"
                     step={5}
                     data-testid="patient-exercise-override-execution-time-input"
@@ -551,7 +608,7 @@ function EditExerciseOverrideDialogContent({
                     variant="outline"
                     size="icon"
                     className="h-11 w-11 shrink-0"
-                    onClick={() => setExecutionTime(executionTime + 5)}
+                    onClick={executionTimeField.increment}
                   >
                     <Plus className="h-4 w-4" />
                   </Button>
@@ -571,14 +628,18 @@ function EditExerciseOverrideDialogContent({
                     variant="outline"
                     size="icon"
                     className="h-11 w-11 shrink-0"
-                    onClick={() => setDuration(Math.max(0, duration - 5))}
+                    onClick={durationField.decrement}
+                    disabled={!durationField.canDecrement}
                   >
                     <Minus className="h-4 w-4" />
                   </Button>
                   <Input
                     type="number"
-                    value={duration}
-                    onChange={(e) => setDuration(Math.max(0, parseInt(e.target.value) || 0))}
+                    value={durationField.draftValue}
+                    onChange={(e) => durationField.setDraftValue(e.target.value)}
+                    onFocus={durationField.handleFocus}
+                    onBlur={durationField.handleBlur}
+                    onKeyDown={durationField.handleKeyDown}
                     className="h-11 text-center text-lg font-semibold"
                     step={5}
                     data-testid="patient-exercise-override-duration-input"
@@ -588,7 +649,7 @@ function EditExerciseOverrideDialogContent({
                     variant="outline"
                     size="icon"
                     className="h-11 w-11 shrink-0"
-                    onClick={() => setDuration(duration + 5)}
+                    onClick={durationField.increment}
                   >
                     <Plus className="h-4 w-4" />
                   </Button>
@@ -603,8 +664,11 @@ function EditExerciseOverrideDialogContent({
                 <Label className="text-sm text-muted-foreground">Przerwa między seriami (s)</Label>
                 <Input
                   type="number"
-                  value={restSets}
-                  onChange={(e) => setRestSets(Math.max(0, Number.parseInt(e.target.value) || 0))}
+                  value={restSetsField.draftValue}
+                  onChange={(e) => restSetsField.setDraftValue(e.target.value)}
+                  onFocus={restSetsField.handleFocus}
+                  onBlur={restSetsField.handleBlur}
+                  onKeyDown={restSetsField.handleKeyDown}
                   className="h-11"
                   data-testid="patient-exercise-override-rest-sets-input"
                 />
@@ -614,8 +678,11 @@ function EditExerciseOverrideDialogContent({
                 <Label className="text-sm text-muted-foreground">Przerwa między powt. (s)</Label>
                 <Input
                   type="number"
-                  value={restReps}
-                  onChange={(e) => setRestReps(Math.max(0, Number.parseInt(e.target.value) || 0))}
+                  value={restRepsField.draftValue}
+                  onChange={(e) => restRepsField.setDraftValue(e.target.value)}
+                  onFocus={restRepsField.handleFocus}
+                  onBlur={restRepsField.handleBlur}
+                  onKeyDown={restRepsField.handleKeyDown}
                   className="h-11"
                   data-testid="patient-exercise-override-rest-reps-input"
                 />

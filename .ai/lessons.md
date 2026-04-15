@@ -14,6 +14,38 @@ Dziennik wniosków z pracy AI agentów. Po każdej korekcie dodaj nowy wpis.
 
 ## Wpisy
 
+### 2026-04-15 - Numeric patch mapper musi rozrozniac "brak pola" od "wyczysc pole"
+
+- **Kategoria**: `React`
+- **Problem**: W edycji parametrow cwiczenia pole `executionTime` po wpisaniu wartosci nie dalo sie przywrocic do pustego, mimo ze input wysylal `undefined` przy czyszczeniu.
+- **Przyczyna**: Warstwa mapowania patchy ignorowala pola o wartosci `undefined` przez warunki `patch.field !== undefined`, wiec intencja "wyczysc pole" byla tracona.
+- **Rozwiązanie**: W mapperach patchy przelaczono warunki na sprawdzanie obecnosci klucza (`'field' in patch`) i przepuszczanie `undefined` do stanu/mutacji.
+- **Reguła**: Dla formularzy z opcjonalnymi polami liczbowymi traktuj `undefined` jako prawidlowa wartosc biznesowa; odrozniaj "pole nieprzeslane" od "pole jawnie wyczyszczone".
+
+### 2026-04-15 - Jeden wizard dla create i edit planu pacjenta
+
+- **Kategoria**: `UI/UX`
+- **Problem**: Edycja planu pacjenta byla oddzielona od glownego kreatora przypisania, przez co terapeuta musial uczyc sie dwoch roznych flow dla tych samych krokow (cwiczenia + harmonogram).
+- **Przyczyna**: Rozdzielenie create/edit na osobny kontener modalowy mimo tego samego modelu mentalnego i tych samych danych domenowych.
+- **Rozwiązanie**: Rozszerzono `AssignmentWizard` o `editMode` z prefill istniejacego `PatientAssignment` oraz submit oparty o mutacje update (zestaw + mappingi + harmonogram przypisania).
+- **Reguła**: Jesli create i edit korzystaja z tych samych krokow domenowych, utrzymuj jeden wizard z trybami operacyjnymi zamiast dwoch niezaleznych entry-pointow.
+
+### 2026-04-15 - Create i edit planu pacjenta to dwa rozne flow
+
+- **Kategoria**: `UI/UX`
+- **Problem**: Na profilu pacjenta edycja planu byla rozproszona miedzy osobne akcje (`harmonogram`, `dodaj cwiczenie`, `edycja override`), przez co karta po rozwinieciu byla ciezka poznawczo i niespojna z modal-first UX.
+- **Przyczyna**: Proba obslugi pelnej edycji istniejacego planu przez zestaw malych dialogow zamiast jednego punktu wejscia oraz mieszanie semantyki create-flow z edit-flow.
+- **Rozwiązanie**: Wprowadzono glowne CTA `Edytuj plan` i modalowy kontener orchestrujacy edycje tresci planu oraz harmonogramu; jednoczesnie pozostawiono `AssignmentWizard` wyłącznie jako create-flow (`always-fork`).
+- **Reguła**: W domenie assignment nie dokladaj trybu edit do `AssignmentWizard`; create i edit rozdzielaj na poziomie punktu wejscia, a karta pacjenta ma byc modal-first z ograniczona liczba akcji inline.
+
+### 2026-04-15 - Brak dni nie znaczy brak harmonogramu
+
+- **Kategoria**: `UI/UX`
+- **Problem**: Karta przypisania pokazywala komunikat `Brak dni` mimo ustawionego celu tygodniowego (`timesPerWeek`), co sugerowalo brak planu zamiast trybu elastycznego.
+- **Przyczyna**: Render opieral sie tylko na flagach dni tygodnia i pomijal semantyke `timesPerWeek` dla harmonogramu bez wskazanych konkretnych dni.
+- **Rozwiązanie**: Ujednolicono formatter harmonogramu dla admin + PDF: gdy brak konkretnych dni i istnieje `timesPerWeek`, UI pokazuje rekomendacje typu `3 razy w tygodniu`.
+- **Reguła**: W harmonogramie assignmentu brak zaznaczonych dni oznacza tryb elastyczny, nie pusty plan; jesli jest `timesPerWeek`, zawsze pokazuj rekomendacje tygodniowa.
+
 ### 2026-04-14 - Timer pacjenta musi byc sterowany executionTime
 
 - **Kategoria**: `GraphQL`

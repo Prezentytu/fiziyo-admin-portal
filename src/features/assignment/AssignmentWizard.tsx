@@ -29,6 +29,7 @@ import { canProceedFromStep } from './utils/assignmentWizardUtils';
 import { decideAssignmentPlanMode, type AssignmentExecutionMode } from './utils/assignmentPlanDecision';
 import { buildStructuredLoad, mapAvailableExercises } from './utils/availableExercisesMapper';
 import { appendPatientIfMissing } from './utils/patientSelectionUtils';
+import { computeExerciseDiff, type ExerciseMappingSnapshot } from './utils/exerciseDiff';
 import { calculateEstimatedTime } from '@/utils/exerciseTime';
 import {
   getWizardSteps,
@@ -57,6 +58,10 @@ import {
   REMOVE_EXERCISE_SET_ASSIGNMENT_MUTATION,
   CREATE_EXERCISE_SET_MUTATION,
   ADD_EXERCISE_TO_EXERCISE_SET_MUTATION,
+  UPDATE_EXERCISE_SET_MUTATION,
+  UPDATE_EXERCISE_IN_SET_MUTATION,
+  REMOVE_EXERCISE_FROM_SET_MUTATION,
+  UPDATE_EXERCISE_SET_ASSIGNMENT_MUTATION,
 } from '@/graphql/mutations/exercises.mutations';
 import { GET_AVAILABLE_EXERCISES_QUERY } from '@/graphql/queries/exercises.queries';
 import { GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY } from '@/graphql/queries/patientAssignments.queries';
@@ -190,6 +195,8 @@ function AssignmentWizardContent({
   mode,
   preselectedSet,
   preselectedPatient,
+  editMode = false,
+  initialAssignment,
   organizationId,
   therapistId: _therapistId,
   onSuccess,
@@ -197,13 +204,15 @@ function AssignmentWizardContent({
   onHasChanges,
   onAssignmentSuccess,
 }: AssignmentWizardContentProps) {
+  const isEditMode = editMode && !!initialAssignment;
+
   // State for customize-set mode - true when creating new set, false when customizing existing
   const [isCreatingNewSet, setIsCreatingNewSet] = useState(false);
 
   // Compute dynamic steps based on what's preselected and if creating new set
   const steps = useMemo(
-    () => getWizardSteps(mode, !!preselectedSet, !!preselectedPatient, isCreatingNewSet),
-    [mode, preselectedSet, preselectedPatient, isCreatingNewSet]
+    () => getWizardSteps(mode, !!preselectedSet, !!preselectedPatient, isCreatingNewSet, isEditMode),
+    [mode, preselectedSet, preselectedPatient, isCreatingNewSet, isEditMode]
   );
 
   // Get first step id
@@ -238,6 +247,35 @@ function AssignmentWizardContent({
   const [isExerciseDialogOpen, setIsExerciseDialogOpen] = useState(false);
   const [isPatientDialogOpen, setIsPatientDialogOpen] = useState(false);
 
+  const initialEditSnapshots = useMemo<ExerciseMappingSnapshot[]>(() => {
+    if (!isEditMode || !initialAssignment?.exerciseSet.exerciseMappings) {
+      return [];
+    }
+
+    return initialAssignment.exerciseSet.exerciseMappings.map((mapping, index) => ({
+      mappingId: mapping.id,
+      exerciseId: mapping.exerciseId,
+      order: mapping.order ?? index + 1,
+      params: {
+        sets: mapping.sets ?? undefined,
+        reps: mapping.reps ?? undefined,
+        duration: mapping.duration ?? undefined,
+        restSets: mapping.restSets ?? undefined,
+        restReps: mapping.restReps ?? undefined,
+        preparationTime: mapping.preparationTime ?? undefined,
+        executionTime: mapping.executionTime ?? undefined,
+        notes: mapping.notes ?? '',
+        customName: mapping.customName ?? '',
+        customDescription: mapping.customDescription ?? '',
+        tempo: mapping.tempo ?? '',
+        loadType: mapping.loadType ?? undefined,
+        loadValue: mapping.loadValue ?? undefined,
+        loadUnit: mapping.loadUnit ?? undefined,
+        loadText: mapping.loadText ?? undefined,
+      },
+    }));
+  }, [initialAssignment, isEditMode]);
+
   // Track changes for close confirmation
   const hasChanges = !preselectedSet ? selectedSet !== null : selectedPatients.length > (preselectedPatient ? 1 : 0);
 
@@ -245,6 +283,73 @@ function AssignmentWizardContent({
   useEffect(() => {
     onHasChanges(hasChanges);
   }, [hasChanges, onHasChanges]);
+
+  useEffect(() => {
+    if (!open || !isEditMode || !initialAssignment || !preselectedPatient) {
+      return;
+    }
+
+    const assignmentSet = initialAssignment.exerciseSet;
+    const assignmentMappings = assignmentSet.exerciseMappings ?? [];
+
+    const instances: ExerciseInstance[] = [];
+    const params = new Map<string, ExerciseParams>();
+
+    assignmentMappings.forEach((mapping) => {
+      const instanceId = `existing-${mapping.id}`;
+      instances.push({
+        instanceId,
+        exerciseId: mapping.exerciseId,
+      });
+      params.set(instanceId, {
+        sets: mapping.sets ?? undefined,
+        reps: mapping.reps ?? undefined,
+        duration: mapping.duration ?? undefined,
+        restSets: mapping.restSets ?? undefined,
+        restReps: mapping.restReps ?? undefined,
+        executionTime: mapping.executionTime ?? undefined,
+        preparationTime: mapping.preparationTime ?? undefined,
+        tempo: mapping.tempo ?? '',
+        load: mapping.load ?? undefined,
+        notes: mapping.notes ?? '',
+        customName: mapping.customName ?? '',
+        customDescription: mapping.customDescription ?? '',
+        loadType: mapping.loadType ?? undefined,
+        loadValue: mapping.loadValue ?? undefined,
+        loadUnit: mapping.loadUnit ?? undefined,
+        loadText: mapping.loadText ?? undefined,
+      });
+    });
+
+    setCurrentStep('customize-set');
+    setCompletedSteps(new Set());
+    setSelectedSet(assignmentSet);
+    setSelectedPatients([preselectedPatient]);
+    setIsCreatingNewSet(false);
+    setOverrides(new Map());
+    setBuilderInstances(instances);
+    setBuilderParams(params);
+    setLocalExercises(assignmentMappings.map(createGhostCopy));
+    setPlanName(assignmentSet.name || 'Plan pacjenta');
+    setOrganizationSetName(`${assignmentSet.name || 'Plan pacjenta'} (organizacja)`);
+    setSaveAsOrganizationSet(false);
+    setFrequency({
+      timesPerDay: initialAssignment.frequency?.timesPerDay || 1,
+      timesPerWeek: initialAssignment.frequency?.timesPerWeek,
+      minTimesPerWeek: initialAssignment.frequency?.minTimesPerWeek,
+      isFlexible: initialAssignment.frequency?.isFlexible,
+      breakBetweenSets: initialAssignment.frequency?.breakBetweenSets || 60,
+      monday: initialAssignment.frequency?.monday ?? false,
+      tuesday: initialAssignment.frequency?.tuesday ?? false,
+      wednesday: initialAssignment.frequency?.wednesday ?? false,
+      thursday: initialAssignment.frequency?.thursday ?? false,
+      friday: initialAssignment.frequency?.friday ?? false,
+      saturday: initialAssignment.frequency?.saturday ?? false,
+      sunday: initialAssignment.frequency?.sunday ?? false,
+    });
+    setStartDate(new Date(initialAssignment.startDate));
+    setEndDate(new Date(initialAssignment.endDate));
+  }, [open, isEditMode, initialAssignment, preselectedPatient]);
 
   // Handle set change - create Ghost Copy and apply Smart Defaults
   const handleSetChange = useCallback((set: ExerciseSet | null) => {
@@ -316,14 +421,14 @@ function AssignmentWizardContent({
   }, []);
 
   // Queries - load sets if needed (from-patient mode, no preselected set, or user navigates to select-set step)
-  const needsSets = mode === 'from-patient' || !preselectedSet || currentStep === 'select-set';
+  const needsSets = !isEditMode && (mode === 'from-patient' || !preselectedSet || currentStep === 'select-set');
   const { data: setsData, loading: loadingSets } = useQuery(GET_ORGANIZATION_EXERCISE_SETS_QUERY, {
     variables: { organizationId },
     skip: !organizationId || !open || !needsSets,
   });
 
   // Load patients if needed (from-set mode or no preselected patient)
-  const needsPatients = !preselectedPatient;
+  const needsPatients = !isEditMode && !preselectedPatient;
   const { data: patientsData, loading: loadingPatients, refetch: refetchPatientsList } = useQuery(GET_ORGANIZATION_PATIENTS_QUERY, {
     variables: { organizationId, filter: 'all' },
     skip: !organizationId || !open || !needsPatients,
@@ -366,6 +471,10 @@ function AssignmentWizardContent({
   const [addExerciseToSet] = useMutation(ADD_EXERCISE_TO_EXERCISE_SET_MUTATION, {
     refetchQueries: [{ query: GET_ORGANIZATION_EXERCISE_SETS_QUERY, variables: { organizationId } }],
   });
+  const [updateExerciseSet] = useMutation(UPDATE_EXERCISE_SET_MUTATION);
+  const [updateExerciseInSet] = useMutation(UPDATE_EXERCISE_IN_SET_MUTATION);
+  const [removeExerciseFromSet] = useMutation(REMOVE_EXERCISE_FROM_SET_MUTATION);
+  const [updateAssignment] = useMutation(UPDATE_EXERCISE_SET_ASSIGNMENT_MUTATION);
 
   // State for unassign confirmation dialog
   const [unassignConfirm, setUnassignConfirm] = useState<{
@@ -693,6 +802,7 @@ function AssignmentWizardContent({
 
   // Ghost Copy - synchronizuj localExercises gdy zmieni się selectedSet z zewnątrz (z query)
   useEffect(() => {
+    if (isEditMode) return;
     if (selectedSet && exerciseSets.length > 0) {
       const updatedSet = exerciseSets.find((s) => s.id === selectedSet.id);
       // Tylko przy pierwszym załadowaniu (gdy localExercises jest puste)
@@ -700,10 +810,11 @@ function AssignmentWizardContent({
         setLocalExercises(updatedSet.exerciseMappings.map(createGhostCopy));
       }
     }
-  }, [exerciseSets, selectedSet, localExercises.length]);
+  }, [exerciseSets, selectedSet, localExercises.length, isEditMode]);
 
   // From set-details: preselectedSet is passed but sets query is skipped → init state from preselectedSet
   useEffect(() => {
+    if (isEditMode) return;
     if (!open || !preselectedSet || localExercises.length > 0) return;
     const set = preselectedSet;
     if (set.exerciseMappings?.length) {
@@ -751,7 +862,7 @@ function AssignmentWizardContent({
         sunday: set.frequency.sunday ?? false,
       });
     }
-  }, [open, preselectedSet, localExercises.length]);
+  }, [open, preselectedSet, localExercises.length, isEditMode]);
 
   // Handle unassign action
   const handleUnassignRequest = useCallback((assignmentId: string, name: string, type: 'set' | 'patient') => {
@@ -862,6 +973,30 @@ function AssignmentWizardContent({
 
   // Determine step title and description
   const getStepInfo = () => {
+    if (isEditMode) {
+      switch (currentStep) {
+        case 'customize-set':
+          return {
+            title: 'Edycja planu pacjenta',
+            description: preselectedPatient
+              ? `Zmień ćwiczenia planu pacjenta ${preselectedPatient.name}`
+              : 'Zmień ćwiczenia w planie pacjenta',
+          };
+        case 'schedule':
+          return {
+            title: 'Harmonogram planu',
+            description: 'Zmień okres i częstotliwość wykonywania ćwiczeń',
+          };
+        case 'summary':
+          return {
+            title: 'Podsumowanie zmian',
+            description: 'Sprawdź i zapisz aktualizację planu pacjenta',
+          };
+        default:
+          return { title: '', description: '' };
+      }
+    }
+
     switch (currentStep) {
       case 'select-set':
         return {
@@ -980,16 +1115,16 @@ function AssignmentWizardContent({
     }, 0);
   }, [availableExercises, builderInstances, builderParams]);
 
+  const normalizeMutationText = useCallback((value?: string) => {
+    if (!value) return null;
+    const trimmedValue = value.trim();
+    return trimmedValue.length > 0 ? trimmedValue : null;
+  }, []);
+
   const buildAddExerciseVariables = useCallback(
     (instance: ExerciseInstance, exerciseSetId: string, order: number) => {
       const params = builderParams.get(instance.instanceId);
       const exercise = availableExercises.find((item) => item.id === instance.exerciseId);
-
-      const normalizeText = (value?: string) => {
-        if (!value) return null;
-        const trimmedValue = value.trim();
-        return trimmedValue.length > 0 ? trimmedValue : null;
-      };
 
       return {
         exerciseId: instance.exerciseId,
@@ -1002,20 +1137,163 @@ function AssignmentWizardContent({
         restReps: params?.restReps ?? exercise?.defaultRestBetweenReps ?? null,
         preparationTime: params?.preparationTime ?? exercise?.preparationTime ?? null,
         executionTime: params?.executionTime ?? exercise?.defaultExecutionTime ?? null,
-        tempo: normalizeText(params?.tempo),
-        notes: normalizeText(params?.notes),
-        customName: normalizeText(params?.customName),
-        customDescription: normalizeText(params?.customDescription),
-        loadType: normalizeText(params?.loadType),
+        tempo: normalizeMutationText(params?.tempo),
+        notes: normalizeMutationText(params?.notes),
+        customName: normalizeMutationText(params?.customName),
+        customDescription: normalizeMutationText(params?.customDescription),
+        loadType: normalizeMutationText(params?.loadType),
         loadValue: params?.loadValue ?? null,
-        loadUnit: normalizeText(params?.loadUnit),
-        loadText: normalizeText(params?.loadText),
+        loadUnit: normalizeMutationText(params?.loadUnit),
+        loadText: normalizeMutationText(params?.loadText),
       };
     },
-    [availableExercises, builderParams]
+    [availableExercises, builderParams, normalizeMutationText]
   );
 
+  const buildUpdateExerciseVariables = useCallback(
+    (exerciseSetId: string, mappingId: string, exerciseId: string, order: number) => {
+      const params = builderParams.get(`existing-${mappingId}`);
+
+      return {
+        exerciseId,
+        exerciseSetId,
+        order,
+        sets: params?.sets,
+        reps: params?.reps,
+        duration: params?.duration,
+        restSets: params?.restSets,
+        restReps: params?.restReps,
+        preparationTime: params?.preparationTime,
+        executionTime: params?.executionTime,
+        tempo: normalizeMutationText(params?.tempo),
+        notes: normalizeMutationText(params?.notes),
+        customName: normalizeMutationText(params?.customName),
+        customDescription: normalizeMutationText(params?.customDescription),
+        loadType: normalizeMutationText(params?.loadType),
+        loadValue: params?.loadValue,
+        loadUnit: normalizeMutationText(params?.loadUnit),
+        loadText: normalizeMutationText(params?.loadText),
+      };
+    },
+    [builderParams, normalizeMutationText]
+  );
+
+  const buildFrequencyPayload = useCallback(() => {
+    const selectedDaysCount = [
+      frequency.monday,
+      frequency.tuesday,
+      frequency.wednesday,
+      frequency.thursday,
+      frequency.friday,
+      frequency.saturday,
+      frequency.sunday,
+    ].filter(Boolean).length;
+    const effectiveTimesPerWeek = selectedDaysCount > 0 ? selectedDaysCount : frequency.timesPerWeek || 3;
+
+    return {
+      timesPerDay: String(frequency.timesPerDay),
+      timesPerWeek: String(effectiveTimesPerWeek),
+      breakBetweenSets: String(frequency.breakBetweenSets),
+      isFlexible: selectedDaysCount === 0,
+      monday: frequency.monday,
+      tuesday: frequency.tuesday,
+      wednesday: frequency.wednesday,
+      thursday: frequency.thursday,
+      friday: frequency.friday,
+      saturday: frequency.saturday,
+      sunday: frequency.sunday,
+    };
+  }, [frequency]);
+
+  const handleEditSubmit = async () => {
+    if (!isEditMode || !initialAssignment || !selectedSet) return;
+    if (builderInstances.length === 0 || isSubmitting) return;
+
+    setIsSubmitting(true);
+    try {
+      await updateExerciseSet({
+        variables: {
+          exerciseSetId: selectedSet.id,
+          name: planName.trim(),
+          description: selectedSet.description ?? null,
+        },
+      });
+
+      const diff = computeExerciseDiff(initialEditSnapshots, {
+        instances: builderInstances,
+        params: builderParams,
+      });
+
+      for (const removedMapping of diff.removed) {
+        await removeExerciseFromSet({
+          variables: {
+            exerciseId: removedMapping.exerciseId,
+            exerciseSetId: selectedSet.id,
+          },
+        });
+      }
+
+      for (const addedItem of diff.added) {
+        await addExerciseToSet({
+          variables: buildAddExerciseVariables(addedItem.instance, selectedSet.id, addedItem.order),
+        });
+      }
+
+      for (const updatedItem of diff.updated) {
+        await updateExerciseInSet({
+          variables: buildUpdateExerciseVariables(
+            selectedSet.id,
+            updatedItem.mappingId,
+            updatedItem.exerciseId,
+            updatedItem.order
+          ),
+        });
+      }
+
+      const patientId = preselectedPatient?.id;
+      await updateAssignment({
+        variables: {
+          assignmentId: initialAssignment.id,
+          startDate: startDate.toISOString(),
+          endDate: endDate.toISOString(),
+          frequency: buildFrequencyPayload(),
+        },
+        refetchQueries: [
+          ...(patientId
+            ? [
+                {
+                  query: GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY,
+                  variables: { userId: patientId },
+                },
+              ]
+            : []),
+          {
+            query: GET_EXERCISE_SET_WITH_ASSIGNMENTS_QUERY,
+            variables: { exerciseSetId: selectedSet.id },
+          },
+          ...(organizationId
+            ? [
+                { query: GET_ORGANIZATION_EXERCISE_SETS_QUERY, variables: { organizationId } },
+                { query: GET_ORGANIZATION_PATIENTS_QUERY, variables: { organizationId, filter: 'all' } },
+              ]
+            : []),
+        ],
+      });
+
+      toast.success('Plan zaktualizowany');
+      onSuccess?.();
+      _onOpenChange(false);
+    } catch (error) {
+      console.error('Błąd aktualizacji planu:', error);
+      const errorMessage = error instanceof Error ? error.message : null;
+      toast.error(errorMessage || 'Nie udało się zaktualizować planu');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   const handleSubmit = async () => {
+    if (isEditMode) return;
     // Need either: creating new set with exercises, or customizing existing set
     if (builderInstances.length === 0) return;
     if (selectedPatients.length === 0) return;
@@ -1121,19 +1399,7 @@ function AssignmentWizardContent({
 
       for (const patient of selectedPatients) {
         // Step 1: Assign the exercise set (auto-aktywuje Premium)
-        // Oblicz efektywną częstotliwość tygodniową:
-        // - Jeśli są zaznaczone dni (specific mode) → użyj liczby dni
-        // - Jeśli nie (flexible mode) → użyj timesPerWeek
-        const selectedDaysCount = [
-          frequency.monday,
-          frequency.tuesday,
-          frequency.wednesday,
-          frequency.thursday,
-          frequency.friday,
-          frequency.saturday,
-          frequency.sunday,
-        ].filter(Boolean).length;
-        const effectiveTimesPerWeek = selectedDaysCount > 0 ? selectedDaysCount : frequency.timesPerWeek || 3;
+        const frequencyPayload = buildFrequencyPayload();
 
         const assignResult = await assignSet({
           variables: {
@@ -1141,19 +1407,7 @@ function AssignmentWizardContent({
             patientId: patient.id,
             startDate: startDate.toISOString(),
             endDate: endDate.toISOString(),
-            frequency: {
-              timesPerDay: String(frequency.timesPerDay),
-              timesPerWeek: String(effectiveTimesPerWeek),
-              breakBetweenSets: String(frequency.breakBetweenSets),
-              isFlexible: selectedDaysCount === 0, // Elastyczny gdy nie ma wybranych dni
-              monday: frequency.monday,
-              tuesday: frequency.tuesday,
-              wednesday: frequency.wednesday,
-              thursday: frequency.thursday,
-              friday: frequency.friday,
-              saturday: frequency.saturday,
-              sunday: frequency.sunday,
-            },
+            frequency: frequencyPayload,
           },
           refetchQueries: [
             // Billing status (aktywni pacjenci premium) - odświeża badge na dashboardzie
@@ -1223,11 +1477,12 @@ function AssignmentWizardContent({
   const isLoading = loadingSets || loadingPatients || assigning || removing || isSubmitting;
   const isFirstStep = steps.length > 0 && currentStep === steps[0].id;
   const isLastStep = currentStep === 'summary';
-  const handleSubmitRef = useRef(handleSubmit);
+  const handleFinalSubmit = isEditMode ? handleEditSubmit : handleSubmit;
+  const handleSubmitRef = useRef(handleFinalSubmit);
 
   useEffect(() => {
-    handleSubmitRef.current = handleSubmit;
-  }, [handleSubmit]);
+    handleSubmitRef.current = handleFinalSubmit;
+  }, [handleFinalSubmit]);
 
   // Get contextual next button text
   const getNextButtonText = () => {
@@ -1236,9 +1491,9 @@ function AssignmentWizardContent({
 
     if (isLastStep) {
       if (isSubmitting) {
-        return 'Tworzenie planu...';
+        return isEditMode ? 'Zapisywanie zmian...' : 'Tworzenie planu...';
       }
-      return 'Utwórz plan i przypisz';
+      return isEditMode ? 'Zapisz zmiany' : 'Utwórz plan i przypisz';
     }
 
     if (nextStep) {
@@ -1397,6 +1652,7 @@ function AssignmentWizardContent({
             saveAsTemplate={saveAsOrganizationSet}
             onSaveAsTemplateChange={setSaveAsOrganizationSet}
             onGoToStep={goToStep}
+              editMode={isEditMode}
           />
         );
       }
@@ -1419,14 +1675,14 @@ function AssignmentWizardContent({
         data-testid="assign-wizard"
       >
         <VisuallyHidden.Root>
-          <DialogTitle>Personalizacja i przypisanie – {stepInfo.title}</DialogTitle>
+          <DialogTitle>{isEditMode ? 'Edycja planu pacjenta' : 'Personalizacja i przypisanie'} – {stepInfo.title}</DialogTitle>
         </VisuallyHidden.Root>
         {/* Toolbar: row-1 = eyebrow (h-7), row-2 = input + stepper + X (h-9). All on same grid → perfect alignment */}
         <div className="shrink-0 bg-surface/95 backdrop-blur-sm border-b border-border px-6">
           {/* Row 1: eyebrow — fixed height with padding */}
           <div className="h-7 flex items-end pb-1">
             <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60 leading-none">
-              Personalizacja i przypisanie
+              {isEditMode ? 'Edycja planu pacjenta' : 'Personalizacja i przypisanie'}
             </span>
           </div>
           {/* Row 2: input (left) + stepper + X (right) — all h-9, same row → centers aligned by definition */}
@@ -1544,7 +1800,7 @@ function AssignmentWizardContent({
 
           {/* Right side - Navigation */}
           <div className="flex items-center gap-3">
-            {currentStep === 'schedule' && (
+            {currentStep === 'schedule' && !isEditMode && (
               <label
                 className="flex items-center gap-2.5 rounded-lg border border-border/60 bg-surface-light/40 px-3 py-2"
                 data-testid="assign-schedule-save-template-toggle"
@@ -1572,7 +1828,7 @@ function AssignmentWizardContent({
             )}
 
             <Button
-              onClick={isLastStep ? handleSubmit : goNext}
+              onClick={isLastStep ? handleFinalSubmit : goNext}
               disabled={isLoading || !canProceed()}
               className={cn(
                 'shadow-lg shadow-primary/20 min-w-[160px] transition-all duration-300',

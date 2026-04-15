@@ -1,6 +1,7 @@
 'use client';
 
 import { useUser, useClerk } from '@clerk/nextjs';
+import { useQuery } from '@apollo/client/react';
 import Image from 'next/image';
 import { Settings, LogOut, ChevronDown } from 'lucide-react';
 import Link from 'next/link';
@@ -13,14 +14,25 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Skeleton } from '@/components/ui/skeleton';
+import { GET_USER_BY_CLERK_ID_QUERY } from '@/graphql/queries/users.queries';
+import type { UserByClerkIdResponse } from '@/types/apollo';
+import { resolveDisplayName } from './userDisplayName';
 
 export function UserMenu() {
   const { user, isLoaded } = useUser();
   const { signOut } = useClerk();
+  const { data } = useQuery<UserByClerkIdResponse>(GET_USER_BY_CLERK_ID_QUERY, {
+    variables: { clerkId: user?.id },
+    skip: !user?.id,
+  });
 
+  const backendUser = data?.userByClerkId;
   const avatarUrl = user?.imageUrl;
-  const fullName = user?.fullName || user?.firstName || 'Użytkownik';
-  const email = user?.primaryEmailAddress?.emailAddress;
+  const fullName =
+    resolveDisplayName(backendUser?.fullname, backendUser?.personalData?.firstName, backendUser?.personalData?.lastName) ||
+    resolveDisplayName(user?.fullName, user?.firstName, user?.lastName) ||
+    'Użytkownik';
+  const email = user?.primaryEmailAddress?.emailAddress || backendUser?.email;
   const initials = fullName
     .split(' ')
     .map((n) => n[0])

@@ -150,6 +150,15 @@ export interface Frequency {
   sunday: boolean;
 }
 
+export interface AssignmentEditInput {
+  id: string;
+  exerciseSetId: string;
+  startDate: string;
+  endDate: string;
+  frequency: Frequency;
+  exerciseSet: ExerciseSet;
+}
+
 // Customization overrides for exercises during assignment
 export interface ExerciseOverride {
   exerciseMappingId: string;
@@ -260,8 +269,29 @@ export function getWizardSteps(
   mode: 'from-set' | 'from-patient',
   hasPreselectedSet: boolean,
   hasPreselectedPatient: boolean,
-  isCreatingNewSet: boolean = false
+  isCreatingNewSet: boolean = false,
+  isEditMode: boolean = false
 ): WizardStepConfig[] {
+  if (isEditMode) {
+    return [
+      {
+        id: 'customize-set',
+        label: 'Plan',
+        description: 'Edytuj ćwiczenia',
+      },
+      {
+        id: 'schedule',
+        label: 'Harmonogram',
+        description: 'Zmień częstotliwość',
+      },
+      {
+        id: 'summary',
+        label: 'Podsumowanie',
+        description: 'Potwierdź zmiany',
+      },
+    ];
+  }
+
   const steps: WizardStepConfig[] = [];
 
   // Step 1: Select set (if not preselected in from-patient mode)
@@ -334,4 +364,6 @@ export interface AssignmentWizardProps {
   organizationId: string;
   therapistId?: string;
   onSuccess?: () => void;
+  editMode?: boolean;
+  initialAssignment?: AssignmentEditInput;
 }

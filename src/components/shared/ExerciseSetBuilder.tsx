@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 import Image from 'next/image';
 import {
   Search,
@@ -195,11 +195,22 @@ function ExercisePickerItem({
   getExerciseTags: (ex: BuilderExercise) => ExerciseTag[];
 }) {
   const imageUrl = getMediaUrl(exercise.thumbnailUrl ?? exercise.imageUrl ?? exercise.images?.[0]);
+  const handleCardKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      onAdd();
+    }
+  };
 
   return (
     <div
+      role="button"
+      tabIndex={0}
+      onClick={onAdd}
+      onKeyDown={handleCardKeyDown}
+      aria-label={`Dodaj ćwiczenie: ${exercise.name}`}
       className={cn(
-        'w-full flex items-center gap-3 p-2.5 rounded-xl text-left transition-all duration-200 border overflow-hidden min-w-0',
+        'w-full flex items-center gap-3 p-2.5 rounded-xl text-left transition-all duration-200 border overflow-hidden min-w-0 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50',
         instanceCount > 0
           ? 'bg-surface-light border-border/80 opacity-80'
           : 'bg-surface/50 hover:bg-surface-light border-border/50 hover:border-border'
@@ -207,7 +218,10 @@ function ExercisePickerItem({
     >
       <button
         type="button"
-        onClick={onPreview}
+        onClick={(event) => {
+          event.stopPropagation();
+          onPreview();
+        }}
         className="h-9 w-9 rounded-lg overflow-hidden shrink-0 relative group bg-surface-light border border-border/60 cursor-pointer"
         aria-label={`Podgląd ćwiczenia: ${exercise.name}`}
       >
@@ -245,7 +259,10 @@ function ExercisePickerItem({
         <Button
           size="icon"
           variant="secondary"
-          onClick={onAdd}
+          onClick={(event) => {
+            event.stopPropagation();
+            onAdd();
+          }}
           className="h-8 w-8 rounded-lg bg-surface-light hover:bg-primary hover:text-primary-foreground border-border transition-all"
         >
           <Plus className="h-4 w-4" />
@@ -296,22 +313,22 @@ function ExerciseLibraryActionItem({
 
 function applyCardPatchToParams(
   patch: Partial<ExerciseExecutionCardData>,
-  onUpdateParams: (field: keyof ExerciseParams, value: number | string) => void
+  onUpdateParams: (field: keyof ExerciseParams, value: number | string | undefined) => void
 ): void {
-  if (patch.sets !== undefined) onUpdateParams('sets', patch.sets);
-  if (patch.reps !== undefined) onUpdateParams('reps', patch.reps);
-  if (patch.duration !== undefined) onUpdateParams('duration', patch.duration);
-  if (patch.executionTime !== undefined) onUpdateParams('executionTime', patch.executionTime);
-  if (patch.restSets !== undefined) onUpdateParams('restSets', patch.restSets);
-  if (patch.restReps !== undefined) onUpdateParams('restReps', patch.restReps ?? 0);
-  if (patch.preparationTime !== undefined) onUpdateParams('preparationTime', patch.preparationTime);
-  if (patch.tempo !== undefined) onUpdateParams('tempo', patch.tempo);
-  if (patch.notes !== undefined) onUpdateParams('notes', patch.notes);
-  if (patch.customName !== undefined) onUpdateParams('customName', patch.customName);
-  if (patch.customDescription !== undefined) onUpdateParams('customDescription', patch.customDescription);
-  if (patch.side !== undefined) onUpdateParams('exerciseSide', patch.side);
-  if (patch.loadKg !== undefined) {
-    onUpdateParams('loadValue', patch.loadKg ?? 0);
+  if ('sets' in patch) onUpdateParams('sets', patch.sets);
+  if ('reps' in patch) onUpdateParams('reps', patch.reps);
+  if ('duration' in patch) onUpdateParams('duration', patch.duration);
+  if ('executionTime' in patch) onUpdateParams('executionTime', patch.executionTime);
+  if ('restSets' in patch) onUpdateParams('restSets', patch.restSets);
+  if ('restReps' in patch) onUpdateParams('restReps', patch.restReps);
+  if ('preparationTime' in patch) onUpdateParams('preparationTime', patch.preparationTime);
+  if ('tempo' in patch) onUpdateParams('tempo', patch.tempo);
+  if ('notes' in patch) onUpdateParams('notes', patch.notes);
+  if ('customName' in patch) onUpdateParams('customName', patch.customName);
+  if ('customDescription' in patch) onUpdateParams('customDescription', patch.customDescription);
+  if ('side' in patch) onUpdateParams('exerciseSide', patch.side);
+  if ('loadKg' in patch) {
+    onUpdateParams('loadValue', patch.loadKg);
     onUpdateParams('loadUnit', 'kg');
   }
 }
@@ -331,7 +348,7 @@ function SortableExerciseCard({
   exercise: BuilderExercise;
   index: number;
   params: ExerciseParams;
-  onUpdateParams: (field: keyof ExerciseParams, value: number | string) => void;
+  onUpdateParams: (field: keyof ExerciseParams, value: number | string | undefined) => void;
   onRemove: () => void;
   onPreview: () => void;
   testIdPrefix?: string;
@@ -506,7 +523,7 @@ export function ExerciseSetBuilder({
   );
 
   const updateExerciseParams = useCallback(
-    (instanceId: string, field: keyof ExerciseParams, value: number | string) => {
+    (instanceId: string, field: keyof ExerciseParams, value: number | string | undefined) => {
       const next = new Map(exerciseParams);
       const instance = selectedInstances.find((i) => i.instanceId === instanceId);
       const exercise = availableExercises.find((e) => e.id === instance?.exerciseId);
@@ -533,8 +550,8 @@ export function ExerciseSetBuilder({
               loadUnit: 'kg',
               loadText: '',
             });
-      const newValue = typeof value === 'number' ? Math.max(0, value) : value;
-      next.set(instanceId, { ...current, [field]: newValue });
+      const normalizedValue = typeof value === 'number' ? Math.max(0, value) : value;
+      next.set(instanceId, { ...current, [field]: normalizedValue });
       onExerciseParamsChange(next);
     },
     [availableExercises, getDefaultParams, selectedInstances, exerciseParams, onExerciseParamsChange]

@@ -22,17 +22,17 @@ interface ExerciseRowProps {
 
 function cardPatchToOverride(patch: Partial<ExerciseExecutionCardData>): Partial<ExerciseOverride> {
   const out: Partial<ExerciseOverride> = {};
-  if (patch.sets !== undefined) out.sets = patch.sets;
-  if (patch.reps !== undefined) out.reps = patch.reps;
-  if (patch.duration !== undefined) out.duration = patch.duration;
-  if (patch.executionTime !== undefined) out.executionTime = patch.executionTime;
-  if (patch.restSets !== undefined) out.restSets = patch.restSets;
-  if (patch.restReps !== undefined) out.restReps = patch.restReps;
-  if (patch.preparationTime !== undefined) out.preparationTime = patch.preparationTime;
-  if (patch.tempo !== undefined) out.tempo = patch.tempo;
-  if (patch.notes !== undefined) out.notes = patch.notes;
-  if (patch.customName !== undefined) out.customName = patch.customName;
-  if (patch.loadKg !== undefined) {
+  if ('sets' in patch) out.sets = patch.sets;
+  if ('reps' in patch) out.reps = patch.reps;
+  if ('duration' in patch) out.duration = patch.duration;
+  if ('executionTime' in patch) out.executionTime = patch.executionTime;
+  if ('restSets' in patch) out.restSets = patch.restSets;
+  if ('restReps' in patch) out.restReps = patch.restReps;
+  if ('preparationTime' in patch) out.preparationTime = patch.preparationTime;
+  if ('tempo' in patch) out.tempo = patch.tempo;
+  if ('notes' in patch) out.notes = patch.notes;
+  if ('customName' in patch) out.customName = patch.customName;
+  if ('loadKg' in patch) {
     if (patch.loadKg == null || Number.isNaN(patch.loadKg)) {
       out.load = { type: 'other', text: '' };
     } else {

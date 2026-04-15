@@ -85,5 +85,31 @@ describe('ExerciseExecutionCard inline read-only source info', () => {
     expect(screen.getByTestId('exercise-preview-dialog')).toBeInTheDocument();
     expect(screen.getByTestId('exercise-preview-title')).toHaveTextContent('Przysiad');
   });
+
+  it('pozwala wyczyścić czas powtórzenia i emituje undefined', async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+
+    render(
+      <ExerciseExecutionCard
+        mode="edit"
+        defaultExpanded
+        testIdPrefix="exercise-card"
+        onChange={onChange}
+        exercise={{
+          id: 'exercise-clear-1',
+          displayName: 'Przysiad',
+          sets: 3,
+          reps: 10,
+          executionTime: 1,
+        }}
+      />
+    );
+
+    const executionTimeInput = screen.getByTestId('exercise-card-exercise-clear-1-execution-time-input');
+    await user.clear(executionTimeInput);
+
+    expect(onChange).toHaveBeenCalledWith({ executionTime: undefined });
+  });
 });
 

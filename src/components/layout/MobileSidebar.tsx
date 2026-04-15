@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { useUser, useClerk } from '@clerk/nextjs';
+import { useQuery } from '@apollo/client/react';
 import {
   LayoutDashboard,
   Dumbbell,
@@ -28,6 +29,9 @@ import { Logo } from '@/components/shared/Logo';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useRoleAccess } from '@/hooks/useRoleAccess';
 import { useOrganization } from '@/contexts/OrganizationContext';
+import { GET_USER_BY_CLERK_ID_QUERY } from '@/graphql/queries/users.queries';
+import type { UserByClerkIdResponse } from '@/types/apollo';
+import { resolveDisplayName } from './userDisplayName';
 
 // ========================================
 // Types
@@ -114,12 +118,20 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
   const router = useRouter();
   const { user, isLoaded } = useUser();
   const { signOut } = useClerk();
+  const { data } = useQuery<UserByClerkIdResponse>(GET_USER_BY_CLERK_ID_QUERY, {
+    variables: { clerkId: user?.id },
+    skip: !user?.id,
+  });
   const { canManageOrganization } = useRoleAccess();
   const { hasMultipleOrganizations } = useOrganization();
 
+  const backendUser = data?.userByClerkId;
   const avatarUrl = user?.imageUrl;
-  const fullName = user?.fullName || user?.firstName || 'Użytkownik';
-  const email = user?.primaryEmailAddress?.emailAddress || '';
+  const fullName =
+    resolveDisplayName(backendUser?.fullname, backendUser?.personalData?.firstName, backendUser?.personalData?.lastName) ||
+    resolveDisplayName(user?.fullName, user?.firstName, user?.lastName) ||
+    'Użytkownik';
+  const email = user?.primaryEmailAddress?.emailAddress || backendUser?.email || '';
   const initials = getInitials(fullName);
 
   const isActive = (href: string) => {
