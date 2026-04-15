@@ -78,6 +78,7 @@ export interface ExerciseMapping {
   sets?: number;
   reps?: number;
   duration?: number;
+  preparationTime?: number;
   restSets?: number;
   restReps?: number;
   executionTime?: number;
@@ -85,6 +86,10 @@ export interface ExerciseMapping {
   notes?: string;
   customName?: string;
   customDescription?: string;
+  loadType?: string;
+  loadValue?: number;
+  loadUnit?: string;
+  loadText?: string;
   exercise?: {
     id: string;
     name: string;
