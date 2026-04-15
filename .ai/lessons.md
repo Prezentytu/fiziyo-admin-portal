@@ -14,6 +14,14 @@ Dziennik wniosków z pracy AI agentów. Po każdej korekcie dodaj nowy wpis.
 
 ## Wpisy
 
+### 2026-04-15 - Numeric patch mapper musi rozrozniac "brak pola" od "wyczysc pole"
+
+- **Kategoria**: `React`
+- **Problem**: W edycji parametrow cwiczenia pole `executionTime` po wpisaniu wartosci nie dalo sie przywrocic do pustego, mimo ze input wysylal `undefined` przy czyszczeniu.
+- **Przyczyna**: Warstwa mapowania patchy ignorowala pola o wartosci `undefined` przez warunki `patch.field !== undefined`, wiec intencja "wyczysc pole" byla tracona.
+- **Rozwiązanie**: W mapperach patchy przelaczono warunki na sprawdzanie obecnosci klucza (`'field' in patch`) i przepuszczanie `undefined` do stanu/mutacji.
+- **Reguła**: Dla formularzy z opcjonalnymi polami liczbowymi traktuj `undefined` jako prawidlowa wartosc biznesowa; odrozniaj "pole nieprzeslane" od "pole jawnie wyczyszczone".
+
 ### 2026-04-15 - Jeden wizard dla create i edit planu pacjenta
 
 - **Kategoria**: `UI/UX`

@@ -286,17 +286,17 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
     patch: Partial<ExerciseExecutionCardData>
   ) => {
     const mappingPatch: Partial<ExerciseMapping> = {};
-    if (patch.sets !== undefined) mappingPatch.sets = patch.sets;
-    if (patch.reps !== undefined) mappingPatch.reps = patch.reps;
-    if (patch.duration !== undefined) mappingPatch.duration = patch.duration;
-    if (patch.executionTime !== undefined) mappingPatch.executionTime = patch.executionTime;
-    if (patch.restSets !== undefined) mappingPatch.restSets = patch.restSets;
-    if (patch.restReps !== undefined) mappingPatch.restReps = patch.restReps;
-    if (patch.preparationTime !== undefined) mappingPatch.preparationTime = patch.preparationTime;
-    if (patch.tempo !== undefined) mappingPatch.tempo = patch.tempo;
-    if (patch.notes !== undefined) mappingPatch.notes = patch.notes;
-    if (patch.customName !== undefined) mappingPatch.customName = patch.customName;
-    if (patch.customDescription !== undefined) mappingPatch.customDescription = patch.customDescription;
+    if ('sets' in patch) mappingPatch.sets = patch.sets;
+    if ('reps' in patch) mappingPatch.reps = patch.reps;
+    if ('duration' in patch) mappingPatch.duration = patch.duration;
+    if ('executionTime' in patch) mappingPatch.executionTime = patch.executionTime;
+    if ('restSets' in patch) mappingPatch.restSets = patch.restSets;
+    if ('restReps' in patch) mappingPatch.restReps = patch.restReps;
+    if ('preparationTime' in patch) mappingPatch.preparationTime = patch.preparationTime;
+    if ('tempo' in patch) mappingPatch.tempo = patch.tempo;
+    if ('notes' in patch) mappingPatch.notes = patch.notes;
+    if ('customName' in patch) mappingPatch.customName = patch.customName;
+    if ('customDescription' in patch) mappingPatch.customDescription = patch.customDescription;
 
     if (Object.keys(mappingPatch).length === 0) return;
     const previousPatch = localExercisePatches[mapping.id];

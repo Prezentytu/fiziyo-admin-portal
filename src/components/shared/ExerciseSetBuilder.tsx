@@ -313,22 +313,22 @@ function ExerciseLibraryActionItem({
 
 function applyCardPatchToParams(
   patch: Partial<ExerciseExecutionCardData>,
-  onUpdateParams: (field: keyof ExerciseParams, value: number | string) => void
+  onUpdateParams: (field: keyof ExerciseParams, value: number | string | undefined) => void
 ): void {
-  if (patch.sets !== undefined) onUpdateParams('sets', patch.sets);
-  if (patch.reps !== undefined) onUpdateParams('reps', patch.reps);
-  if (patch.duration !== undefined) onUpdateParams('duration', patch.duration);
-  if (patch.executionTime !== undefined) onUpdateParams('executionTime', patch.executionTime);
-  if (patch.restSets !== undefined) onUpdateParams('restSets', patch.restSets);
-  if (patch.restReps !== undefined) onUpdateParams('restReps', patch.restReps ?? 0);
-  if (patch.preparationTime !== undefined) onUpdateParams('preparationTime', patch.preparationTime);
-  if (patch.tempo !== undefined) onUpdateParams('tempo', patch.tempo);
-  if (patch.notes !== undefined) onUpdateParams('notes', patch.notes);
-  if (patch.customName !== undefined) onUpdateParams('customName', patch.customName);
-  if (patch.customDescription !== undefined) onUpdateParams('customDescription', patch.customDescription);
-  if (patch.side !== undefined) onUpdateParams('exerciseSide', patch.side);
-  if (patch.loadKg !== undefined) {
-    onUpdateParams('loadValue', patch.loadKg ?? 0);
+  if ('sets' in patch) onUpdateParams('sets', patch.sets);
+  if ('reps' in patch) onUpdateParams('reps', patch.reps);
+  if ('duration' in patch) onUpdateParams('duration', patch.duration);
+  if ('executionTime' in patch) onUpdateParams('executionTime', patch.executionTime);
+  if ('restSets' in patch) onUpdateParams('restSets', patch.restSets);
+  if ('restReps' in patch) onUpdateParams('restReps', patch.restReps);
+  if ('preparationTime' in patch) onUpdateParams('preparationTime', patch.preparationTime);
+  if ('tempo' in patch) onUpdateParams('tempo', patch.tempo);
+  if ('notes' in patch) onUpdateParams('notes', patch.notes);
+  if ('customName' in patch) onUpdateParams('customName', patch.customName);
+  if ('customDescription' in patch) onUpdateParams('customDescription', patch.customDescription);
+  if ('side' in patch) onUpdateParams('exerciseSide', patch.side);
+  if ('loadKg' in patch) {
+    onUpdateParams('loadValue', patch.loadKg);
     onUpdateParams('loadUnit', 'kg');
   }
 }
@@ -348,7 +348,7 @@ function SortableExerciseCard({
   exercise: BuilderExercise;
   index: number;
   params: ExerciseParams;
-  onUpdateParams: (field: keyof ExerciseParams, value: number | string) => void;
+  onUpdateParams: (field: keyof ExerciseParams, value: number | string | undefined) => void;
   onRemove: () => void;
   onPreview: () => void;
   testIdPrefix?: string;
@@ -523,7 +523,7 @@ export function ExerciseSetBuilder({
   );
 
   const updateExerciseParams = useCallback(
-    (instanceId: string, field: keyof ExerciseParams, value: number | string) => {
+    (instanceId: string, field: keyof ExerciseParams, value: number | string | undefined) => {
       const next = new Map(exerciseParams);
       const instance = selectedInstances.find((i) => i.instanceId === instanceId);
       const exercise = availableExercises.find((e) => e.id === instance?.exerciseId);
@@ -550,8 +550,8 @@ export function ExerciseSetBuilder({
               loadUnit: 'kg',
               loadText: '',
             });
-      const newValue = typeof value === 'number' ? Math.max(0, value) : value;
-      next.set(instanceId, { ...current, [field]: newValue });
+      const normalizedValue = typeof value === 'number' ? Math.max(0, value) : value;
+      next.set(instanceId, { ...current, [field]: normalizedValue });
       onExerciseParamsChange(next);
     },
     [availableExercises, getDefaultParams, selectedInstances, exerciseParams, onExerciseParamsChange]

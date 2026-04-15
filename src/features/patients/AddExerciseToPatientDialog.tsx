@@ -16,6 +16,7 @@ import { ImagePlaceholder } from '@/components/shared/ImagePlaceholder';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { cn } from '@/lib/utils';
 import { getMediaUrl } from '@/utils/mediaUrl';
+import { useNumericDraft } from '@/hooks/useNumericDraft';
 
 import { GET_AVAILABLE_EXERCISES_QUERY } from '@/graphql/queries/exercises.queries';
 import { UPDATE_PATIENT_EXERCISE_OVERRIDES_MUTATION } from '@/graphql/mutations/exercises.mutations';
@@ -134,6 +135,28 @@ function AddExerciseToPatientDialogContent({
   const [sets, setSets] = useState(3);
   const [reps, setReps] = useState(10);
   const [duration, setDuration] = useState(30);
+
+  const setsField = useNumericDraft({
+    value: sets,
+    onCommit: setSets,
+    min: 1,
+    parseMode: 'int',
+  });
+
+  const repsField = useNumericDraft({
+    value: reps,
+    onCommit: setReps,
+    min: 1,
+    parseMode: 'int',
+  });
+
+  const durationField = useNumericDraft({
+    value: duration,
+    onCommit: setDuration,
+    min: 5,
+    step: 5,
+    parseMode: 'int',
+  });
 
   // Get exercises from organization
   const { data: exercisesData, loading: loadingExercises } = useQuery(GET_AVAILABLE_EXERCISES_QUERY, {
@@ -323,14 +346,18 @@ function AddExerciseToPatientDialogContent({
                         variant="outline"
                         size="icon"
                         className="h-11 w-11 shrink-0"
-                        onClick={() => setSets(Math.max(1, sets - 1))}
+                        onClick={setsField.decrement}
+                        disabled={!setsField.canDecrement}
                       >
                         <Minus className="h-4 w-4" />
                       </Button>
                       <Input
                         type="number"
-                        value={sets}
-                        onChange={(e) => setSets(Math.max(1, Number.parseInt(e.target.value) || 1))}
+                        value={setsField.draftValue}
+                        onChange={(e) => setsField.setDraftValue(e.target.value)}
+                        onFocus={setsField.handleFocus}
+                        onBlur={setsField.handleBlur}
+                        onKeyDown={setsField.handleKeyDown}
                         className="h-11 text-center text-lg font-semibold"
                         data-testid="add-exercise-sets-input"
                       />
@@ -339,7 +366,7 @@ function AddExerciseToPatientDialogContent({
                         variant="outline"
                         size="icon"
                         className="h-11 w-11 shrink-0"
-                        onClick={() => setSets(sets + 1)}
+                        onClick={setsField.increment}
                       >
                         <Plus className="h-4 w-4" />
                       </Button>
@@ -359,14 +386,18 @@ function AddExerciseToPatientDialogContent({
                           variant="outline"
                           size="icon"
                           className="h-11 w-11 shrink-0"
-                          onClick={() => setDuration(Math.max(5, duration - 5))}
+                          onClick={durationField.decrement}
+                          disabled={!durationField.canDecrement}
                         >
                           <Minus className="h-4 w-4" />
                         </Button>
                         <Input
                           type="number"
-                          value={duration}
-                          onChange={(e) => setDuration(Math.max(5, Number.parseInt(e.target.value) || 5))}
+                          value={durationField.draftValue}
+                          onChange={(e) => durationField.setDraftValue(e.target.value)}
+                          onFocus={durationField.handleFocus}
+                          onBlur={durationField.handleBlur}
+                          onKeyDown={durationField.handleKeyDown}
                           className="h-11 text-center text-lg font-semibold"
                           step={5}
                           data-testid="add-exercise-duration-input"
@@ -376,7 +407,7 @@ function AddExerciseToPatientDialogContent({
                           variant="outline"
                           size="icon"
                           className="h-11 w-11 shrink-0"
-                          onClick={() => setDuration(duration + 5)}
+                          onClick={durationField.increment}
                         >
                           <Plus className="h-4 w-4" />
                         </Button>
@@ -391,14 +422,18 @@ function AddExerciseToPatientDialogContent({
                           variant="outline"
                           size="icon"
                           className="h-11 w-11 shrink-0"
-                          onClick={() => setReps(Math.max(1, reps - 1))}
+                          onClick={repsField.decrement}
+                          disabled={!repsField.canDecrement}
                         >
                           <Minus className="h-4 w-4" />
                         </Button>
                         <Input
                           type="number"
-                          value={reps}
-                          onChange={(e) => setReps(Math.max(1, Number.parseInt(e.target.value) || 1))}
+                          value={repsField.draftValue}
+                          onChange={(e) => repsField.setDraftValue(e.target.value)}
+                          onFocus={repsField.handleFocus}
+                          onBlur={repsField.handleBlur}
+                          onKeyDown={repsField.handleKeyDown}
                           className="h-11 text-center text-lg font-semibold"
                           data-testid="add-exercise-reps-input"
                         />
@@ -407,7 +442,7 @@ function AddExerciseToPatientDialogContent({
                           variant="outline"
                           size="icon"
                           className="h-11 w-11 shrink-0"
-                          onClick={() => setReps(reps + 1)}
+                          onClick={repsField.increment}
                         >
                           <Plus className="h-4 w-4" />
                         </Button>

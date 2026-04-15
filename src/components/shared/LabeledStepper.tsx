@@ -3,6 +3,7 @@
 import { Info, Minus, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { useNumericDraft } from '@/hooks/useNumericDraft';
 
 interface LabeledStepperProps {
   readonly value: number;
@@ -37,32 +38,26 @@ export function LabeledStepper({
   infoTooltip,
   infoTestId,
 }: LabeledStepperProps) {
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = e.target.value;
-    if (val === '') {
-      onChange(min);
-      return;
-    }
-    const parsed = Number.parseInt(val, 10);
-    if (!Number.isNaN(parsed)) {
-      const clamped = Math.max(min, Math.min(max, parsed));
-      onChange(clamped);
-    }
-  };
+  const {
+    draftValue,
+    setDraftValue,
+    increment,
+    decrement,
+    handleBlur,
+    handleFocus,
+    handleKeyDown,
+    canIncrement,
+    canDecrement,
+  } = useNumericDraft({
+    value,
+    onCommit: onChange,
+    min,
+    max,
+    step,
+    parseMode: 'int',
+  });
 
-  const increment = () => {
-    if (disabled) return;
-    const newVal = Math.min(max, value + step);
-    onChange(newVal);
-  };
-
-  const decrement = () => {
-    if (disabled) return;
-    const newVal = Math.max(min, value - step);
-    onChange(newVal);
-  };
-
-  const valueText = String(value);
+  const valueText = draftValue || String(value);
   const valueWidthCh = Math.max(valueText.length, 1);
 
   return (
@@ -76,7 +71,7 @@ export function LabeledStepper({
         <button
           type="button"
           onClick={decrement}
-          disabled={disabled || value <= min}
+          disabled={disabled || !canDecrement}
           data-stepper-control
           className={cn(
             'w-7 flex items-center justify-center rounded-l-lg transition-all cursor-pointer',
@@ -100,8 +95,11 @@ export function LabeledStepper({
               data-stepper-input
               size={valueWidthCh}
               style={{ width: `${valueWidthCh}ch` }}
-              value={value}
-              onChange={handleInputChange}
+              value={draftValue}
+              onChange={(event) => setDraftValue(event.target.value)}
+              onFocus={handleFocus}
+              onBlur={handleBlur}
+              onKeyDown={handleKeyDown}
               disabled={disabled}
               className={cn(
                 'w-auto min-w-0 bg-transparent text-right font-bold text-sm text-foreground tabular-nums cursor-text',
@@ -124,7 +122,7 @@ export function LabeledStepper({
         <button
           type="button"
           onClick={increment}
-          disabled={disabled || value >= max}
+          disabled={disabled || !canIncrement}
           data-stepper-control
           className={cn(
             'w-7 flex items-center justify-center rounded-r-lg transition-all cursor-pointer',
