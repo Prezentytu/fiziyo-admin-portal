@@ -92,6 +92,12 @@ assign-success-close-btn
 
 ## Changelog
 
+### 2026-04-15
+
+- Utrzymano model, w którym `set.frequency` działa jako seed dla personalizacji harmonogramu planu pacjenta, bez edycji tego defaultu na detalu szablonu.
+- Ujednolicono copy i odczyt harmonogramu w powierzchniach admin/PDF: gdy nie ma konkretnych dni, ale jest `timesPerWeek`, UI pokazuje rekomendację tygodniową (np. `3 razy w tygodniu`).
+- Rozszerzono `AssignmentWizard` o tryb `editMode`: ten sam wizard obsługuje tworzenie i edycję planu pacjenta, ale w edycji kroki są prefillowane i submit wykonuje mutacje update (`updateExerciseSet`, `updateExerciseInSet`/`removeExerciseFromSet`/`addExerciseToExerciseSet`, `updateExerciseSetAssignment`).
+
 ### 2026-03-07
 
 - Aktualizacja specyfikacji do realnego flow `personalizacja planu -> przypisanie`.

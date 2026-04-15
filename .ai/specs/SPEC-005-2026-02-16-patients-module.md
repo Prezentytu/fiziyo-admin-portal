@@ -85,6 +85,12 @@ Prefiks: `patient-`
 
 ## Changelog
 
+### 2026-04-15
+
+- Na profilu pacjenta rozwinięta karta przypisania została przełączona na model modal-first: główne CTA `Edytuj plan` otwiera spójny punkt wejścia do edycji planu pacjenta.
+- Punkt wejścia `Edytuj plan` został przepięty bezpośrednio na `AssignmentWizard` w trybie `editMode` (ten sam UX krokowy jak przy przypisywaniu, ale z prefill i aktualizacją istniejącego planu/przypisania).
+- Uproszczono expanded state `PatientAssignmentCard` (mniej równorzędnych akcji i czytelniejsza hierarchia), pozostawiając szybkie akcje inline dla ćwiczeń.
+
 ### 2026-02-16
 
 - Utworzenie specyfikacji na podstawie istniejącej implementacji

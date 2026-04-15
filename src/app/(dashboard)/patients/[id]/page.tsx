@@ -1,6 +1,6 @@
 'use client';
 
-import { use, useState } from 'react';
+import { use, useMemo, useState } from 'react';
 import { useQuery } from '@apollo/client/react';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@clerk/nextjs';
@@ -48,8 +48,7 @@ import type { UserByIdResponse } from '@/types/apollo';
 
 // Dialogs
 import { AssignmentWizard } from '@/features/assignment/AssignmentWizard';
-import type { Patient as AssignmentPatient } from '@/features/assignment/types';
-import { EditAssignmentScheduleDialog } from '@/features/patients/EditAssignmentScheduleDialog';
+import type { AssignmentEditInput, Patient as AssignmentPatient } from '@/features/assignment/types';
 import { EditExerciseOverrideDialog } from '@/features/patients/EditExerciseOverrideDialog';
 import { AddExerciseToPatientDialog } from '@/features/patients/AddExerciseToPatientDialog';
 import { ExercisePreviewDrawer } from '@/features/patients/ExercisePreviewDrawer';
@@ -75,7 +74,7 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
   const [isQRCodeDialogOpen, setIsQRCodeDialogOpen] = useState(false);
   const [isEditPatientOpen, setIsEditPatientOpen] = useState(false);
-  const [editingScheduleAssignment, setEditingScheduleAssignment] = useState<PatientAssignment | null>(null);
+  const [editingPlanAssignment, setEditingPlanAssignment] = useState<PatientAssignment | null>(null);
   const [editingExerciseData, setEditingExerciseData] = useState<{
     assignment: PatientAssignment;
     mapping: ExerciseMapping;
@@ -125,6 +124,58 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
   // Filter only exercise set assignments (not individual exercises)
   const setAssignments = assignments.filter((a) => a.exerciseSetId);
 
+  const editingAssignmentInput = useMemo<AssignmentEditInput | null>(() => {
+    if (!editingPlanAssignment?.exerciseSet?.id || !editingPlanAssignment.exerciseSetId) {
+      return null;
+    }
+
+    const nowIso = new Date().toISOString();
+
+    return {
+      id: editingPlanAssignment.id,
+      exerciseSetId: editingPlanAssignment.exerciseSetId,
+      startDate: editingPlanAssignment.startDate || nowIso,
+      endDate: editingPlanAssignment.endDate || nowIso,
+      frequency: {
+        timesPerDay: editingPlanAssignment.frequency?.timesPerDay || 1,
+        timesPerWeek: editingPlanAssignment.frequency?.timesPerWeek,
+        isFlexible: editingPlanAssignment.frequency?.isFlexible,
+        breakBetweenSets: editingPlanAssignment.frequency?.breakBetweenSets || 60,
+        monday: editingPlanAssignment.frequency?.monday ?? false,
+        tuesday: editingPlanAssignment.frequency?.tuesday ?? false,
+        wednesday: editingPlanAssignment.frequency?.wednesday ?? false,
+        thursday: editingPlanAssignment.frequency?.thursday ?? false,
+        friday: editingPlanAssignment.frequency?.friday ?? false,
+        saturday: editingPlanAssignment.frequency?.saturday ?? false,
+        sunday: editingPlanAssignment.frequency?.sunday ?? false,
+      },
+      exerciseSet: {
+        id: editingPlanAssignment.exerciseSet.id,
+        name: editingPlanAssignment.exerciseSet.name,
+        description: editingPlanAssignment.exerciseSet.description,
+        exerciseMappings: (editingPlanAssignment.exerciseSet.exerciseMappings || []).map((mapping) => ({
+          ...mapping,
+          order: mapping.order ?? undefined,
+          sets: mapping.sets ?? undefined,
+          reps: mapping.reps ?? undefined,
+          duration: mapping.duration ?? undefined,
+          restSets: mapping.restSets ?? undefined,
+          restReps: mapping.restReps ?? undefined,
+          preparationTime: mapping.preparationTime ?? undefined,
+          executionTime: mapping.executionTime ?? undefined,
+          tempo: mapping.tempo ?? undefined,
+          notes: mapping.notes ?? undefined,
+          customName: mapping.customName ?? undefined,
+          customDescription: mapping.customDescription ?? undefined,
+          loadType: mapping.loadType ?? undefined,
+          loadValue: mapping.loadValue ?? undefined,
+          loadUnit: mapping.loadUnit ?? undefined,
+          loadText: mapping.loadText ?? undefined,
+        })),
+      },
+    };
+  }, [editingPlanAssignment]);
+
   if (userLoading) {
     return <PatientDetailSkeleton />;
   }
@@ -158,9 +209,16 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
 
   const activeAssignments = setAssignments.filter((a) => a.status === 'active');
   const totalCompletions = setAssignments.reduce((sum, a) => sum + (a.completionCount || 0), 0);
+  const assignmentWizardPatient = {
+    id: patient.id,
+    name: displayName,
+    email: patient.email,
+    image: patient.image,
+    isShadowUser: patient.isShadowUser,
+  } as AssignmentPatient;
 
-  const handleEditSchedule = (assignment: PatientAssignment) => {
-    setEditingScheduleAssignment(assignment);
+  const handleEditPlan = (assignment: PatientAssignment) => {
+    setEditingPlanAssignment(assignment);
   };
 
   const handleEditExercise = (assignment: PatientAssignment, mapping: ExerciseMapping, override?: ExerciseOverride) => {
@@ -215,7 +273,7 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
             key={assignment.id}
             assignment={assignment}
             patientId={id}
-            onEditSchedule={handleEditSchedule}
+            onEditPlan={handleEditPlan}
             onEditExercise={handleEditExercise}
             onPreviewExercise={handlePreviewExercise}
             onAddExercise={handleAddExerciseToAssignment}
@@ -438,31 +496,29 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
           open={isAssignDialogOpen}
           onOpenChange={setIsAssignDialogOpen}
           mode="from-patient"
-          preselectedPatient={
-            {
-              id: patient.id,
-              name: displayName,
-              email: patient.email,
-              image: patient.image,
-              isShadowUser: patient.isShadowUser,
-            } as AssignmentPatient
-          }
+          preselectedPatient={assignmentWizardPatient}
           organizationId={organizationId}
           therapistId={therapistId}
           onSuccess={() => refetchAssignments()}
         />
       )}
 
-      <EditAssignmentScheduleDialog
-        open={!!editingScheduleAssignment}
-        onOpenChange={(open) => !open && setEditingScheduleAssignment(null)}
-        assignment={editingScheduleAssignment}
-        patientId={id}
-        onSuccess={() => {
-          refetchAssignments();
-          setEditingScheduleAssignment(null);
-        }}
-      />
+      {organizationId && therapistId && editingAssignmentInput && (
+        <AssignmentWizard
+          open={!!editingPlanAssignment}
+          onOpenChange={(open) => !open && setEditingPlanAssignment(null)}
+          mode="from-patient"
+          preselectedPatient={assignmentWizardPatient}
+          organizationId={organizationId}
+          therapistId={therapistId}
+          editMode
+          initialAssignment={editingAssignmentInput}
+          onSuccess={() => {
+            refetchAssignments();
+            setEditingPlanAssignment(null);
+          }}
+        />
+      )}
 
       <EditExerciseOverrideDialog
         open={!!editingExerciseData}

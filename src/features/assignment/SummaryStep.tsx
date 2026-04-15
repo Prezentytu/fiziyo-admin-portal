@@ -26,7 +26,8 @@ interface SummaryStepProps {
   excludedExercises: Set<string>;
   saveAsTemplate: boolean;
   onSaveAsTemplateChange: (value: boolean) => void;
-  onGoToStep?: (step: 'select-set' | 'select-patients' | 'schedule') => void;
+  onGoToStep?: (step: 'select-set' | 'customize-set' | 'select-patients' | 'schedule') => void;
+  editMode?: boolean;
 }
 
 // Helper: Oblicz łączny czas zestawu
@@ -70,6 +71,7 @@ export function SummaryStep({
   saveAsTemplate,
   onSaveAsTemplateChange,
   onGoToStep,
+  editMode = false,
 }: SummaryStepProps) {
   const { user } = useUser();
   const { currentOrganization } = useOrganization();
@@ -223,7 +225,7 @@ export function SummaryStep({
             {/* Edytuj - powrót do kroku 1 */}
             {onGoToStep && (
               <button
-                onClick={() => onGoToStep('select-set')}
+                onClick={() => onGoToStep(editMode ? 'customize-set' : 'select-set')}
                 className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1.5 transition-colors"
                 data-testid="summary-edit-exercises-btn"
               >
@@ -374,7 +376,8 @@ export function SummaryStep({
       {/* ══════════════════════════════════════════════════════════════ */}
       <div className="col-span-12 lg:col-span-4 flex flex-col gap-3 sm:gap-4">
         {/* KARTA 3: PACJENT(CI) */}
-        <div className="bg-surface border border-border/60 rounded-xl p-4 sm:p-5" data-testid="summary-patients-card">
+        {!editMode && (
+          <div className="bg-surface border border-border/60 rounded-xl p-4 sm:p-5" data-testid="summary-patients-card">
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-xs uppercase text-muted-foreground font-bold flex items-center gap-2">
               {selectedPatients.length > 1 ? <Users className="w-3 h-3" /> : <User className="w-3 h-3" />}
@@ -442,7 +445,8 @@ export function SummaryStep({
               </Badge>
             </div>
           )}
-        </div>
+          </div>
+        )}
 
         {/* KARTA 4: HARMONOGRAM */}
         <div className="bg-surface border border-border/60 rounded-xl p-4 sm:p-5" data-testid="summary-schedule-card">
@@ -502,24 +506,26 @@ export function SummaryStep({
           </div>
         </div>
 
-        <div className="bg-surface border border-border/60 rounded-xl p-4 sm:p-5" data-testid="summary-template-save-card">
-          <div className="mb-3 rounded-lg border border-border/50 bg-surface-light/30 px-3 py-2 text-xs text-muted-foreground">
-            W tym flow zawsze tworzymy nowy, spersonalizowany plan ćwiczeń dla pacjenta.
-          </div>
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <h3 className="text-xs uppercase text-muted-foreground font-bold">Zestaw organizacji</h3>
-              <p className="text-sm text-foreground mt-1" data-testid="assign-summary-save-template-label">
-                Zapisz także jako osobny zestaw organizacji
-              </p>
+        {!editMode && (
+          <div className="bg-surface border border-border/60 rounded-xl p-4 sm:p-5" data-testid="summary-template-save-card">
+            <div className="mb-3 rounded-lg border border-border/50 bg-surface-light/30 px-3 py-2 text-xs text-muted-foreground">
+              W tym flow zawsze tworzymy nowy, spersonalizowany plan ćwiczeń dla pacjenta.
             </div>
-            <Switch
-              checked={saveAsTemplate}
-              onCheckedChange={onSaveAsTemplateChange}
-              data-testid="assign-summary-save-template-toggle"
-            />
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h3 className="text-xs uppercase text-muted-foreground font-bold">Zestaw organizacji</h3>
+                <p className="text-sm text-foreground mt-1" data-testid="assign-summary-save-template-label">
+                  Zapisz także jako osobny zestaw organizacji
+                </p>
+              </div>
+              <Switch
+                checked={saveAsTemplate}
+                onCheckedChange={onSaveAsTemplateChange}
+                data-testid="assign-summary-save-template-toggle"
+              />
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Spacer - wypycha compliance na dół (tylko na desktop) */}
         <div className="hidden lg:flex lg:flex-1" />

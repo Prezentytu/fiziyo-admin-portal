@@ -19,7 +19,7 @@ import {
   Eye,
   EyeOff,
   Plus,
-  Settings2,
+  FilePenLine,
   FileDown,
   X,
 } from 'lucide-react';
@@ -45,6 +45,7 @@ import { cn } from '@/lib/utils';
 import { translateAssignmentStatus, type AssignmentStatus } from '@/utils/statusUtils';
 import { getMediaUrl } from '@/utils/mediaUrl';
 import { formatDurationPolish } from '@/utils/durationPolish';
+import { formatFrequencyDisplay } from '@/utils/frequencyDisplay';
 
 import {
   UPDATE_EXERCISE_SET_ASSIGNMENT_MUTATION,
@@ -149,37 +150,31 @@ export interface PatientAssignment {
 }
 
 interface PatientAssignmentCardProps {
-  assignment: PatientAssignment;
-  patientId: string;
-  onEditSchedule?: (assignment: PatientAssignment) => void;
-  onEditExercise?: (assignment: PatientAssignment, mapping: ExerciseMapping, override?: ExerciseOverride) => void;
-  onPreviewExercise?: (mapping: ExerciseMapping, override?: ExerciseOverride) => void;
-  onAddExercise?: (assignment: PatientAssignment) => void;
-  onExtend?: (assignment: PatientAssignment) => void;
-  onGeneratePDF?: (assignment: PatientAssignment) => void;
-  onRefresh?: () => void;
+  readonly assignment: PatientAssignment;
+  readonly patientId: string;
+  readonly onEditPlan?: (assignment: PatientAssignment) => void;
+  readonly onEditExercise?: (assignment: PatientAssignment, mapping: ExerciseMapping, override?: ExerciseOverride) => void;
+  readonly onPreviewExercise?: (mapping: ExerciseMapping, override?: ExerciseOverride) => void;
+  readonly onAddExercise?: (assignment: PatientAssignment) => void;
+  readonly onExtend?: (assignment: PatientAssignment) => void;
+  readonly onGeneratePDF?: (assignment: PatientAssignment) => void;
+  readonly onRefresh?: () => void;
+}
+
+function toPositiveNumber(value: number | string | null | undefined): number | undefined {
+  if (value === null || value === undefined) {
+    return undefined;
+  }
+
+  const numericValue = typeof value === 'number' ? value : Number(value);
+  if (!Number.isFinite(numericValue) || numericValue <= 0) {
+    return undefined;
+  }
+
+  return numericValue;
 }
 
 // Helper functions
-
-const getActiveDays = (frequency?: Frequency): string => {
-  if (!frequency) return 'Brak harmonogramu';
-
-  const days: string[] = [];
-  if (frequency.monday) days.push('Pn');
-  if (frequency.tuesday) days.push('Wt');
-  if (frequency.wednesday) days.push('Śr');
-  if (frequency.thursday) days.push('Cz');
-  if (frequency.friday) days.push('Pt');
-  if (frequency.saturday) days.push('So');
-  if (frequency.sunday) days.push('Nd');
-
-  if (days.length === 7) return 'Codziennie';
-  if (days.length === 5 && !frequency.saturday && !frequency.sunday) return 'Pn-Pt';
-  if (days.length === 0) return 'Brak dni';
-
-  return days.join(', ');
-};
 
 const getStatusVariant = (status?: string): 'success' | 'secondary' | 'warning' | 'destructive' | 'default' => {
   switch (status) {
@@ -210,7 +205,7 @@ export function buildUnassignRefetchQueries(patientId: string, organizationId?: 
 export function PatientAssignmentCard({
   assignment,
   patientId,
-  onEditSchedule,
+  onEditPlan,
   onEditExercise,
   onPreviewExercise,
   onAddExercise,
@@ -260,6 +255,7 @@ export function PatientAssignmentCard({
     const override = exerciseOverrides[m.id];
     return !override?.hidden;
   });
+  const hiddenExercisesCount = exercises.length - visibleExercises.length;
 
   // Handlers
   const handleToggleStatus = async () => {
@@ -366,11 +362,19 @@ export function PatientAssignmentCard({
   // Get effective exercise params (with overrides)
   const getEffectiveParams = (mapping: ExerciseMapping) => {
     const override = exerciseOverrides[mapping.id];
+
+    const sets = toPositiveNumber(override?.sets ?? mapping.sets ?? mapping.exercise?.sets);
+    const reps = toPositiveNumber(override?.reps ?? mapping.reps ?? mapping.exercise?.reps);
+    const duration = toPositiveNumber(override?.duration ?? mapping.duration ?? mapping.exercise?.duration);
+    const executionTime = toPositiveNumber(
+      override?.executionTime ?? mapping.executionTime ?? mapping.exercise?.defaultExecutionTime
+    );
+
     return {
-      sets: override?.sets ?? mapping.sets ?? mapping.exercise?.sets,
-      reps: override?.reps ?? mapping.reps ?? mapping.exercise?.reps,
-      duration: override?.duration ?? mapping.duration ?? mapping.exercise?.duration,
-      executionTime: override?.executionTime ?? mapping.executionTime ?? mapping.exercise?.defaultExecutionTime,
+      sets,
+      reps,
+      duration,
+      executionTime,
       customName: override?.customName ?? mapping.customName,
       customImages: override?.customImages ?? [],
       hidden: override?.hidden ?? false,
@@ -425,7 +429,7 @@ export function PatientAssignmentCard({
                   </span>
                   <span className="flex items-center gap-1">
                     <Calendar className="h-3.5 w-3.5" />
-                    {getActiveDays(assignment.frequency)}
+                    {formatFrequencyDisplay(assignment.frequency)}
                   </span>
                   {assignment.frequency?.timesPerDay && (
                     <span className="flex items-center gap-1">
@@ -437,13 +441,14 @@ export function PatientAssignmentCard({
               </div>
 
               {/* Actions */}
-              <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+              <div className="flex items-center gap-1">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button
                       variant="ghost"
                       size="icon"
                       className="h-8 w-8"
+                      onClick={(event) => event.stopPropagation()}
                       data-testid={`patient-assignment-${assignment.id}-menu-trigger`}
                     >
                       <MoreHorizontal className="h-4 w-4" />
@@ -459,11 +464,11 @@ export function PatientAssignmentCard({
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
-                      onClick={() => onEditSchedule?.(assignment)}
-                      data-testid={`patient-assignment-${assignment.id}-edit-btn`}
+                      onClick={() => onEditPlan?.(assignment)}
+                      data-testid={`patient-assignment-${assignment.id}-edit-plan-btn`}
                     >
-                      <Calendar className="mr-2 h-4 w-4" />
-                      Edytuj harmonogram
+                      <FilePenLine className="mr-2 h-4 w-4" />
+                      Edytuj plan
                     </DropdownMenuItem>
                     <DropdownMenuItem
                       onClick={() => onExtend?.(assignment)}
@@ -502,13 +507,12 @@ export function PatientAssignmentCard({
 
           {/* Expanded content */}
           <CollapsibleContent>
-            <CardContent className="pt-0 pb-4">
-              {/* Schedule info */}
-              <div className="mb-4 p-3 rounded-xl bg-surface-light/50 border border-border/40">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-1">
-                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Harmonogram</p>
-                    <p className="text-sm">
+            <CardContent className="space-y-4 pt-0 pb-4">
+              <div className="rounded-xl border border-border/50 bg-surface-light/30 p-3.5">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="space-y-1.5">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Plan pacjenta</p>
+                    <p className="text-sm text-foreground">
                       {assignment.startDate && (
                         <>
                           {format(new Date(assignment.startDate), 'd MMM yyyy', { locale: pl })}
@@ -519,7 +523,7 @@ export function PatientAssignmentCard({
                       )}
                     </p>
                     <p className="text-sm text-muted-foreground">
-                      {getActiveDays(assignment.frequency)}
+                      {formatFrequencyDisplay(assignment.frequency)}
                       {assignment.frequency?.timesPerDay && assignment.frequency.timesPerDay > 1 && (
                         <>, {assignment.frequency.timesPerDay}x dziennie</>
                       )}
@@ -528,9 +532,14 @@ export function PatientAssignmentCard({
                       )}
                     </p>
                   </div>
-                  <Button variant="outline" size="sm" onClick={() => onEditSchedule?.(assignment)} className="shrink-0">
-                    <Settings2 className="mr-2 h-4 w-4" />
-                    Edytuj
+                  <Button
+                    size="sm"
+                    onClick={() => onEditPlan?.(assignment)}
+                    className="shrink-0"
+                    data-testid={`patient-assignment-${assignment.id}-edit-plan-primary-btn`}
+                  >
+                    <FilePenLine className="mr-2 h-4 w-4" />
+                    Edytuj plan
                   </Button>
                 </div>
               </div>
@@ -540,7 +549,7 @@ export function PatientAssignmentCard({
                 <div className="flex items-center justify-between">
                   <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
                     Ćwiczenia ({visibleExercises.length}
-                    {exercises.length !== visibleExercises.length ? `/${exercises.length}` : ''})
+                    {hiddenExercisesCount > 0 ? `/${exercises.length}` : ''})
                   </p>
                   <Button
                     variant="outline"
@@ -694,10 +703,10 @@ export function PatientAssignmentCard({
                       })}
 
                     {/* Show hidden exercises count */}
-                    {exercises.length > visibleExercises.length && (
+                    {hiddenExercisesCount > 0 && (
                       <div className="flex items-center justify-center gap-2 py-2 text-xs text-muted-foreground">
                         <EyeOff className="h-3.5 w-3.5" />
-                        {exercises.length - visibleExercises.length} ukrytych ćwiczeń
+                        {hiddenExercisesCount} ukrytych ćwiczeń
                         <Button
                           variant="link"
                           size="sm"

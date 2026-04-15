@@ -60,6 +60,11 @@ Prefiks: `set-`
 
 ## Changelog
 
+### 2026-04-15
+
+- Usunięto z detalu zestawu (`/exercise-sets/[id]`) możliwość edycji `Domyślnego harmonogramu szablonu`; harmonogram szablonu pozostaje ukrytym seedem danych dla personalizacji.
+- Ujednolicono semantykę prezentacji harmonogramu na odczycie: brak zaznaczonych dni przy ustawionym `timesPerWeek` jest pokazywany jako rekomendacja tygodniowa (np. `3 razy w tygodniu`), zamiast pustego stanu.
+
 ### 2026-04-09
 
 - Ulepszono UX tworzenia zestawu w `CreateSetWizard`: główne CTA nie jest blokowane przez pustą nazwę, a walidacja uruchamia się przy próbie zapisu.

@@ -53,4 +53,10 @@ describe('getWizardSteps', () => {
     expect(getWizardSteps('from-patient', false, false, false).slice(-1)[0].id).toBe('summary');
     expect(getWizardSteps('from-set', true, true, false).slice(-1)[0].id).toBe('summary');
   });
+
+  it('returns edit flow steps when edit mode is enabled', () => {
+    const steps = getWizardSteps('from-patient', true, true, false, true);
+    expect(steps.map((step) => step.id)).toEqual(['customize-set', 'schedule', 'summary']);
+    expect(steps[0]?.label).toBe('Plan');
+  });
 });
