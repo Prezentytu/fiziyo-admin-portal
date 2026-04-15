@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 import Image from 'next/image';
 import {
   Search,
@@ -195,11 +195,22 @@ function ExercisePickerItem({
   getExerciseTags: (ex: BuilderExercise) => ExerciseTag[];
 }) {
   const imageUrl = getMediaUrl(exercise.thumbnailUrl ?? exercise.imageUrl ?? exercise.images?.[0]);
+  const handleCardKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      onAdd();
+    }
+  };
 
   return (
     <div
+      role="button"
+      tabIndex={0}
+      onClick={onAdd}
+      onKeyDown={handleCardKeyDown}
+      aria-label={`Dodaj ćwiczenie: ${exercise.name}`}
       className={cn(
-        'w-full flex items-center gap-3 p-2.5 rounded-xl text-left transition-all duration-200 border overflow-hidden min-w-0',
+        'w-full flex items-center gap-3 p-2.5 rounded-xl text-left transition-all duration-200 border overflow-hidden min-w-0 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50',
         instanceCount > 0
           ? 'bg-surface-light border-border/80 opacity-80'
           : 'bg-surface/50 hover:bg-surface-light border-border/50 hover:border-border'
@@ -207,7 +218,10 @@ function ExercisePickerItem({
     >
       <button
         type="button"
-        onClick={onPreview}
+        onClick={(event) => {
+          event.stopPropagation();
+          onPreview();
+        }}
         className="h-9 w-9 rounded-lg overflow-hidden shrink-0 relative group bg-surface-light border border-border/60 cursor-pointer"
         aria-label={`Podgląd ćwiczenia: ${exercise.name}`}
       >
@@ -245,7 +259,10 @@ function ExercisePickerItem({
         <Button
           size="icon"
           variant="secondary"
-          onClick={onAdd}
+          onClick={(event) => {
+            event.stopPropagation();
+            onAdd();
+          }}
           className="h-8 w-8 rounded-lg bg-surface-light hover:bg-primary hover:text-primary-foreground border-border transition-all"
         >
           <Plus className="h-4 w-4" />
