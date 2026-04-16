@@ -6,6 +6,7 @@ import { useQuery, useMutation } from '@apollo/client/react';
 import {
   Loader2,
   Dumbbell,
+  Clock,
   Check,
   Tag,
   Plus,
@@ -46,8 +47,8 @@ import type { CreateExerciseMutationResult, CreateExerciseVariables } from '@/gr
 import { useVoiceInput } from '@/hooks/useVoiceInput';
 import { aiService } from '@/services/aiService';
 import type { ExerciseSuggestionResponse } from '@/services/aiService';
-import { calculateSeriesTimeSeconds } from './utils/calculateSeriesTime';
 import { formatDurationPolish } from '@/utils/durationPolish';
+import { calculateExerciseTotalSeconds } from '@/utils/exerciseTime';
 
 // ============================================================
 // CLEAN NUMBER INPUT - Pure number, no steppers (Linear/Vercel style)
@@ -1100,14 +1101,52 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
     );
   }, [data, mediaFiles]);
 
-  const computedSeriesDurationSeconds = useMemo(() => {
-    return calculateSeriesTimeSeconds({
-      duration: data.duration,
-      reps: data.reps,
-      executionTime: data.executionTime,
-      restReps: data.restReps,
-    });
-  }, [data.duration, data.executionTime, data.reps, data.restReps]);
+  const totalDuration = useMemo(
+    () =>
+      calculateExerciseTotalSeconds({
+        sets: data.sets ?? 0,
+        reps: data.reps ?? undefined,
+        duration: data.duration ?? undefined,
+        executionTime: data.executionTime ?? undefined,
+        restSets: data.restSets ?? undefined,
+        restReps: data.restReps ?? undefined,
+        preparationTime: data.preparationTime ?? undefined,
+        tempo: data.tempo || undefined,
+        side: data.exerciseSide,
+      }),
+    [
+      data.sets,
+      data.reps,
+      data.duration,
+      data.executionTime,
+      data.restSets,
+      data.restReps,
+      data.preparationTime,
+      data.tempo,
+      data.exerciseSide,
+    ]
+  );
+
+  const exactDurationLabel = useMemo(() => {
+    const normalizedSeconds = Math.max(0, Math.round(totalDuration.seconds));
+    const minutes = Math.floor(normalizedSeconds / 60);
+    const seconds = normalizedSeconds % 60;
+
+    if (minutes <= 0) {
+      return `${seconds} s`;
+    }
+
+    return `${minutes} min ${seconds} s`;
+  }, [totalDuration.seconds]);
+
+  const durationBadgeTooltip = useMemo(() => {
+    const baseTooltip = `Laczny czas cwiczenia: ${exactDurationLabel} (serie + przerwy + przygotowanie).`;
+    if (!totalDuration.isEstimate) {
+      return baseTooltip;
+    }
+
+    return `${baseTooltip} Wyliczenie na podstawie aktualnych parametrow tempa/czasu.`;
+  }, [exactDurationLabel, totalDuration.isEstimate]);
 
   // Reset form
   const resetForm = useCallback(() => {
@@ -1390,37 +1429,18 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
     const inferredType = (data.executionTime ?? 0) > 0 ? 'time' : 'reps';
 
     try {
-      // Parse weight field into load components
-      // Format: "20kg", "RPE 7", "Guma czerwona" etc.
+      // Parse weight as numeric kilograms
       let loadType: string | null = null;
       let loadValue: number | null = null;
       let loadUnit: string | null = null;
       let loadText: string | null = null;
 
-      if (data.weight) {
-        const weightStr = data.weight.trim();
-        // Try to parse numeric weight with unit (e.g., "20kg", "15 lbs")
-        const numericMatch = weightStr.match(/^(\d+(?:\.\d+)?)\s*(kg|lbs?|lb)?$/i);
-        if (numericMatch) {
+      const numericWeight = data.weight ? Number(data.weight) : Number.NaN;
+      if (!Number.isNaN(numericWeight) && numericWeight > 0) {
           loadType = 'weight';
-          loadValue = parseFloat(numericMatch[1]);
-          loadUnit = numericMatch[2]?.toLowerCase() || 'kg';
-          loadText = weightStr;
-        } else if (weightStr.toLowerCase().startsWith('rpe')) {
-          // RPE format (e.g., "RPE 7")
-          const rpeMatch = weightStr.match(/rpe\s*(\d+)/i);
-          loadType = 'rpe';
-          loadValue = rpeMatch ? parseInt(rpeMatch[1]) : null;
-          loadText = weightStr;
-        } else {
-          // Free text (e.g., "Guma czerwona", "Własna waga")
-          loadType = weightStr.toLowerCase().includes('gum')
-            ? 'band'
-            : weightStr.toLowerCase().includes('waga')
-              ? 'bodyweight'
-              : 'other';
-          loadText = weightStr;
-        }
+        loadValue = numericWeight;
+        loadUnit = 'kg';
+        loadText = `${numericWeight} kg`;
       }
 
       const result = await createExercise({
@@ -1509,13 +1529,24 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
       >
         {/* ========== HEADER ========== */}
         <DialogHeader className="px-6 pt-5 pb-4 border-b border-border">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/20">
-                <Dumbbell className="h-5 w-5 text-primary" />
-              </div>
-              <DialogTitle className="text-lg font-semibold text-foreground">Nowe ćwiczenie</DialogTitle>
+          <div className="flex items-center gap-3 pr-8">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/20">
+              <Dumbbell className="h-5 w-5 text-primary" />
             </div>
+            <DialogTitle className="text-lg font-semibold text-foreground">Nowe ćwiczenie</DialogTitle>
+            {totalDuration.seconds > 0 && (
+              <div
+                className="flex shrink-0 items-center gap-1.5 rounded-md border border-primary/20 bg-primary/10 px-2 py-0.5"
+                data-testid="exercise-create-duration-badge"
+                title={durationBadgeTooltip}
+                aria-label={durationBadgeTooltip}
+              >
+                <Clock className="h-3 w-3 text-primary" />
+                <span className="text-xs font-semibold text-primary">
+                  {exactDurationLabel}
+                </span>
+              </div>
+            )}
           </div>
         </DialogHeader>
 
@@ -1912,18 +1943,6 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
                 />
               </div>
 
-              <div
-                className="mt-3 rounded-lg border border-border bg-surface/60 px-3 py-2 text-xs text-muted-foreground"
-                data-testid="exercise-create-series-time-summary"
-              >
-                <span className="font-medium text-foreground">Czas serii (wyliczany): </span>
-                <span data-testid="exercise-create-series-time-value">
-                  {computedSeriesDurationSeconds != null ? formatDurationPolish(computedSeriesDurationSeconds) : '—'}
-                </span>
-                {data.duration && data.duration > 0 && (
-                  <span className="ml-2 text-text-tertiary">(tryb czasowy: ręcznie ustawiony czas serii)</span>
-                )}
-              </div>
             </section>
 
             {/* SEKCJA 4: OPIS / INSTRUKCJA */}
@@ -1963,7 +1982,6 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
                     <span>Zaawansowane</span>
                     {(data.exerciseSide !== 'none' ||
                       data.restReps ||
-                      data.duration ||
                       data.tempo ||
                       data.weight ||
                       data.rangeOfMotion) && (
@@ -2055,28 +2073,6 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
                       />
                     </div>
 
-                    {/* Czas serii (tylko dla time-based fallbacku) */}
-                    <div className="space-y-2">
-                      <ExerciseFieldLabelWithTooltip
-                        htmlFor="series-duration-input"
-                        label="Czas serii (s)"
-                        tooltip={EXERCISE_FIELD_TOOLTIPS.duration}
-                        labelClassName="text-[10px] font-semibold text-muted-foreground uppercase"
-                        className="gap-2"
-                        testId="exercise-create-duration-info"
-                      />
-                      <Input
-                        type="number"
-                        id="series-duration-input"
-                        value={data.duration || ''}
-                        onChange={(e) => updateField('duration', e.target.value ? Number(e.target.value) : null)}
-                        placeholder="Tylko dla serii czasowych"
-                        className="bg-surface border-border text-foreground placeholder:text-muted-foreground/50 text-sm"
-                        min={0}
-                        max={3600}
-                        data-testid="exercise-create-duration-input"
-                      />
-                    </div>
                   </div>
 
                   {/* PRO TUNING: Tempo, Obciążenie, ROM */}
@@ -2116,22 +2112,24 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
                       <div className="space-y-2">
                         <ExerciseFieldLabelWithTooltip
                           htmlFor="weight-input"
-                          label="Obciążenie"
+                          label="Obciążenie (kg)"
                           tooltip={EXERCISE_FIELD_TOOLTIPS.load}
                           labelClassName="text-[10px] font-semibold text-muted-foreground uppercase"
                           className="gap-2"
                           testId="exercise-create-load-info"
                         />
                         <Input
-                          type="text"
+                          type="number"
                           id="weight-input"
+                          min={0}
+                          max={500}
                           value={data.weight}
                           onChange={(e) => updateField('weight', e.target.value)}
-                          placeholder="np. 20kg, RPE 7"
+                          placeholder="np. 5"
                           className="bg-surface border-border text-foreground placeholder:text-muted-foreground/50 text-sm"
                           data-testid="exercise-create-weight-input"
                         />
-                        <p className="text-[9px] text-muted-foreground/60">kg, kolor gumy, RPE 1-10</p>
+                        <p className="text-[9px] text-muted-foreground/60">Podaj wartość liczbową w kilogramach.</p>
                       </div>
 
                       {/* Zakres ruchu (ROM) */}

@@ -69,12 +69,10 @@ import {
 import { createTagsMap, mapExerciseTagsToObjects } from '@/utils/tagUtils';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import type { ExerciseByIdResponse, ExerciseTagsResponse, TagCategoriesResponse } from '@/types/apollo';
-import { translateExerciseSidePolish } from '@/components/pdf/polishUtils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { getNextExerciseCopyName } from '@/features/exercises/utils/getNextExerciseCopyName';
-import { calculateSeriesTimeSeconds } from '@/features/exercises/utils/calculateSeriesTime';
-import { formatDurationPolish } from '@/utils/durationPolish';
+import { calculateExerciseTotalSeconds, formatExerciseDuration } from '@/utils/exerciseTime';
 import { getExerciseMediaGalleryUrls } from '@/features/exercises/utils/exerciseMedia';
 
 interface ExerciseDetailPageProps {
@@ -324,11 +322,16 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
 
   const normalizedFields = normalizeExerciseFieldValues(exercise);
 
-  const computedSeriesTimeSeconds = calculateSeriesTimeSeconds({
+  const totalExerciseTime = calculateExerciseTotalSeconds({
+    sets: normalizedFields.sets ?? 0,
     duration: normalizedFields.duration,
     reps: normalizedFields.reps,
     executionTime: normalizedFields.executionTime,
+    restSets: normalizedFields.restSets,
     restReps: normalizedFields.restReps,
+    preparationTime: normalizedFields.preparationTime,
+    tempo: normalizedFields.tempo ?? undefined,
+    side: normalizedFields.side ?? undefined,
   });
 
   const quickStats = [
@@ -357,13 +360,12 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
           },
         ]
       : []),
-    ...(computedSeriesTimeSeconds != null
+    ...(totalExerciseTime.seconds > 0
       ? [
           {
-            id: 'seriesTime',
-            label:
-              normalizedFields.duration && !normalizedFields.executionTime ? 'Czas serii' : 'Czas serii (wyliczany)',
-            value: formatDurationPolish(computedSeriesTimeSeconds),
+            id: 'exerciseDuration',
+            label: 'Czas trwania ćwiczenia',
+            value: formatExerciseDuration(totalExerciseTime.seconds, totalExerciseTime.isEstimate),
             icon: Timer,
             color: 'text-info',
           },
@@ -529,10 +531,6 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
       {/* Hero Section: Title + Meta */}
       <div className="space-y-2">
         <div className="flex flex-wrap items-center gap-2">
-          <Badge variant="secondary" className="text-[10px] uppercase font-bold tracking-wider">
-            <ArrowLeftRight className="mr-1 h-3 w-3" />
-            {translateExerciseSidePolish(exercise.side || exercise.exerciseSide) || 'Bez podziału'}
-          </Badge>
           {/* Verification Status Badges */}
           {isGlobalExercise && (
             <Badge
@@ -578,19 +576,6 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
       {/* Feedback Banner for CHANGES_REQUESTED */}
       {isChangesRequested && exercise.adminReviewNotes && (
         <FeedbackBanner adminReviewNotes={exercise.adminReviewNotes} updatedAt={exercise.updatedAt} />
-      )}
-      {hasMissingCoreInformation && (
-        <div className="rounded-2xl border border-amber-500/30 bg-amber-50 dark:bg-amber-500/10 p-4">
-          <div className="flex items-start gap-3">
-            <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-amber-500" />
-            <div>
-              <p className="text-sm font-semibold text-foreground">Brak wszystkich informacji o ćwiczeniu</p>
-              <p className="text-sm text-muted-foreground">
-                Uzupełnij opis dla pacjenta, opis kliniczny i media, aby ćwiczenie było kompletne.
-              </p>
-            </div>
-          </div>
-        </div>
       )}
 
       {/* Hero Action + Quick Stats */}
@@ -653,6 +638,19 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
           ))}
         </div>
       </div>
+      {hasMissingCoreInformation && (
+        <div className="rounded-2xl border border-sky-500/20 bg-sky-50/50 p-4 dark:bg-sky-500/5">
+          <div className="flex items-start gap-3">
+            <Sparkles className="mt-0.5 h-5 w-5 shrink-0 text-sky-500" />
+            <div>
+              <p className="text-sm font-semibold text-foreground">To ćwiczenie może być jeszcze lepsze</p>
+              <p className="text-sm text-muted-foreground">
+                Dodaj opis dla pacjenta, opis kliniczny i zdjęcia, aby pacjent lepiej rozumiał sposób wykonania.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
       <Collapsible open={isParametersOpen} onOpenChange={setIsParametersOpen}>
         <div className="rounded-2xl border border-border/40 bg-surface/50">
           <CollapsibleTrigger

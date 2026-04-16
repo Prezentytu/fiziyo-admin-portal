@@ -12,10 +12,11 @@ import Image from 'next/image';
 import { ImagePlaceholder } from '@/components/shared/ImagePlaceholder';
 import { getMediaUrl } from '@/utils/mediaUrl';
 import { cn } from '@/lib/utils';
+import { calculateExerciseTotalSeconds, formatExerciseDuration } from '@/utils/exerciseTime';
+import { useOptionalNumericDraft } from '@/hooks/useOptionalNumericDraft';
 import {
   type ExerciseExecutionCardProps,
   type EditableField,
-  isTimerExercise,
   isFieldEditable,
 } from './types';
 import {
@@ -114,15 +115,105 @@ export function ExerciseExecutionCard({
   );
 
   const canEdit = mode === 'edit' && !readOnlyReason;
-  const showTimerBadge = isTimerExercise(exercise);
-  const shouldShowTimerBadge = showTimerBadge && !hideTimerBadge;
   const showReadableView = mode === 'view' && viewVariant === 'readable';
   const id = exercise.id;
   const testId = `${testIdPrefix}-${id}`;
   const imageUrl = getMediaUrl(exercise.thumbnailUrl ?? exercise.imageUrls?.[0]);
   const canUseInternalPreview = !onPreview;
+  const totalDuration = useMemo(
+    () =>
+      calculateExerciseTotalSeconds({
+        sets: exercise.sets,
+        reps: exercise.reps,
+        duration: exercise.duration,
+        executionTime: exercise.executionTime,
+        restSets: exercise.restSets,
+        restReps: exercise.restReps,
+        preparationTime: exercise.preparationTime,
+        tempo: exercise.tempo,
+        side: exercise.side,
+      }),
+    [
+      exercise.duration,
+      exercise.executionTime,
+      exercise.preparationTime,
+      exercise.reps,
+      exercise.restReps,
+      exercise.restSets,
+      exercise.sets,
+      exercise.side,
+      exercise.tempo,
+    ]
+  );
+  const durationBadgeLabel =
+    totalDuration.seconds > 0 ? formatExerciseDuration(totalDuration.seconds, totalDuration.isEstimate) : null;
+  const shouldShowDurationBadge = durationBadgeLabel !== null && !hideTimerBadge;
 
   const canEditField = (field: EditableField) => canEdit && isFieldEditable(field, mode, editableFields);
+  const {
+    draftValue: executionTimeDraft,
+    handleChange: handleExecutionTimeChange,
+    handleFocus: handleExecutionTimeFocus,
+    handleBlur: handleExecutionTimeBlur,
+    handleKeyDown: handleExecutionTimeKeyDown,
+  } = useOptionalNumericDraft({
+    value: exercise.executionTime,
+    onCommit: (value) => handleChange({ executionTime: value }),
+    min: 0,
+    max: 300,
+  });
+  const {
+    draftValue: restSetsDraft,
+    handleChange: handleRestSetsChange,
+    handleFocus: handleRestSetsFocus,
+    handleBlur: handleRestSetsBlur,
+    handleKeyDown: handleRestSetsKeyDown,
+  } = useOptionalNumericDraft({
+    value: exercise.restSets,
+    onCommit: (value) => handleChange({ restSets: value }),
+    min: 0,
+    max: 600,
+  });
+  const {
+    draftValue: restRepsDraft,
+    handleChange: handleRestRepsChange,
+    handleFocus: handleRestRepsFocus,
+    handleBlur: handleRestRepsBlur,
+    handleKeyDown: handleRestRepsKeyDown,
+  } = useOptionalNumericDraft({
+    value: exercise.restReps,
+    onCommit: (value) => handleChange({ restReps: value }),
+    min: 0,
+    max: 60,
+  });
+  const {
+    draftValue: preparationTimeDraft,
+    handleChange: handlePreparationTimeChange,
+    handleFocus: handlePreparationTimeFocus,
+    handleBlur: handlePreparationTimeBlur,
+    handleKeyDown: handlePreparationTimeKeyDown,
+  } = useOptionalNumericDraft({
+    value: exercise.preparationTime,
+    onCommit: (value) => handleChange({ preparationTime: value }),
+    min: 0,
+    max: 120,
+  });
+  const {
+    draftValue: loadKgDraft,
+    handleChange: handleLoadKgChange,
+    handleFocus: handleLoadKgFocus,
+    handleBlur: handleLoadKgBlur,
+    handleKeyDown: handleLoadKgKeyDown,
+  } = useOptionalNumericDraft({
+    value: exercise.loadKg,
+    onCommit: (value) =>
+      handleChange({
+        loadKg: value,
+        loadDisplayText: value == null ? undefined : `${value} kg`,
+      }),
+    min: 0,
+    max: 500,
+  });
   const setsField = EXERCISE_FIELD_METADATA.sets;
   const repsField = EXERCISE_FIELD_METADATA.reps;
   const executionTimeField = EXERCISE_FIELD_METADATA.executionTime;
@@ -241,17 +332,17 @@ export function ExerciseExecutionCard({
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
-                  {shouldShowTimerBadge && (
+                  {shouldShowDurationBadge && (
                     <TooltipProvider delayDuration={150}>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <span className="inline-flex items-center gap-1 mt-0.5 text-[10px] text-primary font-medium">
+                          <span className="inline-flex items-center gap-1 mt-0.5 text-[12px] text-primary font-medium">
                             <Clock className="h-3 w-3" />
-                            Timer ({exercise.executionTime}s)
+                             {durationBadgeLabel}
                           </span>
                         </TooltipTrigger>
                         <TooltipContent side="top" className="text-xs max-w-[220px]">
-                          Dla pacjenta w aplikacji mobilnej zostanie uruchomiony timer na czas jednego powtórzenia.
+                          Szacowany laczny czas wykonania cwiczenia z uwzglednieniem serii, powtorzen, przerw i przygotowania.
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
@@ -434,21 +525,19 @@ export function ExerciseExecutionCard({
                 {showReadableView ? (
                   <p className="mt-1 text-xs text-muted-foreground whitespace-normal wrap-break-word">
                     {exercise.sets} serie • {exercise.reps} powt.
-                    {exercise.executionTime != null && exercise.executionTime > 0
-                      ? ` • Czas powtórzenia: ${exercise.executionTime}s`
-                      : ''}
+                    {durationBadgeLabel ? ` • Czas cwiczenia: ${durationBadgeLabel}` : ''}
                   </p>
-                ) : shouldShowTimerBadge ? (
+                ) : shouldShowDurationBadge ? (
                   <TooltipProvider delayDuration={150}>
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <span className="inline-flex items-center gap-1 mt-0.5 text-[10px] text-primary font-medium">
                           <Clock className="h-3 w-3" />
-                          Timer ({exercise.executionTime}s)
+                          Czas: {durationBadgeLabel}
                         </span>
                       </TooltipTrigger>
                       <TooltipContent side="top" className="text-xs max-w-[220px]">
-                        Dla pacjenta w aplikacji mobilnej zostanie uruchomiony timer na czas jednego powtórzenia.
+                        Szacowany laczny czas wykonania cwiczenia z uwzglednieniem serii, powtorzen, przerw i przygotowania.
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
@@ -469,14 +558,12 @@ export function ExerciseExecutionCard({
                   <span className="tabular-nums">{exercise.reps}</span>
                   <span className="text-muted-foreground text-xs font-normal hidden sm:inline ml-[-2px]">powt.</span>
                 </div>
-                {shouldShowTimerBadge && exercise.executionTime != null && (
+                {shouldShowDurationBadge && (
                   <>
                     <div className="hidden sm:block text-muted-foreground/30 h-4 w-px bg-border/50"></div>
                     <div className="flex items-center justify-between sm:justify-start gap-3 sm:gap-1.5 w-full sm:w-auto">
-                      <span className="text-[10px] sm:hidden text-muted-foreground uppercase font-bold tracking-wide">
-                        Czas powtórzenia
-                      </span>
-                      <span className="text-primary tabular-nums">{exercise.executionTime}s</span>
+                      <span className="text-[10px] sm:hidden text-muted-foreground uppercase font-bold tracking-wide">Czas</span>
+                      <span className="text-primary tabular-nums">{durationBadgeLabel}</span>
                     </div>
                   </>
                 )}
@@ -502,12 +589,11 @@ export function ExerciseExecutionCard({
                     type="number"
                     min={0}
                     max={300}
-                    value={exercise.executionTime ?? ''}
-                    onChange={(e) =>
-                      handleChange({
-                        executionTime: e.target.value ? Number(e.target.value) : undefined,
-                      })
-                    }
+                    value={executionTimeDraft}
+                    onChange={(e) => handleExecutionTimeChange(e.target.value)}
+                    onFocus={handleExecutionTimeFocus}
+                    onBlur={handleExecutionTimeBlur}
+                    onKeyDown={handleExecutionTimeKeyDown}
                     className="h-9 bg-surface-light border-border/50 focus:border-primary"
                     disabled={!canEditField('executionTime')}
                     data-testid={`${testId}-execution-time-input`}
@@ -523,10 +609,11 @@ export function ExerciseExecutionCard({
                   <Input
                     id={`${testId}-rest-sets-input`}
                     type="number"
-                    value={exercise.restSets ?? ''}
-                    onChange={(e) =>
-                      handleChange({ restSets: e.target.value ? Number(e.target.value) : undefined })
-                    }
+                    value={restSetsDraft}
+                    onChange={(e) => handleRestSetsChange(e.target.value)}
+                    onFocus={handleRestSetsFocus}
+                    onBlur={handleRestSetsBlur}
+                    onKeyDown={handleRestSetsKeyDown}
                     className="h-9 bg-surface-light border-border/50 focus:border-primary"
                     disabled={!canEditField('restSets')}
                     data-testid={`${testId}-rest-sets-input`}
@@ -543,13 +630,11 @@ export function ExerciseExecutionCard({
                     id={`${testId}-load-input`}
                     type="number"
                     placeholder="np. 5"
-                    value={exercise.loadKg ?? ''}
-                    onChange={(e) =>
-                      handleChange({
-                        loadKg: e.target.value ? Number(e.target.value) : undefined,
-                        loadDisplayText: e.target.value ? `${e.target.value} kg` : undefined,
-                      })
-                    }
+                    value={loadKgDraft}
+                    onChange={(e) => handleLoadKgChange(e.target.value)}
+                    onFocus={handleLoadKgFocus}
+                    onBlur={handleLoadKgBlur}
+                    onKeyDown={handleLoadKgKeyDown}
                     className="h-9 bg-surface-light border-border/50 focus:border-primary"
                     disabled={!canEditField('loadKg')}
                     data-testid={`${testId}-load-input`}
@@ -602,10 +687,11 @@ export function ExerciseExecutionCard({
                         type="number"
                         min={0}
                         max={60}
-                        value={exercise.restReps ?? ''}
-                        onChange={(e) =>
-                          handleChange({ restReps: e.target.value ? Number(e.target.value) : undefined })
-                        }
+                        value={restRepsDraft}
+                        onChange={(e) => handleRestRepsChange(e.target.value)}
+                        onFocus={handleRestRepsFocus}
+                        onBlur={handleRestRepsBlur}
+                        onKeyDown={handleRestRepsKeyDown}
                         className="h-9 bg-surface-light border-border/50"
                         disabled={!canEditField('restReps')}
                         data-testid={`${testId}-rest-reps-input`}
@@ -623,12 +709,11 @@ export function ExerciseExecutionCard({
                         type="number"
                         min={0}
                         max={120}
-                        value={exercise.preparationTime ?? ''}
-                        onChange={(e) =>
-                          handleChange({
-                            preparationTime: e.target.value ? Number(e.target.value) : undefined,
-                          })
-                        }
+                        value={preparationTimeDraft}
+                        onChange={(e) => handlePreparationTimeChange(e.target.value)}
+                        onFocus={handlePreparationTimeFocus}
+                        onBlur={handlePreparationTimeBlur}
+                        onKeyDown={handlePreparationTimeKeyDown}
                         className="h-9 bg-surface-light border-border/50"
                         disabled={!canEditField('preparationTime')}
                         data-testid={`${testId}-preparation-time-input`}

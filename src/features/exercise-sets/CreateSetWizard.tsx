@@ -72,6 +72,7 @@ import { GET_TAG_CATEGORIES_BY_ORGANIZATION_QUERY } from '@/graphql/queries/tagC
 import { GET_PATIENT_CLINICAL_NOTES_QUERY } from '@/graphql/queries/clinicalNotes.queries';
 import { createTagsMap, mapExercisesWithTags } from '@/utils/tagUtils';
 import type { ExerciseTagsResponse, TagCategoriesResponse, OrganizationExerciseSetsResponse } from '@/types/apollo';
+import { calculateExerciseTotalSeconds, formatExerciseDuration } from '@/utils/exerciseTime';
 
 // ============================================================
 // TYPES
@@ -130,7 +131,7 @@ interface ExerciseParams {
   customDescription: string;
   tempo: string;
   loadType: string;
-  loadValue: number;
+  loadValue?: number;
   loadUnit: string;
   loadText: string;
 }
@@ -535,7 +536,7 @@ export function CreateSetWizard({
       customDescription: '',
       tempo: '',
       loadType: '',
-      loadValue: 0,
+      loadValue: undefined,
       loadUnit: 'kg',
       loadText: '',
     }),
@@ -567,7 +568,7 @@ export function CreateSetWizard({
                 customDescription: '',
                 tempo: '',
                 loadType: '',
-                loadValue: 0,
+                loadValue: undefined,
                 loadUnit: 'kg',
                 loadText: '',
               });
@@ -686,26 +687,29 @@ export function CreateSetWizard({
       .filter((item): item is { instanceId: string; exerciseId: string; exercise: Exercise } => item !== null);
   }, [exercises, selectedInstances]);
 
-  const estimatedTime = useMemo(() => {
+  const totalSetDuration = useMemo(() => {
     let totalSeconds = 0;
+    let isEstimate = false;
 
     for (const { instanceId, exercise } of selectedInstancesData) {
       const params = exerciseParams.get(instanceId) || getDefaultParams(exercise);
-      const isTimeType = exercise.type === 'time';
+      const duration = calculateExerciseTotalSeconds({
+        sets: params.sets ?? 3,
+        reps: params.reps ?? 10,
+        duration: params.duration,
+        executionTime: params.executionTime,
+        restSets: params.restSets,
+        restReps: params.restReps,
+        preparationTime: params.preparationTime,
+        tempo: params.tempo,
+        side: params.exerciseSide ?? exercise.side ?? exercise.exerciseSide,
+      });
 
-      if (isTimeType) {
-        totalSeconds += params.sets * params.duration;
-        totalSeconds += (params.sets - 1) * params.restSets;
-      } else {
-        // Use executionTime if provided, otherwise default to 2 seconds per rep
-        const secondsPerRep = params.executionTime > 0 ? params.executionTime : 2;
-        const repTime = params.reps * secondsPerRep;
-        totalSeconds += params.sets * repTime;
-        totalSeconds += (params.sets - 1) * params.restSets;
-      }
+      totalSeconds += duration.seconds;
+      isEstimate = isEstimate || duration.isEstimate;
     }
 
-    return Math.round(totalSeconds / 60);
+    return { seconds: totalSeconds, isEstimate };
   }, [selectedInstancesData, exerciseParams, getDefaultParams]);
 
   const handleCreateSet = async () => {
@@ -1103,10 +1107,12 @@ export function CreateSetWizard({
                 </Badge>
 
                 {/* Hero Duration Badge */}
-                {estimatedTime > 0 && (
+                {totalSetDuration.seconds > 0 && (
                   <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-primary/10 border border-primary/20 shrink-0">
                     <Timer className="h-3.5 w-3.5 text-primary" />
-                    <span className="text-sm font-bold text-primary">~{estimatedTime} min</span>
+                    <span className="text-sm font-bold text-primary">
+                      {formatExerciseDuration(totalSetDuration.seconds, totalSetDuration.isEstimate)}
+                    </span>
                   </div>
                 )}
               </div>

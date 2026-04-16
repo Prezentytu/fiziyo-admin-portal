@@ -38,6 +38,107 @@ export function calculateEstimatedTime(params: {
   return exerciseTime + microBreakTime + restTime;
 }
 
+function normalizePositiveNumber(value: number | undefined): number {
+  if (value == null || Number.isNaN(value) || value <= 0) {
+    return 0;
+  }
+
+  return value;
+}
+
+export function parseTempo(tempo: string | undefined): number | null {
+  const normalizedTempo = tempo?.trim();
+  if (!normalizedTempo) {
+    return null;
+  }
+
+  const segments = normalizedTempo.split('-').map((segment) => segment.trim());
+  if (segments.length === 0) {
+    return null;
+  }
+
+  let totalSeconds = 0;
+  for (const segment of segments) {
+    if (!/^\d+$/.test(segment)) {
+      return null;
+    }
+
+    totalSeconds += Number(segment);
+  }
+
+  return totalSeconds > 0 ? totalSeconds : null;
+}
+
+export function calculateExerciseTotalSeconds(params: {
+  sets: number;
+  reps?: number;
+  duration?: number;
+  executionTime?: number;
+  restSets?: number;
+  restReps?: number;
+  preparationTime?: number;
+  tempo?: string;
+  side?: string;
+}): { seconds: number; isEstimate: boolean } {
+  const sets = Math.max(0, Math.floor(params.sets));
+  if (sets <= 0) {
+    return { seconds: 0, isEstimate: false };
+  }
+
+  const reps = Math.max(1, Math.floor(params.reps ?? 10));
+  const side = params.side?.toLowerCase();
+  const sideMultiplier = side === 'both' ? 2 : 1;
+  const effectiveReps = reps * sideMultiplier;
+
+  const preparationTime = normalizePositiveNumber(params.preparationTime);
+  const restSets = normalizePositiveNumber(params.restSets);
+  const restReps = normalizePositiveNumber(params.restReps);
+  const durationOverride = normalizePositiveNumber(params.duration);
+  const executionTime = normalizePositiveNumber(params.executionTime);
+  const tempoExecutionTime = parseTempo(params.tempo);
+
+  const repetitionTime = executionTime > 0 ? executionTime : (tempoExecutionTime ?? 3);
+  const isEstimate = executionTime <= 0 && tempoExecutionTime == null && durationOverride <= 0;
+
+  // executionTime is the primary source for timer behavior; duration acts as fallback only.
+  const timePerSet =
+    executionTime > 0
+      ? effectiveReps * executionTime + Math.max(0, effectiveReps - 1) * restReps
+      : durationOverride > 0
+        ? durationOverride
+        : effectiveReps * repetitionTime + Math.max(0, effectiveReps - 1) * restReps;
+
+  const setsTime = sets * timePerSet;
+  const interSetRestTime = Math.max(0, sets - 1) * restSets;
+
+  return {
+    seconds: preparationTime + setsTime + interSetRestTime,
+    isEstimate,
+  };
+}
+
+export function formatExerciseDuration(seconds: number, isEstimate: boolean): string {
+  const normalizedSeconds = Math.max(0, Math.round(seconds));
+  const estimatePrefix = isEstimate ? '~' : '';
+
+  if (normalizedSeconds < 60) {
+    return `${estimatePrefix}${normalizedSeconds} s`;
+  }
+
+  const minutes = Math.floor(normalizedSeconds / 60);
+  const remainingSeconds = normalizedSeconds % 60;
+
+  if (isEstimate) {
+    return `${estimatePrefix}${Math.max(1, Math.round(normalizedSeconds / 60))} min`;
+  }
+
+  if (remainingSeconds === 0) {
+    return `${minutes} min`;
+  }
+
+  return `${minutes} min ${remainingSeconds} s`;
+}
+
 /**
  * Formatuje czas w sekundach do czytelnego formatu.
  *

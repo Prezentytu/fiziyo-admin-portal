@@ -3,6 +3,7 @@
 import { useState, useCallback } from 'react';
 import Image from 'next/image';
 import { Upload, X, Image as ImageIcon, Video, Film, Link as LinkIcon, ExternalLink, Play, Trash2 } from 'lucide-react';
+import { ExerciseImageFrame } from '@/components/shared/exercise';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -179,11 +180,11 @@ export function MediaUploadSection({
                 key={`${file.name}-${index}`}
                 className="group relative aspect-video rounded-lg overflow-hidden bg-surface-light border border-border"
               >
-                <Image
+                <ExerciseImageFrame
                   src={URL.createObjectURL(file)}
                   alt={file.name}
-                  fill
-                  className="object-cover"
+                  aspectRatio=""
+                  className="h-full w-full rounded-none border-0"
                   unoptimized
                 />
                 <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">

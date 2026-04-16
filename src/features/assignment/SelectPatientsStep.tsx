@@ -54,9 +54,6 @@ export function SelectPatientsStep({
 
   const availableCount = patients.filter((p) => !assignedPatientsMap.has(p.id)).length;
 
-  // Filter available patients for "select all" functionality
-  const availablePatients = filteredPatients.filter((p) => !assignedPatientsMap.has(p.id));
-
   const selectedIds = new Set(selectedPatients.map((p) => p.id));
 
   const togglePatient = (patient: Patient) => {
@@ -78,13 +75,9 @@ export function SelectPatientsStep({
       if (selectedIds.has(patient.id)) {
         onSelectPatients(selectedPatients.filter((p) => p.id !== patient.id));
       } else {
-        onSelectPatients([...selectedPatients, patient]);
+        onSelectPatients([patient]);
       }
     }
-  };
-
-  const selectAll = () => {
-    onSelectPatients(availablePatients);
   };
 
   const clearSelection = () => {
@@ -161,10 +154,6 @@ export function SelectPatientsStep({
               )}
             </p>
             <div className="flex gap-2">
-              <button type="button" onClick={selectAll} className="text-xs text-primary hover:underline">
-                Zaznacz wszystkich
-              </button>
-              <span className="text-muted-foreground">·</span>
               <button
                 type="button"
                 onClick={clearSelection}

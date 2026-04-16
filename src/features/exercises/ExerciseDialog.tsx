@@ -2,7 +2,6 @@
 
 import * as React from 'react';
 import { useState, useCallback, useMemo, useRef } from 'react';
-import Image from 'next/image';
 import { useMutation, useQuery } from '@apollo/client/react';
 import { toast } from 'sonner';
 import { Clock, Lock, Sparkles, Copy, Rocket, Upload, Trash2, Wand2, Loader2 } from 'lucide-react';
@@ -11,6 +10,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
+import { ExerciseImageFrame } from '@/components/shared/exercise';
 import { ExerciseForm, ExerciseFormValues } from './ExerciseForm';
 import { CreateExerciseWizard, type CreateExerciseWizardSuccessEvent } from './CreateExerciseWizard';
 import { FeedbackBanner } from './FeedbackBanner';
@@ -552,11 +552,11 @@ export function ExerciseDialog({
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                   {existingMediaUrls.map((mediaUrl, index) => (
                     <div key={mediaUrl} className="group relative aspect-video overflow-hidden rounded-lg border border-border">
-                      <Image
+                      <ExerciseImageFrame
                         src={mediaUrl}
                         alt={`Zdjęcie ćwiczenia ${index + 1}`}
-                        fill
-                        className="object-cover"
+                        aspectRatio=""
+                        className="h-full w-full rounded-none border-0"
                         sizes="(max-width: 768px) 40vw, 180px"
                       />
                       <Button
@@ -578,14 +578,14 @@ export function ExerciseDialog({
                         key={mediaPreviewUrl}
                         className="group relative aspect-video overflow-hidden rounded-lg border border-dashed border-primary/60"
                       >
-                        <Image
+                        <ExerciseImageFrame
                           src={mediaPreviewUrl}
                           alt={`Nowe zdjęcie ćwiczenia ${previewIndex + 1}`}
-                          fill
-                          className="object-cover"
+                          aspectRatio=""
+                          className="h-full w-full rounded-none border-0"
                           unoptimized
                           sizes="(max-width: 768px) 40vw, 180px"
-                          data-testid={`exercise-form-media-preview-${previewId}`}
+                          dataTestId={`exercise-form-media-preview-${previewId}`}
                         />
                         <Button
                           type="button"
