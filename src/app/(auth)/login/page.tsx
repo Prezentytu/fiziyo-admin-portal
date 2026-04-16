@@ -10,7 +10,7 @@ export default function AuthLandingPage() {
       {/* Header */}
       <div className="space-y-2 text-center lg:text-left">
         <h1 className="text-3xl font-bold tracking-tight text-foreground">Witaj w FiziYo</h1>
-        <p className="text-muted-foreground">Panel administracyjny dla fizjoterapeutów i właścicieli gabinetów</p>
+        <p className="text-muted-foreground">Panel administracyjny dla fizjoterapii</p>
       </div>
 
       {/* Buttons */}
@@ -41,13 +41,7 @@ export default function AuthLandingPage() {
         </Button>
       </div>
 
-      {/* Info */}
-      <div className="rounded-xl border border-border bg-surface p-4">
-        <p className="text-sm text-muted-foreground">
-          <strong className="text-foreground">Dla fizjoterapeutów:</strong> Twórz ćwiczenia, zarządzaj pacjentami i
-          monitoruj postępy terapii.
-        </p>
-      </div>
+
 
       {/* Terms */}
       <p className="text-center text-xs text-muted-foreground">

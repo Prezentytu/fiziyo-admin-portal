@@ -139,7 +139,8 @@ export default function FinalizingRegistrationPage() {
   };
 
   return (
-    <div className="space-y-6 text-center">
+    <div className="flex min-h-screen items-center justify-center bg-background p-6">
+      <div className="w-full max-w-md space-y-6 text-center">
       {status === 'loading' && (
         <>
           <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-primary/15">
@@ -199,6 +200,7 @@ export default function FinalizingRegistrationPage() {
           </div>
         </>
       )}
+      </div>
     </div>
   );
 }

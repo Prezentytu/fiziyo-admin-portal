@@ -14,6 +14,14 @@ Dziennik wniosków z pracy AI agentów. Po każdej korekcie dodaj nowy wpis.
 
 ## Wpisy
 
+### 2026-04-16 - Sign-in link do resetu hasla musi miec docelowa strone
+
+- **Kategoria**: `UI/UX`
+- **Problem**: `/sign-in` linkowalo do `/reset-password?email=...` (`handleForgotPassword` robilo `router.push`), ale strona `/reset-password` nie istniala i uzytkownik ladowal na 404 po wyslaniu kodu.
+- **Przyczyna**: Dodano flow "Zapomniales hasla" w `sign-in/page.tsx` bez utworzenia odpowiadajacej trasy w `src/app/(auth)/` - brak checku end-to-end flow po stronie nawigacji.
+- **Rozwiązanie**: Dodano `src/app/(auth)/reset-password/page.tsx` z Clerk `attemptFirstFactor({ strategy: 'reset_password_email_code' })`, segmentowanym OTP (shadcn `input-otp`), live password strength i success state przed redirectem.
+- **Reguła**: Gdy dodajesz link/push do nowej trasy z istniejacego flow, zawsze potwierdz, ze strona docelowa istnieje (lub utworz ja w tym samym PR-ze). Traktuj nawigacje w auth flow jako kontrakt - 404 na `/reset-password` lub `/verify` blokuje uzytkownika.
+
 ### 2026-04-16 - Optional number inputy wymagaja lokalnego draftu i commitu na blur
 
 - **Kategoria**: `React`
