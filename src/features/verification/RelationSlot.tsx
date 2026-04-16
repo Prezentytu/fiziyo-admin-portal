@@ -1,8 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import Image from 'next/image';
 import { ArrowLeft, ArrowRight, Plus, X, RefreshCw, Play, Eye, Sparkles, Loader2, AlertTriangle } from 'lucide-react';
+import { ExerciseImageFrame } from '@/components/shared/exercise';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -196,11 +196,12 @@ export function RelationSlot({
           {/* Thumbnail */}
           <div className="relative aspect-video bg-surface">
             {mediaUrl ? (
-              <Image
+              <ExerciseImageFrame
                 src={isHovering && exercise?.gifUrl ? exercise.gifUrl : exercise?.thumbnailUrl || mediaUrl}
                 alt={exercise?.name || 'Exercise'}
-                fill
-                className="object-cover transition-all"
+                aspectRatio=""
+                className="h-full w-full rounded-none bg-surface"
+                imageClassName="transition-all"
                 sizes="(max-width: 768px) 100vw, 400px"
               />
             ) : (
@@ -335,15 +336,12 @@ function ExercisePreviewDialog({ exercise, open, onOpenChange }: ExercisePreview
         <div className="space-y-4">
           {/* Media */}
           {mediaUrl && (
-            <div className="relative aspect-video rounded-lg overflow-hidden bg-surface">
-              <Image
-                src={mediaUrl}
-                alt={exercise.name}
-                fill
-                className="object-cover"
-                sizes="(max-width: 448px) 100vw, 448px"
-              />
-            </div>
+            <ExerciseImageFrame
+              src={mediaUrl}
+              alt={exercise.name}
+              className="rounded-lg bg-surface"
+              sizes="(max-width: 448px) 100vw, 448px"
+            />
           )}
 
           {/* Info */}
