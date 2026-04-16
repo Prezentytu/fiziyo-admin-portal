@@ -13,6 +13,7 @@ import { ImagePlaceholder } from '@/components/shared/ImagePlaceholder';
 import { getMediaUrl } from '@/utils/mediaUrl';
 import { cn } from '@/lib/utils';
 import { calculateExerciseTotalSeconds, formatExerciseDuration } from '@/utils/exerciseTime';
+import { useOptionalNumericDraft } from '@/hooks/useOptionalNumericDraft';
 import {
   type ExerciseExecutionCardProps,
   type EditableField,
@@ -149,6 +150,70 @@ export function ExerciseExecutionCard({
   const shouldShowDurationBadge = durationBadgeLabel !== null && !hideTimerBadge;
 
   const canEditField = (field: EditableField) => canEdit && isFieldEditable(field, mode, editableFields);
+  const {
+    draftValue: executionTimeDraft,
+    handleChange: handleExecutionTimeChange,
+    handleFocus: handleExecutionTimeFocus,
+    handleBlur: handleExecutionTimeBlur,
+    handleKeyDown: handleExecutionTimeKeyDown,
+  } = useOptionalNumericDraft({
+    value: exercise.executionTime,
+    onCommit: (value) => handleChange({ executionTime: value }),
+    min: 0,
+    max: 300,
+  });
+  const {
+    draftValue: restSetsDraft,
+    handleChange: handleRestSetsChange,
+    handleFocus: handleRestSetsFocus,
+    handleBlur: handleRestSetsBlur,
+    handleKeyDown: handleRestSetsKeyDown,
+  } = useOptionalNumericDraft({
+    value: exercise.restSets,
+    onCommit: (value) => handleChange({ restSets: value }),
+    min: 0,
+    max: 600,
+  });
+  const {
+    draftValue: restRepsDraft,
+    handleChange: handleRestRepsChange,
+    handleFocus: handleRestRepsFocus,
+    handleBlur: handleRestRepsBlur,
+    handleKeyDown: handleRestRepsKeyDown,
+  } = useOptionalNumericDraft({
+    value: exercise.restReps,
+    onCommit: (value) => handleChange({ restReps: value }),
+    min: 0,
+    max: 60,
+  });
+  const {
+    draftValue: preparationTimeDraft,
+    handleChange: handlePreparationTimeChange,
+    handleFocus: handlePreparationTimeFocus,
+    handleBlur: handlePreparationTimeBlur,
+    handleKeyDown: handlePreparationTimeKeyDown,
+  } = useOptionalNumericDraft({
+    value: exercise.preparationTime,
+    onCommit: (value) => handleChange({ preparationTime: value }),
+    min: 0,
+    max: 120,
+  });
+  const {
+    draftValue: loadKgDraft,
+    handleChange: handleLoadKgChange,
+    handleFocus: handleLoadKgFocus,
+    handleBlur: handleLoadKgBlur,
+    handleKeyDown: handleLoadKgKeyDown,
+  } = useOptionalNumericDraft({
+    value: exercise.loadKg,
+    onCommit: (value) =>
+      handleChange({
+        loadKg: value,
+        loadDisplayText: value == null ? undefined : `${value} kg`,
+      }),
+    min: 0,
+    max: 500,
+  });
   const setsField = EXERCISE_FIELD_METADATA.sets;
   const repsField = EXERCISE_FIELD_METADATA.reps;
   const executionTimeField = EXERCISE_FIELD_METADATA.executionTime;
@@ -524,12 +589,11 @@ export function ExerciseExecutionCard({
                     type="number"
                     min={0}
                     max={300}
-                    value={exercise.executionTime ?? ''}
-                    onChange={(e) =>
-                      handleChange({
-                        executionTime: e.target.value ? Number(e.target.value) : undefined,
-                      })
-                    }
+                    value={executionTimeDraft}
+                    onChange={(e) => handleExecutionTimeChange(e.target.value)}
+                    onFocus={handleExecutionTimeFocus}
+                    onBlur={handleExecutionTimeBlur}
+                    onKeyDown={handleExecutionTimeKeyDown}
                     className="h-9 bg-surface-light border-border/50 focus:border-primary"
                     disabled={!canEditField('executionTime')}
                     data-testid={`${testId}-execution-time-input`}
@@ -545,10 +609,11 @@ export function ExerciseExecutionCard({
                   <Input
                     id={`${testId}-rest-sets-input`}
                     type="number"
-                    value={exercise.restSets ?? ''}
-                    onChange={(e) =>
-                      handleChange({ restSets: e.target.value ? Number(e.target.value) : undefined })
-                    }
+                    value={restSetsDraft}
+                    onChange={(e) => handleRestSetsChange(e.target.value)}
+                    onFocus={handleRestSetsFocus}
+                    onBlur={handleRestSetsBlur}
+                    onKeyDown={handleRestSetsKeyDown}
                     className="h-9 bg-surface-light border-border/50 focus:border-primary"
                     disabled={!canEditField('restSets')}
                     data-testid={`${testId}-rest-sets-input`}
@@ -565,13 +630,11 @@ export function ExerciseExecutionCard({
                     id={`${testId}-load-input`}
                     type="number"
                     placeholder="np. 5"
-                    value={exercise.loadKg ?? ''}
-                    onChange={(e) =>
-                      handleChange({
-                        loadKg: e.target.value ? Number(e.target.value) : undefined,
-                        loadDisplayText: e.target.value ? `${e.target.value} kg` : undefined,
-                      })
-                    }
+                    value={loadKgDraft}
+                    onChange={(e) => handleLoadKgChange(e.target.value)}
+                    onFocus={handleLoadKgFocus}
+                    onBlur={handleLoadKgBlur}
+                    onKeyDown={handleLoadKgKeyDown}
                     className="h-9 bg-surface-light border-border/50 focus:border-primary"
                     disabled={!canEditField('loadKg')}
                     data-testid={`${testId}-load-input`}
@@ -624,10 +687,11 @@ export function ExerciseExecutionCard({
                         type="number"
                         min={0}
                         max={60}
-                        value={exercise.restReps ?? ''}
-                        onChange={(e) =>
-                          handleChange({ restReps: e.target.value ? Number(e.target.value) : undefined })
-                        }
+                        value={restRepsDraft}
+                        onChange={(e) => handleRestRepsChange(e.target.value)}
+                        onFocus={handleRestRepsFocus}
+                        onBlur={handleRestRepsBlur}
+                        onKeyDown={handleRestRepsKeyDown}
                         className="h-9 bg-surface-light border-border/50"
                         disabled={!canEditField('restReps')}
                         data-testid={`${testId}-rest-reps-input`}
@@ -645,12 +709,11 @@ export function ExerciseExecutionCard({
                         type="number"
                         min={0}
                         max={120}
-                        value={exercise.preparationTime ?? ''}
-                        onChange={(e) =>
-                          handleChange({
-                            preparationTime: e.target.value ? Number(e.target.value) : undefined,
-                          })
-                        }
+                        value={preparationTimeDraft}
+                        onChange={(e) => handlePreparationTimeChange(e.target.value)}
+                        onFocus={handlePreparationTimeFocus}
+                        onBlur={handlePreparationTimeBlur}
+                        onKeyDown={handlePreparationTimeKeyDown}
                         className="h-9 bg-surface-light border-border/50"
                         disabled={!canEditField('preparationTime')}
                         data-testid={`${testId}-preparation-time-input`}

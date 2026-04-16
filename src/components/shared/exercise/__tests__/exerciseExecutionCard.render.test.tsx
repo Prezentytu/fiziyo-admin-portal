@@ -56,7 +56,7 @@ describe('ExerciseExecutionCard inline read-only source info', () => {
     expect(screen.getByTestId('exercise-card-exercise-1-open-details-btn')).toBeInTheDocument();
     expect(screen.getByText('Obciążenie')).toBeInTheDocument();
     expect(screen.queryByText('nogi')).not.toBeInTheDocument();
-    expect(screen.getByText('Czas: 9 min 35 s')).toBeInTheDocument();
+    expect(screen.getByText('9 min 35 s')).toBeInTheDocument();
 
     await user.click(screen.getByTestId('exercise-card-exercise-1-open-details-btn'));
 
@@ -109,6 +109,7 @@ describe('ExerciseExecutionCard inline read-only source info', () => {
 
     const executionTimeInput = screen.getByTestId('exercise-card-exercise-clear-1-execution-time-input');
     await user.clear(executionTimeInput);
+    await user.tab();
 
     expect(onChange).toHaveBeenCalledWith({ executionTime: undefined });
   });

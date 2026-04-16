@@ -44,7 +44,7 @@ import { ExerciseExecutionCard, fromBuilderExercise, HIDE_EXERCISE_TAGS } from '
 import type { ExerciseExecutionCardData } from '@/components/shared/exercise';
 import { ColorBadge } from '@/components/shared/ColorBadge';
 import { filterExercisesBySource, countBySource } from '@/utils/exerciseSourceFilter';
-import { calculateEstimatedTime } from '@/utils/exerciseTime';
+import { calculateExerciseTotalSeconds, formatExerciseDuration } from '@/utils/exerciseTime';
 import type { ExerciseSourceFilter } from '@/utils/exerciseSourceFilter';
 import { cn } from '@/lib/utils';
 
@@ -515,7 +515,7 @@ export function ExerciseSetBuilder({
       customDescription: '',
       tempo: '',
       loadType: '',
-      loadValue: 0,
+      loadValue: undefined,
       loadUnit: 'kg',
       loadText: '',
     }),
@@ -546,7 +546,7 @@ export function ExerciseSetBuilder({
               customDescription: '',
               tempo: '',
               loadType: '',
-              loadValue: 0,
+              loadValue: undefined,
               loadUnit: 'kg',
               loadText: '',
             });
@@ -614,32 +614,30 @@ export function ExerciseSetBuilder({
       .filter((item): item is { instanceId: string; exerciseId: string; exercise: BuilderExercise } => item !== null);
   }, [availableExercises, selectedInstances]);
 
-  // Estimated time calculation
-  const estimatedTime = useMemo(() => {
+  // Set duration based on the same algorithm as exercise cards.
+  const totalSetDuration = useMemo(() => {
     let totalSeconds = 0;
+    let isEstimate = false;
 
     for (const { instanceId, exercise } of selectedInstancesData) {
       const params = exerciseParams.get(instanceId) || getDefaultParams(exercise);
-
-      // Use defaults for undefined values
-      const sets = params.sets ?? 3;
-      const reps = params.reps ?? 10;
-      const duration = params.duration ?? 0;
-      const restSets = params.restSets ?? 60;
-      const restReps = params.restReps ?? 0;
-      const executionTime = params.executionTime ?? 0;
-
-      totalSeconds += calculateEstimatedTime({
-        sets,
-        reps,
-        duration,
-        executionTime,
-        rest: restSets,
-        restReps,
+      const duration = calculateExerciseTotalSeconds({
+        sets: params.sets ?? 3,
+        reps: params.reps ?? 10,
+        duration: params.duration,
+        executionTime: params.executionTime,
+        restSets: params.restSets,
+        restReps: params.restReps,
+        preparationTime: params.preparationTime,
+        tempo: params.tempo,
+        side: params.exerciseSide ?? exercise.side ?? exercise.exerciseSide,
       });
+
+      totalSeconds += duration.seconds;
+      isEstimate = isEstimate || duration.isEstimate;
     }
 
-    return Math.round(totalSeconds / 60);
+    return { seconds: totalSeconds, isEstimate };
   }, [selectedInstancesData, exerciseParams, getDefaultParams]);
 
   return (
@@ -853,10 +851,12 @@ export function ExerciseSetBuilder({
               </Badge>
 
               {/* Hero Duration Badge */}
-              {estimatedTime > 0 && (
+              {totalSetDuration.seconds > 0 && (
                 <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-primary/10 border border-primary/20 shrink-0">
                   <Timer className="h-3.5 w-3.5 text-primary" />
-                  <span className="text-sm font-bold text-primary">~{estimatedTime} min</span>
+                  <span className="text-sm font-bold text-primary">
+                    {formatExerciseDuration(totalSetDuration.seconds, totalSetDuration.isEstimate)}
+                  </span>
                 </div>
               )}
             </div>

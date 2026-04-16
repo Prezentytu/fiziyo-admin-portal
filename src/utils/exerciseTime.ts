@@ -100,10 +100,13 @@ export function calculateExerciseTotalSeconds(params: {
   const repetitionTime = executionTime > 0 ? executionTime : (tempoExecutionTime ?? 3);
   const isEstimate = executionTime <= 0 && tempoExecutionTime == null && durationOverride <= 0;
 
+  // executionTime is the primary source for timer behavior; duration acts as fallback only.
   const timePerSet =
-    durationOverride > 0
-      ? durationOverride
-      : effectiveReps * repetitionTime + Math.max(0, effectiveReps - 1) * restReps;
+    executionTime > 0
+      ? effectiveReps * executionTime + Math.max(0, effectiveReps - 1) * restReps
+      : durationOverride > 0
+        ? durationOverride
+        : effectiveReps * repetitionTime + Math.max(0, effectiveReps - 1) * restReps;
 
   const setsTime = sets * timePerSet;
   const interSetRestTime = Math.max(0, sets - 1) * restSets;

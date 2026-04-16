@@ -14,6 +14,14 @@ Dziennik wniosków z pracy AI agentów. Po każdej korekcie dodaj nowy wpis.
 
 ## Wpisy
 
+### 2026-04-16 - Optional number inputy wymagaja lokalnego draftu i commitu na blur
+
+- **Kategoria**: `React`
+- **Problem**: W edycji zestawu nie dalo sie wyczyscic pol liczbowych (np. `executionTime`), bo po usunieciu cyfry input natychmiast wracal do wartosci domyslnej.
+- **Przyczyna**: Kontrolowany input wysylal `undefined` na kazdym keystroke, a warstwa mapowania (`fromBuilderExercise`) traktowala `undefined` jako brak override i fallbackowala do `exercise.default*`.
+- **Rozwiązanie**: Dodano hook `useOptionalNumericDraft` i przepieto numeryczne pola opcjonalne na lokalny string draft z commitowaniem do rodzica dopiero na `blur`/`Enter`.
+- **Reguła**: Dla opcjonalnych liczbowych pol formularza z fallbackami domenowymi utrzymuj lokalny draft tekstowy; aktualizacje canonical state wysylaj dopiero przy commit event (`blur`/`Enter`), nie na kazde `onChange`.
+
 ### 2026-04-15 - Numeric patch mapper musi rozrozniac "brak pola" od "wyczysc pole"
 
 - **Kategoria**: `React`

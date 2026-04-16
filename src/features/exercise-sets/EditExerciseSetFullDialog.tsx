@@ -188,7 +188,7 @@ export function EditExerciseSetFullDialog({
         customDescription: mapping.customDescription ?? '',
         tempo: mapping.tempo ?? '',
         loadType: mapping.loadType ?? '',
-        loadValue: mapping.loadValue ?? 0,
+        loadValue: mapping.loadValue ?? undefined,
         loadUnit: mapping.loadUnit ?? 'kg',
         loadText: mapping.loadText ?? '',
       });

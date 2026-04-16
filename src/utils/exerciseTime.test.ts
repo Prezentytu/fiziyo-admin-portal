@@ -64,11 +64,24 @@ describe('calculateExerciseTotalSeconds', () => {
     });
   });
 
-  it('traktuje duration jako override czasu serii', () => {
+  it('daje priorytet executionTime nad duration', () => {
     const result = calculateExerciseTotalSeconds({
       sets: 3,
       reps: 10,
       executionTime: 10,
+      duration: 40,
+    });
+
+    expect(result).toEqual({
+      seconds: 300,
+      isEstimate: false,
+    });
+  });
+
+  it('uzywa duration jako fallback gdy brak executionTime', () => {
+    const result = calculateExerciseTotalSeconds({
+      sets: 3,
+      reps: 10,
       duration: 40,
     });
 
