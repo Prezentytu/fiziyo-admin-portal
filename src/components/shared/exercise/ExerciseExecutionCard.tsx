@@ -12,10 +12,10 @@ import Image from 'next/image';
 import { ImagePlaceholder } from '@/components/shared/ImagePlaceholder';
 import { getMediaUrl } from '@/utils/mediaUrl';
 import { cn } from '@/lib/utils';
+import { calculateExerciseTotalSeconds, formatExerciseDuration } from '@/utils/exerciseTime';
 import {
   type ExerciseExecutionCardProps,
   type EditableField,
-  isTimerExercise,
   isFieldEditable,
 } from './types';
 import {
@@ -114,13 +114,39 @@ export function ExerciseExecutionCard({
   );
 
   const canEdit = mode === 'edit' && !readOnlyReason;
-  const showTimerBadge = isTimerExercise(exercise);
-  const shouldShowTimerBadge = showTimerBadge && !hideTimerBadge;
   const showReadableView = mode === 'view' && viewVariant === 'readable';
   const id = exercise.id;
   const testId = `${testIdPrefix}-${id}`;
   const imageUrl = getMediaUrl(exercise.thumbnailUrl ?? exercise.imageUrls?.[0]);
   const canUseInternalPreview = !onPreview;
+  const totalDuration = useMemo(
+    () =>
+      calculateExerciseTotalSeconds({
+        sets: exercise.sets,
+        reps: exercise.reps,
+        duration: exercise.duration,
+        executionTime: exercise.executionTime,
+        restSets: exercise.restSets,
+        restReps: exercise.restReps,
+        preparationTime: exercise.preparationTime,
+        tempo: exercise.tempo,
+        side: exercise.side,
+      }),
+    [
+      exercise.duration,
+      exercise.executionTime,
+      exercise.preparationTime,
+      exercise.reps,
+      exercise.restReps,
+      exercise.restSets,
+      exercise.sets,
+      exercise.side,
+      exercise.tempo,
+    ]
+  );
+  const durationBadgeLabel =
+    totalDuration.seconds > 0 ? formatExerciseDuration(totalDuration.seconds, totalDuration.isEstimate) : null;
+  const shouldShowDurationBadge = durationBadgeLabel !== null && !hideTimerBadge;
 
   const canEditField = (field: EditableField) => canEdit && isFieldEditable(field, mode, editableFields);
   const setsField = EXERCISE_FIELD_METADATA.sets;
@@ -241,17 +267,17 @@ export function ExerciseExecutionCard({
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
-                  {shouldShowTimerBadge && (
+                  {shouldShowDurationBadge && (
                     <TooltipProvider delayDuration={150}>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <span className="inline-flex items-center gap-1 mt-0.5 text-[10px] text-primary font-medium">
+                          <span className="inline-flex items-center gap-1 mt-0.5 text-[12px] text-primary font-medium">
                             <Clock className="h-3 w-3" />
-                            Timer ({exercise.executionTime}s)
+                             {durationBadgeLabel}
                           </span>
                         </TooltipTrigger>
                         <TooltipContent side="top" className="text-xs max-w-[220px]">
-                          Dla pacjenta w aplikacji mobilnej zostanie uruchomiony timer na czas jednego powtórzenia.
+                          Szacowany laczny czas wykonania cwiczenia z uwzglednieniem serii, powtorzen, przerw i przygotowania.
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
@@ -434,21 +460,19 @@ export function ExerciseExecutionCard({
                 {showReadableView ? (
                   <p className="mt-1 text-xs text-muted-foreground whitespace-normal wrap-break-word">
                     {exercise.sets} serie • {exercise.reps} powt.
-                    {exercise.executionTime != null && exercise.executionTime > 0
-                      ? ` • Czas powtórzenia: ${exercise.executionTime}s`
-                      : ''}
+                    {durationBadgeLabel ? ` • Czas cwiczenia: ${durationBadgeLabel}` : ''}
                   </p>
-                ) : shouldShowTimerBadge ? (
+                ) : shouldShowDurationBadge ? (
                   <TooltipProvider delayDuration={150}>
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <span className="inline-flex items-center gap-1 mt-0.5 text-[10px] text-primary font-medium">
                           <Clock className="h-3 w-3" />
-                          Timer ({exercise.executionTime}s)
+                          Czas: {durationBadgeLabel}
                         </span>
                       </TooltipTrigger>
                       <TooltipContent side="top" className="text-xs max-w-[220px]">
-                        Dla pacjenta w aplikacji mobilnej zostanie uruchomiony timer na czas jednego powtórzenia.
+                        Szacowany laczny czas wykonania cwiczenia z uwzglednieniem serii, powtorzen, przerw i przygotowania.
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
@@ -469,14 +493,12 @@ export function ExerciseExecutionCard({
                   <span className="tabular-nums">{exercise.reps}</span>
                   <span className="text-muted-foreground text-xs font-normal hidden sm:inline ml-[-2px]">powt.</span>
                 </div>
-                {shouldShowTimerBadge && exercise.executionTime != null && (
+                {shouldShowDurationBadge && (
                   <>
                     <div className="hidden sm:block text-muted-foreground/30 h-4 w-px bg-border/50"></div>
                     <div className="flex items-center justify-between sm:justify-start gap-3 sm:gap-1.5 w-full sm:w-auto">
-                      <span className="text-[10px] sm:hidden text-muted-foreground uppercase font-bold tracking-wide">
-                        Czas powtórzenia
-                      </span>
-                      <span className="text-primary tabular-nums">{exercise.executionTime}s</span>
+                      <span className="text-[10px] sm:hidden text-muted-foreground uppercase font-bold tracking-wide">Czas</span>
+                      <span className="text-primary tabular-nums">{durationBadgeLabel}</span>
                     </div>
                   </>
                 )}

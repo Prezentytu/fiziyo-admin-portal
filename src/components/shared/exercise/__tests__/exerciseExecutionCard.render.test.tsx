@@ -56,6 +56,7 @@ describe('ExerciseExecutionCard inline read-only source info', () => {
     expect(screen.getByTestId('exercise-card-exercise-1-open-details-btn')).toBeInTheDocument();
     expect(screen.getByText('Obciążenie')).toBeInTheDocument();
     expect(screen.queryByText('nogi')).not.toBeInTheDocument();
+    expect(screen.getByText('Czas: 9 min 35 s')).toBeInTheDocument();
 
     await user.click(screen.getByTestId('exercise-card-exercise-1-open-details-btn'));
 
@@ -110,6 +111,23 @@ describe('ExerciseExecutionCard inline read-only source info', () => {
     await user.clear(executionTimeInput);
 
     expect(onChange).toHaveBeenCalledWith({ executionTime: undefined });
+  });
+
+  it('pokazuje estymowany czas gdy brakuje executionTime i tempa', () => {
+    render(
+      <ExerciseExecutionCard
+        mode="view"
+        testIdPrefix="exercise-card"
+        exercise={{
+          id: 'exercise-estimated-1',
+          displayName: 'Przysiad',
+          sets: 3,
+          reps: 10,
+        }}
+      />
+    );
+
+    expect(screen.getByText('Czas: ~2 min')).toBeInTheDocument();
   });
 });
 
