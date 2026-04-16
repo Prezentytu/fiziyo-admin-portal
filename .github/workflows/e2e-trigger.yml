@@ -70,9 +70,15 @@ jobs:
 
             core.setOutput("project", selectedProject);
             core.setOutput("event_type", selectedEventType);
+            core.setOutput(
+              "canonical_base_url",
+              selectedEventType === "e2e-prod-run"
+                ? "https://portal.fiziyo.pl"
+                : "https://devportal.fiziyo.pl",
+            );
 
             core.info(
-              `Resolved E2E scope: env=${environmentName || "<empty>"} url=${targetUrl || "<empty>"} branches=${branchesForSha.length > 0 ? branchesForSha.join(",") : "<none>"} reason=${matchedReason} project=${selectedProject} event=${selectedEventType}`,
+              `Resolved E2E scope: env=${environmentName || "<empty>"} url=${targetUrl || "<empty>"} branches=${branchesForSha.length > 0 ? branchesForSha.join(",") : "<none>"} reason=${matchedReason} project=${selectedProject} event=${selectedEventType} baseUrl=${selectedEventType === "e2e-prod-run" ? "https://portal.fiziyo.pl" : "https://devportal.fiziyo.pl"}`,
             );
 
       - name: Trigger fiziyo-tests repository
@@ -86,10 +92,11 @@ jobs:
             const targetUrl = context.payload.deployment_status?.target_url;
             const environmentName = context.payload.deployment_status?.environment;
             const deploymentSha = context.payload.deployment?.sha;
+            const canonicalBaseUrl = "${{ steps.scope.outputs.canonical_base_url }}";
             const testsOwner = process.env.TESTS_REPO_OWNER || context.repo.owner;
             const testsRepo = process.env.TESTS_REPO_NAME || "fiziyo-tests";
 
-            if (!targetUrl || !deploymentSha || !environmentName) {
+            if (!deploymentSha || !environmentName) {
               core.setFailed("Missing deployment payload fields required for dispatch.");
               return;
             }
@@ -99,7 +106,8 @@ jobs:
               repo: testsRepo,
               event_type: "${{ steps.scope.outputs.event_type }}",
               client_payload: {
-                base_url: targetUrl,
+                base_url: canonicalBaseUrl,
+                deployment_url: targetUrl || "",
                 environment: environmentName,
                 sha: deploymentSha,
                 project: "${{ steps.scope.outputs.project }}",
