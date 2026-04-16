@@ -4,7 +4,7 @@ import { useState, useCallback, useMemo, useEffect } from 'react';
 import { useSignUp } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, ArrowRight, Loader2, Mail, Lock, User, Building2, Check, Pencil, Sparkles } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Loader2, Mail, Lock, User, Building2, Check, Pencil } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { PhoneInput } from '@/components/ui/phone-input';
@@ -264,12 +264,8 @@ export default function RegisterPage() {
 
       {/* Header */}
       <div className="space-y-2">
-        <div className="mb-1 flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-primary">
-          <Sparkles className="h-4 w-4" />
-          Darmowe konto
-        </div>
         <h1 className="text-2xl font-bold tracking-tight text-foreground">Utwórz konto fizjoterapeuty</h1>
-        <p className="text-sm text-muted-foreground">Zacznij bezpłatnie. Rozszerz plan gdy będziesz gotowy.</p>
+        <p className="text-sm text-muted-foreground">Kilka kroków i możesz zacząć pracę z pacjentami.</p>
       </div>
 
       {/* Step indicator */}
@@ -392,7 +388,7 @@ export default function RegisterPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="phone">Telefon (opcjonalnie)</Label>
+              <Label htmlFor="phone">Telefon</Label>
               <PhoneInput
                 id="phone"
                 placeholder="123 456 789"
@@ -429,14 +425,6 @@ export default function RegisterPage() {
               />
             )}
 
-            {/* Free plan info */}
-            <div className="flex items-start gap-3 rounded-xl border border-primary/20 bg-primary/5 p-3">
-              <Check className="mt-0.5 h-4 w-4 flex-shrink-0 text-primary" />
-              <div className="text-xs text-muted-foreground">
-                <span className="font-medium text-foreground">Plan Free zawiera:</span> 10 pacjentów, 30 ćwiczeń, 15
-                zestawów. Upgrade w każdej chwili!
-              </div>
-            </div>
           </div>
         )}
 
@@ -466,7 +454,7 @@ export default function RegisterPage() {
                 <ArrowRight className="ml-2 h-4 w-4" />
               </>
             ) : (
-              'Załóż darmowe konto'
+              'Utwórz konto'
             )}
           </Button>
         </div>

@@ -1653,17 +1653,6 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
                     />
                   </Badge>
                 ))}
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setShowTagPicker(!showTagPicker)}
-                  className="h-6 px-2 text-[10px] text-muted-foreground hover:text-foreground hover:bg-surface-light"
-                  data-testid="exercise-create-add-tag-btn"
-                >
-                  <Tag className="h-3 w-3 mr-1" />
-                  {selectedTags.length === 0 ? 'Dodaj tagi' : '+'}
-                </Button>
               </div>
 
               {showTagPicker && (
