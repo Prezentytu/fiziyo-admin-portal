@@ -1,6 +1,8 @@
 export { ExerciseExecutionCard } from './ExerciseExecutionCard';
 export { ExercisePreviewDialog } from './ExercisePreviewDialog';
 export { ExerciseImageFrame } from './ExerciseImageFrame';
+export { ExerciseThumbnail } from './ExerciseThumbnail';
+export type { ExerciseThumbnailProps } from './ExerciseThumbnail';
 export type { ExerciseExecutionCardProps, ExerciseExecutionCardData, EditableField } from './types';
 export { isTimerExercise, isFieldEditable } from './types';
 export { fromExerciseMapping, fromBuilderExercise, buildExerciseImageUrls } from './adapters';

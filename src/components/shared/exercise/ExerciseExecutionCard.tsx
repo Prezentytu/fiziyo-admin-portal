@@ -8,8 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { LabeledStepper } from '@/components/shared/LabeledStepper';
-import Image from 'next/image';
-import { ImagePlaceholder } from '@/components/shared/ImagePlaceholder';
+import { ExerciseThumbnail } from './ExerciseThumbnail';
 import { getMediaUrl } from '@/utils/mediaUrl';
 import { cn } from '@/lib/utils';
 import { calculateExerciseTotalSeconds, formatExerciseDuration } from '@/utils/exerciseTime';
@@ -283,35 +282,23 @@ export function ExerciseExecutionCard({
               const editThumb = (
                 <button
                   type="button"
-                  className={cn(
-                    'h-10 w-10 shrink-0 overflow-hidden rounded-lg bg-surface-light border border-border/60 relative group/thumb',
-                    'cursor-pointer'
-                  )}
+                  className="group/thumb cursor-pointer"
                   onClick={handlePreviewTrigger}
                   aria-label="Otwórz podgląd ćwiczenia"
                   data-testid={`${testId}-thumbnail-btn`}
                 >
-                  {imageUrl ? (
-                    <>
-                      <Image src={imageUrl} alt="" fill className="object-cover" sizes="40px" />
+                  <ExerciseThumbnail
+                    src={imageUrl}
+                    sizeClass="h-10 w-10"
+                    overlay={
                       <div
                         className="absolute inset-0 bg-black/50 opacity-0 group-hover/thumb:opacity-100 transition-opacity flex items-center justify-center pointer-events-none"
                         data-testid={`${testId}-preview-btn`}
                       >
                         <Eye className="h-4 w-4 text-white" />
                       </div>
-                    </>
-                  ) : (
-                    <>
-                      <ImagePlaceholder type="exercise" iconClassName="h-4 w-4" />
-                      <div
-                        className="absolute inset-0 bg-black/50 opacity-0 group-hover/thumb:opacity-100 transition-opacity flex items-center justify-center pointer-events-none"
-                        data-testid={`${testId}-preview-btn`}
-                      >
-                        <Eye className="h-4 w-4 text-white" />
-                      </div>
-                    </>
-                  )}
+                    }
+                  />
                 </button>
               );
 
@@ -471,35 +458,23 @@ export function ExerciseExecutionCard({
               {dragHandle && <div className="shrink-0">{dragHandle}</div>}
               <button
                 type="button"
-                className={cn(
-                  'h-12 w-12 shrink-0 overflow-hidden rounded-lg bg-surface-light border border-border/60 relative group/thumb',
-                  'cursor-pointer'
-                )}
+                className="group/thumb cursor-pointer"
                 onClick={handlePreviewTrigger}
                 aria-label="Otwórz podgląd ćwiczenia"
                 data-testid={`${testId}-thumbnail-btn`}
               >
-                {imageUrl ? (
-                  <>
-                    <Image src={imageUrl} alt="" fill className="object-cover" sizes="48px" />
+                <ExerciseThumbnail
+                  src={imageUrl}
+                  sizeClass="h-12 w-12"
+                  overlay={
                     <div
                       className="absolute inset-0 bg-black/50 opacity-0 group-hover/thumb:opacity-100 transition-opacity flex items-center justify-center pointer-events-none"
                       data-testid={`${testId}-preview-btn`}
                     >
                       <Eye className="h-4 w-4 text-white" />
                     </div>
-                  </>
-                ) : (
-                  <>
-                    <ImagePlaceholder type="exercise" iconClassName="h-4 w-4" />
-                    <div
-                      className="absolute inset-0 bg-black/50 opacity-0 group-hover/thumb:opacity-100 transition-opacity flex items-center justify-center pointer-events-none"
-                      data-testid={`${testId}-preview-btn`}
-                    >
-                      <Eye className="h-4 w-4 text-white" />
-                    </div>
-                  </>
-                )}
+                  }
+                />
               </button>
               <div className="min-w-0 flex-1">
                 <TooltipProvider delayDuration={200}>

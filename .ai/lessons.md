@@ -14,6 +14,22 @@ Dziennik wniosków z pracy AI agentów. Po każdej korekcie dodaj nowy wpis.
 
 ## Wpisy
 
+### 2026-04-17 - createExercise refetchQueries odpala sie ZANIM uploadImage zdazy dorzucic obraz
+
+- **Kategoria**: `GraphQL` | `UI/UX`
+- **Problem**: Po utworzeniu cwiczenia ze zdjeciem przez `CreateExerciseWizard` karta na `/exercises` pokazywala placeholder `<Dumbbell>` zamiast obrazu. Dopiero F5 strony aktualizowal kafelek. Identyczny bug w `ExerciseDialog` (edycja) - dodanie/usuniecie zdjecia w trakcie edycji nie odswiezalo miniatury w liscie az do recznego refresh.
+- **Przyczyna**: `useMutation(CREATE_EXERCISE_MUTATION)` mial `refetchQueries: [GET_AVAILABLE_EXERCISES_QUERY]` wykonywany natychmiast po utworzeniu rekordu (w tym momencie backend zwraca exercise BEZ pol `imageUrl`/`thumbnailUrl`/`images`, bo upload jeszcze nie startowal). Petla `for (file of mediaFiles) await uploadImage(...)` wgrywala obrazy POTEM, ale `uploadImage` mial pusty `refetchQueries` - lista nigdy nie dostawala drugiego refetchu z pelnymi URL-ami obrazow. Ten sam blad w edycji: `updateExercise` refetchowal liste, kazdy `uploadExerciseImage`/`deleteExerciseImage` refetchowal tylko `GET_EXERCISE_BY_ID_QUERY` (detal), nigdy listy.
+- **Rozwiązanie**: W `CreateExerciseWizard` i `ExerciseDialog` dodano `useApolloClient` + final `apolloClient.refetchQueries({ include: [...] })` PO petli upload/delete. Dorzucono `awaitRefetchQueries: true` do `createExercise` zeby porzadek czasowy refetchow byl deterministyczny. Final refetch wlacza zarowno `GET_AVAILABLE_EXERCISES_QUERY` jak i `GET_ORGANIZATION_EXERCISES_QUERY` (oba renderuja te sama liste w roznych miejscach UI).
+- **Reguła**: Jezeli flow biznesowy to `mutationA` (tworzy/edytuje rekord) → `mutationB[]` (uploads/deletes obrazow), to `refetchQueries` na `mutationA` nigdy nie wystarczy - lista trafia do cache zanim `mutationB` zdazy zmodyfikowac obrazy. Standard: `useApolloClient` + final `client.refetchQueries({ include: [...] })` po wszystkich petlach. Per-iteration refetch w petli to anti-pattern (N requestow zamiast 1). Pattern juz utrwalony w `AssignmentWizard.handleEditSubmit` - reuse, nie reinventuj.
+
+### 2026-04-17 - Roznicy `sizes` next/image rozbijaja browser cache miedzy pickerem a karta
+
+- **Kategoria**: `UI/UX` | `React`
+- **Problem**: Po dodaniu cwiczenia z pickera do builderu zestawow miniatura na nowo zamontowanej karcie pojawiala sie z wyraznym opoznieniem (~100-400 ms), mimo ze ten sam obraz byl juz widoczny w pickerze obok.
+- **Przyczyna**: `<Image>` z `next/image` w pickerze uzywal `sizes="36px"`, a w `ExerciseExecutionCard` `sizes="40px"` (edit) lub `sizes="48px"` (view). Next/Image generuje pod rozne `sizes` rozne wpisy w `srcset` (`/_next/image?...&w=64` vs `&w=96`). Browser cache HTTP nie traktuje ich jako tego samego zasobu - karta po dodaniu MUSI pobrac swoj wariant od zera. Dodatkowo karta startuje z domyslnym `loading="lazy"`, co dorzuca opoznienie IntersectionObservera.
+- **Rozwiązanie**: Wyodrebniono wspolny `ExerciseThumbnail` (`src/components/shared/exercise/ExerciseThumbnail.tsx`) z domyslnym `sizes="48px"` i `loading="eager"` dla malych miniatur (36-48 px). Ujednolicono `sizes` we wszystkich miejscach (picker, edit card, view card, `SetThumbnail` cell). Dodano prefetch `new globalThis.Image().src = url` na `onPointerEnter`/`onMouseDown` w `ExercisePickerItem` - request startuje zanim React zamontuje karte. `onError` przelacza na `ImagePlaceholder` (poprzednio polamane URL-e zostawialy pusty kafelek).
+- **Reguła**: Jezeli ten sam obraz jest renderowany przez `next/image` w wielu miejscach (lista + szczegol, picker + karta, miniatura + powiekszenie), MUSI miec identyczny atrybut `sizes`, inaczej browser cache pudluje przy nawigacji. Dla malych miniatur (<= 48 px) nie ma sensu lazy-loadowac - `loading="eager"` eliminuje narzut IntersectionObservera. Prefetch obrazu na hover/mousedown (`new globalThis.Image().src = url`) to standardowy trick dla flow "kliknij -> zamontuj nowy komponent z tym samym obrazem". Kazdy `<Image>` z `onError` powinien miec fallback wizualny - inaczej zlamany URL = pusty box.
+
 ### 2026-04-17 - PDF z @react-pdf/renderer w browserze potrzebuje server-side image proxy
 
 - **Kategoria**: `React`

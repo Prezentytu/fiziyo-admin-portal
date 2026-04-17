@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import Image from 'next/image';
-import { useQuery, useMutation } from '@apollo/client/react';
+import { useQuery, useMutation, useApolloClient } from '@apollo/client/react';
 import {
   Loader2,
   Dumbbell,
@@ -1080,11 +1080,18 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
     };
   }, [mediaPreviewUrls]);
 
+  // Apollo client - potrzebny do final refetch listy cwiczen PO uploadzie obrazow.
+  // `createExercise` ma wlasne `refetchQueries`, ale to startuje natychmiast po
+  // utworzeniu rekordu - zanim petla `uploadImage` zdazy dorzucic zdjecia.
+  // Bez final refetch karta na liscie pokazuje placeholder do czasu F5.
+  const apolloClient = useApolloClient();
+
   // Mutations
   const [createExercise] = useMutation<CreateExerciseMutationResult, CreateExerciseVariables>(
     CREATE_EXERCISE_MUTATION,
     {
       refetchQueries: [{ query: GET_AVAILABLE_EXERCISES_QUERY, variables: { organizationId } }],
+      awaitRefetchQueries: true,
     }
   );
 
@@ -1494,6 +1501,13 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
             console.error('Error uploading image:', err);
           }
         }
+
+        // Final refetch listy cwiczen - po uploadzie obrazow backend ma juz pelne
+        // dane (thumbnailUrl/imageUrl/images). Bez tego refetchu kafelek na
+        // /exercises pokazuje placeholder az do recznego odswiezenia strony.
+        await apolloClient.refetchQueries({
+          include: [GET_AVAILABLE_EXERCISES_QUERY],
+        });
       }
 
       toast.success('Ćwiczenie utworzone!');

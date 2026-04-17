@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { useState, useCallback, useMemo, useRef } from 'react';
-import { useMutation, useQuery } from '@apollo/client/react';
+import { useMutation, useQuery, useApolloClient } from '@apollo/client/react';
 import { toast } from 'sonner';
 import { Clock, Lock, Sparkles, Copy, Rocket, Upload, Trash2, Wand2, Loader2 } from 'lucide-react';
 
@@ -155,6 +155,12 @@ export function ExerciseDialog({
       setIsMediaStateReady(true);
     }
   }, [initialMediaUrls, open]);
+
+  // Apollo client - potrzebny do final refetch listy cwiczen PO upload/delete
+  // obrazow. `updateExercise` refetchuje liste z danymi tekstowymi, ale dzieje
+  // sie to PRZED petlami upload/delete - bez final refetchu kafelek na liscie
+  // pokazuje placeholder/stary obraz az do recznego F5.
+  const apolloClient = useApolloClient();
 
   const [updateExercise, { loading: updating }] = useMutation(UPDATE_EXERCISE_MUTATION, {
     refetchQueries: [{ query: GET_ORGANIZATION_EXERCISES_QUERY, variables: { organizationId } }],
@@ -355,6 +361,17 @@ export function ExerciseDialog({
             },
             refetchQueries: [{ query: GET_EXERCISE_BY_ID_QUERY, variables: { id: exercise.id } }],
             awaitRefetchQueries: true,
+          });
+        }
+
+        // Final refetch obu list cwiczen - po petlach upload/delete backend
+        // ma juz pelne URL-e obrazow. Bez tego kafelek na /exercises pokazuje
+        // stare miniatury (lub placeholder dla nowo dodanych) az do F5.
+        const hadMediaMutations =
+          mediaChangeSet.removedImageUrls.length > 0 || mediaChangeSet.filesToUpload.length > 0;
+        if (hadMediaMutations) {
+          await apolloClient.refetchQueries({
+            include: [GET_ORGANIZATION_EXERCISES_QUERY, GET_AVAILABLE_EXERCISES_QUERY],
           });
         }
 
