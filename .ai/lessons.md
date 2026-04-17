@@ -14,6 +14,14 @@ Dziennik wniosków z pracy AI agentów. Po każdej korekcie dodaj nowy wpis.
 
 ## Wpisy
 
+### 2026-04-17 - PDF z @react-pdf/renderer w browserze potrzebuje server-side image proxy
+
+- **Kategoria**: `React`
+- **Problem**: Generowany w browserze PDF planu cwiczen (`GeneratePDFDialog`) ladowal sie poprawnie, ale zdjecia ćwiczeń byly puste/placeholder mimo poprawnych URL-i z Azure Front Door CDN.
+- **Przyczyna**: `@react-pdf/renderer@4` w browser kontekscie wykonuje `fetch()` na zdalne URL-e obrazow. Azure Front Door / Blob Storage NIE wysyla `Access-Control-Allow-Origin`, wiec browser blokuje request a react-pdf cicho renderuje pusty box. Dodatkowo CDN serwuje WebP/AVIF, ktorych react-pdf v4 nie obsluguje natywnie (tylko PNG/JPG). Trzecie zrodlo bledu: cichy `console.error` zamiast user-facing toastu maskowal problem.
+- **Rozwiązanie**: Wprowadzono `src/app/api/pdf/image-proxy/route.ts` (server-side proxy z whitelistą hostów) + `src/components/pdf/pdfImagePreloader.ts` (preload wszystkich URL-i przez proxy → blob → base64 dataURL przed `pdf().toBlob()`, z konwersją WebP/AVIF→PNG przez `<canvas>`). Per-image isolation przez `Promise.allSettled`: jedno zepsute zdjęcie staje się placeholderem zamiast walic cały dokument. Dodano toast feedback (sukces, warning gdy część zdjęć failuje, error gdy cały generation pada) i disabled checkbox "Zdjęcia ćwiczeń" gdy żaden mapping nie ma URL-a. Wyodrebniono `resolveExerciseImageUrl` z fallback chain `thumbnailUrl → imageUrl → images[0]` (zgodnie z lekcją "thumbnail-first detail preview").
+- **Reguła**: Browserowe biblioteki PDF (`@react-pdf/renderer`, `pdfmake`) NIGDY nie powinny pobierać obrazow z zewnetrznych CDN bezposrednio. Zawsze: (1) server-side proxy z whitelistą hostow (omija CORS i daje kontrole nad SSRF), (2) preload do base64 dataURL przed renderem (oddziela network errors od PDF errors i pozwala uzyc `Promise.allSettled` per-image), (3) konwersja formatow nieobslugiwanych (WebP/AVIF/SVG → PNG) przez `<canvas>` w browserze. Cichy `console.error` w generacji binarnych artefaktow (PDF/Excel) jest anti-patternem - zawsze user-facing toast.
+
 ### 2026-04-17 - Cache-first + custom merge + brak push = nieaktualne dane mobile
 
 - **Kategoria**: `GraphQL`

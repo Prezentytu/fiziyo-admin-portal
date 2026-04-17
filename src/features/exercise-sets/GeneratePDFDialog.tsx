@@ -5,6 +5,7 @@ import { useQuery } from '@apollo/client/react';
 import { useUser } from '@clerk/nextjs';
 import { pdf } from '@react-pdf/renderer';
 import { QRCodeCanvas } from 'qrcode.react';
+import { toast } from 'sonner';
 import { FileDown, Image as ImageIcon, Calendar, QrCode, Loader2, Download, Eye, List } from 'lucide-react';
 
 import {
@@ -23,6 +24,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 
 import { ExerciseSetPDF, formatExercises } from '@/components/pdf';
+import { preloadPdfImages } from '@/components/pdf/pdfImagePreloader';
 import type {
   PDFExerciseSet,
   PDFOrganization,
@@ -31,6 +33,8 @@ import type {
   PDFOptions,
   PDFExercise,
 } from '@/components/pdf';
+import { getMediaUrl } from '@/utils/mediaUrl';
+import { resolveExerciseImageUrl } from './pdfImageResolver';
 
 import { GET_ORGANIZATION_BY_ID_QUERY } from '@/graphql/queries/organizations.queries';
 import { GET_USER_BY_CLERK_ID_QUERY } from '@/graphql/queries/users.queries';
@@ -68,6 +72,51 @@ interface ExerciseMapping {
     exerciseSide?: string;
     notes?: string;
   };
+}
+
+interface ImagePreloadStats {
+  total: number;
+  loaded: number;
+}
+
+/**
+ * Resolves all exercise images via the server proxy and rewrites
+ * `exercise.imageUrl` IN-PLACE with base64 data URLs (or undefined when load fails).
+ */
+async function preloadExerciseImages(exercises: PDFExercise[]): Promise<ImagePreloadStats> {
+  const absoluteImageUrls = exercises
+    .map((ex) => getMediaUrl(ex.imageUrl))
+    .filter((url): url is string => !!url);
+
+  const stats: ImagePreloadStats = { total: absoluteImageUrls.length, loaded: 0 };
+  if (absoluteImageUrls.length === 0) return stats;
+
+  const dataUrlMap = await preloadPdfImages(absoluteImageUrls);
+  stats.loaded = Array.from(dataUrlMap.values()).filter(Boolean).length;
+
+  for (const exercise of exercises) {
+    const absUrl = getMediaUrl(exercise.imageUrl);
+    const dataUrl = absUrl ? dataUrlMap.get(absUrl) : null;
+    exercise.imageUrl = dataUrl ?? undefined;
+  }
+
+  if (process.env.NODE_ENV !== 'production') {
+     
+    console.log(`[PDF] Preloaded ${stats.loaded}/${stats.total} images`);
+  }
+
+  return stats;
+}
+
+/**
+ * Returns base64 logo when preload succeeds, undefined when there is no logo,
+ * or `null` when load fails (caller falls back to placeholder).
+ */
+async function preloadOrganizationLogo(logoUrl: string | undefined): Promise<string | undefined> {
+  const absoluteUrl = getMediaUrl(logoUrl);
+  if (!absoluteUrl) return undefined;
+  const map = await preloadPdfImages([absoluteUrl]);
+  return map.get(absoluteUrl) ?? undefined;
 }
 
 interface ExerciseSetInput {
@@ -170,7 +219,7 @@ export function GeneratePDFDialog({
         type: mapping.exercise?.type as PDFExercise['type'],
         exerciseSide: (mapping.exercise?.side?.toLowerCase() ||
           mapping.exercise?.exerciseSide) as PDFExercise['exerciseSide'],
-        imageUrl: mapping.exercise?.thumbnailUrl || mapping.exercise?.imageUrl,
+        imageUrl: resolveExerciseImageUrl(mapping.exercise),
         images: mapping.exercise?.images,
         notes: mapping.notes || mapping.exercise?.notes,
         sets: mapping.sets,
@@ -182,6 +231,19 @@ export function GeneratePDFDialog({
         customName: mapping.customName,
         customDescription: mapping.customDescription,
       }));
+
+      // Preload images via server-side proxy → base64 dataURL.
+      // Bypasses browser CORS with Azure CDN and converts WebP/AVIF to PNG.
+      // Per-image isolation: failed image becomes placeholder, not a broken PDF.
+      const shouldPreload = viewMode === 'full' && showImages;
+      const imageStats = shouldPreload
+        ? await preloadExerciseImages(pdfExercises)
+        : { total: 0, loaded: 0 };
+
+      const preloadedLogoUrl = await preloadOrganizationLogo(pdfOrganization.logoUrl);
+      if (preloadedLogoUrl !== undefined) {
+        pdfOrganization.logoUrl = preloadedLogoUrl;
+      }
 
       const pdfExerciseSet: PDFExerciseSet = {
         id: exerciseSet.id,
@@ -242,9 +304,19 @@ export function GeneratePDFDialog({
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
 
+      toast.success('Pobrano PDF');
+      if (process.env.NODE_ENV !== 'production' && shouldPreload && imageStats.total > 0) {
+         
+        console.log(`[PDF] Images: ${imageStats.loaded}/${imageStats.total}`);
+      }
       onOpenChange(false);
     } catch (error) {
-      console.error('Błąd generowania PDF:', error);
+      const message = error instanceof Error ? error.message : 'Nieznany błąd';
+       
+      console.error('[PDF] Generation failed:', error);
+      toast.error('Nie udało się wygenerować PDF', {
+        description: message,
+      });
     } finally {
       setIsGenerating(false);
     }
@@ -264,6 +336,17 @@ export function GeneratePDFDialog({
   const exerciseCount = exerciseSet.exerciseMappings?.length || 0;
   const exerciseCountText = formatExercises(exerciseCount);
   const qrUrl = `https://app.fiziyo.pl/sets/${exerciseSet.id}`;
+
+  const exercisesWithImageCount = (exerciseSet.exerciseMappings || []).filter(
+    (mapping) => !!resolveExerciseImageUrl(mapping.exercise)
+  ).length;
+  const noImagesAvailable = exerciseCount > 0 && exercisesWithImageCount === 0;
+
+  useEffect(() => {
+    if (noImagesAvailable && showImages) {
+      setShowImages(false);
+    }
+  }, [noImagesAvailable, showImages]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -351,11 +434,24 @@ export function GeneratePDFDialog({
             <Label className="text-sm font-semibold">Zawartość dokumentu</Label>
             <div className="space-y-3 pl-1">
               {viewMode === 'full' && (
-                <label className="flex items-center gap-3 cursor-pointer group">
-                  <Checkbox checked={showImages} onCheckedChange={(checked) => setShowImages(checked === true)} />
+                <label
+                  className={cn(
+                    'flex items-center gap-3 group',
+                    noImagesAvailable ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'
+                  )}
+                  title={noImagesAvailable ? 'Żadne ćwiczenie w tym zestawie nie ma zdjęcia' : undefined}
+                >
+                  <Checkbox
+                    checked={showImages}
+                    disabled={noImagesAvailable}
+                    onCheckedChange={(checked) => setShowImages(checked === true)}
+                  />
                   <div className="flex items-center gap-2 text-sm group-hover:text-foreground transition-colors">
                     <ImageIcon className="h-4 w-4 text-muted-foreground" />
                     <span>Zdjęcia ćwiczeń</span>
+                    {noImagesAvailable && (
+                      <span className="text-xs text-muted-foreground">(brak zdjęć w zestawie)</span>
+                    )}
                   </div>
                 </label>
               )}

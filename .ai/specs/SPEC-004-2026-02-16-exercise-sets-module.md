@@ -58,7 +58,24 @@ Prefiks: `set-`
 - `set-frequency-picker`
 - `set-add-exercise-btn`
 
+### Generowanie PDF (GeneratePDFDialog) - przeplyw obrazow
+
+`GeneratePDFDialog` korzysta z `@react-pdf/renderer` w 100% w browserze, co generuje dwa systemowe ograniczenia: (1) Azure Front Door CDN nie zwraca naglowkow CORS, wiec direct-fetch z react-pdf jest blokowany przez browser, (2) react-pdf v4 wspiera tylko PNG/JPG natywnie. Pipeline rozwiazujacy oba problemy:
+
+1. **Resolver URL** - `pdfImageResolver.resolveExerciseImageUrl` daje pojedynczy fallback chain `thumbnailUrl → imageUrl → images[0]` synchronicznie z mobile i widokami detal.
+2. **Server-side proxy** - `src/app/api/pdf/image-proxy/route.ts` posredniczy w fetch obrazow (whitelista hostow `azurefd.net`, `fiziyo.com`, `blob.core.windows.net`, timeout 5s, cache `public, max-age=86400`).
+3. **Preloader** - `pdfImagePreloader.preloadPdfImages` pobiera URL-e przez proxy, konwertuje WebP/AVIF → PNG przez `<canvas>`, zwraca `Map<originalUrl, dataUrl|null>`. `Promise.allSettled` zapewnia per-image isolation - jedno zepsute zdjecie nie blokuje calego PDF.
+4. **Render** - przed `pdf().toBlob()` `handleGeneratePDF` zamienia `imageUrl` na base64 dataURL (lub `undefined` gdy load failed). `ExercisePDFItem` rozpoznaje `data:` URL i renderuje go bezposrednio bez `getMediaUrl`.
+5. **UX feedback** - toast sukcesu z licznikiem `loaded/total`, toast warning dla cześciowych failow, toast error dla calej generacji. Checkbox "Zdjecia cwiczen" jest disabled gdy zaden mapping w zestawie nie ma URL-a.
+
+Logo organizacji preloadowane analogicznym mechanizmem (osobne wywolanie `preloadPdfImages`).
+
 ## Changelog
+
+### 2026-04-17
+
+- Naprawiono brak zdjec w generowanym PDF: dodano server-side image proxy (`/api/pdf/image-proxy`), preloader z konwersja WebP/AVIF → PNG, integracje w `GeneratePDFDialog` z toast feedbackiem i disabled checkbox gdy brak URL-i.
+- Wyodrebniono `resolveExerciseImageUrl` do `pdfImageResolver.ts` (single source of truth dla fallback chain `thumbnailUrl → imageUrl → images[0]`).
 
 ### 2026-04-15
 
