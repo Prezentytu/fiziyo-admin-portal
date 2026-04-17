@@ -14,6 +14,14 @@ Dziennik wniosków z pracy AI agentów. Po każdej korekcie dodaj nowy wpis.
 
 ## Wpisy
 
+### 2026-04-17 - Cache-first + custom merge + brak push = nieaktualne dane mobile
+
+- **Kategoria**: `GraphQL`
+- **Problem**: Po edycji cwiczenia w zestawie spersonalizowanym przez fizjoterapeute w panelu admin, pacjent w aplikacji mobilnej nie widzial zaktualizowanych danych nawet po ponownym wejsciu na ekran.
+- **Przyczyna**: Pieciowarstwowy bug: (1) mobile bez WebSocket linku, (2) backend bez emisji eventow per-pacjent, (3) `cache-first` + brak `refetch on focus`, (4) `InMemoryCache.exerciseMappings.merge` zachowywal `existing` gdy `incoming` byl pusty, (5) `buildExerciseUpdateVariables` w admin pomijal pola i wizard nie awaitowal refetchow.
+- **Rozwiązanie**: Faza 1 (cache-and-network + merge zwraca `incoming` + `useFocusEffect` z refetchAssignments + RefreshControl + complete update vars + `awaitRefetchQueries: true`); Faza 3 (split link z `graphql-ws`, subscription `OnMyAssignmentChanged`, hook globalny w `RealtimeBridge` z debounce 300ms i AppState listener); Faza 2 udokumentowana w `docs/backend/realtime-patient-sync-contract.md`.
+- **Reguła**: Dla widokow z danymi modyfikowanymi przez innego usera (cross-app) ZAWSZE projektuj trzy warstwy: (1) push przez WebSocket dla swiezosci `<2s`, (2) `refetch on focus` jako fallback dla zerwanych polaczen, (3) cache merge ktory NIE preferuje `existing` nad `incoming` - backend jest source of truth. Custom merge `incoming.length > 0 ? incoming : existing` jest anti-patternem - traci sygnal "lista jest pusta".
+
 ### 2026-04-16 - Sign-in link do resetu hasla musi miec docelowa strone
 
 - **Kategoria**: `UI/UX`

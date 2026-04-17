@@ -33,6 +33,15 @@ const exerciseFormSchema = z.object({
   clinicalDescription: z.string().optional(),
   audioCue: z.string().max(200).optional(),
   rangeOfMotion: z.string().max(100).optional(),
+  // Passthrough fields - nieedytowalne w obecnym formularzu, ale przekazywane
+  // do mutacji UpdateExercise, zeby nie zgubic istniejacych wartosci.
+  mainTags: z.array(z.string()).optional().nullable(),
+  additionalTags: z.array(z.string()).optional().nullable(),
+  difficultyLevel: z.enum(['Unknown', 'Easy', 'Medium', 'Hard', 'Expert']).optional().nullable(),
+  loadType: z.string().optional().nullable(),
+  loadValue: z.number().optional().nullable(),
+  loadUnit: z.string().optional().nullable(),
+  loadText: z.string().optional().nullable(),
 });
 
 export type ExerciseFormValues = z.infer<typeof exerciseFormSchema>;
@@ -80,6 +89,13 @@ export function ExerciseForm({
       clinicalDescription: '',
       audioCue: '',
       rangeOfMotion: '',
+      mainTags: null,
+      additionalTags: null,
+      difficultyLevel: null,
+      loadType: null,
+      loadValue: null,
+      loadUnit: null,
+      loadText: null,
       ...defaultValues,
     },
   });
