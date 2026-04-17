@@ -16,6 +16,9 @@ import {
   Share2,
   Calendar,
   Sparkles,
+  User,
+  Users,
+  FileText,
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { pl } from 'date-fns/locale';
@@ -357,29 +360,34 @@ export function AssignmentSuccessDialog({
         </DialogHeader>
 
         <div className="space-y-4 py-4">
-          <div className="flex flex-wrap items-center gap-2">
-            <Badge variant="secondary" className="bg-surface-light text-foreground border-border">
-              {isSinglePatient ? selectedPatient.name : `${patients.length} pacjentów`}
-            </Badge>
-            <Badge
-              variant="secondary"
-              className="max-w-full bg-surface-light text-foreground border-border"
-              title={setName}
-            >
-              <span className="truncate">{setName}</span>
-            </Badge>
-          </div>
-
-          {formattedPremiumDate && (
-            <div className="flex flex-wrap items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 sm:flex-nowrap sm:justify-between sm:gap-3">
-              <Sparkles className="h-4 w-4 text-primary shrink-0" />
-              <p className="text-sm font-medium text-foreground flex-1 min-w-0">Dostęp Premium aktywny</p>
-              <Badge variant="secondary" className="shrink-0 bg-surface-light text-foreground border-border">
-                <Calendar className="h-3 w-3 mr-1" />
-                {formattedPremiumDate}
-              </Badge>
+          <div className="rounded-xl border border-border/60 bg-surface/40 p-4">
+            <div className="flex items-start gap-3">
+              <div className="h-9 w-9 shrink-0 rounded-full bg-surface-light border border-border flex items-center justify-center">
+                {isSinglePatient ? (
+                  <User className="h-4 w-4 text-muted-foreground" />
+                ) : (
+                  <Users className="h-4 w-4 text-muted-foreground" />
+                )}
+              </div>
+              <div className="min-w-0 flex-1 space-y-1">
+                <p className="text-[11px] font-medium uppercase tracking-wide text-text-tertiary">
+                  {isSinglePatient ? 'Pacjent' : 'Pacjenci'}
+                </p>
+                <p
+                  className="truncate text-sm font-semibold text-foreground"
+                  title={isSinglePatient ? selectedPatient.name : `${patients.length} pacjentów`}
+                >
+                  {isSinglePatient ? selectedPatient.name : `${patients.length} pacjentów`}
+                </p>
+                <div className="flex items-center gap-1.5 pt-1 text-sm text-muted-foreground">
+                  <FileText className="h-3.5 w-3.5 shrink-0" />
+                  <span className="truncate" title={setName}>
+                    {setName}
+                  </span>
+                </div>
+              </div>
             </div>
-          )}
+          </div>
 
           {!isSinglePatient && (
             <div className="flex gap-2 overflow-x-auto pb-2">
@@ -394,6 +402,17 @@ export function AssignmentSuccessDialog({
                   {patient.name}
                 </Button>
               ))}
+            </div>
+          )}
+
+          {formattedPremiumDate && (
+            <div className="flex flex-wrap items-center gap-2 rounded-lg border border-border bg-surface px-3 py-2 sm:flex-nowrap sm:justify-between sm:gap-3">
+              <Sparkles className="h-4 w-4 text-primary shrink-0" />
+              <p className="text-sm font-medium text-foreground flex-1 min-w-0">Dostęp Premium aktywny</p>
+              <Badge variant="secondary" className="shrink-0 bg-surface-light text-foreground border-border">
+                <Calendar className="h-3 w-3 mr-1" />
+                {formattedPremiumDate}
+              </Badge>
             </div>
           )}
 
@@ -535,7 +554,8 @@ export function AssignmentSuccessDialog({
                 data-testid="assign-success-assign-another-primary-btn"
                 className="w-full sm:w-auto"
               >
-                Personalizuj i przypisz
+                <Sparkles className="h-4 w-4 mr-1.5" />
+                Personalizuj kolejny zestaw
               </Button>
             )}
           </div>
