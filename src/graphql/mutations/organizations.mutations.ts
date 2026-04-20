@@ -176,9 +176,6 @@ export const CREATE_ORGANIZATION_MUTATION = gql`
       subscriptionExpiresAt
       allowPersonalExercises
       sharedExercisesByDefault
-      maxTherapists
-      maxPatients
-      maxClinics
       creationTime
     }
   }
@@ -227,9 +224,6 @@ export const UPDATE_SUBSCRIPTION_MUTATION = gql`
       name
       subscriptionPlan
       subscriptionExpiresAt
-      maxTherapists
-      maxPatients
-      maxClinics
     }
   }
 `;
@@ -245,9 +239,6 @@ export const ACTIVATE_PLAN_WITH_CODE_MUTATION = gql`
       name
       subscriptionPlan
       subscriptionExpiresAt
-      maxTherapists
-      maxPatients
-      maxClinics
     }
   }
 `;

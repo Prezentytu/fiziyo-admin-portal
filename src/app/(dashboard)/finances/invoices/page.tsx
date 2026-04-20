@@ -9,7 +9,6 @@ import { useOrganization } from '@/contexts/OrganizationContext';
 import {
   BillingHeroCard,
   TherapistBillingTable,
-  FairUsageCard,
   BillingDetailsCard,
   InvoicesHistoryCard,
 } from '@/components/billing';
@@ -63,7 +62,6 @@ export default function InvoicesPage() {
 
           {/* Sidebar Column - 1/3 */}
           <div className="space-y-4">
-            <FairUsageCard organizationId={organizationId} />
             <BillingDetailsCard organizationId={organizationId} />
             <InvoicesHistoryCard organizationId={organizationId} />
           </div>

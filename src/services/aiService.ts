@@ -3,8 +3,9 @@
  * Zastępuje exerciseAIService.ts - teraz backend gwarantuje JSON
  */
 
+import { toast } from 'sonner';
 import { getBackendToken } from '@/lib/tokenCache';
-import { triggerCreditsRefresh } from '@/components/settings/AICreditsPanel';
+import { triggerCreditsRefresh } from '@/lib/aiCreditsRefresh';
 import type {
   ExerciseSuggestionRequest,
   ExerciseSuggestionResponse,
@@ -62,7 +63,25 @@ class AIService {
       if (response.status === 401) {
         throw new Error('Sesja wygasła. Odśwież stronę i spróbuj ponownie.');
       }
+
       const errorText = await response.text();
+
+      // Wyczerpanie miesiecznej puli AI — nie pokazujemy slowa "limit"/"kredyty",
+      // user nie powinien czuc ze jest ograniczany. Backend zwraca 400 z error: "insufficient_credits".
+      if (response.status === 400 || response.status === 402 || response.status === 403) {
+        try {
+          const errorJson = JSON.parse(errorText) as { error?: string };
+          if (errorJson?.error === 'insufficient_credits') {
+            toast.error('Funkcja chwilowo niedostępna. Spróbuj ponownie za chwilę.');
+            throw new Error('AI_TEMPORARILY_UNAVAILABLE');
+          }
+        } catch (parseError) {
+          if (parseError instanceof Error && parseError.message === 'AI_TEMPORARILY_UNAVAILABLE') {
+            throw parseError;
+          }
+        }
+      }
+
       throw new Error(`Błąd AI: ${response.status} - ${errorText}`);
     }
 

@@ -1,5 +1,5 @@
 import { getBackendToken } from '@/lib/tokenCache';
-import { triggerCreditsRefresh } from '@/components/settings/AICreditsPanel';
+import { triggerCreditsRefresh } from '@/lib/aiCreditsRefresh';
 import type { ChatQuestionRequest, ChatDataContainer } from '@/types/chat.types';
 
 const isDev = process.env.NODE_ENV === 'development';

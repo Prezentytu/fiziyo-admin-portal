@@ -154,50 +154,6 @@ export const GET_USER_ORGANIZATION_MEMBERSHIPS_QUERY = gql`
   }
 `;
 
-// Query do pobierania szczegółów planu subskrypcyjnego organizacji
-export const GET_CURRENT_ORGANIZATION_PLAN = gql`
-  query GetCurrentOrganizationPlan($organizationId: String!) {
-    currentOrganizationPlan(organizationId: $organizationId) {
-      currentPlan
-      expiresAt
-      limits {
-        maxExercises
-        maxPatients
-        maxTherapists
-        maxClinics
-        allowQRCodes
-        allowReports
-        allowCustomBranding
-        allowSMSReminders
-      }
-      pricing {
-        monthlyPrice
-        annualPrice
-      }
-      currentUsage {
-        exercises
-        patients
-        therapists
-      }
-    }
-  }
-`;
-
-// Query do pobierania informacji o wszystkich dostępnych planach
-export const GET_ALL_PLANS_INFO = gql`
-  query GetAllPlansInfo {
-    allPlansInfo {
-      plan
-      limits
-      pricing {
-        monthlyPrice
-        annualPrice
-      }
-      features
-    }
-  }
-`;
-
 // Query do pobierania zaproszeń organizacji
 export const GET_ORGANIZATION_INVITATIONS_QUERY = gql`
   query GetOrganizationInvitations($organizationId: String!) {
