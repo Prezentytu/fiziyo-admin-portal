@@ -28,20 +28,56 @@ const isDev = process.env.NODE_ENV === 'development';
  * Centralny serwis AI z dedykowanymi endpointami
  */
 class AIService {
-  private baseUrl: string;
+  private readonly baseUrl: string;
+
+  // Mapa aktywnych requestów: endpoint+payloadHash → Promise.
+  // Dwa identyczne kliknięcia "Ulepsz z AI" zwracają TEN SAM Promise zamiast palić 2x kredyty.
+  private readonly inflight = new Map<string, Promise<unknown>>();
+
+  // Mapa kontrolerów: endpoint+payloadHash → AbortController.
+  // Pozwala anulować request gdy user zamknie drawer / wystartuje nowy request.
+  private readonly controllers = new Map<string, AbortController>();
 
   constructor() {
     this.baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
   }
 
   /**
-   * Wykonuje request do AI endpoint
+   * Anuluje wszystkie aktywne requesty dla danego endpointu.
+   * Wywołać gdy user zamknie drawer lub odejdzie od formularza.
    */
-  private async request<T>(endpoint: string, body: unknown): Promise<T> {
+  abortEndpoint(endpoint: string): void {
+    for (const [key, controller] of this.controllers.entries()) {
+      if (key.startsWith(`${endpoint}::`)) {
+        controller.abort();
+        this.controllers.delete(key);
+        this.inflight.delete(key);
+      }
+    }
+  }
+
+  private dedupeKey(endpoint: string, body: unknown): string {
+    return `${endpoint}::${JSON.stringify(body)}`;
+  }
+
+  /**
+   * Wykonuje request do AI endpoint z deduplikacją i abort support
+   */
+  private async request<T>(endpoint: string, body: unknown, options?: { signal?: AbortSignal }): Promise<T> {
     const token = getBackendToken();
 
     if (!token) {
       throw new Error('Brak tokenu autoryzacji. Zaloguj się ponownie.');
+    }
+
+    const key = this.dedupeKey(endpoint, body);
+
+    const existing = this.inflight.get(key) as Promise<T> | undefined;
+    if (existing) {
+      if (isDev) {
+        console.log(`[AIService] Reusing inflight request for ${endpoint}`);
+      }
+      return existing;
     }
 
     const url = `${this.baseUrl}/api/ai/${endpoint}`;
@@ -50,51 +86,88 @@ class AIService {
       console.log(`[AIService] Request to ${endpoint}:`, body);
     }
 
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify(body),
-    });
+    const controller = new AbortController();
+    this.controllers.set(key, controller);
 
-    if (!response.ok) {
-      if (response.status === 401) {
-        throw new Error('Sesja wygasła. Odśwież stronę i spróbuj ponownie.');
+    if (options?.signal) {
+      if (options.signal.aborted) {
+        controller.abort();
+      } else {
+        options.signal.addEventListener('abort', () => controller.abort(), { once: true });
       }
+    }
 
-      const errorText = await response.text();
+    const promise = (async () => {
+      try {
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(body),
+          signal: controller.signal,
+        });
 
-      // Wyczerpanie miesiecznej puli AI — nie pokazujemy slowa "limit"/"kredyty",
-      // user nie powinien czuc ze jest ograniczany. Backend zwraca 400 z error: "insufficient_credits".
-      if (response.status === 400 || response.status === 402 || response.status === 403) {
-        try {
-          const errorJson = JSON.parse(errorText) as { error?: string };
-          if (errorJson?.error === 'insufficient_credits') {
-            toast.error('Funkcja chwilowo niedostępna. Spróbuj ponownie za chwilę.');
-            throw new Error('AI_TEMPORARILY_UNAVAILABLE');
+        if (!response.ok) {
+          if (response.status === 401) {
+            throw new Error('Sesja wygasła. Odśwież stronę i spróbuj ponownie.');
           }
-        } catch (parseError) {
-          if (parseError instanceof Error && parseError.message === 'AI_TEMPORARILY_UNAVAILABLE') {
-            throw parseError;
+
+          const errorText = await response.text();
+
+          // Wyczerpanie miesiecznej puli AI — nie pokazujemy slowa "limit"/"kredyty",
+          // user nie powinien czuc ze jest ograniczany. Backend zwraca 400 z error: "insufficient_credits".
+          if (response.status === 400 || response.status === 402 || response.status === 403) {
+            try {
+              const errorJson = JSON.parse(errorText) as { error?: string };
+              if (errorJson?.error === 'insufficient_credits') {
+                toast.error('Funkcja chwilowo niedostępna. Spróbuj ponownie za chwilę.');
+                throw new Error('AI_TEMPORARILY_UNAVAILABLE');
+              }
+            } catch (parseError) {
+              if (parseError instanceof Error && parseError.message === 'AI_TEMPORARILY_UNAVAILABLE') {
+                throw parseError;
+              }
+            }
           }
+
+          // 502 = backend AI provider failure (po naszych zmianach na backendzie)
+          if (response.status === 502) {
+            try {
+              const errorJson = JSON.parse(errorText) as { error?: string; message?: string };
+              if (errorJson?.message) {
+                toast.error(errorJson.message);
+                throw new Error('AI_PROVIDER_FAILURE');
+              }
+            } catch (parseError) {
+              if (parseError instanceof Error && parseError.message === 'AI_PROVIDER_FAILURE') {
+                throw parseError;
+              }
+            }
+          }
+
+          throw new Error(`Błąd AI: ${response.status} - ${errorText}`);
         }
+
+        const data = await response.json();
+
+        if (isDev) {
+          console.log(`[AIService] Response from ${endpoint}:`, data);
+        }
+
+        triggerCreditsRefresh();
+
+        return data as T;
+      } finally {
+        // Wyczyść mapy niezależnie od wyniku - request się skończył
+        this.inflight.delete(key);
+        this.controllers.delete(key);
       }
+    })();
 
-      throw new Error(`Błąd AI: ${response.status} - ${errorText}`);
-    }
-
-    const data = await response.json();
-
-    if (isDev) {
-      console.log(`[AIService] Response from ${endpoint}:`, data);
-    }
-
-    // Odśwież kredyty po udanej akcji AI
-    triggerCreditsRefresh();
-
-    return data as T;
+    this.inflight.set(key, promise);
+    return promise;
   }
 
   // ============================================
