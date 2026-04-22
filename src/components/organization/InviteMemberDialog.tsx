@@ -49,24 +49,8 @@ interface GeneratedLink {
   role: string;
 }
 
-const LEGACY_PLAN_LIMIT_CODES = new Set([
-  'THERAPIST_LIMIT_REACHED',
-  'PATIENT_LIMIT_REACHED',
-  'EXERCISE_LIMIT_REACHED',
-  'CLINIC_LIMIT_REACHED',
-]);
-
 function getInviteErrorMessage(error: unknown, fallbackMessage: string): string {
   if (CombinedGraphQLErrors.is(error)) {
-    const legacyLimitError = error.errors.find((graphQLError) => {
-      const extensionCode = graphQLError.extensions?.code;
-      return typeof extensionCode === 'string' && LEGACY_PLAN_LIMIT_CODES.has(extensionCode);
-    });
-
-    if (legacyLimitError) {
-      return 'Nie można teraz wygenerować zaproszenia. Spróbuj ponownie później.';
-    }
-
     const firstMessage = error.errors[0]?.message;
     if (firstMessage) {
       return firstMessage;

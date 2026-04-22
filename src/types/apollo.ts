@@ -68,43 +68,7 @@ export interface OrganizationByIdResponse {
   organizationById: Organization | null;
 }
 
-// ========================================
-// Organization Plan & Subscription Types
-// ========================================
-
-export interface PlanLimits {
-  maxExercises?: number;
-  maxPatients?: number;
-  maxTherapists?: number;
-  maxClinics?: number;
-  allowQRCodes?: boolean;
-  allowReports?: boolean;
-  allowCustomBranding?: boolean;
-  allowSMSReminders?: boolean;
-}
-
-export interface PlanPricing {
-  monthlyPrice?: number;
-  annualPrice?: number;
-}
-
-export interface PlanUsage {
-  exercises: number;
-  patients: number;
-  therapists: number;
-}
-
-export interface OrganizationPlan {
-  currentPlan: string;
-  expiresAt?: string;
-  limits?: PlanLimits;
-  pricing?: PlanPricing;
-  currentUsage?: PlanUsage;
-}
-
-export interface CurrentOrganizationPlanResponse {
-  currentOrganizationPlan: OrganizationPlan | null;
-}
+// NOTE: Typy PlanLimits/PlanUsage/OrganizationPlan usuniete — model pay-as-you-go AI bez limitow zasobow.
 
 export interface UserOrganizationWithRole {
   organizationId: string;

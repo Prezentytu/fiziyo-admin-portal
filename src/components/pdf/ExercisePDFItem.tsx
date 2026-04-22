@@ -21,7 +21,11 @@ interface ExercisePDFItemProps {
 export function ExercisePDFItem({ exercise, index, showImage, compact }: ExercisePDFItemProps) {
   const displayName = exercise.customName || exercise.name;
   const displayDescription = exercise.customDescription || exercise.description;
-  const imageUrl = getMediaUrl(exercise.imageUrl || exercise.images?.[0]);
+  // Image is always pre-resolved upstream (data URL from preloader OR plain URL).
+  // Plain URL is still passed through getMediaUrl for legacy relative-path safety.
+  const imageUrl = exercise.imageUrl?.startsWith('data:')
+    ? exercise.imageUrl
+    : getMediaUrl(exercise.imageUrl);
   const sideLabel = translateExerciseSidePolish(exercise.exerciseSide);
 
   // Formatowanie parametrów

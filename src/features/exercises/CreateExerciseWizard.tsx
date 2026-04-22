@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import Image from 'next/image';
-import { useQuery, useMutation } from '@apollo/client/react';
+import { useQuery, useMutation, useApolloClient } from '@apollo/client/react';
 import {
   Loader2,
   Dumbbell,
@@ -49,6 +49,7 @@ import { aiService } from '@/services/aiService';
 import type { ExerciseSuggestionResponse } from '@/services/aiService';
 import { formatDurationPolish } from '@/utils/durationPolish';
 import { calculateExerciseTotalSeconds } from '@/utils/exerciseTime';
+import { findSimilar } from '@/utils/stringSimilarity';
 
 // ============================================================
 // CLEAN NUMBER INPUT - Pure number, no steppers (Linear/Vercel style)
@@ -832,18 +833,40 @@ function AIDiffDrawer({
           </AISection>
         )}
 
-        {/* No suggestions - everything is optimal */}
+        {/* No suggestions - rozróżniamy "wysoka pewność = wszystko OK" vs "niska pewność = AI nie miało zastrzeżeń" */}
         {totalSuggestions === 0 && !hasHints && !hasAdvancedParams && (
           <div className="text-center py-12 px-6">
-            <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-              <Check className="h-7 w-7 text-primary" />
-            </div>
-            <p className="text-sm font-medium text-foreground mb-1">Parametry optymalne</p>
-            <p className="text-xs text-muted-foreground">
-              AI nie wykryło błędów ani obszarów do poprawy.
-              <br />
-              Twoje ćwiczenie jest gotowe!
-            </p>
+            {suggestion.confidence >= 0.7 ? (
+              <>
+                <div
+                  className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4"
+                  data-testid="ai-diff-no-suggestions-confident"
+                >
+                  <Check className="h-7 w-7 text-primary" />
+                </div>
+                <p className="text-sm font-medium text-foreground mb-1">Parametry optymalne</p>
+                <p className="text-xs text-muted-foreground">
+                  AI nie wykryło błędów ani obszarów do poprawy.
+                  <br />
+                  Twoje ćwiczenie jest gotowe.
+                </p>
+              </>
+            ) : (
+              <>
+                <div
+                  className="w-14 h-14 rounded-full bg-warning/10 flex items-center justify-center mx-auto mb-4"
+                  data-testid="ai-diff-no-suggestions-low-confidence"
+                >
+                  <AlertTriangle className="h-7 w-7 text-warning" />
+                </div>
+                <p className="text-sm font-medium text-foreground mb-1">Brak sugestii AI</p>
+                <p className="text-xs text-muted-foreground">
+                  AI nie ma pewności co do tego ćwiczenia ({Math.round(suggestion.confidence * 100)}%).
+                  <br />
+                  Sprawdź nazwę i parametry ręcznie - możliwe że potrzebują uściślenia.
+                </p>
+              </>
+            )}
           </div>
         )}
       </div>
@@ -1034,23 +1057,37 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
     skip: !organizationId,
   });
 
-  // Similar exercises detection (Inline Library Guard)
+  // Similar exercises detection (Inline Library Guard).
+  // Łączy dwie strategie:
+  //   1) substring match (np. "hip" → "Hip Thrust z hantlem")
+  //   2) Levenshtein fuzzy match (np. "hip trust" → "Hip Thrust") - łapie literówki LOKALNIE,
+  //      bez wywołania AI, więc działa zanim user kliknie "Ulepsz z AI" i nie zużywa kredytów.
   const similarExercises = useMemo((): ExistingExercise[] => {
     if (!data.name || data.name.length < 2) return [];
 
     const exercises = (exercisesData as { organizationExercises?: ExistingExercise[] })?.organizationExercises || [];
     const normalizedInput = normalizeText(data.name);
 
-    return exercises
-      .filter((ex) => {
-        const normalizedName = normalizeText(ex.name);
-        // Check if similar but not exact match
-        return (
-          (normalizedName.includes(normalizedInput) || normalizedInput.includes(normalizedName)) &&
-          normalizedName !== normalizedInput
-        );
-      })
-      .slice(0, 5);
+    const substringHits = exercises.filter((ex) => {
+      const normalizedName = normalizeText(ex.name);
+      return (
+        (normalizedName.includes(normalizedInput) || normalizedInput.includes(normalizedName)) &&
+        normalizedName !== normalizedInput
+      );
+    });
+
+    const fuzzyHits = findSimilar(data.name, exercises, (ex) => ex.name, { limit: 5, threshold: 0.7 });
+
+    // Deduplikacja po id, zachowując kolejność (substring najpierw - najpewniejsze sygnały)
+    const seen = new Set<string>();
+    const merged: ExistingExercise[] = [];
+    for (const ex of [...substringHits, ...fuzzyHits]) {
+      if (!seen.has(ex.id)) {
+        seen.add(ex.id);
+        merged.push(ex);
+      }
+    }
+    return merged.slice(0, 5);
   }, [data.name, exercisesData]);
 
   const tags: ExerciseTag[] = useMemo(() => {
@@ -1080,11 +1117,18 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
     };
   }, [mediaPreviewUrls]);
 
+  // Apollo client - potrzebny do final refetch listy cwiczen PO uploadzie obrazow.
+  // `createExercise` ma wlasne `refetchQueries`, ale to startuje natychmiast po
+  // utworzeniu rekordu - zanim petla `uploadImage` zdazy dorzucic zdjecia.
+  // Bez final refetch karta na liscie pokazuje placeholder do czasu F5.
+  const apolloClient = useApolloClient();
+
   // Mutations
   const [createExercise] = useMutation<CreateExerciseMutationResult, CreateExerciseVariables>(
     CREATE_EXERCISE_MUTATION,
     {
       refetchQueries: [{ query: GET_AVAILABLE_EXERCISES_QUERY, variables: { organizationId } }],
+      awaitRefetchQueries: true,
     }
   );
 
@@ -1392,11 +1436,20 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
     setShowAIDiff(false);
   }, [aiSuggestion, tags]);
 
-  // Close AI Diff drawer
+  // Close AI Diff drawer - abortuje aktywny request, zwalnia kredyty po stronie backendu
   const handleCloseAIDiff = useCallback(() => {
+    aiService.abortEndpoint('exercise-suggest');
     setShowAIDiff(false);
     setAiSuggestion(null);
+    setIsLoadingAI(false);
   }, []);
+
+  // Cleanup gdy modal się zamyka w trakcie ładowania AI
+  useEffect(() => {
+    if (!open && isLoadingAI) {
+      aiService.abortEndpoint('exercise-suggest');
+    }
+  }, [open, isLoadingAI]);
 
   // Validation
   const isValid = data.name.trim().length >= 2;
@@ -1494,6 +1547,13 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
             console.error('Error uploading image:', err);
           }
         }
+
+        // Final refetch listy cwiczen - po uploadzie obrazow backend ma juz pelne
+        // dane (thumbnailUrl/imageUrl/images). Bez tego refetchu kafelek na
+        // /exercises pokazuje placeholder az do recznego odswiezenia strony.
+        await apolloClient.refetchQueries({
+          include: [GET_AVAILABLE_EXERCISES_QUERY],
+        });
       }
 
       toast.success('Ćwiczenie utworzone!');

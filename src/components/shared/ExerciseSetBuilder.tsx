@@ -1,7 +1,6 @@
 'use client';
 
-import { useState, useMemo, useCallback, type KeyboardEvent as ReactKeyboardEvent } from 'react';
-import Image from 'next/image';
+import { useCallback, useMemo, useState, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 import {
   Search,
   Loader2,
@@ -37,10 +36,14 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { ImagePlaceholder } from '@/components/shared/ImagePlaceholder';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { getMediaUrl } from '@/utils/mediaUrl';
-import { ExerciseExecutionCard, fromBuilderExercise, HIDE_EXERCISE_TAGS } from '@/components/shared/exercise';
+import {
+  ExerciseExecutionCard,
+  ExerciseThumbnail,
+  fromBuilderExercise,
+  HIDE_EXERCISE_TAGS,
+} from '@/components/shared/exercise';
 import type { ExerciseExecutionCardData } from '@/components/shared/exercise';
 import { ColorBadge } from '@/components/shared/ColorBadge';
 import { filterExercisesBySource, countBySource } from '@/utils/exerciseSourceFilter';
@@ -202,12 +205,24 @@ function ExercisePickerItem({
     }
   };
 
+  // Warm up cache HTTP wariantu next/image, którego za chwilę użyje karta
+  // (`<ExerciseThumbnail sizes="48px">`). Strzelamy na pierwszej możliwej
+  // interakcji - hover lub mousedown - żeby request startował zanim React
+  // zdąży zamontować nową kartę po `onAdd`.
+  const prefetchThumb = useCallback(() => {
+    if (!imageUrl || globalThis.window === undefined) return;
+    const img = new globalThis.Image();
+    img.src = imageUrl;
+  }, [imageUrl]);
+
   return (
     <div
       role="button"
       tabIndex={0}
       onClick={onAdd}
       onKeyDown={handleCardKeyDown}
+      onPointerEnter={prefetchThumb}
+      onMouseDown={prefetchThumb}
       aria-label={`Dodaj ćwiczenie: ${exercise.name}`}
       className={cn(
         'w-full flex items-center gap-3 p-2.5 rounded-xl text-left transition-all duration-200 border overflow-hidden min-w-0 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50',
@@ -222,17 +237,19 @@ function ExercisePickerItem({
           event.stopPropagation();
           onPreview();
         }}
-        className="h-9 w-9 rounded-lg overflow-hidden shrink-0 relative group bg-surface-light border border-border/60 cursor-pointer"
+        className="group cursor-pointer"
         aria-label={`Podgląd ćwiczenia: ${exercise.name}`}
       >
-        {imageUrl ? (
-          <Image src={imageUrl} alt="" fill className="object-cover" sizes="36px" />
-        ) : (
-          <ImagePlaceholder type="exercise" iconClassName="h-4 w-4" />
-        )}
-        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
-          <Eye className="h-3 w-3 text-white" />
-        </div>
+        <ExerciseThumbnail
+          src={imageUrl}
+          sizeClass="h-9 w-9"
+          loading="lazy"
+          overlay={
+            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
+              <Eye className="h-3 w-3 text-white" />
+            </div>
+          }
+        />
       </button>
 
       <div className="flex-1 min-w-0">

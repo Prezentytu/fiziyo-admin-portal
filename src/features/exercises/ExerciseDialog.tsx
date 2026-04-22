@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { useState, useCallback, useMemo, useRef } from 'react';
-import { useMutation, useQuery } from '@apollo/client/react';
+import { useMutation, useQuery, useApolloClient } from '@apollo/client/react';
 import { toast } from 'sonner';
 import { Clock, Lock, Sparkles, Copy, Rocket, Upload, Trash2, Wand2, Loader2 } from 'lucide-react';
 
@@ -25,8 +25,13 @@ import {
   GET_AVAILABLE_EXERCISES_QUERY,
   GET_EXERCISE_BY_ID_QUERY,
 } from '@/graphql/queries/exercises.queries';
-import type { Exercise } from './ExerciseCard';
+import type { Exercise, ExerciseTag } from './ExerciseCard';
 import { buildExerciseUpdateVariables } from './utils/buildExerciseUpdateVariables';
+
+function normalizeTagIds(tags: Exercise['mainTags'] | Exercise['additionalTags']): string[] | null {
+  if (!tags || tags.length === 0) return null;
+  return (tags as Array<string | ExerciseTag>).map((tag) => (typeof tag === 'string' ? tag : tag.id));
+}
 import { getNextExerciseCopyName } from './utils/getNextExerciseCopyName';
 import { aiService } from '@/services/aiService';
 import { buildExerciseMediaChangeSet, getExerciseMediaGalleryUrls } from './utils/exerciseMedia';
@@ -150,6 +155,12 @@ export function ExerciseDialog({
       setIsMediaStateReady(true);
     }
   }, [initialMediaUrls, open]);
+
+  // Apollo client - potrzebny do final refetch listy cwiczen PO upload/delete
+  // obrazow. `updateExercise` refetchuje liste z danymi tekstowymi, ale dzieje
+  // sie to PRZED petlami upload/delete - bez final refetchu kafelek na liscie
+  // pokazuje placeholder/stary obraz az do recznego F5.
+  const apolloClient = useApolloClient();
 
   const [updateExercise, { loading: updating }] = useMutation(UPDATE_EXERCISE_MUTATION, {
     refetchQueries: [{ query: GET_ORGANIZATION_EXERCISES_QUERY, variables: { organizationId } }],
@@ -353,6 +364,17 @@ export function ExerciseDialog({
           });
         }
 
+        // Final refetch obu list cwiczen - po petlach upload/delete backend
+        // ma juz pelne URL-e obrazow. Bez tego kafelek na /exercises pokazuje
+        // stare miniatury (lub placeholder dla nowo dodanych) az do F5.
+        const hadMediaMutations =
+          mediaChangeSet.removedImageUrls.length > 0 || mediaChangeSet.filesToUpload.length > 0;
+        if (hadMediaMutations) {
+          await apolloClient.refetchQueries({
+            include: [GET_ORGANIZATION_EXERCISES_QUERY, GET_AVAILABLE_EXERCISES_QUERY],
+          });
+        }
+
         // If in fix mode (CHANGES_REQUESTED), also resubmit for review
         if (isFixMode && onResubmit) {
           setIsResubmitting(true);
@@ -418,6 +440,12 @@ export function ExerciseDialog({
         clinicalDescription: exercise.clinicalDescription ?? '',
         audioCue: exercise.audioCue ?? '',
         rangeOfMotion: exercise.rangeOfMotion ?? '',
+        // Passthrough zachowujacy istniejace wartosci przy edycji formularza,
+        // ktory nie eksponuje tych pol bezposrednio. Tagi przechodza w postaci
+        // tablicy ID (string[]); jesli backend zwrocil obiekty ExerciseTag,
+        // wyciagamy z nich id, zeby kontrakt z UPDATE_EXERCISE_MUTATION byl spojny.
+        mainTags: normalizeTagIds(exercise.mainTags),
+        additionalTags: normalizeTagIds(exercise.additionalTags),
       }
     : undefined;
 

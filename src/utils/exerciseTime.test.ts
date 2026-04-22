@@ -9,6 +9,20 @@ describe('parseTempo', () => {
   it('zwraca null dla niepoprawnego tempa', () => {
     expect(parseTempo('3-x-2-0')).toBeNull();
   });
+
+  it('parsuje skompresowany format 4 cyfr bez separatora (zgodnie z wizardem i AI)', () => {
+    expect(parseTempo('3010')).toBe(4);
+    expect(parseTempo('2010')).toBe(3);
+  });
+
+  it('parsuje skompresowany format 3 cyfr bez separatora', () => {
+    expect(parseTempo('310')).toBe(4);
+  });
+
+  it('zwraca null gdy wszystkie cyfry sa zerowe', () => {
+    expect(parseTempo('0000')).toBeNull();
+    expect(parseTempo('0-0-0-0')).toBeNull();
+  });
 });
 
 describe('calculateExerciseTotalSeconds', () => {
@@ -87,6 +101,24 @@ describe('calculateExerciseTotalSeconds', () => {
 
     expect(result).toEqual({
       seconds: 120,
+      isEstimate: false,
+    });
+  });
+
+  it('liczy czas dla skompresowanego tempa "2010" bez wybuchu do 1208 min (regresja)', () => {
+    // Regresja: wczesniej parseTempo("2010") zwracalo 2010 sekund/powt, co dawalo
+    // ~72485 s = 1208 min 5 s w naglowku wizarda. Po fixie tempo "2010" = 2+0+1+0 = 3 s.
+    const result = calculateExerciseTotalSeconds({
+      sets: 3,
+      reps: 12,
+      restSets: 60,
+      preparationTime: 5,
+      tempo: '2010',
+    });
+
+    // 3 * (12 * 3) + 2 * 60 + 5 = 108 + 120 + 5 = 233
+    expect(result).toEqual({
+      seconds: 233,
       isEstimate: false,
     });
   });

@@ -48,14 +48,14 @@ describe('InviteMemberDialog error handling', () => {
     });
   });
 
-  it('pokazuje neutralny komunikat dla legacy limit error w generate link', async () => {
+  it('nie pokazuje juz dialogu LimitReached dla bledow GraphQL (model pay-as-you-go)', async () => {
     const user = userEvent.setup();
     generateInviteLinkMock.mockRejectedValueOnce({
       isCombinedGraphQLError: true,
       errors: [
         {
-          message: 'Osiągnięto limit 1 fizjoterapeutów w planie Starter.',
-          extensions: { code: 'THERAPIST_LIMIT_REACHED' },
+          message: 'Nieoczekiwany blad serwera.',
+          extensions: { code: 'INTERNAL_SERVER_ERROR' },
         },
       ],
     });
@@ -73,7 +73,7 @@ describe('InviteMemberDialog error handling', () => {
     await user.click(screen.getByTestId('org-invite-generate-link-btn'));
 
     await waitFor(() => {
-      expect(toastErrorMock).toHaveBeenCalledWith('Nie można teraz wygenerować zaproszenia. Spróbuj ponownie później.');
+      expect(toastErrorMock).toHaveBeenCalledWith('Nieoczekiwany blad serwera.');
     });
 
     expect(screen.queryByTestId('common-limit-reached-dialog')).not.toBeInTheDocument();

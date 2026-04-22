@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
-import { useQuery, useMutation } from '@apollo/client/react';
+import { useQuery, useMutation, useApolloClient } from '@apollo/client/react';
 import { useRouter } from 'next/navigation';
 import { Loader2, ArrowLeft, ArrowRight, Users, Calendar, Pencil, Sparkles, X } from 'lucide-react';
 import { toast } from 'sonner';
@@ -460,6 +460,11 @@ function AssignmentWizardContent({
     variables: { organizationId },
     skip: !organizationId || !open,
   });
+
+  // Apollo client - uzywany do final refetch po petli mutacji w handleEditSubmit,
+  // zeby UI admina zobaczyl spojny stan nawet jesli backend wykonuje czesc operacji
+  // asynchronicznie i nie wszystkie mutacje w petli maja wlasne refetchQueries.
+  const apolloClient = useApolloClient();
 
   // Mutations
   const [assignSet, { loading: assigning }] = useMutation(ASSIGN_EXERCISE_SET_TO_PATIENT_MUTATION);
@@ -1217,6 +1222,7 @@ function AssignmentWizardContent({
           name: planName.trim(),
           description: selectedSet.description ?? null,
         },
+        awaitRefetchQueries: true,
       });
 
       const diff = computeExerciseDiff(initialEditSnapshots, {
@@ -1230,12 +1236,14 @@ function AssignmentWizardContent({
             exerciseId: removedMapping.exerciseId,
             exerciseSetId: selectedSet.id,
           },
+          awaitRefetchQueries: true,
         });
       }
 
       for (const addedItem of diff.added) {
         await addExerciseToSet({
           variables: buildAddExerciseVariables(addedItem.instance, selectedSet.id, addedItem.order),
+          awaitRefetchQueries: true,
         });
       }
 
@@ -1247,6 +1255,7 @@ function AssignmentWizardContent({
             updatedItem.exerciseId,
             updatedItem.order
           ),
+          awaitRefetchQueries: true,
         });
       }
 
@@ -1277,6 +1286,17 @@ function AssignmentWizardContent({
                 { query: GET_ORGANIZATION_PATIENTS_QUERY, variables: { organizationId, filter: 'all' } },
               ]
             : []),
+        ],
+        awaitRefetchQueries: true,
+      });
+
+      // Final refetch po petli - gwarantuje, ze admin UI widzi spojny stan
+      // wszystkich mappingow przed zamknieciem wizarda. Zabezpiecza przed sytuacja,
+      // gdy ktora-s mutacja w petli zmodyfikowala cache w sposob niespojny.
+      await apolloClient.refetchQueries({
+        include: [
+          GET_EXERCISE_SET_WITH_ASSIGNMENTS_QUERY,
+          ...(patientId ? [GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY] : []),
         ],
       });
 

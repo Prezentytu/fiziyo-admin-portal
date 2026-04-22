@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import { Dumbbell } from 'lucide-react';
 import { getMediaUrl } from '@/utils/mediaUrl';
@@ -17,7 +18,36 @@ interface SetThumbnailProps {
   className?: string;
 }
 
-export function SetThumbnail({ exerciseMappings, size = 'sm', className = '' }: SetThumbnailProps) {
+function SetThumbnailCell({ src, iconSize }: Readonly<{ src: string | undefined; iconSize: string }>) {
+  const [errored, setErrored] = useState(false);
+
+  useEffect(() => {
+    setErrored(false);
+  }, [src]);
+
+  const showImage = Boolean(src) && !errored;
+
+  return (
+    <div className="relative overflow-hidden">
+      {showImage ? (
+        <Image
+          src={src as string}
+          alt=""
+          fill
+          className="object-cover"
+          sizes="48px"
+          onError={() => setErrored(true)}
+        />
+      ) : (
+        <div className="h-full w-full bg-surface flex items-center justify-center">
+          <Dumbbell className={`${iconSize} text-muted-foreground/40`} />
+        </div>
+      )}
+    </div>
+  );
+}
+
+export function SetThumbnail({ exerciseMappings, size = 'sm', className = '' }: Readonly<SetThumbnailProps>) {
   const images = exerciseMappings
     ?.slice(0, 4)
     .map((m) => getMediaUrl(m.exercise?.imageUrl || m.exercise?.images?.[0]))
@@ -41,15 +71,7 @@ export function SetThumbnail({ exerciseMappings, size = 'sm', className = '' }: 
       className={`${gridSize} grid grid-cols-2 gap-px rounded-xl overflow-hidden bg-surface-light shrink-0 ${className}`}
     >
       {[0, 1, 2, 3].map((i) => (
-        <div key={i} className="relative overflow-hidden">
-          {images[i] ? (
-            <Image src={images[i]} alt="" fill className="object-cover" sizes="44px" />
-          ) : (
-            <div className="h-full w-full bg-surface flex items-center justify-center">
-              <Dumbbell className={`${iconSize} text-muted-foreground/40`} />
-            </div>
-          )}
-        </div>
+        <SetThumbnailCell key={i} src={images[i]} iconSize={iconSize} />
       ))}
     </div>
   );

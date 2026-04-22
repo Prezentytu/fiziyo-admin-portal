@@ -52,7 +52,17 @@ export function parseTempo(tempo: string | undefined): number | null {
     return null;
   }
 
-  const segments = normalizedTempo.split('-').map((segment) => segment.trim());
+  // Wspierane formaty:
+  //   1) "3-0-1-0" (z separatorami) - klasyczny zapis tempa
+  //   2) "3010" (3-4 cyfry bez separatora) - format skompresowany uzywany przez
+  //      CreateExerciseWizard (input akceptuje tylko cyfry, max 4) oraz backend AI
+  //      (prompt nakazuje "DOKLADNIE 4 cyfry bez separatorow"). Bez tej galezi
+  //      "3010" parsowalo sie jako 3010 sekund/powt. → totalDuration ~1208 min.
+  const segments =
+    !normalizedTempo.includes('-') && /^\d{3,4}$/.test(normalizedTempo)
+      ? [...normalizedTempo]
+      : normalizedTempo.split('-').map((segment) => segment.trim());
+
   if (segments.length === 0) {
     return null;
   }
