@@ -424,7 +424,7 @@ export function ExerciseDialog({
         reps: exercise.defaultReps ?? exercise.reps,
         duration: exercise.defaultDuration ?? exercise.duration,
         restSets: exercise.defaultRestBetweenSets ?? exercise.restSets ?? 60,
-        restReps: exercise.defaultRestBetweenReps ?? exercise.restReps ?? null,
+        restReps: exercise.defaultRestBetweenReps ?? exercise.restReps ?? 0,
         preparationTime: exercise.preparationTime ?? 5,
         executionTime: exercise.defaultExecutionTime ?? exercise.executionTime ?? null,
         exerciseSide:

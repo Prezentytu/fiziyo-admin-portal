@@ -73,7 +73,7 @@ function mappingToCardData(mapping: ExerciseMapping): ExerciseExecutionCardData 
     duration: mapping.duration ?? exercise?.defaultDuration,
     executionTime: mapping.executionTime ?? exercise?.defaultExecutionTime,
     restSets: mapping.restSets ?? exercise?.defaultRestBetweenSets ?? 60,
-    restReps: mapping.restReps ?? exercise?.defaultRestBetweenReps,
+    restReps: mapping.restReps ?? exercise?.defaultRestBetweenReps ?? 0,
     preparationTime: mapping.preparationTime ?? exercise?.preparationTime,
     tempo: mapping.tempo,
     notes: mapping.notes ?? '',

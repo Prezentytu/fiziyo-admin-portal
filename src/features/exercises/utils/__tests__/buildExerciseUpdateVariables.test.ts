@@ -11,7 +11,7 @@ const baseValues: ExerciseFormValues = {
   reps: 10,
   duration: null,
   restSets: 60,
-  restReps: 30,
+  restReps: 0,
   preparationTime: 5,
   executionTime: null,
   exerciseSide: 'none',
@@ -111,5 +111,15 @@ describe('buildExerciseUpdateVariables', () => {
     expect(result.notes).toBe('note');
     expect(result.sets).toBe(3);
     expect(result.reps).toBe(10);
+  });
+
+  it('forwards explicit zero restReps to backend (default = brak przerwy)', () => {
+    const result = buildExerciseUpdateVariables({
+      exerciseId: 'exercise-1',
+      values: baseValues,
+    });
+
+    // 0 musi przejsc do mutacji - inaczej mobile player moze utknac w stanie odpoczynku
+    expect(result.restReps).toBe(0);
   });
 });
