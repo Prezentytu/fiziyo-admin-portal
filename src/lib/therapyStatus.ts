@@ -29,11 +29,25 @@ export interface PatientAssignmentData {
 
 export interface ExerciseProgressData {
   id: string;
+  assignmentId?: string | null;
+  exerciseId?: string | null;
+  exerciseSetId?: string | null;
   completedAt?: string | null;
   status: string;
+  completedReps?: number | null;
+  completedSets?: number | null;
+  completedTime?: number | null;
   painLevel?: number | null;
   difficultyLevel?: number | null;
+  notes?: string | null;
   patientNotes?: string | null;
+  rating?: number | null;
+  realDuration?: number | null;
+  exercise?: {
+    id: string;
+    name: string;
+    type?: string | null;
+  } | null;
 }
 
 export interface DayData {

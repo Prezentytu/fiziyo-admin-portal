@@ -143,6 +143,7 @@ export interface PatientAssignment {
   endDate?: string;
   completionCount?: number;
   lastCompletedAt?: string;
+  currentCycleStartedAt?: string;
   notes?: string;
   frequency?: Frequency;
   exerciseSet?: {

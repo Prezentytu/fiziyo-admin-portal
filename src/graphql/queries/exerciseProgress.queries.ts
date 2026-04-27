@@ -30,6 +30,11 @@ export const EXERCISE_PROGRESS_FULL_FRAGMENT = gql`
     rating
     painLevel
     realDuration
+    exercise {
+      id
+      name
+      type
+    }
   }
 `;
 
@@ -82,8 +87,11 @@ export const GET_ALL_EXERCISE_SETS_PROGRESS_QUERY = gql`
   query GetAllExerciseSetsProgress($userId: String!) {
     allExerciseSetsProgress(userId: $userId) {
       assignmentId
+      exerciseSetId
+      exerciseSetName
       totalExercises
       completedExercises
+      lastCompletedAt
     }
   }
 `;
