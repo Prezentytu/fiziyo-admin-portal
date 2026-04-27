@@ -190,18 +190,23 @@ export const GET_PATIENT_EXERCISE_SET_ASSIGNMENTS_QUERY = gql`
  * Query do pobierania raportu aktywności pacjenta
  */
 export const GET_PATIENT_ACTIVITY_REPORT_QUERY = gql`
-  query GetPatientActivityReport($patientId: String!, $therapistId: String!, $startDate: DateTime, $endDate: DateTime) {
-    patientActivityReport(patientId: $patientId, therapistId: $therapistId, startDate: $startDate, endDate: $endDate) {
-      patientId
-      therapistId
-      startDate
-      endDate
-      totalAssignments
-      totalExerciseSets
-      totalExercises
-      completedExercises
-      completionRate
-      lastActivity
+  query GetPatientActivityReport($patientId: String!, $periodStart: DateTime, $periodEnd: DateTime) {
+    patientActivityReport(patientId: $patientId, periodStart: $periodStart, periodEnd: $periodEnd) {
+      summary {
+        completedExercises
+        totalExercises
+        overallCompletionPercentage
+        totalCompletedSessions
+        totalExerciseSets
+      }
+      exerciseSets {
+        exerciseSetId
+        name
+        totalExercises
+        completedExercises
+        completionPercentage
+        avgPainLevel
+      }
     }
   }
 `;

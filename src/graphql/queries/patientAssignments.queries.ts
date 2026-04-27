@@ -24,6 +24,7 @@ export const PATIENT_ASSIGNMENT_FULL_FRAGMENT = gql`
     exerciseSetId
     exerciseOverrides
     lastCompletedAt
+    currentCycleStartedAt
     notes
     startDate
     status
