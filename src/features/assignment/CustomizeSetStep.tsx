@@ -177,7 +177,7 @@ export function CustomizeSetStep({
       reps: exercise.defaultReps ?? exercise.reps ?? 10,
       duration: exercise.defaultDuration ?? exercise.duration,
       restSets: exercise.defaultRestBetweenSets ?? exercise.restSets ?? 60,
-      restReps: exercise.defaultRestBetweenReps ?? exercise.restReps,
+      restReps: exercise.defaultRestBetweenReps ?? exercise.restReps ?? 0,
       executionTime: exercise.defaultExecutionTime,
       exercise: {
         id: exercise.id,

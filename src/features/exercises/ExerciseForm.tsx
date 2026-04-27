@@ -79,7 +79,7 @@ export function ExerciseForm({
       reps: 10,
       duration: null,
       restSets: 60,
-      restReps: 30,
+      restReps: 0,
       preparationTime: 5,
       executionTime: null,
       exerciseSide: 'none',
@@ -304,11 +304,11 @@ export function ExerciseForm({
                     type="number"
                     min="0"
                     max="300"
-                    value={field.value ?? ''}
-                    onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : null)}
+                    value={field.value ?? 0}
+                    onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) || 0 : 0)}
                   />
                 </FormControl>
-                <FormDescription>Czas między powtórzeniami</FormDescription>
+                <FormDescription>Czas między powtórzeniami (0 = brak)</FormDescription>
                 <FormMessage />
               </FormItem>
             )}

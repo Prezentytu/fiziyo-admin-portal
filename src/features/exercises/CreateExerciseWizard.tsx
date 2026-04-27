@@ -218,7 +218,7 @@ const DEFAULT_DATA: ExerciseData = {
   reps: 10, // Domyślnie 10 powtórzeń (najczęstszy przypadek)
   duration: null, // null = brak czasu serii
   restSets: 60,
-  restReps: null,
+  restReps: 0,
   preparationTime: 5,
   executionTime: null,
   videoUrl: '',
@@ -2087,9 +2087,9 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
                       <Input
                         type="number"
                         id="rest-reps-input"
-                        value={data.restReps || ''}
-                        onChange={(e) => updateField('restReps', e.target.value ? Number(e.target.value) : null)}
-                        placeholder="Brak"
+                        value={data.restReps ?? 0}
+                        onChange={(e) => updateField('restReps', e.target.value ? Number(e.target.value) || 0 : 0)}
+                        placeholder="0"
                         className="bg-surface border-border text-foreground placeholder:text-muted-foreground/50 text-sm"
                         min={0}
                         max={60}
