@@ -8,6 +8,7 @@ import { Loader2, ArrowLeft, Mail, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { getClerkErrorMessagePL, parseClerkError } from '@/lib/clerkErrors';
 
 export default function SignInPage() {
   const { signIn, setActive, isLoaded } = useSignIn();
@@ -29,14 +30,9 @@ export default function SignInPage() {
   }, []);
 
   const getErrorMessage = (err: unknown): string => {
-    const error = err as {
-      errors?: Array<{ code?: string; message?: string }>;
-      message?: string;
-    };
-    const errorCode = error?.errors?.[0]?.code;
-    const errorMessage = error?.errors?.[0]?.message || error?.message || '';
+    const { code, message } = parseClerkError(err);
 
-    switch (errorCode) {
+    switch (code) {
       case 'form_identifier_not_found':
         return 'Nie znaleziono użytkownika z podanym adresem email';
       case 'form_password_incorrect':
@@ -46,13 +42,7 @@ export default function SignInPage() {
       case 'session_exists':
         return 'Jesteś już zalogowany';
       default:
-        if (errorMessage.toLowerCase().includes('identifier is invalid')) {
-          return 'Wprowadź prawidłowy adres email';
-        }
-        if (errorMessage.toLowerCase().includes('password')) {
-          return 'Nieprawidłowe hasło';
-        }
-        return 'Wystąpił błąd podczas logowania. Spróbuj ponownie';
+        return getClerkErrorMessagePL({ errors: [{ message }] }, 'Wystąpił błąd podczas logowania. Spróbuj ponownie');
     }
   };
 

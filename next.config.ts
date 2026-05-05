@@ -50,6 +50,25 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+  async redirects() {
+    return [
+      {
+        source: "/terms",
+        destination: "https://fiziyo.pl/terms",
+        permanent: true,
+      },
+      {
+        source: "/privacy",
+        destination: "https://fiziyo.pl/privacy",
+        permanent: true,
+      },
+      {
+        source: "/support",
+        destination: "https://fiziyo.pl/support",
+        permanent: true,
+      },
+    ];
+  },
 };
 
 export default withBundleAnalyzer(nextConfig);
