@@ -28,6 +28,7 @@ import {
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { UPDATE_USER_PROFILE_MUTATION, UPDATE_USER_MUTATION } from '@/graphql/mutations/users.mutations';
 import { GET_USER_BY_CLERK_ID_QUERY } from '@/graphql/queries/users.queries';
+import { getClerkErrorMessagePL, isClerkUnknownParamError } from '@/lib/clerkErrors';
 
 // ========================================
 // Schema
@@ -74,6 +75,7 @@ interface ProfileFormProps {
 // ========================================
 
 const ACCEPTED_IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/gif']);
+const WEBHOOK_SYNC_WAIT_MS = 500;
 
 export function ProfileForm({ user, clerkId, onSuccess }: Readonly<ProfileFormProps>) {
   const { user: clerkUser } = useUser();
@@ -127,59 +129,113 @@ export function ProfileForm({ user, clerkId, onSuccess }: Readonly<ProfileFormPr
       toast.error('Brak sesji użytkownika');
       return;
     }
-    try {
-      const currentEmail = clerkUser.primaryEmailAddress?.emailAddress || user.email || '';
-      const emailChanged = values.email.trim() !== currentEmail;
+    const normalizedEmail = values.email.trim();
+    const currentEmail = clerkUser.primaryEmailAddress?.emailAddress || user.email || '';
+    const emailChanged = normalizedEmail !== currentEmail;
+    let shouldDelayRefetch = false;
 
-      if (emailChanged && !emailVerifying) {
-        const res = await createEmailAddress(values.email.trim());
+    if (emailChanged && !emailVerifying) {
+      try {
+        const response = await createEmailAddress(normalizedEmail);
         await clerkUser.reload();
-        const emailAddress = clerkUser.emailAddresses.find((a) => a.id === res?.id);
-        if (emailAddress) {
-          await emailAddress.prepareVerification({ strategy: 'email_code' });
-          setPendingEmailAddress(emailAddress);
-          setEmailVerifying(true);
-          toast.info('Wpisz kod weryfikacyjny wysłany na nowy adres email');
+        const emailAddress = clerkUser.emailAddresses.find((addressResource) => addressResource.id === response?.id);
+        if (!emailAddress) {
+          toast.error('Nie udało się rozpocząć weryfikacji nowego adresu email');
           return;
         }
+
+        await emailAddress.prepareVerification({ strategy: 'email_code' });
+        setPendingEmailAddress(emailAddress);
+        setEmailVerifying(true);
+        toast.info('Wpisz kod weryfikacyjny wysłany na nowy adres email');
+      } catch (error) {
+        console.error('Błąd podczas rozpoczęcia weryfikacji email:', error);
+        toast.error(getClerkErrorMessagePL(error, 'Nie udało się rozpocząć weryfikacji adresu email'));
+      }
+      return;
+    }
+
+    if (emailVerifying) {
+      if (!pendingEmailAddress) {
+        toast.error('Brak oczekującej weryfikacji email. Spróbuj ponownie');
+        return;
+      }
+      if (!emailVerificationCode.trim()) {
+        toast.error('Wpisz kod weryfikacyjny z wiadomości email');
+        return;
       }
 
-      let emailToSync: string | undefined;
-      if (emailVerifying && pendingEmailAddress && emailVerificationCode) {
-        const attempt = await pendingEmailAddress.attemptVerification({ code: emailVerificationCode });
+      try {
+        const attempt = await pendingEmailAddress.attemptVerification({ code: emailVerificationCode.trim() });
         if (attempt?.verification?.status !== 'verified') {
           toast.error('Nieprawidłowy kod weryfikacyjny');
           return;
         }
+
         await clerkUser.update({ primaryEmailAddressId: pendingEmailAddress.id });
         await clerkUser.reload();
-        emailToSync = values.email.trim();
         setEmailVerifying(false);
         setPendingEmailAddress(null);
         setEmailVerificationCode('');
-      } else {
-        emailToSync = undefined;
+        shouldDelayRefetch = true;
+      } catch (error) {
+        console.error('Błąd podczas potwierdzenia nowego emaila:', error);
+        toast.error(getClerkErrorMessagePL(error, 'Nie udało się potwierdzić nowego adresu email'));
+        return;
       }
+    }
 
-      await clerkUser.update({
-        firstName: values.firstName,
-        lastName: values.lastName,
-      });
+    try {
       await updateProfile({
         variables: {
           userId: user.id,
           firstName: values.firstName,
           lastName: values.lastName,
-          email: emailToSync,
           phone: values.phone || null,
           address: values.address || null,
         },
       });
-      toast.success('Profil został zaktualizowany');
-      onSuccess?.();
     } catch (error) {
-      console.error('Błąd podczas aktualizacji:', error);
-      toast.error('Nie udało się zaktualizować profilu');
+      console.error('Błąd podczas zapisu profilu w backendzie:', error);
+      toast.error('Nie udało się zapisać zmian profilu');
+      return;
+    }
+
+    try {
+      await clerkUser.update({
+        firstName: values.firstName,
+        lastName: values.lastName,
+      });
+    } catch (error) {
+      console.error('Błąd podczas synchronizacji imienia i nazwiska z Clerk:', error);
+      if (isClerkUnknownParamError(error, 'first_name') || isClerkUnknownParamError(error, 'last_name')) {
+        toast.warning(
+          'Profil został zapisany. Synchronizacja imienia i nazwiska z Clerk wymaga odpowiednich ustawień w dashboardzie Clerk'
+        );
+      } else {
+        toast.warning('Profil został zapisany, ale synchronizacja danych z Clerk nie powiodła się');
+      }
+    }
+
+    if (shouldDelayRefetch) {
+      await new Promise((resolve) => setTimeout(resolve, WEBHOOK_SYNC_WAIT_MS));
+    }
+
+    toast.success('Profil został zaktualizowany');
+    onSuccess?.();
+  };
+
+  const handleFormKeyDown = (event: React.KeyboardEvent<HTMLFormElement>) => {
+    if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
+      event.preventDefault();
+      void form.handleSubmit(onSubmit)();
+    }
+  };
+
+  const handleCropDialogKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
+      event.preventDefault();
+      void handleCropConfirm();
     }
   };
 
@@ -252,7 +308,12 @@ export function ProfileForm({ user, clerkId, onSuccess }: Readonly<ProfileFormPr
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6" data-testid="settings-profile-form">
+      <form
+        onSubmit={form.handleSubmit(onSubmit)}
+        onKeyDown={handleFormKeyDown}
+        className="space-y-6"
+        data-testid="settings-profile-form"
+      >
         {/* Section 1: Profile Photo */}
         <Card className="rounded-xl border border-border/50 bg-card/30">
           <CardHeader className="pb-4">
@@ -471,6 +532,7 @@ export function ProfileForm({ user, clerkId, onSuccess }: Readonly<ProfileFormPr
         <DialogContent
           className="sm:max-w-md"
           onEscapeKeyDown={handleCropCancel}
+          onKeyDown={handleCropDialogKeyDown}
           data-testid="settings-profile-crop-dialog"
         >
           <DialogHeader>

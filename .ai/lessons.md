@@ -14,6 +14,14 @@ Dziennik wniosków z pracy AI agentów. Po każdej korekcie dodaj nowy wpis.
 
 ## Wpisy
 
+### 2026-05-05 - Email profilu musi byc single-source w Clerk, a backend musi to syncowac webhookiem
+
+- **Kategoria**: `GraphQL` | `Build/Tooling`
+- **Problem**: `ProfileForm` wysylal `email` do `updateUserProfile`, ale backendowy kontrakt mutacji nie przyjmowal tego argumentu (400: `The argument email does not exist`). Jednoczesnie webhook `user.updated` po stronie backendu nie synchronizowal `User.Email`, co tworzylo drift danych po zmianie primary email w Clerk.
+- **Przyczyna**: Rozjechany kontrakt miedzy klientami (mobile byl juz zaktualizowany, admin nie), plus niepelna obsluga eventu `user.updated` (first/last/image bez emaila).
+- **Rozwiązanie**: W adminie usunieto `email` z `UPDATE_USER_PROFILE_MUTATION` i flow zostalo podzielone na: Clerk (zmiana emaila) + backend (personal/contact data). W backendzie webhook `ClerkWebhookController.HandleUserUpdated` dostal sync `primary_email_address_id` + `email_addresses[]` do `User.Email` oraz defensywny update `Username` gdy byl pochodna starego emaila.
+- **Reguła**: Dla pol tozsamosci zarzadzanych przez IdP (`email`, `password`, MFA) ustal jedno source of truth i nigdy nie dubluj zapisu przez wlasne mutacje domenowe. Jesli backend przechowuje kopie pola IdP, webhook aktualizacyjny MUSI syncowac to pole, inaczej powstaje cichy data drift.
+
 ### 2026-04-17 - createExercise refetchQueries odpala sie ZANIM uploadImage zdazy dorzucic obraz
 
 - **Kategoria**: `GraphQL` | `UI/UX`
