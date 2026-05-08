@@ -42,7 +42,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { ImagePlaceholder } from '@/components/shared/ImagePlaceholder';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { cn } from '@/lib/utils';
-import { translateAssignmentStatus, type AssignmentStatus } from '@/utils/statusUtils';
+import { toGqlStatus, translateAssignmentStatus, type AssignmentStatus } from '@/utils/statusUtils';
 import { getMediaUrl } from '@/utils/mediaUrl';
 import { formatDurationPolish } from '@/utils/durationPolish';
 import { formatFrequencyDisplay } from '@/utils/frequencyDisplay';
@@ -270,7 +270,8 @@ export function PatientAssignmentCard({
       await updateAssignment({
         variables: {
           assignmentId: assignment.id,
-          status: newStatus,
+          status: toGqlStatus(newStatus),
+          statusLegacy: newStatus,
         },
         refetchQueries: [{ query: GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY, variables: { userId: patientId } }],
       });

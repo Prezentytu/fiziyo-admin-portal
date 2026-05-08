@@ -27,7 +27,7 @@ import { toast } from 'sonner';
 import Link from 'next/link';
 
 import { cn } from '@/lib/utils';
-import { translateAssignmentStatus, type AssignmentStatus } from '@/utils/statusUtils';
+import { toGqlStatus, translateAssignmentStatus, type AssignmentStatus } from '@/utils/statusUtils';
 import { pluralize } from '@/utils/textUtils';
 import { formatFrequencyDisplay } from '@/utils/frequencyDisplay';
 import { Button } from '@/components/ui/button';
@@ -270,7 +270,8 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
       await updateAssignment({
         variables: {
           assignmentId: assignment.id,
-          status: newStatus,
+          status: toGqlStatus(newStatus),
+          statusLegacy: newStatus,
         },
       });
       toast.success(newStatus === 'active' ? 'Przypisanie wznowione' : 'Przypisanie wstrzymane');

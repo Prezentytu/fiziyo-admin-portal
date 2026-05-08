@@ -58,6 +58,7 @@ Każda specyfikacja powinna mieć sekcję Changelog na końcu:
 | 011 | [Invite Flow Without Legacy Plan Limits](SPEC-011-2026-03-08-invite-flow-no-legacy-limits.md) | Invite flow bez limitów starego modelu planów   | Aktywny |
 | 012 | [Exercise Dosage Model](SPEC-012-2026-04-08-exercise-dosage-model.md)                         | Single source of truth dla semantyki dawkowania | Aktywny |
 | 014 | [Real-time Patient Assignment Sync](SPEC-014-2026-04-17-realtime-patient-sync.md)             | Push admin->mobile przez GraphQL Subscriptions  | Aktywny |
+| 015 | [Assignment Status Enum Alignment](SPEC-015-2026-05-07-assignment-status-enum-alignment.md)   | Migracja statusu assignment na enum GraphQL     | Aktywny |
 
 ## Planowane specyfikacje
 

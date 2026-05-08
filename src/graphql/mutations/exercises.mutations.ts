@@ -533,7 +533,8 @@ export const UPDATE_EXERCISE_SET_ASSIGNMENT_MUTATION = gql`
     $startDate: DateTime
     $endDate: DateTime
     $frequency: FrequencyInput
-    $status: String
+    $status: AssignmentStatus
+    $statusLegacy: String
     $exerciseOverrides: String
   ) {
     updateExerciseSetAssignment(
@@ -542,6 +543,7 @@ export const UPDATE_EXERCISE_SET_ASSIGNMENT_MUTATION = gql`
       endDate: $endDate
       frequency: $frequency
       status: $status
+      statusLegacy: $statusLegacy
       exerciseOverrides: $exerciseOverrides
     ) {
       id

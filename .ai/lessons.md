@@ -14,6 +14,14 @@ Dziennik wniosków z pracy AI agentów. Po każdej korekcie dodaj nowy wpis.
 
 ## Wpisy
 
+### 2026-05-07 - Migracja GraphQL status String->enum wymaga synchronicznej aktualizacji obu klientów
+
+- **Kategoria**: `GraphQL`
+- **Problem**: Edycja planu pacjenta na produkcji kończyła się błędem walidacji GraphQL (`The variable 'status' is not compatible with the type of the current location`) podczas `updateExerciseSetAssignment`.
+- **Przyczyna**: Backend zmigrował argument mutacji `status` z `String` na enum `AssignmentStatus`, ale dokumenty GraphQL w adminie i mobile nadal deklarowały `$status: String`.
+- **Rozwiązanie**: W obu klientach zmieniono mutację na `$status: AssignmentStatus` i dodano defensywny `statusLegacy: String`, a wywołania zmiany statusu mapują wartości UI (`active`/`paused`) na enum GraphQL (`ACTIVE`/`PAUSED`) z fallbackiem legacy.
+- **Reguła**: Przy każdej kontraktowej migracji GraphQL `String -> enum` aktualizuj równolegle backend + wszystkie klienty i utrzymuj additive-first fallback (np. `*Legacy`) do czasu pełnej migracji.
+
 ### 2026-05-05 - Email profilu musi byc single-source w Clerk, a backend musi to syncowac webhookiem
 
 - **Kategoria**: `GraphQL` | `Build/Tooling`
