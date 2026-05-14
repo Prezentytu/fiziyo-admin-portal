@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '@clerk/nextjs';
 import { useRouter, usePathname } from 'next/navigation';
 import { getBackendToken, clearBackendToken } from '@/lib/tokenCache';
+import { decideAdminAccess } from '@/lib/auth/adminAccessDecision';
+import { getUserRoleFromToken } from '@/lib/auth/jwtClaims';
 import { tokenExchangeService } from '@/services/tokenExchangeService';
 import { DashboardRouteLoading } from '@/components/layout/DashboardRouteLoading';
 
@@ -41,19 +43,12 @@ export function OrganizationGuard({ children }: Readonly<OrganizationGuardProps>
     return null;
   };
 
-  const getUserRoleFromToken = (token: string): string | null => {
-    try {
-      const payload = JSON.parse(atob(token.split('.')[1])) as Record<string, unknown>;
-      const roleClaim = payload['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'];
-      if (typeof roleClaim === 'string') {
-        return roleClaim;
+  const getErrorCode = (error: unknown): string | null => {
+    if (error && typeof error === 'object' && 'code' in error) {
+      const codeValue = (error as { code?: unknown }).code;
+      if (typeof codeValue === 'string') {
+        return codeValue;
       }
-
-      if (typeof payload.role === 'string') {
-        return payload.role;
-      }
-    } catch {
-      return null;
     }
 
     return null;
@@ -91,31 +86,40 @@ export function OrganizationGuard({ children }: Readonly<OrganizationGuardProps>
 
         const exchangedToken = await tokenExchangeService.exchangeClerkToken(clerkToken);
         const userRole = getUserRoleFromToken(exchangedToken.access_token);
+        const accessDecision = decideAdminAccess({ role: userRole });
 
-        if (userRole === 'patient') {
-          setHasOrganization(true);
+        if (accessDecision.kind === 'patient') {
+          clearBackendToken();
+          router.replace('/patient-redirect');
           return;
         }
 
-        setHasOrganization(true);
+        setHasOrganization(accessDecision.kind === 'allowed');
       } catch (error) {
         console.error('[OrganizationGuard] Token exchange error:', error);
 
         const errorMessage = error instanceof Error ? error.message : String(error);
         const statusCode = getErrorStatusCode(error);
+        const errorCode = getErrorCode(error);
+        const accessDecision = decideAdminAccess({
+          statusCode,
+          errorCode,
+          errorMessage,
+        });
 
-        if (statusCode === 404) {
+        if (accessDecision.kind === 'pending') {
           router.replace('/finalizing');
           return;
         }
 
+        if (accessDecision.kind === 'patient') {
+          clearBackendToken();
+          router.replace('/patient-redirect');
+          return;
+        }
+
         // Jeśli błąd dotyczy braku organizacji - przekieruj na onboarding
-        if (
-          errorMessage.includes('does not belong to') ||
-          errorMessage.includes('organization') ||
-          statusCode === 401 ||
-          errorMessage.includes('401')
-        ) {
+        if (accessDecision.kind === 'no-organization') {
           clearBackendToken();
           setHasOrganization(false);
           router.replace('/onboarding');

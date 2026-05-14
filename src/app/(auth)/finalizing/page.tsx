@@ -5,6 +5,8 @@ import { useAuth, useClerk } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
 import { Loader2, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { decideAdminAccess } from '@/lib/auth/adminAccessDecision';
+import { getUserRoleFromToken } from '@/lib/auth/jwtClaims';
 import { clearBackendToken } from '@/lib/tokenCache';
 import { tokenExchangeService } from '@/services/tokenExchangeService';
 
@@ -47,11 +49,37 @@ export default function FinalizingRegistrationPage() {
     }
 
     try {
-      await tokenExchangeService.exchangeClerkToken(clerkToken);
+      const exchangeResult = await tokenExchangeService.exchangeClerkToken(clerkToken);
+      const role = getUserRoleFromToken(exchangeResult.access_token);
+      const accessDecision = decideAdminAccess({ role });
+
+      if (accessDecision.kind === 'patient') {
+        clearBackendToken();
+        router.replace('/patient-redirect');
+        return false;
+      }
+
       return true;
     } catch (error) {
       const statusCode = getStatusCode(error);
-      if (statusCode === 404) {
+      const errorCode =
+        error && typeof error === 'object' && 'code' in error && typeof (error as { code?: unknown }).code === 'string'
+          ? ((error as { code: string }).code ?? null)
+          : null;
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      const accessDecision = decideAdminAccess({
+        statusCode,
+        errorCode,
+        errorMessage,
+      });
+
+      if (accessDecision.kind === 'pending') {
+        return false;
+      }
+
+      if (accessDecision.kind === 'patient') {
+        clearBackendToken();
+        router.replace('/patient-redirect');
         return false;
       }
 
@@ -61,7 +89,7 @@ export default function FinalizingRegistrationPage() {
 
       return false;
     }
-  }, [getToken]);
+  }, [getToken, router]);
 
   const finalizeSuccess = useCallback(() => {
     if (hasRedirected.current) {

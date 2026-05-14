@@ -8,6 +8,7 @@ import type { Exercise } from './ExerciseCard';
 
 const useMutationMock = vi.fn();
 const useQueryMock = vi.fn();
+const useApolloClientMock = vi.fn();
 const generateExerciseImageMock = vi.fn();
 
 vi.mock('next/image', () => ({
@@ -17,6 +18,7 @@ vi.mock('next/image', () => ({
 vi.mock('@apollo/client/react', () => ({
   useMutation: (...args: unknown[]) => useMutationMock(...args),
   useQuery: (...args: unknown[]) => useQueryMock(...args),
+  useApolloClient: (...args: unknown[]) => useApolloClientMock(...args),
 }));
 
 vi.mock('./CreateExerciseWizard', () => ({
@@ -123,6 +125,9 @@ describe('ExerciseDialog media edit flow', () => {
       data: {
         organizationExercises: [],
       },
+    });
+    useApolloClientMock.mockReturnValue({
+      refetchQueries: vi.fn().mockResolvedValue(undefined),
     });
 
     useMutationMock.mockImplementation(

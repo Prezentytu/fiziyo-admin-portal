@@ -14,6 +14,14 @@ Dziennik wniosków z pracy AI agentów. Po każdej korekcie dodaj nowy wpis.
 
 ## Wpisy
 
+### 2026-05-14 - Guard dostepu nie moze semantycznie przepuszczac pacjenta
+
+- **Kategoria**: `React` | `UI/UX` | `GraphQL`
+- **Problem**: `OrganizationGuard` rozpoznawal `role === 'patient'`, ale ustawial `setHasOrganization(true)`, co semantycznie przepuszczalo pacjenta do panelu admina.
+- **Przyczyna**: Logika decyzji dostepu byla zaszyta inline w komponencie i nie miala jednostkowego testu dla sciezki pacjenta.
+- **Rozwiązanie**: Wyodrebniono czysta funkcje `decideAdminAccess`, dodano testy Vitest i zmapowano zarowno fallback `role=patient`, jak i backendowe `403 PATIENT_NOT_ALLOWED_ON_ADMIN` na redirect do `/patient-redirect`.
+- **Reguła**: Dla endpointow wspoldzielonych miedzy klientami stosuj `X-Client-Type` jako sygnal policy i utrzymuj defense-in-depth: backend deny + frontend fallback. Flagi typu `hasOrganization` musza miec jednoznaczna semantyke (`true` oznacza dostep), nigdy "przepusc mimo braku uprawnien".
+
 ### 2026-05-07 - Migracja GraphQL status String->enum wymaga synchronicznej aktualizacji obu klientów
 
 - **Kategoria**: `GraphQL`

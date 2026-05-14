@@ -5,6 +5,13 @@ import {
 } from '@/types/tokenExchange.types';
 
 const isDev = process.env.NODE_ENV === 'development';
+const CLIENT_TYPE_HEADER_KEY = 'X-Client-Type';
+const ADMIN_PORTAL_CLIENT_TYPE = 'admin-portal';
+
+export interface TokenExchangeError extends Error {
+  status?: number;
+  code?: string;
+}
 
 /**
  * Serwis do wymiany tokenów z backendem
@@ -34,16 +41,29 @@ export class TokenExchangeService {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          [CLIENT_TYPE_HEADER_KEY]: ADMIN_PORTAL_CLIENT_TYPE,
         },
         body: JSON.stringify(request),
       });
 
       if (!response.ok) {
         const errorText = await response.text();
+        let parsedCode: string | undefined;
+
+        try {
+          const parsedBody = JSON.parse(errorText) as { code?: unknown };
+          if (typeof parsedBody.code === 'string') {
+            parsedCode = parsedBody.code;
+          }
+        } catch {
+          // Plain text response - keep default undefined code.
+        }
+
         const responseError = new Error(
           `Token exchange failed: ${response.status} ${response.statusText} - ${errorText}`
-        ) as Error & { status?: number };
+        ) as TokenExchangeError;
         responseError.status = response.status;
+        responseError.code = parsedCode;
         throw responseError;
       }
 
@@ -73,6 +93,7 @@ export class TokenExchangeService {
         headers: {
           Authorization: `Bearer ${backendToken}`,
           'Content-Type': 'application/json',
+          [CLIENT_TYPE_HEADER_KEY]: ADMIN_PORTAL_CLIENT_TYPE,
         },
       });
 

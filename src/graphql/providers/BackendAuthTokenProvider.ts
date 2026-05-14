@@ -1,5 +1,5 @@
 import { IAuthTokenProvider } from '../links/authLink';
-import { tokenExchangeService } from '@/services/tokenExchangeService';
+import { tokenExchangeService, type TokenExchangeError } from '@/services/tokenExchangeService';
 import { getBackendToken, saveBackendToken, clearBackendToken } from '@/lib/tokenCache';
 
 const isDev = process.env.NODE_ENV === 'development';
@@ -225,7 +225,10 @@ export class BackendAuthTokenProvider implements IAuthTokenProvider {
       const response = await tokenExchangeService.exchangeClerkToken(clerkToken);
       return response.access_token;
     } catch (error: unknown) {
+      const typedError = error as TokenExchangeError;
       const errorMessage = error instanceof Error ? error.message : String(error);
+      const statusCode = typeof typedError.status === 'number' ? typedError.status : null;
+      const errorCode = typeof typedError.code === 'string' ? typedError.code : null;
 
       // Sprawdź czy to network error i czy możemy retry
       const isNetworkError = errorMessage.includes('fetch') || errorMessage.includes('network');
@@ -236,8 +239,12 @@ export class BackendAuthTokenProvider implements IAuthTokenProvider {
         return this.exchangeWithRetry(clerkToken, retryCount + 1);
       }
 
+      if (statusCode === 403 && errorCode === 'PATIENT_NOT_ALLOWED_ON_ADMIN') {
+        clearBackendToken();
+      }
+
       // 401 = token invalid/expired - wyczyść cache
-      if (errorMessage.includes('401')) {
+      if (errorMessage.includes('401') || statusCode === 401) {
         clearBackendToken();
       }
 
