@@ -511,6 +511,7 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
             <DropdownMenuItem
               onClick={() => setIsReportDialogOpen(true)}
               data-testid="exercise-detail-report-btn"
+              className="text-amber-500 focus:text-amber-500 focus:bg-amber-500/10"
             >
               <Flag className="mr-2 h-4 w-4" />
               Zgłoś do poprawki

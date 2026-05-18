@@ -25,6 +25,7 @@ const reportExerciseSchema = z.object({
     'CLINICAL_RISK',
     'DUPLICATE',
     'OUTDATED_CONTENT',
+    'NEEDS_IMPROVEMENT',
     'OTHER',
   ] as const),
   description: z.string().trim().min(12, 'Opis musi mieć minimum 12 znaków').max(2000, 'Opis jest za długi'),
@@ -38,6 +39,7 @@ const reasonOptions: Array<{ value: ExerciseReportReasonCategory; label: string 
   { value: 'CLINICAL_RISK', label: 'Ryzyko kliniczne' },
   { value: 'DUPLICATE', label: 'Duplikat ćwiczenia' },
   { value: 'OUTDATED_CONTENT', label: 'Treść nieaktualna' },
+  { value: 'NEEDS_IMPROVEMENT', label: 'Ćwiczenie do usprawnienia' },
   { value: 'OTHER', label: 'Inny problem' },
 ];
 

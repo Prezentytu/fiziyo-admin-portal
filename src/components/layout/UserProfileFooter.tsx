@@ -236,7 +236,7 @@ export function UserProfileFooter({ isCollapsed }: UserProfileFooterProps) {
   if (isCollapsed) {
     return (
       <div className="border-t border-border p-2 bg-surface">
-        <Tooltip>
+        <Tooltip open={!isOpen}>
           <TooltipTrigger asChild>
             <div>{menuContent}</div>
           </TooltipTrigger>

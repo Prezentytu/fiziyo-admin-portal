@@ -14,6 +14,22 @@ Dziennik wniosków z pracy AI agentów. Po każdej korekcie dodaj nowy wpis.
 
 ## Wpisy
 
+### 2026-05-18 - Tooltip i dropdown nie moga konkurowac w tym samym triggerze
+
+- **Kategoria**: `UI/UX` | `React`
+- **Problem**: W zwiniętym sidebarze podpowiedź „Kliknij dla opcji” nachodziła na otwarte menu użytkownika i zasłaniała część akcji.
+- **Przyczyna**: `Tooltip` i `DropdownMenu` były aktywne równolegle na tym samym triggerze, a oba portale miały ten sam poziom warstwy (`z-index`), więc tooltip pozostawał widoczny przy otwarciu menu.
+- **Rozwiązanie**: Przełączono tooltip na stan kontrolowany (`open={!isOpen}`), dzięki czemu po otwarciu dropdownu tooltip jest natychmiast wyłączany.
+- **Reguła**: Gdy `Tooltip` i `DropdownMenu/Popover` współdzielą trigger, tooltip musi być sterowany stanem otwarcia menu i wyłączany podczas otwartego panelu, zamiast polegać tylko na hover.
+
+### 2026-05-18 - Flagi access-control licz po fallbackach danych
+
+- **Kategoria**: `Build/Tooling` | `GraphQL`
+- **Problem**: Fizjoterapeuci byli oznaczani jako pacjenci i przekierowywani na `/patient-redirect`, mimo aktywnego członkostwa w organizacji.
+- **Przyczyna**: W `TokenExchangeService.GenerateTokenForUser` flaga `isPatient` była liczona przed fallbackiem do `DefaultOrganizationId`/pierwszego aktywnego membership. Dla `organizationId=""` dawało to fałszywe `true`.
+- **Rozwiązanie**: Przeniesiono wyznaczanie `isPatient` po pełnej selekcji membership, dodano obsługę `SystemRole` jako sygnału non-patient oraz testy regresyjne dla pustego i niedopasowanego `organizationId`.
+- **Reguła**: Flagi domenowe access-control wyznaczaj dopiero na końcowym stanie danych (po fallbackach), a każdą gałąź z pustym/wadliwym identyfikatorem (`organizationId`) pokrywaj testem.
+
 ### 2026-05-14 - Guard dostepu nie moze semantycznie przepuszczac pacjenta
 
 - **Kategoria**: `React` | `UI/UX` | `GraphQL`

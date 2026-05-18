@@ -383,6 +383,7 @@ export function ExerciseCard({
                 <DropdownMenuItem
                   onClick={(event) => runMenuAction(event, () => onReportIssue(exercise))}
                   data-testid={`exercise-card-${exercise.id}-report-btn`}
+                  className="text-amber-500 focus:text-amber-500 focus:bg-amber-500/10"
                 >
                   <Flag className="mr-2 h-4 w-4" />
                   Zgłoś do poprawki
@@ -628,6 +629,7 @@ export function ExerciseCard({
                     <DropdownMenuItem
                       onClick={(event) => runMenuAction(event, () => onReportIssue(exercise))}
                       data-testid={`exercise-card-${exercise.id}-report-btn`}
+                      className="text-amber-500 focus:text-amber-500 focus:bg-amber-500/10"
                     >
                       <Flag className="mr-2 h-4 w-4" />
                       Zgłoś do poprawki

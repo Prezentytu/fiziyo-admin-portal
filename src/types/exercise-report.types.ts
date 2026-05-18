@@ -4,6 +4,7 @@ export type ExerciseReportReasonCategory =
   | 'CLINICAL_RISK'
   | 'DUPLICATE'
   | 'OUTDATED_CONTENT'
+  | 'NEEDS_IMPROVEMENT'
   | 'OTHER';
 
 export type ExerciseReportStatus = 'OPEN' | 'RESOLVED';
