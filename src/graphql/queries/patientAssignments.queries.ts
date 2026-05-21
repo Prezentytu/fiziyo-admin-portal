@@ -18,6 +18,12 @@ export const PATIENT_ASSIGNMENT_FULL_FRAGMENT = gql`
     id
     assignedAt
     assignedById
+    assignedBy {
+      id
+      fullname
+      email
+      image
+    }
     completionCount
     endDate
     exerciseId

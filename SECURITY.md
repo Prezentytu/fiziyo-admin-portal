@@ -12,7 +12,7 @@ If you discover a security vulnerability, please report it responsibly.
 
 **Do NOT open a public GitHub issue.**
 
-Instead, email us at: **security@fiziyo.com**
+Instead, email us at: **security@fiziyo.pl**
 
 Please include:
 

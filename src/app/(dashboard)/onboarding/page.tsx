@@ -276,7 +276,7 @@ export default function OnboardingPage() {
 
               <Button
                 variant="outline"
-                onClick={() => window.open('mailto:support@fiziyo.pl', '_blank')}
+                onClick={() => window.open('mailto:kontakt@fiziyo.pl', '_blank')}
                 className="w-full"
               >
                 <Mail className="mr-2 h-4 w-4" />

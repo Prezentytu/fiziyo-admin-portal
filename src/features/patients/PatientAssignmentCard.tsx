@@ -135,6 +135,11 @@ export interface ExerciseOverride {
 export interface PatientAssignment {
   id: string;
   userId: string;
+  assignedBy?: {
+    id: string;
+    fullname?: string;
+    email?: string;
+  };
   exerciseSetId?: string;
   exerciseOverrides?: string;
   status?: string;
@@ -538,6 +543,9 @@ export function PatientAssignmentCard({
                         <>, min. {assignment.frequency.breakBetweenSets}h między sesjami</>
                       )}
                     </p>
+                    {assignment.assignedBy?.fullname && (
+                      <p className="text-xs text-muted-foreground">Przypisał: {assignment.assignedBy.fullname}</p>
+                    )}
                   </div>
                   <Button
                     size="sm"

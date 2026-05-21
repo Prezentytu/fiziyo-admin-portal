@@ -207,7 +207,7 @@ export function UserProfileFooter({ isCollapsed }: UserProfileFooterProps) {
         {/* Help / Support */}
         <DropdownMenuItem asChild className="gap-3 px-3 py-2.5 cursor-pointer">
           <a
-            href="mailto:support@fiziyo.app"
+            href="mailto:kontakt@fiziyo.pl"
             data-testid="nav-user-footer-help"
             target="_blank"
             rel="noopener noreferrer"

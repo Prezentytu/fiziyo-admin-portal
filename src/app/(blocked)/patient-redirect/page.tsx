@@ -12,7 +12,7 @@ import { clearBackendToken } from '@/lib/tokenCache';
 const IOS_APP_URL = 'https://apps.apple.com/app/fiziyo/id0000000000'; // TODO: Replace with production App Store URL.
 const ANDROID_APP_URL = 'https://play.google.com/store/apps/details?id=pl.fiziyo.app'; // TODO: Replace with production Google Play URL.
 const MOBILE_DOWNLOAD_URL = 'https://app.fiziyo.pl/download'; // TODO: Replace with canonical download landing URL.
-const SUPPORT_MAILTO_URL = 'mailto:support@fiziyo.pl?subject=Problem%20z%20logowaniem%20do%20panelu';
+const SUPPORT_MAILTO_URL = 'mailto:kontakt@fiziyo.pl?subject=Problem%20z%20logowaniem%20do%20panelu';
 
 type DeviceType = 'ios' | 'android' | 'desktop';
 
