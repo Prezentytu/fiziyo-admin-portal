@@ -14,6 +14,14 @@ Dziennik wniosków z pracy AI agentów. Po każdej korekcie dodaj nowy wpis.
 
 ## Wpisy
 
+### 2026-05-21 - AI metadane zestawu powinny generować nazwe i opis jedną akcją
+
+- **Kategoria**: `UI/UX` | `React`
+- **Problem**: W edycji zestawu brakowało szybkiej akcji AI po prawej stronie pola nazwy, a użytkownik musiał ręcznie pisać zarówno nazwę, jak i opis.
+- **Przyczyna**: `EditExerciseSetFullDialog` miał wyłączoną integrację AI (`showAI=false`) i nie wykorzystywał istniejących endpointów AI do uzupełniania metadanych zestawu.
+- **Rozwiązanie**: Włączono akcję AI w `ExerciseSetBuilder` dla edycji zestawu, podpięto generowanie `setName + setDescription` przez `aiService.generateExerciseSet` z fallbackiem do `suggestSetName`, oraz dodano spinner/loading dla ikony AI.
+- **Reguła**: Jeśli formularz ma pola metadanych zależnych od tego samego kontekstu domenowego (tu: nazwa + opis zestawu), akcja AI powinna uzupełniać je razem i być osadzona bezpośrednio przy głównym polu wejściowym.
+
 ### 2026-05-18 - Tooltip i dropdown nie moga konkurowac w tym samym triggerze
 
 - **Kategoria**: `UI/UX` | `React`

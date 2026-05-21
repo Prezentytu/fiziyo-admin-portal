@@ -160,6 +160,7 @@ export interface ExerciseSetBuilderProps {
   showAI?: boolean;
   onAIClick?: () => void;
   aiButtonLabel?: string;
+  isAIGenerating?: boolean;
 
   // When true, name is rendered by parent (e.g. in wizard toolbar); no Name Section block.
   hideNameSection?: boolean;
@@ -451,6 +452,8 @@ export function ExerciseSetBuilder({
   exercisePopularity = {},
   showAI = false,
   onAIClick,
+  aiButtonLabel = 'Wygeneruj nazwę AI',
+  isAIGenerating = false,
   description,
   onDescriptionChange,
   descriptionPlaceholder = 'Opis zestawu (opcjonalnie)',
@@ -683,11 +686,18 @@ export function ExerciseSetBuilder({
                   e.stopPropagation();
                   onAIClick();
                 }}
-                title="Wygeneruj nazwę AI"
-                className="p-1 rounded text-muted-foreground hover:text-secondary hover:bg-secondary/10 shrink-0"
+                title={aiButtonLabel}
+                aria-label={aiButtonLabel}
+                disabled={isAIGenerating}
+                className={cn(
+                  'p-1 rounded shrink-0',
+                  isAIGenerating
+                    ? 'text-muted-foreground cursor-not-allowed opacity-50'
+                    : 'text-muted-foreground hover:text-secondary hover:bg-secondary/10'
+                )}
                 data-testid={`${testIdPrefix}-ai-btn`}
               >
-                <Sparkles className="h-3.5 w-3.5" />
+                {isAIGenerating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
               </button>
             )}
           </div>

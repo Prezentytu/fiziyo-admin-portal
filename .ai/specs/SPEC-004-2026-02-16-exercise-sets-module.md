@@ -72,6 +72,11 @@ Logo organizacji preloadowane analogicznym mechanizmem (osobne wywolanie `preloa
 
 ## Changelog
 
+### 2026-05-21
+
+- W `EditExerciseSetFullDialog` dodano akcję AI (ikona po prawej stronie pola nazwy), która generuje nazwę i opis zestawu na podstawie aktualnej listy ćwiczeń.
+- `ExerciseSetBuilder` rozszerzono o konfigurowalny tooltip etykiety AI i stan ładowania spinnerem, aby wzorzec był spójny w create/edit flow.
+
 ### 2026-04-17
 
 - Naprawiono brak zdjec w generowanym PDF: dodano server-side image proxy (`/api/pdf/image-proxy`), preloader z konwersja WebP/AVIF → PNG, integracje w `GeneratePDFDialog` z toast feedbackiem i disabled checkbox gdy brak URL-i.
