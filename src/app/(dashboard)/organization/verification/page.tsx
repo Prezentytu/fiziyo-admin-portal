@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { useQuery } from '@apollo/client/react';
+import { useQuery, useSubscription, useApolloClient } from '@apollo/client/react';
 import { Search, ShieldCheck } from 'lucide-react';
 
 import { useOrganization } from '@/contexts/OrganizationContext';
@@ -22,6 +22,7 @@ import {
   GET_ORGANIZATION_VERIFICATION_QUEUE_PAGE_QUERY,
   GET_ORGANIZATION_VERIFICATION_STATS_QUERY,
 } from '@/graphql/queries/adminExercises.queries';
+import { ON_EXERCISE_UPDATED } from '@/graphql/subscriptions';
 import type {
   GetOrganizationVerificationStatsResponse,
   VerificationQueuePage,
@@ -35,6 +36,7 @@ export default function OrganizationVerificationPage() {
   const searchParams = useSearchParams();
   const { currentOrganization } = useOrganization();
   const { canManageOrganization, isLoading: roleLoading } = useRoleAccess();
+  const apolloClient = useApolloClient();
 
   const organizationId = currentOrganization?.organizationId;
   const [search, setSearch] = useState(searchParams.get('search') ?? '');
@@ -64,6 +66,19 @@ export default function OrganizationVerificationPage() {
       fetchPolicy: 'cache-and-network',
     }
   );
+
+  useSubscription<{ onExerciseUpdated: string }>(ON_EXERCISE_UPDATED, {
+    skip: !organizationId || !canManageOrganization,
+    variables: { organizationId: organizationId! },
+    onData: () => {
+      apolloClient.refetchQueries({
+        include: [
+          GET_ORGANIZATION_VERIFICATION_STATS_QUERY,
+          GET_ORGANIZATION_VERIFICATION_QUEUE_PAGE_QUERY,
+        ],
+      });
+    },
+  });
 
   const updateUrl = (nextFilter: OrgFilter, nextSearch: string, nextPage: number) => {
     const params = buildOrganizationVerificationSearchParams({

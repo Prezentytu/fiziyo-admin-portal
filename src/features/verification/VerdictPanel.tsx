@@ -226,7 +226,7 @@ export function VerdictPanel({
     DRAFT: { label: 'Szkic', color: 'bg-muted text-muted-foreground border-border' },
   };
   const organizationStatusConfig = {
-    PENDING_ORG_REVIEW: { label: 'Oczekuje', color: 'bg-amber-500/20 text-amber-500 border-amber-500/30' },
+    PENDING_ORG_REVIEW: { label: 'Oczekuje na weryfikację', color: 'bg-amber-500/20 text-amber-500 border-amber-500/30' },
     ORG_CHANGES_REQUESTED: { label: 'Do poprawy', color: 'bg-orange-500/20 text-orange-500 border-orange-500/30' },
     ORG_VERIFIED: { label: 'Zweryfikowane', color: 'bg-emerald-500/20 text-emerald-500 border-emerald-500/30' },
     ORG_ARCHIVED: { label: 'Zarchiwizowane', color: 'bg-muted text-muted-foreground border-border' },

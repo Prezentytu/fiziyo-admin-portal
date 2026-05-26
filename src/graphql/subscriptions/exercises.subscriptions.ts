@@ -47,3 +47,13 @@ export const ON_GLOBAL_EXERCISE_PUBLISHED = gql`
     onGlobalExercisePublished
   }
 `;
+
+/**
+ * Subskrypcja na zgłoszenie ćwiczenia do globalnej weryfikacji
+ * Zwraca ID kopii globalnej (PENDING_REVIEW)
+ */
+export const ON_EXERCISE_SUBMITTED_FOR_GLOBAL_REVIEW = gql`
+  subscription OnExerciseSubmittedForGlobalReview {
+    onExerciseSubmittedForGlobalReview
+  }
+`;

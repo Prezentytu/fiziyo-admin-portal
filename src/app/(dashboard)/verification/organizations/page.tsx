@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { useQuery } from '@apollo/client/react';
+import { useQuery, useSubscription } from '@apollo/client/react';
 import { Search, ShieldCheck } from 'lucide-react';
 
 import { useSystemRole } from '@/hooks/useSystemRole';
@@ -17,6 +17,7 @@ import {
   GET_CROSS_ORG_VERIFICATION_QUEUE_PAGE_QUERY,
   GET_CROSS_ORG_VERIFICATION_STATS_QUERY,
 } from '@/graphql/queries/crossOrgVerification.queries';
+import { ON_EXERCISE_SUBMITTED_FOR_GLOBAL_REVIEW } from '@/graphql/subscriptions';
 import type {
   CrossOrgVerificationQueuePage,
   GetOrganizationVerificationStatsResponse,
@@ -42,15 +43,16 @@ export default function CrossOrgVerificationPage() {
   const [page, setPage] = useState(Number(searchParams.get('page') ?? '1') || 1);
   const [pageSize] = useState(20);
 
-  const { data: statsData, loading: statsLoading } = useQuery<GetOrganizationVerificationStatsResponse>(
+  const { data: statsData, loading: statsLoading, refetch: refetchStats } = useQuery<GetOrganizationVerificationStatsResponse>(
     GET_CROSS_ORG_VERIFICATION_STATS_QUERY,
     {
       skip: !isSiteSuperAdmin,
       fetchPolicy: 'cache-and-network',
+      pollInterval: 30_000,
     }
   );
 
-  const { data: queueData, loading: queueLoading } = useQuery<{ crossOrgVerificationQueuePage: CrossOrgVerificationQueuePage }>(
+  const { data: queueData, loading: queueLoading, refetch: refetchQueue } = useQuery<{ crossOrgVerificationQueuePage: CrossOrgVerificationQueuePage }>(
     GET_CROSS_ORG_VERIFICATION_QUEUE_PAGE_QUERY,
     {
       variables: {
@@ -61,8 +63,17 @@ export default function CrossOrgVerificationPage() {
       },
       skip: !isSiteSuperAdmin,
       fetchPolicy: 'cache-and-network',
+      pollInterval: 30_000,
     }
   );
+
+  useSubscription<{ onExerciseSubmittedForGlobalReview: string }>(ON_EXERCISE_SUBMITTED_FOR_GLOBAL_REVIEW, {
+    skip: !isSiteSuperAdmin,
+    onData: () => {
+      refetchStats();
+      refetchQueue();
+    },
+  });
 
   const updateUrl = (nextFilter: CrossOrgFilter, nextSearch: string, nextPage: number) => {
     const params = new URLSearchParams();

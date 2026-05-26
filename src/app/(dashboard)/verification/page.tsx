@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
-import { useQuery, useMutation } from '@apollo/client/react';
+import { useQuery, useMutation, useSubscription } from '@apollo/client/react';
 import { useUser } from '@clerk/nextjs';
 import { ShieldCheck, Search, RefreshCw, LayoutGrid, List, Clock, User, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
@@ -36,6 +36,7 @@ import {
   IMPORT_EXERCISES_TO_REVIEW_MUTATION,
   UNPUBLISH_EXERCISE_MUTATION,
 } from '@/graphql/mutations/adminExercises.mutations';
+import { ON_EXERCISE_SUBMITTED_FOR_GLOBAL_REVIEW } from '@/graphql/subscriptions';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Badge } from '@/components/ui/badge';
@@ -304,6 +305,14 @@ export default function VerificationPage() {
     variables: queueVariables,
     skip: !canReviewExercises || activeFilter === 'reported',
     fetchPolicy: 'cache-and-network',
+  });
+
+  useSubscription<{ onExerciseSubmittedForGlobalReview: string }>(ON_EXERCISE_SUBMITTED_FOR_GLOBAL_REVIEW, {
+    skip: !canReviewExercises,
+    onData: () => {
+      refetchStats();
+      refetchQueue();
+    },
   });
 
   // Scan repository mutation
