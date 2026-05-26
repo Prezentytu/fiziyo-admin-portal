@@ -6,8 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { ArrowLeft, Archive, ShieldCheck } from 'lucide-react';
 import { toast } from 'sonner';
 
-import { useOrganization } from '@/contexts/OrganizationContext';
-import { useRoleAccess } from '@/hooks/useRoleAccess';
+import { useSystemRole } from '@/hooks/useSystemRole';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -15,99 +14,100 @@ import { EmptyState } from '@/components/shared/EmptyState';
 import { MasterVideoPlayer } from '@/features/verification/MasterVideoPlayer';
 import { VerdictPanel } from '@/features/verification/VerdictPanel';
 import {
-  GET_EXERCISE_BY_ID_FOR_ORG_VERIFICATION_QUERY,
-  GET_ORGANIZATION_VERIFICATION_QUEUE_NAVIGATOR_QUERY,
-} from '@/graphql/queries/adminExercises.queries';
+  GET_CROSS_ORG_VERIFICATION_QUEUE_NAVIGATOR_QUERY,
+  GET_EXERCISE_BY_ID_FOR_CROSS_ORG_VERIFICATION_QUERY,
+} from '@/graphql/queries/crossOrgVerification.queries';
 import {
-  APPROVE_ORGANIZATION_EXERCISE_MUTATION,
-  ARCHIVE_ORGANIZATION_EXERCISE_MUTATION,
-  REQUEST_ORGANIZATION_EXERCISE_CHANGES_MUTATION,
-} from '@/graphql/mutations/adminExercises.mutations';
-import {
-  buildOrganizationVerificationDetailHref,
-  buildOrganizationVerificationListHref,
-  parseOrganizationVerificationFilter,
-} from '@/features/verification/utils/orgVerificationPagination';
+  APPROVE_ORGANIZATION_EXERCISE_AS_ADMIN_MUTATION,
+  ARCHIVE_ORGANIZATION_EXERCISE_AS_ADMIN_MUTATION,
+  REQUEST_ORGANIZATION_EXERCISE_CHANGES_AS_ADMIN_MUTATION,
+} from '@/graphql/mutations/crossOrgVerification.mutations';
 import type {
   AdminExercise,
+  GetCrossOrgVerificationQueueNavigatorResponse,
   VerificationQueueNavigator,
 } from '@/graphql/types/adminExercise.types';
 
-interface OrganizationVerificationDetailPageProps {
+interface CrossOrgVerificationDetailPageProps {
   params: Promise<{ id: string }>;
 }
 
-export default function OrganizationVerificationDetailPage({ params }: Readonly<OrganizationVerificationDetailPageProps>) {
+type CrossOrgFilter = 'pending' | 'changes' | 'verified' | 'archived';
+
+function parseFilter(value: string | null): CrossOrgFilter {
+  if (value === 'changes' || value === 'verified' || value === 'archived') {
+    return value;
+  }
+  return 'pending';
+}
+
+export default function CrossOrgVerificationDetailPage({ params }: Readonly<CrossOrgVerificationDetailPageProps>) {
   const { id } = use(params);
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { currentOrganization } = useOrganization();
-  const { canManageOrganization, isLoading: roleLoading } = useRoleAccess();
+  const { isSiteSuperAdmin, isLoading: roleLoading } = useSystemRole();
 
-  const organizationId = currentOrganization?.organizationId;
-  const filter = parseOrganizationVerificationFilter(searchParams.get('filter'));
+  const filter = parseFilter(searchParams.get('filter'));
   const search = searchParams.get('search') ?? '';
   const page = Number(searchParams.get('page') ?? '1') || 1;
   const pageSize = Number(searchParams.get('pageSize') ?? '20') || 20;
   const [reviewNotes, setReviewNotes] = useState('');
 
-  const listHref = useMemo(
-    () =>
-      buildOrganizationVerificationListHref({
-        filter,
-        search,
-        page,
-        pageSize,
-        view: 'grid',
-      }),
-    [filter, search, page, pageSize]
-  );
+  const listHref = useMemo(() => {
+    const params = new URLSearchParams();
+    params.set('filter', filter);
+    if (search.trim()) {
+      params.set('search', search.trim());
+    }
+    params.set('page', String(page));
+    params.set('pageSize', String(pageSize));
+    return `/verification/organizations?${params.toString()}`;
+  }, [filter, search, page, pageSize]);
 
-  const { data, loading, refetch } = useQuery<{ exerciseByIdForOrgVerification: AdminExercise | null }>(
-    GET_EXERCISE_BY_ID_FOR_ORG_VERIFICATION_QUERY,
+  const { data, loading, refetch } = useQuery<{ exerciseByIdForCrossOrgVerification: AdminExercise | null }>(
+    GET_EXERCISE_BY_ID_FOR_CROSS_ORG_VERIFICATION_QUERY,
     {
-      variables: { organizationId: organizationId ?? '', id },
-      skip: !organizationId || !canManageOrganization,
+      variables: { exerciseId: id },
+      skip: !isSiteSuperAdmin,
       fetchPolicy: 'cache-and-network',
     }
   );
 
-  const { data: navigatorData } = useQuery<{ organizationVerificationQueueNavigator: VerificationQueueNavigator }>(
-    GET_ORGANIZATION_VERIFICATION_QUEUE_NAVIGATOR_QUERY,
+  const { data: navigatorData } = useQuery<GetCrossOrgVerificationQueueNavigatorResponse>(
+    GET_CROSS_ORG_VERIFICATION_QUEUE_NAVIGATOR_QUERY,
     {
       variables: {
-        organizationId: organizationId ?? '',
         currentExerciseId: id,
         filter,
         search: search || null,
       },
-      skip: !organizationId || !canManageOrganization,
+      skip: !isSiteSuperAdmin,
       fetchPolicy: 'cache-and-network',
     }
   );
 
-  const [approveOrganizationExercise, { loading: approving }] = useMutation(APPROVE_ORGANIZATION_EXERCISE_MUTATION);
-  const [requestChanges, { loading: rejecting }] = useMutation(REQUEST_ORGANIZATION_EXERCISE_CHANGES_MUTATION);
-  const [archiveOrganizationExercise, { loading: archiving }] = useMutation(ARCHIVE_ORGANIZATION_EXERCISE_MUTATION);
+  const [approveOrganizationExercise, { loading: approving }] = useMutation(APPROVE_ORGANIZATION_EXERCISE_AS_ADMIN_MUTATION);
+  const [requestChanges, { loading: rejecting }] = useMutation(REQUEST_ORGANIZATION_EXERCISE_CHANGES_AS_ADMIN_MUTATION);
+  const [archiveOrganizationExercise, { loading: archiving }] = useMutation(ARCHIVE_ORGANIZATION_EXERCISE_AS_ADMIN_MUTATION);
 
-  if (!roleLoading && !canManageOrganization) {
+  if (!roleLoading && !isSiteSuperAdmin) {
     return (
       <EmptyState
         icon={ShieldCheck}
         title="Brak dostępu"
-        description="Tylko Owner/Admin może zarządzać weryfikacją organizacji."
+        description="Tylko SiteSuperAdmin może moderować cross-organizacyjną weryfikację."
       />
     );
   }
 
-  const exercise = data?.exerciseByIdForOrgVerification;
+  const exercise = data?.exerciseByIdForCrossOrgVerification;
 
   if (!loading && !exercise) {
     return (
       <EmptyState
         icon={Archive}
         title="Nie znaleziono ćwiczenia"
-        description="Ćwiczenie nie jest dostępne w kolejce tej organizacji."
+        description="Ćwiczenie nie jest dostępne w tej kolejce."
         actionLabel="Wróć do listy"
         onAction={() => router.push(listHref)}
       />
@@ -119,20 +119,19 @@ export default function OrganizationVerificationDetailPage({ params }: Readonly<
       router.push(listHref);
       return;
     }
-    router.push(
-      buildOrganizationVerificationDetailHref(nextId, {
-        filter,
-        search,
-        page,
-        pageSize,
-        view: 'grid',
-      })
-    );
+    const params = new URLSearchParams();
+    params.set('filter', filter);
+    if (search.trim()) {
+      params.set('search', search.trim());
+    }
+    params.set('page', String(page));
+    params.set('pageSize', String(pageSize));
+    router.push(`/verification/organizations/${nextId}?${params.toString()}`);
   };
 
   return (
-    <div className="space-y-4">
-      <Button variant="ghost" className="-ml-3" onClick={() => router.push(listHref)} data-testid="org-verification-back-btn">
+    <div className="space-y-4" data-testid="cross-org-verification-detail-page">
+      <Button variant="ghost" className="-ml-3" onClick={() => router.push(listHref)} data-testid="cross-org-verification-back-btn">
         <ArrowLeft className="mr-2 h-4 w-4" />
         Wróć do kolejki
       </Button>
@@ -142,9 +141,7 @@ export default function OrganizationVerificationDetailPage({ params }: Readonly<
           <CardHeader>
             <CardTitle>{exercise?.name ?? 'Ładowanie...'}</CardTitle>
           </CardHeader>
-          <CardContent className="min-h-[360px]">
-            {exercise && <MasterVideoPlayer exercise={exercise} />}
-          </CardContent>
+          <CardContent className="min-h-[360px]">{exercise && <MasterVideoPlayer exercise={exercise} />}</CardContent>
         </Card>
 
         <Card>
@@ -162,11 +159,7 @@ export default function OrganizationVerificationDetailPage({ params }: Readonly<
             </div>
             <div className="flex items-center gap-2">
               <Badge variant="outline">{exercise?.organizationVerificationStatus ?? 'NOT_SUBMITTED'}</Badge>
-              {exercise?.submittedForOrgReviewAt && (
-                <span className="text-xs text-muted-foreground">
-                  Zgłoszono: {new Date(exercise.submittedForOrgReviewAt).toLocaleDateString('pl-PL')}
-                </span>
-              )}
+              {exercise?.organizationId && <Badge variant="secondary">{exercise.organizationId}</Badge>}
             </div>
           </CardContent>
         </Card>
@@ -179,7 +172,7 @@ export default function OrganizationVerificationDetailPage({ params }: Readonly<
             try {
               await approveOrganizationExercise({ variables: { exerciseId: id, reviewNotes: reviewNotes || null } });
               toast.success('Ćwiczenie zweryfikowane.');
-              goToNeighbor(navigatorData?.organizationVerificationQueueNavigator.nextExerciseId);
+              goToNeighbor(navigatorData?.crossOrgVerificationQueueNavigator.nextExerciseId);
             } catch (error) {
               console.error(error);
               toast.error('Nie udało się zatwierdzić ćwiczenia.');
@@ -201,7 +194,7 @@ export default function OrganizationVerificationDetailPage({ params }: Readonly<
                 },
               });
               toast.success('Ćwiczenie odesłane do poprawek.');
-              goToNeighbor(navigatorData?.organizationVerificationQueueNavigator.nextExerciseId);
+              goToNeighbor(navigatorData?.crossOrgVerificationQueueNavigator.nextExerciseId);
             } catch (error) {
               console.error(error);
               toast.error('Nie udało się odesłać ćwiczenia do poprawek.');
@@ -231,8 +224,8 @@ export default function OrganizationVerificationDetailPage({ params }: Readonly<
           isApproving={approving}
           isRejecting={rejecting}
           isUnpublishing={archiving}
-          remainingCount={navigatorData?.organizationVerificationQueueNavigator.remainingCount ?? 0}
-          onSkip={() => goToNeighbor(navigatorData?.organizationVerificationQueueNavigator.nextExerciseId)}
+          remainingCount={(navigatorData?.crossOrgVerificationQueueNavigator as VerificationQueueNavigator | undefined)?.remainingCount ?? 0}
+          onSkip={() => goToNeighbor(navigatorData?.crossOrgVerificationQueueNavigator.nextExerciseId)}
         />
       </div>
     </div>

@@ -59,7 +59,7 @@ describe('ExerciseCard menu actions', () => {
     );
 
     await user.click(screen.getByRole('button'));
-    expect(screen.getByText('Zgłoś do weryfikacji org')).toBeInTheDocument();
+    expect(screen.getByText('Zgłoś do weryfikacji organizacyjnej')).toBeInTheDocument();
 
     await user.click(screen.getByTestId('exercise-card-exercise-1-submit-org-review-btn'));
     expect(onSubmitToOrganizationReview).toHaveBeenCalledTimes(1);

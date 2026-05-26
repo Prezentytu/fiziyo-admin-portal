@@ -19,7 +19,6 @@ import {
   COPY_EXERCISE_TEMPLATE_MUTATION,
   UPLOAD_EXERCISE_IMAGE_MUTATION,
   DELETE_EXERCISE_IMAGE_MUTATION,
-  SUBMIT_FOR_ORGANIZATION_REVIEW_MUTATION,
 } from '@/graphql/mutations/exercises.mutations';
 import {
   GET_ORGANIZATION_EXERCISES_QUERY,
@@ -28,6 +27,7 @@ import {
 } from '@/graphql/queries/exercises.queries';
 import type { Exercise, ExerciseTag } from './ExerciseCard';
 import { buildExerciseUpdateVariables } from './utils/buildExerciseUpdateVariables';
+import { verificationCopy } from '@/features/verification/verificationCopy';
 
 function normalizeTagIds(tags: Exercise['mainTags'] | Exercise['additionalTags']): string[] | null {
   if (!tags || tags.length === 0) return null;
@@ -121,18 +121,12 @@ export function ExerciseDialog({
 
   // Can submit to global: ORGANIZATION scope, no existing submission, not in review
   const canSubmitToGlobal =
-    onSubmitToGlobal &&
-    exercise?.scope === 'ORGANIZATION' &&
-    !exercise?.globalSubmissionId &&
-    !isPendingReview &&
-    !isChangesRequested;
+    onSubmitToGlobal && exercise?.scope === 'ORGANIZATION' && !exercise?.globalSubmissionId;
 
   const canSubmitToOrganization =
     onSubmitToOrganizationReview &&
     exercise?.scope === 'ORGANIZATION' &&
-    (exercise?.organizationVerificationStatus === 'NOT_SUBMITTED' ||
-      exercise?.organizationVerificationStatus === 'ORG_CHANGES_REQUESTED') &&
-    !isPendingOrganizationReview;
+    (exercise?.organizationVerificationStatus === 'NOT_SUBMITTED' || exercise?.organizationVerificationStatus === 'ORG_CHANGES_REQUESTED');
 
   const handleCloseAttempt = useCallback(() => {
     if (isFormDirty || hasMediaChanges) {
@@ -184,9 +178,6 @@ export function ExerciseDialog({
   const [copyExercise, { loading: copying }] = useMutation(COPY_EXERCISE_TEMPLATE_MUTATION, {
     refetchQueries: [{ query: GET_AVAILABLE_EXERCISES_QUERY, variables: { organizationId } }],
   });
-  const [submitForOrganizationReview, { loading: submittingForOrganizationReview }] = useMutation(
-    SUBMIT_FOR_ORGANIZATION_REVIEW_MUTATION
-  );
   const organizationExerciseNames =
     ((organizationExercisesData as { organizationExercises?: { name?: string | null }[] } | undefined)
       ?.organizationExercises ?? [])
@@ -589,8 +580,7 @@ export function ExerciseDialog({
             isResubmitting ||
             uploadingMedia ||
             deletingMedia ||
-            isGeneratingMedia ||
-            submittingForOrganizationReview
+            isGeneratingMedia
           }
           submitLabel={isFixMode ? 'Wyślij poprawki' : 'Zapisz zmiany'}
           onDirtyChange={setIsFormDirty}
@@ -701,28 +691,20 @@ export function ExerciseDialog({
                 className="gap-2 bg-gradient-to-r from-primary to-emerald-600 hover:from-primary/90 hover:to-emerald-600/90"
               >
                 <Rocket className="h-4 w-4" />
-                Wyślij do weryfikacji
+                {verificationCopy.submitGlobal}
               </Button>
             ) : canSubmitToOrganization && exercise ? (
               <Button
                 type="button"
-                onClick={async () => {
-                  try {
-                    await submitForOrganizationReview({ variables: { exerciseId: exercise.id } });
-                    toast.success('Ćwiczenie zgłoszone do weryfikacji organizacyjnej.');
-                    onSubmitToOrganizationReview?.(exercise);
-                    onOpenChange(false);
-                    onSuccess?.({ action: 'updated', exerciseId: exercise.id });
-                  } catch (error) {
-                    console.error(error);
-                    toast.error('Nie udało się zgłosić ćwiczenia do weryfikacji organizacyjnej.');
-                  }
+                onClick={() => {
+                  onOpenChange(false);
+                  onSubmitToOrganizationReview(exercise);
                 }}
                 className="gap-2 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-600/90 hover:to-emerald-500/90"
                 data-testid="exercise-dialog-submit-org-review-btn"
               >
                 <Rocket className="h-4 w-4" />
-                Zgłoś do weryfikacji org
+                {verificationCopy.submitOrganization}
               </Button>
             ) : undefined
           }

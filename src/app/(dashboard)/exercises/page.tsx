@@ -16,6 +16,7 @@ import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { ExerciseCard, Exercise } from '@/features/exercises/ExerciseCard';
 import { ExerciseDialog } from '@/features/exercises/ExerciseDialog';
 import { SubmitToGlobalDialog } from '@/features/exercises/SubmitToGlobalDialog';
+import { SubmitToOrganizationDialog } from '@/features/exercises/SubmitToOrganizationDialog';
 import { ReportExerciseDialog } from '@/features/exercises/ReportExerciseDialog';
 import { ExerciseBuilderSidebar } from '@/components/exercise-builder/ExerciseBuilderSidebar';
 import { ExerciseBuilderFAB } from '@/components/exercise-builder/ExerciseBuilderFAB';
@@ -24,7 +25,11 @@ import { cn } from '@/lib/utils';
 import { GET_AVAILABLE_EXERCISES_QUERY } from '@/graphql/queries/exercises.queries';
 import { GET_EXERCISE_TAGS_BY_ORGANIZATION_QUERY } from '@/graphql/queries/exerciseTags.queries';
 import { GET_TAG_CATEGORIES_BY_ORGANIZATION_QUERY } from '@/graphql/queries/tagCategories.queries';
-import { DELETE_EXERCISE_MUTATION, SUBMIT_TO_GLOBAL_REVIEW_MUTATION } from '@/graphql/mutations/exercises.mutations';
+import {
+  DELETE_EXERCISE_MUTATION,
+  SUBMIT_FOR_ORGANIZATION_REVIEW_MUTATION,
+  SUBMIT_TO_GLOBAL_REVIEW_MUTATION,
+} from '@/graphql/mutations/exercises.mutations';
 import { matchesSearchQuery, matchesAnyText } from '@/utils/textUtils';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { useExerciseBuilder, type BuilderExercise } from '@/contexts/ExerciseBuilderContext';
@@ -48,6 +53,7 @@ export default function ExercisesPage() {
   const [editingExercise, setEditingExercise] = useState<Exercise | null>(null);
   const [deletingExercise, setDeletingExercise] = useState<Exercise | null>(null);
   const [submitToGlobalExercise, setSubmitToGlobalExercise] = useState<Exercise | null>(null);
+  const [submitToOrganizationExercise, setSubmitToOrganizationExercise] = useState<Exercise | null>(null);
   const [reportExercise, setReportExercise] = useState<Exercise | null>(null);
 
   // Get organization ID from context (changes when user switches organization)
@@ -124,6 +130,17 @@ export default function ExercisesPage() {
       },
     ],
   });
+  const [submitForOrganizationReview, { loading: submittingToOrganization }] = useMutation(
+    SUBMIT_FOR_ORGANIZATION_REVIEW_MUTATION,
+    {
+      refetchQueries: [
+        {
+          query: GET_AVAILABLE_EXERCISES_QUERY,
+          variables: { organizationId },
+        },
+      ],
+    }
+  );
 
   const rawExercises: Exercise[] = (data as AvailableExercisesResponse)?.availableExercises || [];
   const tags = (tagsData as ExerciseTagsResponse)?.exerciseTags || [];
@@ -217,6 +234,19 @@ export default function ExercisesPage() {
   const handleCloseDialog = () => {
     setIsDialogOpen(false);
     setEditingExercise(null);
+  };
+
+  const handleSubmitToOrganization = async (exerciseId: string) => {
+    try {
+      await submitForOrganizationReview({
+        variables: { exerciseId },
+      });
+      toast.success('Ćwiczenie zostało zgłoszone do weryfikacji organizacyjnej');
+      setSubmitToOrganizationExercise(null);
+    } catch (err) {
+      console.error('Błąd podczas zgłaszania organizacyjnego:', err);
+      toast.error('Nie udało się zgłosić ćwiczenia do weryfikacji organizacyjnej');
+    }
   };
 
   if (error) {
@@ -442,6 +472,7 @@ export default function ExercisesPage() {
                   onDelete={(e) => setDeletingExercise(e)}
                   onAddToSet={() => {}}
                   onSubmitToGlobal={(e) => setSubmitToGlobalExercise(e)}
+                  onSubmitToOrganizationReview={(e) => setSubmitToOrganizationExercise(e)}
                   onReportIssue={(e) => setReportExercise(e)}
                   isInBuilder={isInBuilder(exercise.id)}
                   onToggleBuilder={handleToggleBuilder}
@@ -460,6 +491,7 @@ export default function ExercisesPage() {
                   onDelete={(e) => setDeletingExercise(e)}
                   onAddToSet={() => {}}
                   onSubmitToGlobal={(e) => setSubmitToGlobalExercise(e)}
+                  onSubmitToOrganizationReview={(e) => setSubmitToOrganizationExercise(e)}
                   onReportIssue={(e) => setReportExercise(e)}
                   isInBuilder={isInBuilder(exercise.id)}
                   onToggleBuilder={handleToggleBuilder}
@@ -484,6 +516,7 @@ export default function ExercisesPage() {
           exercise={editingExercise}
           organizationId={organizationId}
           onSubmitToGlobal={(exercise) => setSubmitToGlobalExercise(exercise)}
+          onSubmitToOrganizationReview={(exercise) => setSubmitToOrganizationExercise(exercise)}
           onSuccess={(event) => {
             if (event?.action === 'copied' && event.exerciseId) {
               router.push(`/exercises/${event.exerciseId}`);
@@ -500,6 +533,15 @@ export default function ExercisesPage() {
           exercise={submitToGlobalExercise}
           onConfirm={handleSubmitToGlobal}
           isLoading={submittingToGlobal}
+        />
+      )}
+      {organizationId && (
+        <SubmitToOrganizationDialog
+          open={!!submitToOrganizationExercise}
+          onOpenChange={(open) => !open && setSubmitToOrganizationExercise(null)}
+          exercise={submitToOrganizationExercise}
+          onConfirm={handleSubmitToOrganization}
+          isLoading={submittingToOrganization}
         />
       )}
 

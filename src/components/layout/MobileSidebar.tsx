@@ -25,6 +25,7 @@ import {
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { OrganizationSwitcher } from './OrganizationSwitcher';
 import { NAV_ITEM_ACTIVE, NAV_ITEM_BASE, NAV_ITEM_INACTIVE } from './navigationItemStyles';
+import { isNavigationHrefActive } from './navigationActive';
 import { Logo } from '@/components/shared/Logo';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useRoleAccess } from '@/hooks/useRoleAccess';
@@ -134,11 +135,6 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
   const email = user?.primaryEmailAddress?.emailAddress || backendUser?.email || '';
   const initials = getInitials(fullName);
 
-  const isActive = (href: string) => {
-    if (href === '/') return pathname === '/';
-    return pathname.startsWith(href);
-  };
-
   // Filter navigation groups based on user role
   const filteredNavigationGroups = useMemo(() => {
     return navigationGroups.filter((group) => {
@@ -148,6 +144,10 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
       return true;
     });
   }, [canManageOrganization]);
+  const filteredNavigationHrefs = useMemo(
+    () => filteredNavigationGroups.flatMap((group) => group.items.map((item) => item.href)),
+    [filteredNavigationGroups]
+  );
 
   const handleLinkClick = () => {
     onClose();
@@ -188,7 +188,7 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
               {/* Navigation items */}
               <div className="space-y-1 px-3">
                 {group.items.map((item) => {
-                  const active = isActive(item.href);
+                  const active = isNavigationHrefActive(pathname, item.href, filteredNavigationHrefs);
                   const Icon = item.icon;
 
                   return (

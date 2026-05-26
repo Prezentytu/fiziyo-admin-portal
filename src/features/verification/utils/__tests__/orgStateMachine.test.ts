@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   canApproveOrganizationExercise,
   canArchiveOrganizationExercise,
+  canPromoteOrganizationExerciseToGlobal,
   canRequestOrganizationChanges,
   canSubmitForOrganizationReview,
   canWithdrawFromOrganizationReview,
@@ -29,5 +30,11 @@ describe('orgStateMachine', () => {
   it('allows archive only for verified status', () => {
     expect(canArchiveOrganizationExercise('ORG_VERIFIED')).toBe(true);
     expect(canArchiveOrganizationExercise('ORG_CHANGES_REQUESTED')).toBe(false);
+  });
+
+  it('allows promotion to global only from org verified', () => {
+    expect(canPromoteOrganizationExerciseToGlobal('ORG_VERIFIED')).toBe(true);
+    expect(canPromoteOrganizationExerciseToGlobal('NOT_SUBMITTED')).toBe(false);
+    expect(canPromoteOrganizationExerciseToGlobal('ORG_ARCHIVED')).toBe(false);
   });
 });

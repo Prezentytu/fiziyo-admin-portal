@@ -230,6 +230,24 @@ export interface VerificationQueuePage {
   search?: string | null;
 }
 
+export interface CrossOrgVerificationQueueItem {
+  organizationId: string;
+  organizationName: string;
+  exercise: AdminExercise;
+}
+
+export interface CrossOrgVerificationQueuePage {
+  items: CrossOrgVerificationQueueItem[];
+  totalCount: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+  hasPreviousPage: boolean;
+  hasNextPage: boolean;
+  filter: string;
+  search?: string | null;
+}
+
 export interface VerificationQueueNavigator {
   currentExerciseId: string;
   positionInQueue?: number | null;
@@ -252,6 +270,10 @@ export interface GetVerificationQueuePageResponse {
   verificationQueuePage: VerificationQueuePage;
 }
 
+export interface GetCrossOrgVerificationQueuePageResponse {
+  crossOrgVerificationQueuePage: CrossOrgVerificationQueuePage;
+}
+
 export interface GetVerificationQueueNavigatorVariables {
   currentExerciseId: string;
   filter: string;
@@ -260,6 +282,10 @@ export interface GetVerificationQueueNavigatorVariables {
 
 export interface GetVerificationQueueNavigatorResponse {
   verificationQueueNavigator: VerificationQueueNavigator;
+}
+
+export interface GetCrossOrgVerificationQueueNavigatorResponse {
+  crossOrgVerificationQueueNavigator: VerificationQueueNavigator;
 }
 
 // ============================================

@@ -14,6 +14,14 @@ Dziennik wniosków z pracy AI agentów. Po każdej korekcie dodaj nowy wpis.
 
 ## Wpisy
 
+### 2026-05-26 - Submit dialogs powinny byc warn-only, nie disabled-only
+
+- **Kategoria**: `UI/UX` | `React`
+- **Problem**: W flow zgłoszeń do weryfikacji łatwo wrócić do wzorca blokujących CTA (disabled), mimo decyzji produktowej o "sugeruj, ale nie blokuj".
+- **Przyczyna**: Historyczne checklisty miały semantykę "wymagane", a nie "zalecane", więc testy i copy mogły nie wykryć regresji.
+- **Rozwiązanie**: Utrwalono testami jednostkowymi dla dialogów global/org, że przy brakach nadal dostępne jest CTA `Zgłoś mimo zaleceń`.
+- **Reguła**: Dla flow verification w modelu warn-only testy muszą sprawdzać nie tylko treść walidacji, ale też aktywność przycisku submit przy niekompletnej checkliście.
+
 ### 2026-05-26 - Kontekst organizacji w frontendzie zawsze używa organizationId
 
 - **Kategoria**: `TypeScript` | `Build/Tooling`

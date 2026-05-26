@@ -36,6 +36,7 @@ import { getMediaUrl } from '@/utils/mediaUrl';
 import {
   HIDE_EXERCISE_TAGS,
 } from '@/components/shared/exercise';
+import { verificationCopy } from '@/features/verification/verificationCopy';
 
 export interface ExerciseTag {
   id: string;
@@ -392,7 +393,7 @@ export function ExerciseCard({
                     className="text-primary focus:text-primary"
                   >
                     <Rocket className="mr-2 h-4 w-4" />
-                    Zgłoś do Bazy Globalnej
+                    {verificationCopy.submitGlobal}
                   </DropdownMenuItem>
                 </>
               )}
@@ -405,7 +406,7 @@ export function ExerciseCard({
                     data-testid={`exercise-card-${exercise.id}-submit-org-review-btn`}
                   >
                     <Rocket className="mr-2 h-4 w-4" />
-                    Zgłoś do weryfikacji org
+                    {verificationCopy.submitOrganization}
                   </DropdownMenuItem>
                 </>
               )}
@@ -687,7 +688,7 @@ export function ExerciseCard({
                         className="text-primary focus:text-primary"
                       >
                         <Rocket className="mr-2 h-4 w-4" />
-                        Zgłoś do Bazy Globalnej
+                        {verificationCopy.submitGlobal}
                       </DropdownMenuItem>
                     </>
                   )}
@@ -700,7 +701,7 @@ export function ExerciseCard({
                         data-testid={`exercise-card-${exercise.id}-submit-org-review-btn`}
                       >
                         <Rocket className="mr-2 h-4 w-4" />
-                        Zgłoś do weryfikacji org
+                        {verificationCopy.submitOrganization}
                       </DropdownMenuItem>
                     </>
                   )}

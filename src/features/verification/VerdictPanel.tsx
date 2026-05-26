@@ -24,6 +24,12 @@ import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 import { pl } from 'date-fns/locale';
 import type { ExerciseReportRoutingTarget } from '@/types/exercise-report.types';
+import type { OrganizationVerificationStatus } from '@/graphql/types/adminExercise.types';
+import {
+  canApproveOrganizationExercise,
+  canArchiveOrganizationExercise,
+  canRequestOrganizationChanges,
+} from '@/features/verification/utils/orgStateMachine';
 
 // ============================================
 // QUICK REJECT CHIPS - Predefined rejection reasons
@@ -64,6 +70,7 @@ interface SafetyCheckItem {
 }
 
 interface VerdictPanelProps {
+  mode?: 'global' | 'organization';
   /** Exercise status */
   status: string;
   /** Submission date (for "waiting since X") */
@@ -74,6 +81,8 @@ interface VerdictPanelProps {
   onRequestChanges: () => void;
   /** Callback: Reject permanently */
   onReject: () => void;
+  /** Callback: Archive organization exercise */
+  onArchive?: () => void;
   /** Callback: Unpublish (for published exercises) */
   onUnpublish?: () => void;
   /** Callback: Skip to next exercise */
@@ -127,11 +136,13 @@ interface VerdictPanelProps {
  * - Action buttons: Approve, Request Changes, Reject
  */
 export function VerdictPanel({
+  mode = 'global',
   status,
   submittedAt,
   onApprove,
   onRequestChanges,
   onReject,
+  onArchive,
   onUnpublish,
   onSkip,
   comment,
@@ -147,6 +158,7 @@ export function VerdictPanel({
   className,
   reportContext,
 }: VerdictPanelProps) {
+  const isOrganizationMode = mode === 'organization';
   const anyLoading = isApproving || isRejecting || isUnpublishing;
 
   // Format wait time
@@ -185,9 +197,17 @@ export function VerdictPanel({
   ];
 
   const allSafetyChecked = Object.values(safetyChecklist).every(Boolean);
-  const canApprove = validationPassed && allSafetyChecked && missingFields.length === 0;
+  const canApprove = isOrganizationMode
+    ? canApproveOrganizationExercise(status as OrganizationVerificationStatus)
+    : validationPassed && allSafetyChecked && missingFields.length === 0;
+  const canRequestChanges = isOrganizationMode
+    ? canRequestOrganizationChanges(status as OrganizationVerificationStatus) && comment.trim().length > 0
+    : comment.trim().length > 0;
+  const canArchive = isOrganizationMode
+    ? canArchiveOrganizationExercise(status as OrganizationVerificationStatus)
+    : false;
   const hasMoreExercises = remainingCount > 0;
-  const isPublished = status === 'PUBLISHED';
+  const isPublished = !isOrganizationMode && status === 'PUBLISHED';
 
   const handleSafetyChange = (id: string, checked: boolean) => {
     onSafetyChecklistChange({
@@ -197,7 +217,7 @@ export function VerdictPanel({
   };
 
   // Status badge color
-  const statusConfig = {
+  const globalStatusConfig = {
     PENDING_REVIEW: { label: 'Oczekuje', color: 'bg-amber-500/20 text-amber-500 border-amber-500/30' },
     CHANGES_REQUESTED: { label: 'Do poprawy', color: 'bg-orange-500/20 text-orange-500 border-orange-500/30' },
     PUBLISHED: { label: 'Opublikowane', color: 'bg-emerald-500/20 text-emerald-500 border-emerald-500/30' },
@@ -205,8 +225,17 @@ export function VerdictPanel({
     ARCHIVED_GLOBAL: { label: 'Wycofane', color: 'bg-muted text-muted-foreground border-border' },
     DRAFT: { label: 'Szkic', color: 'bg-muted text-muted-foreground border-border' },
   };
+  const organizationStatusConfig = {
+    PENDING_ORG_REVIEW: { label: 'Oczekuje', color: 'bg-amber-500/20 text-amber-500 border-amber-500/30' },
+    ORG_CHANGES_REQUESTED: { label: 'Do poprawy', color: 'bg-orange-500/20 text-orange-500 border-orange-500/30' },
+    ORG_VERIFIED: { label: 'Zweryfikowane', color: 'bg-emerald-500/20 text-emerald-500 border-emerald-500/30' },
+    ORG_ARCHIVED: { label: 'Zarchiwizowane', color: 'bg-muted text-muted-foreground border-border' },
+    NOT_SUBMITTED: { label: 'Nie zgłoszone', color: 'bg-muted text-muted-foreground border-border' },
+  };
 
-  const currentStatus = statusConfig[status as keyof typeof statusConfig] || statusConfig.DRAFT;
+  const currentStatus = isOrganizationMode
+    ? organizationStatusConfig[status as keyof typeof organizationStatusConfig] || organizationStatusConfig.NOT_SUBMITTED
+    : globalStatusConfig[status as keyof typeof globalStatusConfig] || globalStatusConfig.DRAFT;
 
   return (
     <TooltipProvider>
@@ -229,12 +258,16 @@ export function VerdictPanel({
           </div>
           <h3 className="text-sm font-semibold text-foreground">Decyzja</h3>
           <p className="text-xs text-muted-foreground mt-0.5">
-            {isPublished ? 'Zarządzaj opublikowanym ćwiczeniem' : 'Sprawdź i zatwierdź lub odeślij do poprawki'}
+            {isOrganizationMode
+              ? 'Zatwierdź ćwiczenie w organizacji albo odeślij do poprawek'
+              : isPublished
+                ? 'Zarządzaj opublikowanym ćwiczeniem'
+                : 'Sprawdź i zatwierdź lub odeślij do poprawki'}
           </p>
         </div>
 
         {/* Safety Checklist (only for non-published) */}
-        {!isPublished && (
+        {!isPublished && !isOrganizationMode && (
           <div className="border-b border-border/40 p-4">
             <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">
               Checklista bezpieczeństwa
@@ -305,7 +338,7 @@ export function VerdictPanel({
             className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2 flex items-center gap-1.5"
           >
             <MessageSquare className="h-3.5 w-3.5" />
-            Komentarz dla autora
+            {isOrganizationMode ? 'Notatka recenzenta' : 'Komentarz dla autora'}
           </Label>
           <Textarea
             id="author-comment"
@@ -314,7 +347,9 @@ export function VerdictPanel({
             placeholder={
               isPublished
                 ? 'Powód wycofania z bazy (opcjonalnie)...'
-                : 'Wpisz uwagi dla autora (widoczne przy odrzuceniu)...'
+                : isOrganizationMode
+                  ? 'Wpisz notatkę recenzencką dla organizacji...'
+                  : 'Wpisz uwagi dla autora (widoczne przy odrzuceniu)...'
             }
             disabled={anyLoading}
             className={cn(
@@ -325,11 +360,15 @@ export function VerdictPanel({
             data-testid="verdict-comment-textarea"
           />
           <p className="mt-1.5 text-[10px] text-muted-foreground">
-            {isPublished ? 'Opcjonalne - wyjaśnienie dla autora' : 'Wymagane przy odrzuceniu lub odesłaniu do poprawki'}
+            {isPublished
+              ? 'Opcjonalne - wyjaśnienie dla autora'
+              : isOrganizationMode
+                ? 'Wymagane przy odesłaniu do poprawek'
+                : 'Wymagane przy odrzuceniu lub odesłaniu do poprawki'}
           </p>
 
           {/* Quick Reject Chips */}
-          {!isPublished && (
+          {!isPublished && !isOrganizationMode && (
             <div className="mt-3">
               <p className="mb-2 text-[10px] text-muted-foreground">Szybkie powody:</p>
               <div className="flex flex-wrap gap-1.5">
@@ -402,12 +441,12 @@ export function VerdictPanel({
                       data-testid="verdict-approve-btn"
                     >
                       <CheckCircle2 className="h-4 w-4" />
-                      Zatwierdź i Opublikuj
+                      {isOrganizationMode ? 'Zatwierdź' : 'Zatwierdź i Opublikuj'}
                       {hasMoreExercises && <ChevronRight className="h-4 w-4" />}
                     </Button>
                   </span>
                 </TooltipTrigger>
-                {!canApprove && (
+                {!canApprove && !isOrganizationMode && (
                   <TooltipContent side="top" className="max-w-xs border-border bg-popover text-popover-foreground">
                     <p className="text-xs">
                       {!allSafetyChecked ? 'Zaznacz wszystkie punkty checklisty' : 'Uzupełnij brakujące dane'}
@@ -421,7 +460,7 @@ export function VerdictPanel({
                 variant="outline"
                 size="default"
                 onClick={onRequestChanges}
-                disabled={anyLoading || !comment.trim()}
+                disabled={anyLoading || !canRequestChanges}
                 className={cn(
                   'w-full gap-2',
                   'border-amber-500/30 text-amber-500 hover:bg-amber-500/10 hover:text-amber-400'
@@ -432,18 +471,31 @@ export function VerdictPanel({
                 Odeślij do poprawki
               </Button>
 
-              {/* Reject button */}
-              <Button
-                variant="ghost"
-                size="default"
-                onClick={onReject}
-                disabled={anyLoading || !comment.trim()}
-                className="w-full gap-2 text-muted-foreground hover:bg-red-500/10 hover:text-red-500"
-                data-testid="verdict-reject-btn"
-              >
-                <XCircle className="h-4 w-4" />
-                Odrzuć na stałe
-              </Button>
+              {isOrganizationMode ? (
+                <Button
+                  variant="destructive"
+                  size="default"
+                  onClick={onArchive}
+                  disabled={anyLoading || !canArchive}
+                  className="w-full gap-2"
+                  data-testid="verdict-archive-btn"
+                >
+                  <XCircle className="h-4 w-4" />
+                  Archiwizuj
+                </Button>
+              ) : (
+                <Button
+                  variant="ghost"
+                  size="default"
+                  onClick={onReject}
+                  disabled={anyLoading || !comment.trim()}
+                  className="w-full gap-2 text-muted-foreground hover:bg-red-500/10 hover:text-red-500"
+                  data-testid="verdict-reject-btn"
+                >
+                  <XCircle className="h-4 w-4" />
+                  Odrzuć na stałe
+                </Button>
+              )}
             </>
           )}
 

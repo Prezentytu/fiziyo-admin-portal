@@ -19,3 +19,7 @@ export function canRequestOrganizationChanges(status?: OrganizationVerificationS
 export function canArchiveOrganizationExercise(status?: OrganizationVerificationStatus): boolean {
   return status === 'ORG_VERIFIED';
 }
+
+export function canPromoteOrganizationExerciseToGlobal(status?: OrganizationVerificationStatus): boolean {
+  return status === 'ORG_VERIFIED';
+}

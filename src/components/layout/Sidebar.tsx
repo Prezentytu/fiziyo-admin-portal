@@ -23,6 +23,7 @@ import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/comp
 import { OrganizationSwitcher } from './OrganizationSwitcher';
 import { UserProfileFooter } from './UserProfileFooter';
 import { NAV_ITEM_ACTIVE, NAV_ITEM_BASE, NAV_ITEM_INACTIVE } from './navigationItemStyles';
+import { isNavigationHrefActive } from './navigationActive';
 import { Logo } from '@/components/shared/Logo';
 import { useRoleAccess } from '@/hooks/useRoleAccess';
 import { useSystemRole } from '@/hooks/useSystemRole';
@@ -107,6 +108,12 @@ const navigationGroups: NavigationGroup[] = [
         icon: ShieldCheck,
         testId: 'nav-link-verification',
       },
+      {
+        name: 'Weryfikacja Organizacji',
+        href: '/verification/organizations',
+        icon: ShieldCheck,
+        testId: 'nav-link-verification-organizations',
+      },
     ],
   },
 ];
@@ -119,16 +126,11 @@ interface SidebarProps {
 export function Sidebar({ isCollapsed, onToggleCollapse }: SidebarProps) {
   const pathname = usePathname();
   const { canManageOrganization } = useRoleAccess();
-  const { canReviewExercises } = useSystemRole();
+  const { canReviewExercises, isSiteSuperAdmin } = useSystemRole();
   const { pendingCount: organizationPendingVerificationCount } = useOrganizationVerificationAccess();
   const navigationRef = useRef<HTMLElement | null>(null);
   const [showTopFade, setShowTopFade] = useState(false);
   const [showBottomFade, setShowBottomFade] = useState(false);
-
-  const isActive = (href: string) => {
-    if (href === '/') return pathname === '/';
-    return pathname.startsWith(href);
-  };
 
   // Filter navigation groups based on user role
   const filteredNavigationGroups = useMemo(() => {
@@ -146,16 +148,22 @@ export function Sidebar({ isCollapsed, onToggleCollapse }: SidebarProps) {
       })
       .map((group) => ({
         ...group,
-        items: group.items.map((item) =>
-          item.href === '/organization/verification'
-            ? {
-                ...item,
-                badge: organizationPendingVerificationCount,
-              }
-            : item
-        ),
+        items: group.items
+          .filter((item) => item.href !== '/verification/organizations' || isSiteSuperAdmin)
+          .map((item) =>
+            item.href === '/organization/verification'
+              ? {
+                  ...item,
+                  badge: organizationPendingVerificationCount,
+                }
+              : item
+          ),
       }));
-  }, [canManageOrganization, canReviewExercises, organizationPendingVerificationCount]);
+  }, [canManageOrganization, canReviewExercises, isSiteSuperAdmin, organizationPendingVerificationCount]);
+  const filteredNavigationHrefs = useMemo(
+    () => filteredNavigationGroups.flatMap((group) => group.items.map((item) => item.href)),
+    [filteredNavigationGroups]
+  );
 
   useEffect(() => {
     const navElement = navigationRef.current;
@@ -260,7 +268,7 @@ export function Sidebar({ isCollapsed, onToggleCollapse }: SidebarProps) {
                 {/* Navigation items */}
                 <div className={cn('space-y-1 xl:space-y-2', isCollapsed ? 'flex flex-col items-center' : 'px-3 xl:px-4')}>
                   {group.items.map((item) => {
-                    const active = isActive(item.href);
+                    const active = isNavigationHrefActive(pathname, item.href, filteredNavigationHrefs);
                     const Icon = item.icon;
 
                     const linkContent = (
