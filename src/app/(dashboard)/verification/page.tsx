@@ -51,6 +51,9 @@ import type {
 } from '@/graphql/types/adminExercise.types';
 import type { ExerciseReport } from '@/types/exercise-report.types';
 
+type GlobalVerificationFilter = 'pending' | 'changes' | 'published' | 'archived' | 'reported';
+type VerificationStatsFilter = GlobalVerificationFilter | 'verified';
+
 // Helper function
 function formatRelativeTime(dateString?: string): string {
   if (!dateString) return '';
@@ -211,9 +214,7 @@ export default function VerificationPage() {
 
   const [searchQuery, setSearchQuery] = useState(initialSearch);
   const [debouncedSearch, setDebouncedSearch] = useState(initialSearch);
-  const [activeFilter, setActiveFilter] = useState<'pending' | 'changes' | 'published' | 'archived' | 'reported' | 'verified'>(
-    initialFilter
-  );
+  const [activeFilter, setActiveFilter] = useState<GlobalVerificationFilter>(initialFilter);
   const [scanResult, setScanResult] = useState<RepositoryScanResult | null>(null);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>(initialView);
   const [page, setPage] = useState(initialPage);
@@ -234,7 +235,7 @@ export default function VerificationPage() {
 
   const updateUrlState = useCallback(
     (nextState: {
-      filter?: 'pending' | 'changes' | 'published' | 'archived' | 'reported' | 'verified';
+      filter?: GlobalVerificationFilter;
       search?: string;
       page?: number;
       pageSize?: number;
@@ -594,10 +595,11 @@ export default function VerificationPage() {
     }
   };
 
-  const handleFilterChange = (nextFilter: 'pending' | 'changes' | 'published' | 'archived' | 'reported' | 'verified') => {
-    setActiveFilter(nextFilter);
+  const handleFilterChange = (nextFilter: VerificationStatsFilter) => {
+    const normalizedFilter: GlobalVerificationFilter = nextFilter === 'verified' ? 'published' : nextFilter;
+    setActiveFilter(normalizedFilter);
     setPage(1);
-    updateUrlState({ filter: nextFilter, page: 1, search: searchQuery });
+    updateUrlState({ filter: normalizedFilter, page: 1, search: searchQuery });
   };
 
   const handleSearchChange = (value: string) => {

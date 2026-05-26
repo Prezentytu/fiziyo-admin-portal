@@ -23,6 +23,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 import { pl } from 'date-fns/locale';
+import type { ExerciseReportRoutingTarget } from '@/types/exercise-report.types';
 
 // ============================================
 // QUICK REJECT CHIPS - Predefined rejection reasons
@@ -112,7 +113,7 @@ interface VerdictPanelProps {
     description: string;
     reporterName?: string;
     createdAt: string;
-    routingTarget: 'PENDING_REVIEW' | 'UPDATE_PENDING';
+    routingTarget: ExerciseReportRoutingTarget;
   };
 }
 

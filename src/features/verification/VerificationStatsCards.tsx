@@ -166,7 +166,7 @@ export function VerificationStatsCards({
       <StatCard
         testId="verification-stats-pending"
         label="Oczekujące"
-        value={stats.pendingReview}
+        value={stats?.pendingReview ?? 0}
         icon={Clock}
         color="text-amber-500"
         bgColor="bg-amber-500/20"
@@ -178,7 +178,7 @@ export function VerificationStatsCards({
       <StatCard
         testId="verification-stats-changes"
         label="Do poprawy"
-        value={stats.changesRequested}
+        value={stats?.changesRequested ?? 0}
         icon={AlertTriangle}
         color="text-orange-500"
         bgColor="bg-orange-500/20"
@@ -190,7 +190,7 @@ export function VerificationStatsCards({
       <StatCard
         testId="verification-stats-published"
         label="Opublikowane"
-        value={stats.published}
+        value={stats?.published ?? 0}
         icon={FileCheck}
         color="text-primary"
         bgColor="bg-primary/20"
@@ -214,7 +214,7 @@ export function VerificationStatsCards({
       <StatCard
         testId="verification-stats-archived"
         label="Wycofane"
-        value={stats.archivedGlobal || 0}
+        value={stats?.archivedGlobal ?? 0}
         icon={Archive}
         color="text-muted-foreground"
         bgColor="bg-muted"

@@ -12,7 +12,7 @@ export function useOrganizationVerificationAccess() {
   const { currentOrganization, isLoading: organizationLoading } = useOrganization();
   const { canManageOrganization, isLoading: roleLoading } = useRoleAccess();
 
-  const organizationId = currentOrganization?.id ?? null;
+  const organizationId = currentOrganization?.organizationId ?? null;
 
   const { data, loading: statsLoading } = useQuery<GetOrganizationVerificationStatsResponse>(
     GET_ORGANIZATION_VERIFICATION_STATS_QUERY,

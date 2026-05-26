@@ -14,6 +14,14 @@ Dziennik wniosków z pracy AI agentów. Po każdej korekcie dodaj nowy wpis.
 
 ## Wpisy
 
+### 2026-05-26 - Kontekst organizacji w frontendzie zawsze używa organizationId
+
+- **Kategoria**: `TypeScript` | `Build/Tooling`
+- **Problem**: Build Vercel zatrzymał się na nowych route'ach weryfikacji organizacyjnej, bo kod odwoływał się do `currentOrganization?.id`.
+- **Przyczyna**: Typ `UserOrganizationWithRole` ma pole `organizationId`, a nie `id`; przy kopiowaniu wzorców z innych modeli łatwo o taki drift.
+- **Rozwiązanie**: Ujednolicono odczyt identyfikatora na `currentOrganization?.organizationId` we wszystkich nowych miejscach i domknięto walidację `type-check`, `lint`, `test:run`, `build`.
+- **Reguła**: W kodzie opartym o `useOrganization()` traktuj `currentOrganization` jako `UserOrganizationWithRole` i zawsze używaj `organizationId` (nie `id`) przy query vars i guardach.
+
 ### 2026-05-25 - Weryfikacja organizacyjna wymaga oddzielenia statusów od globalnych
 
 - **Kategoria**: `GraphQL` | `UI/UX`

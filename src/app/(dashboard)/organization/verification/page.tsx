@@ -36,7 +36,7 @@ export default function OrganizationVerificationPage() {
   const { currentOrganization } = useOrganization();
   const { canManageOrganization, isLoading: roleLoading } = useRoleAccess();
 
-  const organizationId = currentOrganization?.id;
+  const organizationId = currentOrganization?.organizationId;
   const [search, setSearch] = useState(searchParams.get('search') ?? '');
   const [filter, setFilter] = useState<OrgFilter>(parseOrganizationVerificationFilter(searchParams.get('filter')));
   const [page, setPage] = useState(Number(searchParams.get('page') ?? '1') || 1);

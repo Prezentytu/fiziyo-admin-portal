@@ -3,7 +3,7 @@
 import { use, useMemo, useState } from 'react';
 import { useMutation, useQuery } from '@apollo/client/react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { ArrowLeft, CheckCircle2, Archive, Undo2 } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Archive, Undo2, ShieldCheck } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { useOrganization } from '@/contexts/OrganizationContext';
@@ -44,7 +44,7 @@ export default function OrganizationVerificationDetailPage({ params }: Readonly<
   const { currentOrganization } = useOrganization();
   const { canManageOrganization, isLoading: roleLoading } = useRoleAccess();
 
-  const organizationId = currentOrganization?.id;
+  const organizationId = currentOrganization?.organizationId;
   const filter = parseOrganizationVerificationFilter(searchParams.get('filter'));
   const search = searchParams.get('search') ?? '';
   const page = Number(searchParams.get('page') ?? '1') || 1;
@@ -92,7 +92,13 @@ export default function OrganizationVerificationDetailPage({ params }: Readonly<
   const [archiveOrganizationExercise, { loading: archiving }] = useMutation(ARCHIVE_ORGANIZATION_EXERCISE_MUTATION);
 
   if (!roleLoading && !canManageOrganization) {
-    return <EmptyState title="Brak dostępu" description="Tylko Owner/Admin może zarządzać weryfikacją organizacji." />;
+    return (
+      <EmptyState
+        icon={ShieldCheck}
+        title="Brak dostępu"
+        description="Tylko Owner/Admin może zarządzać weryfikacją organizacji."
+      />
+    );
   }
 
   const exercise = data?.exerciseByIdForOrgVerification;
@@ -100,6 +106,7 @@ export default function OrganizationVerificationDetailPage({ params }: Readonly<
   if (!loading && !exercise) {
     return (
       <EmptyState
+        icon={Archive}
         title="Nie znaleziono ćwiczenia"
         description="Ćwiczenie nie jest dostępne w kolejce tej organizacji."
         actionLabel="Wróć do listy"
