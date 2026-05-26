@@ -206,4 +206,21 @@ describe('ExerciseDialog media edit flow', () => {
     expect(screen.getByText('Ćwiczenie z bazy FiziYo')).toBeInTheDocument();
     expect(screen.queryByTestId('exercise-form-media-upload-btn')).not.toBeInTheDocument();
   });
+
+  it('blokuje edycję gdy ćwiczenie czeka na weryfikację organizacyjną', () => {
+    render(
+      <ExerciseDialog
+        open
+        onOpenChange={vi.fn()}
+        exercise={{
+          ...baseExercise,
+          organizationVerificationStatus: 'PENDING_ORG_REVIEW',
+        }}
+        organizationId="org-1"
+      />
+    );
+
+    expect(screen.getByText('Ćwiczenie oczekuje na weryfikację')).toBeInTheDocument();
+    expect(screen.getByText('Nie możesz edytować ćwiczenia podczas weryfikacji. Poczekaj na decyzję weryfikatora.')).toBeInTheDocument();
+  });
 });

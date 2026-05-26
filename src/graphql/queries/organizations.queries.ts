@@ -24,6 +24,7 @@ export const ORGANIZATION_FULL_FRAGMENT = gql`
     subscriptionExpiresAt
     allowPersonalExercises
     sharedExercisesByDefault
+    requireOrganizationVerification
     autoSyncExampleExercises
     # Contact info for PDF/branding
     address

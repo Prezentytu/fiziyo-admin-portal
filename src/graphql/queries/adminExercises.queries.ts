@@ -60,6 +60,11 @@ export const ADMIN_EXERCISE_FRAGMENT = gql`
     globalSubmissionId
     sourceOrganizationExerciseId
     submittedToGlobalAt
+    organizationVerificationStatus
+    submittedForOrgReviewAt
+    orgReviewedById
+    orgReviewedAt
+    orgReviewNotes
     createdBy {
       id
       fullname
@@ -80,6 +85,10 @@ export const VERIFICATION_QUEUE_ITEM_FRAGMENT = gql`
     patientDescription
     createdAt
     updatedAt
+    organizationVerificationStatus
+    submittedForOrgReviewAt
+    orgReviewedAt
+    orgReviewNotes
     createdBy {
       id
       fullname
@@ -211,6 +220,84 @@ export const GET_VERIFICATION_QUEUE_NAVIGATOR_QUERY = gql`
       search
     }
   }
+`;
+
+export const GET_ORGANIZATION_VERIFICATION_STATS_QUERY = gql`
+  query GetOrganizationVerificationStats($organizationId: String!) {
+    organizationVerificationStats(organizationId: $organizationId) {
+      notSubmitted
+      pendingOrgReview
+      orgChangesRequested
+      orgVerified
+      orgArchived
+      total
+    }
+  }
+`;
+
+export const GET_ORGANIZATION_VERIFICATION_QUEUE_PAGE_QUERY = gql`
+  query GetOrganizationVerificationQueuePage(
+    $organizationId: String!
+    $filter: String!
+    $search: String
+    $page: Int!
+    $pageSize: Int!
+  ) {
+    organizationVerificationQueuePage(
+      organizationId: $organizationId
+      filter: $filter
+      search: $search
+      page: $page
+      pageSize: $pageSize
+    ) {
+      items {
+        ...VerificationQueueItemFragment
+      }
+      totalCount
+      page
+      pageSize
+      totalPages
+      hasPreviousPage
+      hasNextPage
+      filter
+      search
+    }
+  }
+  ${VERIFICATION_QUEUE_ITEM_FRAGMENT}
+`;
+
+export const GET_ORGANIZATION_VERIFICATION_QUEUE_NAVIGATOR_QUERY = gql`
+  query GetOrganizationVerificationQueueNavigator(
+    $organizationId: String!
+    $currentExerciseId: String!
+    $filter: String!
+    $search: String
+  ) {
+    organizationVerificationQueueNavigator(
+      organizationId: $organizationId
+      currentExerciseId: $currentExerciseId
+      filter: $filter
+      search: $search
+    ) {
+      currentExerciseId
+      positionInQueue
+      totalInQueue
+      remainingCount
+      nextExerciseId
+      previousExerciseId
+      filter
+      search
+    }
+  }
+`;
+
+export const GET_EXERCISE_BY_ID_FOR_ORG_VERIFICATION_QUERY = gql`
+  query GetExerciseByIdForOrgVerification($organizationId: String!, $id: String!) {
+    exerciseByIdForOrgVerification(organizationId: $organizationId, id: $id) {
+      ...ExerciseFullFragment
+    }
+  }
+  ${EXERCISE_FULL_FRAGMENT}
 `;
 
 /**

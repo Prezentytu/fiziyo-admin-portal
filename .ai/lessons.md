@@ -14,6 +14,14 @@ Dziennik wniosków z pracy AI agentów. Po każdej korekcie dodaj nowy wpis.
 
 ## Wpisy
 
+### 2026-05-25 - Weryfikacja organizacyjna wymaga oddzielenia statusów od globalnych
+
+- **Kategoria**: `GraphQL` | `UI/UX`
+- **Problem**: Przy wdrażaniu prywatnej weryfikacji ćwiczeń łatwo było mieszać semantykę globalnego `status` z nowym statusem organizacyjnym, co groziło regresją globalnej kolejki i błędnym gatingiem assignmentów.
+- **Przyczyna**: Oba flow dotyczą tej samej encji `Exercise`, ale mają inne role, inne reguły przejść i inny moment egzekwowania dostępu.
+- **Rozwiązanie**: Wdrożono additive-first model z osobnym polem `organizationVerificationStatus`, osobnymi query/mutation i dedykowanym RBAC (Owner/Admin), bez naruszania dotychczasowego global verification.
+- **Reguła**: Dla równoległych lifecycle na jednej encji zawsze utrzymuj dwa niezależne kanały statusowe i nie reutilizuj globalnych flag do logiki tenantowej.
+
 ### 2026-05-21 - AI metadane zestawu powinny generować nazwe i opis jedną akcją
 
 - **Kategoria**: `UI/UX` | `React`

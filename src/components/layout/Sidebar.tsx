@@ -26,6 +26,7 @@ import { NAV_ITEM_ACTIVE, NAV_ITEM_BASE, NAV_ITEM_INACTIVE } from './navigationI
 import { Logo } from '@/components/shared/Logo';
 import { useRoleAccess } from '@/hooks/useRoleAccess';
 import { useSystemRole } from '@/hooks/useSystemRole';
+import { useOrganizationVerificationAccess } from '@/hooks/useOrganizationVerificationAccess';
 
 // ========================================
 // Types
@@ -85,6 +86,12 @@ const navigationGroups: NavigationGroup[] = [
     adminOnly: true,
     items: [
       { name: 'Zespół', href: '/organization', icon: Building2, testId: 'nav-link-organization' },
+      {
+        name: 'Weryfikacja',
+        href: '/organization/verification',
+        icon: ShieldCheck,
+        testId: 'nav-link-organization-verification',
+      },
       { name: 'Finanse', href: '/finances', icon: Wallet, testId: 'nav-link-finances' },
       { name: 'Ustawienia', href: '/settings', icon: Settings, testId: 'nav-link-settings' },
     ],
@@ -113,6 +120,7 @@ export function Sidebar({ isCollapsed, onToggleCollapse }: SidebarProps) {
   const pathname = usePathname();
   const { canManageOrganization } = useRoleAccess();
   const { canReviewExercises } = useSystemRole();
+  const { pendingCount: organizationPendingVerificationCount } = useOrganizationVerificationAccess();
   const navigationRef = useRef<HTMLElement | null>(null);
   const [showTopFade, setShowTopFade] = useState(false);
   const [showBottomFade, setShowBottomFade] = useState(false);
@@ -124,18 +132,30 @@ export function Sidebar({ isCollapsed, onToggleCollapse }: SidebarProps) {
 
   // Filter navigation groups based on user role
   const filteredNavigationGroups = useMemo(() => {
-    return navigationGroups.filter((group) => {
+    return navigationGroups
+      .filter((group) => {
       // ContentManager-only groups (system role)
-      if (group.contentManagerOnly) {
-        return canReviewExercises;
-      }
-      // Admin-only groups (organization role)
-      if (group.adminOnly) {
-        return canManageOrganization;
-      }
-      return true;
-    });
-  }, [canManageOrganization, canReviewExercises]);
+        if (group.contentManagerOnly) {
+          return canReviewExercises;
+        }
+        // Admin-only groups (organization role)
+        if (group.adminOnly) {
+          return canManageOrganization;
+        }
+        return true;
+      })
+      .map((group) => ({
+        ...group,
+        items: group.items.map((item) =>
+          item.href === '/organization/verification'
+            ? {
+                ...item,
+                badge: organizationPendingVerificationCount,
+              }
+            : item
+        ),
+      }));
+  }, [canManageOrganization, canReviewExercises, organizationPendingVerificationCount]);
 
   useEffect(() => {
     const navElement = navigationRef.current;

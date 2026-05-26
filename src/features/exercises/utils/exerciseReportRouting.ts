@@ -11,7 +11,12 @@ interface ExerciseRoutingInput {
  */
 export function resolveExerciseReportRoutingTarget({
   status,
+  scope,
 }: ExerciseRoutingInput): ExerciseReportRoutingTarget {
+  if (scope === 'ORGANIZATION') {
+    return 'PENDING_ORG_REVIEW';
+  }
+
   if (status === 'PUBLISHED') {
     return 'UPDATE_PENDING';
   }

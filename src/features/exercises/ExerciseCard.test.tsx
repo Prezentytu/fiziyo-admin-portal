@@ -42,4 +42,39 @@ describe('ExerciseCard menu actions', () => {
     await user.click(screen.getByTestId('exercise-card-exercise-1-report-btn'));
     expect(onReportIssue).toHaveBeenCalledTimes(1);
   });
+
+  it('pokazuje akcję submit do weryfikacji organizacyjnej i badge pending', async () => {
+    const user = userEvent.setup();
+    const onSubmitToOrganizationReview = vi.fn();
+
+    const { rerender } = render(
+      <ExerciseCard
+        exercise={{
+          ...baseExercise,
+          organizationVerificationStatus: 'NOT_SUBMITTED',
+        }}
+        compact
+        onSubmitToOrganizationReview={onSubmitToOrganizationReview}
+      />
+    );
+
+    await user.click(screen.getByRole('button'));
+    expect(screen.getByText('Zgłoś do weryfikacji org')).toBeInTheDocument();
+
+    await user.click(screen.getByTestId('exercise-card-exercise-1-submit-org-review-btn'));
+    expect(onSubmitToOrganizationReview).toHaveBeenCalledTimes(1);
+
+    rerender(
+      <ExerciseCard
+        exercise={{
+          ...baseExercise,
+          organizationVerificationStatus: 'PENDING_ORG_REVIEW',
+        }}
+        compact
+        onSubmitToOrganizationReview={onSubmitToOrganizationReview}
+      />
+    );
+
+    expect(screen.getByText('Oczekuje na weryfikację org')).toBeInTheDocument();
+  });
 });

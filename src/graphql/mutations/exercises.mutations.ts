@@ -1066,3 +1066,31 @@ export const WITHDRAW_FROM_REVIEW_MUTATION = gql`
     }
   }
 `;
+
+export const SUBMIT_FOR_ORGANIZATION_REVIEW_MUTATION = gql`
+  mutation SubmitForOrganizationReview($exerciseId: String!) {
+    submitForOrganizationReview(exerciseId: $exerciseId) {
+      id
+      organizationVerificationStatus
+      submittedForOrgReviewAt
+      orgReviewedById
+      orgReviewedAt
+      orgReviewNotes
+      updatedAt
+    }
+  }
+`;
+
+export const WITHDRAW_FROM_ORGANIZATION_REVIEW_MUTATION = gql`
+  mutation WithdrawFromOrganizationReview($exerciseId: String!) {
+    withdrawFromOrganizationReview(exerciseId: $exerciseId) {
+      id
+      organizationVerificationStatus
+      submittedForOrgReviewAt
+      orgReviewedById
+      orgReviewedAt
+      orgReviewNotes
+      updatedAt
+    }
+  }
+`;

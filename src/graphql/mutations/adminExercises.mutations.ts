@@ -163,6 +163,41 @@ export const BATCH_UPDATE_EXERCISE_FIELDS_MUTATION = gql`
   ${ADMIN_EXERCISE_FRAGMENT}
 `;
 
+export const APPROVE_ORGANIZATION_EXERCISE_MUTATION = gql`
+  mutation ApproveOrganizationExercise($exerciseId: String!, $reviewNotes: String) {
+    approveOrganizationExercise(exerciseId: $exerciseId, reviewNotes: $reviewNotes) {
+      ...AdminExerciseFragment
+    }
+  }
+  ${ADMIN_EXERCISE_FRAGMENT}
+`;
+
+export const REQUEST_ORGANIZATION_EXERCISE_CHANGES_MUTATION = gql`
+  mutation RequestOrganizationExerciseChanges(
+    $exerciseId: String!
+    $reviewNotes: String!
+    $rejectionReason: String!
+  ) {
+    requestOrganizationExerciseChanges(
+      exerciseId: $exerciseId
+      reviewNotes: $reviewNotes
+      rejectionReason: $rejectionReason
+    ) {
+      ...AdminExerciseFragment
+    }
+  }
+  ${ADMIN_EXERCISE_FRAGMENT}
+`;
+
+export const ARCHIVE_ORGANIZATION_EXERCISE_MUTATION = gql`
+  mutation ArchiveOrganizationExercise($exerciseId: String!, $reason: String) {
+    archiveOrganizationExercise(exerciseId: $exerciseId, reason: $reason) {
+      ...AdminExerciseFragment
+    }
+  }
+  ${ADMIN_EXERCISE_FRAGMENT}
+`;
+
 // ============================================
 // Exercise Relationships (Graph) Mutations
 // ============================================

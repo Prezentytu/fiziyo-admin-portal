@@ -19,6 +19,7 @@ import {
   COPY_EXERCISE_TEMPLATE_MUTATION,
   UPLOAD_EXERCISE_IMAGE_MUTATION,
   DELETE_EXERCISE_IMAGE_MUTATION,
+  SUBMIT_FOR_ORGANIZATION_REVIEW_MUTATION,
 } from '@/graphql/mutations/exercises.mutations';
 import {
   GET_ORGANIZATION_EXERCISES_QUERY,
@@ -57,6 +58,8 @@ interface ExerciseDialogProps {
   onResubmit?: (exerciseId: string) => Promise<void>;
   /** Callback to submit exercise to global database */
   onSubmitToGlobal?: (exercise: Exercise) => void;
+  /** Callback to submit exercise to organization verification */
+  onSubmitToOrganizationReview?: (exercise: Exercise) => void;
 }
 
 export function ExerciseDialog({
@@ -67,6 +70,7 @@ export function ExerciseDialog({
   onSuccess,
   onResubmit,
   onSubmitToGlobal,
+  onSubmitToOrganizationReview,
 }: Readonly<ExerciseDialogProps>) {
   const isEditing = !!exercise;
   const [showCloseConfirm, setShowCloseConfirm] = useState(false);
@@ -111,6 +115,7 @@ export function ExerciseDialog({
 
   // Status-based modes
   const isPendingReview = exercise?.status === 'PENDING_REVIEW';
+  const isPendingOrganizationReview = exercise?.organizationVerificationStatus === 'PENDING_ORG_REVIEW';
   const isChangesRequested = exercise?.status === 'CHANGES_REQUESTED';
   const isFixMode = isChangesRequested; // Enable editing to fix issues
 
@@ -121,6 +126,13 @@ export function ExerciseDialog({
     !exercise?.globalSubmissionId &&
     !isPendingReview &&
     !isChangesRequested;
+
+  const canSubmitToOrganization =
+    onSubmitToOrganizationReview &&
+    exercise?.scope === 'ORGANIZATION' &&
+    (exercise?.organizationVerificationStatus === 'NOT_SUBMITTED' ||
+      exercise?.organizationVerificationStatus === 'ORG_CHANGES_REQUESTED') &&
+    !isPendingOrganizationReview;
 
   const handleCloseAttempt = useCallback(() => {
     if (isFormDirty || hasMediaChanges) {
@@ -172,6 +184,9 @@ export function ExerciseDialog({
   const [copyExercise, { loading: copying }] = useMutation(COPY_EXERCISE_TEMPLATE_MUTATION, {
     refetchQueries: [{ query: GET_AVAILABLE_EXERCISES_QUERY, variables: { organizationId } }],
   });
+  const [submitForOrganizationReview, { loading: submittingForOrganizationReview }] = useMutation(
+    SUBMIT_FOR_ORGANIZATION_REVIEW_MUTATION
+  );
   const organizationExerciseNames =
     ((organizationExercisesData as { organizationExercises?: { name?: string | null }[] } | undefined)
       ?.organizationExercises ?? [])
@@ -494,8 +509,8 @@ export function ExerciseDialog({
     );
   }
 
-  // Edit locked state for PENDING_REVIEW
-  if (isPendingReview) {
+  // Edit locked state for PENDING_REVIEW / PENDING_ORG_REVIEW
+  if (isPendingReview || isPendingOrganizationReview) {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-md">
@@ -506,6 +521,9 @@ export function ExerciseDialog({
             </DialogTitle>
             <DialogDescription>
               &quot;{exercise?.name}&quot; zostało zgłoszone do bazy globalnej i oczekuje na weryfikację.
+              {isPendingOrganizationReview && !isPendingReview && (
+                <span> To ćwiczenie jest aktualnie w lokalnej kolejce weryfikacji organizacyjnej.</span>
+              )}
             </DialogDescription>
           </DialogHeader>
 
@@ -525,7 +543,6 @@ export function ExerciseDialog({
             <Button variant="outline" onClick={() => onOpenChange(false)}>
               Zamknij
             </Button>
-            {/* TODO: Add "Withdraw submission" button when backend supports it */}
           </div>
         </DialogContent>
       </Dialog>
@@ -567,7 +584,14 @@ export function ExerciseDialog({
           defaultValues={defaultValues}
           onSubmit={handleSubmit}
           onCancel={handleCloseAttempt}
-          isLoading={updating || isResubmitting || uploadingMedia || deletingMedia || isGeneratingMedia}
+          isLoading={
+            updating ||
+            isResubmitting ||
+            uploadingMedia ||
+            deletingMedia ||
+            isGeneratingMedia ||
+            submittingForOrganizationReview
+          }
           submitLabel={isFixMode ? 'Wyślij poprawki' : 'Zapisz zmiany'}
           onDirtyChange={setIsFormDirty}
           mediaSection={
@@ -678,6 +702,27 @@ export function ExerciseDialog({
               >
                 <Rocket className="h-4 w-4" />
                 Wyślij do weryfikacji
+              </Button>
+            ) : canSubmitToOrganization && exercise ? (
+              <Button
+                type="button"
+                onClick={async () => {
+                  try {
+                    await submitForOrganizationReview({ variables: { exerciseId: exercise.id } });
+                    toast.success('Ćwiczenie zgłoszone do weryfikacji organizacyjnej.');
+                    onSubmitToOrganizationReview?.(exercise);
+                    onOpenChange(false);
+                    onSuccess?.({ action: 'updated', exerciseId: exercise.id });
+                  } catch (error) {
+                    console.error(error);
+                    toast.error('Nie udało się zgłosić ćwiczenia do weryfikacji organizacyjnej.');
+                  }
+                }}
+                className="gap-2 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-600/90 hover:to-emerald-500/90"
+                data-testid="exercise-dialog-submit-org-review-btn"
+              >
+                <Rocket className="h-4 w-4" />
+                Zgłoś do weryfikacji org
               </Button>
             ) : undefined
           }

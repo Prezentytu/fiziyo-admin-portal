@@ -98,3 +98,12 @@ Przykłady: `3 × 10`, `3 × 10 × 10s`, `3 × 1 × 30s`
 
 Prefiks: `exercise-`
 Przykłady: `exercise-form-submit-btn`, `exercise-form-name-input`, `exercise-card-{id}`
+
+## Weryfikacja organizacyjna (OrganizationVerificationStatus)
+
+- Utrzymuj rozdział: `status` (global) vs `organizationVerificationStatus` (organizacja).
+- Dla ćwiczeń `scope=ORGANIZATION` pokazuj badge statusu org (`PENDING_ORG_REVIEW`, `ORG_CHANGES_REQUESTED`, `ORG_VERIFIED`).
+- Akcja zgłoszenia do org review ma być dostępna tylko dla statusów:
+  - `NOT_SUBMITTED`
+  - `ORG_CHANGES_REQUESTED`
+- W `PENDING_ORG_REVIEW` edycja powinna być zablokowana (UI lock + backend guard).

@@ -211,7 +211,7 @@ export default function VerificationPage() {
 
   const [searchQuery, setSearchQuery] = useState(initialSearch);
   const [debouncedSearch, setDebouncedSearch] = useState(initialSearch);
-  const [activeFilter, setActiveFilter] = useState<'pending' | 'changes' | 'published' | 'archived' | 'reported'>(
+  const [activeFilter, setActiveFilter] = useState<'pending' | 'changes' | 'published' | 'archived' | 'reported' | 'verified'>(
     initialFilter
   );
   const [scanResult, setScanResult] = useState<RepositoryScanResult | null>(null);
@@ -234,7 +234,7 @@ export default function VerificationPage() {
 
   const updateUrlState = useCallback(
     (nextState: {
-      filter?: 'pending' | 'changes' | 'published' | 'archived' | 'reported';
+      filter?: 'pending' | 'changes' | 'published' | 'archived' | 'reported' | 'verified';
       search?: string;
       page?: number;
       pageSize?: number;
@@ -594,7 +594,7 @@ export default function VerificationPage() {
     }
   };
 
-  const handleFilterChange = (nextFilter: 'pending' | 'changes' | 'published' | 'archived' | 'reported') => {
+  const handleFilterChange = (nextFilter: 'pending' | 'changes' | 'published' | 'archived' | 'reported' | 'verified') => {
     setActiveFilter(nextFilter);
     setPage(1);
     updateUrlState({ filter: nextFilter, page: 1, search: searchQuery });

@@ -71,6 +71,12 @@ export interface Exercise {
     | 'REJECTED'
     | 'ARCHIVED_GLOBAL'
     | 'UPDATE_PENDING';
+  organizationVerificationStatus?:
+    | 'NOT_SUBMITTED'
+    | 'PENDING_ORG_REVIEW'
+    | 'ORG_VERIFIED'
+    | 'ORG_CHANGES_REQUESTED'
+    | 'ORG_ARCHIVED';
   scope?: 'PERSONAL' | 'ORGANIZATION' | 'GLOBAL';
   adminReviewNotes?: string;
   // Global submission tracking (nowy model weryfikacji)
@@ -107,6 +113,8 @@ interface ExerciseCardProps {
   onAddToSet?: (exercise: Exercise) => void;
   /** Callback to submit exercise to global database for verification */
   onSubmitToGlobal?: (exercise: Exercise) => void;
+  /** Callback to submit exercise to organization verification */
+  onSubmitToOrganizationReview?: (exercise: Exercise) => void;
   /** Callback to report exercise issue */
   onReportIssue?: (exercise: Exercise) => void;
   /** Whether this exercise is currently in the builder */
@@ -124,6 +132,7 @@ export function ExerciseCard({
   onDelete,
   onAddToSet,
   onSubmitToGlobal,
+  onSubmitToOrganizationReview,
   onReportIssue,
   isInBuilder = false,
   onToggleBuilder,
@@ -142,6 +151,10 @@ export function ExerciseCard({
 
   // Check if exercise has been submitted to global (new model)
   const hasGlobalSubmission = !!exercise.globalSubmissionId;
+  const organizationVerificationStatus = exercise.organizationVerificationStatus;
+  const isPendingOrganizationReview = organizationVerificationStatus === 'PENDING_ORG_REVIEW';
+  const isOrganizationChangesRequested = organizationVerificationStatus === 'ORG_CHANGES_REQUESTED';
+  const isOrganizationVerified = organizationVerificationStatus === 'ORG_VERIFIED';
 
   // Check if exercise is pending review (locked) - for legacy support
   const isPendingReview = exercise.status === 'PENDING_REVIEW';
@@ -149,9 +162,13 @@ export function ExerciseCard({
 
   // For organization exercises with global submission, show as "submitted"
   const isSubmittedToGlobal = hasGlobalSubmission && exercise.scope === 'ORGANIZATION';
+  const canSubmitToOrganization =
+    onSubmitToOrganizationReview &&
+    exercise.scope === 'ORGANIZATION' &&
+    (organizationVerificationStatus === 'NOT_SUBMITTED' || organizationVerificationStatus === 'ORG_CHANGES_REQUESTED');
 
   // Global exercises and pending review exercises are read-only (no edit/delete)
-  const isReadOnly = isGlobalExercise || isPendingReview;
+  const isReadOnly = isGlobalExercise || isPendingReview || isPendingOrganizationReview;
 
   const handleToggleBuilder = useCallback(
     (e: React.MouseEvent) => {
@@ -379,6 +396,19 @@ export function ExerciseCard({
                   </DropdownMenuItem>
                 </>
               )}
+              {canSubmitToOrganization && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={(event) => runMenuAction(event, () => onSubmitToOrganizationReview?.(exercise))}
+                    className="text-emerald-600 focus:text-emerald-600"
+                    data-testid={`exercise-card-${exercise.id}-submit-org-review-btn`}
+                  >
+                    <Rocket className="mr-2 h-4 w-4" />
+                    Zgłoś do weryfikacji org
+                  </DropdownMenuItem>
+                </>
+              )}
               {onReportIssue && (
                 <DropdownMenuItem
                   onClick={(event) => runMenuAction(event, () => onReportIssue(exercise))}
@@ -405,6 +435,12 @@ export function ExerciseCard({
                 <div className="px-2 py-1.5 text-xs text-amber-600 flex items-center gap-1">
                   <Globe className="h-3 w-3" />
                   Oczekuje na weryfikację
+                </div>
+              )}
+              {isPendingOrganizationReview && (
+                <div className="px-2 py-1.5 text-xs text-amber-700 flex items-center gap-1">
+                  <Clock className="h-3 w-3" />
+                  Oczekuje na weryfikację org
                 </div>
               )}
               {onDelete && !isReadOnly && (
@@ -501,7 +537,13 @@ export function ExerciseCard({
             )}
 
             {/* Status badges - top left */}
-            {(isGlobalExercise || isSubmittedToGlobal || isPendingReview || isChangesRequested) && (
+              {(isGlobalExercise ||
+                isSubmittedToGlobal ||
+                isPendingReview ||
+                isChangesRequested ||
+                isPendingOrganizationReview ||
+                isOrganizationChangesRequested ||
+                isOrganizationVerified) && (
               <div className="absolute top-3 left-3 z-10">
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -516,7 +558,10 @@ export function ExerciseCard({
                           !isGlobalExercise &&
                           'bg-blue-500/80 text-white border-blue-600',
                         isPendingReview && 'bg-yellow-500/90 text-black border-yellow-600',
-                        isChangesRequested && 'bg-red-500/90 text-white border-red-600'
+                        isChangesRequested && 'bg-red-500/90 text-white border-red-600',
+                        isPendingOrganizationReview && 'bg-amber-600/90 text-white border-amber-700',
+                        isOrganizationChangesRequested && 'bg-rose-500/90 text-white border-rose-600',
+                        isOrganizationVerified && 'bg-emerald-500/90 text-white border-emerald-600'
                       )}
                     >
                       {isGlobalExercise && (
@@ -542,6 +587,24 @@ export function ExerciseCard({
                           Do poprawy
                         </>
                       )}
+                      {isPendingOrganizationReview && (
+                        <>
+                          <Clock className="h-3 w-3 mr-1" />
+                          Weryfikacja org
+                        </>
+                      )}
+                      {isOrganizationChangesRequested && (
+                        <>
+                          <AlertCircle className="h-3 w-3 mr-1" />
+                          Poprawki org
+                        </>
+                      )}
+                      {isOrganizationVerified && (
+                        <>
+                          <Check className="h-3 w-3 mr-1" />
+                          Zweryfikowane org
+                        </>
+                      )}
                     </Badge>
                   </TooltipTrigger>
                   <TooltipContent side="bottom" className="text-xs max-w-[220px]">
@@ -553,6 +616,9 @@ export function ExerciseCard({
                       'Zgłoszono do bazy globalnej FiziYo'}
                     {isPendingReview && 'Nasi eksperci sprawdzają to ćwiczenie. Średni czas: 24h.'}
                     {isChangesRequested && 'Admin dodał uwagi. Kliknij aby zobaczyć.'}
+                    {isPendingOrganizationReview && 'Ćwiczenie czeka na lokalną decyzję Owner/Admin.'}
+                    {isOrganizationChangesRequested && 'Ćwiczenie wymaga poprawek w ramach organizacji.'}
+                    {isOrganizationVerified && 'Ćwiczenie jest zweryfikowane lokalnie w organizacji.'}
                   </TooltipContent>
                 </Tooltip>
               </div>
@@ -622,6 +688,19 @@ export function ExerciseCard({
                       >
                         <Rocket className="mr-2 h-4 w-4" />
                         Zgłoś do Bazy Globalnej
+                      </DropdownMenuItem>
+                    </>
+                  )}
+                  {canSubmitToOrganization && (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        onClick={(event) => runMenuAction(event, () => onSubmitToOrganizationReview?.(exercise))}
+                        className="text-emerald-600 focus:text-emerald-600"
+                        data-testid={`exercise-card-${exercise.id}-submit-org-review-btn`}
+                      >
+                        <Rocket className="mr-2 h-4 w-4" />
+                        Zgłoś do weryfikacji org
                       </DropdownMenuItem>
                     </>
                   )}

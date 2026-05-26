@@ -252,16 +252,19 @@ export const UPDATE_EXERCISE_VISIBILITY_SETTINGS_MUTATION = gql`
     $organizationId: String!
     $allowPersonalExercises: Boolean!
     $sharedExercisesByDefault: Boolean!
+    $requireOrganizationVerification: Boolean!
   ) {
     updateExerciseVisibilitySettings(
       organizationId: $organizationId
       allowPersonalExercises: $allowPersonalExercises
       sharedExercisesByDefault: $sharedExercisesByDefault
+      requireOrganizationVerification: $requireOrganizationVerification
     ) {
       id
       name
       allowPersonalExercises
       sharedExercisesByDefault
+      requireOrganizationVerification
     }
   }
 `;

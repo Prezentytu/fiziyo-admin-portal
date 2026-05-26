@@ -9,7 +9,7 @@ export type ExerciseReportReasonCategory =
 
 export type ExerciseReportStatus = 'OPEN' | 'RESOLVED';
 
-export type ExerciseReportRoutingTarget = 'PENDING_REVIEW' | 'UPDATE_PENDING';
+export type ExerciseReportRoutingTarget = 'PENDING_REVIEW' | 'PENDING_ORG_REVIEW' | 'UPDATE_PENDING';
 
 export interface ExerciseReportAuthor {
   userId: string;

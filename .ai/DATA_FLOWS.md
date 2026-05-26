@@ -350,3 +350,33 @@ Panel / Mobile                  Backend                    Azure Blob / Vimeo
       │  CDN URL pattern:            │                           │
       │  {AzureStorage:CdnBaseUrl}/exercises/{exerciseId}/{guid}.{ext}
 ```
+
+---
+
+## 9. Organization Verification Flow (Exercise)
+
+```
+Therapist (org exercise)            Backend GraphQL                     Org Admin/Owner
+────────────────────────            ───────────────                     ───────────────
+         │                                  │                                   │
+         │ submitForOrganizationReview      │                                   │
+         │─────────────────────────────────→│ status=PendingOrgReview           │
+         │                                  │ submittedForOrgReviewAt=now       │
+         │                                  │                                   │
+         │                                  │◄──────────────────────────────────│
+         │                                  │ approveOrganizationExercise        │
+         │                                  │ requestOrganizationExerciseChanges │
+         │                                  │ archiveOrganizationExercise        │
+         │                                  │                                   │
+```
+
+### State machine
+
+- `NotSubmitted` → `PendingOrgReview`
+- `PendingOrgReview` → `OrgVerified` | `OrgChangesRequested` | `OrgArchived`
+- `OrgChangesRequested` → `NotSubmitted` (po edycji + ponownym zgłoszeniu)
+
+### Gating
+
+- Jeśli `Organization.RequireOrganizationVerification = true`, listy i assignmenty ukrywają/blokują niezweryfikowane ćwiczenia organizacyjne.
+- Ćwiczenia globalne i już zweryfikowane organizacyjnie przechodzą bez ograniczeń.

@@ -46,7 +46,8 @@ Zapytania używane w obu frontendach (wspólne resolwery):
 
 - Billing/Revenue: `GET_BILLING_QUERY`, `GET_REVENUE_QUERY`
 - AI Credits: `GET_AI_CREDITS_QUERY`
-- Weryfikacja: `GET_ADMIN_EXERCISES_QUERY`, `SUBMIT_TO_GLOBAL_REVIEW_MUTATION`
+- Weryfikacja globalna: `GET_ADMIN_EXERCISES_QUERY`, `SUBMIT_TO_GLOBAL_REVIEW_MUTATION`
+- Weryfikacja organizacyjna: `GET_ORGANIZATION_VERIFICATION_*`, `SUBMIT_FOR_ORGANIZATION_REVIEW_MUTATION`, `APPROVE_ORGANIZATION_EXERCISE_MUTATION`
 - Onboarding: `GET_ONBOARDING_STATS_QUERY`
 - Subskrypcje real-time: exercises, exerciseSets, patients, assignments, clinicalNotes, tags, clinics
 
@@ -55,6 +56,7 @@ Zapytania używane w obu frontendach (wspólne resolwery):
 - Video Inbox: `GET_VIDEO_INBOX_QUERY`
 - Patient Report: `GET_PATIENT_REPORT_QUERY`
 - Exercise Progress: `MARK_EXERCISE_COMPLETED_MUTATION`
+- Organization verification submit: `SUBMIT_FOR_ORGANIZATION_REVIEW_MUTATION`
 - Hooks layer: 28 custom hooks (`useExercises`, `usePatientAssignments` itd.)
 
 ### Typy — duplikacja, nie współdzielenie
@@ -128,3 +130,4 @@ Przy zmianie schematu backendu — zaktualizuj typy w **obu** repozytoriach.
 4. **ExerciseLoad** — JSONB w bazie, różne interpretacje w admin (formularz edycji) i mobile (player). Przy zmianie struktury — sprawdź oba.
 5. **Env variables** — admin: `NEXT_PUBLIC_API_URL`; mobile: `EXPO_PUBLIC_API_URL` (w `app.config.ts`); backend: connection strings w `appsettings.json`.
 6. **Deploy backendu** — wdrożenie na Azure jest manualne i wykonuje je użytkownik. Agent powinien jasno zaznaczyć, gdy zmiana backendowa wymaga ręcznego deploya, zamiast zakładać, że środowisko zdalne samo się zaktualizuje.
+7. **Dual verification model** — globalna i organizacyjna weryfikacja są równoległe. Przy każdej zmianie statusów ćwiczeń aktualizuj backend + admin + mobile, aby nie mieszać `ContentStatus` z `OrganizationVerificationStatus`.
