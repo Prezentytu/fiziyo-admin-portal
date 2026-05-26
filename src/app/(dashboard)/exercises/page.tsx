@@ -36,6 +36,7 @@ import { useExerciseBuilder, type BuilderExercise } from '@/contexts/ExerciseBui
 import { createTagsMap, mapExercisesWithTags } from '@/utils/tagUtils';
 import { useDataManagement } from '@/hooks/useDataManagement';
 import { useRealtimeExercises } from '@/hooks/useRealtimeExercises';
+import { ORG_VERIFICATION_REFETCH_QUERIES } from '@/hooks/useOrganizationVerificationRealtime';
 import type { AvailableExercisesResponse, ExerciseTagsResponse, TagCategoriesResponse } from '@/types/apollo';
 import { sortExercisesByNewest } from '@/features/exercises/utils/sortExercisesByNewest';
 
@@ -138,6 +139,7 @@ export default function ExercisesPage() {
           query: GET_AVAILABLE_EXERCISES_QUERY,
           variables: { organizationId },
         },
+        ...ORG_VERIFICATION_REFETCH_QUERIES,
       ],
     }
   );

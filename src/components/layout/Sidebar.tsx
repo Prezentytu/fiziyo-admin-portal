@@ -28,6 +28,7 @@ import { Logo } from '@/components/shared/Logo';
 import { useRoleAccess } from '@/hooks/useRoleAccess';
 import { useSystemRole } from '@/hooks/useSystemRole';
 import { useOrganizationVerificationAccess } from '@/hooks/useOrganizationVerificationAccess';
+import { NavCountBadge } from '@/components/layout/NavCountBadge';
 
 // ========================================
 // Types
@@ -300,12 +301,7 @@ export function Sidebar({ isCollapsed, onToggleCollapse }: SidebarProps) {
                           <>
                             <span className="flex-1 truncate">{item.name}</span>
 
-                            {/* Badge indicator */}
-                            {item.badge && item.badge > 0 && (
-                              <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive px-1.5 text-[10px] font-bold text-white">
-                                {item.badge > 99 ? '99+' : item.badge}
-                              </span>
-                            )}
+                            <NavCountBadge count={item.badge ?? 0} />
 
                             {/* AI accent indicator in expanded mode */}
                             {item.hasAiAccent && !active && <Sparkles className="h-3.5 w-3.5 text-primary opacity-60" />}

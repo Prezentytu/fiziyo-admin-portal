@@ -77,6 +77,7 @@ import { getNextExerciseCopyName } from '@/features/exercises/utils/getNextExerc
 import { calculateExerciseTotalSeconds, formatExerciseDuration } from '@/utils/exerciseTime';
 import { getExerciseMediaGalleryUrls } from '@/features/exercises/utils/exerciseMedia';
 import { verificationCopy } from '@/features/verification/verificationCopy';
+import { ORG_VERIFICATION_REFETCH_QUERIES } from '@/hooks/useOrganizationVerificationRealtime';
 
 interface ExerciseDetailPageProps {
   params: Promise<{ id: string }>;
@@ -149,7 +150,10 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
   const [submitForOrganizationReview, { loading: submittingToOrganization }] = useMutation(
     SUBMIT_FOR_ORGANIZATION_REVIEW_MUTATION,
     {
-      refetchQueries: [{ query: GET_EXERCISE_BY_ID_QUERY, variables: { id } }],
+      refetchQueries: [
+        { query: GET_EXERCISE_BY_ID_QUERY, variables: { id } },
+        ...ORG_VERIFICATION_REFETCH_QUERIES,
+      ],
     }
   );
 

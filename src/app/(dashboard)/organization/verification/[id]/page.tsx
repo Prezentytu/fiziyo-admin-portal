@@ -36,6 +36,7 @@ import type {
   AdminExercise,
   VerificationQueueNavigator,
 } from '@/graphql/types/adminExercise.types';
+import { ORG_VERIFICATION_REFETCH_QUERIES } from '@/hooks/useOrganizationVerificationRealtime';
 
 interface OrganizationVerificationDetailPageProps {
   params: Promise<{ id: string }>;
@@ -110,9 +111,20 @@ export default function OrganizationVerificationDetailPage({ params }: Readonly<
     }
   }, [exercise]);
 
-  const [approveOrganizationExercise, { loading: approving }] = useMutation(APPROVE_ORGANIZATION_EXERCISE_MUTATION);
-  const [requestChanges, { loading: rejecting }] = useMutation(REQUEST_ORGANIZATION_EXERCISE_CHANGES_MUTATION);
-  const [archiveOrganizationExercise, { loading: archiving }] = useMutation(ARCHIVE_ORGANIZATION_EXERCISE_MUTATION);
+  const orgVerificationRefetch = { refetchQueries: [...ORG_VERIFICATION_REFETCH_QUERIES] };
+
+  const [approveOrganizationExercise, { loading: approving }] = useMutation(
+    APPROVE_ORGANIZATION_EXERCISE_MUTATION,
+    orgVerificationRefetch
+  );
+  const [requestChanges, { loading: rejecting }] = useMutation(
+    REQUEST_ORGANIZATION_EXERCISE_CHANGES_MUTATION,
+    orgVerificationRefetch
+  );
+  const [archiveOrganizationExercise, { loading: archiving }] = useMutation(
+    ARCHIVE_ORGANIZATION_EXERCISE_MUTATION,
+    orgVerificationRefetch
+  );
   const [updateExerciseField] = useMutation(UPDATE_EXERCISE_FIELD_MUTATION, {
     onError: (error) => toast.error(`Błąd zapisu: ${error.message}`),
   });

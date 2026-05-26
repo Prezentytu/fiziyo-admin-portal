@@ -7,8 +7,10 @@ import { useOrganization } from '@/contexts/OrganizationContext';
 import { useRoleAccess } from '@/hooks/useRoleAccess';
 import { GET_ORGANIZATION_VERIFICATION_STATS_QUERY } from '@/graphql/queries/adminExercises.queries';
 import type { GetOrganizationVerificationStatsResponse } from '@/graphql/types/adminExercise.types';
+import { useOrganizationVerificationRealtime } from '@/hooks/useOrganizationVerificationRealtime';
 
 export function useOrganizationVerificationAccess() {
+  useOrganizationVerificationRealtime();
   const { currentOrganization, isLoading: organizationLoading } = useOrganization();
   const { canManageOrganization, isLoading: roleLoading } = useRoleAccess();
 
