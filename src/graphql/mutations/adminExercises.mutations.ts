@@ -1,5 +1,5 @@
 import { gql } from '@apollo/client';
-import { ADMIN_EXERCISE_FRAGMENT } from '../queries/adminExercises.queries';
+import { ADMIN_EXERCISE_FRAGMENT, ORG_VERIFICATION_MUTATION_RESULT_FRAGMENT } from '../queries/adminExercises.queries';
 
 /**
  * GraphQL Mutations for Admin Exercise Verification Module
@@ -166,10 +166,10 @@ export const BATCH_UPDATE_EXERCISE_FIELDS_MUTATION = gql`
 export const APPROVE_ORGANIZATION_EXERCISE_MUTATION = gql`
   mutation ApproveOrganizationExercise($exerciseId: String!, $reviewNotes: String) {
     approveOrganizationExercise(exerciseId: $exerciseId, reviewNotes: $reviewNotes) {
-      ...AdminExerciseFragment
+      ...OrgVerificationMutationResultFragment
     }
   }
-  ${ADMIN_EXERCISE_FRAGMENT}
+  ${ORG_VERIFICATION_MUTATION_RESULT_FRAGMENT}
 `;
 
 export const REQUEST_ORGANIZATION_EXERCISE_CHANGES_MUTATION = gql`
@@ -183,19 +183,19 @@ export const REQUEST_ORGANIZATION_EXERCISE_CHANGES_MUTATION = gql`
       reviewNotes: $reviewNotes
       rejectionReason: $rejectionReason
     ) {
-      ...AdminExerciseFragment
+      ...OrgVerificationMutationResultFragment
     }
   }
-  ${ADMIN_EXERCISE_FRAGMENT}
+  ${ORG_VERIFICATION_MUTATION_RESULT_FRAGMENT}
 `;
 
 export const ARCHIVE_ORGANIZATION_EXERCISE_MUTATION = gql`
   mutation ArchiveOrganizationExercise($exerciseId: String!, $reason: String) {
     archiveOrganizationExercise(exerciseId: $exerciseId, reason: $reason) {
-      ...AdminExerciseFragment
+      ...OrgVerificationMutationResultFragment
     }
   }
-  ${ADMIN_EXERCISE_FRAGMENT}
+  ${ORG_VERIFICATION_MUTATION_RESULT_FRAGMENT}
 `;
 
 // ============================================

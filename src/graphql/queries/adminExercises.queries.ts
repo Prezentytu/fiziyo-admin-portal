@@ -74,6 +74,18 @@ export const ADMIN_EXERCISE_FRAGMENT = gql`
   }
 `;
 
+/** Minimal fields returned by org verification mutations (avoids non-null createdBy resolver issues). */
+export const ORG_VERIFICATION_MUTATION_RESULT_FRAGMENT = gql`
+  fragment OrgVerificationMutationResultFragment on Exercise {
+    id
+    organizationVerificationStatus
+    submittedForOrgReviewAt
+    orgReviewedById
+    orgReviewedAt
+    orgReviewNotes
+  }
+`;
+
 export const VERIFICATION_QUEUE_ITEM_FRAGMENT = gql`
   fragment VerificationQueueItemFragment on Exercise {
     id
