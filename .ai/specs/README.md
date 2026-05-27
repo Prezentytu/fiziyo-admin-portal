@@ -62,6 +62,7 @@ Każda specyfikacja powinna mieć sekcję Changelog na końcu:
 | 014 | [Real-time Patient Assignment Sync](SPEC-014-2026-04-17-realtime-patient-sync.md)               | Push admin->mobile przez GraphQL Subscriptions   | Aktywny |
 | 015 | [Assignment Status Enum Alignment](SPEC-015-2026-05-07-assignment-status-enum-alignment.md)     | Migracja statusu assignment na enum GraphQL      | Aktywny |
 | 016 | [Admin Portal Access Control](SPEC-016-2026-05-14-admin-portal-access-control.md)               | Blokada pacjentów w panelu fizjoterapeutów       | Aktywny |
+| 017 | [Assignment Display Status](SPEC-017-2026-05-26-assignment-display-status.md)                   | Dynamiczny status przypisania + sygnał Premium   | Aktywny |
 
 ## Planowane specyfikacje
 

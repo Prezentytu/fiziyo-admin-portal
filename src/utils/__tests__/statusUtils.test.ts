@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { fromGqlStatus, getStatusColorClass, toGqlStatus, translateAssignmentStatus, type AssignmentStatus } from '../statusUtils';
 
 describe('statusUtils GraphQL mappings', () => {
-  const statuses: AssignmentStatus[] = ['assigned', 'active', 'paused', 'completed', 'cancelled', 'in_progress'];
+  const statuses: AssignmentStatus[] = ['assigned', 'active', 'paused', 'completed', 'cancelled', 'in_progress', 'expired'];
 
   it('maps lowercase statuses to GraphQL enum values', () => {
     expect(toGqlStatus('assigned')).toBe('ASSIGNED');
@@ -24,7 +24,7 @@ describe('statusUtils GraphQL mappings', () => {
   });
 
   it('keeps mapping reversible for all supported statuses', () => {
-    for (const status of statuses) {
+    for (const status of statuses.filter((status): status is Exclude<AssignmentStatus, 'expired'> => status !== 'expired')) {
       expect(fromGqlStatus(toGqlStatus(status))).toBe(status);
     }
   });
@@ -37,5 +37,10 @@ describe('statusUtils translations and badge classes', () => {
 
   it('returns dedicated color class for in_progress status', () => {
     expect(getStatusColorClass('in_progress')).toContain('bg-indigo-500/20');
+  });
+
+  it('translates and colors expired status', () => {
+    expect(translateAssignmentStatus('expired')).toBe('Wygasł');
+    expect(getStatusColorClass('expired')).toContain('bg-red-500/20');
   });
 });

@@ -360,6 +360,8 @@ await expect(page.getByTestId(/^exercise-card-/)).toHaveCount(5);
 | `patient-dialog`                             | Dialog pacjenta                      | `PatientDialog.tsx`                |
 | `patient-dialog-title`                       | Tytuł dialogu                        | `PatientDialog.tsx`                |
 | `patient-assignment-{id}`                    | Karta przypisania                    | `PatientAssignmentCard.tsx`        |
+| `patient-assignment-status-badge-{id}`       | Główny badge statusu przypisania     | `PatientAssignmentCard.tsx`        |
+| `patient-assignment-premium-hint-{id}`       | Dodatkowy sygnał „Brak Premium”      | `PatientAssignmentCard.tsx`        |
 | `patient-assignment-{id}-edit-btn`           | Edytuj harmonogram                   | `PatientAssignmentCard.tsx`        |
 | `patient-assignment-{id}-remove-btn`         | Usuń przypisanie                     | `PatientAssignmentCard.tsx`        |
 | `patient-assignment-{id}-pdf-btn`            | Generuj PDF                          | `PatientAssignmentCard.tsx`        |

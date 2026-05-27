@@ -38,13 +38,18 @@ import { EmptyState } from '@/components/shared/EmptyState';
 import { ActivityReport } from '@/features/patients/ActivityReport';
 import { PatientAssignmentCard } from '@/features/patients/PatientAssignmentCard';
 import { PatientDetailSkeleton } from '@/features/patients/PatientDetailSkeleton';
+import { PremiumStatusBadge } from '@/features/patients/PremiumStatusBadge';
+import { ActivatePremiumDialog } from '@/features/patients/ActivatePremiumDialog';
 import { ClinicalNotesList } from '@/components/clinical/ClinicalNotesList';
 import type { PatientAssignment, ExerciseMapping, ExerciseOverride } from '@/features/patients/PatientAssignmentCard';
 
 import { GET_USER_BY_ID_QUERY, GET_USER_BY_CLERK_ID_QUERY } from '@/graphql/queries/users.queries';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY } from '@/graphql/queries/patientAssignments.queries';
-import type { UserByIdResponse } from '@/types/apollo';
+import { GET_ORGANIZATION_PATIENTS_QUERY } from '@/graphql/queries/therapists.queries';
+import { usePatientPremium } from '@/hooks/usePatientPremium';
+import { resolveAssignmentDisplayStatus } from '@/features/patients/utils/assignmentDisplayStatus';
+import type { OrganizationPatientsResponse, UserByIdResponse } from '@/types/apollo';
 
 // Dialogs
 import { AssignmentWizard } from '@/features/assignment/AssignmentWizard';
@@ -117,9 +122,31 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
   } = useQuery(GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY, {
     variables: { userId: id },
   });
+  const { data: orgPatientsData, refetch: refetchOrganizationPatients } = useQuery<OrganizationPatientsResponse>(GET_ORGANIZATION_PATIENTS_QUERY, {
+    variables: { organizationId: organizationId ?? '', filter: 'all' },
+    skip: !organizationId,
+    fetchPolicy: 'cache-and-network',
+  });
 
   const patient = (userData as UserByIdResponse)?.userById;
   const assignments = (assignmentsData as PatientAssignmentsData)?.patientAssignments || [];
+  const organizationPatient = orgPatientsData?.organizationPatients.find((item) => item.patient.id === id);
+  const patientPremiumValidUntil = organizationPatient?.premiumValidUntil ?? null;
+
+  const {
+    initiateActivation,
+    confirmActivation,
+    cancelActivation,
+    isActivating,
+    showConfirmDialog,
+    activationTarget,
+  } = usePatientPremium({
+    organizationId: organizationId ?? '',
+    onSuccess: () => {
+      void refetchAssignments();
+      void refetchOrganizationPatients();
+    },
+  });
 
   // Filter only exercise set assignments (not individual exercises)
   const setAssignments = assignments.filter((a) => a.exerciseSetId);
@@ -207,7 +234,15 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
     .slice(0, 2)
     .toUpperCase();
 
-  const activeAssignments = setAssignments.filter((a) => a.status === 'active');
+  const activeAssignments = setAssignments.filter((assignment) => {
+    return (
+      resolveAssignmentDisplayStatus({
+        status: assignment.status,
+        endDate: assignment.endDate,
+        premiumValidUntil: patientPremiumValidUntil,
+      }).primary.kind === 'active'
+    );
+  });
   const totalCompletions = setAssignments.reduce((sum, a) => sum + (a.completionCount || 0), 0);
   const assignmentWizardPatient = {
     id: patient.id,
@@ -273,6 +308,7 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
             key={assignment.id}
             assignment={assignment}
             patientId={id}
+            patientPremiumValidUntil={patientPremiumValidUntil}
             onEditPlan={handleEditPlan}
             onEditExercise={handleEditExercise}
             onPreviewExercise={handlePreviewExercise}
@@ -335,6 +371,19 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
               <Badge variant="secondary" className="text-[10px] shrink-0">
                 Tymczasowe
               </Badge>
+            )}
+            {organizationId && (
+              <PremiumStatusBadge
+                premiumActiveUntil={patientPremiumValidUntil}
+                patientId={patient.id}
+                onActivate={() => initiateActivation(patient.id, displayName, patientPremiumValidUntil)}
+                onGenerateQR={() => setIsQRCodeDialogOpen(true)}
+                isShadowUser={patient.isShadowUser}
+                isActivating={isActivating && activationTarget?.patientId === patient.id}
+                showActivateButton={true}
+                size="sm"
+                className="ml-1"
+              />
             )}
           </div>
           <div className="flex items-center gap-3 text-sm text-muted-foreground">
@@ -612,6 +661,19 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
 
       {/* Edit Patient Dialog */}
       <EditPatientDialog open={isEditPatientOpen} onOpenChange={setIsEditPatientOpen} patient={patient} />
+
+      {/* Activate Premium Dialog */}
+      {organizationId && (
+        <ActivatePremiumDialog
+          open={showConfirmDialog}
+          onOpenChange={(open) => !open && cancelActivation()}
+          patientName={activationTarget?.patientName}
+          currentPremiumValidUntil={activationTarget?.premiumValidUntil}
+          onConfirm={confirmActivation}
+          onCancel={cancelActivation}
+          isLoading={isActivating}
+        />
+      )}
     </div>
   );
 }

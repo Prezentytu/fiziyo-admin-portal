@@ -42,10 +42,11 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { ImagePlaceholder } from '@/components/shared/ImagePlaceholder';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { cn } from '@/lib/utils';
-import { toGqlStatus, translateAssignmentStatus, type AssignmentStatus } from '@/utils/statusUtils';
+import { toGqlStatus } from '@/utils/statusUtils';
 import { getMediaUrl } from '@/utils/mediaUrl';
 import { formatDurationPolish } from '@/utils/durationPolish';
 import { formatFrequencyDisplay } from '@/utils/frequencyDisplay';
+import { resolveAssignmentDisplayStatus } from '@/features/patients/utils/assignmentDisplayStatus';
 
 import {
   UPDATE_EXERCISE_SET_ASSIGNMENT_MUTATION,
@@ -163,6 +164,7 @@ export interface PatientAssignment {
 interface PatientAssignmentCardProps {
   readonly assignment: PatientAssignment;
   readonly patientId: string;
+  readonly patientPremiumValidUntil?: string | null;
   readonly onEditPlan?: (assignment: PatientAssignment) => void;
   readonly onEditExercise?: (assignment: PatientAssignment, mapping: ExerciseMapping, override?: ExerciseOverride) => void;
   readonly onPreviewExercise?: (mapping: ExerciseMapping, override?: ExerciseOverride) => void;
@@ -187,23 +189,6 @@ function toPositiveNumber(value: number | string | null | undefined): number | u
 
 // Helper functions
 
-const getStatusVariant = (status?: string): 'success' | 'secondary' | 'warning' | 'destructive' | 'default' => {
-  switch (status) {
-    case 'assigned':
-      return 'default';
-    case 'active':
-      return 'success';
-    case 'paused':
-      return 'warning';
-    case 'completed':
-      return 'secondary';
-    case 'cancelled':
-      return 'destructive';
-    default:
-      return 'secondary';
-  }
-};
-
 export function buildUnassignRefetchQueries(patientId: string, organizationId?: string) {
   return [
     { query: GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY, variables: { userId: patientId } },
@@ -216,6 +201,7 @@ export function buildUnassignRefetchQueries(patientId: string, organizationId?: 
 export function PatientAssignmentCard({
   assignment,
   patientId,
+  patientPremiumValidUntil,
   onEditPlan,
   onEditExercise,
   onPreviewExercise,
@@ -248,19 +234,15 @@ export function PatientAssignmentCard({
 
   const exerciseSet = assignment.exerciseSet;
   const exercises = exerciseSet?.exerciseMappings || [];
-  const assignmentStatus: AssignmentStatus = React.useMemo(() => {
-    const status = assignment.status;
-    if (
-      status === 'assigned' ||
-      status === 'active' ||
-      status === 'paused' ||
-      status === 'completed' ||
-      status === 'cancelled'
-    ) {
-      return status;
-    }
-    return 'assigned';
-  }, [assignment.status]);
+  const assignmentDisplayStatus = React.useMemo(
+    () =>
+      resolveAssignmentDisplayStatus({
+        status: assignment.status,
+        endDate: assignment.endDate,
+        premiumValidUntil: patientPremiumValidUntil,
+      }),
+    [assignment.endDate, assignment.status, patientPremiumValidUntil]
+  );
 
   const visibleExercises = exercises.filter((m) => {
     const override = exerciseOverrides[m.id];
@@ -270,6 +252,10 @@ export function PatientAssignmentCard({
 
   // Handlers
   const handleToggleStatus = async () => {
+    if (assignmentDisplayStatus.primary.kind === 'expired') {
+      toast.error('Ten plan wygasł. Użyj akcji „Przedłuż zestaw”.');
+      return;
+    }
     const newStatus = assignment.status === 'active' ? 'paused' : 'active';
     try {
       await updateAssignment({
@@ -430,9 +416,22 @@ export function PatientAssignmentCard({
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                   <p className="font-semibold truncate">{exerciseSet?.name || 'Nieznany zestaw'}</p>
-                  <Badge variant={getStatusVariant(assignment.status)} className="text-[10px] shrink-0">
-                    {translateAssignmentStatus(assignmentStatus)}
+                  <Badge
+                    variant={assignmentDisplayStatus.primary.variant}
+                    className="text-[10px] shrink-0"
+                    data-testid={`patient-assignment-status-badge-${assignment.id}`}
+                  >
+                    {assignmentDisplayStatus.primary.label}
                   </Badge>
+                  {assignmentDisplayStatus.secondary && (
+                    <Badge
+                      variant={assignmentDisplayStatus.secondary.variant}
+                      className="text-[10px] shrink-0"
+                      data-testid={`patient-assignment-premium-hint-${assignment.id}`}
+                    >
+                      {assignmentDisplayStatus.secondary.label}
+                    </Badge>
+                  )}
                 </div>
                 <div className="flex items-center gap-3 mt-1 text-sm text-muted-foreground">
                   <span className="flex items-center gap-1">
@@ -487,9 +486,9 @@ export function PatientAssignmentCard({
                       data-testid={`patient-assignment-${assignment.id}-extend-btn`}
                     >
                       <CalendarPlus className="mr-2 h-4 w-4" />
-                      Przedłuż zestaw
+                      {assignmentDisplayStatus.primary.kind === 'expired' ? 'Przedłuż wygasły zestaw' : 'Przedłuż zestaw'}
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={handleToggleStatus} disabled={updating}>
+                    <DropdownMenuItem onClick={handleToggleStatus} disabled={updating || assignmentDisplayStatus.primary.kind === 'expired'}>
                       {assignment.status === 'active' ? (
                         <>
                           <Pause className="mr-2 h-4 w-4" />
