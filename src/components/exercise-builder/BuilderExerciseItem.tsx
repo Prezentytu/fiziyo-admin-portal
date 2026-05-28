@@ -32,14 +32,40 @@ export function BuilderExerciseItem({ exercise, onUpdate, onRemove }: BuilderExe
           id: exercise.id,
           name: exercise.name,
           type: exercise.type,
+          description: exercise.description,
+          patientDescription: exercise.patientDescription,
+          clinicalDescription: exercise.clinicalDescription,
+          audioCue: exercise.audioCue,
           thumbnailUrl: exercise.thumbnailUrl,
           imageUrl: exercise.imageUrl,
           images: exercise.images,
+          defaultSets: exercise.defaultSets,
+          defaultReps: exercise.defaultReps,
+          defaultDuration: exercise.defaultDuration,
+          defaultExecutionTime: exercise.defaultExecutionTime,
+          defaultRestBetweenSets: exercise.defaultRestBetweenSets,
+          defaultRestBetweenReps: exercise.defaultRestBetweenReps,
+          preparationTime: exercise.preparationTime,
+          side: exercise.side,
+          exerciseSide: exercise.exerciseSide,
         },
         {
           sets: exercise.sets,
           reps: exercise.reps,
           duration: exercise.duration,
+          executionTime: exercise.executionTime,
+          restSets: exercise.restSets,
+          restReps: exercise.restReps,
+          preparationTime: exercise.preparationTime,
+          tempo: exercise.tempo,
+          notes: exercise.notes,
+          customName: exercise.customName,
+          customDescription: exercise.customDescription,
+          exerciseSide: exercise.exerciseSide ?? exercise.side,
+          loadType: exercise.loadType,
+          loadValue: exercise.loadValue,
+          loadUnit: exercise.loadUnit,
+          loadText: exercise.loadText,
         }
       ),
     [exercise]
@@ -51,6 +77,19 @@ export function BuilderExerciseItem({ exercise, onUpdate, onRemove }: BuilderExe
       if (patch.sets !== undefined) updates.sets = patch.sets;
       if (patch.reps !== undefined) updates.reps = patch.reps;
       if (patch.duration !== undefined) updates.duration = patch.duration;
+      if (patch.executionTime !== undefined) updates.executionTime = patch.executionTime;
+      if (patch.restSets !== undefined) updates.restSets = patch.restSets;
+      if (patch.restReps !== undefined) updates.restReps = patch.restReps;
+      if (patch.preparationTime !== undefined) updates.preparationTime = patch.preparationTime;
+      if (patch.tempo !== undefined) updates.tempo = patch.tempo;
+      if (patch.notes !== undefined) updates.notes = patch.notes;
+      if (patch.customName !== undefined) updates.customName = patch.customName;
+      if (patch.customDescription !== undefined) updates.customDescription = patch.customDescription;
+      if (patch.side !== undefined) updates.exerciseSide = patch.side;
+      if (patch.loadKg !== undefined) {
+        updates.loadValue = patch.loadKg;
+        updates.loadUnit = 'kg';
+      }
       if (Object.keys(updates).length > 0) onUpdate(updates);
     },
     [onUpdate]

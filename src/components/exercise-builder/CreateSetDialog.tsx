@@ -143,21 +143,32 @@ export function CreateSetDialog({ open, onOpenChange }: CreateSetDialogProps) {
         throw new Error('Nie udało się utworzyć zestawu');
       }
 
-      // 2. Add all exercises to the set
-      const addPromises = selectedExercises.map((exercise, index) =>
-        addExerciseToSet({
+      // 2. Add all exercises to the set with full parameter payload
+      let order = 0;
+      for (const exercise of selectedExercises) {
+        await addExerciseToSet({
           variables: {
             exerciseId: exercise.id,
             exerciseSetId,
-            order: index + 1,
+            order: order++,
             sets: exercise.sets || null,
             reps: exercise.reps || null,
             duration: exercise.duration || null,
+            restSets: exercise.restSets || null,
+            restReps: exercise.restReps || null,
+            preparationTime: exercise.preparationTime || null,
+            executionTime: exercise.executionTime || null,
+            notes: exercise.notes || null,
+            customName: exercise.customName || null,
+            customDescription: exercise.customDescription || null,
+            tempo: exercise.tempo || null,
+            loadType: exercise.loadType || null,
+            loadValue: exercise.loadValue || null,
+            loadUnit: exercise.loadUnit || null,
+            loadText: exercise.loadText || null,
           },
-        })
-      );
-
-      await Promise.all(addPromises);
+        });
+      }
 
       // 3. Success!
       toast.success('Zestaw został utworzony', {

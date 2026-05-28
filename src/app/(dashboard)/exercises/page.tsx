@@ -39,6 +39,7 @@ import { useRealtimeExercises } from '@/hooks/useRealtimeExercises';
 import { ORG_VERIFICATION_REFETCH_QUERIES } from '@/hooks/useOrganizationVerificationRealtime';
 import type { AvailableExercisesResponse, ExerciseTagsResponse, TagCategoriesResponse } from '@/types/apollo';
 import { sortExercisesByNewest } from '@/features/exercises/utils/sortExercisesByNewest';
+import { getExerciseDefaultParams } from '@/features/exercise-sets/utils/exerciseDefaults';
 
 // Typ dla filtra źródła ćwiczeń
 type ExerciseSourceFilter = 'all' | 'organization' | 'fiziyo';
@@ -63,15 +64,40 @@ export default function ExercisesPage() {
   // Handler for toggling exercise in builder
   const handleToggleBuilder = useCallback(
     (exercise: Exercise) => {
+      const defaults = getExerciseDefaultParams(exercise);
       const builderExercise: BuilderExercise = {
         id: exercise.id,
         name: exercise.name,
+        description: exercise.description,
+        patientDescription: exercise.patientDescription ?? exercise.description,
+        clinicalDescription: exercise.clinicalDescription,
+        audioCue: exercise.audioCue,
+        notes: exercise.notes,
+        tempo: exercise.tempo,
+        side: exercise.side,
+        exerciseSide: defaults.exerciseSide,
+        preparationTime: exercise.preparationTime,
         thumbnailUrl: exercise.thumbnailUrl,
         imageUrl: exercise.imageUrl,
         images: exercise.images,
-        sets: exercise.sets || 3,
-        reps: exercise.reps || 10,
-        duration: exercise.duration || 0,
+        defaultSets: exercise.defaultSets,
+        defaultReps: exercise.defaultReps,
+        defaultDuration: exercise.defaultDuration,
+        defaultExecutionTime: exercise.defaultExecutionTime,
+        defaultRestBetweenSets: exercise.defaultRestBetweenSets,
+        defaultRestBetweenReps: exercise.defaultRestBetweenReps,
+        sets: defaults.sets,
+        reps: defaults.reps,
+        duration: defaults.duration,
+        executionTime: defaults.executionTime,
+        restSets: defaults.restSets,
+        restReps: defaults.restReps,
+        customName: defaults.customName,
+        customDescription: defaults.customDescription,
+        loadType: defaults.loadType,
+        loadValue: defaults.loadValue,
+        loadUnit: defaults.loadUnit,
+        loadText: defaults.loadText,
         type: exercise.type,
       };
       toggleExercise(builderExercise);
@@ -260,7 +286,7 @@ export default function ExercisesPage() {
   }
 
   return (
-    <div className="flex h-full overflow-hidden -m-4 lg:-m-6 2xl:-m-8">
+    <div className="flex overflow-hidden -m-4 lg:-m-6 2xl:-m-8 h-[calc(100%+2rem)] lg:h-[calc(100%+3rem)] 2xl:h-[calc(100%+4rem)]">
       {/* Left Panel: Strefa Inspiracji (Grid) */}
       <div className="flex-1 overflow-y-auto p-4 lg:p-6 scroll-smooth custom-scrollbar">
         <div className="max-w-screen-2xl mx-auto space-y-6">

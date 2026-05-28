@@ -558,4 +558,20 @@ Dziennik wniosków z pracy AI agentów. Po każdej korekcie dodaj nowy wpis.
 - **Rozwiazanie**: (1) Backend: `GetOrganizationPatients` bazuje na `OrganizationMembers(role=patient, status=active)`. (2) Admin: Assignment Wizard przelaczony na `GET_ORGANIZATION_PATIENTS_QUERY` z `filter: 'all'`. (3) 8 testow regresyjnych (filtry all/my/unassigned, Premium, inactive, tenant isolation).
 - **Regula**: Dla listy pacjentow organizacji ZAWSZE uzywaj `OrganizationMembers` jako source of truth — jest spojne z `BillingService.ActivatePatientPremium`. `TherapistPatients` to dane pomocnicze (przypisania), nie zrodlo listy.
 
+### 2026-05-28 - Jeden helper defaultow dla kreatorow zestawu
+
+- **Kategoria**: `React` | `UI/UX`
+- **Problem**: Sidebar tworzenia zestawu i `CreateSetWizard` pokazywaly rozne parametry startowe tego samego cwiczenia.
+- **Przyczyna**: Logika defaultow byla skopiowana do kilku miejsc (`CreateSetWizard`, `ExerciseSetBuilder`, `exercises/page.tsx`) i rozjechala sie (`duration` 30 vs 0 oraz fallbacki `field || value`).
+- **Rozwiazanie**: Dodano wspolny helper `getExerciseDefaultParams` w `src/features/exercise-sets/utils/exerciseDefaults.ts` i przepieto wszystkie punkty wejscia na ten sam kontrakt.
+- **Regula**: Defaulty parametrow cwiczenia utrzymuj tylko w jednym helperze domenowym; punkty wejscia UI moga je tylko konsumowac, nigdy reimplementowac.
+
+### 2026-05-28 - h-full z ujemnymi marginesami nie kompensuje paddingu rodzica
+
+- **Kategoria**: `Layout` | `UI/UX`
+- **Problem**: Na stronie listy cwiczen pojawial sie czarny pasek pod trescia i pod prawym kreatorem.
+- **Przyczyna**: Kontener mial `h-full` i `-m-*`; wysokosc liczona byla dla content-box rodzica (`main` z `p-*`), wiec dolny padding rodzica nie byl pokryty.
+- **Rozwiazanie**: Dodano wysokosc kompensujaca padding rodzica: `h-[calc(100%+2rem)] lg:h-[calc(100%+3rem)] 2xl:h-[calc(100%+4rem)]`.
+- **Regula**: Przy layoutach full-height z negative margins zawsze kompensuj wysokosc o `2 x padding` rodzica albo przebuduj strukture bez negative margins.
+
 <!-- Dodawaj nowe wpisy powyżej tej linii -->

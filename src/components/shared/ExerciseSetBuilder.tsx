@@ -50,6 +50,7 @@ import { filterExercisesBySource, countBySource } from '@/utils/exerciseSourceFi
 import { calculateExerciseTotalSeconds, formatExerciseDuration } from '@/utils/exerciseTime';
 import type { ExerciseSourceFilter } from '@/utils/exerciseSourceFilter';
 import { cn } from '@/lib/utils';
+import { EMPTY_EXERCISE_PARAMS, getExerciseDefaultParams } from '@/features/exercise-sets/utils/exerciseDefaults';
 
 // ============================================================
 // TYPES
@@ -521,24 +522,7 @@ export function ExerciseSetBuilder({
 
   // Params helpers
   const getDefaultParams = useCallback(
-    (exercise: BuilderExercise): ExerciseParams => ({
-      sets: exercise.defaultSets ?? exercise.sets ?? 3,
-      reps: exercise.defaultReps ?? exercise.reps ?? 10,
-      duration: exercise.defaultDuration ?? exercise.duration ?? 0,
-      restSets: exercise.defaultRestBetweenSets ?? exercise.restSets ?? 60,
-      restReps: exercise.defaultRestBetweenReps ?? exercise.restReps ?? 0,
-      preparationTime: 0,
-      executionTime: exercise.defaultExecutionTime ?? 0,
-      notes: '',
-      exerciseSide: exercise.side?.toLowerCase() || exercise.exerciseSide || 'both',
-      customName: '',
-      customDescription: '',
-      tempo: '',
-      loadType: '',
-      loadValue: undefined,
-      loadUnit: 'kg',
-      loadText: '',
-    }),
+    (exercise: BuilderExercise): ExerciseParams => getExerciseDefaultParams(exercise),
     []
   );
 
@@ -552,24 +536,7 @@ export function ExerciseSetBuilder({
         next.get(instanceId) ||
         (exercise
           ? getDefaultParams(exercise)
-          : {
-              sets: 3,
-              reps: 10,
-              duration: 0,
-              restSets: 60,
-              restReps: 0,
-              preparationTime: 0,
-              executionTime: 0,
-              notes: '',
-              exerciseSide: 'both',
-              customName: '',
-              customDescription: '',
-              tempo: '',
-              loadType: '',
-              loadValue: undefined,
-              loadUnit: 'kg',
-              loadText: '',
-            });
+          : EMPTY_EXERCISE_PARAMS);
       const normalizedValue = typeof value === 'number' ? Math.max(0, value) : value;
       next.set(instanceId, { ...current, [field]: normalizedValue });
       onExerciseParamsChange(next);
