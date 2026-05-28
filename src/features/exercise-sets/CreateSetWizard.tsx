@@ -144,6 +144,7 @@ interface CreateSetWizardProps {
   patientId?: string;
   patientName?: string;
   autoAssign?: boolean;
+  initialExerciseIds?: string[];
 }
 
 interface PatientContext {
@@ -333,6 +334,7 @@ export function CreateSetWizard({
   patientId,
   patientName,
   autoAssign = false,
+  initialExerciseIds,
 }: CreateSetWizardProps) {
   // Form state
   const [name, setName] = useState('');
@@ -349,6 +351,7 @@ export function CreateSetWizard({
   const [isGeneratingName, setIsGeneratingName] = useState(false);
   const [showNameError, setShowNameError] = useState(false);
   const nameInputRef = useRef<HTMLInputElement | null>(null);
+  const initializedFromInitialRef = useRef(false);
 
   // DnD sensors
   const sensors = useSensors(
@@ -387,6 +390,7 @@ export function CreateSetWizard({
       setPreviewExercise(null);
       setIsGeneratingName(false);
       setShowNameError(false);
+      initializedFromInitialRef.current = false;
     }
   }, [open, patientName]);
 
@@ -594,6 +598,27 @@ export function CreateSetWizard({
     },
     [getDefaultParams]
   );
+
+  useEffect(() => {
+    if (!open || initializedFromInitialRef.current) {
+      return;
+    }
+    if (!initialExerciseIds || initialExerciseIds.length === 0) {
+      return;
+    }
+    if (exercises.length === 0) {
+      return;
+    }
+
+    for (const exerciseId of initialExerciseIds) {
+      const matchedExercise = exercises.find((exercise) => exercise.id === exerciseId);
+      if (matchedExercise) {
+        addExerciseToSet(matchedExercise);
+      }
+    }
+
+    initializedFromInitialRef.current = true;
+  }, [open, initialExerciseIds, exercises, addExerciseToSet]);
 
   const removeInstance = useCallback((instanceId: string) => {
     setSelectedInstances((prev) => prev.filter((i) => i.instanceId !== instanceId));

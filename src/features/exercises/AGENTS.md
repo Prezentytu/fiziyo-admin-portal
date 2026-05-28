@@ -93,6 +93,7 @@ Przykłady: `3 × 10`, `3 × 10 × 10s`, `3 × 1 × 30s`
 - Lista: strona `app/(dashboard)/exercises/`
 - GraphQL: `src/graphql/queries/`, `src/graphql/mutations/`
 - Single source of truth dawkowania: `.ai/specs/SPEC-012-2026-04-08-exercise-dosage-model.md`
+- Akcja `Dodaj do zestawu` na detalu ćwiczenia używa `CreateSetWizard` (`src/features/exercise-sets/CreateSetWizard.tsx`) z `initialExerciseIds`.
 
 ## Konwencje data-testid
 

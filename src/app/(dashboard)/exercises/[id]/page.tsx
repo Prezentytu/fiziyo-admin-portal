@@ -36,7 +36,7 @@ import { Badge } from '@/components/ui/badge';
 import { LoadingState } from '@/components/shared/LoadingState';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { ExerciseDialog } from '@/features/exercises/ExerciseDialog';
-import { AddExerciseToSetsDialog } from '@/features/exercises/AddExerciseToSetsDialog';
+import { CreateSetWizard } from '@/features/exercise-sets';
 import { SubmitToGlobalDialog } from '@/features/exercises/SubmitToGlobalDialog';
 import { SubmitToOrganizationDialog } from '@/features/exercises/SubmitToOrganizationDialog';
 import { FeedbackBanner } from '@/features/exercises/FeedbackBanner';
@@ -99,7 +99,7 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
   const { currentOrganization } = useOrganization();
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [isAddToSetDialogOpen, setIsAddToSetDialogOpen] = useState(false);
+  const [isCreateSetWizardOpen, setIsCreateSetWizardOpen] = useState(false);
   const [isSubmitToGlobalDialogOpen, setIsSubmitToGlobalDialogOpen] = useState(false);
   const [isSubmitToOrganizationDialogOpen, setIsSubmitToOrganizationDialogOpen] = useState(false);
   const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
@@ -194,7 +194,7 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
   };
 
   const handleAddToSet = () => {
-    setIsAddToSetDialogOpen(true);
+    setIsCreateSetWizardOpen(true);
   };
 
   const handleSubmitToGlobal = async (exerciseId: string) => {
@@ -894,8 +894,15 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
         isLoading={deleting}
       />
 
-      {/* Add to Set Dialog with AI */}
-      <AddExerciseToSetsDialog open={isAddToSetDialogOpen} onOpenChange={setIsAddToSetDialogOpen} exercise={exercise} />
+      {organizationId && (
+        <CreateSetWizard
+          open={isCreateSetWizardOpen}
+          onOpenChange={setIsCreateSetWizardOpen}
+          organizationId={organizationId}
+          initialExerciseIds={[exercise.id]}
+          onSuccess={() => setIsCreateSetWizardOpen(false)}
+        />
+      )}
 
       {/* Image Lightbox */}
       {currentImage && (

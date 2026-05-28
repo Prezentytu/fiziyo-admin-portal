@@ -14,6 +14,14 @@ Dziennik wniosków z pracy AI agentów. Po każdej korekcie dodaj nowy wpis.
 
 ## Wpisy
 
+### 2026-05-28 - Jeden entrypoint tworzenia zestawu na detalu ćwiczenia
+
+- **Kategoria**: `UI/UX` | `React`
+- **Problem**: Detal ćwiczenia używał osobnego `AddExerciseToSetsDialog`, który duplikował logikę tworzenia zestawu względem `CreateSetWizard` i prowadził do niespójnych możliwości edycji parametrów.
+- **Przyczyna**: Historycznie dodano szybki, lokalny flow "dodaj do zestawu", zamiast rozszerzyć kanoniczny wizard o prefill wejściowy.
+- **Rozwiązanie**: Zastąpiono custom dialog użyciem `CreateSetWizard` z `initialExerciseIds`, dzięki czemu detal ćwiczenia i inne entrypointy korzystają z tego samego kreatora.
+- **Reguła**: Jeśli dwa flow tworzą ten sam byt domenowy (`ExerciseSet`), utrzymuj jeden kanoniczny wizard i dokładaj prefill/context props zamiast utrzymywać równoległy komponent customowy.
+
 ### 2026-05-26 - Submit dialogs powinny byc warn-only, nie disabled-only
 
 - **Kategoria**: `UI/UX` | `React`
