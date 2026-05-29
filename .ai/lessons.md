@@ -14,6 +14,14 @@ Dziennik wniosków z pracy AI agentów. Po każdej korekcie dodaj nowy wpis.
 
 ## Wpisy
 
+### 2026-05-28 - Status terapii powinien informować, nie alarmować
+
+- **Kategoria**: `UI/UX` | `React`
+- **Problem**: Status terapii oznaczał brak aktywności czerwonym badge `ALARM`, a przyciski `Zadzwoń` i `Edytuj plan` w sekcji rekomendacji nie miały podpiętych callbacków na profilu pacjenta.
+- **Przyczyna**: Logika biznesowa mapowała różne sytuacje (dyskomfort, nieaktywność) do jednego poziomu `alert`, a komponent `ActivityReport` był renderowany bez przekazanych handlerów akcji z `patients/[id]/page.tsx`.
+- **Rozwiązanie**: Wydzielono ocenę adherence do `therapyAdherence.ts` z modelem `tone + reason`, usunięto alarmistyczny język z UI, dodano progresywne progi nieaktywności oraz podpięto akcje telefonu i edycji planu przez dedykowany hook `usePatientTherapyActions`.
+- **Reguła**: W monitoringu pacjenta rozdzielaj sygnał domenowy (`reason`) od tonu komunikacji (`tone`) i zawsze podpinaj entrypointy akcji na poziomie strony, jeśli komponent feature renderuje interaktywne CTA.
+
 ### 2026-05-28 - Jeden entrypoint tworzenia zestawu na detalu ćwiczenia
 
 - **Kategoria**: `UI/UX` | `React`

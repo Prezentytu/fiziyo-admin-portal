@@ -3,7 +3,7 @@
 import { MessageSquare, Settings, ThumbsUp, Phone } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import type { TherapyStatus, TherapyStatusResult } from '@/lib/therapyStatus';
+import type { TherapyStatusResult } from '@/lib/therapyStatus';
 
 interface NextStepCardProps {
   statusResult: TherapyStatusResult;
@@ -14,12 +14,6 @@ interface NextStepCardProps {
   className?: string;
 }
 
-const recommendationText: Record<TherapyStatus, string> = {
-  success: 'Wszystko idzie zgodnie z planem. Możesz pochwalić pacjenta.',
-  warning: 'Pacjent może potrzebować wsparcia. Rozważ kontakt.',
-  alert: 'Wymaga pilnej uwagi. Zalecany kontakt telefoniczny.',
-};
-
 export function NextStepCard({
   statusResult,
   onSendMessage,
@@ -28,31 +22,53 @@ export function NextStepCard({
   onCall,
   className,
 }: Readonly<NextStepCardProps>) {
-  const isSuccess = statusResult.status === 'success';
-  const isAlert = statusResult.status === 'alert';
+  const isLongInactivity = statusResult.reason === 'inactivity' && (statusResult.daysSinceLastActivity ?? 0) >= 7;
+  const recommendationText = (() => {
+    switch (statusResult.reason) {
+      case 'on_track':
+        return 'Pacjent działa regularnie. Utrzymaj dobre tempo i pozytywny feedback.';
+      case 'inactivity':
+        return isLongInactivity
+          ? 'Widać dłuższą przerwę. Warto skontaktować się i sprawdzić, co blokuje regularność.'
+          : 'Aktywność lekko spadła. Delikatne przypomnienie zwykle wystarcza, aby wrócić do rytmu.';
+      case 'discomfort':
+        return 'Pacjent zgłasza dyskomfort. Najlepiej zweryfikować plan i obciążenia.';
+      case 'high_difficulty':
+      case 'missed_schedule':
+        return 'Warto monitorować postępy i dopasować plan, aby pacjent łatwiej utrzymał regularność.';
+      default:
+        return 'Monitoruj postępy pacjenta i reaguj na zmiany aktywności.';
+    }
+  })();
+
   const actionButtons = (() => {
-    if (isSuccess) {
+    if (statusResult.reason === 'on_track') {
       return (
         <Button
           variant="secondary"
           size="sm"
           className="flex-1 text-xs bg-surface-elevated hover:bg-surface-light border-border text-foreground"
           onClick={onSendPraise || onSendMessage}
+          disabled={!onSendPraise && !onSendMessage}
+          data-testid="patient-next-step-message-btn"
         >
           <ThumbsUp className="h-3.5 w-3.5 mr-1.5" />
-          Wyślij &quot;Brawo&quot;
+          Wyślij &quot;Brawo&quot; (wkrótce)
         </Button>
       );
     }
 
-    if (isAlert) {
+    if (statusResult.reason === 'inactivity' && isLongInactivity) {
       return (
         <>
           <Button
             variant="secondary"
             size="sm"
-            className="flex-1 text-xs bg-red-500/10 hover:bg-red-500/20 border-red-500/30 text-red-700 dark:text-red-300"
-            onClick={onCall || onSendMessage}
+            className="flex-1 text-xs bg-warning/10 hover:bg-warning/20 border-warning/30 text-warning"
+            onClick={onCall}
+            disabled={!onCall}
+            aria-disabled={!onCall}
+            data-testid="patient-next-step-call-btn"
           >
             <Phone className="h-3.5 w-3.5 mr-1.5" />
             Zadzwoń
@@ -62,9 +78,73 @@ export function NextStepCard({
             size="sm"
             className="flex-1 text-xs bg-surface-elevated hover:bg-surface-light border-border text-foreground"
             onClick={onEditPlan}
+            disabled={!onEditPlan}
+            aria-disabled={!onEditPlan}
+            data-testid="patient-next-step-edit-plan-btn"
           >
             <Settings className="h-3.5 w-3.5 mr-1.5" />
             Edytuj plan
+          </Button>
+        </>
+      );
+    }
+
+    if (statusResult.reason === 'inactivity') {
+      return (
+        <>
+          <Button
+            variant="secondary"
+            size="sm"
+            className="flex-1 text-xs bg-surface-elevated hover:bg-surface-light border-border text-foreground"
+            onClick={onSendMessage}
+            disabled={!onSendMessage}
+            data-testid="patient-next-step-message-btn"
+          >
+            <MessageSquare className="h-3.5 w-3.5 mr-1.5" />
+            Przypomnij (wkrótce)
+          </Button>
+          <Button
+            variant="secondary"
+            size="sm"
+            className="flex-1 text-xs bg-surface-elevated hover:bg-surface-light border-border text-foreground"
+            onClick={onEditPlan}
+            disabled={!onEditPlan}
+            aria-disabled={!onEditPlan}
+            data-testid="patient-next-step-edit-plan-btn"
+          >
+            <Settings className="h-3.5 w-3.5 mr-1.5" />
+            Edytuj plan
+          </Button>
+        </>
+      );
+    }
+
+    if (statusResult.reason === 'discomfort') {
+      return (
+        <>
+          <Button
+            variant="secondary"
+            size="sm"
+            className="flex-1 text-xs bg-surface-elevated hover:bg-surface-light border-border text-foreground"
+            onClick={onEditPlan}
+            disabled={!onEditPlan}
+            aria-disabled={!onEditPlan}
+            data-testid="patient-next-step-edit-plan-btn"
+          >
+            <Settings className="h-3.5 w-3.5 mr-1.5" />
+            Edytuj plan
+          </Button>
+          <Button
+            variant="secondary"
+            size="sm"
+            className="flex-1 text-xs bg-warning/10 hover:bg-warning/20 border-warning/30 text-warning"
+            onClick={onCall}
+            disabled={!onCall}
+            aria-disabled={!onCall}
+            data-testid="patient-next-step-call-btn"
+          >
+            <Phone className="h-3.5 w-3.5 mr-1.5" />
+            Zadzwoń
           </Button>
         </>
       );
@@ -77,15 +157,20 @@ export function NextStepCard({
           size="sm"
           className="flex-1 text-xs bg-surface-elevated hover:bg-surface-light border-border text-foreground"
           onClick={onSendMessage}
+          disabled={!onSendMessage}
+          data-testid="patient-next-step-message-btn"
         >
           <MessageSquare className="h-3.5 w-3.5 mr-1.5" />
-          Napisz
+          Napisz (wkrótce)
         </Button>
         <Button
           variant="secondary"
           size="sm"
           className="flex-1 text-xs bg-surface-elevated hover:bg-surface-light border-border text-foreground"
           onClick={onEditPlan}
+          disabled={!onEditPlan}
+          aria-disabled={!onEditPlan}
+          data-testid="patient-next-step-edit-plan-btn"
         >
           <Settings className="h-3.5 w-3.5 mr-1.5" />
           Edytuj plan
@@ -100,7 +185,8 @@ export function NextStepCard({
     >
       <div>
         <h3 className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground mb-2">Rekomendacja</h3>
-        <p className="text-foreground font-medium text-sm">{recommendationText[statusResult.status]}</p>
+        <p className="text-foreground font-medium text-sm">{recommendationText}</p>
+        <p className="mt-2 text-xs text-muted-foreground">Wiadomości do pacjenta będą wkrótce dostępne w panelu.</p>
       </div>
 
       <div className="mt-4 flex gap-2">{actionButtons}</div>

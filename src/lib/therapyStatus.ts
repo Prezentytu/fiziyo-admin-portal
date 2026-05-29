@@ -3,6 +3,13 @@
  * Dashboard Diagnostyczny - "Na Pierwszy Rzut Oka"
  */
 
+import {
+  ADHERENCE_THRESHOLDS,
+  evaluateTherapyAdherence,
+  type TherapyReason,
+  type TherapyTone,
+} from '@/features/patients/utils/therapyAdherence';
+
 export type TherapyStatus = 'success' | 'warning' | 'alert';
 export type FeelingType = 'easy' | 'ok' | 'hard';
 export type WellbeingType = 'ok' | 'discomfort';
@@ -63,9 +70,14 @@ export interface DayData {
 
 export interface TherapyStatusResult {
   status: TherapyStatus;
+  tone: TherapyTone;
+  reason: TherapyReason;
+  badgeLabel: string;
   title: string;
   description: string;
   nextStep: string;
+  daysSinceLastActivity?: number;
+  lastActivityAt?: string;
 }
 
 /**
@@ -250,14 +262,13 @@ export function calculateTherapyStatus(
   const effectiveStartDate = earliestStart && earliestStart > sevenDaysAgo ? earliestStart : sevenDaysAgo;
 
   // Filtruj postępy od daty rozpoczęcia
-  const recentProgress = progress.filter((p) => {
-    if (!p.completedAt || p.status !== 'completed') return false;
-    const completedDate = new Date(p.completedAt);
-    return completedDate >= effectiveStartDate && completedDate <= now;
-  });
-
-  // Sprawdź czy jest dyskomfort
-  const hasDiscomfort = recentProgress.some((p) => p.painLevel && p.painLevel > 5);
+  const recentProgress = progress
+    .filter((p) => {
+      if (!p.completedAt || p.status !== 'completed') return false;
+      const completedDate = new Date(p.completedAt);
+      return completedDate >= effectiveStartDate && completedDate <= now;
+    })
+    .sort((a, b) => new Date(b.completedAt!).getTime() - new Date(a.completedAt!).getTime());
 
   // Policz unikalne dni z aktywnością
   const uniqueDays = new Set(recentProgress.map((p) => new Date(p.completedAt!).toDateString()));
@@ -268,59 +279,38 @@ export function calculateTherapyStatus(
 
   // Oblicz wymaganą liczbę treningów w tygodniu
   const requiredWeekly = getRequiredWeeklyTrainings(assignments);
-  const requiredSoFar = requiredWeekly > 0 ? Math.ceil((requiredWeekly / 7) * daysSinceStart) : daysSinceStart; // Jeśli nie ma frequency, zakładamy że każdy dzień
+  const requiredSoFar = requiredWeekly > 0 ? Math.ceil((requiredWeekly / 7) * daysSinceStart) : daysSinceStart;
 
   // Policz trudne treningi
-  const hardCount = recentProgress.filter((p) => p.difficultyLevel && p.difficultyLevel > 6).length;
+  const hardCount = recentProgress.filter(
+    (p) => p.difficultyLevel !== null && p.difficultyLevel !== undefined && p.difficultyLevel > ADHERENCE_THRESHOLDS.hardDifficultyLevel
+  ).length;
 
-  // Określ status
-  if (hasDiscomfort) {
-    return {
-      status: 'alert',
-      title: 'Wymaga uwagi',
-      description:
-        'Pacjent zgłosił dyskomfort podczas ostatnich ćwiczeń. Zalecany kontakt w celu weryfikacji planu treningowego.',
-      nextStep: 'Zalecany kontakt telefoniczny',
-    };
-  }
+  // Sprawdź czy jest dyskomfort
+  const hasDiscomfort = recentProgress.some(
+    (p) => p.painLevel !== null && p.painLevel !== undefined && p.painLevel > ADHERENCE_THRESHOLDS.discomfortPainLevel
+  );
 
-  // Brak aktywności - ale tylko jeśli minęło wystarczająco dużo czasu
   const missedTrainings = Math.max(0, requiredSoFar - activeDays);
-  const daysSinceLastActivity =
-    recentProgress.length > 0
-      ? Math.ceil((now.getTime() - new Date(recentProgress[0].completedAt!).getTime()) / (24 * 60 * 60 * 1000))
-      : daysSinceStart;
+  const lastActivityAt = recentProgress[0]?.completedAt ?? undefined;
+  const daysSinceLastActivity = lastActivityAt
+    ? Math.ceil((now.getTime() - new Date(lastActivityAt).getTime()) / (24 * 60 * 60 * 1000))
+    : daysSinceStart;
 
-  if (daysSinceLastActivity >= 5 && daysSinceStart >= 5) {
-    return {
-      status: 'alert',
-      title: 'Brak aktywności',
-      description: `Pacjent nie ćwiczył od ${daysSinceLastActivity} dni. Możliwe ryzyko rezygnacji z planu treningowego.`,
-      nextStep: 'Zalecany kontakt telefoniczny',
-    };
-  }
-
-  if ((missedTrainings >= 2 && daysSinceStart >= 3) || hardCount >= 3) {
-    const reasons: string[] = [];
-    if (missedTrainings >= 2) reasons.push(`pominął ${missedTrainings} zaplanowanych treningów`);
-    if (hardCount >= 3) reasons.push(`ostatnie treningi ocenia jako ciężkie (${hardCount}x)`);
-
-    return {
-      status: 'warning',
-      title: 'Ostrzeżenie',
-      description: `Pacjent ${reasons.join(' oraz ')}. Rozważ dostosowanie planu treningowego.`,
-      nextStep: 'Rozważ kontakt z pacjentem',
-    };
-  }
-
-  // Oblicz procent wykonania
-  const completionPercent = requiredSoFar > 0 ? Math.round((activeDays / requiredSoFar) * 100) : 100;
+  const viewModel = evaluateTherapyAdherence({
+    daysSinceStart,
+    daysSinceLastActivity,
+    missedTrainings,
+    hardCount,
+    hasDiscomfort,
+    requiredSoFar,
+    activeDays,
+    lastActivityAt,
+  });
 
   return {
-    status: 'success',
-    title: 'Aktywny',
-    description: `Pacjent realizuje plan zgodnie z założeniami${completionPercent < 100 ? ` (${completionPercent}% wykonania)` : ''}. Ostatnie treningi ocenia pozytywnie. Brak zgłoszeń dyskomfortu.`,
-    nextStep: 'Brak wymaganej interwencji',
+    status: viewModel.tone === 'positive' ? 'success' : 'warning',
+    ...viewModel,
   };
 }
 

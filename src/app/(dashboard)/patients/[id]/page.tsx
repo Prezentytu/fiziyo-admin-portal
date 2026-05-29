@@ -1,6 +1,6 @@
 'use client';
 
-import { use, useMemo, useState } from 'react';
+import { use, useCallback, useMemo, useState } from 'react';
 import { useQuery } from '@apollo/client/react';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@clerk/nextjs';
@@ -49,6 +49,7 @@ import { GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY } from '@/graphql/queries/patient
 import { GET_ORGANIZATION_PATIENTS_QUERY } from '@/graphql/queries/therapists.queries';
 import { usePatientPremium } from '@/hooks/usePatientPremium';
 import { resolveAssignmentDisplayStatus } from '@/features/patients/utils/assignmentDisplayStatus';
+import { usePatientTherapyActions } from '@/features/patients/hooks/usePatientTherapyActions';
 import type { OrganizationPatientsResponse, UserByIdResponse } from '@/types/apollo';
 
 // Dialogs
@@ -151,6 +152,18 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
   // Filter only exercise set assignments (not individual exercises)
   const setAssignments = assignments.filter((a) => a.exerciseSetId);
 
+  const handleEditPlan = useCallback((assignment: PatientAssignment) => {
+    setEditingPlanAssignment(assignment);
+  }, []);
+
+  const therapyActions = usePatientTherapyActions({
+    patientPhone: patient?.contactData?.phone,
+    assignments: setAssignments,
+    premiumValidUntil: patientPremiumValidUntil,
+    onEditPlan: handleEditPlan,
+    onOpenAssign: () => setIsAssignDialogOpen(true),
+  });
+
   const editingAssignmentInput = useMemo<AssignmentEditInput | null>(() => {
     if (!editingPlanAssignment?.exerciseSet?.id || !editingPlanAssignment.exerciseSetId) {
       return null;
@@ -251,10 +264,6 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
     image: patient.image,
     isShadowUser: patient.isShadowUser,
   } as AssignmentPatient;
-
-  const handleEditPlan = (assignment: PatientAssignment) => {
-    setEditingPlanAssignment(assignment);
-  };
 
   const handleEditExercise = (assignment: PatientAssignment, mapping: ExerciseMapping, override?: ExerciseOverride) => {
     setEditingExerciseData({ assignment, mapping, override });
@@ -534,7 +543,16 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-0">
-            <ActivityReport patientId={id} patientName={displayName} heatmapDays={21} journalDays={3} />
+            <ActivityReport
+              patientId={id}
+              patientName={displayName}
+              heatmapDays={21}
+              journalDays={3}
+              onCall={therapyActions.handleCall}
+              onEditPlan={therapyActions.handleEditPlan}
+              onSendMessage={therapyActions.handleSendMessage}
+              onSendPraise={therapyActions.handleSendPraise}
+            />
           </CardContent>
         </Card>
       </div>

@@ -2,7 +2,8 @@
 
 import { TrendingUp, AlertTriangle, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import type { TherapyStatus, TherapyStatusResult } from '@/lib/therapyStatus';
+import type { TherapyStatusResult } from '@/lib/therapyStatus';
+import type { TherapyTone } from './utils/therapyAdherence';
 
 interface TherapyStatusCardProps {
   statusResult: TherapyStatusResult;
@@ -10,8 +11,8 @@ interface TherapyStatusCardProps {
   className?: string;
 }
 
-const statusConfig: Record<
-  TherapyStatus,
+const toneConfig: Record<
+  TherapyTone,
   {
     borderColor: string;
     bgColor: string;
@@ -22,50 +23,51 @@ const statusConfig: Record<
     badgeText: string;
     badgeLabel: string;
     Icon: typeof TrendingUp;
-  }
+  },
 > = {
-  success: {
-    borderColor: 'border-green-500/30',
-    bgColor: 'bg-green-500/5',
-    iconBg: 'bg-green-500/10',
-    iconBorder: 'border-green-500/20',
-    iconColor: 'text-green-600 dark:text-green-400',
-    badgeBg: 'bg-green-500/20',
-    badgeText: 'text-green-700 dark:text-green-300',
+  positive: {
+    borderColor: 'border-success/30',
+    bgColor: 'bg-success/5',
+    iconBg: 'bg-success/10',
+    iconBorder: 'border-success/20',
+    iconColor: 'text-success',
+    badgeBg: 'bg-success/20',
+    badgeText: 'text-success',
     badgeLabel: 'W NORMIE',
     Icon: TrendingUp,
   },
-  warning: {
-    borderColor: 'border-yellow-500/30',
-    bgColor: 'bg-yellow-500/5',
-    iconBg: 'bg-yellow-500/10',
-    iconBorder: 'border-yellow-500/20',
-    iconColor: 'text-yellow-700 dark:text-yellow-400',
-    badgeBg: 'bg-yellow-500/20',
-    badgeText: 'text-yellow-700 dark:text-yellow-300',
-    badgeLabel: 'UWAGA',
+  informative: {
+    borderColor: 'border-info/30',
+    bgColor: 'bg-info/5',
+    iconBg: 'bg-info/10',
+    iconBorder: 'border-info/20',
+    iconColor: 'text-info',
+    badgeBg: 'bg-info/20',
+    badgeText: 'text-info',
+    badgeLabel: 'MONITORUJ',
     Icon: AlertTriangle,
   },
-  alert: {
-    borderColor: 'border-red-500/30',
-    bgColor: 'bg-red-500/5',
-    iconBg: 'bg-red-500/10',
-    iconBorder: 'border-red-500/20',
-    iconColor: 'text-red-600 dark:text-red-400',
-    badgeBg: 'bg-red-500/20',
-    badgeText: 'text-red-700 dark:text-red-300',
-    badgeLabel: 'ALARM',
+  caution: {
+    borderColor: 'border-warning/30',
+    bgColor: 'bg-warning/5',
+    iconBg: 'bg-warning/10',
+    iconBorder: 'border-warning/20',
+    iconColor: 'text-warning',
+    badgeBg: 'bg-warning/20',
+    badgeText: 'text-warning',
+    badgeLabel: 'UWAGA',
     Icon: AlertCircle,
   },
 };
 
 export function TherapyStatusCard({ statusResult, lastActivityLabel, className }: Readonly<TherapyStatusCardProps>) {
-  const config = statusConfig[statusResult.status];
+  const config = toneConfig[statusResult.tone];
   const { Icon } = config;
 
   return (
     <div
       className={cn('relative overflow-hidden rounded-2xl border border-border bg-surface dark:bg-surface/50 p-6', config.borderColor, className)}
+      data-testid="patient-therapy-status-card"
     >
       {/* Background glow */}
       <div className={cn('absolute inset-0 pointer-events-none', config.bgColor)} />
@@ -86,8 +88,11 @@ export function TherapyStatusCard({ statusResult, lastActivityLabel, className }
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
             <h3 className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground">Status Terapii</h3>
-            <span className={cn('px-2 py-0.5 rounded-full text-[10px] font-bold', config.badgeBg, config.badgeText)}>
-              {config.badgeLabel}
+            <span
+              className={cn('px-2 py-0.5 rounded-full text-[10px] font-bold', config.badgeBg, config.badgeText)}
+              data-testid="patient-therapy-status-badge"
+            >
+              {statusResult.badgeLabel || config.badgeLabel}
             </span>
           </div>
           <p className="text-2xl font-bold text-foreground mb-2">
