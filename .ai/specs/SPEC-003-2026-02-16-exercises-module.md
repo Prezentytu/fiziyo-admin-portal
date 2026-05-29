@@ -114,22 +114,24 @@ Wszystkie powierzchnie UI wyświetlające szczegóły ćwiczenia muszą korzysta
 
 ### Komponenty UI (16)
 
-| Komponent                 | Odpowiedzialność                            |
-| ------------------------- | ------------------------------------------- |
-| `ExerciseForm`            | Główny formularz tworzenia/edycji ćwiczenia |
-| `ExerciseCard`            | Karta ćwiczenia w liście/gridzie            |
-| `ExerciseDialog`          | Dialog szczegółów ćwiczenia                 |
-| `CreateExerciseWizard`    | Wizard tworzenia nowego ćwiczenia           |
-| `MediaUploadSection`      | Upload obrazów i wideo                      |
-| `ExerciseVoiceInput`      | Input głosowy (AI transkrypcja)             |
-| `TagPicker`               | Wybór tagów z autocomplete                  |
-| `TagCard`                 | Wyświetlanie tagu                           |
-| `TagDialog`               | Tworzenie/edycja tagu                       |
-| `QuickTemplates`          | Szybkie szablony ćwiczeń                    |
-| `AIExerciseSuggestions`   | Sugestie AI na podstawie kontekstu          |
-| `AddExerciseToSetsDialog` | Dodawanie ćwiczenia do zestawów             |
-| `SubmitToGlobalDialog`    | Zgłaszanie ćwiczenia do globalnej bazy      |
-| `FeedbackBanner`          | Banner z informacjami zwrotnymi             |
+| Komponent               | Odpowiedzialność                            |
+| ----------------------- | ------------------------------------------- |
+| `ExerciseForm`          | Główny formularz tworzenia/edycji ćwiczenia |
+| `ExerciseCard`          | Karta ćwiczenia w liście/gridzie            |
+| `ExerciseDialog`        | Dialog szczegółów ćwiczenia                 |
+| `CreateExerciseWizard`  | Wizard tworzenia nowego ćwiczenia           |
+| `MediaUploadSection`    | Upload obrazów i wideo                      |
+| `ExerciseVoiceInput`    | Input głosowy (AI transkrypcja)             |
+| `TagPicker`             | Wybór tagów z autocomplete                  |
+| `TagCard`               | Wyświetlanie tagu                           |
+| `TagDialog`             | Tworzenie/edycja tagu                       |
+| `QuickTemplates`        | Szybkie szablony ćwiczeń                    |
+| `AIExerciseSuggestions` | Sugestie AI na podstawie kontekstu          |
+| `CreateSetWizard`       | Tworzenie zestawu z preselekcją ćwiczenia   |
+| `SubmitToGlobalDialog`  | Zgłaszanie ćwiczenia do globalnej bazy      |
+| `FeedbackBanner`        | Banner z informacjami zwrotnymi             |
+
+Na ekranie szczegółów ćwiczenia akcja `Dodaj do zestawu` otwiera `CreateSetWizard` z `initialExerciseIds=[exercise.id]`.
 
 ### Interfejsy API (GraphQL)
 
@@ -171,6 +173,11 @@ Prefiks: `exercise-`
 - `exercise-voice-input-btn`
 
 ## Changelog
+
+### 2026-05-28
+
+- Usunięto customowy `AddExerciseToSetsDialog` z modułu ćwiczeń i ujednolicono flow pod `CreateSetWizard`.
+- Doprecyzowano kontrakt: akcja `Dodaj do zestawu` na detalu ćwiczenia uruchamia tworzenie nowego zestawu z preselekcją bieżącego ćwiczenia.
 
 ### 2026-04-14
 

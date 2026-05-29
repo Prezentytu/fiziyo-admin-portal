@@ -27,9 +27,10 @@ import { toast } from 'sonner';
 import Link from 'next/link';
 
 import { cn } from '@/lib/utils';
-import { toGqlStatus, translateAssignmentStatus, type AssignmentStatus } from '@/utils/statusUtils';
+import { toGqlStatus } from '@/utils/statusUtils';
 import { pluralize } from '@/utils/textUtils';
 import { formatFrequencyDisplay } from '@/utils/frequencyDisplay';
+import { resolveAssignmentDisplayStatus } from '@/features/patients/utils/assignmentDisplayStatus';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -369,25 +370,12 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
     }
   };
 
-  // Helper function for status display
-  const getStatusInfo = (status?: string) => {
-    const safeStatus = (status || 'assigned') as AssignmentStatus;
-    const label = translateAssignmentStatus(safeStatus);
-    let variant: 'success' | 'warning' | 'secondary' = 'secondary';
-
-    switch (status) {
-      case 'active':
-        variant = 'success';
-        break;
-      case 'paused':
-        variant = 'warning';
-        break;
-      case 'completed':
-        variant = 'secondary';
-        break;
-    }
-
-    return { label, variant };
+  const getStatusInfo = (status?: string, endDate?: string) => {
+    const displayStatus = resolveAssignmentDisplayStatus({ status, endDate });
+    return {
+      label: displayStatus.primary.label,
+      variant: displayStatus.primary.variant,
+    };
   };
 
   const toExecutionCardData = (mapping: ExerciseMapping): ExerciseExecutionCardData => ({
@@ -618,7 +606,7 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
 
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 animate-stagger">
             {assignments.map((assignment) => {
-              const statusInfo = getStatusInfo(assignment.status);
+              const statusInfo = getStatusInfo(assignment.status, assignment.endDate);
               const frequencyDisplay = formatFrequencyDisplay(assignment.frequency);
 
               return (

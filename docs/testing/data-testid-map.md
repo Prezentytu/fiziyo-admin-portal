@@ -225,31 +225,32 @@ await expect(page.getByTestId(/^exercise-card-/)).toHaveCount(5);
 
 ### 4. Ćwiczenia (exercise-)
 
-| data-testid                           | Element                                 | Plik                       |
-| ------------------------------------- | --------------------------------------- | -------------------------- |
-| `exercise-page-title`                 | Tytuł strony                            | `exercises/page.tsx`       |
-| `exercise-search-input`               | Wyszukiwarka                            | `exercises/page.tsx`       |
-| `exercise-view-grid-btn`              | Widok siatki                            | `exercises/page.tsx`       |
-| `exercise-view-list-btn`              | Widok listy                             | `exercises/page.tsx`       |
-| `exercise-create-btn`                 | Dodaj ćwiczenie                         | `exercises/page.tsx`       |
-| `exercise-card-{id}`                  | Karta ćwiczenia                         | `ExerciseCard.tsx`         |
-| `exercise-card-{id}-menu-trigger`     | Menu kontekstowe                        | `ExerciseCard.tsx`         |
-| `exercise-card-{id}-view-btn`         | Podgląd                                 | `ExerciseCard.tsx`         |
-| `exercise-card-{id}-edit-btn`         | Edytuj                                  | `ExerciseCard.tsx`         |
-| `exercise-card-{id}-add-to-set-btn`   | Dodaj do zestawu                        | `ExerciseCard.tsx`         |
-| `exercise-card-{id}-delete-btn`       | Usuń                                    | `ExerciseCard.tsx`         |
-| `exercise-form`                       | Formularz ćwiczenia                     | `ExerciseForm.tsx`         |
-| `exercise-form-name-input`            | Nazwa ćwiczenia                         | `ExerciseForm.tsx`         |
-| `exercise-form-description-input`     | Opis                                    | `ExerciseForm.tsx`         |
-| `exercise-form-type-select`           | Typ ćwiczenia                           | `ExerciseForm.tsx`         |
-| `exercise-form-type-option-reps`      | Opcja: Powtórzenia                      | `ExerciseForm.tsx`         |
-| `exercise-form-type-option-time`      | Opcja: Czasowe                          | `ExerciseForm.tsx`         |
-| `exercise-form-type-option-hold`      | Opcja: Utrzymywanie                     | `ExerciseForm.tsx`         |
-| `exercise-form-side-select`           | Strona ciała                            | `ExerciseForm.tsx`         |
-| `exercise-quick-templates`            | Sekcja szybkich szablonów               | `QuickTemplates.tsx`       |
-| `exercise-quick-templates-toggle-btn` | Rozwiń/zwiń szablony                    | `QuickTemplates.tsx`       |
-| `exercise-quick-template-{id}-btn`    | Przycisk szablonu (np. plank, bird-dog) | `QuickTemplates.tsx`       |
-| `exercise-create-ai-image-btn`        | Wygeneruj obraz AI (widoczny od razu)   | `CreateExerciseWizard.tsx` |
+| data-testid                           | Element                                 | Plik                             |
+| ------------------------------------- | --------------------------------------- | -------------------------------- |
+| `exercise-page-title`                 | Tytuł strony                            | `exercises/page.tsx`             |
+| `exercise-search-input`               | Wyszukiwarka                            | `exercises/page.tsx`             |
+| `exercise-view-grid-btn`              | Widok siatki                            | `exercises/page.tsx`             |
+| `exercise-view-list-btn`              | Widok listy                             | `exercises/page.tsx`             |
+| `exercise-create-btn`                 | Dodaj ćwiczenie                         | `exercises/page.tsx`             |
+| `exercise-card-{id}`                  | Karta ćwiczenia                         | `ExerciseCard.tsx`               |
+| `exercise-card-{id}-menu-trigger`     | Menu kontekstowe                        | `ExerciseCard.tsx`               |
+| `exercise-card-{id}-view-btn`         | Podgląd                                 | `ExerciseCard.tsx`               |
+| `exercise-card-{id}-edit-btn`         | Edytuj                                  | `ExerciseCard.tsx`               |
+| `exercise-card-{id}-add-to-set-btn`   | Dodaj do zestawu                        | `ExerciseCard.tsx`               |
+| `exercise-card-{id}-delete-btn`       | Usuń                                    | `ExerciseCard.tsx`               |
+| `exercise-form`                       | Formularz ćwiczenia                     | `ExerciseForm.tsx`               |
+| `exercise-form-name-input`            | Nazwa ćwiczenia                         | `ExerciseForm.tsx`               |
+| `exercise-form-description-input`     | Opis                                    | `ExerciseForm.tsx`               |
+| `exercise-form-type-select`           | Typ ćwiczenia                           | `ExerciseForm.tsx`               |
+| `exercise-form-type-option-reps`      | Opcja: Powtórzenia                      | `ExerciseForm.tsx`               |
+| `exercise-form-type-option-time`      | Opcja: Czasowe                          | `ExerciseForm.tsx`               |
+| `exercise-form-type-option-hold`      | Opcja: Utrzymywanie                     | `ExerciseForm.tsx`               |
+| `exercise-form-side-select`           | Strona ciała                            | `ExerciseForm.tsx`               |
+| `exercise-quick-templates`            | Sekcja szybkich szablonów               | `QuickTemplates.tsx`             |
+| `exercise-quick-templates-toggle-btn` | Rozwiń/zwiń szablony                    | `QuickTemplates.tsx`             |
+| `exercise-quick-template-{id}-btn`    | Przycisk szablonu (np. plank, bird-dog) | `QuickTemplates.tsx`             |
+| `exercise-create-ai-image-btn`        | Wygeneruj obraz AI (widoczny od razu)   | `CreateExerciseWizard.tsx`       |
+| `exercise-submit-to-org-dialog`       | Dialog: zgłoszenie do weryfikacji org   | `SubmitToOrganizationDialog.tsx` |
 
 ### 5. Zestawy ćwiczeń (set-)
 
@@ -359,6 +360,8 @@ await expect(page.getByTestId(/^exercise-card-/)).toHaveCount(5);
 | `patient-dialog`                             | Dialog pacjenta                      | `PatientDialog.tsx`                |
 | `patient-dialog-title`                       | Tytuł dialogu                        | `PatientDialog.tsx`                |
 | `patient-assignment-{id}`                    | Karta przypisania                    | `PatientAssignmentCard.tsx`        |
+| `patient-assignment-status-badge-{id}`       | Główny badge statusu przypisania     | `PatientAssignmentCard.tsx`        |
+| `patient-assignment-premium-hint-{id}`       | Dodatkowy sygnał „Brak Premium”      | `PatientAssignmentCard.tsx`        |
 | `patient-assignment-{id}-edit-btn`           | Edytuj harmonogram                   | `PatientAssignmentCard.tsx`        |
 | `patient-assignment-{id}-remove-btn`         | Usuń przypisanie                     | `PatientAssignmentCard.tsx`        |
 | `patient-assignment-{id}-pdf-btn`            | Generuj PDF                          | `PatientAssignmentCard.tsx`        |
@@ -646,30 +649,40 @@ await expect(page.getByTestId(/^exercise-card-/)).toHaveCount(5);
 
 #### Widok pełny (z zadaniami)
 
-| data-testid                          | Element                              | Plik                           |
-| ------------------------------------ | ------------------------------------ | ------------------------------ |
-| `nav-link-verification`              | Link: Centrum Weryfikacji            | `Sidebar.tsx`                  |
-| `verification-search-input`          | Wyszukiwarka ćwiczeń                 | `verification/page.tsx`        |
-| `verification-stats-pending`         | Karta statystyk: Oczekujące          | `VerificationStatsCards.tsx`   |
-| `verification-stats-changes`         | Karta statystyk: Do poprawy          | `VerificationStatsCards.tsx`   |
-| `verification-stats-approved`        | Karta statystyk: Zatwierdzone        | `VerificationStatsCards.tsx`   |
-| `verification-stats-published`       | Karta statystyk: Opublikowane        | `VerificationStatsCards.tsx`   |
-| `verification-card-{id}`             | Karta zadania weryfikacji            | `VerificationTaskCard.tsx`     |
-| `verification-card-{id}-start-btn`   | Przycisk rozpoczęcia weryfikacji     | `VerificationTaskCard.tsx`     |
-| `verification-checklist-clinical`    | Checkbox: Poprawność kliniczna       | `QualityChecklist.tsx`         |
-| `verification-checklist-media`       | Checkbox: Jakość mediów              | `QualityChecklist.tsx`         |
-| `verification-checklist-description` | Checkbox: Kompletność opisu          | `QualityChecklist.tsx`         |
-| `verification-checklist-tags`        | Checkbox: Odpowiednie tagi           | `QualityChecklist.tsx`         |
-| `verification-reject-btn`            | Przycisk odrzucenia                  | `VerificationStickyFooter.tsx` |
-| `verification-skip-btn`              | Przycisk pominięcia                  | `VerificationStickyFooter.tsx` |
-| `verification-approve-btn`           | Przycisk zatwierdzenia               | `VerificationStickyFooter.tsx` |
-| `verification-reject-dialog`         | Dialog odrzucenia                    | `RejectReasonDialog.tsx`       |
-| `verification-reject-reason-select`  | Dropdown wyboru powodu               | `RejectReasonDialog.tsx`       |
-| `verification-reject-notes-input`    | Textarea notatki (wymagana)          | `RejectReasonDialog.tsx`       |
-| `verification-reject-confirm-btn`    | Przycisk potwierdzenia odrzucenia    | `RejectReasonDialog.tsx`       |
-| `verification-approve-dialog`        | Dialog zatwierdzenia                 | `ApproveDialog.tsx`            |
-| `verification-approve-notes-input`   | Textarea notatki (opcjonalna)        | `ApproveDialog.tsx`            |
-| `verification-approve-confirm-btn`   | Przycisk potwierdzenia zatwierdzenia | `ApproveDialog.tsx`            |
+| data-testid                           | Element                              | Plik                           |
+| ------------------------------------- | ------------------------------------ | ------------------------------ |
+| `nav-link-verification`               | Link: Centrum Weryfikacji            | `Sidebar.tsx`                  |
+| `nav-link-verification-organizations` | Link: Weryfikacja Organizacji        | `Sidebar.tsx`                  |
+| `verification-search-input`           | Wyszukiwarka ćwiczeń                 | `verification/page.tsx`        |
+| `verification-stats-pending`          | Karta statystyk: Oczekujące          | `VerificationStatsCards.tsx`   |
+| `verification-stats-changes`          | Karta statystyk: Do poprawy          | `VerificationStatsCards.tsx`   |
+| `verification-stats-approved`         | Karta statystyk: Zatwierdzone        | `VerificationStatsCards.tsx`   |
+| `verification-stats-published`        | Karta statystyk: Opublikowane        | `VerificationStatsCards.tsx`   |
+| `verification-card-{id}`              | Karta zadania weryfikacji            | `VerificationTaskCard.tsx`     |
+| `verification-card-{id}-start-btn`    | Przycisk rozpoczęcia weryfikacji     | `VerificationTaskCard.tsx`     |
+| `verification-checklist-clinical`     | Checkbox: Poprawność kliniczna       | `QualityChecklist.tsx`         |
+| `verification-checklist-media`        | Checkbox: Jakość mediów              | `QualityChecklist.tsx`         |
+| `verification-checklist-description`  | Checkbox: Kompletność opisu          | `QualityChecklist.tsx`         |
+| `verification-checklist-tags`         | Checkbox: Odpowiednie tagi           | `QualityChecklist.tsx`         |
+| `verification-reject-btn`             | Przycisk odrzucenia                  | `VerificationStickyFooter.tsx` |
+| `verification-skip-btn`               | Przycisk pominięcia                  | `VerificationStickyFooter.tsx` |
+| `verification-approve-btn`            | Przycisk zatwierdzenia               | `VerificationStickyFooter.tsx` |
+| `verification-reject-dialog`          | Dialog odrzucenia                    | `RejectReasonDialog.tsx`       |
+| `verification-reject-reason-select`   | Dropdown wyboru powodu               | `RejectReasonDialog.tsx`       |
+| `verification-reject-notes-input`     | Textarea notatki (wymagana)          | `RejectReasonDialog.tsx`       |
+| `verification-reject-confirm-btn`     | Przycisk potwierdzenia odrzucenia    | `RejectReasonDialog.tsx`       |
+| `verification-approve-dialog`         | Dialog zatwierdzenia                 | `ApproveDialog.tsx`            |
+| `verification-approve-notes-input`    | Textarea notatki (opcjonalna)        | `ApproveDialog.tsx`            |
+| `verification-approve-confirm-btn`    | Przycisk potwierdzenia zatwierdzenia | `ApproveDialog.tsx`            |
+
+#### Cross-org verification (SiteSuperAdmin)
+
+| data-testid                           | Element                     | Plik                                       |
+| ------------------------------------- | --------------------------- | ------------------------------------------ |
+| `cross-org-verification-page`         | Lista cross-org kolejki org | `verification/organizations/page.tsx`      |
+| `cross-org-verification-search-input` | Wyszukiwarka cross-org      | `verification/organizations/page.tsx`      |
+| `cross-org-verification-detail-page`  | Detal ćwiczenia w cross-org | `verification/organizations/[id]/page.tsx` |
+| `cross-org-verification-back-btn`     | Powrót z detalu cross-org   | `verification/organizations/[id]/page.tsx` |
 
 #### Inline Editing Components (NEW)
 

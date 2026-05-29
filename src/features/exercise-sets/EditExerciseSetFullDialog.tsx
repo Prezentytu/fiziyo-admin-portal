@@ -47,6 +47,7 @@ import {
   hasExerciseSetChanges,
   type InitialMapping,
 } from '@/features/exercise-sets/utils/exerciseSetDiff';
+import { aiService } from '@/services/aiService';
 
 interface SetSnapshot {
   id: string;
@@ -97,6 +98,7 @@ export function EditExerciseSetFullDialog({
   const [exerciseParams, setExerciseParams] = useState<Map<string, ExerciseParams>>(new Map());
   const [showCloseConfirm, setShowCloseConfirm] = useState(false);
   const [previewExercise, setPreviewExercise] = useState<ExerciseExecutionCardData | null>(null);
+  const [isGeneratingSetMeta, setIsGeneratingSetMeta] = useState(false);
   const initialMappingsRef = React.useRef<InitialMapping[]>([]);
   const initialNameRef = React.useRef('');
   const initialDescriptionRef = React.useRef('');
@@ -291,6 +293,68 @@ export function EditExerciseSetFullDialog({
 
   const saving = updatingSet || updatingExercise;
 
+  const handleGenerateAISetMeta = useCallback(async () => {
+    if (isGeneratingSetMeta) {
+      return;
+    }
+
+    const exerciseNames = selectedInstances
+      .map((instance) => availableExercises.find((exercise) => exercise.id === instance.exerciseId)?.name)
+      .filter((exerciseName): exerciseName is string => Boolean(exerciseName?.trim()));
+
+    if (exerciseNames.length === 0) {
+      toast.error('Dodaj przynajmniej jedno ćwiczenie, aby AI mogło wygenerować nazwę i opis');
+      return;
+    }
+
+    const promptParts = [
+      'Wygeneruj profesjonalną nazwę oraz krótki opis zestawu fizjoterapeutycznego.',
+      'Opis ma być konkretny, maksymalnie 2 zdania, po polsku.',
+      `Ćwiczenia: ${exerciseNames.join(', ')}.`,
+      name.trim() ? `Obecna nazwa: ${name.trim()}.` : '',
+      description.trim() ? `Obecny opis: ${description.trim()}.` : '',
+    ].filter((part) => part.length > 0);
+    const prompt = promptParts.join(' ');
+
+    try {
+      setIsGeneratingSetMeta(true);
+
+      const generatedSet = await aiService.generateExerciseSet(prompt, undefined, exerciseNames);
+
+      const generatedName = generatedSet?.setName?.trim();
+      const generatedDescription = generatedSet?.setDescription?.trim();
+
+      if (generatedName) {
+        setName(generatedName);
+      }
+
+      if (generatedDescription) {
+        setDescription(generatedDescription);
+      }
+
+      if (generatedName || generatedDescription) {
+        toast.success('Wygenerowano nazwę i opis zestawu');
+        return;
+      }
+
+      const nameSuggestion = await aiService.suggestSetName(name, exerciseNames);
+      const suggestedName = nameSuggestion?.suggestedName?.trim();
+
+      if (suggestedName) {
+        setName(suggestedName);
+        toast.success('Wygenerowano nazwę zestawu');
+        return;
+      }
+
+      toast.error('AI nie zwróciło propozycji nazwy ani opisu');
+    } catch (error) {
+      console.error('Błąd generowania nazwy i opisu zestawu:', error);
+      toast.error('Nie udało się wygenerować nazwy i opisu');
+    } finally {
+      setIsGeneratingSetMeta(false);
+    }
+  }, [availableExercises, description, isGeneratingSetMeta, name, selectedInstances]);
+
   const handleSave = useCallback(async () => {
     const trimmedName = name.trim();
     if (!trimmedName) {
@@ -459,7 +523,10 @@ export function EditExerciseSetFullDialog({
               loadingExercises={loadingExercises}
               tags={builderTags}
               exercisePopularity={exercisePopularity}
-              showAI={false}
+              showAI
+              onAIClick={handleGenerateAISetMeta}
+              aiButtonLabel="Wygeneruj nazwę i opis AI"
+              isAIGenerating={isGeneratingSetMeta}
               onPreviewExercise={handlePreviewExercise}
               testIdPrefix="set-edit-full"
             />

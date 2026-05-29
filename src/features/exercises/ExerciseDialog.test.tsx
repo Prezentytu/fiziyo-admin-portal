@@ -8,6 +8,7 @@ import type { Exercise } from './ExerciseCard';
 
 const useMutationMock = vi.fn();
 const useQueryMock = vi.fn();
+const useApolloClientMock = vi.fn();
 const generateExerciseImageMock = vi.fn();
 
 vi.mock('next/image', () => ({
@@ -17,6 +18,7 @@ vi.mock('next/image', () => ({
 vi.mock('@apollo/client/react', () => ({
   useMutation: (...args: unknown[]) => useMutationMock(...args),
   useQuery: (...args: unknown[]) => useQueryMock(...args),
+  useApolloClient: (...args: unknown[]) => useApolloClientMock(...args),
 }));
 
 vi.mock('./CreateExerciseWizard', () => ({
@@ -124,6 +126,9 @@ describe('ExerciseDialog media edit flow', () => {
         organizationExercises: [],
       },
     });
+    useApolloClientMock.mockReturnValue({
+      refetchQueries: vi.fn().mockResolvedValue(undefined),
+    });
 
     useMutationMock.mockImplementation(
       (documentNode: {
@@ -200,5 +205,22 @@ describe('ExerciseDialog media edit flow', () => {
 
     expect(screen.getByText('Ćwiczenie z bazy FiziYo')).toBeInTheDocument();
     expect(screen.queryByTestId('exercise-form-media-upload-btn')).not.toBeInTheDocument();
+  });
+
+  it('blokuje edycję gdy ćwiczenie czeka na weryfikację organizacyjną', () => {
+    render(
+      <ExerciseDialog
+        open
+        onOpenChange={vi.fn()}
+        exercise={{
+          ...baseExercise,
+          organizationVerificationStatus: 'PENDING_ORG_REVIEW',
+        }}
+        organizationId="org-1"
+      />
+    );
+
+    expect(screen.getByText('Ćwiczenie oczekuje na weryfikację')).toBeInTheDocument();
+    expect(screen.getByText('Nie możesz edytować ćwiczenia podczas weryfikacji. Poczekaj na decyzję weryfikatora.')).toBeInTheDocument();
   });
 });

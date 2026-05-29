@@ -73,6 +73,11 @@ import { GET_PATIENT_CLINICAL_NOTES_QUERY } from '@/graphql/queries/clinicalNote
 import { createTagsMap, mapExercisesWithTags } from '@/utils/tagUtils';
 import type { ExerciseTagsResponse, TagCategoriesResponse, OrganizationExerciseSetsResponse } from '@/types/apollo';
 import { calculateExerciseTotalSeconds, formatExerciseDuration } from '@/utils/exerciseTime';
+import {
+  EMPTY_EXERCISE_PARAMS,
+  getExerciseDefaultParams,
+  type ExerciseParams,
+} from '@/features/exercise-sets/utils/exerciseDefaults';
 
 // ============================================================
 // TYPES
@@ -117,25 +122,6 @@ interface Exercise {
   additionalTags?: ExerciseTag[];
 }
 
-interface ExerciseParams {
-  sets: number;
-  reps: number;
-  duration: number;
-  restSets: number;
-  restReps: number;
-  preparationTime: number;
-  executionTime: number;
-  notes: string;
-  exerciseSide: string;
-  customName: string;
-  customDescription: string;
-  tempo: string;
-  loadType: string;
-  loadValue?: number;
-  loadUnit: string;
-  loadText: string;
-}
-
 interface CreateSetWizardProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -144,6 +130,7 @@ interface CreateSetWizardProps {
   patientId?: string;
   patientName?: string;
   autoAssign?: boolean;
+  initialExerciseIds?: string[];
 }
 
 interface PatientContext {
@@ -333,6 +320,7 @@ export function CreateSetWizard({
   patientId,
   patientName,
   autoAssign = false,
+  initialExerciseIds,
 }: CreateSetWizardProps) {
   // Form state
   const [name, setName] = useState('');
@@ -349,6 +337,7 @@ export function CreateSetWizard({
   const [isGeneratingName, setIsGeneratingName] = useState(false);
   const [showNameError, setShowNameError] = useState(false);
   const nameInputRef = useRef<HTMLInputElement | null>(null);
+  const initializedFromInitialRef = useRef(false);
 
   // DnD sensors
   const sensors = useSensors(
@@ -387,6 +376,7 @@ export function CreateSetWizard({
       setPreviewExercise(null);
       setIsGeneratingName(false);
       setShowNameError(false);
+      initializedFromInitialRef.current = false;
     }
   }, [open, patientName]);
 
@@ -521,27 +511,7 @@ export function CreateSetWizard({
   }, [exercises]);
 
   // Params helpers
-  const getDefaultParams = useCallback(
-    (exercise: Exercise): ExerciseParams => ({
-      sets: exercise.defaultSets ?? exercise.sets ?? 3,
-      reps: exercise.defaultReps ?? exercise.reps ?? 10,
-      duration: exercise.defaultDuration ?? exercise.duration ?? 30,
-      restSets: exercise.defaultRestBetweenSets ?? exercise.restSets ?? 60,
-      restReps: exercise.defaultRestBetweenReps ?? exercise.restReps ?? 0,
-      preparationTime: 0,
-      executionTime: exercise.defaultExecutionTime ?? 0,
-      notes: '',
-      exerciseSide: exercise.side?.toLowerCase() || exercise.exerciseSide || 'both',
-      customName: '',
-      customDescription: '',
-      tempo: '',
-      loadType: '',
-      loadValue: undefined,
-      loadUnit: 'kg',
-      loadText: '',
-    }),
-    []
-  );
+  const getDefaultParams = useCallback((exercise: Exercise): ExerciseParams => getExerciseDefaultParams(exercise), []);
 
   const updateExerciseParams = useCallback(
     (instanceId: string, field: keyof ExerciseParams, value: number | string | undefined) => {
@@ -554,24 +524,7 @@ export function CreateSetWizard({
           next.get(instanceId) ||
           (exercise
             ? getDefaultParams(exercise)
-            : {
-                sets: 3,
-                reps: 10,
-                duration: 30,
-                restSets: 60,
-                restReps: 0,
-                preparationTime: 0,
-                executionTime: 0,
-                notes: '',
-                exerciseSide: 'both',
-                customName: '',
-                customDescription: '',
-                tempo: '',
-                loadType: '',
-                loadValue: undefined,
-                loadUnit: 'kg',
-                loadText: '',
-              });
+          : EMPTY_EXERCISE_PARAMS);
         const normalizedValue = typeof value === 'number' ? Math.max(0, value) : value;
         next.set(instanceId, { ...current, [field]: normalizedValue });
         return next;
@@ -594,6 +547,27 @@ export function CreateSetWizard({
     },
     [getDefaultParams]
   );
+
+  useEffect(() => {
+    if (!open || initializedFromInitialRef.current) {
+      return;
+    }
+    if (!initialExerciseIds || initialExerciseIds.length === 0) {
+      return;
+    }
+    if (exercises.length === 0) {
+      return;
+    }
+
+    for (const exerciseId of initialExerciseIds) {
+      const matchedExercise = exercises.find((exercise) => exercise.id === exerciseId);
+      if (matchedExercise) {
+        addExerciseToSet(matchedExercise);
+      }
+    }
+
+    initializedFromInitialRef.current = true;
+  }, [open, initialExerciseIds, exercises, addExerciseToSet]);
 
   const removeInstance = useCallback((instanceId: string) => {
     setSelectedInstances((prev) => prev.filter((i) => i.instanceId !== instanceId));

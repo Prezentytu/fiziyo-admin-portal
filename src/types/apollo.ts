@@ -185,6 +185,12 @@ export interface Exercise {
   globalSubmissionId?: string;
   sourceOrganizationExerciseId?: string;
   submittedToGlobalAt?: string;
+  organizationVerificationStatus?:
+    | 'NOT_SUBMITTED'
+    | 'PENDING_ORG_REVIEW'
+    | 'ORG_CHANGES_REQUESTED'
+    | 'ORG_VERIFIED'
+    | 'ORG_ARCHIVED';
 
   // Legacy aliasy (dla kompatybilności wstecznej)
   description?: string;

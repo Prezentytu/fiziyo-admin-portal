@@ -28,6 +28,7 @@ export {
   ON_EXERCISE_UPDATED,
   ON_EXERCISE_DELETED,
   ON_GLOBAL_EXERCISE_PUBLISHED,
+  ON_EXERCISE_SUBMITTED_FOR_GLOBAL_REVIEW,
 } from './exercises.subscriptions';
 
 // Exercise Sets

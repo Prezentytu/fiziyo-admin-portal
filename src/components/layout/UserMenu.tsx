@@ -1,7 +1,8 @@
 'use client';
 
-import { useUser, useClerk } from '@clerk/nextjs';
+import { useUser } from '@clerk/nextjs';
 import { useQuery } from '@apollo/client/react';
+import { useAppSignOut } from '@/lib/auth/useAppSignOut';
 import Image from 'next/image';
 import { Settings, LogOut, ChevronDown } from 'lucide-react';
 import Link from 'next/link';
@@ -20,7 +21,7 @@ import { resolveDisplayName } from './userDisplayName';
 
 export function UserMenu() {
   const { user, isLoaded } = useUser();
-  const { signOut } = useClerk();
+  const signOut = useAppSignOut();
   const { data } = useQuery<UserByClerkIdResponse>(GET_USER_BY_CLERK_ID_QUERY, {
     variables: { clerkId: user?.id },
     skip: !user?.id,
@@ -100,7 +101,7 @@ export function UserMenu() {
         <DropdownMenuSeparator />
 
         <DropdownMenuItem
-          onClick={() => signOut({ redirectUrl: '/sign-in' })}
+          onClick={() => signOut('/sign-in')}
           data-testid="nav-user-menu-logout"
           className="gap-3 px-3 py-2.5 cursor-pointer text-error focus:text-error focus:bg-error/10 focus:outline-none focus-visible:outline-none"
           style={{ outline: 'none' }}

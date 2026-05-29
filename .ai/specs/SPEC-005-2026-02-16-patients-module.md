@@ -82,8 +82,39 @@ Prefiks: `patient-`
 - `patient-form-firstname-input`
 - `patient-assignment-card-{id}`
 - `patient-qr-code-btn`
+- `patient-therapy-status-card`
+- `patient-therapy-status-badge`
+- `patient-next-step-call-btn`
+- `patient-next-step-edit-plan-btn`
+- `patient-next-step-message-btn`
+
+## Reguły monitoringu adherence
+
+Status terapii jest liczony lokalnie na froncie przez `calculateTherapyStatus` (`src/lib/therapyStatus.ts`) z dedykowaną oceną progów i tonu komunikacji w `src/features/patients/utils/therapyAdherence.ts`.
+
+### Progi i ton komunikacji
+
+| Warunek                                     | Efekt UI          | Zachowanie                                                 |
+| ------------------------------------------- | ----------------- | ---------------------------------------------------------- |
+| 0-2 dni od ostatniej aktywności             | `W NORMIE`        | Stan pozytywny, brak potrzeby interwencji                  |
+| 3-4 dni bez aktywności (plan trwa >= 3 dni) | `MONITORUJ`       | Łagodna informacja, bez alarmowania                        |
+| 5-6 dni bez aktywności                      | `UWAGA`           | Mocniejsze przypomnienie i sugestia kontaktu               |
+| >= 7 dni bez aktywności                     | `UWAGA`           | Rekomendacja kontaktu telefonicznego i przeglądu planu     |
+| `painLevel > 5`                             | `SKONTROLUJ PLAN` | Priorytet dla dyskomfortu; sugestia szybkiej korekty planu |
+
+### Zasada komunikacji
+
+- UI ma model **informuj, nie alarmuj**: nie używamy etykiety `ALARM` dla nieaktywności.
+- Rekomendacje są progresywne i oparte o `reason + tone`, a nie o panic-level status.
+- Akcje „Napisz” i „Brawo” wyświetlają informację o dostępności funkcji „wkrótce”.
 
 ## Changelog
+
+### 2026-05-28
+
+- Wprowadzono łagodny monitoring aktywności oparty o progi adherence (`therapyAdherence.ts`) i usunięto alarmistyczny język z UI statusu terapii.
+- Podpięto akcje z `ActivityReport` do profilu pacjenta: `Zadzwoń` (dialer), `Edytuj plan` (otwarcie edycji aktywnego planu), oraz placeholder komunikacji „wkrótce”.
+- Dodano `data-testid` dla nowej karty statusu i przycisków rekomendacji.
 
 ### 2026-04-15
 

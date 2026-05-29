@@ -50,6 +50,7 @@ import { filterExercisesBySource, countBySource } from '@/utils/exerciseSourceFi
 import { calculateExerciseTotalSeconds, formatExerciseDuration } from '@/utils/exerciseTime';
 import type { ExerciseSourceFilter } from '@/utils/exerciseSourceFilter';
 import { cn } from '@/lib/utils';
+import { EMPTY_EXERCISE_PARAMS, getExerciseDefaultParams } from '@/features/exercise-sets/utils/exerciseDefaults';
 
 // ============================================================
 // TYPES
@@ -160,6 +161,7 @@ export interface ExerciseSetBuilderProps {
   showAI?: boolean;
   onAIClick?: () => void;
   aiButtonLabel?: string;
+  isAIGenerating?: boolean;
 
   // When true, name is rendered by parent (e.g. in wizard toolbar); no Name Section block.
   hideNameSection?: boolean;
@@ -451,6 +453,8 @@ export function ExerciseSetBuilder({
   exercisePopularity = {},
   showAI = false,
   onAIClick,
+  aiButtonLabel = 'Wygeneruj nazwę AI',
+  isAIGenerating = false,
   description,
   onDescriptionChange,
   descriptionPlaceholder = 'Opis zestawu (opcjonalnie)',
@@ -518,24 +522,7 @@ export function ExerciseSetBuilder({
 
   // Params helpers
   const getDefaultParams = useCallback(
-    (exercise: BuilderExercise): ExerciseParams => ({
-      sets: exercise.defaultSets ?? exercise.sets ?? 3,
-      reps: exercise.defaultReps ?? exercise.reps ?? 10,
-      duration: exercise.defaultDuration ?? exercise.duration ?? 0,
-      restSets: exercise.defaultRestBetweenSets ?? exercise.restSets ?? 60,
-      restReps: exercise.defaultRestBetweenReps ?? exercise.restReps ?? 0,
-      preparationTime: 0,
-      executionTime: exercise.defaultExecutionTime ?? 0,
-      notes: '',
-      exerciseSide: exercise.side?.toLowerCase() || exercise.exerciseSide || 'both',
-      customName: '',
-      customDescription: '',
-      tempo: '',
-      loadType: '',
-      loadValue: undefined,
-      loadUnit: 'kg',
-      loadText: '',
-    }),
+    (exercise: BuilderExercise): ExerciseParams => getExerciseDefaultParams(exercise),
     []
   );
 
@@ -549,24 +536,7 @@ export function ExerciseSetBuilder({
         next.get(instanceId) ||
         (exercise
           ? getDefaultParams(exercise)
-          : {
-              sets: 3,
-              reps: 10,
-              duration: 0,
-              restSets: 60,
-              restReps: 0,
-              preparationTime: 0,
-              executionTime: 0,
-              notes: '',
-              exerciseSide: 'both',
-              customName: '',
-              customDescription: '',
-              tempo: '',
-              loadType: '',
-              loadValue: undefined,
-              loadUnit: 'kg',
-              loadText: '',
-            });
+          : EMPTY_EXERCISE_PARAMS);
       const normalizedValue = typeof value === 'number' ? Math.max(0, value) : value;
       next.set(instanceId, { ...current, [field]: normalizedValue });
       onExerciseParamsChange(next);
@@ -683,11 +653,18 @@ export function ExerciseSetBuilder({
                   e.stopPropagation();
                   onAIClick();
                 }}
-                title="Wygeneruj nazwę AI"
-                className="p-1 rounded text-muted-foreground hover:text-secondary hover:bg-secondary/10 shrink-0"
+                title={aiButtonLabel}
+                aria-label={aiButtonLabel}
+                disabled={isAIGenerating}
+                className={cn(
+                  'p-1 rounded shrink-0',
+                  isAIGenerating
+                    ? 'text-muted-foreground cursor-not-allowed opacity-50'
+                    : 'text-muted-foreground hover:text-secondary hover:bg-secondary/10'
+                )}
                 data-testid={`${testIdPrefix}-ai-btn`}
               >
-                <Sparkles className="h-3.5 w-3.5" />
+                {isAIGenerating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
               </button>
             )}
           </div>

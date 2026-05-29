@@ -21,6 +21,20 @@ Ze strony pacjenta: przycisk "Przypisz zestaw" otwiera wizard z predefiniowanym 
 - Hook `usePatientPremium` — sprawdza status Premium
 - Rozliczenia: 15 PLN/pacjent Premium/miesiąc (zgodnie z Billing Widget)
 
+### Effective display status przypisania
+
+- Nie polegaj wyłącznie na `assignment.status`.
+- Dla badge na karcie planu używaj resolvera:
+  - `src/features/patients/utils/assignmentDisplayStatus.ts`
+- Priorytet:
+  1. `expired` lub `endDate < now` -> `Wygasł`
+  2. `paused` -> `Wstrzymany`
+  3. `completed` -> `Zakończony`
+  4. `cancelled` -> `Anulowany`
+  5. `endDate` blisko końca -> `Wygasa za X dni`
+  6. `assigned/active/in_progress` -> `Aktywny`
+- Sygnał Premium na karcie jest pomocniczy (`Brak Premium`) i nie zastępuje głównego statusu planu.
+
 ## Komponenty
 
 - Lista: `app/(dashboard)/patients/`

@@ -5,6 +5,13 @@ import {
 } from '@/types/tokenExchange.types';
 
 const isDev = process.env.NODE_ENV === 'development';
+const CLIENT_TYPE_HEADER_KEY = 'X-Client-Type';
+const ADMIN_PORTAL_CLIENT_TYPE = 'admin-portal';
+
+export interface TokenExchangeError extends Error {
+  status?: number;
+  code?: string;
+}
 
 /**
  * Serwis do wymiany tokenów z backendem
@@ -34,16 +41,31 @@ export class TokenExchangeService {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          [CLIENT_TYPE_HEADER_KEY]: ADMIN_PORTAL_CLIENT_TYPE,
         },
         body: JSON.stringify(request),
       });
 
       if (!response.ok) {
         const errorText = await response.text();
+        let parsedCode: string | undefined;
+
+        try {
+          const parsedBody = JSON.parse(errorText) as { code?: unknown };
+          if (typeof parsedBody.code === 'string') {
+            parsedCode = parsedBody.code;
+          }
+        } catch {
+          // Plain text response - keep default undefined code.
+        }
+
         const responseError = new Error(
           `Token exchange failed: ${response.status} ${response.statusText} - ${errorText}`
-        ) as Error & { status?: number };
+        ) as TokenExchangeError;
         responseError.status = response.status;
+        responseError.code = parsedCode;
+        // Expected flow-control responses (e.g. 404 USER_NOT_FOUND while the account
+        // is still syncing) are handled by callers - do not log them as errors here.
         throw responseError;
       }
 
@@ -51,8 +73,12 @@ export class TokenExchangeService {
 
       return data;
     } catch (error) {
-      if (isDev) {
-        console.error('[TokenExchange] Błąd wymiany tokenu:', error);
+      // Only genuine network failures reach here without a status code. Log them at
+      // warn level (never console.error with an Error) so the Next.js dev overlay
+      // does not surface a handled flow-control state as a crash.
+      const hasHttpStatus = typeof (error as TokenExchangeError)?.status === 'number';
+      if (isDev && !hasHttpStatus) {
+        console.warn('[TokenExchange] Network error during token exchange');
       }
       throw error;
     }
@@ -73,6 +99,7 @@ export class TokenExchangeService {
         headers: {
           Authorization: `Bearer ${backendToken}`,
           'Content-Type': 'application/json',
+          [CLIENT_TYPE_HEADER_KEY]: ADMIN_PORTAL_CLIENT_TYPE,
         },
       });
 

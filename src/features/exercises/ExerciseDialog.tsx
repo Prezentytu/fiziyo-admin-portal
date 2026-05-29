@@ -27,6 +27,7 @@ import {
 } from '@/graphql/queries/exercises.queries';
 import type { Exercise, ExerciseTag } from './ExerciseCard';
 import { buildExerciseUpdateVariables } from './utils/buildExerciseUpdateVariables';
+import { verificationCopy } from '@/features/verification/verificationCopy';
 
 function normalizeTagIds(tags: Exercise['mainTags'] | Exercise['additionalTags']): string[] | null {
   if (!tags || tags.length === 0) return null;
@@ -57,6 +58,8 @@ interface ExerciseDialogProps {
   onResubmit?: (exerciseId: string) => Promise<void>;
   /** Callback to submit exercise to global database */
   onSubmitToGlobal?: (exercise: Exercise) => void;
+  /** Callback to submit exercise to organization verification */
+  onSubmitToOrganizationReview?: (exercise: Exercise) => void;
 }
 
 export function ExerciseDialog({
@@ -67,6 +70,7 @@ export function ExerciseDialog({
   onSuccess,
   onResubmit,
   onSubmitToGlobal,
+  onSubmitToOrganizationReview,
 }: Readonly<ExerciseDialogProps>) {
   const isEditing = !!exercise;
   const [showCloseConfirm, setShowCloseConfirm] = useState(false);
@@ -111,16 +115,18 @@ export function ExerciseDialog({
 
   // Status-based modes
   const isPendingReview = exercise?.status === 'PENDING_REVIEW';
+  const isPendingOrganizationReview = exercise?.organizationVerificationStatus === 'PENDING_ORG_REVIEW';
   const isChangesRequested = exercise?.status === 'CHANGES_REQUESTED';
   const isFixMode = isChangesRequested; // Enable editing to fix issues
 
   // Can submit to global: ORGANIZATION scope, no existing submission, not in review
   const canSubmitToGlobal =
-    onSubmitToGlobal &&
+    onSubmitToGlobal && exercise?.scope === 'ORGANIZATION' && !exercise?.globalSubmissionId;
+
+  const canSubmitToOrganization =
+    onSubmitToOrganizationReview &&
     exercise?.scope === 'ORGANIZATION' &&
-    !exercise?.globalSubmissionId &&
-    !isPendingReview &&
-    !isChangesRequested;
+    (exercise?.organizationVerificationStatus === 'NOT_SUBMITTED' || exercise?.organizationVerificationStatus === 'ORG_CHANGES_REQUESTED');
 
   const handleCloseAttempt = useCallback(() => {
     if (isFormDirty || hasMediaChanges) {
@@ -494,8 +500,8 @@ export function ExerciseDialog({
     );
   }
 
-  // Edit locked state for PENDING_REVIEW
-  if (isPendingReview) {
+  // Edit locked state for PENDING_REVIEW / PENDING_ORG_REVIEW
+  if (isPendingReview || isPendingOrganizationReview) {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-md">
@@ -506,6 +512,9 @@ export function ExerciseDialog({
             </DialogTitle>
             <DialogDescription>
               &quot;{exercise?.name}&quot; zostało zgłoszone do bazy globalnej i oczekuje na weryfikację.
+              {isPendingOrganizationReview && !isPendingReview && (
+                <span> To ćwiczenie jest aktualnie w lokalnej kolejce weryfikacji organizacyjnej.</span>
+              )}
             </DialogDescription>
           </DialogHeader>
 
@@ -525,7 +534,6 @@ export function ExerciseDialog({
             <Button variant="outline" onClick={() => onOpenChange(false)}>
               Zamknij
             </Button>
-            {/* TODO: Add "Withdraw submission" button when backend supports it */}
           </div>
         </DialogContent>
       </Dialog>
@@ -567,7 +575,13 @@ export function ExerciseDialog({
           defaultValues={defaultValues}
           onSubmit={handleSubmit}
           onCancel={handleCloseAttempt}
-          isLoading={updating || isResubmitting || uploadingMedia || deletingMedia || isGeneratingMedia}
+          isLoading={
+            updating ||
+            isResubmitting ||
+            uploadingMedia ||
+            deletingMedia ||
+            isGeneratingMedia
+          }
           submitLabel={isFixMode ? 'Wyślij poprawki' : 'Zapisz zmiany'}
           onDirtyChange={setIsFormDirty}
           mediaSection={
@@ -677,7 +691,20 @@ export function ExerciseDialog({
                 className="gap-2 bg-gradient-to-r from-primary to-emerald-600 hover:from-primary/90 hover:to-emerald-600/90"
               >
                 <Rocket className="h-4 w-4" />
-                Wyślij do weryfikacji
+                {verificationCopy.submitGlobal}
+              </Button>
+            ) : canSubmitToOrganization && exercise ? (
+              <Button
+                type="button"
+                onClick={() => {
+                  onOpenChange(false);
+                  onSubmitToOrganizationReview(exercise);
+                }}
+                className="gap-2 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-600/90 hover:to-emerald-500/90"
+                data-testid="exercise-dialog-submit-org-review-btn"
+              >
+                <Rocket className="h-4 w-4" />
+                {verificationCopy.submitOrganization}
               </Button>
             ) : undefined
           }

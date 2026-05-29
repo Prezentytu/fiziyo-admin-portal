@@ -4,7 +4,8 @@ import { useMemo } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { useUser, useClerk } from '@clerk/nextjs';
+import { useUser } from '@clerk/nextjs';
+import { useAppSignOut } from '@/lib/auth/useAppSignOut';
 import { useQuery } from '@apollo/client/react';
 import {
   LayoutDashboard,
@@ -25,6 +26,7 @@ import {
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { OrganizationSwitcher } from './OrganizationSwitcher';
 import { NAV_ITEM_ACTIVE, NAV_ITEM_BASE, NAV_ITEM_INACTIVE } from './navigationItemStyles';
+import { isNavigationHrefActive } from './navigationActive';
 import { Logo } from '@/components/shared/Logo';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useRoleAccess } from '@/hooks/useRoleAccess';
@@ -117,7 +119,7 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const { user, isLoaded } = useUser();
-  const { signOut } = useClerk();
+  const signOut = useAppSignOut();
   const { data } = useQuery<UserByClerkIdResponse>(GET_USER_BY_CLERK_ID_QUERY, {
     variables: { clerkId: user?.id },
     skip: !user?.id,
@@ -134,11 +136,6 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
   const email = user?.primaryEmailAddress?.emailAddress || backendUser?.email || '';
   const initials = getInitials(fullName);
 
-  const isActive = (href: string) => {
-    if (href === '/') return pathname === '/';
-    return pathname.startsWith(href);
-  };
-
   // Filter navigation groups based on user role
   const filteredNavigationGroups = useMemo(() => {
     return navigationGroups.filter((group) => {
@@ -148,6 +145,10 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
       return true;
     });
   }, [canManageOrganization]);
+  const filteredNavigationHrefs = useMemo(
+    () => filteredNavigationGroups.flatMap((group) => group.items.map((item) => item.href)),
+    [filteredNavigationGroups]
+  );
 
   const handleLinkClick = () => {
     onClose();
@@ -155,7 +156,7 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
 
   const handleSignOut = () => {
     onClose();
-    signOut({ redirectUrl: '/sign-in' });
+    signOut('/sign-in');
   };
 
   const handleOpenProfile = () => {
@@ -188,7 +189,7 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
               {/* Navigation items */}
               <div className="space-y-1 px-3">
                 {group.items.map((item) => {
-                  const active = isActive(item.href);
+                  const active = isNavigationHrefActive(pathname, item.href, filteredNavigationHrefs);
                   const Icon = item.icon;
 
                   return (
@@ -285,7 +286,7 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
                 )}
 
                 <a
-                  href="mailto:support@fiziyo.app"
+                  href="mailto:kontakt@fiziyo.pl"
                   data-testid="nav-mobile-help"
                   className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-muted-foreground hover:bg-surface-light hover:text-foreground transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
                 >

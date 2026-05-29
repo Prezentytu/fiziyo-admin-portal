@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
-import { useQuery, useMutation } from '@apollo/client/react';
+import { useQuery, useMutation, useSubscription } from '@apollo/client/react';
 import { useUser } from '@clerk/nextjs';
 import { ShieldCheck, Search, RefreshCw, LayoutGrid, List, Clock, User, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
@@ -36,6 +36,7 @@ import {
   IMPORT_EXERCISES_TO_REVIEW_MUTATION,
   UNPUBLISH_EXERCISE_MUTATION,
 } from '@/graphql/mutations/adminExercises.mutations';
+import { ON_EXERCISE_SUBMITTED_FOR_GLOBAL_REVIEW } from '@/graphql/subscriptions';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Badge } from '@/components/ui/badge';
@@ -50,6 +51,9 @@ import type {
   AdminExercise,
 } from '@/graphql/types/adminExercise.types';
 import type { ExerciseReport } from '@/types/exercise-report.types';
+
+type GlobalVerificationFilter = 'pending' | 'changes' | 'published' | 'archived' | 'reported';
+type VerificationStatsFilter = GlobalVerificationFilter | 'verified';
 
 // Helper function
 function formatRelativeTime(dateString?: string): string {
@@ -211,9 +215,7 @@ export default function VerificationPage() {
 
   const [searchQuery, setSearchQuery] = useState(initialSearch);
   const [debouncedSearch, setDebouncedSearch] = useState(initialSearch);
-  const [activeFilter, setActiveFilter] = useState<'pending' | 'changes' | 'published' | 'archived' | 'reported'>(
-    initialFilter
-  );
+  const [activeFilter, setActiveFilter] = useState<GlobalVerificationFilter>(initialFilter);
   const [scanResult, setScanResult] = useState<RepositoryScanResult | null>(null);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>(initialView);
   const [page, setPage] = useState(initialPage);
@@ -234,7 +236,7 @@ export default function VerificationPage() {
 
   const updateUrlState = useCallback(
     (nextState: {
-      filter?: 'pending' | 'changes' | 'published' | 'archived' | 'reported';
+      filter?: GlobalVerificationFilter;
       search?: string;
       page?: number;
       pageSize?: number;
@@ -303,6 +305,14 @@ export default function VerificationPage() {
     variables: queueVariables,
     skip: !canReviewExercises || activeFilter === 'reported',
     fetchPolicy: 'cache-and-network',
+  });
+
+  useSubscription<{ onExerciseSubmittedForGlobalReview: string }>(ON_EXERCISE_SUBMITTED_FOR_GLOBAL_REVIEW, {
+    skip: !canReviewExercises,
+    onData: () => {
+      refetchStats();
+      refetchQueue();
+    },
   });
 
   // Scan repository mutation
@@ -594,10 +604,11 @@ export default function VerificationPage() {
     }
   };
 
-  const handleFilterChange = (nextFilter: 'pending' | 'changes' | 'published' | 'archived' | 'reported') => {
-    setActiveFilter(nextFilter);
+  const handleFilterChange = (nextFilter: VerificationStatsFilter) => {
+    const normalizedFilter: GlobalVerificationFilter = nextFilter === 'verified' ? 'published' : nextFilter;
+    setActiveFilter(normalizedFilter);
     setPage(1);
-    updateUrlState({ filter: nextFilter, page: 1, search: searchQuery });
+    updateUrlState({ filter: normalizedFilter, page: 1, search: searchQuery });
   };
 
   const handleSearchChange = (value: string) => {

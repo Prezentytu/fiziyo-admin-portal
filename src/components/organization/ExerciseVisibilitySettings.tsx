@@ -17,6 +17,7 @@ interface ExerciseVisibilitySettingsProps {
   organizationId: string;
   allowPersonalExercises?: boolean;
   sharedExercisesByDefault?: boolean;
+  requireOrganizationVerification?: boolean;
   canEdit?: boolean;
   onSuccess?: () => void;
 }
@@ -25,24 +26,39 @@ export function ExerciseVisibilitySettings({
   organizationId,
   allowPersonalExercises: initialAllowPersonal = true,
   sharedExercisesByDefault: initialSharedByDefault = true,
+  requireOrganizationVerification: initialRequireOrganizationVerification = false,
   canEdit = false,
   onSuccess,
 }: ExerciseVisibilitySettingsProps) {
   const [allowPersonal, setAllowPersonal] = useState(initialAllowPersonal);
   const [sharedByDefault, setSharedByDefault] = useState(initialSharedByDefault);
+  const [requireOrganizationVerification, setRequireOrganizationVerification] = useState(
+    initialRequireOrganizationVerification
+  );
   const [hasChanges, setHasChanges] = useState(false);
 
   // Track changes
   useEffect(() => {
-    const changed = allowPersonal !== initialAllowPersonal || sharedByDefault !== initialSharedByDefault;
+    const changed =
+      allowPersonal !== initialAllowPersonal ||
+      sharedByDefault !== initialSharedByDefault ||
+      requireOrganizationVerification !== initialRequireOrganizationVerification;
     setHasChanges(changed);
-  }, [allowPersonal, sharedByDefault, initialAllowPersonal, initialSharedByDefault]);
+  }, [
+    allowPersonal,
+    sharedByDefault,
+    requireOrganizationVerification,
+    initialAllowPersonal,
+    initialSharedByDefault,
+    initialRequireOrganizationVerification,
+  ]);
 
   // Reset on prop changes
   useEffect(() => {
     setAllowPersonal(initialAllowPersonal);
     setSharedByDefault(initialSharedByDefault);
-  }, [initialAllowPersonal, initialSharedByDefault]);
+    setRequireOrganizationVerification(initialRequireOrganizationVerification);
+  }, [initialAllowPersonal, initialSharedByDefault, initialRequireOrganizationVerification]);
 
   const [updateSettings, { loading }] = useMutation(UPDATE_EXERCISE_VISIBILITY_SETTINGS_MUTATION, {
     refetchQueries: [{ query: GET_ORGANIZATION_BY_ID_QUERY, variables: { id: organizationId } }],
@@ -55,6 +71,7 @@ export function ExerciseVisibilitySettings({
           organizationId,
           allowPersonalExercises: allowPersonal,
           sharedExercisesByDefault: sharedByDefault,
+          requireOrganizationVerification,
         },
       });
       toast.success('Ustawienia zostały zapisane');
@@ -69,6 +86,7 @@ export function ExerciseVisibilitySettings({
   const handleReset = () => {
     setAllowPersonal(initialAllowPersonal);
     setSharedByDefault(initialSharedByDefault);
+    setRequireOrganizationVerification(initialRequireOrganizationVerification);
   };
 
   return (
@@ -83,6 +101,37 @@ export function ExerciseVisibilitySettings({
             <CardDescription className="text-sm text-muted-foreground">
               Kontroluj widoczność i udostępnianie ćwiczeń w organizacji
             </CardDescription>
+          </div>
+        </div>
+
+        <div
+          className={cn(
+            'flex items-start gap-4 p-4 rounded-xl border transition-all',
+            requireOrganizationVerification
+              ? 'border-emerald-500/30 bg-emerald-500/5 ring-1 ring-emerald-500/10'
+              : 'border-border/50 bg-background/50 hover:bg-background hover:border-emerald-500/30'
+          )}
+        >
+          <Checkbox
+            id="requireOrganizationVerification"
+            checked={requireOrganizationVerification}
+            onCheckedChange={(checked) => canEdit && setRequireOrganizationVerification(checked === true)}
+            disabled={!canEdit}
+            className="mt-1 rounded-md"
+            data-testid="org-require-verification-checkbox"
+          />
+          <div className="flex-1 space-y-1">
+            <Label
+              htmlFor="requireOrganizationVerification"
+              className="text-base font-semibold cursor-pointer flex items-center gap-2"
+            >
+              <Lock className="h-4 w-4 text-muted-foreground" />
+              Wymagaj weryfikacji organizacyjnej ćwiczeń
+            </Label>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              Gdy opcja jest włączona, niezweryfikowane ćwiczenia organizacyjne nie będą dostępne do nowych przypisań.
+              Dotychczas używane ćwiczenia pozostają dostępne.
+            </p>
           </div>
         </div>
       </CardHeader>

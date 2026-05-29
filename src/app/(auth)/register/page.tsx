@@ -209,21 +209,14 @@ export default function RegisterPage() {
       await signUp.create({
         emailAddress: formData.email,
         password: formData.password,
+        unsafeMetadata: {
+          firstName: formData.firstName.trim(),
+          lastName: formData.lastName.trim(),
+          phone: formData.phone.trim(),
+          companyName: formData.companyName.trim() || generatedName,
+          isCompanyAccount: true,
+        },
       });
-
-      try {
-        await signUp.update({
-          unsafeMetadata: {
-            firstName: formData.firstName.trim(),
-            lastName: formData.lastName.trim(),
-            phone: formData.phone.trim(),
-            companyName: formData.companyName.trim() || generatedName,
-            isCompanyAccount: true,
-          },
-        });
-      } catch (updateError) {
-        console.error('Error setting metadata:', updateError);
-      }
 
       await signUp.prepareEmailAddressVerification({ strategy: 'email_code' });
       router.push('/verify');

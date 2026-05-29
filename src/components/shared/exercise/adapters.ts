@@ -210,6 +210,7 @@ export function fromBuilderExercise(
     customDescription?: string;
     notes?: string;
     exerciseSide?: string;
+    loadType?: string;
     loadValue?: number;
     loadUnit?: string;
     loadText?: string;
@@ -219,9 +220,12 @@ export function fromBuilderExercise(
   const isTimeBased = exercise.type?.toLowerCase() === 'time';
   const load =
     params.load ??
-    (params.loadValue == null
-      ? undefined
-      : { type: 'weight' as const, value: params.loadValue, unit: (params.loadUnit as 'kg') ?? 'kg', text: params.loadText ?? `${params.loadValue} kg` });
+    buildLoadFromScalars({
+      type: params.loadType,
+      value: params.loadValue,
+      unit: params.loadUnit,
+      text: params.loadText,
+    });
   const loadKg =
     load && 'unit' in load && load.unit === 'kg' ? load.value : params.loadValue;
   const loadDisplayText =

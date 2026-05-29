@@ -7,8 +7,12 @@ import { Building2, RefreshCw, LogOut, Mail, Loader2, CheckCircle, AlertTriangle
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { clearBackendToken } from '@/lib/tokenCache';
+import { tokenExchangeService } from '@/services/tokenExchangeService';
 
 type OnboardingStatus = 'checking' | 'creating' | 'success' | 'error' | 'waiting';
+
+const isDev = process.env.NODE_ENV === 'development';
+const GENERIC_ERROR_MESSAGE = 'Konfiguracja Twojego konta trwa dłużej niż zwykle. Spróbuj jeszcze raz za chwilę.';
 
 /**
  * Strona onboardingu - automatycznie tworzy organizację dla nowego użytkownika
@@ -29,7 +33,6 @@ export default function OnboardingPage() {
         firstName?: string;
         lastName?: string;
         companyName?: string;
-        organizationType?: string;
       }
     | undefined;
 
@@ -69,7 +72,7 @@ export default function OnboardingPage() {
           `,
           variables: {
             name: organizationName,
-            description: `Organizacja utworzona automatycznie dla ${metadata?.organizationType || 'individual'}`,
+            description: 'Organizacja utworzona automatycznie',
             plan: 'FREE',
           },
         }),
@@ -81,23 +84,23 @@ export default function OnboardingPage() {
         // Sprawdź czy organizacja już istnieje (możliwe że webhook ją utworzył)
         const errorMessage = result.errors[0]?.message || '';
         if (errorMessage.includes('already exists') || errorMessage.includes('already has')) {
-          console.log('[Onboarding] Organizacja już istnieje - kontynuuję...');
           return true;
         }
         throw new Error(errorMessage);
       }
 
       if (result.data?.createOrganization?.id) {
-        console.log('[Onboarding] Organizacja utworzona:', result.data.createOrganization.id);
         return true;
       }
 
       return false;
     } catch (err) {
-      console.error('[Onboarding] Błąd tworzenia organizacji:', err);
+      if (isDev) {
+        console.warn('[Onboarding] Organization setup retry');
+      }
       throw err;
     }
-  }, [getToken, organizationName, metadata?.organizationType]);
+  }, [getToken, organizationName]);
 
   /**
    * Sprawdza czy token exchange już działa (organizacja istnieje)
@@ -107,18 +110,9 @@ export default function OnboardingPage() {
       const clerkToken = await getToken();
       if (!clerkToken) return false;
 
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-      if (!apiUrl) return false;
-
-      const response = await fetch(`${apiUrl}/api/token-exchange/clerk`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ token: clerkToken }),
-      });
-
-      return response.ok;
+      // Używamy wspólnego serwisu (wysyła X-Client-Type: admin-portal), spójnie z resztą aplikacji.
+      await tokenExchangeService.exchangeClerkToken(clerkToken);
+      return true;
     } catch {
       return false;
     }
@@ -176,11 +170,11 @@ export default function OnboardingPage() {
 
       // 5. Ostateczny błąd
       setStatus('error');
-      setError('Konfiguracja konta trwa dłużej niż zwykle. Spróbuj ponownie.');
-    } catch (err) {
-      console.error('[Onboarding] Error:', err);
+      setError(GENERIC_ERROR_MESSAGE);
+    } catch {
+      // Nigdy nie pokazujemy użytkownikowi surowych komunikatów technicznych.
       setStatus('error');
-      setError(err instanceof Error ? err.message : 'Wystąpił błąd podczas konfiguracji konta');
+      setError(GENERIC_ERROR_MESSAGE);
     }
   }, [checkTokenExchange, createOrganization]);
 
@@ -255,15 +249,6 @@ export default function OnboardingPage() {
                 <p className="text-sm text-muted-foreground">{user?.primaryEmailAddress?.emailAddress}</p>
               </div>
             </div>
-            <p className="text-sm text-muted-foreground">
-              Typ:{' '}
-              <span className="text-foreground">
-                {metadata?.organizationType === 'individual' && 'Praktyka Indywidualna'}
-                {metadata?.organizationType === 'small' && 'Mały Gabinet'}
-                {metadata?.organizationType === 'large' && 'Duża Klinika'}
-                {!metadata?.organizationType && 'Praktyka Indywidualna'}
-              </span>
-            </p>
           </div>
 
           {/* Actions - show only on error */}
@@ -276,7 +261,7 @@ export default function OnboardingPage() {
 
               <Button
                 variant="outline"
-                onClick={() => window.open('mailto:support@fiziyo.pl', '_blank')}
+                onClick={() => window.open('mailto:kontakt@fiziyo.pl', '_blank')}
                 className="w-full"
               >
                 <Mail className="mr-2 h-4 w-4" />

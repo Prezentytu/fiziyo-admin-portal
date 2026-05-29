@@ -13,10 +13,14 @@ describe('resolveExerciseReportRoutingTarget', () => {
   });
 
   it('returns PENDING_REVIEW for non-published statuses', () => {
-    expect(resolveExerciseReportRoutingTarget({ status: 'DRAFT', scope: 'ORGANIZATION' })).toBe('PENDING_REVIEW');
+    expect(resolveExerciseReportRoutingTarget({ status: 'DRAFT', scope: 'GLOBAL' })).toBe('PENDING_REVIEW');
     expect(resolveExerciseReportRoutingTarget({ status: 'CHANGES_REQUESTED', scope: 'ORGANIZATION' })).toBe(
-      'PENDING_REVIEW'
+      'PENDING_ORG_REVIEW'
     );
     expect(resolveExerciseReportRoutingTarget({ status: undefined, scope: 'GLOBAL' })).toBe('PENDING_REVIEW');
+  });
+
+  it('routes organization scope reports to organization queue', () => {
+    expect(resolveExerciseReportRoutingTarget({ status: 'DRAFT', scope: 'ORGANIZATION' })).toBe('PENDING_ORG_REVIEW');
   });
 });

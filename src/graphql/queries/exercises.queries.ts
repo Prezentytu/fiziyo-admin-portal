@@ -69,6 +69,12 @@ export const EXERCISE_FULL_FRAGMENT = gql`
     globalSubmissionId
     sourceOrganizationExerciseId
     submittedToGlobalAt
+    # Organization verification tracking
+    organizationVerificationStatus
+    submittedForOrgReviewAt
+    orgReviewedById
+    orgReviewedAt
+    orgReviewNotes
   }
 `;
 

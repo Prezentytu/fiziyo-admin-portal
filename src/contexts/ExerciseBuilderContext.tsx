@@ -1,6 +1,7 @@
 'use client';
 
 import { createContext, useContext, useState, useCallback, useMemo } from 'react';
+import { calculateExerciseTotalSeconds } from '@/utils/exerciseTime';
 
 // ========================================
 // Types
@@ -12,9 +13,33 @@ export interface BuilderExercise {
   thumbnailUrl?: string;
   imageUrl?: string;
   images?: string[];
+  description?: string;
+  patientDescription?: string;
+  clinicalDescription?: string;
+  audioCue?: string;
+  notes?: string;
+  tempo?: string;
+  side?: string;
+  exerciseSide?: string;
+  preparationTime?: number;
+  defaultSets?: number;
+  defaultReps?: number;
+  defaultDuration?: number;
+  defaultExecutionTime?: number;
+  defaultRestBetweenSets?: number;
+  defaultRestBetweenReps?: number;
   sets: number;
   reps: number;
   duration: number;
+  executionTime?: number;
+  restSets?: number;
+  restReps?: number;
+  customName?: string;
+  customDescription?: string;
+  loadType?: string;
+  loadValue?: number;
+  loadUnit?: string;
+  loadText?: string;
   type?: string;
 }
 
@@ -156,11 +181,25 @@ export function ExerciseBuilderProvider({ children }: ExerciseBuilderProviderPro
     [isInBuilder, removeExercise, addExercise]
   );
 
-  // Calculate estimated time: (total sets * 3 min) + (total duration in seconds / 60)
+  // Keep sidebar summary aligned with set wizard total duration logic.
   const estimatedTime = useMemo(() => {
-    const totalSets = selectedExercises.reduce((sum, e) => sum + (e.sets || 0), 0);
-    const totalDuration = selectedExercises.reduce((sum, e) => sum + (e.duration || 0), 0);
-    return Math.ceil(totalSets * 3 + totalDuration / 60);
+    const totalSeconds = selectedExercises.reduce((sum, exercise) => {
+      const duration = calculateExerciseTotalSeconds({
+        sets: exercise.sets ?? 0,
+        reps: exercise.reps,
+        duration: exercise.duration,
+        executionTime: exercise.executionTime,
+        restSets: exercise.restSets,
+        restReps: exercise.restReps,
+        preparationTime: exercise.preparationTime,
+        tempo: exercise.tempo,
+        side: exercise.exerciseSide ?? exercise.side,
+      });
+
+      return sum + duration.seconds;
+    }, 0);
+
+    return Math.ceil(totalSeconds / 60);
   }, [selectedExercises]);
 
   const hasExercises = selectedExercises.length > 0;

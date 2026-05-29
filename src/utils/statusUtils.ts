@@ -4,9 +4,10 @@ import type { AssignmentStatusGql } from '@/graphql/types';
  * Utility functions for status translations and mappings
  */
 
-export type AssignmentStatus = 'assigned' | 'active' | 'paused' | 'completed' | 'cancelled' | 'in_progress';
+export type AssignmentStatus = 'assigned' | 'active' | 'paused' | 'completed' | 'cancelled' | 'in_progress' | 'expired';
+type AssignmentStatusForMutation = Exclude<AssignmentStatus, 'expired'>;
 
-const assignmentStatusToGqlMap: Record<AssignmentStatus, AssignmentStatusGql> = {
+const assignmentStatusToGqlMap: Record<AssignmentStatusForMutation, AssignmentStatusGql> = {
   assigned: 'ASSIGNED',
   active: 'ACTIVE',
   paused: 'PAUSED',
@@ -27,7 +28,7 @@ const gqlStatusToAssignmentMap: Record<AssignmentStatusGql, AssignmentStatus> = 
 /**
  * Converts lowercase DB/UI status to GraphQL enum status.
  */
-export function toGqlStatus(status: AssignmentStatus): AssignmentStatusGql {
+export function toGqlStatus(status: AssignmentStatusForMutation): AssignmentStatusGql {
   return assignmentStatusToGqlMap[status];
 }
 
@@ -55,6 +56,8 @@ export function translateAssignmentStatus(status: AssignmentStatus): string {
       return 'Anulowany';
     case 'in_progress':
       return 'W trakcie';
+    case 'expired':
+      return 'Wygasł';
     default:
       return status;
   }
@@ -77,6 +80,8 @@ export function getStatusColorClass(status: string): string {
       return 'bg-red-500/20 text-red-700 border-red-500/30';
     case 'in_progress':
       return 'bg-indigo-500/20 text-indigo-700 border-indigo-500/30';
+    case 'expired':
+      return 'bg-red-500/20 text-red-700 border-red-500/30';
     case 'inactive':
       return 'bg-gray-500/20 text-gray-700 border-gray-500/30';
     default:

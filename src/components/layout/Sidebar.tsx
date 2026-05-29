@@ -23,9 +23,12 @@ import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/comp
 import { OrganizationSwitcher } from './OrganizationSwitcher';
 import { UserProfileFooter } from './UserProfileFooter';
 import { NAV_ITEM_ACTIVE, NAV_ITEM_BASE, NAV_ITEM_INACTIVE } from './navigationItemStyles';
+import { isNavigationHrefActive } from './navigationActive';
 import { Logo } from '@/components/shared/Logo';
 import { useRoleAccess } from '@/hooks/useRoleAccess';
 import { useSystemRole } from '@/hooks/useSystemRole';
+import { useOrganizationVerificationAccess } from '@/hooks/useOrganizationVerificationAccess';
+import { NavCountBadge } from '@/components/layout/NavCountBadge';
 
 // ========================================
 // Types
@@ -85,6 +88,12 @@ const navigationGroups: NavigationGroup[] = [
     adminOnly: true,
     items: [
       { name: 'Zespół', href: '/organization', icon: Building2, testId: 'nav-link-organization' },
+      {
+        name: 'Weryfikacja',
+        href: '/organization/verification',
+        icon: ShieldCheck,
+        testId: 'nav-link-organization-verification',
+      },
       { name: 'Finanse', href: '/finances', icon: Wallet, testId: 'nav-link-finances' },
       { name: 'Ustawienia', href: '/settings', icon: Settings, testId: 'nav-link-settings' },
     ],
@@ -100,6 +109,12 @@ const navigationGroups: NavigationGroup[] = [
         icon: ShieldCheck,
         testId: 'nav-link-verification',
       },
+      {
+        name: 'Weryfikacja Organizacji',
+        href: '/verification/organizations',
+        icon: ShieldCheck,
+        testId: 'nav-link-verification-organizations',
+      },
     ],
   },
 ];
@@ -112,30 +127,44 @@ interface SidebarProps {
 export function Sidebar({ isCollapsed, onToggleCollapse }: SidebarProps) {
   const pathname = usePathname();
   const { canManageOrganization } = useRoleAccess();
-  const { canReviewExercises } = useSystemRole();
+  const { canReviewExercises, isSiteSuperAdmin } = useSystemRole();
+  const { pendingCount: organizationPendingVerificationCount } = useOrganizationVerificationAccess();
   const navigationRef = useRef<HTMLElement | null>(null);
   const [showTopFade, setShowTopFade] = useState(false);
   const [showBottomFade, setShowBottomFade] = useState(false);
 
-  const isActive = (href: string) => {
-    if (href === '/') return pathname === '/';
-    return pathname.startsWith(href);
-  };
-
   // Filter navigation groups based on user role
   const filteredNavigationGroups = useMemo(() => {
-    return navigationGroups.filter((group) => {
+    return navigationGroups
+      .filter((group) => {
       // ContentManager-only groups (system role)
-      if (group.contentManagerOnly) {
-        return canReviewExercises;
-      }
-      // Admin-only groups (organization role)
-      if (group.adminOnly) {
-        return canManageOrganization;
-      }
-      return true;
-    });
-  }, [canManageOrganization, canReviewExercises]);
+        if (group.contentManagerOnly) {
+          return canReviewExercises;
+        }
+        // Admin-only groups (organization role)
+        if (group.adminOnly) {
+          return canManageOrganization;
+        }
+        return true;
+      })
+      .map((group) => ({
+        ...group,
+        items: group.items
+          .filter((item) => item.href !== '/verification/organizations' || isSiteSuperAdmin)
+          .map((item) =>
+            item.href === '/organization/verification'
+              ? {
+                  ...item,
+                  badge: organizationPendingVerificationCount,
+                }
+              : item
+          ),
+      }));
+  }, [canManageOrganization, canReviewExercises, isSiteSuperAdmin, organizationPendingVerificationCount]);
+  const filteredNavigationHrefs = useMemo(
+    () => filteredNavigationGroups.flatMap((group) => group.items.map((item) => item.href)),
+    [filteredNavigationGroups]
+  );
 
   useEffect(() => {
     const navElement = navigationRef.current;
@@ -240,7 +269,7 @@ export function Sidebar({ isCollapsed, onToggleCollapse }: SidebarProps) {
                 {/* Navigation items */}
                 <div className={cn('space-y-1 xl:space-y-2', isCollapsed ? 'flex flex-col items-center' : 'px-3 xl:px-4')}>
                   {group.items.map((item) => {
-                    const active = isActive(item.href);
+                    const active = isNavigationHrefActive(pathname, item.href, filteredNavigationHrefs);
                     const Icon = item.icon;
 
                     const linkContent = (
@@ -272,12 +301,7 @@ export function Sidebar({ isCollapsed, onToggleCollapse }: SidebarProps) {
                           <>
                             <span className="flex-1 truncate">{item.name}</span>
 
-                            {/* Badge indicator */}
-                            {item.badge && item.badge > 0 && (
-                              <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive px-1.5 text-[10px] font-bold text-white">
-                                {item.badge > 99 ? '99+' : item.badge}
-                              </span>
-                            )}
+                            <NavCountBadge count={item.badge ?? 0} />
 
                             {/* AI accent indicator in expanded mode */}
                             {item.hasAiAccent && !active && <Sparkles className="h-3.5 w-3.5 text-primary opacity-60" />}

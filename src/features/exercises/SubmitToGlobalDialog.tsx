@@ -11,9 +11,10 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Rocket, CheckCircle, XCircle, Video, FileText, Tag, Loader2, AlertTriangle } from 'lucide-react';
+import { Rocket, CheckCircle, Video, FileText, Tag, Loader2, AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Exercise } from './ExerciseCard';
+import { verificationCopy } from '@/features/verification/verificationCopy';
 
 interface SubmitToGlobalDialogProps {
   open: boolean;
@@ -29,17 +30,12 @@ interface ValidationCheck {
   description: string;
   icon: React.ReactNode;
   passed: boolean;
-  critical: boolean;
 }
 
 /**
  * SubmitToGlobalDialog - Auto-Guard Validation before submission
  *
- * Validates:
- * - Has video or image (critical)
- * - Description min 50 chars (critical)
- * - Has at least 2 tags (recommended)
- * - Has clinical description (recommended)
+ * Validates quality checklist in warn-only mode.
  */
 export function SubmitToGlobalDialog({
   open,
@@ -77,7 +73,6 @@ export function SubmitToGlobalDialog({
         description: hasMedia ? 'Wideo lub zdjęcie jest dostępne' : 'Dodaj wideo lub zdjęcie do ćwiczenia',
         icon: <Video className="h-4 w-4" />,
         passed: hasMedia,
-        critical: true,
       },
       {
         id: 'description',
@@ -87,7 +82,6 @@ export function SubmitToGlobalDialog({
           : `Tylko ${descriptionLength}/50 znaków - uzupełnij opis`,
         icon: <FileText className="h-4 w-4" />,
         passed: hasDescription,
-        critical: true,
       },
       {
         id: 'tags',
@@ -97,7 +91,6 @@ export function SubmitToGlobalDialog({
           : `Tylko ${tagCount}/2 kategorii - dodaj więcej tagów`,
         icon: <Tag className="h-4 w-4" />,
         passed: hasTags,
-        critical: false,
       },
       {
         id: 'clinical',
@@ -107,14 +100,13 @@ export function SubmitToGlobalDialog({
           : 'Zalecane: dodaj opis kliniczny dla fizjoterapeutów',
         icon: <FileText className="h-4 w-4" />,
         passed: hasClinicalDesc,
-        critical: false,
       },
     ];
   }, [exercise]);
 
-  const criticalFailed = validationChecks.filter((c) => c.critical && !c.passed);
-  const recommendedFailed = validationChecks.filter((c) => !c.critical && !c.passed);
-  const canSubmit = criticalFailed.length === 0;
+  const failedChecks = validationChecks.filter((check) => !check.passed);
+  const hasSuggestions = failedChecks.length > 0;
+  const canSubmit = Boolean(exercise?.name?.trim());
 
   const handleSubmit = async () => {
     if (!exercise || !canSubmit) return;
@@ -135,7 +127,7 @@ export function SubmitToGlobalDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Rocket className="h-5 w-5 text-primary" />
-            Zgłoś do Bazy Globalnej
+            {verificationCopy.submitGlobal}
           </DialogTitle>
           <DialogDescription>
             Twoje ćwiczenie zostanie przesłane do weryfikacji przez zespół ekspertów. Po zatwierdzeniu będzie widoczne
@@ -169,38 +161,27 @@ export function SubmitToGlobalDialog({
                 'flex items-start gap-3 p-3 rounded-lg border transition-colors',
                 check.passed
                   ? 'bg-emerald-500/5 border-emerald-500/20'
-                  : check.critical
-                    ? 'bg-red-500/5 border-red-500/20'
-                    : 'bg-amber-500/5 border-amber-500/20'
+                  : 'bg-amber-500/5 border-amber-500/20'
               )}
             >
               <div
                 className={cn(
                   'shrink-0 mt-0.5',
-                  check.passed ? 'text-emerald-500' : check.critical ? 'text-red-500' : 'text-amber-500'
+                  check.passed ? 'text-emerald-500' : 'text-amber-500'
                 )}
               >
-                {check.passed ? (
-                  <CheckCircle className="h-4 w-4" />
-                ) : check.critical ? (
-                  <XCircle className="h-4 w-4" />
-                ) : (
-                  <AlertTriangle className="h-4 w-4" />
-                )}
+                {check.passed ? <CheckCircle className="h-4 w-4" /> : <AlertTriangle className="h-4 w-4" />}
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                   <span
-                    className={cn(
-                      'text-sm font-medium',
-                      check.passed ? 'text-emerald-600' : check.critical ? 'text-red-600' : 'text-amber-600'
-                    )}
+                    className={cn('text-sm font-medium', check.passed ? 'text-emerald-600' : 'text-amber-600')}
                   >
                     {check.label}
                   </span>
-                  {check.critical && !check.passed && (
+                  {!check.passed && (
                     <Badge variant="destructive" className="text-[9px] px-1.5 py-0">
-                      Wymagane
+                      Zalecane
                     </Badge>
                   )}
                 </div>
@@ -210,22 +191,11 @@ export function SubmitToGlobalDialog({
           ))}
         </div>
 
-        {/* Warning for critical failures */}
-        {!canSubmit && (
-          <div className="mt-4 p-3 rounded-lg bg-red-500/10 border border-red-500/20">
-            <p className="text-sm text-red-600 flex items-center gap-2">
-              <XCircle className="h-4 w-4 shrink-0" />
-              Uzupełnij wymagane dane przed zgłoszeniem
-            </p>
-          </div>
-        )}
-
-        {/* Info for recommended failures */}
-        {canSubmit && recommendedFailed.length > 0 && (
+        {hasSuggestions && (
           <div className="mt-4 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
             <p className="text-sm text-amber-600 flex items-center gap-2">
               <AlertTriangle className="h-4 w-4 shrink-0" />
-              Zalecamy uzupełnienie brakujących danych dla lepszej jakości
+              Zalecamy uzupełnić dane, ale możesz zgłosić ćwiczenie już teraz
             </p>
           </div>
         )}
@@ -236,7 +206,7 @@ export function SubmitToGlobalDialog({
           </Button>
           <Button onClick={handleSubmit} disabled={!canSubmit || isSubmitting || isLoading} className="gap-2">
             {isSubmitting || isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Rocket className="h-4 w-4" />}
-            {canSubmit ? 'Zgłoś do weryfikacji' : 'Uzupełnij dane'}
+            {hasSuggestions ? verificationCopy.submitDespiteSuggestions : verificationCopy.submitToVerification}
           </Button>
         </DialogFooter>
       </DialogContent>

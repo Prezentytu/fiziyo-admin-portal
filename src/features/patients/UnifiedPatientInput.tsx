@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { cn } from '@/lib/utils';
 import { getAvatarGradient, getInitials } from '@/utils/textUtils';
 
@@ -26,6 +27,7 @@ import {
 } from '@/graphql/queries/therapists.queries';
 import { GET_ALL_PATIENT_ASSIGNMENTS_QUERY } from '@/graphql/queries/patientAssignments.queries';
 import type { FindUserByEmailData, FindUserByPhoneData } from '@/graphql/types/user.types';
+import type { OrganizationPatientsResponse } from '@/types/apollo';
 
 // ============================================
 // TYPES
@@ -157,6 +159,10 @@ export function UnifiedPatientInput({
   const [viewState, setViewState] = useState<ViewState>('search');
   const [foundUser, setFoundUser] = useState<FoundUser | null>(null);
   const [isNoteExpanded, setIsNoteExpanded] = useState(false);
+  const [takeoverConfirmation, setTakeoverConfirmation] = useState<{
+    therapistId: string;
+    therapistName: string;
+  } | null>(null);
 
   // Refs
   const contactInputRef = useRef<HTMLInputElement>(null);
@@ -193,6 +199,13 @@ export function UnifiedPatientInput({
       skip: !therapistId || !organizationId,
     }
   );
+
+  // Get organization patients for takeover warning context
+  const { data: organizationPatientsData } = useQuery<OrganizationPatientsResponse>(GET_ORGANIZATION_PATIENTS_QUERY, {
+    variables: { organizationId, filter: 'all' },
+    skip: !organizationId,
+    fetchPolicy: 'cache-first',
+  });
 
   // Query: search by email
   const { data: emailData, loading: emailLoading } = useQuery<FindUserByEmailData>(FIND_USER_BY_EMAIL_QUERY, {
@@ -306,6 +319,9 @@ export function UnifiedPatientInput({
     (assignment) => assignment.patientId === foundUser?.id
   );
   const isAlreadyAssignedToTherapist = !!existingAssignment;
+  const activeTherapistForFoundUser = organizationPatientsData?.organizationPatients?.find(
+    (entry) => entry.patient.id === foundUser?.id
+  )?.therapist;
 
   const foundInitials = foundUser
     ? getInitials(foundUser.personalData?.firstName, foundUser.personalData?.lastName)
@@ -365,8 +381,20 @@ export function UnifiedPatientInput({
     toast.error('Wpisz poprawny email lub numer telefonu');
   }, [contactValue]);
 
-  const handleAddExistingPatient = useCallback(async () => {
+  const handleAddExistingPatient = useCallback(async (skipTakeoverConfirm: boolean = false) => {
     if (!foundUser) return;
+
+    if (
+      !skipTakeoverConfirm &&
+      activeTherapistForFoundUser?.id &&
+      activeTherapistForFoundUser.id !== therapistId
+    ) {
+      setTakeoverConfirmation({
+        therapistId: activeTherapistForFoundUser.id,
+        therapistName: activeTherapistForFoundUser.fullname || activeTherapistForFoundUser.email || 'innego fizjoterapeuty',
+      });
+      return;
+    }
 
     try {
       // Add to organization if not already member
@@ -406,7 +434,7 @@ export function UnifiedPatientInput({
       const errorMessage = gqlError.graphQLErrors?.[0]?.message || 'Nie udało się dodać pacjenta';
       toast.error(errorMessage);
     }
-  }, [foundUser, addDirectMember, assignPatient, therapistId, organizationId, clinicId, onSuccess]);
+  }, [foundUser, activeTherapistForFoundUser, addDirectMember, assignPatient, therapistId, organizationId, clinicId, onSuccess]);
 
   const handleSubmitNewPatient = useCallback(
     async (values: z.infer<typeof patientFormSchema>) => {
@@ -487,7 +515,7 @@ export function UnifiedPatientInput({
         if (isAlreadyAssignedToTherapist) {
           globalThis.location.href = `/patients/${foundUser.id}`;
         } else {
-          handleAddExistingPatient();
+          void handleAddExistingPatient();
         }
         return;
       }
@@ -643,7 +671,9 @@ export function UnifiedPatientInput({
                 </Button>
               ) : (
                 <Button
-                  onClick={handleAddExistingPatient}
+                  onClick={() => {
+                    void handleAddExistingPatient();
+                  }}
                   disabled={isLoading}
                   className="flex-1 h-11 bg-linear-to-r from-primary to-primary-dark shadow-lg shadow-primary/20"
                   data-testid="patient-unified-add-existing-btn"
@@ -866,6 +896,20 @@ export function UnifiedPatientInput({
           </Form>
         </div>
       )}
+
+      <ConfirmDialog
+        open={!!takeoverConfirmation}
+        onOpenChange={(open) => !open && setTakeoverConfirmation(null)}
+        title="Przejęcie pacjenta"
+        description={`Pacjent jest aktualnie pod opieką ${takeoverConfirmation?.therapistName || 'innego fizjoterapeuty'}. Kontynuacja spowoduje przejęcie opieki i utratę dostępu przez poprzedniego fizjoterapeutę. Czy kontynuować?`}
+        confirmText="Przejmij"
+        cancelText="Anuluj"
+        variant="destructive"
+        onConfirm={() => {
+          setTakeoverConfirmation(null);
+          void handleAddExistingPatient(true);
+        }}
+      />
     </div>
   );
 }

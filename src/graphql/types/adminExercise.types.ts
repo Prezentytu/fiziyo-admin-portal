@@ -21,6 +21,13 @@ export type ContentStatus =
   | 'ARCHIVED_GLOBAL' // Wycofane z bazy globalnej (soft delete)
   | 'UPDATE_PENDING'; // Shadow draft dla poprawki published
 
+export type OrganizationVerificationStatus =
+  | 'NOT_SUBMITTED'
+  | 'PENDING_ORG_REVIEW'
+  | 'ORG_VERIFIED'
+  | 'ORG_CHANGES_REQUESTED'
+  | 'ORG_ARCHIVED';
+
 /**
  * Predefiniowane powody odrzucenia ćwiczenia
  */
@@ -42,6 +49,15 @@ export interface VerificationStats {
   approved: number;
   published: number;
   archivedGlobal: number; // ARCHIVED_GLOBAL count
+  total: number;
+}
+
+export interface OrganizationVerificationStats {
+  notSubmitted: number;
+  pendingOrgReview: number;
+  orgChangesRequested: number;
+  orgVerified: number;
+  orgArchived: number;
   total: number;
 }
 
@@ -88,6 +104,14 @@ export interface AdminExercise {
   progressionFamilyId?: string;
   createdAt?: string;
   updatedAt?: string;
+  globalSubmissionId?: string;
+  sourceOrganizationExerciseId?: string;
+  submittedToGlobalAt?: string;
+  organizationVerificationStatus?: OrganizationVerificationStatus;
+  submittedForOrgReviewAt?: string;
+  orgReviewedById?: string;
+  orgReviewedAt?: string;
+  orgReviewNotes?: string;
   // Extended training parameters
   rangeOfMotion?: string;
   defaultLoad?: {
@@ -115,7 +139,7 @@ export interface AdminExercise {
     description: string;
     reporterName?: string;
     createdAt: string;
-    routingTarget: 'PENDING_REVIEW' | 'UPDATE_PENDING';
+    routingTarget: 'PENDING_REVIEW' | 'PENDING_ORG_REVIEW' | 'UPDATE_PENDING';
   };
 }
 
@@ -190,8 +214,30 @@ export interface GetVerificationStatsResponse {
   verificationStats: VerificationStats;
 }
 
+export interface GetOrganizationVerificationStatsResponse {
+  organizationVerificationStats: OrganizationVerificationStats;
+}
+
 export interface VerificationQueuePage {
   items: AdminExercise[];
+  totalCount: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+  hasPreviousPage: boolean;
+  hasNextPage: boolean;
+  filter: string;
+  search?: string | null;
+}
+
+export interface CrossOrgVerificationQueueItem {
+  organizationId: string;
+  organizationName: string;
+  exercise: AdminExercise;
+}
+
+export interface CrossOrgVerificationQueuePage {
+  items: CrossOrgVerificationQueueItem[];
   totalCount: number;
   page: number;
   pageSize: number;
@@ -224,6 +270,10 @@ export interface GetVerificationQueuePageResponse {
   verificationQueuePage: VerificationQueuePage;
 }
 
+export interface GetCrossOrgVerificationQueuePageResponse {
+  crossOrgVerificationQueuePage: CrossOrgVerificationQueuePage;
+}
+
 export interface GetVerificationQueueNavigatorVariables {
   currentExerciseId: string;
   filter: string;
@@ -232,6 +282,10 @@ export interface GetVerificationQueueNavigatorVariables {
 
 export interface GetVerificationQueueNavigatorResponse {
   verificationQueueNavigator: VerificationQueueNavigator;
+}
+
+export interface GetCrossOrgVerificationQueueNavigatorResponse {
+  crossOrgVerificationQueueNavigator: VerificationQueueNavigator;
 }
 
 // ============================================

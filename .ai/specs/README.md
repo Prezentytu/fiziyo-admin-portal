@@ -44,21 +44,25 @@ Każda specyfikacja powinna mieć sekcję Changelog na końcu:
 
 ## Indeks specyfikacji
 
-| Nr  | Tytuł                                                                                         | Opis                                            | Status  |
-| --- | --------------------------------------------------------------------------------------------- | ----------------------------------------------- | ------- |
-| 001 | [Assignment Wizard](SPEC-001-2026-02-04-assignment-wizard.md)                                 | Wizard przypisywania zestawów ćwiczeń pacjentom | Aktywny |
-| 002 | [Billing Widget](SPEC-002-2026-02-04-billing-widget.md)                                       | Widget rozliczeniowy Pay-as-you-go              | Aktywny |
-| 003 | [Exercises Module](SPEC-003-2026-02-16-exercises-module.md)                                   | Ćwiczenia — formularz, lista, filtrowanie       | Aktywny |
-| 004 | [Exercise Sets Module](SPEC-004-2026-02-16-exercise-sets-module.md)                           | Zestawy ćwiczeń                                 | Aktywny |
-| 005 | [Patients Module](SPEC-005-2026-02-16-patients-module.md)                                     | Pacjenci — lista, profil, przypisania           | Aktywny |
-| 006 | [Billing Details](SPEC-006-2026-03-04-billing-details.md)                                     | Dane firmy do fakturowania i rozliczeń          | Aktywny |
-| 007 | [Template vs Plan](SPEC-007-2026-03-07-template-vs-plan.md)                                   | Rozdzielenie szablonów i planów pacjenta        | Aktywny |
-| 008 | [Exercise Report Verification Flow](SPEC-008-2026-03-08-exercise-report-verification-flow.md) | Zgłaszanie ćwiczeń do kolejki verification      | Aktywny |
-| 010 | [Import Module](SPEC-010-2026-03-08-import-module.md)                                         | Import dokumentów (plik i plain text)           | Aktywny |
-| 011 | [Invite Flow Without Legacy Plan Limits](SPEC-011-2026-03-08-invite-flow-no-legacy-limits.md) | Invite flow bez limitów starego modelu planów   | Aktywny |
-| 012 | [Exercise Dosage Model](SPEC-012-2026-04-08-exercise-dosage-model.md)                         | Single source of truth dla semantyki dawkowania | Aktywny |
-| 014 | [Real-time Patient Assignment Sync](SPEC-014-2026-04-17-realtime-patient-sync.md)             | Push admin->mobile przez GraphQL Subscriptions  | Aktywny |
-| 015 | [Assignment Status Enum Alignment](SPEC-015-2026-05-07-assignment-status-enum-alignment.md)   | Migracja statusu assignment na enum GraphQL     | Aktywny |
+| Nr  | Tytuł                                                                                           | Opis                                             | Status  |
+| --- | ----------------------------------------------------------------------------------------------- | ------------------------------------------------ | ------- |
+| 001 | [Assignment Wizard](SPEC-001-2026-02-04-assignment-wizard.md)                                   | Wizard przypisywania zestawów ćwiczeń pacjentom  | Aktywny |
+| 002 | [Billing Widget](SPEC-002-2026-02-04-billing-widget.md)                                         | Widget rozliczeniowy Pay-as-you-go               | Aktywny |
+| 003 | [Exercises Module](SPEC-003-2026-02-16-exercises-module.md)                                     | Ćwiczenia — formularz, lista, filtrowanie        | Aktywny |
+| 004 | [Exercise Sets Module](SPEC-004-2026-02-16-exercise-sets-module.md)                             | Zestawy ćwiczeń                                  | Aktywny |
+| 005 | [Patients Module](SPEC-005-2026-02-16-patients-module.md)                                       | Pacjenci — lista, profil, przypisania            | Aktywny |
+| 006 | [Billing Details](SPEC-006-2026-03-04-billing-details.md)                                       | Dane firmy do fakturowania i rozliczeń           | Aktywny |
+| 007 | [Template vs Plan](SPEC-007-2026-03-07-template-vs-plan.md)                                     | Rozdzielenie szablonów i planów pacjenta         | Aktywny |
+| 008 | [Exercise Report Verification Flow](SPEC-008-2026-03-08-exercise-report-verification-flow.md)   | Zgłaszanie ćwiczeń do kolejki verification       | Aktywny |
+| 009 | [Organization Exercise Verification](SPEC-009-2026-05-25-organization-exercise-verification.md) | Weryfikacja ćwiczeń na poziomie organizacji      | Aktywny |
+| 010 | [Import Module](SPEC-010-2026-03-08-import-module.md)                                           | Import dokumentów (plik i plain text)            | Aktywny |
+| 011 | [Invite Flow Without Legacy Plan Limits](SPEC-011-2026-03-08-invite-flow-no-legacy-limits.md)   | Invite flow bez limitów starego modelu planów    | Aktywny |
+| 012 | [Exercise Dosage Model](SPEC-012-2026-04-08-exercise-dosage-model.md)                           | Single source of truth dla semantyki dawkowania  | Aktywny |
+| 013 | [Verification Dual-Track](SPEC-013-2026-05-26-verification-dual-track.md)                       | Dwa tory weryfikacji + cross-org dla super admin | Aktywny |
+| 014 | [Real-time Patient Assignment Sync](SPEC-014-2026-04-17-realtime-patient-sync.md)               | Push admin->mobile przez GraphQL Subscriptions   | Aktywny |
+| 015 | [Assignment Status Enum Alignment](SPEC-015-2026-05-07-assignment-status-enum-alignment.md)     | Migracja statusu assignment na enum GraphQL      | Aktywny |
+| 016 | [Admin Portal Access Control](SPEC-016-2026-05-14-admin-portal-access-control.md)               | Blokada pacjentów w panelu fizjoterapeutów       | Aktywny |
+| 017 | [Assignment Display Status](SPEC-017-2026-05-26-assignment-display-status.md)                   | Dynamiczny status przypisania + sygnał Premium   | Aktywny |
 
 ## Planowane specyfikacje
 
@@ -70,9 +74,9 @@ Tworzone stopniowo, przy okazji pracy nad danym modułem:
 | ~~004~~ | ~~Exercise Sets Module~~ | Przeniesione do aktywnych |
 | ~~005~~ | ~~Patients Module~~      | Przeniesione do aktywnych |
 | ~~006~~ | ~~Organization Module~~  | Przeniesione do aktywnych |
-| 009     | Chat/AI Module           | Chat AI, asystent         |
+| 017     | Chat/AI Module           | Chat AI, asystent         |
 | ~~010~~ | ~~Import Module~~        | Przeniesione do aktywnych |
-| 013     | Settings Module          | Ustawienia użytkownika    |
+| ~~013~~ | ~~Settings Module~~      | Przeniesione do aktywnych |
 
 ## Dla AI Agentów
 

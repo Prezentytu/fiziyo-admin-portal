@@ -391,3 +391,27 @@ Organization
  ├── BillingCycle + OrganizationBillingSettings
  └── OrganizationInvitation
 ```
+
+---
+
+## Organization Exercise Verification (additive-first)
+
+Weryfikacja organizacyjna działa równolegle do globalnej weryfikacji `ContentStatus`.
+
+### Exercise — nowe pola
+
+- `OrganizationVerificationStatus` (enum): `NotSubmitted`, `PendingOrgReview`, `OrgVerified`, `OrgChangesRequested`, `OrgArchived`
+- `SubmittedForOrgReviewAt` (DateTime?)
+- `OrgReviewedById` (string?)
+- `OrgReviewedAt` (DateTime?)
+- `OrgReviewNotes` (string?, max 2000)
+
+### Organization — nowe pole
+
+- `RequireOrganizationVerification` (bool, default `false`)
+
+### Reguły domenowe
+
+- `ContentStatus` (global) i `OrganizationVerificationStatus` (organizacja) są niezależne.
+- Gate widoczności działa tylko gdy `Organization.RequireOrganizationVerification == true`.
+- Dla gate assignment obowiązuje grandfathering: rekordy wcześniej użyte w setach/przypisaniach pozostają legalne.

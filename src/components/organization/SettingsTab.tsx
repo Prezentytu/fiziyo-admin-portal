@@ -18,6 +18,7 @@ import {
   REMOVE_ORGANIZATION_LOGO_MUTATION,
 } from '@/graphql/mutations/organizations.mutations';
 import { GET_ORGANIZATION_BY_ID_QUERY } from '@/graphql/queries/organizations.queries';
+import { ExerciseVisibilitySettings } from './ExerciseVisibilitySettings';
 
 interface Organization {
   id: string;
@@ -29,6 +30,7 @@ interface Organization {
   subscriptionExpiresAt?: string;
   allowPersonalExercises?: boolean;
   sharedExercisesByDefault?: boolean;
+  requireOrganizationVerification?: boolean;
 }
 
 interface SettingsTabProps {
@@ -290,6 +292,15 @@ export function SettingsTab({ organization, currentUserRole, isLoading = false, 
             )}
         </CardContent>
       </Card>
+
+      <ExerciseVisibilitySettings
+        organizationId={organization.id}
+        allowPersonalExercises={organization.allowPersonalExercises}
+        sharedExercisesByDefault={organization.sharedExercisesByDefault}
+        requireOrganizationVerification={organization.requireOrganizationVerification}
+        canEdit={canEdit}
+        onSuccess={onRefresh}
+      />
     </div>
   );
 }

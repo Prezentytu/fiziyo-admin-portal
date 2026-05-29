@@ -14,6 +14,110 @@ Dziennik wniosków z pracy AI agentów. Po każdej korekcie dodaj nowy wpis.
 
 ## Wpisy
 
+### 2026-05-29 - Wylogowanie MUSI czyscic backendowy token; cache-token guard musi sprawdzac tozsamosc usera
+
+- **Kategoria**: `React` | `GraphQL`
+- **Problem**: Po wylogowaniu sie jako fizjo i zalogowaniu jako pacjent w tej samej przegladarce, pacjent widzial powloke UI terapeuty (mimo ze backend zwracal `403` na token-exchange). Bramka roli z cache patrzyla tylko na role, nie na to, do KOGO nalezy token.
+- **Przyczyna**: (1) Przyciski "Wyloguj" w `UserMenu`, `UserProfileFooter` i `MobileSidebar` wolaly goly `useClerk().signOut(...)` BEZ `clearBackendToken()` — token fizjo zostawal w `sessionStorage`. (2) `OrganizationGuard` na fast-path cache ufal kazdemu tokenowi po sprawdzeniu samej roli (`role=owner` z poprzedniej sesji → `setHasOrganization(true)`), nie weryfikujac czy token nalezy do aktualnie zalogowanego usera Clerk.
+- **Rozwiązanie**: Wspolny hook `useAppSignOut()` (`clearBackendToken()` → `signOut`) uzywany przez WSZYSTKIE przyciski wylogowania — eliminuje pominiecia. `OrganizationGuard` na sciezce cache porownuje `getClerkIdFromToken(cachedToken)` z `userId` z `useAuth()`; mismatch (lub nieczytelny `clerk_id`) → `clearBackendToken()` i swieza wymiana tokenu (ktora dla pacjenta konczy sie 403 → `/patient-redirect`).
+- **Reguła**: Wylogowanie zawsze czysci WSZYSTKIE cache tozsamosci (backend JWT), najlepiej przez jeden wspolny helper, nie ad-hoc w kazdym przycisku. Cache'owanemu tokenowi nigdy nie ufaj bez sprawdzenia, ze nalezy do BIEZACEGO uzytkownika (claim `clerk_id` == aktualny `userId`) — sama poprawna rola nie wystarcza, bo moze pochodzic z poprzedniej sesji.
+
+### 2026-05-29 - Bramka roli to nie tylko jeden punkt — cache i warstwa danych tez musza odmawiac pacjentowi
+
+- **Kategoria**: `React` | `GraphQL`
+- **Problem**: Pacjent zalogowal sie do panelu i zobaczyl powloke UI terapeuty (zapytania terapeutyczne lecialy i wracaly bledem). Bramka roli dzialala tylko na sciezce swiezej wymiany tokenu.
+- **Przyczyna**: `OrganizationGuard` na sciezce "cached token" ufal KAZDEMU tokenowi z cache bez sprawdzenia roli (`getBackendToken() → setHasOrganization(true)`). `BackendAuthTokenProvider` cache'owal i serwowal token `role=patient`, gdy backend go wydal (autorytatywna bramka 403 miala luke). Jeden punkt kontroli nie wystarczyl.
+- **Rozwiązanie**: `OrganizationGuard` na sciezce cache wyciaga role z tokenu (`getUserRoleFromToken`) i przepuszcza ja przez `decideAdminAccess` → pacjent = `clearBackendToken` + redirect `/patient-redirect`. `BackendAuthTokenProvider` nigdy nie cache'uje ani nie zwraca tokenu `role=patient` (sprawdzenie przy odczycie cache i po wymianie). Root cause naprawiony w backendzie (definicja `IsPatient`).
+- **Reguła**: Decyzja autoryzacyjna musi byc egzekwowana na KAZDEJ sciezce, ktora prowadzi do dostepu — szczegolnie na fast-pathach z cache. Nigdy nie ufaj cache'owanemu tokenowi bez ponownej walidacji roli; warstwa danych (Apollo) nie moze przechowywac ani wysylac tokenu roli bez uprawnien (defense-in-depth obok bramki backendu).
+
+### 2026-05-29 - Oczekiwane stany przejściowe auth nie mogą wyglądać jak crash
+
+- **Kategoria**: `UI/UX` | `React`
+- **Problem**: Po rejestracji finalizacja konta wyrzucała czerwony overlay Next.js `Token exchange failed: 404 Not Found - {"error":"USER_NOT_FOUND"}`, przez co użytkownik nie mógł się zalogować. Ekran finalizacji pokazywał techniczne teksty ("synchronizacja konta z backendem", `Próba 4/15`) i po 30 s wymuszał kliknięcie "Spróbuj ponownie".
+- **Przyczyna**: `404 USER_NOT_FOUND` to normalny stan przejściowy (backend nie zdążył zsynchronizować konta przez webhook Clerk), ale `tokenExchangeService` logował każdą odpowiedź `!ok` przez `console.error(Error)`. Next.js w dev przechwytuje `console.error` z obiektem `Error` i wyświetla error overlay — obsłużony flow-control wyglądał jak crash. Dodatkowo `/finalizing` miał twardy timeout po `MAX_ATTEMPTS` i ujawniał wewnętrzny licznik prób oraz słowo "backend".
+- **Rozwiązanie**: Flow-control z kodem HTTP nie jest już logowany jako błąd — w `tokenExchangeService`, `OrganizationGuard` i `BackendAuthTokenProvider` logujemy tylko realne błędy sieci przez `console.warn` (dev-only, bez obiektu `Error`). `/finalizing` dostał przyjazny copy ("Przygotowujemy Twoje konto" / "Już prawie gotowe"), ukryty licznik prób i ciche auto-ponawianie (`HELP_AFTER_ATTEMPTS` pokazuje dyskretną pomoc, ale polling trwa do `MAX_ATTEMPTS`). Onboarding nie pokazuje surowych komunikatów backendu — zawsze neutralny tekst.
+- **Reguła**: Oczekiwanych stanów przejściowych (np. `404 USER_NOT_FOUND` w token exchange) nigdy nie loguj przez `console.error(Error)` — w dev Next.js zamienia to w error overlay i wygląda jak crash; flow-control loguj cicho (`console.warn`, dev-only, bez `Error`) albo wcale. W copy auth nie ujawniaj pojęć technicznych ("backend", liczniki prób) ani nie zmuszaj użytkownika do ręcznego retry — preferuj ciche auto-ponawianie z dyskretnym escape-hatch.
+
+### 2026-05-29 - Intencja konta to trwały stan serwera, fizjo zawsze z organizacją
+
+- **Kategoria**: `TypeScript` | `Build/Tooling` | `GraphQL`
+- **Problem**: (1) Build Vercel padał na 2 błędach `tsc` (`loadType` poza sygnaturą `fromBuilderExercise`, trailing comma w `Record<...>` w `TherapyStatusCard`). (2) Rejestracja przez admin portal tworzyła pacjenta zamiast fizjo, a fizjo mógł skończyć bez żadnej organizacji.
+- **Przyczyna**: Rola (`company` vs `patient`) zależała wyłącznie od mutowalnego `unsafeMetadata.isCompanyAccount`, ustawianego osobnym `signUp.update()` w `try/catch`, który połykał błędy. Brak serwerowego źródła prawdy i transakcji przy tworzeniu org+membership w webhooku; org-less fizjo wracał z token-exchange jako `patient` → 403 → `/patient-redirect`.
+- **Rozwiązanie**: Atomowy `signUp.create({ unsafeMetadata })` (web + mobile). Dodano trwałe `User.IsCompanyAccount` (migracja EF), webhook zapisuje intencję i tworzy user+org+owner w jednej transakcji. Token-exchange robi self-healing organizacji dla intended-fizjo lub klienta `admin-portal` (invariant: fizjo zawsze ma org), pacjent mobilny pozostaje pacjentem. Mobile: usunięto ekran wyboru typu organizacji (`individual/small/large`), zostaje tylko wybór pacjent/fizjo.
+- **Reguła**: Nie ufaj samemu `unsafeMetadata` jako źródłu roli — utrwalaj intencję konta po stronie serwera i wymuszaj inwarianty (fizjo↔organizacja) zarówno przy tworzeniu (transakcja), jak i przy dostępie (self-heal). Nowe pola adapterów dodawaj najpierw do sygnatury typu, nie tylko do miejsca wywołania. Provider EF InMemory wymaga `ConfigureWarnings(Ignore(TransactionIgnoredWarning))` gdy kod używa transakcji.
+
+### 2026-05-28 - Status terapii powinien informować, nie alarmować
+
+- **Kategoria**: `UI/UX` | `React`
+- **Problem**: Status terapii oznaczał brak aktywności czerwonym badge `ALARM`, a przyciski `Zadzwoń` i `Edytuj plan` w sekcji rekomendacji nie miały podpiętych callbacków na profilu pacjenta.
+- **Przyczyna**: Logika biznesowa mapowała różne sytuacje (dyskomfort, nieaktywność) do jednego poziomu `alert`, a komponent `ActivityReport` był renderowany bez przekazanych handlerów akcji z `patients/[id]/page.tsx`.
+- **Rozwiązanie**: Wydzielono ocenę adherence do `therapyAdherence.ts` z modelem `tone + reason`, usunięto alarmistyczny język z UI, dodano progresywne progi nieaktywności oraz podpięto akcje telefonu i edycji planu przez dedykowany hook `usePatientTherapyActions`.
+- **Reguła**: W monitoringu pacjenta rozdzielaj sygnał domenowy (`reason`) od tonu komunikacji (`tone`) i zawsze podpinaj entrypointy akcji na poziomie strony, jeśli komponent feature renderuje interaktywne CTA.
+
+### 2026-05-28 - Jeden entrypoint tworzenia zestawu na detalu ćwiczenia
+
+- **Kategoria**: `UI/UX` | `React`
+- **Problem**: Detal ćwiczenia używał osobnego `AddExerciseToSetsDialog`, który duplikował logikę tworzenia zestawu względem `CreateSetWizard` i prowadził do niespójnych możliwości edycji parametrów.
+- **Przyczyna**: Historycznie dodano szybki, lokalny flow "dodaj do zestawu", zamiast rozszerzyć kanoniczny wizard o prefill wejściowy.
+- **Rozwiązanie**: Zastąpiono custom dialog użyciem `CreateSetWizard` z `initialExerciseIds`, dzięki czemu detal ćwiczenia i inne entrypointy korzystają z tego samego kreatora.
+- **Reguła**: Jeśli dwa flow tworzą ten sam byt domenowy (`ExerciseSet`), utrzymuj jeden kanoniczny wizard i dokładaj prefill/context props zamiast utrzymywać równoległy komponent customowy.
+
+### 2026-05-26 - Submit dialogs powinny byc warn-only, nie disabled-only
+
+- **Kategoria**: `UI/UX` | `React`
+- **Problem**: W flow zgłoszeń do weryfikacji łatwo wrócić do wzorca blokujących CTA (disabled), mimo decyzji produktowej o "sugeruj, ale nie blokuj".
+- **Przyczyna**: Historyczne checklisty miały semantykę "wymagane", a nie "zalecane", więc testy i copy mogły nie wykryć regresji.
+- **Rozwiązanie**: Utrwalono testami jednostkowymi dla dialogów global/org, że przy brakach nadal dostępne jest CTA `Zgłoś mimo zaleceń`.
+- **Reguła**: Dla flow verification w modelu warn-only testy muszą sprawdzać nie tylko treść walidacji, ale też aktywność przycisku submit przy niekompletnej checkliście.
+
+### 2026-05-26 - Kontekst organizacji w frontendzie zawsze używa organizationId
+
+- **Kategoria**: `TypeScript` | `Build/Tooling`
+- **Problem**: Build Vercel zatrzymał się na nowych route'ach weryfikacji organizacyjnej, bo kod odwoływał się do `currentOrganization?.id`.
+- **Przyczyna**: Typ `UserOrganizationWithRole` ma pole `organizationId`, a nie `id`; przy kopiowaniu wzorców z innych modeli łatwo o taki drift.
+- **Rozwiązanie**: Ujednolicono odczyt identyfikatora na `currentOrganization?.organizationId` we wszystkich nowych miejscach i domknięto walidację `type-check`, `lint`, `test:run`, `build`.
+- **Reguła**: W kodzie opartym o `useOrganization()` traktuj `currentOrganization` jako `UserOrganizationWithRole` i zawsze używaj `organizationId` (nie `id`) przy query vars i guardach.
+
+### 2026-05-25 - Weryfikacja organizacyjna wymaga oddzielenia statusów od globalnych
+
+- **Kategoria**: `GraphQL` | `UI/UX`
+- **Problem**: Przy wdrażaniu prywatnej weryfikacji ćwiczeń łatwo było mieszać semantykę globalnego `status` z nowym statusem organizacyjnym, co groziło regresją globalnej kolejki i błędnym gatingiem assignmentów.
+- **Przyczyna**: Oba flow dotyczą tej samej encji `Exercise`, ale mają inne role, inne reguły przejść i inny moment egzekwowania dostępu.
+- **Rozwiązanie**: Wdrożono additive-first model z osobnym polem `organizationVerificationStatus`, osobnymi query/mutation i dedykowanym RBAC (Owner/Admin), bez naruszania dotychczasowego global verification.
+- **Reguła**: Dla równoległych lifecycle na jednej encji zawsze utrzymuj dwa niezależne kanały statusowe i nie reutilizuj globalnych flag do logiki tenantowej.
+
+### 2026-05-21 - AI metadane zestawu powinny generować nazwe i opis jedną akcją
+
+- **Kategoria**: `UI/UX` | `React`
+- **Problem**: W edycji zestawu brakowało szybkiej akcji AI po prawej stronie pola nazwy, a użytkownik musiał ręcznie pisać zarówno nazwę, jak i opis.
+- **Przyczyna**: `EditExerciseSetFullDialog` miał wyłączoną integrację AI (`showAI=false`) i nie wykorzystywał istniejących endpointów AI do uzupełniania metadanych zestawu.
+- **Rozwiązanie**: Włączono akcję AI w `ExerciseSetBuilder` dla edycji zestawu, podpięto generowanie `setName + setDescription` przez `aiService.generateExerciseSet` z fallbackiem do `suggestSetName`, oraz dodano spinner/loading dla ikony AI.
+- **Reguła**: Jeśli formularz ma pola metadanych zależnych od tego samego kontekstu domenowego (tu: nazwa + opis zestawu), akcja AI powinna uzupełniać je razem i być osadzona bezpośrednio przy głównym polu wejściowym.
+
+### 2026-05-18 - Tooltip i dropdown nie moga konkurowac w tym samym triggerze
+
+- **Kategoria**: `UI/UX` | `React`
+- **Problem**: W zwiniętym sidebarze podpowiedź „Kliknij dla opcji” nachodziła na otwarte menu użytkownika i zasłaniała część akcji.
+- **Przyczyna**: `Tooltip` i `DropdownMenu` były aktywne równolegle na tym samym triggerze, a oba portale miały ten sam poziom warstwy (`z-index`), więc tooltip pozostawał widoczny przy otwarciu menu.
+- **Rozwiązanie**: Przełączono tooltip na stan kontrolowany (`open={!isOpen}`), dzięki czemu po otwarciu dropdownu tooltip jest natychmiast wyłączany.
+- **Reguła**: Gdy `Tooltip` i `DropdownMenu/Popover` współdzielą trigger, tooltip musi być sterowany stanem otwarcia menu i wyłączany podczas otwartego panelu, zamiast polegać tylko na hover.
+
+### 2026-05-18 - Flagi access-control licz po fallbackach danych
+
+- **Kategoria**: `Build/Tooling` | `GraphQL`
+- **Problem**: Fizjoterapeuci byli oznaczani jako pacjenci i przekierowywani na `/patient-redirect`, mimo aktywnego członkostwa w organizacji.
+- **Przyczyna**: W `TokenExchangeService.GenerateTokenForUser` flaga `isPatient` była liczona przed fallbackiem do `DefaultOrganizationId`/pierwszego aktywnego membership. Dla `organizationId=""` dawało to fałszywe `true`.
+- **Rozwiązanie**: Przeniesiono wyznaczanie `isPatient` po pełnej selekcji membership, dodano obsługę `SystemRole` jako sygnału non-patient oraz testy regresyjne dla pustego i niedopasowanego `organizationId`.
+- **Reguła**: Flagi domenowe access-control wyznaczaj dopiero na końcowym stanie danych (po fallbackach), a każdą gałąź z pustym/wadliwym identyfikatorem (`organizationId`) pokrywaj testem.
+
+### 2026-05-14 - Guard dostepu nie moze semantycznie przepuszczac pacjenta
+
+- **Kategoria**: `React` | `UI/UX` | `GraphQL`
+- **Problem**: `OrganizationGuard` rozpoznawal `role === 'patient'`, ale ustawial `setHasOrganization(true)`, co semantycznie przepuszczalo pacjenta do panelu admina.
+- **Przyczyna**: Logika decyzji dostepu byla zaszyta inline w komponencie i nie miala jednostkowego testu dla sciezki pacjenta.
+- **Rozwiązanie**: Wyodrebniono czysta funkcje `decideAdminAccess`, dodano testy Vitest i zmapowano zarowno fallback `role=patient`, jak i backendowe `403 PATIENT_NOT_ALLOWED_ON_ADMIN` na redirect do `/patient-redirect`.
+- **Reguła**: Dla endpointow wspoldzielonych miedzy klientami stosuj `X-Client-Type` jako sygnal policy i utrzymuj defense-in-depth: backend deny + frontend fallback. Flagi typu `hasOrganization` musza miec jednoznaczna semantyke (`true` oznacza dostep), nigdy "przepusc mimo braku uprawnien".
+
 ### 2026-05-07 - Migracja GraphQL status String->enum wymaga synchronicznej aktualizacji obu klientów
 
 - **Kategoria**: `GraphQL`
@@ -493,5 +597,21 @@ Dziennik wniosków z pracy AI agentów. Po każdej korekcie dodaj nowy wpis.
 - **Przyczyna**: Historyczny shortcut — lista pacjentow organizacji budowana z TherapistPatients (relacja n:n), a nie z OrganizationMembers (source of truth dla Premium/billing).
 - **Rozwiazanie**: (1) Backend: `GetOrganizationPatients` bazuje na `OrganizationMembers(role=patient, status=active)`. (2) Admin: Assignment Wizard przelaczony na `GET_ORGANIZATION_PATIENTS_QUERY` z `filter: 'all'`. (3) 8 testow regresyjnych (filtry all/my/unassigned, Premium, inactive, tenant isolation).
 - **Regula**: Dla listy pacjentow organizacji ZAWSZE uzywaj `OrganizationMembers` jako source of truth — jest spojne z `BillingService.ActivatePatientPremium`. `TherapistPatients` to dane pomocnicze (przypisania), nie zrodlo listy.
+
+### 2026-05-28 - Jeden helper defaultow dla kreatorow zestawu
+
+- **Kategoria**: `React` | `UI/UX`
+- **Problem**: Sidebar tworzenia zestawu i `CreateSetWizard` pokazywaly rozne parametry startowe tego samego cwiczenia.
+- **Przyczyna**: Logika defaultow byla skopiowana do kilku miejsc (`CreateSetWizard`, `ExerciseSetBuilder`, `exercises/page.tsx`) i rozjechala sie (`duration` 30 vs 0 oraz fallbacki `field || value`).
+- **Rozwiazanie**: Dodano wspolny helper `getExerciseDefaultParams` w `src/features/exercise-sets/utils/exerciseDefaults.ts` i przepieto wszystkie punkty wejscia na ten sam kontrakt.
+- **Regula**: Defaulty parametrow cwiczenia utrzymuj tylko w jednym helperze domenowym; punkty wejscia UI moga je tylko konsumowac, nigdy reimplementowac.
+
+### 2026-05-28 - h-full z ujemnymi marginesami nie kompensuje paddingu rodzica
+
+- **Kategoria**: `Layout` | `UI/UX`
+- **Problem**: Na stronie listy cwiczen pojawial sie czarny pasek pod trescia i pod prawym kreatorem.
+- **Przyczyna**: Kontener mial `h-full` i `-m-*`; wysokosc liczona byla dla content-box rodzica (`main` z `p-*`), wiec dolny padding rodzica nie byl pokryty.
+- **Rozwiazanie**: Dodano wysokosc kompensujaca padding rodzica: `h-[calc(100%+2rem)] lg:h-[calc(100%+3rem)] 2xl:h-[calc(100%+4rem)]`.
+- **Regula**: Przy layoutach full-height z negative margins zawsze kompensuj wysokosc o `2 x padding` rodzica albo przebuduj strukture bez negative margins.
 
 <!-- Dodawaj nowe wpisy powyżej tej linii -->

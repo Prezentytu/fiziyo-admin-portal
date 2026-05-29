@@ -10,6 +10,12 @@ export type ExerciseType = 'REPS' | 'TIME';
 export type ExerciseSide = 'NONE' | 'LEFT' | 'RIGHT' | 'BOTH' | 'ALTERNATING';
 export type ExerciseScope = 'PERSONAL' | 'ORGANIZATION' | 'GLOBAL';
 export type ContentStatus = 'DRAFT' | 'PENDING_REVIEW' | 'CHANGES_REQUESTED' | 'APPROVED' | 'PUBLISHED';
+export type OrganizationVerificationStatus =
+  | 'NOT_SUBMITTED'
+  | 'PENDING_ORG_REVIEW'
+  | 'ORG_VERIFIED'
+  | 'ORG_CHANGES_REQUESTED'
+  | 'ORG_ARCHIVED';
 export type MediaType = 'VIDEO' | 'IMAGE' | 'AUDIO';
 export type MediaContext =
   | 'MAIN_DEMO'
@@ -99,6 +105,11 @@ export interface Exercise {
   globalSubmissionId?: string;
   sourceOrganizationExerciseId?: string;
   submittedToGlobalAt?: string;
+  organizationVerificationStatus?: OrganizationVerificationStatus;
+  submittedForOrgReviewAt?: string;
+  orgReviewedById?: string;
+  orgReviewedAt?: string;
+  orgReviewNotes?: string;
 
   // Legacy aliasy (dla kompatybilności wstecznej w komponentach)
   description?: string; // alias dla patientDescription

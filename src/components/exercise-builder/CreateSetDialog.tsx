@@ -7,7 +7,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { toast } from 'sonner';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Sparkles } from 'lucide-react';
 
 import {
   Dialog,
@@ -27,6 +27,7 @@ import {
   CREATE_EXERCISE_SET_MUTATION,
   ADD_EXERCISE_TO_EXERCISE_SET_MUTATION,
 } from '@/graphql/mutations/exercises.mutations';
+import { aiService } from '@/services/aiService';
 // ========================================
 // Form Schema
 // ========================================
@@ -59,6 +60,7 @@ export function CreateSetDialog({ open, onOpenChange }: CreateSetDialogProps) {
   const { currentOrganization } = useOrganization();
   const { selectedExercises, clearBuilder, exerciseCount } = useExerciseBuilder();
   const [isCreating, setIsCreating] = useState(false);
+  const [isGeneratingName, setIsGeneratingName] = useState(false);
 
   const organizationId = currentOrganization?.organizationId;
 
@@ -72,6 +74,43 @@ export function CreateSetDialog({ open, onOpenChange }: CreateSetDialogProps) {
 
   const [createExerciseSet] = useMutation<CreateExerciseSetResponse>(CREATE_EXERCISE_SET_MUTATION);
   const [addExerciseToSet] = useMutation(ADD_EXERCISE_TO_EXERCISE_SET_MUTATION);
+
+  const handleGenerateAiName = async () => {
+    if (isCreating || isGeneratingName) {
+      return;
+    }
+
+    const exerciseNames = selectedExercises
+      .map((exercise) => exercise.name?.trim())
+      .filter((exerciseName): exerciseName is string => Boolean(exerciseName));
+
+    if (exerciseNames.length === 0) {
+      toast.error('Brak ćwiczeń do wygenerowania nazwy');
+      return;
+    }
+
+    setIsGeneratingName(true);
+    try {
+      const response = await aiService.suggestSetName(form.getValues('name'), exerciseNames);
+      const suggestedName = response?.suggestedName?.trim();
+
+      if (!suggestedName) {
+        toast.error('Nie udało się wygenerować nazwy');
+        return;
+      }
+
+      form.setValue('name', suggestedName, {
+        shouldDirty: true,
+        shouldValidate: true,
+      });
+      toast.success('Wygenerowano nazwę zestawu');
+    } catch (error) {
+      console.error('Error generating set name:', error);
+      toast.error('Nie udało się wygenerować nazwy');
+    } finally {
+      setIsGeneratingName(false);
+    }
+  };
 
   const handleSubmit = async (values: CreateSetFormValues) => {
     if (!organizationId) {
@@ -104,21 +143,32 @@ export function CreateSetDialog({ open, onOpenChange }: CreateSetDialogProps) {
         throw new Error('Nie udało się utworzyć zestawu');
       }
 
-      // 2. Add all exercises to the set
-      const addPromises = selectedExercises.map((exercise, index) =>
-        addExerciseToSet({
+      // 2. Add all exercises to the set with full parameter payload
+      let order = 0;
+      for (const exercise of selectedExercises) {
+        await addExerciseToSet({
           variables: {
             exerciseId: exercise.id,
             exerciseSetId,
-            order: index + 1,
+            order: order++,
             sets: exercise.sets || null,
             reps: exercise.reps || null,
             duration: exercise.duration || null,
+            restSets: exercise.restSets || null,
+            restReps: exercise.restReps || null,
+            preparationTime: exercise.preparationTime || null,
+            executionTime: exercise.executionTime || null,
+            notes: exercise.notes || null,
+            customName: exercise.customName || null,
+            customDescription: exercise.customDescription || null,
+            tempo: exercise.tempo || null,
+            loadType: exercise.loadType || null,
+            loadValue: exercise.loadValue || null,
+            loadUnit: exercise.loadUnit || null,
+            loadText: exercise.loadText || null,
           },
-        })
-      );
-
-      await Promise.all(addPromises);
+        });
+      }
 
       // 3. Success!
       toast.success('Zestaw został utworzony', {
@@ -184,12 +234,27 @@ export function CreateSetDialog({ open, onOpenChange }: CreateSetDialogProps) {
                 <FormItem>
                   <FormLabel>Nazwa zestawu *</FormLabel>
                   <FormControl>
-                    <Input
-                      {...field}
-                      placeholder="np. Rehabilitacja kolana"
-                      disabled={isCreating}
-                      data-testid="create-set-name-input"
-                    />
+                    <div className="flex items-center gap-2">
+                      <Input
+                        {...field}
+                        placeholder="np. Rehabilitacja kolana"
+                        disabled={isCreating || isGeneratingName}
+                        data-testid="create-set-name-input"
+                        className="flex-1"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          void handleGenerateAiName();
+                        }}
+                        disabled={isCreating || isGeneratingName}
+                        title="Wygeneruj nazwę AI"
+                        data-testid="create-set-ai-name-btn"
+                        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:bg-surface-light hover:text-foreground disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        {isGeneratingName ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+                      </button>
+                    </div>
                   </FormControl>
                   <FormMessage />
                 </FormItem>

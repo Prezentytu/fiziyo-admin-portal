@@ -36,8 +36,9 @@ import { Badge } from '@/components/ui/badge';
 import { LoadingState } from '@/components/shared/LoadingState';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { ExerciseDialog } from '@/features/exercises/ExerciseDialog';
-import { AddExerciseToSetsDialog } from '@/features/exercises/AddExerciseToSetsDialog';
+import { CreateSetWizard } from '@/features/exercise-sets';
 import { SubmitToGlobalDialog } from '@/features/exercises/SubmitToGlobalDialog';
+import { SubmitToOrganizationDialog } from '@/features/exercises/SubmitToOrganizationDialog';
 import { FeedbackBanner } from '@/features/exercises/FeedbackBanner';
 import { ReportExerciseDialog } from '@/features/exercises/ReportExerciseDialog';
 import { ImagePlaceholder } from '@/components/shared/ImagePlaceholder';
@@ -62,6 +63,7 @@ import { GET_EXERCISE_TAGS_BY_ORGANIZATION_QUERY } from '@/graphql/queries/exerc
 import { GET_TAG_CATEGORIES_BY_ORGANIZATION_QUERY } from '@/graphql/queries/tagCategories.queries';
 import {
   DELETE_EXERCISE_MUTATION,
+  SUBMIT_FOR_ORGANIZATION_REVIEW_MUTATION,
   SUBMIT_TO_GLOBAL_REVIEW_MUTATION,
   RESUBMIT_FROM_ORIGINAL_MUTATION,
   CREATE_EXERCISE_MUTATION,
@@ -74,6 +76,8 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { getNextExerciseCopyName } from '@/features/exercises/utils/getNextExerciseCopyName';
 import { calculateExerciseTotalSeconds, formatExerciseDuration } from '@/utils/exerciseTime';
 import { getExerciseMediaGalleryUrls } from '@/features/exercises/utils/exerciseMedia';
+import { verificationCopy } from '@/features/verification/verificationCopy';
+import { ORG_VERIFICATION_REFETCH_QUERIES } from '@/hooks/useOrganizationVerificationRealtime';
 
 interface ExerciseDetailPageProps {
   params: Promise<{ id: string }>;
@@ -95,8 +99,9 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
   const { currentOrganization } = useOrganization();
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [isAddToSetDialogOpen, setIsAddToSetDialogOpen] = useState(false);
+  const [isCreateSetWizardOpen, setIsCreateSetWizardOpen] = useState(false);
   const [isSubmitToGlobalDialogOpen, setIsSubmitToGlobalDialogOpen] = useState(false);
+  const [isSubmitToOrganizationDialogOpen, setIsSubmitToOrganizationDialogOpen] = useState(false);
   const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
@@ -142,6 +147,15 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
   const [submitToGlobalReview, { loading: submittingToGlobal }] = useMutation(SUBMIT_TO_GLOBAL_REVIEW_MUTATION, {
     refetchQueries: [{ query: GET_EXERCISE_BY_ID_QUERY, variables: { id } }],
   });
+  const [submitForOrganizationReview, { loading: submittingToOrganization }] = useMutation(
+    SUBMIT_FOR_ORGANIZATION_REVIEW_MUTATION,
+    {
+      refetchQueries: [
+        { query: GET_EXERCISE_BY_ID_QUERY, variables: { id } },
+        ...ORG_VERIFICATION_REFETCH_QUERIES,
+      ],
+    }
+  );
 
   // Resubmit after changes mutation
   const [resubmitFromOriginal, { loading: resubmitting }] = useMutation(RESUBMIT_FROM_ORIGINAL_MUTATION, {
@@ -180,7 +194,7 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
   };
 
   const handleAddToSet = () => {
-    setIsAddToSetDialogOpen(true);
+    setIsCreateSetWizardOpen(true);
   };
 
   const handleSubmitToGlobal = async (exerciseId: string) => {
@@ -204,6 +218,19 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
     } catch (err) {
       console.error('Błąd podczas ponownego zgłaszania:', err);
       toast.error('Nie udało się ponownie zgłosić ćwiczenia');
+    }
+  };
+
+  const handleSubmitToOrganization = async (exerciseId: string) => {
+    try {
+      await submitForOrganizationReview({
+        variables: { exerciseId },
+      });
+      toast.success('Ćwiczenie zostało zgłoszone do weryfikacji organizacyjnej');
+      setIsSubmitToOrganizationDialogOpen(false);
+    } catch (err) {
+      console.error('Błąd podczas zgłaszania organizacyjnego:', err);
+      toast.error('Nie udało się zgłosić ćwiczenia do weryfikacji organizacyjnej');
     }
   };
 
@@ -309,6 +336,10 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
   // Check if exercise can be submitted to global review
   // Only for ORGANIZATION scope exercises that don't have an active global submission
   const canSubmitToGlobal = exercise.scope === 'ORGANIZATION' && !exercise.globalSubmissionId;
+  const canSubmitToOrganization =
+    exercise.scope === 'ORGANIZATION' &&
+    (exercise.organizationVerificationStatus === 'NOT_SUBMITTED' ||
+      exercise.organizationVerificationStatus === 'ORG_CHANGES_REQUESTED');
 
   // Status checks for verification workflow
   const isGlobalExercise = exercise.scope === 'GLOBAL';
@@ -489,7 +520,20 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
                   data-testid="exercise-detail-submit-global-btn"
                 >
                   <Rocket className="mr-2 h-4 w-4" />
-                  Zgłoś do bazy globalnej
+                  {verificationCopy.submitGlobal}
+                </DropdownMenuItem>
+              </>
+            )}
+            {canSubmitToOrganization && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={() => setIsSubmitToOrganizationDialogOpen(true)}
+                  className="text-emerald-600 focus:text-emerald-600"
+                  data-testid="exercise-detail-submit-org-btn"
+                >
+                  <Rocket className="mr-2 h-4 w-4" />
+                  {verificationCopy.submitOrganization}
                 </DropdownMenuItem>
               </>
             )}
@@ -511,6 +555,7 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
             <DropdownMenuItem
               onClick={() => setIsReportDialogOpen(true)}
               data-testid="exercise-detail-report-btn"
+              className="text-amber-500 focus:text-amber-500 focus:bg-amber-500/10"
             >
               <Flag className="mr-2 h-4 w-4" />
               Zgłoś do poprawki
@@ -827,6 +872,8 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
           onOpenChange={setIsEditDialogOpen}
           exercise={exercise}
           organizationId={organizationId}
+          onSubmitToGlobal={() => setIsSubmitToGlobalDialogOpen(true)}
+          onSubmitToOrganizationReview={() => setIsSubmitToOrganizationDialogOpen(true)}
           onSuccess={(event) => {
             if (event?.action === 'copied' && event.exerciseId) {
               router.push(`/exercises/${event.exerciseId}`);
@@ -847,8 +894,15 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
         isLoading={deleting}
       />
 
-      {/* Add to Set Dialog with AI */}
-      <AddExerciseToSetsDialog open={isAddToSetDialogOpen} onOpenChange={setIsAddToSetDialogOpen} exercise={exercise} />
+      {organizationId && (
+        <CreateSetWizard
+          open={isCreateSetWizardOpen}
+          onOpenChange={setIsCreateSetWizardOpen}
+          organizationId={organizationId}
+          initialExerciseIds={[exercise.id]}
+          onSuccess={() => setIsCreateSetWizardOpen(false)}
+        />
+      )}
 
       {/* Image Lightbox */}
       {currentImage && (
@@ -870,6 +924,13 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
         exercise={exercise}
         onConfirm={handleSubmitToGlobal}
         isLoading={submittingToGlobal}
+      />
+      <SubmitToOrganizationDialog
+        open={isSubmitToOrganizationDialogOpen}
+        onOpenChange={setIsSubmitToOrganizationDialogOpen}
+        exercise={exercise}
+        onConfirm={handleSubmitToOrganization}
+        isLoading={submittingToOrganization}
       />
 
       <ReportExerciseDialog
