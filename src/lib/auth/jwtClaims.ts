@@ -37,3 +37,17 @@ export function getUserRoleFromToken(token: string): string | null {
 
   return null;
 }
+
+/**
+ * Zwraca Clerk user id (claim `clerk_id`) zaszyte w backendowym JWT.
+ * Pozwala zweryfikować, że cache'owany token należy do AKTUALNIE zalogowanego użytkownika Clerk,
+ * a nie do poprzedniej sesji (np. fizjo → wylogowanie → login pacjenta w tej samej przeglądarce).
+ */
+export function getClerkIdFromToken(token: string): string | null {
+  const payload = decodeJwtPayload(token);
+  if (!payload) {
+    return null;
+  }
+
+  return typeof payload.clerk_id === 'string' ? payload.clerk_id : null;
+}

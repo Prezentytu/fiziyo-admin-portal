@@ -4,7 +4,8 @@ import { useMemo } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { useUser, useClerk } from '@clerk/nextjs';
+import { useUser } from '@clerk/nextjs';
+import { useAppSignOut } from '@/lib/auth/useAppSignOut';
 import { useQuery } from '@apollo/client/react';
 import {
   LayoutDashboard,
@@ -118,7 +119,7 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const { user, isLoaded } = useUser();
-  const { signOut } = useClerk();
+  const signOut = useAppSignOut();
   const { data } = useQuery<UserByClerkIdResponse>(GET_USER_BY_CLERK_ID_QUERY, {
     variables: { clerkId: user?.id },
     skip: !user?.id,
@@ -155,7 +156,7 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
 
   const handleSignOut = () => {
     onClose();
-    signOut({ redirectUrl: '/sign-in' });
+    signOut('/sign-in');
   };
 
   const handleOpenProfile = () => {

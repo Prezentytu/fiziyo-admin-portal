@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useAuth, useClerk } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
-import { Loader2, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { Loader2, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { decideAdminAccess } from '@/lib/auth/adminAccessDecision';
 import { getUserRoleFromToken } from '@/lib/auth/jwtClaims';
@@ -11,9 +11,12 @@ import { clearBackendToken } from '@/lib/tokenCache';
 import { tokenExchangeService } from '@/services/tokenExchangeService';
 
 const POLLING_INTERVAL_MS = 2000;
-const MAX_ATTEMPTS = 15;
+// Po tylu próbach pokazujemy dyskretną pomoc, ale polling trwa dalej w tle.
+const HELP_AFTER_ATTEMPTS = 30;
+// Absolutny limit, by nie pollować w nieskończoność (~3 min przy 2 s interwale).
+const MAX_ATTEMPTS = 90;
 
-type FinalizingStatus = 'loading' | 'success' | 'timeout';
+type FinalizingStatus = 'loading' | 'success' | 'taking-longer';
 
 function getStatusCode(error: unknown): number | null {
   if (error && typeof error === 'object' && 'status' in error) {
@@ -39,7 +42,7 @@ export default function FinalizingRegistrationPage() {
   const { signOut } = useClerk();
 
   const [status, setStatus] = useState<FinalizingStatus>('loading');
-  const [attempt, setAttempt] = useState(0);
+  const [retryToken, setRetryToken] = useState(0);
   const hasRedirected = useRef(false);
 
   const checkTokenExchangeReady = useCallback(async (): Promise<boolean> => {
@@ -114,12 +117,9 @@ export default function FinalizingRegistrationPage() {
       return;
     }
 
-    if (status !== 'loading') {
-      return;
-    }
-
     let timeoutId: ReturnType<typeof setTimeout> | null = null;
     let isCancelled = false;
+    let attempts = 0;
 
     const poll = async () => {
       const isReady = await checkTokenExchangeReady();
@@ -133,16 +133,19 @@ export default function FinalizingRegistrationPage() {
         return;
       }
 
-      setAttempt((currentAttempt) => {
-        const nextAttempt = currentAttempt + 1;
-        if (nextAttempt >= MAX_ATTEMPTS) {
-          setStatus('timeout');
-          return nextAttempt;
-        }
+      attempts += 1;
 
-        timeoutId = setTimeout(poll, POLLING_INTERVAL_MS);
-        return nextAttempt;
-      });
+      // Po dłuższym czasie pokazujemy spokojny komunikat i dyskretną pomoc,
+      // ale dalej automatycznie ponawiamy - użytkownik nigdy nie musi klikać.
+      if (attempts >= HELP_AFTER_ATTEMPTS) {
+        setStatus('taking-longer');
+      }
+
+      if (attempts >= MAX_ATTEMPTS) {
+        return;
+      }
+
+      timeoutId = setTimeout(poll, POLLING_INTERVAL_MS);
     };
 
     poll();
@@ -153,11 +156,11 @@ export default function FinalizingRegistrationPage() {
         clearTimeout(timeoutId);
       }
     };
-  }, [checkTokenExchangeReady, finalizeSuccess, isLoaded, isSignedIn, router, status]);
+  }, [checkTokenExchangeReady, finalizeSuccess, isLoaded, isSignedIn, router, retryToken]);
 
   const handleRetry = () => {
-    setAttempt(0);
     setStatus('loading');
+    setRetryToken((token) => token + 1);
   };
 
   const handleSignOut = async () => {
@@ -169,65 +172,57 @@ export default function FinalizingRegistrationPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-6">
       <div className="w-full max-w-md space-y-6 text-center">
-      {status === 'loading' && (
-        <>
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-primary/15">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          </div>
-          <div className="space-y-2">
-            <h1 className="text-2xl font-semibold text-foreground">Finalizujemy Twoje konto</h1>
-            <p className="text-muted-foreground">
-              To może potrwać kilka sekund. Trwa synchronizacja konta z backendem.
-            </p>
-            <p className="text-sm text-muted-foreground">Próba {attempt + 1}/{MAX_ATTEMPTS}</p>
-          </div>
-        </>
-      )}
+        {status === 'success' ? (
+          <>
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-primary/15">
+              <CheckCircle2 className="h-8 w-8 text-primary" />
+            </div>
+            <div className="space-y-2">
+              <h1 className="text-2xl font-semibold text-foreground">Wszystko gotowe</h1>
+              <p className="text-muted-foreground">Przenosimy Cię do aplikacji...</p>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-primary/15">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+            <div className="space-y-2">
+              <h1 className="text-2xl font-semibold text-foreground">
+                {status === 'taking-longer' ? 'Już prawie gotowe' : 'Przygotowujemy Twoje konto'}
+              </h1>
+              <p className="text-muted-foreground">
+                {status === 'taking-longer'
+                  ? 'Kończymy konfigurację Twojego konta. Za moment Cię przeniesiemy.'
+                  : 'To zajmie tylko chwilę.'}
+              </p>
+            </div>
 
-      {status === 'success' && (
-        <>
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-primary/15">
-            <CheckCircle2 className="h-8 w-8 text-primary" />
-          </div>
-          <div className="space-y-2">
-            <h1 className="text-2xl font-semibold text-foreground">Konto gotowe</h1>
-            <p className="text-muted-foreground">Przenosimy Cię do aplikacji...</p>
-          </div>
-        </>
-      )}
-
-      {status === 'timeout' && (
-        <>
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-warning/15">
-            <AlertTriangle className="h-8 w-8 text-warning" />
-          </div>
-          <div className="space-y-2">
-            <h1 className="text-2xl font-semibold text-foreground">To trwa dłużej niż zwykle</h1>
-            <p className="text-muted-foreground">
-              Konto jest nadal przygotowywane. Możesz spróbować ponownie lub zalogować się ponownie.
-            </p>
-          </div>
-          <div className="space-y-3">
-            <Button
-              type="button"
-              className="w-full"
-              onClick={handleRetry}
-              data-testid="auth-finalizing-retry-btn"
-            >
-              Spróbuj ponownie
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              className="w-full"
-              onClick={handleSignOut}
-              data-testid="auth-finalizing-signout-btn"
-            >
-              Wyloguj się
-            </Button>
-          </div>
-        </>
-      )}
+            {status === 'taking-longer' && (
+              <div className="space-y-3 pt-2">
+                <p className="text-sm text-muted-foreground">Trwa to dłużej niż zwykle?</p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full"
+                  onClick={handleRetry}
+                  data-testid="auth-finalizing-retry-btn"
+                >
+                  Odśwież
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="w-full text-muted-foreground"
+                  onClick={handleSignOut}
+                  data-testid="auth-finalizing-signout-btn"
+                >
+                  Wyloguj się
+                </Button>
+              </div>
+            )}
+          </>
+        )}
       </div>
     </div>
   );

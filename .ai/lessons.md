@@ -14,6 +14,38 @@ Dziennik wniosków z pracy AI agentów. Po każdej korekcie dodaj nowy wpis.
 
 ## Wpisy
 
+### 2026-05-29 - Wylogowanie MUSI czyscic backendowy token; cache-token guard musi sprawdzac tozsamosc usera
+
+- **Kategoria**: `React` | `GraphQL`
+- **Problem**: Po wylogowaniu sie jako fizjo i zalogowaniu jako pacjent w tej samej przegladarce, pacjent widzial powloke UI terapeuty (mimo ze backend zwracal `403` na token-exchange). Bramka roli z cache patrzyla tylko na role, nie na to, do KOGO nalezy token.
+- **Przyczyna**: (1) Przyciski "Wyloguj" w `UserMenu`, `UserProfileFooter` i `MobileSidebar` wolaly goly `useClerk().signOut(...)` BEZ `clearBackendToken()` — token fizjo zostawal w `sessionStorage`. (2) `OrganizationGuard` na fast-path cache ufal kazdemu tokenowi po sprawdzeniu samej roli (`role=owner` z poprzedniej sesji → `setHasOrganization(true)`), nie weryfikujac czy token nalezy do aktualnie zalogowanego usera Clerk.
+- **Rozwiązanie**: Wspolny hook `useAppSignOut()` (`clearBackendToken()` → `signOut`) uzywany przez WSZYSTKIE przyciski wylogowania — eliminuje pominiecia. `OrganizationGuard` na sciezce cache porownuje `getClerkIdFromToken(cachedToken)` z `userId` z `useAuth()`; mismatch (lub nieczytelny `clerk_id`) → `clearBackendToken()` i swieza wymiana tokenu (ktora dla pacjenta konczy sie 403 → `/patient-redirect`).
+- **Reguła**: Wylogowanie zawsze czysci WSZYSTKIE cache tozsamosci (backend JWT), najlepiej przez jeden wspolny helper, nie ad-hoc w kazdym przycisku. Cache'owanemu tokenowi nigdy nie ufaj bez sprawdzenia, ze nalezy do BIEZACEGO uzytkownika (claim `clerk_id` == aktualny `userId`) — sama poprawna rola nie wystarcza, bo moze pochodzic z poprzedniej sesji.
+
+### 2026-05-29 - Bramka roli to nie tylko jeden punkt — cache i warstwa danych tez musza odmawiac pacjentowi
+
+- **Kategoria**: `React` | `GraphQL`
+- **Problem**: Pacjent zalogowal sie do panelu i zobaczyl powloke UI terapeuty (zapytania terapeutyczne lecialy i wracaly bledem). Bramka roli dzialala tylko na sciezce swiezej wymiany tokenu.
+- **Przyczyna**: `OrganizationGuard` na sciezce "cached token" ufal KAZDEMU tokenowi z cache bez sprawdzenia roli (`getBackendToken() → setHasOrganization(true)`). `BackendAuthTokenProvider` cache'owal i serwowal token `role=patient`, gdy backend go wydal (autorytatywna bramka 403 miala luke). Jeden punkt kontroli nie wystarczyl.
+- **Rozwiązanie**: `OrganizationGuard` na sciezce cache wyciaga role z tokenu (`getUserRoleFromToken`) i przepuszcza ja przez `decideAdminAccess` → pacjent = `clearBackendToken` + redirect `/patient-redirect`. `BackendAuthTokenProvider` nigdy nie cache'uje ani nie zwraca tokenu `role=patient` (sprawdzenie przy odczycie cache i po wymianie). Root cause naprawiony w backendzie (definicja `IsPatient`).
+- **Reguła**: Decyzja autoryzacyjna musi byc egzekwowana na KAZDEJ sciezce, ktora prowadzi do dostepu — szczegolnie na fast-pathach z cache. Nigdy nie ufaj cache'owanemu tokenowi bez ponownej walidacji roli; warstwa danych (Apollo) nie moze przechowywac ani wysylac tokenu roli bez uprawnien (defense-in-depth obok bramki backendu).
+
+### 2026-05-29 - Oczekiwane stany przejściowe auth nie mogą wyglądać jak crash
+
+- **Kategoria**: `UI/UX` | `React`
+- **Problem**: Po rejestracji finalizacja konta wyrzucała czerwony overlay Next.js `Token exchange failed: 404 Not Found - {"error":"USER_NOT_FOUND"}`, przez co użytkownik nie mógł się zalogować. Ekran finalizacji pokazywał techniczne teksty ("synchronizacja konta z backendem", `Próba 4/15`) i po 30 s wymuszał kliknięcie "Spróbuj ponownie".
+- **Przyczyna**: `404 USER_NOT_FOUND` to normalny stan przejściowy (backend nie zdążył zsynchronizować konta przez webhook Clerk), ale `tokenExchangeService` logował każdą odpowiedź `!ok` przez `console.error(Error)`. Next.js w dev przechwytuje `console.error` z obiektem `Error` i wyświetla error overlay — obsłużony flow-control wyglądał jak crash. Dodatkowo `/finalizing` miał twardy timeout po `MAX_ATTEMPTS` i ujawniał wewnętrzny licznik prób oraz słowo "backend".
+- **Rozwiązanie**: Flow-control z kodem HTTP nie jest już logowany jako błąd — w `tokenExchangeService`, `OrganizationGuard` i `BackendAuthTokenProvider` logujemy tylko realne błędy sieci przez `console.warn` (dev-only, bez obiektu `Error`). `/finalizing` dostał przyjazny copy ("Przygotowujemy Twoje konto" / "Już prawie gotowe"), ukryty licznik prób i ciche auto-ponawianie (`HELP_AFTER_ATTEMPTS` pokazuje dyskretną pomoc, ale polling trwa do `MAX_ATTEMPTS`). Onboarding nie pokazuje surowych komunikatów backendu — zawsze neutralny tekst.
+- **Reguła**: Oczekiwanych stanów przejściowych (np. `404 USER_NOT_FOUND` w token exchange) nigdy nie loguj przez `console.error(Error)` — w dev Next.js zamienia to w error overlay i wygląda jak crash; flow-control loguj cicho (`console.warn`, dev-only, bez `Error`) albo wcale. W copy auth nie ujawniaj pojęć technicznych ("backend", liczniki prób) ani nie zmuszaj użytkownika do ręcznego retry — preferuj ciche auto-ponawianie z dyskretnym escape-hatch.
+
+### 2026-05-29 - Intencja konta to trwały stan serwera, fizjo zawsze z organizacją
+
+- **Kategoria**: `TypeScript` | `Build/Tooling` | `GraphQL`
+- **Problem**: (1) Build Vercel padał na 2 błędach `tsc` (`loadType` poza sygnaturą `fromBuilderExercise`, trailing comma w `Record<...>` w `TherapyStatusCard`). (2) Rejestracja przez admin portal tworzyła pacjenta zamiast fizjo, a fizjo mógł skończyć bez żadnej organizacji.
+- **Przyczyna**: Rola (`company` vs `patient`) zależała wyłącznie od mutowalnego `unsafeMetadata.isCompanyAccount`, ustawianego osobnym `signUp.update()` w `try/catch`, który połykał błędy. Brak serwerowego źródła prawdy i transakcji przy tworzeniu org+membership w webhooku; org-less fizjo wracał z token-exchange jako `patient` → 403 → `/patient-redirect`.
+- **Rozwiązanie**: Atomowy `signUp.create({ unsafeMetadata })` (web + mobile). Dodano trwałe `User.IsCompanyAccount` (migracja EF), webhook zapisuje intencję i tworzy user+org+owner w jednej transakcji. Token-exchange robi self-healing organizacji dla intended-fizjo lub klienta `admin-portal` (invariant: fizjo zawsze ma org), pacjent mobilny pozostaje pacjentem. Mobile: usunięto ekran wyboru typu organizacji (`individual/small/large`), zostaje tylko wybór pacjent/fizjo.
+- **Reguła**: Nie ufaj samemu `unsafeMetadata` jako źródłu roli — utrwalaj intencję konta po stronie serwera i wymuszaj inwarianty (fizjo↔organizacja) zarówno przy tworzeniu (transakcja), jak i przy dostępie (self-heal). Nowe pola adapterów dodawaj najpierw do sygnatury typu, nie tylko do miejsca wywołania. Provider EF InMemory wymaga `ConfigureWarnings(Ignore(TransactionIgnoredWarning))` gdy kod używa transakcji.
+
 ### 2026-05-28 - Status terapii powinien informować, nie alarmować
 
 - **Kategoria**: `UI/UX` | `React`

@@ -2,8 +2,9 @@
 
 import { useState } from 'react';
 import Image from 'next/image';
-import { useUser, useClerk } from '@clerk/nextjs';
+import { useUser } from '@clerk/nextjs';
 import { useQuery } from '@apollo/client/react';
+import { useAppSignOut } from '@/lib/auth/useAppSignOut';
 import { Settings, HelpCircle, LogOut, ChevronUp } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
@@ -50,7 +51,7 @@ function getInitials(name: string): string {
 
 export function UserProfileFooter({ isCollapsed }: UserProfileFooterProps) {
   const { user, isLoaded } = useUser();
-  const { signOut } = useClerk();
+  const signOut = useAppSignOut();
   const { hasMultipleOrganizations, currentOrganization, organizations, switchOrganization, isSwitching } =
     useOrganization();
   const [isOpen, setIsOpen] = useState(false);
@@ -221,7 +222,7 @@ export function UserProfileFooter({ isCollapsed }: UserProfileFooterProps) {
 
         {/* Sign out */}
         <DropdownMenuItem
-          onClick={() => signOut({ redirectUrl: '/sign-in' })}
+          onClick={() => signOut('/sign-in')}
           data-testid="nav-user-footer-logout"
           className="gap-3 px-3 py-2.5 cursor-pointer text-error focus:text-error focus:bg-error/10"
         >

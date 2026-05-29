@@ -23,7 +23,7 @@ const toneConfig: Record<
     badgeText: string;
     badgeLabel: string;
     Icon: typeof TrendingUp;
-  },
+  }
 > = {
   positive: {
     borderColor: 'border-success/30',

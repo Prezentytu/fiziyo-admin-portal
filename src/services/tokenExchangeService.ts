@@ -64,6 +64,8 @@ export class TokenExchangeService {
         ) as TokenExchangeError;
         responseError.status = response.status;
         responseError.code = parsedCode;
+        // Expected flow-control responses (e.g. 404 USER_NOT_FOUND while the account
+        // is still syncing) are handled by callers - do not log them as errors here.
         throw responseError;
       }
 
@@ -71,8 +73,12 @@ export class TokenExchangeService {
 
       return data;
     } catch (error) {
-      if (isDev) {
-        console.error('[TokenExchange] Błąd wymiany tokenu:', error);
+      // Only genuine network failures reach here without a status code. Log them at
+      // warn level (never console.error with an Error) so the Next.js dev overlay
+      // does not surface a handled flow-control state as a crash.
+      const hasHttpStatus = typeof (error as TokenExchangeError)?.status === 'number';
+      if (isDev && !hasHttpStatus) {
+        console.warn('[TokenExchange] Network error during token exchange');
       }
       throw error;
     }

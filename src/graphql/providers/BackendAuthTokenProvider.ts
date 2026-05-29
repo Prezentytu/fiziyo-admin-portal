@@ -1,8 +1,20 @@
 import { IAuthTokenProvider } from '../links/authLink';
 import { tokenExchangeService, type TokenExchangeError } from '@/services/tokenExchangeService';
 import { getBackendToken, saveBackendToken, clearBackendToken } from '@/lib/tokenCache';
+import { getUserRoleFromToken } from '@/lib/auth/jwtClaims';
 
 const isDev = process.env.NODE_ENV === 'development';
+const PATIENT_ROLE = 'patient';
+
+/**
+ * Pacjent nie ma dostępu do panelu webowego (physio-only). Token z rolą "patient"
+ * nigdy nie może być cache'owany ani wysyłany w zapytaniach GraphQL — w przeciwnym razie
+ * pacjent bombarduje backend zapytaniami terapeutycznymi (które i tak są odrzucane).
+ * To defense-in-depth wobec autorytatywnej bramki 403 PATIENT_NOT_ALLOWED_ON_ADMIN w backendzie.
+ */
+function isPatientToken(token: string): boolean {
+  return getUserRoleFromToken(token)?.trim().toLowerCase() === PATIENT_ROLE;
+}
 
 /**
  * Provider tokenów dla backendu (wersja Web/Next.js)
@@ -133,6 +145,10 @@ export class BackendAuthTokenProvider implements IAuthTokenProvider {
         if (!isForCurrentUser) {
           clearBackendToken();
           // Kontynuuj do wymiany tokenu
+        } else if (isPatientToken(cachedToken)) {
+          // Pacjent nie ma dostępu do panelu — nie serwuj tokenu, wyczyść cache.
+          clearBackendToken();
+          return null;
         } else if (!this.isTokenExpired(cachedToken)) {
           // Token należy do aktualnego użytkownika i nie wygasł
           return cachedToken;
@@ -147,12 +163,23 @@ export class BackendAuthTokenProvider implements IAuthTokenProvider {
 
       return backendToken;
     } catch (error) {
-      if (isDev) {
-        console.error('[BackendAuthTokenProvider] Krytyczny błąd:', error);
+      // Token exchange can legitimately fail while the account is still syncing
+      // (404 USER_NOT_FOUND) or for access reasons (401/403). These are handled by
+      // higher-level guards; log at warn level (dev-only) to avoid the dev overlay.
+      if (isDev && !this.hasHttpStatus(error)) {
+        console.warn('[BackendAuthTokenProvider] Network error while resolving backend token');
       }
       // NIE zwracaj Clerk token - backend go nie akceptuje!
       return null;
     }
+  }
+
+  /**
+   * Sprawdza czy błąd niesie status HTTP (czyli to obsłużona odpowiedź backendu,
+   * a nie nieoczekiwany błąd sieci)
+   */
+  private hasHttpStatus(error: unknown): boolean {
+    return typeof (error as TokenExchangeError)?.status === 'number';
   }
 
   /**
@@ -196,6 +223,13 @@ export class BackendAuthTokenProvider implements IAuthTokenProvider {
       const backendToken = await this.exchangeWithRetry(clerkToken);
 
       if (backendToken) {
+        // Pacjent nie ma dostępu do panelu webowego — nie cache'uj ani nie zwracaj tokenu.
+        // Backend powinien zwrócić 403, ale to dodatkowa warstwa, gdyby wydał token role=patient.
+        if (isPatientToken(backendToken)) {
+          clearBackendToken();
+          return null;
+        }
+
         // Cache'uj backend token
         saveBackendToken(backendToken);
         return backendToken;
@@ -203,8 +237,10 @@ export class BackendAuthTokenProvider implements IAuthTokenProvider {
 
       return null;
     } catch (error) {
-      if (isDev) {
-        console.error('[BackendAuthTokenProvider] Błąd wymiany tokenu:', error);
+      // Expected flow-control errors (account still syncing / access denied) carry an
+      // HTTP status and are handled upstream. Only log unexpected network failures.
+      if (isDev && !this.hasHttpStatus(error)) {
+        console.warn('[BackendAuthTokenProvider] Network error during token exchange');
       }
 
       // Wyczyść cache jeśli błąd (może być invalid token)

@@ -5,7 +5,7 @@ import { useAuth } from '@clerk/nextjs';
 import { useRouter, usePathname } from 'next/navigation';
 import { getBackendToken, clearBackendToken } from '@/lib/tokenCache';
 import { decideAdminAccess } from '@/lib/auth/adminAccessDecision';
-import { getUserRoleFromToken } from '@/lib/auth/jwtClaims';
+import { getUserRoleFromToken, getClerkIdFromToken } from '@/lib/auth/jwtClaims';
 import { tokenExchangeService } from '@/services/tokenExchangeService';
 import { DashboardRouteLoading } from '@/components/layout/DashboardRouteLoading';
 
@@ -19,7 +19,7 @@ interface OrganizationGuardProps {
  * Zawsze renderuje widoczny fallback (nigdy null), żeby uniknąć pustego ekranu.
  */
 export function OrganizationGuard({ children }: Readonly<OrganizationGuardProps>) {
-  const { getToken, isLoaded, isSignedIn } = useAuth();
+  const { getToken, isLoaded, isSignedIn, userId } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
   const [isChecking, setIsChecking] = useState(true);
@@ -69,12 +69,32 @@ export function OrganizationGuard({ children }: Readonly<OrganizationGuardProps>
       }
 
       try {
-        // Sprawdź czy mamy cached token
+        // Sprawdź czy mamy cached token. Defense-in-depth: zaufaj cache TYLKO jeśli token
+        // należy do AKTUALNEGO użytkownika Clerk. Po wylogowaniu fizjo i zalogowaniu pacjenta
+        // w tej samej przeglądarce w cache może wisieć token poprzedniej sesji — zaufanie mu
+        // pokazałoby pacjentowi powłokę UI terapeuty. Dodatkowo zawsze weryfikujemy rolę
+        // (pacjent nigdy nie wchodzi do panelu webowego, nawet z ważnym tokenem).
         const cachedToken = getBackendToken();
         if (cachedToken) {
-          setHasOrganization(true);
-          setIsChecking(false);
-          return;
+          const cachedClerkId = getClerkIdFromToken(cachedToken);
+          const belongsToCurrentUser = Boolean(cachedClerkId && userId && cachedClerkId === userId);
+
+          if (belongsToCurrentUser) {
+            const cachedRole = getUserRoleFromToken(cachedToken);
+            const cachedDecision = decideAdminAccess({ role: cachedRole });
+            if (cachedDecision.kind === 'patient') {
+              clearBackendToken();
+              router.replace('/patient-redirect');
+              return;
+            }
+
+            setHasOrganization(true);
+            setIsChecking(false);
+            return;
+          }
+
+          // Token z poprzedniej sesji (lub nieczytelny) — nie ufaj mu, wyczyść i wymień świeżo poniżej.
+          clearBackendToken();
         }
 
         // Spróbuj wymienić token
@@ -96,8 +116,6 @@ export function OrganizationGuard({ children }: Readonly<OrganizationGuardProps>
 
         setHasOrganization(accessDecision.kind === 'allowed');
       } catch (error) {
-        console.error('[OrganizationGuard] Token exchange error:', error);
-
         const errorMessage = error instanceof Error ? error.message : String(error);
         const statusCode = getErrorStatusCode(error);
         const errorCode = getErrorCode(error);
@@ -106,6 +124,12 @@ export function OrganizationGuard({ children }: Readonly<OrganizationGuardProps>
           errorCode,
           errorMessage,
         });
+
+        // Pending/no-organization/patient are expected branches of the auth flow,
+        // not failures - never log them. Only surface genuinely unexpected errors.
+        if (accessDecision.kind === 'error' && process.env.NODE_ENV === 'development') {
+          console.warn('[OrganizationGuard] Unexpected token exchange error:', accessDecision.reason);
+        }
 
         if (accessDecision.kind === 'pending') {
           router.replace('/finalizing');
@@ -134,7 +158,7 @@ export function OrganizationGuard({ children }: Readonly<OrganizationGuardProps>
     }
 
     checkOrganization();
-  }, [isLoaded, isSignedIn, getToken, router, pathname]);
+  }, [isLoaded, isSignedIn, getToken, router, pathname, userId]);
 
   // Loading state – spójny skeleton zamiast surowego spinnera
   if (isChecking) {

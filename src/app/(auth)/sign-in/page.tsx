@@ -29,14 +29,16 @@ export default function SignInPage() {
     setError('');
   }, []);
 
+  // Generyczny komunikat dla błędnych poświadczeń, aby nie ujawniać czy email istnieje (anti account-enumeration).
+  const INVALID_CREDENTIALS_MESSAGE = 'Nieprawidłowy email lub hasło';
+
   const getErrorMessage = (err: unknown): string => {
     const { code, message } = parseClerkError(err);
 
     switch (code) {
       case 'form_identifier_not_found':
-        return 'Nie znaleziono użytkownika z podanym adresem email';
       case 'form_password_incorrect':
-        return 'Nieprawidłowe hasło';
+        return INVALID_CREDENTIALS_MESSAGE;
       case 'too_many_requests':
         return 'Zbyt wiele prób logowania. Spróbuj ponownie za kilka minut';
       case 'session_exists':
@@ -75,6 +77,14 @@ export default function SignInPage() {
       router.push(`/reset-password?email=${encodeURIComponent(formData.email.trim())}`);
     } catch (err) {
       console.error('Reset password error:', err);
+      const { code } = parseClerkError(err);
+
+      // Nie ujawniaj czy konto istnieje - dla nieznanego identyfikatora zachowaj się jak przy sukcesie.
+      if (code === 'form_identifier_not_found') {
+        router.push(`/reset-password?email=${encodeURIComponent(formData.email.trim())}`);
+        return;
+      }
+
       setError(getErrorMessage(err));
     } finally {
       setResetPasswordLoading(false);
@@ -111,6 +121,10 @@ export default function SignInPage() {
       if (result.status === 'complete') {
         await setActive({ session: result.createdSessionId });
         router.replace('/');
+      } else if (result.status === 'needs_second_factor') {
+        setError('To konto wymaga weryfikacji dwuetapowej, która nie jest jeszcze obsługiwana w panelu. Skontaktuj się z pomocą.');
+      } else {
+        setError('Nie udało się dokończyć logowania. Spróbuj ponownie.');
       }
     } catch (err) {
       console.error('Login error:', err);
