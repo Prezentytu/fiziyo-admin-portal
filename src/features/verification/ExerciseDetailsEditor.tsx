@@ -161,7 +161,7 @@ export function ExerciseDetailsEditor({
               />
             </div>
             <div className="space-y-1">
-              <span className="text-xs text-muted-foreground">Czas (s)</span>
+              <span className="text-xs text-muted-foreground">Czas serii (s)</span>
               <Input
                 type="number"
                 min={0}

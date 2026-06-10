@@ -242,19 +242,21 @@ export function VerificationEditorPanel({
   const dataValidation = useMemo(() => {
     const hasSets = (localSets ?? 0) > 0;
     const hasReps = (localReps ?? 0) > 0;
+    const hasExecutionTime = (localExecTime ?? 0) > 0;
     const hasDuration = (localDuration ?? 0) > 0;
-    const hasVolume = hasReps || hasDuration;
+    const hasVolume = hasReps || hasExecutionTime || hasDuration;
     const hasTags = HIDE_EXERCISE_TAGS ? true : mainTags.length > 0;
 
     return {
       isValid: hasSets && hasVolume && hasTags,
       hasSets,
       hasReps,
+      hasExecutionTime,
       hasDuration,
       hasVolume,
       hasTags,
     };
-  }, [localSets, localReps, localDuration, mainTags]);
+  }, [localSets, localReps, localExecTime, localDuration, mainTags]);
 
   // Combined missing fields
   const missingFields = useMemo(() => {
@@ -492,38 +494,38 @@ export function VerificationEditorPanel({
               </div>
             </div>
 
-            {/* Czas wykonania (Time Under Tension) */}
+            {/* Czas powtórzenia */}
             <div className="flex-1 min-w-0 space-y-1">
               <ExerciseFieldLabelWithTooltip
-                label="Czas serii"
-                tooltip={EXERCISE_FIELD_TOOLTIPS.duration}
-                icon={renderFieldIcon('duration')}
+                label="Czas powtórzenia"
+                tooltip={EXERCISE_FIELD_TOOLTIPS.executionTime}
+                icon={renderFieldIcon('executionTime')}
                 className="justify-center"
                 labelClassName="text-[9px] uppercase tracking-wider text-center text-muted-foreground truncate"
-                testId="verification-duration-info"
+                testId="verification-execution-time-info"
               />
               <div
                 className={cn(
                   'relative h-12 rounded-lg transition-all duration-200',
                   'bg-card/70 border border-border/70',
                   'hover:border-border focus-within:border-primary/50',
-                  localReps && !localDuration && 'opacity-40'
+                  localReps && !localExecTime && 'opacity-40'
                 )}
               >
                 <input
                   type="number"
-                  min={5}
-                  max={600}
-                  step={5}
-                  value={localDuration ?? ''}
+                  min={1}
+                  max={120}
+                  step={1}
+                  value={localExecTime ?? ''}
                   onChange={(e) =>
-                    setLocalDuration(e.target.value === '' ? null : Number.parseInt(e.target.value, 10))
+                    setLocalExecTime(e.target.value === '' ? null : Number.parseInt(e.target.value, 10))
                   }
-                  onBlur={() => handleNumberBlur('defaultDuration', localDuration)}
+                  onBlur={() => handleNumberBlur('defaultExecutionTime', localExecTime)}
                   disabled={disabled}
                   placeholder="—"
                   className="w-full h-full bg-transparent text-lg font-bold text-center outline-none text-foreground placeholder:text-muted-foreground/80 pr-5 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                  data-testid="core-metric-duration"
+                  data-testid="core-metric-execution-time"
                 />
                 <span className="absolute right-1.5 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground font-medium pointer-events-none">
                   s
@@ -791,30 +793,31 @@ export function VerificationEditorPanel({
                   </div>
                 </div>
 
-                {/* Czas wykonania powtórzenia */}
+                {/* Czas serii */}
                 <div className="min-w-0 space-y-1.5">
                   <ExerciseFieldLabelWithTooltip
-                    label="Czas wyk. powt."
-                    tooltip={EXERCISE_FIELD_TOOLTIPS.executionTime}
-                    icon={renderFieldIcon('executionTime')}
+                    label="Czas serii"
+                    tooltip={EXERCISE_FIELD_TOOLTIPS.duration}
+                    icon={renderFieldIcon('duration')}
                     labelClassName="min-h-4 truncate text-[10px] uppercase tracking-wider text-muted-foreground"
-                    testId="verification-execution-time-info"
+                    testId="verification-duration-info"
                   />
                   <div className="relative">
                     <Input
                       type="number"
-                      min={1}
-                      max={60}
-                      value={localExecTime ?? ''}
+                      min={5}
+                      max={600}
+                      step={5}
+                      value={localDuration ?? ''}
                       onChange={(e) => {
-                        setLocalExecTime(e.target.value === '' ? null : Number.parseInt(e.target.value, 10));
+                        setLocalDuration(e.target.value === '' ? null : Number.parseInt(e.target.value, 10));
                         setTechnicalDetailsModified(true);
                       }}
-                      onBlur={() => handleNumberBlur('defaultExecutionTime', localExecTime)}
+                      onBlur={() => handleNumberBlur('defaultDuration', localDuration)}
                       disabled={disabled}
                       placeholder="0"
                       className="h-9 border-border/70 bg-card/70 pr-6 text-center"
-                      data-testid="property-exec-time"
+                      data-testid="property-duration"
                     />
                     <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">s</span>
                   </div>

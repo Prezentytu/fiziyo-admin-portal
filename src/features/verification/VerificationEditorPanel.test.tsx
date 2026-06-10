@@ -45,13 +45,13 @@ describe('VerificationEditorPanel', () => {
 
     expect(screen.getByTestId('verification-sets-info-icon')).toBeInTheDocument();
     expect(screen.getByTestId('verification-reps-info-icon')).toBeInTheDocument();
-    expect(screen.getByTestId('verification-duration-info-icon')).toBeInTheDocument();
+    expect(screen.getByTestId('verification-execution-time-info-icon')).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: /szczegóły techniczne/i }));
 
     expect(screen.getByText('Bez zmian')).toBeInTheDocument();
     expect(screen.getByTestId('verification-tempo-info-icon')).toBeInTheDocument();
-    expect(screen.getByTestId('verification-execution-time-info-icon')).toBeInTheDocument();
+    expect(screen.getByTestId('verification-duration-info-icon')).toBeInTheDocument();
   });
 
   it('zapisuje obciążenie przez defaultLoad po zmianie typu', async () => {

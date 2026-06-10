@@ -14,6 +14,14 @@ Dziennik wniosków z pracy AI agentów. Po każdej korekcie dodaj nowy wpis.
 
 ## Wpisy
 
+### 2026-06-10 - Weryfikacja: główny parametr czasu musi mapować na executionTime, nie duration
+
+- **Kategoria**: `UI/UX` | `React`
+- **Problem**: W głównej sekcji parametrów w Centrum Weryfikacji pole czasu było spięte z `defaultDuration` (czas serii), co dawało mylący model mentalny i ryzyko edycji niewłaściwego pola.
+- **Przyczyna**: Rozjechanie semantyki między nowym modelem dawkowania (`executionTime` jako główny czas) a starszym layoutem edytora.
+- **Rozwiązanie**: W `VerificationEditorPanel` przepięto główny kafelek czasu na `defaultExecutionTime` (`Czas powtórzenia`), a `defaultDuration` (`Czas serii`) pozostawiono w szczegółach technicznych; dodatkowo walidacje publikacji rozszerzono o `defaultExecutionTime`.
+- **Reguła**: Jeśli UI pokazuje parametr jako „główny”, jego binding musi wskazywać na canonical field domenowy (tu: `defaultExecutionTime`), a pola legacy (`defaultDuration`) utrzymuj jako zaawansowane i zawsze jasno etykietowane.
+
 ### 2026-05-29 - Wylogowanie MUSI czyscic backendowy token; cache-token guard musi sprawdzac tozsamosc usera
 
 - **Kategoria**: `React` | `GraphQL`
