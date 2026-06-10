@@ -92,6 +92,12 @@ assign-success-close-btn
 
 ## Changelog
 
+### 2026-06-10
+
+- Dodano współdzieloną warstwę obliczeń harmonogramu (`scheduleSummaryUtils`) i komponent read-only `ScheduleSummary` z wariantami `compact`, `card`, `inline-highlight`.
+- Ujednolicono wyświetlanie harmonogramu (okres, częstotliwość, sesje) w `ScheduleStep`, `SummaryStep`, headerze wizarda, `AssignmentSuccessDialog`, kartach pacjenta oraz na detalu zestawu.
+- Rozszerzono kontrakt PDF (`PDFExerciseSet`) o opcjonalne `startDate` i `endDate`, aby renderować okres planu obok częstotliwości.
+
 ### 2026-04-15
 
 - Utrzymano model, w którym `set.frequency` działa jako seed dla personalizacji harmonogramu planu pacjenta, bez edycji tego defaultu na detalu szablonu.

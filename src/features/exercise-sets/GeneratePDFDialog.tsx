@@ -24,6 +24,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 
 import { ExerciseSetPDF, formatExercises } from '@/components/pdf';
+import { preloadPdfExerciseImages, resolvePdfExerciseImageUrl } from '@/components/pdf';
 import { preloadPdfImages } from '@/components/pdf/pdfImagePreloader';
 import type {
   PDFExerciseSet,
@@ -34,7 +35,6 @@ import type {
   PDFExercise,
 } from '@/components/pdf';
 import { getMediaUrl } from '@/utils/mediaUrl';
-import { resolveExerciseImageUrl } from './pdfImageResolver';
 
 import { GET_ORGANIZATION_BY_ID_QUERY } from '@/graphql/queries/organizations.queries';
 import { GET_USER_BY_CLERK_ID_QUERY } from '@/graphql/queries/users.queries';
@@ -72,40 +72,6 @@ interface ExerciseMapping {
     exerciseSide?: string;
     notes?: string;
   };
-}
-
-interface ImagePreloadStats {
-  total: number;
-  loaded: number;
-}
-
-/**
- * Resolves all exercise images via the server proxy and rewrites
- * `exercise.imageUrl` IN-PLACE with base64 data URLs (or undefined when load fails).
- */
-async function preloadExerciseImages(exercises: PDFExercise[]): Promise<ImagePreloadStats> {
-  const absoluteImageUrls = exercises
-    .map((ex) => getMediaUrl(ex.imageUrl))
-    .filter((url): url is string => !!url);
-
-  const stats: ImagePreloadStats = { total: absoluteImageUrls.length, loaded: 0 };
-  if (absoluteImageUrls.length === 0) return stats;
-
-  const dataUrlMap = await preloadPdfImages(absoluteImageUrls);
-  stats.loaded = Array.from(dataUrlMap.values()).filter(Boolean).length;
-
-  for (const exercise of exercises) {
-    const absUrl = getMediaUrl(exercise.imageUrl);
-    const dataUrl = absUrl ? dataUrlMap.get(absUrl) : null;
-    exercise.imageUrl = dataUrl ?? undefined;
-  }
-
-  if (process.env.NODE_ENV !== 'production') {
-     
-    console.log(`[PDF] Preloaded ${stats.loaded}/${stats.total} images`);
-  }
-
-  return stats;
 }
 
 /**
@@ -219,7 +185,7 @@ export function GeneratePDFDialog({
         type: mapping.exercise?.type as PDFExercise['type'],
         exerciseSide: (mapping.exercise?.side?.toLowerCase() ||
           mapping.exercise?.exerciseSide) as PDFExercise['exerciseSide'],
-        imageUrl: resolveExerciseImageUrl(mapping.exercise),
+        imageUrl: resolvePdfExerciseImageUrl(mapping.exercise),
         images: mapping.exercise?.images,
         notes: mapping.notes || mapping.exercise?.notes,
         sets: mapping.sets,
@@ -237,7 +203,7 @@ export function GeneratePDFDialog({
       // Per-image isolation: failed image becomes placeholder, not a broken PDF.
       const shouldPreload = viewMode === 'full' && showImages;
       const imageStats = shouldPreload
-        ? await preloadExerciseImages(pdfExercises)
+        ? await preloadPdfExerciseImages(pdfExercises)
         : { total: 0, loaded: 0 };
 
       const preloadedLogoUrl = await preloadOrganizationLogo(pdfOrganization.logoUrl);
@@ -338,7 +304,7 @@ export function GeneratePDFDialog({
   const qrUrl = `https://app.fiziyo.pl/sets/${exerciseSet.id}`;
 
   const exercisesWithImageCount = (exerciseSet.exerciseMappings || []).filter(
-    (mapping) => !!resolveExerciseImageUrl(mapping.exercise)
+    (mapping) => !!resolvePdfExerciseImageUrl(mapping.exercise)
   ).length;
   const noImagesAvailable = exerciseCount > 0 && exercisesWithImageCount === 0;
 

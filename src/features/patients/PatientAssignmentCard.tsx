@@ -7,9 +7,7 @@ import { useMutation } from '@apollo/client/react';
 import {
   ChevronDown,
   ChevronRight,
-  Calendar,
   CalendarPlus,
-  Clock,
   Dumbbell,
   MoreHorizontal,
   Pencil,
@@ -40,12 +38,12 @@ import {
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { ImagePlaceholder } from '@/components/shared/ImagePlaceholder';
+import { ScheduleSummary } from '@/components/shared';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { cn } from '@/lib/utils';
 import { toGqlStatus } from '@/utils/statusUtils';
 import { getMediaUrl } from '@/utils/mediaUrl';
 import { formatDurationPolish } from '@/utils/durationPolish';
-import { formatFrequencyDisplay } from '@/utils/frequencyDisplay';
 import { resolveAssignmentDisplayStatus } from '@/features/patients/utils/assignmentDisplayStatus';
 
 import {
@@ -438,17 +436,19 @@ export function PatientAssignmentCard({
                     <Dumbbell className="h-3.5 w-3.5" />
                     {visibleExercises.length} ćwiczeń
                   </span>
-                  <span className="flex items-center gap-1">
-                    <Calendar className="h-3.5 w-3.5" />
-                    {formatFrequencyDisplay(assignment.frequency)}
-                  </span>
-                  {assignment.frequency?.timesPerDay && (
-                    <span className="flex items-center gap-1">
-                      <Clock className="h-3.5 w-3.5" />
-                      {assignment.frequency.timesPerDay}x/dzień
-                    </span>
-                  )}
                 </div>
+                {assignment.startDate && assignment.endDate && assignment.frequency && (
+                  <ScheduleSummary
+                    startDate={assignment.startDate}
+                    endDate={assignment.endDate}
+                    frequency={assignment.frequency}
+                    variant="compact"
+                    showSessions={false}
+                    showStartInDays={false}
+                    testIdPrefix={`patient-assignment-${assignment.id}`}
+                    className="mt-1"
+                  />
+                )}
               </div>
 
               {/* Actions */}
@@ -523,25 +523,23 @@ export function PatientAssignmentCard({
                 <div className="flex items-start justify-between gap-4">
                   <div className="space-y-1.5">
                     <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Plan pacjenta</p>
-                    <p className="text-sm text-foreground">
-                      {assignment.startDate && (
-                        <>
-                          {format(new Date(assignment.startDate), 'd MMM yyyy', { locale: pl })}
-                          {assignment.endDate && (
-                            <> — {format(new Date(assignment.endDate), 'd MMM yyyy', { locale: pl })}</>
-                          )}
-                        </>
-                      )}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      {formatFrequencyDisplay(assignment.frequency)}
-                      {assignment.frequency?.timesPerDay && assignment.frequency.timesPerDay > 1 && (
-                        <>, {assignment.frequency.timesPerDay}x dziennie</>
-                      )}
-                      {assignment.frequency?.breakBetweenSets && (
-                        <>, min. {assignment.frequency.breakBetweenSets}h między sesjami</>
-                      )}
-                    </p>
+                    {assignment.startDate && assignment.endDate && assignment.frequency && (
+                      <ScheduleSummary
+                        startDate={assignment.startDate}
+                        endDate={assignment.endDate}
+                        frequency={assignment.frequency}
+                        variant="card"
+                        showSessions
+                        showStartInDays={false}
+                        className="border-0 bg-transparent p-0"
+                        testIdPrefix={`patient-assignment-expanded-${assignment.id}`}
+                      />
+                    )}
+                    {assignment.frequency?.breakBetweenSets && (
+                      <p className="text-sm text-muted-foreground">
+                        Min. {assignment.frequency.breakBetweenSets}h między sesjami
+                      </p>
+                    )}
                     {assignment.assignedBy?.fullname && (
                       <p className="text-xs text-muted-foreground">Przypisał: {assignment.assignedBy.fullname}</p>
                     )}

@@ -27,9 +27,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { ScheduleSummary } from '@/components/shared';
 import { toast } from 'sonner';
 
-import { ExerciseSetPDF } from '@/components/pdf';
+import { ExerciseSetPDF, preloadPdfExerciseImages, resolvePdfExerciseImageUrl } from '@/components/pdf';
 import type {
   PDFExerciseSet,
   PDFOrganization,
@@ -68,6 +69,10 @@ interface AssignmentSuccessDialogProps {
   exerciseSet?: ExerciseSet;
   /** Częstotliwość ćwiczeń */
   frequency?: Frequency;
+  /** Data startu planu pacjenta */
+  startDate?: Date;
+  /** Data końca planu pacjenta */
+  endDate?: Date;
   /** Callback do przypisania kolejnemu pacjentowi */
   onAssignAnother?: () => void;
   /** Przejście do nowo utworzonego planu */
@@ -85,6 +90,8 @@ export function AssignmentSuccessDialog({
   organizationId,
   exerciseSet,
   frequency,
+  startDate,
+  endDate,
   onAssignAnother,
   onViewPlan,
 }: AssignmentSuccessDialogProps) {
@@ -209,7 +216,7 @@ export function AssignmentSuccessDialog({
         type: mapping.exercise?.type?.toLowerCase() as PDFExercise['type'],
         exerciseSide: (mapping.exercise?.side?.toLowerCase() ||
           mapping.exercise?.exerciseSide) as PDFExercise['exerciseSide'],
-        imageUrl: mapping.exercise?.thumbnailUrl || mapping.exercise?.imageUrl,
+        imageUrl: resolvePdfExerciseImageUrl(mapping.exercise),
         images: mapping.exercise?.images,
         notes: mapping.notes || mapping.exercise?.notes,
         sets: mapping.sets ?? mapping.exercise?.defaultSets ?? mapping.exercise?.sets,
@@ -221,12 +228,15 @@ export function AssignmentSuccessDialog({
         customName: mapping.customName,
         customDescription: mapping.customDescription,
       }));
+      await preloadPdfExerciseImages(pdfExercises);
 
       const pdfExerciseSet: PDFExerciseSet = {
         id: exerciseSet.id,
         name: setName || exerciseSet.name,
         description: exerciseSet.description,
         exercises: pdfExercises,
+        startDate: startDate?.toISOString(),
+        endDate: endDate?.toISOString(),
         frequency: frequency
           ? {
               timesPerDay: frequency.timesPerDay,
@@ -388,6 +398,17 @@ export function AssignmentSuccessDialog({
               </div>
             </div>
           </div>
+
+          {frequency && startDate && endDate && (
+            <ScheduleSummary
+              startDate={startDate}
+              endDate={endDate}
+              frequency={frequency}
+              variant="card"
+              showSessions
+              testIdPrefix="assign-success"
+            />
+          )}
 
           {!isSinglePatient && (
             <div className="flex gap-2 overflow-x-auto pb-2">

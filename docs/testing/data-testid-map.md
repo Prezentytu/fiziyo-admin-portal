@@ -254,170 +254,178 @@ await expect(page.getByTestId(/^exercise-card-/)).toHaveCount(5);
 
 ### 5. Zestawy ćwiczeń (set-)
 
-| data-testid                         | Element                         | Plik                          |
-| ----------------------------------- | ------------------------------- | ----------------------------- |
-| `set-page-title`                    | Tytuł strony                    | `exercise-sets/page.tsx`      |
-| `set-search-input`                  | Wyszukiwarka                    | `exercise-sets/page.tsx`      |
-| `set-tag-filter-btn`                | Dropdown filtra tagów           | `exercise-sets/page.tsx`      |
-| `set-filter-all-templates-btn`      | Filtr: Wszystkie szablony       | `exercise-sets/page.tsx`      |
-| `set-filter-fiziyo-templates-btn`   | Filtr: Szablony FiziYo          | `exercise-sets/page.tsx`      |
-| `set-filter-my-templates-btn`       | Filtr: Moje szablony            | `exercise-sets/page.tsx`      |
-| `set-filter-patient-plans-btn`      | Filtr: Zestawy spersonalizowane | `exercise-sets/page.tsx`      |
-| `set-create-btn`                    | Utwórz zestaw                   | `exercise-sets/page.tsx`      |
-| `set-create-wizard-btn`             | Kreator zestawu                 | `exercise-sets/page.tsx`      |
-| `set-card-{id}`                     | Karta zestawu                   | `SetCard.tsx`                 |
-| `set-card-{id}-assign-btn`          | Personalizuj i przypisz         | `SetCard.tsx`                 |
-| `set-card-{id}-copy-link-btn`       | Kopiuj link publiczny           | `SetCard.tsx`                 |
-| `set-card-{id}-menu-trigger`        | Menu kontekstowe (3 kropki)     | `SetCard.tsx`                 |
-| `set-card-{id}-edit-btn`            | Edytuj (w menu)                 | `SetCard.tsx`                 |
-| `set-card-{id}-duplicate-btn`       | Duplikuj (w menu)               | `SetCard.tsx`                 |
-| `set-card-{id}-delete-btn`          | Usuń (w menu)                   | `SetCard.tsx`                 |
-| `set-detail-back-btn`               | Przycisk wstecz                 | `exercise-sets/[id]/page.tsx` |
-| `set-detail-name`                   | Nazwa zestawu                   | `exercise-sets/[id]/page.tsx` |
-| `set-detail-menu-trigger`           | Menu akcji                      | `exercise-sets/[id]/page.tsx` |
-| `set-detail-edit-btn`               | Edytuj zestaw                   | `exercise-sets/[id]/page.tsx` |
-| `set-detail-delete-btn`             | Usuń zestaw                     | `exercise-sets/[id]/page.tsx` |
-| `set-detail-edit-set-btn`           | Edytuj zestaw (sekcja ćwiczeń)  | `exercise-sets/[id]/page.tsx` |
-| `set-detail-assign-btn`             | Personalizuj i przypisz         | `exercise-sets/[id]/page.tsx` |
-| `set-detail-pdf-btn`                | Generuj PDF                     | `exercise-sets/[id]/page.tsx` |
-| `set-exercise-item-{id}`            | Ćwiczenie w zestawie            | `exercise-sets/[id]/page.tsx` |
-| `set-exercise-item-{id}-edit-btn`   | Edytuj w zestawie               | `exercise-sets/[id]/page.tsx` |
-| `set-exercise-item-{id}-remove-btn` | Usuń z zestawu                  | `exercise-sets/[id]/page.tsx` |
-| `set-form`                          | Formularz zestawu               | `SetForm.tsx`                 |
-| `set-form-name-input`               | Nazwa zestawu                   | `SetForm.tsx`                 |
-| `set-form-description-input`        | Opis zestawu                    | `SetForm.tsx`                 |
-| `set-form-submit-btn`               | Zapisz                          | `SetForm.tsx`                 |
-| `set-form-cancel-btn`               | Anuluj                          | `SetForm.tsx`                 |
-| `set-dialog`                        | Dialog zestawu                  | `SetDialog.tsx`               |
-| `set-dialog-title`                  | Tytuł dialogu                   | `SetDialog.tsx`               |
-| `set-wizard`                        | Kreator zestawu                 | `CreateSetWizard.tsx`         |
-| `set-wizard-name-input`             | Nazwa w kreatorze               | `CreateSetWizard.tsx`         |
-| `set-wizard-description-input`      | Opis zestawu                    | `CreateSetWizard.tsx`         |
-| `set-wizard-search-input`           | Wyszukaj ćwiczenia              | `CreateSetWizard.tsx`         |
-| `set-wizard-exercise-{id}`          | Ćwiczenie do wyboru             | `CreateSetWizard.tsx`         |
-| `set-wizard-selected-{id}`          | Wybrane ćwiczenie               | `CreateSetWizard.tsx`         |
-| `set-wizard-next-btn`               | Dalej: Ćwiczenia                | `CreateSetWizard.tsx`         |
-| `set-wizard-back-btn`               | Wstecz                          | `CreateSetWizard.tsx`         |
-| `set-wizard-create-empty-btn`       | Utwórz pusty zestaw             | `CreateSetWizard.tsx`         |
-| `set-wizard-create-btn`             | Utwórz zestaw (z ćwiczeniami)   | `CreateSetWizard.tsx`         |
-| `set-add-exercise-dialog`           | Dialog dodawania                | `AddExerciseToSetDialog.tsx`  |
-| `set-add-exercise-search`           | Wyszukaj ćwiczenia              | `AddExerciseToSetDialog.tsx`  |
-| `set-add-exercise-{id}`             | Ćwiczenie do dodania            | `AddExerciseToSetDialog.tsx`  |
-| `set-add-exercise-submit-btn`       | Dodaj wybrane                   | `AddExerciseToSetDialog.tsx`  |
-| `set-edit-exercise-dialog`          | Dialog edycji                   | `EditExerciseInSetDialog.tsx` |
-| `set-edit-exercise-sets-input`      | Serie                           | `EditExerciseInSetDialog.tsx` |
-| `set-edit-exercise-reps-input`      | Powtórzenia                     | `EditExerciseInSetDialog.tsx` |
-| `set-edit-exercise-duration-input`  | Czas trwania                    | `EditExerciseInSetDialog.tsx` |
-| `set-edit-exercise-submit-btn`      | Zapisz zmiany                   | `EditExerciseInSetDialog.tsx` |
-| `set-frequency-times-per-day`       | Razy dziennie                   | `FrequencyPicker.tsx`         |
-| `set-frequency-times-per-week`      | Razy tygodniowo                 | `FrequencyPicker.tsx`         |
-| `set-frequency-day-{day}`           | Dzień tygodnia                  | `FrequencyPicker.tsx`         |
-| `set-pdf-dialog`                    | Dialog PDF                      | `GeneratePDFDialog.tsx`       |
-| `set-pdf-download-btn`              | Pobierz PDF                     | `GeneratePDFDialog.tsx`       |
+| data-testid                                   | Element                                  | Plik                          |
+| --------------------------------------------- | ---------------------------------------- | ----------------------------- |
+| `set-page-title`                              | Tytuł strony                             | `exercise-sets/page.tsx`      |
+| `set-search-input`                            | Wyszukiwarka                             | `exercise-sets/page.tsx`      |
+| `set-tag-filter-btn`                          | Dropdown filtra tagów                    | `exercise-sets/page.tsx`      |
+| `set-filter-all-templates-btn`                | Filtr: Wszystkie szablony                | `exercise-sets/page.tsx`      |
+| `set-filter-fiziyo-templates-btn`             | Filtr: Szablony FiziYo                   | `exercise-sets/page.tsx`      |
+| `set-filter-my-templates-btn`                 | Filtr: Moje szablony                     | `exercise-sets/page.tsx`      |
+| `set-filter-patient-plans-btn`                | Filtr: Zestawy spersonalizowane          | `exercise-sets/page.tsx`      |
+| `set-create-btn`                              | Utwórz zestaw                            | `exercise-sets/page.tsx`      |
+| `set-create-wizard-btn`                       | Kreator zestawu                          | `exercise-sets/page.tsx`      |
+| `set-card-{id}`                               | Karta zestawu                            | `SetCard.tsx`                 |
+| `set-card-{id}-assign-btn`                    | Personalizuj i przypisz                  | `SetCard.tsx`                 |
+| `set-card-{id}-copy-link-btn`                 | Kopiuj link publiczny                    | `SetCard.tsx`                 |
+| `set-card-{id}-menu-trigger`                  | Menu kontekstowe (3 kropki)              | `SetCard.tsx`                 |
+| `set-card-{id}-edit-btn`                      | Edytuj (w menu)                          | `SetCard.tsx`                 |
+| `set-card-{id}-duplicate-btn`                 | Duplikuj (w menu)                        | `SetCard.tsx`                 |
+| `set-card-{id}-delete-btn`                    | Usuń (w menu)                            | `SetCard.tsx`                 |
+| `set-detail-back-btn`                         | Przycisk wstecz                          | `exercise-sets/[id]/page.tsx` |
+| `set-detail-name`                             | Nazwa zestawu                            | `exercise-sets/[id]/page.tsx` |
+| `set-detail-menu-trigger`                     | Menu akcji                               | `exercise-sets/[id]/page.tsx` |
+| `set-detail-edit-btn`                         | Edytuj zestaw                            | `exercise-sets/[id]/page.tsx` |
+| `set-detail-delete-btn`                       | Usuń zestaw                              | `exercise-sets/[id]/page.tsx` |
+| `set-detail-edit-set-btn`                     | Edytuj zestaw (sekcja ćwiczeń)           | `exercise-sets/[id]/page.tsx` |
+| `set-detail-assign-btn`                       | Personalizuj i przypisz                  | `exercise-sets/[id]/page.tsx` |
+| `set-detail-pdf-btn`                          | Generuj PDF                              | `exercise-sets/[id]/page.tsx` |
+| `set-detail-assignment-{id}-schedule-summary` | Skrót harmonogramu na karcie przypisania | `exercise-sets/[id]/page.tsx` |
+| `set-exercise-item-{id}`                      | Ćwiczenie w zestawie                     | `exercise-sets/[id]/page.tsx` |
+| `set-exercise-item-{id}-edit-btn`             | Edytuj w zestawie                        | `exercise-sets/[id]/page.tsx` |
+| `set-exercise-item-{id}-remove-btn`           | Usuń z zestawu                           | `exercise-sets/[id]/page.tsx` |
+| `set-form`                                    | Formularz zestawu                        | `SetForm.tsx`                 |
+| `set-form-name-input`                         | Nazwa zestawu                            | `SetForm.tsx`                 |
+| `set-form-description-input`                  | Opis zestawu                             | `SetForm.tsx`                 |
+| `set-form-submit-btn`                         | Zapisz                                   | `SetForm.tsx`                 |
+| `set-form-cancel-btn`                         | Anuluj                                   | `SetForm.tsx`                 |
+| `set-dialog`                                  | Dialog zestawu                           | `SetDialog.tsx`               |
+| `set-dialog-title`                            | Tytuł dialogu                            | `SetDialog.tsx`               |
+| `set-wizard`                                  | Kreator zestawu                          | `CreateSetWizard.tsx`         |
+| `set-wizard-name-input`                       | Nazwa w kreatorze                        | `CreateSetWizard.tsx`         |
+| `set-wizard-description-input`                | Opis zestawu                             | `CreateSetWizard.tsx`         |
+| `set-wizard-search-input`                     | Wyszukaj ćwiczenia                       | `CreateSetWizard.tsx`         |
+| `set-wizard-exercise-{id}`                    | Ćwiczenie do wyboru                      | `CreateSetWizard.tsx`         |
+| `set-wizard-selected-{id}`                    | Wybrane ćwiczenie                        | `CreateSetWizard.tsx`         |
+| `set-wizard-next-btn`                         | Dalej: Ćwiczenia                         | `CreateSetWizard.tsx`         |
+| `set-wizard-back-btn`                         | Wstecz                                   | `CreateSetWizard.tsx`         |
+| `set-wizard-create-empty-btn`                 | Utwórz pusty zestaw                      | `CreateSetWizard.tsx`         |
+| `set-wizard-create-btn`                       | Utwórz zestaw (z ćwiczeniami)            | `CreateSetWizard.tsx`         |
+| `set-add-exercise-dialog`                     | Dialog dodawania                         | `AddExerciseToSetDialog.tsx`  |
+| `set-add-exercise-search`                     | Wyszukaj ćwiczenia                       | `AddExerciseToSetDialog.tsx`  |
+| `set-add-exercise-{id}`                       | Ćwiczenie do dodania                     | `AddExerciseToSetDialog.tsx`  |
+| `set-add-exercise-submit-btn`                 | Dodaj wybrane                            | `AddExerciseToSetDialog.tsx`  |
+| `set-edit-exercise-dialog`                    | Dialog edycji                            | `EditExerciseInSetDialog.tsx` |
+| `set-edit-exercise-sets-input`                | Serie                                    | `EditExerciseInSetDialog.tsx` |
+| `set-edit-exercise-reps-input`                | Powtórzenia                              | `EditExerciseInSetDialog.tsx` |
+| `set-edit-exercise-duration-input`            | Czas trwania                             | `EditExerciseInSetDialog.tsx` |
+| `set-edit-exercise-submit-btn`                | Zapisz zmiany                            | `EditExerciseInSetDialog.tsx` |
+| `set-frequency-times-per-day`                 | Razy dziennie                            | `FrequencyPicker.tsx`         |
+| `set-frequency-times-per-week`                | Razy tygodniowo                          | `FrequencyPicker.tsx`         |
+| `set-frequency-day-{day}`                     | Dzień tygodnia                           | `FrequencyPicker.tsx`         |
+| `set-pdf-dialog`                              | Dialog PDF                               | `GeneratePDFDialog.tsx`       |
+| `set-pdf-download-btn`                        | Pobierz PDF                              | `GeneratePDFDialog.tsx`       |
 
 ### 6. Pacjenci (patient-)
 
-| data-testid                                  | Element                              | Plik                               |
-| -------------------------------------------- | ------------------------------------ | ---------------------------------- |
-| `patient-page-title`                         | Tytuł strony                         | `patients/page.tsx`                |
-| `patient-search-input`                       | Wyszukiwarka                         | `patients/page.tsx`                |
-| `patient-filter-dropdown`                    | Dropdown filtra (Collaborative Care) | `PatientFilter.tsx`                |
-| `patient-filter-option-my`                   | Opcja: Moi pacjenci                  | `PatientFilter.tsx`                |
-| `patient-filter-option-all`                  | Opcja: Wszyscy                       | `PatientFilter.tsx`                |
-| `patient-filter-option-unassigned`           | Opcja: Nieprzypisani                 | `PatientFilter.tsx`                |
-| `patient-filter-my-btn`                      | Filtr: Moi (Quick Stats)             | `patients/page.tsx`                |
-| `patient-filter-all-btn`                     | Filtr: Wszyscy (Quick Stats)         | `patients/page.tsx`                |
-| `patient-filter-unassigned-btn`              | Filtr: Nieprzypisani (Quick Stats)   | `patients/page.tsx`                |
-| `patient-create-btn`                         | Dodaj pacjenta                       | `patients/page.tsx`                |
-| `patient-card-{id}`                          | Karta pacjenta                       | `PatientCard.tsx`                  |
-| `patient-card-{id}-menu-trigger`             | Menu kontekstowe                     | `PatientCard.tsx`                  |
-| `patient-card-{id}-view-btn`                 | Podgląd                              | `PatientCard.tsx`                  |
-| `patient-card-{id}-edit-btn`                 | Edytuj                               | `PatientCard.tsx`                  |
-| `patient-card-{id}-assign-btn`               | Personalizuj i przypisz              | `PatientCard.tsx`                  |
-| `patient-card-{id}-delete-btn`               | Usuń                                 | `PatientCard.tsx`                  |
-| `patient-card-therapist-badge`               | Badge fizjoterapeuty                 | `TherapistBadge.tsx`               |
-| `patient-card-therapist-badge-unassigned`    | Badge nieprzypisany                  | `TherapistBadge.tsx`               |
-| `patient-takeover-btn`                       | Przejmij opiekę (przycisk)           | `PatientExpandableCard.tsx`        |
-| `patient-takeover-dialog`                    | Dialog przejmowania opieki           | `TakeOverDialog.tsx`               |
-| `patient-takeover-confirm-btn`               | Potwierdź przejęcie                  | `TakeOverDialog.tsx`               |
-| `patient-expandable-{id}`                    | Karta rozwijana                      | `PatientExpandableCard.tsx`        |
-| `patient-expandable-{id}-assign-btn`         | Personalizuj i przypisz              | `PatientExpandableCard.tsx`        |
-| `patient-expandable-{id}-menu-trigger`       | Menu kontekstowe                     | `PatientExpandableCard.tsx`        |
-| `patient-detail-back-btn`                    | Przycisk wstecz                      | `patients/[id]/page.tsx`           |
-| `patient-detail-name`                        | Imię i nazwisko                      | `patients/[id]/page.tsx`           |
-| `patient-detail-menu-trigger`                | Menu akcji                           | `patients/[id]/page.tsx`           |
-| `patient-detail-assign-btn`                  | Personalizuj i przypisz              | `patients/[id]/page.tsx`           |
-| `patient-detail-qr-btn`                      | Kod QR                               | `patients/[id]/page.tsx`           |
-| `patient-detail-edit-btn`                    | Edytuj dane                          | `patients/[id]/page.tsx`           |
-| `patient-form`                               | Formularz pacjenta                   | `PatientForm.tsx`                  |
-| `patient-form-firstname-input`               | Imię                                 | `PatientForm.tsx`                  |
-| `patient-form-lastname-input`                | Nazwisko                             | `PatientForm.tsx`                  |
-| `patient-form-phone-input`                   | Telefon                              | `PatientForm.tsx`                  |
-| `patient-form-email-input`                   | Email                                | `PatientForm.tsx`                  |
-| `patient-form-context-input`                 | Etykieta kontekstu                   | `PatientForm.tsx`                  |
-| `patient-form-submit-btn`                    | Zapisz                               | `PatientForm.tsx`                  |
-| `patient-form-cancel-btn`                    | Anuluj                               | `PatientForm.tsx`                  |
-| `patient-dialog`                             | Dialog pacjenta                      | `PatientDialog.tsx`                |
-| `patient-dialog-title`                       | Tytuł dialogu                        | `PatientDialog.tsx`                |
-| `patient-assignment-{id}`                    | Karta przypisania                    | `PatientAssignmentCard.tsx`        |
-| `patient-assignment-status-badge-{id}`       | Główny badge statusu przypisania     | `PatientAssignmentCard.tsx`        |
-| `patient-assignment-premium-hint-{id}`       | Dodatkowy sygnał „Brak Premium”      | `PatientAssignmentCard.tsx`        |
-| `patient-assignment-{id}-edit-btn`           | Edytuj harmonogram                   | `PatientAssignmentCard.tsx`        |
-| `patient-assignment-{id}-remove-btn`         | Usuń przypisanie                     | `PatientAssignmentCard.tsx`        |
-| `patient-assignment-{id}-pdf-btn`            | Generuj PDF                          | `PatientAssignmentCard.tsx`        |
-| `patient-notes-section`                      | Sekcja notatek                       | `PatientNotes.tsx`                 |
-| `patient-notes-add-btn`                      | Dodaj notatkę                        | `PatientNotes.tsx`                 |
-| `patient-notes-input`                        | Treść notatki                        | `PatientNotes.tsx`                 |
-| `patient-note-{id}`                          | Notatka                              | `PatientNotes.tsx`                 |
-| `patient-note-{id}-delete-btn`               | Usuń notatkę                         | `PatientNotes.tsx`                 |
-| `patient-qr-dialog`                          | Dialog QR                            | `PatientQRCodeDialog.tsx`          |
-| `patient-qr-download-btn`                    | Pobierz QR                           | `PatientQRCodeDialog.tsx`          |
-| `patient-qr-copy-btn`                        | Kopiuj link                          | `PatientQRCodeDialog.tsx`          |
-| `patient-schedule-dialog`                    | Dialog harmonogramu                  | `EditAssignmentScheduleDialog.tsx` |
-| `patient-schedule-start-date`                | Data rozpoczęcia                     | `EditAssignmentScheduleDialog.tsx` |
-| `patient-schedule-end-date`                  | Data zakończenia                     | `EditAssignmentScheduleDialog.tsx` |
-| `patient-schedule-submit-btn`                | Zapisz harmonogram                   | `EditAssignmentScheduleDialog.tsx` |
-| `patient-override-dialog`                    | Dialog nadpisania                    | `EditExerciseOverrideDialog.tsx`   |
-| `patient-override-sets-input`                | Serie                                | `EditExerciseOverrideDialog.tsx`   |
-| `patient-override-reps-input`                | Powtórzenia                          | `EditExerciseOverrideDialog.tsx`   |
-| `patient-override-submit-btn`                | Zapisz zmiany                        | `EditExerciseOverrideDialog.tsx`   |
-| `patient-context-edit-btn`                   | Edytuj etykietę                      | `EditContextLabelDialog.tsx`       |
-| `patient-context-dialog`                     | Dialog etykiety                      | `EditContextLabelDialog.tsx`       |
-| `patient-context-submit-btn`                 | Zapisz etykietę                      | `EditContextLabelDialog.tsx`       |
-| `patient-premium-badge-{id}`                 | Badge statusu Premium                | `PremiumStatusBadge.tsx`           |
-| `patient-premium-activate-btn-{id}`          | Przycisk aktywacji Premium           | `PremiumStatusBadge.tsx`           |
-| `patient-premium-confirm-dialog`             | Dialog potwierdzenia aktywacji       | `ActivatePremiumDialog.tsx`        |
-| `patient-premium-confirm-dialog-title`       | Tytuł dialogu aktywacji              | `ActivatePremiumDialog.tsx`        |
-| `patient-premium-confirm-dialog-confirm-btn` | Przycisk potwierdzenia               | `ActivatePremiumDialog.tsx`        |
-| `patient-premium-confirm-dialog-cancel-btn`  | Przycisk anulowania                  | `ActivatePremiumDialog.tsx`        |
+| data-testid                                         | Element                                    | Plik                               |
+| --------------------------------------------------- | ------------------------------------------ | ---------------------------------- |
+| `patient-page-title`                                | Tytuł strony                               | `patients/page.tsx`                |
+| `patient-search-input`                              | Wyszukiwarka                               | `patients/page.tsx`                |
+| `patient-filter-dropdown`                           | Dropdown filtra (Collaborative Care)       | `PatientFilter.tsx`                |
+| `patient-filter-option-my`                          | Opcja: Moi pacjenci                        | `PatientFilter.tsx`                |
+| `patient-filter-option-all`                         | Opcja: Wszyscy                             | `PatientFilter.tsx`                |
+| `patient-filter-option-unassigned`                  | Opcja: Nieprzypisani                       | `PatientFilter.tsx`                |
+| `patient-filter-my-btn`                             | Filtr: Moi (Quick Stats)                   | `patients/page.tsx`                |
+| `patient-filter-all-btn`                            | Filtr: Wszyscy (Quick Stats)               | `patients/page.tsx`                |
+| `patient-filter-unassigned-btn`                     | Filtr: Nieprzypisani (Quick Stats)         | `patients/page.tsx`                |
+| `patient-create-btn`                                | Dodaj pacjenta                             | `patients/page.tsx`                |
+| `patient-card-{id}`                                 | Karta pacjenta                             | `PatientCard.tsx`                  |
+| `patient-card-{id}-menu-trigger`                    | Menu kontekstowe                           | `PatientCard.tsx`                  |
+| `patient-card-{id}-view-btn`                        | Podgląd                                    | `PatientCard.tsx`                  |
+| `patient-card-{id}-edit-btn`                        | Edytuj                                     | `PatientCard.tsx`                  |
+| `patient-card-{id}-assign-btn`                      | Personalizuj i przypisz                    | `PatientCard.tsx`                  |
+| `patient-card-{id}-delete-btn`                      | Usuń                                       | `PatientCard.tsx`                  |
+| `patient-card-therapist-badge`                      | Badge fizjoterapeuty                       | `TherapistBadge.tsx`               |
+| `patient-card-therapist-badge-unassigned`           | Badge nieprzypisany                        | `TherapistBadge.tsx`               |
+| `patient-takeover-btn`                              | Przejmij opiekę (przycisk)                 | `PatientExpandableCard.tsx`        |
+| `patient-takeover-dialog`                           | Dialog przejmowania opieki                 | `TakeOverDialog.tsx`               |
+| `patient-takeover-confirm-btn`                      | Potwierdź przejęcie                        | `TakeOverDialog.tsx`               |
+| `patient-expandable-{id}`                           | Karta rozwijana                            | `PatientExpandableCard.tsx`        |
+| `patient-expandable-{id}-assign-btn`                | Personalizuj i przypisz                    | `PatientExpandableCard.tsx`        |
+| `patient-expandable-{id}-menu-trigger`              | Menu kontekstowe                           | `PatientExpandableCard.tsx`        |
+| `patient-detail-back-btn`                           | Przycisk wstecz                            | `patients/[id]/page.tsx`           |
+| `patient-detail-name`                               | Imię i nazwisko                            | `patients/[id]/page.tsx`           |
+| `patient-detail-menu-trigger`                       | Menu akcji                                 | `patients/[id]/page.tsx`           |
+| `patient-detail-assign-btn`                         | Personalizuj i przypisz                    | `patients/[id]/page.tsx`           |
+| `patient-detail-qr-btn`                             | Kod QR                                     | `patients/[id]/page.tsx`           |
+| `patient-detail-edit-btn`                           | Edytuj dane                                | `patients/[id]/page.tsx`           |
+| `patient-form`                                      | Formularz pacjenta                         | `PatientForm.tsx`                  |
+| `patient-form-firstname-input`                      | Imię                                       | `PatientForm.tsx`                  |
+| `patient-form-lastname-input`                       | Nazwisko                                   | `PatientForm.tsx`                  |
+| `patient-form-phone-input`                          | Telefon                                    | `PatientForm.tsx`                  |
+| `patient-form-email-input`                          | Email                                      | `PatientForm.tsx`                  |
+| `patient-form-context-input`                        | Etykieta kontekstu                         | `PatientForm.tsx`                  |
+| `patient-form-submit-btn`                           | Zapisz                                     | `PatientForm.tsx`                  |
+| `patient-form-cancel-btn`                           | Anuluj                                     | `PatientForm.tsx`                  |
+| `patient-dialog`                                    | Dialog pacjenta                            | `PatientDialog.tsx`                |
+| `patient-dialog-title`                              | Tytuł dialogu                              | `PatientDialog.tsx`                |
+| `patient-assignment-{id}`                           | Karta przypisania                          | `PatientAssignmentCard.tsx`        |
+| `patient-assignment-status-badge-{id}`              | Główny badge statusu przypisania           | `PatientAssignmentCard.tsx`        |
+| `patient-assignment-premium-hint-{id}`              | Dodatkowy sygnał „Brak Premium”            | `PatientAssignmentCard.tsx`        |
+| `patient-assignment-{id}-edit-btn`                  | Edytuj harmonogram                         | `PatientAssignmentCard.tsx`        |
+| `patient-assignment-{id}-remove-btn`                | Usuń przypisanie                           | `PatientAssignmentCard.tsx`        |
+| `patient-assignment-{id}-pdf-btn`                   | Generuj PDF                                | `PatientAssignmentCard.tsx`        |
+| `patient-assignment-{id}-schedule-summary`          | Kompaktowy harmonogram (karta zwinięta)    | `PatientAssignmentCard.tsx`        |
+| `patient-assignment-expanded-{id}-schedule-summary` | Harmonogram szczegółowy (karta rozwinięta) | `PatientAssignmentCard.tsx`        |
+| `patient-notes-section`                             | Sekcja notatek                             | `PatientNotes.tsx`                 |
+| `patient-notes-add-btn`                             | Dodaj notatkę                              | `PatientNotes.tsx`                 |
+| `patient-notes-input`                               | Treść notatki                              | `PatientNotes.tsx`                 |
+| `patient-note-{id}`                                 | Notatka                                    | `PatientNotes.tsx`                 |
+| `patient-note-{id}-delete-btn`                      | Usuń notatkę                               | `PatientNotes.tsx`                 |
+| `patient-qr-dialog`                                 | Dialog QR                                  | `PatientQRCodeDialog.tsx`          |
+| `patient-qr-download-btn`                           | Pobierz QR                                 | `PatientQRCodeDialog.tsx`          |
+| `patient-qr-copy-btn`                               | Kopiuj link                                | `PatientQRCodeDialog.tsx`          |
+| `patient-schedule-dialog`                           | Dialog harmonogramu                        | `EditAssignmentScheduleDialog.tsx` |
+| `patient-schedule-start-date`                       | Data rozpoczęcia                           | `EditAssignmentScheduleDialog.tsx` |
+| `patient-schedule-end-date`                         | Data zakończenia                           | `EditAssignmentScheduleDialog.tsx` |
+| `patient-schedule-edit-schedule-summary`            | Podsumowanie harmonogramu w dialogu        | `EditAssignmentScheduleDialog.tsx` |
+| `patient-schedule-submit-btn`                       | Zapisz harmonogram                         | `EditAssignmentScheduleDialog.tsx` |
+| `patient-override-dialog`                           | Dialog nadpisania                          | `EditExerciseOverrideDialog.tsx`   |
+| `patient-override-sets-input`                       | Serie                                      | `EditExerciseOverrideDialog.tsx`   |
+| `patient-override-reps-input`                       | Powtórzenia                                | `EditExerciseOverrideDialog.tsx`   |
+| `patient-override-submit-btn`                       | Zapisz zmiany                              | `EditExerciseOverrideDialog.tsx`   |
+| `patient-context-edit-btn`                          | Edytuj etykietę                            | `EditContextLabelDialog.tsx`       |
+| `patient-context-dialog`                            | Dialog etykiety                            | `EditContextLabelDialog.tsx`       |
+| `patient-context-submit-btn`                        | Zapisz etykietę                            | `EditContextLabelDialog.tsx`       |
+| `patient-premium-badge-{id}`                        | Badge statusu Premium                      | `PremiumStatusBadge.tsx`           |
+| `patient-premium-activate-btn-{id}`                 | Przycisk aktywacji Premium                 | `PremiumStatusBadge.tsx`           |
+| `patient-premium-confirm-dialog`                    | Dialog potwierdzenia aktywacji             | `ActivatePremiumDialog.tsx`        |
+| `patient-premium-confirm-dialog-title`              | Tytuł dialogu aktywacji                    | `ActivatePremiumDialog.tsx`        |
+| `patient-premium-confirm-dialog-confirm-btn`        | Przycisk potwierdzenia                     | `ActivatePremiumDialog.tsx`        |
+| `patient-premium-confirm-dialog-cancel-btn`         | Przycisk anulowania                        | `ActivatePremiumDialog.tsx`        |
 
 ### 7. Przypisywanie zestawów (assign-)
 
-| data-testid                            | Element                                   | Plik                         |
-| -------------------------------------- | ----------------------------------------- | ---------------------------- |
-| `assign-wizard`                        | Kreator przypisywania                     | `AssignmentWizard.tsx`       |
-| `assign-wizard-step-indicator`         | Wskaźnik kroków                           | `AssignmentWizard.tsx`       |
-| `assign-wizard-close-btn`              | Zamknij kreator                           | `AssignmentWizard.tsx`       |
-| `assign-wizard-back-btn`               | Wstecz                                    | `AssignmentWizard.tsx`       |
-| `assign-wizard-next-btn`               | Dalej                                     | `AssignmentWizard.tsx`       |
-| `assign-select-set-search`             | Wyszukaj zestaw                           | `SelectSetStep.tsx`          |
-| `assign-select-set-{id}`               | Zestaw do wyboru                          | `SelectSetStep.tsx`          |
-| `assign-select-patients-search`        | Wyszukaj pacjenta                         | `SelectPatientsStep.tsx`     |
-| `assign-select-patient-{id}`           | Pacjent do wyboru                         | `SelectPatientsStep.tsx`     |
-| `assign-select-all-btn`                | Zaznacz wszystkich                        | `SelectPatientsStep.tsx`     |
-| `assign-customize-exercise-{id}`       | Ćwiczenie do dostosowania                 | `CustomizeExercisesStep.tsx` |
-| `assign-customize-{id}-sets-input`     | Serie                                     | `CustomizeExercisesStep.tsx` |
-| `assign-customize-{id}-reps-input`     | Powtórzenia                               | `CustomizeExercisesStep.tsx` |
-| `assign-schedule-start-date`           | Data rozpoczęcia                          | `ScheduleStep.tsx`           |
-| `assign-schedule-end-date`             | Data zakończenia                          | `ScheduleStep.tsx`           |
-| `assign-schedule-frequency`            | Częstotliwość                             | `ScheduleStep.tsx`           |
-| `assign-schedule-save-template-toggle` | Kontener: zapisz jako szablon             | `AssignmentWizard.tsx`       |
-| `assign-schedule-save-template-switch` | Przełącznik: zapisz jako szablon          | `AssignmentWizard.tsx`       |
-| `assign-schedule-save-template-label`  | Etykieta: zapisz kopię jako szablon       | `AssignmentWizard.tsx`       |
-| `assign-summary-save-template-toggle`  | Przełącznik: zapisz jako szablon          | `SummaryStep.tsx`            |
-| `assign-summary-save-template-label`   | Etykieta: zapisz kopię planu jako szablon | `SummaryStep.tsx`            |
-| `assign-summary`                       | Podsumowanie                              | `SummaryStep.tsx`            |
-| `assign-summary-submit-btn`            | Utwórz plan i przypisz                    | `SummaryStep.tsx`            |
+| data-testid                             | Element                                   | Plik                          |
+| --------------------------------------- | ----------------------------------------- | ----------------------------- |
+| `assign-wizard`                         | Kreator przypisywania                     | `AssignmentWizard.tsx`        |
+| `assign-wizard-step-indicator`          | Wskaźnik kroków                           | `AssignmentWizard.tsx`        |
+| `assign-wizard-close-btn`               | Zamknij kreator                           | `AssignmentWizard.tsx`        |
+| `assign-wizard-back-btn`                | Wstecz                                    | `AssignmentWizard.tsx`        |
+| `assign-wizard-next-btn`                | Dalej                                     | `AssignmentWizard.tsx`        |
+| `assign-select-set-search`              | Wyszukaj zestaw                           | `SelectSetStep.tsx`           |
+| `assign-select-set-{id}`                | Zestaw do wyboru                          | `SelectSetStep.tsx`           |
+| `assign-select-patients-search`         | Wyszukaj pacjenta                         | `SelectPatientsStep.tsx`      |
+| `assign-select-patient-{id}`            | Pacjent do wyboru                         | `SelectPatientsStep.tsx`      |
+| `assign-select-all-btn`                 | Zaznacz wszystkich                        | `SelectPatientsStep.tsx`      |
+| `assign-customize-exercise-{id}`        | Ćwiczenie do dostosowania                 | `CustomizeExercisesStep.tsx`  |
+| `assign-customize-{id}-sets-input`      | Serie                                     | `CustomizeExercisesStep.tsx`  |
+| `assign-customize-{id}-reps-input`      | Powtórzenia                               | `CustomizeExercisesStep.tsx`  |
+| `assign-schedule-start-date`            | Data rozpoczęcia                          | `ScheduleStep.tsx`            |
+| `assign-schedule-end-date`              | Data zakończenia                          | `ScheduleStep.tsx`            |
+| `assign-schedule-summary`               | Stopka podsumowania harmonogramu          | `ScheduleStep.tsx`            |
+| `assign-schedule-frequency`             | Częstotliwość                             | `ScheduleStep.tsx`            |
+| `assign-schedule-save-template-toggle`  | Kontener: zapisz jako szablon             | `AssignmentWizard.tsx`        |
+| `assign-schedule-save-template-switch`  | Przełącznik: zapisz jako szablon          | `AssignmentWizard.tsx`        |
+| `assign-schedule-save-template-label`   | Etykieta: zapisz kopię jako szablon       | `AssignmentWizard.tsx`        |
+| `assign-summary-save-template-toggle`   | Przełącznik: zapisz jako szablon          | `SummaryStep.tsx`             |
+| `assign-summary-save-template-label`    | Etykieta: zapisz kopię planu jako szablon | `SummaryStep.tsx`             |
+| `assign-summary`                        | Podsumowanie                              | `SummaryStep.tsx`             |
+| `summary-schedule-summary`              | Karta harmonogramu w podsumowaniu         | `SummaryStep.tsx`             |
+| `assign-wizard-header-schedule-summary` | Skrót harmonogramu w headerze wizarda     | `AssignmentWizard.tsx`        |
+| `assign-success-schedule-summary`       | Karta harmonogramu w dialogu sukcesu      | `AssignmentSuccessDialog.tsx` |
+| `assign-summary-submit-btn`             | Utwórz plan i przypisz                    | `SummaryStep.tsx`             |
 
 ### 8. AI Chat (ai-)
 

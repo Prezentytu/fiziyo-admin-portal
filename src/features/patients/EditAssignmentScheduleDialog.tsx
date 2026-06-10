@@ -4,14 +4,14 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useMutation } from '@apollo/client/react';
 import { Loader2, Calendar, Zap, Info, Minus, Plus } from 'lucide-react';
 import { toast } from 'sonner';
-import { addDays, addWeeks, differenceInDays, format, startOfDay } from 'date-fns';
-import { pl } from 'date-fns/locale';
+import { addDays, addWeeks, differenceInDays, format } from 'date-fns';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
+import { ScheduleSummary } from '@/components/shared';
 import {
   Dialog,
   DialogContent,
@@ -22,6 +22,7 @@ import {
 } from '@/components/ui/dialog';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { getDefaultDaysForFrequency } from '@/features/assignment/utils/scheduleUtils';
+import { calculateScheduleSummary, calculateStartInDays, pluralizeDay } from '@/features/assignment/utils/scheduleSummaryUtils';
 
 import { UPDATE_EXERCISE_SET_ASSIGNMENT_MUTATION } from '@/graphql/mutations/exercises.mutations';
 import { GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY } from '@/graphql/queries/patientAssignments.queries';
@@ -144,10 +145,6 @@ function detectDurationType(startDate: Date, endDate: Date): DurationType {
   if (days >= 26 && days <= 32) return 'WEEKS_4';
   if (days >= 54 && days <= 60) return 'WEEKS_8';
   return 'CUSTOM';
-}
-
-function pluralizeDay(dayCount: number): string {
-  return dayCount === 1 ? 'dzień' : 'dni';
 }
 
 interface CardOptionProps {
@@ -281,16 +278,16 @@ export function EditAssignmentScheduleDialog({
 
   const selectedDaysCount = useMemo(() => getSelectedDaysCount(frequency), [frequency]);
   const frequencyType = useMemo(() => detectFrequencyType(frequency), [frequency]);
-  const durationDays = Math.max(1, differenceInDays(startOfDay(endDate), startOfDay(startDate)));
-  const effectiveWeeklyFrequency = frequencyType === 'SPECIFIC_DAYS' ? selectedDaysCount : frequency.timesPerWeek;
-  const totalSessions = Math.round((durationDays / 7) * effectiveWeeklyFrequency * frequency.timesPerDay);
-  const daysToStart = differenceInDays(startOfDay(startDate), startOfDay(new Date()));
-  const selectedDayLabels = DAYS.filter((day) => frequency[day.key]).map((day) => day.label).join(', ');
-  const specificDaysSuffix = selectedDayLabels ? ` (${selectedDayLabels})` : '';
-  const summaryFrequencyText =
-    frequencyType === 'SPECIFIC_DAYS'
-      ? `${selectedDaysCount} dni/tydzień${specificDaysSuffix}`
-      : `${frequency.timesPerWeek}x/tydzień, ${frequency.timesPerDay}x dziennie`;
+  const scheduleSummary = useMemo(
+    () =>
+      calculateScheduleSummary({
+        startDate,
+        endDate,
+        frequency,
+      }),
+    [endDate, frequency, startDate]
+  );
+  const daysToStart = calculateStartInDays(startDate);
   const canSave = !loading && !!assignment && !(frequencyType === 'SPECIFIC_DAYS' && selectedDaysCount === 0);
 
   const applyFrequencyType = (nextType: FrequencyType) => {
@@ -705,30 +702,33 @@ export function EditAssignmentScheduleDialog({
               <Info className="h-3.5 w-3.5" />
               Podsumowanie planu
             </div>
-            <div className="flex flex-wrap items-center gap-x-5 gap-y-1.5 text-sm text-muted-foreground">
-              <p>
-                Okres:{' '}
-                <span className="font-semibold text-foreground">
-                  {format(startDate, 'd MMM yyyy', { locale: pl })} — {format(endDate, 'd MMM yyyy', { locale: pl })}
-                </span>
-              </p>
-              <p>
-                Częstotliwość: <span className="font-semibold text-foreground">{summaryFrequencyText}</span>
-              </p>
-              <p>
-                Sesje: <span className="font-semibold text-foreground">~{Math.max(0, totalSessions)}</span>
-              </p>
-              <p>
-                Przerwa: <span className="font-semibold text-foreground">{frequency.breakBetweenSets}h</span>
-              </p>
-              {daysToStart > 0 && (
+            <div className="space-y-2">
+              <ScheduleSummary
+                startDate={startDate}
+                endDate={endDate}
+                frequency={frequency}
+                variant="card"
+                showSessions
+                showStartInDays={false}
+                className="border-0 bg-transparent p-0"
+                testIdPrefix="patient-schedule-edit"
+              />
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
                 <p>
-                  Start za{' '}
-                  <span className="font-semibold text-foreground">
-                    {daysToStart} {pluralizeDay(daysToStart)}
-                  </span>
+                  Przerwa: <span className="font-semibold text-foreground">{frequency.breakBetweenSets}h</span>
                 </p>
-              )}
+                <p>
+                  Sesje: <span className="font-semibold text-foreground">~{Math.max(0, scheduleSummary.totalSessions)}</span>
+                </p>
+                {daysToStart > 0 && (
+                  <p>
+                    Start za{' '}
+                    <span className="font-semibold text-foreground">
+                      {daysToStart} {pluralizeDay(daysToStart)}
+                    </span>
+                  </p>
+                )}
+              </div>
             </div>
           </div>
         </div>

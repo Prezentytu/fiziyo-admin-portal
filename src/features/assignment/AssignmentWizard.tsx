@@ -3,9 +3,9 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useApolloClient } from '@apollo/client/react';
 import { useRouter } from 'next/navigation';
-import { Loader2, ArrowLeft, ArrowRight, Users, Calendar, Pencil, Sparkles, X } from 'lucide-react';
+import { Loader2, ArrowLeft, ArrowRight, Users, Pencil, Sparkles, X } from 'lucide-react';
 import { toast } from 'sonner';
-import { addDays, differenceInDays, format } from 'date-fns';
+import { addDays, format } from 'date-fns';
 import { cn } from '@/lib/utils';
 
 import { Button } from '@/components/ui/button';
@@ -13,6 +13,7 @@ import { Switch } from '@/components/ui/switch';
 import * as VisuallyHidden from '@radix-ui/react-visually-hidden';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
+import { ScheduleSummary } from '@/components/shared';
 import { ExerciseDialog } from '@/features/exercises/ExerciseDialog';
 import { PatientDialog } from '@/features/patients/PatientDialog';
 import { defaultFrequency } from '@/features/exercise-sets/FrequencyPicker';
@@ -30,6 +31,7 @@ import { decideAssignmentPlanMode, type AssignmentExecutionMode } from './utils/
 import { buildStructuredLoad, mapAvailableExercises } from './utils/availableExercisesMapper';
 import { appendPatientIfMissing } from './utils/patientSelectionUtils';
 import { computeExerciseDiff, type ExerciseMappingSnapshot } from './utils/exerciseDiff';
+import { buildExerciseSetFromBuilder } from './utils/buildExerciseSetFromBuilder';
 import { calculateEstimatedTime } from '@/utils/exerciseTime';
 import {
   getWizardSteps,
@@ -76,6 +78,8 @@ interface SuccessDialogData {
   premiumValidUntil: string | null;
   exerciseSet: ExerciseSet;
   frequency: Frequency;
+  startDate: Date;
+  endDate: Date;
 }
 
 // Wrapper component that handles dialog state - content remounts on each open
@@ -161,6 +165,8 @@ export function AssignmentWizard(props: AssignmentWizardProps) {
           organizationId={organizationId}
           exerciseSet={successData.exerciseSet}
           frequency={successData.frequency}
+          startDate={successData.startDate}
+          endDate={successData.endDate}
           onViewPlan={() => {
             const detailQuery = new URLSearchParams({
               from: 'patient-plans',
@@ -1091,9 +1097,6 @@ function AssignmentWizardContent({
     }
   }, [steps, currentStep]);
 
-  // Calculate duration for context summary
-  const durationDays = differenceInDays(endDate, startDate);
-
   const estimatedSessionDurationSeconds = useMemo(() => {
     return builderInstances.reduce((totalSeconds, instance) => {
       const params = builderParams.get(instance.instanceId);
@@ -1361,12 +1364,14 @@ function AssignmentWizardContent({
         }
 
         exerciseSetIdToAssign = newSet.id;
-        effectiveSetForSuccess = {
-          id: newSet.id,
-          name: planName.trim(),
+        effectiveSetForSuccess = buildExerciseSetFromBuilder({
+          setId: newSet.id,
+          setName: planName.trim(),
           description: undefined,
-          exerciseMappings: [],
-        };
+          builderInstances,
+          builderParams,
+          availableExercises,
+        });
       } catch (createError) {
         console.error('Błąd tworzenia planu pacjenta:', createError);
         toast.error('Nie udało się utworzyć planu pacjenta');
@@ -1481,6 +1486,8 @@ function AssignmentWizardContent({
         premiumValidUntil: lastPremiumValidUntil,
         exerciseSet: effectiveSetForSuccess,
         frequency,
+        startDate,
+        endDate,
       });
 
       // Notify success callback
@@ -1625,33 +1632,14 @@ function AssignmentWizardContent({
         if (builderInstances.length === 0) return null;
 
         // Always build exercise set from builder state (it's always customized in customize-set step)
-        const summaryExerciseSet: ExerciseSet = {
-          id: isCreatingNewSet ? 'new-set' : selectedSet?.id || 'customized-set',
-          name: planName,
+        const summaryExerciseSet: ExerciseSet = buildExerciseSetFromBuilder({
+          setId: isCreatingNewSet ? 'new-set' : selectedSet?.id || 'customized-set',
+          setName: planName,
           description: selectedSet?.description,
-          exerciseMappings: builderInstances.map((instance, index) => {
-            const exercise = availableExercises.find((e) => e.id === instance.exerciseId);
-            const params = builderParams.get(instance.instanceId);
-            return {
-              id: instance.instanceId,
-              exerciseId: instance.exerciseId,
-              order: index + 1,
-              sets: params?.sets,
-              reps: params?.reps,
-              duration: params?.duration,
-              restSets: params?.restSets,
-              restReps: params?.restReps,
-              executionTime: params?.executionTime,
-              preparationTime: params?.preparationTime,
-              tempo: params?.tempo,
-              load: params?.load,
-              notes: params?.notes,
-              customName: params?.customName,
-              customDescription: params?.customDescription,
-              exercise: exercise,
-            };
-          }),
-        };
+          builderInstances,
+          builderParams,
+          availableExercises,
+        });
 
         const summaryLocalExercises =
           summaryExerciseSet.exerciseMappings?.map((m) => ({
@@ -1748,7 +1736,7 @@ function AssignmentWizardContent({
             </div>
             {/* Right: context chip + stepper + X — all h-9, centered in the same row */}
             <div className="flex-1 flex items-center gap-3 min-w-0 pl-3">
-              {selectedPatients.length > 0 || currentStep === 'summary' ? (
+              {selectedPatients.length > 0 || currentStep === 'schedule' || currentStep === 'summary' ? (
                 <div className="hidden sm:flex items-center gap-2 px-2 py-1 rounded-md bg-surface-light/40 text-[10px] text-muted-foreground shrink-0">
                   {selectedPatients.length > 0 && (
                     <div className="flex items-center gap-1">
@@ -1756,14 +1744,20 @@ function AssignmentWizardContent({
                       <span className="font-medium">{selectedPatients.length} {selectedPatients.length === 1 ? 'pacjent' : 'pacjentów'}</span>
                     </div>
                   )}
-                  {selectedPatients.length > 0 && currentStep === 'summary' && (
+                  {selectedPatients.length > 0 && (currentStep === 'schedule' || currentStep === 'summary') && (
                     <span className="text-border">·</span>
                   )}
-                  {currentStep === 'summary' && (
-                    <div className="flex items-center gap-1">
-                      <Calendar className="h-3 w-3" />
-                      <span className="font-medium">{durationDays} dni</span>
-                    </div>
+                  {(currentStep === 'schedule' || currentStep === 'summary') && (
+                    <ScheduleSummary
+                      startDate={startDate}
+                      endDate={endDate}
+                      frequency={frequency}
+                      variant="compact"
+                      showSessions={false}
+                      showStartInDays={false}
+                      testIdPrefix="assign-wizard-header"
+                      className="max-w-[280px]"
+                    />
                   )}
                 </div>
               ) : null}

@@ -1,9 +1,10 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { Calendar, Zap, ArrowRight, Minus, Plus, Info } from 'lucide-react';
-import { addDays, addWeeks, differenceInDays, format, startOfDay } from 'date-fns';
+import { Calendar, Zap, ArrowRight, Minus, Plus } from 'lucide-react';
+import { addDays, addWeeks, differenceInDays, format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { ScheduleSummary } from '@/components/shared';
 import { Input } from '@/components/ui/input';
 import { formatEstimatedTime } from '@/utils/exerciseTime';
 import { getDefaultDaysForFrequency } from './utils/scheduleUtils';
@@ -145,10 +146,6 @@ function detectDurationType(startDate: Date, endDate: Date): DurationType {
   return 'CUSTOM';
 }
 
-function pluralizeDay(dayCount: number): string {
-  return dayCount === 1 ? 'dzień' : 'dni';
-}
-
 export function ScheduleStep({
   startDate,
   endDate,
@@ -164,10 +161,7 @@ export function ScheduleStep({
   const selectedDaysCount = useMemo(() => getSelectedDaysCount(frequency), [frequency]);
   const frequencyType = useMemo(() => detectFrequencyType(frequency), [frequency]);
 
-  const durationDays = Math.max(1, differenceInDays(endDate, startDate));
-  const effectiveWeeklyFrequency = frequencyType === 'SPECIFIC_DAYS' ? selectedDaysCount : (frequency.timesPerWeek ?? 7);
   const estimatedDailyDurationSeconds = estimatedSessionDurationSeconds * Math.max(1, frequency.timesPerDay ?? 1);
-  const totalSessions = Math.round((durationDays / 7) * effectiveWeeklyFrequency * (frequency.timesPerDay ?? 1));
 
   const schedulePayload: SchedulePayload = useMemo(
     () => ({
@@ -281,8 +275,6 @@ export function ScheduleStep({
     setDurationType('CUSTOM');
     onEndDateChange(new Date(dateString));
   };
-
-  const daysToStart = differenceInDays(startOfDay(startDate), startOfDay(new Date()));
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full min-h-0 p-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -472,24 +464,15 @@ export function ScheduleStep({
         </div>
 
         {/* PODSUMOWANIE - STONOWANE */}
-        <div className="bg-surface border border-border/60 rounded-xl p-4 shrink-0 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm">
-          <div className="flex items-center gap-3.5">
-            <div className="w-8 h-8 bg-surface-light rounded-full flex items-center justify-center shrink-0 border border-border/40">
-              <Info className="w-4 h-4 text-muted-foreground" />
-            </div>
-            <div>
-              <div className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-0.5">Podsumowanie planu</div>
-              <div className="text-base font-semibold text-foreground">
-                {durationDays} {pluralizeDay(durationDays)} <span className="text-muted-foreground/30 mx-1.5">•</span> ~{totalSessions} sesji
-              </div>
-            </div>
-          </div>
-          {daysToStart > 0 && (
-            <div className="text-xs text-muted-foreground bg-surface-light px-3 py-1.5 rounded-lg font-medium whitespace-nowrap border border-border/40">
-              Start za {daysToStart} {pluralizeDay(daysToStart)}
-            </div>
-          )}
-        </div>
+        <ScheduleSummary
+          startDate={startDate}
+          endDate={endDate}
+          frequency={frequency}
+          variant="inline-highlight"
+          showSessions
+          showStartInDays
+          testIdPrefix="assign"
+        />
       </div>
 
       <div className="sr-only" data-testid="assign-schedule-payload-preview">

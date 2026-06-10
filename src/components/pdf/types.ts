@@ -39,6 +39,8 @@ export interface PDFExerciseSet {
   description?: string;
   exercises: PDFExercise[];
   frequency?: PDFFrequency;
+  startDate?: string;
+  endDate?: string;
 }
 
 export interface PDFOrganization {

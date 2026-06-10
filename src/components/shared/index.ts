@@ -15,6 +15,7 @@ export { GhostField } from './GhostField';
 export { SmartAccordion } from './SmartAccordion';
 export { LabeledStepper } from './LabeledStepper';
 export { ExerciseSetBuilder } from './ExerciseSetBuilder';
+export { ScheduleSummary } from './schedule';
 export type {
   ExerciseSetBuilderProps,
   ExerciseInstance,

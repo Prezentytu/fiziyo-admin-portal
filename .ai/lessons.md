@@ -14,6 +14,14 @@ Dziennik wniosków z pracy AI agentów. Po każdej korekcie dodaj nowy wpis.
 
 ## Wpisy
 
+### 2026-06-10 - Harmonogram assignmentu potrzebuje jednego źródła obliczeń i formatu
+
+- **Kategoria**: `UI/UX` | `React`
+- **Problem**: Okres trwania, częstotliwość i szacowana liczba sesji były liczone i renderowane różnie w wizardzie, karcie pacjenta i dialogach, co prowadziło do rozjazdów copy oraz wartości.
+- **Przyczyna**: Logika harmonogramu (`durationDays`, `effectiveWeeklyFrequency`, `totalSessions`) była duplikowana inline w wielu komponentach zamiast być centralnym helperem.
+- **Rozwiązanie**: Dodano wspólne utilsy `scheduleSummaryUtils` oraz reużywalny komponent `ScheduleSummary`, a następnie przepięto powierzchnie read-only (wizard, success, karta pacjenta, detal zestawu, PDF) na jeden kontrakt danych.
+- **Reguła**: Dla danych harmonogramu w assignment zawsze utrzymuj single-source-of-truth dla obliczeń i formatowania; komponenty ekranowe mają tylko konsumować gotowe summary, nie reimplementować wzorów.
+
 ### 2026-06-10 - Weryfikacja: główny parametr czasu musi mapować na executionTime, nie duration
 
 - **Kategoria**: `UI/UX` | `React`

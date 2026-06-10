@@ -38,6 +38,10 @@ Loader podczas ładowania.
 
 Pole wyszukiwania z debounce.
 
+### ScheduleSummary
+
+Wspólny komponent read-only harmonogramu (`compact` / `card` / `inline-highlight`) dla Assignment Wizard, kart pacjenta i detali zestawów.
+
 ### Inne
 
 - `AccessGuard` — ochrona dostępu (rola/organizacja)

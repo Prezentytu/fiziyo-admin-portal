@@ -1,5 +1,5 @@
 import { Document, Page, View, Text } from '@react-pdf/renderer';
-import { format } from 'date-fns';
+import { differenceInDays, format, startOfDay } from 'date-fns';
 import { pl } from 'date-fns/locale';
 
 import { pdfStyles } from './styles';
@@ -53,6 +53,15 @@ export function ExerciseSetPDF({
   // Tekst częstotliwości
   const frequencyText = frequency?.timesPerDay ? `${frequency.timesPerDay}x dziennie` : '1x dziennie';
   const daysText = isEveryDay || selectedDays.length === 0 ? '(Codziennie)' : null;
+  const hasPlanPeriod = Boolean(exerciseSet.startDate && exerciseSet.endDate);
+  const periodText = hasPlanPeriod
+    ? (() => {
+        const startDate = new Date(exerciseSet.startDate as string);
+        const endDate = new Date(exerciseSet.endDate as string);
+        const durationDays = Math.max(1, differenceInDays(startOfDay(endDate), startOfDay(startDate)));
+        return `${format(startDate, 'dd.MM.yyyy', { locale: pl })} - ${format(endDate, 'dd.MM.yyyy', { locale: pl })} (${durationDays} dni)`;
+      })()
+    : null;
 
   return (
     <Document
@@ -126,6 +135,8 @@ export function ExerciseSetPDF({
               </View>
             </View>
           )}
+
+          {periodText && <Text style={pdfStyles.infoStripNote}>Okres planu: {periodText}</Text>}
 
           {/* Notatka o przerwie */}
           {frequency?.breakBetweenSets && frequency.timesPerDay && frequency.timesPerDay > 1 && (
