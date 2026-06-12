@@ -10,9 +10,11 @@ Specyfikacje są źródłem prawdy dla architektury i decyzji projektowych.
 ### Przed implementacją
 
 1. **Sprawdź istniejące specyfikacje**
+
    ```
    ls .ai/specs/
    ```
+
    Szukaj plików `SPEC-*-{nazwa-modułu}.md`
 
 2. **Jeśli specyfikacja istnieje** - przeczytaj ją przed kodowaniem
@@ -21,18 +23,24 @@ Specyfikacje są źródłem prawdy dla architektury i decyzji projektowych.
    - Użyj kolejnego numeru (sprawdź najwyższy w README.md)
    - Format: `SPEC-{numer}-{YYYY-MM-DD}-{nazwa}.md`
    - Zaktualizuj tabelę w README.md
+   - W nowej specyfikacji dodaj sekcję `## Verification plan` z:
+     - testami jednostkowymi
+     - scenariuszami E2E (w `fiziyo-tests`) dla ścieżek krytycznych
 
 ### Po implementacji
 
 1. **Zaktualizuj changelog** w specyfikacji:
+
    ```markdown
    ## Changelog
-   
+
    ### {data}
+
    - {opis zmian}
    ```
 
 2. **Zaktualizuj status** w README.md jeśli się zmienił
+3. **Po zamknięciu specyfikacji** przenieś ją do `.ai/specs/implemented/` (zachowując link w README)
 
 ### Tworzenie nowej specyfikacji
 
@@ -58,8 +66,8 @@ Szablon:
 ### Komponenty
 
 | Komponent | Lokalizacja | Opis |
-|-----------|-------------|------|
-| ... | ... | ... |
+| --------- | ----------- | ---- |
+| ...       | ...         | ...  |
 
 ## Data-testid
 
@@ -68,6 +76,7 @@ Szablon:
 ## Changelog
 
 ### {data utworzenia}
+
 - Utworzenie specyfikacji
 ```
 

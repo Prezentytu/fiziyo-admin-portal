@@ -13,6 +13,9 @@ Umiejętności (skills) to specjalistyczne przewodniki dla AI agentów pracując
 | [implement-spec](implement-spec/SKILL.md)         | Implementacja spec krok po kroku                  | Wdrażanie złożonych funkcjonalności ze specyfikacji          |
 | [pre-implement-spec](pre-implement-spec/SKILL.md) | Analiza gotowości specyfikacji                    | Ocena ryzyka i braków przed rozpoczęciem kodowania           |
 | [integration-tests](integration-tests/SKILL.md)   | Orkiestracja testów regresyjnych i integracyjnych | Bugfixy, zmiany logiki biznesowej, wdrożenia ze specyfikacji |
+| [check-and-commit](check-and-commit/SKILL.md)     | Proporcjonalna walidacja i przygotowanie commitu  | Domknięcie zadania i quality gate przed commitem             |
+| [root-cause](root-cause/SKILL.md)                 | Metodyczne dojście do przyczyny źródłowej         | Diagnostyka regresji, bugfixy, incydenty                     |
+| [smart-test](smart-test/SKILL.md)                 | Dobór minimalnego zestawu testów                  | Szybki feedback loop zależny od diffa                        |
 
 ## Dokumentacja ekosystemowa (.ai/)
 
@@ -24,7 +27,7 @@ Oprócz skills, folder `.ai/` zawiera dokumentację kontekstową:
 | [DOMAIN_MODEL.md](../DOMAIN_MODEL.md) | Encje, enumy, relacje, JSONB — szybka referencja            |
 | [DATA_FLOWS.md](../DATA_FLOWS.md)     | Kluczowe flow biznesowe z diagramami                        |
 | [lessons.md](../lessons.md)           | Dziennik wniosków z pracy AI                                |
-| [specs/](../specs/README.md)          | Specyfikacje modułów (SPEC-001…005)                         |
+| [specs/](../specs/README.md)          | Specyfikacje modułów (aktualny indeks w README)             |
 
 ## Integracja z Cursor
 

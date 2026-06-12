@@ -25,6 +25,12 @@ Każda specyfikacja powinna zawierać:
 5. **Data-testid** - identyfikatory dla testów E2E
 6. **Changelog** - historia zmian
 
+### Cykl życia specyfikacji
+
+- Aktywne/pracujące specyfikacje trzymamy w `.ai/specs/`.
+- Specyfikacje zakończone i zweryfikowane przenosimy do `.ai/specs/implemented/`.
+- Każda nowa specyfikacja musi zawierać sekcję `## Verification plan` (unit + E2E).
+
 ### Format Changelog
 
 Każda specyfikacja powinna mieć sekcję Changelog na końcu:
@@ -74,7 +80,7 @@ Tworzone stopniowo, przy okazji pracy nad danym modułem:
 | ~~004~~ | ~~Exercise Sets Module~~ | Przeniesione do aktywnych |
 | ~~005~~ | ~~Patients Module~~      | Przeniesione do aktywnych |
 | ~~006~~ | ~~Organization Module~~  | Przeniesione do aktywnych |
-| 017     | Chat/AI Module           | Chat AI, asystent         |
+| 018     | Chat/AI Module           | Chat AI, asystent         |
 | ~~010~~ | ~~Import Module~~        | Przeniesione do aktywnych |
 | ~~013~~ | ~~Settings Module~~      | Przeniesione do aktywnych |
 

@@ -14,6 +14,14 @@ Dziennik wniosków z pracy AI agentów. Po każdej korekcie dodaj nowy wpis.
 
 ## Wpisy
 
+### 2026-06-12 - Reguły procesowe muszą być egzekwowane przez skrypty, nie tylko opisane
+
+- **Kategoria**: `Build/Tooling`
+- **Problem**: Repo miało opisane standardy (`data-testid`, skills sync, coverage), ale część z nich nie była egzekwowana automatycznie (`skills:sync` był martwy, `test:coverage` bez pluginu, brak guardu na nowe braki `data-testid`).
+- **Przyczyna**: Zasady żyły w dokumentacji, ale bez działających skryptów i kroków CI.
+- **Rozwiązanie**: Dodano działający `scripts/sync-cursor-skills.mjs`, `@vitest/coverage-v8`, guard `check:testids` z allowlistą i kroki CI uruchamiające ten guard.
+- **Reguła**: Jeśli zasada jakości ma znaczenie release'owe, zawsze musi mieć egzekwujący ją skrypt/test i krok w CI; sama dokumentacja nie wystarcza.
+
 ### 2026-06-10 - Harmonogram assignmentu potrzebuje jednego źródła obliczeń i formatu
 
 - **Kategoria**: `UI/UX` | `React`

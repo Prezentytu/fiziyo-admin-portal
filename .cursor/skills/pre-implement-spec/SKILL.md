@@ -76,20 +76,25 @@ Uzyj formatu:
 # Pre-implementation review: <nazwa spec>
 
 ## Executive summary
+
 - ...
 
 ## Blockers
+
 - [Critical] ...
 
 ## Risks
+
 | Obszar | Ryzyko | Poziom | Mitigacja |
-| --- | --- | --- | --- |
-| ... | ... | ... | ... |
+| ------ | ------ | ------ | --------- |
+| ...    | ...    | ...    | ...       |
 
 ## Missing sections in spec
+
 - ...
 
 ## Suggested implementation phases
+
 1. ...
 2. ...
 ```
