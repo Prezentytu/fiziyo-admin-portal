@@ -1,6 +1,6 @@
 ---
 name: smart-test
-description: Dobór minimalnego i skutecznego zestawu testów do aktualnego diffa.
+description: Dobor minimalnego skutecznego zestawu testow do aktualnego diffa. Użyj gdy użytkownik prosi - jakie testy uruchomić, dobierz testy do zmiany, przetestuj szybko, nie chcę pełnego validate, które testy są potrzebne, skróć feedback loop. EN triggers - which tests to run, minimal regression scope, selective tests, fast feedback. Wynik to uzasadniony zestaw komend testowych proporcjonalny do ryzyka diffa.
 ---
 
 # smart-test

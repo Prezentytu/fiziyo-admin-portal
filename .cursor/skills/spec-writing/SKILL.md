@@ -1,6 +1,6 @@
 ---
 name: spec-writing
-description: Tworzy i aktualizuje specyfikacje w .ai/specs zgodnie z podejsciem spec-first. Uzyj przy nowych funkcjonalnosciach, refaktorach wieloplikowych i zmianach architektonicznych wymagajacych udokumentowania.
+description: Tworzenie i aktualizacja specyfikacji w .ai/specs w modelu spec-first. Użyj gdy użytkownik prosi - napisz spec, utwórz specyfikację, udokumentuj nową funkcjonalność, zaktualizuj SPEC po zmianach, opisz architekturę przed kodowaniem, dodaj changelog do specyfikacji. EN triggers - create specification, update spec, architecture proposal, feature design doc. Wynik to plik SPEC z architektura, kontraktami GraphQL, ryzykami, planem testow i wpisem w indeksie README.
 ---
 
 # Skill: Pisanie specyfikacji FiziYo

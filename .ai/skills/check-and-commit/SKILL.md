@@ -1,6 +1,6 @@
 ---
 name: check-and-commit
-description: Proporcjonalna walidacja zmian i przygotowanie commitu zgodnego z konwencją.
+description: Quality gate przed commitem z walidacją proporcjonalną do zakresu zmian. Użyj gdy użytkownik prosi - domknij zadanie, sprawdź przed commitem, zrób commit, przygotuj zmiany do commita, zweryfikuj czy można mergować, odpal walidację, sprawdź czy wszystko przechodzi. EN triggers - finalize task, quality gate, check before commit, prepare commit, verify merge readiness. Wynik to dobrany zestaw komend walidacyjnych i checklist release-safe przed commitem.
 ---
 
 # check-and-commit

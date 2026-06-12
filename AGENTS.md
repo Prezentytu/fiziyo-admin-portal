@@ -50,6 +50,13 @@ Przed rozpoczęciem pracy dopasuj zadanie do tabeli i przeczytaj WSZYSTKIE pasuj
 | Analiza spec przed implementacją | `.ai/skills/pre-implement-spec/`                  |
 | Implementacja ze specyfikacji    | `.ai/skills/implement-spec/`                      |
 | Testy regresyjne / integracyjne  | `.ai/skills/integration-tests/`                   |
+| Guardian UI / migracja tokenów   | `.ai/skills/ui-guardian/`                         |
+| Audyt bezpieczeństwa auth/tenant | `.ai/skills/sec-report/`                          |
+| Scenariusze QA przed release     | `.ai/skills/qa-scenarios/`                        |
+| Run autonomiczny                 | `.ai/skills/auto-implement/`                      |
+| Wznowienie runu                  | `.ai/skills/continue-run/`                        |
+| Nawigator skilli ("co dalej?")   | `.ai/skills/help/`                                |
+| Tworzenie nowego skilla          | `.ai/skills/skill-creator/`                       |
 | Pipeline E2E / cross-repo CI     | `docs/testing/e2e-cross-repo-pipeline.md`         |
 | Code review                      | `.ai/skills/code-review/`                         |
 | UI/UX / design / accessibility   | `.ai/skills/product-designer/SKILL.md`            |
@@ -371,6 +378,7 @@ Prefiksy modułów: `auth-`, `nav-`, `exercise-`, `set-`, `patient-`, `org-`, `s
 - Zwracaj minimalne komunikaty błędów auth (nie ujawniaj czy email istnieje)
 - Nigdy nie loguj credentials ani tokenów
 - Zawsze używaj wzorca token exchange (Clerk → Własny JWT)
+- Każda zmiana w `auth` / `token-exchange` / `permission` MUSI przejść przez skill `.ai/skills/sec-report/` przed merge.
 
 ### Bezpieczeństwo typów
 

@@ -1,0 +1,11 @@
+# UI Health Report
+date=2026-06-12
+generated_at_utc=2026-06-12T17:37:44Z
+hardcoded_base_without_dark=156
+missing_testids_total=755
+loading_state_files=153
+empty_state_files=42
+any_ratchet_count=20
+
+## Delta vs previous
+previous_report=none

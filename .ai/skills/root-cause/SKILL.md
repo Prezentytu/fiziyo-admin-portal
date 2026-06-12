@@ -1,6 +1,6 @@
 ---
 name: root-cause
-description: Metodyczne debugowanie problemu do przyczyny źródłowej z regułą zapobiegawczą.
+description: Metodyczne debugowanie do przyczyny zrodlowej zamiast fixow objawowych. Użyj gdy użytkownik prosi - znajdź przyczynę błędu, dlaczego to nie działa, zdebuguj problem, napraw regresję porządnie, ustal root cause, dlaczego test failuje, skąd ten błąd. EN triggers - debug, investigate regression, find root cause, explain failure. Wynik to udowodniona przyczyna zrodlowa, fix source-level, test regresyjny i wpis do .ai/lessons.md.
 ---
 
 # root-cause

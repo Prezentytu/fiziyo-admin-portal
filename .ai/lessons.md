@@ -14,6 +14,14 @@ Dziennik wniosków z pracy AI agentów. Po każdej korekcie dodaj nowy wpis.
 
 ## Wpisy
 
+### 2026-06-12 - Ekosystem skilli wymaga source-of-truth i automatycznego linta
+
+- **Kategoria**: `Build/Tooling`
+- **Problem**: Skille były rozwijane ręcznie bez jednego źródła prawdy i bez automatycznego wykrywania dryfu między katalogami, frontmatter i warstwą `.cursor/skills`.
+- **Przyczyna**: `skills:sync` kopiował pliki, ale nie walidował manifestu tierów ani obowiązkowych pól (`name`, `description`) i nie miał dedykowanego gate'a CI.
+- **Rozwiązanie**: Dodano `.ai/skills/manifest.json`, walidację frontmatter + dryf manifestu w `scripts/sync-cursor-skills.mjs`, nowy krok `skills:lint` oraz egzekwowanie go w CI.
+- **Reguła**: Jeśli proces opiera się na katalogu instrukcji (skills/rules), zawsze utrzymuj manifest jako source-of-truth i uruchamiaj lint governance w CI; sama synchronizacja plików nie wystarcza.
+
 ### 2026-06-12 - Reguły procesowe muszą być egzekwowane przez skrypty, nie tylko opisane
 
 - **Kategoria**: `Build/Tooling`

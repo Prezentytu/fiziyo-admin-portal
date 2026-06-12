@@ -1,6 +1,6 @@
 ---
 name: product-designer
-description: Projektuje i recenzuje interfejsy Premium Utility dla aplikacji MedTech SaaS. Uzyj przy redesignie UI/UX, zadaniach dostepnosci, audytach designu oraz implementacji nowych widokow i komponentow wizualnych.
+description: Projektowanie i recenzja interfejsow Premium Utility dla MedTech SaaS. Użyj gdy użytkownik prosi - zaprojektuj widok, popraw wygląd, zrób redesign, ulepsz layout, popraw UX, sprawdź dostępność, audyt designu, nowy komponent wizualny, dopracuj dialog albo formularz, popraw czytelność. EN triggers - UI/UX redesign, accessibility audit, layout polish, premium interface, visual design. Wynik to produkcyjny UI zgodny z 8pt grid, tokenami semantycznymi i WCAG AA w light i dark mode.
 ---
 
 # Design Philosophy: Premium Utility
