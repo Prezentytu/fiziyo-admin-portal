@@ -40,7 +40,11 @@ import {
   REJECT_EXERCISE_MUTATION,
   UPDATE_EXERCISE_FIELD_MUTATION,
 } from '@/graphql/mutations/adminExercises.mutations';
-import { UPDATE_EXERCISE_MUTATION as UPDATE_EXERCISE_DETAILS_MUTATION } from '@/graphql/mutations/exercises.mutations';
+import {
+  UPDATE_EXERCISE_MUTATION as UPDATE_EXERCISE_DETAILS_MUTATION,
+  UPLOAD_EXERCISE_IMAGE_MUTATION,
+  DELETE_EXERCISE_IMAGE_MUTATION,
+} from '@/graphql/mutations/exercises.mutations';
 import type { ExerciseByIdForAdminResponse } from '@/types/apollo';
 import type {
   AdminExercise,
@@ -142,7 +146,7 @@ export default function VerificationDetailPage({ params }: Readonly<Verification
   // QUERIES
   // ============================================
 
-  const { data, loading, error } = useQuery<ExerciseByIdForAdminResponse>(GET_EXERCISE_BY_ID_FOR_ADMIN_QUERY, {
+  const { data, loading, error, refetch } = useQuery<ExerciseByIdForAdminResponse>(GET_EXERCISE_BY_ID_FOR_ADMIN_QUERY, {
     variables: { id },
   });
 
@@ -306,6 +310,28 @@ export default function VerificationDetailPage({ params }: Readonly<Verification
       toast.error(`Błąd zapisu: ${error.message}`);
     },
   });
+  const [uploadExerciseImage] = useMutation(UPLOAD_EXERCISE_IMAGE_MUTATION, {
+    onError: (error) => {
+      toast.error(`Błąd uploadu zdjęcia: ${error.message}`);
+    },
+  });
+  const [deleteExerciseImage] = useMutation(DELETE_EXERCISE_IMAGE_MUTATION, {
+    onError: (error) => {
+      toast.error(`Błąd usuwania zdjęcia: ${error.message}`);
+    },
+  });
+
+  const fileToBase64 = useCallback((file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => {
+        const result = reader.result as string;
+        resolve(result.split(',')[1] ?? '');
+      };
+      reader.onerror = reject;
+    });
+  }, []);
 
   // ============================================
   // HANDLERS
@@ -404,6 +430,36 @@ export default function VerificationDetailPage({ params }: Readonly<Verification
   const handleValidationChange = useCallback((_isValid: boolean, fields: string[]) => {
     setMissingFields(fields);
   }, []);
+
+  const handleUploadImage = useCallback(
+    async (file: File) => {
+      if (!exercise) return;
+      const base64Image = await fileToBase64(file);
+      await uploadExerciseImage({
+        variables: {
+          exerciseId: exercise.id,
+          base64Image,
+          contentType: file.type,
+        },
+      });
+      await refetch();
+    },
+    [exercise, fileToBase64, refetch, uploadExerciseImage]
+  );
+
+  const handleDeleteImage = useCallback(
+    async (imageUrl: string) => {
+      if (!exercise) return;
+      await deleteExerciseImage({
+        variables: {
+          exerciseId: exercise.id,
+          imageUrl,
+        },
+      });
+      await refetch();
+    },
+    [deleteExerciseImage, exercise, refetch]
+  );
 
   // Approve handler
   const handleApprove = useCallback(
@@ -552,25 +608,25 @@ export default function VerificationDetailPage({ params }: Readonly<Verification
   // Loading
   if (loading) {
     return (
-      <div className="-m-4 flex h-full min-h-0 flex-col overflow-y-auto lg:-m-6 lg:overflow-hidden 2xl:-m-8">
+      <div className="-m-4 flex h-full lg:h-[calc(100%+3rem)] 2xl:h-[calc(100%+4rem)] min-h-0 flex-col overflow-y-auto lg:-m-6 lg:overflow-hidden 2xl:-m-8">
         <div className="flex-1 flex flex-col lg:flex-row min-h-0">
-          {/* Left: Video skeleton (40%) */}
-          <div className="lg:w-[40%] bg-card p-3 border-r border-border/30">
+          {/* Left: Video skeleton (42%) */}
+          <div className="lg:w-[42%] bg-card p-3 border-r border-border/30">
             <div className="flex items-center justify-between mb-3">
               <Skeleton className="h-8 w-24" />
               <Skeleton className="h-4 w-16" />
             </div>
             <Skeleton className="w-full h-[calc(100%-3rem)] rounded-lg" />
           </div>
-          {/* Middle: Editor skeleton (35%) */}
-          <div className="lg:w-[35%] p-3 space-y-3 border-l border-border/20">
+          {/* Middle: Editor skeleton (fluid) */}
+          <div className="flex-1 p-3 space-y-3 border-r border-border/20">
             <Skeleton className="h-8 w-3/4" />
             <Skeleton className="h-10 w-full" />
             <Skeleton className="h-32 w-full" />
             <Skeleton className="h-16 w-full" />
           </div>
-          {/* Right: Verdict skeleton (25%) */}
-          <div className="lg:w-[25%] p-3 space-y-3 border-l border-border/30 bg-card/70">
+          {/* Right: Verdict skeleton (320px) */}
+          <div className="lg:w-[320px] lg:min-w-[320px] p-3 space-y-3 border-l border-border/30 bg-card/70">
             <Skeleton className="h-6 w-24" />
             <Skeleton className="h-8 w-full" />
             <Skeleton className="h-8 w-full" />
@@ -604,11 +660,11 @@ export default function VerificationDetailPage({ params }: Readonly<Verification
   // ============================================
 
   return (
-    <div className="-m-4 flex h-full min-h-0 flex-col overflow-y-auto lg:-m-6 lg:overflow-hidden 2xl:-m-8">
-      {/* Main content area - 3 column layout 40/35/25 */}
+    <div className="-m-4 flex h-full lg:h-[calc(100%+3rem)] 2xl:h-[calc(100%+4rem)] min-h-0 flex-col overflow-y-auto lg:-m-6 lg:overflow-hidden 2xl:-m-8">
+      {/* Main content area - 3 column layout 42/fluid/320 */}
       <div className="flex-1 flex flex-col lg:flex-row min-h-0">
-        {/* LEFT COLUMN: Media Player (40% on desktop) */}
-        <div className="h-[30vh] lg:h-auto lg:w-[40%] bg-card border-b lg:border-b-0 lg:border-r border-border/30 flex flex-col min-h-0">
+        {/* LEFT COLUMN: Media Player */}
+        <div className="h-[30vh] lg:h-auto lg:w-[42%] bg-card border-b lg:border-b-0 lg:border-r border-border/30 flex flex-col min-h-0">
           {/* Compact Header: Back + Progress */}
           <div className="flex items-center justify-between gap-3 px-4 py-2.5 border-b border-border/40 shrink-0">
             <Button
@@ -640,13 +696,17 @@ export default function VerificationDetailPage({ params }: Readonly<Verification
           </div>
 
           {/* Master Video Player */}
-          <div className="flex-1 min-h-0">
-            <MasterVideoPlayer exercise={exercise} />
+          <div className="flex-1 min-h-0 overflow-hidden p-3">
+            <MasterVideoPlayer
+              exercise={exercise}
+              onUploadImage={handleUploadImage}
+              onDeleteImage={handleDeleteImage}
+            />
           </div>
         </div>
 
-        {/* MIDDLE COLUMN: Editor Panel (35% on desktop) */}
-        <div className="flex-1 lg:w-[35%] bg-background flex flex-col min-h-0 border-r border-border/20">
+        {/* MIDDLE COLUMN: Editor Panel */}
+        <div className="flex-1 min-w-0 bg-background flex flex-col min-h-0 border-r border-border/20">
           <div className="flex-1 p-4 pr-5 lg:p-5 lg:pr-6 flex flex-col min-h-0 overflow-y-auto">
             {/* Previous review notes (if any) */}
             {exercise.adminReviewNotes && (
@@ -680,8 +740,8 @@ export default function VerificationDetailPage({ params }: Readonly<Verification
           </div>
         </div>
 
-        {/* RIGHT COLUMN: Verdict Panel (25% on desktop) */}
-        <div className="lg:w-[25%] min-w-[280px] flex flex-col min-h-0">
+        {/* RIGHT COLUMN: Verdict Panel */}
+        <div className="lg:w-[320px] lg:min-w-[320px] flex flex-col min-h-0">
           <VerdictPanel
             status={exercise.status}
             submittedAt={exercise.createdAt}
@@ -692,6 +752,7 @@ export default function VerificationDetailPage({ params }: Readonly<Verification
             comment={authorComment}
             onCommentChange={setAuthorComment}
             validationPassed={canPublish}
+            completionPercentage={completionData.percentage}
             missingFields={missingFields}
             safetyChecklist={safetyChecklist}
             onSafetyChecklistChange={setSafetyChecklist}

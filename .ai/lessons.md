@@ -14,6 +14,22 @@ Dziennik wniosków z pracy AI agentów. Po każdej korekcie dodaj nowy wpis.
 
 ## Wpisy
 
+### 2026-06-23 - Wąskie sloty UI wymagają container queries i jednego źródła wysokości media
+
+- **Kategoria**: `UI/UX` | `React`
+- **Problem**: Na 14" ekranie sekcja "Instrukcje i wskazówki" w verification była nieczytelna, a w detalu ćwiczenia kontener media zostawiał duże puste pasy pod zdjęciem.
+- **Przyczyna**: Wnętrza komponentów reagowały na viewport (`md:`), a nie na realną szerokość środkowej kolumny; dodatkowo `MediaGallery` łączyło `layout="stage"` (aspect ratio) z wymuszonym `min-h`, co dawało dwa sprzeczne źródła wysokości.
+- **Rozwiązanie**: Przepięto układy na Tailwind v4 container queries (`@container` + `@md/...`) i spłaszczono zagnieżdżenia sekcji enrichment; w detalu ćwiczenia zmieniono gallery na `layout="fill"` oraz stały box wysokości (`h-[320px] lg:h-[520px]`).
+- **Reguła**: Dla komponentów renderowanych w sidebarach/środkowych panelach używaj container queries zamiast viewport breakpoints, a dla media utrzymuj jedno źródło wysokości kontenera (albo aspect ratio, albo fixed/fill box, nigdy oba naraz).
+
+### 2026-06-23 - Mixed media w detalu i verification wymagają jednego współdzielonego playera
+
+- **Kategoria**: `UI/UX` | `React`
+- **Problem**: Detal ćwiczenia renderował wideo i zdjęcia jako osobne sekcje, co przy pionowych zdjęciach dawało duże puste obszary, nadmiar scrolla i niespójny UX względem panelu verification.
+- **Przyczyna**: Brak wspólnego kontraktu komponentu dla mixed media (`image/video/gif`) i duplikowanie logiki galerii w różnych modułach.
+- **Rozwiązanie**: Wydzielono współdzielony `MediaGallery` + `buildMediaItems`, refaktorowano `MasterVideoPlayer` do wrappera i przepięto detal ćwiczenia na jeden stage z miniaturami oraz układ 2-kolumnowy ze sticky media.
+- **Reguła**: Dla powierzchni pokazujących to samo medium (detal, verification, preview) utrzymuj jeden komponent gallery/player z trybami layoutu; nie rozdzielaj wideo i zdjęć na niezależne bloki UI.
+
 ### 2026-06-12 - Ekosystem skilli wymaga source-of-truth i automatycznego linta
 
 - **Kategoria**: `Build/Tooling`

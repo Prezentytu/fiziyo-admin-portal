@@ -1,6 +1,7 @@
 /**
  * Typy dla AI Service - komunikacja z /api/ai endpoints
  */
+import type { ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.types';
 
 // ============================================
 // 1. Exercise Suggestion
@@ -242,4 +243,23 @@ export interface AIVideoAnalysisResponse {
   confidence: number;
   /** Lista pól które zostały wypełnione przez AI */
   updatedFields: string[];
+}
+
+// ============================================
+// 7. Enrichment Generation
+// ============================================
+
+export interface EnrichmentGenerationRequest {
+  exerciseName: string;
+  patientDescription?: string;
+  clinicalDescription?: string;
+  type?: 'reps' | 'time' | null;
+  tags?: string[];
+  existingEnrichmentJson?: string;
+}
+
+export interface EnrichmentGenerationResponse {
+  enrichmentData: ExerciseEnrichmentData;
+  success: boolean;
+  errorMessage?: string;
 }

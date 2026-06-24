@@ -95,6 +95,8 @@ interface VerdictPanelProps {
   validationPassed?: boolean;
   /** List of missing fields */
   missingFields?: string[];
+  /** Completion percentage from editor */
+  completionPercentage?: number;
   /** Safety checklist state */
   safetyChecklist: {
     videoReadable: boolean;
@@ -149,6 +151,7 @@ export function VerdictPanel({
   onCommentChange,
   validationPassed = false,
   missingFields = [],
+  completionPercentage,
   safetyChecklist,
   onSafetyChecklistChange,
   isApproving = false,
@@ -160,6 +163,16 @@ export function VerdictPanel({
 }: VerdictPanelProps) {
   const isOrganizationMode = mode === 'organization';
   const anyLoading = isApproving || isRejecting || isUnpublishing;
+  const readinessPercentage = Math.max(
+    0,
+    Math.min(
+      100,
+      Math.round(
+        completionPercentage ??
+          (missingFields.length === 0 ? 100 : Math.max(20, 100 - missingFields.length * 16))
+      )
+    )
+  );
 
   // Format wait time
   const waitTime = useMemo(() => {
@@ -264,6 +277,28 @@ export function VerdictPanel({
                 ? 'Zarządzaj opublikowanym ćwiczeniem'
                 : 'Sprawdź i zatwierdź lub odeślij do poprawki'}
           </p>
+
+          {!isPublished && (
+            <div className="mt-3 rounded-lg border border-border/60 bg-background/60 p-2.5">
+              <div className="mb-2 flex items-center justify-between text-[11px]">
+                <span className="font-medium text-muted-foreground">Gotowość publikacji</span>
+                <span className="font-semibold text-foreground">{readinessPercentage}%</span>
+              </div>
+              <div className="h-1.5 overflow-hidden rounded-full bg-muted">
+                <div
+                  className={cn(
+                    'h-full rounded-full transition-all',
+                    readinessPercentage >= 80
+                      ? 'bg-emerald-500'
+                      : readinessPercentage >= 50
+                        ? 'bg-amber-500'
+                        : 'bg-destructive'
+                  )}
+                  style={{ width: `${readinessPercentage}%` }}
+                />
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Safety Checklist (only for non-published) */}
@@ -398,7 +433,7 @@ export function VerdictPanel({
         </div>
 
         {/* Action Buttons */}
-        <div className="space-y-2.5 border-t border-border/40 p-4">
+        <div className="space-y-2 border-t border-border/40 p-4">
           {/* Transition state: Show success message during approval */}
           {isApproving ? (
             <div className="flex flex-col items-center justify-center py-4 gap-3">
@@ -433,9 +468,9 @@ export function VerdictPanel({
                       onClick={onApprove}
                       disabled={anyLoading || !canApprove}
                       className={cn(
-                        'w-full gap-2 font-semibold',
+                        'w-full gap-2 font-semibold shadow-sm',
                         canApprove
-                          ? 'bg-emerald-600 text-white hover:bg-emerald-700'
+                          ? 'bg-primary text-primary-foreground hover:bg-primary/90'
                           : 'cursor-not-allowed bg-muted text-muted-foreground'
                       )}
                       data-testid="verdict-approve-btn"

@@ -26,7 +26,11 @@ import {
 import {
   UPDATE_EXERCISE_FIELD_MUTATION,
 } from '@/graphql/mutations/adminExercises.mutations';
-import { UPDATE_EXERCISE_MUTATION as UPDATE_EXERCISE_DETAILS_MUTATION } from '@/graphql/mutations/exercises.mutations';
+import {
+  UPDATE_EXERCISE_MUTATION as UPDATE_EXERCISE_DETAILS_MUTATION,
+  UPLOAD_EXERCISE_IMAGE_MUTATION,
+  DELETE_EXERCISE_IMAGE_MUTATION,
+} from '@/graphql/mutations/exercises.mutations';
 import {
   buildOrganizationVerificationDetailHref,
   buildOrganizationVerificationListHref,
@@ -131,6 +135,24 @@ export default function OrganizationVerificationDetailPage({ params }: Readonly<
   const [updateExerciseDetails] = useMutation(UPDATE_EXERCISE_DETAILS_MUTATION, {
     onError: (error) => toast.error(`Błąd zapisu: ${error.message}`),
   });
+  const [uploadExerciseImage] = useMutation(UPLOAD_EXERCISE_IMAGE_MUTATION, {
+    onError: (error) => toast.error(`Błąd uploadu zdjęcia: ${error.message}`),
+  });
+  const [deleteExerciseImage] = useMutation(DELETE_EXERCISE_IMAGE_MUTATION, {
+    onError: (error) => toast.error(`Błąd usuwania zdjęcia: ${error.message}`),
+  });
+
+  const fileToBase64 = useCallback((file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => {
+        const result = reader.result as string;
+        resolve(result.split(',')[1] ?? '');
+      };
+      reader.onerror = reject;
+    });
+  }, []);
 
   const handleFieldUpdate = useCallback(
     async (field: string, value: unknown) => {
@@ -188,6 +210,36 @@ export default function OrganizationVerificationDetailPage({ params }: Readonly<
     [handleFieldUpdate]
   );
 
+  const handleUploadImage = useCallback(
+    async (file: File) => {
+      if (!exercise) return;
+      const base64Image = await fileToBase64(file);
+      await uploadExerciseImage({
+        variables: {
+          exerciseId: exercise.id,
+          base64Image,
+          contentType: file.type,
+        },
+      });
+      await refetch();
+    },
+    [exercise, fileToBase64, refetch, uploadExerciseImage]
+  );
+
+  const handleDeleteImage = useCallback(
+    async (imageUrl: string) => {
+      if (!exercise) return;
+      await deleteExerciseImage({
+        variables: {
+          exerciseId: exercise.id,
+          imageUrl,
+        },
+      });
+      await refetch();
+    },
+    [deleteExerciseImage, exercise, refetch]
+  );
+
   if (!roleLoading && !canManageOrganization) {
     return (
       <EmptyState
@@ -200,18 +252,18 @@ export default function OrganizationVerificationDetailPage({ params }: Readonly<
 
   if (loading) {
     return (
-      <div className="-m-4 flex h-full min-h-0 flex-col overflow-y-auto lg:-m-6 lg:overflow-hidden 2xl:-m-8">
+      <div className="-m-4 flex h-full lg:h-[calc(100%+3rem)] 2xl:h-[calc(100%+4rem)] min-h-0 flex-col overflow-y-auto lg:-m-6 lg:overflow-hidden 2xl:-m-8">
         <div className="flex-1 flex flex-col lg:flex-row min-h-0">
-          <div className="lg:w-[40%] bg-card p-3 border-r border-border/30">
+          <div className="lg:w-[42%] bg-card p-3 border-r border-border/30">
             <Skeleton className="h-8 w-32 mb-3" />
             <Skeleton className="w-full h-[calc(100%-3rem)] rounded-lg" />
           </div>
-          <div className="lg:w-[35%] p-3 space-y-3 border-l border-border/20">
+          <div className="flex-1 p-3 space-y-3 border-r border-border/20">
             <Skeleton className="h-8 w-3/4" />
             <Skeleton className="h-10 w-full" />
             <Skeleton className="h-32 w-full" />
           </div>
-          <div className="lg:w-[25%] p-3 space-y-3 border-l border-border/30 bg-card/70">
+          <div className="lg:w-[320px] lg:min-w-[320px] p-3 space-y-3 border-l border-border/30 bg-card/70">
             <Skeleton className="h-6 w-24" />
             <Skeleton className="h-8 w-full" />
             <Skeleton className="h-8 w-full" />
@@ -251,10 +303,10 @@ export default function OrganizationVerificationDetailPage({ params }: Readonly<
   };
 
   return (
-    <div className="-m-4 flex h-full min-h-0 flex-col overflow-y-auto lg:-m-6 lg:overflow-hidden 2xl:-m-8">
+    <div className="-m-4 flex h-full lg:h-[calc(100%+3rem)] 2xl:h-[calc(100%+4rem)] min-h-0 flex-col overflow-y-auto lg:-m-6 lg:overflow-hidden 2xl:-m-8">
       <div className="flex-1 flex flex-col lg:flex-row min-h-0">
         {/* LEFT: Video + nawigacja */}
-        <div className="h-[30vh] lg:h-auto lg:w-[40%] bg-card border-b lg:border-b-0 lg:border-r border-border/30 flex flex-col min-h-0">
+        <div className="h-[30vh] lg:h-auto lg:w-[42%] bg-card border-b lg:border-b-0 lg:border-r border-border/30 flex flex-col min-h-0">
           <div className="flex items-center gap-3 px-4 py-2.5 border-b border-border/40 shrink-0">
             <Button
               variant="ghost"
@@ -273,12 +325,18 @@ export default function OrganizationVerificationDetailPage({ params }: Readonly<
             )}
           </div>
           <div className="flex-1 min-h-0 overflow-hidden p-3">
-            {exercise && <MasterVideoPlayer exercise={exercise} />}
+            {exercise && (
+              <MasterVideoPlayer
+                exercise={exercise}
+                onUploadImage={handleUploadImage}
+                onDeleteImage={handleDeleteImage}
+              />
+            )}
           </div>
         </div>
 
         {/* MIDDLE: Inline editor */}
-        <div className="lg:w-[35%] flex flex-col min-h-0 border-l border-border/20 overflow-hidden">
+        <div className="flex-1 min-w-0 flex flex-col min-h-0 border-r border-border/20 overflow-hidden">
           {exercise && (
             <VerificationEditorPanel
               exercise={exercise}
@@ -354,7 +412,7 @@ export default function OrganizationVerificationDetailPage({ params }: Readonly<
           isUnpublishing={archiving}
           remainingCount={navigatorData?.organizationVerificationQueueNavigator.remainingCount ?? 0}
           onSkip={() => goToNeighbor(navigatorData?.organizationVerificationQueueNavigator.nextExerciseId)}
-          className="lg:w-[25%]"
+          className="lg:w-[320px] lg:min-w-[320px]"
         />
       </div>
     </div>

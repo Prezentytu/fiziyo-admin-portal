@@ -20,6 +20,8 @@ import type {
   ExerciseImageRequest,
   ExerciseImageResponse,
   ImageStyle,
+  EnrichmentGenerationRequest,
+  EnrichmentGenerationResponse,
 } from '@/types/ai.types';
 
 const isDev = process.env.NODE_ENV === 'development';
@@ -415,6 +417,28 @@ class AIService {
     } catch (error) {
       if (isDev) {
         console.error('[AIService] generateExerciseImage error:', error);
+      }
+      return null;
+    }
+  }
+
+  // ============================================
+  // 6. Enrichment Generation
+  // ============================================
+
+  async generateEnrichment(request: EnrichmentGenerationRequest): Promise<EnrichmentGenerationResponse | null> {
+    if (!request.exerciseName.trim() || request.exerciseName.trim().length < 2) {
+      return null;
+    }
+
+    try {
+      return await this.request<EnrichmentGenerationResponse>('generate-enrichment', {
+        ...request,
+        exerciseName: request.exerciseName.trim(),
+      });
+    } catch (error) {
+      if (isDev) {
+        console.error('[AIService] generateEnrichment error:', error);
       }
       return null;
     }
