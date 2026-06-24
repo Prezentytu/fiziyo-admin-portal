@@ -18,7 +18,31 @@ describe('resolveAssignmentDisplayStatus', () => {
     expect(result.secondary).toBeUndefined();
   });
 
-  it('shows expired when backend status is expired', () => {
+  it('shows expired when backend status is expired and endDate is also in the past', () => {
+    const result = resolveAssignmentDisplayStatus({
+      status: 'expired',
+      endDate: '2026-05-20T10:00:00.000Z',
+      premiumValidUntil: '2026-06-20T10:00:00.000Z',
+      now: NOW,
+    });
+
+    expect(result.primary.kind).toBe('expired');
+    expect(result.primary.variant).toBe('destructive');
+  });
+
+  it('shows expired when backend status is expired and there is no endDate', () => {
+    const result = resolveAssignmentDisplayStatus({
+      status: 'expired',
+      endDate: null,
+      premiumValidUntil: '2026-06-20T10:00:00.000Z',
+      now: NOW,
+    });
+
+    expect(result.primary.kind).toBe('expired');
+    expect(result.primary.variant).toBe('destructive');
+  });
+
+  it('shows active when backend status is stale "expired" but endDate is in the future (plan was extended)', () => {
     const result = resolveAssignmentDisplayStatus({
       status: 'expired',
       endDate: '2026-06-20T10:00:00.000Z',
@@ -26,8 +50,8 @@ describe('resolveAssignmentDisplayStatus', () => {
       now: NOW,
     });
 
-    expect(result.primary.kind).toBe('expired');
-    expect(result.primary.variant).toBe('destructive');
+    expect(result.primary.kind).toBe('active');
+    expect(result.primary.label).toBe('Aktywny');
   });
 
   it('shows paused when status is paused', () => {

@@ -58,7 +58,11 @@ export function resolveAssignmentDisplayStatus({
 
   let primary: AssignmentDisplayBadge;
 
-  if (normalizedStatus === 'expired' || expiredByDate) {
+  // endDate in the future overrides a stale "expired" status string.
+  // We only treat status="expired" as expired when there is no endDate to contradict it.
+  const isEffectivelyExpired = expiredByDate || (normalizedStatus === 'expired' && !end);
+
+  if (isEffectivelyExpired) {
     primary = { label: 'Wygasł', variant: 'destructive', kind: 'expired' };
   } else if (normalizedStatus === 'paused') {
     primary = { label: 'Wstrzymany', variant: 'warning', kind: 'paused' };

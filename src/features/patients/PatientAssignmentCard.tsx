@@ -169,6 +169,7 @@ interface PatientAssignmentCardProps {
   readonly onAddExercise?: (assignment: PatientAssignment) => void;
   readonly onExtend?: (assignment: PatientAssignment) => void;
   readonly onGeneratePDF?: (assignment: PatientAssignment) => void;
+  readonly onActivatePremium?: () => void;
   readonly onRefresh?: () => void;
 }
 
@@ -206,6 +207,7 @@ export function PatientAssignmentCard({
   onAddExercise,
   onExtend,
   onGeneratePDF,
+  onActivatePremium,
   onRefresh,
 }: PatientAssignmentCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -412,7 +414,7 @@ export function PatientAssignmentCard({
 
               {/* Info */}
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <p className="font-semibold truncate">{exerciseSet?.name || 'Nieznany zestaw'}</p>
                   <Badge
                     variant={assignmentDisplayStatus.primary.variant}
@@ -422,13 +424,29 @@ export function PatientAssignmentCard({
                     {assignmentDisplayStatus.primary.label}
                   </Badge>
                   {assignmentDisplayStatus.secondary && (
-                    <Badge
-                      variant={assignmentDisplayStatus.secondary.variant}
-                      className="text-[10px] shrink-0"
-                      data-testid={`patient-assignment-premium-hint-${assignment.id}`}
-                    >
-                      {assignmentDisplayStatus.secondary.label}
-                    </Badge>
+                    onActivatePremium ? (
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); onActivatePremium(); }}
+                        data-testid={`patient-assignment-premium-hint-${assignment.id}`}
+                        className="inline-flex"
+                      >
+                        <Badge
+                          variant={assignmentDisplayStatus.secondary.variant}
+                          className="text-[10px] shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
+                        >
+                          {assignmentDisplayStatus.secondary.label}
+                        </Badge>
+                      </button>
+                    ) : (
+                      <Badge
+                        variant={assignmentDisplayStatus.secondary.variant}
+                        className="text-[10px] shrink-0"
+                        data-testid={`patient-assignment-premium-hint-${assignment.id}`}
+                      >
+                        {assignmentDisplayStatus.secondary.label}
+                      </Badge>
+                    )
                   )}
                 </div>
                 <div className="flex items-center gap-3 mt-1 text-sm text-muted-foreground">
@@ -453,6 +471,18 @@ export function PatientAssignmentCard({
 
               {/* Actions */}
               <div className="flex items-center gap-1">
+                {assignmentDisplayStatus.primary.kind === 'expired' && onExtend && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-8 text-xs gap-1.5 shrink-0 border-primary/40 text-primary hover:bg-primary/5"
+                    onClick={(e) => { e.stopPropagation(); onExtend(assignment); }}
+                    data-testid={`patient-assignment-${assignment.id}-extend-quick-btn`}
+                  >
+                    <CalendarPlus className="h-3.5 w-3.5" />
+                    Przedłuż
+                  </Button>
+                )}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button

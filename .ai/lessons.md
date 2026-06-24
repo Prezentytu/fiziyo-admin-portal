@@ -14,6 +14,14 @@ Dziennik wniosków z pracy AI agentów. Po każdej korekcie dodaj nowy wpis.
 
 ## Wpisy
 
+### 2026-06-24 - Klikalny badge "Brak Premium" i przycisk "Przedłuż" dla wygasłych planów
+
+- **Kategoria**: `UI/UX` | `React`
+- **Problem**: Po przedłużeniu planu (endDate w przyszłości) i wygasłym Premium pacjenta, karta pokazywała "Aktywny" + "Brak Premium" jednocześnie bez żadnej akcji do podjęcia. Przy wygasłym planie przycisk "Przedłuż" był ukryty w dropdown. Ponadto po kliknięciu "Przedłuż" badge "Wygasł" pozostawał, bo `ExtendSetDialog` aktualizował tylko `endDate` bez resetowania pola `status`.
+- **Przyczyna**: Badge "Brak Premium" był tylko informacyjny, bez powiązanego CTA. Przycisk "Przedłuż wygasły zestaw" był dostępny wyłącznie z menu kontekstowego (3 kropki). `ExtendSetDialog` nie wysyłał resetu statusu do backendu — DB nadal miała `status: "expired"` i `resolveAssignmentDisplayStatus` sprawdza status przed datą.
+- **Rozwiązanie**: Dodano prop `onActivatePremium` do `PatientAssignmentCard` — gdy przekazany, badge "Brak Premium" staje się klikalny i wywołuje dialog aktywacji Premium. Gdy plan jest wygasły (`kind === 'expired'`), obok menu pojawia się bezpośredni przycisk "Przedłuż". W `ExtendSetDialog.handleExtend` gdy `isExpired`, dodano `status: 'ACTIVE', statusLegacy: 'active'` oraz `startDate` do zmiennych mutacji. Callback `onActivatePremium` przekazano ze strony pacjenta.
+- **Reguła**: Każdy badge ostrzegawczy (secondary hint) powinien mieć powiązane CTA. Akcje krytyczne (jak "Przedłuż wygasły plan") nie mogą być ukryte w dropdown. Gdy resetujesz daty wygasłego przypisania, zawsze resetuj też `status` — backend nie robi tego automatycznie. W `resolveAssignmentDisplayStatus` `endDate` w przyszłości ZAWSZE nadpisuje przestarzały string `status: "expired"` — data jest autorytatywna.
+
 ### 2026-06-23 - Wąskie sloty UI wymagają container queries i jednego źródła wysokości media
 
 - **Kategoria**: `UI/UX` | `React`
