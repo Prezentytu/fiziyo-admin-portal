@@ -11,7 +11,6 @@ import {
   Repeat,
   Dumbbell,
   FolderPlus,
-  ArrowLeftRight,
   FileText,
   MoreHorizontal,
   Timer,
@@ -23,13 +22,14 @@ import {
   Globe,
   RefreshCw,
   Copy,
-  ChevronDown,
   Flag,
+  Info,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { LoadingState } from '@/components/shared/LoadingState';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { ExerciseDialog } from '@/features/exercises/ExerciseDialog';
@@ -37,6 +37,9 @@ import { CreateSetWizard } from '@/features/exercise-sets';
 import { SubmitToGlobalDialog } from '@/features/exercises/SubmitToGlobalDialog';
 import { SubmitToOrganizationDialog } from '@/features/exercises/SubmitToOrganizationDialog';
 import { EnrichmentDisplay } from '@/features/exercises/EnrichmentDisplay';
+import { ExerciseParametersPanel } from '@/features/exercises/ExerciseParametersPanel';
+import { ExerciseExecutionSteps } from '@/features/exercises/ExerciseExecutionSteps';
+import { ExerciseAudioCues } from '@/features/exercises/ExerciseAudioCues';
 import { FeedbackBanner } from '@/features/exercises/FeedbackBanner';
 import { ReportExerciseDialog } from '@/features/exercises/ReportExerciseDialog';
 import { MediaGallery, buildMediaItems } from '@/components/shared';
@@ -49,7 +52,6 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 import {
-  EMPTY_NUMERIC_VALUE,
   EXERCISE_FIELD_METADATA,
   formatFieldValueWithPlaceholder,
   normalizeExerciseFieldValues,
@@ -69,7 +71,6 @@ import { createTagsMap, mapExerciseTagsToObjects } from '@/utils/tagUtils';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import type { ExerciseByIdResponse, ExerciseTagsResponse, TagCategoriesResponse } from '@/types/apollo';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { getNextExerciseCopyName } from '@/features/exercises/utils/getNextExerciseCopyName';
 import { calculateExerciseTotalSeconds, formatExerciseDuration } from '@/utils/exerciseTime';
 import { verificationCopy } from '@/features/verification/verificationCopy';
@@ -99,7 +100,6 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
   const [isSubmitToGlobalDialogOpen, setIsSubmitToGlobalDialogOpen] = useState(false);
   const [isSubmitToOrganizationDialogOpen, setIsSubmitToOrganizationDialogOpen] = useState(false);
   const [isReportDialogOpen, setIsReportDialogOpen] = useState(false);
-  const [isParametersOpen, setIsParametersOpen] = useState(false);
 
   // Get organization ID from context (changes when user switches organization)
   const organizationId = currentOrganization?.organizationId;
@@ -366,6 +366,7 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
     {
       id: 'sets',
       label: EXERCISE_FIELD_METADATA.sets.label,
+      tooltip: EXERCISE_FIELD_METADATA.sets.tooltip,
       value: formatFieldValueWithPlaceholder(EXERCISE_FIELD_METADATA.sets, normalizedFields),
       icon: Repeat,
       color: 'text-primary',
@@ -373,26 +374,25 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
     {
       id: 'reps',
       label: EXERCISE_FIELD_METADATA.reps.label,
+      tooltip: EXERCISE_FIELD_METADATA.reps.tooltip,
       value: formatFieldValueWithPlaceholder(EXERCISE_FIELD_METADATA.reps, normalizedFields),
       icon: Dumbbell,
       color: 'text-secondary',
     },
-    ...(normalizedFields.executionTime
-      ? [
-          {
-            id: 'executionTime',
-            label: EXERCISE_FIELD_METADATA.executionTime.label,
-            value: formatFieldValueWithPlaceholder(EXERCISE_FIELD_METADATA.executionTime, normalizedFields),
-            icon: Clock,
-            color: 'text-info',
-          },
-        ]
-      : []),
+    {
+      id: 'executionTime',
+      label: EXERCISE_FIELD_METADATA.executionTime.label,
+      tooltip: EXERCISE_FIELD_METADATA.executionTime.tooltip,
+      value: formatFieldValueWithPlaceholder(EXERCISE_FIELD_METADATA.executionTime, normalizedFields),
+      icon: Clock,
+      color: 'text-info',
+    },
     ...(totalExerciseTime.seconds > 0
       ? [
           {
             id: 'exerciseDuration',
             label: 'Czas trwania ćwiczenia',
+            tooltip: 'Szacowany łączny czas całego ćwiczenia (wszystkie serie + przerwy + przygotowanie).',
             value: formatExerciseDuration(totalExerciseTime.seconds, totalExerciseTime.isEstimate),
             icon: Timer,
             color: 'text-info',
@@ -401,70 +401,12 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
       : []),
   ];
 
-  const detailStats = [
-    {
-      id: 'restBetweenSets',
-      label: EXERCISE_FIELD_METADATA.restSets.label,
-      value: formatFieldValueWithPlaceholder(EXERCISE_FIELD_METADATA.restSets, normalizedFields),
-      icon: Timer,
-      color: 'text-orange-500',
-    },
-    {
-      id: 'prep',
-      label: EXERCISE_FIELD_METADATA.preparationTime.label,
-      value: formatFieldValueWithPlaceholder(EXERCISE_FIELD_METADATA.preparationTime, normalizedFields),
-      icon: Clock,
-      color: 'text-emerald-500',
-    },
-    {
-      id: 'restBetweenReps',
-      label: EXERCISE_FIELD_METADATA.restReps.label,
-      value: formatFieldValueWithPlaceholder(EXERCISE_FIELD_METADATA.restReps, normalizedFields),
-      icon: Timer,
-      color: 'text-cyan-500',
-    },
-    {
-      id: 'tempo',
-      label: EXERCISE_FIELD_METADATA.tempo.label,
-      value: formatFieldValueWithPlaceholder(EXERCISE_FIELD_METADATA.tempo, normalizedFields, 'Nie ustawiono'),
-      icon: RefreshCw,
-      color: 'text-violet',
-    },
-    {
-      id: 'load',
-      label: EXERCISE_FIELD_METADATA.load.label,
-      value: formatFieldValueWithPlaceholder(EXERCISE_FIELD_METADATA.load, normalizedFields, 'Nie ustawiono'),
-      icon: Dumbbell,
-      color: 'text-primary',
-    },
-    {
-      id: 'side',
-      label: EXERCISE_FIELD_METADATA.side.label,
-      value: formatFieldValueWithPlaceholder(EXERCISE_FIELD_METADATA.side, normalizedFields, 'Nie ustawiono'),
-      icon: ArrowLeftRight,
-      color: 'text-sky-500',
-    },
-    {
-      id: 'rangeOfMotion',
-      label: EXERCISE_FIELD_METADATA.rangeOfMotion.label,
-      value: formatFieldValueWithPlaceholder(EXERCISE_FIELD_METADATA.rangeOfMotion, normalizedFields, 'Nie ustawiono'),
-      icon: Repeat,
-      color: 'text-indigo-500',
-    },
-    {
-      id: 'difficulty',
-      label: EXERCISE_FIELD_METADATA.difficultyLevel.label,
-      value: formatFieldValueWithPlaceholder(EXERCISE_FIELD_METADATA.difficultyLevel, normalizedFields, 'Nie ustawiono'),
-      icon: Dumbbell,
-      color: 'text-amber-500',
-    },
-  ];
-
   const patientDescription = exercise.patientDescription || exercise.description || '';
   const physiotherapistDescription = exercise.clinicalDescription || '';
   const audioCue = (exercise as { audioCue?: string }).audioCue || '';
   const notes = exercise.notes || '';
-  const hasMissingCoreInformation = !patientDescription.trim() || !physiotherapistDescription.trim() || imageItemsCount === 0;
+  const hasMissingCoreInformation =
+    !patientDescription.trim() || !physiotherapistDescription.trim() || imageItemsCount === 0;
 
   return (
     <div className="space-y-6">
@@ -660,25 +602,44 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
         </button>
 
         {/* Quick Stats */}
-        <div
-          className={cn(
-            'grid gap-3 sm:col-span-1 lg:col-span-12',
-            quickStats.length <= 2 ? 'grid-cols-2' : 'grid-cols-2 sm:grid-cols-4'
-          )}
-        >
-          {quickStats.map((metric) => (
-            <div
-              key={metric.id}
-              className="rounded-2xl border border-border/40 bg-surface/50 p-4 flex flex-col items-center justify-center text-center"
-            >
-              <div className="flex items-center gap-2">
-                <metric.icon className={cn('h-4 w-4', metric.color)} />
-                <span className="text-2xl font-bold text-foreground tabular-nums">{metric.value}</span>
+        <TooltipProvider delayDuration={150}>
+          <div
+            className={cn(
+              'grid gap-3 sm:col-span-1 lg:col-span-12',
+              quickStats.length <= 2 ? 'grid-cols-2' : 'grid-cols-2 sm:grid-cols-4'
+            )}
+          >
+            {quickStats.map((metric) => (
+              <div
+                key={metric.id}
+                className="rounded-2xl border border-border/40 bg-surface/50 p-4 flex flex-col items-center justify-center text-center"
+              >
+                <div className="flex items-center gap-2">
+                  <metric.icon className={cn('h-4 w-4', metric.color)} />
+                  <span className="text-2xl font-bold text-foreground tabular-nums">{metric.value}</span>
+                </div>
+                <div className="flex items-center gap-1 mt-1">
+                  <p className="text-xs text-muted-foreground">{metric.label}</p>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        type="button"
+                        className="inline-flex h-3.5 w-3.5 items-center justify-center rounded-full text-muted-foreground/40 transition-colors hover:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/50"
+                        aria-label={`Informacja: ${metric.label}`}
+                        data-testid={`exercise-detail-stat-${metric.id}-info`}
+                      >
+                        <Info className="h-3 w-3" />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" className="max-w-xs text-xs">
+                      {metric.tooltip}
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
               </div>
-              <p className="text-xs text-muted-foreground mt-1">{metric.label}</p>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        </TooltipProvider>
       </div>
       {hasMissingCoreInformation && (
         <div className="rounded-2xl border border-sky-500/20 bg-sky-50/50 p-4 dark:bg-sky-500/5">
@@ -710,68 +671,64 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
         </div>
 
         <div className="space-y-4">
-          <Collapsible open={isParametersOpen} onOpenChange={setIsParametersOpen}>
-            <div className="rounded-2xl border border-border/40 bg-surface/50">
-              <CollapsibleTrigger
-                className="flex w-full items-center justify-between p-4 text-left transition-colors hover:bg-surface-light/40"
-                data-testid="exercise-detail-advanced-params-toggle"
-              >
-                <div>
-                  <p className="text-sm font-semibold text-foreground">Szczegóły parametrów</p>
-                  <p className="text-xs text-muted-foreground">Rozwiń, aby zobaczyć wszystkie parametry wykonania</p>
-                </div>
-                <ChevronDown
-                  className={cn('h-4 w-4 text-muted-foreground transition-transform', isParametersOpen && 'rotate-180')}
-                />
-              </CollapsibleTrigger>
-              <CollapsibleContent>
-                <div className="grid gap-3 border-t border-border/40 p-4 sm:grid-cols-2">
-                  {detailStats.map((metric) => (
-                    <div key={metric.id} className="rounded-xl bg-surface-light/40 p-3">
-                      <p className="text-xs text-muted-foreground">{metric.label}</p>
-                      <div className="mt-1 flex items-center gap-2">
-                        <metric.icon className={cn('h-4 w-4', metric.color)} />
-                        <span
-                          className={cn(
-                            'text-sm font-semibold',
-                            metric.value === EMPTY_NUMERIC_VALUE ? 'text-muted-foreground' : 'text-foreground'
-                          )}
-                        >
-                          {metric.value}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CollapsibleContent>
-            </div>
-          </Collapsible>
+          {/* Wszystkie parametry wykonania — zawsze widoczne */}
+          <div>
+            <h2 className="flex items-center gap-2 text-base font-semibold text-foreground mb-3">
+              <RefreshCw className="h-4 w-4 text-muted-foreground" />
+              Parametry wykonania
+            </h2>
+            <ExerciseParametersPanel source={normalizedFields} />
+          </div>
 
-          <div className="space-y-4">
+          {/* Kroki wykonania */}
+          <ExerciseExecutionSteps
+            enrichmentData={exercise.enrichmentData}
+            patientDescription={patientDescription}
+          />
+
+          {/* Wskazówki głosowe */}
+          <ExerciseAudioCues
+            audioCue={audioCue}
+            enrichmentData={exercise.enrichmentData}
+          />
+
+          {/* Informacje o ćwiczeniu */}
+          <div className="space-y-3">
             <h2 className="flex items-center gap-2 text-base font-semibold text-foreground">
               <FileText className="h-4 w-4 text-muted-foreground" />
               Informacje o ćwiczeniu
             </h2>
             <div className="rounded-2xl border border-border/40 bg-surface/50 p-4 sm:p-6">
               <Tabs defaultValue="patient" className="w-full">
-                <TabsList className="grid h-auto w-full grid-cols-2 gap-1 bg-surface-light/60 p-1 sm:grid-cols-4">
-                  <TabsTrigger value="patient" className="text-xs sm:text-sm" data-testid="exercise-detail-tab-patient">
+                <TabsList className="grid h-auto w-full grid-cols-3 gap-1 bg-surface-light/60 p-1">
+                  <TabsTrigger
+                    value="patient"
+                    className="text-xs sm:text-sm"
+                    data-testid="exercise-detail-tab-patient"
+                  >
                     Dla pacjenta
                   </TabsTrigger>
-                  <TabsTrigger value="physio" className="text-xs sm:text-sm" data-testid="exercise-detail-tab-physio">
+                  <TabsTrigger
+                    value="physio"
+                    className="text-xs sm:text-sm"
+                    data-testid="exercise-detail-tab-physio"
+                  >
                     Dla fizjoterapeuty
                   </TabsTrigger>
-                  <TabsTrigger value="audio" className="text-xs sm:text-sm" data-testid="exercise-detail-tab-audio">
-                    Polecenia audio
-                  </TabsTrigger>
-                  <TabsTrigger value="notes" className="text-xs sm:text-sm" data-testid="exercise-detail-tab-notes">
+                  <TabsTrigger
+                    value="notes"
+                    className="text-xs sm:text-sm"
+                    data-testid="exercise-detail-tab-notes"
+                  >
                     Notatki
                   </TabsTrigger>
                 </TabsList>
                 <TabsContent value="patient">
                   <div className="rounded-xl bg-surface-light/30 p-4">
                     {patientDescription ? (
-                      <p className="whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground">{patientDescription}</p>
+                      <p className="whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground">
+                        {patientDescription}
+                      </p>
                     ) : (
                       <p className="text-sm text-muted-foreground">Brak opisu dla pacjenta.</p>
                     )}
@@ -784,23 +741,18 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
                         {physiotherapistDescription}
                       </p>
                     ) : (
-                      <p className="text-sm text-muted-foreground">Brak opisu klinicznego dla fizjoterapeuty.</p>
-                    )}
-                  </div>
-                </TabsContent>
-                <TabsContent value="audio">
-                  <div className="rounded-xl bg-surface-light/30 p-4">
-                    {audioCue ? (
-                      <p className="whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground">{audioCue}</p>
-                    ) : (
-                      <p className="text-sm text-muted-foreground">Brak podpowiedzi głosowej.</p>
+                      <p className="text-sm text-muted-foreground">
+                        Brak opisu klinicznego dla fizjoterapeuty.
+                      </p>
                     )}
                   </div>
                 </TabsContent>
                 <TabsContent value="notes">
                   <div className="rounded-xl bg-surface-light/30 p-4">
                     {notes ? (
-                      <p className="whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground">{notes}</p>
+                      <p className="whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground">
+                        {notes}
+                      </p>
                     ) : (
                       <p className="text-sm text-muted-foreground">Brak notatek.</p>
                     )}
@@ -810,6 +762,7 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
             </div>
           </div>
 
+          {/* Dane rozszerzone */}
           <EnrichmentDisplay enrichmentData={exercise.enrichmentData} />
         </div>
       </div>

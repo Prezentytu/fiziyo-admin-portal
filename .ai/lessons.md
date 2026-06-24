@@ -662,4 +662,20 @@ Dziennik wniosków z pracy AI agentów. Po każdej korekcie dodaj nowy wpis.
 - **Rozwiazanie**: Dodano wysokosc kompensujaca padding rodzica: `h-[calc(100%+2rem)] lg:h-[calc(100%+3rem)] 2xl:h-[calc(100%+4rem)]`.
 - **Regula**: Przy layoutach full-height z negative margins zawsze kompensuj wysokosc o `2 x padding` rodzica albo przebuduj strukture bez negative margins.
 
+### 2026-06-24 - Warunkowe kafelki hero ukrywały kluczowe parametry
+
+- **Kategoria**: `UI/UX` | `Exercise`
+- **Problem**: `executionTime` (Czas powtórzenia) był pokazywany w kafelkach hero tylko gdy `> 0`, przez co terapeuta nie widział, że parametr nie jest ustawiony. Inne parametry były ukryte w zwijanej sekcji "Szczegóły parametrów".
+- **Przyczyna**: Logika `...(normalizedFields.executionTime ? [...] : [])` ukrywała parametr zamiast pokazywać go z placeholderem.
+- **Rozwiązanie**: Wszystkie parametry wykonania zawsze widoczne — hero stats zawierają `executionTime` bezwarunkowo; dedykowany `ExerciseParametersPanel` pokazuje wszystkie grupy parametrów z ikoną info i placeholderem `—`/`Nie ustawiono` dla nieustawionych pól.
+- **Regula**: Parametry ćwiczenia zawsze pokazuj nawet gdy puste — wartość `—` komunikuje "nieustalone", ukrycie parametru sugeruje "nieistnieje". Helper `buildExerciseParameterGroups` jest single source of truth dla grupowania i wyświetlania.
+
+### 2026-06-24 - Kroki enrichment były zakopane pod AI-metadata i dosing profiles
+
+- **Kategoria**: `IA` | `Exercise` | `Product`
+- **Problem**: `EnrichmentDisplay` renderował kroki wykonania (`instruction_steps`) i wskazówki audio (`coaching_cues`) w tej samej kolejności co słowa kluczowe AI i profile dawkowania — krytyczne dane dla pacjenta były na dole.
+- **Przyczyna**: Brak podziału na priorytety; wszystko w jednym komponencie bez hierarchii fizjoterapeutycznej.
+- **Rozwiązanie**: Wydzielono `ExerciseExecutionSteps` (kroki z przełącznikiem wariantów) i `ExerciseAudioCues` (audioCue + coaching_cues), renderowane wysoko w prawej kolumnie. `EnrichmentDisplay` zachował tylko dane kliniczne (błędy, odczucia, bezpieczeństwo, notatki terapeutyczne) i zwijaną sekcję "Zaawansowane" (dosing profiles, AI keywords, feedback questions).
+- **Regula**: Hierarchia wizualna strony detalu ćwiczenia = parametry → kroki wykonania → wskazówki audio → opisy tekstowe → dane kliniczne → zaawansowane. Priorytet wynika z potrzeb fizjoterapeuty i pacjenta, nie z kolejności pól w schemacie danych.
+
 <!-- Dodawaj nowe wpisy powyżej tej linii -->
