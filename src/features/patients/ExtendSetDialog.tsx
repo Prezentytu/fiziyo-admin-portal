@@ -130,7 +130,9 @@ export function ExtendSetDialog({
       await updateAssignment({
         variables: {
           assignmentId: assignment.id,
+          startDate: newStartDate.toISOString(),
           endDate: newEndDate.toISOString(),
+          ...(isExpired && { status: 'ACTIVE', statusLegacy: 'active' }),
         },
       });
 

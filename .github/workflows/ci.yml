@@ -22,8 +22,14 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Skills lint
+        run: npm run skills:lint
+
       - name: Lint
         run: npm run lint
+
+      - name: Data-testid guard
+        run: npm run check:testids
 
       - name: Type check
         run: npm run type-check

@@ -4,15 +4,25 @@ Umiejętności (skills) to specjalistyczne przewodniki dla AI agentów pracując
 
 ## Dostępne skills
 
-| Skill                                             | Opis                                              | Kiedy używać                                                 |
-| ------------------------------------------------- | ------------------------------------------------- | ------------------------------------------------------------ |
-| [spec-writing](spec-writing/SKILL.md)             | Jak pisać specyfikacje FiziYo                     | Tworzenie/aktualizacja plików w `.ai/specs/`                 |
-| [code-review](code-review/SKILL.md)               | Code review w FiziYo                              | Przegląd kodu przed merge, weryfikacja zmian                 |
-| [create-agents-md](create-agents-md/SKILL.md)     | Jak tworzyć AGENTS.md dla modułów                 | Dodawanie nowego modułu/komponentu do Task Routera           |
-| [product-designer](product-designer/SKILL.md)     | Premium UI/UX dla MedTech SaaS                    | Zadania UI/UX, redesign, audit designu i dostępności         |
-| [implement-spec](implement-spec/SKILL.md)         | Implementacja spec krok po kroku                  | Wdrażanie złożonych funkcjonalności ze specyfikacji          |
-| [pre-implement-spec](pre-implement-spec/SKILL.md) | Analiza gotowości specyfikacji                    | Ocena ryzyka i braków przed rozpoczęciem kodowania           |
-| [integration-tests](integration-tests/SKILL.md)   | Orkiestracja testów regresyjnych i integracyjnych | Bugfixy, zmiany logiki biznesowej, wdrożenia ze specyfikacji |
+| Skill                                             | Opis                                                   | Kiedy używać                                         |
+| ------------------------------------------------- | ------------------------------------------------------ | ---------------------------------------------------- |
+| [spec-writing](spec-writing/SKILL.md)             | Tworzenie/aktualizacja specyfikacji                    | Gdy potrzebna dokumentacja architektury i kontraktów |
+| [pre-implement-spec](pre-implement-spec/SKILL.md) | Audyt gotowości specyfikacji                           | Przed kodowaniem dużych zmian                        |
+| [implement-spec](implement-spec/SKILL.md)         | Wdrażanie spec fazami                                  | Implementacja wieloetapowa                           |
+| [code-review](code-review/SKILL.md)               | Review jakości i ryzyk                                 | Audyt PR/diffa                                       |
+| [integration-tests](integration-tests/SKILL.md)   | Testy regresyjne i integracyjne                        | Po zmianach funkcjonalnych                           |
+| [smart-test](smart-test/SKILL.md)                 | Minimalny zestaw testów pod diff                       | Szybki feedback loop                                 |
+| [check-and-commit](check-and-commit/SKILL.md)     | Quality gate przed commitem                            | Domknięcie zadania                                   |
+| [root-cause](root-cause/SKILL.md)                 | Analiza przyczyny źródłowej                            | Debug regresji/incydentu                             |
+| [product-designer](product-designer/SKILL.md)     | Premium UI/UX + accessibility                          | Redesign, audit UI, theme-safe                       |
+| [ui-guardian](ui-guardian/SKILL.md)               | Wykonywalny guardian UI + metryki                      | Skan tokenów, migracja theme-safe, raport delta      |
+| [sec-report](sec-report/SKILL.md)                 | Audyt bezpieczeństwa (OWASP + RODO + tenant isolation) | Zmiany auth/token/permission, review PR              |
+| [qa-scenarios](qa-scenarios/SKILL.md)             | Raport QA P0/P1/P2                                     | Okno zmian przed release                             |
+| [auto-implement](auto-implement/SKILL.md)         | Autonomiczna implementacja runu                        | Realizacja planu krok po kroku                       |
+| [continue-run](continue-run/SKILL.md)             | Wznowienie przerwanego runu                            | Kontynuacja checklisty `.ai/runs/`                   |
+| [help](help/SKILL.md)                             | Nawigator "jaki skill teraz?"                          | Gdy potrzebna decyzja o następnym kroku              |
+| [skill-creator](skill-creator/SKILL.md)           | Scaffold nowego skilla                                 | Dodawanie nowych skilli zgodnych z konwencją FiziYo  |
+| [create-agents-md](create-agents-md/SKILL.md)     | Tworzenie AGENTS.md modułu                             | Standaryzacja instrukcji agentowych i Task Routera   |
 
 ## Dokumentacja ekosystemowa (.ai/)
 
@@ -24,7 +34,7 @@ Oprócz skills, folder `.ai/` zawiera dokumentację kontekstową:
 | [DOMAIN_MODEL.md](../DOMAIN_MODEL.md) | Encje, enumy, relacje, JSONB — szybka referencja            |
 | [DATA_FLOWS.md](../DATA_FLOWS.md)     | Kluczowe flow biznesowe z diagramami                        |
 | [lessons.md](../lessons.md)           | Dziennik wniosków z pracy AI                                |
-| [specs/](../specs/README.md)          | Specyfikacje modułów (SPEC-001…005)                         |
+| [specs/](../specs/README.md)          | Specyfikacje modułów (aktualny indeks w README)             |
 
 ## Integracja z Cursor
 
@@ -34,6 +44,9 @@ Canonical source pozostaje w `.ai/skills/`, a workflow agentow jest spinany prze
 ### Source of truth
 
 - Edytuj skille tylko w `.ai/skills/`.
+- Trzymaj listę skilli w `.ai/skills/manifest.json` (tier `core` i `process`).
+- Frontmatter każdego `SKILL.md` musi mieć `name` i auto-trigger `description` (PL+EN).
+- Uruchamiaj `npm run skills:lint` aby wykryć dryf manifestu i brakujące frontmatter.
 - Synchronizuj warstwe Cursor poleceniem: `npm run skills:sync`.
 - Nie utrzymuj recznie plikow w `.cursor/skills/` (to katalog generowany).
 

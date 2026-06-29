@@ -12,7 +12,6 @@ import {
   Dumbbell,
   Plus,
   Calendar,
-  Clock,
   FolderKanban,
   ExternalLink,
   Settings2,
@@ -29,7 +28,6 @@ import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { toGqlStatus } from '@/utils/statusUtils';
 import { pluralize } from '@/utils/textUtils';
-import { formatFrequencyDisplay } from '@/utils/frequencyDisplay';
 import { resolveAssignmentDisplayStatus } from '@/features/patients/utils/assignmentDisplayStatus';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -44,6 +42,7 @@ import {
 import { LoadingState } from '@/components/shared/LoadingState';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
+import { ScheduleSummary } from '@/components/shared';
 import { ExerciseExecutionCard } from '@/components/shared/exercise';
 import type { ExerciseExecutionCardData } from '@/components/shared/exercise';
 import { EditExerciseSetFullDialog } from '@/features/exercise-sets/EditExerciseSetFullDialog';
@@ -607,7 +606,6 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 animate-stagger">
             {assignments.map((assignment) => {
               const statusInfo = getStatusInfo(assignment.status, assignment.endDate);
-              const frequencyDisplay = formatFrequencyDisplay(assignment.frequency);
 
               return (
                 <div
@@ -649,21 +647,17 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
                           {statusInfo.label}
                         </Badge>
                       </div>
-                      {(frequencyDisplay || assignment.frequency?.timesPerDay) && (
-                        <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
-                          {frequencyDisplay && (
-                            <span className="flex items-center gap-1">
-                              <Calendar className="h-3 w-3" />
-                              {frequencyDisplay}
-                            </span>
-                          )}
-                          {assignment.frequency?.timesPerDay && (
-                            <span className="flex items-center gap-1">
-                              <Clock className="h-3 w-3" />
-                              {assignment.frequency.timesPerDay}x/dzień
-                            </span>
-                          )}
-                        </div>
+                      {assignment.startDate && assignment.endDate && assignment.frequency && (
+                        <ScheduleSummary
+                          startDate={assignment.startDate}
+                          endDate={assignment.endDate}
+                          frequency={assignment.frequency}
+                          variant="compact"
+                          showSessions={false}
+                          showStartInDays={false}
+                          className="mt-1"
+                          testIdPrefix={`set-detail-assignment-${assignment.id}`}
+                        />
                       )}
                       {assignment.completionCount !== undefined && assignment.completionCount > 0 && (
                         <p className="text-xs text-muted-foreground mt-1">Wykonano: {assignment.completionCount}x</p>

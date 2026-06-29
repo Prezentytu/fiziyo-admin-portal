@@ -40,6 +40,8 @@ import {
 // Sub-components
 import { VerificationStickyHeader } from './VerificationStickyHeader';
 import { TagSmartChips } from './TagSmartChips';
+import { EnrichmentEditor } from './EnrichmentEditor';
+import { EditorSection } from './EditorSection';
 
 import type { AdminExercise, ExerciseRelationTarget } from '@/graphql/types/adminExercise.types';
 
@@ -69,6 +71,11 @@ const RANGE_OF_MOTION_OPTIONS = [
   { value: 'ISOMETRIC', label: 'Izometryczny' },
   { value: 'ECCENTRIC', label: 'Ekscentryczny' },
   { value: 'CONCENTRIC', label: 'Koncentryczny' },
+];
+
+const EXERCISE_TYPES = [
+  { value: 'REPS', label: 'Powtórzenia' },
+  { value: 'TIME', label: 'Czas' },
 ];
 
 const LOAD_PRESETS = [
@@ -153,8 +160,8 @@ export function VerificationEditorPanel({
   onFieldChange,
   mainTags,
   onMainTagsChange,
-  additionalTags: _additionalTags,
-  onAdditionalTagsChange: _onAdditionalTagsChange,
+  additionalTags,
+  onAdditionalTagsChange,
   onRelationsChange: _onRelationsChange,
   onValidationChange,
   onCompletionChange,
@@ -170,8 +177,11 @@ export function VerificationEditorPanel({
   const [localDuration, setLocalDuration] = useState<number | null>(exercise.defaultDuration ?? null);
   const [localRest, setLocalRest] = useState<number | null>(exercise.defaultRestBetweenSets ?? null);
   const [localTempo, setLocalTempo] = useState<string>(exercise.tempo || '');
+  const [localType, setLocalType] = useState<string>(exercise.type || 'REPS');
   const [localDifficulty, setLocalDifficulty] = useState<string>(exercise.difficultyLevel || '');
   const [localSide, setLocalSide] = useState<string>(exercise.side || 'NONE');
+  const [localAudioCue, setLocalAudioCue] = useState<string>(exercise.audioCue || '');
+  const [localNotes, setLocalNotes] = useState<string>(exercise.notes || '');
 
   // Extended parameters state
   const [localRestBetweenReps, setLocalRestBetweenReps] = useState<number | null>(
@@ -188,6 +198,7 @@ export function VerificationEditorPanel({
 
   // Collapsible state for technical details
   const [isTechnicalOpen, setIsTechnicalOpen] = useState(false);
+  const [isEnrichmentOpen, setIsEnrichmentOpen] = useState(false);
 
   // Track if any technical details have been modified
   const [technicalDetailsModified, setTechnicalDetailsModified] = useState(false);
@@ -207,8 +218,11 @@ export function VerificationEditorPanel({
     setLocalDuration(exercise.defaultDuration ?? null);
     setLocalRest(exercise.defaultRestBetweenSets ?? null);
     setLocalTempo(exercise.tempo || '');
+    setLocalType(exercise.type || 'REPS');
     setLocalDifficulty(exercise.difficultyLevel || '');
     setLocalSide(exercise.side || 'NONE');
+    setLocalAudioCue(exercise.audioCue || '');
+    setLocalNotes(exercise.notes || '');
     setLocalPatientDesc(exercise.patientDescription || '');
     setLocalClinicalDesc(exercise.clinicalDescription || '');
     setLocalRestBetweenReps(exercise.defaultRestBetweenReps ?? null);
@@ -242,19 +256,21 @@ export function VerificationEditorPanel({
   const dataValidation = useMemo(() => {
     const hasSets = (localSets ?? 0) > 0;
     const hasReps = (localReps ?? 0) > 0;
+    const hasExecutionTime = (localExecTime ?? 0) > 0;
     const hasDuration = (localDuration ?? 0) > 0;
-    const hasVolume = hasReps || hasDuration;
+    const hasVolume = hasReps || hasExecutionTime || hasDuration;
     const hasTags = HIDE_EXERCISE_TAGS ? true : mainTags.length > 0;
 
     return {
       isValid: hasSets && hasVolume && hasTags,
       hasSets,
       hasReps,
+      hasExecutionTime,
       hasDuration,
       hasVolume,
       hasTags,
     };
-  }, [localSets, localReps, localDuration, mainTags]);
+  }, [localSets, localReps, localExecTime, localDuration, mainTags]);
 
   // Combined missing fields
   const missingFields = useMemo(() => {
@@ -368,40 +384,60 @@ export function VerificationEditorPanel({
   return (
     <TooltipProvider>
       <div
-        className={cn('flex flex-col h-full overflow-y-auto overflow-x-hidden pr-2', className)}
+        className={cn('@container/editor flex h-full flex-col overflow-x-hidden overflow-y-auto pr-2', className)}
         data-testid={testId}
       >
-        {/* ============================================ */}
-        {/* SECTION 1: HEADER (Name + Tags) */}
-        {/* ============================================ */}
-        <VerificationStickyHeader
-          exercise={exercise}
-          onFieldChange={onFieldChange}
-          disabled={disabled}
-          className="shrink-0 mb-4 min-w-0"
-          data-testid="verification-editor-header"
-        />
-
-        {!HIDE_EXERCISE_TAGS && (
-          <div className="shrink-0 mb-5 min-w-0">
-            <TagSmartChips
-              exerciseId={exercise.id}
-              exerciseName={exercise.name}
-              exerciseDescription={descriptionValue}
-              tags={mainTags}
-              onTagsChange={onMainTagsChange}
-              tagType="main"
-              label="Tagi"
+        <div className="space-y-4 pb-4">
+          <EditorSection
+            index={1}
+            title="Nazwa i kategoria"
+            icon={FileText}
+            description="Nazwa ćwiczenia i tagi do wyszukiwania."
+          >
+            <VerificationStickyHeader
+              exercise={exercise}
+              onFieldChange={onFieldChange}
               disabled={disabled}
-              data-testid="verification-editor-main-tags"
+              className="shrink-0 min-w-0"
+              data-testid="verification-editor-header"
             />
-          </div>
-        )}
 
-        {/* ============================================ */}
-        {/* SECTION 2: CORE METRICS (Tier 1) */}
-        {/* ============================================ */}
-        <div className="shrink-0 mb-5 min-w-0">
+            {!HIDE_EXERCISE_TAGS && (
+              <div className="mt-3 min-w-0">
+                <TagSmartChips
+                  exerciseId={exercise.id}
+                  exerciseName={exercise.name}
+                  exerciseDescription={descriptionValue}
+                  tags={mainTags}
+                  onTagsChange={onMainTagsChange}
+                  tagType="main"
+                  label="Tagi"
+                  disabled={disabled}
+                  data-testid="verification-editor-main-tags"
+                />
+                <div className="mt-3">
+                  <TagSmartChips
+                    exerciseId={exercise.id}
+                    exerciseName={exercise.name}
+                    exerciseDescription={descriptionValue}
+                    tags={additionalTags}
+                    onTagsChange={onAdditionalTagsChange}
+                    tagType="additional"
+                    label="Tagi dodatkowe"
+                    disabled={disabled}
+                    data-testid="verification-editor-additional-tags"
+                  />
+                </div>
+              </div>
+            )}
+          </EditorSection>
+
+          <EditorSection
+            index={2}
+            title="Parametry treningowe"
+            icon={Dumbbell}
+            description="Serie, powtórzenia, tempo i obciążenie."
+          >
           <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3 flex items-center gap-2">
             <Dumbbell className="h-3.5 w-3.5 text-primary" />
             Parametry podstawowe
@@ -492,38 +528,38 @@ export function VerificationEditorPanel({
               </div>
             </div>
 
-            {/* Czas wykonania (Time Under Tension) */}
+            {/* Czas powtórzenia */}
             <div className="flex-1 min-w-0 space-y-1">
               <ExerciseFieldLabelWithTooltip
-                label="Czas serii"
-                tooltip={EXERCISE_FIELD_TOOLTIPS.duration}
-                icon={renderFieldIcon('duration')}
+                label="Czas powtórzenia"
+                tooltip={EXERCISE_FIELD_TOOLTIPS.executionTime}
+                icon={renderFieldIcon('executionTime')}
                 className="justify-center"
                 labelClassName="text-[9px] uppercase tracking-wider text-center text-muted-foreground truncate"
-                testId="verification-duration-info"
+                testId="verification-execution-time-info"
               />
               <div
                 className={cn(
                   'relative h-12 rounded-lg transition-all duration-200',
                   'bg-card/70 border border-border/70',
                   'hover:border-border focus-within:border-primary/50',
-                  localReps && !localDuration && 'opacity-40'
+                  localReps && !localExecTime && 'opacity-40'
                 )}
               >
                 <input
                   type="number"
-                  min={5}
-                  max={600}
-                  step={5}
-                  value={localDuration ?? ''}
+                  min={1}
+                  max={120}
+                  step={1}
+                  value={localExecTime ?? ''}
                   onChange={(e) =>
-                    setLocalDuration(e.target.value === '' ? null : Number.parseInt(e.target.value, 10))
+                    setLocalExecTime(e.target.value === '' ? null : Number.parseInt(e.target.value, 10))
                   }
-                  onBlur={() => handleNumberBlur('defaultDuration', localDuration)}
+                  onBlur={() => handleNumberBlur('defaultExecutionTime', localExecTime)}
                   disabled={disabled}
                   placeholder="—"
                   className="w-full h-full bg-transparent text-lg font-bold text-center outline-none text-foreground placeholder:text-muted-foreground/80 pr-5 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                  data-testid="core-metric-duration"
+                  data-testid="core-metric-execution-time"
                 />
                 <span className="absolute right-1.5 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground font-medium pointer-events-none">
                   s
@@ -569,49 +605,76 @@ export function VerificationEditorPanel({
               </div>
             </div>
           </div>
-        </div>
 
-        {/* ============================================ */}
-        {/* SECTION 3: SZCZEGÓŁY TECHNICZNE (Collapsible) */}
-        {/* ============================================ */}
-        <Collapsible open={isTechnicalOpen} onOpenChange={setIsTechnicalOpen} className="shrink-0 mb-5">
-          <CollapsibleTrigger className="flex w-full items-center justify-between rounded-t-lg border border-border/60 bg-card/60 p-3 transition-colors hover:bg-card data-[state=open]:rounded-b-none data-[state=open]:border-b-0">
-            <div className="flex items-center gap-2">
-              <Gauge className="h-3.5 w-3.5 text-muted-foreground" />
-              <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
-                Szczegóły techniczne
-              </span>
-              {technicalDetailsModified ? (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Badge
-                      variant="secondary"
-                      className="h-5 rounded-full bg-emerald-500/15 px-2 text-[10px] font-medium text-emerald-600"
-                      data-testid="verification-technical-status-badge"
-                    >
-                      Edytowano
-                    </Badge>
-                  </TooltipTrigger>
-                  <TooltipContent side="top">
-                    Zmiany techniczne są zapisywane po opuszczeniu pola.
-                  </TooltipContent>
-                </Tooltip>
-              ) : (
-                <span className="text-[10px] text-muted-foreground">Bez zmian</span>
-              )}
-            </div>
-            <ChevronDown
-              className={cn(
-                'h-4 w-4 text-muted-foreground transition-transform duration-200',
-                isTechnicalOpen && 'rotate-180'
-              )}
-            />
-          </CollapsibleTrigger>
+          <Collapsible open={isTechnicalOpen} onOpenChange={setIsTechnicalOpen} className="shrink-0 mt-3">
+            <CollapsibleTrigger className="flex w-full items-center justify-between rounded-t-lg border border-border/60 bg-card/60 p-3 transition-colors hover:bg-card data-[state=open]:rounded-b-none data-[state=open]:border-b-0">
+              <div className="flex items-center gap-2">
+                <Gauge className="h-3.5 w-3.5 text-muted-foreground" />
+                <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+                  Szczegóły techniczne
+                </span>
+                {technicalDetailsModified ? (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Badge
+                        variant="secondary"
+                        className="h-5 rounded-full bg-emerald-500/15 px-2 text-[10px] font-medium text-emerald-600"
+                        data-testid="verification-technical-status-badge"
+                      >
+                        Edytowano
+                      </Badge>
+                    </TooltipTrigger>
+                    <TooltipContent side="top">
+                      Zmiany techniczne są zapisywane po opuszczeniu pola.
+                    </TooltipContent>
+                  </Tooltip>
+                ) : (
+                  <span className="text-[10px] text-muted-foreground">Bez zmian</span>
+                )}
+              </div>
+              <ChevronDown
+                className={cn(
+                  'h-4 w-4 text-muted-foreground transition-transform duration-200',
+                  isTechnicalOpen && 'rotate-180'
+                )}
+              />
+            </CollapsibleTrigger>
 
-          <CollapsibleContent>
-            <div className="rounded-b-lg border border-border/60 border-t-0 bg-card/60 p-4">
-              {/* Responsive technical grid for stable alignment */}
-              <div className="grid grid-cols-2 gap-x-3 gap-y-4 2xl:grid-cols-3">
+            <CollapsibleContent>
+              <div className="rounded-b-lg border border-border/60 border-t-0 bg-card/60 p-4">
+                {/* Responsive technical grid for stable alignment */}
+                <div className="grid grid-cols-1 gap-x-3 gap-y-4 @md/editor:grid-cols-2 @4xl/editor:grid-cols-3">
+                {/* Typ ćwiczenia */}
+                <div className="min-w-0 space-y-1.5">
+                  <ExerciseFieldLabelWithTooltip
+                    label="Typ"
+                    tooltip="Tryb ćwiczenia: na powtórzenia lub na czas."
+                    icon={renderFieldIcon('reps')}
+                    labelClassName="min-h-4 truncate text-[10px] uppercase tracking-wider text-muted-foreground"
+                    testId="verification-type-info"
+                  />
+                  <Select
+                    value={localType}
+                    onValueChange={(v) => {
+                      setLocalType(v);
+                      setTechnicalDetailsModified(true);
+                      handleSelectChange('type', v);
+                    }}
+                    disabled={disabled}
+                  >
+                    <SelectTrigger className="h-9 border-border/70 bg-card/70" data-testid="property-type">
+                      <SelectValue placeholder="—" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {EXERCISE_TYPES.map((opt) => (
+                        <SelectItem key={opt.value} value={opt.value}>
+                          {opt.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
                 {/* Tempo */}
                 <div className="min-w-0 space-y-1.5">
                   <ExerciseFieldLabelWithTooltip
@@ -791,30 +854,31 @@ export function VerificationEditorPanel({
                   </div>
                 </div>
 
-                {/* Czas wykonania powtórzenia */}
+                {/* Czas serii */}
                 <div className="min-w-0 space-y-1.5">
                   <ExerciseFieldLabelWithTooltip
-                    label="Czas wyk. powt."
-                    tooltip={EXERCISE_FIELD_TOOLTIPS.executionTime}
-                    icon={renderFieldIcon('executionTime')}
+                    label="Czas serii"
+                    tooltip={EXERCISE_FIELD_TOOLTIPS.duration}
+                    icon={renderFieldIcon('duration')}
                     labelClassName="min-h-4 truncate text-[10px] uppercase tracking-wider text-muted-foreground"
-                    testId="verification-execution-time-info"
+                    testId="verification-duration-info"
                   />
                   <div className="relative">
                     <Input
                       type="number"
-                      min={1}
-                      max={60}
-                      value={localExecTime ?? ''}
+                      min={5}
+                      max={600}
+                      step={5}
+                      value={localDuration ?? ''}
                       onChange={(e) => {
-                        setLocalExecTime(e.target.value === '' ? null : Number.parseInt(e.target.value, 10));
+                        setLocalDuration(e.target.value === '' ? null : Number.parseInt(e.target.value, 10));
                         setTechnicalDetailsModified(true);
                       }}
-                      onBlur={() => handleNumberBlur('defaultExecutionTime', localExecTime)}
+                      onBlur={() => handleNumberBlur('defaultDuration', localDuration)}
                       disabled={disabled}
                       placeholder="0"
                       className="h-9 border-border/70 bg-card/70 pr-6 text-center"
-                      data-testid="property-exec-time"
+                      data-testid="property-duration"
                     />
                     <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">s</span>
                   </div>
@@ -893,19 +957,22 @@ export function VerificationEditorPanel({
                     data-testid="property-load-text"
                   />
                 </div>
+                </div>
               </div>
-            </div>
-          </CollapsibleContent>
-        </Collapsible>
+            </CollapsibleContent>
+          </Collapsible>
+          </EditorSection>
 
-        {/* ============================================ */}
-        {/* SECTION 4: CONTENT SWITCHER (Tier 3) */}
-        {/* ============================================ */}
-        <div className="flex-1 min-h-0">
+          <EditorSection
+            index={3}
+            title="Opis dla pacjenta i fizjoterapeuty"
+            icon={User}
+            description="Prosty opis dla pacjenta oraz opis kliniczny."
+          >
           <Tabs
             value={activeDescTab}
             onValueChange={(v) => setActiveDescTab(v as 'clinical' | 'patient')}
-            className="flex flex-col h-full"
+            className="flex flex-col"
           >
             <TabsList className="grid w-full grid-cols-2 h-9 mb-3 shrink-0">
               <TabsTrigger
@@ -935,10 +1002,10 @@ export function VerificationEditorPanel({
             </TabsList>
 
             {/* Patient Description */}
-            <TabsContent value="patient" className="flex-1 mt-0">
+            <TabsContent value="patient" className="mt-0">
               <div
                 className={cn(
-                  'h-full rounded-lg border transition-colors',
+                  'min-h-[180px] rounded-lg border transition-colors',
                   activeDescTab === 'patient' ? 'border-emerald-500/30 bg-emerald-500/5' : 'border-border/70'
                 )}
               >
@@ -949,7 +1016,7 @@ export function VerificationEditorPanel({
                   placeholder="Wpisz prosty opis dla pacjenta - jak Pani Jadzia ma wykonać to ćwiczenie..."
                   disabled={disabled || isDescSaving}
                   className={cn(
-                    'h-full min-h-[120px] resize-none border-0 bg-transparent',
+                    'min-h-[180px] resize-none border-0 bg-transparent',
                     'text-sm leading-relaxed placeholder:text-muted-foreground/80'
                   )}
                   data-testid="desc-patient-textarea"
@@ -964,10 +1031,10 @@ export function VerificationEditorPanel({
             </TabsContent>
 
             {/* Clinical Description */}
-            <TabsContent value="clinical" className="flex-1 mt-0">
+            <TabsContent value="clinical" className="mt-0">
               <div
                 className={cn(
-                  'h-full rounded-lg border transition-colors',
+                  'min-h-[180px] rounded-lg border transition-colors',
                   activeDescTab === 'clinical' ? 'border-blue-500/30 bg-blue-500/5' : 'border-border/70'
                 )}
               >
@@ -978,7 +1045,7 @@ export function VerificationEditorPanel({
                   placeholder="Opis kliniczny: biomechanika, mięśnie aktywowane, wskazania medyczne..."
                   disabled={disabled || isDescSaving}
                   className={cn(
-                    'h-full min-h-[120px] resize-none border-0 bg-transparent',
+                    'min-h-[180px] resize-none border-0 bg-transparent',
                     'text-sm leading-relaxed placeholder:text-muted-foreground/80'
                   )}
                   data-testid="desc-clinical-textarea"
@@ -992,6 +1059,95 @@ export function VerificationEditorPanel({
               </p>
             </TabsContent>
           </Tabs>
+          </EditorSection>
+
+          <EditorSection
+            index={4}
+            title="Instrukcje i wskazówki"
+            icon={FileText}
+            description="Kroki wykonania, błędy i bezpieczeństwo."
+          >
+            <Collapsible open={isEnrichmentOpen} onOpenChange={setIsEnrichmentOpen} className="shrink-0">
+              <CollapsibleTrigger className="flex w-full items-center justify-between rounded-t-lg border border-border/60 bg-card/60 p-3 transition-colors hover:bg-card data-[state=open]:rounded-b-none data-[state=open]:border-b-0">
+                <div className="flex items-center gap-2">
+                  <FileText className="h-3.5 w-3.5 text-muted-foreground" />
+                  <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+                    Treść i wskazówki ćwiczenia
+                  </span>
+                </div>
+                <ChevronDown
+                  className={cn(
+                    'h-4 w-4 text-muted-foreground transition-transform duration-200',
+                    isEnrichmentOpen && 'rotate-180'
+                  )}
+                />
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <div className="rounded-b-lg border border-border/60 border-t-0 bg-card/60 p-3">
+                  <EnrichmentEditor
+                    exercise={exercise}
+                    enrichmentData={exercise.enrichmentData}
+                    videoUrl={exercise.videoUrl}
+                    disabled={disabled}
+                    onFieldChange={onFieldChange}
+                  />
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+          </EditorSection>
+
+          <EditorSection
+            index={5}
+            title="Wskazówka głosowa i notatki"
+            icon={Volume2}
+            description="Krótka podpowiedź audio i notatki wewnętrzne."
+          >
+            <div className="space-y-3 min-w-0">
+          <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide flex items-center gap-2">
+            <Volume2 className="h-3.5 w-3.5 text-primary" />
+            Wskazówki audio i notatki
+          </h3>
+
+          <div className="space-y-1.5">
+            <ExerciseFieldLabelWithTooltip
+              label="Audio cue"
+              tooltip={EXERCISE_FIELD_TOOLTIPS.audioCue}
+              icon={renderFieldIcon('audioCue')}
+              labelClassName="min-h-4 truncate text-[10px] uppercase tracking-wider text-muted-foreground"
+              testId="verification-audio-cue-info"
+            />
+            <Input
+              type="text"
+              value={localAudioCue}
+              onChange={(e) => setLocalAudioCue(e.target.value)}
+              onBlur={() => handleSelectChange('audioCue', localAudioCue)}
+              disabled={disabled}
+              placeholder="Krótka wskazówka głosowa dla pacjenta"
+              className="h-9 border-border/70 bg-card/70"
+              data-testid="verification-audio-cue"
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <ExerciseFieldLabelWithTooltip
+              label="Notatki wewnętrzne"
+              tooltip={EXERCISE_FIELD_TOOLTIPS.notes}
+              icon={renderFieldIcon('notes')}
+              labelClassName="min-h-4 truncate text-[10px] uppercase tracking-wider text-muted-foreground"
+              testId="verification-notes-info"
+            />
+            <Textarea
+              value={localNotes}
+              onChange={(e) => setLocalNotes(e.target.value)}
+              onBlur={() => handleDescriptionBlur('notes', localNotes)}
+              placeholder="Notatki techniczne, wskazówki redakcyjne, dodatkowy kontekst kliniczny..."
+              disabled={disabled}
+              className="min-h-[90px] border-border/70 bg-card/70"
+              data-testid="verification-notes-textarea"
+            />
+          </div>
+            </div>
+          </EditorSection>
         </div>
       </div>
     </TooltipProvider>

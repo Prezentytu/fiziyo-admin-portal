@@ -21,7 +21,7 @@ Dokument opisuje cały ekosystem FiziYo: kontekst biznesowy, architekturę techn
 - **2 repozytoria:** fiziyo-admin (panel), fizjo-app (mobile + backend w jednym repo)
 - **38+ encji** w bazie, **59+ migracji** EF Core
 - **24 zapytania GraphQL**, **15 mutacji**, subskrypcje real-time
-- **5 aktywnych specyfikacji** modułów (`.ai/specs/`)
+- **17 aktywnych specyfikacji** w `fiziyo-admin-portal/.ai/specs/` oraz **19+** w `fizjo-app/.ai/specs/`
 - **Dwa główne widoki w aplikacji mobilnej:** Pacjent i Terapeuta, każdy z wieloma ekranami
 
 ---
@@ -167,7 +167,7 @@ graph TB
 
 **Lokalizacja:** repozytorium `fizjo-app` (w tym samym repo co backend w folderze `backend/`).
 
-**Stack:** React Native, Expo (Expo Router), NativeWind (Tailwind dla RN), Apollo Client 4, TypeScript.
+**Stack:** React Native, Expo (Expo Router), StyleSheet + design tokens, Apollo Client 4, TypeScript.
 
 **Platformy:** iOS (App Store), Android (Google Play). Build: EAS Build (profile: development, preview, production).
 

@@ -3,8 +3,10 @@
  * Konfiguracja przez zmienną środowiskową NEXT_PUBLIC_CDN_URL
  *
  * Przykłady:
- * - Dev: https://fiziyo-images-dev-bwg5chc5cwbvbngb.z03.azurefd.net
- * - Prod: https://images.fiziyo.com
+ * - Dev/Prod: https://fiziyoimagesprod.z36.web.core.windows.net (Azure Static Website)
+ *
+ * Uwaga: backend zwraca pełne URL-e, więc ta zmienna jest używana tylko dla
+ * ścieżek relatywnych (fallback). Ustaw NEXT_PUBLIC_CDN_URL na aktualny host CDN.
  */
 const CDN_BASE_URL = process.env.NEXT_PUBLIC_CDN_URL || '';
 

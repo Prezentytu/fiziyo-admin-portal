@@ -1,6 +1,6 @@
 ---
 name: pre-implement-spec
-description: Analizuje specyfikacje przed kodowaniem, wykrywa luki, ryzyka i niespojnosci kontraktow. Uzyj przy przygotowaniu implementacji, estymacji ryzyka i ocenie gotowosci specyfikacji.
+description: Analiza specyfikacji przed kodowaniem - luki, ryzyka, gotowosc do implementacji. Użyj gdy użytkownik prosi - przeanalizuj spec przed implementacją, oceń ryzyko tej zmiany, sprawdź czy specyfikacja jest kompletna, czy można zaczynać kodować, znajdź braki w spec, oszacuj regresje. EN triggers - spec review, readiness check, risk analysis, gap audit before coding. Wynik to raport gotowosci z blockerami, tabela ryzyk i proponowany podzial na fazy.
 ---
 
 # Skill: Analiza spec przed implementacja (FiziYo)

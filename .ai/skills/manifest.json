@@ -1,0 +1,26 @@
+{
+  "version": 1,
+  "tiers": {
+    "core": [
+      "check-and-commit",
+      "code-review",
+      "implement-spec",
+      "integration-tests",
+      "pre-implement-spec",
+      "product-designer",
+      "smart-test",
+      "spec-writing",
+      "ui-guardian"
+    ],
+    "process": [
+      "auto-implement",
+      "continue-run",
+      "create-agents-md",
+      "help",
+      "qa-scenarios",
+      "root-cause",
+      "sec-report",
+      "skill-creator"
+    ]
+  }
+}

@@ -1,6 +1,6 @@
 ---
 name: code-review
-description: Przeglada zmiany kodu pod katem jakosci, bezpieczenstwa i zgodnosci z zasadami FiziYo. Uzyj przy review PR, audycie diffa, weryfikacji zmian agenta lub gdy uzytkownik prosi o code review.
+description: Code review wedlug standardow FiziYo z klasyfikacja severity. Użyj gdy użytkownik prosi - zrób code review, przejrzyj kod, oceń zmiany, sprawdź PR przed merge, zrób audyt diffa, zweryfikuj zmiany agenta, czy ten kod jest ok. EN triggers - code review, PR audit, review changes, merge risk check, quality assessment. Wynik to lista uwag z severity (Critical/High/Medium/Low) wzgledem konwencji FiziYo i backward compatibility.
 ---
 
 # Skill: Code Review FiziYo
@@ -10,6 +10,7 @@ description: Przeglada zmiany kodu pod katem jakosci, bezpieczenstwa i zgodnosci
 Użyj tego skilla gdy wykonujesz code review kodu w projekcie FiziYo Admin. Zapewnia spójność z konwencjami projektu.
 
 Pelna lista kontroli znajduje sie w pliku referencyjnym:
+
 - [references/review-checklist.md](references/review-checklist.md)
 - Kontrakt kompatybilnosci: [BACKWARD_COMPATIBILITY.md](../../../BACKWARD_COMPATIBILITY.md)
 

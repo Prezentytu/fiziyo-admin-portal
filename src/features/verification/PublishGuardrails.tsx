@@ -48,6 +48,7 @@ interface PublishGuardrailsProps {
     sets?: number | null;
     reps?: number | null;
     duration?: number | null;
+    executionTime?: number | null;
   };
   /** Callback gdy walidacja się zmieni */
   onValidationChange?: (isValid: boolean, results: ValidationResult[]) => void;
@@ -168,10 +169,10 @@ const DEFAULT_RULES: ValidationRule[] = [
   {
     id: 'has-parameters',
     label: 'Parametry domyślne',
-    description: 'Ćwiczenie powinno mieć serie, powtórzenia lub czas',
+    description: 'Ćwiczenie powinno mieć serie oraz parametry wykonania (powtórzenia lub czas)',
     severity: 'warning',
     category: 'parameters',
-    check: (e) => !!(e.defaultSets || e.defaultReps || e.defaultDuration),
+    check: (e) => !!(e.defaultSets || e.defaultReps || e.defaultExecutionTime || e.defaultDuration),
     autoDetect: true,
   },
   {

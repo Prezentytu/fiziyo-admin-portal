@@ -27,6 +27,7 @@ export const ADMIN_EXERCISE_FRAGMENT = gql`
     images
     gifUrl
     videoUrl
+    enrichmentData
     notes
     audioCue
     tempo

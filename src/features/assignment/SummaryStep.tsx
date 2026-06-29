@@ -3,13 +3,12 @@
 import { useState, useMemo, useCallback } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { Calendar, User, Users, Flag, Clock, X, Pencil, Check, Settings2, Loader2 } from 'lucide-react';
-import { format, differenceInDays } from 'date-fns';
-import { pl } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
 import { ExerciseExecutionCard, fromExerciseMapping } from '@/components/shared/exercise';
+import { ScheduleSummary } from '@/components/shared';
 import { calculateEstimatedTime, formatEstimatedTime } from '@/utils/exerciseTime';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import { sendExerciseReport } from '@/services/exerciseReportService';
@@ -80,43 +79,9 @@ export function SummaryStep({
   const [feedbackSent, setFeedbackSent] = useState(false);
   const [isSendingFeedback, setIsSendingFeedback] = useState(false);
 
-  const durationDays = differenceInDays(endDate, startDate);
-
-  // Oblicz liczbę wybranych konkretnych dni
-  const selectedDaysCount = [
-    frequency.monday,
-    frequency.tuesday,
-    frequency.wednesday,
-    frequency.thursday,
-    frequency.friday,
-    frequency.saturday,
-    frequency.sunday,
-  ].filter(Boolean).length;
-
-  // Czy używamy trybu elastycznego (bez konkretnych dni)?
-  const isFlexibleMode = selectedDaysCount === 0;
-
-  // Efektywna częstotliwość tygodniowa
-  const effectiveWeeklyFrequency = isFlexibleMode ? frequency.timesPerWeek || 3 : selectedDaysCount;
-
   const customizedCount = [...overrides.values()].filter((o) =>
     Object.keys(o).some((key) => key !== 'exerciseMappingId' && o[key as keyof ExerciseOverride] !== undefined)
   ).length;
-
-  const getDayNames = () => {
-    if (isFlexibleMode) {
-      return null; // Nie pokazuj dni w trybie elastycznym
-    }
-    const days: string[] = [];
-    if (frequency.monday) days.push('Pn');
-    if (frequency.tuesday) days.push('Wt');
-    if (frequency.wednesday) days.push('Śr');
-    if (frequency.thursday) days.push('Cz');
-    if (frequency.friday) days.push('Pt');
-    if (frequency.saturday) days.push('So');
-    if (frequency.sunday) days.push('Nd');
-    return days.join(', ');
-  };
 
   // Filter out excluded exercises - use localExercises (ghost copy) instead of exerciseSet.exerciseMappings
   const visibleMappings = useMemo(
@@ -464,46 +429,23 @@ export function SummaryStep({
               </button>
             )}
           </div>
-
-          <div className="space-y-3">
-            {/* Daty */}
-            <div className="flex justify-between items-center text-sm">
-              <span className="text-muted-foreground">Start:</span>
-              <span className="text-foreground font-mono">{format(startDate, 'dd.MM.yyyy', { locale: pl })}</span>
-            </div>
-            <div className="flex justify-between items-center text-sm">
-              <span className="text-muted-foreground">Koniec:</span>
-              <span className="text-foreground font-mono">{format(endDate, 'dd.MM.yyyy', { locale: pl })}</span>
-            </div>
-
-            <div className="w-full h-px bg-border/50 my-2" />
-
-            {/* Podsumowanie */}
-            <div className="flex items-center gap-2 text-xs text-info bg-info/10 p-2.5 rounded-lg border border-info/20">
-              <Clock className="w-3.5 h-3.5 shrink-0" />
-              <span>
-                {durationDays} dni • {effectiveWeeklyFrequency}× w tyg. • {frequency.timesPerDay}× dziennie
-              </span>
-            </div>
-
-            {/* Dni tygodnia (tylko w trybie specyficznym) */}
-            {!isFlexibleMode && (
-              <div className="text-xs text-muted-foreground">
-                Dni: <span className="text-foreground">{getDayNames()}</span>
-              </div>
-            )}
-
-            {/* Info o trybie elastycznym */}
-            {isFlexibleMode && <div className="text-xs text-muted-foreground">Pacjent sam wybierze dni ćwiczeń</div>}
-
-            {/* Dostosowane ćwiczenia */}
-            {customizedCount > 0 && (
+          <ScheduleSummary
+            startDate={startDate}
+            endDate={endDate}
+            frequency={frequency}
+            variant="card"
+            showSessions
+            className="border-0 bg-transparent p-0 sm:p-0"
+            testIdPrefix="summary"
+          />
+          {customizedCount > 0 && (
+            <div className="mt-3">
               <Badge variant="outline" className="border-primary/40 text-primary text-xs">
                 <Settings2 className="h-3 w-3 mr-1" />
                 {customizedCount} dostosowane
               </Badge>
-            )}
-          </div>
+            </div>
+          )}
         </div>
 
         {!editMode && (

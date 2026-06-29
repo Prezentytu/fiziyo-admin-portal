@@ -1,6 +1,6 @@
 ---
 name: integration-tests
-description: Orkiestruje testy regresyjne i integracyjne w FiziYo po zmianach funkcjonalnych. Uzyj gdy trzeba zaproponowac, napisac lub uruchomic testy po bugfixie, zmianie logiki biznesowej albo wdrozeniu funkcjonalnosci ze specyfikacji.
+description: Orkiestracja testow regresyjnych i integracyjnych po zmianach funkcjonalnych. Użyj gdy użytkownik prosi - napisz testy do tej zmiany, dodaj test regresyjny, pokryj bugfix testem, sprawdź czy nic się nie zepsuło, zaproponuj testy po wdrożeniu, zabezpiecz zmianę logiki testami. EN triggers - regression tests, integration coverage, bugfix validation, test after change. Wynik to plan testow proporcjonalny do ryzyka, napisane testy i raport co uruchomiono.
 ---
 
 # Skill: Integration Tests (FiziYo)

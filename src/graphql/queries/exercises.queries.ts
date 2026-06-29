@@ -65,6 +65,7 @@ export const EXERCISE_FULL_FRAGMENT = gql`
     defaultSets
     type
     videoUrl
+    enrichmentData
     # Global submission tracking (nowy model weryfikacji)
     globalSubmissionId
     sourceOrganizationExerciseId

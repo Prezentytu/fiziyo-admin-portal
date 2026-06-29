@@ -1,6 +1,6 @@
 ---
 name: implement-spec
-description: Implementuje specyfikacje etapami w modelu spec-first, z gate'ami jakosci, testami i aktualizacja dokumentacji. Uzyj gdy uzytkownik prosi o implementacje SPEC lub wdrozenie zaplanowanej funkcjonalnosci wieloetapowej.
+description: Etapowa implementacja specyfikacji w modelu spec-first z gate'ami jakosci. Użyj gdy użytkownik prosi - wdróż SPEC, zaimplementuj specyfikację, zrealizuj zaplanowaną funkcjonalność, wykonaj fazy z dokumentu, kontynuuj implementację spec, wdróż funkcję z .ai/specs. EN triggers - implement spec, execute feature phases, deliver roadmap, spec-first implementation. Wynik to implementacja fazami z testami, review gate i aktualizacja changelogu specyfikacji.
 ---
 
 # Skill: Implementacja specyfikacji (FiziYo)

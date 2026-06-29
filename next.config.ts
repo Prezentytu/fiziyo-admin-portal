@@ -8,10 +8,11 @@ const withBundleAnalyzer = bundleAnalyzer({
 const nextConfig: NextConfig = {
   images: {
     remotePatterns: [
-      { protocol: "https", hostname: "**.azurefd.net", pathname: "/**" },
       { protocol: "https", hostname: "images.fiziyo.com", pathname: "/**" },
       { protocol: "https", hostname: "**.blob.core.windows.net", pathname: "/**" },
+      { protocol: "https", hostname: "**.web.core.windows.net", pathname: "/**" },
       { protocol: "https", hostname: "img.clerk.com", pathname: "/**" },
+      { protocol: "https", hostname: "img.youtube.com", pathname: "/**" },
       { protocol: "http", hostname: "localhost", pathname: "/**" },
     ],
   },

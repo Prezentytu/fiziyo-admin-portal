@@ -1,6 +1,7 @@
 /**
  * Typy dla ćwiczeń i mutacji GraphQL
  */
+import type { ExerciseEnrichmentData } from './exerciseEnrichment.types';
 
 // ============================================
 // Enums
@@ -76,6 +77,7 @@ export interface Exercise {
   defaultLoad?: ExerciseLoad;
   // Media (legacy + nowe)
   videoUrl?: string;
+  enrichmentData?: ExerciseEnrichmentData | null;
   gifUrl?: string;
   imageUrl?: string;
   thumbnailUrl?: string;

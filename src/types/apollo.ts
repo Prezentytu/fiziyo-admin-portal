@@ -1,5 +1,6 @@
 // Apollo GraphQL Response Types
 // Types for GraphQL query responses based on actual schema
+import type { ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.types';
 
 // ========================================
 // User Types
@@ -152,6 +153,7 @@ export interface Exercise {
   images?: string[];
   gifUrl?: string;
   videoUrl?: string;
+  enrichmentData?: ExerciseEnrichmentData | null;
   // Status i widoczność
   scope?: 'PERSONAL' | 'ORGANIZATION' | 'GLOBAL';
   status?:

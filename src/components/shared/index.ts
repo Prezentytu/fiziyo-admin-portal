@@ -15,6 +15,10 @@ export { GhostField } from './GhostField';
 export { SmartAccordion } from './SmartAccordion';
 export { LabeledStepper } from './LabeledStepper';
 export { ExerciseSetBuilder } from './ExerciseSetBuilder';
+export { ScheduleSummary } from './schedule';
+export { MediaGallery } from './media/MediaGallery';
+export { buildMediaItems } from './media/mediaItems';
+export type { MediaItem, MediaItemKind, BuildMediaItemsInput } from './media/mediaItems';
 export type {
   ExerciseSetBuilderProps,
   ExerciseInstance,

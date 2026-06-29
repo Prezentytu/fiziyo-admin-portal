@@ -324,6 +324,7 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
             onAddExercise={handleAddExerciseToAssignment}
             onExtend={handleExtend}
             onGeneratePDF={handleGeneratePDF}
+            onActivatePremium={() => initiateActivation(patient.id, displayName, patientPremiumValidUntil)}
             onRefresh={() => refetchAssignments()}
           />
         ))}

@@ -7,9 +7,7 @@ import { useMutation } from '@apollo/client/react';
 import {
   ChevronDown,
   ChevronRight,
-  Calendar,
   CalendarPlus,
-  Clock,
   Dumbbell,
   MoreHorizontal,
   Pencil,
@@ -40,12 +38,12 @@ import {
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { ImagePlaceholder } from '@/components/shared/ImagePlaceholder';
+import { ScheduleSummary } from '@/components/shared';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { cn } from '@/lib/utils';
 import { toGqlStatus } from '@/utils/statusUtils';
 import { getMediaUrl } from '@/utils/mediaUrl';
 import { formatDurationPolish } from '@/utils/durationPolish';
-import { formatFrequencyDisplay } from '@/utils/frequencyDisplay';
 import { resolveAssignmentDisplayStatus } from '@/features/patients/utils/assignmentDisplayStatus';
 
 import {
@@ -171,6 +169,7 @@ interface PatientAssignmentCardProps {
   readonly onAddExercise?: (assignment: PatientAssignment) => void;
   readonly onExtend?: (assignment: PatientAssignment) => void;
   readonly onGeneratePDF?: (assignment: PatientAssignment) => void;
+  readonly onActivatePremium?: () => void;
   readonly onRefresh?: () => void;
 }
 
@@ -208,6 +207,7 @@ export function PatientAssignmentCard({
   onAddExercise,
   onExtend,
   onGeneratePDF,
+  onActivatePremium,
   onRefresh,
 }: PatientAssignmentCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -414,7 +414,7 @@ export function PatientAssignmentCard({
 
               {/* Info */}
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <p className="font-semibold truncate">{exerciseSet?.name || 'Nieznany zestaw'}</p>
                   <Badge
                     variant={assignmentDisplayStatus.primary.variant}
@@ -424,13 +424,29 @@ export function PatientAssignmentCard({
                     {assignmentDisplayStatus.primary.label}
                   </Badge>
                   {assignmentDisplayStatus.secondary && (
-                    <Badge
-                      variant={assignmentDisplayStatus.secondary.variant}
-                      className="text-[10px] shrink-0"
-                      data-testid={`patient-assignment-premium-hint-${assignment.id}`}
-                    >
-                      {assignmentDisplayStatus.secondary.label}
-                    </Badge>
+                    onActivatePremium ? (
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); onActivatePremium(); }}
+                        data-testid={`patient-assignment-premium-hint-${assignment.id}`}
+                        className="inline-flex"
+                      >
+                        <Badge
+                          variant={assignmentDisplayStatus.secondary.variant}
+                          className="text-[10px] shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
+                        >
+                          {assignmentDisplayStatus.secondary.label}
+                        </Badge>
+                      </button>
+                    ) : (
+                      <Badge
+                        variant={assignmentDisplayStatus.secondary.variant}
+                        className="text-[10px] shrink-0"
+                        data-testid={`patient-assignment-premium-hint-${assignment.id}`}
+                      >
+                        {assignmentDisplayStatus.secondary.label}
+                      </Badge>
+                    )
                   )}
                 </div>
                 <div className="flex items-center gap-3 mt-1 text-sm text-muted-foreground">
@@ -438,21 +454,35 @@ export function PatientAssignmentCard({
                     <Dumbbell className="h-3.5 w-3.5" />
                     {visibleExercises.length} ćwiczeń
                   </span>
-                  <span className="flex items-center gap-1">
-                    <Calendar className="h-3.5 w-3.5" />
-                    {formatFrequencyDisplay(assignment.frequency)}
-                  </span>
-                  {assignment.frequency?.timesPerDay && (
-                    <span className="flex items-center gap-1">
-                      <Clock className="h-3.5 w-3.5" />
-                      {assignment.frequency.timesPerDay}x/dzień
-                    </span>
-                  )}
                 </div>
+                {assignment.startDate && assignment.endDate && assignment.frequency && (
+                  <ScheduleSummary
+                    startDate={assignment.startDate}
+                    endDate={assignment.endDate}
+                    frequency={assignment.frequency}
+                    variant="compact"
+                    showSessions={false}
+                    showStartInDays={false}
+                    testIdPrefix={`patient-assignment-${assignment.id}`}
+                    className="mt-1"
+                  />
+                )}
               </div>
 
               {/* Actions */}
               <div className="flex items-center gap-1">
+                {assignmentDisplayStatus.primary.kind === 'expired' && onExtend && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-8 text-xs gap-1.5 shrink-0 border-primary/40 text-primary hover:bg-primary/5"
+                    onClick={(e) => { e.stopPropagation(); onExtend(assignment); }}
+                    data-testid={`patient-assignment-${assignment.id}-extend-quick-btn`}
+                  >
+                    <CalendarPlus className="h-3.5 w-3.5" />
+                    Przedłuż
+                  </Button>
+                )}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button
@@ -523,25 +553,23 @@ export function PatientAssignmentCard({
                 <div className="flex items-start justify-between gap-4">
                   <div className="space-y-1.5">
                     <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Plan pacjenta</p>
-                    <p className="text-sm text-foreground">
-                      {assignment.startDate && (
-                        <>
-                          {format(new Date(assignment.startDate), 'd MMM yyyy', { locale: pl })}
-                          {assignment.endDate && (
-                            <> — {format(new Date(assignment.endDate), 'd MMM yyyy', { locale: pl })}</>
-                          )}
-                        </>
-                      )}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      {formatFrequencyDisplay(assignment.frequency)}
-                      {assignment.frequency?.timesPerDay && assignment.frequency.timesPerDay > 1 && (
-                        <>, {assignment.frequency.timesPerDay}x dziennie</>
-                      )}
-                      {assignment.frequency?.breakBetweenSets && (
-                        <>, min. {assignment.frequency.breakBetweenSets}h między sesjami</>
-                      )}
-                    </p>
+                    {assignment.startDate && assignment.endDate && assignment.frequency && (
+                      <ScheduleSummary
+                        startDate={assignment.startDate}
+                        endDate={assignment.endDate}
+                        frequency={assignment.frequency}
+                        variant="card"
+                        showSessions
+                        showStartInDays={false}
+                        className="border-0 bg-transparent p-0"
+                        testIdPrefix={`patient-assignment-expanded-${assignment.id}`}
+                      />
+                    )}
+                    {assignment.frequency?.breakBetweenSets && (
+                      <p className="text-sm text-muted-foreground">
+                        Min. {assignment.frequency.breakBetweenSets}h między sesjami
+                      </p>
+                    )}
                     {assignment.assignedBy?.fullname && (
                       <p className="text-xs text-muted-foreground">Przypisał: {assignment.assignedBy.fullname}</p>
                     )}

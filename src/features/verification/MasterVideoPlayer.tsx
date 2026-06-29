@@ -1,243 +1,154 @@
 'use client';
 
-import { useState, useCallback } from 'react';
-import Image from 'next/image';
-import { Play, Volume2, VolumeX, Maximize2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useMemo } from 'react';
+import { Sparkles, Trash2, Upload } from 'lucide-react';
+
+import { MediaGallery, buildMediaItems } from '@/components/shared';
+import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { ImagePlaceholder } from '@/components/shared/ImagePlaceholder';
-import { ImageLightbox } from '@/components/shared/ImageLightbox';
 import { cn } from '@/lib/utils';
-import { getMediaUrl, getMediaUrls } from '@/utils/mediaUrl';
 import type { AdminExercise } from '@/graphql/types/adminExercise.types';
+import type { MediaItem } from '@/components/shared/media/mediaItems';
+import { useExerciseMediaManager } from './useExerciseMediaManager';
 
 interface MasterVideoPlayerProps {
   exercise: AdminExercise;
+  disabled?: boolean;
+  onUploadImage?: (file: File) => Promise<void>;
+  onDeleteImage?: (imageUrl: string) => Promise<void>;
   className?: string;
 }
 
-/**
- * MasterVideoPlayer - Pełnoekranowy player wideo/obrazu
- *
- * Filozofia "Zero Scroll":
- * - Maksymalizacja przestrzeni na media źródłowe (Master View)
- * - Ekspert widzi detale anatomiczne bez przeszkód
- *
- * Features:
- * - Responsywny player (100% wysokości kontenera)
- * - Lightbox do pełnoekranowego podglądu
- * - Kompaktowe miniatury na dole
- * - Kontrolki video inline
- */
-export function MasterVideoPlayer({ exercise, className }: MasterVideoPlayerProps) {
-  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
-  const [lightboxOpen, setLightboxOpen] = useState(false);
-  const [isMuted, setIsMuted] = useState(true);
+export function MasterVideoPlayer({
+  exercise,
+  disabled = false,
+  onUploadImage,
+  onDeleteImage,
+  className,
+}: MasterVideoPlayerProps) {
+  const {
+    fileInputRef,
+    existingImages,
+    remainingSlots,
+    canManageMedia,
+    isUploading,
+    isGenerating,
+    isDeleting,
+    openFilePicker,
+    handleUploadFiles,
+    generateAiImage,
+    deleteImage,
+  } = useExerciseMediaManager({
+    exercise,
+    disabled,
+    onUploadImage,
+    onDeleteImage,
+  });
 
-  // Collect all media
-  const allImages = getMediaUrls([exercise.thumbnailUrl, exercise.imageUrl, ...(exercise.images || [])]);
-  const currentImage = allImages[selectedImageIndex] || null;
-  const hasVideo = !!exercise.videoUrl;
-  const hasGif = !!exercise.gifUrl;
-  const gifUrl = getMediaUrl(exercise.gifUrl);
-
-  // Navigation
-  const hasPrev = selectedImageIndex > 0;
-  const hasNext = selectedImageIndex < allImages.length - 1;
-
-  const handlePrev = useCallback(() => {
-    if (hasPrev) setSelectedImageIndex((i) => i - 1);
-  }, [hasPrev]);
-
-  const handleNext = useCallback(() => {
-    if (hasNext) setSelectedImageIndex((i) => i + 1);
-  }, [hasNext]);
-
-  // Keyboard navigation
-  const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent) => {
-      if (e.key === 'ArrowLeft') handlePrev();
-      if (e.key === 'ArrowRight') handleNext();
-      if (e.key === 'Escape' && lightboxOpen) setLightboxOpen(false);
-    },
-    [handlePrev, handleNext, lightboxOpen]
+  const mediaItems = useMemo(
+    () =>
+      buildMediaItems({
+        thumbnailUrl: exercise.thumbnailUrl,
+        imageUrl: exercise.imageUrl,
+        images: exercise.images,
+        videoUrl: exercise.videoUrl,
+        gifUrl: exercise.gifUrl,
+        title: exercise.name,
+      }),
+    [exercise.thumbnailUrl, exercise.imageUrl, exercise.images, exercise.videoUrl, exercise.gifUrl, exercise.name]
   );
 
-  return (
-    <TooltipProvider>
-      <div
-        className={cn('relative flex flex-col h-full bg-card', className)}
-        onKeyDown={handleKeyDown}
-        tabIndex={0}
-        data-testid="master-video-player"
-      >
-        {/* Main Media Area */}
-        <div className="relative flex-1 min-h-0 flex items-center justify-center overflow-hidden">
-          {/* Blurred background for aesthetics */}
-          {currentImage && (
-            <div
-              className="absolute inset-0 bg-cover bg-center blur-3xl opacity-20 scale-110"
-              style={{ backgroundImage: `url(${currentImage})` }}
-            />
-          )}
+  const renderToolbar = (selected: MediaItem | null) => {
+    if (!canManageMedia) return null;
+    const selectedImageUrl =
+      selected?.kind === 'image' || selected?.kind === 'gif'
+        ? (existingImages.includes(selected.src) ? selected.src : null)
+        : null;
 
-          {/* Main Image/Video */}
-          {currentImage ? (
-            <div className="relative w-full h-full min-h-[200px]">
-              <Image
-                src={currentImage}
-                alt={exercise.name}
-                fill
-                className="object-contain transition-all duration-300"
-                sizes="(max-width: 1200px) 100vw, 50vw"
-                priority
-              />
-            </div>
-          ) : hasGif && gifUrl ? (
-            <div className="relative w-full h-full min-h-[200px]">
-              <Image
-                src={gifUrl}
-                alt={exercise.name}
-                fill
-                className="object-contain"
-                sizes="(max-width: 1200px) 100vw, 50vw"
-              />
-            </div>
-          ) : (
-            <ImagePlaceholder type="exercise" className="h-64 w-64" iconClassName="h-20 w-20" />
-          )}
-
-          {/* Navigation arrows (if multiple images) */}
-          {allImages.length > 1 && (
-            <>
-              <button
-                onClick={handlePrev}
-                disabled={!hasPrev}
-                className={cn(
-                  'absolute left-2 top-1/2 -translate-y-1/2 z-20',
-                  'flex h-10 w-10 items-center justify-center rounded-full',
-                  'bg-background/85 text-foreground backdrop-blur-sm border border-border/70',
-                  'transition-all hover:bg-background hover:scale-110',
-                  !hasPrev && 'opacity-30 cursor-not-allowed'
-                )}
-                data-testid="master-player-prev-btn"
+    return (
+      <TooltipProvider>
+        <div className="flex items-center gap-1 rounded-lg border border-border/70 bg-background/85 p-1 backdrop-blur-sm">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                onClick={openFilePicker}
+                disabled={disabled || isUploading || remainingSlots === 0}
+                className="h-8 w-8"
+                aria-label="Dodaj zdjęcia"
               >
-                <ChevronLeft className="h-6 w-6" />
-              </button>
-              <button
-                onClick={handleNext}
-                disabled={!hasNext}
-                className={cn(
-                  'absolute right-2 top-1/2 -translate-y-1/2 z-20',
-                  'flex h-10 w-10 items-center justify-center rounded-full',
-                  'bg-background/85 text-foreground backdrop-blur-sm border border-border/70',
-                  'transition-all hover:bg-background hover:scale-110',
-                  !hasNext && 'opacity-30 cursor-not-allowed'
-                )}
-                data-testid="master-player-next-btn"
+                <Upload className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">
+              {remainingSlots === 0 ? 'Osiągnięto limit zdjęć' : 'Dodaj zdjęcia'}
+            </TooltipContent>
+          </Tooltip>
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                onClick={() => void generateAiImage()}
+                disabled={disabled || isGenerating || remainingSlots === 0}
+                className="h-8 w-8"
+                aria-label="Generuj zdjęcie AI"
               >
-                <ChevronRight className="h-6 w-6" />
-              </button>
-            </>
-          )}
+                <Sparkles className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">
+              {remainingSlots === 0 ? 'Osiągnięto limit zdjęć' : 'Generuj zdjęcie AI'}
+            </TooltipContent>
+          </Tooltip>
 
-          {/* Controls overlay - top right */}
-          <div className="absolute top-3 right-3 z-20 flex items-center gap-2">
-            {/* Fullscreen/Lightbox */}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  onClick={() => setLightboxOpen(true)}
-                  className="flex h-9 w-9 items-center justify-center rounded-lg border border-border/70 bg-background/85 text-foreground backdrop-blur-sm hover:bg-background transition-all"
-                  data-testid="master-player-fullscreen-btn"
-                >
-                  <Maximize2 className="h-4 w-4" />
-                </button>
-              </TooltipTrigger>
-              <TooltipContent side="bottom">Pełny ekran</TooltipContent>
-            </Tooltip>
-          </div>
-
-          {/* Video controls - top left (if video available) */}
-          {hasVideo && (
-            <div className="absolute top-3 left-3 z-20 flex items-center gap-2">
-              <a
-                href={exercise.videoUrl!}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex h-9 items-center gap-2 px-3 rounded-lg bg-primary text-primary-foreground font-medium text-sm hover:bg-primary/90 transition-all"
-                data-testid="master-player-video-link"
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                onClick={() => selectedImageUrl && void deleteImage(selectedImageUrl)}
+                disabled={disabled || isDeleting || !selectedImageUrl}
+                className="h-8 w-8 text-destructive hover:text-destructive"
+                aria-label="Usuń bieżące zdjęcie"
               >
-                <Play className="h-4 w-4" />
-                <span>Otwórz wideo</span>
-              </a>
-              <button
-                onClick={() => setIsMuted(!isMuted)}
-                className="flex h-9 w-9 items-center justify-center rounded-lg border border-border/70 bg-background/85 text-foreground backdrop-blur-sm hover:bg-background transition-all"
-                data-testid="master-player-mute-btn"
-              >
-                {isMuted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
-              </button>
-            </div>
-          )}
-
-          {/* GIF indicator */}
-          {hasGif && !hasVideo && (
-            <div className="absolute top-3 left-3 z-20 px-2 py-1 rounded-lg bg-emerald-500/20 text-emerald-400 text-xs font-medium border border-emerald-500/30">
-              GIF Animowany
-            </div>
-          )}
-
-          {/* Image counter */}
-          {allImages.length > 1 && (
-            <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 rounded-full border border-border/70 bg-background/85 px-3 py-1 text-xs text-foreground backdrop-blur-sm dark:bg-black/45 dark:text-white/85">
-              {selectedImageIndex + 1} / {allImages.length}
-            </div>
-          )}
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">
+              {!selectedImageUrl ? 'Zaznacz zdjęcie, aby usunąć' : 'Usuń bieżące zdjęcie'}
+            </TooltipContent>
+          </Tooltip>
         </div>
+      </TooltipProvider>
+    );
+  };
 
-        {/* Thumbnails strip (compact) */}
-        {allImages.length > 1 && (
-          <div className="flex-shrink-0 border-t border-border/40 bg-card/80 px-3 py-2">
-            <div className="flex gap-1.5 overflow-x-auto">
-              {allImages.map((img, idx) => (
-                <button
-                  key={`${img}-${idx}`}
-                  onClick={() => setSelectedImageIndex(idx)}
-                  className={cn(
-                    'shrink-0 w-12 h-12 rounded-md overflow-hidden border-2 transition-all',
-                    selectedImageIndex === idx
-                      ? 'border-primary ring-1 ring-primary/50'
-                      : 'border-transparent opacity-60 hover:opacity-100 hover:border-border'
-                  )}
-                  data-testid={`master-player-thumb-${idx}`}
-                >
-                  <Image
-                    src={img}
-                    alt=""
-                    width={48}
-                    height={48}
-                    className="w-full h-full object-cover"
-                    sizes="48px"
-                  />
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
+  return (
+    <>
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        multiple
+        className="hidden"
+        onChange={(event) => void handleUploadFiles(event.target.files)}
+      />
 
-        {/* Lightbox */}
-        {currentImage && (
-          <ImageLightbox
-            src={currentImage}
-            alt={exercise.name}
-            open={lightboxOpen}
-            onOpenChange={setLightboxOpen}
-            images={allImages.length > 1 ? allImages : undefined}
-            currentIndex={selectedImageIndex}
-            onIndexChange={setSelectedImageIndex}
-          />
-        )}
-      </div>
-    </TooltipProvider>
+      <MediaGallery
+        items={mediaItems}
+        title={exercise.name}
+        layout="fill"
+        rootTestId="master-video-player"
+        testIdPrefix="master-player"
+        className={cn('h-full', className)}
+        toolbar={renderToolbar}
+      />
+    </>
   );
 }

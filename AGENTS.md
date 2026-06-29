@@ -2,6 +2,36 @@
 
 WAŻNE: Preferuj wnioskowanie oparte na dokumentacji (retrieval-led) zamiast wnioskowania opartego na danych treningowych dla zadań Next.js/React.
 
+## Always
+
+- Przed implementacją dopasuj zadanie do Task Routera i przeczytaj wszystkie pasujące guide'y.
+- Dla zmian nietrywialnych pracuj spec-first (`.ai/specs/`) i lessons-first (`.ai/lessons.md`).
+- Trzymaj zmiany additive-first dla kontraktów i uruchamiaj walidację proporcjonalną do ryzyka.
+- Po istotnych poprawkach dopisz regułę do `.ai/lessons.md`.
+
+## Ask First
+
+- Zanim zmienisz kontrakty GraphQL, modele danych współdzielone z mobile/backendem lub politykę autoryzacji.
+- Zanim zrobisz zmiany architektoniczne wykraczające poza zakres zadania lub dotykające wielu modułów naraz.
+- Zanim zmienisz pipeline release/deploy, sekrety, zmienne środowiskowe, albo usuniesz pliki.
+
+## Never
+
+- Nigdy nie używaj `any` ani `useLazyQuery`.
+- Nigdy nie usuwaj `data-testid` i nie omijaj zasad theme-safe UI.
+- Nigdy nie modyfikuj `.env`/credentials ani nie pushuj do `main/master` bez review.
+
+## Validation Commands
+
+```bash
+npm run lint
+npm run type-check
+npm run test:run
+npm run validate
+```
+
+Szczegółowe konwencje i checklisty operacyjne: `.ai/docs/agent-rules.md`.
+
 ## Task Router
 
 Przed rozpoczęciem pracy dopasuj zadanie do tabeli i przeczytaj WSZYSTKIE pasujące guide'y:
@@ -11,6 +41,8 @@ Przed rozpoczęciem pracy dopasuj zadanie do tabeli i przeczytaj WSZYSTKIE pasuj
 | Tworzenie/edycja ćwiczeń         | `src/features/exercises/AGENTS.md`                |
 | Assignment Wizard                | `src/features/assignment/AGENTS.md`               |
 | Praca z pacjentami               | `src/features/patients/AGENTS.md`                 |
+| Weryfikacja treści               | `src/features/verification/AGENTS.md`             |
+| Import dokumentów                | `src/features/import/AGENTS.md`                   |
 | Zapytania/mutacje GraphQL        | `src/graphql/AGENTS.md`                           |
 | Komponenty współdzielone         | `src/components/shared/AGENTS.md`                 |
 | Zestawy ćwiczeń                  | `src/features/exercise-sets/AGENTS.md`            |
@@ -18,6 +50,13 @@ Przed rozpoczęciem pracy dopasuj zadanie do tabeli i przeczytaj WSZYSTKIE pasuj
 | Analiza spec przed implementacją | `.ai/skills/pre-implement-spec/`                  |
 | Implementacja ze specyfikacji    | `.ai/skills/implement-spec/`                      |
 | Testy regresyjne / integracyjne  | `.ai/skills/integration-tests/`                   |
+| Guardian UI / migracja tokenów   | `.ai/skills/ui-guardian/`                         |
+| Audyt bezpieczeństwa auth/tenant | `.ai/skills/sec-report/`                          |
+| Scenariusze QA przed release     | `.ai/skills/qa-scenarios/`                        |
+| Run autonomiczny                 | `.ai/skills/auto-implement/`                      |
+| Wznowienie runu                  | `.ai/skills/continue-run/`                        |
+| Nawigator skilli ("co dalej?")   | `.ai/skills/help/`                                |
+| Tworzenie nowego skilla          | `.ai/skills/skill-creator/`                       |
 | Pipeline E2E / cross-repo CI     | `docs/testing/e2e-cross-repo-pipeline.md`         |
 | Code review                      | `.ai/skills/code-review/`                         |
 | UI/UX / design / accessibility   | `.ai/skills/product-designer/SKILL.md`            |
@@ -339,6 +378,7 @@ Prefiksy modułów: `auth-`, `nav-`, `exercise-`, `set-`, `patient-`, `org-`, `s
 - Zwracaj minimalne komunikaty błędów auth (nie ujawniaj czy email istnieje)
 - Nigdy nie loguj credentials ani tokenów
 - Zawsze używaj wzorca token exchange (Clerk → Własny JWT)
+- Każda zmiana w `auth` / `token-exchange` / `permission` MUSI przejść przez skill `.ai/skills/sec-report/` przed merge.
 
 ### Bezpieczeństwo typów
 

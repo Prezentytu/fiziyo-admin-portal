@@ -1,6 +1,6 @@
 ---
 name: create-agents-md
-description: Tworzy lub aktualizuje pliki AGENTS.md dla modulow, z naciskiem na instrukcje operacyjne zamiast dokumentacji opisowej. Uzyj przy dodawaniu nowych modulow, porzadkowaniu Task Routera i standaryzacji reguł agentowych.
+description: Tworzenie i aktualizacja plikow AGENTS.md dla modulow z instrukcjami operacyjnymi. Użyj gdy użytkownik prosi - utwórz AGENTS.md, dodaj instrukcje dla agenta do modułu, zaktualizuj Task Router, ustandaryzuj reguły agentowe, dodaj guide dla nowego modułu. EN triggers - create AGENTS.md, task-router rules, module agent instructions. Wynik to plik AGENTS.md w trybie rozkazujacym (50-100 linii) i wpis w Task Routerze glownego AGENTS.md.
 ---
 
 # Skill: Tworzenie AGENTS.md dla modułów

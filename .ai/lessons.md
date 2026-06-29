@@ -14,6 +14,62 @@ Dziennik wniosków z pracy AI agentów. Po każdej korekcie dodaj nowy wpis.
 
 ## Wpisy
 
+### 2026-06-24 - Klikalny badge "Brak Premium" i przycisk "Przedłuż" dla wygasłych planów
+
+- **Kategoria**: `UI/UX` | `React`
+- **Problem**: Po przedłużeniu planu (endDate w przyszłości) i wygasłym Premium pacjenta, karta pokazywała "Aktywny" + "Brak Premium" jednocześnie bez żadnej akcji do podjęcia. Przy wygasłym planie przycisk "Przedłuż" był ukryty w dropdown. Ponadto po kliknięciu "Przedłuż" badge "Wygasł" pozostawał, bo `ExtendSetDialog` aktualizował tylko `endDate` bez resetowania pola `status`.
+- **Przyczyna**: Badge "Brak Premium" był tylko informacyjny, bez powiązanego CTA. Przycisk "Przedłuż wygasły zestaw" był dostępny wyłącznie z menu kontekstowego (3 kropki). `ExtendSetDialog` nie wysyłał resetu statusu do backendu — DB nadal miała `status: "expired"` i `resolveAssignmentDisplayStatus` sprawdza status przed datą.
+- **Rozwiązanie**: Dodano prop `onActivatePremium` do `PatientAssignmentCard` — gdy przekazany, badge "Brak Premium" staje się klikalny i wywołuje dialog aktywacji Premium. Gdy plan jest wygasły (`kind === 'expired'`), obok menu pojawia się bezpośredni przycisk "Przedłuż". W `ExtendSetDialog.handleExtend` gdy `isExpired`, dodano `status: 'ACTIVE', statusLegacy: 'active'` oraz `startDate` do zmiennych mutacji. Callback `onActivatePremium` przekazano ze strony pacjenta.
+- **Reguła**: Każdy badge ostrzegawczy (secondary hint) powinien mieć powiązane CTA. Akcje krytyczne (jak "Przedłuż wygasły plan") nie mogą być ukryte w dropdown. Gdy resetujesz daty wygasłego przypisania, zawsze resetuj też `status` — backend nie robi tego automatycznie. W `resolveAssignmentDisplayStatus` `endDate` w przyszłości ZAWSZE nadpisuje przestarzały string `status: "expired"` — data jest autorytatywna.
+
+### 2026-06-23 - Wąskie sloty UI wymagają container queries i jednego źródła wysokości media
+
+- **Kategoria**: `UI/UX` | `React`
+- **Problem**: Na 14" ekranie sekcja "Instrukcje i wskazówki" w verification była nieczytelna, a w detalu ćwiczenia kontener media zostawiał duże puste pasy pod zdjęciem.
+- **Przyczyna**: Wnętrza komponentów reagowały na viewport (`md:`), a nie na realną szerokość środkowej kolumny; dodatkowo `MediaGallery` łączyło `layout="stage"` (aspect ratio) z wymuszonym `min-h`, co dawało dwa sprzeczne źródła wysokości.
+- **Rozwiązanie**: Przepięto układy na Tailwind v4 container queries (`@container` + `@md/...`) i spłaszczono zagnieżdżenia sekcji enrichment; w detalu ćwiczenia zmieniono gallery na `layout="fill"` oraz stały box wysokości (`h-[320px] lg:h-[520px]`).
+- **Reguła**: Dla komponentów renderowanych w sidebarach/środkowych panelach używaj container queries zamiast viewport breakpoints, a dla media utrzymuj jedno źródło wysokości kontenera (albo aspect ratio, albo fixed/fill box, nigdy oba naraz).
+
+### 2026-06-23 - Mixed media w detalu i verification wymagają jednego współdzielonego playera
+
+- **Kategoria**: `UI/UX` | `React`
+- **Problem**: Detal ćwiczenia renderował wideo i zdjęcia jako osobne sekcje, co przy pionowych zdjęciach dawało duże puste obszary, nadmiar scrolla i niespójny UX względem panelu verification.
+- **Przyczyna**: Brak wspólnego kontraktu komponentu dla mixed media (`image/video/gif`) i duplikowanie logiki galerii w różnych modułach.
+- **Rozwiązanie**: Wydzielono współdzielony `MediaGallery` + `buildMediaItems`, refaktorowano `MasterVideoPlayer` do wrappera i przepięto detal ćwiczenia na jeden stage z miniaturami oraz układ 2-kolumnowy ze sticky media.
+- **Reguła**: Dla powierzchni pokazujących to samo medium (detal, verification, preview) utrzymuj jeden komponent gallery/player z trybami layoutu; nie rozdzielaj wideo i zdjęć na niezależne bloki UI.
+
+### 2026-06-12 - Ekosystem skilli wymaga source-of-truth i automatycznego linta
+
+- **Kategoria**: `Build/Tooling`
+- **Problem**: Skille były rozwijane ręcznie bez jednego źródła prawdy i bez automatycznego wykrywania dryfu między katalogami, frontmatter i warstwą `.cursor/skills`.
+- **Przyczyna**: `skills:sync` kopiował pliki, ale nie walidował manifestu tierów ani obowiązkowych pól (`name`, `description`) i nie miał dedykowanego gate'a CI.
+- **Rozwiązanie**: Dodano `.ai/skills/manifest.json`, walidację frontmatter + dryf manifestu w `scripts/sync-cursor-skills.mjs`, nowy krok `skills:lint` oraz egzekwowanie go w CI.
+- **Reguła**: Jeśli proces opiera się na katalogu instrukcji (skills/rules), zawsze utrzymuj manifest jako source-of-truth i uruchamiaj lint governance w CI; sama synchronizacja plików nie wystarcza.
+
+### 2026-06-12 - Reguły procesowe muszą być egzekwowane przez skrypty, nie tylko opisane
+
+- **Kategoria**: `Build/Tooling`
+- **Problem**: Repo miało opisane standardy (`data-testid`, skills sync, coverage), ale część z nich nie była egzekwowana automatycznie (`skills:sync` był martwy, `test:coverage` bez pluginu, brak guardu na nowe braki `data-testid`).
+- **Przyczyna**: Zasady żyły w dokumentacji, ale bez działających skryptów i kroków CI.
+- **Rozwiązanie**: Dodano działający `scripts/sync-cursor-skills.mjs`, `@vitest/coverage-v8`, guard `check:testids` z allowlistą i kroki CI uruchamiające ten guard.
+- **Reguła**: Jeśli zasada jakości ma znaczenie release'owe, zawsze musi mieć egzekwujący ją skrypt/test i krok w CI; sama dokumentacja nie wystarcza.
+
+### 2026-06-10 - Harmonogram assignmentu potrzebuje jednego źródła obliczeń i formatu
+
+- **Kategoria**: `UI/UX` | `React`
+- **Problem**: Okres trwania, częstotliwość i szacowana liczba sesji były liczone i renderowane różnie w wizardzie, karcie pacjenta i dialogach, co prowadziło do rozjazdów copy oraz wartości.
+- **Przyczyna**: Logika harmonogramu (`durationDays`, `effectiveWeeklyFrequency`, `totalSessions`) była duplikowana inline w wielu komponentach zamiast być centralnym helperem.
+- **Rozwiązanie**: Dodano wspólne utilsy `scheduleSummaryUtils` oraz reużywalny komponent `ScheduleSummary`, a następnie przepięto powierzchnie read-only (wizard, success, karta pacjenta, detal zestawu, PDF) na jeden kontrakt danych.
+- **Reguła**: Dla danych harmonogramu w assignment zawsze utrzymuj single-source-of-truth dla obliczeń i formatowania; komponenty ekranowe mają tylko konsumować gotowe summary, nie reimplementować wzorów.
+
+### 2026-06-10 - Weryfikacja: główny parametr czasu musi mapować na executionTime, nie duration
+
+- **Kategoria**: `UI/UX` | `React`
+- **Problem**: W głównej sekcji parametrów w Centrum Weryfikacji pole czasu było spięte z `defaultDuration` (czas serii), co dawało mylący model mentalny i ryzyko edycji niewłaściwego pola.
+- **Przyczyna**: Rozjechanie semantyki między nowym modelem dawkowania (`executionTime` jako główny czas) a starszym layoutem edytora.
+- **Rozwiązanie**: W `VerificationEditorPanel` przepięto główny kafelek czasu na `defaultExecutionTime` (`Czas powtórzenia`), a `defaultDuration` (`Czas serii`) pozostawiono w szczegółach technicznych; dodatkowo walidacje publikacji rozszerzono o `defaultExecutionTime`.
+- **Reguła**: Jeśli UI pokazuje parametr jako „główny”, jego binding musi wskazywać na canonical field domenowy (tu: `defaultExecutionTime`), a pola legacy (`defaultDuration`) utrzymuj jako zaawansowane i zawsze jasno etykietowane.
+
 ### 2026-05-29 - Wylogowanie MUSI czyscic backendowy token; cache-token guard musi sprawdzac tozsamosc usera
 
 - **Kategoria**: `React` | `GraphQL`
@@ -613,5 +669,21 @@ Dziennik wniosków z pracy AI agentów. Po każdej korekcie dodaj nowy wpis.
 - **Przyczyna**: Kontener mial `h-full` i `-m-*`; wysokosc liczona byla dla content-box rodzica (`main` z `p-*`), wiec dolny padding rodzica nie byl pokryty.
 - **Rozwiazanie**: Dodano wysokosc kompensujaca padding rodzica: `h-[calc(100%+2rem)] lg:h-[calc(100%+3rem)] 2xl:h-[calc(100%+4rem)]`.
 - **Regula**: Przy layoutach full-height z negative margins zawsze kompensuj wysokosc o `2 x padding` rodzica albo przebuduj strukture bez negative margins.
+
+### 2026-06-24 - Warunkowe kafelki hero ukrywały kluczowe parametry
+
+- **Kategoria**: `UI/UX` | `Exercise`
+- **Problem**: `executionTime` (Czas powtórzenia) był pokazywany w kafelkach hero tylko gdy `> 0`, przez co terapeuta nie widział, że parametr nie jest ustawiony. Inne parametry były ukryte w zwijanej sekcji "Szczegóły parametrów".
+- **Przyczyna**: Logika `...(normalizedFields.executionTime ? [...] : [])` ukrywała parametr zamiast pokazywać go z placeholderem.
+- **Rozwiązanie**: Wszystkie parametry wykonania zawsze widoczne — hero stats zawierają `executionTime` bezwarunkowo; dedykowany `ExerciseParametersPanel` pokazuje wszystkie grupy parametrów z ikoną info i placeholderem `—`/`Nie ustawiono` dla nieustawionych pól.
+- **Regula**: Parametry ćwiczenia zawsze pokazuj nawet gdy puste — wartość `—` komunikuje "nieustalone", ukrycie parametru sugeruje "nieistnieje". Helper `buildExerciseParameterGroups` jest single source of truth dla grupowania i wyświetlania.
+
+### 2026-06-24 - Kroki enrichment były zakopane pod AI-metadata i dosing profiles
+
+- **Kategoria**: `IA` | `Exercise` | `Product`
+- **Problem**: `EnrichmentDisplay` renderował kroki wykonania (`instruction_steps`) i wskazówki audio (`coaching_cues`) w tej samej kolejności co słowa kluczowe AI i profile dawkowania — krytyczne dane dla pacjenta były na dole.
+- **Przyczyna**: Brak podziału na priorytety; wszystko w jednym komponencie bez hierarchii fizjoterapeutycznej.
+- **Rozwiązanie**: Wydzielono `ExerciseExecutionSteps` (kroki z przełącznikiem wariantów) i `ExerciseAudioCues` (audioCue + coaching_cues), renderowane wysoko w prawej kolumnie. `EnrichmentDisplay` zachował tylko dane kliniczne (błędy, odczucia, bezpieczeństwo, notatki terapeutyczne) i zwijaną sekcję "Zaawansowane" (dosing profiles, AI keywords, feedback questions).
+- **Regula**: Hierarchia wizualna strony detalu ćwiczenia = parametry → kroki wykonania → wskazówki audio → opisy tekstowe → dane kliniczne → zaawansowane. Priorytet wynika z potrzeb fizjoterapeuty i pacjenta, nie z kolejności pól w schemacie danych.
 
 <!-- Dodawaj nowe wpisy powyżej tej linii -->

@@ -7,6 +7,7 @@ export { PDFHeader } from './PDFHeader';
 export { PDFFooter } from './PDFFooter';
 export { PDFFrequency } from './PDFFrequency';
 export { ExercisePDFItem } from './ExercisePDFItem';
+export { preloadPdfExerciseImages, resolvePdfExerciseImageUrl } from './pdfExerciseUtils';
 
 // Style
 export { pdfStyles } from './styles';

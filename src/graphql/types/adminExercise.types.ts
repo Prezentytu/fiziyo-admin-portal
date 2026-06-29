@@ -3,6 +3,7 @@
  * Used by ContentManager and SiteSuperAdmin roles
  */
 import type { ExerciseReportReasonCategory } from '@/types/exercise-report.types';
+import type { ExerciseEnrichmentData } from './exerciseEnrichment.types';
 
 // ============================================
 // Enums
@@ -85,6 +86,7 @@ export interface AdminExercise {
   images?: string[];
   gifUrl?: string;
   videoUrl?: string;
+  enrichmentData?: ExerciseEnrichmentData | null;
   notes?: string;
   audioCue?: string;
   tempo?: string;

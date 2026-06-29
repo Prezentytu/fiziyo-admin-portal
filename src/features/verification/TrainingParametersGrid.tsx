@@ -40,7 +40,7 @@ interface TrainingParametersGridProps {
  * TrainingParametersGrid - Parametry treningowe w czystym grid layout
  *
  * Layout:
- * | Serie *  | Powtórzenia | Czas (s) |
+ * | Serie *  | Powtórzenia | Czas serii (s) |
  * | Trudność | Tempo       | Przerwa  |
  */
 export function TrainingParametersGrid({
@@ -191,7 +191,7 @@ export function TrainingParametersGrid({
           )}
         </div>
 
-        {/* Row 1: Volume - Serie, Powtórzenia, Czas */}
+        {/* Row 1: Volume - Serie, Powtórzenia, Czas serii */}
         <div className="grid grid-cols-3 gap-4">
           {/* Serie (Wymagane) */}
           <div className="space-y-1.5">
@@ -238,11 +238,11 @@ export function TrainingParametersGrid({
             />
           </div>
 
-          {/* Czas (Sekundy) */}
+          {/* Czas serii (Sekundy) */}
           <div className="space-y-1.5">
             <Label className="text-xs flex items-center gap-1 text-muted-foreground">
               <Timer className="h-3.5 w-3.5" />
-              Czas (s)
+              Czas serii (s)
             </Label>
             <Input
               type="number"

@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 
-import { ExerciseSetPDF } from '@/components/pdf';
+import { ExerciseSetPDF, preloadPdfExerciseImages, resolvePdfExerciseImageUrl } from '@/components/pdf';
 import type {
   PDFExerciseSet,
   PDFOrganization,
@@ -70,6 +70,8 @@ interface PatientPlan {
   name: string;
   description?: string;
   exerciseMappings?: ExerciseMapping[];
+  startDate?: string;
+  endDate?: string;
   validUntil?: string;
   createdAt?: string;
   status?: 'active' | 'archived' | 'expired';
@@ -252,6 +254,8 @@ export function PatientQRCodeDialog({
             name: a.exerciseSet.name,
             description: a.exerciseSet.description,
             exerciseMappings: a.exerciseSet.exerciseMappings,
+            startDate: a.startDate,
+            endDate: a.endDate,
             createdAt: a.assignedAt || a.exerciseSet.creationTime,
             validUntil: a.endDate,
             status: a.status === 'active' ? 'active' : undefined,
@@ -411,7 +415,7 @@ export function PatientQRCodeDialog({
         type: mapping.exercise?.type?.toLowerCase() as PDFExercise['type'],
         exerciseSide: (mapping.exercise?.side?.toLowerCase() ||
           mapping.exercise?.exerciseSide) as PDFExercise['exerciseSide'],
-        imageUrl: mapping.exercise?.thumbnailUrl || mapping.exercise?.imageUrl,
+        imageUrl: resolvePdfExerciseImageUrl(mapping.exercise),
         images: mapping.exercise?.images,
         notes: mapping.notes || mapping.exercise?.notes,
         sets: mapping.sets ?? mapping.exercise?.defaultSets ?? mapping.exercise?.sets,
@@ -423,6 +427,7 @@ export function PatientQRCodeDialog({
         customName: mapping.customName,
         customDescription: mapping.customDescription,
       }));
+      await preloadPdfExerciseImages(pdfExercises);
 
       const pdfExerciseSet: PDFExerciseSet = {
         id: selectedPlan.id,
@@ -430,6 +435,8 @@ export function PatientQRCodeDialog({
         description: selectedPlan.description,
         exercises: pdfExercises,
         frequency: selectedPlan.frequency,
+        startDate: selectedPlan.startDate || selectedPlan.createdAt,
+        endDate: selectedPlan.endDate || selectedPlan.validUntil,
       };
 
       const pdfPatient: PDFPatient = {
