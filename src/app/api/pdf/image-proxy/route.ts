@@ -5,7 +5,7 @@ import { NextRequest, NextResponse } from 'next/server';
  *
  * Why this exists:
  * - `@react-pdf/renderer` v4 fetches remote images from the BROWSER context.
- * - Azure Front Door / Blob Storage typically does NOT send `Access-Control-Allow-Origin`.
+ * - Azure Blob Storage / Static Website typically does NOT send `Access-Control-Allow-Origin`.
  * - The browser then blocks the fetch and react-pdf silently renders an empty box.
  *
  * What this does:
@@ -17,7 +17,11 @@ import { NextRequest, NextResponse } from 'next/server';
  * NOT a generic image CDN: only used by `usePdfImagePreloader`.
  */
 
-const ALLOWED_HOST_SUFFIXES = ['azurefd.net', 'fiziyo.com', 'blob.core.windows.net'];
+const ALLOWED_HOST_SUFFIXES = [
+  'fiziyo.com',
+  'blob.core.windows.net',
+  'web.core.windows.net',
+];
 
 const ALLOWED_CONTENT_TYPES = [
   'image/jpeg',
