@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
-import { ListEditor } from './ListEditor';
+import { ListEditor } from '@/components/shared/enrichment/ListEditor';
 import type { EnrichmentInstructionStep, ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.types';
 
 interface PatientInstructionSectionProps {

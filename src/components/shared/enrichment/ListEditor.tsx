@@ -12,6 +12,16 @@ interface ListEditorProps {
   disabled?: boolean;
   onChange: (items: string[]) => void;
   onBlur?: () => void;
+  testIdPrefix?: string;
+}
+
+function slugify(value: string): string {
+  return value
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
 }
 
 export function ListEditor({
@@ -22,19 +32,22 @@ export function ListEditor({
   disabled = false,
   onChange,
   onBlur,
+  testIdPrefix,
 }: Readonly<ListEditorProps>) {
   const safeItems = items.length > 0 ? items : [''];
+  const prefix = testIdPrefix ?? (slugify(title) || 'list-editor');
 
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
-        <p className="text-xs font-medium text-muted-foreground">{title}</p>
+        {title && <p className="text-xs font-medium text-muted-foreground">{title}</p>}
         <Button
           type="button"
           size="sm"
           variant="outline"
           disabled={disabled}
           onClick={() => onChange([...items, ''])}
+          data-testid={`${prefix}-add-btn`}
         >
           <Plus className="mr-1 h-3.5 w-3.5" />
           {addLabel}
@@ -53,6 +66,7 @@ export function ListEditor({
               onChange(next);
             }}
             onBlur={onBlur}
+            data-testid={`${prefix}-item-${index}`}
           />
           <Button
             type="button"
@@ -65,6 +79,7 @@ export function ListEditor({
               onChange(next);
               onBlur?.();
             }}
+            data-testid={`${prefix}-remove-${index}`}
           >
             <Trash2 className="h-4 w-4 text-destructive" />
           </Button>

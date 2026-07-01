@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.types';
-import { cleanupEnrichment } from '../utils/enrichment';
+import { cleanupEnrichment } from '@/features/verification/utils/enrichment';
 
 function deepClone<T>(value: T): T {
   return JSON.parse(JSON.stringify(value)) as T;

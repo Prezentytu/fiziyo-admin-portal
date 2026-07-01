@@ -252,6 +252,60 @@ await expect(page.getByTestId(/^exercise-card-/)).toHaveCount(5);
 | `exercise-create-ai-image-btn`        | Wygeneruj obraz AI (widoczny od razu)   | `CreateExerciseWizard.tsx`       |
 | `exercise-submit-to-org-dialog`       | Dialog: zgłoszenie do weryfikacji org   | `SubmitToOrganizationDialog.tsx` |
 
+#### Detal ćwiczenia — strona szczegółów (`exercises/[id]/page.tsx`)
+
+| data-testid                                      | Element                                                       | Plik                          |
+| ------------------------------------------------ | ------------------------------------------------------------- | ----------------------------- |
+| `exercise-detail-back-btn`                       | Powrót do listy ćwiczeń                                       | `exercises/[id]/page.tsx`     |
+| `exercise-detail-menu-trigger`                   | Przycisk "Opcje" (menu kontekstowe)                           | `exercises/[id]/page.tsx`     |
+| `exercise-detail-duplicate-btn`                  | Duplikuj ćwiczenie                                            | `exercises/[id]/page.tsx`     |
+| `exercise-detail-submit-global-btn`              | Zgłoś do bazy FiziYo                                          | `exercises/[id]/page.tsx`     |
+| `exercise-detail-submit-org-btn`                 | Zgłoś do weryfikacji organizacyjnej                           | `exercises/[id]/page.tsx`     |
+| `exercise-detail-resubmit-btn`                   | Zgłoś ponownie do weryfikacji                                 | `exercises/[id]/page.tsx`     |
+| `exercise-detail-report-btn`                     | Zgłoś do poprawki (menu)                                      | `exercises/[id]/page.tsx`     |
+| `exercise-detail-report-hero-btn`                | Zgłoś do poprawki (hero card)                                 | `exercises/[id]/page.tsx`     |
+| `exercise-detail-delete-btn`                     | Usuń ćwiczenie                                                | `exercises/[id]/page.tsx`     |
+| `exercise-detail-name`                           | Tytuł ćwiczenia (h1)                                          | `exercises/[id]/page.tsx`     |
+| `exercise-detail-add-to-set-btn`                 | Hero: Dodaj do zestawu                                        | `exercises/[id]/page.tsx`     |
+| `exercise-detail-edit-btn`                       | Hero: Edytuj ćwiczenie / Zapisz (toggler trybu edycji)        | `exercises/[id]/page.tsx`     |
+| `exercise-detail-media-player`                   | Galeria mediów                                                | `exercises/[id]/page.tsx`     |
+| `exercise-detail-media-edit-section`             | Sekcja zarządzania zdjęciami                                  | `exercises/[id]/page.tsx`     |
+| `exercise-detail-upload-image-btn`               | Dodaj zdjęcie                                                 | `exercises/[id]/page.tsx`     |
+| `exercise-detail-ai-image-btn`                   | Generuj zdjęcie AI                                            | `exercises/[id]/page.tsx`     |
+| `exercise-detail-image-file-input`               | Hidden file input do uploadu                                  | `exercises/[id]/page.tsx`     |
+| `exercise-detail-delete-image-btn`               | Usuń zdjęcie (hover overlay)                                  | `exercises/[id]/page.tsx`     |
+| `exercise-detail-name-input`                     | Edycja nazwy ćwiczenia (tryb edycji)                          | `exercises/[id]/page.tsx`     |
+| `exercise-detail-patient-description-input`      | Edycja opisu dla pacjenta                                     | `exercises/[id]/page.tsx`     |
+| `exercise-detail-clinical-description-input`     | Edycja opisu klinicznego                                      | `exercises/[id]/page.tsx`     |
+| `exercise-detail-notes-input`                    | Edycja notatek                                                | `exercises/[id]/page.tsx`     |
+| `exercise-detail-parameters-primary-group`       | Wyróżniona sekcja "Główne parametry"                          | `ExerciseParametersPanel.tsx` |
+| `exercise-param-summary-stat`                    | Wyróżniony podsumowujący stat (czas trwania)                  | `ExerciseParametersPanel.tsx` |
+| `exercise-param-summary-stat-info`               | Info tooltip przy podsumowującym stat                         | `ExerciseParametersPanel.tsx` |
+| `exercise-param-{key}-input`                     | Edycja parametru (liczba/tekst)                               | `ExerciseParametersPanel.tsx` |
+| `exercise-param-{key}-select`                    | Edycja parametru (select: strona/trudność)                    | `ExerciseParametersPanel.tsx` |
+| `exercise-audio-cues`                            | Sekcja "Wskazówki głosowe"                                    | `ExerciseAudioCues.tsx`       |
+| `exercise-audio-cue-main`                        | Kontener komendy TTS (widok/edycja)                           | `ExerciseAudioCues.tsx`       |
+| `exercise-audio-cue-input`                       | Edycja komendy TTS (tryb edycji)                              | `ExerciseAudioCues.tsx`       |
+| `exercise-audio-cues-list`                       | Lista wskazówek AI (coaching cues, widok)                     | `ExerciseAudioCues.tsx`       |
+| `exercise-audio-cues-editor-add-btn`             | Dodaj wskazówkę AI (tryb edycji)                              | `ExerciseAudioCues.tsx`       |
+| `exercise-audio-cues-editor-item-{i}`            | Edycja treści wskazówki AI (tryb edycji)                      | `ExerciseAudioCues.tsx`       |
+| `exercise-audio-cues-editor-remove-{i}`          | Usuń wskazówkę AI (tryb edycji)                               | `ExerciseAudioCues.tsx`       |
+| `exercise-execution-steps`                       | Sekcja "Wykonanie krok po kroku"                              | `ExerciseExecutionSteps.tsx`  |
+| `exercise-execution-steps-list`                  | Lista kroków (widok)                                          | `ExerciseExecutionSteps.tsx`  |
+| `exercise-execution-step-{n}`                    | Pojedynczy krok (widok)                                       | `ExerciseExecutionSteps.tsx`  |
+| `exercise-execution-steps-editor-add-btn`        | Dodaj krok (tryb edycji)                                      | `ExerciseExecutionSteps.tsx`  |
+| `exercise-execution-steps-editor-item-{i}`       | Edycja treści kroku (tryb edycji)                             | `ExerciseExecutionSteps.tsx`  |
+| `exercise-execution-steps-editor-remove-{i}`     | Usuń krok (tryb edycji)                                       | `ExerciseExecutionSteps.tsx`  |
+| `exercise-enrichment-display`                    | Sekcja "Dane rozszerzone"                                     | `EnrichmentDisplay.tsx`       |
+| `exercise-enrichment-mistakes`                   | Sekcja "Typowe błędy i korekty"                               | `EnrichmentDisplay.tsx`       |
+| `exercise-enrichment-add-mistake-btn`            | Dodaj typowy błąd (tryb edycji)                               | `EnrichmentDisplay.tsx`       |
+| `exercise-enrichment-feel-safety`                | Sekcja odczucia/bezpieczeństwo/notatki pacjenta (tryb edycji) | `EnrichmentDisplay.tsx`       |
+| `exercise-enrichment-therapist-notes`            | Sekcja "Notatki terapeutyczne"                                | `EnrichmentDisplay.tsx`       |
+| `exercise-enrichment-advanced-toggle`            | Rozwiń/zwiń sekcję "Zaawansowane"                             | `EnrichmentDisplay.tsx`       |
+| `exercise-enrichment-dosing-profiles`            | Sekcja "Profile dawkowania" (tryb edycji)                     | `EnrichmentDisplay.tsx`       |
+| `exercise-enrichment-feedback-questions-add-btn` | Dodaj pytanie feedbackowe (tryb edycji)                       | `EnrichmentDisplay.tsx`       |
+| `exercise-enrichment-ai-keywords-add-btn`        | Dodaj słowo kluczowe AI (tryb edycji)                         | `EnrichmentDisplay.tsx`       |
+
 ### 5. Zestawy ćwiczeń (set-)
 
 | data-testid                                   | Element                                  | Plik                          |

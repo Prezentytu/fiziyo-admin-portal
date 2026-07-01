@@ -1,19 +1,16 @@
 'use client';
 
-import { use, useState } from 'react';
-import { useQuery, useMutation } from '@apollo/client/react';
+import { use, useState, useCallback, useRef } from 'react';
+import { useQuery, useMutation, useApolloClient } from '@apollo/client/react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import {
   ArrowLeft,
-  Pencil,
   Trash2,
   Clock,
-  Repeat,
   Dumbbell,
   FolderPlus,
-  FileText,
   MoreHorizontal,
-  Timer,
   Sparkles,
   Plus,
   ExternalLink,
@@ -23,26 +20,31 @@ import {
   RefreshCw,
   Copy,
   Flag,
-  Info,
+  Upload,
+  Loader2,
+  Pencil,
+  Check,
+  FileText,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { LoadingState } from '@/components/shared/LoadingState';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
-import { ExerciseDialog } from '@/features/exercises/ExerciseDialog';
-import { CreateSetWizard } from '@/features/exercise-sets';
-import { SubmitToGlobalDialog } from '@/features/exercises/SubmitToGlobalDialog';
-import { SubmitToOrganizationDialog } from '@/features/exercises/SubmitToOrganizationDialog';
-import { EnrichmentDisplay } from '@/features/exercises/EnrichmentDisplay';
 import { ExerciseParametersPanel } from '@/features/exercises/ExerciseParametersPanel';
 import { ExerciseExecutionSteps } from '@/features/exercises/ExerciseExecutionSteps';
 import { ExerciseAudioCues } from '@/features/exercises/ExerciseAudioCues';
+import { EnrichmentDisplay } from '@/features/exercises/EnrichmentDisplay';
+import { CreateSetWizard } from '@/features/exercise-sets';
+import { SubmitToGlobalDialog } from '@/features/exercises/SubmitToGlobalDialog';
+import { SubmitToOrganizationDialog } from '@/features/exercises/SubmitToOrganizationDialog';
 import { FeedbackBanner } from '@/features/exercises/FeedbackBanner';
 import { ReportExerciseDialog } from '@/features/exercises/ReportExerciseDialog';
 import { MediaGallery, buildMediaItems } from '@/components/shared';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -51,26 +53,27 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
-import {
-  EXERCISE_FIELD_METADATA,
-  formatFieldValueWithPlaceholder,
-  normalizeExerciseFieldValues,
-} from '@/components/shared/exercise';
+import { normalizeExerciseFieldValues } from '@/components/shared/exercise';
 
 import { GET_EXERCISE_BY_ID_QUERY, GET_ORGANIZATION_EXERCISES_QUERY } from '@/graphql/queries/exercises.queries';
 import { GET_EXERCISE_TAGS_BY_ORGANIZATION_QUERY } from '@/graphql/queries/exerciseTags.queries';
 import { GET_TAG_CATEGORIES_BY_ORGANIZATION_QUERY } from '@/graphql/queries/tagCategories.queries';
 import {
   DELETE_EXERCISE_MUTATION,
+  UPDATE_EXERCISE_MUTATION,
+  UPLOAD_EXERCISE_IMAGE_MUTATION,
+  DELETE_EXERCISE_IMAGE_MUTATION,
   SUBMIT_FOR_ORGANIZATION_REVIEW_MUTATION,
   SUBMIT_TO_GLOBAL_REVIEW_MUTATION,
   RESUBMIT_FROM_ORIGINAL_MUTATION,
   CREATE_EXERCISE_MUTATION,
 } from '@/graphql/mutations/exercises.mutations';
+import { UPDATE_EXERCISE_FIELD_MUTATION } from '@/graphql/mutations/adminExercises.mutations';
+import { useEnrichmentDraft } from '@/components/shared/enrichment/useEnrichmentDraft';
+import { aiService } from '@/services/aiService';
 import { createTagsMap, mapExerciseTagsToObjects } from '@/utils/tagUtils';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import type { ExerciseByIdResponse, ExerciseTagsResponse, TagCategoriesResponse } from '@/types/apollo';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { getNextExerciseCopyName } from '@/features/exercises/utils/getNextExerciseCopyName';
 import { calculateExerciseTotalSeconds, formatExerciseDuration } from '@/utils/exerciseTime';
 import { verificationCopy } from '@/features/verification/verificationCopy';
@@ -90,12 +93,78 @@ function isTagObject(tag: string | ExerciseTag): tag is ExerciseTag {
   return typeof tag === 'object' && 'name' in tag;
 }
 
+const NUMERIC_UPDATE_FIELDS = new Set<string>([
+  'sets',
+  'reps',
+  'duration',
+  'executionTime',
+  'restSets',
+  'restReps',
+  'preparationTime',
+]);
+
+/**
+ * Maps a single edited display field to UPDATE_EXERCISE_MUTATION variables.
+ * Returns null for fields that are not autosaved through this channel.
+ */
+function buildUpdateVariables(
+  exerciseId: string,
+  field: string,
+  value: unknown
+): Record<string, unknown> | null {
+  const asText = (input: unknown): string | null => {
+    const normalized = typeof input === 'string' ? input.trim() : input == null ? '' : String(input);
+    return normalized === '' ? null : normalized;
+  };
+
+  if (NUMERIC_UPDATE_FIELDS.has(field)) {
+    const numericValue =
+      value === '' || value == null ? null : typeof value === 'number' ? value : Number(value);
+    const safeValue = numericValue != null && Number.isNaN(numericValue) ? null : numericValue;
+    return { exerciseId, [field]: safeValue };
+  }
+
+  switch (field) {
+    case 'name':
+      return { exerciseId, name: asText(value) ?? '' };
+    case 'patientDescription':
+      return { exerciseId, description: asText(value) };
+    case 'clinicalDescription':
+      return { exerciseId, clinicalDescription: asText(value) };
+    case 'notes':
+      return { exerciseId, notes: asText(value) };
+    case 'audioCue':
+      return { exerciseId, audioCue: asText(value) };
+    case 'tempo':
+      return { exerciseId, tempo: asText(value) };
+    case 'rangeOfMotion':
+      return { exerciseId, rangeOfMotion: asText(value) };
+    case 'side': {
+      const sideValue = asText(value);
+      return { exerciseId, exerciseSide: sideValue === 'none' ? null : sideValue };
+    }
+    case 'difficultyLevel': {
+      const difficulty = asText(value);
+      return { exerciseId, difficultyLevel: difficulty === 'UNKNOWN' ? null : difficulty };
+    }
+    case 'load': {
+      const loadText = asText(value);
+      return { exerciseId, loadText, loadType: loadText ? 'text' : null };
+    }
+    default:
+      return null;
+  }
+}
+
 export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) {
   const { id } = use(params);
   const router = useRouter();
   const { currentOrganization } = useOrganization();
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const apolloClient = useApolloClient();
   const [isCreateSetWizardOpen, setIsCreateSetWizardOpen] = useState(false);
   const [isSubmitToGlobalDialogOpen, setIsSubmitToGlobalDialogOpen] = useState(false);
   const [isSubmitToOrganizationDialogOpen, setIsSubmitToOrganizationDialogOpen] = useState(false);
@@ -124,6 +193,12 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
     variables: { organizationId },
     skip: !organizationId,
   });
+
+  // Autosave mutations
+  const [updateExercise] = useMutation(UPDATE_EXERCISE_MUTATION);
+  const [updateExerciseField] = useMutation(UPDATE_EXERCISE_FIELD_MUTATION);
+  const [uploadExerciseImage] = useMutation(UPLOAD_EXERCISE_IMAGE_MUTATION);
+  const [deleteExerciseImage] = useMutation(DELETE_EXERCISE_IMAGE_MUTATION);
 
   // Delete mutation
   const [deleteExercise, { loading: deleting }] = useMutation(DELETE_EXERCISE_MUTATION, {
@@ -297,6 +372,150 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
     }
   };
 
+  // ============================================
+  // AUTOSAVE + MEDIA HANDLERS
+  // ============================================
+
+  const handleFieldUpdate = useCallback(
+    async (field: string, value: unknown) => {
+      if (!exercise) return;
+
+      if (field === 'enrichmentData') {
+        try {
+          await updateExerciseField({
+            variables: { exerciseId: id, fieldName: 'enrichmentData', value: JSON.stringify(value ?? {}) },
+          });
+        } catch (err) {
+          console.error('[ExerciseDetail] Autosave failed for field enrichmentData:', err);
+          toast.error('Nie udało się zapisać zmian');
+        }
+        return;
+      }
+
+      const variables = buildUpdateVariables(id, field, value);
+      if (!variables) {
+        console.warn(`[ExerciseDetail] Unhandled autosave field: ${field}`);
+        return;
+      }
+
+      try {
+        await updateExercise({ variables });
+      } catch (err) {
+        console.error(`[ExerciseDetail] Autosave failed for field ${field}:`, err);
+        toast.error('Nie udało się zapisać zmian');
+      }
+    },
+    [exercise, id, updateExercise, updateExerciseField]
+  );
+
+  const {
+    draft: enrichmentDraft,
+    setPath: setEnrichmentPath,
+    updateDraft: updateEnrichmentDraft,
+    persist: persistEnrichmentDraft,
+  } = useEnrichmentDraft({
+    enrichmentData: exercise?.enrichmentData,
+    onFieldChange: handleFieldUpdate,
+  });
+
+  const fileToBase64 = useCallback((file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => {
+        const result = reader.result as string;
+        resolve(result.split(',')[1] ?? '');
+      };
+      reader.onerror = reject;
+    });
+  }, []);
+
+  const handleImageFileChange = useCallback(
+    async (event: React.ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0];
+      if (!file) return;
+
+      const currentCount = exercise?.images?.length ?? 0;
+      if (currentCount >= 5) {
+        toast.error('Maksymalna liczba zdjęć to 5');
+        return;
+      }
+
+      setUploadingImage(true);
+      try {
+        const base64Image = await fileToBase64(file);
+        await uploadExerciseImage({
+          variables: { exerciseId: id, base64Image, contentType: file.type },
+        });
+        await apolloClient.refetchQueries({ include: [GET_EXERCISE_BY_ID_QUERY] });
+        toast.success('Zdjęcie zostało dodane');
+      } catch (err) {
+        console.error('[ExerciseDetail] Image upload failed:', err);
+        toast.error('Nie udało się dodać zdjęcia');
+      } finally {
+        setUploadingImage(false);
+        if (fileInputRef.current) fileInputRef.current.value = '';
+      }
+    },
+    [exercise, id, uploadExerciseImage, fileToBase64, apolloClient]
+  );
+
+  const handleDeleteImage = useCallback(
+    async (imageUrl: string) => {
+      setUploadingImage(true);
+      try {
+        await deleteExerciseImage({ variables: { exerciseId: id, imageUrl } });
+        await apolloClient.refetchQueries({ include: [GET_EXERCISE_BY_ID_QUERY] });
+        toast.success('Zdjęcie zostało usunięte');
+      } catch (err) {
+        console.error('[ExerciseDetail] Image delete failed:', err);
+        toast.error('Nie udało się usunąć zdjęcia');
+      } finally {
+        setUploadingImage(false);
+      }
+    },
+    [id, deleteExerciseImage, apolloClient]
+  );
+
+  const handleAIGenerateImage = useCallback(async () => {
+    if (!exercise?.name) return;
+
+    const currentCount = exercise.images?.length ?? 0;
+    if (currentCount >= 5) {
+      toast.error('Maksymalna liczba zdjęć to 5');
+      return;
+    }
+
+    setUploadingImage(true);
+    try {
+      const description = [exercise.patientDescription, exercise.description].filter(Boolean).join(' ');
+      const generated = await aiService.generateExerciseImage(
+        exercise.name,
+        description,
+        exercise.type?.toLowerCase() === 'time' ? 'time' : 'reps',
+        'illustration'
+      );
+
+      const generatedFile = generated?.file;
+      if (!generatedFile) {
+        toast.error('Nie udało się wygenerować obrazu');
+        return;
+      }
+
+      const base64Image = await fileToBase64(generatedFile);
+      await uploadExerciseImage({
+        variables: { exerciseId: id, base64Image, contentType: generatedFile.type || 'image/png' },
+      });
+      await apolloClient.refetchQueries({ include: [GET_EXERCISE_BY_ID_QUERY] });
+      toast.success('Zdjęcie AI zostało wygenerowane');
+    } catch (err) {
+      console.error('[ExerciseDetail] AI image generation failed:', err);
+      toast.error('Nie udało się wygenerować zdjęcia AI');
+    } finally {
+      setUploadingImage(false);
+    }
+  }, [exercise, id, uploadExerciseImage, fileToBase64, apolloClient]);
+
   if (loading) {
     return (
       <div className="space-y-6">
@@ -362,44 +581,14 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
     side: normalizedFields.side ?? undefined,
   });
 
-  const quickStats = [
-    {
-      id: 'sets',
-      label: EXERCISE_FIELD_METADATA.sets.label,
-      tooltip: EXERCISE_FIELD_METADATA.sets.tooltip,
-      value: formatFieldValueWithPlaceholder(EXERCISE_FIELD_METADATA.sets, normalizedFields),
-      icon: Repeat,
-      color: 'text-primary',
-    },
-    {
-      id: 'reps',
-      label: EXERCISE_FIELD_METADATA.reps.label,
-      tooltip: EXERCISE_FIELD_METADATA.reps.tooltip,
-      value: formatFieldValueWithPlaceholder(EXERCISE_FIELD_METADATA.reps, normalizedFields),
-      icon: Dumbbell,
-      color: 'text-secondary',
-    },
-    {
-      id: 'executionTime',
-      label: EXERCISE_FIELD_METADATA.executionTime.label,
-      tooltip: EXERCISE_FIELD_METADATA.executionTime.tooltip,
-      value: formatFieldValueWithPlaceholder(EXERCISE_FIELD_METADATA.executionTime, normalizedFields),
-      icon: Clock,
-      color: 'text-info',
-    },
-    ...(totalExerciseTime.seconds > 0
-      ? [
-          {
-            id: 'exerciseDuration',
-            label: 'Czas trwania ćwiczenia',
-            tooltip: 'Szacowany łączny czas całego ćwiczenia (wszystkie serie + przerwy + przygotowanie).',
-            value: formatExerciseDuration(totalExerciseTime.seconds, totalExerciseTime.isEstimate),
-            icon: Timer,
-            color: 'text-info',
-          },
-        ]
-      : []),
-  ];
+  const exerciseDurationSummary =
+    totalExerciseTime.seconds > 0
+      ? {
+          label: 'Czas trwania ćwiczenia',
+          value: formatExerciseDuration(totalExerciseTime.seconds, totalExerciseTime.isEstimate),
+          tooltip: 'Szacowany łączny czas całego ćwiczenia (wszystkie serie + przerwy + przygotowanie).',
+        }
+      : undefined;
 
   const patientDescription = exercise.patientDescription || exercise.description || '';
   const physiotherapistDescription = exercise.clinicalDescription || '';
@@ -407,6 +596,11 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
   const notes = exercise.notes || '';
   const hasMissingCoreInformation =
     !patientDescription.trim() || !physiotherapistDescription.trim() || imageItemsCount === 0;
+
+  const isPendingOrganizationReview = exercise.organizationVerificationStatus === 'PENDING_ORG_REVIEW';
+  const isLocked = isGlobalExercise || isPendingReview || isPendingOrganizationReview;
+  const isEditing = isEditMode && !isLocked;
+  const canEditMedia = isEditing;
 
   return (
     <div className="space-y-6">
@@ -422,94 +616,92 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
           Powrót do ćwiczeń
         </Button>
 
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm" className="gap-2" data-testid="exercise-detail-menu-trigger">
-              Opcje
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => setIsEditDialogOpen(true)} data-testid="exercise-detail-edit-btn">
-              <Pencil className="mr-2 h-4 w-4" />
-              Edytuj ćwiczenie
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={handleDuplicateExercise}
-              disabled={duplicating}
-              data-testid="exercise-detail-duplicate-btn"
-            >
-              <Copy className="mr-2 h-4 w-4" />
-              {duplicating ? 'Tworzenie kopii...' : 'Duplikuj'}
-            </DropdownMenuItem>
-            {exercise.videoUrl && (
-              <DropdownMenuItem asChild>
-                <a href={exercise.videoUrl} target="_blank" rel="noopener noreferrer">
-                  <ExternalLink className="mr-2 h-4 w-4" />
-                  Otwórz film
-                </a>
+        <div className="flex items-center gap-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="gap-2" data-testid="exercise-detail-menu-trigger">
+                Opcje
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem
+                onClick={handleDuplicateExercise}
+                disabled={duplicating}
+                data-testid="exercise-detail-duplicate-btn"
+              >
+                <Copy className="mr-2 h-4 w-4" />
+                {duplicating ? 'Tworzenie kopii...' : 'Duplikuj'}
               </DropdownMenuItem>
-            )}
-            {canSubmitToGlobal && (
-              <>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={() => setIsSubmitToGlobalDialogOpen(true)}
-                  className="text-primary focus:text-primary"
-                  data-testid="exercise-detail-submit-global-btn"
-                >
-                  <Rocket className="mr-2 h-4 w-4" />
-                  {verificationCopy.submitGlobal}
+              {exercise.videoUrl && (
+                <DropdownMenuItem asChild>
+                  <a href={exercise.videoUrl} target="_blank" rel="noopener noreferrer">
+                    <ExternalLink className="mr-2 h-4 w-4" />
+                    Otwórz film
+                  </a>
                 </DropdownMenuItem>
-              </>
-            )}
-            {canSubmitToOrganization && (
-              <>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={() => setIsSubmitToOrganizationDialogOpen(true)}
-                  className="text-emerald-600 focus:text-emerald-600"
-                  data-testid="exercise-detail-submit-org-btn"
-                >
-                  <Rocket className="mr-2 h-4 w-4" />
-                  {verificationCopy.submitOrganization}
-                </DropdownMenuItem>
-              </>
-            )}
-            {canResubmit && (
-              <>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={handleResubmit}
-                  disabled={resubmitting}
-                  className="text-primary focus:text-primary"
-                  data-testid="exercise-detail-resubmit-btn"
-                >
-                  <RefreshCw className={cn('mr-2 h-4 w-4', resubmitting && 'animate-spin')} />
-                  Zgłoś ponownie do weryfikacji
-                </DropdownMenuItem>
-              </>
-            )}
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              onClick={() => setIsReportDialogOpen(true)}
-              data-testid="exercise-detail-report-btn"
-              className="text-amber-500 focus:text-amber-500 focus:bg-amber-500/10"
-            >
-              <Flag className="mr-2 h-4 w-4" />
-              Zgłoś do poprawki
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              onClick={() => setIsDeleteDialogOpen(true)}
-              className="text-destructive focus:text-destructive"
-              data-testid="exercise-detail-delete-btn"
-            >
-              <Trash2 className="mr-2 h-4 w-4" />
-              Usuń ćwiczenie
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+              )}
+              {canSubmitToGlobal && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={() => setIsSubmitToGlobalDialogOpen(true)}
+                    className="text-primary focus:text-primary"
+                    data-testid="exercise-detail-submit-global-btn"
+                  >
+                    <Rocket className="mr-2 h-4 w-4" />
+                    {verificationCopy.submitGlobal}
+                  </DropdownMenuItem>
+                </>
+              )}
+              {canSubmitToOrganization && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={() => setIsSubmitToOrganizationDialogOpen(true)}
+                    className="text-emerald-600 focus:text-emerald-600"
+                    data-testid="exercise-detail-submit-org-btn"
+                  >
+                    <Rocket className="mr-2 h-4 w-4" />
+                    {verificationCopy.submitOrganization}
+                  </DropdownMenuItem>
+                </>
+              )}
+              {canResubmit && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={handleResubmit}
+                    disabled={resubmitting}
+                    className="text-primary focus:text-primary"
+                    data-testid="exercise-detail-resubmit-btn"
+                  >
+                    <RefreshCw className={cn('mr-2 h-4 w-4', resubmitting && 'animate-spin')} />
+                    Zgłoś ponownie do weryfikacji
+                  </DropdownMenuItem>
+                </>
+              )}
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={() => setIsReportDialogOpen(true)}
+                data-testid="exercise-detail-report-btn"
+                className="text-amber-500 focus:text-amber-500 focus:bg-amber-500/10"
+              >
+                <Flag className="mr-2 h-4 w-4" />
+                Zgłoś do poprawki
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={() => setIsDeleteDialogOpen(true)}
+                className="text-destructive focus:text-destructive"
+                data-testid="exercise-detail-delete-btn"
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                Usuń ćwiczenie
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
 
       {/* Hero Section: Title + Meta */}
@@ -552,9 +744,28 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
             </Badge>
           )}
         </div>
-        <h1 className="text-2xl font-bold text-foreground" data-testid="exercise-detail-name">
-          {exercise.name}
-        </h1>
+        {isEditing ? (
+          <Input
+            defaultValue={exercise.name}
+            className="h-auto border-0 border-b border-border/60 bg-transparent px-0 text-2xl font-bold text-foreground shadow-none focus-visible:ring-0 focus-visible:border-primary rounded-none"
+            onBlur={(event) => {
+              const next = event.target.value.trim();
+              if (next && next !== exercise.name) {
+                handleFieldUpdate('name', next);
+              }
+            }}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') {
+                event.currentTarget.blur();
+              }
+            }}
+            data-testid="exercise-detail-name-input"
+          />
+        ) : (
+          <h1 className="text-2xl font-bold text-foreground" data-testid="exercise-detail-name">
+            {exercise.name}
+          </h1>
+        )}
       </div>
 
       {/* Feedback Banner for CHANGES_REQUESTED */}
@@ -562,12 +773,15 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
         <FeedbackBanner adminReviewNotes={exercise.adminReviewNotes} updatedAt={exercise.updatedAt} />
       )}
 
-      {/* Hero Action + Quick Stats */}
+      {/* Hero Actions */}
       <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-12">
         {/* Hero Action - Dodaj do zestawu */}
         <button
           onClick={handleAddToSet}
-          className="group relative overflow-hidden rounded-2xl bg-linear-to-br from-primary via-primary to-primary-dark p-5 text-left transition-all duration-300 hover:shadow-xl hover:shadow-primary/20 hover:scale-[1.02] cursor-pointer sm:col-span-1 lg:col-span-4"
+          className={cn(
+            'group relative overflow-hidden rounded-2xl bg-linear-to-br from-primary via-primary to-primary-dark p-5 text-left transition-all duration-300 hover:shadow-xl hover:shadow-primary/20 hover:scale-[1.02] cursor-pointer sm:col-span-1',
+            isLocked ? 'lg:col-span-6' : 'lg:col-span-4'
+          )}
           data-testid="exercise-detail-add-to-set-btn"
         >
           <div className="absolute inset-0 bg-linear-to-br from-white/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
@@ -587,7 +801,10 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
 
         <button
           onClick={() => setIsReportDialogOpen(true)}
-          className="group relative overflow-hidden rounded-2xl border border-amber-500/30 bg-amber-500/10 p-5 text-left transition-all duration-300 hover:shadow-lg hover:shadow-amber-500/20 hover:scale-[1.01] cursor-pointer sm:col-span-1 lg:col-span-4"
+          className={cn(
+            'group relative overflow-hidden rounded-2xl border border-amber-500/30 bg-amber-500/10 p-5 text-left transition-all duration-300 hover:shadow-lg hover:shadow-amber-500/20 hover:scale-[1.01] cursor-pointer sm:col-span-1',
+            isLocked ? 'lg:col-span-6' : 'lg:col-span-4'
+          )}
           data-testid="exercise-detail-report-hero-btn"
         >
           <div className="relative flex items-center gap-4">
@@ -601,45 +818,36 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
           </div>
         </button>
 
-        {/* Quick Stats */}
-        <TooltipProvider delayDuration={150}>
-          <div
+        {/* Hero Action - Edytuj / Zapisz */}
+        {!isLocked && (
+          <button
+            onClick={() => setIsEditMode((current) => !current)}
             className={cn(
-              'grid gap-3 sm:col-span-1 lg:col-span-12',
-              quickStats.length <= 2 ? 'grid-cols-2' : 'grid-cols-2 sm:grid-cols-4'
+              'group relative overflow-hidden rounded-2xl border p-5 text-left transition-all duration-300 hover:shadow-lg hover:scale-[1.01] cursor-pointer sm:col-span-2 lg:col-span-4',
+              isEditing
+                ? 'border-emerald-500/30 bg-emerald-500/10 hover:shadow-emerald-500/20'
+                : 'border-border/40 bg-surface/50 hover:shadow-primary/10'
             )}
+            data-testid="exercise-detail-edit-btn"
           >
-            {quickStats.map((metric) => (
+            <div className="relative flex items-center gap-4">
               <div
-                key={metric.id}
-                className="rounded-2xl border border-border/40 bg-surface/50 p-4 flex flex-col items-center justify-center text-center"
+                className={cn(
+                  'flex h-11 w-11 items-center justify-center rounded-xl shrink-0 group-hover:scale-110 transition-transform duration-300',
+                  isEditing ? 'bg-emerald-500/20 text-emerald-600' : 'bg-primary/10 text-primary'
+                )}
               >
-                <div className="flex items-center gap-2">
-                  <metric.icon className={cn('h-4 w-4', metric.color)} />
-                  <span className="text-2xl font-bold text-foreground tabular-nums">{metric.value}</span>
-                </div>
-                <div className="flex items-center gap-1 mt-1">
-                  <p className="text-xs text-muted-foreground">{metric.label}</p>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <button
-                        type="button"
-                        className="inline-flex h-3.5 w-3.5 items-center justify-center rounded-full text-muted-foreground/40 transition-colors hover:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/50"
-                        aria-label={`Informacja: ${metric.label}`}
-                        data-testid={`exercise-detail-stat-${metric.id}-info`}
-                      >
-                        <Info className="h-3 w-3" />
-                      </button>
-                    </TooltipTrigger>
-                    <TooltipContent side="bottom" className="max-w-xs text-xs">
-                      {metric.tooltip}
-                    </TooltipContent>
-                  </Tooltip>
-                </div>
+                {isEditing ? <Check className="h-5 w-5" /> : <Pencil className="h-5 w-5" />}
               </div>
-            ))}
-          </div>
-        </TooltipProvider>
+              <div className="min-w-0 flex-1">
+                <h3 className="text-base font-bold text-foreground">{isEditing ? 'Zapisz' : 'Edytuj ćwiczenie'}</h3>
+                <p className="text-sm text-muted-foreground">
+                  {isEditing ? 'Zakończ edycję parametrów' : 'Zmień parametry i opisy'}
+                </p>
+              </div>
+            </div>
+          </button>
+        )}
       </div>
       {hasMissingCoreInformation && (
         <div className="rounded-2xl border border-sky-500/20 bg-sky-50/50 p-4 dark:bg-sky-500/5">
@@ -655,6 +863,7 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
         </div>
       )}
       <div className="grid gap-6 lg:grid-cols-2 lg:items-start">
+        {/* Left column: media gallery + editable media controls */}
         <div className="space-y-4 lg:sticky lg:top-6">
           <h2 className="flex items-center gap-2 text-base font-semibold text-foreground">
             <Dumbbell className="h-4 w-4 text-muted-foreground" />
@@ -668,6 +877,88 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
             testIdPrefix="exercise-detail-media"
             className="h-[320px] lg:h-[520px]"
           />
+
+          {/* Editable media controls */}
+          {canEditMedia && (
+            <div className="rounded-2xl border border-border/40 bg-surface/50 p-4 space-y-3" data-testid="exercise-detail-media-edit-section">
+              <p className="text-sm font-semibold text-foreground">Zarządzaj zdjęciami</p>
+
+              {/* Existing images with delete buttons */}
+              {(exercise.images?.length ?? 0) > 0 && (
+                <div className="grid grid-cols-4 gap-2">
+                  {exercise.images?.map((imageUrl) => (
+                    <div
+                      key={imageUrl}
+                      className="relative group aspect-square rounded-lg overflow-hidden border border-border/40"
+                    >
+                      <Image
+                        src={imageUrl}
+                        alt=""
+                        fill
+                        className="object-cover"
+                        sizes="80px"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteImage(imageUrl)}
+                        disabled={uploadingImage}
+                        className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/50 transition-colors"
+                        aria-label="Usuń zdjęcie"
+                        data-testid="exercise-detail-delete-image-btn"
+                      >
+                        <Trash2 className="h-4 w-4 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <div className="flex items-center gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploadingImage || (exercise.images?.length ?? 0) >= 5}
+                  data-testid="exercise-detail-upload-image-btn"
+                >
+                  {uploadingImage ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Upload className="mr-2 h-4 w-4" />
+                  )}
+                  Dodaj zdjęcie
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={handleAIGenerateImage}
+                  disabled={uploadingImage || !exercise.name || (exercise.images?.length ?? 0) >= 5}
+                  data-testid="exercise-detail-ai-image-btn"
+                >
+                  <Sparkles className="mr-2 h-4 w-4" />
+                  Generuj AI
+                </Button>
+              </div>
+
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleImageFileChange}
+                data-testid="exercise-detail-image-file-input"
+              />
+            </div>
+          )}
+
+          {isLocked && (
+            <div className="rounded-2xl border border-border/40 bg-surface/50 px-4 py-3 text-xs text-muted-foreground flex items-center gap-2">
+              <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+              {isGlobalExercise
+                ? 'Ćwiczenie z bazy FiziYo — tylko do odczytu. Użyj "Duplikuj" aby je edytować.'
+                : 'Edycja zablokowana podczas weryfikacji.'}
+            </div>
+          )}
         </div>
 
         <div className="space-y-4">
@@ -677,19 +968,31 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
               <RefreshCw className="h-4 w-4 text-muted-foreground" />
               Parametry wykonania
             </h2>
-            <ExerciseParametersPanel source={normalizedFields} />
+            <ExerciseParametersPanel
+              source={normalizedFields}
+              editable={isEditing}
+              onFieldChange={isEditing ? handleFieldUpdate : undefined}
+              summaryStat={exerciseDurationSummary}
+            />
           </div>
 
           {/* Kroki wykonania */}
           <ExerciseExecutionSteps
-            enrichmentData={exercise.enrichmentData}
+            enrichmentData={enrichmentDraft}
             patientDescription={patientDescription}
+            editable={isEditing}
+            setPath={isEditing ? setEnrichmentPath : undefined}
+            persist={isEditing ? persistEnrichmentDraft : undefined}
           />
 
           {/* Wskazówki głosowe */}
           <ExerciseAudioCues
             audioCue={audioCue}
-            enrichmentData={exercise.enrichmentData}
+            enrichmentData={enrichmentDraft}
+            editable={isEditing}
+            onAudioCueChange={isEditing ? (value) => handleFieldUpdate('audioCue', value) : undefined}
+            setPath={isEditing ? setEnrichmentPath : undefined}
+            persist={isEditing ? persistEnrichmentDraft : undefined}
           />
 
           {/* Informacje o ćwiczeniu */}
@@ -701,31 +1004,31 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
             <div className="rounded-2xl border border-border/40 bg-surface/50 p-4 sm:p-6">
               <Tabs defaultValue="patient" className="w-full">
                 <TabsList className="grid h-auto w-full grid-cols-3 gap-1 bg-surface-light/60 p-1">
-                  <TabsTrigger
-                    value="patient"
-                    className="text-xs sm:text-sm"
-                    data-testid="exercise-detail-tab-patient"
-                  >
+                  <TabsTrigger value="patient" className="text-xs sm:text-sm" data-testid="exercise-detail-tab-patient">
                     Dla pacjenta
                   </TabsTrigger>
-                  <TabsTrigger
-                    value="physio"
-                    className="text-xs sm:text-sm"
-                    data-testid="exercise-detail-tab-physio"
-                  >
+                  <TabsTrigger value="physio" className="text-xs sm:text-sm" data-testid="exercise-detail-tab-physio">
                     Dla fizjoterapeuty
                   </TabsTrigger>
-                  <TabsTrigger
-                    value="notes"
-                    className="text-xs sm:text-sm"
-                    data-testid="exercise-detail-tab-notes"
-                  >
+                  <TabsTrigger value="notes" className="text-xs sm:text-sm" data-testid="exercise-detail-tab-notes">
                     Notatki
                   </TabsTrigger>
                 </TabsList>
                 <TabsContent value="patient">
                   <div className="rounded-xl bg-surface-light/30 p-4">
-                    {patientDescription ? (
+                    {isEditing ? (
+                      <Textarea
+                        defaultValue={patientDescription}
+                        placeholder="Instrukcja dla pacjenta prostym językiem: co ma zrobić krok po kroku."
+                        className="min-h-[140px] text-sm"
+                        onBlur={(event) => {
+                          if (event.target.value !== patientDescription) {
+                            handleFieldUpdate('patientDescription', event.target.value);
+                          }
+                        }}
+                        data-testid="exercise-detail-patient-description-input"
+                      />
+                    ) : patientDescription ? (
                       <p className="whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground">
                         {patientDescription}
                       </p>
@@ -736,23 +1039,43 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
                 </TabsContent>
                 <TabsContent value="physio">
                   <div className="rounded-xl bg-surface-light/30 p-4">
-                    {physiotherapistDescription ? (
+                    {isEditing ? (
+                      <Textarea
+                        defaultValue={physiotherapistDescription}
+                        placeholder="Opis kliniczny dla fizjoterapeuty: cel, biomechanika, uwagi terapeutyczne."
+                        className="min-h-[140px] text-sm"
+                        onBlur={(event) => {
+                          if (event.target.value !== physiotherapistDescription) {
+                            handleFieldUpdate('clinicalDescription', event.target.value);
+                          }
+                        }}
+                        data-testid="exercise-detail-clinical-description-input"
+                      />
+                    ) : physiotherapistDescription ? (
                       <p className="whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground">
                         {physiotherapistDescription}
                       </p>
                     ) : (
-                      <p className="text-sm text-muted-foreground">
-                        Brak opisu klinicznego dla fizjoterapeuty.
-                      </p>
+                      <p className="text-sm text-muted-foreground">Brak opisu klinicznego dla fizjoterapeuty.</p>
                     )}
                   </div>
                 </TabsContent>
                 <TabsContent value="notes">
                   <div className="rounded-xl bg-surface-light/30 p-4">
-                    {notes ? (
-                      <p className="whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground">
-                        {notes}
-                      </p>
+                    {isEditing ? (
+                      <Textarea
+                        defaultValue={notes}
+                        placeholder="Dodatkowe notatki terapeuty: na co szczególnie zwrócić uwagę przy wykonaniu."
+                        className="min-h-[140px] text-sm"
+                        onBlur={(event) => {
+                          if (event.target.value !== notes) {
+                            handleFieldUpdate('notes', event.target.value);
+                          }
+                        }}
+                        data-testid="exercise-detail-notes-input"
+                      />
+                    ) : notes ? (
+                      <p className="whitespace-pre-wrap text-sm leading-relaxed text-muted-foreground">{notes}</p>
                     ) : (
                       <p className="text-sm text-muted-foreground">Brak notatek.</p>
                     )}
@@ -763,26 +1086,15 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
           </div>
 
           {/* Dane rozszerzone */}
-          <EnrichmentDisplay enrichmentData={exercise.enrichmentData} />
+          <EnrichmentDisplay
+            enrichmentData={enrichmentDraft}
+            editable={isEditing}
+            setPath={isEditing ? setEnrichmentPath : undefined}
+            updateDraft={isEditing ? updateEnrichmentDraft : undefined}
+            persist={isEditing ? persistEnrichmentDraft : undefined}
+          />
         </div>
       </div>
-
-      {/* Edit Dialog */}
-      {organizationId && (
-        <ExerciseDialog
-          open={isEditDialogOpen}
-          onOpenChange={setIsEditDialogOpen}
-          exercise={exercise}
-          organizationId={organizationId}
-          onSubmitToGlobal={() => setIsSubmitToGlobalDialogOpen(true)}
-          onSubmitToOrganizationReview={() => setIsSubmitToOrganizationDialogOpen(true)}
-          onSuccess={(event) => {
-            if (event?.action === 'copied' && event.exerciseId) {
-              router.push(`/exercises/${event.exerciseId}`);
-            }
-          }}
-        />
-      )}
 
       {/* Delete Confirmation */}
       <ConfirmDialog

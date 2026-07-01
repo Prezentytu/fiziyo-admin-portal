@@ -1,85 +1,47 @@
 'use client';
 
-import { useState } from 'react';
 import { ListOrdered } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import type { ExerciseEnrichmentData, EnrichmentInstructionStep } from '@/graphql/types/exerciseEnrichment.types';
-
-interface StepVariant {
-  key: string;
-  label: string;
-  steps: EnrichmentInstructionStep[];
-}
+import { ListEditor } from '@/components/shared/enrichment/ListEditor';
+import type { EnrichmentInstructionStep, ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.types';
 
 interface ExerciseExecutionStepsProps {
   enrichmentData?: ExerciseEnrichmentData | null;
   patientDescription?: string;
+  editable?: boolean;
+  setPath?: (path: string, value: unknown) => void;
+  persist?: () => Promise<void>;
 }
 
-function hasMeaningfulSteps(steps: EnrichmentInstructionStep[] | undefined): steps is EnrichmentInstructionStep[] {
-  return Boolean(steps && steps.length > 0 && steps.some((s) => s.text?.trim()));
-}
+const STEPS_PATH = 'patient_instruction.pre_exercise.instruction_steps';
 
-function StepsList({ steps }: { steps: EnrichmentInstructionStep[] }) {
-  return (
-    <ol className="space-y-3">
-      {steps.map((step, index) => {
-        const num = step.step ?? index + 1;
-        return (
-          <li
-            key={`step-${num}-${step.text ?? index}`}
-            className="flex gap-3"
-            data-testid={`exercise-execution-step-${num}`}
-          >
-            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[11px] font-bold text-primary mt-0.5">
-              {num}
-            </span>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm text-foreground leading-snug">
-                {step.text ?? 'Brak opisu kroku'}
-              </p>
-              <div className="flex flex-wrap gap-1.5 mt-1">
-                {step.phase && (
-                  <span className="rounded-full bg-surface-light px-2 py-0.5 text-[10px] text-muted-foreground">
-                    {step.phase}
-                  </span>
-                )}
-                {step.duration_hint_seconds != null && step.duration_hint_seconds > 0 && (
-                  <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] text-primary font-medium">
-                    {step.duration_hint_seconds}s
-                  </span>
-                )}
-              </div>
-            </div>
-          </li>
-        );
-      })}
-    </ol>
-  );
+type PreExercise = NonNullable<ExerciseEnrichmentData['patient_instruction']>['pre_exercise'];
+
+function pickEffectiveSteps(pre?: PreExercise): EnrichmentInstructionStep[] {
+  if (!pre) return [];
+  const candidates = [
+    pre.instruction_steps,
+    pre.instruction_steps_simple,
+    pre.instruction_steps_child,
+    pre.instruction_steps_technical,
+  ];
+  return candidates.find((steps) => steps && steps.length > 0 && steps.some((step) => step.text?.trim())) ?? [];
 }
 
 export function ExerciseExecutionSteps({
   enrichmentData,
   patientDescription,
+  editable = false,
+  setPath,
+  persist,
 }: Readonly<ExerciseExecutionStepsProps>) {
   const pre = enrichmentData?.patient_instruction?.pre_exercise;
+  const stepTexts = pickEffectiveSteps(pre).map((step) => step.text ?? '');
+  const hasSteps = stepTexts.some((text) => text.trim());
 
-  const fullSteps = pre?.instruction_steps ?? [];
-  const simpleSteps = pre?.instruction_steps_simple ?? [];
-  const childSteps = pre?.instruction_steps_child ?? [];
-  const technicalSteps = pre?.instruction_steps_technical ?? [];
-
-  const variants: StepVariant[] = [
-    { key: 'full', label: 'Pełne', steps: fullSteps },
-    { key: 'simple', label: 'Uproszczone', steps: simpleSteps },
-    { key: 'child', label: 'Dla dziecka', steps: childSteps },
-    { key: 'technical', label: 'Techniczne', steps: technicalSteps },
-  ].filter((v) => hasMeaningfulSteps(v.steps));
-
-  const hasAnySteps = variants.length > 0;
-  const [activeVariant, setActiveVariant] = useState<string>(variants[0]?.key ?? 'full');
-
-  const activeSteps = variants.find((v) => v.key === activeVariant)?.steps ?? [];
+  const commitSteps = (texts: string[]) => {
+    const steps: EnrichmentInstructionStep[] = texts.map((text, index) => ({ step: index + 1, text }));
+    setPath?.(STEPS_PATH, steps);
+  };
 
   return (
     <div
@@ -91,37 +53,27 @@ export function ExerciseExecutionSteps({
         <h2 className="text-base font-semibold text-foreground">Wykonanie krok po kroku</h2>
       </div>
 
-      {hasAnySteps ? (
-        <>
-          {variants.length > 1 && (
-            <div
-              className="flex flex-wrap gap-1"
-              role="tablist"
-              aria-label="Wariant kroków wykonania"
-              data-testid="exercise-execution-steps-variant-switcher"
-            >
-              {variants.map((v) => (
-                <button
-                  key={v.key}
-                  type="button"
-                  role="tab"
-                  aria-selected={activeVariant === v.key}
-                  onClick={() => setActiveVariant(v.key)}
-                  className={cn(
-                    'rounded-lg px-3 py-1 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50',
-                    activeVariant === v.key
-                      ? 'bg-primary text-primary-foreground'
-                      : 'bg-surface-light/60 text-muted-foreground hover:bg-surface-light hover:text-foreground'
-                  )}
-                  data-testid={`exercise-execution-steps-variant-${v.key}`}
-                >
-                  {v.label}
-                </button>
-              ))}
-            </div>
-          )}
-          <StepsList steps={activeSteps} />
-        </>
+      {editable ? (
+        <ListEditor
+          title=""
+          items={stepTexts}
+          placeholder="Opisz krok wykonania ćwiczenia"
+          addLabel="Dodaj krok"
+          onChange={commitSteps}
+          onBlur={() => void persist?.()}
+          testIdPrefix="exercise-execution-steps-editor"
+        />
+      ) : hasSteps ? (
+        <ol className="space-y-3" data-testid="exercise-execution-steps-list">
+          {stepTexts.map((text, index) => (
+            <li key={`step-${index}-${text}`} className="flex gap-3" data-testid={`exercise-execution-step-${index + 1}`}>
+              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[11px] font-bold text-primary mt-0.5">
+                {index + 1}
+              </span>
+              <p className="flex-1 min-w-0 text-sm text-foreground leading-snug">{text || 'Brak opisu kroku'}</p>
+            </li>
+          ))}
+        </ol>
       ) : patientDescription ? (
         <div className="rounded-xl bg-surface-light/30 p-4 space-y-2">
           <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/70">

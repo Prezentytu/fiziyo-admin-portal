@@ -1,12 +1,20 @@
 'use client';
 
 import { Volume2 } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { ListEditor } from '@/components/shared/enrichment/ListEditor';
 import { cn } from '@/lib/utils';
 import type { EnrichmentCoachingCue, ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.types';
+
+const COACHING_CUES_PATH = 'therapist_notes.coaching_cues';
 
 interface ExerciseAudioCuesProps {
   audioCue?: string;
   enrichmentData?: ExerciseEnrichmentData | null;
+  editable?: boolean;
+  onAudioCueChange?: (value: string) => void;
+  setPath?: (path: string, value: unknown) => void;
+  persist?: () => Promise<void>;
 }
 
 function PhaseBadge({ phase }: { phase: string }) {
@@ -56,14 +64,21 @@ function CueRow({ cue, index }: { cue: EnrichmentCoachingCue; index: number }) {
 export function ExerciseAudioCues({
   audioCue,
   enrichmentData,
+  editable = false,
+  onAudioCueChange,
+  setPath,
+  persist,
 }: Readonly<ExerciseAudioCuesProps>) {
   const coachingCues = enrichmentData?.therapist_notes?.coaching_cues ?? [];
+  const cueTexts = coachingCues.map((cue) => cue.text ?? '');
   const hasAudioCue = Boolean(audioCue?.trim());
   const hasCues = coachingCues.some((c) => c.text?.trim());
+  const showTtsBlock = editable || hasAudioCue;
 
-  if (!hasAudioCue && !hasCues) {
-    return null;
-  }
+  const commitCues = (texts: string[]) => {
+    const cues: EnrichmentCoachingCue[] = texts.map((text) => ({ text }));
+    setPath?.(COACHING_CUES_PATH, cues);
+  };
 
   return (
     <div
@@ -78,7 +93,7 @@ export function ExerciseAudioCues({
         </span>
       </div>
 
-      {hasAudioCue && (
+      {showTtsBlock && (
         <div
           className={cn(
             'rounded-xl p-3',
@@ -89,16 +104,54 @@ export function ExerciseAudioCues({
           <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/70 mb-1.5">
             Komenda TTS
           </p>
-          <p className="text-sm text-foreground">{audioCue}</p>
+          {editable ? (
+            <Input
+              defaultValue={audioCue ?? ''}
+              placeholder="Np. „Wykonaj przysiad, utrzymując prosty kręgosłup”"
+              className="h-9 text-sm"
+              onBlur={(event) => {
+                const next = event.target.value.trim();
+                if (next !== (audioCue ?? '').trim()) {
+                  onAudioCueChange?.(next);
+                }
+              }}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') {
+                  event.currentTarget.blur();
+                }
+              }}
+              data-testid="exercise-audio-cue-input"
+            />
+          ) : (
+            <p className="text-sm text-foreground">{audioCue}</p>
+          )}
         </div>
       )}
 
-      {hasCues && (
-        <ul className="space-y-3" data-testid="exercise-audio-cues-list">
-          {coachingCues.map((cue, index) => (
-            <CueRow key={`cue-${cue.text ?? ''}-${index}`} cue={cue} index={index} />
-          ))}
-        </ul>
+      {editable ? (
+        <ListEditor
+          title="Wskazówki AI (coaching cues)"
+          items={cueTexts}
+          placeholder="Np. „Pilnuj, żeby kolano nie wychodziło za linię palców”"
+          addLabel="Dodaj wskazówkę"
+          onChange={commitCues}
+          onBlur={() => void persist?.()}
+          testIdPrefix="exercise-audio-cues-editor"
+        />
+      ) : (
+        <>
+          {hasCues && (
+            <ul className="space-y-3" data-testid="exercise-audio-cues-list">
+              {coachingCues.map((cue, index) => (
+                <CueRow key={`cue-${cue.text ?? ''}-${index}`} cue={cue} index={index} />
+              ))}
+            </ul>
+          )}
+
+          {!showTtsBlock && !hasCues && (
+            <p className="text-sm text-muted-foreground">Brak wskazówek głosowych dla tego ćwiczenia.</p>
+          )}
+        </>
       )}
     </div>
   );

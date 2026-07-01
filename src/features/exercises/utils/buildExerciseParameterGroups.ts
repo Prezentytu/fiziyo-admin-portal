@@ -54,7 +54,7 @@ export function buildExerciseParameterGroups(
   return [
     {
       id: 'dosage',
-      title: 'Dawkowanie',
+      title: 'Główne parametry',
       items: buildItems(DOSAGE_KEYS, source),
     },
     {
