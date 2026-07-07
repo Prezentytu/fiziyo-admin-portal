@@ -57,6 +57,18 @@ export function FeelSafetySection({
         />
       </div>
 
+      <div className="space-y-1">
+        <Label className="text-xs text-muted-foreground">Wskazówki dot. intensywności</Label>
+        <Textarea
+          value={draft.safety?.intensity_guide ?? ''}
+          disabled={disabled}
+          onChange={(event) => setPath('safety.intensity_guide', event.target.value)}
+          onBlur={() => void persist()}
+          className="min-h-[70px]"
+          data-testid="enrichment-intensity-guide-input"
+        />
+      </div>
+
       <div className="flex items-center gap-3 rounded-md border border-border/50 p-3">
         <Switch
           checked={Boolean(draft.safety?.requires_supervision)}

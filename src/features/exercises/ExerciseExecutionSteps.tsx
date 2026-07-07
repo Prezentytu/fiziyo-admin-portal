@@ -8,6 +8,7 @@ interface ExerciseExecutionStepsProps {
   enrichmentData?: ExerciseEnrichmentData | null;
   patientDescription?: string;
   editable?: boolean;
+  disabled?: boolean;
   setPath?: (path: string, value: unknown) => void;
   persist?: () => Promise<void>;
 }
@@ -18,6 +19,7 @@ export function ExerciseExecutionSteps({
   enrichmentData,
   patientDescription,
   editable = false,
+  disabled = false,
   setPath,
   persist,
 }: Readonly<ExerciseExecutionStepsProps>) {
@@ -44,6 +46,7 @@ export function ExerciseExecutionSteps({
           items={stepTexts}
           placeholder="Opisz krok wykonania ćwiczenia"
           addLabel="Dodaj krok"
+          disabled={disabled}
           onChange={commitSteps}
           onBlur={() => void persist?.()}
           testIdPrefix="exercise-execution-steps-editor"

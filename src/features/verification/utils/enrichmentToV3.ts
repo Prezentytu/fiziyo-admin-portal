@@ -75,11 +75,13 @@ function buildPatientV3(data: ExerciseEnrichmentData): ExerciseEnrichmentPatient
 }
 
 function buildSafetyV3(data: ExerciseEnrichmentData): ExerciseEnrichmentData['safety'] | undefined {
-  const stopIf = trimmedOrUndefined(data.safety?.stop_if) ?? trimmedOrUndefined(data.safety?.intensity_guide);
+  const stopIf = trimmedOrUndefined(data.safety?.stop_if);
+  const intensityGuide = trimmedOrUndefined(data.safety?.intensity_guide);
   const requiresSupervision = data.safety?.requires_supervision;
 
   const safety: NonNullable<ExerciseEnrichmentData['safety']> = {
     ...(stopIf ? { stop_if: stopIf } : {}),
+    ...(intensityGuide ? { intensity_guide: intensityGuide } : {}),
     ...(requiresSupervision !== undefined ? { requires_supervision: requiresSupervision } : {}),
   };
 

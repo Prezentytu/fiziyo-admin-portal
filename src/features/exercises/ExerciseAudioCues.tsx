@@ -12,6 +12,7 @@ interface ExerciseAudioCuesProps {
   audioCue?: string;
   enrichmentData?: ExerciseEnrichmentData | null;
   editable?: boolean;
+  disabled?: boolean;
   onAudioCueChange?: (value: string) => void;
   setPath?: (path: string, value: unknown) => void;
   persist?: () => Promise<void>;
@@ -35,6 +36,7 @@ export function ExerciseAudioCues({
   audioCue,
   enrichmentData,
   editable = false,
+  disabled = false,
   onAudioCueChange,
   setPath,
   persist,
@@ -73,6 +75,7 @@ export function ExerciseAudioCues({
               defaultValue={audioCue ?? ''}
               placeholder="Np. „Wykonaj przysiad, utrzymując prosty kręgosłup”"
               className="h-9 text-sm"
+              disabled={disabled}
               onBlur={(event) => {
                 const next = event.target.value.trim();
                 if (next !== (audioCue ?? '').trim()) {
@@ -98,6 +101,7 @@ export function ExerciseAudioCues({
           items={cues}
           placeholder="Np. „Pilnuj, żeby kolano nie wychodziło za linię palców”"
           addLabel="Dodaj wskazówkę"
+          disabled={disabled}
           onChange={(items) => setPath?.(CUES_PATH, items)}
           onBlur={() => void persist?.()}
           testIdPrefix="exercise-audio-cues-editor"

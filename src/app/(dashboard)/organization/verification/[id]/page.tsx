@@ -1,6 +1,6 @@
 'use client';
 
-import { use, useCallback, useEffect, useMemo, useState } from 'react';
+import { use, useCallback, useMemo, useState } from 'react';
 import { useMutation, useQuery } from '@apollo/client/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ArrowLeft, Archive, ShieldCheck } from 'lucide-react';
@@ -12,7 +12,9 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { MasterVideoPlayer } from '@/features/verification/MasterVideoPlayer';
-import { VerificationEditorPanel } from '@/features/verification/VerificationEditorPanel';
+import { CollapsibleMediaPanel } from '@/features/verification/CollapsibleMediaPanel';
+import { ExerciseEditor } from '@/features/exercises/ExerciseEditor';
+import { useExerciseEditorForm } from '@/features/exercises/useExerciseEditorForm';
 import { VerdictPanel } from '@/features/verification/VerdictPanel';
 import {
   GET_EXERCISE_BY_ID_FOR_ORG_VERIFICATION_QUERY,
@@ -40,17 +42,11 @@ import type {
   AdminExercise,
   VerificationQueueNavigator,
 } from '@/graphql/types/adminExercise.types';
+import type { ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.types';
 import { ORG_VERIFICATION_REFETCH_QUERIES } from '@/hooks/useOrganizationVerificationRealtime';
 
 interface OrganizationVerificationDetailPageProps {
   params: Promise<{ id: string }>;
-}
-
-interface DefaultLoadUpdateInput {
-  type: string | null;
-  value: number | null;
-  unit: string | null;
-  text: string | null;
 }
 
 export default function OrganizationVerificationDetailPage({ params }: Readonly<OrganizationVerificationDetailPageProps>) {
@@ -67,9 +63,6 @@ export default function OrganizationVerificationDetailPage({ params }: Readonly<
   const pageSize = Number(searchParams.get('pageSize') ?? '20') || 20;
 
   const [reviewNotes, setReviewNotes] = useState('');
-  const [mainTags, setMainTags] = useState<string[]>([]);
-  const [additionalTags, setAdditionalTags] = useState<string[]>([]);
-  const [, setIsSaving] = useState(false);
 
   const listHref = useMemo(
     () =>
@@ -107,13 +100,6 @@ export default function OrganizationVerificationDetailPage({ params }: Readonly<
   );
 
   const exercise = data?.exerciseByIdForOrgVerification;
-
-  useEffect(() => {
-    if (exercise) {
-      setMainTags(exercise.mainTags ?? []);
-      setAdditionalTags(exercise.additionalTags ?? []);
-    }
-  }, [exercise]);
 
   const orgVerificationRefetch = { refetchQueries: [...ORG_VERIFICATION_REFETCH_QUERIES] };
 
@@ -154,61 +140,30 @@ export default function OrganizationVerificationDetailPage({ params }: Readonly<
     });
   }, []);
 
-  const handleFieldUpdate = useCallback(
-    async (field: string, value: unknown) => {
-      if (!exercise) return;
-      setIsSaving(true);
-      try {
-        if (field === 'defaultLoad') {
-          const loadUpdate = value as DefaultLoadUpdateInput | null;
-          await updateExerciseDetails({
-            variables: {
-              exerciseId: id,
-              loadType: loadUpdate?.type ?? null,
-              loadValue: loadUpdate?.value ?? null,
-              loadUnit: loadUpdate?.unit ?? null,
-              loadText: loadUpdate?.text ?? null,
-            },
-          });
-          return;
-        }
-
-        let stringValue: string | null = null;
-        if (value !== null && value !== undefined) {
-          if (Array.isArray(value)) {
-            stringValue = value.join(',');
-          } else if (typeof value === 'string') {
-            stringValue = value;
-          } else {
-            stringValue = JSON.stringify(value);
-          }
-        }
-
-        await updateExerciseField({
-          variables: { exerciseId: id, fieldName: field, value: stringValue },
-        });
-      } finally {
-        setIsSaving(false);
-      }
+  const updateCore = useCallback(
+    async (variables: Record<string, unknown>) => {
+      await updateExerciseDetails({ variables: { exerciseId: id, ...variables } });
     },
-    [exercise, id, updateExerciseField, updateExerciseDetails]
+    [id, updateExerciseDetails]
   );
 
-  const handleMainTagsChange = useCallback(
-    async (newTags: string[]) => {
-      setMainTags(newTags);
-      await handleFieldUpdate('mainTags', newTags);
+  const updateEnrichment = useCallback(
+    async (payload: ExerciseEnrichmentData) => {
+      await updateExerciseField({
+        variables: { exerciseId: id, fieldName: 'enrichmentData', value: JSON.stringify(payload ?? {}) },
+      });
     },
-    [handleFieldUpdate]
+    [id, updateExerciseField]
   );
 
-  const handleAdditionalTagsChange = useCallback(
-    async (newTags: string[]) => {
-      setAdditionalTags(newTags);
-      await handleFieldUpdate('additionalTags', newTags);
-    },
-    [handleFieldUpdate]
-  );
+  const exerciseEditorForm = useExerciseEditorForm({
+    source: exercise,
+    updateCore,
+    updateEnrichment,
+    onError: () => toast.error('Nie udało się zapisać zmian'),
+    autosaveDelayMs: 900,
+  });
+  const { core, flush: flushEditorForm } = exerciseEditorForm;
 
   const handleUploadImage = useCallback(
     async (file: File) => {
@@ -305,8 +260,8 @@ export default function OrganizationVerificationDetailPage({ params }: Readonly<
   return (
     <div className="-m-4 flex h-full lg:h-[calc(100%+3rem)] 2xl:h-[calc(100%+4rem)] min-h-0 flex-col overflow-y-auto lg:-m-6 lg:overflow-hidden 2xl:-m-8">
       <div className="flex-1 flex flex-col lg:flex-row min-h-0">
-        {/* LEFT: Video + nawigacja */}
-        <div className="h-[30vh] lg:h-auto lg:w-[42%] bg-card border-b lg:border-b-0 lg:border-r border-border/30 flex flex-col min-h-0">
+        {/* LEFT: Video + nawigacja (zwijalny) */}
+        <CollapsibleMediaPanel onBack={() => router.push(listHref)}>
           <div className="flex items-center gap-3 px-4 py-2.5 border-b border-border/40 shrink-0">
             <Button
               variant="ghost"
@@ -333,19 +288,23 @@ export default function OrganizationVerificationDetailPage({ params }: Readonly<
               />
             )}
           </div>
-        </div>
+        </CollapsibleMediaPanel>
 
-        {/* MIDDLE: Inline editor */}
-        <div className="flex-1 min-w-0 flex flex-col min-h-0 border-r border-border/20 overflow-hidden">
+        {/* MIDDLE: shared ExerciseEditor (autosave) */}
+        <div className="flex-1 min-w-0 flex flex-col min-h-0 border-r border-border/20 overflow-y-auto p-3">
           {exercise && (
-            <VerificationEditorPanel
-              exercise={exercise}
-              onFieldChange={handleFieldUpdate}
-              mainTags={mainTags}
-              onMainTagsChange={handleMainTagsChange}
-              additionalTags={additionalTags}
-              onAdditionalTagsChange={handleAdditionalTagsChange}
-              className="flex-1 p-3"
+            <ExerciseEditor
+              form={exerciseEditorForm}
+              showNameField
+              aiFillContext={{
+                name: core.name,
+                patientDescription: core.patientDescription,
+                clinicalDescription: core.clinicalDescription,
+                type: exercise.type,
+                mainTags: exercise.mainTags,
+                additionalTags: exercise.additionalTags,
+              }}
+              showAdvancedJson
             />
           )}
         </div>
@@ -357,6 +316,7 @@ export default function OrganizationVerificationDetailPage({ params }: Readonly<
           submittedAt={exercise?.submittedForOrgReviewAt}
           onApprove={async () => {
             try {
+              await flushEditorForm();
               await approveOrganizationExercise({ variables: { exerciseId: id, reviewNotes: reviewNotes || null } });
               toast.success('Ćwiczenie zweryfikowane.');
               goToNeighbor(navigatorData?.organizationVerificationQueueNavigator.nextExerciseId);
@@ -372,6 +332,7 @@ export default function OrganizationVerificationDetailPage({ params }: Readonly<
               return;
             }
             try {
+              await flushEditorForm();
               await requestChanges({
                 variables: {
                   exerciseId: id,
@@ -389,6 +350,7 @@ export default function OrganizationVerificationDetailPage({ params }: Readonly<
           onReject={() => {}}
           onArchive={async () => {
             try {
+              await flushEditorForm();
               await archiveOrganizationExercise({ variables: { exerciseId: id, reason: reviewNotes || null } });
               toast.success('Ćwiczenie zarchiwizowane.');
               router.push(listHref);

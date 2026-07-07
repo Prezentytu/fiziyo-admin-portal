@@ -3,6 +3,7 @@
 import { Plus, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { DirtyDot } from './DirtyDot';
 
 interface ListEditorProps {
   title: string;
@@ -10,6 +11,7 @@ interface ListEditorProps {
   placeholder: string;
   addLabel: string;
   disabled?: boolean;
+  dirty?: boolean;
   onChange: (items: string[]) => void;
   onBlur?: () => void;
   testIdPrefix?: string;
@@ -30,6 +32,7 @@ export function ListEditor({
   placeholder,
   addLabel,
   disabled = false,
+  dirty = false,
   onChange,
   onBlur,
   testIdPrefix,
@@ -40,7 +43,12 @@ export function ListEditor({
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
-        {title && <p className="text-xs font-medium text-muted-foreground">{title}</p>}
+        {title && (
+          <p className="flex items-center gap-1 text-xs font-medium text-muted-foreground">
+            {title}
+            <DirtyDot active={dirty} />
+          </p>
+        )}
         <Button
           type="button"
           size="sm"

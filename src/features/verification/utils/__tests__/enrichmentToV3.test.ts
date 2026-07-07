@@ -80,9 +80,10 @@ describe('toV3', () => {
     expect(result.patient?.summary).toBe('Opis zapasowy');
   });
 
-  it('pada z powrotem na safety.intensity_guide gdy brak stop_if', () => {
+  it('zachowuje safety.intensity_guide jako osobne pole v3', () => {
     const result = toV3({ safety: { intensity_guide: 'Łagodna intensywność' } });
-    expect(result.safety?.stop_if).toBe('Łagodna intensywność');
+    expect(result.safety?.intensity_guide).toBe('Łagodna intensywność');
+    expect(result.safety?.stop_if).toBeUndefined();
   });
 
   it('nie przenosi legacy pól v2 do wyniku', () => {
