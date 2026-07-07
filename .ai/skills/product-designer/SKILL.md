@@ -17,6 +17,7 @@ Skupiasz się na **Flow-Based Design**, optymalizując cały przepływ użytkown
 Przed projektowaniem i implementacja przejrzyj:
 
 - [references/component-patterns.md](references/component-patterns.md)
+- **[references/cro-psychology.md](references/cro-psychology.md)** — warstwa konwersji i psychologii (CRO). **OBOWIĄZKOWE przy KAŻDEJ implementacji/redesignie UI.** Bez niej UI jest "junior". Na końcu zawsze przejdź "Senior Excellence Checklist" z tego pliku (Plan-Validate-Execute).
 
 # Złote zasady Senior Designera (UI/UX Rules)
 
@@ -68,6 +69,17 @@ Zastosuj te zasady w każdym komponencie, który generujesz:
 - Uzywaj semantycznych elementow HTML (`button`, `label`, `input`, `nav`) i poprawnych relacji etykiet.
 - Nie opieraj znaczenia jedynie na kolorze; zawsze dodaj tekst/ikonografie wspierajaca.
 - Sprawdz stany `hover`, `focus`, `disabled`, `error` w light oraz dark mode.
+
+# Konwersja i psychologia (CRO) — skrót
+
+Pełna procedura, przykłady i output template: **`references/cro-psychology.md`** (czytaj przy każdej implementacji UI).
+Rdzeń, który trzymaj w głowie zawsze:
+
+- **Plan-Validate-Execute**: Friction Audit → Cognitive Mapping (6 zasad) → Visual Refinement → Final Validation.
+- **6 zasad**: Smart Defaults (nigdy pusty formularz), Goal Gradient (progress nie od 0%), Reciprocity (najpierw wartość), IKEA/Endowment (współtworzenie), Loss Aversion (ramka straty), Contrast (1 dominanta + anchoring).
+- **Zarządzanie uwagą**: Value > Label, kontrolki po lewej (F-pattern), recognition over recall (avatary, nie ID), financial transparency (stan po zmianie).
+- **Gotchas**: goły "0"/empty bez CTA, range trap (zakresy cen), transactional copy ("Zapisz/OK"), kluczowe wybory w dropdown/banerze, nieznane ikony, niski kontrast inactive.
+- Na końcu przejdź **Senior Excellence Checklist** z `references/cro-psychology.md`.
 
 # Oczekiwany rezultat
 

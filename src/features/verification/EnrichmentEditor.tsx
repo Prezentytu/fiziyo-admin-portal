@@ -8,8 +8,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
-import { DuringPostSection } from './enrichment/DuringPostSection';
-import { DosingProfilesSection } from '@/components/shared/enrichment/DosingProfilesSection';
 import { FeelSafetySection } from '@/components/shared/enrichment/FeelSafetySection';
 import { ListEditor } from '@/components/shared/enrichment/ListEditor';
 import { MistakesCuesSection } from './enrichment/MistakesCuesSection';
@@ -21,6 +19,7 @@ import type { AdminExercise } from '@/graphql/types/adminExercise.types';
 import type { ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.types';
 import { computeCompleteness } from './utils/enrichmentSkeleton';
 import { cleanupEnrichment, parseEnrichmentJson, toFullShapeJson } from './utils/enrichment';
+import { toV3 } from './utils/enrichmentToV3';
 
 interface EnrichmentEditorProps {
   exercise: AdminExercise;
@@ -84,7 +83,7 @@ export function EnrichmentEditor({
   }, [videoUrl]);
 
   useEffect(() => {
-    setRawJson(toFullShapeJson(enrichmentData ?? {}));
+    setRawJson(toFullShapeJson(toV3(enrichmentData)));
     setRawJsonError(null);
   }, [enrichmentData]);
 
@@ -114,7 +113,8 @@ export function EnrichmentEditor({
   const handleApplyRawJson = useCallback(async () => {
     try {
       const parsed = parseEnrichmentJson(rawJson);
-      const cleaned = (cleanupEnrichment(parsed) ?? {}) as ExerciseEnrichmentData;
+      // toV3 obsługuje też przypadek, gdyby ktoś wkleił JSON w starym (v2) kształcie.
+      const cleaned = (cleanupEnrichment(toV3(parsed)) ?? {}) as ExerciseEnrichmentData;
       await applyAndSave(cleaned);
       setRawJsonError(null);
     } catch (error) {
@@ -156,8 +156,9 @@ export function EnrichmentEditor({
       return;
     }
 
-    // Używamy surowych danych z AI bez ponownej walidacji Zod, która może cicho zwracać {}
-    const aiData = response.enrichmentData as ExerciseEnrichmentData;
+    // toV3 jest idempotentny — bezpieczny niezależnie od tego, czy AI zwróciło już v3 (docelowo) czy v2.
+    // Nie walidujemy Zodem, który mógłby cicho zwrócić {} i wyciszyć dane.
+    const aiData = toV3(response.enrichmentData as ExerciseEnrichmentData);
     const merged = deepMergeFillGaps(preAiPayload, aiData) as ExerciseEnrichmentData;
     const cleanedMerged = (cleanupEnrichment(merged) ?? {}) as ExerciseEnrichmentData;
 
@@ -246,18 +247,6 @@ export function EnrichmentEditor({
               draft={draft}
               disabled={disabled}
               setPath={setPath}
-              updateDraft={updateDraft}
-              persist={persistStructuredData}
-            />
-          </div>
-
-          <div className="space-y-2 rounded-md border border-border/40 p-2.5">
-            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Podczas i po ćwiczeniu</p>
-            <DuringPostSection
-              draft={draft}
-              disabled={disabled}
-              updateDraft={updateDraft}
-              setPath={setPath}
               persist={persistStructuredData}
             />
           </div>
@@ -268,6 +257,7 @@ export function EnrichmentEditor({
               draft={draft}
               disabled={disabled}
               updateDraft={updateDraft}
+              setPath={setPath}
               persist={persistStructuredData}
             />
           </div>
@@ -288,26 +278,16 @@ export function EnrichmentEditor({
           </div>
 
           <div className="space-y-2 rounded-md border border-border/40 p-2.5">
-            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Dawkowanie</p>
-            <DosingProfilesSection
-              draft={draft}
-              disabled={disabled}
-              setPath={setPath}
-              updateDraft={updateDraft}
-              persist={persistStructuredData}
-            />
-          </div>
-
-          <div className="space-y-2 rounded-md border border-border/40 p-2.5">
             <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Słowa kluczowe do wyszukiwania</p>
             <ListEditor
               title="Słowa kluczowe wyszukiwania"
-              items={draft.ai_metadata?.search_keywords ?? []}
+              items={draft.ai?.keywords ?? []}
               placeholder="np. stabilizacja centralna"
               addLabel="Dodaj słowo kluczowe"
               disabled={disabled}
-              onChange={(items) => setPath('ai_metadata.search_keywords', items)}
+              onChange={(items) => setPath('ai.keywords', items)}
               onBlur={() => void persistStructuredData()}
+              testIdPrefix="enrichment-editor-ai-keywords"
             />
           </div>
         </TabsContent>

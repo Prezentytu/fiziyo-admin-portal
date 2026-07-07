@@ -411,7 +411,6 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
   const {
     draft: enrichmentDraft,
     setPath: setEnrichmentPath,
-    updateDraft: updateEnrichmentDraft,
     persist: persistEnrichmentDraft,
   } = useEnrichmentDraft({
     enrichmentData: exercise?.enrichmentData,
@@ -1090,7 +1089,6 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
             enrichmentData={enrichmentDraft}
             editable={isEditing}
             setPath={isEditing ? setEnrichmentPath : undefined}
-            updateDraft={isEditing ? updateEnrichmentDraft : undefined}
             persist={isEditing ? persistEnrichmentDraft : undefined}
           />
         </div>

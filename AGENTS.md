@@ -36,41 +36,41 @@ Szczegółowe konwencje i checklisty operacyjne: `.ai/docs/agent-rules.md`.
 
 Przed rozpoczęciem pracy dopasuj zadanie do tabeli i przeczytaj WSZYSTKIE pasujące guide'y:
 
-| Zadanie                          | Guide                                             |
-| -------------------------------- | ------------------------------------------------- |
-| Tworzenie/edycja ćwiczeń         | `src/features/exercises/AGENTS.md`                |
-| Assignment Wizard                | `src/features/assignment/AGENTS.md`               |
-| Praca z pacjentami               | `src/features/patients/AGENTS.md`                 |
-| Weryfikacja treści               | `src/features/verification/AGENTS.md`             |
-| Import dokumentów                | `src/features/import/AGENTS.md`                   |
-| Zapytania/mutacje GraphQL        | `src/graphql/AGENTS.md`                           |
-| Komponenty współdzielone         | `src/components/shared/AGENTS.md`                 |
-| Zestawy ćwiczeń                  | `src/features/exercise-sets/AGENTS.md`            |
-| Nowa specyfikacja                | `.ai/specs/AGENTS.md`, `.ai/skills/spec-writing/` |
-| Analiza spec przed implementacją | `.ai/skills/pre-implement-spec/`                  |
-| Implementacja ze specyfikacji    | `.ai/skills/implement-spec/`                      |
-| Testy regresyjne / integracyjne  | `.ai/skills/integration-tests/`                   |
-| Guardian UI / migracja tokenów   | `.ai/skills/ui-guardian/`                         |
-| Audyt bezpieczeństwa auth/tenant | `.ai/skills/sec-report/`                          |
-| Scenariusze QA przed release     | `.ai/skills/qa-scenarios/`                        |
-| Run autonomiczny                 | `.ai/skills/auto-implement/`                      |
-| Wznowienie runu                  | `.ai/skills/continue-run/`                        |
-| Nawigator skilli ("co dalej?")   | `.ai/skills/help/`                                |
-| Tworzenie nowego skilla          | `.ai/skills/skill-creator/`                       |
-| Pipeline E2E / cross-repo CI     | `docs/testing/e2e-cross-repo-pipeline.md`         |
-| Code review                      | `.ai/skills/code-review/`                         |
-| UI/UX / design / accessibility   | `.ai/skills/product-designer/SKILL.md`            |
-| Ustawienia/organizacja           | `src/components/settings/AGENTS.md`               |
-| Kontekst cross-repo / backend    | `.ai/ECOSYSTEM.md`                                |
-| Encje / enumy / relacje          | `.ai/DOMAIN_MODEL.md`                             |
-| Flow biznesowe / auth / AI       | `.ai/DATA_FLOWS.md`                               |
-| Struktura modułów (utils, testy) | `.ai/STRUCTURE.md`                                |
+| Zadanie                          | Guide                                                                                               |
+| -------------------------------- | --------------------------------------------------------------------------------------------------- |
+| Tworzenie/edycja ćwiczeń         | `src/features/exercises/AGENTS.md`                                                                  |
+| Assignment Wizard                | `src/features/assignment/AGENTS.md`                                                                 |
+| Praca z pacjentami               | `src/features/patients/AGENTS.md`                                                                   |
+| Weryfikacja treści               | `src/features/verification/AGENTS.md`                                                               |
+| Import dokumentów                | `src/features/import/AGENTS.md`                                                                     |
+| Zapytania/mutacje GraphQL        | `src/graphql/AGENTS.md`                                                                             |
+| Komponenty współdzielone         | `src/components/shared/AGENTS.md`                                                                   |
+| Zestawy ćwiczeń                  | `src/features/exercise-sets/AGENTS.md`                                                              |
+| Nowa specyfikacja                | `.ai/specs/AGENTS.md`, `.ai/skills/spec-writing/`                                                   |
+| Analiza spec przed implementacją | `.ai/skills/pre-implement-spec/`                                                                    |
+| Implementacja ze specyfikacji    | `.ai/skills/implement-spec/`                                                                        |
+| Testy regresyjne / integracyjne  | `.ai/skills/integration-tests/`                                                                     |
+| Guardian UI / migracja tokenów   | `.ai/skills/ui-guardian/`                                                                           |
+| Audyt bezpieczeństwa auth/tenant | `.ai/skills/sec-report/`                                                                            |
+| Scenariusze QA przed release     | `.ai/skills/qa-scenarios/`                                                                          |
+| Run autonomiczny                 | `.ai/skills/auto-implement/`                                                                        |
+| Wznowienie runu                  | `.ai/skills/continue-run/`                                                                          |
+| Nawigator skilli ("co dalej?")   | `.ai/skills/help/`                                                                                  |
+| Tworzenie nowego skilla          | `.ai/skills/skill-creator/`                                                                         |
+| Pipeline E2E / cross-repo CI     | `docs/testing/e2e-cross-repo-pipeline.md`                                                           |
+| Code review                      | `.ai/skills/code-review/`                                                                           |
+| UI/UX / design / accessibility   | `.ai/skills/product-designer/SKILL.md` + `.ai/skills/product-designer/references/cro-psychology.md` |
+| Ustawienia/organizacja           | `src/components/settings/AGENTS.md`                                                                 |
+| Kontekst cross-repo / backend    | `.ai/ECOSYSTEM.md`                                                                                  |
+| Encje / enumy / relacje          | `.ai/DOMAIN_MODEL.md`                                                                               |
+| Flow biznesowe / auth / AI       | `.ai/DATA_FLOWS.md`                                                                                 |
+| Struktura modułów (utils, testy) | `.ai/STRUCTURE.md`                                                                                  |
 
 ## Workflow Orchestration
 
 1. **Spec-first**: Wejdź w plan mode dla nietrywialnych zadań (3+ kroki). Sprawdź `.ai/specs/` przed kodowaniem; utwórz SPEC jeśli nie istnieje.
 2. **Task Router**: Dopasuj zadanie do tabeli i przeczytaj odpowiednie guide'y.
-   - Jeśli zadanie dotyczy UI/UX/designu (np. redesign, layout, komponenty wizualne, dostępność, audit UI), zawsze przeczytaj `.ai/skills/product-designer/SKILL.md`.
+   - Jeśli zadanie dotyczy UI/UX/designu (np. redesign, layout, komponenty wizualne, dostępność, audit UI), zawsze przeczytaj `.ai/skills/product-designer/SKILL.md` ORAZ `.ai/skills/product-designer/references/cro-psychology.md` (CRO + Senior Excellence Checklist).
 3. **Lessons-first**: Przed implementacją przeczytaj `.ai/lessons.md` i sprawdź, czy zadanie nie powtarza znanego błędu.
 4. **Self-improvement**: Po korekcie zaktualizuj `.ai/lessons.md`.
 5. **Verification**: Uruchom build, sprawdź lint. Zapytaj: "Czy senior developer zaakceptowałby ten kod?"

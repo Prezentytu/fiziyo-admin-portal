@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.types';
 import { cleanupEnrichment } from '@/features/verification/utils/enrichment';
+import { ENRICHMENT_SCHEMA_V3, toV3 } from '@/features/verification/utils/enrichmentToV3';
 
 function deepClone<T>(value: T): T {
   return JSON.parse(JSON.stringify(value)) as T;
@@ -34,9 +35,9 @@ export function useEnrichmentDraft({ enrichmentData, onFieldChange }: UseEnrichm
   const [draft, setDraft] = useState<ExerciseEnrichmentData>({});
 
   useEffect(() => {
-    // Bezpośrednie przypisanie — nie przez Zod (normalizeEnrichmentData może cicho zwrócić {}
-    // gdy schema nie przejdzie, co czyści cały draft po zapisie przez onFieldChange)
-    setDraft((enrichmentData ?? {}) as ExerciseEnrichmentData);
+    // Konwersja v2 -> v3 raz przy wczytaniu — od tego momentu edytor operuje wyłącznie
+    // na kształcie v3 (SPEC-022). Patrz docs/architecture/admin-enrichment-v3-migration-plan.md.
+    setDraft(toV3(enrichmentData));
   }, [enrichmentData]);
 
   const setPath = useCallback((path: string, value: unknown) => {
@@ -53,7 +54,9 @@ export function useEnrichmentDraft({ enrichmentData, onFieldChange }: UseEnrichm
 
   const composePayload = useCallback((): ExerciseEnrichmentData => {
     const cleaned = cleanupEnrichment(draft);
-    return (cleaned ?? {}) as ExerciseEnrichmentData;
+    // $schema musi przetrwać cleanup (nie jest polem "wypełnianym" przez użytkownika),
+    // żeby backendowy normalizer traktował payload jako już-v3 i nie próbował go renormalizować.
+    return { ...(cleaned as ExerciseEnrichmentData | undefined), $schema: ENRICHMENT_SCHEMA_V3 };
   }, [draft]);
 
   const persist = useCallback(async () => {

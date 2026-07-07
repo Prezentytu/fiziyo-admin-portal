@@ -23,62 +23,68 @@ export function TherapistNotesSection({
       <div className="space-y-1">
         <Label className="text-xs text-muted-foreground">Notatki kliniczne</Label>
         <Textarea
-          value={draft.therapist_notes?.clinical_notes ?? ''}
+          value={draft.therapist?.clinical_notes ?? ''}
           disabled={disabled}
-          onChange={(event) => setPath('therapist_notes.clinical_notes', event.target.value)}
+          onChange={(event) => setPath('therapist.clinical_notes', event.target.value)}
           onBlur={() => void persist()}
           className="min-h-[80px]"
+          data-testid="enrichment-clinical-notes-input"
         />
       </div>
 
       <ListEditor
         title="Wskazania kliniczne"
-        items={draft.therapist_notes?.clinical_indications ?? []}
+        items={draft.therapist?.indications ?? []}
         placeholder="Wskazanie kliniczne"
         addLabel="Dodaj wskazanie"
         disabled={disabled}
-        onChange={(items) => setPath('therapist_notes.clinical_indications', items)}
+        onChange={(items) => setPath('therapist.indications', items)}
         onBlur={() => void persist()}
+        testIdPrefix="enrichment-indications"
       />
 
       <ListEditor
         title="Przeciwwskazania"
-        items={draft.therapist_notes?.contraindications ?? []}
+        items={draft.therapist?.contraindications ?? []}
         placeholder="Przeciwwskazanie"
         addLabel="Dodaj przeciwwskazanie"
         disabled={disabled}
-        onChange={(items) => setPath('therapist_notes.contraindications', items)}
+        onChange={(items) => setPath('therapist.contraindications', items)}
         onBlur={() => void persist()}
+        testIdPrefix="enrichment-contraindications"
       />
 
       <ListEditor
         title="Faza rehabilitacji"
-        items={draft.therapist_notes?.rehab_phase ?? []}
+        items={draft.therapist?.rehab_phases ?? []}
         placeholder="np. wczesna, środkowa, późna"
         addLabel="Dodaj fazę"
         disabled={disabled}
-        onChange={(items) => setPath('therapist_notes.rehab_phase', items)}
+        onChange={(items) => setPath('therapist.rehab_phases', items)}
         onBlur={() => void persist()}
+        testIdPrefix="enrichment-rehab-phases"
       />
 
       <ListEditor
         title="Korzyści kliniczne"
-        items={draft.therapist_notes?.clinical_benefits ?? []}
+        items={draft.therapist?.clinical_benefits ?? []}
         placeholder="Korzyść kliniczna"
         addLabel="Dodaj korzyść"
         disabled={disabled}
-        onChange={(items) => setPath('therapist_notes.clinical_benefits', items)}
+        onChange={(items) => setPath('therapist.clinical_benefits', items)}
         onBlur={() => void persist()}
+        testIdPrefix="enrichment-clinical-benefits"
       />
 
       <div className="space-y-1">
         <Label className="text-xs text-muted-foreground">Notatki o progresji</Label>
         <Textarea
-          value={draft.therapist_notes?.progression_notes ?? ''}
+          value={draft.therapist?.progression_notes ?? ''}
           disabled={disabled}
-          onChange={(event) => setPath('therapist_notes.progression_notes', event.target.value)}
+          onChange={(event) => setPath('therapist.progression_notes', event.target.value)}
           onBlur={() => void persist()}
           className="min-h-[80px]"
+          data-testid="enrichment-progression-notes-input"
         />
       </div>
     </div>

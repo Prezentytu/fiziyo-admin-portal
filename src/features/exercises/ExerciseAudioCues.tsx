@@ -4,9 +4,9 @@ import { Volume2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { ListEditor } from '@/components/shared/enrichment/ListEditor';
 import { cn } from '@/lib/utils';
-import type { EnrichmentCoachingCue, ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.types';
+import type { ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.types';
 
-const COACHING_CUES_PATH = 'therapist_notes.coaching_cues';
+const CUES_PATH = 'patient.cues';
 
 interface ExerciseAudioCuesProps {
   audioCue?: string;
@@ -17,46 +17,16 @@ interface ExerciseAudioCuesProps {
   persist?: () => Promise<void>;
 }
 
-function PhaseBadge({ phase }: { phase: string }) {
-  return (
-    <span className="rounded-full bg-surface-light px-2 py-0.5 text-[10px] text-muted-foreground">
-      {phase}
-    </span>
-  );
-}
-
-function CueRow({ cue, index }: { cue: EnrichmentCoachingCue; index: number }) {
-  const text = cue.text?.trim();
-  if (!text) return null;
-
-  const phases = cue.phases?.filter(Boolean) ?? [];
+function CueRow({ text, index }: { text: string; index: number }) {
+  const trimmed = text.trim();
+  if (!trimmed) return null;
 
   return (
-    <li
-      className="flex items-start gap-3"
-      data-testid={`exercise-audio-cue-${index}`}
-    >
+    <li className="flex items-start gap-3" data-testid={`exercise-audio-cue-${index}`}>
       <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/10">
         <Volume2 className="h-3 w-3 text-primary" />
       </span>
-      <div className="flex-1 min-w-0 space-y-1">
-        <p className="text-sm text-foreground leading-snug">{text}</p>
-        <div className="flex flex-wrap gap-1.5">
-          {phases.map((phase) => (
-            <PhaseBadge key={phase} phase={phase} />
-          ))}
-          {cue.repeat && (
-            <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] text-primary font-medium">
-              powtarzaj
-            </span>
-          )}
-          {cue.priority != null && cue.priority <= 1 && (
-            <span className="rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] text-amber-600 font-medium">
-              ważne
-            </span>
-          )}
-        </div>
-      </div>
+      <p className="flex-1 min-w-0 text-sm text-foreground leading-snug">{trimmed}</p>
     </li>
   );
 }
@@ -69,16 +39,10 @@ export function ExerciseAudioCues({
   setPath,
   persist,
 }: Readonly<ExerciseAudioCuesProps>) {
-  const coachingCues = enrichmentData?.therapist_notes?.coaching_cues ?? [];
-  const cueTexts = coachingCues.map((cue) => cue.text ?? '');
+  const cues = enrichmentData?.patient?.cues ?? [];
   const hasAudioCue = Boolean(audioCue?.trim());
-  const hasCues = coachingCues.some((c) => c.text?.trim());
+  const hasCues = cues.some((cue) => cue.trim());
   const showTtsBlock = editable || hasAudioCue;
-
-  const commitCues = (texts: string[]) => {
-    const cues: EnrichmentCoachingCue[] = texts.map((text) => ({ text }));
-    setPath?.(COACHING_CUES_PATH, cues);
-  };
 
   return (
     <div
@@ -130,11 +94,11 @@ export function ExerciseAudioCues({
 
       {editable ? (
         <ListEditor
-          title="Wskazówki AI (coaching cues)"
-          items={cueTexts}
+          title="Wskazówki (cues)"
+          items={cues}
           placeholder="Np. „Pilnuj, żeby kolano nie wychodziło za linię palców”"
           addLabel="Dodaj wskazówkę"
-          onChange={commitCues}
+          onChange={(items) => setPath?.(CUES_PATH, items)}
           onBlur={() => void persist?.()}
           testIdPrefix="exercise-audio-cues-editor"
         />
@@ -142,8 +106,8 @@ export function ExerciseAudioCues({
         <>
           {hasCues && (
             <ul className="space-y-3" data-testid="exercise-audio-cues-list">
-              {coachingCues.map((cue, index) => (
-                <CueRow key={`cue-${cue.text ?? ''}-${index}`} cue={cue} index={index} />
+              {cues.map((text, index) => (
+                <CueRow key={`cue-${text}-${index}`} text={text} index={index} />
               ))}
             </ul>
           )}

@@ -2,7 +2,7 @@
 
 import { ListOrdered } from 'lucide-react';
 import { ListEditor } from '@/components/shared/enrichment/ListEditor';
-import type { EnrichmentInstructionStep, ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.types';
+import type { ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.types';
 
 interface ExerciseExecutionStepsProps {
   enrichmentData?: ExerciseEnrichmentData | null;
@@ -12,20 +12,7 @@ interface ExerciseExecutionStepsProps {
   persist?: () => Promise<void>;
 }
 
-const STEPS_PATH = 'patient_instruction.pre_exercise.instruction_steps';
-
-type PreExercise = NonNullable<ExerciseEnrichmentData['patient_instruction']>['pre_exercise'];
-
-function pickEffectiveSteps(pre?: PreExercise): EnrichmentInstructionStep[] {
-  if (!pre) return [];
-  const candidates = [
-    pre.instruction_steps,
-    pre.instruction_steps_simple,
-    pre.instruction_steps_child,
-    pre.instruction_steps_technical,
-  ];
-  return candidates.find((steps) => steps && steps.length > 0 && steps.some((step) => step.text?.trim())) ?? [];
-}
+const STEPS_PATH = 'patient.steps';
 
 export function ExerciseExecutionSteps({
   enrichmentData,
@@ -34,13 +21,11 @@ export function ExerciseExecutionSteps({
   setPath,
   persist,
 }: Readonly<ExerciseExecutionStepsProps>) {
-  const pre = enrichmentData?.patient_instruction?.pre_exercise;
-  const stepTexts = pickEffectiveSteps(pre).map((step) => step.text ?? '');
+  const stepTexts = enrichmentData?.patient?.steps ?? [];
   const hasSteps = stepTexts.some((text) => text.trim());
 
   const commitSteps = (texts: string[]) => {
-    const steps: EnrichmentInstructionStep[] = texts.map((text, index) => ({ step: index + 1, text }));
-    setPath?.(STEPS_PATH, steps);
+    setPath?.(STEPS_PATH, texts);
   };
 
   return (
