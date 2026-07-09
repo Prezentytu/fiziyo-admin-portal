@@ -14,6 +14,22 @@ Dziennik wniosków z pracy AI agentów. Po każdej korekcie dodaj nowy wpis.
 
 ## Wpisy
 
+### 2026-07-09 - "Dokumentacja" (ClinicalNote) miała martwy wizard sekcji klinicznych — zredukowana do "Notatki"
+
+- **Kategoria**: `UI/UX` | `React` | `Build/Tooling`
+- **Problem**: Karta "Dokumentacja" na stronie pacjenta wyglądała jak zaawansowana dokumentacja kliniczna (model `ClinicalNoteSections`: wywiad, badanie, diagnoza ICD-10/ICF, plan terapii, przebieg wizyty — ok. 30 pól), ale faktyczny edytor (`ClinicalNoteEditor`) udostępniał tylko 3 pola nagłówkowe + jedno pole tekstowe mapowane na `sections.interview.additionalNotes`. Dodatkowo w `src/components/clinical/` istniał kompletny, wyeksportowany wizard krok-po-kroku (`StepperHeader`, `StepperFooter`, `SectionAccordion`, `QuickPhrases`, 5× `*SectionForm`, `steps/SummaryStep`) do wypełniania tej struktury — ale nie istniała żadna strona/route, która go renderowała. Martwy kod sugerował istniejącą funkcjonalność, której nie było.
+- **Przyczyna**: Model backendu zbudowano zgodnie z wytycznymi KIF (bogata dokumentacja kliniczna), ale UI dostarczono w uproszczonej wersji (MVP notatki tekstowej) i nigdy nie podpięto zbudowanego wizarda. `.ai/DOMAIN_MODEL.md` już to dokumentował jako `STATUS: DO PRZEBUDOWY` dla `ClinicalNote`/`ClinicalNoteSections`/`ClinicalNoteStatus`/`VisitType`.
+- **Rozwiązanie**: Przemianowano UI "Dokumentacja" → "Notatki" (`ClinicalNotesList` CardTitle + EmptyState) bez zmian w GraphQL/backendzie (additive-safe, zero migracji). Usunięto cały martwy kod wizarda (`StepperHeader.tsx`, `StepperFooter.tsx`, `SectionAccordion.tsx`, `QuickPhrases.tsx`, `sections/` z 5 formularzami, `steps/SummaryStep.tsx`, `data/icd10-codes.ts` używany wyłącznie przez usunięty `DiagnosisSectionForm`) oraz nieużywane eksporty `QUICK_PHRASES`/`VISIT_TYPE_LABELS`/`STATUS_LABELS` z `types/clinical.types.ts` (potwierdzone brakiem importów po usunięciu konsumentów). Interfejsy sekcji (`InterviewSection` itd.) i `ClinicalNoteSections` zostały — `ClinicalNoteEditor` wciąż potrzebuje ich do zachowania istniejących danych sekcji (np. z importu AI) przy zapisie przez `omitTypename({ ...noteData?.sections, interview: {...} })`.
+- **Reguła**: Przed dodaniem kolejnej funkcji do istniejącego modułu zawsze zweryfikuj, czy wyeksportowane komponenty faktycznie są renderowane przez jakąś stronę/route (nie tylko przez barrel `index.ts`) — barrel eksport nie jest dowodem użycia. Gdy `.ai/DOMAIN_MODEL.md` oznacza encję jako "DO PRZEBUDOWY", to jest sygnał do sprawdzenia realnego stanu UI przed zaufaniem nazwie/modelowi.
+
+### 2026-07-08 - Widok fizjo dla danych pacjenta wymaga twardego filtra widoczności w resolverze, nie tylko w UI
+
+- **Kategoria**: `GraphQL` | `UI/UX`
+- **Problem**: Plan mobilny dodał `PatientJournalEntry` z polem `Visibility` (`Private` / `SharedWithTherapist`), ale istniejąca query `GetMyJournalEntries` czyta tylko wpisy zalogowanego pacjenta (`PatientId == scope.UserId`) — nie dało się jej użyć do wyświetlenia notatek pacjenta fizjoterapeucie w panelu admin.
+- **Przyczyna**: Kontrakt GraphQL dla widoku fizjo nie istniał; backend (`fizjo-app`) i frontend (`fiziyo-admin-portal`) to osobne repo, co łatwo przeoczyć przy planowaniu "dodania UI" bez sprawdzenia czy kontrakt danych już wspiera docelowego odbiorcę.
+- **Rozwiązanie**: Dodano nową, odrębną query `patientSharedJournalEntries(patientId, organizationId)` w `PatientJournalQuery.cs`, która filtruje `Visibility == SharedWithTherapist` bezpośrednio w zapytaniu do bazy (nie w UI) i wymaga `RequireScopedOrganizationAccess` z rolami Owner/Admin/Therapist/Staff — wzorem `ClinicalNoteQuery`. Frontend dostał osobny, read-only komponent `PatientJournalNotes` (bez edycji/usuwania) w `src/features/patients/`.
+- **Reguła**: Gdy encja ma pole widoczności/prywatności, nowy odbiorca danych (inna rola) MUSI mieć dedykowany resolver z filtrem na poziomie zapytania do bazy — nigdy nie polegaj na tym, że UI po prostu nie pokaże pola. Przy zadaniach "wyświetl X na portalu" zawsze zweryfikuj najpierw, czy kontrakt GraphQL dla tego odbiorcy istnieje (repo backendu może być osobne od repo frontendu).
+
 ### 2026-06-24 - Klikalny badge "Brak Premium" i przycisk "Przedłuż" dla wygasłych planów
 
 - **Kategoria**: `UI/UX` | `React`

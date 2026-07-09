@@ -145,7 +145,7 @@ export function ClinicalNotesList({
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2 text-base font-medium">
               <FileText className="h-4 w-4 text-info" />
-              Dokumentacja
+              Notatki
               {notes.length > 0 && (
                 <Badge variant="secondary" className="ml-1">
                   {notes.length}
@@ -168,7 +168,7 @@ export function ClinicalNotesList({
           ) : notes.length === 0 ? (
             <EmptyState
               icon={FileText}
-              title="Brak dokumentacji"
+              title="Brak notatek"
               description="Utwórz pierwszą notatkę dla tego pacjenta"
               actionLabel="Utwórz notatkę"
               onAction={handleNewNote}

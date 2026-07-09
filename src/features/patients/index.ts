@@ -11,6 +11,7 @@ export type { PatientAssignment, ExerciseMapping, ExerciseOverride, Frequency } 
 export { EditAssignmentScheduleDialog } from './EditAssignmentScheduleDialog';
 export { EditExerciseOverrideDialog } from './EditExerciseOverrideDialog';
 export { PatientNotes } from './PatientNotes';
+export { PatientJournalNotes } from './PatientJournalNotes';
 export { PatientQRCodeDialog } from './PatientQRCodeDialog';
 
 // Collaborative Care components

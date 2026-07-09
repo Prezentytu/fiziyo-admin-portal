@@ -41,6 +41,7 @@ import { PatientDetailSkeleton } from '@/features/patients/PatientDetailSkeleton
 import { PremiumStatusBadge } from '@/features/patients/PremiumStatusBadge';
 import { ActivatePremiumDialog } from '@/features/patients/ActivatePremiumDialog';
 import { ClinicalNotesList } from '@/components/clinical/ClinicalNotesList';
+import { PatientJournalNotes } from '@/features/patients/PatientJournalNotes';
 import type { PatientAssignment, ExerciseMapping, ExerciseOverride } from '@/features/patients/PatientAssignmentCard';
 
 import { GET_USER_BY_ID_QUERY, GET_USER_BY_CLERK_ID_QUERY } from '@/graphql/queries/users.queries';
@@ -523,13 +524,14 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
         </Card>
 
         {therapistId && organizationId && (
-          <div className="lg:col-span-4">
+          <div className="lg:col-span-4 space-y-4">
             <ClinicalNotesList
               patientId={id}
               therapistId={therapistId}
               organizationId={organizationId}
               patientName={patient?.fullname}
             />
+            <PatientJournalNotes patientId={id} organizationId={organizationId} />
           </div>
         )}
 
