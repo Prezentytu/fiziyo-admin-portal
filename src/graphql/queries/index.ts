@@ -59,3 +59,6 @@ export * from './billing.queries';
 
 // Admin Exercises (weryfikacja ćwiczeń - Centrum Weryfikacji)
 export * from './adminExercises.queries';
+
+// Patient Journal (notatki pacjenta udostępnione fizjoterapeucie)
+export * from './patientJournal.queries';

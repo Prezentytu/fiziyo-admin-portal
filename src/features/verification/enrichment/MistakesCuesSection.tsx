@@ -3,12 +3,14 @@
 import { Plus, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import type { EnrichmentCoachingCue, EnrichmentCommonMistake, ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.types';
+import { ListEditor } from '@/components/shared/enrichment/ListEditor';
+import type { EnrichmentPatientMistakeV3, ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.types';
 
 interface MistakesCuesSectionProps {
   draft: ExerciseEnrichmentData;
   disabled?: boolean;
   updateDraft: (updater: (current: ExerciseEnrichmentData) => ExerciseEnrichmentData) => void;
+  setPath: (path: string, value: unknown) => void;
   persist: () => Promise<void>;
 }
 
@@ -16,27 +18,22 @@ export function MistakesCuesSection({
   draft,
   disabled = false,
   updateDraft,
+  setPath,
   persist,
 }: Readonly<MistakesCuesSectionProps>) {
-  const mistakes = draft.common_mistakes ?? [];
-  const cues = draft.therapist_notes?.coaching_cues ?? [];
+  const mistakes = draft.patient?.mistakes ?? [];
 
-  const setMistakes = (value: EnrichmentCommonMistake[]) => {
-    updateDraft((current) => ({ ...current, common_mistakes: value }));
-  };
-
-  const setCues = (value: EnrichmentCoachingCue[]) => {
+  const setMistakes = (value: EnrichmentPatientMistakeV3[]) => {
     updateDraft((current) => ({
       ...current,
-      therapist_notes: {
-        ...(current.therapist_notes ?? {}),
-        coaching_cues: value,
+      patient: {
+        ...(current.patient ?? {}),
+        mistakes: value,
       },
     }));
   };
 
   const safeMistakes = mistakes.length > 0 ? mistakes : [{ mistake: '', fix: '' }];
-  const safeCues = cues.length > 0 ? cues : [{ text: '', phases: [], priority: 1, repeat: false }];
 
   return (
     <div className="space-y-4">
@@ -49,6 +46,7 @@ export function MistakesCuesSection({
             variant="outline"
             disabled={disabled}
             onClick={() => setMistakes([...safeMistakes, { mistake: '', fix: '' }])}
+            data-testid="enrichment-mistakes-add-btn"
           >
             <Plus className="mr-1 h-3.5 w-3.5" />
             Dodaj błąd
@@ -66,6 +64,7 @@ export function MistakesCuesSection({
                 setMistakes(next);
               }}
               onBlur={() => void persist()}
+              data-testid={`enrichment-mistake-text-${index}`}
             />
             <div className="flex gap-2">
               <Input
@@ -78,6 +77,7 @@ export function MistakesCuesSection({
                   setMistakes(next);
                 }}
                 onBlur={() => void persist()}
+                data-testid={`enrichment-mistake-fix-${index}`}
               />
               <Button
                 type="button"
@@ -88,6 +88,7 @@ export function MistakesCuesSection({
                   setMistakes(safeMistakes.filter((_, itemIndex) => itemIndex !== index));
                   void persist();
                 }}
+                data-testid={`enrichment-mistake-remove-${index}`}
               >
                 <Trash2 className="h-4 w-4 text-destructive" />
               </Button>
@@ -96,97 +97,16 @@ export function MistakesCuesSection({
         ))}
       </div>
 
-      <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <p className="text-xs font-medium text-muted-foreground">Wskazówki werbalne</p>
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            disabled={disabled}
-            onClick={() => setCues([...safeCues, { text: '', phases: [], priority: 1, repeat: false }])}
-          >
-            <Plus className="mr-1 h-3.5 w-3.5" />
-            Dodaj wskazówkę
-          </Button>
-        </div>
-        {safeCues.map((item, index) => (
-          <div
-            key={`cue-${index}`}
-            className="grid min-w-0 grid-cols-1 gap-2 @md/enrich:grid-cols-[minmax(0,1fr)_140px_90px_90px_auto] @md/enrich:items-start"
-          >
-            <Input
-              value={item.text ?? ''}
-              disabled={disabled}
-              placeholder="Treść wskazówki"
-              className="min-w-0 w-full"
-              onChange={(event) => {
-                const next = [...safeCues];
-                next[index] = { ...next[index], text: event.target.value };
-                setCues(next);
-              }}
-              onBlur={() => void persist()}
-            />
-            <Input
-              value={(item.phases ?? []).join(', ')}
-              disabled={disabled}
-              placeholder="Fazy: praca, przygotowanie"
-              className="w-full @md/enrich:w-[140px]"
-              onChange={(event) => {
-                const next = [...safeCues];
-                next[index] = {
-                  ...next[index],
-                  phases: event.target.value
-                    .split(',')
-                    .map((entry) => entry.trim())
-                    .filter(Boolean),
-                };
-                setCues(next);
-              }}
-              onBlur={() => void persist()}
-            />
-            <Input
-              type="number"
-              min={1}
-              value={item.priority ?? 1}
-              disabled={disabled}
-              placeholder="Priorytet"
-              className="w-full @md/enrich:w-[90px]"
-              onChange={(event) => {
-                const next = [...safeCues];
-                next[index] = { ...next[index], priority: Number(event.target.value) || 1 };
-                setCues(next);
-              }}
-              onBlur={() => void persist()}
-            />
-            <Input
-              value={item.repeat ? 'TAK' : 'NIE'}
-              disabled={disabled}
-              placeholder="Powtarzaj"
-              className="w-full @md/enrich:w-[90px]"
-              onChange={(event) => {
-                const next = [...safeCues];
-                next[index] = { ...next[index], repeat: event.target.value.trim().toLowerCase() === 'tak' };
-                setCues(next);
-              }}
-              onBlur={() => void persist()}
-            />
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              disabled={disabled}
-              className="justify-self-end @md/enrich:justify-self-auto"
-              onClick={() => {
-                setCues(safeCues.filter((_, itemIndex) => itemIndex !== index));
-                void persist();
-              }}
-            >
-              <Trash2 className="h-4 w-4 text-destructive" />
-            </Button>
-          </div>
-        ))}
-      </div>
+      <ListEditor
+        title="Wskazówki (cues)"
+        items={draft.patient?.cues ?? []}
+        placeholder="Np. „Pilnuj, żeby kolano nie wychodziło za linię palców”"
+        addLabel="Dodaj wskazówkę"
+        disabled={disabled}
+        onChange={(items) => setPath('patient.cues', items)}
+        onBlur={() => void persist()}
+        testIdPrefix="enrichment-cues"
+      />
     </div>
   );
 }

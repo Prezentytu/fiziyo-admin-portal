@@ -29,12 +29,12 @@ export { ExerciseSearchPopover, ExerciseSearchDialog } from './ExerciseSearchPop
 export { RelationshipManager, useExerciseRelationships, getRelationsForApprove } from './RelationshipManager';
 
 // Clinical Operator UI - 3-Column Verification Cockpit (2025)
-export { VerificationEditorPanel } from './VerificationEditorPanel';
 export { VerificationStickyHeader } from './VerificationStickyHeader';
 export { VerdictPanel } from './VerdictPanel';
 export { ProgressionChain } from './ProgressionChain';
 export { ClinicalMacrosBar } from './ClinicalMacrosBar';
 export { MasterVideoPlayer } from './MasterVideoPlayer';
+export { CollapsibleMediaPanel } from './CollapsibleMediaPanel';
 
 // Training Design System - Engineering Grade (2025)
 export { AIAnalysisHeader } from './AIAnalysisHeader';

@@ -1,4 +1,5 @@
 import type { ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.types';
+import { ENRICHMENT_SCHEMA_V3 } from './enrichmentToV3';
 
 export interface EnrichmentSectionMeta {
   id: string;
@@ -14,54 +15,33 @@ export interface EnrichmentCompleteness {
 
 export function createEnrichmentSkeleton(): ExerciseEnrichmentData {
   return {
-    simplified_instruction: '',
-    patient_notes: {
-      why_this_exercise: '',
-      technique_reminders: [],
+    $schema: ENRICHMENT_SCHEMA_V3,
+    patient: {
+      summary: '',
+      steps: [],
+      cues: [],
+      mistakes: [],
+      should_feel: '',
+      should_not_feel: '',
+      why: '',
       when_to_do: '',
     },
     safety: {
       stop_if: '',
-      intensity_guide: '',
       requires_supervision: false,
     },
-    feel_description: {
-      should_feel: '',
-      should_not_feel: '',
-    },
-    common_mistakes: [],
-    dosing_profiles: {},
-    therapist_notes: {
+    therapist: {
       clinical_notes: '',
-      clinical_indications: [],
+      indications: [],
       contraindications: [],
-      rehab_phase: [],
-      coaching_cues: [],
-      clinical_benefits: [],
+      rehab_phases: [],
       progression_notes: '',
+      clinical_benefits: [],
     },
-    patient_instruction: {
-      pre_exercise: {
-        quick_summary: '',
-        safety_note: '',
-        what_you_need: [],
-        instruction_steps: [],
-        instruction_steps_simple: [],
-        instruction_steps_child: [],
-        instruction_steps_technical: [],
-      },
-      during_exercise: {
-        phases: [],
-      },
-      post_exercise: {
-        completion_message: '',
-        feedback_questions: [],
-        patient_note_prompt: '',
-      },
+    ai: {
+      keywords: [],
     },
-    ai_metadata: {
-      search_keywords: [],
-    },
+    equipment: [],
   };
 }
 
@@ -108,74 +88,64 @@ export function mergeWithSkeleton(data: ExerciseEnrichmentData): ExerciseEnrichm
 
 export const ENRICHMENT_SECTIONS: EnrichmentSectionMeta[] = [
   {
-    id: 'simplified_instruction',
-    label: 'Uproszczona instrukcja',
-    isFilled: (data) => isNonEmptyText(data.simplified_instruction),
+    id: 'summary',
+    label: 'Podsumowanie dla pacjenta',
+    isFilled: (data) => isNonEmptyText(data.patient?.summary),
   },
   {
-    id: 'pre_exercise_core',
-    label: 'Podsumowanie i bezpieczeństwo przed ćwiczeniem',
-    isFilled: (data) =>
-      isNonEmptyText(data.patient_instruction?.pre_exercise?.quick_summary)
-      && isNonEmptyText(data.patient_instruction?.pre_exercise?.safety_note),
-  },
-  {
-    id: 'what_you_need',
-    label: 'Co jest potrzebne',
-    isFilled: (data) => hasArrayItems(data.patient_instruction?.pre_exercise?.what_you_need),
-  },
-  {
-    id: 'instruction_steps',
+    id: 'steps',
     label: 'Kroki wykonania',
-    isFilled: (data) => hasArrayItems(data.patient_instruction?.pre_exercise?.instruction_steps),
+    isFilled: (data) => hasArrayItems(data.patient?.steps),
   },
   {
-    id: 'during_phases',
-    label: 'Fazy podczas ćwiczenia',
-    isFilled: (data) => hasArrayItems(data.patient_instruction?.during_exercise?.phases),
-  },
-  {
-    id: 'post_exercise',
-    label: 'Sekcja po ćwiczeniu',
-    isFilled: (data) =>
-      isNonEmptyText(data.patient_instruction?.post_exercise?.completion_message)
-      && isNonEmptyText(data.patient_instruction?.post_exercise?.patient_note_prompt),
-  },
-  {
-    id: 'feel_description',
-    label: 'Odczucia pacjenta',
-    isFilled: (data) =>
-      isNonEmptyText(data.feel_description?.should_feel) && isNonEmptyText(data.feel_description?.should_not_feel),
-  },
-  {
-    id: 'safety',
-    label: 'Bezpieczeństwo i intensywność',
-    isFilled: (data) => isNonEmptyText(data.safety?.stop_if) && isNonEmptyText(data.safety?.intensity_guide),
+    id: 'cues',
+    label: 'Wskazówki (cues)',
+    isFilled: (data) => hasArrayItems(data.patient?.cues),
   },
   {
     id: 'mistakes',
     label: 'Typowe błędy',
-    isFilled: (data) => hasArrayItems(data.common_mistakes),
+    isFilled: (data) => hasArrayItems(data.patient?.mistakes),
   },
   {
-    id: 'coaching_cues',
-    label: 'Wskazówki werbalne',
-    isFilled: (data) => hasArrayItems(data.therapist_notes?.coaching_cues),
+    id: 'feel',
+    label: 'Odczucia pacjenta',
+    isFilled: (data) => isNonEmptyText(data.patient?.should_feel) && isNonEmptyText(data.patient?.should_not_feel),
+  },
+  {
+    id: 'why_when',
+    label: 'Dlaczego i kiedy wykonywać',
+    isFilled: (data) => isNonEmptyText(data.patient?.why) && isNonEmptyText(data.patient?.when_to_do),
+  },
+  {
+    id: 'safety',
+    label: 'Bezpieczeństwo',
+    isFilled: (data) => isNonEmptyText(data.safety?.stop_if),
   },
   {
     id: 'clinical_notes',
     label: 'Notatki kliniczne',
-    isFilled: (data) => isNonEmptyText(data.therapist_notes?.clinical_notes),
+    isFilled: (data) => isNonEmptyText(data.therapist?.clinical_notes),
   },
   {
-    id: 'dosing',
-    label: 'Dawkowanie',
-    isFilled: (data) => !!data.dosing_profiles && Object.keys(data.dosing_profiles).length > 0,
+    id: 'clinical_indications',
+    label: 'Wskazania i przeciwwskazania',
+    isFilled: (data) => hasArrayItems(data.therapist?.indications) && hasArrayItems(data.therapist?.contraindications),
+  },
+  {
+    id: 'clinical_benefits',
+    label: 'Korzyści kliniczne',
+    isFilled: (data) => hasArrayItems(data.therapist?.clinical_benefits),
+  },
+  {
+    id: 'equipment',
+    label: 'Sprzęt',
+    isFilled: (data) => hasArrayItems(data.equipment),
   },
   {
     id: 'keywords',
     label: 'Słowa kluczowe',
-    isFilled: (data) => hasArrayItems(data.ai_metadata?.search_keywords),
+    isFilled: (data) => hasArrayItems(data.ai?.keywords),
   },
 ];
 

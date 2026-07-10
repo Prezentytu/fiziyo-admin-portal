@@ -38,7 +38,53 @@ export interface EnrichmentCoachingCue {
   repeat?: boolean;
 }
 
+// ============================================
+// Schema v3 (SPEC-022, fizjo-app) — kanoniczny kształt EnrichmentData.
+// Pola v2 poniżej pozostają na razie w typie (Faza sprzątająca usunie je po potwierdzeniu
+// 100% v3 na prod) — ale edytor/widoki operują wyłącznie na v3 dzięki `toV3()`
+// (src/features/verification/utils/enrichmentToV3.ts) wołanemu raz przy wczytaniu draftu.
+// Patrz: docs/architecture/admin-enrichment-v3-migration-plan.md w repo fizjo-app.
+// ============================================
+
+export interface EnrichmentPatientMistakeV3 {
+  mistake?: string;
+  fix?: string;
+}
+
+export interface ExerciseEnrichmentPatientV3 {
+  summary?: string;
+  steps?: string[];
+  cues?: string[];
+  mistakes?: EnrichmentPatientMistakeV3[];
+  should_feel?: string;
+  should_not_feel?: string;
+  why?: string;
+  when_to_do?: string;
+}
+
+export interface ExerciseEnrichmentTherapistV3 {
+  clinical_notes?: string;
+  indications?: string[];
+  contraindications?: string[];
+  rehab_phases?: string[];
+  progression_notes?: string;
+  clinical_benefits?: string[];
+}
+
+export interface ExerciseEnrichmentAiV3 {
+  keywords?: string[];
+  problems?: string[];
+  suitable_for?: string[];
+  contraindicated_for?: string[];
+}
+
 export interface ExerciseEnrichmentData {
+  // Marker schemy v3 — obecny na wierszach już znormalizowanych przez backend (SPEC-022).
+  $schema?: string;
+  patient?: ExerciseEnrichmentPatientV3;
+  therapist?: ExerciseEnrichmentTherapistV3;
+  ai?: ExerciseEnrichmentAiV3;
+  equipment?: string[];
   simplified_instruction?: string;
   patient_notes?: {
     why_this_exercise?: string;

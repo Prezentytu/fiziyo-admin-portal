@@ -12,13 +12,16 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { MasterVideoPlayer } from '@/features/verification/MasterVideoPlayer';
+import { CollapsibleMediaPanel } from '@/features/verification/CollapsibleMediaPanel';
 import { RejectReasonDialog } from '@/features/verification/RejectReasonDialog';
 import { ApproveDialog } from '@/features/verification/ApproveDialog';
 
 // Clinical Operator UI Components - 3-Column Layout
-import { VerificationEditorPanel } from '@/features/verification/VerificationEditorPanel';
+import { ExerciseEditor } from '@/features/exercises/ExerciseEditor';
+import { useExerciseEditorForm } from '@/features/exercises/useExerciseEditorForm';
 import { VerdictPanel } from '@/features/verification/VerdictPanel';
 import { useExerciseValidation } from '@/features/verification/PublishGuardrails';
+import { computeVerificationCompletion } from '@/features/verification/utils/computeVerificationCompletion';
 import { buildQueueProgressModel } from '@/features/verification/utils/queueProgress';
 
 import { useSystemRole } from '@/hooks/useSystemRole';
@@ -54,19 +57,12 @@ import type {
   GetVerificationQueueNavigatorResponse,
   GetVerificationQueueNavigatorVariables,
   GetVerificationStatsResponse,
-  ExerciseRelationTarget,
 } from '@/graphql/types/adminExercise.types';
 import type { ExerciseReport } from '@/types/exercise-report.types';
+import type { ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.types';
 
 interface VerificationDetailPageProps {
   params: Promise<{ id: string }>;
-}
-
-interface DefaultLoadUpdateInput {
-  type: string | null;
-  value: number | null;
-  unit: string | null;
-  text: string | null;
 }
 
 /**
@@ -111,35 +107,6 @@ export default function VerificationDetailPage({ params }: Readonly<Verification
   // Clinical safety checkbox (legacy - derived from checklist)
   const clinicalCheckboxChecked = Object.values(safetyChecklist).every(Boolean);
 
-  // Tags state (for local editing before save)
-  const [mainTags, setMainTags] = useState<string[]>([]);
-  const [additionalTags, setAdditionalTags] = useState<string[]>([]);
-
-  // Relations state
-  const [, setRegressionExercise] = useState<ExerciseRelationTarget | null>(null);
-  const [, setProgressionExercise] = useState<ExerciseRelationTarget | null>(null);
-
-  // Save tracking
-  const [, setLastSavedTime] = useState<Date | null>(null);
-  const [, setIsSavingDraft] = useState(false);
-
-  // Smart Validation completion state (from VerificationEditorPanel)
-  const [completionData, setCompletionData] = useState<{
-    percentage: number;
-    canSaveDraft: boolean;
-    canPublish: boolean;
-    criticalMissing: string[];
-    recommendedMissing: string[];
-  }>({
-    percentage: 0,
-    canSaveDraft: false,
-    canPublish: false,
-    criticalMissing: [],
-    recommendedMissing: [],
-  });
-
-  // Missing fields state (from new validation layer)
-  const [missingFields, setMissingFields] = useState<string[]>([]);
   const [openReports, setOpenReports] = useState<ExerciseReport[]>([]);
 
   // ============================================
@@ -150,13 +117,9 @@ export default function VerificationDetailPage({ params }: Readonly<Verification
     variables: { id },
   });
 
-  // Initialize tags when data loads
+  // Reset safety checklist and comment when switching exercises
   useEffect(() => {
     if (data?.exerciseByIdForAdmin) {
-      const ex = data.exerciseByIdForAdmin as unknown as AdminExercise;
-      setMainTags(ex.mainTags || []);
-      setAdditionalTags(ex.additionalTags || []);
-      // Reset safety checklist when switching exercises
       setSafetyChecklist({
         videoReadable: false,
         techniqueSafe: false,
@@ -254,17 +217,11 @@ export default function VerificationDetailPage({ params }: Readonly<Verification
     return buildQueueProgressModel(positionInQueue, totalPending, remainingCount);
   }, [positionInQueue, totalPending, remainingCount]);
 
-  // Validation (using existing hook)
+  // Validation (using existing hook, based on raw exercise + tags as a legacy safety net)
   const { canPublish: legacyCanPublish, errors: _validationErrorRules } = useExerciseValidation(
     exercise || ({} as AdminExercise),
-    { mainTags, additionalTags }
+    { mainTags: exercise?.mainTags, additionalTags: exercise?.additionalTags }
   );
-
-  // Can publish = smart validation says OK OR legacy validation says OK
-  const canPublish = completionData.canPublish || legacyCanPublish;
-
-  // Can approve = clinical checkbox + validation passed
-  const canApprove = clinicalCheckboxChecked && canPublish;
 
   // ============================================
   // NAVIGATION
@@ -295,17 +252,11 @@ export default function VerificationDetailPage({ params }: Readonly<Verification
   });
 
   const [updateExerciseField] = useMutation(UPDATE_EXERCISE_FIELD_MUTATION, {
-    onCompleted: () => {
-      setLastSavedTime(new Date());
-    },
     onError: (error) => {
       toast.error(`Błąd zapisu: ${error.message}`);
     },
   });
   const [updateExerciseDetails] = useMutation(UPDATE_EXERCISE_DETAILS_MUTATION, {
-    onCompleted: () => {
-      setLastSavedTime(new Date());
-    },
     onError: (error) => {
       toast.error(`Błąd zapisu: ${error.message}`);
     },
@@ -334,102 +285,63 @@ export default function VerificationDetailPage({ params }: Readonly<Verification
   }, []);
 
   // ============================================
-  // HANDLERS
+  // EXERCISE EDITOR FORM (autosave)
   // ============================================
 
-  // Field update (inline editing)
-  const handleFieldUpdate = useCallback(
-    async (field: string, value: unknown) => {
-      if (!exercise) return;
-
-      setIsSavingDraft(true);
-      try {
-        if (field === 'defaultLoad') {
-          const loadUpdate = value as DefaultLoadUpdateInput | null;
-          await updateExerciseDetails({
-            variables: {
-              exerciseId: id,
-              loadType: loadUpdate?.type ?? null,
-              loadValue: loadUpdate?.value ?? null,
-              loadUnit: loadUpdate?.unit ?? null,
-              loadText: loadUpdate?.text ?? null,
-            },
-          });
-          return;
-        }
-
-        // Convert value to string for backend (expects string?)
-        let stringValue: string | null = null;
-        if (value !== null && value !== undefined) {
-          if (Array.isArray(value)) {
-            stringValue = value.join(',');
-          } else if (typeof value === 'string') {
-            stringValue = value;
-          } else {
-            stringValue = JSON.stringify(value);
-          }
-        }
-
-        await updateExerciseField({
-          variables: {
-            exerciseId: id,
-            fieldName: field,
-            value: stringValue,
-          },
-        });
-        // Note: Removed refetch() to prevent resetting local state in VerificationEditorPanel
-        // The mutation updates the cache, and local state is managed optimistically
-      } finally {
-        setIsSavingDraft(false);
-      }
+  const updateCore = useCallback(
+    async (variables: Record<string, unknown>) => {
+      await updateExerciseDetails({ variables: { exerciseId: id, ...variables } });
     },
-    [exercise, id, updateExerciseField, updateExerciseDetails]
+    [id, updateExerciseDetails]
   );
 
-  // Tags handlers
-  const handleMainTagsChange = useCallback(
-    async (newTags: string[]) => {
-      setMainTags(newTags);
-      await handleFieldUpdate('mainTags', newTags);
+  const updateEnrichment = useCallback(
+    async (payload: ExerciseEnrichmentData) => {
+      await updateExerciseField({
+        variables: { exerciseId: id, fieldName: 'enrichmentData', value: JSON.stringify(payload ?? {}) },
+      });
     },
-    [handleFieldUpdate]
+    [id, updateExerciseField]
   );
 
-  const handleAdditionalTagsChange = useCallback(
-    async (newTags: string[]) => {
-      setAdditionalTags(newTags);
-      await handleFieldUpdate('additionalTags', newTags);
-    },
-    [handleFieldUpdate]
+  const exerciseEditorForm = useExerciseEditorForm({
+    source: exercise,
+    updateCore,
+    updateEnrichment,
+    onError: () => toast.error('Nie udało się zapisać zmian'),
+    autosaveDelayMs: 900,
+  });
+  const { core, flush: flushEditorForm } = exerciseEditorForm;
+
+  const hasMedia = Boolean(
+    exercise?.videoUrl || exercise?.gifUrl || exercise?.imageUrl || (exercise?.images && exercise.images.length > 0)
   );
 
-  // Relations handler
-  const handleRelationsChange = useCallback(
-    (relations: { regression: ExerciseRelationTarget | null; progression: ExerciseRelationTarget | null }) => {
-      setRegressionExercise(relations.regression);
-      setProgressionExercise(relations.progression);
-    },
-    []
+  const completion = useMemo(
+    () =>
+      computeVerificationCompletion({
+        name: core.name,
+        patientDescription: core.patientDescription,
+        clinicalDescription: core.clinicalDescription,
+        sets: core.sets,
+        reps: core.reps,
+        executionTime: core.executionTime,
+        duration: core.duration,
+        hasMedia,
+        mainTagsCount: exercise?.mainTags?.length ?? 0,
+      }),
+    [core, hasMedia, exercise?.mainTags]
   );
 
-  // Completion change handler (from Smart Validation)
-  const handleCompletionChange = useCallback(
-    (completion: {
-      percentage: number;
-      canSaveDraft: boolean;
-      canPublish: boolean;
-      criticalMissing: string[];
-      recommendedMissing: string[];
-    }) => {
-      setCompletionData(completion);
-    },
-    []
-  );
+  // Can publish = smart validation says OK OR legacy validation says OK
+  const canPublish = completion.isValid || legacyCanPublish;
 
-  // Validation change handler (from new Clean Cockpit validation layer)
-  const handleValidationChange = useCallback((_isValid: boolean, fields: string[]) => {
-    setMissingFields(fields);
-  }, []);
+  // Can approve = clinical checkbox + validation passed
+  const canApprove = clinicalCheckboxChecked && canPublish;
+
+  // ============================================
+  // HANDLERS
+  // ============================================
 
   const handleUploadImage = useCallback(
     async (file: File) => {
@@ -468,6 +380,7 @@ export default function VerificationDetailPage({ params }: Readonly<Verification
       setIsTransitioning(true);
 
       try {
+        await flushEditorForm();
         await approveExercise({
           variables: { exerciseId: id, reviewNotes: notes },
         });
@@ -495,7 +408,7 @@ export default function VerificationDetailPage({ params }: Readonly<Verification
         setIsTransitioning(false); // Unlock on error
       }
     },
-    [approveExercise, id, router, getNextExerciseId, user?.id, buildDetailUrl, listUrl]
+    [approveExercise, flushEditorForm, id, router, getNextExerciseId, user?.id, buildDetailUrl, listUrl]
   );
 
   // Approve & Next (with checkbox validation)
@@ -515,6 +428,7 @@ export default function VerificationDetailPage({ params }: Readonly<Verification
   const handleReject = useCallback(
     async (reason: RejectionReason, notesText: string) => {
       try {
+        await flushEditorForm();
         await rejectExercise({
           variables: { exerciseId: id, rejectionReason: reason, notes: notesText },
         });
@@ -540,7 +454,7 @@ export default function VerificationDetailPage({ params }: Readonly<Verification
         toast.error('Nie udało się odrzucić ćwiczenia');
       }
     },
-    [rejectExercise, id, router, getNextExerciseId, user?.id, buildDetailUrl, listUrl]
+    [rejectExercise, flushEditorForm, id, router, getNextExerciseId, user?.id, buildDetailUrl, listUrl]
   );
 
   // Skip handler
@@ -553,11 +467,10 @@ export default function VerificationDetailPage({ params }: Readonly<Verification
     }
   }, [router, getNextExerciseId, buildDetailUrl, listUrl]);
 
-  // Save draft handler
+  // Save draft handler (wymusza natychmiastowy zapis, pomijając debounce autosave)
   const handleSaveDraft = useCallback(() => {
-    toast.success('Szkic zapisany');
-    setLastSavedTime(new Date());
-  }, []);
+    void flushEditorForm().then(() => toast.success('Zmiany zapisane'));
+  }, [flushEditorForm]);
 
   // Toggle all safety checkboxes handler (for keyboard shortcut)
   const handleToggleClinicalCheckbox = useCallback(() => {
@@ -663,8 +576,8 @@ export default function VerificationDetailPage({ params }: Readonly<Verification
     <div className="-m-4 flex h-full lg:h-[calc(100%+3rem)] 2xl:h-[calc(100%+4rem)] min-h-0 flex-col overflow-y-auto lg:-m-6 lg:overflow-hidden 2xl:-m-8">
       {/* Main content area - 3 column layout 42/fluid/320 */}
       <div className="flex-1 flex flex-col lg:flex-row min-h-0">
-        {/* LEFT COLUMN: Media Player */}
-        <div className="h-[30vh] lg:h-auto lg:w-[42%] bg-card border-b lg:border-b-0 lg:border-r border-border/30 flex flex-col min-h-0">
+        {/* LEFT COLUMN: Media Player (collapsible) */}
+        <CollapsibleMediaPanel onBack={() => router.push(listUrl)}>
           {/* Compact Header: Back + Progress */}
           <div className="flex items-center justify-between gap-3 px-4 py-2.5 border-b border-border/40 shrink-0">
             <Button
@@ -703,7 +616,7 @@ export default function VerificationDetailPage({ params }: Readonly<Verification
               onDeleteImage={handleDeleteImage}
             />
           </div>
-        </div>
+        </CollapsibleMediaPanel>
 
         {/* MIDDLE COLUMN: Editor Panel */}
         <div className="flex-1 min-w-0 bg-background flex flex-col min-h-0 border-r border-border/20">
@@ -723,19 +636,20 @@ export default function VerificationDetailPage({ params }: Readonly<Verification
               </Card>
             )}
 
-            {/* MAIN: VerificationEditorPanel */}
-            <VerificationEditorPanel
-              exercise={exercise}
-              onFieldChange={handleFieldUpdate}
-              mainTags={mainTags}
-              onMainTagsChange={handleMainTagsChange}
-              additionalTags={additionalTags}
-              onAdditionalTagsChange={handleAdditionalTagsChange}
-              onRelationsChange={handleRelationsChange}
-              onValidationChange={handleValidationChange}
-              onCompletionChange={handleCompletionChange}
+            {/* MAIN: shared ExerciseEditor (autosave) */}
+            <ExerciseEditor
+              form={exerciseEditorForm}
+              showNameField
+              aiFillContext={{
+                name: core.name,
+                patientDescription: core.patientDescription,
+                clinicalDescription: core.clinicalDescription,
+                type: exercise.type,
+                mainTags: exercise.mainTags,
+                additionalTags: exercise.additionalTags,
+              }}
+              showAdvancedJson
               className="flex-1 min-h-0"
-              data-testid="verification-editor-panel"
             />
           </div>
         </div>
@@ -752,8 +666,8 @@ export default function VerificationDetailPage({ params }: Readonly<Verification
             comment={authorComment}
             onCommentChange={setAuthorComment}
             validationPassed={canPublish}
-            completionPercentage={completionData.percentage}
-            missingFields={missingFields}
+            completionPercentage={completion.percentage}
+            missingFields={completion.missingFields}
             safetyChecklist={safetyChecklist}
             onSafetyChecklistChange={setSafetyChecklist}
             isApproving={approving || isTransitioning}
