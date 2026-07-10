@@ -1,5 +1,7 @@
 'use client';
 
+import { History } from 'lucide-react';
+
 import { cn } from '@/lib/utils';
 import { formatDateWithTime, mapDifficultyToFeeling, getFeelingLabel } from '@/lib/therapyStatus';
 import type { ExerciseProgressData } from '@/lib/therapyStatus';
@@ -140,18 +142,37 @@ function progressToEvents(progress: ExerciseProgressData[], maxDays: number = 7)
 export function EventJournal({ progress, maxEvents = 5, className }: Readonly<EventJournalProps>) {
   const events = progressToEvents(progress, maxEvents);
 
+  const header = (
+    <div className="flex items-center gap-2.5 mb-5">
+      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+        <History className="h-3.5 w-3.5 text-primary" />
+      </div>
+      <h3 className="text-sm font-semibold text-foreground">Dziennik zdarzeń</h3>
+    </div>
+  );
+
   if (events.length === 0) {
     return (
-      <div className={cn('rounded-2xl border border-border bg-surface dark:bg-surface/50 p-6', className)}>
-        <h3 className="font-bold text-foreground mb-6">Dziennik Zdarzeń</h3>
+      <div
+        className={cn(
+          'rounded-xl md:rounded-2xl border border-border/60 bg-background/40 dark:bg-background/20 p-5 md:p-6',
+          className
+        )}
+      >
+        {header}
         <p className="text-sm text-muted-foreground text-center py-8">Brak zdarzeń do wyświetlenia</p>
       </div>
     );
   }
 
   return (
-    <div className={cn('rounded-2xl border border-border bg-surface dark:bg-surface/50 p-6 flex flex-col h-full', className)}>
-      <h3 className="font-bold text-foreground mb-6">Dziennik Zdarzeń</h3>
+    <div
+      className={cn(
+        'rounded-xl md:rounded-2xl border border-border/60 bg-background/40 dark:bg-background/20 p-5 md:p-6 flex flex-col h-full',
+        className
+      )}
+    >
+      {header}
 
       <div className="space-y-6 overflow-y-auto pr-2 flex-1">
         {events.map((event, index) => {

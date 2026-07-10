@@ -2,9 +2,8 @@
 
 import { useMemo } from 'react';
 import { useQuery } from '@apollo/client/react';
-import { Activity, BarChart3 } from 'lucide-react';
+import { Activity, BarChart3, CheckCircle2, Flame, FolderKanban } from 'lucide-react';
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { LoadingState } from '@/components/shared/LoadingState';
 import { EmptyState } from '@/components/shared/EmptyState';
 
@@ -205,22 +204,80 @@ export function ActivityReport({
 
   if (exerciseProgress.length === 0 && rawAssignments.length === 0) {
     return (
-      <Card className="border-border/60">
-        <CardContent className="py-12">
-          <EmptyState
-            icon={Activity}
-            title="Brak danych aktywności"
-            description="Ten pacjent nie ma jeszcze żadnych zarejestrowanych ćwiczeń"
-          />
-        </CardContent>
-      </Card>
+      <div className="rounded-xl md:rounded-2xl border border-border/60 bg-background/40 dark:bg-background/20 py-12">
+        <EmptyState
+          icon={Activity}
+          title="Brak danych aktywności"
+          description="Ten pacjent nie ma jeszcze żadnych zarejestrowanych ćwiczeń"
+        />
+      </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header Row: Status + Next Step */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <div className="space-y-5 md:space-y-6">
+      {/* KPI Scorecard - anchor stat (realizacja) + supporting metrics, shown first (Reciprocity) */}
+      {activityReportSummary && (
+        <div
+          className="rounded-xl md:rounded-2xl border border-border/60 bg-background/40 dark:bg-background/20 p-5 md:p-6"
+          data-testid="patient-activity-kpi-scorecard"
+        >
+          <p className="mb-4 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+            Raport okresowy · ostatnie 30 dni
+          </p>
+          <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:gap-6 md:gap-8">
+            <div className="flex items-center gap-4 sm:border-r sm:border-border/60 sm:pr-6 md:pr-8">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/10">
+                <BarChart3 className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <p className="text-[11px] font-medium text-muted-foreground">Realizacja planu</p>
+                <p className="text-3xl font-bold leading-tight text-foreground">
+                  {activityReportSummary.overallCompletionPercentage}%
+                </p>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  {activityReportSummary.overallCompletionPercentage > 0
+                    ? 'w tym okresie'
+                    : 'Brak aktywności w tym okresie'}
+                </p>
+              </div>
+            </div>
+
+            <div className="grid flex-1 grid-cols-3 gap-4 sm:gap-6">
+              <div className="flex items-center gap-2.5">
+                <CheckCircle2 className="h-4 w-4 shrink-0 text-success" />
+                <div className="min-w-0">
+                  <p className="text-lg font-semibold leading-tight text-foreground">
+                    {activityReportSummary.completedExercises}/{activityReportSummary.totalExercises}
+                  </p>
+                  <p className="truncate text-[11px] text-muted-foreground">Wykonane ćwiczenia</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2.5">
+                <Flame className="h-4 w-4 shrink-0 text-warning" />
+                <div className="min-w-0">
+                  <p className="text-lg font-semibold leading-tight text-foreground">
+                    {activityReportSummary.totalCompletedSessions}
+                  </p>
+                  <p className="truncate text-[11px] text-muted-foreground">Dni z treningiem</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2.5">
+                <FolderKanban className="h-4 w-4 shrink-0 text-info" />
+                <div className="min-w-0">
+                  <p className="text-lg font-semibold leading-tight text-foreground">
+                    {activityReportSummary.totalExerciseSets}
+                  </p>
+                  <p className="truncate text-[11px] text-muted-foreground">Aktywne zestawy</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Status + Next Step */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
         <TherapyStatusCard
           statusResult={therapyStatus}
           lastActivityLabel={lastActivityLabel}
@@ -235,55 +292,17 @@ export function ActivityReport({
         />
       </div>
 
-      {/* Content Row: Heatmap + Event Journal */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {/* Heatmap + Event Journal */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
         <FeelingsHeatmap data={heatmapData} className="lg:col-span-2" />
         <EventJournal progress={exerciseProgress} maxEvents={journalDays} />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      {/* Set progress + Execution log */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
         <SetProgressCard progress={setProgress} assignments={rawAssignments} className="lg:col-span-1" />
         <ExerciseExecutionLog progress={exerciseProgress} className="lg:col-span-2" />
       </div>
-
-      {activityReportSummary && (
-        <Card className="border-border/60 bg-surface dark:bg-surface/50">
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-sm font-semibold">
-              <BarChart3 className="h-4 w-4 text-primary" />
-              Raport okresowy: ostatnie 30 dni
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              <div className="rounded-xl border border-border/60 bg-background/50 p-3">
-                <p className="text-xs text-muted-foreground">Wykonane ćwiczenia</p>
-                <p className="mt-1 text-lg font-semibold text-foreground">
-                  {activityReportSummary.completedExercises}/{activityReportSummary.totalExercises}
-                </p>
-              </div>
-              <div className="rounded-xl border border-border/60 bg-background/50 p-3">
-                <p className="text-xs text-muted-foreground">Realizacja</p>
-                <p className="mt-1 text-lg font-semibold text-foreground">
-                  {activityReportSummary.overallCompletionPercentage}%
-                </p>
-              </div>
-              <div className="rounded-xl border border-border/60 bg-background/50 p-3">
-                <p className="text-xs text-muted-foreground">Dni z treningiem</p>
-                <p className="mt-1 text-lg font-semibold text-foreground">
-                  {activityReportSummary.totalCompletedSessions}
-                </p>
-              </div>
-              <div className="rounded-xl border border-border/60 bg-background/50 p-3">
-                <p className="text-xs text-muted-foreground">Aktywne zestawy</p>
-                <p className="mt-1 text-lg font-semibold text-foreground">
-                  {activityReportSummary.totalExerciseSets}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
     </div>
   );
 }

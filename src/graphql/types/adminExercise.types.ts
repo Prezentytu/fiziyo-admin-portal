@@ -188,6 +188,32 @@ export interface BatchApproveExercisesVariables {
   exerciseIds: string[];
 }
 
+export interface BulkArchiveResult {
+  totalRequested: number;
+  successCount: number;
+  failedIds: string[];
+  errors: string[];
+}
+
+export interface BatchArchiveExercisesVariables {
+  exerciseIds: string[];
+  reason?: string | null;
+}
+
+export interface BatchArchiveOrganizationExercisesVariables extends BatchArchiveExercisesVariables {
+  organizationId: string;
+}
+
+export interface OrganizationExerciseScopeInput {
+  organizationId: string;
+  exerciseId: string;
+}
+
+export interface BatchArchiveOrganizationExercisesAsAdminVariables {
+  organizationExercises: OrganizationExerciseScopeInput[];
+  reason?: string | null;
+}
+
 // ============================================
 // Query Responses
 // ============================================
@@ -313,6 +339,18 @@ export interface BatchApproveExercisesResponse {
     totalRequested: number;
     errors: string[];
   };
+}
+
+export interface BatchArchiveExercisesResponse {
+  batchArchiveExercises: BulkArchiveResult;
+}
+
+export interface BatchArchiveOrganizationExercisesResponse {
+  batchArchiveOrganizationExercises: BulkArchiveResult;
+}
+
+export interface BatchArchiveOrganizationExercisesAsAdminResponse {
+  batchArchiveOrganizationExercisesAsAdmin: BulkArchiveResult;
 }
 
 export interface PublishApprovedExercisesResponse {

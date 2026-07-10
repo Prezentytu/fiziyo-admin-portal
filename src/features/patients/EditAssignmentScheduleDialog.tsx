@@ -23,6 +23,7 @@ import {
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { getDefaultDaysForFrequency } from '@/features/assignment/utils/scheduleUtils';
 import { calculateScheduleSummary, calculateStartInDays, pluralizeDay } from '@/features/assignment/utils/scheduleSummaryUtils';
+import { buildAssignmentFrequencyPayload } from '@/features/assignment/utils/scheduleFrequencyUtils';
 
 import { UPDATE_EXERCISE_SET_ASSIGNMENT_MUTATION } from '@/graphql/mutations/exercises.mutations';
 import { GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY } from '@/graphql/queries/patientAssignments.queries';
@@ -404,19 +405,10 @@ export function EditAssignmentScheduleDialog({
           assignmentId: assignment.id,
           startDate: startDate.toISOString(),
           endDate: endDate.toISOString(),
-          frequency: {
-            timesPerDay: frequency.timesPerDay,
-            timesPerWeek: frequencyType === 'SPECIFIC_DAYS' ? selectedDaysCount : frequency.timesPerWeek,
-            breakBetweenSets: frequency.breakBetweenSets,
+          frequency: buildAssignmentFrequencyPayload({
+            ...frequency,
             isFlexible: frequencyType !== 'SPECIFIC_DAYS',
-            monday: frequency.monday,
-            tuesday: frequency.tuesday,
-            wednesday: frequency.wednesday,
-            thursday: frequency.thursday,
-            friday: frequency.friday,
-            saturday: frequency.saturday,
-            sunday: frequency.sunday,
-          },
+          }),
         },
         refetchQueries: [
           {
@@ -475,28 +467,28 @@ export function EditAssignmentScheduleDialog({
                 <div className="grid grid-cols-2 gap-3">
                   <CardOption
                     checked={frequencyType === 'DAILY_1X'}
-                    label="Codziennie"
+                    label="Zalecenia — 7 razy w tygodniu"
                     onSelect={() => applyFrequencyType('DAILY_1X')}
                     name="patient-schedule-frequency"
                     testId="patient-schedule-frequency-daily-1x"
                   />
                   <CardOption
                     checked={frequencyType === 'DAILY_2X'}
-                    label="2x dziennie"
+                    label="Zalecenia — 7 razy w tygodniu, 2× dziennie"
                     onSelect={() => applyFrequencyType('DAILY_2X')}
                     name="patient-schedule-frequency"
                     testId="patient-schedule-frequency-daily-2x"
                   />
                   <CardOption
                     checked={frequencyType === 'WEEKLY_3X'}
-                    label={`${Math.max(1, frequency.timesPerWeek)}x w tygodniu`}
+                    label={`Zalecenia — ${Math.max(1, frequency.timesPerWeek)} razy w tygodniu`}
                     onSelect={() => applyFrequencyType('WEEKLY_3X')}
                     name="patient-schedule-frequency"
                     testId="patient-schedule-frequency-weekly"
                   />
                   <CardOption
                     checked={frequencyType === 'SPECIFIC_DAYS'}
-                    label="Wybrane dni"
+                    label="Harmonogram — wybrane dni"
                     onSelect={() => applyFrequencyType('SPECIFIC_DAYS')}
                     name="patient-schedule-frequency"
                     testId="patient-schedule-frequency-specific-days"
@@ -577,6 +569,11 @@ export function EditAssignmentScheduleDialog({
                     <p className="mt-3 text-center text-xs text-muted-foreground">
                       Wybrano: {selectedDaysCount} {pluralizeDay(selectedDaysCount)}
                     </p>
+                    {frequencyType === 'SPECIFIC_DAYS' && selectedDaysCount === 0 && (
+                      <p className="mt-2 text-center text-sm text-destructive" role="alert">
+                        Wybierz co najmniej jeden dzień harmonogramu.
+                      </p>
+                    )}
                   </div>
                 </div>
 

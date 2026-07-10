@@ -28,6 +28,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { SetThumbnail } from '@/features/exercise-sets/SetThumbnail';
 import { CreateSetWizard } from '@/features/exercise-sets/CreateSetWizard';
 import { AssignmentWizard } from '@/features/assignment/AssignmentWizard';
+import { normalizeFrequencySeed } from '@/features/assignment/utils/scheduleFrequencyUtils';
 import { PatientDialog } from '@/features/patients/PatientDialog';
 import { DashboardSkeleton } from '@/components/shared/DashboardSkeleton';
 import { GettingStartedCard } from '@/components/onboarding/GettingStartedCard';
@@ -55,6 +56,19 @@ interface ExerciseSetItem {
   creationTime?: string;
   kind?: 'TEMPLATE' | 'PATIENT_PLAN';
   isTemplate?: boolean;
+  frequency?: {
+    timesPerDay?: number | string;
+    timesPerWeek?: number | string;
+    breakBetweenSets?: number | string;
+    isFlexible?: boolean;
+    monday?: boolean;
+    tuesday?: boolean;
+    wednesday?: boolean;
+    thursday?: boolean;
+    friday?: boolean;
+    saturday?: boolean;
+    sunday?: boolean;
+  };
   exerciseMappings?: Array<{
     id: string;
     exerciseId: string;
@@ -733,6 +747,7 @@ export default function DashboardPage() {
                   id: quickAssignSet.id,
                   name: quickAssignSet.name,
                   description: quickAssignSet.description,
+                  frequency: quickAssignSet.frequency ? normalizeFrequencySeed(quickAssignSet.frequency) : undefined,
                   exerciseMappings: quickAssignSet.exerciseMappings?.map((m) => ({
                     id: m.id,
                     exerciseId: m.exerciseId,

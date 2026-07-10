@@ -18,6 +18,7 @@ import { SetCard, ExerciseSet } from '@/features/exercise-sets/SetCard';
 import { EditExerciseSetFullDialog } from '@/features/exercise-sets/EditExerciseSetFullDialog';
 import { CreateSetWizard } from '@/features/exercise-sets/CreateSetWizard';
 import { AssignmentWizard } from '@/features/assignment/AssignmentWizard';
+import { normalizeFrequencySeed } from '@/features/assignment/utils/scheduleFrequencyUtils';
 import { cn } from '@/lib/utils';
 import { HIDE_EXERCISE_TAGS } from '@/components/shared/exercise';
 
@@ -643,6 +644,7 @@ export default function ExerciseSetsPage() {
                   id: assigningSet.id,
                   name: assigningSet.name,
                   description: assigningSet.description,
+                  frequency: assigningSet.frequency ? normalizeFrequencySeed(assigningSet.frequency) : undefined,
                   exerciseMappings: assigningSet.exerciseMappings?.map((m) => ({
                     id: m.id,
                     exerciseId: m.exerciseId,

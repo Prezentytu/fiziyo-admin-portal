@@ -9,6 +9,7 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { EmptyState } from '@/components/shared/EmptyState';
@@ -35,6 +36,7 @@ import {
   SCAN_EXERCISE_REPOSITORY_MUTATION,
   IMPORT_EXERCISES_TO_REVIEW_MUTATION,
   UNPUBLISH_EXERCISE_MUTATION,
+  BATCH_ARCHIVE_EXERCISES_MUTATION,
 } from '@/graphql/mutations/adminExercises.mutations';
 import { ON_EXERCISE_SUBMITTED_FOR_GLOBAL_REVIEW } from '@/graphql/subscriptions';
 import Link from 'next/link';
@@ -42,6 +44,8 @@ import Image from 'next/image';
 import { Badge } from '@/components/ui/badge';
 import { getMediaUrl } from '@/utils/mediaUrl';
 import { cn } from '@/lib/utils';
+import { VerificationSelectionToolbar } from '@/features/verification/VerificationSelectionToolbar';
+import { VerificationArchiveDialog } from '@/features/verification/VerificationArchiveDialog';
 import type { UserByClerkIdResponse } from '@/types/apollo';
 import type {
   GetVerificationStatsResponse,
@@ -49,8 +53,10 @@ import type {
   GetVerificationQueuePageVariables,
   UnpublishExerciseResponse,
   AdminExercise,
+  BatchArchiveExercisesResponse,
 } from '@/graphql/types/adminExercise.types';
 import type { ExerciseReport } from '@/types/exercise-report.types';
+import { useVerificationSelection } from '@/features/verification/utils/verificationSelection';
 
 type GlobalVerificationFilter = 'pending' | 'changes' | 'published' | 'archived' | 'reported';
 type VerificationStatsFilter = GlobalVerificationFilter | 'verified';
@@ -76,11 +82,17 @@ function VerificationTaskRow({
   onUnpublish,
   isUnpublishing,
   detailHref,
+  selectable = false,
+  selected = false,
+  onSelectionChange,
 }: {
   exercise: AdminExercise;
   onUnpublish?: (id: string) => void;
   isUnpublishing?: boolean;
   detailHref?: string;
+  selectable?: boolean;
+  selected?: boolean;
+  onSelectionChange?: (selected: boolean) => void;
 }) {
   const imageUrl = getMediaUrl(exercise.thumbnailUrl || exercise.imageUrl || exercise.images?.[0]);
 
@@ -92,93 +104,110 @@ function VerificationTaskRow({
   const status = statusConfig[exercise.status] || { label: 'Szkic', className: 'bg-muted text-muted-foreground' };
 
   return (
-    <Link href={detailHref ?? `/verification/${exercise.id}`}>
-      <div
-        className={cn(
-          'group flex items-center gap-4 p-3 rounded-lg border border-border/60 bg-surface/50',
-          'hover:border-primary/40 hover:bg-surface transition-all duration-200 cursor-pointer'
-        )}
-        data-testid={`verification-row-${exercise.id}`}
-      >
-        {/* Thumbnail */}
-        <div className="w-16 h-12 rounded-md overflow-hidden bg-surface-light shrink-0 relative">
-          {imageUrl ? (
-            <Image
-              src={imageUrl}
-              alt={exercise.name}
-              width={64}
-              height={48}
-              className="w-full h-full object-cover"
-              sizes="64px"
-            />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-              <ShieldCheck className="h-5 w-5" />
+    <div className="relative">
+      {selectable && (
+        <Checkbox
+          checked={selected}
+          onCheckedChange={(checked) => onSelectionChange?.(checked === true)}
+          aria-label={`${selected ? 'Odznacz' : 'Zaznacz'} ćwiczenie ${exercise.name}`}
+          className="absolute left-3 top-3 z-20 h-5 w-5 border-border bg-card shadow-sm"
+          data-testid={`verification-row-${exercise.id}-select-checkbox`}
+        />
+      )}
+      <Link href={detailHref ?? `/verification/${exercise.id}`}>
+        <div
+          className={cn(
+            'group flex items-center gap-4 p-3 rounded-lg border border-border/60 bg-surface',
+            'hover:border-primary/40 hover:bg-surface transition-all duration-200 cursor-pointer',
+            selected && 'border-primary ring-1 ring-primary/30',
+            selectable && 'pl-12'
+          )}
+          data-testid={`verification-row-${exercise.id}`}
+        >
+          {/* Thumbnail */}
+          <div className="w-16 h-12 rounded-md overflow-hidden bg-surface-light shrink-0 relative">
+            {imageUrl ? (
+              <Image
+                src={imageUrl}
+                alt={exercise.name}
+                width={64}
+                height={48}
+                className="w-full h-full object-cover"
+                sizes="64px"
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+                <ShieldCheck className="h-5 w-5" />
+              </div>
+            )}
+          </div>
+
+          {/* Content */}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 mb-0.5">
+              <h3 className="font-medium text-foreground truncate group-hover:text-primary transition-colors">
+                {exercise.name}
+              </h3>
+              <Badge variant="outline" className={cn('text-[10px] shrink-0', status.className)}>
+                {status.label}
+              </Badge>
             </div>
-          )}
-        </div>
-
-        {/* Content */}
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-0.5">
-            <h3 className="font-medium text-foreground truncate group-hover:text-primary transition-colors">
-              {exercise.name}
-            </h3>
-            <Badge variant="outline" className={cn('text-[10px] shrink-0', status.className)}>
-              {status.label}
-            </Badge>
-          </div>
-          <div className="flex items-center gap-3 text-xs text-muted-foreground">
-            {exercise.createdBy && (
-              <span className="flex items-center gap-1">
-                <User className="h-3 w-3" />
-                {exercise.createdBy.fullname || exercise.createdBy.email}
-              </span>
-            )}
-            {exercise.createdAt && (
-              <span className="flex items-center gap-1">
-                <Clock className="h-3 w-3" />
-                {formatRelativeTime(exercise.createdAt)}
-              </span>
+            <div className="flex items-center gap-3 text-xs text-muted-foreground">
+              {exercise.createdBy && (
+                <span className="flex items-center gap-1">
+                  <User className="h-3 w-3" />
+                  {exercise.createdBy.fullname || exercise.createdBy.email}
+                </span>
+              )}
+              {exercise.createdAt && (
+                <span className="flex items-center gap-1">
+                  <Clock className="h-3 w-3" />
+                  {formatRelativeTime(exercise.createdAt)}
+                </span>
+              )}
+            </div>
+            {exercise.latestReport && (
+              <p
+                className="mt-1 text-[11px] text-amber-600 line-clamp-1"
+                data-testid={`verification-row-${exercise.id}-report-context`}
+              >
+                {exercise.latestReport.reasonCategory}: {exercise.latestReport.description}
+              </p>
             )}
           </div>
-          {exercise.latestReport && (
-            <p className="mt-1 text-[11px] text-amber-600 line-clamp-1" data-testid={`verification-row-${exercise.id}-report-context`}>
-              {exercise.latestReport.reasonCategory}: {exercise.latestReport.description}
-            </p>
-          )}
-        </div>
 
-        {/* Actions */}
-        <div className="flex items-center gap-2 shrink-0">
-          {exercise.hasOpenReport && (
-            <Badge
-              variant="outline"
-              className="text-[10px] border-amber-500/30 bg-amber-500/10 text-amber-600"
-              data-testid={`verification-row-${exercise.id}-reported-badge`}
-            >
-              Zgłoszenia ({exercise.openReportCount ?? 1})
-            </Badge>
-          )}
-          {onUnpublish && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                onUnpublish(exercise.id);
-              }}
-              disabled={isUnpublishing}
-              className="h-8 text-xs text-muted-foreground hover:text-destructive"
-            >
-              Cofnij
-            </Button>
-          )}
-          <ChevronRight className="h-4 w-4 text-muted-foreground/40 group-hover:text-primary transition-colors" />
+          {/* Actions */}
+          <div className="flex items-center gap-2 shrink-0">
+            {exercise.hasOpenReport && (
+              <Badge
+                variant="outline"
+                className="text-[10px] border-amber-500/30 bg-amber-500/10 text-amber-600"
+                data-testid={`verification-row-${exercise.id}-reported-badge`}
+              >
+                Zgłoszenia ({exercise.openReportCount ?? 1})
+              </Badge>
+            )}
+            {onUnpublish && (
+              <Button
+                data-testid={`verification-row-${exercise.id}-unpublish-btn`}
+                variant="ghost"
+                size="sm"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  onUnpublish(exercise.id);
+                }}
+                disabled={isUnpublishing}
+                className="h-8 text-xs text-muted-foreground hover:text-destructive"
+              >
+                Cofnij
+              </Button>
+            )}
+            <ChevronRight className="h-4 w-4 text-muted-foreground/40 group-hover:text-primary transition-colors" />
+          </div>
         </div>
-      </div>
-    </Link>
+      </Link>
+    </div>
   );
 }
 
@@ -233,6 +262,7 @@ export default function VerificationPage() {
     hasNextPage: false,
   });
   const [reportedCount, setReportedCount] = useState(0);
+  const [archiveDialogOpen, setArchiveDialogOpen] = useState(false);
 
   const updateUrlState = useCallback(
     (nextState: {
@@ -387,6 +417,10 @@ export default function VerificationPage() {
     unpublishExercise({ variables: { exerciseId, reason } });
   };
 
+  const [batchArchiveExercises, { loading: archiving }] = useMutation<BatchArchiveExercisesResponse>(
+    BATCH_ARCHIVE_EXERCISES_MUTATION
+  );
+
   useEffect(() => {
     if (!canReviewExercises) {
       setReportedCount(0);
@@ -524,26 +558,29 @@ export default function VerificationPage() {
 
     const queueItems = queueData?.verificationQueuePage.items ?? [];
     return queueItems.map((exercise) => {
-        const reports = openReportsByExerciseId.get(exercise.id);
-        if (!reports || reports.length === 0) {
-          return exercise;
-        }
+      const reports = openReportsByExerciseId.get(exercise.id);
+      if (!reports || reports.length === 0) {
+        return exercise;
+      }
 
-        const latestReport = [...reports].sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0];
-        return {
-          ...exercise,
-          hasOpenReport: true,
-          openReportCount: reports.length,
-          latestReport: {
-            reasonCategory: latestReport.reasonCategory,
-            description: latestReport.description,
-            reporterName: latestReport.reportedBy.name,
-            createdAt: latestReport.createdAt,
-            routingTarget: latestReport.routingTarget,
-          },
-        };
-      });
+      const latestReport = [...reports].sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0];
+      return {
+        ...exercise,
+        hasOpenReport: true,
+        openReportCount: reports.length,
+        latestReport: {
+          reasonCategory: latestReport.reasonCategory,
+          description: latestReport.description,
+          reporterName: latestReport.reportedBy.name,
+          createdAt: latestReport.createdAt,
+          routingTarget: latestReport.routingTarget,
+        },
+      };
+    });
   }, [activeFilter, queueData, reportedExercises, openReportsByExerciseId]);
+
+  const visibleExerciseIds = useMemo(() => exercises.map((exercise) => exercise.id), [exercises]);
+  const selection = useVerificationSelection(visibleExerciseIds);
 
   const pageMeta = useMemo(() => {
     if (activeFilter === 'reported') {
@@ -606,12 +643,14 @@ export default function VerificationPage() {
 
   const handleFilterChange = (nextFilter: VerificationStatsFilter) => {
     const normalizedFilter: GlobalVerificationFilter = nextFilter === 'verified' ? 'published' : nextFilter;
+    selection.clear();
     setActiveFilter(normalizedFilter);
     setPage(1);
     updateUrlState({ filter: normalizedFilter, page: 1, search: searchQuery });
   };
 
   const handleSearchChange = (value: string) => {
+    selection.clear();
     setSearchQuery(value);
     setPage(1);
     updateUrlState({ search: value, page: 1 });
@@ -624,14 +663,48 @@ export default function VerificationPage() {
 
   const handlePageChange = (nextPage: number) => {
     const safeNextPage = Math.max(nextPage, 1);
+    selection.clear();
     setPage(safeNextPage);
     updateUrlState({ page: safeNextPage });
   };
 
   const handlePageSizeChange = (nextPageSize: number) => {
+    selection.clear();
     setPageSize(nextPageSize);
     setPage(1);
     updateUrlState({ pageSize: nextPageSize, page: 1 });
+  };
+
+  const handleArchiveSelected = async () => {
+    const selectedIds = selection.selectedIds;
+    if (selectedIds.length === 0) {
+      return;
+    }
+
+    try {
+      const response = await batchArchiveExercises({
+        variables: { exerciseIds: selectedIds, reason: null },
+      });
+      const result = response.data?.batchArchiveExercises;
+      if (!result) {
+        throw new Error('Brak wyniku archiwizacji');
+      }
+
+      const failedIdSet = new Set(result.failedIds);
+      selection.remove(selectedIds.filter((exerciseId) => !failedIdSet.has(exerciseId)));
+      await Promise.all([refetchStats(), refetchQueue()]);
+      setArchiveDialogOpen(false);
+
+      if (result.failedIds.length > 0) {
+        toast.warning(
+          `Zarchiwizowano ${result.successCount} z ${result.totalRequested} ćwiczeń. Niektóre pozycje wymagają ponowienia.`
+        );
+      } else {
+        toast.success(`Zarchiwizowano ${result.successCount} ćwiczeń.`);
+      }
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Nie udało się zarchiwizować ćwiczeń.');
+    }
   };
 
   // Access denied for non-content managers
@@ -688,7 +761,14 @@ export default function VerificationPage() {
         <div className="flex items-center gap-3 flex-wrap sm:flex-nowrap">
           {/* Compact achievements in header */}
           <ReviewerAchievements variant="compact" />
-          <Button variant="outline" size="sm" onClick={handleRefresh} disabled={isLoading} className="gap-2">
+          <Button
+            data-testid="verification-refresh-btn"
+            variant="outline"
+            size="sm"
+            onClick={handleRefresh}
+            disabled={isLoading}
+            className="gap-2"
+          >
             <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
             Odśwież
           </Button>
@@ -709,11 +789,11 @@ export default function VerificationPage() {
         <div className="relative w-full sm:w-64">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
+            data-testid="verification-search-input"
             placeholder="Szukaj ćwiczenia..."
             className="pl-9 bg-surface border-border/60"
             value={searchQuery}
             onChange={(e) => handleSearchChange(e.target.value)}
-            data-testid="verification-search-input"
           />
         </div>
 
@@ -739,6 +819,18 @@ export default function VerificationPage() {
           </Button>
         </div>
       </div>
+
+      <VerificationSelectionToolbar
+        selectedCount={selection.selectedCount}
+        visibleCount={visibleExerciseIds.length}
+        allVisibleSelected={selection.allVisibleSelected}
+        someVisibleSelected={selection.someVisibleSelected}
+        onToggleVisible={selection.toggleVisible}
+        onClear={selection.clear}
+        onArchive={() => setArchiveDialogOpen(true)}
+        disabled={activeFilter === 'archived' || isLoading}
+        isArchiving={archiving}
+      />
 
       {/* Exercise Grid */}
       {isLoading ? (
@@ -776,9 +868,9 @@ export default function VerificationPage() {
                   ? 'Brak ćwiczeń do poprawy'
                   : activeFilter === 'reported'
                     ? 'Brak aktywnych zgłoszeń'
-                  : activeFilter === 'archived'
-                    ? 'Brak wycofanych ćwiczeń'
-                    : 'Brak opublikowanych ćwiczeń'
+                    : activeFilter === 'archived'
+                      ? 'Brak wycofanych ćwiczeń'
+                      : 'Brak opublikowanych ćwiczeń'
           }
           description={
             searchQuery
@@ -789,9 +881,9 @@ export default function VerificationPage() {
                   ? 'Wszystkie ćwiczenia wymagające poprawek zostały zaktualizowane.'
                   : activeFilter === 'reported'
                     ? 'Nie ma zgłoszeń oczekujących na obsługę.'
-                  : activeFilter === 'archived'
-                    ? 'Żadne ćwiczenie nie zostało wycofane z bazy globalnej.'
-                    : "Zatwierdź ćwiczenia z karty 'Oczekujące' żeby je opublikować."
+                    : activeFilter === 'archived'
+                      ? 'Żadne ćwiczenie nie zostało wycofane z bazy globalnej.'
+                      : "Zatwierdź ćwiczenia z karty 'Oczekujące' żeby je opublikować."
           }
         />
       ) : viewMode === 'grid' ? (
@@ -803,6 +895,9 @@ export default function VerificationPage() {
               exercise={exercise}
               onUnpublish={activeFilter === 'published' ? handleUnpublish : undefined}
               isUnpublishing={unpublishing}
+              selectable={activeFilter !== 'archived'}
+              selected={selection.isSelected(exercise.id)}
+              onSelectionChange={() => selection.toggle(exercise.id)}
               detailHref={`/verification/${exercise.id}?${detailQueryString}`}
             />
           ))}
@@ -816,11 +911,23 @@ export default function VerificationPage() {
               exercise={exercise}
               onUnpublish={activeFilter === 'published' ? handleUnpublish : undefined}
               isUnpublishing={unpublishing}
+              selectable={activeFilter !== 'archived'}
+              selected={selection.isSelected(exercise.id)}
+              onSelectionChange={() => selection.toggle(exercise.id)}
               detailHref={`/verification/${exercise.id}?${detailQueryString}`}
             />
           ))}
         </div>
       )}
+
+      <VerificationArchiveDialog
+        open={archiveDialogOpen}
+        count={selection.selectedCount}
+        scopeLabel="globalnym Centrum Weryfikacji"
+        isLoading={archiving}
+        onOpenChange={setArchiveDialogOpen}
+        onConfirm={handleArchiveSelected}
+      />
 
       {exercises.length > 0 && (
         <div className="flex flex-col gap-3 rounded-lg border border-border/60 bg-surface p-3 sm:flex-row sm:items-center sm:justify-between">

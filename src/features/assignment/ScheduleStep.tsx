@@ -160,6 +160,7 @@ export function ScheduleStep({
 
   const selectedDaysCount = useMemo(() => getSelectedDaysCount(frequency), [frequency]);
   const frequencyType = useMemo(() => detectFrequencyType(frequency), [frequency]);
+  const hasSpecificDaysError = frequencyType === 'SPECIFIC_DAYS' && selectedDaysCount === 0;
 
   const estimatedDailyDurationSeconds = estimatedSessionDurationSeconds * Math.max(1, frequency.timesPerDay ?? 1);
 
@@ -289,28 +290,28 @@ export function ScheduleStep({
           <div className="grid grid-cols-2 gap-3 shrink-0">
             <CardOption
               checked={frequencyType === 'DAILY_1X'}
-              label="Codziennie"
+              label="Zalecenia — 7 razy w tygodniu"
               onSelect={() => applyFrequencyType('DAILY_1X')}
               name="frequency"
               testId="assign-schedule-frequency-daily-1x"
             />
             <CardOption
               checked={frequencyType === 'DAILY_2X'}
-              label="2x dziennie"
+              label="Zalecenia — 7 razy w tygodniu, 2× dziennie"
               onSelect={() => applyFrequencyType('DAILY_2X')}
               name="frequency"
               testId="assign-schedule-frequency-daily-2x"
             />
             <CardOption
               checked={frequencyType === 'WEEKLY_3X'}
-              label={frequencyType === 'WEEKLY_3X' && frequency.timesPerWeek ? `${frequency.timesPerWeek}x w tygodniu` : '3x w tygodniu'}
+              label={`Zalecenia — ${frequency.timesPerWeek ?? 3} razy w tygodniu`}
               onSelect={() => applyFrequencyType('WEEKLY_3X')}
               name="frequency"
               testId="assign-schedule-frequency-weekly-3x"
             />
             <CardOption
               checked={frequencyType === 'SPECIFIC_DAYS'}
-              label="Wybrane dni"
+              label="Harmonogram — wybrane dni"
               onSelect={() => applyFrequencyType('SPECIFIC_DAYS')}
               name="frequency"
               testId="assign-schedule-specific-days-toggle"
@@ -346,6 +347,11 @@ export function ScheduleStep({
                   );
                 })}
               </div>
+              {hasSpecificDaysError && (
+                <p className="text-sm text-destructive" role="alert" data-testid="assign-schedule-specific-days-error">
+                  Wybierz co najmniej jeden dzień harmonogramu.
+                </p>
+              )}
             </div>
           </div>
 

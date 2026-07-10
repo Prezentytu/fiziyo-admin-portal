@@ -483,19 +483,23 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
         </button>
 
         <div className="grid grid-cols-2 gap-3 sm:col-span-2 lg:col-span-4">
-          <div className="rounded-2xl border border-border/40 bg-surface/50 p-4 flex flex-col items-center justify-center text-center">
-            <div className="flex items-center gap-2">
+          <div className="rounded-2xl border border-border/40 bg-surface/50 p-4 flex items-center gap-3">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10">
               <FolderKanban className="h-4 w-4 text-primary" />
-              <span className="text-2xl font-bold text-foreground">{activeAssignments.length}</span>
             </div>
-            <p className="text-xs text-muted-foreground mt-1">Aktywnych zestawów</p>
+            <div className="min-w-0">
+              <p className="text-xl font-bold leading-tight text-foreground">{activeAssignments.length}</p>
+              <p className="truncate text-xs text-muted-foreground">Aktywnych zestawów</p>
+            </div>
           </div>
-          <div className="rounded-2xl border border-border/40 bg-surface/50 p-4 flex flex-col items-center justify-center text-center">
-            <div className="flex items-center gap-2">
+          <div className="rounded-2xl border border-border/40 bg-surface/50 p-4 flex items-center gap-3">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-secondary/10">
               <CheckCircle2 className="h-4 w-4 text-secondary" />
-              <span className="text-2xl font-bold text-foreground">{totalCompletions}</span>
             </div>
-            <p className="text-xs text-muted-foreground mt-1">Wykonań łącznie</p>
+            <div className="min-w-0">
+              <p className="text-xl font-bold leading-tight text-foreground">{totalCompletions}</p>
+              <p className="truncate text-xs text-muted-foreground">Wykonań łącznie</p>
+            </div>
           </div>
         </div>
       </div>

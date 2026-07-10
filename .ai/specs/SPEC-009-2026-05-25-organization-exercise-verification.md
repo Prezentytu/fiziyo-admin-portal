@@ -155,9 +155,27 @@ Zasada kompatybilności:
 | Brak regresji global verification flow           | Regresyjny   | High      |
 | Cross-org access blocked                         | Integracyjny | High      |
 
+## Bulk archive actions (2026-07)
+
+Owner/Admin może zaznaczyć wiele ćwiczeń z bieżącej kolejki organizacyjnej i zarchiwizować je jedną, jawnie potwierdzoną akcją. Archiwizacja ustawia `ORG_ARCHIVED`, zachowuje rekord oraz historię recenzji i usuwa ćwiczenie wyłącznie z aktywnej kolejki. Checkbox nadrzędny zaznacza tylko ćwiczenia z aktualnie załadowanej strony.
+
+Bulkowy kontrakt organizacyjny musi:
+
+- wymagać `organizationId` i egzekwować zgodność z membership/token scope,
+- rozróżniać sukcesy i błędy per ćwiczenie,
+- odrzucać ID spoza bieżącej organizacji albo niedozwolonego stanu,
+- odświeżać statystyki, kolejkę i navigator po zakończeniu operacji.
+
+Ten sam model statusu i wyników jest używany przez wariant cross-org SiteSuperAdmin, ale wariant cross-org przyjmuje scope organizacji dla każdego elementu i nie może omijać walidacji tenant isolation.
+
 ## Changelog
 
 ### 2026-05-25
 
 - Utworzenie specyfikacji dla per-organizacyjnej weryfikacji ćwiczeń.
 - Dodanie modelu danych, state machine, kontraktów GraphQL i planu testów.
+
+### 2026-07-11
+
+- Dodano page-scoped bulk selection i soft-delete/archiwizację kolejki organizacyjnej.
+- Doprecyzowano partial failure oraz wymagania scope/RBAC dla bulk operation.

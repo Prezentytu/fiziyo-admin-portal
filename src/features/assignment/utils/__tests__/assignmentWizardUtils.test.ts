@@ -7,6 +7,9 @@ function ctx(overrides: Partial<CanProceedContext> = {}): CanProceedContext {
     builderInstancesLength: 0,
     planNameTrimLength: 0,
     selectedPatientsCount: 0,
+    frequency: {
+      isFlexible: true,
+    },
     ...overrides,
   };
 }
@@ -44,8 +47,19 @@ describe('canProceedFromStep', () => {
   });
 
   describe('schedule and summary', () => {
-    it('returns true regardless of context', () => {
+    it('allows a flexible recommendation without selected days', () => {
       expect(canProceedFromStep('schedule', ctx())).toBe(true);
+    });
+
+    it('blocks a specific schedule without selected days', () => {
+      expect(canProceedFromStep('schedule', ctx({ frequency: { isFlexible: false } }))).toBe(false);
+    });
+
+    it('allows a specific schedule with at least one day', () => {
+      expect(canProceedFromStep('schedule', ctx({ frequency: { isFlexible: false, monday: true } }))).toBe(true);
+    });
+
+    it('always allows the summary step', () => {
       expect(canProceedFromStep('summary', ctx())).toBe(true);
     });
   });

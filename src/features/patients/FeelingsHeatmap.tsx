@@ -1,5 +1,7 @@
 'use client';
 
+import { CalendarDays } from 'lucide-react';
+
 import { cn } from '@/lib/utils';
 import type { DayData } from '@/lib/therapyStatus';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -104,10 +106,22 @@ export function FeelingsHeatmap({ data, className, title }: FeelingsHeatmapProps
   };
 
   return (
-    <div className={cn('rounded-2xl border border-border bg-surface dark:bg-surface/50 p-6', className)}>
-      <div className="flex justify-between items-center mb-6">
-        <h3 className="font-bold text-foreground text-sm">{title ?? `Regularność (Ostatnie ${data.length} dni)`}</h3>
-        <div className="flex gap-3 text-[10px] text-muted-foreground uppercase tracking-wider font-medium">
+    <div
+      className={cn(
+        'rounded-xl md:rounded-2xl border border-border/60 bg-background/40 dark:bg-background/20 p-5 md:p-6',
+        className
+      )}
+    >
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
+        <div className="flex items-center gap-2.5">
+          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-info/10">
+            <CalendarDays className="h-3.5 w-3.5 text-info" />
+          </div>
+          <h3 className="text-sm font-semibold text-foreground">
+            {title ?? `Regularność (Ostatnie ${data.length} dni)`}
+          </h3>
+        </div>
+        <div className="flex flex-wrap gap-3 text-[10px] text-muted-foreground uppercase tracking-wider font-medium">
           <div className="flex items-center gap-1.5">
             <span className="w-2 h-2 rounded bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.4)]" />
             <span>OK</span>
@@ -128,9 +142,9 @@ export function FeelingsHeatmap({ data, className, title }: FeelingsHeatmapProps
       </div>
 
       <TooltipProvider delayDuration={100}>
-        <div className="space-y-2">
+        <div className="mx-auto max-w-md space-y-1.5">
           {/* Day labels */}
-          <div className="grid grid-cols-7 gap-2">
+          <div className="grid grid-cols-7 gap-1.5">
             {dayLabels.map((label) => (
               <div key={label} className="text-center text-muted-foreground text-[10px] uppercase pb-1">
                 {label}
@@ -140,23 +154,25 @@ export function FeelingsHeatmap({ data, className, title }: FeelingsHeatmapProps
 
           {/* Weeks */}
           {weeks.map((week) => (
-            <div key={week[0]?.dateStr || Math.random()} className="grid grid-cols-7 gap-2">
+            <div key={week[0]?.dateStr || Math.random()} className="grid grid-cols-7 gap-1.5">
               {week.map((day) => {
                 const isToday = day.date.toDateString() === today;
 
                 return (
                   <Tooltip key={day.dateStr}>
                     <TooltipTrigger asChild>
-                      <div
-                        className={cn(
-                          'aspect-square rounded-md border transition-colors relative',
-                          getSquareStyle(day)
-                        )}
-                      >
-                        {/* Marker dla "dzisiaj" - biała kropka */}
-                        {isToday && day.hasActivity && (
-                          <div className="absolute -top-1 -right-1 w-2 h-2 bg-primary rounded-full" />
-                        )}
+                      <div className="mx-auto aspect-square w-full max-w-9">
+                        <div
+                          className={cn(
+                            'relative h-full w-full rounded-md border transition-colors',
+                            getSquareStyle(day)
+                          )}
+                        >
+                          {/* Marker dla "dzisiaj" - biała kropka */}
+                          {isToday && day.hasActivity && (
+                            <div className="absolute -top-1 -right-1 w-2 h-2 bg-primary rounded-full" />
+                          )}
+                        </div>
                       </div>
                     </TooltipTrigger>
                     <TooltipContent side="top" className="bg-popover border-border text-popover-foreground max-w-[200px]">
