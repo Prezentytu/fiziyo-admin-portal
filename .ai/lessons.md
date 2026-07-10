@@ -14,6 +14,14 @@ Dziennik wniosków z pracy AI agentów. Po każdej korekcie dodaj nowy wpis.
 
 ## Wpisy
 
+### 2026-07-09 - Redesign "Aktywność i postępy" — card-in-card noise i heatmap bez capu rozmiaru kafla
+
+- **Kategoria**: `UI/UX` | `React`
+- **Problem**: Podsekcje `ActivityReport` (`TherapyStatusCard`, `NextStepCard`, `FeelingsHeatmap`, `EventJournal`, `SetProgressCard`, `ExerciseExecutionLog`) używały `bg-surface`/shadcn `Card` (domyślnie `bg-card`, ten sam token co `bg-surface`) mimo że cała sekcja była już zagnieżdżona w page-level `Card` z `bg-surface` — dawało to efekt "ramka w tej samej ramce" (podwójne bordery, brak głębi). Dodatkowo `FeelingsHeatmap` renderował kafle jako `aspect-square` bez górnego limitu rozmiaru w gridzie 7 kolumn na szerokim `lg:col-span-2` kontenerze, co przy małej liczbie tygodni dawało gigantyczne, puste kwadraty. KPI "Raport okresowy" był na samym dole sekcji, mimo że to najważniejsza liczba do zeskanowania wzrokiem (naruszenie Reciprocity/Label-Value z warstwy CRO).
+- **Przyczyna**: Komponenty rozwijane niezależnie w czasie bez jednego wspólnego "poziomu zagnieżdżenia" dla paneli wewnątrz sekcji zagnieżdżonej w innej `Card`; heatmap nie miał capu na `max-width`/`max-height` kafla, tylko skalowanie 1:1 z szerokością kolumny grida.
+- **Rozwiązanie**: Wprowadzono jeden wspólny "recessed panel" token dla wszystkich podkomponentów sekcji zagnieżdżonej w page-level `Card`: `bg-background/40 dark:bg-background/20` (ciemniejszy/jaśniejszy niż otaczający `bg-surface`, więc widać głębię bez podwójnego bordera) + spójny `rounded-xl md:rounded-2xl p-5 md:p-6`. Wewnętrzne "wiersze" (np. w `SetProgressCard`, `ExerciseExecutionLog`) dostały odwrotny, "podniesiony" token `bg-surface/70 dark:bg-surface/40` dla rytmu recessed→raised. Heatmap: każdy kafel owinięto w `div` z `aspect-square w-full max-w-9 mx-auto` (cap 36px), a cała siatka dni w `mx-auto max-w-md` — kafle nie rosną już z szerokością kontenera. KPI "Raport okresowy" przeniesiono na górę `ActivityReport` jako scorecard z jedną dominantą (Realizacja % większym fontem po lewej) + 3 metryki wspierające (Contrast Effect).
+- **Reguła**: Gdy komponent-panel będzie renderowany wewnątrz innej `Card`/kontenera z tym samym tłem (`bg-surface`/`bg-card`), NIE używaj tego samego tokenu tła ponownie — zejdź o jeden poziom głębi (`bg-background/*`) albo usuń zewnętrzny border. Dla siatek typu heatmap/kalendarz ZAWSZE dodawaj cap rozmiaru komórki (`max-w-*`/`max-h-*` + `mx-auto`), nigdy nie licz wyłącznie na `aspect-square` skalujące się z szerokością kolumny grida — inaczej przy małej liczbie elementów w rzędzie kafle rozdmuchują się do absurdalnych rozmiarów.
+
 ### 2026-07-09 - "Dokumentacja" (ClinicalNote) miała martwy wizard sekcji klinicznych — zredukowana do "Notatki"
 
 - **Kategoria**: `UI/UX` | `React` | `Build/Tooling`
@@ -749,5 +757,13 @@ Dziennik wniosków z pracy AI agentów. Po każdej korekcie dodaj nowy wpis.
 - **Przyczyna**: Panel weryfikacyjny powstał niezależnie od edytora na stronie ćwiczenia (`useExerciseEditorForm` + `ExerciseParametersEditor` + sekcje), więc dwa równoległe źródła prawdy dla tych samych pól rozjechały się w czasie.
 - **Rozwiązanie**: Wydzielono `ExerciseEditor` (sekcje core + enrichment + opcjonalne sloty: pole nazwy, AI-fill, zwijany JSON, `disabled`) i rozszerzono `useExerciseEditorForm` o tryb `autosave` (debounce ~900ms) + `flush()` (wymuszenie zapisu przed akcją krytyczną) + `markSaved()` (aktualizacja baseline bez refetch, żeby dirty-dots znikały bez resetu stanu recenzenta). Wszystkie 3 widoki weryfikacji + strona ćwiczenia korzystają teraz z tego samego komponentu; `flush()` wywoływany zawsze przed `approve`/`reject`/`archive`/`requestChanges`, żeby pending autosave nie zgubił zmian.
 - **Reguła**: Gdy kilka widoków edytuje ten sam encję domenową (tu: `Exercise`), trzymaj JEDEN komponent edycyjny + JEDEN hook stanu, a widoki różnicuj tylko przez propsy (mutacje zapisu, `disabled`, sloty opcjonalne) i logikę wokół (mutacje approve/reject specyficzne dla trybu). Migrację rób etapowo z gate'em "zero regresji" na pierwszym miejscu (strona ćwiczenia bez zmiany UX), zanim podłączysz kolejne widoki. Przed usunięciem starego komponentu zawsze pytaj o zgodę i sprawdź `grep` czy nic go już nie importuje.
+
+### 2026-07-11 - Bulk verification musi przenosić scope organizacji
+
+- **Kategoria**: `UI/UX` | `GraphQL`
+- **Problem**: Masowe akcje weryfikacji działają na paginowanych kolejkach i w wariancie cross-org; samo `exerciseId` nie wystarcza do bezpiecznego wskazania rekordu organizacyjnego.
+- **Przyczyna**: Globalny i organizacyjny lifecycle używają tej samej encji `Exercise`, ale mają niezależne statusy i granice tenantów. Dodatkowo selekcja może przeżyć zmianę danych kolejki, jeśli nie jest czyszczona przy zmianie filtra, wyszukiwania lub strony.
+- **Rozwiązanie**: Wydzielono wspólny page-scoped model selekcji, resetowano go przy zmianie kontekstu listy, a cross-org bulk payload przenosi parę `organizationId + exerciseId`; backend ma ponownie egzekwować RBAC, scope i dozwolone przejścia statusu oraz zwracać błędy per ID.
+- **Reguła**: Dla bulk operacji na encjach tenant-aware payload zawsze musi zawierać jawny scope, selekcję ograniczaj do aktualnie widocznej strony, a częściowe wyniki obsługuj per rekord — nigdy nie zakładaj, że sukces całej mutacji oznacza sukces każdego ID.
 
 <!-- Dodawaj nowe wpisy powyżej tej linii -->

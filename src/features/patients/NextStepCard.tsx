@@ -41,13 +41,20 @@ export function NextStepCard({
     }
   })();
 
+  // Dominant (primary) action gets a tinted, higher-contrast style; secondary action stays neutral/ghost
+  // so there is always exactly one visual anchor per recommendation (Contrast Effect).
+  const primaryButtonClass = 'flex-1 text-xs bg-primary/10 hover:bg-primary/15 border-primary/30 text-primary';
+  const urgentButtonClass = 'flex-1 text-xs bg-warning/10 hover:bg-warning/20 border-warning/30 text-warning';
+  const secondaryButtonClass =
+    'flex-1 text-xs bg-transparent hover:bg-background/60 border-border/70 text-foreground';
+
   const actionButtons = (() => {
     if (statusResult.reason === 'on_track') {
       return (
         <Button
           variant="secondary"
           size="sm"
-          className="flex-1 text-xs bg-surface-elevated hover:bg-surface-light border-border text-foreground"
+          className={cn('flex-1 text-xs bg-success/10 hover:bg-success/15 border-success/30 text-success')}
           onClick={onSendPraise || onSendMessage}
           disabled={!onSendPraise && !onSendMessage}
           data-testid="patient-next-step-message-btn"
@@ -64,7 +71,7 @@ export function NextStepCard({
           <Button
             variant="secondary"
             size="sm"
-            className="flex-1 text-xs bg-warning/10 hover:bg-warning/20 border-warning/30 text-warning"
+            className={urgentButtonClass}
             onClick={onCall}
             disabled={!onCall}
             aria-disabled={!onCall}
@@ -76,7 +83,7 @@ export function NextStepCard({
           <Button
             variant="secondary"
             size="sm"
-            className="flex-1 text-xs bg-surface-elevated hover:bg-surface-light border-border text-foreground"
+            className={secondaryButtonClass}
             onClick={onEditPlan}
             disabled={!onEditPlan}
             aria-disabled={!onEditPlan}
@@ -95,7 +102,7 @@ export function NextStepCard({
           <Button
             variant="secondary"
             size="sm"
-            className="flex-1 text-xs bg-surface-elevated hover:bg-surface-light border-border text-foreground"
+            className={primaryButtonClass}
             onClick={onSendMessage}
             disabled={!onSendMessage}
             data-testid="patient-next-step-message-btn"
@@ -106,7 +113,7 @@ export function NextStepCard({
           <Button
             variant="secondary"
             size="sm"
-            className="flex-1 text-xs bg-surface-elevated hover:bg-surface-light border-border text-foreground"
+            className={secondaryButtonClass}
             onClick={onEditPlan}
             disabled={!onEditPlan}
             aria-disabled={!onEditPlan}
@@ -125,19 +132,7 @@ export function NextStepCard({
           <Button
             variant="secondary"
             size="sm"
-            className="flex-1 text-xs bg-surface-elevated hover:bg-surface-light border-border text-foreground"
-            onClick={onEditPlan}
-            disabled={!onEditPlan}
-            aria-disabled={!onEditPlan}
-            data-testid="patient-next-step-edit-plan-btn"
-          >
-            <Settings className="h-3.5 w-3.5 mr-1.5" />
-            Edytuj plan
-          </Button>
-          <Button
-            variant="secondary"
-            size="sm"
-            className="flex-1 text-xs bg-warning/10 hover:bg-warning/20 border-warning/30 text-warning"
+            className={urgentButtonClass}
             onClick={onCall}
             disabled={!onCall}
             aria-disabled={!onCall}
@@ -145,6 +140,18 @@ export function NextStepCard({
           >
             <Phone className="h-3.5 w-3.5 mr-1.5" />
             Zadzwoń
+          </Button>
+          <Button
+            variant="secondary"
+            size="sm"
+            className={secondaryButtonClass}
+            onClick={onEditPlan}
+            disabled={!onEditPlan}
+            aria-disabled={!onEditPlan}
+            data-testid="patient-next-step-edit-plan-btn"
+          >
+            <Settings className="h-3.5 w-3.5 mr-1.5" />
+            Edytuj plan
           </Button>
         </>
       );
@@ -155,7 +162,7 @@ export function NextStepCard({
         <Button
           variant="secondary"
           size="sm"
-          className="flex-1 text-xs bg-surface-elevated hover:bg-surface-light border-border text-foreground"
+          className={primaryButtonClass}
           onClick={onSendMessage}
           disabled={!onSendMessage}
           data-testid="patient-next-step-message-btn"
@@ -166,7 +173,7 @@ export function NextStepCard({
         <Button
           variant="secondary"
           size="sm"
-          className="flex-1 text-xs bg-surface-elevated hover:bg-surface-light border-border text-foreground"
+          className={secondaryButtonClass}
           onClick={onEditPlan}
           disabled={!onEditPlan}
           aria-disabled={!onEditPlan}
@@ -181,7 +188,10 @@ export function NextStepCard({
 
   return (
     <div
-      className={cn('rounded-2xl border border-border bg-surface dark:bg-surface/50 p-6 flex flex-col justify-between', className)}
+      className={cn(
+        'rounded-xl md:rounded-2xl border border-border/60 bg-background/40 dark:bg-background/20 p-5 md:p-6 flex flex-col justify-between',
+        className
+      )}
     >
       <div>
         <h3 className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground mb-2">Rekomendacja</h3>

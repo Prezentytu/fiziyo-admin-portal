@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import type { ReactNode } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -35,5 +36,24 @@ describe('VerificationTaskCard', () => {
 
     expect(screen.getByTestId('verification-card-exercise-1-reported-badge')).toHaveTextContent('Zgłoszenia (3)');
     expect(screen.getByTestId('verification-card-exercise-1-report-context')).toBeInTheDocument();
+  });
+
+  it('obsługuje zaznaczenie bez otwierania detalu ćwiczenia', async () => {
+    const user = userEvent.setup();
+    const onSelectionChange = vi.fn();
+
+    render(
+      <VerificationTaskCard
+        exercise={baseExercise}
+        selectable
+        onSelectionChange={onSelectionChange}
+        detailHref="/verification/exercise-1"
+      />
+    );
+
+    await user.click(screen.getByTestId('verification-card-exercise-1-select-checkbox'));
+
+    expect(onSelectionChange).toHaveBeenCalledWith(true);
+    expect(screen.getByTestId('verification-card-exercise-1-select-checkbox')).toBeInTheDocument();
   });
 });

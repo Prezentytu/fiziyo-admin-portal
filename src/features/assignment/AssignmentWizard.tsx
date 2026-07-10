@@ -32,6 +32,10 @@ import { buildStructuredLoad, mapAvailableExercises } from './utils/availableExe
 import { appendPatientIfMissing } from './utils/patientSelectionUtils';
 import { computeExerciseDiff, type ExerciseMappingSnapshot } from './utils/exerciseDiff';
 import { buildExerciseSetFromBuilder } from './utils/buildExerciseSetFromBuilder';
+import {
+  buildAssignmentFrequencyPayload,
+  normalizeFrequencySeed,
+} from './utils/scheduleFrequencyUtils';
 import { calculateEstimatedTime } from '@/utils/exerciseTime';
 import {
   getWizardSteps,
@@ -232,7 +236,7 @@ function AssignmentWizardContent({
   const [overrides, setOverrides] = useState<Map<string, ExerciseOverride>>(new Map());
   const [startDate, setStartDate] = useState<Date>(() => new Date());
   const [endDate, setEndDate] = useState<Date>(() => addDays(new Date(), 30));
-  const [frequency, setFrequency] = useState<Frequency>(defaultFrequency as Frequency);
+  const [frequency, setFrequency] = useState<Frequency>(() => normalizeFrequencySeed(defaultFrequency));
   const [isCreatingSet, setIsCreatingSet] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGeneratingName, setIsGeneratingName] = useState(false);
@@ -339,20 +343,7 @@ function AssignmentWizardContent({
     setPlanName(assignmentSet.name || 'Plan pacjenta');
     setOrganizationSetName(`${assignmentSet.name || 'Plan pacjenta'} (organizacja)`);
     setSaveAsOrganizationSet(false);
-    setFrequency({
-      timesPerDay: initialAssignment.frequency?.timesPerDay || 1,
-      timesPerWeek: initialAssignment.frequency?.timesPerWeek,
-      minTimesPerWeek: initialAssignment.frequency?.minTimesPerWeek,
-      isFlexible: initialAssignment.frequency?.isFlexible,
-      breakBetweenSets: initialAssignment.frequency?.breakBetweenSets || 60,
-      monday: initialAssignment.frequency?.monday ?? false,
-      tuesday: initialAssignment.frequency?.tuesday ?? false,
-      wednesday: initialAssignment.frequency?.wednesday ?? false,
-      thursday: initialAssignment.frequency?.thursday ?? false,
-      friday: initialAssignment.frequency?.friday ?? false,
-      saturday: initialAssignment.frequency?.saturday ?? false,
-      sunday: initialAssignment.frequency?.sunday ?? false,
-    });
+    setFrequency(normalizeFrequencySeed(initialAssignment.frequency));
     setStartDate(new Date(initialAssignment.startDate));
     setEndDate(new Date(initialAssignment.endDate));
   }, [open, isEditMode, initialAssignment, preselectedPatient]);
@@ -411,18 +402,7 @@ function AssignmentWizardContent({
 
     // Smart Defaults: wypełnij frequency z szablonu jeśli dostępne
     if (set?.frequency) {
-      setFrequency({
-        timesPerDay: set.frequency.timesPerDay || 1,
-        timesPerWeek: set.frequency.timesPerWeek,
-        breakBetweenSets: set.frequency.breakBetweenSets || 60,
-        monday: set.frequency.monday ?? true,
-        tuesday: set.frequency.tuesday ?? true,
-        wednesday: set.frequency.wednesday ?? true,
-        thursday: set.frequency.thursday ?? true,
-        friday: set.frequency.friday ?? true,
-        saturday: set.frequency.saturday ?? false,
-        sunday: set.frequency.sunday ?? false,
-      });
+      setFrequency(normalizeFrequencySeed(set.frequency));
     }
   }, []);
 
@@ -860,18 +840,7 @@ function AssignmentWizardContent({
     setOrganizationSetName(`${set.name || 'Nowy Plan'} (organizacja)`);
     setSaveAsOrganizationSet(false);
     if (set.frequency) {
-      setFrequency({
-        timesPerDay: set.frequency.timesPerDay || 1,
-        timesPerWeek: set.frequency.timesPerWeek,
-        breakBetweenSets: set.frequency.breakBetweenSets || 60,
-        monday: set.frequency.monday ?? true,
-        tuesday: set.frequency.tuesday ?? true,
-        wednesday: set.frequency.wednesday ?? true,
-        thursday: set.frequency.thursday ?? true,
-        friday: set.frequency.friday ?? true,
-        saturday: set.frequency.saturday ?? false,
-        sunday: set.frequency.sunday ?? false,
-      });
+      setFrequency(normalizeFrequencySeed(set.frequency));
     }
   }, [open, preselectedSet, localExercises.length, isEditMode]);
 
@@ -1061,8 +1030,9 @@ function AssignmentWizardContent({
         builderInstancesLength: builderInstances.length,
         planNameTrimLength: planName.trim().length,
         selectedPatientsCount: selectedPatients.length,
+        frequency,
       }),
-    [currentStep, selectedSet, builderInstances.length, planName, selectedPatients.length]
+    [currentStep, selectedSet, builderInstances.length, planName, selectedPatients.length, frequency]
   );
 
   // Track animation direction
@@ -1186,33 +1156,6 @@ function AssignmentWizardContent({
     [builderParams, normalizeMutationText]
   );
 
-  const buildFrequencyPayload = useCallback(() => {
-    const selectedDaysCount = [
-      frequency.monday,
-      frequency.tuesday,
-      frequency.wednesday,
-      frequency.thursday,
-      frequency.friday,
-      frequency.saturday,
-      frequency.sunday,
-    ].filter(Boolean).length;
-    const effectiveTimesPerWeek = selectedDaysCount > 0 ? selectedDaysCount : frequency.timesPerWeek || 3;
-
-    return {
-      timesPerDay: String(frequency.timesPerDay),
-      timesPerWeek: String(effectiveTimesPerWeek),
-      breakBetweenSets: String(frequency.breakBetweenSets),
-      isFlexible: selectedDaysCount === 0,
-      monday: frequency.monday,
-      tuesday: frequency.tuesday,
-      wednesday: frequency.wednesday,
-      thursday: frequency.thursday,
-      friday: frequency.friday,
-      saturday: frequency.saturday,
-      sunday: frequency.sunday,
-    };
-  }, [frequency]);
-
   const handleEditSubmit = async () => {
     if (!isEditMode || !initialAssignment || !selectedSet) return;
     if (builderInstances.length === 0 || isSubmitting) return;
@@ -1268,7 +1211,7 @@ function AssignmentWizardContent({
           assignmentId: initialAssignment.id,
           startDate: startDate.toISOString(),
           endDate: endDate.toISOString(),
-          frequency: buildFrequencyPayload(),
+          frequency: buildAssignmentFrequencyPayload(frequency),
         },
         refetchQueries: [
           ...(patientId
@@ -1424,7 +1367,7 @@ function AssignmentWizardContent({
 
       for (const patient of selectedPatients) {
         // Step 1: Assign the exercise set (auto-aktywuje Premium)
-        const frequencyPayload = buildFrequencyPayload();
+        const frequencyPayload = buildAssignmentFrequencyPayload(frequency);
 
         const assignResult = await assignSet({
           variables: {

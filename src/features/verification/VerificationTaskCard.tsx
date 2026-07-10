@@ -7,6 +7,7 @@ import { Clock, User, AlertCircle, ChevronRight, Undo2, Play, Building2, Flag } 
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { ImagePlaceholder } from '@/components/shared/ImagePlaceholder';
 import { cn } from '@/lib/utils';
 import { getMediaUrl } from '@/utils/mediaUrl';
@@ -19,6 +20,9 @@ interface VerificationTaskCardProps {
   onUnpublish?: (exerciseId: string, reason?: string) => void;
   isUnpublishing?: boolean;
   detailHref?: string;
+  selectable?: boolean;
+  selected?: boolean;
+  onSelectionChange?: (selected: boolean) => void;
 }
 
 function getStatusBadge(status: ContentStatus) {
@@ -93,6 +97,9 @@ export function VerificationTaskCard({
   onUnpublish,
   isUnpublishing,
   detailHref,
+  selectable = false,
+  selected = false,
+  onSelectionChange,
 }: VerificationTaskCardProps) {
   const [isHovered, setIsHovered] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -115,6 +122,10 @@ export function VerificationTaskCard({
     }
   };
 
+  const handleSelectionChange = (checked: boolean | 'indeterminate') => {
+    onSelectionChange?.(checked === true);
+  };
+
   // Handle hover to play video preview
   const handleMouseEnter = () => {
     setIsHovered(true);
@@ -134,202 +145,216 @@ export function VerificationTaskCard({
   };
 
   return (
-    <Link href={detailHref ?? `/verification/${exercise.id}`}>
-      <Card
-        data-testid={`verification-card-${exercise.id}`}
-        className={cn(
-          'group relative overflow-hidden transition-all duration-300 cursor-pointer',
-          'hover:-translate-y-1 hover:border-primary/40 hover:shadow-xl hover:shadow-primary/10',
-          hasWarnings && 'border-amber-500/30',
-          className
-        )}
-        onMouseEnter={handleMouseEnter}
-        onMouseLeave={handleMouseLeave}
-      >
-        <CardContent className="p-0">
-          {/* Image/Video section with hover preview */}
-          <div className="relative aspect-video overflow-hidden bg-surface-light">
-            {/* Static image (shown when not hovered or no video preview) */}
-            {imageUrl && (
-              <>
-                <div
-                  className={cn(
-                    'absolute inset-0 bg-cover bg-center blur-xl opacity-40 scale-110 transition-opacity duration-300',
-                    isHovered && hasVideoPreview && 'opacity-0'
-                  )}
-                  style={{ backgroundImage: `url(${imageUrl})` }}
-                />
-                <div className="relative h-full w-full">
-                <Image
-                  src={imageUrl}
-                  alt={exercise.name}
-                  fill
-                  sizes="(max-width: 768px) 100vw, 33vw"
-                  className={cn(
-                    'object-contain transition-all duration-500',
-                    'group-hover:scale-[1.03]',
-                    isHovered && hasVideoPreview && 'opacity-0'
-                  )}
-                />
-                </div>
-              </>
-            )}
+    <div className="relative">
+      {selectable && (
+        <Checkbox
+          checked={selected}
+          onCheckedChange={handleSelectionChange}
+          aria-label={`${selected ? 'Odznacz' : 'Zaznacz'} ćwiczenie ${exercise.name}`}
+          className="absolute left-3 top-3 z-20 h-5 w-5 border-border bg-card shadow-sm"
+          data-testid={`verification-card-${exercise.id}-select-checkbox`}
+        />
+      )}
+      <Link href={detailHref ?? `/verification/${exercise.id}`}>
+        <Card
+          data-testid={`verification-card-${exercise.id}`}
+          className={cn(
+            'group relative overflow-hidden transition-all duration-300 cursor-pointer',
+            'hover:-translate-y-1 hover:border-primary/40 hover:shadow-xl hover:shadow-primary/10',
+            hasWarnings && 'border-amber-500/30',
+            selected && 'border-primary ring-1 ring-primary/30',
+            className
+          )}
+          onMouseEnter={handleMouseEnter}
+          onMouseLeave={handleMouseLeave}
+        >
+          <CardContent className="p-0">
+            {/* Image/Video section with hover preview */}
+            <div className="relative aspect-video overflow-hidden bg-surface-light">
+              {/* Static image (shown when not hovered or no video preview) */}
+              {imageUrl && (
+                <>
+                  <div
+                    className={cn(
+                      'absolute inset-0 bg-cover bg-center blur-xl opacity-40 scale-110 transition-opacity duration-300',
+                      isHovered && hasVideoPreview && 'opacity-0'
+                    )}
+                    style={{ backgroundImage: `url(${imageUrl})` }}
+                  />
+                  <div className="relative h-full w-full">
+                    <Image
+                      src={imageUrl}
+                      alt={exercise.name}
+                      fill
+                      sizes="(max-width: 768px) 100vw, 33vw"
+                      className={cn(
+                        'object-contain transition-all duration-500',
+                        'group-hover:scale-[1.03]',
+                        isHovered && hasVideoPreview && 'opacity-0'
+                      )}
+                    />
+                  </div>
+                </>
+              )}
 
-            {/* GIF preview (shown on hover if available) */}
-            {gifUrl && (
-              <div className="absolute inset-0">
-                <Image
-                  src={gifUrl}
-                  alt={`${exercise.name} preview`}
-                  fill
-                  sizes="(max-width: 768px) 100vw, 33vw"
+              {/* GIF preview (shown on hover if available) */}
+              {gifUrl && (
+                <div className="absolute inset-0">
+                  <Image
+                    src={gifUrl}
+                    alt={`${exercise.name} preview`}
+                    fill
+                    sizes="(max-width: 768px) 100vw, 33vw"
+                    className={cn(
+                      'object-contain transition-opacity duration-300',
+                      isHovered ? 'opacity-100' : 'opacity-0'
+                    )}
+                  />
+                </div>
+              )}
+
+              {/* Video preview (shown on hover if no GIF available) */}
+              {videoUrl && !gifUrl && (
+                <video
+                  ref={videoRef}
+                  src={videoUrl}
+                  muted
+                  loop
+                  playsInline
                   className={cn(
-                    'object-contain transition-opacity duration-300',
+                    'absolute inset-0 h-full w-full object-contain transition-opacity duration-300',
                     isHovered ? 'opacity-100' : 'opacity-0'
                   )}
                 />
+              )}
+
+              {/* No image fallback */}
+              {!imageUrl && <ImagePlaceholder type="exercise" className="h-full" iconClassName="h-12 w-12" />}
+
+              {/* Video indicator badge */}
+              {hasVideoPreview && !isHovered && (
+                <div className="absolute bottom-3 left-3 flex items-center gap-1 rounded-md border border-border/70 bg-background/85 px-2 py-1 backdrop-blur-sm dark:bg-black/45">
+                  <Play className="h-3 w-3 fill-foreground text-foreground dark:fill-white dark:text-white" />
+                  <span className="text-[10px] font-medium text-foreground dark:text-white">
+                    {gifUrl ? 'GIF' : 'Wideo'}
+                  </span>
+                </div>
+              )}
+
+              {/* Status badge overlay */}
+              <div className={cn('absolute top-3 left-3', selectable && 'left-11')}>
+                <div className="flex items-center gap-2">
+                  <Badge className={cn('border', statusBadge.className)}>{statusBadge.label}</Badge>
+                  {hasOpenReport && (
+                    <Badge
+                      variant="outline"
+                      className="border-amber-500/30 bg-amber-500/15 text-amber-500"
+                      data-testid={`verification-card-${exercise.id}-reported-badge`}
+                    >
+                      <Flag className="mr-1 h-3 w-3" />
+                      Zgłoszenia ({exercise.openReportCount ?? 1})
+                    </Badge>
+                  )}
+                </div>
               </div>
-            )}
 
-            {/* Video preview (shown on hover if no GIF available) */}
-            {videoUrl && !gifUrl && (
-              <video
-                ref={videoRef}
-                src={videoUrl}
-                muted
-                loop
-                playsInline
-                className={cn(
-                  'absolute inset-0 h-full w-full object-contain transition-opacity duration-300',
-                  isHovered ? 'opacity-100' : 'opacity-0'
-                )}
-              />
-            )}
-
-            {/* No image fallback */}
-            {!imageUrl && <ImagePlaceholder type="exercise" className="h-full" iconClassName="h-12 w-12" />}
-
-            {/* Video indicator badge */}
-            {hasVideoPreview && !isHovered && (
-              <div className="absolute bottom-3 left-3 flex items-center gap-1 rounded-md border border-border/70 bg-background/85 px-2 py-1 backdrop-blur-sm dark:bg-black/45">
-                <Play className="h-3 w-3 fill-foreground text-foreground dark:fill-white dark:text-white" />
-                <span className="text-[10px] font-medium text-foreground dark:text-white">{gifUrl ? 'GIF' : 'Wideo'}</span>
-              </div>
-            )}
-
-            {/* Status badge overlay */}
-            <div className="absolute top-3 left-3">
-              <div className="flex items-center gap-2">
-                <Badge className={cn('border', statusBadge.className)}>{statusBadge.label}</Badge>
-                {hasOpenReport && (
-                  <Badge
-                    variant="outline"
-                    className="border-amber-500/30 bg-amber-500/15 text-amber-500"
-                    data-testid={`verification-card-${exercise.id}-reported-badge`}
-                  >
-                    <Flag className="mr-1 h-3 w-3" />
-                    Zgłoszenia ({exercise.openReportCount ?? 1})
-                  </Badge>
-                )}
-              </div>
-            </div>
-
-            {/* Quality warnings overlay */}
-            {qualityIndicators.length > 0 && (
-              <div className="absolute top-3 right-3 flex flex-col gap-1">
-                {qualityIndicators.slice(0, 2).map((indicator, idx) => (
-                  <Badge
-                    key={idx}
-                    variant="outline"
-                    className={cn(
-                      'text-[10px] px-2 py-0.5 backdrop-blur-sm',
-                      indicator.type === 'warning'
-                        ? 'border-amber-600 bg-amber-500/80 text-white'
-                        : 'border-info bg-info/80 text-white'
-                    )}
-                  >
-                    <AlertCircle className="h-3 w-3 mr-1" />
-                    {indicator.label}
-                  </Badge>
-                ))}
-                {qualityIndicators.length > 2 && (
-                  <Badge variant="outline" className="text-[10px] px-2 py-0.5 bg-muted/80 backdrop-blur-sm">
-                    +{qualityIndicators.length - 2} więcej
-                  </Badge>
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* Content section */}
-          <div className="p-4 space-y-3">
-            <div>
-              <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors line-clamp-1">
-                {exercise.name}
-              </h3>
-              {exercise.description && (
-                <p className="text-xs text-muted-foreground line-clamp-2 mt-1">{exercise.description}</p>
+              {/* Quality warnings overlay */}
+              {qualityIndicators.length > 0 && (
+                <div className="absolute top-3 right-3 flex flex-col gap-1">
+                  {qualityIndicators.slice(0, 2).map((indicator, idx) => (
+                    <Badge
+                      key={idx}
+                      variant="outline"
+                      className={cn(
+                        'text-[10px] px-2 py-0.5 backdrop-blur-sm',
+                        indicator.type === 'warning'
+                          ? 'border-amber-600 bg-amber-500/80 text-white'
+                          : 'border-info bg-info/80 text-white'
+                      )}
+                    >
+                      <AlertCircle className="h-3 w-3 mr-1" />
+                      {indicator.label}
+                    </Badge>
+                  ))}
+                  {qualityIndicators.length > 2 && (
+                    <Badge variant="outline" className="text-[10px] px-2 py-0.5 bg-muted/80 backdrop-blur-sm">
+                      +{qualityIndicators.length - 2} więcej
+                    </Badge>
+                  )}
+                </div>
               )}
             </div>
 
-            {/* Meta info */}
-            <div className="flex items-center justify-between text-xs text-muted-foreground">
-              <div className="flex flex-col gap-1.5">
-                {/* Author row */}
-                <div className="flex items-center gap-3">
-                  {exercise.createdBy && (
-                    <div className="flex items-center gap-1">
-                      <User className="h-3 w-3" />
-                      <span className="truncate max-w-[100px]">
-                        {exercise.createdBy.fullname || exercise.createdBy.email}
+            {/* Content section */}
+            <div className="p-4 space-y-3">
+              <div>
+                <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors line-clamp-1">
+                  {exercise.name}
+                </h3>
+                {exercise.description && (
+                  <p className="text-xs text-muted-foreground line-clamp-2 mt-1">{exercise.description}</p>
+                )}
+              </div>
+
+              {/* Meta info */}
+              <div className="flex items-center justify-between text-xs text-muted-foreground">
+                <div className="flex flex-col gap-1.5">
+                  {/* Author row */}
+                  <div className="flex items-center gap-3">
+                    {exercise.createdBy && (
+                      <div className="flex items-center gap-1">
+                        <User className="h-3 w-3" />
+                        <span className="truncate max-w-[100px]">
+                          {exercise.createdBy.fullname || exercise.createdBy.email}
+                        </span>
+                      </div>
+                    )}
+                    {exercise.createdAt && (
+                      <div className="flex items-center gap-1">
+                        <Clock className="h-3 w-3" />
+                        <span>{formatRelativeTime(exercise.createdAt)}</span>
+                      </div>
+                    )}
+                  </div>
+                  {/* Organization row (if available) */}
+                  {exercise.organizationId && (
+                    <div className="flex items-center gap-1 text-[10px] text-muted-foreground/70">
+                      <Building2 className="h-2.5 w-2.5" />
+                      <span className="truncate max-w-[120px]">
+                        {/* TODO: Replace with organization.name when backend provides it */}
+                        Org: {exercise.organizationId.slice(0, 8)}...
                       </span>
                     </div>
                   )}
-                  {exercise.createdAt && (
-                    <div className="flex items-center gap-1">
-                      <Clock className="h-3 w-3" />
-                      <span>{formatRelativeTime(exercise.createdAt)}</span>
+                  {exercise.latestReport && (
+                    <div
+                      className="rounded-md border border-amber-500/20 bg-amber-500/5 px-2 py-1 text-[10px] text-amber-600"
+                      data-testid={`verification-card-${exercise.id}-report-context`}
+                    >
+                      {exercise.latestReport.reasonCategory}: {exercise.latestReport.description.slice(0, 72)}
                     </div>
                   )}
                 </div>
-                {/* Organization row (if available) */}
-                {exercise.organizationId && (
-                  <div className="flex items-center gap-1 text-[10px] text-muted-foreground/70">
-                    <Building2 className="h-2.5 w-2.5" />
-                    <span className="truncate max-w-[120px]">
-                      {/* TODO: Replace with organization.name when backend provides it */}
-                      Org: {exercise.organizationId.slice(0, 8)}...
-                    </span>
-                  </div>
-                )}
-                {exercise.latestReport && (
-                  <div
-                    className="rounded-md border border-amber-500/20 bg-amber-500/5 px-2 py-1 text-[10px] text-amber-600"
-                    data-testid={`verification-card-${exercise.id}-report-context`}
+                {onUnpublish ? (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleUnpublish}
+                    disabled={isUnpublishing}
+                    className="h-7 px-2 text-xs text-muted-foreground hover:text-destructive"
+                    data-testid={`verification-card-${exercise.id}-unpublish-btn`}
                   >
-                    {exercise.latestReport.reasonCategory}: {exercise.latestReport.description.slice(0, 72)}
-                  </div>
+                    <Undo2 className="h-3 w-3 mr-1" />
+                    Cofnij
+                  </Button>
+                ) : (
+                  <ChevronRight className="h-4 w-4 text-muted-foreground/40 group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
                 )}
               </div>
-              {onUnpublish ? (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleUnpublish}
-                  disabled={isUnpublishing}
-                  className="h-7 px-2 text-xs text-muted-foreground hover:text-destructive"
-                  data-testid={`verification-card-${exercise.id}-unpublish-btn`}
-                >
-                  <Undo2 className="h-3 w-3 mr-1" />
-                  Cofnij
-                </Button>
-              ) : (
-                <ChevronRight className="h-4 w-4 text-muted-foreground/40 group-hover:text-primary group-hover:translate-x-0.5 transition-all" />
-              )}
             </div>
-          </div>
-        </CardContent>
-      </Card>
-    </Link>
+          </CardContent>
+        </Card>
+      </Link>
+    </div>
   );
 }

@@ -61,6 +61,19 @@ export interface ExerciseSet {
   reviewStatus?: 'DRAFT' | 'PENDING_REVIEW' | 'CHANGES_REQUESTED' | 'PUBLISHED';
   sourceExerciseSetId?: string;
   creationTime?: string;
+  frequency?: {
+    timesPerDay?: number | string;
+    timesPerWeek?: number | string;
+    breakBetweenSets?: number | string;
+    isFlexible?: boolean;
+    monday?: boolean;
+    tuesday?: boolean;
+    wednesday?: boolean;
+    thursday?: boolean;
+    friday?: boolean;
+    saturday?: boolean;
+    sunday?: boolean;
+  };
   exerciseMappings?: ExerciseMapping[];
   patientAssignments?: { id: string }[];
 }

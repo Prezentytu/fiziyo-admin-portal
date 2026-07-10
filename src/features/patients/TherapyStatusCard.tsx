@@ -66,13 +66,17 @@ export function TherapyStatusCard({ statusResult, lastActivityLabel, className }
 
   return (
     <div
-      className={cn('relative overflow-hidden rounded-2xl border border-border bg-surface dark:bg-surface/50 p-6', config.borderColor, className)}
+      className={cn(
+        'relative overflow-hidden rounded-xl md:rounded-2xl border bg-background/40 dark:bg-background/20 p-5 md:p-6',
+        config.borderColor,
+        className
+      )}
       data-testid="patient-therapy-status-card"
     >
       {/* Background glow */}
       <div className={cn('absolute inset-0 pointer-events-none', config.bgColor)} />
 
-      <div className="relative flex items-start gap-5">
+      <div className="relative flex items-start gap-4 md:gap-5">
         {/* Status icon - smaller */}
         <div
           className={cn(

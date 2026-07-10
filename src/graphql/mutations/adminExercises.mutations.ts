@@ -65,6 +65,17 @@ export const BATCH_APPROVE_EXERCISES_MUTATION = gql`
   }
 `;
 
+export const BATCH_ARCHIVE_EXERCISES_MUTATION = gql`
+  mutation BatchArchiveExercises($exerciseIds: [String!]!, $reason: String) {
+    batchArchiveExercises(exerciseIds: $exerciseIds, reason: $reason) {
+      totalRequested
+      successCount
+      failedIds
+      errors
+    }
+  }
+`;
+
 /**
  * Publish all approved exercises - changes status to Published
  * Makes exercises visible to all users
@@ -173,11 +184,7 @@ export const APPROVE_ORGANIZATION_EXERCISE_MUTATION = gql`
 `;
 
 export const REQUEST_ORGANIZATION_EXERCISE_CHANGES_MUTATION = gql`
-  mutation RequestOrganizationExerciseChanges(
-    $exerciseId: String!
-    $reviewNotes: String!
-    $rejectionReason: String!
-  ) {
+  mutation RequestOrganizationExerciseChanges($exerciseId: String!, $reviewNotes: String!, $rejectionReason: String!) {
     requestOrganizationExerciseChanges(
       exerciseId: $exerciseId
       reviewNotes: $reviewNotes
@@ -196,6 +203,17 @@ export const ARCHIVE_ORGANIZATION_EXERCISE_MUTATION = gql`
     }
   }
   ${ORG_VERIFICATION_MUTATION_RESULT_FRAGMENT}
+`;
+
+export const BATCH_ARCHIVE_ORGANIZATION_EXERCISES_MUTATION = gql`
+  mutation BatchArchiveOrganizationExercises($organizationId: String!, $exerciseIds: [String!]!, $reason: String) {
+    batchArchiveOrganizationExercises(organizationId: $organizationId, exerciseIds: $exerciseIds, reason: $reason) {
+      totalRequested
+      successCount
+      failedIds
+      errors
+    }
+  }
 `;
 
 // ============================================

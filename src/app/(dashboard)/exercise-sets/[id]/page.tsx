@@ -50,6 +50,7 @@ import { EditExerciseInSetDialog } from '@/features/exercise-sets/EditExerciseIn
 import { GeneratePDFDialog } from '@/features/exercise-sets/GeneratePDFDialog';
 import { AssignmentWizard } from '@/features/assignment/AssignmentWizard';
 import type { ExerciseSet as AssignmentExerciseSet } from '@/features/assignment/types';
+import { normalizeFrequencySeed } from '@/features/assignment/utils/scheduleFrequencyUtils';
 
 import {
   GET_EXERCISE_SET_WITH_ASSIGNMENTS_QUERY,
@@ -777,6 +778,7 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
               id: exerciseSet.id,
               name: exerciseSet.name,
               description: exerciseSet.description,
+              frequency: exerciseSet.frequency ? normalizeFrequencySeed(exerciseSet.frequency) : undefined,
               exerciseMappings: exerciseSet.exerciseMappings?.map((m) => ({
                 id: m.id,
                 exerciseId: m.exerciseId,
