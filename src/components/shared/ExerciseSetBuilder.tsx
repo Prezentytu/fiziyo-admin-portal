@@ -48,6 +48,7 @@ import type { ExerciseExecutionCardData } from '@/components/shared/exercise';
 import { ColorBadge } from '@/components/shared/ColorBadge';
 import { filterExercisesBySource, countBySource } from '@/utils/exerciseSourceFilter';
 import { calculateExerciseTotalSeconds, formatExerciseDuration } from '@/utils/exerciseTime';
+import { buildExerciseLoadParamFields } from '@/utils/exerciseLoadMutation';
 import type { ExerciseSourceFilter } from '@/utils/exerciseSourceFilter';
 import { cn } from '@/lib/utils';
 import { EMPTY_EXERCISE_PARAMS, getExerciseDefaultParams } from '@/features/exercise-sets/utils/exerciseDefaults';
@@ -120,8 +121,12 @@ export interface ExerciseParams {
   loadValue?: number;
   loadUnit?: string;
   loadText?: string;
+  loadWeightKg?: number;
+  loadSource?: string;
   // Structured load (alternative to individual load fields)
   load?: {
+    loadWeightKg?: number | null;
+    loadSource?: string | null;
     type: 'weight' | 'band' | 'bodyweight' | 'other';
     value?: number;
     unit?: 'kg' | 'lbs' | 'level';
@@ -347,8 +352,13 @@ function applyCardPatchToParams(
   if ('customDescription' in patch) onUpdateParams('customDescription', patch.customDescription);
   if ('side' in patch) onUpdateParams('exerciseSide', patch.side);
   if ('loadKg' in patch) {
-    onUpdateParams('loadValue', patch.loadKg);
-    onUpdateParams('loadUnit', 'kg');
+    const loadFields = buildExerciseLoadParamFields(patch.loadKg);
+    onUpdateParams('loadWeightKg', loadFields.loadWeightKg);
+    onUpdateParams('loadSource', loadFields.loadSource);
+    onUpdateParams('loadType', loadFields.loadType);
+    onUpdateParams('loadValue', loadFields.loadValue);
+    onUpdateParams('loadUnit', loadFields.loadUnit);
+    onUpdateParams('loadText', loadFields.loadText);
   }
 }
 

@@ -33,6 +33,7 @@ import { GET_TAG_CATEGORIES_BY_ORGANIZATION_QUERY } from '@/graphql/queries/tagC
 import { ADD_EXERCISE_TO_EXERCISE_SET_MUTATION } from '@/graphql/mutations/exercises.mutations';
 import { createTagsMap, mapExercisesWithTags } from '@/utils/tagUtils';
 import { pluralize } from '@/utils/textUtils';
+import { buildExerciseLoadMutationVars } from '@/utils/exerciseLoadMutation';
 import type {
   ExerciseTagsResponse,
   TagCategoriesResponse,
@@ -276,10 +277,7 @@ export function AddExerciseToSetDialog({
             customName: params?.customName ?? null,
             customDescription: params?.customDescription ?? null,
             tempo: params?.tempo ?? null,
-            loadType: params?.loadType ?? null,
-            loadValue: params?.loadValue ?? null,
-            loadUnit: params?.loadUnit ?? null,
-            loadText: params?.loadText ?? null,
+            ...buildExerciseLoadMutationVars(params?.loadWeightKg ?? params?.loadValue),
           },
           refetchQueries: [
             {

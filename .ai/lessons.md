@@ -14,6 +14,14 @@ Dziennik wniosków z pracy AI agentów. Po każdej korekcie dodaj nowy wpis.
 
 ## Wpisy
 
+### 2026-07-20 - ExerciseLoad kg-only wymaga dual-write w mutacjach i we wszystkich builderach
+
+- **Kategoria**: `GraphQL` | `React`
+- **Problem**: Obciążenie w Kreatorze Zestawu wyglądało na edytowalne, ale nie wracało po zapisie; jednocześnie backend miał już `LoadWeightKg`/`LoadSource`, a mutacje zapisywały tylko legacy i wipe’owały kg-only przy update.
+- **Przyczyna**: UI mapowało `loadKg` tylko na `loadValue`+`loadUnit` (bez `loadType`/`loadText`/`loadWeightKg`); backend tworzył `new ExerciseLoad` bez pól kg-only; ścieżki (Kreator, ExerciseSetBuilder, Assignment) miały niespójne adaptery.
+- **Rozwiązanie**: `ExerciseLoadFactory` w backendzie (dual-write + preserve przy partial update) oraz wspólny `buildExerciseLoadMutationVars` w adminie podpięty we wszystkich write pathach; dual-read preferuje `loadWeightKg`.
+- **Reguła**: Przy additive zmianie modelu JSONB (np. nowe pole docelowe) ZAWSZE domknij write path mutacji GraphQL w tym samym PR-ze co pola modelu i ujednolić wszystkie klienty UI przez jeden helper — lokalny fix w jednym builderze zostawia drift.
+
 ### 2026-07-09 - Redesign "Aktywność i postępy" — card-in-card noise i heatmap bez capu rozmiaru kafla
 
 - **Kategoria**: `UI/UX` | `React`

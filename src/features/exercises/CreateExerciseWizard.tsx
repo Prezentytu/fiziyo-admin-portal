@@ -49,6 +49,7 @@ import { aiService } from '@/services/aiService';
 import type { ExerciseSuggestionResponse } from '@/services/aiService';
 import { formatDurationPolish } from '@/utils/durationPolish';
 import { calculateExerciseTotalSeconds } from '@/utils/exerciseTime';
+import { buildExerciseLoadMutationVars } from '@/utils/exerciseLoadMutation';
 import { findSimilar } from '@/utils/stringSimilarity';
 
 // ============================================================
@@ -1482,19 +1483,10 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
     const inferredType = (data.executionTime ?? 0) > 0 ? 'time' : 'reps';
 
     try {
-      // Parse weight as numeric kilograms
-      let loadType: string | null = null;
-      let loadValue: number | null = null;
-      let loadUnit: string | null = null;
-      let loadText: string | null = null;
-
       const numericWeight = data.weight ? Number(data.weight) : Number.NaN;
-      if (!Number.isNaN(numericWeight) && numericWeight > 0) {
-          loadType = 'weight';
-        loadValue = numericWeight;
-        loadUnit = 'kg';
-        loadText = `${numericWeight} kg`;
-      }
+      const loadVars = buildExerciseLoadMutationVars(
+        !Number.isNaN(numericWeight) && numericWeight > 0 ? numericWeight : null
+      );
 
       const result = await createExercise({
         variables: {
@@ -1521,11 +1513,7 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
           // Pro Tuning fields
           tempo: data.tempo || null,
           rangeOfMotion: data.rangeOfMotion || null,
-          // Load fields
-          loadType,
-          loadValue,
-          loadUnit,
-          loadText,
+          ...loadVars,
         },
       });
 

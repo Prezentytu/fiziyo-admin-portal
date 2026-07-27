@@ -5,6 +5,10 @@
  * Smart String - parsowane z tekstu użytkownika do struktury JSONB.
  */
 export interface ExerciseLoad {
+  /** Target kg-only field (SPEC-003). Prefer this over legacy value/unit. */
+  loadWeightKg?: number | null;
+  /** Source of kg value: manual | converted | unknown */
+  loadSource?: 'manual' | 'converted' | 'unknown' | string | null;
   /** Typ obciążenia: weight (ciężar), band (guma), bodyweight (własna waga), other (inne) */
   type: 'weight' | 'band' | 'bodyweight' | 'other';
   /** Wartość liczbowa (dla wykresów postępów, np. 5, 10, 15) */

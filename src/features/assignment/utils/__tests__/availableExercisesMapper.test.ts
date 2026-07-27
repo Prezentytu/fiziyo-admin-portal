@@ -23,6 +23,8 @@ describe('mapAvailableExercises', () => {
 
     expect(mapped).toHaveLength(1);
     expect(mapped[0].defaultLoad).toEqual({
+      loadWeightKg: null,
+      loadSource: null,
       type: 'band',
       value: 3,
       unit: 'level',
@@ -44,10 +46,39 @@ describe('mapAvailableExercises', () => {
     ]);
 
     expect(mapped[0].defaultLoad).toEqual({
+      loadWeightKg: null,
+      loadSource: null,
       type: 'weight',
       value: 15,
       unit: 'kg',
       text: '15 kg',
+    });
+  });
+
+  it('prefers loadWeightKg from structured defaultLoad', () => {
+    const mapped = mapAvailableExercises([
+      {
+        id: 'exercise-3',
+        name: 'RDL',
+        isActive: true,
+        defaultLoad: {
+          loadWeightKg: 60,
+          loadSource: 'manual',
+          type: 'weight',
+          value: 60,
+          unit: 'kg',
+          text: '60 kg',
+        },
+      },
+    ]);
+
+    expect(mapped[0].defaultLoad).toEqual({
+      loadWeightKg: 60,
+      loadSource: 'manual',
+      type: 'weight',
+      value: 60,
+      unit: 'kg',
+      text: '60 kg',
     });
   });
 

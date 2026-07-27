@@ -48,6 +48,7 @@ import {
   type InitialMapping,
 } from '@/features/exercise-sets/utils/exerciseSetDiff';
 import { aiService } from '@/services/aiService';
+import { buildExerciseLoadMutationVars } from '@/utils/exerciseLoadMutation';
 
 interface SetSnapshot {
   id: string;
@@ -72,6 +73,14 @@ interface SetSnapshot {
     loadValue?: number;
     loadUnit?: string;
     loadText?: string;
+    load?: {
+      loadWeightKg?: number | null;
+      loadSource?: string | null;
+      type?: string;
+      value?: number;
+      unit?: string;
+      text?: string;
+    } | null;
   }>;
 }
 
@@ -164,6 +173,8 @@ export function EditExerciseSetFullDialog({
       loadValue: m.loadValue,
       loadUnit: m.loadUnit,
       loadText: m.loadText,
+      loadWeightKg: m.load?.loadWeightKg ?? m.loadValue ?? undefined,
+      loadSource: m.load?.loadSource ?? undefined,
     }));
     initialNameRef.current = set.name ?? '';
     initialDescriptionRef.current = set.description ?? '';
@@ -193,6 +204,8 @@ export function EditExerciseSetFullDialog({
         loadValue: mapping.loadValue ?? undefined,
         loadUnit: mapping.loadUnit ?? 'kg',
         loadText: mapping.loadText ?? '',
+        loadWeightKg: mapping.load?.loadWeightKg ?? mapping.loadValue ?? undefined,
+        loadSource: mapping.load?.loadSource ?? undefined,
       });
     });
     setSelectedInstances(initialInstances);
@@ -413,10 +426,7 @@ export function EditExerciseSetFullDialog({
             customName: params.customName ?? null,
             customDescription: params.customDescription ?? null,
             tempo: params.tempo ?? null,
-            loadType: params.loadType ?? null,
-            loadValue: params.loadValue ?? null,
-            loadUnit: params.loadUnit ?? null,
-            loadText: params.loadText ?? null,
+            ...buildExerciseLoadMutationVars(params.loadWeightKg ?? params.loadValue),
           },
           refetchQueries: [
             { query: GET_EXERCISE_SET_WITH_ASSIGNMENTS_QUERY, variables: { exerciseSetId } },
@@ -443,10 +453,7 @@ export function EditExerciseSetFullDialog({
             customName: params.customName ?? null,
             customDescription: params.customDescription ?? null,
             tempo: params.tempo ?? null,
-            loadType: params.loadType ?? null,
-            loadValue: params.loadValue ?? null,
-            loadUnit: params.loadUnit ?? null,
-            loadText: params.loadText ?? null,
+            ...buildExerciseLoadMutationVars(params.loadWeightKg ?? params.loadValue),
           },
           refetchQueries: [
             { query: GET_EXERCISE_SET_WITH_ASSIGNMENTS_QUERY, variables: { exerciseSetId } },

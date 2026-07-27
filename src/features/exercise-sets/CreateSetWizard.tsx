@@ -74,6 +74,10 @@ import { createTagsMap, mapExercisesWithTags } from '@/utils/tagUtils';
 import type { ExerciseTagsResponse, TagCategoriesResponse, OrganizationExerciseSetsResponse } from '@/types/apollo';
 import { calculateExerciseTotalSeconds, formatExerciseDuration } from '@/utils/exerciseTime';
 import {
+  buildExerciseLoadMutationVars,
+  buildExerciseLoadParamFields,
+} from '@/utils/exerciseLoadMutation';
+import {
   EMPTY_EXERCISE_PARAMS,
   getExerciseDefaultParams,
   type ExerciseParams,
@@ -269,8 +273,13 @@ function SortableExerciseCard({
       if ('customDescription' in patch) onUpdateParams('customDescription', patch.customDescription);
       if ('side' in patch) onUpdateParams('exerciseSide', patch.side);
       if ('loadKg' in patch) {
-        onUpdateParams('loadValue', patch.loadKg);
-        onUpdateParams('loadUnit', 'kg');
+        const loadFields = buildExerciseLoadParamFields(patch.loadKg);
+        onUpdateParams('loadWeightKg', loadFields.loadWeightKg);
+        onUpdateParams('loadSource', loadFields.loadSource);
+        onUpdateParams('loadType', loadFields.loadType);
+        onUpdateParams('loadValue', loadFields.loadValue);
+        onUpdateParams('loadUnit', loadFields.loadUnit);
+        onUpdateParams('loadText', loadFields.loadText);
       }
     },
     [onUpdateParams]
@@ -745,10 +754,7 @@ export function CreateSetWizard({
               customName: params.customName || null,
               customDescription: params.customDescription || null,
               tempo: params.tempo || null,
-              loadType: params.loadType || null,
-              loadValue: params.loadValue || null,
-              loadUnit: params.loadUnit || null,
-              loadText: params.loadText || null,
+              ...buildExerciseLoadMutationVars(params.loadWeightKg ?? params.loadValue),
             },
           });
         }

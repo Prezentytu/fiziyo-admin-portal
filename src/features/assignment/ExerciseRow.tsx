@@ -34,9 +34,16 @@ function cardPatchToOverride(patch: Partial<ExerciseExecutionCardData>): Partial
   if ('customName' in patch) out.customName = patch.customName;
   if ('loadKg' in patch) {
     if (patch.loadKg == null || Number.isNaN(patch.loadKg)) {
-      out.load = { type: 'other', text: '' };
+      out.load = { type: 'other', text: '', loadWeightKg: null, loadSource: null };
     } else {
-      out.load = { type: 'weight', value: patch.loadKg, unit: 'kg', text: `${patch.loadKg} kg` };
+      out.load = {
+        type: 'weight',
+        value: patch.loadKg,
+        unit: 'kg',
+        text: `${patch.loadKg} kg`,
+        loadWeightKg: patch.loadKg,
+        loadSource: 'manual',
+      };
     }
   }
   return out;

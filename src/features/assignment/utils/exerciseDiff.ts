@@ -68,6 +68,8 @@ function normalizeParams(params?: ExerciseParams): ExerciseParams {
     loadValue: params?.loadValue ?? undefined,
     loadUnit: normalizeString(params?.loadUnit) ?? undefined,
     loadText: normalizeString(params?.loadText) ?? undefined,
+    loadWeightKg: params?.loadWeightKg ?? undefined,
+    loadSource: normalizeString(params?.loadSource) ?? undefined,
   };
 }
 

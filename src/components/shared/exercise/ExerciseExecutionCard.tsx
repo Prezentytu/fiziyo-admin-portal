@@ -212,6 +212,7 @@ export function ExerciseExecutionCard({
       }),
     min: 0,
     max: 500,
+    parseMode: 'float',
   });
   const setsField = EXERCISE_FIELD_METADATA.sets;
   const repsField = EXERCISE_FIELD_METADATA.reps;

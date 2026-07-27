@@ -15,6 +15,8 @@ export interface ExerciseParams {
   loadValue?: number;
   loadUnit: string;
   loadText: string;
+  loadWeightKg?: number;
+  loadSource?: string;
 }
 
 export interface ExerciseLikeForDefaults {
@@ -50,6 +52,8 @@ export const EMPTY_EXERCISE_PARAMS: ExerciseParams = {
   loadValue: undefined,
   loadUnit: 'kg',
   loadText: '',
+  loadWeightKg: undefined,
+  loadSource: undefined,
 };
 
 export function getExerciseDefaultParams(exercise: ExerciseLikeForDefaults): ExerciseParams {
@@ -73,5 +77,7 @@ export function getExerciseDefaultParams(exercise: ExerciseLikeForDefaults): Exe
     loadValue: undefined,
     loadUnit: 'kg',
     loadText: '',
+    loadWeightKg: undefined,
+    loadSource: undefined,
   };
 }

@@ -37,6 +37,7 @@ import {
   normalizeFrequencySeed,
 } from './utils/scheduleFrequencyUtils';
 import { calculateEstimatedTime } from '@/utils/exerciseTime';
+import { buildExerciseLoadMutationVars } from '@/utils/exerciseLoadMutation';
 import {
   getWizardSteps,
   createGhostCopy,
@@ -282,6 +283,8 @@ function AssignmentWizardContent({
         loadValue: mapping.loadValue ?? undefined,
         loadUnit: mapping.loadUnit ?? undefined,
         loadText: mapping.loadText ?? undefined,
+        loadWeightKg: mapping.load?.loadWeightKg ?? mapping.loadValue ?? undefined,
+        loadSource: mapping.load?.loadSource ?? undefined,
       },
     }));
   }, [initialAssignment, isEditMode]);
@@ -328,6 +331,8 @@ function AssignmentWizardContent({
         loadValue: mapping.loadValue ?? undefined,
         loadUnit: mapping.loadUnit ?? undefined,
         loadText: mapping.loadText ?? undefined,
+        loadWeightKg: mapping.load?.loadWeightKg ?? mapping.loadValue ?? undefined,
+        loadSource: mapping.load?.loadSource ?? undefined,
       });
     });
 
@@ -492,15 +497,21 @@ function AssignmentWizardContent({
       frequency: set.frequency,
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       exerciseMappings: set.exerciseMappings?.map((m: any) => {
-        const mappingLoad = buildStructuredLoad({
-          type: m.loadType,
-          value: m.loadValue,
-          unit: m.loadUnit,
-          text: m.loadText,
-        });
+        const mappingLoad =
+          buildStructuredLoad(m.load) ??
+          buildStructuredLoad({
+            loadWeightKg: m.load?.loadWeightKg,
+            loadSource: m.load?.loadSource,
+            type: m.loadType,
+            value: m.loadValue,
+            unit: m.loadUnit,
+            text: m.loadText,
+          });
         const exerciseLoad =
           buildStructuredLoad(m.exercise?.defaultLoad) ??
           buildStructuredLoad({
+            loadWeightKg: m.exercise?.defaultLoad?.loadWeightKg,
+            loadSource: m.exercise?.defaultLoad?.loadSource,
             type: m.exercise?.loadType,
             value: m.exercise?.loadValue,
             unit: m.exercise?.loadUnit,
@@ -1119,10 +1130,7 @@ function AssignmentWizardContent({
         notes: normalizeMutationText(params?.notes),
         customName: normalizeMutationText(params?.customName),
         customDescription: normalizeMutationText(params?.customDescription),
-        loadType: normalizeMutationText(params?.loadType),
-        loadValue: params?.loadValue ?? null,
-        loadUnit: normalizeMutationText(params?.loadUnit),
-        loadText: normalizeMutationText(params?.loadText),
+        ...buildExerciseLoadMutationVars(params?.loadWeightKg ?? params?.loadValue),
       };
     },
     [availableExercises, builderParams, normalizeMutationText]
@@ -1147,10 +1155,7 @@ function AssignmentWizardContent({
         notes: normalizeMutationText(params?.notes),
         customName: normalizeMutationText(params?.customName),
         customDescription: normalizeMutationText(params?.customDescription),
-        loadType: normalizeMutationText(params?.loadType),
-        loadValue: params?.loadValue,
-        loadUnit: normalizeMutationText(params?.loadUnit),
-        loadText: normalizeMutationText(params?.loadText),
+        ...buildExerciseLoadMutationVars(params?.loadWeightKg ?? params?.loadValue),
       };
     },
     [builderParams, normalizeMutationText]

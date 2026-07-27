@@ -28,6 +28,7 @@ import {
   ADD_EXERCISE_TO_EXERCISE_SET_MUTATION,
 } from '@/graphql/mutations/exercises.mutations';
 import { aiService } from '@/services/aiService';
+import { buildExerciseLoadMutationVars } from '@/utils/exerciseLoadMutation';
 // ========================================
 // Form Schema
 // ========================================
@@ -162,10 +163,7 @@ export function CreateSetDialog({ open, onOpenChange }: CreateSetDialogProps) {
             customName: exercise.customName || null,
             customDescription: exercise.customDescription || null,
             tempo: exercise.tempo || null,
-            loadType: exercise.loadType || null,
-            loadValue: exercise.loadValue || null,
-            loadUnit: exercise.loadUnit || null,
-            loadText: exercise.loadText || null,
+            ...buildExerciseLoadMutationVars(exercise.loadWeightKg ?? exercise.loadValue),
           },
         });
       }

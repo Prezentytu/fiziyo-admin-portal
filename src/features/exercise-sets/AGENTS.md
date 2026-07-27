@@ -17,7 +17,7 @@ Mapowanie ćwiczenia do zestawu. Pola NULL = wartość z Exercise.
 | `RestSets`          | decimal?       | Przerwa między seriami               | Przerwa między seriami |
 | `RestReps`          | decimal?       | Przerwa między powt.                 | Przerwa między powt.   |
 | `Tempo`             | string?        | Tempo                                | Tempo                  |
-| `Load`              | ExerciseLoad?  | Obciążenie                           | Obciążenie             |
+| `Load`              | ExerciseLoad?  | Obciążenie (kg-only + legacy)        | Obciążenie             |
 | `Notes`             | string?        | Notatka                              | Notatka                |
 | `CustomName`        | string? (200)  | Własna nazwa                         | Własna nazwa           |
 | `CustomDescription` | string? (4000) | Własny opis                          | Własny opis            |
@@ -38,6 +38,11 @@ Mapowanie ćwiczenia do zestawu. Pola NULL = wartość z Exercise.
 - `ExerciseSetBuilder.tsx` — builder współdzielony (shared)
 - `EditExerciseInSetDialog.tsx` — edycja ćwiczenia w zestawie
 - `CustomizeExercisesStep.tsx` — personalizacja w Assignment Wizard
+
+## ExerciseLoad (kg-only, SPEC-003)
+
+JSONB na mappingu: preferuj `loadWeightKg` + `loadSource` (`manual` | `converted` | `unknown`).
+Legacy `type/value/unit/text` nadal w mutacjach (dual-write). Helper: `src/utils/exerciseLoadMutation.ts`.
 
 ## Hierarchia pól (nadpisywalne)
 

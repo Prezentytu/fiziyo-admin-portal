@@ -41,12 +41,16 @@ Moduł szablonów ćwiczeń: formularz create/edit, lista, filtrowanie, hierarch
 
 ### ExerciseLoad (Obciążenie)
 
-| Pole    | Typ          | Opis                                    |
-| ------- | ------------ | --------------------------------------- |
-| `Type`  | string (20)  | `weight`, `band`, `bodyweight`, `other` |
-| `Value` | decimal?     | Wartość liczbowa                        |
-| `Unit`  | string? (10) | `kg`, `lbs`, `level`                    |
-| `Text`  | string (100) | Tekst wyświetlany (np. "5 kg")          |
+| Pole           | Typ          | Opis                                            |
+| -------------- | ------------ | ----------------------------------------------- |
+| `LoadWeightKg` | decimal?     | **Docelowe** pole kg-only (SPEC-003)            |
+| `LoadSource`   | string? (20) | `manual`, `converted`, `unknown`                |
+| `Type`         | string (20)  | legacy: `weight`, `band`, `bodyweight`, `other` |
+| `Value`        | decimal?     | legacy wartość liczbowa                         |
+| `Unit`         | string? (10) | legacy: `kg`, `lbs`, `level`                    |
+| `Text`         | string (100) | Tekst wyświetlany (np. "5 kg")                  |
+
+UI i mutacje: dual-read/dual-write przez `buildExerciseLoadMutationVars` (`src/utils/exerciseLoadMutation.ts`).
 
 ### Enumy
 

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.types';
 import { cleanupEnrichment } from '@/features/verification/utils/enrichment';
 import { ENRICHMENT_SCHEMA_V3, toV3 } from '@/features/verification/utils/enrichmentToV3';
+import { buildExerciseLoadMutationVars } from '@/utils/exerciseLoadMutation';
 
 /**
  * Pojedynczy model formularza edytora ćwiczenia (v3).
@@ -214,17 +215,12 @@ function buildChangedCoreVariables(
   if (current.preparationTime !== initial.preparationTime) variables.preparationTime = current.preparationTime;
 
   if (current.loadKg !== initial.loadKg) {
-    if (current.loadKg != null && current.loadKg > 0) {
-      variables.loadType = 'weight';
-      variables.loadValue = current.loadKg;
-      variables.loadUnit = 'kg';
-      variables.loadText = `${current.loadKg} kg`;
-    } else {
-      variables.loadType = null;
-      variables.loadValue = null;
-      variables.loadUnit = null;
-      variables.loadText = null;
-    }
+    Object.assign(
+      variables,
+      buildExerciseLoadMutationVars(
+        current.loadKg != null && current.loadKg > 0 ? current.loadKg : null
+      )
+    );
   }
 
   return variables;

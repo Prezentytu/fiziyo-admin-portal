@@ -1,5 +1,6 @@
 import type { ExerciseExecutionCardData } from './types';
 import type { ExerciseMapping, ExerciseOverride, ExerciseLoad } from '@/features/assignment/types';
+import { resolveLoadKg } from '@/utils/exerciseLoadMutation';
 import { formatLoad } from '@/utils/loadParser';
 import { getMediaUrl, getMediaUrls } from '@/utils/mediaUrl';
 
@@ -77,13 +78,19 @@ function resolveDisplayName(primaryName?: string, fallbackName?: string): string
 }
 
 function buildLoadFromScalars(load: {
+  loadWeightKg?: number | null;
+  loadSource?: string | null;
   type?: string;
   value?: number;
   unit?: string;
   text?: string;
 }): ExerciseLoad | undefined {
   const hasAnyValue =
-    Boolean(load.text && load.text.trim().length > 0) || load.value != null || Boolean(load.type) || Boolean(load.unit);
+    load.loadWeightKg != null ||
+    Boolean(load.text && load.text.trim().length > 0) ||
+    load.value != null ||
+    Boolean(load.type) ||
+    Boolean(load.unit);
   if (!hasAnyValue) return undefined;
 
   const normalizedType: ExerciseLoad['type'] =
@@ -94,6 +101,8 @@ function buildLoadFromScalars(load: {
   const text = load.text?.trim() || textFromValue || 'Obciążenie';
 
   return {
+    loadWeightKg: load.loadWeightKg,
+    loadSource: load.loadSource,
     type: normalizedType,
     value: load.value,
     unit: normalizedUnit,
@@ -131,7 +140,7 @@ export function fromExerciseMapping(
       unit: exercise?.loadUnit,
       text: exercise?.loadText,
     });
-  const loadKg = load?.unit === 'kg' ? load.value : undefined;
+  const loadKg = resolveLoadKg(load);
   const loadDisplayText = formatLoad(load);
 
   const thumb = exercise?.thumbnailUrl ?? exercise?.imageUrl ?? exercise?.images?.[0];
@@ -210,24 +219,34 @@ export function fromBuilderExercise(
     customDescription?: string;
     notes?: string;
     exerciseSide?: string;
+    loadWeightKg?: number;
+    loadSource?: string;
     loadType?: string;
     loadValue?: number;
     loadUnit?: string;
     loadText?: string;
-    load?: ExerciseLoad | { type: string; value?: number; unit?: string; text: string };
+    load?: ExerciseLoad | {
+      loadWeightKg?: number | null;
+      loadSource?: string | null;
+      type: string;
+      value?: number;
+      unit?: string;
+      text: string;
+    };
   }
 ): ExerciseExecutionCardData {
   const isTimeBased = exercise.type?.toLowerCase() === 'time';
   const load =
     params.load ??
     buildLoadFromScalars({
+      loadWeightKg: params.loadWeightKg,
+      loadSource: params.loadSource,
       type: params.loadType,
       value: params.loadValue,
       unit: params.loadUnit,
       text: params.loadText,
     });
-  const loadKg =
-    load && 'unit' in load && load.unit === 'kg' ? load.value : params.loadValue;
+  const loadKg = resolveLoadKg(load) ?? params.loadValue ?? params.loadWeightKg;
   const loadDisplayText =
     (load && 'text' in load ? load.text : params.loadText) ??
     (loadKg == null ? undefined : `${loadKg} kg`);

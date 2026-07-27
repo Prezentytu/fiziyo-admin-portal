@@ -27,6 +27,8 @@ export interface InitialMapping {
   loadValue?: number;
   loadUnit?: string;
   loadText?: string;
+  loadWeightKg?: number;
+  loadSource?: string;
 }
 
 export interface ExerciseSetDiffInput {
@@ -92,6 +94,8 @@ function paramsEqual(a: ExerciseParams, b: ExerciseParams): boolean {
     'loadValue',
     'loadUnit',
     'loadText',
+    'loadWeightKg',
+    'loadSource',
   ];
   for (const key of keys) {
     const va = a[key];
@@ -124,6 +128,8 @@ function mappingToParams(m: InitialMapping): ExerciseParams {
     loadValue: m.loadValue ?? 0,
     loadUnit: m.loadUnit ?? 'kg',
     loadText: m.loadText ?? '',
+    loadWeightKg: m.loadWeightKg ?? m.loadValue ?? undefined,
+    loadSource: m.loadSource ?? undefined,
   };
 }
 

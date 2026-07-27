@@ -9,6 +9,7 @@ import type { BuilderExercise } from '@/contexts/ExerciseBuilderContext';
 import { ImageLightbox } from '@/components/shared/ImageLightbox';
 import { ExerciseExecutionCard, fromBuilderExercise, buildExerciseImageUrls } from '@/components/shared/exercise';
 import type { ExerciseExecutionCardData } from '@/components/shared/exercise';
+import { buildExerciseLoadParamFields } from '@/utils/exerciseLoadMutation';
 
 interface BuilderExerciseItemProps {
   exercise: BuilderExercise;
@@ -66,6 +67,8 @@ export function BuilderExerciseItem({ exercise, onUpdate, onRemove }: BuilderExe
           loadValue: exercise.loadValue,
           loadUnit: exercise.loadUnit,
           loadText: exercise.loadText,
+          loadWeightKg: exercise.loadWeightKg,
+          loadSource: exercise.loadSource,
         }
       ),
     [exercise]
@@ -86,9 +89,8 @@ export function BuilderExerciseItem({ exercise, onUpdate, onRemove }: BuilderExe
       if (patch.customName !== undefined) updates.customName = patch.customName;
       if (patch.customDescription !== undefined) updates.customDescription = patch.customDescription;
       if (patch.side !== undefined) updates.exerciseSide = patch.side;
-      if (patch.loadKg !== undefined) {
-        updates.loadValue = patch.loadKg;
-        updates.loadUnit = 'kg';
+      if ('loadKg' in patch) {
+        Object.assign(updates, buildExerciseLoadParamFields(patch.loadKg));
       }
       if (Object.keys(updates).length > 0) onUpdate(updates);
     },

@@ -39,6 +39,8 @@ export const CREATE_EXERCISE_MUTATION = gql`
     $loadValue: Decimal
     $loadUnit: String
     $loadText: String
+    $loadWeightKg: Decimal
+    $loadSource: String
   ) {
     createExercise(
       organizationId: $organizationId
@@ -72,6 +74,8 @@ export const CREATE_EXERCISE_MUTATION = gql`
       loadValue: $loadValue
       loadUnit: $loadUnit
       loadText: $loadText
+      loadWeightKg: $loadWeightKg
+      loadSource: $loadSource
     ) {
       id
       organizationId
@@ -96,6 +100,8 @@ export const CREATE_EXERCISE_MUTATION = gql`
       audioCue
       rangeOfMotion
       defaultLoad {
+        loadWeightKg
+        loadSource
         type
         value
         unit
@@ -154,6 +160,8 @@ export const UPDATE_EXERCISE_MUTATION = gql`
     $loadValue: Decimal
     $loadUnit: String
     $loadText: String
+    $loadWeightKg: Decimal
+    $loadSource: String
   ) {
     updateExercise(
       exerciseId: $exerciseId
@@ -182,6 +190,8 @@ export const UPDATE_EXERCISE_MUTATION = gql`
       loadValue: $loadValue
       loadUnit: $loadUnit
       loadText: $loadText
+      loadWeightKg: $loadWeightKg
+      loadSource: $loadSource
     ) {
       id
       organizationId
@@ -642,6 +652,8 @@ export const UPDATE_EXERCISE_IN_SET_MUTATION = gql`
     $loadValue: Decimal
     $loadUnit: String
     $loadText: String
+    $loadWeightKg: Decimal
+    $loadSource: String
   ) {
     updateExerciseInSet(
       exerciseId: $exerciseId
@@ -662,6 +674,8 @@ export const UPDATE_EXERCISE_IN_SET_MUTATION = gql`
       loadValue: $loadValue
       loadUnit: $loadUnit
       loadText: $loadText
+      loadWeightKg: $loadWeightKg
+      loadSource: $loadSource
     ) {
       id
       exerciseSetId
@@ -676,6 +690,18 @@ export const UPDATE_EXERCISE_IN_SET_MUTATION = gql`
       customName
       customDescription
       tempo
+      loadType
+      loadValue
+      loadUnit
+      loadText
+      load {
+        loadWeightKg
+        loadSource
+        type
+        value
+        unit
+        text
+      }
     }
   }
 `;
@@ -769,6 +795,8 @@ export const ADD_EXERCISE_TO_EXERCISE_SET_MUTATION = gql`
     $loadValue: Decimal
     $loadUnit: String
     $loadText: String
+    $loadWeightKg: Decimal
+    $loadSource: String
   ) {
     addExerciseToExerciseSet(
       exerciseId: $exerciseId
@@ -789,6 +817,8 @@ export const ADD_EXERCISE_TO_EXERCISE_SET_MUTATION = gql`
       loadValue: $loadValue
       loadUnit: $loadUnit
       loadText: $loadText
+      loadWeightKg: $loadWeightKg
+      loadSource: $loadSource
     ) {
       id
       exerciseSetId
@@ -803,6 +833,18 @@ export const ADD_EXERCISE_TO_EXERCISE_SET_MUTATION = gql`
       customName
       customDescription
       tempo
+      loadType
+      loadValue
+      loadUnit
+      loadText
+      load {
+        loadWeightKg
+        loadSource
+        type
+        value
+        unit
+        text
+      }
     }
   }
 `;

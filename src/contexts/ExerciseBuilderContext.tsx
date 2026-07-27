@@ -40,6 +40,8 @@ export interface BuilderExercise {
   loadValue?: number;
   loadUnit?: string;
   loadText?: string;
+  loadWeightKg?: number;
+  loadSource?: string;
   type?: string;
 }
 

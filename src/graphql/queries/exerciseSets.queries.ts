@@ -51,6 +51,14 @@ export const EXERCISE_SET_WITH_EXERCISES_FRAGMENT = gql`
       loadValue
       loadUnit
       loadText
+      load {
+        loadWeightKg
+        loadSource
+        type
+        value
+        unit
+        text
+      }
       notes
       customName
       customDescription
@@ -80,6 +88,14 @@ export const EXERCISE_SET_WITH_EXERCISES_FRAGMENT = gql`
         defaultDuration
         defaultRestBetweenSets
         defaultRestBetweenReps
+        defaultLoad {
+          loadWeightKg
+          loadSource
+          type
+          value
+          unit
+          text
+        }
         mainTags
         additionalTags
         scope
