@@ -98,7 +98,6 @@ export function ExerciseExecutionCard({
   readOnlyReason,
   className,
   testIdPrefix = 'exercise-execution-card',
-  layoutVariant = 'default',
 }: Readonly<ExerciseExecutionCardProps>) {
   const [uncontrolledExpanded, setUncontrolledExpanded] = useState(defaultExpanded);
   const [showAdvanced, setShowAdvanced] = useState(false);
@@ -274,110 +273,20 @@ export function ExerciseExecutionCard({
         {mode === 'edit' && (
           <>
             {(() => {
-              const editDragHandle = dragHandle && (
-                <div className="shrink-0 flex items-center">
-                  {dragHandle}
-                </div>
-              );
-
-              const editThumb = (
-                <button
-                  type="button"
-                  className="group/thumb cursor-pointer"
-                  onClick={handlePreviewTrigger}
-                  aria-label="Otwórz podgląd ćwiczenia"
-                  data-testid={`${testId}-thumbnail-btn`}
-                >
-                  <ExerciseThumbnail
-                    src={imageUrl}
-                    sizeClass="h-10 w-10"
-                    overlay={
-                      <div
-                        className="absolute inset-0 bg-black/50 opacity-0 group-hover/thumb:opacity-100 transition-opacity flex items-center justify-center pointer-events-none"
-                        data-testid={`${testId}-preview-btn`}
-                      >
-                        <Eye className="h-4 w-4 text-white" />
-                      </div>
-                    }
-                  />
-                </button>
-              );
-
-              const editName = (
-                <div className="min-w-0 overflow-hidden flex-1">
-                  <TooltipProvider delayDuration={200}>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <p
-                          className="font-medium text-sm text-foreground truncate"
-                          data-testid={`${testId}-name`}
-                        >
-                          {exercise.displayName}
-                        </p>
-                      </TooltipTrigger>
-                      <TooltipContent side="top" className="text-xs max-w-[300px] wrap-break-word">
-                        {exercise.displayName}
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                  {shouldShowDurationBadge && (
-                    <TooltipProvider delayDuration={150}>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <span className="inline-flex items-center gap-1 mt-0.5 text-[12px] text-primary font-medium">
-                            <Clock className="h-3 w-3" />
-                             {durationBadgeLabel}
-                          </span>
-                        </TooltipTrigger>
-                        <TooltipContent side="top" className="text-xs max-w-[220px]">
-                          Szacowany laczny czas wykonania cwiczenia z uwzglednieniem serii, powtorzen, przerw i przygotowania.
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  )}
-                </div>
-              );
-
-              const editSteppers = (
-                <>
-                  <div className={cn(layoutVariant === 'sidebar' ? 'shrink-0' : 'h-8 overflow-visible shrink-0 flex flex-col items-center justify-start')}>
-                    <LabeledStepper
-                      value={exercise.sets}
-                      onChange={(v) => handleChange({ sets: v })}
-                      label="SERIE"
-                      infoTooltip={setsField.tooltip}
-                      infoTestId={`${testId}-help-sets`}
-                      min={1}
-                      max={20}
-                      disabled={!canEditField('sets')}
-                    />
-                  </div>
-                  <div className={cn(layoutVariant === 'sidebar' ? 'shrink-0' : 'h-8 overflow-visible shrink-0 flex flex-col items-center justify-start')}>
-                    <LabeledStepper
-                      value={exercise.reps}
-                      onChange={(v) => handleChange({ reps: v })}
-                      label="POWT."
-                      infoTooltip={repsField.tooltip}
-                      infoTestId={`${testId}-help-reps`}
-                      min={1}
-                      max={100}
-                      disabled={!canEditField('reps')}
-                    />
-                  </div>
-                </>
-              );
-
-              const editActions = (
-                <div
-                  className={cn(
-                    'flex items-center gap-1 shrink-0',
-                    layoutVariant === 'sidebar' ? '' : '@[460px]:ml-0 ml-auto'
-                  )}
-                >
+              /*
+                Narrow (<460px):
+                  [identity ........] [actions]
+                  [    steppers centered    ]
+                Wide (>=460px):
+                  [identity ........] [steppers + actions]
+                  Actions share the h-8 control baseline with steppers (labels sit below).
+              */
+              const actionButtons = (
+                <div className="flex h-8 shrink-0 items-center gap-0.5">
                   <CollapsibleTrigger asChild>
                     <button
                       type="button"
-                      className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground/60 hover:text-foreground hover:bg-surface-light transition-colors data-[state=open]:bg-primary/10 data-[state=open]:text-primary cursor-pointer"
+                      className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground/60 transition-colors hover:bg-surface-light hover:text-foreground data-[state=open]:bg-primary/10 data-[state=open]:text-primary cursor-pointer"
                       title={isExpanded ? 'Zwiń' : 'Więcej opcji'}
                       data-testid={`${testId}-expand-btn`}
                     >
@@ -388,54 +297,126 @@ export function ExerciseExecutionCard({
                       )}
                     </button>
                   </CollapsibleTrigger>
-                  {onRemove && (
+                  {onRemove ? (
                     <button
                       type="button"
                       onClick={onRemove}
-                      className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground/60 hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer"
+                      className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground/60 transition-colors hover:bg-destructive/10 hover:text-destructive cursor-pointer"
                       title="Usuń"
                       data-testid={`${testId}-remove-btn`}
                     >
                       <X className="h-4 w-4" />
                     </button>
-                  )}
+                  ) : null}
                 </div>
               );
 
-              if (layoutVariant === 'sidebar') {
-                return (
-                  <div className="w-full p-4 flex flex-col gap-4">
-                    {/* Górny wiersz: Identyfikacja i akcje rozciągnięte na pełną szerokość */}
-                    <div className="flex flex-row items-center gap-3 w-full">
-                      {editDragHandle}
-                      {editThumb}
-                      {editName}
-                      <div className="shrink-0 ml-auto pl-1">
-                        {editActions}
-                      </div>
-                    </div>
-
-                    {/* Dolny wiersz: Steppery wyśrodkowane i szeroko rozstawione dla idealnego balansu (złoty podział) */}
-                    <div className="flex flex-row items-center justify-center gap-10 sm:gap-12 w-full pt-1 pb-1">
-                      {editSteppers}
-                    </div>
-                  </div>
-                );
-              }
+              const steppers = (
+                <div className="flex items-start justify-center gap-4">
+                  <LabeledStepper
+                    value={exercise.sets}
+                    onChange={(v) => handleChange({ sets: v })}
+                    label="SERIE"
+                    infoTooltip={setsField.tooltip}
+                    infoTestId={`${testId}-help-sets`}
+                    min={1}
+                    max={20}
+                    disabled={!canEditField('sets')}
+                  />
+                  <LabeledStepper
+                    value={exercise.reps}
+                    onChange={(v) => handleChange({ reps: v })}
+                    label="POWT."
+                    infoTooltip={repsField.tooltip}
+                    infoTestId={`${testId}-help-reps`}
+                    min={1}
+                    max={100}
+                    disabled={!canEditField('reps')}
+                  />
+                </div>
+              );
 
               return (
-                <div className="w-full p-4 flex flex-col gap-3 @[460px]:flex-row @[460px]:gap-2 @[460px]:items-center">
-                  <div
-                    className="grid items-center gap-2 @[460px]:flex-1 @[460px]:min-w-0"
-                    style={{ gridTemplateColumns: dragHandle ? 'auto auto 1fr' : 'auto 1fr' }}
-                  >
-                    {editDragHandle}
-                    {editThumb}
-                    {editName}
+                <div
+                  className={cn(
+                    'grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-x-2 gap-y-3 p-3',
+                    '@[460px]:grid-cols-[minmax(0,1fr)_auto] @[460px]:gap-x-4 @[460px]:gap-y-0 @[460px]:p-4'
+                  )}
+                >
+                  <div className="col-start-1 row-start-1 flex min-w-0 items-center gap-2.5">
+                    {dragHandle ? (
+                      <div className="-ml-0.5 flex shrink-0 items-center self-center">
+                        {dragHandle}
+                      </div>
+                    ) : null}
+                    <button
+                      type="button"
+                      className="group/thumb shrink-0 cursor-pointer"
+                      onClick={handlePreviewTrigger}
+                      aria-label="Otwórz podgląd ćwiczenia"
+                      data-testid={`${testId}-thumbnail-btn`}
+                    >
+                      <ExerciseThumbnail
+                        src={imageUrl}
+                        sizeClass="h-10 w-10"
+                        overlay={
+                          <div
+                            className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 transition-opacity group-hover/thumb:opacity-100"
+                            data-testid={`${testId}-preview-btn`}
+                          >
+                            <Eye className="h-4 w-4 text-white" />
+                          </div>
+                        }
+                      />
+                    </button>
+                    <div className="min-w-0 flex-1 overflow-hidden">
+                      <TooltipProvider delayDuration={200}>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <p
+                              className="truncate text-sm font-medium leading-snug text-foreground"
+                              data-testid={`${testId}-name`}
+                            >
+                              {exercise.displayName}
+                            </p>
+                          </TooltipTrigger>
+                          <TooltipContent side="top" className="max-w-[300px] text-xs wrap-break-word">
+                            {exercise.displayName}
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                      {shouldShowDurationBadge ? (
+                        <TooltipProvider delayDuration={150}>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <span className="mt-0.5 inline-flex items-center gap-1 text-[11px] font-medium leading-none text-primary">
+                                <Clock className="h-3 w-3 shrink-0" />
+                                {durationBadgeLabel}
+                              </span>
+                            </TooltipTrigger>
+                            <TooltipContent side="top" className="max-w-[220px] text-xs">
+                              Szacowany laczny czas wykonania cwiczenia z uwzglednieniem serii, powtorzen, przerw i przygotowania.
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      ) : null}
+                    </div>
                   </div>
-                  <div className="flex shrink-0 gap-3 items-start">
-                    {editSteppers}
-                    {editActions}
+
+                  {/* Narrow: actions top-right, aligned to identity row */}
+                  <div className="col-start-2 row-start-1 flex items-center justify-end @[460px]:hidden">
+                    {actionButtons}
+                  </div>
+
+                  {/* Narrow: steppers on second row */}
+                  <div className="col-span-2 col-start-1 row-start-2 flex justify-center @[460px]:hidden">
+                    {steppers}
+                  </div>
+
+                  {/* Wide: steppers + actions share the control baseline (h-8) */}
+                  <div className="col-start-2 row-start-1 hidden items-start gap-3 @[460px]:flex">
+                    {steppers}
+                    {actionButtons}
                   </div>
                 </div>
               );
@@ -551,8 +532,8 @@ export function ExerciseExecutionCard({
         {/* Expanded panel (edit only) - below main row, border-t */}
         {mode === 'edit' && (
           <CollapsibleContent>
-            <div className="w-full border-t border-border bg-surface/50 p-4 space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="w-full border-t border-border bg-surface/50 px-3 py-4 @[460px]:px-4 space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 @[460px]:gap-4">
                 <div>
                   <EditableFieldLabel
                     htmlFor={`${testId}-execution-time-input`}

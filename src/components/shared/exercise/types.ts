@@ -89,8 +89,6 @@ export interface ExerciseExecutionCardProps {
   className?: string;
   /** For data-testid: card will use exercise-execution-card-{id} */
   testIdPrefix?: string;
-  /** Layout variant: sidebar = wąski panel (Kreator Zestawu), domyślny = dialogi/szerokie layouty */
-  layoutVariant?: 'default' | 'sidebar';
 }
 
 /**

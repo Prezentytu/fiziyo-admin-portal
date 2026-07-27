@@ -34,10 +34,21 @@ Mapowanie ćwiczenia do zestawu. Pola NULL = wartość z Exercise.
 
 ## Kluczowe komponenty
 
-- `CreateSetWizard.tsx` — tworzenie zestawu
+- `CreateSetWizard.tsx` — pełny kreator zestawu (composer)
+- `ExerciseBuilderSidebar` / `CreateSetDialog` — szybki kreator z listy ćwiczeń (ten sam write-path)
+- `components/SetNameField.tsx` + `SetDescriptionCollapsible.tsx` — wspólne pola metadanych (nazwa+AI, opis)
+- `utils/createSetSubmit.ts` — kanoniczny write-path `createExerciseSet` + `addExerciseToSet` (TEMPLATE + frequency)
 - `ExerciseSetBuilder.tsx` — builder współdzielony (shared)
 - `EditExerciseInSetDialog.tsx` — edycja ćwiczenia w zestawie
 - `CustomizeExercisesStep.tsx` — personalizacja w Assignment Wizard
+
+## Tworzenie zestawu (kanoniczny kontrakt)
+
+- Zawsze `kind: TEMPLATE`, `templateSource: ORGANIZATION_PRIVATE`, `isTemplate: true`
+- Zawsze wysyłaj domyślny `frequency` (elastyczny 3×/tydzień) przez `buildCreateTemplateSetVariables`
+- Mappingi: pełny payload + dual-write load przez `buildExerciseLoadMutationVars`
+- UI karty ćwiczenia: wyłącznie `ExerciseExecutionCard` (bez lokalnych klonów / `layoutVariant`)
+- Po utworzeniu z sidebara: zostań w kontekście listy + toast z akcją „Zobacz zestaw” (bez auto-redirect)
 
 ## ExerciseLoad (kg-only, SPEC-003)
 

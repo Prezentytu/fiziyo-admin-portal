@@ -8,20 +8,24 @@ Moduł zestawów ćwiczeń pozwala fizjoterapeutom grupować ćwiczenia w logicz
 
 ### Komponenty UI (14)
 
-| Komponent                 | Odpowiedzialność                                   |
-| ------------------------- | -------------------------------------------------- |
-| `CreateSetWizard`         | Wielokrokowy wizard tworzenia zestawu              |
-| `SetForm`                 | Formularz edycji zestawu                           |
-| `SetDialog`               | Dialog szczegółów zestawu                          |
-| `SetCard`                 | Karta zestawu w liście                             |
-| `SetThumbnail`            | Miniaturka zestawu                                 |
-| `EditExerciseInSetDialog` | Edycja parametrów ćwiczenia w zestawie             |
-| `AddExerciseToSetDialog`  | Dodawanie ćwiczenia do zestawu                     |
-| `FrequencyPicker`         | Wybór częstotliwości (dni tygodnia, razy dziennie) |
-| `SetFilters`              | Filtrowanie zestawów                               |
-| `SetQuickStats`           | Statystyki zestawu (ćwiczenia, czas, przypisania)  |
-| `AISetGenerator`          | Generowanie zestawu przez AI                       |
-| `GeneratePDFDialog`       | Eksport zestawu do PDF                             |
+| Komponent                   | Odpowiedzialność                                    |
+| --------------------------- | --------------------------------------------------- |
+| `CreateSetWizard`           | Pełny composer tworzenia zestawu                    |
+| `ExerciseBuilderSidebar`    | Szybki kreator z listy ćwiczeń (wspólny write-path) |
+| `SetNameField`              | Wspólne pole nazwy + AI + inline error              |
+| `SetDescriptionCollapsible` | Wspólny zwijany opis zestawu                        |
+| `createSetSubmit`           | Kanoniczny helper create+addExercise                |
+| `SetForm`                   | Formularz edycji zestawu                            |
+| `SetDialog`                 | Dialog szczegółów zestawu                           |
+| `SetCard`                   | Karta zestawu w liście                              |
+| `SetThumbnail`              | Miniaturka zestawu                                  |
+| `EditExerciseInSetDialog`   | Edycja parametrów ćwiczenia w zestawie              |
+| `AddExerciseToSetDialog`    | Dodawanie ćwiczenia do zestawu                      |
+| `FrequencyPicker`           | Wybór częstotliwości (dni tygodnia, razy dziennie)  |
+| `SetFilters`                | Filtrowanie zestawów                                |
+| `SetQuickStats`             | Statystyki zestawu (ćwiczenia, czas, przypisania)   |
+| `AISetGenerator`            | Generowanie zestawu przez AI                        |
+| `GeneratePDFDialog`         | Eksport zestawu do PDF                              |
 
 ### Interfejsy API (GraphQL)
 
@@ -71,6 +75,15 @@ Prefiks: `set-`
 Logo organizacji preloadowane analogicznym mechanizmem (osobne wywolanie `preloadPdfImages`).
 
 ## Changelog
+
+### 2026-07-27
+
+- Ujednolicono szybki kreator sidebara (`ExerciseBuilderSidebar` + `CreateSetDialog`) z pełnym `CreateSetWizard`:
+  - wspólny write-path `utils/createSetSubmit.ts` (`TEMPLATE` + domyślny `frequency` + dual-write load),
+  - wspólne pola metadanych `SetNameField` / `SetDescriptionCollapsible`,
+  - wspólne podsumowanie czasu przez `formatExerciseDuration` (bez heurystycznego badge „Intensywność”),
+  - jedna geometria karty `ExerciseExecutionCard` oparta o container queries (usunięto `layoutVariant="sidebar"`).
+- Po utworzeniu zestawu z sidebara: brak auto-redirect — toast z akcją „Zobacz zestaw”.
 
 ### 2026-05-21
 

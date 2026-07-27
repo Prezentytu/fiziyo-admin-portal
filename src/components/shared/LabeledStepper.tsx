@@ -62,19 +62,17 @@ export function LabeledStepper({
 
   return (
     <div
-      className={cn('flex flex-col items-stretch justify-center group', className)}
+      className={cn('flex w-[76px] flex-col items-center group', className)}
       data-testid="labeled-stepper"
     >
-      {/* Controls row: grid so label below aligns with value column only */}
-      <div className="grid grid-cols-[auto_1fr_auto] items-stretch h-8 w-full">
-        {/* Minus */}
+      <div className="inline-flex h-8 w-full items-stretch">
         <button
           type="button"
           onClick={decrement}
           disabled={disabled || !canDecrement}
           data-stepper-control
           className={cn(
-            'w-7 flex items-center justify-center rounded-l-lg transition-all cursor-pointer',
+            'flex w-7 shrink-0 items-center justify-center rounded-l-lg transition-all cursor-pointer',
             'bg-surface-light/80 border border-r-0 border-border/40',
             'text-muted-foreground/70 hover:text-foreground hover:bg-surface-light',
             'active:scale-95 disabled:cursor-not-allowed disabled:bg-surface-light/35 disabled:text-muted-foreground/35 disabled:hover:bg-surface-light/35',
@@ -82,12 +80,11 @@ export function LabeledStepper({
           )}
           data-testid="stepper-decrement"
         >
-          <Minus className="h-3.5 w-3.5" strokeWidth={2.5} />
+          <Minus className="h-3.5 w-3.5 shrink-0" strokeWidth={2.5} />
         </button>
 
-        {/* Value + suffix: middle column — label will sit under this only */}
-        <div className="flex items-center justify-center min-w-10 h-full border-y border-border/40 bg-surface/80 px-1 rounded-none [&:has(input:focus)]:ring-0 [&:has(input:focus)]:ring-offset-0">
-          <div className="flex items-baseline justify-center gap-0 leading-none">
+        <div className="flex h-full min-w-0 flex-1 items-center justify-center border-y border-border/40 bg-surface/80 px-1">
+          <div className="flex h-full items-center justify-center gap-0.5 leading-none">
             <input
               type="text"
               inputMode="numeric"
@@ -102,7 +99,7 @@ export function LabeledStepper({
               onKeyDown={handleKeyDown}
               disabled={disabled}
               className={cn(
-                'w-auto min-w-0 bg-transparent text-right font-bold text-sm text-foreground tabular-nums cursor-text',
+                'h-full w-auto min-w-0 bg-transparent text-center font-bold text-sm text-foreground tabular-nums cursor-text',
                 'outline-none border-0 p-0 leading-none',
                 'focus:bg-transparent !focus:outline-none !focus:ring-0 !focus:ring-offset-0 !focus-visible:outline-none !focus-visible:ring-0 !focus-visible:ring-offset-0',
                 'disabled:opacity-40 disabled:cursor-not-allowed',
@@ -110,22 +107,21 @@ export function LabeledStepper({
               )}
               data-testid="stepper-input"
             />
-            {suffix && (
-              <span className="text-sm text-muted-foreground/60 font-medium tabular-nums shrink-0 leading-none">
+            {suffix ? (
+              <span className="shrink-0 text-sm font-medium leading-none tabular-nums text-muted-foreground/60">
                 {suffix}
               </span>
-            )}
+            ) : null}
           </div>
         </div>
 
-        {/* Plus */}
         <button
           type="button"
           onClick={increment}
           disabled={disabled || !canIncrement}
           data-stepper-control
           className={cn(
-            'w-7 flex items-center justify-center rounded-r-lg transition-all cursor-pointer',
+            'flex w-7 shrink-0 items-center justify-center rounded-r-lg transition-all cursor-pointer',
             'bg-surface-light/80 border border-l-0 border-border/40',
             'text-muted-foreground/70 hover:text-foreground hover:bg-surface-light',
             'active:scale-95 disabled:cursor-not-allowed disabled:bg-surface-light/35 disabled:text-muted-foreground/35 disabled:hover:bg-surface-light/35',
@@ -133,37 +129,33 @@ export function LabeledStepper({
           )}
           data-testid="stepper-increment"
         >
-          <Plus className="h-3.5 w-3.5" strokeWidth={2.5} />
+          <Plus className="h-3.5 w-3.5 shrink-0" strokeWidth={2.5} />
         </button>
       </div>
 
-      {/* Label: same 3-column grid so label sits exactly under the value cell */}
-      <div className="grid grid-cols-[auto_1fr_auto] w-full mt-1 min-h-[14px] items-center">
-        <span className="w-7 shrink-0" aria-hidden />
-        <span className="text-[9px] uppercase font-bold text-muted-foreground/40 tracking-wider text-center group-hover:text-muted-foreground/70 transition-colors whitespace-nowrap">
+      <div className="mt-1.5 grid h-4 w-full grid-cols-[1fr_auto_1fr] items-center">
+        <span className="col-start-2 whitespace-nowrap text-center text-[10px] font-bold uppercase leading-none tracking-wider text-muted-foreground/50 transition-colors group-hover:text-muted-foreground/80">
           {label}
         </span>
-        <span className="w-7 shrink-0 flex items-center justify-center">
-          {infoTooltip ? (
-            <TooltipProvider delayDuration={150}>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <button
-                    type="button"
-                    className="inline-flex h-4 w-4 items-center justify-center rounded-full text-muted-foreground/60 hover:text-foreground transition-colors"
-                    aria-label={`Informacja o polu: ${label}`}
-                    data-testid={infoTestId}
-                  >
-                    <Info className="h-3 w-3" />
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent side="top" className="max-w-xs text-xs">
-                  {infoTooltip}
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          ) : null}
-        </span>
+        {infoTooltip ? (
+          <TooltipProvider delayDuration={150}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  className="col-start-3 ml-1 inline-flex h-3.5 w-3.5 shrink-0 items-center justify-center justify-self-start rounded-full text-muted-foreground/50 transition-colors hover:text-foreground"
+                  aria-label={`Informacja o polu: ${label}`}
+                  data-testid={infoTestId}
+                >
+                  <Info className="h-3 w-3" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="top" className="max-w-xs text-xs">
+                {infoTooltip}
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        ) : null}
       </div>
     </div>
   );

@@ -10,12 +10,10 @@ import {
   Check,
   Plus,
   GripVertical,
-  ChevronDown,
   Eye,
   TrendingUp,
   Sparkles,
   Timer,
-  Pencil,
   X,
 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -40,12 +38,12 @@ import { CSS } from '@dnd-kit/utilities';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import * as VisuallyHidden from '@radix-ui/react-visually-hidden';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { ImagePlaceholder } from '@/components/shared/ImagePlaceholder';
+import { SetNameField } from '@/features/exercise-sets/components/SetNameField';
+import { SetDescriptionCollapsible } from '@/features/exercise-sets/components/SetDescriptionCollapsible';
 import { getMediaUrl } from '@/utils/mediaUrl';
 import { countBySource, filterExercisesBySource, type ExerciseSourceFilter } from '@/utils/exerciseSourceFilter';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
@@ -73,15 +71,13 @@ import { GET_PATIENT_CLINICAL_NOTES_QUERY } from '@/graphql/queries/clinicalNote
 import { createTagsMap, mapExercisesWithTags } from '@/utils/tagUtils';
 import type { ExerciseTagsResponse, TagCategoriesResponse, OrganizationExerciseSetsResponse } from '@/types/apollo';
 import { calculateExerciseTotalSeconds, formatExerciseDuration } from '@/utils/exerciseTime';
-import {
-  buildExerciseLoadMutationVars,
-  buildExerciseLoadParamFields,
-} from '@/utils/exerciseLoadMutation';
+import { buildExerciseLoadParamFields } from '@/utils/exerciseLoadMutation';
 import {
   EMPTY_EXERCISE_PARAMS,
   getExerciseDefaultParams,
   type ExerciseParams,
 } from '@/features/exercise-sets/utils/exerciseDefaults';
+import { submitCreateTemplateSet } from '@/features/exercise-sets/utils/createSetSubmit';
 
 // ============================================================
 // TYPES
@@ -704,61 +700,42 @@ export function CreateSetWizard({
 
     try {
       const sanitizedName = name.trim();
-      const result = await createSet({
-        variables: {
+      const mappings = selectedInstances
+        .map(({ instanceId, exerciseId }) => {
+          const exercise = exercises.find((item) => item.id === exerciseId);
+          if (!exercise) return null;
+          const params = exerciseParams.get(instanceId) || getDefaultParams(exercise);
+          return {
+            exerciseId,
+            sets: params.sets,
+            reps: params.reps,
+            duration: params.duration,
+            restSets: params.restSets,
+            restReps: params.restReps,
+            preparationTime: params.preparationTime,
+            executionTime: params.executionTime,
+            notes: params.notes,
+            customName: params.customName,
+            customDescription: params.customDescription,
+            tempo: params.tempo,
+            loadWeightKg: params.loadWeightKg,
+            loadValue: params.loadValue,
+          };
+        })
+        .filter((mapping): mapping is NonNullable<typeof mapping> => mapping !== null);
+
+      const newSetId = await submitCreateTemplateSet(
+        {
+          createSet: (options) => createSet(options),
+          addExercise: (options) => addExercise(options),
+        },
+        {
           organizationId,
           name: sanitizedName,
-          description: description.trim() || null,
-          kind: 'TEMPLATE',
-          templateSource: 'ORGANIZATION_PRIVATE',
-          isTemplate: true,
-          frequency: {
-            timesPerDay: '1',
-            timesPerWeek: '3',
-            isFlexible: true,
-            breakBetweenSets: '24',
-            monday: false,
-            tuesday: false,
-            wednesday: false,
-            thursday: false,
-            friday: false,
-            saturday: false,
-            sunday: false,
-          },
+          description,
         },
-      });
-
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const newSetId = (result.data as any)?.createExerciseSet?.id;
-      if (!newSetId) throw new Error('Nie udało się utworzyć zestawu');
-
-      if (selectedInstances.length > 0) {
-        let order = 0;
-        for (const { instanceId, exerciseId } of selectedInstances) {
-          const exercise = exercises.find((e) => e.id === exerciseId);
-          if (!exercise) continue;
-          const params = exerciseParams.get(instanceId) || getDefaultParams(exercise);
-          await addExercise({
-            variables: {
-              exerciseId,
-              exerciseSetId: newSetId,
-              order: order++,
-              sets: params.sets || null,
-              reps: params.reps || null,
-              duration: params.duration || null,
-              restSets: params.restSets || null,
-              restReps: params.restReps || null,
-              preparationTime: params.preparationTime || null,
-              executionTime: params.executionTime || null,
-              notes: params.notes || null,
-              customName: params.customName || null,
-              customDescription: params.customDescription || null,
-              tempo: params.tempo || null,
-              ...buildExerciseLoadMutationVars(params.loadWeightKg ?? params.loadValue),
-            },
-          });
-        }
-      }
+        mappings
+      );
 
       // Refresh exercise sets cache after all exercises are added
       await refetchExerciseSets();
@@ -814,64 +791,19 @@ export function CreateSetWizard({
             </div>
             <div className="min-h-11 py-1 flex items-start gap-0 -mx-1">
               <div className="w-full lg:w-[40%] min-w-0 pr-3 flex flex-col">
-                <label
-                  className={cn(
-                    'flex-1 flex h-9 items-center min-w-0 rounded-md border border-transparent px-1.5 focus-within:bg-surface transition-colors cursor-text hover:bg-surface-light/50',
-                    showNameError
-                      ? 'bg-destructive/5 border-destructive/50 ring-1 ring-destructive/30 focus-within:border-destructive/60 focus-within:ring-destructive/40'
-                      : 'focus-within:border-border focus-within:ring-1 focus-within:ring-primary/20'
-                  )}
-                >
-                  <input
-                    type="text"
-                    value={name}
-                    onChange={(event) => {
-                      const nextName = event.target.value;
-                      setName(nextName);
-                      if (showNameError && nextName.trim().length >= 2) {
-                        setShowNameError(false);
-                      }
-                    }}
-                    placeholder="np. Rehabilitacja kolana - tydzień 1"
-                    autoFocus
-                    autoComplete="off"
-                    ref={nameInputRef}
-                    aria-invalid={showNameError}
-                    aria-describedby={showNameError ? 'set-composer-name-error' : undefined}
-                    data-testid="set-composer-name-input"
-                    className="peer flex-1 min-w-0 bg-transparent text-base font-semibold text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-0 border-none p-0 cursor-text"
-                  />
-                  <Pencil className="h-3.5 w-3.5 text-muted-foreground/40 shrink-0 ml-2 peer-focus:hidden transition-opacity pointer-events-none" aria-hidden />
-                  <button
-                    type="button"
-                    onClick={(e) => { e.preventDefault(); handleGenerateAIName(); }}
-                    title="Wygeneruj nazwę AI"
-                    className={cn(
-                      'p-1.5 rounded-md shrink-0 transition-colors ml-1 relative z-10',
-                      isGeneratingName
-                        ? 'text-muted-foreground cursor-not-allowed opacity-50'
-                        : 'text-muted-foreground hover:text-secondary hover:bg-secondary/10'
-                    )}
-                    data-testid="set-composer-ai-btn"
-                    aria-label="Wygeneruj nazwę AI"
-                    disabled={isGeneratingName}
-                  >
-                    {isGeneratingName ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                      <Sparkles className="h-3.5 w-3.5" />
-                    )}
-                  </button>
-                </label>
-                {showNameError && (
-                  <p
-                    id="set-composer-name-error"
-                    className="mt-1 px-1.5 text-[11px] font-medium text-destructive"
-                    data-testid="set-composer-name-error"
-                  >
-                    Podaj nazwę zestawu (minimum 2 znaki), aby utworzyć zestaw.
-                  </p>
-                )}
+                <SetNameField
+                  value={name}
+                  onChange={setName}
+                  onGenerateAiName={() => {
+                    void handleGenerateAIName();
+                  }}
+                  isGeneratingName={isGeneratingName}
+                  showError={showNameError}
+                  onClearError={() => setShowNameError(false)}
+                  inputRef={nameInputRef}
+                  autoFocus
+                  testIdPrefix="set-composer"
+                />
               </div>
               <div className="flex-1 flex items-center justify-end gap-3 min-w-0 pl-3">
                 {patientContext && (
@@ -896,36 +828,17 @@ export function CreateSetWizard({
                 </Button>
               </div>
             </div>
-            
-            {/* Row 3: Bottom spacer + Collapsible trigger (idealne wykorzystanie przestrzeni h-7 i wyrównanie) */}
-            <Collapsible open={showDescription} onOpenChange={setShowDescription}>
-              <div className="h-7 flex items-start -mx-1">
-                <div className="w-full lg:w-[40%] pr-3 px-1.5 flex items-start">
-                  <CollapsibleTrigger asChild>
-                    <button
-                      type="button"
-                      className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors rounded-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary pt-0.5"
-                    >
-                      <ChevronDown className={cn('h-3.5 w-3.5 transition-transform', showDescription && 'rotate-180')} />
-                      {description ? 'Edytuj opis' : 'Dodaj opis'}
-                    </button>
-                  </CollapsibleTrigger>
-                </div>
-              </div>
-              <CollapsibleContent>
-                <div className="pb-5 pt-1 -mx-1">
-                  <div className="w-full lg:w-[40%] pr-3 px-1.5">
-                    <Textarea
-                      value={description}
-                      onChange={(e) => setDescription(e.target.value)}
-                      placeholder="Opisz cel zestawu (np. wzmocnienie mięśnia czworogłowego)..."
-                      className="h-[68px] min-h-[68px] text-sm resize-none bg-surface border-border placeholder:text-muted-foreground/50 w-full focus-visible:ring-1 focus-visible:ring-primary shadow-sm"
-                      data-testid="set-composer-description-input"
-                    />
-                  </div>
-                </div>
-              </CollapsibleContent>
-            </Collapsible>
+
+            <div className="w-full lg:w-[40%]">
+              <SetDescriptionCollapsible
+                open={showDescription}
+                onOpenChange={setShowDescription}
+                value={description}
+                onChange={setDescription}
+                testIdPrefix="set-composer-description"
+                className="pb-4"
+              />
+            </div>
           </div>
         </div>
 

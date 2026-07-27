@@ -14,6 +14,22 @@ Dziennik wniosków z pracy AI agentów. Po każdej korekcie dodaj nowy wpis.
 
 ## Wpisy
 
+### 2026-07-27 - Detal zestawu musi czytać load przez wspólny adapter, nie lokalny mapper
+
+- **Kategoria**: `React` | `GraphQL`
+- **Problem**: Po utworzeniu zestawu z obciążeniem 10 kg backend zapisał `Load` JSONB, ale na stronie szczegółów / w dialogu inline edycji pole wyglądało na puste („nie zapisało się”).
+- **Przyczyna**: Lokalne `toExecutionCardData` / `mappingToCardData` pomijały `load`/`loadWeightKg`; quick-update i `EditExerciseInSetDialog` nie wysyłały też `buildExerciseLoadMutationVars` przy edycji.
+- **Rozwiązanie**: Przepięto odczyt na `fromExerciseMapping`; dopięto dual-write load w quick-update i dialogu edycji parametrów.
+- **Reguła**: Nigdy nie utrzymuj lokalnych mapperów karty ćwiczenia na detalach zestawu — zawsze `fromExerciseMapping` + `buildExerciseLoadMutationVars` dla load; lokalny mapper bez pól JSONB wygląda jak „zapis nie działa”.
+
+### 2026-07-27 - Dwa kreatory zestawu muszą dzielić jeden write-path i wspólne pola metadanych
+
+- **Kategoria**: `UI/UX` | `React` | `GraphQL`
+- **Problem**: Sidebar „Kreator zestawu” i pełny `CreateSetWizard` wyglądały podobnie (ta sama `ExerciseExecutionCard`), ale miały osobne ścieżki zapisu (dialog bez `frequency`), osobne UI nazwy/AI/opisu, osobne formatowanie czasu oraz auto-redirect po create — co powodowało drift kontraktu i UX.
+- **Przyczyna**: Szybki flow sidebara powstał jako lokalny skrót zamiast rozszerzenia kanonicznego kreatora o współdzielone helpery/komponenty.
+- **Rozwiązanie**: Wydzielono `createSetSubmit.ts`, `SetNameField`, `SetDescriptionCollapsible`; przepięto oba entrypointy; ujednolicono podsumowanie czasu; usunięto `layoutVariant="sidebar"` na rzecz container queries; po create w sidebarze toast + „Zobacz zestaw” zamiast `router.push`.
+- **Reguła**: Jeśli dwa flow tworzą ten sam byt (`ExerciseSet` TEMPLATE), utrzymuj jeden write-path helper i współdzielone pola metadanych; różnicuj tylko layout entrypointu (sidebar vs modal), nigdy payload mutacji ani semantykę karty ćwiczenia.
+
 ### 2026-07-20 - ExerciseLoad kg-only wymaga dual-write w mutacjach i we wszystkich builderach
 
 - **Kategoria**: `GraphQL` | `React`

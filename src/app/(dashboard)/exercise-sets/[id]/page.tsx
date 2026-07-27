@@ -43,14 +43,19 @@ import { LoadingState } from '@/components/shared/LoadingState';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { ScheduleSummary } from '@/components/shared';
-import { ExerciseExecutionCard } from '@/components/shared/exercise';
+import { ExerciseExecutionCard, fromExerciseMapping } from '@/components/shared/exercise';
 import type { ExerciseExecutionCardData } from '@/components/shared/exercise';
 import { EditExerciseSetFullDialog } from '@/features/exercise-sets/EditExerciseSetFullDialog';
 import { EditExerciseInSetDialog } from '@/features/exercise-sets/EditExerciseInSetDialog';
 import { GeneratePDFDialog } from '@/features/exercise-sets/GeneratePDFDialog';
 import { AssignmentWizard } from '@/features/assignment/AssignmentWizard';
-import type { ExerciseSet as AssignmentExerciseSet } from '@/features/assignment/types';
+import type {
+  ExerciseLoad,
+  ExerciseMapping as AssignmentExerciseMapping,
+  ExerciseSet as AssignmentExerciseSet,
+} from '@/features/assignment/types';
 import { normalizeFrequencySeed } from '@/features/assignment/utils/scheduleFrequencyUtils';
+import { buildExerciseLoadMutationVars } from '@/utils/exerciseLoadMutation';
 
 import {
   GET_EXERCISE_SET_WITH_ASSIGNMENTS_QUERY,
@@ -86,6 +91,11 @@ interface ExerciseMapping {
   notes?: string;
   customName?: string;
   customDescription?: string;
+  loadType?: string;
+  loadValue?: number;
+  loadUnit?: string;
+  loadText?: string;
+  load?: ExerciseLoad | null;
   exercise?: {
     id: string;
     name: string;
@@ -97,12 +107,20 @@ interface ExerciseMapping {
     defaultReps?: number;
     defaultDuration?: number;
     defaultExecutionTime?: number;
+    defaultRestBetweenSets?: number;
+    defaultRestBetweenReps?: number;
+    preparationTime?: number;
     // Legacy aliasy
     description?: string;
     type?: string;
     imageUrl?: string;
     images?: string[];
     exerciseSide?: string;
+    defaultLoad?: ExerciseLoad | null;
+    loadType?: string;
+    loadValue?: number;
+    loadUnit?: string;
+    loadText?: string;
   };
 }
 
@@ -299,6 +317,24 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
     if ('notes' in patch) mappingPatch.notes = patch.notes;
     if ('customName' in patch) mappingPatch.customName = patch.customName;
     if ('customDescription' in patch) mappingPatch.customDescription = patch.customDescription;
+    if ('loadKg' in patch) {
+      const loadVars = buildExerciseLoadMutationVars(patch.loadKg);
+      mappingPatch.loadType = loadVars.loadType ?? undefined;
+      mappingPatch.loadValue = loadVars.loadValue ?? undefined;
+      mappingPatch.loadUnit = loadVars.loadUnit ?? undefined;
+      mappingPatch.loadText = loadVars.loadText ?? undefined;
+      mappingPatch.load =
+        loadVars.loadWeightKg == null
+          ? null
+          : {
+              loadWeightKg: loadVars.loadWeightKg,
+              loadSource: loadVars.loadSource,
+              type: 'weight',
+              value: loadVars.loadValue ?? undefined,
+              unit: 'kg',
+              text: loadVars.loadText ?? `${loadVars.loadWeightKg} kg`,
+            };
+    }
 
     if (Object.keys(mappingPatch).length === 0) return;
     const previousPatch = localExercisePatches[mapping.id];
@@ -333,6 +369,7 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
           customName: mergedMapping.customName ?? null,
           customDescription: mergedMapping.customDescription ?? null,
           tempo: mergedMapping.tempo ?? null,
+          ...('loadKg' in patch ? buildExerciseLoadMutationVars(patch.loadKg) : {}),
         },
       });
     } catch (err) {
@@ -377,23 +414,6 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
       variant: displayStatus.primary.variant,
     };
   };
-
-  const toExecutionCardData = (mapping: ExerciseMapping): ExerciseExecutionCardData => ({
-    id: mapping.id,
-    displayName: mapping.customName || mapping.exercise?.name || 'Nieznane ćwiczenie',
-    thumbnailUrl: mapping.exercise?.thumbnailUrl ?? mapping.exercise?.imageUrl ?? mapping.exercise?.images?.[0],
-    sets: mapping.sets ?? mapping.exercise?.defaultSets ?? 3,
-    reps: mapping.reps ?? mapping.exercise?.defaultReps ?? 10,
-    duration: mapping.duration ?? mapping.exercise?.defaultDuration,
-    executionTime: mapping.executionTime ?? mapping.exercise?.defaultExecutionTime,
-    restSets: mapping.restSets,
-    restReps: mapping.restReps,
-    notes: mapping.notes,
-    customName: mapping.customName,
-    customDescription: mapping.customDescription,
-    side: (mapping.exercise?.side ?? mapping.exercise?.exerciseSide ?? 'none')?.toLowerCase(),
-    isTimeBased: false,
-  });
 
   if (loading) {
     return (
@@ -566,7 +586,7 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
                   ...mapping,
                   ...(localExercisePatches[mapping.id] ?? {}),
                 };
-                const cardData = toExecutionCardData(patchedMapping);
+                const cardData = fromExerciseMapping(patchedMapping as AssignmentExerciseMapping);
                 return (
                   <div key={mapping.id} data-testid={`set-detail-exercise-row-${mapping.id}`}>
                     <ExerciseExecutionCard
@@ -576,7 +596,7 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
                       onChange={(patch: Partial<ExerciseExecutionCardData>) =>
                         handleQuickExerciseUpdate(mapping, patch)
                       }
-                      onExpand={() => setEditingExercise(mapping)}
+                      onExpand={() => setEditingExercise(patchedMapping)}
                       onRemove={() => setRemovingExerciseId(mapping.exerciseId)}
                       className="transition-all duration-200 hover:border-primary/30 hover:bg-surface-light"
                       testIdPrefix="set-detail-exercise-row"
@@ -789,6 +809,11 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
                 restSets: m.restSets,
                 restReps: m.restReps,
                 notes: m.notes,
+                load: m.load ?? undefined,
+                loadType: m.loadType,
+                loadValue: m.loadValue,
+                loadUnit: m.loadUnit,
+                loadText: m.loadText,
                 exercise: m.exercise
                   ? {
                       id: m.exercise.id,
@@ -801,6 +826,7 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
                       images: m.exercise.images,
                       side: m.exercise.side,
                       exerciseSide: m.exercise.side?.toLowerCase() || m.exercise.exerciseSide,
+                      defaultLoad: m.exercise.defaultLoad ?? undefined,
                     }
                   : undefined,
               })),
