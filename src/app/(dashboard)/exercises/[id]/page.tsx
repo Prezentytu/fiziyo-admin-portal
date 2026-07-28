@@ -73,13 +73,16 @@ import {
   RESUBMIT_FROM_ORIGINAL_MUTATION,
   CREATE_EXERCISE_MUTATION,
 } from '@/graphql/mutations/exercises.mutations';
-import { UPDATE_EXERCISE_FIELD_MUTATION } from '@/graphql/mutations/adminExercises.mutations';
 import { useExerciseEditorForm } from '@/features/exercises/useExerciseEditorForm';
 import type { ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.types';
 import { aiService } from '@/services/aiService';
 import { createTagsMap, mapExerciseTagsToObjects } from '@/utils/tagUtils';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import type { ExerciseByIdResponse, ExerciseTagsResponse, TagCategoriesResponse } from '@/types/apollo';
+import {
+  buildEnrichmentUpdateVariables,
+  isExerciseSaveAuthError,
+} from '@/features/exercises/utils/buildEnrichmentUpdateVariables';
 import { getNextExerciseCopyName } from '@/features/exercises/utils/getNextExerciseCopyName';
 import { calculateExerciseTotalSeconds, formatExerciseDuration } from '@/utils/exerciseTime';
 import { verificationCopy } from '@/features/verification/verificationCopy';
@@ -134,7 +137,6 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
   });
 
   const [updateExercise] = useMutation(UPDATE_EXERCISE_MUTATION);
-  const [updateExerciseField] = useMutation(UPDATE_EXERCISE_FIELD_MUTATION);
   const [uploadExerciseImage] = useMutation(UPLOAD_EXERCISE_IMAGE_MUTATION);
   const [deleteExerciseImage] = useMutation(DELETE_EXERCISE_IMAGE_MUTATION);
 
@@ -194,11 +196,11 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
 
   const updateEnrichment = useCallback(
     async (payload: ExerciseEnrichmentData) => {
-      await updateExerciseField({
-        variables: { exerciseId: id, fieldName: 'enrichmentData', value: JSON.stringify(payload ?? {}) },
+      await updateExercise({
+        variables: buildEnrichmentUpdateVariables(id, payload),
       });
     },
-    [id, updateExerciseField]
+    [id, updateExercise]
   );
 
   const handleSaved = useCallback(() => {
@@ -207,7 +209,11 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
     void apolloClient.refetchQueries({ include: [GET_EXERCISE_BY_ID_QUERY] });
   }, [apolloClient]);
 
-  const handleSaveError = useCallback(() => {
+  const handleSaveError = useCallback((error?: unknown) => {
+    if (error && isExerciseSaveAuthError(error)) {
+      toast.error('Brak uprawnień do zapisu tych zmian');
+      return;
+    }
     toast.error('Nie udało się zapisać zmian');
   }, []);
 

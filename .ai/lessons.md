@@ -14,6 +14,14 @@ Dziennik wniosków z pracy AI agentów. Po każdej korekcie dodaj nowy wpis.
 
 ## Wpisy
 
+### 2026-07-28 - Enrichment na /exercises zapisuj przez updateExercise.enrichmentDataJson, nie updateExerciseField
+
+- **Kategoria**: `GraphQL` | `React`
+- **Problem**: Po create ćwiczenia → edycja → wypełnienie sekcji enrichment (sprzęt/AI/kroki) zapis padał z `updateExerciseField` / „Unexpected Execution Error” / „Nie udało się zapisać”.
+- **Przyczyna**: Frontend wołał adminową `UpdateExerciseField` (`RequireContentManagerPermission`). Terapeuta org może tworzyć/edytować core przez `updateExercise`, ale nie ma roli ContentManager. Fałszywe założenie w lessons mówiło, że `enrichmentData` nie ma kanału w `UPDATE_EXERCISE_MUTATION` — backend od dawna przyjmuje `enrichmentDataJson`.
+- **Rozwiązanie**: Additive `enrichmentDataJson` w `UPDATE_EXERCISE_MUTATION`; `/exercises/[id]` i org-verification zapisują enrichment przez `buildEnrichmentUpdateVariables` → `updateExercise`. `updateExerciseField` zostaje dla CM/global verification.
+- **Reguła**: Zapis enrichment dla terapeuty/org Owner = zawsze `updateExercise(enrichmentDataJson)`. `updateExerciseField` wyłącznie dla ContentManager. Przed wyborem mutacji sprawdź backendowy gate uprawnień, nie tylko nazwę pola.
+
 ### 2026-07-27 - Detal zestawu musi czytać load przez wspólny adapter, nie lokalny mapper
 
 - **Kategoria**: `React` | `GraphQL`

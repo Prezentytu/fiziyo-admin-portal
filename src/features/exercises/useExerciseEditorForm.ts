@@ -84,7 +84,7 @@ interface UseExerciseEditorFormParams {
   updateCore: (variables: Record<string, unknown>) => Promise<void>;
   updateEnrichment: (payload: ExerciseEnrichmentData) => Promise<void>;
   onSaved?: () => void;
-  onError?: () => void;
+  onError?: (error: unknown) => void;
   /**
    * Włącza tryb autosave (debounce po każdej zmianie, bez przycisku "Zapisz").
    * Baseline (dirty-tracking) jest wtedy aktualizowany wyłącznie przez `markSaved()`
@@ -360,7 +360,7 @@ export function useExerciseEditorForm({
     } catch (error) {
       console.error('[ExerciseEditor] Save failed:', error);
       setSaveStatus('error');
-      onError?.();
+      onError?.(error);
     }
   }, [initialEnrichmentPayload, markSaved, onError, onSaved, updateCore, updateEnrichment]);
 

@@ -162,6 +162,7 @@ export const UPDATE_EXERCISE_MUTATION = gql`
     $loadText: String
     $loadWeightKg: Decimal
     $loadSource: String
+    $enrichmentDataJson: String
   ) {
     updateExercise(
       exerciseId: $exerciseId
@@ -192,6 +193,7 @@ export const UPDATE_EXERCISE_MUTATION = gql`
       loadText: $loadText
       loadWeightKg: $loadWeightKg
       loadSource: $loadSource
+      enrichmentDataJson: $enrichmentDataJson
     ) {
       id
       organizationId
@@ -217,6 +219,7 @@ export const UPDATE_EXERCISE_MUTATION = gql`
       mainTags
       additionalTags
       difficultyLevel
+      enrichmentData
       updatedAt
     }
   }
