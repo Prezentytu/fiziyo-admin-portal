@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
-import { Sparkles, Trash2, Upload } from 'lucide-react';
+import { Loader2, Sparkles, Trash2, Upload } from 'lucide-react';
 
 import { MediaGallery, buildMediaItems } from '@/components/shared';
 import { Button } from '@/components/ui/button';
@@ -9,6 +9,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { cn } from '@/lib/utils';
 import type { AdminExercise } from '@/graphql/types/adminExercise.types';
 import type { MediaItem } from '@/components/shared/media/mediaItems';
+import { ImageStylePicker } from '@/features/exercises/ImageStylePicker';
 import { useExerciseMediaManager } from './useExerciseMediaManager';
 
 interface MasterVideoPlayerProps {
@@ -34,6 +35,8 @@ export function MasterVideoPlayer({
     isUploading,
     isGenerating,
     isDeleting,
+    imageStyle,
+    setImageStyle,
     openFilePicker,
     handleUploadFiles,
     generateAiImage,
@@ -78,6 +81,7 @@ export function MasterVideoPlayer({
                 disabled={disabled || isUploading || remainingSlots === 0}
                 className="h-8 w-8"
                 aria-label="Dodaj zdjęcia"
+                data-testid="verification-media-upload-btn"
               >
                 <Upload className="h-4 w-4" />
               </Button>
@@ -86,6 +90,13 @@ export function MasterVideoPlayer({
               {remainingSlots === 0 ? 'Osiągnięto limit zdjęć' : 'Dodaj zdjęcia'}
             </TooltipContent>
           </Tooltip>
+
+          <ImageStylePicker
+            value={imageStyle}
+            onChange={setImageStyle}
+            disabled={disabled || isGenerating}
+            testIdPrefix="verification-media-ai-style"
+          />
 
           <Tooltip>
             <TooltipTrigger asChild>
@@ -97,12 +108,18 @@ export function MasterVideoPlayer({
                 disabled={disabled || isGenerating || remainingSlots === 0}
                 className="h-8 w-8"
                 aria-label="Generuj zdjęcie AI"
+                aria-busy={isGenerating}
+                data-testid="verification-media-ai-generate-btn"
               >
-                <Sparkles className="h-4 w-4" />
+                {isGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
               </Button>
             </TooltipTrigger>
             <TooltipContent side="bottom">
-              {remainingSlots === 0 ? 'Osiągnięto limit zdjęć' : 'Generuj zdjęcie AI'}
+              {remainingSlots === 0
+                ? 'Osiągnięto limit zdjęć'
+                : isGenerating
+                  ? 'Generowanie obrazu…'
+                  : 'Generuj zdjęcie AI'}
             </TooltipContent>
           </Tooltip>
 

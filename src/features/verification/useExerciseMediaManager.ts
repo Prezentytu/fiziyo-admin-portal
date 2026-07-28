@@ -1,9 +1,10 @@
-import { useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
-import { aiService } from '@/services/aiService';
+import { useExerciseImageGeneration } from '@/features/exercises/useExerciseImageGeneration';
 import { getMediaUrls } from '@/utils/mediaUrl';
 import type { AdminExercise } from '@/graphql/types/adminExercise.types';
+import type { ImageStyle } from '@/types/ai.types';
 
 const MAX_IMAGES = 5;
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
@@ -23,8 +24,16 @@ export function useExerciseMediaManager({
 }: Readonly<UseExerciseMediaManagerOptions>) {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [isUploading, setIsUploading] = useState(false);
-  const [isGenerating, setIsGenerating] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  const {
+    generate,
+    isGenerating,
+    imageStyle,
+    setImageStyle,
+  } = useExerciseImageGeneration({
+    showSuccessToast: false,
+  });
 
   const existingImages = useMemo(
     () => getMediaUrls([exercise.thumbnailUrl, exercise.imageUrl, ...(exercise.images ?? [])]),
@@ -89,7 +98,7 @@ export function useExerciseMediaManager({
     }
   };
 
-  const generateAiImage = async () => {
+  const generateAiImage = useCallback(async () => {
     if (!canManageMedia || disabled || !onUploadImage) {
       return;
     }
@@ -99,30 +108,37 @@ export function useExerciseMediaManager({
       return;
     }
 
-    setIsGenerating(true);
+    const description = [exercise.patientDescription, exercise.description].filter(Boolean).join(' ');
+    const generatedFile = await generate({
+      exerciseName: exercise.name,
+      exerciseDescription: description,
+      exerciseType: exercise.type?.toLowerCase() === 'time' ? 'time' : 'reps',
+      style: imageStyle,
+    });
+
+    if (!generatedFile) {
+      return;
+    }
+
     try {
-      const description = [exercise.patientDescription, exercise.description].filter(Boolean).join(' ');
-      const generated = await aiService.generateExerciseImage(
-        exercise.name,
-        description,
-        exercise.type?.toLowerCase() === 'time' ? 'time' : 'reps',
-        'illustration'
-      );
-
-      if (!generated?.file) {
-        toast.error('Nie udało się wygenerować obrazu');
-        return;
-      }
-
-      await onUploadImage(generated.file);
+      await onUploadImage(generatedFile);
       toast.success('Obraz AI został dodany');
     } catch (error) {
-      console.error('Błąd generowania obrazu AI w weryfikacji:', error);
-      toast.error('Nie udało się wygenerować obrazu');
-    } finally {
-      setIsGenerating(false);
+      console.error('Błąd uploadu obrazu AI w weryfikacji:', error);
+      toast.error('Nie udało się dodać obrazu AI');
     }
-  };
+  }, [
+    canManageMedia,
+    disabled,
+    onUploadImage,
+    existingImages.length,
+    exercise.patientDescription,
+    exercise.description,
+    exercise.name,
+    exercise.type,
+    generate,
+    imageStyle,
+  ]);
 
   const deleteImage = async (imageUrl: string) => {
     if (!canManageMedia || disabled || !onDeleteImage) {
@@ -149,6 +165,8 @@ export function useExerciseMediaManager({
     isUploading,
     isGenerating,
     isDeleting,
+    imageStyle,
+    setImageStyle: setImageStyle as (style: ImageStyle) => void,
     openFilePicker,
     handleUploadFiles,
     generateAiImage,

@@ -35,7 +35,8 @@ import { useNumericDraft } from '@/hooks/useNumericDraft';
 
 import { UPDATE_PATIENT_EXERCISE_OVERRIDES_MUTATION } from '@/graphql/mutations/exercises.mutations';
 import { GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY } from '@/graphql/queries/patientAssignments.queries';
-import { aiService } from '@/services/aiService';
+import { useExerciseImageGeneration } from '@/features/exercises/useExerciseImageGeneration';
+import { ImageStylePicker } from '@/features/exercises/ImageStylePicker';
 import type { PatientAssignment, ExerciseMapping, ExerciseOverride } from './PatientAssignmentCard';
 
 interface EditExerciseOverrideDialogProps {
@@ -189,7 +190,14 @@ function EditExerciseOverrideDialogContent({
   const [notes, setNotes] = useState(initialNotes);
   const [exerciseSide, setExerciseSide] = useState(initialExerciseSide);
   const [customImages, setCustomImages] = useState<string[]>(initialCustomImages);
-  const [isGeneratingImage, setIsGeneratingImage] = useState(false);
+  const {
+    generate: generateExerciseImage,
+    isGenerating: isGeneratingImage,
+    imageStyle,
+    setImageStyle,
+  } = useExerciseImageGeneration({
+    showSuccessToast: false,
+  });
 
   const setsField = useNumericDraft({
     value: sets,
@@ -270,7 +278,6 @@ function EditExerciseOverrideDialogContent({
       return;
     }
 
-    // Build description with full context for AI
     const descParts: string[] = [];
     descParts.push(`Nazwa ćwiczenia: ${exerciseName}`);
     if (exerciseDesc) {
@@ -281,35 +288,24 @@ function EditExerciseOverrideDialogContent({
     }
     const fullDescription = descParts.join('. ');
 
-    setIsGeneratingImage(true);
-    try {
-      const result = await aiService.generateExerciseImage(
-        exerciseName,
-        fullDescription,
-        exercise?.type as 'reps' | 'time' | undefined,
-        'illustration'
-      );
+    const file = await generateExerciseImage({
+      exerciseName,
+      exerciseDescription: fullDescription,
+      exerciseType: exercise?.type as 'reps' | 'time' | undefined,
+      style: imageStyle,
+    });
 
-      if (result?.file) {
-        // Convert File to base64 and add to customImages
-        const reader = new FileReader();
-        reader.onload = () => {
-          setCustomImages((prev) => [...prev, reader.result as string]);
-          toast.success('Obraz wygenerowany przez AI!');
-        };
-        reader.readAsDataURL(result.file);
-      } else if (result?.response?.isTextOnly) {
-        toast.info('AI zwróciło opis tekstowy. Spróbuj ponownie lub zmień nazwę ćwiczenia.');
-      } else {
-        toast.error('Nie udało się wygenerować obrazu');
-      }
-    } catch (error) {
-      console.error('Błąd generowania obrazu:', error);
-      toast.error('Nie udało się wygenerować obrazu');
-    } finally {
-      setIsGeneratingImage(false);
+    if (!file) {
+      return;
     }
-  }, [exercise, customName, customDescription, exerciseSide]);
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      setCustomImages((prev) => [...prev, reader.result as string]);
+      toast.success('Obraz wygenerowany przez AI!');
+    };
+    reader.readAsDataURL(file);
+  }, [exercise, customName, customDescription, exerciseSide, generateExerciseImage, imageStyle]);
 
   const handleImageUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -785,17 +781,24 @@ function EditExerciseOverrideDialogContent({
                   <Upload className="h-4 w-4" />
                   Wgraj z dysku
                 </Button>
+                <ImageStylePicker
+                  value={imageStyle}
+                  onChange={setImageStyle}
+                  disabled={isGeneratingImage}
+                  testIdPrefix="patient-exercise-override-ai-style"
+                />
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
                   onClick={handleGenerateImage}
                   disabled={isGeneratingImage}
+                  aria-busy={isGeneratingImage}
                   className="flex-1 gap-2"
                   data-testid="patient-exercise-override-ai-generate-btn"
                 >
                   {isGeneratingImage ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-                  {isGeneratingImage ? 'Generowanie...' : 'Generuj AI'}
+                  {isGeneratingImage ? 'Generowanie…' : 'Generuj AI'}
                 </Button>
               </div>
               <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />

@@ -70,6 +70,7 @@ Każda specyfikacja powinna mieć sekcję Changelog na końcu:
 | 016 | [Admin Portal Access Control](SPEC-016-2026-05-14-admin-portal-access-control.md)               | Blokada pacjentów w panelu fizjoterapeutów       | Aktywny |
 | 017 | [Assignment Display Status](SPEC-017-2026-05-26-assignment-display-status.md)                   | Dynamiczny status przypisania + sygnał Premium   | Aktywny |
 | 019 | [Second Gen Skills Open-Mercato](SPEC-019-2026-06-12-second-gen-skills-open-mercato.md)         | Wykonywalne skille, manifest lint, runy i audyty | Aktywny |
+| 020 | [AI Image Generation](SPEC-020-2026-07-28-ai-image-generation.md)                               | OpenRouter Image API + kaskada modeli + UX hook  | Aktywny |
 
 ## Planowane specyfikacje
 

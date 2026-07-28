@@ -20,6 +20,8 @@ import {
   Sparkles,
   AlertTriangle,
   Upload,
+  ZoomIn,
+  Trash2,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -47,6 +49,8 @@ import type { CreateExerciseMutationResult, CreateExerciseVariables } from '@/gr
 import { useVoiceInput } from '@/hooks/useVoiceInput';
 import { aiService } from '@/services/aiService';
 import type { ExerciseSuggestionResponse } from '@/services/aiService';
+import { useExerciseImageGeneration } from './useExerciseImageGeneration';
+import { ImageStylePicker } from './ImageStylePicker';
 import { formatDurationPolish } from '@/utils/durationPolish';
 import { calculateExerciseTotalSeconds } from '@/utils/exerciseTime';
 import { findSimilar } from '@/utils/stringSimilarity';
@@ -1049,7 +1053,12 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
   const [isMediaLightboxOpen, setIsMediaLightboxOpen] = useState(false);
   const [showCloseConfirm, setShowCloseConfirm] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [isGeneratingImage, setIsGeneratingImage] = useState(false);
+  const {
+    generate: generateExerciseImage,
+    isGenerating: isGeneratingImage,
+    imageStyle,
+    setImageStyle,
+  } = useExerciseImageGeneration({ successMessage: 'Obraz wygenerowany' });
   const [showTagPicker, setShowTagPicker] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
 
@@ -1340,24 +1349,18 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
       return;
     }
 
-    setIsGeneratingImage(true);
-    try {
-      // Timer semantics: executionTime > 0 means timed exercise.
-      const inferredType = inferExerciseType(data.executionTime);
-      const result = await aiService.generateExerciseImage(data.name, data.description, inferredType, 'illustration');
+    const inferredType = inferExerciseType(data.executionTime);
+    const file = await generateExerciseImage({
+      exerciseName: data.name,
+      exerciseDescription: data.description,
+      exerciseType: inferredType,
+      style: imageStyle,
+    });
 
-      if (result?.file) {
-        setMediaFiles((prev) => [result.file!, ...prev]);
-        toast.success('Obraz wygenerowany');
-      } else {
-        toast.error('Nie udało się wygenerować obrazu');
-      }
-    } catch {
-      toast.error('Błąd generowania obrazu');
-    } finally {
-      setIsGeneratingImage(false);
+    if (file) {
+      setMediaFiles((prev) => [file, ...prev]);
     }
-  }, [data.name, data.description, data.executionTime]);
+  }, [data.name, data.description, data.executionTime, generateExerciseImage, imageStyle]);
 
   // Remove image
   const handleRemoveImage = useCallback((index: number) => {
@@ -1730,179 +1733,220 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
               )}
             </section>
 
-            {/* SEKCJA 2: MEDIA - Wide Hero Dropzone */}
+            {/* SEKCJA 2: MEDIA */}
             <section className="mb-6" data-testid="exercise-create-media-gallery">
-              <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mb-2 block">
-                Media
-              </label>
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">
+                  Media
+                </label>
+                <span className="text-[10px] tabular-nums text-muted-foreground" data-testid="exercise-create-media-count">
+                  {mediaFiles.length}/5
+                </span>
+              </div>
 
               {mediaFiles.length === 0 ? (
-                /* STAN PUSTY: Hero Dropzone Banner */
-                <div
-                  onClick={() => fileInputRef.current?.click()}
-                  onDragOver={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                  }}
-                  onDrop={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    const files = Array.from(e.dataTransfer.files).filter(
-                      (f) => f.type.startsWith('image/') || f.type.startsWith('video/')
-                    );
-                    if (files.length > 0) {
-                      handleFileSelect({ target: { files } } as unknown as React.ChangeEvent<HTMLInputElement>);
-                    }
-                  }}
-                  className={cn(
-                    'w-full h-40 rounded-xl border-2 border-dashed border-border',
-                    'flex flex-col items-center justify-center gap-3 cursor-pointer',
-                    'bg-surface/30 hover:bg-surface/50 hover:border-primary/30',
-                    'transition-all duration-300 group'
-                  )}
-                  tabIndex={2}
-                  data-testid="exercise-create-media-dropzone"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-full bg-surface-light/50 flex items-center justify-center group-hover:bg-primary/10 transition-colors">
-                      <Upload className="h-6 w-6 text-muted-foreground group-hover:text-primary transition-colors" />
-                    </div>
-                    <div className="text-left">
-                      <p className="text-sm text-muted-foreground group-hover:text-foreground transition-colors font-medium">
-                        Przeciągnij zdjęcia lub wideo
-                      </p>
-                      <p className="text-xs text-text-tertiary group-hover:text-muted-foreground transition-colors">
-                        Start / Koniec ruchu • maks. 5 plików
-                      </p>
+                isGeneratingImage ? (
+                  <div
+                    className="relative flex h-40 w-full flex-col items-center justify-center gap-3 overflow-hidden rounded-xl border border-border bg-muted/30"
+                    aria-busy
+                    data-testid="exercise-create-ai-image-skeleton"
+                  >
+                    <div className="absolute inset-0 animate-pulse bg-muted/40" aria-hidden />
+                    <Loader2 className="relative z-10 h-7 w-7 animate-spin text-secondary" />
+                    <div className="relative z-10 text-center">
+                      <p className="text-sm font-medium text-foreground">Generowanie obrazu AI…</p>
+                      <p className="mt-1 text-xs text-muted-foreground">To potrwa kilka sekund</p>
                     </div>
                   </div>
-
-                  {/* Inline AI Generate hint */}
-                  <div className="flex items-center gap-4 mt-1">
-                    <span className="text-[10px] text-text-tertiary">lub</span>
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleGenerateImage();
-                      }}
-                      disabled={isGeneratingImage || !data.name.trim()}
-                      className={cn(
-                        'flex items-center gap-1.5 text-xs text-secondary/70 hover:text-secondary',
-                        'disabled:opacity-40 disabled:cursor-not-allowed transition-colors'
-                      )}
-                      data-testid="exercise-create-ai-image-btn"
-                    >
-                      {isGeneratingImage ? (
-                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                      ) : (
-                        <Wand2 className="h-3.5 w-3.5" />
-                      )}
-                      Wygeneruj z AI
-                    </button>
+                ) : (
+                  <div
+                    onClick={() => fileInputRef.current?.click()}
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                    }}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      const files = Array.from(e.dataTransfer.files).filter(
+                        (f) => f.type.startsWith('image/') || f.type.startsWith('video/')
+                      );
+                      if (files.length > 0) {
+                        handleFileSelect({ target: { files } } as unknown as React.ChangeEvent<HTMLInputElement>);
+                      }
+                    }}
+                    className={cn(
+                      'flex h-40 w-full cursor-pointer flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-border',
+                      'bg-surface/30 transition-colors duration-150 group',
+                      'hover:border-primary/30 hover:bg-surface/50',
+                      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
+                    )}
+                    tabIndex={2}
+                    role="button"
+                    data-testid="exercise-create-media-dropzone"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-surface-light/50 transition-colors group-hover:bg-primary/10">
+                        <Upload className="h-6 w-6 text-muted-foreground transition-colors group-hover:text-primary" />
+                      </div>
+                      <div className="text-left">
+                        <p className="text-sm font-medium text-muted-foreground transition-colors group-hover:text-foreground">
+                          Przeciągnij zdjęcia lub wideo
+                        </p>
+                        <p className="text-xs text-muted-foreground/80">Start / Koniec ruchu • maks. 5 plików</p>
+                      </div>
+                    </div>
                   </div>
-                </div>
+                )
               ) : (
-                /* STAN Z PLIKAMI: Grid panoramicznych kafelków */
                 <div className="grid grid-cols-3 gap-3">
-                  {/* Media thumbnails - panoramiczne (16:9) */}
                   {mediaFiles.map((file, idx) => (
                     <div
                       key={`${file.name}-${file.lastModified}-${file.size}-${idx}`}
                       className={cn(
-                        'relative aspect-video rounded-xl overflow-hidden border border-border',
-                        'group animate-in fade-in zoom-in-95 duration-300'
+                        'group relative aspect-video overflow-hidden rounded-xl border border-border bg-surface',
+                        'animate-in fade-in zoom-in-95 duration-200'
                       )}
-                      style={{ animationDelay: `${idx * 50}ms` }}
+                      style={{ animationDelay: `${idx * 40}ms` }}
                     >
-                      <button
-                        type="button"
-                        onClick={() => handleOpenMediaPreview(idx)}
-                        className="absolute inset-0 z-10 cursor-zoom-in"
-                        data-testid={`exercise-create-media-preview-${idx}`}
-                      >
-                        <div
-                          className="absolute inset-0 bg-cover bg-center blur-2xl opacity-35 scale-110"
-                          style={{ backgroundImage: `url(${mediaPreviewUrls[idx]})` }}
-                        />
-                        <Image
-                          src={mediaPreviewUrls[idx]}
-                          alt={`Media ${idx + 1}`}
-                          fill
-                          className="object-contain"
-                          unoptimized
-                        />
-                      </button>
-                      {/* Overlay gradient */}
-                      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                      {/* Index badge */}
-                      <span className="pointer-events-none absolute bottom-2 left-2 text-[10px] font-medium text-white/80 bg-black/40 px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div
+                        className="absolute inset-0 bg-cover bg-center opacity-30 blur-2xl scale-110"
+                        style={{ backgroundImage: `url(${mediaPreviewUrls[idx]})` }}
+                        aria-hidden
+                      />
+                      <Image
+                        src={mediaPreviewUrls[idx]}
+                        alt={`Media ${idx + 1}`}
+                        fill
+                        className="object-contain"
+                        unoptimized
+                      />
+
+                      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/20" />
+
+                      <span className="absolute bottom-2 left-2 z-10 rounded bg-background/90 px-1.5 py-0.5 text-[10px] font-medium text-foreground dark:bg-black/50 dark:text-white">
                         {idx === 0 ? 'Start' : idx === 1 ? 'Koniec' : `#${idx + 1}`}
                       </span>
-                      {/* Remove button */}
-                      <button
-                        type="button"
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          handleRemoveImage(idx);
-                        }}
-                        className={cn(
-                          'absolute top-2 right-2 w-7 h-7 rounded-full',
-                          'bg-black/60 backdrop-blur-sm flex items-center justify-center',
-                          'opacity-0 group-hover:opacity-100 transition-all',
-                          'hover:bg-destructive hover:scale-110 z-20'
-                        )}
-                        data-testid={`exercise-create-media-remove-${idx}`}
-                      >
-                        <X className="h-4 w-4 text-white" />
-                      </button>
+
+                      <div className="absolute right-2 top-2 z-20 flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => handleOpenMediaPreview(idx)}
+                          className={cn(
+                            'flex h-8 w-8 items-center justify-center rounded-full',
+                            'border border-border/60 bg-background/90 text-foreground shadow-sm',
+                            'transition-colors duration-150 hover:bg-background',
+                            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                            'dark:border-white/15 dark:bg-black/55 dark:text-white dark:hover:bg-black/75'
+                          )}
+                          aria-label={`Powiększ zdjęcie ${idx + 1}`}
+                          data-testid={`exercise-create-media-preview-${idx}`}
+                        >
+                          <ZoomIn className="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveImage(idx)}
+                          className={cn(
+                            'flex h-8 w-8 items-center justify-center rounded-full',
+                            'border border-border/60 bg-background/90 text-foreground shadow-sm',
+                            'transition-colors duration-150 hover:border-destructive/40 hover:bg-destructive hover:text-destructive-foreground',
+                            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                            'dark:border-white/15 dark:bg-black/55 dark:text-white'
+                          )}
+                          aria-label={`Usuń zdjęcie ${idx + 1}`}
+                          data-testid={`exercise-create-media-remove-${idx}`}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
                     </div>
                   ))}
 
-                  {/* Przycisk "Dodaj kolejny" - pasuje do gridu */}
-                  {mediaFiles.length < 5 && (
+                  {isGeneratingImage && mediaFiles.length < 5 && (
+                    <div
+                      className="relative flex aspect-video flex-col items-center justify-center gap-2 overflow-hidden rounded-xl border border-border bg-muted/30"
+                      aria-busy
+                      data-testid="exercise-create-ai-image-skeleton"
+                    >
+                      <div className="absolute inset-0 animate-pulse bg-muted/40" aria-hidden />
+                      <Loader2 className="relative z-10 h-5 w-5 animate-spin text-secondary" />
+                      <span className="relative z-10 text-xs text-muted-foreground">Generowanie…</span>
+                    </div>
+                  )}
+
+                  {!isGeneratingImage && mediaFiles.length < 5 && (
                     <button
                       type="button"
                       onClick={() => fileInputRef.current?.click()}
                       className={cn(
-                        'aspect-video rounded-xl border-2 border-dashed border-border',
-                        'flex flex-col items-center justify-center gap-2 cursor-pointer',
-                        'bg-surface/30 hover:bg-surface/50 hover:border-primary/30',
-                        'transition-all duration-200 group'
+                        'flex aspect-video cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-border',
+                        'bg-surface/30 transition-colors duration-150 group',
+                        'hover:border-primary/30 hover:bg-surface/50',
+                        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
                       )}
                       tabIndex={2}
                       data-testid="exercise-create-media-add-btn"
                     >
-                      <Plus className="h-6 w-6 text-muted-foreground group-hover:text-primary transition-colors" />
-                      <span className="text-xs text-muted-foreground group-hover:text-muted-foreground">Dodaj</span>
+                      <Plus className="h-6 w-6 text-muted-foreground transition-colors group-hover:text-primary" />
+                      <span className="text-xs text-muted-foreground">Dodaj</span>
                     </button>
                   )}
 
-                  {/* AI Generate jako ostatni kafelek jeśli jest miejsce */}
-                  {mediaFiles.length < 4 && (
+                  {!isGeneratingImage && mediaFiles.length < 4 && (
                     <button
                       type="button"
                       onClick={handleGenerateImage}
-                      disabled={isGeneratingImage || !data.name.trim()}
+                      disabled={!data.name.trim()}
                       className={cn(
-                        'aspect-video rounded-xl border border-dashed border-border',
-                        'flex flex-col items-center justify-center gap-2 cursor-pointer',
-                        'bg-surface/20 hover:bg-secondary/5 hover:border-secondary/40',
-                        'transition-all duration-200 group',
-                        'disabled:opacity-40 disabled:cursor-not-allowed'
+                        'flex aspect-video cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-border',
+                        'bg-surface/20 transition-colors duration-150 group',
+                        'hover:border-secondary/40 hover:bg-secondary/5',
+                        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                        'disabled:cursor-not-allowed disabled:opacity-40'
                       )}
                       data-testid="exercise-create-ai-image-generate-btn"
                     >
-                      {isGeneratingImage ? (
-                        <Loader2 className="h-6 w-6 text-secondary animate-spin" />
-                      ) : (
-                        <Wand2 className="h-6 w-6 text-muted-foreground group-hover:text-secondary transition-colors" />
-                      )}
-                      <span className="text-xs text-muted-foreground group-hover:text-secondary">AI</span>
+                      <Wand2 className="h-6 w-6 text-muted-foreground transition-colors group-hover:text-secondary" />
+                      <span className="text-xs text-muted-foreground transition-colors group-hover:text-secondary">
+                        Generuj AI
+                      </span>
                     </button>
                   )}
                 </div>
               )}
+
+              {/* Stabilny pasek AI — poza dropzone, bez layout shift */}
+              <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+                <div className="flex min-w-0 flex-wrap items-center gap-2">
+                  <span className="shrink-0 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                    Styl AI
+                  </span>
+                  <ImageStylePicker
+                    value={imageStyle}
+                    onChange={setImageStyle}
+                    disabled={isGeneratingImage}
+                    testIdPrefix="exercise-create-ai-style"
+                  />
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleGenerateImage}
+                  disabled={isGeneratingImage || !data.name.trim() || mediaFiles.length >= 5}
+                  aria-busy={isGeneratingImage}
+                  className="shrink-0 gap-1.5"
+                  data-testid="exercise-create-ai-image-btn"
+                >
+                  {isGeneratingImage ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Wand2 className="h-3.5 w-3.5" />
+                  )}
+                  {isGeneratingImage ? 'Generowanie…' : 'Wygeneruj z AI'}
+                </Button>
+              </div>
 
               <input
                 ref={fileInputRef}

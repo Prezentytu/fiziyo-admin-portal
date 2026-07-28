@@ -90,6 +90,14 @@ vi.mock('@/services/aiService', () => ({
   },
 }));
 
+vi.mock('sonner', () => ({
+  toast: {
+    success: vi.fn(),
+    error: vi.fn(),
+    info: vi.fn(),
+  },
+}));
+
 const updateExerciseMock = vi.fn();
 const uploadExerciseImageMock = vi.fn();
 const deleteExerciseImageMock = vi.fn();
@@ -152,7 +160,32 @@ describe('ExerciseDialog media edit flow', () => {
     uploadExerciseImageMock.mockResolvedValue({});
     deleteExerciseImageMock.mockResolvedValue({});
     copyExerciseMock.mockResolvedValue({});
-    generateExerciseImageMock.mockResolvedValue({ file: new File(['img'], 'ai.png', { type: 'image/png' }) });
+    generateExerciseImageMock.mockResolvedValue({
+      status: 'ok',
+      file: new File(['img'], 'ai.png', { type: 'image/png' }),
+      response: { success: true, imageBase64: 'x', contentType: 'image/png', prompt: '' },
+    });
+  });
+
+  it('pokazuje błąd gdy generowanie AI obrazu się nie uda', async () => {
+    generateExerciseImageMock.mockResolvedValue({
+      status: 'error',
+      code: 'provider_unavailable',
+      message: 'Asystent AI jest chwilowo niedostępny. Spróbuj ponownie.',
+    });
+
+    render(
+      <ExerciseDialog open onOpenChange={vi.fn()} exercise={baseExercise} organizationId="org-1" />
+    );
+
+    const user = userEvent.setup();
+    await user.click(screen.getByTestId('exercise-form-media-ai-generate-btn'));
+
+    await waitFor(() => {
+      expect(generateExerciseImageMock).toHaveBeenCalled();
+    });
+
+    expect(screen.queryByTestId('exercise-form-media-ai-skeleton')).not.toBeInTheDocument();
   });
 
   it('wykonuje update + delete + upload dla zmienionej galerii', async () => {

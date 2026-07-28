@@ -75,8 +75,9 @@ import {
 } from '@/graphql/mutations/exercises.mutations';
 import { useExerciseEditorForm } from '@/features/exercises/useExerciseEditorForm';
 import type { ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.types';
-import { aiService } from '@/services/aiService';
 import { createTagsMap, mapExerciseTagsToObjects } from '@/utils/tagUtils';
+import { useExerciseImageGeneration } from '@/features/exercises/useExerciseImageGeneration';
+import { ImageStylePicker } from '@/features/exercises/ImageStylePicker';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import type { ExerciseByIdResponse, ExerciseTagsResponse, TagCategoriesResponse } from '@/types/apollo';
 import {
@@ -111,6 +112,12 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
   const [isEditMode, setIsEditMode] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const {
+    generate: generateAiImage,
+    isGenerating: isGeneratingAiImage,
+    imageStyle,
+    setImageStyle,
+  } = useExerciseImageGeneration({ showSuccessToast: false });
   const fileInputRef = useRef<HTMLInputElement>(null);
   const apolloClient = useApolloClient();
   const [isCreateSetWizardOpen, setIsCreateSetWizardOpen] = useState(false);
@@ -414,7 +421,10 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
   );
 
   const handleAIGenerateImage = useCallback(async () => {
-    if (!exercise?.name) return;
+    if (!exercise?.name?.trim()) {
+      toast.error('Brak nazwy ćwiczenia do generowania obrazu');
+      return;
+    }
 
     const currentCount = exercise.images?.length ?? 0;
     if (currentCount >= 5) {
@@ -422,22 +432,20 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
       return;
     }
 
+    const description = [exercise.patientDescription, exercise.description].filter(Boolean).join(' ');
+    const generatedFile = await generateAiImage({
+      exerciseName: exercise.name,
+      exerciseDescription: description,
+      exerciseType: exercise.type?.toLowerCase() === 'time' ? 'time' : 'reps',
+      style: imageStyle,
+    });
+
+    if (!generatedFile) {
+      return;
+    }
+
     setUploadingImage(true);
     try {
-      const description = [exercise.patientDescription, exercise.description].filter(Boolean).join(' ');
-      const generated = await aiService.generateExerciseImage(
-        exercise.name,
-        description,
-        exercise.type?.toLowerCase() === 'time' ? 'time' : 'reps',
-        'illustration'
-      );
-
-      const generatedFile = generated?.file;
-      if (!generatedFile) {
-        toast.error('Nie udało się wygenerować obrazu');
-        return;
-      }
-
       const base64Image = await fileToBase64(generatedFile);
       await uploadExerciseImage({
         variables: { exerciseId: id, base64Image, contentType: generatedFile.type || 'image/png' },
@@ -445,12 +453,12 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
       await apolloClient.refetchQueries({ include: [GET_EXERCISE_BY_ID_QUERY] });
       toast.success('Zdjęcie AI zostało wygenerowane');
     } catch (err) {
-      console.error('[ExerciseDetail] AI image generation failed:', err);
-      toast.error('Nie udało się wygenerować zdjęcia AI');
+      console.error('[ExerciseDetail] AI image upload failed:', err);
+      toast.error('Nie udało się zapisać wygenerowanego zdjęcia');
     } finally {
       setUploadingImage(false);
     }
-  }, [exercise, id, uploadExerciseImage, fileToBase64, apolloClient]);
+  }, [exercise, id, uploadExerciseImage, fileToBase64, apolloClient, generateAiImage, imageStyle]);
 
   if (loading) {
     return (
@@ -840,12 +848,20 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
                 </div>
               )}
 
-              <div className="flex items-center gap-2">
+              {isGeneratingAiImage && (
+                <div
+                  className="mb-3 aspect-video w-full max-w-[220px] animate-pulse rounded-xl border border-dashed border-border bg-muted/40"
+                  aria-hidden
+                  data-testid="exercise-detail-ai-image-skeleton"
+                />
+              )}
+
+              <div className="flex flex-wrap items-center gap-2">
                 <Button
                   size="sm"
                   variant="outline"
                   onClick={() => fileInputRef.current?.click()}
-                  disabled={uploadingImage || (exercise.images?.length ?? 0) >= 5}
+                  disabled={uploadingImage || isGeneratingAiImage || (exercise.images?.length ?? 0) >= 5}
                   data-testid="exercise-detail-upload-image-btn"
                 >
                   {uploadingImage ? (
@@ -855,15 +871,26 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
                   )}
                   Dodaj zdjęcie
                 </Button>
+                <ImageStylePicker
+                  value={imageStyle}
+                  onChange={setImageStyle}
+                  disabled={isGeneratingAiImage || uploadingImage}
+                  testIdPrefix="exercise-detail-ai-style"
+                />
                 <Button
                   size="sm"
                   variant="outline"
                   onClick={handleAIGenerateImage}
-                  disabled={uploadingImage || !exercise.name || (exercise.images?.length ?? 0) >= 5}
+                  disabled={uploadingImage || isGeneratingAiImage || !exercise.name || (exercise.images?.length ?? 0) >= 5}
+                  aria-busy={isGeneratingAiImage}
                   data-testid="exercise-detail-ai-image-btn"
                 >
-                  <Sparkles className="mr-2 h-4 w-4" />
-                  Generuj AI
+                  {isGeneratingAiImage ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Sparkles className="mr-2 h-4 w-4" />
+                  )}
+                  {isGeneratingAiImage ? 'Generowanie…' : 'Generuj AI'}
                 </Button>
               </div>
 

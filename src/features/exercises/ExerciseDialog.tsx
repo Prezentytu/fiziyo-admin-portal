@@ -4,13 +4,15 @@ import * as React from 'react';
 import { useState, useCallback, useMemo, useRef } from 'react';
 import { useMutation, useQuery, useApolloClient } from '@apollo/client/react';
 import { toast } from 'sonner';
-import { Clock, Lock, Sparkles, Copy, Rocket, Upload, Trash2, Wand2, Loader2 } from 'lucide-react';
+import { Clock, Lock, Sparkles, Copy, Rocket, Upload, Trash2, Wand2, Loader2, ZoomIn } from 'lucide-react';
 
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
+import { ImageLightbox } from '@/components/shared/ImageLightbox';
 import { ExerciseImageFrame } from '@/components/shared/exercise';
+import { cn } from '@/lib/utils';
 import { ExerciseForm, ExerciseFormValues } from './ExerciseForm';
 import { CreateExerciseWizard, type CreateExerciseWizardSuccessEvent } from './CreateExerciseWizard';
 import { FeedbackBanner } from './FeedbackBanner';
@@ -34,8 +36,9 @@ function normalizeTagIds(tags: Exercise['mainTags'] | Exercise['additionalTags']
   return (tags as Array<string | ExerciseTag>).map((tag) => (typeof tag === 'string' ? tag : tag.id));
 }
 import { getNextExerciseCopyName } from './utils/getNextExerciseCopyName';
-import { aiService } from '@/services/aiService';
 import { buildExerciseMediaChangeSet, getExerciseMediaGalleryUrls } from './utils/exerciseMedia';
+import { useExerciseImageGeneration } from './useExerciseImageGeneration';
+import { ImageStylePicker } from './ImageStylePicker';
 
 export type ExerciseDialogSuccessEvent =
   | CreateExerciseWizardSuccessEvent
@@ -78,7 +81,14 @@ export function ExerciseDialog({
   const [isResubmitting, setIsResubmitting] = useState(false);
   const [existingMediaUrls, setExistingMediaUrls] = useState<string[]>([]);
   const [newMediaFiles, setNewMediaFiles] = useState<File[]>([]);
-  const [isGeneratingMedia, setIsGeneratingMedia] = useState(false);
+  const [isMediaLightboxOpen, setIsMediaLightboxOpen] = useState(false);
+  const [activeMediaPreviewIndex, setActiveMediaPreviewIndex] = useState(0);
+  const {
+    generate: generateMediaWithAI,
+    isGenerating: isGeneratingMedia,
+    imageStyle,
+    setImageStyle,
+  } = useExerciseImageGeneration();
   const [isMediaStateReady, setIsMediaStateReady] = useState(false);
   const mediaFileInputRef = useRef<HTMLInputElement>(null);
   const { data: organizationExercisesData } = useQuery(GET_ORGANIZATION_EXERCISES_QUERY, {
@@ -97,6 +107,15 @@ export function ExerciseDialog({
   }, [exercise]);
 
   const newMediaPreviewUrls = useMemo(() => newMediaFiles.map((file) => URL.createObjectURL(file)), [newMediaFiles]);
+  const allMediaPreviewUrls = useMemo(
+    () => [...existingMediaUrls, ...newMediaPreviewUrls],
+    [existingMediaUrls, newMediaPreviewUrls]
+  );
+
+  const openMediaPreview = useCallback((index: number) => {
+    setActiveMediaPreviewIndex(index);
+    setIsMediaLightboxOpen(true);
+  }, []);
 
   React.useEffect(() => {
     return () => {
@@ -247,36 +266,26 @@ export function ExerciseDialog({
       return;
     }
 
-    setIsGeneratingMedia(true);
-    try {
-      const description = [exercise?.patientDescription, exercise?.description].filter(Boolean).join(' ');
-      const generated = await aiService.generateExerciseImage(
-        sourceName,
-        description,
-        exercise?.type?.toLowerCase() === 'time' ? 'time' : 'reps',
-        'illustration'
-      );
-
-      const generatedFile = generated?.file;
-      if (!generatedFile) {
-        toast.error('Nie udało się wygenerować obrazu');
-        return;
-      }
-
-      const currentCount = existingMediaUrls.length + newMediaFiles.length;
-      if (currentCount >= 5) {
-        toast.error('Maksymalna liczba zdjęć to 5');
-        return;
-      }
-      setNewMediaFiles((previousFiles) => [...previousFiles, generatedFile]);
-      toast.success('Obraz został wygenerowany');
-    } catch (error: unknown) {
-      console.error('Błąd podczas generowania obrazu AI:', error);
-      toast.error('Nie udało się wygenerować obrazu');
-    } finally {
-      setIsGeneratingMedia(false);
+    const currentCount = existingMediaUrls.length + newMediaFiles.length;
+    if (currentCount >= 5) {
+      toast.error('Maksymalna liczba zdjęć to 5');
+      return;
     }
-  }, [exercise, existingMediaUrls.length, newMediaFiles.length]);
+
+    const description = [exercise?.patientDescription, exercise?.description].filter(Boolean).join(' ');
+    const generatedFile = await generateMediaWithAI({
+      exerciseName: sourceName,
+      exerciseDescription: description,
+      exerciseType: exercise?.type?.toLowerCase() === 'time' ? 'time' : 'reps',
+      style: imageStyle,
+    });
+
+    if (!generatedFile) {
+      return;
+    }
+
+    setNewMediaFiles((previousFiles) => [...previousFiles, generatedFile]);
+  }, [exercise, existingMediaUrls.length, newMediaFiles.length, generateMediaWithAI, imageStyle]);
 
   const handleForkExercise = async () => {
     if (!exercise) return;
@@ -590,10 +599,10 @@ export function ExerciseDialog({
                 <p className="text-sm font-medium">Zdjęcia ćwiczenia</p>
                 <span className="text-xs text-muted-foreground">{existingMediaUrls.length + newMediaFiles.length}/5</span>
               </div>
-              {(existingMediaUrls.length > 0 || newMediaPreviewUrls.length > 0) && (
+              {(existingMediaUrls.length > 0 || newMediaPreviewUrls.length > 0 || isGeneratingMedia) && (
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                   {existingMediaUrls.map((mediaUrl, index) => (
-                    <div key={mediaUrl} className="group relative aspect-video overflow-hidden rounded-lg border border-border">
+                    <div key={mediaUrl} className="relative aspect-video overflow-hidden rounded-lg border border-border bg-surface">
                       <ExerciseImageFrame
                         src={mediaUrl}
                         alt={`Zdjęcie ćwiczenia ${index + 1}`}
@@ -601,16 +610,37 @@ export function ExerciseDialog({
                         className="h-full w-full rounded-none border-0"
                         sizes="(max-width: 768px) 40vw, 180px"
                       />
-                      <Button
-                        type="button"
-                        variant="destructive"
-                        size="icon"
-                        className="absolute right-1 top-1 h-7 w-7 opacity-0 transition-opacity group-hover:opacity-100"
-                        onClick={() => handleRemoveExistingMedia(mediaUrl)}
-                        data-testid={`exercise-form-media-remove-btn-${index}`}
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </Button>
+                      <div className="absolute right-1.5 top-1.5 z-10 flex items-center gap-1">
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          size="icon"
+                          className={cn(
+                            'h-8 w-8 border border-border/60 bg-background/90 shadow-sm',
+                            'dark:border-white/15 dark:bg-black/55'
+                          )}
+                          onClick={() => openMediaPreview(index)}
+                          aria-label={`Powiększ zdjęcie ${index + 1}`}
+                          data-testid={`exercise-form-media-preview-btn-${index}`}
+                        >
+                          <ZoomIn className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          size="icon"
+                          className={cn(
+                            'h-8 w-8 border border-border/60 bg-background/90 shadow-sm',
+                            'hover:border-destructive/40 hover:bg-destructive hover:text-destructive-foreground',
+                            'dark:border-white/15 dark:bg-black/55'
+                          )}
+                          onClick={() => handleRemoveExistingMedia(mediaUrl)}
+                          aria-label={`Usuń zdjęcie ${index + 1}`}
+                          data-testid={`exercise-form-media-remove-btn-${index}`}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </div>
                     </div>
                   ))}
                   {newMediaPreviewUrls.map((mediaPreviewUrl, previewIndex) => {
@@ -618,7 +648,7 @@ export function ExerciseDialog({
                     return (
                       <div
                         key={mediaPreviewUrl}
-                        className="group relative aspect-video overflow-hidden rounded-lg border border-dashed border-primary/60"
+                        className="relative aspect-video overflow-hidden rounded-lg border border-dashed border-primary/60 bg-surface"
                       >
                         <ExerciseImageFrame
                           src={mediaPreviewUrl}
@@ -629,42 +659,83 @@ export function ExerciseDialog({
                           sizes="(max-width: 768px) 40vw, 180px"
                           dataTestId={`exercise-form-media-preview-${previewId}`}
                         />
-                        <Button
-                          type="button"
-                          variant="destructive"
-                          size="icon"
-                          className="absolute right-1 top-1 h-7 w-7 opacity-0 transition-opacity group-hover:opacity-100"
-                          onClick={() => handleRemoveNewMedia(previewIndex)}
-                          data-testid={`exercise-form-media-remove-btn-${previewId}`}
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </Button>
+                        <div className="absolute right-1.5 top-1.5 z-10 flex items-center gap-1">
+                          <Button
+                            type="button"
+                            variant="secondary"
+                            size="icon"
+                            className={cn(
+                              'h-8 w-8 border border-border/60 bg-background/90 shadow-sm',
+                              'dark:border-white/15 dark:bg-black/55'
+                            )}
+                            onClick={() => openMediaPreview(previewId)}
+                            aria-label={`Powiększ nowe zdjęcie ${previewIndex + 1}`}
+                            data-testid={`exercise-form-media-preview-btn-${previewId}`}
+                          >
+                            <ZoomIn className="h-3.5 w-3.5" />
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="secondary"
+                            size="icon"
+                            className={cn(
+                              'h-8 w-8 border border-border/60 bg-background/90 shadow-sm',
+                              'hover:border-destructive/40 hover:bg-destructive hover:text-destructive-foreground',
+                              'dark:border-white/15 dark:bg-black/55'
+                            )}
+                            onClick={() => handleRemoveNewMedia(previewIndex)}
+                            aria-label={`Usuń nowe zdjęcie ${previewIndex + 1}`}
+                            data-testid={`exercise-form-media-remove-btn-${previewId}`}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
                       </div>
                     );
                   })}
+                  {isGeneratingMedia && (
+                    <div
+                      className="relative flex aspect-video flex-col items-center justify-center gap-2 overflow-hidden rounded-lg border border-border bg-muted/30"
+                      aria-busy
+                      data-testid="exercise-form-media-ai-skeleton"
+                    >
+                      <div className="absolute inset-0 animate-pulse bg-muted/40" aria-hidden />
+                      <Loader2 className="relative z-10 h-5 w-5 animate-spin text-secondary" />
+                      <span className="relative z-10 text-xs text-muted-foreground">Generowanie…</span>
+                    </div>
+                  )}
                 </div>
               )}
 
-              <div className="flex items-center gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => mediaFileInputRef.current?.click()}
-                  disabled={existingMediaUrls.length + newMediaFiles.length >= 5}
-                  data-testid="exercise-form-media-upload-btn"
-                >
-                  <Upload className="mr-2 h-4 w-4" />
-                  Dodaj zdjęcie
-                </Button>
+              <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+                <div className="flex flex-wrap items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => mediaFileInputRef.current?.click()}
+                    disabled={isGeneratingMedia || existingMediaUrls.length + newMediaFiles.length >= 5}
+                    data-testid="exercise-form-media-upload-btn"
+                  >
+                    <Upload className="mr-2 h-4 w-4" />
+                    Dodaj zdjęcie
+                  </Button>
+                  <ImageStylePicker
+                    value={imageStyle}
+                    onChange={setImageStyle}
+                    disabled={isGeneratingMedia}
+                    testIdPrefix="exercise-form-media-ai-style"
+                  />
+                </div>
                 <Button
                   type="button"
                   variant="outline"
                   onClick={handleGenerateMediaWithAI}
                   disabled={isGeneratingMedia || existingMediaUrls.length + newMediaFiles.length >= 5}
+                  aria-busy={isGeneratingMedia}
                   data-testid="exercise-form-media-ai-generate-btn"
                 >
                   {isGeneratingMedia ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wand2 className="mr-2 h-4 w-4" />}
-                  Generuj AI
+                  {isGeneratingMedia ? 'Generowanie…' : 'Generuj AI'}
                 </Button>
                 <input
                   ref={mediaFileInputRef}
@@ -678,6 +749,15 @@ export function ExerciseDialog({
                   }}
                 />
               </div>
+              <ImageLightbox
+                src={allMediaPreviewUrls[activeMediaPreviewIndex] ?? ''}
+                alt={exercise?.name || 'Podgląd zdjęcia ćwiczenia'}
+                open={isMediaLightboxOpen}
+                onOpenChange={setIsMediaLightboxOpen}
+                images={allMediaPreviewUrls.length > 0 ? allMediaPreviewUrls : undefined}
+                currentIndex={activeMediaPreviewIndex}
+                onIndexChange={setActiveMediaPreviewIndex}
+              />
             </div>
           }
           secondaryAction={

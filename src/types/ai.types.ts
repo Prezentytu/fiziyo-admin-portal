@@ -179,17 +179,35 @@ export interface ExerciseImageRequest {
   style?: ImageStyle;
 }
 
+export type ExerciseImageErrorCode =
+  | 'insufficient_credits'
+  | 'provider_unavailable'
+  | 'safety_blocked'
+  | 'invalid_output'
+  | 'rate_limited'
+  | 'cancelled'
+  | 'missing_name'
+  | 'unknown';
+
 export interface ExerciseImageResponse {
   imageBase64: string;
   contentType: string;
   prompt: string;
   success: boolean;
   errorMessage?: string;
-  /** Opis tekstowy wygenerowany przez AI (gdy model zwraca tekst zamiast obrazu) */
+  /** @deprecated Always null — image API never returns text-only */
   textDescription?: string;
-  /** Czy odpowiedź zawiera tylko tekst (bez obrazu) */
+  /** @deprecated Always false — image API never returns text-only */
   isTextOnly?: boolean;
+  modelUsed?: string;
+  attempts?: number;
+  costUsd?: number;
+  errorCode?: ExerciseImageErrorCode | string;
 }
+
+export type GenerateExerciseImageResult =
+  | { status: 'ok'; file: File; response: ExerciseImageResponse }
+  | { status: 'error'; code: ExerciseImageErrorCode; message: string };
 
 // ============================================
 // 6. Video Analysis (AI Auto-Analysis dla weryfikacji)

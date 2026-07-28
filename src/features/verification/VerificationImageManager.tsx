@@ -99,8 +99,8 @@ export function VerificationImageManager({
         'illustration'
       );
 
-      if (!generated?.file) {
-        toast.error('Nie udało się wygenerować obrazu');
+      if (generated.status !== 'ok') {
+        toast.error(generated.message || 'Nie udało się wygenerować obrazu');
         return;
       }
 
@@ -152,6 +152,7 @@ export function VerificationImageManager({
           variant="outline"
           disabled={disabled || isUploading || remainingSlots === 0}
           onClick={() => fileInputRef.current?.click()}
+          data-testid="verification-image-manager-upload-btn"
         >
           <Upload className="mr-1 h-3.5 w-3.5" />
           Dodaj zdjęcia
@@ -162,9 +163,11 @@ export function VerificationImageManager({
           variant="outline"
           disabled={disabled || isGenerating || remainingSlots === 0}
           onClick={() => void handleGenerateAiImage()}
+          aria-busy={isGenerating}
+          data-testid="verification-image-manager-ai-generate-btn"
         >
           <Sparkles className="mr-1 h-3.5 w-3.5" />
-          Generuj AI
+          {isGenerating ? 'Generowanie…' : 'Generuj AI'}
         </Button>
       </div>
 

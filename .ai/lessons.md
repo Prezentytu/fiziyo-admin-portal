@@ -14,6 +14,14 @@ Dziennik wniosków z pracy AI agentów. Po każdej korekcie dodaj nowy wpis.
 
 ## Wpisy
 
+### 2026-07-28 - Generowanie obrazów AI wyłącznie przez Image API, nigdy chat/completions z modalities
+
+- **Kategoria**: `Build/Tooling` | `UI/UX`
+- **Problem**: `generate-image` czasem zwracał `success: true` z pustym `imageBase64` / `isTextOnly` — UI pokazywał „wygenerowano tekst”, zdjęcie nie powstawało, kredyty ginęły.
+- **Przyczyna**: Backend wołał OpenRouter `/chat/completions` z `modalities: ["image","text"]` na Gemini Flash Image — model mógł legalnie odpowiedzieć tekstem. Brak walidacji bajtów i brak refundu przy porażce.
+- **Rozwiązanie**: `ExerciseImageGenerationService` → `POST /api/v1/images` z kaskadą modeli + magic-number validation; `TryRefundCredits` przy 502; frontend: `useExerciseImageGeneration` + discriminated union zamiast `null`/`isTextOnly`.
+- **Reguła**: Obrazy generuj tylko przez dedykowane Image API (`/images`). Nigdy `/chat/completions` z `modalities`. Sukces = niepusty base64 z poprawnym magic number; przy porażce zawsze refund kredytów i HTTP 502 z `errorCode`.
+
 ### 2026-07-28 - Create i duplicate ćwiczenia muszą dzielić jeden builder payloadu
 
 - **Kategoria**: `GraphQL` | `React`
