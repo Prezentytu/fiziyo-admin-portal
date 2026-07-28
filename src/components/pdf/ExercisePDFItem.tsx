@@ -130,7 +130,7 @@ export function ExercisePDFItem({ exercise, index, showImage, compact }: Exercis
         {/* Fallback */}
         {!exercise.sets && !exercise.reps && !exercise.duration && (
           <View style={pdfStyles.paramItemClean}>
-            <Text style={pdfStyles.paramLabelClean}>Dawkowanie</Text>
+            <Text style={pdfStyles.paramLabelClean}>Podstawowe parametry</Text>
             <Text style={pdfStyles.paramValueCleanSmall}>Wg zaleceń</Text>
           </View>
         )}

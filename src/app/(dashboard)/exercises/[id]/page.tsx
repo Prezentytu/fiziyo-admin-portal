@@ -921,7 +921,7 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
             <ExerciseEditor form={exerciseEditorForm} />
           ) : (
             <>
-              {/* 1. Parametry (dawkowanie) */}
+              {/* 1. Podstawowe parametry */}
               <div>
                 <h2 className="flex items-center gap-2 text-base font-semibold text-foreground mb-3">
                   <RefreshCw className="h-4 w-4 text-muted-foreground" />

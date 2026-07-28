@@ -32,17 +32,33 @@ export interface ExerciseCoreDraft {
   restSets: number | null;
   restReps: number | null;
   preparationTime: number | null;
-  /** Czas serii (tryb czasowy) — niewidoczne w edytorze, zachowywane do wyliczeń. */
+  /** Czas serii (tryb czasowy / legacy override) — TIER 4 w fieldContract. */
   duration: number | null;
   /** Obciążenie strukturalne w kg (zastępuje free-text loadText). */
   loadKg: number | null;
+  mainTags: string[];
+  additionalTags: string[];
 }
 
 interface ExerciseLoadLike {
+  loadWeightKg?: number | null;
   type?: string | null;
   value?: number | null;
   unit?: string | null;
   text?: string | null;
+}
+
+function normalizeTagIds(tags: unknown): string[] {
+  if (!Array.isArray(tags)) return [];
+  return tags
+    .map((tag) => {
+      if (typeof tag === 'string') return tag;
+      if (tag && typeof tag === 'object' && 'id' in tag && typeof (tag as { id: unknown }).id === 'string') {
+        return (tag as { id: string }).id;
+      }
+      return null;
+    })
+    .filter((tagId): tagId is string => Boolean(tagId));
 }
 
 export interface ExerciseEditorSource {
@@ -74,6 +90,8 @@ export interface ExerciseEditorSource {
   defaultLoad?: ExerciseLoadLike | null;
   loadValue?: number | null;
   loadUnit?: string | null;
+  mainTags?: unknown;
+  additionalTags?: unknown;
   enrichmentData?: ExerciseEnrichmentData | null;
 }
 
@@ -103,6 +121,9 @@ function firstNumber(...values: Array<number | null | undefined>): number | null
 
 function deriveLoadKg(source: ExerciseEditorSource): number | null {
   const load = source.defaultLoad;
+  if (load?.loadWeightKg != null && !Number.isNaN(load.loadWeightKg)) {
+    return load.loadWeightKg;
+  }
   if (load && load.value != null && (load.unit === 'kg' || load.type === 'weight')) {
     return load.value;
   }
@@ -132,6 +153,8 @@ function deriveCoreDraft(source: ExerciseEditorSource | null | undefined): Exerc
     preparationTime: firstNumber(source?.preparationTime),
     duration: firstNumber(source?.defaultDuration, source?.duration),
     loadKg: source ? deriveLoadKg(source) : null,
+    mainTags: normalizeTagIds(source?.mainTags),
+    additionalTags: normalizeTagIds(source?.additionalTags),
   };
 }
 
@@ -188,7 +211,8 @@ function asText(value: string): string | null {
   return trimmed === '' ? null : trimmed;
 }
 
-function buildChangedCoreVariables(
+/** Exported for unit tests — dirty-diff core draft → UpdateExercise variables. */
+export function buildChangedCoreVariables(
   initial: ExerciseCoreDraft,
   current: ExerciseCoreDraft
 ): Record<string, unknown> {
@@ -213,6 +237,7 @@ function buildChangedCoreVariables(
   if (current.restSets !== initial.restSets) variables.restSets = current.restSets;
   if (current.restReps !== initial.restReps) variables.restReps = current.restReps;
   if (current.preparationTime !== initial.preparationTime) variables.preparationTime = current.preparationTime;
+  if (current.duration !== initial.duration) variables.duration = current.duration;
 
   if (current.loadKg !== initial.loadKg) {
     Object.assign(
@@ -221,6 +246,13 @@ function buildChangedCoreVariables(
         current.loadKg != null && current.loadKg > 0 ? current.loadKg : null
       )
     );
+  }
+
+  if (JSON.stringify(current.mainTags) !== JSON.stringify(initial.mainTags)) {
+    variables.mainTags = current.mainTags;
+  }
+  if (JSON.stringify(current.additionalTags) !== JSON.stringify(initial.additionalTags)) {
+    variables.additionalTags = current.additionalTags;
   }
 
   return variables;

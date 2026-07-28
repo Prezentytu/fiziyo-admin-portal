@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import { useQuery, useMutation, useApolloClient } from '@apollo/client/react';
 import {
   Loader2,
@@ -30,7 +31,6 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { ImageLightbox } from '@/components/shared/ImageLightbox';
@@ -56,91 +56,8 @@ import { calculateExerciseTotalSeconds } from '@/utils/exerciseTime';
 import { findSimilar } from '@/utils/stringSimilarity';
 import { buildCreateExerciseVariables } from './utils/buildCreateExerciseVariables';
 import { inferExerciseType } from './utils/inferExerciseType';
-
-// ============================================================
-// CLEAN NUMBER INPUT - Pure number, no steppers (Linear/Vercel style)
-// ============================================================
-interface CleanNumberInputProps {
-  label: string;
-  tooltip: string;
-  value: number | null;
-  onChange: (value: number | null) => void;
-  suffix?: string;
-  placeholder?: string;
-  dimmed?: boolean;
-  tabIndex?: number;
-  testId?: string;
-  infoTestId?: string;
-}
-
-function CleanNumberInput({
-  label,
-  tooltip,
-  value,
-  onChange,
-  suffix,
-  placeholder = '0',
-  dimmed = false,
-  tabIndex,
-  testId,
-  infoTestId,
-}: CleanNumberInputProps) {
-  // Handle change with min=0 validation (no negative values)
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const rawValue = e.target.value;
-    if (rawValue === '') {
-      onChange(null);
-      return;
-    }
-    const numValue = Number(rawValue);
-    // Prevent negative values
-    onChange(numValue < 0 ? 0 : numValue);
-  };
-
-  return (
-    <div className={cn('flex flex-col gap-1.5 transition-opacity duration-200', dimmed && 'opacity-40')}>
-      <ExerciseFieldLabelWithTooltip
-        label={label}
-        tooltip={tooltip}
-        className="justify-center"
-        labelClassName="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider text-center"
-        testId={infoTestId ?? `${testId ?? 'exercise-create-field'}-info`}
-      />
-
-      {/* Clean Number Input */}
-      <div
-        className={cn(
-          'relative h-14 rounded-xl transition-all duration-200',
-          'bg-surface/50 border border-border',
-          'hover:border-border focus-within:border-primary/50 focus-within:bg-surface',
-          dimmed && 'hover:border-border'
-        )}
-      >
-        <input
-          type="number"
-          inputMode="numeric"
-          min={0}
-          value={value ?? ''}
-          onChange={handleChange}
-          placeholder={placeholder}
-          tabIndex={tabIndex}
-          className={cn(
-            'w-full h-full bg-transparent text-xl font-bold text-center outline-none',
-            'text-foreground placeholder:text-muted-foreground',
-            '[appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none',
-            suffix ? 'pr-6' : ''
-          )}
-          data-testid={testId}
-        />
-        {suffix && (
-          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground font-medium pointer-events-none">
-            {suffix}
-          </span>
-        )}
-      </div>
-    </div>
-  );
-}
+import { ExerciseParametersEditor } from './ExerciseParametersEditor';
+import type { ExerciseCoreDraft } from './useExerciseEditorForm';
 
 // ============================================================
 // QUICK PRESETS (Unified - shows all params)
@@ -157,14 +74,6 @@ const QUICK_PRESETS = [
 // TYPES
 // ============================================================
 type ExerciseSide = 'none' | 'left' | 'right' | 'both' | 'alternating';
-
-const DIFFICULTY_OPTIONS: { value: string; label: string }[] = [
-  { value: 'UNKNOWN', label: 'Nieokreślony' },
-  { value: 'EASY', label: 'Łatwy' },
-  { value: 'MEDIUM', label: 'Średni' },
-  { value: 'HARD', label: 'Trudny' },
-  { value: 'EXPERT', label: 'Ekspert' },
-];
 
 interface ExerciseData {
   name: string;
@@ -1047,6 +956,7 @@ function SuggestionCard({
 // MAIN COMPONENT
 // ============================================================
 export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuccess }: CreateExerciseWizardProps) {
+  const router = useRouter();
   const [data, setData] = useState<ExerciseData>(DEFAULT_DATA);
   const [mediaFiles, setMediaFiles] = useState<File[]>([]);
   const [activeMediaPreviewIndex, setActiveMediaPreviewIndex] = useState(0);
@@ -1269,6 +1179,32 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
   const updateField = useCallback(<K extends keyof ExerciseData>(field: K, value: ExerciseData[K]) => {
     setData((prev) => ({ ...prev, [field]: value }));
   }, []);
+
+  const parametersCore = useMemo<ExerciseCoreDraft>(
+    () => ({
+      name: data.name,
+      patientDescription: data.description,
+      clinicalDescription: data.clinicalDescription,
+      notes: data.notes,
+      audioCue: data.audioCue,
+      tempo: data.tempo,
+      rangeOfMotion: data.rangeOfMotion,
+      side: data.exerciseSide,
+      difficultyLevel: data.difficultyLevel,
+      videoUrl: data.videoUrl,
+      sets: data.sets,
+      reps: data.reps,
+      executionTime: data.executionTime,
+      restSets: data.restSets,
+      restReps: data.restReps,
+      preparationTime: data.preparationTime,
+      duration: data.duration,
+      loadKg: data.loadKg,
+      mainTags: data.mainTags,
+      additionalTags: data.additionalTags,
+    }),
+    [data]
+  );
 
   // Apply preset (One-Tap Setup) - works with new unified presets
   const applyPreset = useCallback(
@@ -1560,7 +1496,15 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
         });
       }
 
-      toast.success('Ćwiczenie utworzone!');
+      toast.success('Ćwiczenie utworzone!', {
+        action: exerciseId
+          ? {
+              label: 'Dokończ opis',
+              onClick: () => router.push(`/exercises/${exerciseId}`),
+            }
+          : undefined,
+        duration: 8000,
+      });
       onOpenChange(false);
       if (exerciseId) {
         onSuccess?.({ action: 'created', exerciseId });
@@ -1958,14 +1902,12 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
               />
             </section>
 
-            {/* SEKCJA 3: THE MATRIX - Parametry (4 kolumny) */}
+            {/* SEKCJA 3: Parametry — shared ExerciseParametersEditor (fieldContract) */}
             <section className="mb-6">
               <div className="flex justify-between items-center mb-3">
                 <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">
                   Parametry
                 </label>
-
-                {/* Quick Presets */}
                 <div className="flex gap-1.5">
                   {QUICK_PRESETS.map((preset, idx) => (
                     <button
@@ -1986,57 +1928,19 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
                 </div>
               </div>
 
-              {/* THE MATRIX: 4 kolumny - Serie | Powt | Czas powt. | Przerwa */}
-              <div className="grid grid-cols-4 gap-3">
-                <CleanNumberInput
-                  label="SERIE"
-                  tooltip={EXERCISE_FIELD_TOOLTIPS.sets}
-                  value={data.sets}
-                  onChange={(v) => updateField('sets', v)}
-                  placeholder="3"
-                  tabIndex={3}
-                  testId="exercise-sets"
-                  infoTestId="exercise-create-sets-info"
-                />
-
-                <CleanNumberInput
-                  label="POWT."
-                  tooltip={EXERCISE_FIELD_TOOLTIPS.reps}
-                  value={data.reps}
-                  onChange={(v) => updateField('reps', v)}
-                  placeholder="10"
-                  dimmed={!!data.duration && !data.reps}
-                  tabIndex={4}
-                  testId="exercise-reps"
-                  infoTestId="exercise-create-reps-info"
-                />
-
-                <CleanNumberInput
-                  label="CZAS POWT."
-                  tooltip={EXERCISE_FIELD_TOOLTIPS.executionTime}
-                  value={data.executionTime}
-                  onChange={(v) => updateField('executionTime', v)}
-                  placeholder="—"
-                  suffix="s"
-                  dimmed={!!data.duration && !data.reps}
-                  tabIndex={5}
-                  testId="exercise-create-exec-time-input"
-                  infoTestId="exercise-create-execution-time-info"
-                />
-
-                <CleanNumberInput
-                  label="PRZERWA SERII"
-                  tooltip={EXERCISE_FIELD_TOOLTIPS.restSets}
-                  value={data.restSets}
-                  onChange={(v) => updateField('restSets', v)}
-                  placeholder="60"
-                  suffix="s"
-                  tabIndex={6}
-                  testId="exercise-rest"
-                  infoTestId="exercise-create-rest-sets-info"
-                />
-              </div>
-
+              <ExerciseParametersEditor
+                variant="create"
+                core={parametersCore}
+                isDirtyField={() => false}
+                onNumberChange={(field, value) => {
+                  setData((previous) => ({ ...previous, [field]: value }));
+                }}
+                onTextChange={(field, value) => {
+                  setData((previous) => ({ ...previous, [field]: value }));
+                }}
+                onSideChange={(value) => updateField('exerciseSide', value as ExerciseSide)}
+                onDifficultyChange={(value) => updateField('difficultyLevel', value)}
+              />
             </section>
 
             {/* SEKCJA 4: OPIS / INSTRUKCJA */}
@@ -2058,7 +1962,7 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
               />
             </section>
 
-            {/* SEKCJA 3: ZAAWANSOWANE */}
+            {/* Treść zaawansowana (notatki, audio, clinical, video) — poza parametrami wykonania */}
             <Collapsible open={showAdvanced} onOpenChange={setShowAdvanced}>
               <CollapsibleTrigger asChild>
                 <button
@@ -2073,14 +1977,8 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
                 >
                   <div className="flex items-center gap-2">
                     <Settings2 className="h-3.5 w-3.5" />
-                    <span>Zaawansowane</span>
-                    {(data.exerciseSide !== 'none' ||
-                      data.restReps ||
-                      data.tempo ||
-                      data.loadKg != null ||
-                      data.rangeOfMotion ||
-                      data.difficultyLevel !== 'UNKNOWN' ||
-                      data.audioCue) && (
+                    <span>Treść dodatkowa</span>
+                    {(data.audioCue || data.clinicalDescription || data.notes || data.videoUrl) && (
                       <span className="px-1.5 py-0.5 text-[9px] rounded bg-primary/20 text-primary normal-case">
                         Zmienione
                       </span>
@@ -2093,195 +1991,6 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
               </CollapsibleTrigger>
               <CollapsibleContent className="pt-3">
                 <div className="rounded-lg border border-border bg-surface/50 p-4 space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    {/* Strona ciała */}
-                    <div className="space-y-2">
-                      <ExerciseFieldLabelWithTooltip
-                        htmlFor="side-select"
-                        label="Strona ciała"
-                        tooltip={EXERCISE_FIELD_TOOLTIPS.exerciseSide}
-                        labelClassName="text-[10px] font-semibold text-muted-foreground uppercase"
-                        className="gap-2"
-                        testId="exercise-create-side-info"
-                      />
-                      <Select
-                        value={data.exerciseSide}
-                        onValueChange={(v) => updateField('exerciseSide', v as ExerciseSide)}
-                      >
-                        <SelectTrigger id="side-select" className="bg-surface border-border text-foreground text-sm">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {EXERCISE_SIDES.map((side) => (
-                            <SelectItem key={side.value} value={side.value}>
-                              {side.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    {/* Przerwa między powtórzeniami */}
-                    <div className="space-y-2">
-                      <ExerciseFieldLabelWithTooltip
-                        htmlFor="rest-reps-input"
-                        label="Przerwa między powt. (s)"
-                        tooltip={EXERCISE_FIELD_TOOLTIPS.restReps}
-                        labelClassName="text-[10px] font-semibold text-muted-foreground uppercase"
-                        className="gap-2"
-                        testId="exercise-create-rest-reps-info"
-                      />
-                      <Input
-                        type="number"
-                        id="rest-reps-input"
-                        value={data.restReps ?? 0}
-                        onChange={(e) => updateField('restReps', e.target.value ? Number(e.target.value) || 0 : 0)}
-                        placeholder="0"
-                        className="bg-surface border-border text-foreground placeholder:text-muted-foreground/50 text-sm"
-                        min={0}
-                        max={60}
-                        data-testid="exercise-create-rest-reps-input"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <ExerciseFieldLabelWithTooltip
-                        htmlFor="prep-time-input"
-                        label="Czas przygotowania (s)"
-                        tooltip={EXERCISE_FIELD_TOOLTIPS.preparationTime}
-                        labelClassName="text-[10px] font-semibold text-muted-foreground uppercase"
-                        className="gap-2"
-                        testId="exercise-create-preparation-time-info"
-                      />
-                      <Input
-                        type="number"
-                        id="prep-time-input"
-                        value={data.preparationTime || ''}
-                        onChange={(e) => updateField('preparationTime', e.target.value ? Number(e.target.value) : null)}
-                        placeholder="5"
-                        className="bg-surface border-border text-foreground placeholder:text-muted-foreground/50 text-sm"
-                        min={0}
-                        max={60}
-                        data-testid="exercise-create-prep-time-input"
-                      />
-                    </div>
-
-                    <div className="space-y-2">
-                      <ExerciseFieldLabelWithTooltip
-                        htmlFor="difficulty-select"
-                        label="Poziom trudności"
-                        tooltip={EXERCISE_FIELD_TOOLTIPS.difficultyLevel}
-                        labelClassName="text-[10px] font-semibold text-muted-foreground uppercase"
-                        className="gap-2"
-                        testId="exercise-create-difficulty-info"
-                      />
-                      <Select
-                        value={data.difficultyLevel}
-                        onValueChange={(value) => updateField('difficultyLevel', value)}
-                      >
-                        <SelectTrigger
-                          id="difficulty-select"
-                          className="bg-surface border-border text-foreground text-sm"
-                          data-testid="exercise-create-difficulty-select"
-                        >
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {DIFFICULTY_OPTIONS.map((option) => (
-                            <SelectItem key={option.value} value={option.value}>
-                              {option.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-
-                  {/* PRO TUNING: Tempo, Obciążenie, ROM */}
-                  <div className="pt-2 border-t border-border/50">
-                    <p className="text-[9px] font-semibold text-muted-foreground/70 uppercase tracking-wider mb-3">
-                      Pro Tuning
-                    </p>
-                    <div className="grid grid-cols-3 gap-4">
-                      {/* Tempo */}
-                      <div className="space-y-2">
-                        <ExerciseFieldLabelWithTooltip
-                          htmlFor="tempo-input"
-                          label="Tempo"
-                          tooltip={EXERCISE_FIELD_TOOLTIPS.tempo}
-                          labelClassName="text-[10px] font-semibold text-muted-foreground uppercase"
-                          className="gap-2"
-                          testId="exercise-create-tempo-info"
-                        />
-                        <Input
-                          type="text"
-                          id="tempo-input"
-                          value={data.tempo}
-                          onChange={(e) => {
-                            // Only allow digits, max 4 characters
-                            const value = e.target.value.replace(/\D/g, '').slice(0, 4);
-                            updateField('tempo', value);
-                          }}
-                          placeholder="3010"
-                          className="bg-surface border-border text-foreground placeholder:text-muted-foreground/50 text-sm font-mono tracking-wider"
-                          maxLength={4}
-                          data-testid="exercise-create-tempo-input"
-                        />
-                        <p className="text-[9px] text-muted-foreground/60">Ekscentryczna-Pauza-Koncentryczna-Pauza</p>
-                      </div>
-
-                      <div className="space-y-2">
-                        <ExerciseFieldLabelWithTooltip
-                          htmlFor="load-kg-input"
-                          label="Obciążenie (kg)"
-                          tooltip={EXERCISE_FIELD_TOOLTIPS.load}
-                          labelClassName="text-[10px] font-semibold text-muted-foreground uppercase"
-                          className="gap-2"
-                          testId="exercise-create-load-info"
-                        />
-                        <Input
-                          type="number"
-                          id="load-kg-input"
-                          min={0}
-                          max={500}
-                          step="0.5"
-                          value={data.loadKg ?? ''}
-                          onChange={(e) =>
-                            updateField('loadKg', e.target.value ? Number(e.target.value) || null : null)
-                          }
-                          placeholder="np. 5"
-                          className="bg-surface border-border text-foreground placeholder:text-muted-foreground/50 text-sm"
-                          data-testid="exercise-create-load-kg-input"
-                        />
-                        <p className="text-[9px] text-muted-foreground/60">Podaj wartość liczbową w kilogramach.</p>
-                      </div>
-
-                      {/* Zakres ruchu (ROM) */}
-                      <div className="space-y-2">
-                        <ExerciseFieldLabelWithTooltip
-                          htmlFor="rom-input"
-                          label="Zakres ruchu"
-                          tooltip={EXERCISE_FIELD_TOOLTIPS.rangeOfMotion}
-                          labelClassName="text-[10px] font-semibold text-muted-foreground uppercase"
-                          className="gap-2"
-                          testId="exercise-create-range-of-motion-info"
-                        />
-                        <Input
-                          type="text"
-                          id="rom-input"
-                          value={data.rangeOfMotion}
-                          onChange={(e) => updateField('rangeOfMotion', e.target.value)}
-                          placeholder="np. Pełny zakres"
-                          className="bg-surface border-border text-foreground placeholder:text-muted-foreground/50 text-sm"
-                          data-testid="exercise-create-rom-input"
-                        />
-                        <p className="text-[9px] text-muted-foreground/60">ROM, ograniczenia</p>
-                      </div>
-                    </div>
-                  </div>
-
                   <div className="space-y-2">
                     <ExerciseFieldLabelWithTooltip
                       htmlFor="notes-input"
@@ -2291,7 +2000,6 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
                       className="gap-2"
                       testId="exercise-create-notes-info"
                     />
-                    <p className="text-[10px] text-muted-foreground/50">Nie widoczne dla pacjenta.</p>
                     <Textarea
                       id="notes-input"
                       value={data.notes}
@@ -2301,7 +2009,6 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
                       data-testid="exercise-create-notes-input"
                     />
                   </div>
-
                   <div className="space-y-2">
                     <ExerciseFieldLabelWithTooltip
                       htmlFor="audio-cue-input"
@@ -2322,7 +2029,6 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
                       data-testid="exercise-create-audio-cue-input"
                     />
                   </div>
-
                   <div className="space-y-2">
                     <ExerciseFieldLabelWithTooltip
                       htmlFor="clinical-description-input"
@@ -2341,7 +2047,6 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
                       data-testid="exercise-create-clinical-description-input"
                     />
                   </div>
-
                   <div className="space-y-2">
                     <ExerciseFieldLabelWithTooltip
                       htmlFor="video-url-input"

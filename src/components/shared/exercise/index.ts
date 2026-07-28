@@ -25,3 +25,28 @@ export type {
   ExerciseFieldValueSource,
 } from './displayRegistry';
 export { normalizeExerciseFieldValues, resolveLoadDisplayText } from './displayNormalizer';
+export {
+  DIFFICULTY_OPTIONS,
+  ENABLE_EXTENDED_PATIENT_OVERRIDE_FIELDS,
+  EXERCISE_FIELD_EDIT_CONFIG,
+  EXERCISE_TEMPLATE_SCHEMA,
+  MAPPING_ONLY_FIELD_CONFIG,
+  PARAMETER_EDITOR_FIELD_KEYS,
+  SIDE_OPTIONS,
+  buildParamTestId,
+  getFieldMetadata,
+  getFieldsByTier,
+  getFieldsForSurface,
+  getParameterEditorFields,
+} from './fieldContract';
+export type {
+  ExerciseFieldEditConfig,
+  ExerciseFieldEditor,
+  ExerciseFieldOption,
+  ExerciseFieldSurface,
+  ExerciseFieldTier,
+  ExerciseTemplateFormValues,
+  MappingFieldMode,
+  MappingOnlyFieldConfig,
+  MappingOnlyFieldKey,
+} from './fieldContract';

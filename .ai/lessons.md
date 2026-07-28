@@ -14,6 +14,22 @@ Dziennik wniosków z pracy AI agentów. Po każdej korekcie dodaj nowy wpis.
 
 ## Wpisy
 
+### 2026-07-28 - UI copy: nigdy „dawkowanie”, zawsze „podstawowe parametry”
+
+- **Kategoria**: `UI/UX`
+- **Problem**: W edytorach, preview, PDF i dialogach pojawiało się słowo „Dawkowanie” — żargon, którego nie chcemy w produkcie.
+- **Przyczyna**: Stara etykieta grupy pól (`group: 'dosage'`) wyciekła do copy użytkownika.
+- **Rozwiązanie**: Zamiana widocznych etykiet na „Podstawowe parametry”; reguła w `AGENTS.md` + `src/features/exercises/AGENTS.md`.
+- **Reguła**: W UI, toastach, PDF i dokumentacji produktowej nigdy nie pisz „dawkowanie”. Używaj „podstawowe parametry” albo konkretnych nazw pól (Serie, Powtórzenia…). Identyfikatory kodu (`dosage`, nazwa pliku SPEC-012) mogą zostać — copy dla człowieka nie.
+
+### 2026-07-28 - Jeden kontrakt pól na byt domenowy — powierzchnia derywuje podzbiór, nigdy semantykę
+
+- **Kategoria**: `UI/UX` | `React`
+- **Problem**: Create wizard, dialog edycji (`ExerciseForm`) i detal (`ExerciseEditor`) miały różne zestawy pól i etykiet (`Czas powtórzenia` vs `Czas 1 powtórzenia`); mapping/override też dryfowały.
+- **Przyczyna**: Trzy niezależne artefakty formularza z lokalnymi listami pól zamiast jednego field-setu z intencją (Salesforce page-layout tax).
+- **Rozwiązanie**: `fieldContract.ts` jako SSOT (tier, surfaces, zod, options) + etykiety z `displayRegistry`; `ExerciseParametersEditor` / `ExerciseEditor` współdzielone; create = lean subset; usunięto `ExerciseForm` i martwe legacy edytory.
+- **Reguła**: Dla danych domenowych edytowanych w wielu miejscach utrzymuj jeden kontrakt pól. Powierzchnia może różnić layout i podzbiór (create-as-prefix), nigdy etykietę, walidację ani mapowanie na mutację. Guardrail: test kompletności kontraktu + integralność testid.
+
 ### 2026-07-28 - Generowanie obrazów AI wyłącznie przez Image API, nigdy chat/completions z modalities
 
 - **Kategoria**: `Build/Tooling` | `UI/UX`

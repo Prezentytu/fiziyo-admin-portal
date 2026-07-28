@@ -19,6 +19,7 @@ WAŻNE: Preferuj wnioskowanie oparte na dokumentacji (retrieval-led) zamiast wni
 
 - Nigdy nie używaj `any` ani `useLazyQuery`.
 - Nigdy nie usuwaj `data-testid` i nie omijaj zasad theme-safe UI.
+- Nigdy nie pisz „dawkowanie” w UI/copy dla terapeuty — używaj „podstawowe parametry” (lub nazw pól); zob. `src/features/exercises/AGENTS.md`.
 - Nigdy nie modyfikuj `.env`/credentials ani nie pushuj do `main/master` bez review.
 
 ## Validation Commands

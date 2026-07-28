@@ -16,7 +16,11 @@ Builder zestawu ćwiczeń — listowanie, dodawanie, edycja, usuwanie ćwiczeń 
 
 ### ExerciseExecutionCard
 
-Jedyny bazowy komponent poziomego kafelka/paska ćwiczenia (miniatura + nazwa + dawkowanie + akcje). Używaj go we wszystkich flow wymagających listy ćwiczeń zamiast tworzyć lokalne warianty.
+Jedyny bazowy komponent poziomego kafelka/paska ćwiczenia (miniatura + nazwa + podstawowe parametry + akcje). Używaj go we wszystkich flow wymagających listy ćwiczeń zamiast tworzyć lokalne warianty.
+
+### fieldContract + displayRegistry
+
+SSOT semantyki pól ćwiczenia: etykiety (`displayRegistry.ts`), tier/surfaces/zod/options (`fieldContract.ts`). Powierzchnie create/edit/mapping/override derywują podzbiór i layout — nigdy lokalnych etykiet ani reguł walidacji.
 
 ### LabeledStepper
 

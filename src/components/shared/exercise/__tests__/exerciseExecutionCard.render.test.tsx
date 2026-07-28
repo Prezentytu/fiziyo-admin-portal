@@ -37,8 +37,9 @@ describe('ExerciseExecutionCard inline read-only source info', () => {
       />
     );
 
-    expect(screen.getByTestId('exercise-card-exercise-1-help-sets')).toBeInTheDocument();
-    expect(screen.getByTestId('exercise-card-exercise-1-help-reps')).toBeInTheDocument();
+    // Responsive layout renders steppers twice (mobile + desktop) → getAllByTestId
+    expect(screen.getAllByTestId('exercise-card-exercise-1-help-sets').length).toBeGreaterThan(0);
+    expect(screen.getAllByTestId('exercise-card-exercise-1-help-reps').length).toBeGreaterThan(0);
 
     await user.click(screen.getByTestId('exercise-card-exercise-1-advanced-toggle'));
 
@@ -46,15 +47,18 @@ describe('ExerciseExecutionCard inline read-only source info', () => {
     expect(screen.getByTestId('exercise-card-exercise-1-help-executionTime')).toBeInTheDocument();
     expect(screen.getByTestId('exercise-card-exercise-1-help-restSets')).toBeInTheDocument();
     expect(screen.getByTestId('exercise-card-exercise-1-help-load')).toBeInTheDocument();
+    expect(screen.getByTestId('exercise-card-exercise-1-help-duration')).toBeInTheDocument();
     expect(screen.getByTestId('exercise-card-exercise-1-help-notes')).toBeInTheDocument();
     expect(screen.getByTestId('exercise-card-exercise-1-help-restReps')).toBeInTheDocument();
-    expect(screen.getByTestId('exercise-card-exercise-1-help-preparationTime')).toBeInTheDocument();
     expect(screen.getByTestId('exercise-card-exercise-1-help-tempo')).toBeInTheDocument();
-    expect(screen.getByTestId('exercise-card-exercise-1-help-side')).toBeInTheDocument();
+    // side / preparationTime: inherited from template (not editable on mapping)
+    expect(screen.queryByTestId('exercise-card-exercise-1-help-preparationTime')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('exercise-card-exercise-1-help-side')).not.toBeInTheDocument();
     expect(screen.getByTestId('exercise-card-exercise-1-help-customName')).toBeInTheDocument();
     expect(screen.getByTestId('exercise-card-exercise-1-help-customDescription')).toBeInTheDocument();
     expect(screen.getByTestId('exercise-card-exercise-1-open-details-btn')).toBeInTheDocument();
     expect(screen.getByText('Obciążenie')).toBeInTheDocument();
+    expect(screen.getByText(/dziedziczone są z szablonu/i)).toBeInTheDocument();
     expect(screen.queryByText('nogi')).not.toBeInTheDocument();
     expect(screen.getByText('9 min 35 s')).toBeInTheDocument();
 

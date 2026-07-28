@@ -1,15 +1,38 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import type { ReactNode } from 'react';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
+
+import {
+  COPY_EXERCISE_TEMPLATE_MUTATION,
+  DELETE_EXERCISE_IMAGE_MUTATION,
+  UPDATE_EXERCISE_MUTATION,
+  UPLOAD_EXERCISE_IMAGE_MUTATION,
+} from '@/graphql/mutations/exercises.mutations';
 
 import { ExerciseDialog } from './ExerciseDialog';
 import type { Exercise } from './ExerciseCard';
 
-const useMutationMock = vi.fn();
-const useQueryMock = vi.fn();
-const useApolloClientMock = vi.fn();
-const generateExerciseImageMock = vi.fn();
+const {
+  useMutationMock,
+  useQueryMock,
+  useApolloClientMock,
+  generateExerciseImageMock,
+  updateExerciseMock,
+  uploadExerciseImageMock,
+  deleteExerciseImageMock,
+  copyExerciseMock,
+  editorSaveMock,
+} = vi.hoisted(() => ({
+  useMutationMock: vi.fn(),
+  useQueryMock: vi.fn(),
+  useApolloClientMock: vi.fn(),
+  generateExerciseImageMock: vi.fn(),
+  updateExerciseMock: vi.fn(),
+  uploadExerciseImageMock: vi.fn(),
+  deleteExerciseImageMock: vi.fn(),
+  copyExerciseMock: vi.fn(),
+  editorSaveMock: vi.fn().mockResolvedValue(undefined),
+}));
 
 vi.mock('next/image', () => ({
   default: ({ alt }: { alt?: string }) => <span>{alt ?? 'image'}</span>,
@@ -25,63 +48,47 @@ vi.mock('./CreateExerciseWizard', () => ({
   CreateExerciseWizard: () => null,
 }));
 
-vi.mock('./ExerciseForm', () => ({
-  ExerciseForm: ({
-    onSubmit,
-    mediaSection,
-  }: {
-    onSubmit: (values: {
-      name: string;
-      description: string;
-      type: 'reps' | 'time';
-      sets: number;
-      reps: number;
-      duration: null;
-      restSets: number;
-      restReps: number;
-      preparationTime: number;
-      executionTime: number;
-      exerciseSide: 'none';
-      videoUrl: string;
-      notes: string;
-      tempo: string;
-      clinicalDescription: string;
-      audioCue: string;
-      rangeOfMotion: string;
-    }) => Promise<void>;
-    mediaSection?: ReactNode;
-  }) => (
-    <div>
-      {mediaSection}
-      <button
-        type="button"
-        data-testid="mock-exercise-form-submit-btn"
-        onClick={() =>
-          onSubmit({
-            name: 'Przysiad',
-            description: 'Opis',
-            type: 'reps',
-            sets: 3,
-            reps: 10,
-            duration: null,
-            restSets: 60,
-            restReps: 0,
-            preparationTime: 5,
-            executionTime: 0,
-            exerciseSide: 'none',
-            videoUrl: '',
-            notes: '',
-            tempo: '',
-            clinicalDescription: '',
-            audioCue: '',
-            rangeOfMotion: '',
-          })
-        }
-      >
-        submit
-      </button>
-    </div>
-  ),
+vi.mock('./ExerciseEditor', () => ({
+  ExerciseEditor: () => <div data-testid="mock-exercise-editor" />,
+}));
+
+vi.mock('./useExerciseEditorForm', () => ({
+  useExerciseEditorForm: () => ({
+    core: {
+      name: 'Przysiad',
+      patientDescription: '',
+      clinicalDescription: '',
+      notes: '',
+      audioCue: '',
+      tempo: '',
+      rangeOfMotion: '',
+      side: 'none',
+      difficultyLevel: 'UNKNOWN',
+      videoUrl: '',
+      sets: 3,
+      reps: 10,
+      executionTime: null,
+      restSets: 60,
+      restReps: 0,
+      preparationTime: 5,
+      duration: null,
+      loadKg: null,
+      mainTags: [],
+      additionalTags: [],
+    },
+    enrichment: {},
+    setCoreField: vi.fn(),
+    setEnrichmentPath: vi.fn(),
+    replaceEnrichment: vi.fn(),
+    isDirty: false,
+    isCoreFieldDirty: () => false,
+    isPathDirty: () => false,
+    saveStatus: 'idle' as const,
+    save: editorSaveMock,
+    flush: vi.fn().mockResolvedValue(undefined),
+    markSaved: vi.fn(),
+    reset: vi.fn(),
+  }),
 }));
 
 vi.mock('@/services/aiService', () => ({
@@ -98,11 +105,6 @@ vi.mock('sonner', () => ({
   },
 }));
 
-const updateExerciseMock = vi.fn();
-const uploadExerciseImageMock = vi.fn();
-const deleteExerciseImageMock = vi.fn();
-const copyExerciseMock = vi.fn();
-
 const baseExercise: Exercise = {
   id: 'exercise-1',
   name: 'Przysiad',
@@ -117,10 +119,12 @@ class MockFileReader {
   public onerror: ((this: FileReader, ev: ProgressEvent<FileReader>) => unknown) | null = null;
 
   readAsDataURL(file: Blob) {
-    this.result = `data:${file.type};base64,ZmFrZS1iYXNlNjQ=`;
-    if (this.onload) {
-      this.onload.call(this as unknown as FileReader, {} as ProgressEvent<FileReader>);
-    }
+    this.result = `data:${file.type || 'image/jpeg'};base64,ZmFrZS1iYXNlNjQ=`;
+    queueMicrotask(() => {
+      if (this.onload) {
+        this.onload.call(this as unknown as FileReader, {} as ProgressEvent<FileReader>);
+      }
+    });
   }
 }
 
@@ -138,24 +142,19 @@ describe('ExerciseDialog media edit flow', () => {
       refetchQueries: vi.fn().mockResolvedValue(undefined),
     });
 
-    useMutationMock.mockImplementation(
-      (documentNode: {
-        definitions?: Array<{ name?: { value?: string }; kind?: string }>;
-        loc?: { source?: { body?: string } };
-      }) => {
-      const operationName = documentNode?.definitions?.[0]?.name?.value;
-      const sourceBody = documentNode?.loc?.source?.body ?? '';
-      if (operationName === 'UpdateExercise') return [updateExerciseMock, { loading: false }];
-      if (operationName === 'UploadExerciseImage' || sourceBody.includes('uploadExerciseImage(')) {
+    useMutationMock.mockImplementation((documentNode: unknown) => {
+      if (documentNode === UPDATE_EXERCISE_MUTATION) return [updateExerciseMock, { loading: false }];
+      if (documentNode === UPLOAD_EXERCISE_IMAGE_MUTATION) {
         return [uploadExerciseImageMock, { loading: false }];
       }
-      if (operationName === 'DeleteExerciseImage' || sourceBody.includes('deleteExerciseImage(')) {
+      if (documentNode === DELETE_EXERCISE_IMAGE_MUTATION) {
         return [deleteExerciseImageMock, { loading: false }];
       }
-      if (operationName === 'CopyExerciseTemplate') return [copyExerciseMock, { loading: false }];
+      if (documentNode === COPY_EXERCISE_TEMPLATE_MUTATION) return [copyExerciseMock, { loading: false }];
       return [vi.fn(), { loading: false }];
     });
 
+    editorSaveMock.mockResolvedValue(undefined);
     updateExerciseMock.mockResolvedValue({});
     uploadExerciseImageMock.mockResolvedValue({});
     deleteExerciseImageMock.mockResolvedValue({});
@@ -206,12 +205,16 @@ describe('ExerciseDialog media edit flow', () => {
     fireEvent.change(fileInput, { target: { files: [uploadFile] } });
     await screen.findByText('Nowe zdjęcie ćwiczenia 1');
 
-    await user.click(screen.getByTestId('mock-exercise-form-submit-btn'));
+    await user.click(screen.getByTestId('exercise-dialog-save-btn'));
 
     await waitFor(() => {
-      expect(updateExerciseMock).toHaveBeenCalledTimes(1);
+      expect(editorSaveMock).toHaveBeenCalled();
       expect(deleteExerciseImageMock).toHaveBeenCalledTimes(1);
+      expect(uploadExerciseImageMock).toHaveBeenCalledTimes(1);
     });
+
+    // Dirty-diff: gdy zmieniamy tylko media, UpdateExercise nie jest wymagany.
+    expect(updateExerciseMock).toHaveBeenCalledTimes(0);
 
     expect(deleteExerciseImageMock).toHaveBeenCalledWith(
       expect.objectContaining({

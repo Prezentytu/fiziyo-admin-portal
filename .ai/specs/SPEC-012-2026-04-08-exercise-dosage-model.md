@@ -4,7 +4,7 @@
 
 W całej platformie FiziYo (admin + backend + mobile) parametry czasu muszą mieć jednoznaczną semantykę. Obecnie terapeuci i kod mieszają `duration` (czas serii) z `executionTime` (czas powtórzenia), co prowadzi do błędnych etykiet, niespójnych presetów i regresji UX.
 
-Ta specyfikacja definiuje jeden model domenowy dawkowania, który jest źródłem prawdy dla:
+Ta specyfikacja definiuje jeden model domenowy podstawowych parametrów wykonania, który jest źródłem prawdy dla:
 
 - formularzy create/edit,
 - override w assignment/pacjent,
@@ -104,23 +104,84 @@ Bez zmian nazw operacji:
 
 ### Komponenty objęte standaryzacją
 
-| Komponent         | Lokalizacja                                            | Kontrakt                                                         |
-| ----------------- | ------------------------------------------------------ | ---------------------------------------------------------------- |
-| Create wizard     | `src/features/exercises/CreateExerciseWizard.tsx`      | TIER 1 używa `executionTime`; `duration` tylko advanced/override |
-| Edit form         | `src/features/exercises/ExerciseForm.tsx`              | Identyczna semantyka jak wizard                                  |
-| Shared registry   | `src/components/shared/exercise/displayRegistry.ts`    | Jedno źródło etykiet i tooltipów                                 |
-| Patient overrides | `src/features/patients/EditExerciseOverrideDialog.tsx` | Obsługa obu pól: `duration` i `executionTime`                    |
-| Assignment card   | `src/features/patients/PatientAssignmentCard.tsx`      | Etykiety jawne: `Czas serii`, `Czas powt.`                       |
-| Import cards      | `src/features/import/cards/*.tsx`                      | Brak etykiety ogólnej `Czas`                                     |
+| Komponent         | Lokalizacja                                                | Kontrakt                                                           |
+| ----------------- | ---------------------------------------------------------- | ------------------------------------------------------------------ |
+| Create wizard     | `src/features/exercises/CreateExerciseWizard.tsx`          | Lean subset z `fieldContract` (TIER 1–2 widoczne, 3–4 collapsible) |
+| Shared editor     | `src/features/exercises/ExerciseEditor.tsx`                | Pełny edytor szablonu (detal, dialog, weryfikacja)                 |
+| Parameters editor | `src/features/exercises/ExerciseParametersEditor.tsx`      | Render z `fieldContract` — parametry wykonania                     |
+| Field contract    | `src/components/shared/exercise/fieldContract.ts`          | SSOT: etykiety, tier, surfaces, zod, options                       |
+| Shared registry   | `src/components/shared/exercise/displayRegistry.ts`        | SSOT etykiet i tooltipów (read-only)                               |
+| Mapping card      | `src/components/shared/exercise/ExerciseExecutionCard.tsx` | Parametry mappingu z `surfaces: mapping`                           |
+| Patient overrides | `src/features/patients/EditExerciseOverrideDialog.tsx`     | Parametry z `surfaces: patientOverride` + dziedziczenie            |
+| Assignment card   | `src/features/patients/PatientAssignmentCard.tsx`          | Etykiety jawne: `Czas serii`, `Czas powt.`                         |
+| Import cards      | `src/features/import/cards/*.tsx`                          | Brak etykiety ogólnej `Czas`                                       |
+
+## Field Contract
+
+Jedno źródło prawdy dla semantyki pól edycyjnych. Powierzchnia derywuje **podzbiór i layout**, nigdy etykietę, walidację ani mapowanie na mutację.
+
+Kod: `src/components/shared/exercise/fieldContract.ts` (+ `displayRegistry.ts` dla etykiet read-only).
+
+### Reguła derywacji create-jako-podzbiór
+
+- Create (`CreateExerciseWizard`) = jawny podzbiór pól szablonu w tej samej kolejności i grupach.
+- TIER 1–2 widoczne od razu; TIER 3–4 w sekcji zaawansowanej.
+- Sekcje rozszerzone (enrichment v3: typowe błędy, kroki, bezpieczeństwo) **nie** są w kreatorze — po zapisie CTA „Dokończ opis” prowadzi na detal.
+- Dialog edycji i detal/weryfikacja używają tego samego `ExerciseEditor` + `useExerciseEditorForm`.
+
+### Macierz `pole × powierzchnia`
+
+| Pole                  | template      | mapping   | patientOverride       | Uwagi                                     |
+| --------------------- | ------------- | --------- | --------------------- | ----------------------------------------- |
+| `sets`                | edit          | edit      | edit                  | TIER 1                                    |
+| `reps`                | edit          | edit      | edit                  | TIER 1                                    |
+| `executionTime`       | edit          | edit      | edit                  | TIER 1 — timer pacjenta                   |
+| `restSets`            | edit          | edit      | edit                  | TIER 2                                    |
+| `load` / `loadKg`     | edit          | edit      | edit\*                | TIER 2; dual-write kg                     |
+| `restReps`            | edit          | edit      | edit                  | TIER 3 / 4                                |
+| `preparationTime`     | edit          | inherited | edit\*                | Mapping: brak persystencji backend (TODO) |
+| `tempo`               | edit          | edit      | edit\*                | TIER 3                                    |
+| `side`                | edit          | inherited | edit                  | Mapping: brak persystencji backend (TODO) |
+| `rangeOfMotion`       | edit          | —         | edit\*                | Tylko szablon (+ override po gate)        |
+| `difficultyLevel`     | edit          | —         | —                     | Tylko szablon                             |
+| `duration`            | edit (TIER 4) | edit      | edit                  | Legacy/override czasu serii               |
+| `patientDescription`  | edit          | —         | via customDescription |                                           |
+| `clinicalDescription` | edit          | —         | —                     |                                           |
+| `audioCue`            | edit          | —         | —                     |                                           |
+| `notes`               | edit          | edit      | edit                  |                                           |
+| `customName`          | —             | edit      | edit                  | Tylko mapping / override                  |
+| `customDescription`   | —             | edit      | edit                  | Tylko mapping / override                  |
+
+\* Pola oznaczone gwiazdką w `patientOverride` wymagają potwierdzenia odczytu w fizjo-app (JSON `exerciseOverrides`). Do potwierdzenia: feature-flag `ENABLE_EXTENDED_PATIENT_OVERRIDE_FIELDS`.
+
+### Gate: rozszerzenie JSON `exerciseOverrides`
+
+Nadpisania per pacjent lecą jako JSON przez `UPDATE_PATIENT_EXERCISE_OVERRIDES_MUTATION` i są konsumowane przez fizjo-app. Rozszerzenie o `tempo`, `loadWeightKg` / `load`, `preparationTime`, `rangeOfMotion` jest **zmianą kontraktu cross-repo**.
+
+- Kontrakt TypeScript assignment (`src/features/assignment/types.ts` → `ExerciseOverride`) już przewiduje `tempo`, `preparationTime`, `load`.
+- UI pacjenta eksponuje nowe pola dopiero gdy `ENABLE_EXTENDED_PATIENT_OVERRIDE_FIELDS === true` **oraz** mobile potwierdzi odczyt.
+- Klucze JSON (kontrakt cross-repo): `sets`, `reps`, `duration`, `executionTime`, `restSets`, `restReps`, `preparationTime`, `tempo`, `load` / `loadWeightKg`, `rangeOfMotion`, `exerciseSide`, `customName`, `customDescription`, `notes`, `customImages`, `hidden`.
 
 ## Data-testid
 
-- `exercise-create-series-time-summary`
-- `exercise-create-series-time-value`
-- `exercise-create-exec-time-input`
-- `exercise-create-duration-input`
+### Create / shared parameters
+
+- `exercise-create-exec-time-input` (legacy alias w kreatorze; kanoniczny: `exercise-param-executionTime-input`)
+- `exercise-param-series-time` — computed „Czas serii”
+- `exercise-param-total-time` — computed „Czas trwania ćwiczenia”
+- `exercise-param-{field}-input` — pola numeryczne/tekstowe z `ExerciseParametersEditor`
+- `exercise-param-{field}-select` — selecty (side, difficulty)
+- `exercise-create-duration-badge` — badge czasu w kreatorze (legacy)
+
+### Patient override
+
 - `patient-exercise-override-duration-input`
 - `patient-exercise-override-execution-time-input`
+- `patient-exercise-override-sets-input`
+- `patient-exercise-override-reps-input`
+- `patient-exercise-override-rest-sets-input`
+- `patient-exercise-override-rest-reps-input`
+- `patient-exercise-override-submit-btn`
 
 ## Risk Assessment
 
@@ -142,6 +203,12 @@ Bez zmian nazw operacji:
 | Helper czasu: formuła z `restReps` nie regresuje                                                   | Jednostkowy  | High      |
 
 ## Changelog
+
+### 2026-07-28 (Field Contract)
+
+- Dodano sekcję Field Contract: macierz `pole × powierzchnia`, reguła create-jako-podzbiór, gate cross-repo na rozszerzenie JSON `exerciseOverrides`.
+- Zsynchronizowano data-testid ze stanem kodu (`exercise-param-*`, `exercise-create-duration-badge`); usunięto nieistniejące ID ze spec.
+- SSOT edycji: `src/components/shared/exercise/fieldContract.ts` (etykiety z `displayRegistry`).
 
 ### 2026-07-28
 

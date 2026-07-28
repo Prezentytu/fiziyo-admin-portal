@@ -40,7 +40,7 @@ Mapowanie ćwiczenia do zestawu. Pola NULL = wartość z Exercise.
 - `utils/createSetSubmit.ts` — kanoniczny write-path `createExerciseSet` + `addExerciseToSet` (TEMPLATE + frequency)
 - `ExerciseSetBuilder.tsx` — builder współdzielony (shared)
 - `EditExerciseInSetDialog.tsx` — edycja ćwiczenia w zestawie
-- `CustomizeExercisesStep.tsx` — personalizacja w Assignment Wizard
+- Assignment customize: `CustomizeSetStep` + `ExerciseSetBuilder` / `ExerciseExecutionCard` (nie legacy CustomizeExercisesStep)
 
 ## Tworzenie zestawu (kanoniczny kontrakt)
 
@@ -57,14 +57,19 @@ Legacy `type/value/unit/text` nadal w mutacjach (dual-write). Helper: `src/utils
 
 ## Hierarchia pól (nadpisywalne)
 
+**SSOT:** `src/components/shared/exercise/fieldContract.ts` (`surfaces: ['mapping']`).
+
 TIER 1: Serie, Powtórzenia, Czas powtórzenia
 TIER 2: Przerwa między seriami, Obciążenie
-TIER 3: Notatka, Strona, Tempo, Czas przygotowania
-TIER 4: Przerwa między powt., Własna nazwa/opis
+TIER 3: Notatka, Tempo
+TIER 4: Przerwa między powt., Czas serii (`duration`), Własna nazwa/opis
+
+`Side` i `PreparationTime` na mappingu są **inherited** (readonly z szablonu) — backend TODO; nie renderować jako input w `ExerciseExecutionCard` / `EditExerciseInSetDialog`.
 
 ## Referencje
 
 - Schemat Exercise: `src/features/exercises/AGENTS.md`
+- Field contract: `src/components/shared/exercise/fieldContract.ts`
 - Assignment Wizard: `src/features/assignment/AGENTS.md`
 - ExerciseSetBuilder: `src/components/shared/ExerciseSetBuilder.tsx`
 

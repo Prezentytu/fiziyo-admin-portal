@@ -104,6 +104,7 @@ export interface ExerciseMapping {
     defaultRestBetweenSets?: number;
     defaultRestBetweenReps?: number;
     defaultExecutionTime?: number;
+    preparationTime?: number;
     // Legacy aliasy
     exerciseSide?: string;
     imageUrl?: string;
@@ -123,6 +124,11 @@ export interface ExerciseOverride {
   executionTime?: number;
   restSets?: number;
   restReps?: number;
+  preparationTime?: number;
+  tempo?: string;
+  /** kg-only load (SPEC-003 / SPEC-012 cross-repo JSON keys). */
+  loadWeightKg?: number;
+  rangeOfMotion?: string;
   hidden?: boolean;
   customName?: string;
   customDescription?: string;

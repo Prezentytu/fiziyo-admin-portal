@@ -235,6 +235,19 @@ function EditExerciseInSetDialogContent({
           onChange={handleChange}
           testIdPrefix="set-edit-exercise"
           defaultExpanded
+          editableFields={[
+            'sets',
+            'reps',
+            'duration',
+            'executionTime',
+            'restSets',
+            'restReps',
+            'tempo',
+            'loadKg',
+            'notes',
+            'customName',
+            'customDescription',
+          ]}
         />
       </div>
 

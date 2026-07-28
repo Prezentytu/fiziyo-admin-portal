@@ -82,7 +82,7 @@ Wszystkie powierzchnie UI wyświetlające szczegóły ćwiczenia muszą korzysta
 
 ### Kanoniczna kolejność pól
 
-1. **Dawkowanie**: `Serie`, `Powtórzenia`, `Czas powtórzenia`, `Czas serii`
+1. **Podstawowe parametry**: `Serie`, `Powtórzenia`, `Czas powtórzenia`, `Czas serii`
 2. **Wykonanie**: `Przerwa między seriami`, `Przerwa między powt.`, `Czas przygotowania`, `Tempo`, `Obciążenie`, `Strona ciała`, `Zakres ruchu (ROM)`, `Poziom trudności`
 3. **Treść**: `Opis dla pacjenta`, `Opis kliniczny`, `Polecenia audio`, `Notatki`
 
@@ -192,7 +192,7 @@ Prefiks: `exercise-`
 
 ### 2026-04-08
 
-- Zaktualizowano semantykę dawkowania: `Czas powtórzenia` jest głównym parametrem wejściowym, a `Czas serii` opisano jako pole time-based / computed display w kreatorze.
+- Zaktualizowano semantykę podstawowych parametrów: `Czas powtórzenia` jest głównym parametrem wejściowym, a `Czas serii` opisano jako pole time-based / computed display w kreatorze.
 - Doprecyzowano zasady etykiet czasowych pod kątem spójności create/edit/detail.
 - Dodano odwołanie do `SPEC-012` jako single source of truth dla modelu `sets × reps × executionTime` oraz roli `duration` jako override time-based.
 

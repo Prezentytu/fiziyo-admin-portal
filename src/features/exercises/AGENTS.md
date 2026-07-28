@@ -2,7 +2,7 @@
 
 ## Zakres
 
-Moduł szablonów ćwiczeń: formularz create/edit, lista, filtrowanie, hierarchia pól dawkowania.
+Moduł szablonów ćwiczeń: formularz create/edit, lista, filtrowanie, hierarchia podstawowych parametrów.
 
 ## Schemat backendu: Exercise (C# .NET)
 
@@ -28,7 +28,7 @@ Moduł szablonów ćwiczeń: formularz create/edit, lista, filtrowanie, hierarch
 | `Tempo`                | string? (20)  | Tempo wykonania np. "3-0-1-0"                                                                  | Tempo              |
 | `RangeOfMotion`        | string? (100) | Zakres ruchu (ROM)                                                                             | Zakres ruchu       |
 
-### Dawkowanie (Presets)
+### Podstawowe parametry (Presets)
 
 | Pole                     | Typ           | Opis                               | Label w UI             | Default |
 | ------------------------ | ------------- | ---------------------------------- | ---------------------- | ------- |
@@ -63,20 +63,26 @@ DifficultyLevel: Unknown = 0, Easy = 1, Medium = 2, Hard = 3, Expert = 4
 
 ## Hierarchia pól UI (od najważniejszych)
 
+**SSOT kodu:** `src/components/shared/exercise/fieldContract.ts` (+ etykiety w `displayRegistry.ts`).
+Nie duplikuj etykiet/tierów lokalnie — derywuj z kontraktu.
+
 **TIER 1 - Zawsze widoczne:** Serie, Powtórzenia, Czas powtórzenia, Czas serii (wyliczany)
 
 **TIER 2 - Często używane:** Przerwa między seriami, Obciążenie
 
 **TIER 3 - Personalizacja:** Notatka, Strona ciała, Tempo, Czas przygotowania
 
-**TIER 4 - Zaawansowane:** Przerwa między powt., Zakres ruchu, Własna nazwa/opis
+**TIER 4 - Zaawansowane:** Przerwa między powt., Zakres ruchu, `duration` (override czasu serii), Własna nazwa/opis
 
 ## Precyzyjne labele (OBOWIĄZKOWE)
 
-| ❌ Źle  | ✅ Dobrze                                     |
-| ------- | --------------------------------------------- |
-| Czas    | Czas serii / Czas powtórzenia                 |
-| Przerwa | Przerwa między seriami / Przerwa między powt. |
+| ❌ Źle     | ✅ Dobrze                                     |
+| ---------- | --------------------------------------------- |
+| Dawkowanie | Podstawowe parametry                          |
+| Czas       | Czas serii / Czas powtórzenia                 |
+| Przerwa    | Przerwa między seriami / Przerwa między powt. |
+
+**Nigdy** nie używaj słowa „dawkowanie” w UI, toastach, PDF ani copy dla terapeuty — zawsze „podstawowe parametry” (lub konkretne nazwy pól). Identyfikatory kodu (`group: 'dosage'`, nazwa SPEC-012) mogą zostać; copy użytkownika nie.
 
 ## Model ćwiczenia - jeden typ, dynamiczny timer
 
@@ -93,10 +99,13 @@ Przykłady: `3 × 10`, `3 × 10 × 10s`, `3 × 1 × 30s`
 
 ## Referencje
 
-- Główny formularz: `ExerciseForm.tsx`
+- Edytor szablonu: `ExerciseEditor.tsx` + `useExerciseEditorForm.ts` + `ExerciseParametersEditor.tsx`
+- Kreator: `CreateExerciseWizard.tsx` (lean subset z `variant="create"`)
+- Dialog edycji: `ExerciseDialog.tsx` → ten sam `ExerciseEditor`
+- Field contract: `src/components/shared/exercise/fieldContract.ts`
 - Lista: strona `app/(dashboard)/exercises/`
 - GraphQL: `src/graphql/queries/`, `src/graphql/mutations/`
-- Single source of truth dawkowania: `.ai/specs/SPEC-012-2026-04-08-exercise-dosage-model.md`
+- Single source of truth podstawowych parametrów: `.ai/specs/SPEC-012-2026-04-08-exercise-dosage-model.md`
 - Akcja `Dodaj do zestawu` na detalu ćwiczenia używa `CreateSetWizard` (`src/features/exercise-sets/CreateSetWizard.tsx`) z `initialExerciseIds`.
 
 ## Konwencje data-testid

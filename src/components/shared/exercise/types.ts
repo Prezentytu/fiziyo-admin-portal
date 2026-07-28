@@ -13,7 +13,7 @@ export interface ExerciseExecutionCardData {
   imageUrls?: string[];
   /** Optional video URL displayed in exercise preview. */
   videoUrl?: string;
-  /** Main dosage */
+  /** Basic execution parameters (sets/reps/…) */
   sets: number;
   reps: number;
   /** Duration per set in seconds (display mode in patient app). */

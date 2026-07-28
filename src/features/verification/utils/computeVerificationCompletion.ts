@@ -28,7 +28,7 @@ export interface VerificationCompletion {
 
 /**
  * Liczy gotowość ćwiczenia do publikacji na podstawie tych samych kryteriów krytycznych,
- * które wcześniej liczył `VerificationEditorPanel` (opis pacjenta/kliniczny, dawkowanie, nazwa, media, tagi).
+ * które wcześniej liczył `VerificationEditorPanel` (opis pacjenta/kliniczny, podstawowe parametry, nazwa, media, tagi).
  * Czysta funkcja — łatwa do przetestowania i reużycia we wszystkich trzech widokach weryfikacji.
  */
 export function computeVerificationCompletion(input: VerificationCompletionInput): VerificationCompletion {

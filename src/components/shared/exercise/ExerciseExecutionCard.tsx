@@ -4,9 +4,7 @@ import { useState, useCallback, useMemo } from 'react';
 import { Clock, Settings2, ChevronUp, ChevronDown, X, Eye, Info } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { LabeledStepper } from '@/components/shared/LabeledStepper';
 import { ExerciseThumbnail } from './ExerciseThumbnail';
 import { getMediaUrl } from '@/utils/mediaUrl';
@@ -24,15 +22,8 @@ import {
   INLINE_EXERCISE_FIELD_ORDER,
   formatFieldValueWithPlaceholder,
 } from './displayRegistry';
+import { MAPPING_ONLY_FIELD_CONFIG } from './fieldContract';
 import { ExercisePreviewDialog } from './ExercisePreviewDialog';
-
-const SIDE_OPTIONS = [
-  { value: 'none', label: 'Bez podziału' },
-  { value: 'both', label: 'Obie strony' },
-  { value: 'left', label: 'Lewa strona' },
-  { value: 'right', label: 'Prawa strona' },
-  { value: 'alternating', label: 'Naprzemiennie' },
-] as const;
 
 function EditableFieldLabel({
   label,
@@ -185,18 +176,6 @@ export function ExerciseExecutionCard({
     max: 60,
   });
   const {
-    draftValue: preparationTimeDraft,
-    handleChange: handlePreparationTimeChange,
-    handleFocus: handlePreparationTimeFocus,
-    handleBlur: handlePreparationTimeBlur,
-    handleKeyDown: handlePreparationTimeKeyDown,
-  } = useOptionalNumericDraft({
-    value: exercise.preparationTime,
-    onCommit: (value) => handleChange({ preparationTime: value }),
-    min: 0,
-    max: 120,
-  });
-  const {
     draftValue: loadKgDraft,
     handleChange: handleLoadKgChange,
     handleFocus: handleLoadKgFocus,
@@ -213,6 +192,18 @@ export function ExerciseExecutionCard({
     max: 500,
     parseMode: 'float',
   });
+  const {
+    draftValue: durationDraft,
+    handleChange: handleDurationChange,
+    handleFocus: handleDurationFocus,
+    handleBlur: handleDurationBlur,
+    handleKeyDown: handleDurationKeyDown,
+  } = useOptionalNumericDraft({
+    value: exercise.duration,
+    onCommit: (value) => handleChange({ duration: value }),
+    min: 0,
+    max: 3600,
+  });
   const setsField = EXERCISE_FIELD_METADATA.sets;
   const repsField = EXERCISE_FIELD_METADATA.reps;
   const executionTimeField = EXERCISE_FIELD_METADATA.executionTime;
@@ -220,11 +211,10 @@ export function ExerciseExecutionCard({
   const loadField = EXERCISE_FIELD_METADATA.load;
   const notesField = EXERCISE_FIELD_METADATA.notes;
   const restRepsField = EXERCISE_FIELD_METADATA.restReps;
-  const preparationTimeField = EXERCISE_FIELD_METADATA.preparationTime;
+  const durationField = EXERCISE_FIELD_METADATA.duration;
   const tempoField = EXERCISE_FIELD_METADATA.tempo;
-  const sideField = EXERCISE_FIELD_METADATA.side;
-  const customNameTooltip = 'Własna nazwa widoczna dla pacjenta w tym konkretnym planie.';
-  const customDescriptionTooltip = 'Własny opis nadpisujący opis ćwiczenia tylko dla tego planu.';
+  const customNameConfig = MAPPING_ONLY_FIELD_CONFIG.customName;
+  const customDescriptionConfig = MAPPING_ONLY_FIELD_CONFIG.customDescription;
   const inlineSourceFields = useMemo(
     () =>
       INLINE_EXERCISE_FIELD_ORDER.map((fieldKey) => {
@@ -501,7 +491,7 @@ export function ExerciseExecutionCard({
                 ) : null}
               </div>
             </div>
-            {/* Right: dosage summary */}
+            {/* Right: basic params summary */}
             {viewVariant === 'compact' && (
               <div className="flex flex-col sm:flex-row sm:items-center justify-center sm:justify-end gap-1.5 sm:gap-3 text-sm font-semibold text-foreground shrink-0 ml-3 bg-surface-light/50 px-3 py-2 sm:py-1.5 rounded-lg border border-border/40 min-w-[80px] sm:min-w-[120px]">
                 <div className="flex items-center justify-between sm:justify-start gap-3 sm:gap-1.5 w-full sm:w-auto">
@@ -597,11 +587,34 @@ export function ExerciseExecutionCard({
                     data-testid={`${testId}-load-input`}
                   />
                 </div>
+                <div>
+                  <EditableFieldLabel
+                    htmlFor={`${testId}-duration-input`}
+                    label={`${durationField.label} (s)`}
+                    tooltip={durationField.tooltip}
+                    testId={`${testId}-help-duration`}
+                  />
+                  <Input
+                    id={`${testId}-duration-input`}
+                    type="number"
+                    min={0}
+                    max={3600}
+                    step={5}
+                    value={durationDraft}
+                    onChange={(e) => handleDurationChange(e.target.value)}
+                    onFocus={handleDurationFocus}
+                    onBlur={handleDurationBlur}
+                    onKeyDown={handleDurationKeyDown}
+                    className="h-9 bg-surface-light border-border/50 focus:border-primary"
+                    disabled={!canEditField('duration')}
+                    data-testid={`${testId}-duration-input`}
+                  />
+                </div>
               </div>
               <div>
                 <EditableFieldLabel
                   htmlFor={`${testId}-notes-input`}
-                  label="Notatka dla pacjenta"
+                  label={notesField.label}
                   tooltip={notesField.tooltip}
                   testId={`${testId}-help-notes`}
                 />
@@ -656,28 +669,6 @@ export function ExerciseExecutionCard({
                     </div>
                     <div>
                       <EditableFieldLabel
-                        htmlFor={`${testId}-preparation-time-input`}
-                        label={`${preparationTimeField.label} (s)`}
-                        tooltip={preparationTimeField.tooltip}
-                        testId={`${testId}-help-preparationTime`}
-                      />
-                      <Input
-                        id={`${testId}-preparation-time-input`}
-                        type="number"
-                        min={0}
-                        max={120}
-                        value={preparationTimeDraft}
-                        onChange={(e) => handlePreparationTimeChange(e.target.value)}
-                        onFocus={handlePreparationTimeFocus}
-                        onBlur={handlePreparationTimeBlur}
-                        onKeyDown={handlePreparationTimeKeyDown}
-                        className="h-9 bg-surface-light border-border/50"
-                        disabled={!canEditField('preparationTime')}
-                        data-testid={`${testId}-preparation-time-input`}
-                      />
-                    </div>
-                    <div>
-                      <EditableFieldLabel
                         htmlFor={`${testId}-tempo-input`}
                         label={tempoField.label}
                         tooltip={tempoField.tooltip}
@@ -693,35 +684,15 @@ export function ExerciseExecutionCard({
                         data-testid={`${testId}-tempo-input`}
                       />
                     </div>
-                    <div>
-                      <EditableFieldLabel
-                        label={sideField.label}
-                        tooltip={sideField.tooltip}
-                        labelId={`${testId}-side-label`}
-                        testId={`${testId}-help-side`}
-                      />
-                      <Select
-                        value={(exercise.side ?? 'none').toLowerCase()}
-                        onValueChange={(v) => handleChange({ side: v })}
-                        disabled={!canEditField('side')}
-                      >
-                        <SelectTrigger className="h-9 bg-surface-light border-border/50" aria-labelledby={`${testId}-side-label`}>
-                          <SelectValue placeholder="Wybierz" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {SIDE_OPTIONS.map((opt) => (
-                            <SelectItem key={opt.value} value={opt.value}>
-                              {opt.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
+                    <p className="sm:col-span-2 text-[11px] text-muted-foreground">
+                      Strona ciała i czas przygotowania dziedziczone są z szablonu ćwiczenia (brak
+                      persystencji na poziomie zestawu).
+                    </p>
                     <div className="sm:col-span-2">
                       <EditableFieldLabel
                         htmlFor={`${testId}-custom-name-input`}
-                        label="Własna nazwa"
-                        tooltip={customNameTooltip}
+                        label={customNameConfig.label}
+                        tooltip={customNameConfig.tooltip}
                         testId={`${testId}-help-customName`}
                       />
                       <Input
@@ -737,13 +708,13 @@ export function ExerciseExecutionCard({
                     <div className="sm:col-span-2">
                       <EditableFieldLabel
                         htmlFor={`${testId}-custom-description-input`}
-                        label="Własny opis"
-                        tooltip={customDescriptionTooltip}
+                        label={customDescriptionConfig.label}
+                        tooltip={customDescriptionConfig.tooltip}
                         testId={`${testId}-help-customDescription`}
                       />
                       <Textarea
                         id={`${testId}-custom-description-input`}
-                        placeholder="Opis dla pacjenta (opcjonalnie)"
+                        placeholder="Opis dla pacjenta"
                         value={exercise.customDescription ?? ''}
                         onChange={(e) => handleChange({ customDescription: e.target.value })}
                         className="min-h-[60px] resize-none bg-surface-light border-border/50"
