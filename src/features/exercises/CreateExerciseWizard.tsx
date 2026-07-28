@@ -49,8 +49,9 @@ import { aiService } from '@/services/aiService';
 import type { ExerciseSuggestionResponse } from '@/services/aiService';
 import { formatDurationPolish } from '@/utils/durationPolish';
 import { calculateExerciseTotalSeconds } from '@/utils/exerciseTime';
-import { buildExerciseLoadMutationVars } from '@/utils/exerciseLoadMutation';
 import { findSimilar } from '@/utils/stringSimilarity';
+import { buildCreateExerciseVariables } from './utils/buildCreateExerciseVariables';
+import { inferExerciseType } from './utils/inferExerciseType';
 
 // ============================================================
 // CLEAN NUMBER INPUT - Pure number, no steppers (Linear/Vercel style)
@@ -153,11 +154,21 @@ const QUICK_PRESETS = [
 // ============================================================
 type ExerciseSide = 'none' | 'left' | 'right' | 'both' | 'alternating';
 
+const DIFFICULTY_OPTIONS: { value: string; label: string }[] = [
+  { value: 'UNKNOWN', label: 'Nieokreślony' },
+  { value: 'EASY', label: 'Łatwy' },
+  { value: 'MEDIUM', label: 'Średni' },
+  { value: 'HARD', label: 'Trudny' },
+  { value: 'EXPERT', label: 'Ekspert' },
+];
+
 interface ExerciseData {
   name: string;
   description: string;
   clinicalDescription: string;
+  audioCue: string;
   exerciseSide: ExerciseSide;
+  difficultyLevel: string;
   sets: number | null;
   reps: number | null;
   duration: number | null;
@@ -169,10 +180,17 @@ interface ExerciseData {
   notes: string;
   mainTags: string[];
   additionalTags: string[];
-  // Pro Tuning fields
-  tempo: string; // np. "3010" (4 cyfry)
-  weight: string; // np. "20kg" lub "RPE 7"
-  rangeOfMotion: string; // np. "Pełny zakres" lub "Do kąta 90°"
+  tempo: string;
+  loadKg: number | null;
+  rangeOfMotion: string;
+}
+
+function parseAiWeightToLoadKg(weight: string | null | undefined): number | null {
+  if (!weight) return null;
+  const match = weight.replace(',', '.').match(/-?\d+(\.\d+)?/);
+  if (!match) return null;
+  const parsed = Number(match[0]);
+  return !Number.isNaN(parsed) && parsed > 0 ? parsed : null;
 }
 
 // Interface for existing exercises from API
@@ -214,10 +232,12 @@ const DEFAULT_DATA: ExerciseData = {
   name: '',
   description: '',
   clinicalDescription: '',
+  audioCue: '',
   exerciseSide: 'none',
+  difficultyLevel: 'UNKNOWN',
   sets: 3,
-  reps: 10, // Domyślnie 10 powtórzeń (najczęstszy przypadek)
-  duration: null, // null = brak czasu serii
+  reps: 10,
+  duration: null,
   restSets: 60,
   restReps: 0,
   preparationTime: 5,
@@ -226,9 +246,8 @@ const DEFAULT_DATA: ExerciseData = {
   notes: '',
   mainTags: [],
   additionalTags: [],
-  // Pro Tuning defaults
   tempo: '',
-  weight: '',
+  loadKg: null,
   rangeOfMotion: '',
 };
 
@@ -787,7 +806,9 @@ function AIDiffDrawer({
                   <p className="text-[9px] text-muted-foreground uppercase mb-1">Obciążenie</p>
                   <p className="text-sm font-medium text-foreground">{suggestion.advancedParams.weight}</p>
                   <button
-                    onClick={() => onAcceptField('weight', suggestion.advancedParams?.weight)}
+                    onClick={() =>
+                      onAcceptField('loadKg', parseAiWeightToLoadKg(suggestion.advancedParams?.weight))
+                    }
                     className="text-[9px] text-secondary hover:text-secondary/80 mt-1"
                   >
                     ← Użyj
@@ -1322,7 +1343,7 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
     setIsGeneratingImage(true);
     try {
       // Timer semantics: executionTime > 0 means timed exercise.
-      const inferredType = (data.executionTime ?? 0) > 0 ? 'time' : 'reps';
+      const inferredType = inferExerciseType(data.executionTime);
       const result = await aiService.generateExerciseImage(data.name, data.description, inferredType, 'illustration');
 
       if (result?.file) {
@@ -1412,7 +1433,7 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
       preparationTime: aiSuggestion.advancedParams?.preparationTime ?? prev.preparationTime,
       executionTime: aiSuggestion.advancedParams?.executionTime ?? prev.executionTime,
       tempo: aiSuggestion.advancedParams?.tempo || prev.tempo,
-      weight: aiSuggestion.advancedParams?.weight || prev.weight,
+      loadKg: parseAiWeightToLoadKg(aiSuggestion.advancedParams?.weight) ?? prev.loadKg,
       rangeOfMotion: aiSuggestion.advancedParams?.rangeOfMotion || prev.rangeOfMotion,
     }));
 
@@ -1479,42 +1500,34 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
 
     setIsSaving(true);
 
-    // Timer semantics: executionTime > 0 means timed exercise.
-    const inferredType = (data.executionTime ?? 0) > 0 ? 'time' : 'reps';
-
     try {
-      const numericWeight = data.weight ? Number(data.weight) : Number.NaN;
-      const loadVars = buildExerciseLoadMutationVars(
-        !Number.isNaN(numericWeight) && numericWeight > 0 ? numericWeight : null
-      );
-
       const result = await createExercise({
-        variables: {
+        variables: buildCreateExerciseVariables({
           organizationId,
-          scope: 'ORGANIZATION',
-          name: data.name.trim(),
-          description: data.description.trim(),
-          clinicalDescription: data.clinicalDescription.trim() || null,
-          type: inferredType,
-          sets: data.sets,
-          reps: data.reps,
-          duration: data.duration,
-          restSets: data.restSets,
-          restReps: data.restReps,
-          preparationTime: data.preparationTime,
-          executionTime: data.executionTime,
-          videoUrl: data.videoUrl || null,
-          gifUrl: null,
-          notes: data.notes || null,
-          exerciseSide: data.exerciseSide === 'none' ? null : data.exerciseSide,
-          isActive: true,
-          mainTags: data.mainTags.length > 0 ? data.mainTags : null,
-          additionalTags: data.additionalTags.length > 0 ? data.additionalTags : null,
-          // Pro Tuning fields
-          tempo: data.tempo || null,
-          rangeOfMotion: data.rangeOfMotion || null,
-          ...loadVars,
-        },
+          draft: {
+            name: data.name,
+            patientDescription: data.description,
+            clinicalDescription: data.clinicalDescription,
+            audioCue: data.audioCue,
+            notes: data.notes,
+            side: data.exerciseSide,
+            difficultyLevel: data.difficultyLevel,
+            sets: data.sets,
+            reps: data.reps,
+            duration: data.duration,
+            restSets: data.restSets,
+            restReps: data.restReps,
+            preparationTime: data.preparationTime,
+            executionTime: data.executionTime,
+            videoUrl: data.videoUrl,
+            tempo: data.tempo,
+            rangeOfMotion: data.rangeOfMotion,
+            loadKg: data.loadKg,
+            mainTags: data.mainTags,
+            additionalTags: data.additionalTags,
+            gifUrl: null,
+          },
+        }),
       });
 
       const exerciseId = result.data?.createExercise?.id;
@@ -1968,7 +1981,7 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
                 />
 
                 <CleanNumberInput
-                  label="PRZERWA"
+                  label="PRZERWA SERII"
                   tooltip={EXERCISE_FIELD_TOOLTIPS.restSets}
                   value={data.restSets}
                   onChange={(v) => updateField('restSets', v)}
@@ -2020,8 +2033,10 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
                     {(data.exerciseSide !== 'none' ||
                       data.restReps ||
                       data.tempo ||
-                      data.weight ||
-                      data.rangeOfMotion) && (
+                      data.loadKg != null ||
+                      data.rangeOfMotion ||
+                      data.difficultyLevel !== 'UNKNOWN' ||
+                      data.audioCue) && (
                       <span className="px-1.5 py-0.5 text-[9px] rounded bg-primary/20 text-primary normal-case">
                         Zmienione
                       </span>
@@ -2087,7 +2102,6 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
-                    {/* Czas przygotowania */}
                     <div className="space-y-2">
                       <ExerciseFieldLabelWithTooltip
                         htmlFor="prep-time-input"
@@ -2110,6 +2124,35 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
                       />
                     </div>
 
+                    <div className="space-y-2">
+                      <ExerciseFieldLabelWithTooltip
+                        htmlFor="difficulty-select"
+                        label="Poziom trudności"
+                        tooltip={EXERCISE_FIELD_TOOLTIPS.difficultyLevel}
+                        labelClassName="text-[10px] font-semibold text-muted-foreground uppercase"
+                        className="gap-2"
+                        testId="exercise-create-difficulty-info"
+                      />
+                      <Select
+                        value={data.difficultyLevel}
+                        onValueChange={(value) => updateField('difficultyLevel', value)}
+                      >
+                        <SelectTrigger
+                          id="difficulty-select"
+                          className="bg-surface border-border text-foreground text-sm"
+                          data-testid="exercise-create-difficulty-select"
+                        >
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {DIFFICULTY_OPTIONS.map((option) => (
+                            <SelectItem key={option.value} value={option.value}>
+                              {option.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
 
                   {/* PRO TUNING: Tempo, Obciążenie, ROM */}
@@ -2145,10 +2188,9 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
                         <p className="text-[9px] text-muted-foreground/60">Ekscentryczna-Pauza-Koncentryczna-Pauza</p>
                       </div>
 
-                      {/* Obciążenie / Intensywność */}
                       <div className="space-y-2">
                         <ExerciseFieldLabelWithTooltip
-                          htmlFor="weight-input"
+                          htmlFor="load-kg-input"
                           label="Obciążenie (kg)"
                           tooltip={EXERCISE_FIELD_TOOLTIPS.load}
                           labelClassName="text-[10px] font-semibold text-muted-foreground uppercase"
@@ -2157,14 +2199,17 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
                         />
                         <Input
                           type="number"
-                          id="weight-input"
+                          id="load-kg-input"
                           min={0}
                           max={500}
-                          value={data.weight}
-                          onChange={(e) => updateField('weight', e.target.value)}
+                          step="0.5"
+                          value={data.loadKg ?? ''}
+                          onChange={(e) =>
+                            updateField('loadKg', e.target.value ? Number(e.target.value) || null : null)
+                          }
                           placeholder="np. 5"
                           className="bg-surface border-border text-foreground placeholder:text-muted-foreground/50 text-sm"
-                          data-testid="exercise-create-weight-input"
+                          data-testid="exercise-create-load-kg-input"
                         />
                         <p className="text-[9px] text-muted-foreground/60">Podaj wartość liczbową w kilogramach.</p>
                       </div>
@@ -2193,7 +2238,6 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
                     </div>
                   </div>
 
-                  {/* Notatki */}
                   <div className="space-y-2">
                     <ExerciseFieldLabelWithTooltip
                       htmlFor="notes-input"
@@ -2210,6 +2254,28 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
                       onChange={(e) => updateField('notes', e.target.value)}
                       placeholder="Uwagi, modyfikacje, przeciwwskazania..."
                       className="min-h-[60px] resize-none bg-surface border-border text-foreground placeholder:text-muted-foreground/50 text-sm"
+                      data-testid="exercise-create-notes-input"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <ExerciseFieldLabelWithTooltip
+                      htmlFor="audio-cue-input"
+                      label="Polecenia audio"
+                      tooltip={EXERCISE_FIELD_TOOLTIPS.audioCue}
+                      labelClassName="text-[10px] font-semibold text-muted-foreground uppercase"
+                      className="gap-2"
+                      testId="exercise-create-audio-cue-info"
+                    />
+                    <Input
+                      id="audio-cue-input"
+                      type="text"
+                      value={data.audioCue}
+                      onChange={(e) => updateField('audioCue', e.target.value)}
+                      placeholder='np. "Proste plecy"'
+                      maxLength={200}
+                      className="bg-surface border-border text-foreground placeholder:text-muted-foreground/50 text-sm"
+                      data-testid="exercise-create-audio-cue-input"
                     />
                   </div>
 

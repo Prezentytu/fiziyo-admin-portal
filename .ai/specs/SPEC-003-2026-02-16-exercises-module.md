@@ -174,6 +174,11 @@ Prefiks: `exercise-`
 
 ## Changelog
 
+### 2026-07-28
+
+- Ujednolicono write-path create: `CreateExerciseWizard` i duplikacja na detalu używają `buildCreateExerciseVariables`.
+- Create pokrywa pełny core parametrów (m.in. `loadKg` dual-write, `difficultyLevel`, `audioCue`, tempo, ROM, side, rest\*/prep/executionTime); enrichment pozostaje wyłącznie na update po utworzeniu.
+
 ### 2026-05-28
 
 - Usunięto customowy `AddExerciseToSetsDialog` z modułu ćwiczeń i ujednolicono flow pod `CreateSetWizard`.

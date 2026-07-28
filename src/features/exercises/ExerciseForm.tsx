@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { ExerciseFieldLabelWithTooltip } from './ExerciseFieldLabelWithTooltip';
 import { EXERCISE_FIELD_TOOLTIPS } from './exerciseFieldTooltips';
+import { inferExerciseType } from './utils/inferExerciseType';
 
 const exerciseFormSchema = z.object({
   name: z.string().min(2, 'Nazwa musi mieć min. 2 znaki').max(100, 'Nazwa może mieć max. 100 znaków'),
@@ -110,7 +111,7 @@ export function ExerciseForm({
   const handleSubmit = async (values: ExerciseFormValues) => {
     try {
       // Timer semantics: executionTime > 0 means timed exercise for patient.
-      const inferredType: ExerciseFormValues['type'] = (values.executionTime ?? 0) > 0 ? 'time' : 'reps';
+      const inferredType = inferExerciseType(values.executionTime);
       await onSubmit({ ...values, type: inferredType });
     } catch (error) {
       console.error('Błąd podczas zapisywania:', error);

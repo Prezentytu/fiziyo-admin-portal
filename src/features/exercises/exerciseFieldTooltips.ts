@@ -15,6 +15,7 @@ export const EXERCISE_FIELD_TOOLTIPS = {
   rangeOfMotion: EXERCISE_FIELD_METADATA.rangeOfMotion.tooltip,
   notes: EXERCISE_FIELD_METADATA.notes.tooltip,
   audioCue: EXERCISE_FIELD_METADATA.audioCue.tooltip,
+  difficultyLevel: EXERCISE_FIELD_METADATA.difficultyLevel.tooltip,
   videoUrl: 'Link do filmu instruktażowego. Wklej pełny URL do materiału, który pacjent może odtworzyć.',
   load: EXERCISE_FIELD_METADATA.load.tooltip,
 } as const;

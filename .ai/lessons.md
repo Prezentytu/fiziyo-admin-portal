@@ -14,6 +14,14 @@ Dziennik wniosków z pracy AI agentów. Po każdej korekcie dodaj nowy wpis.
 
 ## Wpisy
 
+### 2026-07-28 - Create i duplicate ćwiczenia muszą dzielić jeden builder payloadu
+
+- **Kategoria**: `GraphQL` | `React`
+- **Problem**: Wizard create i `handleDuplicateExercise` mapowały pola osobno — duplicate gubił load/difficulty, a create nie wysyłał `audioCue`/`difficultyLevel` mimo kontraktu mutacji.
+- **Przyczyna**: Lokalne obiekty `variables` w dwóch entrypointach create zamiast wspólnego write-path (jak przy zestawach).
+- **Rozwiązanie**: `buildCreateExerciseVariables` + `inferExerciseType`; wizard i duplicate budują ten sam payload z draftu zgodnego z core modelem.
+- **Reguła**: Jeśli dwa flow tworzą ten sam byt (`Exercise`), utrzymuj jeden helper create→GraphQL; różnicuj tylko UI entrypointu, nigdy mapowanie pól mutacji.
+
 ### 2026-07-28 - Enrichment na /exercises zapisuj przez updateExercise.enrichmentDataJson, nie updateExerciseField
 
 - **Kategoria**: `GraphQL` | `React`

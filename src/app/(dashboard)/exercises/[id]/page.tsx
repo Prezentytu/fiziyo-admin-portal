@@ -84,7 +84,9 @@ import {
   isExerciseSaveAuthError,
 } from '@/features/exercises/utils/buildEnrichmentUpdateVariables';
 import { getNextExerciseCopyName } from '@/features/exercises/utils/getNextExerciseCopyName';
+import { buildCreateExerciseVariables } from '@/features/exercises/utils/buildCreateExerciseVariables';
 import { calculateExerciseTotalSeconds, formatExerciseDuration } from '@/utils/exerciseTime';
+import { resolveLoadKg } from '@/utils/exerciseLoadMutation';
 import { verificationCopy } from '@/features/verification/verificationCopy';
 import { ORG_VERIFICATION_REFETCH_QUERIES } from '@/hooks/useOrganizationVerificationRealtime';
 
@@ -290,41 +292,44 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
   const handleDuplicateExercise = async () => {
     if (!organizationId || !exercise) return;
 
-    const setsValue = exercise.defaultSets ?? exercise.sets ?? null;
-    const repsValue = exercise.defaultReps ?? exercise.reps ?? null;
-    const durationValue = exercise.defaultDuration ?? exercise.duration ?? null;
-    const restBetweenSetsValue = exercise.defaultRestBetweenSets ?? exercise.restSets ?? null;
-    const restBetweenRepsValue = exercise.defaultRestBetweenReps ?? exercise.restReps ?? null;
-    const sideValue = exercise.side || exercise.exerciseSide;
     const duplicatedExerciseName = getNextExerciseCopyName(exercise.name, organizationExerciseNames);
+    const exerciseWithLoad = exercise as typeof exercise & {
+      defaultLoad?: {
+        loadWeightKg?: number | null;
+        value?: number | null;
+        unit?: string | null;
+      } | null;
+    };
+    const loadKg = resolveLoadKg(exerciseWithLoad.defaultLoad) ?? null;
 
     try {
       const result = await createExercise({
-        variables: {
+        variables: buildCreateExerciseVariables({
           organizationId,
-          scope: 'ORGANIZATION',
-          name: duplicatedExerciseName,
-          description: (exercise.patientDescription || exercise.description || '').trim(),
-          type: exercise.type || 'reps',
-          sets: setsValue,
-          reps: repsValue,
-          duration: durationValue,
-          restSets: restBetweenSetsValue,
-          restReps: restBetweenRepsValue,
-          preparationTime: exercise.preparationTime ?? null,
-          executionTime: exercise.defaultExecutionTime ?? exercise.executionTime ?? null,
-          videoUrl: exercise.videoUrl || null,
-          images: exercise.images?.length ? exercise.images : null,
-          notes: exercise.notes || null,
-          exerciseSide: sideValue && sideValue !== 'none' ? sideValue : null,
-          mainTags: normalizeTagIds(exercise.mainTags),
-          additionalTags: normalizeTagIds(exercise.additionalTags),
-          tempo: exercise.tempo || null,
-          clinicalDescription: exercise.clinicalDescription || null,
-          audioCue: (exercise as { audioCue?: string }).audioCue || null,
-          rangeOfMotion: (exercise as { rangeOfMotion?: string }).rangeOfMotion || null,
-          isActive: true,
-        },
+          draft: {
+            name: duplicatedExerciseName,
+            patientDescription: exercise.patientDescription || exercise.description || '',
+            clinicalDescription: exercise.clinicalDescription,
+            notes: exercise.notes,
+            audioCue: exercise.audioCue,
+            tempo: exercise.tempo,
+            rangeOfMotion: exercise.rangeOfMotion,
+            side: exercise.side || exercise.exerciseSide,
+            difficultyLevel: exercise.difficultyLevel,
+            videoUrl: exercise.videoUrl,
+            sets: exercise.defaultSets ?? exercise.sets ?? null,
+            reps: exercise.defaultReps ?? exercise.reps ?? null,
+            duration: exercise.defaultDuration ?? exercise.duration ?? null,
+            restSets: exercise.defaultRestBetweenSets ?? exercise.restSets ?? null,
+            restReps: exercise.defaultRestBetweenReps ?? exercise.restReps ?? null,
+            preparationTime: exercise.preparationTime ?? null,
+            executionTime: exercise.defaultExecutionTime ?? exercise.executionTime ?? null,
+            loadKg,
+            images: exercise.images?.length ? exercise.images : null,
+            mainTags: normalizeTagIds(exercise.mainTags),
+            additionalTags: normalizeTagIds(exercise.additionalTags),
+          },
+        }),
       });
 
       const duplicatedExerciseId = (result.data as { createExercise?: { id?: string } } | undefined)?.createExercise?.id;
