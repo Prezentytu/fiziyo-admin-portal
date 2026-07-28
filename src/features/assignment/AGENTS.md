@@ -17,7 +17,10 @@ Kroki są dynamiczne zależnie od punktu wejścia:
 ## Model danych i intencja UX
 
 - Użytkownik wybiera zestaw źródłowy (lub tworzy od zera).
-- Użytkownik personalizuje nazwę planu i ćwiczenia.
+- Użytkownik personalizuje nazwę planu i **wszystkie** parametry ćwiczenia (`cardSurface="patientPlan"`).
+- Dawkowanie (sets/reps/tempo/load/…) → mapping `PATIENT_PLAN`.
+- side / ROM / difficulty / opisy / audioCue → JSON `exerciseOverrides` po `assign` (SPEC-021).
+- Nie pokazuj sekcji „Odziedziczone z ćwiczenia” w `customize-set` — tam wszystko jest edytowalne.
 - Podczas `submit` zawsze tworzymy nowy `ExerciseSet(kind: PATIENT_PLAN)` i dopiero ten nowy plan przypisujemy pacjentom.
 - Opcjonalny toggle zapisuje dodatkową, osobną kopię jako zestaw organizacji (`TEMPLATE + ORG_PRIVATE`) bez relacji do pacjentów.
 - Copy w UI musi jasno rozróżniać:

@@ -213,8 +213,10 @@ Open → Closed → Invoiced → Paid
 Pozycja ćwiczenia w zestawie z opcjonalnymi nadpisaniami parametrów:
 
 - `ExerciseSetId`, `ExerciseId`, `Order`
-- Nadpisania: `Sets`, `Reps`, `Duration`, `ExecutionTime`, `RestSets`, `RestReps`, `Tempo`, `Load` (JSONB)
+- Nadpisania: `Sets`, `Reps`, `Duration`, `ExecutionTime`, `RestSets`, `RestReps`, `PreparationTime`, `Tempo`, `Load` (JSONB)
 - Custom: `Notes`, `CustomName` (200), `CustomDescription` (4000)
+- Brak na mappingu (tylko z `Exercise` + opcjonalnie `PatientAssignment.exerciseOverrides`): `Side`, `RangeOfMotion`, `DifficultyLevel`, opisy/audioCue
+- Personalizacja przy assign (SPEC-021): dawkowanie → `ExerciseSetMapping` na `PATIENT_PLAN`; side/ROM/difficulty/teksty → JSON `exerciseOverrides` (`persistence: assignmentOverride`)
 
 ### PatientAssignment
 

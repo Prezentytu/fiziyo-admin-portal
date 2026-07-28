@@ -20,10 +20,18 @@ import {
   EXERCISE_FIELD_METADATA,
   HIDE_EXERCISE_TAGS,
   INLINE_EXERCISE_FIELD_ORDER,
+  formatDifficultyLabel,
   formatFieldValueWithPlaceholder,
+  formatSideLabel,
 } from './displayRegistry';
-import { MAPPING_ONLY_FIELD_CONFIG } from './fieldContract';
+import {
+  DIFFICULTY_OPTIONS,
+  MAPPING_ONLY_FIELD_CONFIG,
+  SIDE_OPTIONS,
+  getInheritedFieldKeys,
+} from './fieldContract';
 import { ExercisePreviewDialog } from './ExercisePreviewDialog';
+import type { ExerciseExecutionCardSurface } from './types';
 
 function EditableFieldLabel({
   label,
@@ -77,6 +85,7 @@ export function ExerciseExecutionCard({
   exercise,
   viewVariant = 'compact',
   hideTimerBadge = false,
+  surface = 'mapping',
   editableFields,
   expanded: controlledExpanded,
   defaultExpanded = false,
@@ -204,6 +213,18 @@ export function ExerciseExecutionCard({
     min: 0,
     max: 3600,
   });
+  const {
+    draftValue: preparationTimeDraft,
+    handleChange: handlePreparationTimeChange,
+    handleFocus: handlePreparationTimeFocus,
+    handleBlur: handlePreparationTimeBlur,
+    handleKeyDown: handlePreparationTimeKeyDown,
+  } = useOptionalNumericDraft({
+    value: exercise.preparationTime,
+    onCommit: (value) => handleChange({ preparationTime: value }),
+    min: 0,
+    max: 300,
+  });
   const setsField = EXERCISE_FIELD_METADATA.sets;
   const repsField = EXERCISE_FIELD_METADATA.reps;
   const executionTimeField = EXERCISE_FIELD_METADATA.executionTime;
@@ -213,20 +234,52 @@ export function ExerciseExecutionCard({
   const restRepsField = EXERCISE_FIELD_METADATA.restReps;
   const durationField = EXERCISE_FIELD_METADATA.duration;
   const tempoField = EXERCISE_FIELD_METADATA.tempo;
+  const preparationTimeField = EXERCISE_FIELD_METADATA.preparationTime;
   const customNameConfig = MAPPING_ONLY_FIELD_CONFIG.customName;
   const customDescriptionConfig = MAPPING_ONLY_FIELD_CONFIG.customDescription;
+  const sideField = EXERCISE_FIELD_METADATA.side;
+  const rangeOfMotionField = EXERCISE_FIELD_METADATA.rangeOfMotion;
+  const difficultyField = EXERCISE_FIELD_METADATA.difficultyLevel;
+  const patientDescriptionField = EXERCISE_FIELD_METADATA.patientDescription;
+  const clinicalDescriptionField = EXERCISE_FIELD_METADATA.clinicalDescription;
+  const audioCueField = EXERCISE_FIELD_METADATA.audioCue;
+  const cardSurface: ExerciseExecutionCardSurface = surface;
+  const inheritedFieldKeys = useMemo(
+    () => getInheritedFieldKeys(cardSurface),
+    [cardSurface]
+  );
+  const showInheritedSection = cardSurface === 'mapping' && inheritedFieldKeys.length > 0;
+  const showPatientPlanClinicalFields = cardSurface === 'patientPlan' && canEdit;
+  const exerciseTemplateHref = exercise.sourceExerciseId
+    ? `/exercises/${exercise.sourceExerciseId}`
+    : undefined;
+  const patientPlanEditableSourceKeys = useMemo(
+    () =>
+      new Set([
+        'side',
+        'rangeOfMotion',
+        'difficultyLevel',
+        'patientDescription',
+        'clinicalDescription',
+        'audioCue',
+      ]),
+    []
+  );
   const inlineSourceFields = useMemo(
     () =>
       INLINE_EXERCISE_FIELD_ORDER.map((fieldKey) => {
         const field = EXERCISE_FIELD_METADATA[fieldKey];
         if (!field.isInlineVisible) return null;
+        if (cardSurface === 'patientPlan' && patientPlanEditableSourceKeys.has(fieldKey)) {
+          return null;
+        }
         const value = formatFieldValueWithPlaceholder(field, exercise, field.group === 'content' ? 'Nie ustawiono' : '—');
         return { field, value };
       }).filter(
         (fieldData): fieldData is { field: (typeof EXERCISE_FIELD_METADATA)[keyof typeof EXERCISE_FIELD_METADATA]; value: string } =>
           fieldData !== null
       ),
-    [exercise]
+    [exercise, cardSurface, patientPlanEditableSourceKeys]
   );
   const handlePreviewTrigger = useCallback(() => {
     if (onPreview) {
@@ -306,9 +359,10 @@ export function ExerciseExecutionCard({
                   <LabeledStepper
                     value={exercise.sets}
                     onChange={(v) => handleChange({ sets: v })}
-                    label="SERIE"
+                    label={setsField.label}
                     infoTooltip={setsField.tooltip}
                     infoTestId={`${testId}-help-sets`}
+                    inputTestId={`${testId}-sets-input`}
                     min={1}
                     max={20}
                     disabled={!canEditField('sets')}
@@ -316,9 +370,10 @@ export function ExerciseExecutionCard({
                   <LabeledStepper
                     value={exercise.reps}
                     onChange={(v) => handleChange({ reps: v })}
-                    label="POWT."
+                    label={repsField.label}
                     infoTooltip={repsField.tooltip}
                     infoTestId={`${testId}-help-reps`}
+                    inputTestId={`${testId}-reps-input`}
                     min={1}
                     max={100}
                     disabled={!canEditField('reps')}
@@ -684,10 +739,205 @@ export function ExerciseExecutionCard({
                         data-testid={`${testId}-tempo-input`}
                       />
                     </div>
-                    <p className="sm:col-span-2 text-[11px] text-muted-foreground">
-                      Strona ciała i czas przygotowania dziedziczone są z szablonu ćwiczenia (brak
-                      persystencji na poziomie zestawu).
-                    </p>
+                    <div>
+                      <EditableFieldLabel
+                        htmlFor={`${testId}-preparation-time-input`}
+                        label={`${preparationTimeField.label} (s)`}
+                        tooltip={preparationTimeField.tooltip}
+                        testId={`${testId}-help-preparationTime`}
+                      />
+                      <Input
+                        id={`${testId}-preparation-time-input`}
+                        type="number"
+                        min={0}
+                        max={300}
+                        value={preparationTimeDraft}
+                        onChange={(e) => handlePreparationTimeChange(e.target.value)}
+                        onFocus={handlePreparationTimeFocus}
+                        onBlur={handlePreparationTimeBlur}
+                        onKeyDown={handlePreparationTimeKeyDown}
+                        className="h-9 bg-surface-light border-border/50"
+                        disabled={!canEditField('preparationTime')}
+                        data-testid={`${testId}-preparation-time-input`}
+                      />
+                    </div>
+                    {showInheritedSection ? (
+                      <div
+                        className="sm:col-span-2 space-y-2 rounded-lg border border-border/40 bg-surface-light/40 p-3"
+                        data-testid={`${testId}-inherited-section`}
+                      >
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                            Odziedziczone z ćwiczenia
+                          </p>
+                          {exerciseTemplateHref ? (
+                            <a
+                              href={exerciseTemplateHref}
+                              className="text-[11px] font-medium text-primary hover:underline"
+                              data-testid={`${testId}-edit-template-link`}
+                            >
+                              Edytuj w ćwiczeniu
+                            </a>
+                          ) : null}
+                        </div>
+                        <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
+                          {(['side', 'rangeOfMotion', 'difficultyLevel'] as const).map((fieldKey) => {
+                            if (!inheritedFieldKeys.includes(fieldKey)) {
+                              return null;
+                            }
+                            let displayValue = '—';
+                            if (fieldKey === 'side') {
+                              displayValue = formatSideLabel(exercise.side) || '—';
+                            } else if (fieldKey === 'difficultyLevel') {
+                              displayValue = formatDifficultyLabel(exercise.difficultyLevel) || '—';
+                            } else {
+                              displayValue = exercise.rangeOfMotion?.trim() || '—';
+                            }
+                            return (
+                              <div
+                                key={fieldKey}
+                                className="rounded-md border border-border/30 bg-background/60 px-2.5 py-2"
+                                data-testid={`${testId}-inherited-${fieldKey}`}
+                              >
+                                <div className="mb-1 flex items-center gap-1.5">
+                                  <span className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground/70">
+                                    {EXERCISE_FIELD_METADATA[fieldKey].label}
+                                  </span>
+                                  <span className="rounded bg-muted px-1.5 py-0.5 text-[9px] font-medium text-muted-foreground">
+                                    odziedziczone
+                                  </span>
+                                </div>
+                                <p className="text-sm text-foreground">{displayValue}</p>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ) : null}
+                    {showPatientPlanClinicalFields ? (
+                      <>
+                        <div>
+                          <EditableFieldLabel
+                            htmlFor={`${testId}-side-select`}
+                            label={sideField.label}
+                            tooltip={sideField.tooltip}
+                            testId={`${testId}-help-side`}
+                          />
+                          <select
+                            id={`${testId}-side-select`}
+                            value={exercise.side ?? 'none'}
+                            onChange={(event) => handleChange({ side: event.target.value })}
+                            className="flex h-9 w-full rounded-md border border-border/50 bg-surface-light px-3 text-sm text-foreground"
+                            disabled={!canEditField('side')}
+                            data-testid={`${testId}-side-select`}
+                          >
+                            {SIDE_OPTIONS.map((option) => (
+                              <option key={option.value} value={option.value}>
+                                {option.label}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                        <div>
+                          <EditableFieldLabel
+                            htmlFor={`${testId}-difficulty-select`}
+                            label={difficultyField.label}
+                            tooltip={difficultyField.tooltip}
+                            testId={`${testId}-help-difficulty`}
+                          />
+                          <select
+                            id={`${testId}-difficulty-select`}
+                            value={exercise.difficultyLevel ?? 'UNKNOWN'}
+                            onChange={(event) =>
+                              handleChange({ difficultyLevel: event.target.value })
+                            }
+                            className="flex h-9 w-full rounded-md border border-border/50 bg-surface-light px-3 text-sm text-foreground"
+                            disabled={!canEditField('difficultyLevel')}
+                            data-testid={`${testId}-difficulty-select`}
+                          >
+                            {DIFFICULTY_OPTIONS.map((option) => (
+                              <option key={option.value} value={option.value}>
+                                {option.label}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                        <div className="sm:col-span-2">
+                          <EditableFieldLabel
+                            htmlFor={`${testId}-rom-input`}
+                            label={rangeOfMotionField.label}
+                            tooltip={rangeOfMotionField.tooltip}
+                            testId={`${testId}-help-rangeOfMotion`}
+                          />
+                          <Input
+                            id={`${testId}-rom-input`}
+                            placeholder="np. 0–90°"
+                            value={exercise.rangeOfMotion ?? ''}
+                            onChange={(event) =>
+                              handleChange({ rangeOfMotion: event.target.value })
+                            }
+                            className="h-9 bg-surface-light border-border/50"
+                            disabled={!canEditField('rangeOfMotion')}
+                            data-testid={`${testId}-rom-input`}
+                          />
+                        </div>
+                        <div className="sm:col-span-2">
+                          <EditableFieldLabel
+                            htmlFor={`${testId}-patient-description-input`}
+                            label={patientDescriptionField.label}
+                            tooltip={patientDescriptionField.tooltip}
+                            testId={`${testId}-help-patientDescription`}
+                          />
+                          <Textarea
+                            id={`${testId}-patient-description-input`}
+                            placeholder="Opis widoczny dla pacjenta"
+                            value={exercise.patientDescription ?? ''}
+                            onChange={(event) =>
+                              handleChange({ patientDescription: event.target.value })
+                            }
+                            className="min-h-[60px] resize-none bg-surface-light border-border/50"
+                            disabled={!canEditField('patientDescription')}
+                            data-testid={`${testId}-patient-description-input`}
+                          />
+                        </div>
+                        <div className="sm:col-span-2">
+                          <EditableFieldLabel
+                            htmlFor={`${testId}-clinical-description-input`}
+                            label={clinicalDescriptionField.label}
+                            tooltip={clinicalDescriptionField.tooltip}
+                            testId={`${testId}-help-clinicalDescription`}
+                          />
+                          <Textarea
+                            id={`${testId}-clinical-description-input`}
+                            placeholder="Notatki kliniczne"
+                            value={exercise.clinicalDescription ?? ''}
+                            onChange={(event) =>
+                              handleChange({ clinicalDescription: event.target.value })
+                            }
+                            className="min-h-[60px] resize-none bg-surface-light border-border/50"
+                            disabled={!canEditField('clinicalDescription')}
+                            data-testid={`${testId}-clinical-description-input`}
+                          />
+                        </div>
+                        <div className="sm:col-span-2">
+                          <EditableFieldLabel
+                            htmlFor={`${testId}-audio-cue-input`}
+                            label={audioCueField.label}
+                            tooltip={audioCueField.tooltip}
+                            testId={`${testId}-help-audioCue`}
+                          />
+                          <Input
+                            id={`${testId}-audio-cue-input`}
+                            placeholder="np. Wdech przy wznosie"
+                            value={exercise.audioCue ?? ''}
+                            onChange={(event) => handleChange({ audioCue: event.target.value })}
+                            className="h-9 bg-surface-light border-border/50"
+                            disabled={!canEditField('audioCue')}
+                            data-testid={`${testId}-audio-cue-input`}
+                          />
+                        </div>
+                      </>
+                    ) : null}
                     <div className="sm:col-span-2">
                       <EditableFieldLabel
                         htmlFor={`${testId}-custom-name-input`}

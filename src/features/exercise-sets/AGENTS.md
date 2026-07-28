@@ -21,8 +21,8 @@ Mapowanie ćwiczenia do zestawu. Pola NULL = wartość z Exercise.
 | `Notes`             | string?        | Notatka                              | Notatka                |
 | `CustomName`        | string? (200)  | Własna nazwa                         | Własna nazwa           |
 | `CustomDescription` | string? (4000) | Własny opis                          | Własny opis            |
-| `Side`              | ExerciseSide?  | **TODO: backend**                    | Strona ciała           |
-| `PreparationTime`   | decimal?       | **TODO: backend**                    | Czas przygotowania     |
+| `Side`              | ExerciseSide?  | Brak w mutacji mappingu — inherited  | Strona ciała           |
+| `PreparationTime`   | decimal?       | Nadpisanie na mappingu (GraphQL)     | Czas przygotowania     |
 
 ## Schemat: ExerciseSet
 
@@ -61,10 +61,11 @@ Legacy `type/value/unit/text` nadal w mutacjach (dual-write). Helper: `src/utils
 
 TIER 1: Serie, Powtórzenia, Czas powtórzenia
 TIER 2: Przerwa między seriami, Obciążenie
-TIER 3: Notatka, Tempo
+TIER 3: Notatka, Tempo, Czas przygotowania
 TIER 4: Przerwa między powt., Czas serii (`duration`), Własna nazwa/opis
 
-`Side` i `PreparationTime` na mappingu są **inherited** (readonly z szablonu) — backend TODO; nie renderować jako input w `ExerciseExecutionCard` / `EditExerciseInSetDialog`.
+`Side`, `rangeOfMotion`, `difficultyLevel` na mappingu są **inherited/none** (readonly z szablonu — brak argumentu w mutacji mappingu). Pokazuj wartości + link „Edytuj w ćwiczeniu”, nie input.
+Precedencja odczytu: `resolveEffectiveExerciseParams` (override > mapping > szablon).
 
 ## Referencje
 

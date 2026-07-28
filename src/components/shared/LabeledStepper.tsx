@@ -17,6 +17,8 @@ interface LabeledStepperProps {
   readonly className?: string;
   readonly infoTooltip?: string;
   readonly infoTestId?: string;
+  /** Additive field-specific test id for the value input (legacy `stepper-input` stays). */
+  readonly inputTestId?: string;
 }
 
 /**
@@ -37,6 +39,7 @@ export function LabeledStepper({
   className,
   infoTooltip,
   infoTestId,
+  inputTestId,
 }: LabeledStepperProps) {
   const {
     draftValue,
@@ -105,7 +108,7 @@ export function LabeledStepper({
                 'disabled:opacity-40 disabled:cursor-not-allowed',
                 '[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none'
               )}
-              data-testid="stepper-input"
+              data-testid={inputTestId ?? 'stepper-input'}
             />
             {suffix ? (
               <span className="shrink-0 text-sm font-medium leading-none tabular-nums text-muted-foreground/60">

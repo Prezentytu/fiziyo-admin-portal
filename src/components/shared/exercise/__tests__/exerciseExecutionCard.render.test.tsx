@@ -51,14 +51,16 @@ describe('ExerciseExecutionCard inline read-only source info', () => {
     expect(screen.getByTestId('exercise-card-exercise-1-help-notes')).toBeInTheDocument();
     expect(screen.getByTestId('exercise-card-exercise-1-help-restReps')).toBeInTheDocument();
     expect(screen.getByTestId('exercise-card-exercise-1-help-tempo')).toBeInTheDocument();
-    // side / preparationTime: inherited from template (not editable on mapping)
-    expect(screen.queryByTestId('exercise-card-exercise-1-help-preparationTime')).not.toBeInTheDocument();
-    expect(screen.queryByTestId('exercise-card-exercise-1-help-side')).not.toBeInTheDocument();
+    expect(screen.getByTestId('exercise-card-exercise-1-help-preparationTime')).toBeInTheDocument();
+    expect(screen.getByTestId('exercise-card-exercise-1-inherited-section')).toBeInTheDocument();
+    expect(screen.getByTestId('exercise-card-exercise-1-inherited-side')).toBeInTheDocument();
+    expect(screen.getByTestId('exercise-card-exercise-1-inherited-rangeOfMotion')).toBeInTheDocument();
+    expect(screen.getByTestId('exercise-card-exercise-1-inherited-difficultyLevel')).toBeInTheDocument();
     expect(screen.getByTestId('exercise-card-exercise-1-help-customName')).toBeInTheDocument();
     expect(screen.getByTestId('exercise-card-exercise-1-help-customDescription')).toBeInTheDocument();
     expect(screen.getByTestId('exercise-card-exercise-1-open-details-btn')).toBeInTheDocument();
     expect(screen.getByText('Obciążenie')).toBeInTheDocument();
-    expect(screen.getByText(/dziedziczone są z szablonu/i)).toBeInTheDocument();
+    expect(screen.getByText('Odziedziczone z ćwiczenia')).toBeInTheDocument();
     expect(screen.queryByText('nogi')).not.toBeInTheDocument();
     expect(screen.getByText('9 min 35 s')).toBeInTheDocument();
 

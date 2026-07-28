@@ -48,15 +48,33 @@ describe('fieldContract', () => {
     expect(rule.safeParse('Unknown').success).toBe(false);
   });
 
-  it('getFieldsForSurface(mapping) pomija pola inherited (side, preparationTime)', () => {
+  it('getFieldsForSurface(mapping) pomija pola inherited/none, zawiera preparationTime', () => {
     const mappingKeys = getFieldsForSurface('mapping').map((config) => config.key);
     expect(mappingKeys).not.toContain('side');
-    expect(mappingKeys).not.toContain('preparationTime');
     expect(mappingKeys).not.toContain('difficultyLevel');
+    expect(mappingKeys).not.toContain('rangeOfMotion');
+    expect(mappingKeys).toContain('preparationTime');
     expect(mappingKeys).toContain('sets');
     expect(mappingKeys).toContain('executionTime');
     expect(mappingKeys).toContain('duration');
     expect(mappingKeys).toContain('load');
+  });
+
+  it('getFieldsForSurface(patientPlan) zawiera side/ROM/difficulty i dawkowanie', () => {
+    const patientPlanKeys = getFieldsForSurface('patientPlan').map((config) => config.key);
+    expect(patientPlanKeys).toContain('sets');
+    expect(patientPlanKeys).toContain('side');
+    expect(patientPlanKeys).toContain('rangeOfMotion');
+    expect(patientPlanKeys).toContain('difficultyLevel');
+    expect(patientPlanKeys).toContain('patientDescription');
+  });
+
+  it('każde pole ma persistence mapping|assignmentOverride|templateOnly', () => {
+    for (const key of ALL_EXERCISE_FIELD_KEYS) {
+      expect(['mapping', 'assignmentOverride', 'templateOnly']).toContain(
+        EXERCISE_FIELD_EDIT_CONFIG[key].persistence
+      );
+    }
   });
 
   it('każde pole PARAMETER_EDITOR ma kanoniczny data-testid', () => {

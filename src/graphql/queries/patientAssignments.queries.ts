@@ -75,11 +75,24 @@ export const PATIENT_ASSIGNMENT_FULL_FRAGMENT = gql`
         duration
         restSets
         restReps
+        preparationTime
         executionTime
         tempo
         notes
         customName
         customDescription
+        loadType
+        loadValue
+        loadUnit
+        loadText
+        load {
+          loadWeightKg
+          loadSource
+          type
+          value
+          unit
+          text
+        }
         exercise {
           id
           name
@@ -89,9 +102,14 @@ export const PATIENT_ASSIGNMENT_FULL_FRAGMENT = gql`
           images
           thumbnailUrl
           patientDescription
+          clinicalDescription
+          audioCue
           notes
           videoUrl
           preparationTime
+          rangeOfMotion
+          difficultyLevel
+          tempo
           defaultExecutionTime
           defaultSets
           defaultReps
@@ -110,6 +128,8 @@ export const PATIENT_ASSIGNMENT_FULL_FRAGMENT = gql`
       images
       thumbnailUrl
       patientDescription
+      clinicalDescription
+      audioCue
       notes
       videoUrl
       preparationTime
@@ -290,11 +310,24 @@ export const PATIENT_ASSIGNMENT_DETAILS_FRAGMENT = gql`
         duration
         restSets
         restReps
+        preparationTime
         executionTime
         tempo
         notes
         customName
         customDescription
+        loadType
+        loadValue
+        loadUnit
+        loadText
+        load {
+          loadWeightKg
+          loadSource
+          type
+          value
+          unit
+          text
+        }
         exercise {
           id
           name
@@ -304,9 +337,14 @@ export const PATIENT_ASSIGNMENT_DETAILS_FRAGMENT = gql`
           images
           thumbnailUrl
           patientDescription
+          clinicalDescription
+          audioCue
           notes
           videoUrl
           preparationTime
+          rangeOfMotion
+          difficultyLevel
+          tempo
           defaultExecutionTime
           defaultSets
           defaultReps
@@ -325,6 +363,8 @@ export const PATIENT_ASSIGNMENT_DETAILS_FRAGMENT = gql`
       images
       thumbnailUrl
       patientDescription
+      clinicalDescription
+      audioCue
       notes
       videoUrl
       preparationTime

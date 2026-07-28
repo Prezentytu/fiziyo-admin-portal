@@ -689,6 +689,8 @@ export const UPDATE_EXERCISE_IN_SET_MUTATION = gql`
       duration
       restSets
       restReps
+      preparationTime
+      executionTime
       notes
       customName
       customDescription
@@ -832,6 +834,8 @@ export const ADD_EXERCISE_TO_EXERCISE_SET_MUTATION = gql`
       duration
       restSets
       restReps
+      preparationTime
+      executionTime
       notes
       customName
       customDescription

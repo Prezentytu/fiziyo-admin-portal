@@ -14,6 +14,22 @@ Dziennik wniosków z pracy AI agentów. Po każdej korekcie dodaj nowy wpis.
 
 ## Wpisy
 
+### 2026-07-28 - Pole bez kolumny na mappingu ≠ readonly przy pacjencie
+
+- **Kategoria**: `GraphQL` | `React` | `UI/UX`
+- **Problem**: Sekcja „Odziedziczone z ćwiczenia” blokowała side/ROM/difficulty w wizardzie assign, mimo że warstwa `exerciseOverrides` już umiała trzymać część tych pól.
+- **Przyczyna**: `fieldContract.mappingMode` mówił tylko „mapping tego nie zapisze”, bez routingu „więc leć do override”. Wizard wyrzucał `mapping.id` i `assignment.id` przy create.
+- **Rozwiązanie**: `FieldPersistence` + powierzchnia `patientPlan` + `exercisePersonalizationWriter` + zapis override po assign (SPEC-021).
+- **Reguła**: Brak argumentu w mutacji mappingu nie oznacza readonly w kontekście pacjenta — sprawdź warstwę `assignmentOverride`. Jedna tabela routingu (`persistence`) steruje zapisem; UI derywuje edytowalność z powierzchni, nie z lokalnych ifów.
+
+### 2026-07-28 - Parity write/read: pole w mutacji bez ścieżki odczytu to bug
+
+- **Kategoria**: `GraphQL` | `React`
+- **Problem**: `EditExerciseOverrideDialog` zapisywał tempo/load/ROM/side, ale `getEffectiveParams` i `fromExerciseMapping` ich nie czytały; mutacja mappingu przyjmowała `executionTime`/`preparationTime`, a selection set ich nie zwracał → stale cache.
+- **Przyczyna**: Rozszerzono zapis bez równoległego rozszerzenia adapterów, query i UI odczytu.
+- **Rozwiązanie**: `resolveEffectiveExerciseParams` (override > mapping > szablon), wspólny typ `ExerciseOverrideFields`, uzupełnione selection sety/fragmenty, karta pacjenta na `ExerciseExecutionCard`.
+- **Reguła**: Pole dodane do zapisu bez ścieżki odczytu (query + adapter + UI) to bug, nie funkcja. Parity write/read jest częścią definicji ukończenia; precedencja wartości w jednej czystej funkcji, nie w lokalnych `??`.
+
 ### 2026-07-28 - UI copy: nigdy „dawkowanie”, zawsze „podstawowe parametry”
 
 - **Kategoria**: `UI/UX`

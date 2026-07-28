@@ -38,9 +38,13 @@ import { GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY } from '@/graphql/queries/patient
 import { useExerciseImageGeneration } from '@/features/exercises/useExerciseImageGeneration';
 import { ImageStylePicker } from '@/features/exercises/ImageStylePicker';
 import {
+  DIFFICULTY_OPTIONS,
   ENABLE_EXTENDED_PATIENT_OVERRIDE_FIELDS,
+  ENABLE_FULL_PATIENT_PERSONALIZATION,
   EXERCISE_FIELD_METADATA,
   SIDE_OPTIONS,
+  buildOverrideDelta,
+  replaceOverrideMapEntry,
 } from '@/components/shared/exercise';
 import type { PatientAssignment, ExerciseMapping, ExerciseOverride } from './PatientAssignmentCard';
 
@@ -172,9 +176,14 @@ function EditExerciseOverrideDialogContent({
   const inheritedTempo = mapping.tempo ?? '';
   const inheritedLoadKg =
     mapping.loadUnit === 'kg' && mapping.loadValue != null ? mapping.loadValue : null;
-  const inheritedRom = '';
+  const inheritedRom = exercise?.rangeOfMotion ?? '';
   const exerciseSideValue = exercise?.side?.toLowerCase() || exercise?.exerciseSide;
   const inheritedExerciseSide = exerciseSideValue ?? 'none';
+  const inheritedDifficulty = exercise?.difficultyLevel ?? 'UNKNOWN';
+  const inheritedPatientDescription =
+    exercise?.patientDescription ?? exercise?.description ?? '';
+  const inheritedClinicalDescription = exercise?.clinicalDescription ?? '';
+  const inheritedAudioCue = exercise?.audioCue ?? '';
 
   const initialSets = currentOverride?.sets ?? inheritedSets;
   const initialReps = currentOverride?.reps ?? inheritedReps;
@@ -195,6 +204,12 @@ function EditExerciseOverrideDialogContent({
     '';
   const initialNotes = currentOverride?.notes ?? mapping.notes ?? '';
   const initialExerciseSide = currentOverride?.exerciseSide ?? inheritedExerciseSide;
+  const initialDifficultyLevel = currentOverride?.difficultyLevel ?? inheritedDifficulty;
+  const initialPatientDescription =
+    currentOverride?.patientDescription ?? inheritedPatientDescription;
+  const initialClinicalDescription =
+    currentOverride?.clinicalDescription ?? inheritedClinicalDescription;
+  const initialAudioCue = currentOverride?.audioCue ?? inheritedAudioCue;
   const initialCustomImages = currentOverride?.customImages ?? [];
 
   const [sets, setSets] = useState<number>(initialSets);
@@ -211,6 +226,10 @@ function EditExerciseOverrideDialogContent({
   const [customDescription, setCustomDescription] = useState(initialCustomDescription);
   const [notes, setNotes] = useState(initialNotes);
   const [exerciseSide, setExerciseSide] = useState(initialExerciseSide);
+  const [difficultyLevel, setDifficultyLevel] = useState(initialDifficultyLevel);
+  const [patientDescription, setPatientDescription] = useState(initialPatientDescription);
+  const [clinicalDescription, setClinicalDescription] = useState(initialClinicalDescription);
+  const [audioCue, setAudioCue] = useState(initialAudioCue);
   const [customImages, setCustomImages] = useState<string[]>(initialCustomImages);
   const {
     generate: generateExerciseImage,
@@ -298,6 +317,10 @@ function EditExerciseOverrideDialogContent({
     customDescription !== initialCustomDescription ||
     notes !== initialNotes ||
     exerciseSide !== initialExerciseSide ||
+    difficultyLevel !== initialDifficultyLevel ||
+    patientDescription !== initialPatientDescription ||
+    clinicalDescription !== initialClinicalDescription ||
+    audioCue !== initialAudioCue ||
     JSON.stringify(customImages) !== JSON.stringify(initialCustomImages);
 
   // Notify parent
@@ -376,92 +399,81 @@ function EditExerciseOverrideDialogContent({
 
   const handleSave = async () => {
     try {
-      // Parse existing overrides
-      let existingOverrides: Record<string, ExerciseOverride> = {};
-      if (assignment.exerciseOverrides) {
-        try {
-          existingOverrides = JSON.parse(assignment.exerciseOverrides);
-        } catch {
-          existingOverrides = {};
+      const newOverride = buildOverrideDelta(
+        {
+          sets: inheritedSets,
+          reps: inheritedReps,
+          duration: inheritedDuration,
+          executionTime: inheritedExecutionTime,
+          restSets: inheritedRestSets,
+          restReps: inheritedRestReps,
+          preparationTime: inheritedPreparationTime,
+          tempo: inheritedTempo,
+          loadKg: inheritedLoadKg ?? undefined,
+          loadWeightKg: inheritedLoadKg ?? undefined,
+          rangeOfMotion: inheritedRom,
+          customName: mapping.customName ?? '',
+          customDescription:
+            mapping.customDescription ??
+            exercise?.patientDescription ??
+            exercise?.description ??
+            '',
+          notes: mapping.notes ?? '',
+          side: inheritedExerciseSide,
+          exerciseSide: inheritedExerciseSide,
+          difficultyLevel: inheritedDifficulty,
+          patientDescription: inheritedPatientDescription,
+          clinicalDescription: inheritedClinicalDescription,
+          audioCue: inheritedAudioCue,
+          customImages: [],
+        },
+        {
+          sets,
+          reps,
+          duration,
+          executionTime,
+          restSets,
+          restReps,
+          ...(ENABLE_EXTENDED_PATIENT_OVERRIDE_FIELDS
+            ? {
+                preparationTime,
+                tempo,
+                loadKg,
+                loadWeightKg: loadKg,
+                rangeOfMotion,
+              }
+            : {}),
+          customName,
+          customDescription,
+          notes,
+          exerciseSide,
+          side: exerciseSide,
+          ...(ENABLE_FULL_PATIENT_PERSONALIZATION
+            ? {
+                difficultyLevel,
+                patientDescription,
+                clinicalDescription,
+                audioCue,
+              }
+            : {}),
+          customImages,
         }
-      }
+      );
 
-      // Build new override - only include non-default values
-      const newOverride: ExerciseOverride = {};
-
-      // Only save if different from mapping/exercise defaults
-      const exerciseDefaults = mapping.exercise;
-      const mappingDefaults = mapping;
-
-      if (sets !== (mappingDefaults.sets ?? exerciseDefaults?.sets ?? 0)) {
-        newOverride.sets = sets;
-      }
-      if (reps !== (mappingDefaults.reps ?? exerciseDefaults?.reps ?? 0)) {
-        newOverride.reps = reps;
-      }
-      if (duration !== (mappingDefaults.duration ?? exerciseDefaults?.duration ?? 0)) {
-        newOverride.duration = duration;
-      }
-      if (executionTime !== (mappingDefaults.executionTime ?? exerciseDefaults?.defaultExecutionTime ?? 0)) {
-        newOverride.executionTime = executionTime;
-      }
-      if (restSets !== (mappingDefaults.restSets ?? 0)) {
-        newOverride.restSets = restSets;
-      }
-      if (restReps !== (mappingDefaults.restReps ?? 0)) {
-        newOverride.restReps = restReps;
-      }
-      if (ENABLE_EXTENDED_PATIENT_OVERRIDE_FIELDS) {
-        if (preparationTime !== inheritedPreparationTime) {
-          newOverride.preparationTime = preparationTime;
-        }
-        if (tempo !== inheritedTempo) {
-          newOverride.tempo = tempo || undefined;
-        }
-        if (loadKg !== inheritedLoadKg) {
-          newOverride.loadWeightKg = loadKg ?? undefined;
-        }
-        if (rangeOfMotion !== inheritedRom) {
-          newOverride.rangeOfMotion = rangeOfMotion || undefined;
-        }
-      }
-      if (customName && customName !== mappingDefaults.customName) {
-        newOverride.customName = customName;
-      }
-      if (
-        customDescription &&
-        customDescription !== (mappingDefaults.customDescription ?? exerciseDefaults?.description ?? '')
-      ) {
-        newOverride.customDescription = customDescription;
-      }
-      if (notes) {
-        newOverride.notes = notes;
-      }
-      const defaultExerciseSide = exerciseDefaults?.side?.toLowerCase() || exerciseDefaults?.exerciseSide || 'none';
-      if (exerciseSide && exerciseSide !== defaultExerciseSide) {
-        newOverride.exerciseSide = exerciseSide;
-      }
-      if (customImages.length > 0) {
-        newOverride.customImages = customImages;
-      }
-
-      // Preserve hidden status if it exists
-      if (existingOverrides[mapping.id]?.hidden) {
+      if (currentOverride?.hidden) {
         newOverride.hidden = true;
       }
 
-      // Update overrides - remove if empty, otherwise set
-      const updatedOverrides = { ...existingOverrides };
-      if (Object.keys(newOverride).length > 0) {
-        updatedOverrides[mapping.id] = newOverride;
-      } else {
-        delete updatedOverrides[mapping.id];
-      }
+      const exerciseOverrides = replaceOverrideMapEntry(
+        assignment.exerciseOverrides,
+        mapping.id,
+        newOverride
+      );
 
       await updateOverrides({
         variables: {
           assignmentId: assignment.id,
-          exerciseOverrides: JSON.stringify(updatedOverrides),
+          exerciseOverrides,
         },
         refetchQueries: [
           {
@@ -863,6 +875,72 @@ function EditExerciseOverrideDialogContent({
             </div>
             <p className="text-xs text-muted-foreground">{EXERCISE_FIELD_METADATA.side.tooltip}</p>
           </div>
+
+          {ENABLE_FULL_PATIENT_PERSONALIZATION && (
+            <>
+              <Separator />
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label className="text-sm text-muted-foreground">
+                    {EXERCISE_FIELD_METADATA.difficultyLevel.label}
+                    {difficultyLevel === inheritedDifficulty && (
+                      <Badge variant="outline" className="ml-2 text-[10px] font-normal">
+                        odziedziczone
+                      </Badge>
+                    )}
+                  </Label>
+                  <select
+                    value={difficultyLevel}
+                    onChange={(event) => setDifficultyLevel(event.target.value)}
+                    className="flex h-11 w-full rounded-md border border-border bg-background px-3 text-sm"
+                    data-testid="patient-exercise-override-difficulty-select"
+                  >
+                    {DIFFICULTY_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-sm text-muted-foreground">
+                    {EXERCISE_FIELD_METADATA.patientDescription.label}
+                  </Label>
+                  <Textarea
+                    value={patientDescription}
+                    onChange={(event) => setPatientDescription(event.target.value)}
+                    placeholder="Opis widoczny dla pacjenta"
+                    className="min-h-[72px] resize-none"
+                    data-testid="patient-exercise-override-patient-description-input"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-sm text-muted-foreground">
+                    {EXERCISE_FIELD_METADATA.clinicalDescription.label}
+                  </Label>
+                  <Textarea
+                    value={clinicalDescription}
+                    onChange={(event) => setClinicalDescription(event.target.value)}
+                    placeholder="Notatki kliniczne"
+                    className="min-h-[72px] resize-none"
+                    data-testid="patient-exercise-override-clinical-description-input"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-sm text-muted-foreground">
+                    {EXERCISE_FIELD_METADATA.audioCue.label}
+                  </Label>
+                  <Input
+                    value={audioCue}
+                    onChange={(event) => setAudioCue(event.target.value)}
+                    placeholder="np. Wdech przy wznosie"
+                    className="h-11"
+                    data-testid="patient-exercise-override-audio-cue-input"
+                  />
+                </div>
+              </div>
+            </>
+          )}
 
           <Separator />
 

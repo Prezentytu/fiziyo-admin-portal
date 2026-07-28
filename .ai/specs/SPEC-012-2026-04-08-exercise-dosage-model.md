@@ -131,36 +131,42 @@ Kod: `src/components/shared/exercise/fieldContract.ts` (+ `displayRegistry.ts` d
 
 ### Macierz `pole × powierzchnia`
 
-| Pole                  | template      | mapping   | patientOverride       | Uwagi                                     |
-| --------------------- | ------------- | --------- | --------------------- | ----------------------------------------- |
-| `sets`                | edit          | edit      | edit                  | TIER 1                                    |
-| `reps`                | edit          | edit      | edit                  | TIER 1                                    |
-| `executionTime`       | edit          | edit      | edit                  | TIER 1 — timer pacjenta                   |
-| `restSets`            | edit          | edit      | edit                  | TIER 2                                    |
-| `load` / `loadKg`     | edit          | edit      | edit\*                | TIER 2; dual-write kg                     |
-| `restReps`            | edit          | edit      | edit                  | TIER 3 / 4                                |
-| `preparationTime`     | edit          | inherited | edit\*                | Mapping: brak persystencji backend (TODO) |
-| `tempo`               | edit          | edit      | edit\*                | TIER 3                                    |
-| `side`                | edit          | inherited | edit                  | Mapping: brak persystencji backend (TODO) |
-| `rangeOfMotion`       | edit          | —         | edit\*                | Tylko szablon (+ override po gate)        |
-| `difficultyLevel`     | edit          | —         | —                     | Tylko szablon                             |
-| `duration`            | edit (TIER 4) | edit      | edit                  | Legacy/override czasu serii               |
-| `patientDescription`  | edit          | —         | via customDescription |                                           |
-| `clinicalDescription` | edit          | —         | —                     |                                           |
-| `audioCue`            | edit          | —         | —                     |                                           |
-| `notes`               | edit          | edit      | edit                  |                                           |
-| `customName`          | —             | edit      | edit                  | Tylko mapping / override                  |
-| `customDescription`   | —             | edit      | edit                  | Tylko mapping / override                  |
+| Pole                  | template | mapping   | patientOverride | Czytane przez                                | Uwagi                                      |
+| --------------------- | -------- | --------- | --------------- | -------------------------------------------- | ------------------------------------------ |
+| `sets`                | edit     | edit      | edit            | exerciseSets / patientAssignments / adapter  | TIER 1                                     |
+| `reps`                | edit     | edit      | edit            | j.w.                                         | TIER 1                                     |
+| `executionTime`       | edit     | edit      | edit            | j.w. (+ response mutacji mapping)            | TIER 1 — timer pacjenta                    |
+| `restSets`            | edit     | edit      | edit            | j.w.                                         | TIER 2                                     |
+| `load` / `loadKg`     | edit     | edit      | edit\*          | j.w. (load na mappingu w patientAssignments) | TIER 2; JSON override: `loadWeightKg`      |
+| `restReps`            | edit     | edit      | edit            | j.w.                                         | TIER 3 / 4                                 |
+| `preparationTime`     | edit     | edit      | edit\*          | exerciseSets + mapping mutacji; adapter      | Potwierdzone w GraphQL mapping             |
+| `tempo`               | edit     | edit      | edit\*          | j.w.                                         | TIER 3                                     |
+| `side`                | edit     | inherited | edit            | Exercise + override `exerciseSide`           | persistence: assignmentOverride (SPEC-021) |
+| `rangeOfMotion`       | edit     | —         | edit\*          | Exercise + override                          | persistence: assignmentOverride            |
+| `difficultyLevel`     | edit     | —         | edit\*\*        | Exercise + override                          | persistence: assignmentOverride (SPEC-021) |
+| `duration`            | edit     | edit      | edit            | j.w.                                         | TIER 4                                     |
+| `patientDescription`  | edit     | —         | edit\*\*        | Exercise + override                          | persistence: assignmentOverride (SPEC-021) |
+| `clinicalDescription` | edit     | —         | edit\*\*        | Exercise + override                          | persistence: assignmentOverride (SPEC-021) |
+| `audioCue`            | edit     | —         | edit\*\*        | Exercise + override                          | persistence: assignmentOverride (SPEC-021) |
+| `notes`               | edit     | edit      | edit            | j.w.                                         |                                            |
+| `customName`          | —        | edit      | edit            | mapping / override                           |                                            |
+| `customDescription`   | —        | edit      | edit            | mapping / override                           |                                            |
 
-\* Pola oznaczone gwiazdką w `patientOverride` wymagają potwierdzenia odczytu w fizjo-app (JSON `exerciseOverrides`). Do potwierdzenia: feature-flag `ENABLE_EXTENDED_PATIENT_OVERRIDE_FIELDS`.
+\* Pola oznaczone gwiazdką w `patientOverride` wymagają potwierdzenia odczytu w fizjo-app (JSON `exerciseOverrides`). Feature-flag: `ENABLE_EXTENDED_PATIENT_OVERRIDE_FIELDS`.
+\*\* Pełna personalizacja (SPEC-021): `ENABLE_FULL_PATIENT_PERSONALIZATION`. Powierzchnia UI `patientPlan` = mapping ∪ assignmentOverride.
+
+**Precedencja odczytu (SSOT):** `resolveEffectiveExerciseParams` — `override > mapping > szablon`. Pole w mutacji bez ścieżki odczytu = bug.
+
+**Routing zapisu (SPEC-021):** `fieldContract.persistence` ∈ `mapping` \| `assignmentOverride` \| `templateOnly`. Writer: `exercisePersonalizationWriter.ts`.
 
 ### Gate: rozszerzenie JSON `exerciseOverrides`
 
-Nadpisania per pacjent lecą jako JSON przez `UPDATE_PATIENT_EXERCISE_OVERRIDES_MUTATION` i są konsumowane przez fizjo-app. Rozszerzenie o `tempo`, `loadWeightKg` / `load`, `preparationTime`, `rangeOfMotion` jest **zmianą kontraktu cross-repo**.
+Nadpisania per pacjent lecą jako JSON przez `UPDATE_PATIENT_EXERCISE_OVERRIDES_MUTATION` i są konsumowane przez fizjo-app. Rozszerzenie o `tempo`, `loadWeightKg`, `preparationTime`, `rangeOfMotion`, `difficultyLevel`, `patientDescription`, `clinicalDescription`, `audioCue` jest **zmianą kontraktu cross-repo**.
 
-- Kontrakt TypeScript assignment (`src/features/assignment/types.ts` → `ExerciseOverride`) już przewiduje `tempo`, `preparationTime`, `load`.
-- UI pacjenta eksponuje nowe pola dopiero gdy `ENABLE_EXTENDED_PATIENT_OVERRIDE_FIELDS === true` **oraz** mobile potwierdzi odczyt.
-- Klucze JSON (kontrakt cross-repo): `sets`, `reps`, `duration`, `executionTime`, `restSets`, `restReps`, `preparationTime`, `tempo`, `load` / `loadWeightKg`, `rangeOfMotion`, `exerciseSide`, `customName`, `customDescription`, `notes`, `customImages`, `hidden`.
+- SSOT kluczy: `src/components/shared/exercise/exerciseOverride.ts` (`ExerciseOverrideFields`).
+- UI pacjenta eksponuje extended fields gdy `ENABLE_EXTENDED_PATIENT_OVERRIDE_FIELDS === true`.
+- Pełna personalizacja: `ENABLE_FULL_PATIENT_PERSONALIZATION === true`.
+- Klucze JSON: `sets`, `reps`, `duration`, `executionTime`, `restSets`, `restReps`, `preparationTime`, `tempo`, `loadWeightKg`, `rangeOfMotion`, `exerciseSide`, `difficultyLevel`, `patientDescription`, `clinicalDescription`, `audioCue`, `customName`, `customDescription`, `notes`, `customImages`, `hidden`.
 
 ## Data-testid
 
@@ -203,6 +209,12 @@ Nadpisania per pacjent lecą jako JSON przez `UPDATE_PATIENT_EXERCISE_OVERRIDES_
 | Helper czasu: formuła z `restReps` nie regresuje                                                   | Jednostkowy  | High      |
 
 ## Changelog
+
+### 2026-07-28 (Mapping Field Parity)
+
+- Macierz rozszerzona o kolumnę „Czytane przez”; `preparationTime` na mappingu = edit (mutacja + query).
+- SSOT odczytu: `resolveEffectiveExerciseParams` + `ExerciseOverrideFields` (klucze SPEC-012).
+- Mutacje mapping zwracają `preparationTime`/`executionTime`; fragmenty patientAssignments pobierają load.
 
 ### 2026-07-28 (Field Contract)
 

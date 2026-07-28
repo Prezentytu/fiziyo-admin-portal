@@ -237,6 +237,7 @@ export function CustomizeSetStep({
         isCreatingExercise={isCreatingExercise}
         createExerciseTestId="assignment-create-exercise-tile-btn"
         testIdPrefix={testIdPrefix}
+        cardSurface="patientPlan"
       />
       {!onPreviewExercise && (
         <ExerciseDetailsDialog

@@ -70,7 +70,8 @@ export const EMPTY_TEXT_VALUE = 'Nie ustawiono';
 
 const DIFFICULTY_LABELS: Record<string, string> = {
   UNKNOWN: 'Nieokreślony',
-  BEGINNER: 'Początkujący',
+  /** Legacy alias — prefer UNKNOWN in new writes (fieldContract / GraphQL). */
+  BEGINNER: 'Nieokreślony',
   EASY: 'Łatwy',
   MEDIUM: 'Średni',
   HARD: 'Trudny',

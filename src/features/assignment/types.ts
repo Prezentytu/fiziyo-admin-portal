@@ -1,5 +1,7 @@
 // Types for Assignment Wizard
 
+import type { AssignmentExerciseOverride } from '@/components/shared/exercise/exerciseOverride';
+
 /**
  * Strukturalne obciążenie/opór z wsparciem dla analityki.
  * Smart String - parsowane z tekstu użytkownika do struktury JSONB.
@@ -163,34 +165,11 @@ export interface AssignmentEditInput {
   exerciseSet: ExerciseSet;
 }
 
-// Customization overrides for exercises during assignment
-export interface ExerciseOverride {
-  exerciseMappingId: string;
-  // Main parameters
-  sets?: number;
-  reps?: number;
-  duration?: number;
-  // Rest parameters
-  restSets?: number;
-  restReps?: number;
-  // Time parameters
-  preparationTime?: number;
-  executionTime?: number;
-  // Tempo
-  tempo?: string;
-  // Load/Resistance - Smart String
-  load?: ExerciseLoad;
-  // Custom content
-  customName?: string;
-  customDescription?: string;
-  notes?: string;
-  // Media overrides
-  videoUrl?: string;
-  imageUrl?: string;
-  images?: string[];
-  // Visibility - hide exercise from this assignment
-  hidden?: boolean;
-}
+/**
+ * Assignment-wizard override. Field keys match SPEC-012 JSON (loadWeightKg, exerciseSide).
+ * Prefer shared ExerciseOverrideFields for new code.
+ */
+export type ExerciseOverride = AssignmentExerciseOverride;
 
 /**
  * Ghost Copy - lokalna kopia ćwiczenia w RAM.

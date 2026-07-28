@@ -71,6 +71,7 @@ Każda specyfikacja powinna mieć sekcję Changelog na końcu:
 | 017 | [Assignment Display Status](SPEC-017-2026-05-26-assignment-display-status.md)                   | Dynamiczny status przypisania + sygnał Premium               | Aktywny |
 | 019 | [Second Gen Skills Open-Mercato](SPEC-019-2026-06-12-second-gen-skills-open-mercato.md)         | Wykonywalne skille, manifest lint, runy i audyty             | Aktywny |
 | 020 | [AI Image Generation](SPEC-020-2026-07-28-ai-image-generation.md)                               | OpenRouter Image API + kaskada modeli + UX hook              | Aktywny |
+| 021 | [Full Patient Personalization](SPEC-021-2026-07-28-full-patient-personalization.md)             | Routing persystencji + pełna edycja przy assign do pacjenta  | Aktywny |
 
 ## Planowane specyfikacje
 

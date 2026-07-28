@@ -17,6 +17,12 @@ export interface ExerciseParams {
   loadText: string;
   loadWeightKg?: number;
   loadSource?: string;
+  rangeOfMotion?: string;
+  difficultyLevel?: string;
+  patientDescription?: string;
+  clinicalDescription?: string;
+  audioCue?: string;
+  customImages?: string[];
 }
 
 export interface ExerciseLikeForDefaults {
@@ -33,6 +39,15 @@ export interface ExerciseLikeForDefaults {
   defaultRestBetweenSets?: number | null;
   defaultRestBetweenReps?: number | null;
   defaultExecutionTime?: number | null;
+  preparationTime?: number | null;
+  tempo?: string | null;
+  notes?: string | null;
+  rangeOfMotion?: string | null;
+  difficultyLevel?: string | null;
+  patientDescription?: string | null;
+  description?: string | null;
+  clinicalDescription?: string | null;
+  audioCue?: string | null;
 }
 
 export const EMPTY_EXERCISE_PARAMS: ExerciseParams = {
@@ -54,6 +69,12 @@ export const EMPTY_EXERCISE_PARAMS: ExerciseParams = {
   loadText: '',
   loadWeightKg: undefined,
   loadSource: undefined,
+  rangeOfMotion: '',
+  difficultyLevel: 'UNKNOWN',
+  patientDescription: '',
+  clinicalDescription: '',
+  audioCue: '',
+  customImages: undefined,
 };
 
 export function getExerciseDefaultParams(exercise: ExerciseLikeForDefaults): ExerciseParams {
@@ -66,18 +87,24 @@ export function getExerciseDefaultParams(exercise: ExerciseLikeForDefaults): Exe
     duration: exercise.defaultDuration ?? exercise.duration ?? 0,
     restSets: exercise.defaultRestBetweenSets ?? exercise.restSets ?? 60,
     restReps: exercise.defaultRestBetweenReps ?? exercise.restReps ?? 0,
-    preparationTime: 0,
+    preparationTime: exercise.preparationTime ?? 0,
     executionTime: exercise.defaultExecutionTime ?? 0,
-    notes: '',
+    notes: exercise.notes ?? '',
     exerciseSide: normalizedSide || normalizedExerciseSide || 'both',
     customName: '',
     customDescription: '',
-    tempo: '',
+    tempo: exercise.tempo ?? '',
     loadType: '',
     loadValue: undefined,
     loadUnit: 'kg',
     loadText: '',
     loadWeightKg: undefined,
     loadSource: undefined,
+    rangeOfMotion: exercise.rangeOfMotion ?? '',
+    difficultyLevel: exercise.difficultyLevel ?? 'UNKNOWN',
+    patientDescription: exercise.patientDescription ?? exercise.description ?? '',
+    clinicalDescription: exercise.clinicalDescription ?? '',
+    audioCue: exercise.audioCue ?? '',
+    customImages: undefined,
   };
 }

@@ -12,7 +12,7 @@ import {
  * Labels/tooltips come from EXERCISE_FIELD_METADATA (displayRegistry).
  */
 
-export type ExerciseFieldSurface = 'template' | 'mapping' | 'patientOverride';
+export type ExerciseFieldSurface = 'template' | 'mapping' | 'patientOverride' | 'patientPlan';
 
 export type ExerciseFieldEditor = 'number' | 'text' | 'textarea' | 'select';
 
@@ -20,6 +20,12 @@ export type ExerciseFieldTier = 1 | 2 | 3 | 4;
 
 /** Mapping persistence status — some fields inherit from template until backend supports them. */
 export type MappingFieldMode = 'edit' | 'inherited' | 'none';
+
+/**
+ * Where a personalized value is persisted when assigning to a patient.
+ * Changing one entry moves a field between layers without UI rewrites.
+ */
+export type FieldPersistence = 'mapping' | 'assignmentOverride' | 'templateOnly';
 
 export interface ExerciseFieldOption {
   value: string;
@@ -33,6 +39,8 @@ export interface ExerciseFieldEditConfig {
   surfaces: readonly ExerciseFieldSurface[];
   /** How the field behaves on ExerciseSetMapping (side/prepTime lack backend persistence). */
   mappingMode: MappingFieldMode;
+  /** Canonical write target for patient personalization (SPEC-021). */
+  persistence: FieldPersistence;
   suffix?: string;
   min?: number;
   max?: number;
@@ -48,6 +56,12 @@ export interface ExerciseFieldEditConfig {
  * Requires fizjo-app to read these JSON keys from exerciseOverrides (cross-repo gate, SPEC-012).
  */
 export const ENABLE_EXTENDED_PATIENT_OVERRIDE_FIELDS = true;
+
+/**
+ * Feature flag: full personalization on patientPlan surface (side/ROM/difficulty/texts via override).
+ * Requires fizjo-app to ignore unknown override keys (additive JSON, SPEC-021).
+ */
+export const ENABLE_FULL_PATIENT_PERSONALIZATION = true;
 
 export const SIDE_OPTIONS: readonly ExerciseFieldOption[] = [
   { value: 'none', label: 'Bez podziału' },
@@ -89,8 +103,9 @@ export const EXERCISE_FIELD_EDIT_CONFIG: Record<ExerciseFieldKey, ExerciseFieldE
     key: 'sets',
     editor: 'number',
     tier: 1,
-    surfaces: ['template', 'mapping', 'patientOverride'],
+    surfaces: ['template', 'mapping', 'patientOverride', 'patientPlan'],
     mappingMode: 'edit',
+    persistence: 'mapping',
     min: 0,
     max: 100,
     rule: optionalNullableNumber(0, 100),
@@ -100,8 +115,9 @@ export const EXERCISE_FIELD_EDIT_CONFIG: Record<ExerciseFieldKey, ExerciseFieldE
     key: 'reps',
     editor: 'number',
     tier: 1,
-    surfaces: ['template', 'mapping', 'patientOverride'],
+    surfaces: ['template', 'mapping', 'patientOverride', 'patientPlan'],
     mappingMode: 'edit',
+    persistence: 'mapping',
     min: 0,
     max: 1000,
     rule: optionalNullableNumber(0, 1000),
@@ -111,8 +127,9 @@ export const EXERCISE_FIELD_EDIT_CONFIG: Record<ExerciseFieldKey, ExerciseFieldE
     key: 'executionTime',
     editor: 'number',
     tier: 1,
-    surfaces: ['template', 'mapping', 'patientOverride'],
+    surfaces: ['template', 'mapping', 'patientOverride', 'patientPlan'],
     mappingMode: 'edit',
+    persistence: 'mapping',
     suffix: 's',
     min: 0,
     max: 300,
@@ -124,8 +141,9 @@ export const EXERCISE_FIELD_EDIT_CONFIG: Record<ExerciseFieldKey, ExerciseFieldE
     key: 'restSets',
     editor: 'number',
     tier: 2,
-    surfaces: ['template', 'mapping', 'patientOverride'],
+    surfaces: ['template', 'mapping', 'patientOverride', 'patientPlan'],
     mappingMode: 'edit',
+    persistence: 'mapping',
     suffix: 's',
     min: 0,
     max: 300,
@@ -136,8 +154,9 @@ export const EXERCISE_FIELD_EDIT_CONFIG: Record<ExerciseFieldKey, ExerciseFieldE
     key: 'load',
     editor: 'number',
     tier: 2,
-    surfaces: ['template', 'mapping', 'patientOverride'],
+    surfaces: ['template', 'mapping', 'patientOverride', 'patientPlan'],
     mappingMode: 'edit',
+    persistence: 'mapping',
     suffix: 'kg',
     min: 0,
     max: 500,
@@ -149,8 +168,9 @@ export const EXERCISE_FIELD_EDIT_CONFIG: Record<ExerciseFieldKey, ExerciseFieldE
     key: 'restReps',
     editor: 'number',
     tier: 3,
-    surfaces: ['template', 'mapping', 'patientOverride'],
+    surfaces: ['template', 'mapping', 'patientOverride', 'patientPlan'],
     mappingMode: 'edit',
+    persistence: 'mapping',
     suffix: 's',
     min: 0,
     max: 300,
@@ -161,8 +181,10 @@ export const EXERCISE_FIELD_EDIT_CONFIG: Record<ExerciseFieldKey, ExerciseFieldE
     key: 'preparationTime',
     editor: 'number',
     tier: 3,
-    surfaces: ['template', 'patientOverride'],
-    mappingMode: 'inherited',
+    surfaces: ['template', 'mapping', 'patientOverride', 'patientPlan'],
+    /** Persisted on ExerciseSetMapping (mutation + exerciseSets query selection). */
+    mappingMode: 'edit',
+    persistence: 'mapping',
     suffix: 's',
     min: 0,
     max: 300,
@@ -173,8 +195,9 @@ export const EXERCISE_FIELD_EDIT_CONFIG: Record<ExerciseFieldKey, ExerciseFieldE
     key: 'tempo',
     editor: 'text',
     tier: 3,
-    surfaces: ['template', 'mapping', 'patientOverride'],
+    surfaces: ['template', 'mapping', 'patientOverride', 'patientPlan'],
     mappingMode: 'edit',
+    persistence: 'mapping',
     rule: optionalText(20),
     testIdSuffix: 'tempo-input',
   },
@@ -182,8 +205,9 @@ export const EXERCISE_FIELD_EDIT_CONFIG: Record<ExerciseFieldKey, ExerciseFieldE
     key: 'side',
     editor: 'select',
     tier: 3,
-    surfaces: ['template', 'patientOverride'],
+    surfaces: ['template', 'patientOverride', 'patientPlan'],
     mappingMode: 'inherited',
+    persistence: 'assignmentOverride',
     options: SIDE_OPTIONS,
     rule: z.enum(SIDE_VALUES).optional().nullable(),
     testIdSuffix: 'side-select',
@@ -192,8 +216,9 @@ export const EXERCISE_FIELD_EDIT_CONFIG: Record<ExerciseFieldKey, ExerciseFieldE
     key: 'rangeOfMotion',
     editor: 'text',
     tier: 4,
-    surfaces: ['template', 'patientOverride'],
+    surfaces: ['template', 'patientOverride', 'patientPlan'],
     mappingMode: 'none',
+    persistence: 'assignmentOverride',
     rule: optionalText(100),
     testIdSuffix: 'rom-input',
   },
@@ -201,8 +226,9 @@ export const EXERCISE_FIELD_EDIT_CONFIG: Record<ExerciseFieldKey, ExerciseFieldE
     key: 'difficultyLevel',
     editor: 'select',
     tier: 3,
-    surfaces: ['template'],
+    surfaces: ['template', 'patientOverride', 'patientPlan'],
     mappingMode: 'none',
+    persistence: 'assignmentOverride',
     options: DIFFICULTY_OPTIONS,
     rule: z.enum(DIFFICULTY_VALUES).optional().nullable(),
     testIdSuffix: 'difficulty-select',
@@ -211,8 +237,9 @@ export const EXERCISE_FIELD_EDIT_CONFIG: Record<ExerciseFieldKey, ExerciseFieldE
     key: 'duration',
     editor: 'number',
     tier: 4,
-    surfaces: ['template', 'mapping', 'patientOverride'],
+    surfaces: ['template', 'mapping', 'patientOverride', 'patientPlan'],
     mappingMode: 'edit',
+    persistence: 'mapping',
     suffix: 's',
     min: 0,
     max: 3600,
@@ -224,8 +251,9 @@ export const EXERCISE_FIELD_EDIT_CONFIG: Record<ExerciseFieldKey, ExerciseFieldE
     key: 'patientDescription',
     editor: 'textarea',
     tier: 2,
-    surfaces: ['template'],
+    surfaces: ['template', 'patientOverride', 'patientPlan'],
     mappingMode: 'none',
+    persistence: 'assignmentOverride',
     rule: z.string().optional().nullable(),
     testIdSuffix: 'patientDescription-input',
   },
@@ -233,8 +261,9 @@ export const EXERCISE_FIELD_EDIT_CONFIG: Record<ExerciseFieldKey, ExerciseFieldE
     key: 'clinicalDescription',
     editor: 'textarea',
     tier: 4,
-    surfaces: ['template'],
+    surfaces: ['template', 'patientOverride', 'patientPlan'],
     mappingMode: 'none',
+    persistence: 'assignmentOverride',
     rule: z.string().optional().nullable(),
     testIdSuffix: 'clinicalDescription-input',
   },
@@ -242,8 +271,9 @@ export const EXERCISE_FIELD_EDIT_CONFIG: Record<ExerciseFieldKey, ExerciseFieldE
     key: 'audioCue',
     editor: 'text',
     tier: 4,
-    surfaces: ['template'],
+    surfaces: ['template', 'patientOverride', 'patientPlan'],
     mappingMode: 'none',
+    persistence: 'assignmentOverride',
     rule: optionalText(200),
     testIdSuffix: 'audioCue-input',
   },
@@ -251,8 +281,9 @@ export const EXERCISE_FIELD_EDIT_CONFIG: Record<ExerciseFieldKey, ExerciseFieldE
     key: 'notes',
     editor: 'textarea',
     tier: 3,
-    surfaces: ['template', 'mapping', 'patientOverride'],
+    surfaces: ['template', 'mapping', 'patientOverride', 'patientPlan'],
     mappingMode: 'edit',
+    persistence: 'mapping',
     rule: z.string().optional().nullable(),
     testIdSuffix: 'notes-input',
   },
@@ -266,6 +297,7 @@ export interface MappingOnlyFieldConfig {
   editor: ExerciseFieldEditor;
   tier: ExerciseFieldTier;
   surfaces: readonly ExerciseFieldSurface[];
+  persistence: FieldPersistence;
   rule: z.ZodTypeAny;
   testIdSuffix: string;
   label: string;
@@ -277,7 +309,8 @@ export const MAPPING_ONLY_FIELD_CONFIG: Record<MappingOnlyFieldKey, MappingOnlyF
     key: 'customName',
     editor: 'text',
     tier: 4,
-    surfaces: ['mapping', 'patientOverride'],
+    surfaces: ['mapping', 'patientOverride', 'patientPlan'],
+    persistence: 'mapping',
     rule: optionalText(200),
     testIdSuffix: 'customName-input',
     label: 'Własna nazwa',
@@ -287,7 +320,8 @@ export const MAPPING_ONLY_FIELD_CONFIG: Record<MappingOnlyFieldKey, MappingOnlyF
     key: 'customDescription',
     editor: 'textarea',
     tier: 4,
-    surfaces: ['mapping', 'patientOverride'],
+    surfaces: ['mapping', 'patientOverride', 'patientPlan'],
+    persistence: 'mapping',
     rule: z.string().optional().nullable(),
     testIdSuffix: 'customDescription-input',
     label: 'Własny opis',
@@ -299,6 +333,71 @@ export function getFieldMetadata(key: ExerciseFieldKey): ExerciseFieldMetadata {
   return EXERCISE_FIELD_METADATA[key];
 }
 
+/** Contract keys editable on mapping → card EditableField names (load → loadKg). */
+export function getMappingEditableCardFields(): Array<
+  | 'sets'
+  | 'reps'
+  | 'duration'
+  | 'executionTime'
+  | 'restSets'
+  | 'restReps'
+  | 'preparationTime'
+  | 'tempo'
+  | 'loadKg'
+  | 'notes'
+  | 'customName'
+  | 'customDescription'
+> {
+  const fromContract = getFieldsForSurface('mapping').map((config) =>
+    config.key === 'load' ? ('loadKg' as const) : (config.key as 'sets')
+  );
+  return [
+    ...fromContract,
+    'customName',
+    'customDescription',
+  ] as Array<
+    | 'sets'
+    | 'reps'
+    | 'duration'
+    | 'executionTime'
+    | 'restSets'
+    | 'restReps'
+    | 'preparationTime'
+    | 'tempo'
+    | 'loadKg'
+    | 'notes'
+    | 'customName'
+    | 'customDescription'
+  >;
+}
+
+/**
+ * Fields shown as readonly inherited values on a surface.
+ * For patientPlan every personalizable field is editable → empty list.
+ * For mapping: inherited/none fields that lack a mapping write path.
+ */
+export function getInheritedFieldKeys(
+  surface: ExerciseFieldSurface = 'mapping'
+): ExerciseFieldKey[] {
+  if (surface === 'patientPlan' || surface === 'patientOverride') {
+    return [];
+  }
+  if (surface === 'mapping') {
+    return (Object.keys(EXERCISE_FIELD_EDIT_CONFIG) as ExerciseFieldKey[]).filter((key) => {
+      const mode = EXERCISE_FIELD_EDIT_CONFIG[key].mappingMode;
+      return mode === 'inherited' || mode === 'none';
+    });
+  }
+  return [];
+}
+
+/** @deprecated Prefer getInheritedFieldKeys('mapping'). Alias kept for additive-first. */
+export function getMappingInheritedFieldKeys(): ExerciseFieldKey[] {
+  return getInheritedFieldKeys('mapping').filter(
+    (key) => EXERCISE_FIELD_EDIT_CONFIG[key].mappingMode === 'inherited'
+  );
+}
+
 export function getFieldsForSurface(surface: ExerciseFieldSurface): ExerciseFieldEditConfig[] {
   return (Object.keys(EXERCISE_FIELD_EDIT_CONFIG) as ExerciseFieldKey[])
     .map((key) => EXERCISE_FIELD_EDIT_CONFIG[key])
@@ -306,7 +405,7 @@ export function getFieldsForSurface(surface: ExerciseFieldSurface): ExerciseFiel
       if (!config.surfaces.includes(surface)) return false;
       if (surface === 'mapping' && config.mappingMode !== 'edit') return false;
       if (
-        surface === 'patientOverride' &&
+        (surface === 'patientOverride' || surface === 'patientPlan') &&
         !ENABLE_EXTENDED_PATIENT_OVERRIDE_FIELDS &&
         (config.key === 'tempo' ||
           config.key === 'load' ||
@@ -315,9 +414,26 @@ export function getFieldsForSurface(surface: ExerciseFieldSurface): ExerciseFiel
       ) {
         return false;
       }
+      if (
+        (surface === 'patientOverride' || surface === 'patientPlan') &&
+        !ENABLE_FULL_PATIENT_PERSONALIZATION &&
+        (config.key === 'difficultyLevel' ||
+          config.key === 'patientDescription' ||
+          config.key === 'clinicalDescription' ||
+          config.key === 'audioCue')
+      ) {
+        return false;
+      }
       return true;
     })
     .sort((left, right) => left.tier - right.tier || left.key.localeCompare(right.key));
+}
+
+/** Fields with assignmentOverride persistence (JSON exerciseOverrides keys). */
+export function getAssignmentOverrideFieldKeys(): ExerciseFieldKey[] {
+  return (Object.keys(EXERCISE_FIELD_EDIT_CONFIG) as ExerciseFieldKey[]).filter(
+    (key) => EXERCISE_FIELD_EDIT_CONFIG[key].persistence === 'assignmentOverride'
+  );
 }
 
 export function getFieldsByTier(

@@ -22,11 +22,24 @@ export const EXERCISE_SET_MAPPING_FULL_FRAGMENT = gql`
     duration
     restSets
     restReps
+    preparationTime
     executionTime
     tempo
     notes
     customName
     customDescription
+    loadType
+    loadValue
+    loadUnit
+    loadText
+    load {
+      loadWeightKg
+      loadSource
+      type
+      value
+      unit
+      text
+    }
     exercise {
       id
       name
@@ -41,6 +54,10 @@ export const EXERCISE_SET_MAPPING_FULL_FRAGMENT = gql`
       defaultDuration
       defaultRestBetweenSets
       defaultRestBetweenReps
+      preparationTime
+      rangeOfMotion
+      difficultyLevel
+      tempo
     }
   }
 `;

@@ -6,6 +6,8 @@ import type { ReactNode } from 'react';
  */
 export interface ExerciseExecutionCardData {
   id: string;
+  /** Template Exercise.id when card represents a mapping instance (for "edit in exercise" links). */
+  sourceExerciseId?: string;
   displayName: string;
   /** Primary image for thumbnail (single URL). */
   thumbnailUrl?: string;
@@ -57,7 +59,15 @@ export type EditableField =
   | 'notes'
   | 'customName'
   | 'customDescription'
-  | 'side';
+  | 'side'
+  | 'rangeOfMotion'
+  | 'difficultyLevel'
+  | 'patientDescription'
+  | 'clinicalDescription'
+  | 'audioCue';
+
+/** Card surface: mapping = TEMPLATE sets (inherited section); patientPlan = full edit. */
+export type ExerciseExecutionCardSurface = 'mapping' | 'patientPlan';
 
 export interface ExerciseExecutionCardProps {
   mode: 'view' | 'edit';
@@ -66,7 +76,12 @@ export interface ExerciseExecutionCardProps {
   viewVariant?: 'compact' | 'readable';
   /** Hide timer hint in title area (view mode) */
   hideTimerBadge?: boolean;
-  /** In edit mode, which fields are editable. Omit or empty = all editable. */
+  /**
+   * Persistence surface. `patientPlan` makes side/ROM/difficulty/texts editable
+   * and hides the inherited section. Default `mapping` for TEMPLATE set builders.
+   */
+  surface?: ExerciseExecutionCardSurface;
+  /** In edit mode, which fields are editable. Omit or empty = all editable for surface. */
   editableFields?: EditableField[];
   /** Current expanded state when controlled */
   expanded?: boolean;

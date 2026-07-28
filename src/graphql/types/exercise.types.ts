@@ -25,7 +25,7 @@ export type MediaContext =
   | 'STEP_BY_STEP'
   | 'ANATOMY_VIEW'
   | 'PATIENT_MATERIAL';
-export type DifficultyLevel = 'EASY' | 'MEDIUM' | 'HARD' | 'EXPERT';
+export type DifficultyLevel = 'UNKNOWN' | 'EASY' | 'MEDIUM' | 'HARD' | 'EXPERT';
 
 export interface ExerciseLoad {
   /** Target kg-only field (SPEC-003). Prefer this over legacy value/unit. */

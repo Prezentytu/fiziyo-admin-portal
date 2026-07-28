@@ -28,6 +28,11 @@ import { AssignmentSuccessDialog } from './AssignmentSuccessDialog';
 import type { ExerciseInstance, ExerciseParams } from '@/components/shared/ExerciseSetBuilder';
 import { canProceedFromStep } from './utils/assignmentWizardUtils';
 import { decideAssignmentPlanMode, type AssignmentExecutionMode } from './utils/assignmentPlanDecision';
+import {
+  buildAssignmentOverrideDeltasFromBuilder,
+  remapOverrideDeltasToMappingIds,
+  stringifyAssignmentOverrides,
+} from './utils/buildAssignmentOverrideDeltas';
 import { buildStructuredLoad, mapAvailableExercises } from './utils/availableExercisesMapper';
 import { appendPatientIfMissing } from './utils/patientSelectionUtils';
 import { computeExerciseDiff, type ExerciseMappingSnapshot } from './utils/exerciseDiff';
@@ -69,6 +74,7 @@ import {
   UPDATE_EXERCISE_IN_SET_MUTATION,
   REMOVE_EXERCISE_FROM_SET_MUTATION,
   UPDATE_EXERCISE_SET_ASSIGNMENT_MUTATION,
+  UPDATE_PATIENT_EXERCISE_OVERRIDES_MUTATION,
 } from '@/graphql/mutations/exercises.mutations';
 import { GET_AVAILABLE_EXERCISES_QUERY } from '@/graphql/queries/exercises.queries';
 import { GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY } from '@/graphql/queries/patientAssignments.queries';
@@ -234,7 +240,6 @@ function AssignmentWizardContent({
   const [completedSteps, setCompletedSteps] = useState<Set<WizardStep>>(new Set());
   const [selectedSet, setSelectedSet] = useState<ExerciseSet | null>(preselectedSet || null);
   const [selectedPatients, setSelectedPatients] = useState<Patient[]>(preselectedPatient ? [preselectedPatient] : []);
-  const [overrides, setOverrides] = useState<Map<string, ExerciseOverride>>(new Map());
   const [startDate, setStartDate] = useState<Date>(() => new Date());
   const [endDate, setEndDate] = useState<Date>(() => addDays(new Date(), 30));
   const [frequency, setFrequency] = useState<Frequency>(() => normalizeFrequencySeed(defaultFrequency));
@@ -341,7 +346,6 @@ function AssignmentWizardContent({
     setSelectedSet(assignmentSet);
     setSelectedPatients([preselectedPatient]);
     setIsCreatingNewSet(false);
-    setOverrides(new Map());
     setBuilderInstances(instances);
     setBuilderParams(params);
     setLocalExercises(assignmentMappings.map(createGhostCopy));
@@ -356,8 +360,6 @@ function AssignmentWizardContent({
   // Handle set change - create Ghost Copy and apply Smart Defaults
   const handleSetChange = useCallback((set: ExerciseSet | null) => {
     setSelectedSet(set);
-    // Reset customizations when changing set
-    setOverrides(new Map());
     // Clear create-new mode when selecting existing set
     setIsCreatingNewSet(false);
 
@@ -471,6 +473,7 @@ function AssignmentWizardContent({
   const [updateExerciseInSet] = useMutation(UPDATE_EXERCISE_IN_SET_MUTATION);
   const [removeExerciseFromSet] = useMutation(REMOVE_EXERCISE_FROM_SET_MUTATION);
   const [updateAssignment] = useMutation(UPDATE_EXERCISE_SET_ASSIGNMENT_MUTATION);
+  const [updatePatientExerciseOverrides] = useMutation(UPDATE_PATIENT_EXERCISE_OVERRIDES_MUTATION);
 
   // State for unassign confirmation dialog
   const [unassignConfirm, setUnassignConfirm] = useState<{
@@ -958,9 +961,26 @@ function AssignmentWizardContent({
         saveAsTemplate: saveAsOrganizationSet,
         builderInstances,
         builderParams,
+        availableExercises,
       }),
-    [selectedSet, isCreatingNewSet, planName, saveAsOrganizationSet, builderInstances, builderParams]
+    [
+      selectedSet,
+      isCreatingNewSet,
+      planName,
+      saveAsOrganizationSet,
+      builderInstances,
+      builderParams,
+      availableExercises,
+    ]
   );
+
+  const summaryOverrides = useMemo(() => {
+    const map = new Map<string, ExerciseOverride>();
+    for (const [instanceId, delta] of Object.entries(assignmentPlanDecision.overridesByMappingId)) {
+      map.set(instanceId, { ...delta, exerciseMappingId: instanceId });
+    }
+    return map;
+  }, [assignmentPlanDecision.overridesByMappingId]);
 
   // Determine step title and description
   const getStepInfo = () => {
@@ -1181,6 +1201,16 @@ function AssignmentWizardContent({
         params: builderParams,
       });
 
+      const instanceIdToMappingId = new Map<string, string>();
+      for (const instance of builderInstances) {
+        if (instance.instanceId.startsWith('existing-')) {
+          instanceIdToMappingId.set(
+            instance.instanceId,
+            instance.instanceId.slice('existing-'.length)
+          );
+        }
+      }
+
       for (const removedMapping of diff.removed) {
         await removeExerciseFromSet({
           variables: {
@@ -1192,10 +1222,15 @@ function AssignmentWizardContent({
       }
 
       for (const addedItem of diff.added) {
-        await addExerciseToSet({
+        const addResult = await addExerciseToSet({
           variables: buildAddExerciseVariables(addedItem.instance, selectedSet.id, addedItem.order),
           awaitRefetchQueries: true,
         });
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const mappingId = (addResult.data as any)?.addExerciseToExerciseSet?.id as string | undefined;
+        if (mappingId) {
+          instanceIdToMappingId.set(addedItem.instance.instanceId, mappingId);
+        }
       }
 
       for (const updatedItem of diff.updated) {
@@ -1241,6 +1276,30 @@ function AssignmentWizardContent({
         awaitRefetchQueries: true,
       });
 
+      const deltasByInstanceId = buildAssignmentOverrideDeltasFromBuilder(
+        builderInstances,
+        builderParams,
+        availableExercises
+      );
+      const overridesByMappingId = remapOverrideDeltasToMappingIds(
+        deltasByInstanceId,
+        instanceIdToMappingId
+      );
+      const exerciseOverridesJson = stringifyAssignmentOverrides(overridesByMappingId);
+      if (exerciseOverridesJson) {
+        try {
+          await updatePatientExerciseOverrides({
+            variables: {
+              assignmentId: initialAssignment.id,
+              exerciseOverrides: exerciseOverridesJson,
+            },
+          });
+        } catch (overrideError) {
+          console.error('Błąd zapisu personalizacji przy edycji planu:', overrideError);
+          toast.warning('Plan zaktualizowany, ale nie udało się zapisać pełnej personalizacji parametrów');
+        }
+      }
+
       // Final refetch po petli - gwarantuje, ze admin UI widzi spojny stan
       // wszystkich mappingow przed zamknieciem wizarda. Zabezpiecza przed sytuacja,
       // gdy ktora-s mutacja w petli zmodyfikowala cache w sposob niespojny.
@@ -1277,6 +1336,13 @@ function AssignmentWizardContent({
       let exerciseSetIdToAssign = '';
       let effectiveSetForSuccess: ExerciseSet | null = null;
 
+      const instanceIdToMappingId = new Map<string, string>();
+      const deltasByInstanceId = buildAssignmentOverrideDeltasFromBuilder(
+        builderInstances,
+        builderParams,
+        availableExercises
+      );
+
       setIsCreatingSet(true);
       try {
         const createResult = await createExerciseSet({
@@ -1301,9 +1367,14 @@ function AssignmentWizardContent({
           const exercise = availableExercises.find((item) => item.id === instance.exerciseId);
 
           try {
-            await addExerciseToSet({
+            const addResult = await addExerciseToSet({
               variables: buildAddExerciseVariables(instance, newSet.id, i + 1),
             });
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const mappingId = (addResult.data as any)?.addExerciseToExerciseSet?.id as string | undefined;
+            if (mappingId) {
+              instanceIdToMappingId.set(instance.instanceId, mappingId);
+            }
           } catch (error) {
             const exerciseName = exercise?.name || 'Nieznane cwiczenie';
             console.error('Błąd dodawania ćwiczenia do planu:', error);
@@ -1328,6 +1399,12 @@ function AssignmentWizardContent({
       } finally {
         setIsCreatingSet(false);
       }
+
+      const overridesByMappingId = remapOverrideDeltasToMappingIds(
+        deltasByInstanceId,
+        instanceIdToMappingId
+      );
+      const exerciseOverridesJson = stringifyAssignmentOverrides(overridesByMappingId);
 
       // Jeśli saveAsOrganizationSet - utwórz DODATKOWY zestaw organizacji (kopia do ponownego użycia)
       if (saveAsOrganizationSet && organizationSetName.trim() && builderInstances.length > 0) {
@@ -1415,6 +1492,22 @@ function AssignmentWizardContent({
           lastPremiumValidUntil = responseData.premiumValidUntil;
         }
 
+        const assignmentId = responseData?.id as string | undefined;
+        if (assignmentId && exerciseOverridesJson) {
+          try {
+            await updatePatientExerciseOverrides({
+              variables: {
+                assignmentId,
+                exerciseOverrides: exerciseOverridesJson,
+              },
+            });
+          } catch (overrideError) {
+            console.error('Błąd zapisu personalizacji ćwiczeń:', overrideError);
+            toast.warning(
+              `Przypisano plan dla ${patient.name}, ale nie udało się zapisać pełnej personalizacji parametrów`
+            );
+          }
+        }
       }
 
       if (!effectiveSetForSuccess) {
@@ -1603,7 +1696,7 @@ function AssignmentWizardContent({
             startDate={startDate}
             endDate={endDate}
             frequency={frequency}
-            overrides={overrides}
+            overrides={summaryOverrides}
             excludedExercises={excludedExercises}
             saveAsTemplate={saveAsOrganizationSet}
             onSaveAsTemplateChange={setSaveAsOrganizationSet}

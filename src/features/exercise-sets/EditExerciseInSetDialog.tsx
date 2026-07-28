@@ -9,7 +9,11 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
-import { ExerciseExecutionCard, fromExerciseMapping } from '@/components/shared/exercise';
+import {
+  ExerciseExecutionCard,
+  fromExerciseMapping,
+  getMappingEditableCardFields,
+} from '@/components/shared/exercise';
 import type { ExerciseExecutionCardData } from '@/components/shared/exercise';
 import type { ExerciseLoad, ExerciseMapping as AssignmentExerciseMapping } from '@/features/assignment/types';
 import { buildExerciseLoadMutationVars } from '@/utils/exerciseLoadMutation';
@@ -235,19 +239,7 @@ function EditExerciseInSetDialogContent({
           onChange={handleChange}
           testIdPrefix="set-edit-exercise"
           defaultExpanded
-          editableFields={[
-            'sets',
-            'reps',
-            'duration',
-            'executionTime',
-            'restSets',
-            'restReps',
-            'tempo',
-            'loadKg',
-            'notes',
-            'customName',
-            'customDescription',
-          ]}
+          editableFields={getMappingEditableCardFields()}
         />
       </div>
 

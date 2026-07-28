@@ -123,6 +123,12 @@ export interface ExerciseParams {
   loadText?: string;
   loadWeightKg?: number;
   loadSource?: string;
+  rangeOfMotion?: string;
+  difficultyLevel?: string;
+  patientDescription?: string;
+  clinicalDescription?: string;
+  audioCue?: string;
+  customImages?: string[];
   // Structured load (alternative to individual load fields)
   load?: {
     loadWeightKg?: number | null;
@@ -179,6 +185,11 @@ export interface ExerciseSetBuilderProps {
 
   /** When set, instances with these IDs are shown read-only (e.g. already in set). */
   readonlyInstanceIds?: Set<string>;
+  /**
+   * Card persistence surface. Use `patientPlan` in assignment wizard for full personalization.
+   * Default `mapping` keeps inherited section for TEMPLATE set builders.
+   */
+  cardSurface?: 'mapping' | 'patientPlan';
   /** Optional quick action rendered in exercise library list. */
   onCreateExercise?: () => void;
   isCreatingExercise?: boolean;
@@ -351,6 +362,13 @@ function applyCardPatchToParams(
   if ('customName' in patch) onUpdateParams('customName', patch.customName);
   if ('customDescription' in patch) onUpdateParams('customDescription', patch.customDescription);
   if ('side' in patch) onUpdateParams('exerciseSide', patch.side);
+  if ('rangeOfMotion' in patch) onUpdateParams('rangeOfMotion', patch.rangeOfMotion);
+  if ('difficultyLevel' in patch) onUpdateParams('difficultyLevel', patch.difficultyLevel);
+  if ('patientDescription' in patch) onUpdateParams('patientDescription', patch.patientDescription);
+  if ('clinicalDescription' in patch) {
+    onUpdateParams('clinicalDescription', patch.clinicalDescription);
+  }
+  if ('audioCue' in patch) onUpdateParams('audioCue', patch.audioCue);
   if ('loadKg' in patch) {
     const loadFields = buildExerciseLoadParamFields(patch.loadKg);
     onUpdateParams('loadWeightKg', loadFields.loadWeightKg);
@@ -372,6 +390,7 @@ function SortableExerciseCard({
   onPreview,
   testIdPrefix,
   isReadonly,
+  cardSurface = 'mapping',
 }: {
   instanceId: string;
   exercise: BuilderExercise;
@@ -382,6 +401,7 @@ function SortableExerciseCard({
   onPreview: () => void;
   testIdPrefix?: string;
   isReadonly?: boolean;
+  cardSurface?: 'mapping' | 'patientPlan';
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: instanceId,
@@ -431,6 +451,7 @@ function SortableExerciseCard({
     >
       <ExerciseExecutionCard
         mode={isReadonly ? 'view' : 'edit'}
+        surface={cardSurface}
         exercise={cardData}
         onChange={handleChange}
         onRemove={isReadonly ? undefined : onRemove}
@@ -472,6 +493,7 @@ export function ExerciseSetBuilder({
   onPreviewExercise,
   testIdPrefix = 'set-builder',
   readonlyInstanceIds,
+  cardSurface = 'mapping',
   onCreateExercise,
   isCreatingExercise = false,
   createExerciseLabel = 'Utwórz nowe ćwiczenie',
@@ -909,6 +931,7 @@ export function ExerciseSetBuilder({
                         onPreview={() => onPreviewExercise?.(data.exercise, exerciseParams.get(data.instanceId))}
                         testIdPrefix={testIdPrefix}
                         isReadonly={readonlyInstanceIds?.has(data.instanceId) ?? false}
+                        cardSurface={cardSurface}
                       />
                     ))}
                   </div>
