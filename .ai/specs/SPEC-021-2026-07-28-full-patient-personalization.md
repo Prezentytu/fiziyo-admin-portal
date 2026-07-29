@@ -84,6 +84,15 @@ Admin zapisuje i czyta nowe klucze od razu. Mobile ignoruje nieznane klucze do c
 
 ## Changelog
 
+### 2026-07-29
+
+- `mergeAssignmentOverridesOnEdit` — edycja planu merguje JSON zamiast pełnego replace;
+  usuwa zacieniające klucze dawkowania po zapisie na mappingu.
+- Prefill wizarda editMode: `override > mapping > szablon`.
+- `AddExerciseToPatientDialog` tworzy realny `ExerciseSetMapping` na PATIENT_PLAN
+  (koniec syntetycznych `isPatientAdded`).
+- Mobile czyta override pod `mappingId` (dual-read legacy `exercise.id`).
+
 ### 2026-07-28
 
 - Wprowadzenie `FieldPersistence`, powierzchni `patientPlan`, writera personalizacji.

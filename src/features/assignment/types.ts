@@ -166,6 +166,8 @@ export interface AssignmentEditInput {
   startDate: string;
   endDate: string;
   frequency: Frequency;
+  /** JSON map keyed by mapping.id — used for editMode prefill + merge on save. */
+  exerciseOverrides?: string | null;
   exerciseSet: ExerciseSet;
 }
 

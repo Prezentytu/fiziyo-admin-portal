@@ -557,6 +557,21 @@ function EditExerciseOverrideDialogContent({
         newOverride.hidden = true;
       }
 
+      // Preserve keys the dialog does not rebuild (enrichment, patient-added metadata).
+      if (currentOverride?.enrichment) {
+        newOverride.enrichment = currentOverride.enrichment;
+      }
+      const previousEntry = currentOverride as
+        | (typeof currentOverride & { exerciseId?: string; isPatientAdded?: boolean })
+        | undefined;
+      if (previousEntry?.exerciseId) {
+        (newOverride as ExerciseOverride & { exerciseId?: string }).exerciseId =
+          previousEntry.exerciseId;
+      }
+      if (previousEntry?.isPatientAdded) {
+        (newOverride as ExerciseOverride & { isPatientAdded?: boolean }).isPatientAdded = true;
+      }
+
       const exerciseOverrides = replaceOverrideMapEntry(
         assignment.exerciseOverrides,
         mapping.id,

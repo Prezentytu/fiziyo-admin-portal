@@ -1,7 +1,7 @@
 'use client';
 
 import { use, useState } from 'react';
-import { useQuery, useMutation } from '@apollo/client/react';
+import { useQuery, useMutation, useApolloClient } from '@apollo/client/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useUser } from '@clerk/nextjs';
 import {
@@ -43,7 +43,12 @@ import { LoadingState } from '@/components/shared/LoadingState';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { ScheduleSummary } from '@/components/shared';
-import { ExerciseExecutionCard, fromExerciseMapping } from '@/components/shared/exercise';
+import {
+  ExerciseExecutionCard,
+  fromExerciseMapping,
+  buildMappingOverridesJson,
+  buildEnrichmentOverrideDelta,
+} from '@/components/shared/exercise';
 import type { ExerciseExecutionCardData } from '@/components/shared/exercise';
 import { EditExerciseSetFullDialog } from '@/features/exercise-sets/EditExerciseSetFullDialog';
 import { EditExerciseInSetDialog } from '@/features/exercise-sets/EditExerciseInSetDialog';
@@ -91,6 +96,7 @@ interface ExerciseMapping {
   notes?: string;
   customName?: string;
   customDescription?: string;
+  overridesJson?: string | null;
   loadType?: string;
   loadValue?: number;
   loadUnit?: string;
@@ -101,6 +107,10 @@ interface ExerciseMapping {
     name: string;
     // Nowe pola
     patientDescription?: string;
+    clinicalDescription?: string;
+    audioCue?: string;
+    rangeOfMotion?: string;
+    difficultyLevel?: string;
     side?: string;
     thumbnailUrl?: string;
     defaultSets?: number;
@@ -110,6 +120,7 @@ interface ExerciseMapping {
     defaultRestBetweenSets?: number;
     defaultRestBetweenReps?: number;
     preparationTime?: number;
+    enrichmentData?: ExerciseExecutionCardData['enrichment'];
     // Legacy aliasy
     description?: string;
     type?: string;
@@ -183,6 +194,7 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user } = useUser();
+  const apolloClient = useApolloClient();
   const { currentOrganization, isLoading: orgContextLoading } = useOrganization();
   const [isEditSetFullOpen, setIsEditSetFullOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -353,6 +365,49 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
       },
     }));
 
+    const touchesMappingOverrides =
+      'side' in patch ||
+      'rangeOfMotion' in patch ||
+      'difficultyLevel' in patch ||
+      'patientDescription' in patch ||
+      'clinicalDescription' in patch ||
+      'audioCue' in patch ||
+      'enrichment' in patch;
+
+    let overridesJson: string | undefined;
+    if (touchesMappingOverrides) {
+      const template = mapping.exercise;
+      const card = fromExerciseMapping({
+        ...mergedMapping,
+        load: mergedMapping.load ?? undefined,
+      } as AssignmentExerciseMapping);
+      const enrichmentDelta = buildEnrichmentOverrideDelta(
+        template?.enrichmentData,
+        patch.enrichment ?? card.enrichment
+      );
+      overridesJson =
+        buildMappingOverridesJson(
+          {
+            side: template?.side ?? template?.exerciseSide,
+            exerciseSide: template?.exerciseSide ?? template?.side,
+            rangeOfMotion: template?.rangeOfMotion,
+            difficultyLevel: template?.difficultyLevel,
+            patientDescription: template?.patientDescription ?? template?.description,
+            clinicalDescription: template?.clinicalDescription,
+            audioCue: template?.audioCue,
+          },
+          {
+            side: patch.side ?? card.side,
+            rangeOfMotion: patch.rangeOfMotion ?? card.rangeOfMotion,
+            difficultyLevel: patch.difficultyLevel ?? card.difficultyLevel,
+            patientDescription: patch.patientDescription ?? card.patientDescription,
+            clinicalDescription: patch.clinicalDescription ?? card.clinicalDescription,
+            audioCue: patch.audioCue ?? card.audioCue,
+          },
+          enrichmentDelta
+        ) ?? '';
+    }
+
     try {
       await updateExerciseInSet({
         variables: {
@@ -370,7 +425,11 @@ export default function SetDetailPage({ params }: SetDetailPageProps) {
           customDescription: mergedMapping.customDescription ?? null,
           tempo: mergedMapping.tempo ?? null,
           ...('loadKg' in patch ? buildExerciseLoadMutationVars(patch.loadKg) : {}),
+          ...(overridesJson !== undefined ? { overridesJson } : {}),
         },
+      });
+      await apolloClient.refetchQueries({
+        include: [GET_EXERCISE_SET_WITH_ASSIGNMENTS_QUERY],
       });
     } catch (err) {
       console.error('Błąd szybkiej aktualizacji ćwiczenia:', err);

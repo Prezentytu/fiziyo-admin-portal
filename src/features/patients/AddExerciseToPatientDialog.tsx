@@ -17,7 +17,9 @@ import {
   ENABLE_EXTENDED_PATIENT_OVERRIDE_FIELDS,
   ENABLE_FULL_PATIENT_PERSONALIZATION,
   ExerciseParametersFields,
-  replaceOverrideMapEntry,
+  buildMappingOverridesJson,
+  buildOverrideDelta,
+  mergeOverrideMap,
   type ExerciseFieldKey,
   type ExerciseParameterValues,
   type MappingOnlyFieldKey,
@@ -25,11 +27,15 @@ import {
 } from '@/components/shared/exercise';
 import { cn } from '@/lib/utils';
 import { getMediaUrl } from '@/utils/mediaUrl';
+import { buildExerciseLoadMutationVars } from '@/utils/exerciseLoadMutation';
 
 import { GET_AVAILABLE_EXERCISES_QUERY } from '@/graphql/queries/exercises.queries';
-import { UPDATE_PATIENT_EXERCISE_OVERRIDES_MUTATION } from '@/graphql/mutations/exercises.mutations';
+import {
+  ADD_EXERCISE_TO_EXERCISE_SET_MUTATION,
+  UPDATE_PATIENT_EXERCISE_OVERRIDES_MUTATION,
+} from '@/graphql/mutations/exercises.mutations';
 import { GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY } from '@/graphql/queries/patientAssignments.queries';
-import type { PatientAssignment, ExerciseOverride } from './PatientAssignmentCard';
+import type { PatientAssignment } from './PatientAssignmentCard';
 
 const ADD_FIELD_TESTID_MAP: Record<
   ExerciseFieldKey | MappingOnlyFieldKey,
@@ -92,11 +98,6 @@ interface AddExerciseToPatientDialogProps {
   organizationId: string;
   onSuccess?: () => void;
 }
-
-// Generate unique ID for patient-added exercises
-const generatePatientExerciseId = () => {
-  return `patient-added-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
-};
 
 export function AddExerciseToPatientDialog({
   open,
@@ -278,8 +279,11 @@ function AddExerciseToPatientDialogContent({
     skip: !organizationId,
   });
 
-  // Mutation
-  const [updateOverrides, { loading: saving }] = useMutation(UPDATE_PATIENT_EXERCISE_OVERRIDES_MUTATION);
+  const [addExerciseToSet, { loading: adding }] = useMutation(ADD_EXERCISE_TO_EXERCISE_SET_MUTATION);
+  const [updateOverrides, { loading: updatingOverrides }] = useMutation(
+    UPDATE_PATIENT_EXERCISE_OVERRIDES_MUTATION
+  );
+  const saving = adding || updatingOverrides;
 
   // Get existing exercise IDs in the assignment to filter them out
   const existingExerciseIds = useMemo(() => {
@@ -337,59 +341,111 @@ function AddExerciseToPatientDialogContent({
     setAudioCue(exercise.audioCue ?? '');
   };
 
-  // Handle save
+  // Handle save — real mapping on PATIENT_PLAN (not synthetic isPatientAdded JSON).
   const handleSave = async () => {
     if (!selectedExercise) return;
+    const exerciseSetId = assignment.exerciseSetId ?? assignment.exerciseSet?.id;
+    if (!exerciseSetId) {
+      toast.error('Brak planu pacjenta do dodania ćwiczenia');
+      return;
+    }
 
     try {
-      const newId = generatePatientExerciseId();
-      const newOverride: ExerciseOverride & { exerciseId?: string; isPatientAdded?: boolean } = {
-        exerciseId: selectedExercise.id,
-        sets,
-        reps,
-        duration,
-        executionTime,
-        restSets,
-        restReps,
-        notes: notes.trim() || undefined,
-        exerciseSide,
-        customName: customName.trim() || undefined,
-        customDescription: customDescription.trim() || undefined,
-        isPatientAdded: true,
-      };
-      if (ENABLE_EXTENDED_PATIENT_OVERRIDE_FIELDS) {
-        newOverride.preparationTime = preparationTime;
-        newOverride.tempo = tempo.trim() || undefined;
-        newOverride.loadWeightKg = loadWeightKg;
-        newOverride.rangeOfMotion = rangeOfMotion.trim() || undefined;
-      }
-      if (ENABLE_FULL_PATIENT_PERSONALIZATION) {
-        newOverride.difficultyLevel = difficultyLevel;
-        newOverride.patientDescription = patientDescription.trim() || undefined;
-        newOverride.clinicalDescription = clinicalDescription.trim() || undefined;
-        newOverride.audioCue = audioCue.trim() || undefined;
-      }
-
-      const exerciseOverrides = replaceOverrideMapEntry(
-        assignment.exerciseOverrides,
-        newId,
-        newOverride
+      const nextOrder = (assignment.exerciseSet?.exerciseMappings?.length ?? 0) + 1;
+      const overridesJson = buildMappingOverridesJson(
+        {
+          side: selectedExercise.side ?? selectedExercise.exerciseSide,
+          exerciseSide: selectedExercise.exerciseSide ?? selectedExercise.side,
+          rangeOfMotion: selectedExercise.rangeOfMotion,
+          difficultyLevel: selectedExercise.difficultyLevel,
+          patientDescription: selectedExercise.patientDescription ?? selectedExercise.description,
+          clinicalDescription: selectedExercise.clinicalDescription,
+          audioCue: selectedExercise.audioCue,
+        },
+        {
+          side: exerciseSide,
+          rangeOfMotion: ENABLE_EXTENDED_PATIENT_OVERRIDE_FIELDS ? rangeOfMotion : undefined,
+          difficultyLevel: ENABLE_FULL_PATIENT_PERSONALIZATION ? difficultyLevel : undefined,
+          patientDescription: ENABLE_FULL_PATIENT_PERSONALIZATION ? patientDescription : undefined,
+          clinicalDescription: ENABLE_FULL_PATIENT_PERSONALIZATION
+            ? clinicalDescription
+            : undefined,
+          audioCue: ENABLE_FULL_PATIENT_PERSONALIZATION ? audioCue : undefined,
+        }
       );
 
-      await updateOverrides({
-        variables: {
-          assignmentId: assignment.id,
-          exerciseOverrides,
+      const refetchAssignments = [
+        {
+          query: GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY,
+          variables: { userId: patientId },
         },
-        refetchQueries: [
-          {
-            query: GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY,
-            variables: { userId: patientId },
-          },
-        ],
+      ];
+
+      const addResult = await addExerciseToSet({
+        variables: {
+          exerciseId: selectedExercise.id,
+          exerciseSetId,
+          order: nextOrder,
+          sets,
+          reps,
+          duration: duration ?? null,
+          restSets: restSets ?? null,
+          restReps: restReps ?? null,
+          preparationTime: ENABLE_EXTENDED_PATIENT_OVERRIDE_FIELDS
+            ? (preparationTime ?? null)
+            : null,
+          executionTime: executionTime ?? null,
+          notes: notes.trim() || null,
+          customName: customName.trim() || null,
+          customDescription: customDescription.trim() || null,
+          tempo: ENABLE_EXTENDED_PATIENT_OVERRIDE_FIELDS ? tempo.trim() || null : null,
+          ...buildExerciseLoadMutationVars(
+            ENABLE_EXTENDED_PATIENT_OVERRIDE_FIELDS ? loadWeightKg : undefined
+          ),
+          overridesJson: overridesJson ?? '',
+        },
+        refetchQueries: refetchAssignments,
+        awaitRefetchQueries: true,
       });
 
-      toast.success(`Ćwiczenie "${selectedExercise.name}" zostało dodane do zestawu`);
+      const mappingId = (
+        addResult.data as { addExerciseToExerciseSet?: { id?: string } } | undefined
+      )?.addExerciseToExerciseSet?.id;
+
+      if (mappingId && ENABLE_FULL_PATIENT_PERSONALIZATION) {
+        const clinicalDelta = buildOverrideDelta(
+          {
+            side: selectedExercise.side ?? selectedExercise.exerciseSide,
+            exerciseSide: selectedExercise.exerciseSide ?? selectedExercise.side,
+            difficultyLevel: selectedExercise.difficultyLevel,
+            patientDescription: selectedExercise.patientDescription ?? selectedExercise.description,
+            clinicalDescription: selectedExercise.clinicalDescription,
+            audioCue: selectedExercise.audioCue,
+          },
+          {
+            side: exerciseSide,
+            difficultyLevel,
+            patientDescription,
+            clinicalDescription,
+            audioCue,
+          }
+        );
+        if (Object.keys(clinicalDelta).length > 0) {
+          const exerciseOverrides = mergeOverrideMap(
+            assignment.exerciseOverrides,
+            mappingId,
+            clinicalDelta
+          );
+          await updateOverrides({
+            variables: {
+              assignmentId: assignment.id,
+              exerciseOverrides,
+            },
+          });
+        }
+      }
+
+      toast.success(`Ćwiczenie "${selectedExercise.name}" zostało dodane do planu`);
       onOpenChange(false);
       onSuccess?.();
     } catch (error) {

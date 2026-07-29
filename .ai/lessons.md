@@ -14,6 +14,14 @@ Dziennik wniosków z pracy AI agentów. Po każdej korekcie dodaj nowy wpis.
 
 ## Wpisy
 
+### 2026-07-29 - Klucz mapy JSON personalizacji to kontrakt cross-repo — adapter nie może przemapować `id`
+
+- **Kategoria**: `GraphQL` | `React`
+- **Problem**: Fizjo zapisywał parametry w panelu (`exerciseOverrides[mapping.id]`), a pacjent w apce ich nie widział — nawet po odświeżeniu.
+- **Przyczyna**: `transformExerciseMapping` rozsypywał najpierw pola ćwiczenia (`id` = exercise.id) i nadpisywał tylko `_id`; `applyExerciseOverrides` czytał `overrides[id]` → nigdy nie trafiał w klucz panelu. Dodatkowo backend nie emitował `onMyAssignmentChanged`, a „Edytuj plan” robił pełny replace JSON i zacieniał świeży mapping starym override dawkowania.
+- **Rozwiązanie**: `mappingId` w adapterze + dual-read (`mappingId|_id|id|exerciseId`); parytet pól mappingu; merge override w wizardzie; realtime per-pacjent w backendzie; dodanie ćwiczenia jako real mapping.
+- **Reguła**: Klucz mapy JSON personalizacji (`ExerciseSetMapping.id`) jest częścią kontraktu admin↔mobile. Adapter read-modelu, który nadpisuje lub gubi `id`, zrywa kontrakt po cichu. Write/read muszą dzielić ten sam klucz; przy legacy kluczach stosuj dual-read, nie „naprawiaj” tylko jedną stronę.
+
 ### 2026-07-28 - Personalizacja enrichment wymaga tej samej whitelist ścieżek w adminie i mobile
 
 - **Kategoria**: `GraphQL` | `React` | `UI/UX`

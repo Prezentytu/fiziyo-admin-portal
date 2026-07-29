@@ -65,8 +65,9 @@ sequenceDiagram
 
 ## Faza 2 - Backend (.NET / HotChocolate)
 
-Status: **DO WDROZENIA** w backend repo. Pelny kontrakt:
+Status: **WDROŻONE** (2026-07-29) w backend repo. Kontrakt:
 [`docs/backend/realtime-patient-sync-contract.md`](../../docs/backend/realtime-patient-sync-contract.md).
+Wymaga manualnego deployu Azure.
 
 ### Schema GraphQL
 
@@ -200,6 +201,15 @@ Brak nowych - subskrypcja jest niewidoczna w UI. Refresh control korzysta z
 domyslnych RN test IDs.
 
 ## Changelog
+
+### 2026-07-29
+
+- Backend: `onMyAssignmentChanged` + `AssignmentChangeEvent` + emisja w 8 mutacjach
+  (assign/update/remove assignment, overrides, mapping add/update/remove, updateExercise).
+- `updatePatientExerciseOverrides` emituje też `{orgId}:assignment:updated` (panel admin).
+- Mobile: dual-read klucza override (`mappingId` > `_id` > `id` > `exerciseId`), parytet pól,
+  focus refetch w player/summary/history.
+- Admin: merge override przy „Edytuj plan” (bez wipe), real mapping przy dodaniu ćwiczenia.
 
 ### 2026-04-17
 

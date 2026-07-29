@@ -363,7 +363,7 @@ export function PatientExpandableCard({
               </Button>
             )}
 
-            {/* QR Code / Recepta (only for my patients) */}
+            {/* QR Code(only for my patients) */}
             {isMyPatient && onShowQR && (
               <Button
                 variant="ghost"

@@ -37,7 +37,11 @@ import { buildStructuredLoad, mapAvailableExercises } from './utils/availableExe
 import { appendPatientIfMissing } from './utils/patientSelectionUtils';
 import { computeExerciseDiff, type ExerciseMappingSnapshot } from './utils/exerciseDiff';
 import { buildExerciseSetFromBuilder } from './utils/buildExerciseSetFromBuilder';
-import { seedBuilderParamsFromMapping } from './utils/seedBuilderParamsFromMapping';
+import {
+  getAssignmentOverrideForMapping,
+  seedBuilderParamsFromMapping,
+} from './utils/seedBuilderParamsFromMapping';
+import { mergeAssignmentOverridesOnEdit } from './utils/mergeAssignmentOverridesOnEdit';
 import {
   buildAssignmentFrequencyPayload,
   normalizeFrequencySeed,
@@ -320,14 +324,20 @@ function AssignmentWizardContent({
         instanceId,
         exerciseId: mapping.exerciseId,
       });
+      const assignmentOverride = getAssignmentOverrideForMapping(
+        initialAssignment.exerciseOverrides,
+        mapping.id
+      );
+      const seeded = seedBuilderParamsFromMapping(mapping, assignmentOverride);
       params.set(instanceId, {
-        ...seedBuilderParamsFromMapping(mapping),
-        loadType: mapping.loadType ?? undefined,
-        loadValue: mapping.loadValue ?? undefined,
-        loadUnit: mapping.loadUnit ?? undefined,
-        loadText: mapping.loadText ?? undefined,
-        loadWeightKg: mapping.load?.loadWeightKg ?? mapping.loadValue ?? undefined,
-        loadSource: mapping.load?.loadSource ?? undefined,
+        ...seeded,
+        loadType: seeded.load?.type ?? mapping.loadType ?? undefined,
+        loadValue: seeded.loadWeightKg ?? seeded.load?.value ?? mapping.loadValue ?? undefined,
+        loadUnit: seeded.load?.unit ?? mapping.loadUnit ?? undefined,
+        loadText: seeded.load?.text ?? mapping.loadText ?? undefined,
+        loadWeightKg:
+          seeded.loadWeightKg ?? mapping.load?.loadWeightKg ?? mapping.loadValue ?? undefined,
+        loadSource: seeded.load?.loadSource ?? mapping.load?.loadSource ?? undefined,
       });
     });
 
@@ -1245,12 +1255,25 @@ function AssignmentWizardContent({
         builderParams,
         availableExercises
       );
-      const overridesByMappingId = remapOverrideDeltasToMappingIds(
+      const clinicalByMappingId = remapOverrideDeltasToMappingIds(
         deltasByInstanceId,
         instanceIdToMappingId
       );
-      const exerciseOverridesJson = stringifyAssignmentOverrides(overridesByMappingId);
-      if (exerciseOverridesJson) {
+      const activeMappingIds = [...instanceIdToMappingId.values()];
+      const mappingIdsWithWrittenDosage = [
+        ...diff.updated.map((item) => item.mappingId),
+        ...diff.added
+          .map((item) => instanceIdToMappingId.get(item.instance.instanceId))
+          .filter((mappingId): mappingId is string => Boolean(mappingId)),
+      ];
+      const exerciseOverridesJson = mergeAssignmentOverridesOnEdit({
+        existingJson: initialAssignment.exerciseOverrides,
+        clinicalByMappingId,
+        activeMappingIds,
+        mappingIdsWithWrittenDosage,
+      });
+      const existingOverridesJson = initialAssignment.exerciseOverrides?.trim() || '{}';
+      if (exerciseOverridesJson !== existingOverridesJson) {
         try {
           await updatePatientExerciseOverrides({
             variables: {

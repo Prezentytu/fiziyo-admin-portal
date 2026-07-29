@@ -545,7 +545,7 @@ export default function PatientsPage() {
         onSuccess={() => setTakeOverPatient(null)}
       />
 
-      {/* QR Code / Recepta Dialog */}
+      {/* QR Code */}
       {therapistId && organizationId && (
         <PatientQRCodeDialog
           open={!!qrPatient}

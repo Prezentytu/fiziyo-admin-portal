@@ -4,7 +4,7 @@ Ten dokument opisuje kontrakt GraphQL (HotChocolate / .NET 9) i mechanizm
 emisji eventow, ktore backend musi wystawic, zeby aplikacja mobilna FiziYo
 otrzymywala push-update'y po edycjach wykonanych w panelu admina.
 
-Status: **TO BE IMPLEMENTED** w backend repo.
+Status: **IMPLEMENTED** (2026-07-29) w `fizjo-app/backend`. Wymaga manualnego deployu Azure.
 
 ## 1. Cel
 
