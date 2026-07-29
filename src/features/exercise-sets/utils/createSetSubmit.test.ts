@@ -73,6 +73,7 @@ describe('createSetSubmit', () => {
       loadValue: 5,
       loadUnit: 'kg',
       loadText: '5 kg',
+      overridesJson: '',
     });
   });
 

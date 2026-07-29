@@ -1,5 +1,11 @@
 import { resolveLoadKg } from '@/utils/exerciseLoadMutation';
+import type { ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.types';
 import type { ExerciseOverrideFields } from './exerciseOverride';
+import { applyEnrichmentOverride, hasEnrichmentOverrideContent } from './enrichmentOverride';
+import {
+  mergeOverrideLayers,
+  parseMappingOverridesJson,
+} from './mappingOverrides';
 
 export interface EffectiveTemplateSource {
   name?: string;
@@ -27,6 +33,8 @@ export interface EffectiveTemplateSource {
   mainTags?: string[];
   additionalTags?: string[];
   type?: string;
+  /** Template enrichment v3 (SPEC-024 baseline). */
+  enrichmentData?: ExerciseEnrichmentData | null;
   defaultLoad?: {
     loadWeightKg?: number | null;
     loadSource?: string | null;
@@ -57,6 +65,8 @@ export interface EffectiveMappingSource {
   notes?: string;
   customName?: string;
   customDescription?: string;
+  /** Template-set personalization JSON (SPEC-023). */
+  overridesJson?: string | ExerciseOverrideFields | null;
   videoUrl?: string;
   load?: {
     loadWeightKg?: number | null;
@@ -105,6 +115,11 @@ export interface EffectiveExerciseParams {
   isTimeBased: boolean;
   /** Field keys present on the override object (for per-field badges). */
   overriddenKeys: string[];
+  /**
+   * Effective enrichment after mapping + assignment path overrides (SPEC-024).
+   * Therapist/ai/equipment always come from template.
+   */
+  effectiveEnrichment: ExerciseEnrichmentData;
 }
 
 function pickDefined<T>(...candidates: Array<T | null | undefined>): T | undefined {
@@ -150,17 +165,17 @@ function resolveTemplateLoadKg(exercise?: EffectiveTemplateSource): number | und
 }
 
 function resolveSide(
-  override?: ExerciseOverrideFields,
+  layered?: ExerciseOverrideFields,
   exercise?: EffectiveTemplateSource
 ): string {
-  const fromOverride = override?.exerciseSide?.toString().toLowerCase();
+  const fromOverride = layered?.exerciseSide?.toString().toLowerCase();
   if (fromOverride) return fromOverride;
   const fromExercise = (exercise?.side ?? exercise?.exerciseSide)?.toString().toLowerCase();
   return fromExercise || 'none';
 }
 
 /**
- * Precedence: override > mapping > template for every overridable field.
+ * Precedence: assignment override > mapping.overridesJson > mapping columns > template.
  * `undefined` on override means "not overridden" (do not coerce to 0).
  */
 export function resolveEffectiveExerciseParams(
@@ -168,43 +183,47 @@ export function resolveEffectiveExerciseParams(
   override?: ExerciseOverrideFields | null
 ): EffectiveExerciseParams {
   const exercise = mapping.exercise;
-  const overriddenKeys = Object.keys(override ?? {}).filter((key) => {
+  const mappingOverrides = parseMappingOverridesJson(mapping.overridesJson);
+  const layered = mergeOverrideLayers(mappingOverrides, override);
+  const overriddenKeys = Object.keys(layered ?? {}).filter((key) => {
     if (key === 'exerciseMappingId') return false;
-    const value = override?.[key as keyof ExerciseOverrideFields];
+    const value = layered?.[key as keyof ExerciseOverrideFields];
     if (value === undefined) return false;
     if (key === 'customImages' && Array.isArray(value) && value.length === 0) return false;
     if (key === 'hidden' && value === false) return false;
+    if (key === 'enrichment') return hasEnrichmentOverrideContent(layered?.enrichment);
     return true;
   });
+  const effectiveEnrichment = applyEnrichmentOverride(exercise?.enrichmentData, layered?.enrichment);
 
-  const sets = pickDefined(override?.sets, mapping.sets, exercise?.defaultSets, exercise?.sets) ?? 3;
-  const reps = pickDefined(override?.reps, mapping.reps, exercise?.defaultReps, exercise?.reps) ?? 10;
+  const sets = pickDefined(layered?.sets, mapping.sets, exercise?.defaultSets, exercise?.sets) ?? 3;
+  const reps = pickDefined(layered?.reps, mapping.reps, exercise?.defaultReps, exercise?.reps) ?? 10;
   const duration = pickDefined(
-    override?.duration,
+    layered?.duration,
     mapping.duration,
     exercise?.defaultDuration,
     exercise?.duration
   );
   const executionTime = pickDefined(
-    override?.executionTime,
+    layered?.executionTime,
     mapping.executionTime,
     exercise?.defaultExecutionTime
   );
   const restSets =
-    pickDefined(override?.restSets, mapping.restSets, exercise?.defaultRestBetweenSets) ?? 60;
+    pickDefined(layered?.restSets, mapping.restSets, exercise?.defaultRestBetweenSets) ?? 60;
   const restReps = pickDefined(
-    override?.restReps,
+    layered?.restReps,
     mapping.restReps,
     exercise?.defaultRestBetweenReps
   );
   const preparationTime = pickDefined(
-    override?.preparationTime,
+    layered?.preparationTime,
     mapping.preparationTime,
     exercise?.preparationTime
   );
-  const tempo = pickDefined(override?.tempo, mapping.tempo, exercise?.tempo);
+  const tempo = pickDefined(layered?.tempo, mapping.tempo, exercise?.tempo);
   const loadKg = pickDefined(
-    resolveOverrideLoadKg(override ?? undefined),
+    resolveOverrideLoadKg(layered),
     resolveMappingLoadKg(mapping),
     resolveTemplateLoadKg(exercise)
   );
@@ -218,23 +237,23 @@ export function resolveEffectiveExerciseParams(
         exercise?.loadText?.trim() ||
         undefined;
 
-  const customName = pickDefined(override?.customName, mapping.customName);
-  const customDescription = pickDefined(override?.customDescription, mapping.customDescription);
-  const notes = pickDefined(override?.notes, mapping.notes, exercise?.notes) ?? '';
-  const rangeOfMotion = pickDefined(override?.rangeOfMotion, exercise?.rangeOfMotion);
-  const side = resolveSide(override ?? undefined, exercise);
-  const difficultyLevel = pickDefined(override?.difficultyLevel, exercise?.difficultyLevel);
+  const customName = pickDefined(layered?.customName, mapping.customName);
+  const customDescription = pickDefined(layered?.customDescription, mapping.customDescription);
+  const notes = pickDefined(layered?.notes, mapping.notes, exercise?.notes) ?? '';
+  const rangeOfMotion = pickDefined(layered?.rangeOfMotion, exercise?.rangeOfMotion);
+  const side = resolveSide(layered, exercise);
+  const difficultyLevel = pickDefined(layered?.difficultyLevel, exercise?.difficultyLevel);
   const patientDescription = pickDefined(
-    override?.patientDescription,
+    layered?.patientDescription,
     customDescription,
     exercise?.patientDescription,
     exercise?.description
   );
   const clinicalDescription = pickDefined(
-    override?.clinicalDescription,
+    layered?.clinicalDescription,
     exercise?.clinicalDescription
   );
-  const audioCue = pickDefined(override?.audioCue, exercise?.audioCue);
+  const audioCue = pickDefined(layered?.audioCue, exercise?.audioCue);
   const displayName = (customName?.trim() || exercise?.name?.trim() || 'Ćwiczenie') as string;
   const exerciseType = exercise?.type?.toLowerCase();
   const isTimeBased = exerciseType === 'time';
@@ -265,9 +284,10 @@ export function resolveEffectiveExerciseParams(
     additionalTags: exercise?.additionalTags,
     thumbnailUrl: exercise?.thumbnailUrl ?? exercise?.imageUrl,
     videoUrl: mapping.videoUrl ?? exercise?.videoUrl,
-    customImages: override?.customImages,
-    hidden: override?.hidden ?? false,
+    customImages: layered?.customImages,
+    hidden: layered?.hidden ?? false,
     isTimeBased,
     overriddenKeys,
+    effectiveEnrichment,
   };
 }

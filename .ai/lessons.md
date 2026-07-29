@@ -14,6 +14,22 @@ Dziennik wniosków z pracy AI agentów. Po każdej korekcie dodaj nowy wpis.
 
 ## Wpisy
 
+### 2026-07-28 - Personalizacja enrichment wymaga tej samej whitelist ścieżek w adminie i mobile
+
+- **Kategoria**: `GraphQL` | `React` | `UI/UX`
+- **Problem**: Terapeuta mógł edytować parametry w assign, ale nie kroki wykonania — pacjent zawsze widział szablon; `effectiveEnrichment` w mobile to był tylko fallback query.
+- **Przyczyna**: Enrichment żył wyłącznie na `Exercise`; `exerciseOverrides` / `overridesJson` nie miały klucza `enrichment`, a mobile nie scalał delty.
+- **Rozwiązanie**: Whitelist 11 ścieżek patient/safety (SPEC-024), delta w istniejącym JSON, `ExercisePatientContentFields` jako SSOT UI, mobile `applyExerciseOverrides` + `overridesJson` w fragmencie.
+- **Reguła**: Treść widoczna pacjentowi personalizuj przez path-override JSON (nie pełny deep-merge i nie nową kolumnę). Logika merge musi być skopiowana 1:1 admin↔mobile na wspólnych fixture'ach; deploy admin+mobile razem.
+
+### 2026-07-28 - Prezentacja parametrów też musi mieć SSOT, nie tylko kontrakt danych
+
+- **Kategoria**: `UI/UX` | `React`
+- **Problem**: `fieldContract` ujednolicał etykiety/walidację, ale create, `ExerciseExecutionCard` i dialogi pacjenta miały trzy niezależne layouity (kolejność pól, „Czas serii” jako kafel vs input, brak badge'a timera).
+- **Przyczyna**: SSOT zatrzymał się na semantyce; warstwa prezentacji nadal była kopiowana lokalnie.
+- **Rozwiązanie**: `PARAMETER_SECTIONS` + `ExerciseParametersFields` jako jedyna prezentacja; kafle „Czas serii/ćwiczenia (wyliczany)”; `duration` tylko w advanced; treść create/edit przez `ExerciseContentSections` (SPEC-022).
+- **Reguła**: Kontrakt pól bez wspólnego komponentu UI i tak dryfuje wizualnie. Surface derywuje podzbiór/gęstość (`omitFields`, `density`, `testIdFor`) — nigdy kolejności sekcji ani etykiet kafli.
+
 ### 2026-07-28 - Pole bez kolumny na mappingu ≠ readonly przy pacjencie
 
 - **Kategoria**: `GraphQL` | `React` | `UI/UX`
@@ -845,5 +861,13 @@ Dziennik wniosków z pracy AI agentów. Po każdej korekcie dodaj nowy wpis.
 - **Przyczyna**: Globalny i organizacyjny lifecycle używają tej samej encji `Exercise`, ale mają niezależne statusy i granice tenantów. Dodatkowo selekcja może przeżyć zmianę danych kolejki, jeśli nie jest czyszczona przy zmianie filtra, wyszukiwania lub strony.
 - **Rozwiązanie**: Wydzielono wspólny page-scoped model selekcji, resetowano go przy zmianie kontekstu listy, a cross-org bulk payload przenosi parę `organizationId + exerciseId`; backend ma ponownie egzekwować RBAC, scope i dozwolone przejścia statusu oraz zwracać błędy per ID.
 - **Reguła**: Dla bulk operacji na encjach tenant-aware payload zawsze musi zawierać jawny scope, selekcję ograniczaj do aktualnie widocznej strony, a częściowe wyniki obsługuj per rekord — nigdy nie zakładaj, że sukces całej mutacji oznacza sukces każdego ID.
+
+### 2026-07-28 - duration vs wyliczany czas serii + overridesJson na mappingu
+
+- **Kategoria**: `Exercise` | `GraphQL` | `UX`
+- **Problem**: Edytowalne „Czas serii” (`duration`) dublowało kafel wyliczany; na zestawie TEMPLATE pola side/ROM/teksty były tylko „odziedziczone”, mimo że fizjo buduje protokoły przed assignem.
+- **Przyczyna**: `duration` to legacy override time-based; encja mapping nie miała kolumn klasyfikacji/treści — tylko assignment `exerciseOverrides`.
+- **Rozwiązanie**: `duration` → `DEPRECATED_FIELD_KEYS` + legacy clear row; addytywne `ExerciseSetMapping.overridesJson` zawsze w kontrakcie admina (deploy razem z backendem). Precedencja resolvera: assignment > mapping JSON > columns > template.
+- **Reguła**: Czas serii pokazuj jako wyliczenie; edytuj `executionTime`. Personalizacja szablonu zestawu ≠ personalizacja pacjenta — osobne warstwy JSON, ten sam kształt kluczy. Addytywne pola GraphQL wdrażaj razem z backendem.
 
 <!-- Dodawaj nowe wpisy powyżej tej linii -->

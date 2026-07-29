@@ -213,10 +213,11 @@ Open → Closed → Invoiced → Paid
 Pozycja ćwiczenia w zestawie z opcjonalnymi nadpisaniami parametrów:
 
 - `ExerciseSetId`, `ExerciseId`, `Order`
-- Nadpisania: `Sets`, `Reps`, `Duration`, `ExecutionTime`, `RestSets`, `RestReps`, `PreparationTime`, `Tempo`, `Load` (JSONB)
+- Nadpisania: `Sets`, `Reps`, `Duration` (legacy read/clear), `ExecutionTime`, `RestSets`, `RestReps`, `PreparationTime`, `Tempo`, `Load` (JSONB)
 - Custom: `Notes`, `CustomName` (200), `CustomDescription` (4000)
-- Brak na mappingu (tylko z `Exercise` + opcjonalnie `PatientAssignment.exerciseOverrides`): `Side`, `RangeOfMotion`, `DifficultyLevel`, opisy/audioCue
-- Personalizacja przy assign (SPEC-021): dawkowanie → `ExerciseSetMapping` na `PATIENT_PLAN`; side/ROM/difficulty/teksty → JSON `exerciseOverrides` (`persistence: assignmentOverride`)
+- `OverridesJson` (nullable, SPEC-023/024): JSON subset dla `exerciseSide` / `rangeOfMotion` / `difficultyLevel` / `patientDescription` / `clinicalDescription` / `audioCue` oraz `enrichment` (whitelist ścieżek patient._ + safety._) na zestawach TEMPLATE
+- Personalizacja przy assign (SPEC-021/024): dawkowanie → `ExerciseSetMapping` na `PATIENT_PLAN`; side/ROM/difficulty/teksty/`enrichment` → JSON `exerciseOverrides` (`persistence: assignmentOverride`)
+- Precedencja efektywna: assignment override > mapping.overridesJson > mapping columns > Exercise template (enrichment: path-level merge tej samej precedencji)
 
 ### PatientAssignment
 

@@ -18,9 +18,13 @@ Builder zestawu ćwiczeń — listowanie, dodawanie, edycja, usuwanie ćwiczeń 
 
 Jedyny bazowy komponent poziomego kafelka/paska ćwiczenia (miniatura + nazwa + podstawowe parametry + akcje). Używaj go we wszystkich flow wymagających listy ćwiczeń zamiast tworzyć lokalne warianty.
 
-### fieldContract + displayRegistry
+### fieldContract + displayRegistry + ExerciseParametersFields
 
-SSOT semantyki pól ćwiczenia: etykiety (`displayRegistry.ts`), tier/surfaces/zod/options (`fieldContract.ts`). Powierzchnie create/edit/mapping/override derywują podzbiór i layout — nigdy lokalnych etykiet ani reguł walidacji.
+SSOT semantyki pól ćwiczenia: etykiety (`displayRegistry.ts`), tier/surfaces/sekcje/zod (`fieldContract.ts` + `PARAMETER_SECTIONS`). Jedyna prezentacja edycji parametrów: `ExerciseParametersFields.tsx` — powierzchnie (template/mapping/patientPlan/patientOverride) derywują podzbiór, `omitFields`, `density` i `testIdFor`, nigdy lokalnych etykiet, kolejności sekcji ani reguł walidacji.
+
+- `duration` jest w `DEPRECATED_FIELD_KEYS` — nie renderuj jako input; pokaż legacy clear gdy wartość > 0.
+- `mappingOverrides.ts` — warstwa `overridesJson` na mappingu (SPEC-023/024, zawsze włączona); resolver: assignment > mapping JSON > columns > template.
+- Treść pacjenta (kroki/cues/safety): `contentContract.ts` + `enrichmentOverride.ts` + `ExercisePatientContentFields` (SPEC-024). Karta ma collapsible „Instrukcje dla pacjenta”; delta leci w `overridesJson.enrichment` / `exerciseOverrides[].enrichment`.
 
 ### LabeledStepper
 

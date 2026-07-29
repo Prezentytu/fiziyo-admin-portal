@@ -2,6 +2,9 @@ import type { ExerciseExecutionCardData } from './types';
 import type { ExerciseMapping, ExerciseLoad } from '@/features/assignment/types';
 import type { ExerciseOverrideFields } from './exerciseOverride';
 import { resolveEffectiveExerciseParams } from './resolveEffectiveExerciseParams';
+import { applyEnrichmentOverride } from './enrichmentOverride';
+import { toV3 } from '@/features/verification/utils/enrichmentToV3';
+import type { ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.types';
 import { resolveLoadKg } from '@/utils/exerciseLoadMutation';
 import { getMediaUrl, getMediaUrls } from '@/utils/mediaUrl';
 
@@ -155,6 +158,8 @@ export function fromExerciseMapping(
     customDescription: effective.customDescription,
     side: effective.side,
     isTimeBased: effective.isTimeBased,
+    enrichment: effective.effectiveEnrichment,
+    templateEnrichment: toV3(exercise?.enrichmentData),
   };
 }
 
@@ -187,6 +192,7 @@ export function fromBuilderExercise(
     exerciseSide?: string;
     mainTags?: Array<{ name?: string } | string>;
     additionalTags?: Array<{ name?: string } | string>;
+    enrichmentData?: ExerciseEnrichmentData | null;
   },
   params: {
     sets?: number;
@@ -206,6 +212,7 @@ export function fromBuilderExercise(
     patientDescription?: string;
     clinicalDescription?: string;
     audioCue?: string;
+    enrichment?: ExerciseEnrichmentData;
     loadWeightKg?: number;
     loadSource?: string;
     loadType?: string;
@@ -273,5 +280,7 @@ export function fromBuilderExercise(
     customDescription: params.customDescription,
     side: (params.exerciseSide ?? exercise.side ?? exercise.exerciseSide ?? 'both')?.toLowerCase(),
     isTimeBased,
+    enrichment: params.enrichment ?? applyEnrichmentOverride(exercise.enrichmentData, null),
+    templateEnrichment: toV3(exercise.enrichmentData),
   };
 }

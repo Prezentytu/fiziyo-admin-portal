@@ -30,14 +30,14 @@ Moduł szablonów ćwiczeń: formularz create/edit, lista, filtrowanie, hierarch
 
 ### Podstawowe parametry (Presets)
 
-| Pole                     | Typ           | Opis                               | Label w UI             | Default |
-| ------------------------ | ------------- | ---------------------------------- | ---------------------- | ------- |
-| `DefaultSets`            | decimal       | Domyślna liczba serii              | Serie                  | 3       |
-| `DefaultReps`            | decimal?      | Domyślna liczba powtórzeń          | Powtórzenia            | 10      |
-| `DefaultDuration`        | decimal?      | Czas serii dla ćwiczeń time-based  | Czas serii             | -       |
-| `DefaultRestBetweenSets` | decimal       | Przerwa między SERIAMI (sekundy)   | Przerwa między seriami | 60      |
-| `DefaultRestBetweenReps` | decimal       | Mikro-przerwa między POWTÓRZENIAMI | Przerwa między powt.   | 0       |
-| `DefaultLoad`            | ExerciseLoad? | Domyślne obciążenie/opór           | Obciążenie             | -       |
+| Pole                     | Typ           | Opis                                                    | Label w UI             | Default |
+| ------------------------ | ------------- | ------------------------------------------------------- | ---------------------- | ------- |
+| `DefaultSets`            | decimal       | Domyślna liczba serii                                   | Serie                  | 3       |
+| `DefaultReps`            | decimal?      | Domyślna liczba powtórzeń                               | Powtórzenia            | 10      |
+| `DefaultDuration`        | decimal?      | Legacy override czasu serii (nie edytuj w UI; SPEC-023) | Czas serii (legacy)    | -       |
+| `DefaultRestBetweenSets` | decimal       | Przerwa między SERIAMI (sekundy)                        | Przerwa między seriami | 60      |
+| `DefaultRestBetweenReps` | decimal       | Mikro-przerwa między POWTÓRZENIAMI                      | Przerwa między powt.   | 0       |
+| `DefaultLoad`            | ExerciseLoad? | Domyślne obciążenie/opór                                | Obciążenie             | -       |
 
 ### ExerciseLoad (Obciążenie)
 
@@ -99,13 +99,15 @@ Przykłady: `3 × 10`, `3 × 10 × 10s`, `3 × 1 × 30s`
 
 ## Referencje
 
-- Edytor szablonu: `ExerciseEditor.tsx` + `useExerciseEditorForm.ts` + `ExerciseParametersEditor.tsx`
-- Kreator: `CreateExerciseWizard.tsx` (lean subset z `variant="create"`)
+- Prezentacja parametrów (SSOT UI): `src/components/shared/exercise/ExerciseParametersFields.tsx` + `PARAMETER_SECTIONS` w `fieldContract.ts`
+- Adapter szablonu: `ExerciseParametersEditor.tsx` → Fields (`variant="create"|"full"`)
+- Treść (enrichment): `ExerciseContentSections.tsx` — wspólne dla `ExerciseEditor` i `CreateExerciseWizard`
+- Kreator: `CreateExerciseWizard.tsx` + `utils/createExerciseSubmit.ts` (create → optional enrichment update)
 - Dialog edycji: `ExerciseDialog.tsx` → ten sam `ExerciseEditor`
 - Field contract: `src/components/shared/exercise/fieldContract.ts`
 - Lista: strona `app/(dashboard)/exercises/`
 - GraphQL: `src/graphql/queries/`, `src/graphql/mutations/`
-- Single source of truth podstawowych parametrów: `.ai/specs/SPEC-012-2026-04-08-exercise-dosage-model.md`
+- SSOT parametrów: `.ai/specs/SPEC-012-2026-04-08-exercise-dosage-model.md`, unifikacja UI: `.ai/specs/SPEC-022-2026-07-28-unified-exercise-parameters.md`
 - Akcja `Dodaj do zestawu` na detalu ćwiczenia używa `CreateSetWizard` (`src/features/exercise-sets/CreateSetWizard.tsx`) z `initialExerciseIds`.
 
 ## Konwencje data-testid

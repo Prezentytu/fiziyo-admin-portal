@@ -131,3 +131,4 @@ Przy zmianie schematu backendu — zaktualizuj typy w **obu** repozytoriach.
 5. **Env variables** — admin: `NEXT_PUBLIC_API_URL`; mobile: `EXPO_PUBLIC_API_URL` (w `app.config.ts`); backend: connection strings w `appsettings.json`.
 6. **Deploy backendu** — wdrożenie na Azure jest manualne i wykonuje je użytkownik. Agent powinien jasno zaznaczyć, gdy zmiana backendowa wymaga ręcznego deploya, zamiast zakładać, że środowisko zdalne samo się zaktualizuje.
 7. **Dual verification model** — globalna i organizacyjna weryfikacja są równoległe. Przy każdej zmianie statusów ćwiczeń aktualizuj backend + admin + mobile, aby nie mieszać `ContentStatus` z `OrganizationVerificationStatus`.
+8. **Enrichment personalization (SPEC-024)** — delta `enrichment` w `overridesJson` / `exerciseOverrides` wymaga tej samej whitelist ścieżek w adminie (`enrichmentOverride.ts`) i mobile (`utils/enrichmentOverride.ts`). Deploy admin + mobile razem; sam backend (limit JSON) może iść wcześniej.

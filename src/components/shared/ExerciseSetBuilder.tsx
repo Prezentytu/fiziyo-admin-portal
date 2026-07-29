@@ -52,6 +52,7 @@ import { buildExerciseLoadParamFields } from '@/utils/exerciseLoadMutation';
 import type { ExerciseSourceFilter } from '@/utils/exerciseSourceFilter';
 import { cn } from '@/lib/utils';
 import { EMPTY_EXERCISE_PARAMS, getExerciseDefaultParams } from '@/features/exercise-sets/utils/exerciseDefaults';
+import type { ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.types';
 
 // ============================================================
 // TYPES
@@ -102,6 +103,8 @@ export interface BuilderExercise {
   additionalTags?: ExerciseTag[];
   /** GLOBAL | ORGANIZATION | PERSONAL - for source filter (Moje / Wszystkie / FiziYo) */
   scope?: string;
+  /** Template enrichment v3 baseline (SPEC-024). */
+  enrichmentData?: ExerciseEnrichmentData | null;
 }
 
 export interface ExerciseParams {
@@ -129,6 +132,11 @@ export interface ExerciseParams {
   clinicalDescription?: string;
   audioCue?: string;
   customImages?: string[];
+  /**
+   * Effective enrichment draft for personalization (SPEC-024).
+   * Write-path diffs this against exercise.enrichmentData.
+   */
+  enrichment?: ExerciseEnrichmentData;
   // Structured load (alternative to individual load fields)
   load?: {
     loadWeightKg?: number | null;
@@ -346,9 +354,11 @@ function ExerciseLibraryActionItem({
 // SORTABLE EXERCISE CARD - uses shared ExerciseExecutionCard
 // ============================================================
 
+type ExerciseParamValue = ExerciseParams[keyof ExerciseParams];
+
 function applyCardPatchToParams(
   patch: Partial<ExerciseExecutionCardData>,
-  onUpdateParams: (field: keyof ExerciseParams, value: number | string | undefined) => void
+  onUpdateParams: (field: keyof ExerciseParams, value: ExerciseParamValue) => void
 ): void {
   if ('sets' in patch) onUpdateParams('sets', patch.sets);
   if ('reps' in patch) onUpdateParams('reps', patch.reps);
@@ -369,6 +379,7 @@ function applyCardPatchToParams(
     onUpdateParams('clinicalDescription', patch.clinicalDescription);
   }
   if ('audioCue' in patch) onUpdateParams('audioCue', patch.audioCue);
+  if ('enrichment' in patch) onUpdateParams('enrichment', patch.enrichment);
   if ('loadKg' in patch) {
     const loadFields = buildExerciseLoadParamFields(patch.loadKg);
     onUpdateParams('loadWeightKg', loadFields.loadWeightKg);
@@ -396,7 +407,7 @@ function SortableExerciseCard({
   exercise: BuilderExercise;
   index: number;
   params: ExerciseParams;
-  onUpdateParams: (field: keyof ExerciseParams, value: number | string | undefined) => void;
+  onUpdateParams: (field: keyof ExerciseParams, value: ExerciseParamValue) => void;
   onRemove: () => void;
   onPreview: () => void;
   testIdPrefix?: string;
@@ -559,7 +570,7 @@ export function ExerciseSetBuilder({
   );
 
   const updateExerciseParams = useCallback(
-    (instanceId: string, field: keyof ExerciseParams, value: number | string | undefined) => {
+    (instanceId: string, field: keyof ExerciseParams, value: ExerciseParamValue) => {
       const next = new Map(exerciseParams);
       const instance = selectedInstances.find((i) => i.instanceId === instanceId);
       const exercise = availableExercises.find((e) => e.id === instance?.exerciseId);

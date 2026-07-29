@@ -2,9 +2,13 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.types';
-import { cleanupEnrichment } from '@/features/verification/utils/enrichment';
-import { ENRICHMENT_SCHEMA_V3, toV3 } from '@/features/verification/utils/enrichmentToV3';
+import { toV3 } from '@/features/verification/utils/enrichmentToV3';
 import { buildExerciseLoadMutationVars } from '@/utils/exerciseLoadMutation';
+import {
+  composeEnrichmentPayload,
+  deepCloneEnrichment,
+  setEnrichmentAtPath,
+} from './useEnrichmentDraft';
 
 /**
  * Pojedynczy model formularza edytora ćwiczenia (v3).
@@ -158,31 +162,6 @@ function deriveCoreDraft(source: ExerciseEditorSource | null | undefined): Exerc
   };
 }
 
-function deepClone<T>(value: T): T {
-  return JSON.parse(JSON.stringify(value)) as T;
-}
-
-function setAtPath(target: Record<string, unknown>, path: string, value: unknown): void {
-  const keys = path.split('.');
-  let current: Record<string, unknown> = target;
-
-  for (let index = 0; index < keys.length - 1; index += 1) {
-    const key = keys[index];
-    const nested = current[key];
-    if (!nested || typeof nested !== 'object' || Array.isArray(nested)) {
-      current[key] = {};
-    }
-    current = current[key] as Record<string, unknown>;
-  }
-
-  current[keys[keys.length - 1]] = value;
-}
-
-function composeEnrichmentPayload(draft: ExerciseEnrichmentData): ExerciseEnrichmentData {
-  const cleaned = cleanupEnrichment(draft) as ExerciseEnrichmentData | undefined;
-  return { ...cleaned, $schema: ENRICHMENT_SCHEMA_V3 };
-}
-
 function getAtPath(source: unknown, path: string): unknown {
   const keys = path.split('.');
   let current: unknown = source;
@@ -304,8 +283,8 @@ export function useExerciseEditorForm({
 
   const setEnrichmentPath = useCallback((path: string, value: unknown) => {
     setEnrichment((previous) => {
-      const next = deepClone(previous);
-      setAtPath(next as Record<string, unknown>, path, value);
+      const next = deepCloneEnrichment(previous);
+      setEnrichmentAtPath(next as Record<string, unknown>, path, value);
       return next;
     });
     setSaveStatus('idle');

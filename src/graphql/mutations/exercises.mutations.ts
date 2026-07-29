@@ -657,6 +657,7 @@ export const UPDATE_EXERCISE_IN_SET_MUTATION = gql`
     $loadText: String
     $loadWeightKg: Decimal
     $loadSource: String
+    $overridesJson: String
   ) {
     updateExerciseInSet(
       exerciseId: $exerciseId
@@ -679,6 +680,7 @@ export const UPDATE_EXERCISE_IN_SET_MUTATION = gql`
       loadText: $loadText
       loadWeightKg: $loadWeightKg
       loadSource: $loadSource
+      overridesJson: $overridesJson
     ) {
       id
       exerciseSetId
@@ -694,6 +696,7 @@ export const UPDATE_EXERCISE_IN_SET_MUTATION = gql`
       notes
       customName
       customDescription
+      overridesJson
       tempo
       loadType
       loadValue
@@ -802,6 +805,7 @@ export const ADD_EXERCISE_TO_EXERCISE_SET_MUTATION = gql`
     $loadText: String
     $loadWeightKg: Decimal
     $loadSource: String
+    $overridesJson: String
   ) {
     addExerciseToExerciseSet(
       exerciseId: $exerciseId
@@ -824,6 +828,7 @@ export const ADD_EXERCISE_TO_EXERCISE_SET_MUTATION = gql`
       loadText: $loadText
       loadWeightKg: $loadWeightKg
       loadSource: $loadSource
+      overridesJson: $overridesJson
     ) {
       id
       exerciseSetId
@@ -839,6 +844,7 @@ export const ADD_EXERCISE_TO_EXERCISE_SET_MUTATION = gql`
       notes
       customName
       customDescription
+      overridesJson
       tempo
       loadType
       loadValue

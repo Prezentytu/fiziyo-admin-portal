@@ -37,11 +37,13 @@ describe('fieldContract persistence routing', () => {
     expect(getInheritedFieldKeys('patientOverride')).toEqual([]);
   });
 
-  it('getInheritedFieldKeys(mapping) zawiera side/ROM/difficulty', () => {
+  it('getInheritedFieldKeys(mapping) jest puste (overridesJson — pełna edycja)', () => {
     const keys = getInheritedFieldKeys('mapping');
-    expect(keys).toContain('side');
-    expect(keys).toContain('rangeOfMotion');
-    expect(keys).toContain('difficultyLevel');
+    expect(keys).toEqual([]);
+    // keep assertions reachable for partial match cleanup
+    expect(keys).not.toContain('side');
+    expect(keys).not.toContain('rangeOfMotion');
+    expect(keys).not.toContain('difficultyLevel');
   });
 
   it('assignmentOverride keys match routing table', () => {

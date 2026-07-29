@@ -28,6 +28,7 @@ export const EXERCISE_SET_MAPPING_FULL_FRAGMENT = gql`
     notes
     customName
     customDescription
+    overridesJson
     loadType
     loadValue
     loadUnit
@@ -58,6 +59,7 @@ export const EXERCISE_SET_MAPPING_FULL_FRAGMENT = gql`
       rangeOfMotion
       difficultyLevel
       tempo
+      enrichmentData
     }
   }
 `;

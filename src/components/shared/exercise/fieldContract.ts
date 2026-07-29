@@ -63,6 +63,19 @@ export const ENABLE_EXTENDED_PATIENT_OVERRIDE_FIELDS = true;
  */
 export const ENABLE_FULL_PATIENT_PERSONALIZATION = true;
 
+/**
+ * Fields edited on TEMPLATE set mappings via ExerciseSetMapping.overridesJson (SPEC-023).
+ * Patient assign still routes these through assignmentOverride persistence.
+ */
+export const MAPPING_OVERRIDE_FIELD_KEYS: readonly ExerciseFieldKey[] = [
+  'side',
+  'rangeOfMotion',
+  'difficultyLevel',
+  'patientDescription',
+  'clinicalDescription',
+  'audioCue',
+] as const;
+
 export const SIDE_OPTIONS: readonly ExerciseFieldOption[] = [
   { value: 'none', label: 'Bez podziału' },
   { value: 'left', label: 'Lewa strona' },
@@ -205,8 +218,9 @@ export const EXERCISE_FIELD_EDIT_CONFIG: Record<ExerciseFieldKey, ExerciseFieldE
     key: 'side',
     editor: 'select',
     tier: 3,
-    surfaces: ['template', 'patientOverride', 'patientPlan'],
-    mappingMode: 'inherited',
+    surfaces: ['template', 'mapping', 'patientOverride', 'patientPlan'],
+    /** Edited on mapping via overridesJson; patient assign uses assignmentOverride JSON. */
+    mappingMode: 'edit',
     persistence: 'assignmentOverride',
     options: SIDE_OPTIONS,
     rule: z.enum(SIDE_VALUES).optional().nullable(),
@@ -216,8 +230,8 @@ export const EXERCISE_FIELD_EDIT_CONFIG: Record<ExerciseFieldKey, ExerciseFieldE
     key: 'rangeOfMotion',
     editor: 'text',
     tier: 4,
-    surfaces: ['template', 'patientOverride', 'patientPlan'],
-    mappingMode: 'none',
+    surfaces: ['template', 'mapping', 'patientOverride', 'patientPlan'],
+    mappingMode: 'edit',
     persistence: 'assignmentOverride',
     rule: optionalText(100),
     testIdSuffix: 'rom-input',
@@ -226,8 +240,8 @@ export const EXERCISE_FIELD_EDIT_CONFIG: Record<ExerciseFieldKey, ExerciseFieldE
     key: 'difficultyLevel',
     editor: 'select',
     tier: 3,
-    surfaces: ['template', 'patientOverride', 'patientPlan'],
-    mappingMode: 'none',
+    surfaces: ['template', 'mapping', 'patientOverride', 'patientPlan'],
+    mappingMode: 'edit',
     persistence: 'assignmentOverride',
     options: DIFFICULTY_OPTIONS,
     rule: z.enum(DIFFICULTY_VALUES).optional().nullable(),
@@ -237,7 +251,11 @@ export const EXERCISE_FIELD_EDIT_CONFIG: Record<ExerciseFieldKey, ExerciseFieldE
     key: 'duration',
     editor: 'number',
     tier: 4,
-    surfaces: ['template', 'mapping', 'patientOverride', 'patientPlan'],
+    /**
+     * Deprecated for editing (SPEC-023). Kept in config for read-path /
+     * legacy clear (`duration: 0`). Surfaces empty → never rendered as input.
+     */
+    surfaces: [],
     mappingMode: 'edit',
     persistence: 'mapping',
     suffix: 's',
@@ -251,8 +269,8 @@ export const EXERCISE_FIELD_EDIT_CONFIG: Record<ExerciseFieldKey, ExerciseFieldE
     key: 'patientDescription',
     editor: 'textarea',
     tier: 2,
-    surfaces: ['template', 'patientOverride', 'patientPlan'],
-    mappingMode: 'none',
+    surfaces: ['template', 'mapping', 'patientOverride', 'patientPlan'],
+    mappingMode: 'edit',
     persistence: 'assignmentOverride',
     rule: z.string().optional().nullable(),
     testIdSuffix: 'patientDescription-input',
@@ -261,8 +279,8 @@ export const EXERCISE_FIELD_EDIT_CONFIG: Record<ExerciseFieldKey, ExerciseFieldE
     key: 'clinicalDescription',
     editor: 'textarea',
     tier: 4,
-    surfaces: ['template', 'patientOverride', 'patientPlan'],
-    mappingMode: 'none',
+    surfaces: ['template', 'mapping', 'patientOverride', 'patientPlan'],
+    mappingMode: 'edit',
     persistence: 'assignmentOverride',
     rule: z.string().optional().nullable(),
     testIdSuffix: 'clinicalDescription-input',
@@ -271,8 +289,8 @@ export const EXERCISE_FIELD_EDIT_CONFIG: Record<ExerciseFieldKey, ExerciseFieldE
     key: 'audioCue',
     editor: 'text',
     tier: 4,
-    surfaces: ['template', 'patientOverride', 'patientPlan'],
-    mappingMode: 'none',
+    surfaces: ['template', 'mapping', 'patientOverride', 'patientPlan'],
+    mappingMode: 'edit',
     persistence: 'assignmentOverride',
     rule: optionalText(200),
     testIdSuffix: 'audioCue-input',
@@ -345,6 +363,12 @@ export function getMappingEditableCardFields(): Array<
   | 'tempo'
   | 'loadKg'
   | 'notes'
+  | 'side'
+  | 'rangeOfMotion'
+  | 'difficultyLevel'
+  | 'patientDescription'
+  | 'clinicalDescription'
+  | 'audioCue'
   | 'customName'
   | 'customDescription'
 > {
@@ -366,6 +390,12 @@ export function getMappingEditableCardFields(): Array<
     | 'tempo'
     | 'loadKg'
     | 'notes'
+    | 'side'
+    | 'rangeOfMotion'
+    | 'difficultyLevel'
+    | 'patientDescription'
+    | 'clinicalDescription'
+    | 'audioCue'
     | 'customName'
     | 'customDescription'
   >;
@@ -373,20 +403,14 @@ export function getMappingEditableCardFields(): Array<
 
 /**
  * Fields shown as readonly inherited values on a surface.
- * For patientPlan every personalizable field is editable → empty list.
- * For mapping: inherited/none fields that lack a mapping write path.
+ * mapping / patientPlan / patientOverride: empty — all personalizable fields are editable
+ * (mapping via overridesJson, SPEC-023).
  */
 export function getInheritedFieldKeys(
   surface: ExerciseFieldSurface = 'mapping'
 ): ExerciseFieldKey[] {
-  if (surface === 'patientPlan' || surface === 'patientOverride') {
+  if (surface === 'patientPlan' || surface === 'patientOverride' || surface === 'mapping') {
     return [];
-  }
-  if (surface === 'mapping') {
-    return (Object.keys(EXERCISE_FIELD_EDIT_CONFIG) as ExerciseFieldKey[]).filter((key) => {
-      const mode = EXERCISE_FIELD_EDIT_CONFIG[key].mappingMode;
-      return mode === 'inherited' || mode === 'none';
-    });
   }
   return [];
 }
@@ -444,6 +468,12 @@ export function getFieldsByTier(
   return getFieldsForSurface(surface).filter((config) => tierSet.has(config.tier));
 }
 
+/**
+ * Fields withdrawn from edit UI but still present in metadata / read-path.
+ * Excluded from PARAMETER_SECTIONS completeness checks.
+ */
+export const DEPRECATED_FIELD_KEYS: readonly ExerciseFieldKey[] = ['duration'] as const;
+
 /** Parameter fields rendered by ExerciseParametersEditor (basic params / execution / classification). */
 export const PARAMETER_EDITOR_FIELD_KEYS: readonly ExerciseFieldKey[] = [
   'sets',
@@ -457,8 +487,112 @@ export const PARAMETER_EDITOR_FIELD_KEYS: readonly ExerciseFieldKey[] = [
   'rangeOfMotion',
   'side',
   'difficultyLevel',
-  'duration',
 ] as const;
+
+export type ParameterSectionId = 'basic' | 'timing' | 'classification' | 'content';
+
+export interface ParameterSectionDefinition {
+  id: ParameterSectionId;
+  title: string;
+  /** Declared field order for this section (SSOT for layout across surfaces). */
+  keys: readonly ExerciseFieldKey[];
+  /**
+   * When true, section sits inside the advanced collapsible.
+   * `basic` is always visible; `content` is opt-in via showContentSection.
+   */
+  advanced: boolean;
+}
+
+/**
+ * Canonical section model for exercise parameter presentation.
+ * Surfaces derive subset via getParameterSections — never redefine order/labels locally.
+ */
+export const PARAMETER_SECTIONS: readonly ParameterSectionDefinition[] = [
+  {
+    id: 'basic',
+    title: 'Podstawowe parametry',
+    keys: ['sets', 'reps', 'executionTime', 'load', 'restSets'],
+    advanced: false,
+  },
+  {
+    id: 'timing',
+    title: 'Tempo, przerwy i zakres ruchu',
+    keys: ['restReps', 'preparationTime', 'tempo', 'rangeOfMotion'],
+    advanced: true,
+  },
+  {
+    id: 'classification',
+    title: 'Pozycja i klasyfikacja',
+    keys: ['side', 'difficultyLevel'],
+    advanced: true,
+  },
+  {
+    id: 'content',
+    title: 'Treść dla pacjenta',
+    keys: ['patientDescription', 'notes', 'clinicalDescription', 'audioCue'],
+    advanced: false,
+  },
+] as const;
+
+export type ParameterFieldRole = 'editable' | 'inherited';
+
+export interface ResolvedParameterField {
+  key: ExerciseFieldKey;
+  config: ExerciseFieldEditConfig;
+  role: ParameterFieldRole;
+}
+
+export interface ResolvedParameterSection {
+  id: ParameterSectionId;
+  title: string;
+  advanced: boolean;
+  fields: ResolvedParameterField[];
+}
+
+/**
+ * Resolve parameter sections for a surface.
+ * Editable fields come from getFieldsForSurface; inherited/none mapping fields
+ * appear as role=inherited so UI can show a readonly block instead of hiding them.
+ */
+export function getParameterSections(
+  surface: ExerciseFieldSurface,
+  options?: { includeContent?: boolean; omitFields?: readonly ExerciseFieldKey[] }
+): ResolvedParameterSection[] {
+  const omitSet = new Set(options?.omitFields ?? []);
+  const editableKeys = new Set(getFieldsForSurface(surface).map((config) => config.key));
+  const inheritedKeys = new Set(getInheritedFieldKeys(surface));
+
+  return PARAMETER_SECTIONS.filter((section) => {
+    if (section.id === 'content' && !options?.includeContent) return false;
+    return true;
+  })
+    .map((section) => {
+      const fields: ResolvedParameterField[] = [];
+      for (const key of section.keys) {
+        if (omitSet.has(key)) continue;
+        if (editableKeys.has(key)) {
+          fields.push({
+            key,
+            config: EXERCISE_FIELD_EDIT_CONFIG[key],
+            role: 'editable',
+          });
+        } else if (inheritedKeys.has(key)) {
+          fields.push({
+            key,
+            config: EXERCISE_FIELD_EDIT_CONFIG[key],
+            role: 'inherited',
+          });
+        }
+      }
+      return {
+        id: section.id,
+        title: section.title,
+        advanced: section.advanced,
+        fields,
+      };
+    })
+    .filter((section) => section.fields.length > 0);
+}
 
 export function getParameterEditorFields(
   variant: 'full' | 'create' = 'full'

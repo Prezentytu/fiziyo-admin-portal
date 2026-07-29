@@ -11,6 +11,7 @@ import {
   type MappingOnlyFieldKey,
 } from './fieldContract';
 import type { ExerciseOverrideFields } from './exerciseOverride';
+import { mergeEnrichmentOverrides } from './enrichmentOverride';
 
 /** Patch keys accepted from UI cards / builders (fieldContract + mapping-only + JSON aliases). */
 export interface PersonalizationPatch {
@@ -369,7 +370,15 @@ export function mergeOverrideMap(
     return stringifyOverrideMap(map);
   }
 
-  map[mappingId] = { ...(map[mappingId] ?? {}), ...delta };
+  const previous = map[mappingId] ?? {};
+  const enrichment = mergeEnrichmentOverrides(previous.enrichment, delta.enrichment);
+  const { enrichment: _prevEnrichment, ...previousScalars } = previous;
+  const { enrichment: _deltaEnrichment, ...deltaScalars } = delta;
+  map[mappingId] = {
+    ...previousScalars,
+    ...deltaScalars,
+    ...(enrichment ? { enrichment } : {}),
+  };
   return stringifyOverrideMap(map);
 }
 

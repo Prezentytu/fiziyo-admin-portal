@@ -49,6 +49,9 @@ import {
 } from '@/features/exercise-sets/utils/exerciseSetDiff';
 import { aiService } from '@/services/aiService';
 import { buildExerciseLoadMutationVars } from '@/utils/exerciseLoadMutation';
+import { seedBuilderParamsFromMapping } from '@/features/assignment/utils/seedBuilderParamsFromMapping';
+import { buildMappingOverridesFromParams } from '@/features/exercise-sets/utils/buildMappingOverridesFromParams';
+import type { ExerciseMapping as AssignmentExerciseMapping } from '@/features/assignment/types';
 
 interface SetSnapshot {
   id: string;
@@ -187,19 +190,9 @@ export function EditExerciseSetFullDialog({
     }));
     const initialParams = new Map<string, ExerciseParams>();
     initialInstances.forEach((instance, index) => {
-      const mapping = mappings[index];
+      const mapping = mappings[index] as AssignmentExerciseMapping;
       initialParams.set(instance.instanceId, {
-        sets: mapping.sets,
-        reps: mapping.reps,
-        duration: mapping.duration,
-        restSets: mapping.restSets,
-        restReps: mapping.restReps,
-        preparationTime: mapping.preparationTime,
-        executionTime: mapping.executionTime,
-        notes: mapping.notes ?? '',
-        customName: mapping.customName ?? '',
-        customDescription: mapping.customDescription ?? '',
-        tempo: mapping.tempo ?? '',
+        ...seedBuilderParamsFromMapping(mapping),
         loadType: mapping.loadType ?? '',
         loadValue: mapping.loadValue ?? undefined,
         loadUnit: mapping.loadUnit ?? 'kg',
@@ -410,6 +403,7 @@ export function EditExerciseSetFullDialog({
       for (const item of saveDiff.toUpdate) {
         const params = item.params;
         const exercise = exerciseLookup.get(item.exerciseId);
+        const overridesJson = buildMappingOverridesFromParams(exercise, params);
         await updateExerciseInSet({
           variables: {
             exerciseId: item.exerciseId,
@@ -427,6 +421,7 @@ export function EditExerciseSetFullDialog({
             customDescription: params.customDescription ?? null,
             tempo: params.tempo ?? null,
             ...buildExerciseLoadMutationVars(params.loadWeightKg ?? params.loadValue),
+            overridesJson: overridesJson ?? '',
           },
           refetchQueries: [
             { query: GET_EXERCISE_SET_WITH_ASSIGNMENTS_QUERY, variables: { exerciseSetId } },
@@ -437,6 +432,7 @@ export function EditExerciseSetFullDialog({
       for (const item of saveDiff.toAdd) {
         const params = item.params;
         const exercise = exerciseLookup.get(item.exerciseId);
+        const overridesJson = buildMappingOverridesFromParams(exercise, params);
         await addExerciseToSet({
           variables: {
             exerciseId: item.exerciseId,
@@ -454,6 +450,7 @@ export function EditExerciseSetFullDialog({
             customDescription: params.customDescription ?? null,
             tempo: params.tempo ?? null,
             ...buildExerciseLoadMutationVars(params.loadWeightKg ?? params.loadValue),
+            overridesJson: overridesJson ?? '',
           },
           refetchQueries: [
             { query: GET_EXERCISE_SET_WITH_ASSIGNMENTS_QUERY, variables: { exerciseSetId } },

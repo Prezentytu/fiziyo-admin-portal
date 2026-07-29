@@ -1,3 +1,6 @@
+import type { ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.types';
+import { toV3 } from '@/features/verification/utils/enrichmentToV3';
+
 export interface ExerciseParams {
   sets: number;
   reps: number;
@@ -23,6 +26,7 @@ export interface ExerciseParams {
   clinicalDescription?: string;
   audioCue?: string;
   customImages?: string[];
+  enrichment?: ExerciseEnrichmentData;
 }
 
 export interface ExerciseLikeForDefaults {
@@ -48,6 +52,7 @@ export interface ExerciseLikeForDefaults {
   description?: string | null;
   clinicalDescription?: string | null;
   audioCue?: string | null;
+  enrichmentData?: ExerciseEnrichmentData | null;
 }
 
 export const EMPTY_EXERCISE_PARAMS: ExerciseParams = {
@@ -71,10 +76,11 @@ export const EMPTY_EXERCISE_PARAMS: ExerciseParams = {
   loadSource: undefined,
   rangeOfMotion: '',
   difficultyLevel: 'UNKNOWN',
-  patientDescription: '',
+    patientDescription: '',
   clinicalDescription: '',
   audioCue: '',
   customImages: undefined,
+  enrichment: toV3(null),
 };
 
 export function getExerciseDefaultParams(exercise: ExerciseLikeForDefaults): ExerciseParams {
@@ -106,5 +112,6 @@ export function getExerciseDefaultParams(exercise: ExerciseLikeForDefaults): Exe
     clinicalDescription: exercise.clinicalDescription ?? '',
     audioCue: exercise.audioCue ?? '',
     customImages: undefined,
+    enrichment: toV3(exercise.enrichmentData),
   };
 }

@@ -61,6 +61,8 @@ export interface ExerciseMapping {
   notes?: string;
   customName?: string;
   customDescription?: string;
+  /** Template-set personalization JSON (SPEC-023). */
+  overridesJson?: string | null;
   // Media
   videoUrl?: string;
   imageUrl?: string;
@@ -118,6 +120,8 @@ export interface Exercise {
   difficultyLevel?: string;
   mainTags?: string[];
   additionalTags?: string[];
+  /** Template enrichment v3 (SPEC-024 baseline for personalization). */
+  enrichmentData?: import('@/graphql/types/exerciseEnrichment.types').ExerciseEnrichmentData | null;
 
   // Legacy aliasy (dla kompatybilności wstecznej)
   description?: string;

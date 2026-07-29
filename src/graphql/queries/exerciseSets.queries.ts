@@ -62,6 +62,7 @@ export const EXERCISE_SET_WITH_EXERCISES_FRAGMENT = gql`
       notes
       customName
       customDescription
+      overridesJson
       videoUrl
       imageUrl
       images
@@ -101,6 +102,7 @@ export const EXERCISE_SET_WITH_EXERCISES_FRAGMENT = gql`
         scope
         status
         difficultyLevel
+        enrichmentData
       }
     }
   }

@@ -45,6 +45,8 @@ export interface ExerciseMappingSubmitInput {
   tempo?: string | null;
   loadWeightKg?: number | null;
   loadValue?: number | null;
+  /** Template-set overridesJson (SPEC-023); "" clears, null omits (leave unchanged on update). */
+  overridesJson?: string | null;
 }
 
 export interface AddExerciseToSetVariables {
@@ -68,6 +70,7 @@ export interface AddExerciseToSetVariables {
   loadValue: number | null;
   loadUnit: string | null;
   loadText: string | null;
+  overridesJson?: string | null;
 }
 
 export interface CreateTemplateSetMutations {
@@ -126,6 +129,7 @@ export function buildAddExerciseToSetVariables(
     customDescription: toNullableString(mapping.customDescription),
     tempo: toNullableString(mapping.tempo),
     ...buildExerciseLoadMutationVars(mapping.loadWeightKg ?? mapping.loadValue),
+    overridesJson: mapping.overridesJson ?? '',
   };
 }
 

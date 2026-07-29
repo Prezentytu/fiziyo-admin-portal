@@ -25,9 +25,9 @@ describe('buildExerciseParameterGroups', () => {
     expect(groups.map((g) => g.id)).toEqual(['dosage', 'timing', 'position', 'classification']);
   });
 
-  it('dosage group has 4 items: sets, reps, duration, executionTime', () => {
+  it('dosage group has sets, reps, executionTime (duration deprecated from UI)', () => {
     const [dosage] = buildExerciseParameterGroups(fullSource);
-    expect(dosage.items.map((i) => i.key)).toEqual(['sets', 'reps', 'duration', 'executionTime']);
+    expect(dosage.items.map((i) => i.key)).toEqual(['sets', 'reps', 'executionTime']);
   });
 
   it('renders correct values when fields are set', () => {

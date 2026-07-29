@@ -20,6 +20,7 @@ describe('mapping surface integrity', () => {
     render(
       <ExerciseExecutionCard
         mode="edit"
+        surface="mapping"
         defaultExpanded
         testIdPrefix="map-card"
         editableFields={getMappingEditableCardFields()}
@@ -42,6 +43,9 @@ describe('mapping surface integrity', () => {
           side: 'both',
           rangeOfMotion: 'pełny',
           difficultyLevel: 'MEDIUM',
+          patientDescription: 'Opis',
+          clinicalDescription: 'Kliniczny',
+          audioCue: 'Cue',
         }}
       />
     );
@@ -66,14 +70,24 @@ describe('mapping surface integrity', () => {
         expect(screen.getByTestId('map-card-m1-rest-reps-input')).toBeInTheDocument();
       } else if (key === 'load') {
         expect(screen.getByTestId('map-card-m1-load-input')).toBeInTheDocument();
-      } else if (key === 'duration') {
-        expect(screen.getByTestId('map-card-m1-duration-input')).toBeInTheDocument();
       } else if (key === 'tempo') {
         expect(screen.getByTestId('map-card-m1-tempo-input')).toBeInTheDocument();
       } else if (key === 'preparationTime') {
         expect(screen.getByTestId('map-card-m1-preparation-time-input')).toBeInTheDocument();
       } else if (key === 'notes') {
         expect(screen.getByTestId('map-card-m1-notes-input')).toBeInTheDocument();
+      } else if (key === 'side') {
+        expect(screen.getByTestId('map-card-m1-side-select')).toBeInTheDocument();
+      } else if (key === 'rangeOfMotion') {
+        expect(screen.getByTestId('map-card-m1-rom-input')).toBeInTheDocument();
+      } else if (key === 'difficultyLevel') {
+        expect(screen.getByTestId('map-card-m1-difficulty-select')).toBeInTheDocument();
+      } else if (key === 'patientDescription') {
+        expect(screen.getByTestId('map-card-m1-patient-description-input')).toBeInTheDocument();
+      } else if (key === 'clinicalDescription') {
+        expect(screen.getByTestId('map-card-m1-clinical-description-input')).toBeInTheDocument();
+      } else if (key === 'audioCue') {
+        expect(screen.getByTestId('map-card-m1-audio-cue-input')).toBeInTheDocument();
       }
     }
 
@@ -81,7 +95,7 @@ describe('mapping surface integrity', () => {
     expect(screen.getByTestId('map-card-m1-custom-description-input')).toBeInTheDocument();
   });
 
-  it('pola inherited/none mają wartość readonly w sekcji odziedziczonej (surface=mapping)', async () => {
+  it('surface=mapping edytuje side/ROM/difficulty/treści — bez sekcji odziedziczonej', async () => {
     const user = userEvent.setup();
     render(
       <ExerciseExecutionCard
@@ -98,17 +112,23 @@ describe('mapping surface integrity', () => {
           side: 'left',
           rangeOfMotion: '90°',
           difficultyLevel: 'HARD',
+          patientDescription: 'Opis',
+          clinicalDescription: 'Kliniczny',
+          audioCue: 'Cue',
         }}
       />
     );
 
     await user.click(screen.getByTestId('map-card-m2-advanced-toggle'));
 
-    expect(getMappingInheritedFieldKeys()).toContain('side');
-    expect(screen.getByTestId('map-card-m2-inherited-side')).toBeInTheDocument();
-    expect(screen.getByTestId('map-card-m2-inherited-rangeOfMotion')).toBeInTheDocument();
-    expect(screen.getByTestId('map-card-m2-inherited-difficultyLevel')).toBeInTheDocument();
-    expect(screen.getByTestId('map-card-m2-edit-template-link')).toHaveAttribute('href', '/exercises/ex-2');
+    expect(getMappingInheritedFieldKeys()).toEqual([]);
+    expect(screen.queryByTestId('map-card-m2-inherited-section')).not.toBeInTheDocument();
+    expect(screen.getByTestId('map-card-m2-side-select')).toBeInTheDocument();
+    expect(screen.getByTestId('map-card-m2-rom-input')).toBeInTheDocument();
+    expect(screen.getByTestId('map-card-m2-difficulty-select')).toBeInTheDocument();
+    expect(screen.getByTestId('map-card-m2-patient-description-input')).toBeInTheDocument();
+    expect(screen.getByTestId('map-card-m2-clinical-description-input')).toBeInTheDocument();
+    expect(screen.getByTestId('map-card-m2-audio-cue-input')).toBeInTheDocument();
   });
 
   it('surface=patientPlan ukrywa sekcję odziedziczoną i pokazuje edytowalne side/ROM/difficulty', async () => {

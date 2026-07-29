@@ -41,6 +41,7 @@ import { createTagsMap, mapExercisesWithTags } from '@/utils/tagUtils';
 import type { ExerciseTagsResponse, TagCategoriesResponse, OrganizationExerciseSetsResponse } from '@/types/apollo';
 import { getExerciseDefaultParams } from '@/features/exercise-sets/utils/exerciseDefaults';
 import { submitCreateTemplateSet } from '@/features/exercise-sets/utils/createSetSubmit';
+import { buildMappingOverridesFromParams } from '@/features/exercise-sets/utils/buildMappingOverridesFromParams';
 
 interface CreateSetWizardProps {
   open: boolean;
@@ -311,6 +312,7 @@ export function CreateSetWizard({
           const exercise = exercises.find((item) => item.id === exerciseId);
           if (!exercise) return null;
           const params = exerciseParams.get(instanceId) || getDefaultParams(exercise);
+          const overridesJson = buildMappingOverridesFromParams(exercise, params);
           return {
             exerciseId,
             sets: params.sets,
@@ -326,6 +328,7 @@ export function CreateSetWizard({
             tempo: params.tempo,
             loadWeightKg: params.loadWeightKg,
             loadValue: params.loadValue,
+            overridesJson: overridesJson ?? '',
           };
         })
         .filter((mapping): mapping is NonNullable<typeof mapping> => mapping !== null);

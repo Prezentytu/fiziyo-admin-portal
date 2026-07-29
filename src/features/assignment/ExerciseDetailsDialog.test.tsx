@@ -80,7 +80,9 @@ describe('ExerciseDetailsDialog', () => {
     expect(screen.getByTestId('assign-set-preview-exercise-details-description')).toHaveTextContent(
       'Brak opisu ćwiczenia.'
     );
-    expect(screen.getByTestId('assign-set-preview-exercise-details-params')).toHaveTextContent('Czas serii');
+    expect(screen.getByTestId('assign-set-preview-exercise-details-params')).toHaveTextContent(
+      'Czas powtórzenia'
+    );
     expect(screen.getByTestId('assign-set-preview-exercise-details-params')).toHaveTextContent('—');
   });
 

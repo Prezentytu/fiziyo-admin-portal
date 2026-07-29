@@ -18,7 +18,7 @@ Każde pole w `fieldContract.ts` ma `persistence`:
 
 Powierzchnia `patientPlan` = suma pól mapping + assignmentOverride. Używana w Assignment Wizard (`customize-set`) i dialogach pacjenta.
 
-Powierzchnia `mapping` zostaje dla zestawów TEMPLATE — tam nie ma assignmentu, więc sekcja „Odziedziczone” jest poprawna.
+Powierzchnia `mapping` dla zestawów TEMPLATE edytuje klasyfikację/treści przez `overridesJson` (SPEC-023) — bez sekcji „Odziedziczone”.
 
 ```mermaid
 graph TD

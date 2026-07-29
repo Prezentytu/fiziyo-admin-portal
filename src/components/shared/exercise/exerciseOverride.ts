@@ -4,6 +4,9 @@
  * like `side` / `load` at the JSON boundary.
  */
 
+import type { EnrichmentOverride } from './enrichmentOverride';
+import { hasEnrichmentOverrideContent } from './enrichmentOverride';
+
 export interface ExerciseOverrideFields {
   sets?: number;
   reps?: number;
@@ -31,6 +34,10 @@ export interface ExerciseOverrideFields {
   audioCue?: string;
   customImages?: string[];
   hidden?: boolean;
+  /**
+   * Path-whitelisted enrichment delta (patient.* + safety.*) — SPEC-024.
+   */
+  enrichment?: EnrichmentOverride;
   /**
    * Legacy in-memory assignment shape. Prefer loadWeightKg.
    * resolveEffectiveExerciseParams still dual-reads this.
@@ -72,6 +79,7 @@ export const EXERCISE_OVERRIDE_CONTENT_KEYS = [
   'customImages',
   'hidden',
   'load',
+  'enrichment',
 ] as const satisfies ReadonlyArray<keyof ExerciseOverrideFields>;
 
 export function hasExerciseOverrideContent(override?: ExerciseOverrideFields | null): boolean {
@@ -81,6 +89,10 @@ export function hasExerciseOverrideContent(override?: ExerciseOverrideFields | n
     if (value === undefined) continue;
     if (key === 'customImages' && Array.isArray(value) && value.length === 0) continue;
     if (key === 'hidden' && value === false) continue;
+    if (key === 'enrichment') {
+      if (hasEnrichmentOverrideContent(value as EnrichmentOverride)) return true;
+      continue;
+    }
     return true;
   }
   return false;
@@ -93,6 +105,7 @@ export function listOverriddenFieldKeys(override?: ExerciseOverrideFields | null
     if (value === undefined) return false;
     if (key === 'customImages' && Array.isArray(value) && value.length === 0) return false;
     if (key === 'hidden' && value === false) return false;
+    if (key === 'enrichment') return hasEnrichmentOverrideContent(value as EnrichmentOverride);
     return true;
   });
 }

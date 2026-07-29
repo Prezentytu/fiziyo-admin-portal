@@ -15,6 +15,8 @@ import {
   getMappingEditableCardFields,
 } from '@/components/shared/exercise';
 import type { ExerciseExecutionCardData } from '@/components/shared/exercise';
+import { buildMappingOverridesJson } from '@/components/shared/exercise/mappingOverrides';
+import { buildEnrichmentOverrideDelta } from '@/components/shared/exercise/enrichmentOverride';
 import type { ExerciseLoad, ExerciseMapping as AssignmentExerciseMapping } from '@/features/assignment/types';
 import { buildExerciseLoadMutationVars } from '@/utils/exerciseLoadMutation';
 
@@ -37,6 +39,7 @@ interface ExerciseMapping {
   notes?: string;
   customName?: string;
   customDescription?: string;
+  overridesJson?: string | null;
   loadType?: string;
   loadValue?: number;
   loadUnit?: string;
@@ -46,6 +49,10 @@ interface ExerciseMapping {
     id: string;
     name: string;
     patientDescription?: string;
+    clinicalDescription?: string;
+    audioCue?: string;
+    rangeOfMotion?: string;
+    difficultyLevel?: string;
     side?: string;
     thumbnailUrl?: string;
     defaultSets?: number;
@@ -65,6 +72,7 @@ interface ExerciseMapping {
     loadValue?: number;
     loadUnit?: string;
     loadText?: string;
+    enrichmentData?: import('@/graphql/types/exerciseEnrichment.types').ExerciseEnrichmentData | null;
   };
 }
 
@@ -167,7 +175,14 @@ function EditExerciseInSetDialogContent({
       (draft.customName ?? '') !== (initialData.customName ?? '') ||
       (draft.customDescription ?? '') !== (initialData.customDescription ?? '') ||
       (draft.tempo ?? '') !== (initialData.tempo ?? '') ||
-      (draft.loadKg ?? null) !== (initialData.loadKg ?? null)
+      (draft.loadKg ?? null) !== (initialData.loadKg ?? null) ||
+      (draft.side ?? '') !== (initialData.side ?? '') ||
+      (draft.rangeOfMotion ?? '') !== (initialData.rangeOfMotion ?? '') ||
+      (draft.difficultyLevel ?? '') !== (initialData.difficultyLevel ?? '') ||
+      (draft.patientDescription ?? '') !== (initialData.patientDescription ?? '') ||
+      (draft.clinicalDescription ?? '') !== (initialData.clinicalDescription ?? '') ||
+      (draft.audioCue ?? '') !== (initialData.audioCue ?? '') ||
+      JSON.stringify(draft.enrichment ?? null) !== JSON.stringify(initialData.enrichment ?? null)
     );
   }, [draft, initialData]);
 
@@ -179,6 +194,32 @@ function EditExerciseInSetDialogContent({
 
   const handleSave = useCallback(async () => {
     try {
+      const template = exerciseMapping.exercise;
+      const enrichmentDelta = buildEnrichmentOverrideDelta(
+        template?.enrichmentData,
+        draft.enrichment
+      );
+      const overridesJson = buildMappingOverridesJson(
+        {
+          side: template?.side ?? template?.exerciseSide,
+          exerciseSide: template?.exerciseSide ?? template?.side,
+          rangeOfMotion: template?.rangeOfMotion,
+          difficultyLevel: template?.difficultyLevel,
+          patientDescription: template?.patientDescription ?? template?.description,
+          clinicalDescription: template?.clinicalDescription,
+          audioCue: template?.audioCue,
+        },
+        {
+          side: draft.side,
+          rangeOfMotion: draft.rangeOfMotion,
+          difficultyLevel: draft.difficultyLevel,
+          patientDescription: draft.patientDescription,
+          clinicalDescription: draft.clinicalDescription,
+          audioCue: draft.audioCue,
+        },
+        enrichmentDelta
+      );
+
       await updateExercise({
         variables: {
           exerciseId: exerciseMapping.exerciseId,
@@ -195,6 +236,8 @@ function EditExerciseInSetDialogContent({
           customDescription: draft.customDescription ?? null,
           tempo: draft.tempo || null,
           ...buildExerciseLoadMutationVars(draft.loadKg),
+          // Backend: null = leave unchanged; "" = clear (SPEC-023)
+          overridesJson: overridesJson ?? '',
         },
         refetchQueries: [
           {
@@ -211,7 +254,7 @@ function EditExerciseInSetDialogContent({
       console.error('Błąd podczas aktualizacji:', error);
       toast.error('Nie udało się zaktualizować parametrów');
     }
-  }, [draft, exerciseMapping.exerciseId, exerciseSetId, onOpenChange, onSuccess, updateExercise]);
+  }, [draft, exerciseMapping, exerciseSetId, onOpenChange, onSuccess, updateExercise]);
 
   const handleChange = useCallback((patch: Partial<ExerciseExecutionCardData>) => {
     setDraft((prev) => ({ ...prev, ...patch }));
@@ -244,14 +287,19 @@ function EditExerciseInSetDialogContent({
       </div>
 
       <div className="flex justify-end gap-3 px-6 py-4 border-t border-border bg-background/95 backdrop-blur-sm shrink-0">
-        <Button variant="outline" onClick={onCloseAttempt} className="rounded-xl">
+        <Button
+          data-testid="set-edit-exercise-cancel-btn"
+          variant="outline"
+          onClick={onCloseAttempt}
+          className="rounded-xl"
+        >
           Anuluj
         </Button>
         <Button
+          data-testid="set-edit-exercise-submit-btn"
           onClick={handleSave}
           disabled={loading}
           className="rounded-xl font-semibold"
-          data-testid="set-edit-exercise-submit-btn"
         >
           {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           Zapisz

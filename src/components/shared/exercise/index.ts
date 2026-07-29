@@ -1,4 +1,12 @@
 export { ExerciseExecutionCard } from './ExerciseExecutionCard';
+export { ExerciseParametersFields } from './ExerciseParametersFields';
+export { ExercisePatientContentFields } from './ExercisePatientContentFields';
+export type { ExercisePatientContentFieldsProps } from './ExercisePatientContentFields';
+export type {
+  ExerciseParameterValues,
+  ExerciseParametersFieldsProps,
+  ParameterTestIdKind,
+} from './ExerciseParametersFields';
 export { ExercisePreviewDialog } from './ExercisePreviewDialog';
 export { ExerciseImageFrame } from './ExerciseImageFrame';
 export { ExerciseThumbnail } from './ExerciseThumbnail';
@@ -43,13 +51,16 @@ export type {
 } from './displayRegistry';
 export { normalizeExerciseFieldValues, resolveLoadDisplayText } from './displayNormalizer';
 export {
+  DEPRECATED_FIELD_KEYS,
   DIFFICULTY_OPTIONS,
   ENABLE_EXTENDED_PATIENT_OVERRIDE_FIELDS,
   ENABLE_FULL_PATIENT_PERSONALIZATION,
   EXERCISE_FIELD_EDIT_CONFIG,
+  MAPPING_OVERRIDE_FIELD_KEYS,
   EXERCISE_TEMPLATE_SCHEMA,
   MAPPING_ONLY_FIELD_CONFIG,
   PARAMETER_EDITOR_FIELD_KEYS,
+  PARAMETER_SECTIONS,
   SIDE_OPTIONS,
   buildParamTestId,
   getAssignmentOverrideFieldKeys,
@@ -60,6 +71,7 @@ export {
   getMappingEditableCardFields,
   getMappingInheritedFieldKeys,
   getParameterEditorFields,
+  getParameterSections,
 } from './fieldContract';
 export type {
   ExerciseFieldEditConfig,
@@ -72,6 +84,11 @@ export type {
   MappingFieldMode,
   MappingOnlyFieldConfig,
   MappingOnlyFieldKey,
+  ParameterFieldRole,
+  ParameterSectionDefinition,
+  ParameterSectionId,
+  ResolvedParameterField,
+  ResolvedParameterSection,
 } from './fieldContract';
 export {
   buildOverrideDelta,
@@ -81,6 +98,33 @@ export {
   splitPersonalization,
   stringifyOverrideMap,
 } from './exercisePersonalizationWriter';
+export {
+  MAPPING_OVERRIDES_JSON_KEYS,
+  buildMappingOverridesJson,
+  mergeOverrideLayers,
+  parseMappingOverridesJson,
+} from './mappingOverrides';
+export type { MappingOverridesJson, MappingOverridesJsonKey } from './mappingOverrides';
+export {
+  applyEnrichmentOverride,
+  buildEnrichmentOverrideDelta,
+  hasEnrichmentOverrideContent,
+  listOverriddenEnrichmentPaths,
+  mergeEnrichmentOverrides,
+  parseEnrichmentOverride,
+} from './enrichmentOverride';
+export type { EnrichmentOverride } from './enrichmentOverride';
+export {
+  CONTENT_SECTIONS,
+  PERSONALIZABLE_ENRICHMENT_PATHS,
+  getContentSections,
+  isPersonalizableEnrichmentPath,
+} from './contentContract';
+export type {
+  ContentSectionDefinition,
+  ContentSectionId,
+  PersonalizableEnrichmentPath,
+} from './contentContract';
 export type {
   MappingMutationVariables,
   OverrideMap,

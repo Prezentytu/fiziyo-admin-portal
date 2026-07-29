@@ -47,22 +47,22 @@ describe('ExerciseExecutionCard inline read-only source info', () => {
     expect(screen.getByTestId('exercise-card-exercise-1-help-executionTime')).toBeInTheDocument();
     expect(screen.getByTestId('exercise-card-exercise-1-help-restSets')).toBeInTheDocument();
     expect(screen.getByTestId('exercise-card-exercise-1-help-load')).toBeInTheDocument();
-    expect(screen.getByTestId('exercise-card-exercise-1-help-duration')).toBeInTheDocument();
+    expect(screen.queryByTestId('exercise-card-exercise-1-help-duration')).not.toBeInTheDocument();
     expect(screen.getByTestId('exercise-card-exercise-1-help-notes')).toBeInTheDocument();
     expect(screen.getByTestId('exercise-card-exercise-1-help-restReps')).toBeInTheDocument();
     expect(screen.getByTestId('exercise-card-exercise-1-help-tempo')).toBeInTheDocument();
     expect(screen.getByTestId('exercise-card-exercise-1-help-preparationTime')).toBeInTheDocument();
-    expect(screen.getByTestId('exercise-card-exercise-1-inherited-section')).toBeInTheDocument();
-    expect(screen.getByTestId('exercise-card-exercise-1-inherited-side')).toBeInTheDocument();
-    expect(screen.getByTestId('exercise-card-exercise-1-inherited-rangeOfMotion')).toBeInTheDocument();
-    expect(screen.getByTestId('exercise-card-exercise-1-inherited-difficultyLevel')).toBeInTheDocument();
+    expect(screen.queryByTestId('exercise-card-exercise-1-inherited-section')).not.toBeInTheDocument();
+    expect(screen.getByTestId('exercise-card-exercise-1-side-select')).toBeInTheDocument();
+    expect(screen.getByTestId('exercise-card-exercise-1-rom-input')).toBeInTheDocument();
+    expect(screen.getByTestId('exercise-card-exercise-1-difficulty-select')).toBeInTheDocument();
     expect(screen.getByTestId('exercise-card-exercise-1-help-customName')).toBeInTheDocument();
     expect(screen.getByTestId('exercise-card-exercise-1-help-customDescription')).toBeInTheDocument();
     expect(screen.getByTestId('exercise-card-exercise-1-open-details-btn')).toBeInTheDocument();
-    expect(screen.getByText('Obciążenie')).toBeInTheDocument();
-    expect(screen.getByText('Odziedziczone z ćwiczenia')).toBeInTheDocument();
+    expect(screen.getAllByText('Obciążenie').length).toBeGreaterThan(0);
+    expect(screen.queryByText('Odziedziczone z ćwiczenia')).not.toBeInTheDocument();
     expect(screen.queryByText('nogi')).not.toBeInTheDocument();
-    expect(screen.getByText('9 min 35 s')).toBeInTheDocument();
+    expect(screen.getAllByText('9 min 35 s').length).toBeGreaterThan(0);
 
     await user.click(screen.getByTestId('exercise-card-exercise-1-open-details-btn'));
 

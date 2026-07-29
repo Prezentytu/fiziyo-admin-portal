@@ -6,6 +6,8 @@ import {
 } from '@/components/shared/exercise/exercisePersonalizationWriter';
 import type { ExerciseOverrideFields } from '@/components/shared/exercise/exerciseOverride';
 import { hasExerciseOverrideContent } from '@/components/shared/exercise/exerciseOverride';
+import { buildEnrichmentOverrideDelta } from '@/components/shared/exercise/enrichmentOverride';
+import type { ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.types';
 
 /** Minimal exercise shape for override baseline (assignment Exercise or BuilderExercise). */
 export interface OverrideBaselineExercise {
@@ -33,6 +35,7 @@ export interface OverrideBaselineExercise {
   description?: string;
   clinicalDescription?: string;
   audioCue?: string;
+  enrichmentData?: ExerciseEnrichmentData | null;
 }
 
 function exerciseToInheritedBaseline(exercise: OverrideBaselineExercise | undefined): InheritedBaseline {
@@ -104,6 +107,13 @@ export function buildAssignmentOverrideDeltasFromBuilder(
     }
 
     const delta = buildOverrideDelta(inherited, clinicalDesired);
+    const enrichmentDelta = buildEnrichmentOverrideDelta(
+      exercise?.enrichmentData,
+      params.enrichment
+    );
+    if (enrichmentDelta) {
+      delta.enrichment = enrichmentDelta;
+    }
     if (hasExerciseOverrideContent(delta)) {
       result[instance.instanceId] = delta;
     }

@@ -135,6 +135,87 @@ describe('resolveEffectiveExerciseParams', () => {
     expect(result.clinicalDescription).toBe('Szablon kliniczny');
     expect(result.audioCue).toBe('Szablon cue');
   });
+
+  it('applies mapping.overridesJson under assignment override (SPEC-023)', () => {
+    const result = resolveEffectiveExerciseParams(
+      {
+        ...baseMapping,
+        overridesJson: JSON.stringify({
+          exerciseSide: 'left',
+          rangeOfMotion: '0–90°',
+          difficultyLevel: 'HARD',
+          patientDescription: 'Mapping patient',
+        }),
+        exercise: {
+          ...baseMapping.exercise,
+          patientDescription: 'Template patient',
+          rangeOfMotion: 'pełny',
+          difficultyLevel: 'EASY',
+        },
+      },
+      {
+        exerciseSide: 'right',
+        patientDescription: 'Assignment patient',
+      }
+    );
+
+    expect(result.side).toBe('right');
+    expect(result.rangeOfMotion).toBe('0–90°');
+    expect(result.difficultyLevel).toBe('HARD');
+    expect(result.patientDescription).toBe('Assignment patient');
+  });
+
+  it('uses mapping.overridesJson when assignment override absent', () => {
+    const result = resolveEffectiveExerciseParams({
+      ...baseMapping,
+      overridesJson: {
+        exerciseSide: 'alternating',
+        audioCue: 'Mapping cue',
+      },
+    });
+
+    expect(result.side).toBe('alternating');
+    expect(result.audioCue).toBe('Mapping cue');
+  });
+
+  it('effectiveEnrichment: assignment > mapping > template (path-level)', () => {
+    const result = resolveEffectiveExerciseParams(
+      {
+        ...baseMapping,
+        overridesJson: JSON.stringify({
+          enrichment: {
+            patient: { steps: ['Mapping step'], cues: ['Mapping cue'] },
+          },
+        }),
+        exercise: {
+          ...baseMapping.exercise,
+          enrichmentData: {
+            $schema: 'fiziyo-exercise-v3',
+            patient: {
+              summary: 'Template summary',
+              steps: ['Template step'],
+              cues: ['Template cue'],
+            },
+            safety: { stop_if: 'Template stop' },
+            therapist: { clinical_notes: 'Keep therapist' },
+          },
+        },
+      },
+      {
+        enrichment: {
+          patient: { steps: ['Assignment step'] },
+          safety: { stop_if: 'Assignment stop' },
+        },
+      }
+    );
+
+    expect(result.effectiveEnrichment.patient?.steps).toEqual(['Assignment step']);
+    expect(result.effectiveEnrichment.patient?.cues).toEqual(['Mapping cue']);
+    expect(result.effectiveEnrichment.patient?.summary).toBe('Template summary');
+    expect(result.effectiveEnrichment.safety?.stop_if).toBe('Assignment stop');
+    expect(result.effectiveEnrichment.therapist?.clinical_notes).toBe('Keep therapist');
+    expect(result.overriddenKeys).toContain('enrichment');
+  });
 });
 
 describe('hasExerciseOverrideContent', () => {

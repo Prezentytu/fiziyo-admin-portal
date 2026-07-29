@@ -107,6 +107,8 @@ interface PatientLeadSectionProps {
   isPathDirty: IsPathDirty;
   onPatientDescriptionChange: (value: string) => void;
   setPath: (path: string, value: unknown) => void;
+  /** When false, hide core patientDescription (scalar lives in parameter form). Default true. */
+  showPatientDescription?: boolean;
 }
 
 export function PatientLeadSection({
@@ -118,9 +120,11 @@ export function PatientLeadSection({
   isPathDirty,
   onPatientDescriptionChange,
   setPath,
+  showPatientDescription = true,
 }: Readonly<PatientLeadSectionProps>) {
   const summary = data.patient?.summary ?? '';
-  const hasReadContent = hasText(patientDescription) || hasText(summary);
+  const hasReadContent =
+    (showPatientDescription && hasText(patientDescription)) || hasText(summary);
   if (!editable && !hasReadContent) return null;
 
   return (
@@ -129,17 +133,19 @@ export function PatientLeadSection({
       icon={<HeartPulse className="h-4 w-4 text-muted-foreground" />}
       testId="exercise-detail-patient-lead"
     >
-      <EditableTextBlock
-        label="Opis dla pacjenta"
-        value={patientDescription}
-        placeholder="Prostym językiem: co pacjent ma zrobić i na co uważać."
-        editable={editable}
-        disabled={disabled}
-        emptyText="Brak opisu dla pacjenta."
-        dirty={patientDescriptionDirty}
-        onChange={onPatientDescriptionChange}
-        testId="exercise-detail-patient-description-input"
-      />
+      {showPatientDescription ? (
+        <EditableTextBlock
+          label="Opis dla pacjenta"
+          value={patientDescription}
+          placeholder="Prostym językiem: co pacjent ma zrobić i na co uważać."
+          editable={editable}
+          disabled={disabled}
+          emptyText="Brak opisu dla pacjenta."
+          dirty={patientDescriptionDirty}
+          onChange={onPatientDescriptionChange}
+          testId="exercise-detail-patient-description-input"
+        />
+      ) : null}
       <EditableTextBlock
         label="Krótkie podsumowanie"
         value={summary}

@@ -15,7 +15,6 @@ describe('displayRegistry', () => {
       'sets',
       'reps',
       'executionTime',
-      'duration',
       'restSets',
       'restReps',
       'preparationTime',

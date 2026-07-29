@@ -39,7 +39,11 @@ import { ExerciseFieldLabelWithTooltip } from './ExerciseFieldLabelWithTooltip';
 import { EXERCISE_FIELD_TOOLTIPS } from './exerciseFieldTooltips';
 import { cn } from '@/lib/utils';
 
-import { CREATE_EXERCISE_MUTATION, UPLOAD_EXERCISE_IMAGE_MUTATION } from '@/graphql/mutations/exercises.mutations';
+import {
+  CREATE_EXERCISE_MUTATION,
+  UPDATE_EXERCISE_MUTATION,
+  UPLOAD_EXERCISE_IMAGE_MUTATION,
+} from '@/graphql/mutations/exercises.mutations';
 import { GET_AVAILABLE_EXERCISES_QUERY } from '@/graphql/queries/exercises.queries';
 import { GET_EXERCISE_TAGS_BY_ORGANIZATION_QUERY } from '@/graphql/queries/exerciseTags.queries';
 import { GET_TAG_CATEGORIES_BY_ORGANIZATION_QUERY } from '@/graphql/queries/tagCategories.queries';
@@ -54,9 +58,11 @@ import { ImageStylePicker } from './ImageStylePicker';
 import { formatDurationPolish } from '@/utils/durationPolish';
 import { calculateExerciseTotalSeconds } from '@/utils/exerciseTime';
 import { findSimilar } from '@/utils/stringSimilarity';
-import { buildCreateExerciseVariables } from './utils/buildCreateExerciseVariables';
+import { createExerciseSubmit } from './utils/createExerciseSubmit';
 import { inferExerciseType } from './utils/inferExerciseType';
 import { ExerciseParametersEditor } from './ExerciseParametersEditor';
+import { ExerciseContentSections } from './ExerciseContentSections';
+import { useEnrichmentDraft } from './useEnrichmentDraft';
 import type { ExerciseCoreDraft } from './useExerciseEditorForm';
 
 // ============================================================
@@ -1073,7 +1079,9 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
     }
   );
 
+  const [updateExercise] = useMutation(UPDATE_EXERCISE_MUTATION);
   const [uploadImage] = useMutation(UPLOAD_EXERCISE_IMAGE_MUTATION);
+  const enrichmentDraft = useEnrichmentDraft();
 
   // Check if form has changes
   const hasChanges = useMemo(() => {
@@ -1082,9 +1090,10 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
       data.description !== '' ||
       mediaFiles.length > 0 ||
       data.mainTags.length > 0 ||
-      data.additionalTags.length > 0
+      data.additionalTags.length > 0 ||
+      !enrichmentDraft.isEmpty
     );
-  }, [data, mediaFiles]);
+  }, [data, mediaFiles, enrichmentDraft.isEmpty]);
 
   const totalDuration = useMemo(
     () =>
@@ -1440,39 +1449,40 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
     setIsSaving(true);
 
     try {
-      const result = await createExercise({
-        variables: buildCreateExerciseVariables({
-          organizationId,
-          draft: {
-            name: data.name,
-            patientDescription: data.description,
-            clinicalDescription: data.clinicalDescription,
-            audioCue: data.audioCue,
-            notes: data.notes,
-            side: data.exerciseSide,
-            difficultyLevel: data.difficultyLevel,
-            sets: data.sets,
-            reps: data.reps,
-            duration: data.duration,
-            restSets: data.restSets,
-            restReps: data.restReps,
-            preparationTime: data.preparationTime,
-            executionTime: data.executionTime,
-            videoUrl: data.videoUrl,
-            tempo: data.tempo,
-            rangeOfMotion: data.rangeOfMotion,
-            loadKg: data.loadKg,
-            mainTags: data.mainTags,
-            additionalTags: data.additionalTags,
-            gifUrl: null,
-          },
-        }),
+      const submitResult = await createExerciseSubmit({
+        organizationId,
+        draft: {
+          name: data.name,
+          patientDescription: data.description,
+          clinicalDescription: data.clinicalDescription,
+          audioCue: data.audioCue,
+          notes: data.notes,
+          side: data.exerciseSide,
+          difficultyLevel: data.difficultyLevel,
+          sets: data.sets,
+          reps: data.reps,
+          duration: data.duration,
+          restSets: data.restSets,
+          restReps: data.restReps,
+          preparationTime: data.preparationTime,
+          executionTime: data.executionTime,
+          videoUrl: data.videoUrl,
+          tempo: data.tempo,
+          rangeOfMotion: data.rangeOfMotion,
+          loadKg: data.loadKg,
+          mainTags: data.mainTags,
+          additionalTags: data.additionalTags,
+          gifUrl: null,
+        },
+        enrichment: enrichmentDraft.enrichment,
+        createExercise,
+        updateExercise,
       });
 
-      const exerciseId = result.data?.createExercise?.id;
+      const exerciseId = submitResult.exerciseId;
 
       // Upload images if any
-      if (exerciseId && mediaFiles.length > 0) {
+      if (mediaFiles.length > 0) {
         for (const file of mediaFiles) {
           try {
             const base64 = await fileToBase64(file);
@@ -1496,19 +1506,19 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
         });
       }
 
+      if (submitResult.enrichmentWarning) {
+        toast.warning(submitResult.enrichmentWarning);
+      }
+
       toast.success('Ćwiczenie utworzone!', {
-        action: exerciseId
-          ? {
-              label: 'Dokończ opis',
-              onClick: () => router.push(`/exercises/${exerciseId}`),
-            }
-          : undefined,
+        action: {
+          label: 'Dokończ opis',
+          onClick: () => router.push(`/exercises/${exerciseId}`),
+        },
         duration: 8000,
       });
       onOpenChange(false);
-      if (exerciseId) {
-        onSuccess?.({ action: 'created', exerciseId });
-      }
+      onSuccess?.({ action: 'created', exerciseId });
     } catch (error) {
       console.error('Error creating exercise:', error);
       toast.error('Nie udało się utworzyć ćwiczenia');
@@ -1943,7 +1953,7 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
               />
             </section>
 
-            {/* SEKCJA 4: OPIS / INSTRUKCJA */}
+            {/* SEKCJA 4: Opis dla pacjenta (lean, always visible) */}
             <section className="mb-6">
               <ExerciseFieldLabelWithTooltip
                 label="Opis dla pacjenta"
@@ -1962,7 +1972,7 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
               />
             </section>
 
-            {/* Treść zaawansowana (notatki, audio, clinical, video) — poza parametrami wykonania */}
+            {/* Treść dodatkowa — pełny parytet sekcji z ExerciseEditor */}
             <Collapsible open={showAdvanced} onOpenChange={setShowAdvanced}>
               <CollapsibleTrigger asChild>
                 <button
@@ -1978,11 +1988,12 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
                   <div className="flex items-center gap-2">
                     <Settings2 className="h-3.5 w-3.5" />
                     <span>Treść dodatkowa</span>
-                    {(data.audioCue || data.clinicalDescription || data.notes || data.videoUrl) && (
-                      <span className="px-1.5 py-0.5 text-[9px] rounded bg-primary/20 text-primary normal-case">
-                        Zmienione
-                      </span>
-                    )}
+                    <span
+                      className="px-1.5 py-0.5 text-[9px] rounded bg-primary/20 text-primary normal-case"
+                      data-testid="exercise-create-content-completeness"
+                    >
+                      {enrichmentDraft.completeness.filled}/{enrichmentDraft.completeness.total}
+                    </span>
                   </div>
                   <ChevronDown
                     className={cn('h-4 w-4 transition-transform duration-200', showAdvanced && 'rotate-180')}
@@ -1990,83 +2001,22 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
                 </button>
               </CollapsibleTrigger>
               <CollapsibleContent className="pt-3">
-                <div className="rounded-lg border border-border bg-surface/50 p-4 space-y-4">
-                  <div className="space-y-2">
-                    <ExerciseFieldLabelWithTooltip
-                      htmlFor="notes-input"
-                      label="Notatki wewnętrzne"
-                      tooltip={EXERCISE_FIELD_TOOLTIPS.notes}
-                      labelClassName="text-[10px] font-semibold text-muted-foreground uppercase"
-                      className="gap-2"
-                      testId="exercise-create-notes-info"
-                    />
-                    <Textarea
-                      id="notes-input"
-                      value={data.notes}
-                      onChange={(e) => updateField('notes', e.target.value)}
-                      placeholder="Uwagi, modyfikacje, przeciwwskazania..."
-                      className="min-h-[60px] resize-none bg-surface border-border text-foreground placeholder:text-muted-foreground/50 text-sm"
-                      data-testid="exercise-create-notes-input"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <ExerciseFieldLabelWithTooltip
-                      htmlFor="audio-cue-input"
-                      label="Polecenia audio"
-                      tooltip={EXERCISE_FIELD_TOOLTIPS.audioCue}
-                      labelClassName="text-[10px] font-semibold text-muted-foreground uppercase"
-                      className="gap-2"
-                      testId="exercise-create-audio-cue-info"
-                    />
-                    <Input
-                      id="audio-cue-input"
-                      type="text"
-                      value={data.audioCue}
-                      onChange={(e) => updateField('audioCue', e.target.value)}
-                      placeholder='np. "Proste plecy"'
-                      maxLength={200}
-                      className="bg-surface border-border text-foreground placeholder:text-muted-foreground/50 text-sm"
-                      data-testid="exercise-create-audio-cue-input"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <ExerciseFieldLabelWithTooltip
-                      htmlFor="clinical-description-input"
-                      label="Opis dla fizjoterapeuty"
-                      tooltip={EXERCISE_FIELD_TOOLTIPS.clinicalDescription}
-                      labelClassName="text-[10px] font-semibold text-muted-foreground uppercase"
-                      className="gap-2"
-                      testId="exercise-create-clinical-description-info"
-                    />
-                    <Textarea
-                      id="clinical-description-input"
-                      value={data.clinicalDescription}
-                      onChange={(e) => updateField('clinicalDescription', e.target.value)}
-                      placeholder="Opis kliniczny dla fizjoterapeuty (język medyczny)..."
-                      className="min-h-[80px] resize-none bg-surface border-border text-foreground placeholder:text-muted-foreground/50 text-sm"
-                      data-testid="exercise-create-clinical-description-input"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <ExerciseFieldLabelWithTooltip
-                      htmlFor="video-url-input"
-                      label="URL filmu"
-                      tooltip={EXERCISE_FIELD_TOOLTIPS.videoUrl}
-                      labelClassName="text-[10px] font-semibold text-muted-foreground uppercase"
-                      className="gap-2"
-                      testId="exercise-create-video-url-info"
-                    />
-                    <Input
-                      id="video-url-input"
-                      type="url"
-                      value={data.videoUrl}
-                      onChange={(e) => updateField('videoUrl', e.target.value)}
-                      placeholder="https://..."
-                      className="bg-surface border-border text-foreground placeholder:text-muted-foreground/50 text-sm"
-                      data-testid="exercise-create-video-url-input"
-                    />
-                  </div>
-                </div>
+                <ExerciseContentSections
+                  enrichment={enrichmentDraft.enrichment}
+                  patientDescription={data.description}
+                  clinicalDescription={data.clinicalDescription}
+                  audioCue={data.audioCue}
+                  videoUrl={data.videoUrl}
+                  notes={data.notes}
+                  isPathDirty={enrichmentDraft.isPathDirty}
+                  showPatientLead={false}
+                  onPatientDescriptionChange={(value) => updateField('description', value)}
+                  onClinicalDescriptionChange={(value) => updateField('clinicalDescription', value)}
+                  onAudioCueChange={(value) => updateField('audioCue', value)}
+                  onVideoUrlChange={(value) => updateField('videoUrl', value)}
+                  onNotesChange={(value) => updateField('notes', value)}
+                  setPath={enrichmentDraft.setPath}
+                />
               </CollapsibleContent>
             </Collapsible>
           </div>

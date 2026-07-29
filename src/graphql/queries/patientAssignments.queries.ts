@@ -81,6 +81,7 @@ export const PATIENT_ASSIGNMENT_FULL_FRAGMENT = gql`
         notes
         customName
         customDescription
+        overridesJson
         loadType
         loadValue
         loadUnit
@@ -110,6 +111,7 @@ export const PATIENT_ASSIGNMENT_FULL_FRAGMENT = gql`
           rangeOfMotion
           difficultyLevel
           tempo
+          enrichmentData
           defaultExecutionTime
           defaultSets
           defaultReps
@@ -133,6 +135,7 @@ export const PATIENT_ASSIGNMENT_FULL_FRAGMENT = gql`
       notes
       videoUrl
       preparationTime
+      enrichmentData
       defaultExecutionTime
       defaultSets
       defaultReps
@@ -316,6 +319,7 @@ export const PATIENT_ASSIGNMENT_DETAILS_FRAGMENT = gql`
         notes
         customName
         customDescription
+        overridesJson
         loadType
         loadValue
         loadUnit
@@ -345,6 +349,7 @@ export const PATIENT_ASSIGNMENT_DETAILS_FRAGMENT = gql`
           rangeOfMotion
           difficultyLevel
           tempo
+          enrichmentData
           defaultExecutionTime
           defaultSets
           defaultReps
@@ -368,6 +373,7 @@ export const PATIENT_ASSIGNMENT_DETAILS_FRAGMENT = gql`
       notes
       videoUrl
       preparationTime
+      enrichmentData
       defaultExecutionTime
       defaultSets
       defaultReps

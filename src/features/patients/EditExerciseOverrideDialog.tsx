@@ -7,46 +7,94 @@ import { useMutation } from '@apollo/client/react';
 import {
   Loader2,
   Dumbbell,
-  Plus,
-  Minus,
-  Clock,
   Sparkles,
   Upload,
   Trash2,
-  ArrowLeft,
-  ArrowRight,
-  Maximize2,
-  RefreshCw,
-  X,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ImagePlaceholder } from '@/components/shared/ImagePlaceholder';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { getMediaUrl } from '@/utils/mediaUrl';
-import { useNumericDraft } from '@/hooks/useNumericDraft';
 
 import { UPDATE_PATIENT_EXERCISE_OVERRIDES_MUTATION } from '@/graphql/mutations/exercises.mutations';
 import { GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY } from '@/graphql/queries/patientAssignments.queries';
 import { useExerciseImageGeneration } from '@/features/exercises/useExerciseImageGeneration';
 import { ImageStylePicker } from '@/features/exercises/ImageStylePicker';
 import {
-  DIFFICULTY_OPTIONS,
   ENABLE_EXTENDED_PATIENT_OVERRIDE_FIELDS,
   ENABLE_FULL_PATIENT_PERSONALIZATION,
-  EXERCISE_FIELD_METADATA,
-  SIDE_OPTIONS,
+  ExerciseParametersFields,
   buildOverrideDelta,
   replaceOverrideMapEntry,
+  type ExerciseFieldKey,
+  type ExerciseParameterValues,
+  type MappingOnlyFieldKey,
+  type ParameterTestIdKind,
 } from '@/components/shared/exercise';
 import type { PatientAssignment, ExerciseMapping, ExerciseOverride } from './PatientAssignmentCard';
+
+const OVERRIDE_FIELD_TESTID_MAP: Record<
+  ExerciseFieldKey | MappingOnlyFieldKey,
+  { input: string; info: string }
+> = {
+  sets: { input: 'patient-exercise-override-sets-input', info: 'patient-exercise-override-sets-info' },
+  reps: { input: 'patient-exercise-override-reps-input', info: 'patient-exercise-override-reps-info' },
+  executionTime: {
+    input: 'patient-exercise-override-execution-time-input',
+    info: 'patient-exercise-override-execution-time-info',
+  },
+  restSets: {
+    input: 'patient-exercise-override-rest-sets-input',
+    info: 'patient-exercise-override-rest-sets-info',
+  },
+  restReps: {
+    input: 'patient-exercise-override-rest-reps-input',
+    info: 'patient-exercise-override-rest-reps-info',
+  },
+  preparationTime: {
+    input: 'patient-exercise-override-prep-time-input',
+    info: 'patient-exercise-override-prep-time-info',
+  },
+  duration: {
+    input: 'patient-exercise-override-duration-input',
+    info: 'patient-exercise-override-duration-info',
+  },
+  load: { input: 'patient-exercise-override-load-kg-input', info: 'patient-exercise-override-load-kg-info' },
+  tempo: { input: 'patient-exercise-override-tempo-input', info: 'patient-exercise-override-tempo-info' },
+  side: { input: 'patient-exercise-override-side-select', info: 'patient-exercise-override-side-info' },
+  rangeOfMotion: { input: 'patient-exercise-override-rom-input', info: 'patient-exercise-override-rom-info' },
+  difficultyLevel: {
+    input: 'patient-exercise-override-difficulty-select',
+    info: 'patient-exercise-override-difficulty-info',
+  },
+  patientDescription: {
+    input: 'patient-exercise-override-patient-description-input',
+    info: 'patient-exercise-override-patient-description-info',
+  },
+  clinicalDescription: {
+    input: 'patient-exercise-override-clinical-description-input',
+    info: 'patient-exercise-override-clinical-description-info',
+  },
+  audioCue: {
+    input: 'patient-exercise-override-audio-cue-input',
+    info: 'patient-exercise-override-audio-cue-info',
+  },
+  notes: { input: 'patient-exercise-override-notes-input', info: 'patient-exercise-override-notes-info' },
+  customName: {
+    input: 'patient-exercise-override-custom-name-input',
+    info: 'patient-exercise-override-custom-name-info',
+  },
+  customDescription: {
+    input: 'patient-exercise-override-custom-description-input',
+    info: 'patient-exercise-override-custom-description-info',
+  },
+};
 
 interface EditExerciseOverrideDialogProps {
   open: boolean;
@@ -70,14 +118,6 @@ const translateSide = (side?: string) => {
     none: 'bez strony',
   };
   return sides[normalizedSide] || side;
-};
-
-const SIDE_ICONS: Record<string, typeof X> = {
-  none: X,
-  left: ArrowLeft,
-  right: ArrowRight,
-  both: Maximize2,
-  alternating: RefreshCw,
 };
 
 // Wrapper component that handles dialog state
@@ -240,66 +280,119 @@ function EditExerciseOverrideDialogContent({
     showSuccessToast: false,
   });
 
-  const setsField = useNumericDraft({
-    value: sets,
-    onCommit: setSets,
-    min: 0,
-    parseMode: 'int',
-  });
-
-  const repsField = useNumericDraft({
-    value: reps,
-    onCommit: setReps,
-    min: 0,
-    parseMode: 'int',
-  });
-
-  const executionTimeField = useNumericDraft({
-    value: executionTime,
-    onCommit: setExecutionTime,
-    min: 0,
-    step: 5,
-    parseMode: 'int',
-  });
-
-  const durationField = useNumericDraft({
-    value: duration,
-    onCommit: setDuration,
-    min: 0,
-    step: 5,
-    parseMode: 'int',
-  });
-
-  const restSetsField = useNumericDraft({
-    value: restSets,
-    onCommit: setRestSets,
-    min: 0,
-    parseMode: 'int',
-  });
-
-  const restRepsField = useNumericDraft({
-    value: restReps,
-    onCommit: setRestReps,
-    min: 0,
-    parseMode: 'int',
-  });
-
-  const preparationTimeField = useNumericDraft({
-    value: preparationTime,
-    onCommit: setPreparationTime,
-    min: 0,
-    parseMode: 'int',
-  });
-
-  const loadKgField = useNumericDraft({
-    value: loadKg ?? 0,
-    onCommit: (value) => setLoadKg(value > 0 ? value : null),
-    min: 0,
-    parseMode: 'float',
-  });
-
   // File input ref
   const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  const parameterValues = React.useMemo<ExerciseParameterValues>(
+    () => ({
+      sets,
+      reps,
+      executionTime,
+      duration,
+      restSets,
+      restReps,
+      preparationTime,
+      loadKg,
+      tempo,
+      rangeOfMotion,
+      side: exerciseSide,
+      difficultyLevel,
+      patientDescription,
+      clinicalDescription,
+      audioCue,
+      notes,
+      customName,
+      customDescription,
+    }),
+    [
+      sets,
+      reps,
+      executionTime,
+      duration,
+      restSets,
+      restReps,
+      preparationTime,
+      loadKg,
+      tempo,
+      rangeOfMotion,
+      exerciseSide,
+      difficultyLevel,
+      patientDescription,
+      clinicalDescription,
+      audioCue,
+      notes,
+      customName,
+      customDescription,
+    ]
+  );
+
+  const inheritedValues = React.useMemo<Partial<ExerciseParameterValues>>(
+    () => ({
+      sets: inheritedSets,
+      reps: inheritedReps,
+      executionTime: inheritedExecutionTime,
+      duration: inheritedDuration,
+      restSets: inheritedRestSets,
+      restReps: inheritedRestReps,
+      preparationTime: inheritedPreparationTime,
+      loadKg: inheritedLoadKg,
+      tempo: inheritedTempo,
+      rangeOfMotion: inheritedRom,
+      side: inheritedExerciseSide,
+      difficultyLevel: inheritedDifficulty,
+      patientDescription: inheritedPatientDescription,
+      clinicalDescription: inheritedClinicalDescription,
+      audioCue: inheritedAudioCue,
+    }),
+    [
+      inheritedSets,
+      inheritedReps,
+      inheritedExecutionTime,
+      inheritedDuration,
+      inheritedRestSets,
+      inheritedRestReps,
+      inheritedPreparationTime,
+      inheritedLoadKg,
+      inheritedTempo,
+      inheritedRom,
+      inheritedExerciseSide,
+      inheritedDifficulty,
+      inheritedPatientDescription,
+      inheritedClinicalDescription,
+      inheritedAudioCue,
+    ]
+  );
+
+  const handleParametersChange = useCallback((patch: Partial<ExerciseParameterValues>) => {
+    if ('sets' in patch && patch.sets != null) setSets(patch.sets);
+    if ('reps' in patch && patch.reps != null) setReps(patch.reps);
+    if ('executionTime' in patch) setExecutionTime(patch.executionTime ?? 0);
+    if ('duration' in patch) setDuration(patch.duration ?? 0);
+    if ('restSets' in patch) setRestSets(patch.restSets ?? 0);
+    if ('restReps' in patch) setRestReps(patch.restReps ?? 0);
+    if ('preparationTime' in patch) setPreparationTime(patch.preparationTime ?? 0);
+    if ('loadKg' in patch) setLoadKg(patch.loadKg ?? null);
+    if ('tempo' in patch) setTempo(patch.tempo ?? '');
+    if ('rangeOfMotion' in patch) setRangeOfMotion(patch.rangeOfMotion ?? '');
+    if ('side' in patch && patch.side != null) setExerciseSide(patch.side);
+    if ('difficultyLevel' in patch && patch.difficultyLevel != null) {
+      setDifficultyLevel(patch.difficultyLevel);
+    }
+    if ('patientDescription' in patch) setPatientDescription(patch.patientDescription ?? '');
+    if ('clinicalDescription' in patch) setClinicalDescription(patch.clinicalDescription ?? '');
+    if ('audioCue' in patch) setAudioCue(patch.audioCue ?? '');
+    if ('notes' in patch) setNotes(patch.notes ?? '');
+    if ('customName' in patch) setCustomName(patch.customName ?? '');
+    if ('customDescription' in patch) setCustomDescription(patch.customDescription ?? '');
+  }, []);
+
+  const overrideTestIdFor = useCallback(
+    (key: ExerciseFieldKey | MappingOnlyFieldKey, kind: ParameterTestIdKind) => {
+      const mapped = OVERRIDE_FIELD_TESTID_MAP[key];
+      return kind === 'info' ? mapped.info : mapped.input;
+    },
+    []
+  );
 
   // Track changes
   const hasChanges =
@@ -504,9 +597,15 @@ function EditExerciseOverrideDialogContent({
     setLoadKg(inheritedLoadKg);
     setRangeOfMotion(inheritedRom);
     setCustomName(mapping.customName ?? '');
-    setCustomDescription(mapping.customDescription ?? exercise?.patientDescription ?? exercise?.description ?? '');
+    setCustomDescription(
+      mapping.customDescription ?? exercise?.patientDescription ?? exercise?.description ?? ''
+    );
     setNotes(mapping.notes ?? '');
     setExerciseSide(inheritedExerciseSide);
+    setDifficultyLevel(inheritedDifficulty);
+    setPatientDescription(inheritedPatientDescription);
+    setClinicalDescription(inheritedClinicalDescription);
+    setAudioCue(inheritedAudioCue);
     setCustomImages([]);
   };
 
@@ -558,7 +657,6 @@ function EditExerciseOverrideDialogContent({
             </div>
           </div>
 
-          {/* Main parameters */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <p className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Parametry ćwiczenia</p>
@@ -566,381 +664,19 @@ function EditExerciseOverrideDialogContent({
                 Przywróć domyślne
               </Button>
             </div>
-
-            {/* Sets & Reps */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label className="text-sm">Serie</Label>
-                <div className="flex items-center gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon"
-                    className="h-11 w-11 shrink-0"
-                    onClick={setsField.decrement}
-                    disabled={!setsField.canDecrement}
-                  >
-                    <Minus className="h-4 w-4" />
-                  </Button>
-                  <Input
-                    type="number"
-                    value={setsField.draftValue}
-                    onChange={(e) => setsField.setDraftValue(e.target.value)}
-                    onFocus={setsField.handleFocus}
-                    onBlur={setsField.handleBlur}
-                    onKeyDown={setsField.handleKeyDown}
-                    className="h-11 text-center text-lg font-semibold"
-                    data-testid="patient-exercise-override-sets-input"
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon"
-                    className="h-11 w-11 shrink-0"
-                    onClick={setsField.increment}
-                  >
-                    <Plus className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label className="text-sm">Powtórzenia</Label>
-                <div className="flex items-center gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon"
-                    className="h-11 w-11 shrink-0"
-                    onClick={repsField.decrement}
-                    disabled={!repsField.canDecrement}
-                  >
-                    <Minus className="h-4 w-4" />
-                  </Button>
-                  <Input
-                    type="number"
-                    value={repsField.draftValue}
-                    onChange={(e) => repsField.setDraftValue(e.target.value)}
-                    onFocus={repsField.handleFocus}
-                    onBlur={repsField.handleBlur}
-                    onKeyDown={repsField.handleKeyDown}
-                    className="h-11 text-center text-lg font-semibold"
-                    data-testid="patient-exercise-override-reps-input"
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon"
-                    className="h-11 w-11 shrink-0"
-                    onClick={repsField.increment}
-                  >
-                    <Plus className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              {/* Execution time */}
-              <div className="space-y-2">
-                <Label className="text-sm flex items-center gap-2">
-                  <Clock className="h-4 w-4 text-muted-foreground" />
-                  Czas powtórzenia (sekundy)
-                </Label>
-                <div className="flex items-center gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon"
-                    className="h-11 w-11 shrink-0"
-                    onClick={executionTimeField.decrement}
-                    disabled={!executionTimeField.canDecrement}
-                  >
-                    <Minus className="h-4 w-4" />
-                  </Button>
-                  <Input
-                    type="number"
-                    value={executionTimeField.draftValue}
-                    onChange={(e) => executionTimeField.setDraftValue(e.target.value)}
-                    onFocus={executionTimeField.handleFocus}
-                    onBlur={executionTimeField.handleBlur}
-                    onKeyDown={executionTimeField.handleKeyDown}
-                    className="h-11 text-center text-lg font-semibold"
-                    step={5}
-                    data-testid="patient-exercise-override-execution-time-input"
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon"
-                    className="h-11 w-11 shrink-0"
-                    onClick={executionTimeField.increment}
-                  >
-                    <Plus className="h-4 w-4" />
-                  </Button>
-                </div>
-                <p className="text-xs text-muted-foreground">Główny timer pojedynczego powtórzenia</p>
-              </div>
-
-              {/* Duration */}
-              <div className="space-y-2">
-                <Label className="text-sm flex items-center gap-2">
-                  <Clock className="h-4 w-4 text-muted-foreground" />
-                  Czas serii (sekundy)
-                </Label>
-                <div className="flex items-center gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon"
-                    className="h-11 w-11 shrink-0"
-                    onClick={durationField.decrement}
-                    disabled={!durationField.canDecrement}
-                  >
-                    <Minus className="h-4 w-4" />
-                  </Button>
-                  <Input
-                    type="number"
-                    value={durationField.draftValue}
-                    onChange={(e) => durationField.setDraftValue(e.target.value)}
-                    onFocus={durationField.handleFocus}
-                    onBlur={durationField.handleBlur}
-                    onKeyDown={durationField.handleKeyDown}
-                    className="h-11 text-center text-lg font-semibold"
-                    step={5}
-                    data-testid="patient-exercise-override-duration-input"
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon"
-                    className="h-11 w-11 shrink-0"
-                    onClick={durationField.increment}
-                  >
-                    <Plus className="h-4 w-4" />
-                  </Button>
-                </div>
-                <p className="text-xs text-muted-foreground">Użyj dla ćwiczeń time-based (override czasu serii)</p>
-              </div>
-            </div>
-
-            {/* Rest parameters */}
-            <div className="grid grid-cols-2 gap-4 pt-2">
-              <div className="space-y-2">
-                <Label className="text-sm text-muted-foreground">
-                  {EXERCISE_FIELD_METADATA.restSets.label} (s)
-                  {restSets === inheritedRestSets && (
-                    <Badge variant="outline" className="ml-2 text-[10px] font-normal">
-                      odziedziczone
-                    </Badge>
-                  )}
-                </Label>
-                <Input
-                  type="number"
-                  value={restSetsField.draftValue}
-                  onChange={(e) => restSetsField.setDraftValue(e.target.value)}
-                  onFocus={restSetsField.handleFocus}
-                  onBlur={restSetsField.handleBlur}
-                  onKeyDown={restSetsField.handleKeyDown}
-                  className="h-11"
-                  data-testid="patient-exercise-override-rest-sets-input"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label className="text-sm text-muted-foreground">
-                  {EXERCISE_FIELD_METADATA.restReps.label} (s)
-                </Label>
-                <Input
-                  type="number"
-                  value={restRepsField.draftValue}
-                  onChange={(e) => restRepsField.setDraftValue(e.target.value)}
-                  onFocus={restRepsField.handleFocus}
-                  onBlur={restRepsField.handleBlur}
-                  onKeyDown={restRepsField.handleKeyDown}
-                  className="h-11"
-                  data-testid="patient-exercise-override-rest-reps-input"
-                />
-              </div>
-            </div>
-
-            {ENABLE_EXTENDED_PATIENT_OVERRIDE_FIELDS && (
-              <div className="grid grid-cols-2 gap-4 pt-2">
-                <div className="space-y-2">
-                  <Label className="text-sm text-muted-foreground">
-                    {EXERCISE_FIELD_METADATA.preparationTime.label} (s)
-                    {preparationTime === inheritedPreparationTime && (
-                      <Badge variant="outline" className="ml-2 text-[10px] font-normal">
-                        odziedziczone
-                      </Badge>
-                    )}
-                  </Label>
-                  <Input
-                    type="number"
-                    value={preparationTimeField.draftValue}
-                    onChange={(e) => preparationTimeField.setDraftValue(e.target.value)}
-                    onFocus={preparationTimeField.handleFocus}
-                    onBlur={preparationTimeField.handleBlur}
-                    onKeyDown={preparationTimeField.handleKeyDown}
-                    className="h-11"
-                    data-testid="patient-exercise-override-prep-time-input"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-sm text-muted-foreground">
-                    {EXERCISE_FIELD_METADATA.load.label} (kg)
-                    {loadKg === inheritedLoadKg && (
-                      <Badge variant="outline" className="ml-2 text-[10px] font-normal">
-                        odziedziczone
-                      </Badge>
-                    )}
-                  </Label>
-                  <Input
-                    type="number"
-                    min={0}
-                    step={0.5}
-                    value={loadKg == null ? '' : loadKgField.draftValue}
-                    onChange={(e) => {
-                      if (e.target.value === '') {
-                        setLoadKg(null);
-                        return;
-                      }
-                      loadKgField.setDraftValue(e.target.value);
-                    }}
-                    onFocus={loadKgField.handleFocus}
-                    onBlur={loadKgField.handleBlur}
-                    onKeyDown={loadKgField.handleKeyDown}
-                    placeholder={inheritedLoadKg != null ? String(inheritedLoadKg) : '—'}
-                    className="h-11"
-                    data-testid="patient-exercise-override-load-kg-input"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-sm text-muted-foreground">{EXERCISE_FIELD_METADATA.tempo.label}</Label>
-                  <Input
-                    value={tempo}
-                    onChange={(e) => setTempo(e.target.value)}
-                    placeholder={inheritedTempo || 'np. 3-0-1-0'}
-                    className="h-11"
-                    data-testid="patient-exercise-override-tempo-input"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-sm text-muted-foreground">
-                    {EXERCISE_FIELD_METADATA.rangeOfMotion.label}
-                  </Label>
-                  <Input
-                    value={rangeOfMotion}
-                    onChange={(e) => setRangeOfMotion(e.target.value)}
-                    placeholder="np. 0–90°"
-                    className="h-11"
-                    data-testid="patient-exercise-override-rom-input"
-                  />
-                </div>
-              </div>
-            )}
+            <ExerciseParametersFields
+              surface="patientOverride"
+              values={parameterValues}
+              onChange={handleParametersChange}
+              inheritedValues={inheritedValues}
+              showContentSection
+              showMappingOnlyFields
+              density="comfortable"
+              advancedDefaultOpen={false}
+              testIdFor={overrideTestIdFor}
+              structuralTestIdPrefix="patient-exercise-override"
+            />
           </div>
-
-          <Separator />
-
-          {/* Exercise side selection */}
-          <div className="space-y-4">
-            <p className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
-              {EXERCISE_FIELD_METADATA.side.label}
-              {exerciseSide === inheritedExerciseSide && (
-                <Badge variant="outline" className="ml-2 text-[10px] font-normal normal-case">
-                  odziedziczone
-                </Badge>
-              )}
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {SIDE_OPTIONS.map((side) => {
-                const Icon = SIDE_ICONS[side.value] ?? X;
-                const isSelected = exerciseSide === side.value;
-                return (
-                  <Button
-                    key={side.value}
-                    type="button"
-                    variant={isSelected ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setExerciseSide(side.value)}
-                    className={`gap-2 ${isSelected ? 'shadow-md' : ''}`}
-                    data-testid={`patient-exercise-override-side-${side.value}`}
-                  >
-                    <Icon className="h-4 w-4" />
-                    {side.label}
-                  </Button>
-                );
-              })}
-            </div>
-            <p className="text-xs text-muted-foreground">{EXERCISE_FIELD_METADATA.side.tooltip}</p>
-          </div>
-
-          {ENABLE_FULL_PATIENT_PERSONALIZATION && (
-            <>
-              <Separator />
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label className="text-sm text-muted-foreground">
-                    {EXERCISE_FIELD_METADATA.difficultyLevel.label}
-                    {difficultyLevel === inheritedDifficulty && (
-                      <Badge variant="outline" className="ml-2 text-[10px] font-normal">
-                        odziedziczone
-                      </Badge>
-                    )}
-                  </Label>
-                  <select
-                    value={difficultyLevel}
-                    onChange={(event) => setDifficultyLevel(event.target.value)}
-                    className="flex h-11 w-full rounded-md border border-border bg-background px-3 text-sm"
-                    data-testid="patient-exercise-override-difficulty-select"
-                  >
-                    {DIFFICULTY_OPTIONS.map((option) => (
-                      <option key={option.value} value={option.value}>
-                        {option.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-sm text-muted-foreground">
-                    {EXERCISE_FIELD_METADATA.patientDescription.label}
-                  </Label>
-                  <Textarea
-                    value={patientDescription}
-                    onChange={(event) => setPatientDescription(event.target.value)}
-                    placeholder="Opis widoczny dla pacjenta"
-                    className="min-h-[72px] resize-none"
-                    data-testid="patient-exercise-override-patient-description-input"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-sm text-muted-foreground">
-                    {EXERCISE_FIELD_METADATA.clinicalDescription.label}
-                  </Label>
-                  <Textarea
-                    value={clinicalDescription}
-                    onChange={(event) => setClinicalDescription(event.target.value)}
-                    placeholder="Notatki kliniczne"
-                    className="min-h-[72px] resize-none"
-                    data-testid="patient-exercise-override-clinical-description-input"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-sm text-muted-foreground">
-                    {EXERCISE_FIELD_METADATA.audioCue.label}
-                  </Label>
-                  <Input
-                    value={audioCue}
-                    onChange={(event) => setAudioCue(event.target.value)}
-                    placeholder="np. Wdech przy wznosie"
-                    className="h-11"
-                    data-testid="patient-exercise-override-audio-cue-input"
-                  />
-                </div>
-              </div>
-            </>
-          )}
 
           <Separator />
 
@@ -996,7 +732,6 @@ function EditExerciseOverrideDialogContent({
                 </div>
               )}
 
-              {/* Add image buttons */}
               <div className="flex gap-2">
                 <Button
                   type="button"
@@ -1034,50 +769,7 @@ function EditExerciseOverrideDialogContent({
             </div>
           </div>
 
-          <Separator />
-
-          {/* Customization */}
-          <div className="space-y-4">
-            <p className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
-              Personalizacja dla pacjenta
-            </p>
-
-            <div className="space-y-2">
-              <Label className="text-sm">Własna nazwa</Label>
-              <Input
-                value={customName}
-                onChange={(e) => setCustomName(e.target.value)}
-                placeholder={exercise?.name || 'Zostaw puste dla domyślnej nazwy'}
-                className="h-11"
-              />
-              <p className="text-xs text-muted-foreground">Pacjent zobaczy tę nazwę zamiast oryginalnej</p>
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-sm">Opis ćwiczenia dla pacjenta</Label>
-              <Textarea
-                value={customDescription}
-                onChange={(e) => setCustomDescription(e.target.value)}
-                placeholder="Wpisz opis ćwiczenia..."
-                className="min-h-[100px] resize-none"
-              />
-              {customDescription !== (exercise?.description ?? '') && (
-                <p className="text-xs text-muted-foreground">Opis został zmodyfikowany dla tego pacjenta</p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-sm">Notatki / instrukcje</Label>
-              <Textarea
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder="Szczególne wskazówki dla pacjenta..."
-                className="min-h-[80px] resize-none"
-              />
-            </div>
-          </div>
-
-          {/* Summary of changes */}
+                    {/* Summary of changes */}
           {(currentOverride?.sets !== undefined ||
             currentOverride?.reps !== undefined ||
             currentOverride?.duration !== undefined ||

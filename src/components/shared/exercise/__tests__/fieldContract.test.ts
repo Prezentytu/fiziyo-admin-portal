@@ -2,12 +2,15 @@ import { describe, expect, it } from 'vitest';
 import { EXERCISE_FIELD_METADATA, type ExerciseFieldKey } from '../displayRegistry';
 import {
   ALL_EXERCISE_FIELD_KEYS,
+  DEPRECATED_FIELD_KEYS,
   EXERCISE_FIELD_EDIT_CONFIG,
   EXERCISE_TEMPLATE_SCHEMA,
   PARAMETER_EDITOR_FIELD_KEYS,
+  PARAMETER_SECTIONS,
   buildParamTestId,
   getFieldsForSurface,
   getParameterEditorFields,
+  getParameterSections,
 } from '../fieldContract';
 
 describe('fieldContract', () => {
@@ -48,16 +51,23 @@ describe('fieldContract', () => {
     expect(rule.safeParse('Unknown').success).toBe(false);
   });
 
-  it('getFieldsForSurface(mapping) pomija pola inherited/none, zawiera preparationTime', () => {
+  it('getFieldsForSurface(mapping) zawiera dawkowanie + side/ROM/difficulty/treści (overridesJson)', () => {
     const mappingKeys = getFieldsForSurface('mapping').map((config) => config.key);
-    expect(mappingKeys).not.toContain('side');
-    expect(mappingKeys).not.toContain('difficultyLevel');
-    expect(mappingKeys).not.toContain('rangeOfMotion');
+    expect(mappingKeys).toContain('side');
+    expect(mappingKeys).toContain('difficultyLevel');
+    expect(mappingKeys).toContain('rangeOfMotion');
+    expect(mappingKeys).toContain('patientDescription');
     expect(mappingKeys).toContain('preparationTime');
     expect(mappingKeys).toContain('sets');
     expect(mappingKeys).toContain('executionTime');
-    expect(mappingKeys).toContain('duration');
+    expect(mappingKeys).not.toContain('duration');
     expect(mappingKeys).toContain('load');
+  });
+
+  it('duration jest wycofane z edycji (surfaces puste, DEPRECATED_FIELD_KEYS)', () => {
+    expect(DEPRECATED_FIELD_KEYS).toContain('duration');
+    expect(EXERCISE_FIELD_EDIT_CONFIG.duration.surfaces).toEqual([]);
+    expect(PARAMETER_EDITOR_FIELD_KEYS).not.toContain('duration');
   });
 
   it('getFieldsForSurface(patientPlan) zawiera side/ROM/difficulty i dawkowanie', () => {
@@ -101,5 +111,59 @@ describe('fieldContract', () => {
 
   it('executionTime ma etykietę „Czas powtórzenia” (blokuje rozjazd z „Czas 1 powtórzenia”)', () => {
     expect(EXERCISE_FIELD_METADATA.executionTime.label).toBe('Czas powtórzenia');
+  });
+
+  it('każde nie-deprecated ExerciseFieldKey należy do dokładnie jednej PARAMETER_SECTION', () => {
+    const deprecated = new Set<ExerciseFieldKey>(DEPRECATED_FIELD_KEYS);
+    const seen = new Map<ExerciseFieldKey, string>();
+    for (const section of PARAMETER_SECTIONS) {
+      for (const key of section.keys) {
+        expect(deprecated.has(key)).toBe(false);
+        expect(seen.has(key)).toBe(false);
+        seen.set(key, section.id);
+      }
+    }
+    const expected = ALL_EXERCISE_FIELD_KEYS.filter((key) => !deprecated.has(key)).sort();
+    expect([...seen.keys()].sort()).toEqual(expected);
+  });
+
+  it('PARAMETER_SECTIONS mają stabilną kolejność id', () => {
+    expect(PARAMETER_SECTIONS.map((section) => section.id)).toEqual([
+      'basic',
+      'timing',
+      'classification',
+      'content',
+    ]);
+  });
+
+  it('getParameterSections(template) zwraca basic + advanced bez content domyślnie', () => {
+    const sections = getParameterSections('template');
+    expect(sections.map((section) => section.id)).toEqual(['basic', 'timing', 'classification']);
+    expect(sections.every((section) => section.fields.every((field) => field.role === 'editable'))).toBe(
+      true
+    );
+  });
+
+  it('getParameterSections(mapping) edytuje side/difficulty i content (bez inherited)', () => {
+    const sections = getParameterSections('mapping', { includeContent: true });
+    const classification = sections.find((section) => section.id === 'classification');
+    expect(classification).toBeDefined();
+    expect(classification?.fields.map((field) => field.key)).toContain('side');
+    expect(classification?.fields.find((field) => field.key === 'side')?.role).toBe('editable');
+    expect(sections.some((section) => section.id === 'content')).toBe(true);
+
+    const timing = sections.find((section) => section.id === 'timing');
+    expect(timing?.fields.map((field) => field.key)).not.toContain('duration');
+  });
+
+  it('getParameterSections respektuje omitFields i includeContent', () => {
+    const withoutSets = getParameterSections('patientPlan', {
+      omitFields: ['sets', 'reps'],
+      includeContent: true,
+    });
+    const basic = withoutSets.find((section) => section.id === 'basic');
+    expect(basic?.fields.map((field) => field.key)).not.toContain('sets');
+    expect(basic?.fields.map((field) => field.key)).not.toContain('reps');
+    expect(withoutSets.some((section) => section.id === 'content')).toBe(true);
   });
 });

@@ -12,15 +12,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { cn } from '@/lib/utils';
 
 import { ExerciseParametersEditor } from './ExerciseParametersEditor';
-import { ExerciseExecutionSteps } from './ExerciseExecutionSteps';
-import { ExerciseAudioCues } from './ExerciseAudioCues';
-import {
-  PatientLeadSection,
-  PatientExtrasSection,
-  SafetySection,
-  TherapistSection,
-  MetadataSection,
-} from './ExerciseDetailSections';
+import { ExerciseContentSections } from './ExerciseContentSections';
 import type { UseExerciseEditorFormResult } from './useExerciseEditorForm';
 
 import { aiService } from '@/services/aiService';
@@ -271,9 +263,6 @@ export function ExerciseEditor({
 }: Readonly<ExerciseEditorProps>) {
   const { core, enrichment, setCoreField, setEnrichmentPath, replaceEnrichment, isCoreFieldDirty, isPathDirty } = form;
 
-  const patientDescription = core.patientDescription;
-  const audioCue = core.audioCue;
-
   return (
     <div className={cn('space-y-4', className)}>
       {showNameField && (
@@ -312,58 +301,22 @@ export function ExerciseEditor({
         />
       </div>
 
-      <PatientLeadSection
-        data={enrichment}
-        patientDescription={patientDescription}
-        editable
-        disabled={disabled}
-        patientDescriptionDirty={isCoreFieldDirty('patientDescription')}
-        isPathDirty={isPathDirty}
-        onPatientDescriptionChange={(value) => setCoreField('patientDescription', value)}
-        setPath={setEnrichmentPath}
-      />
-
-      <ExerciseExecutionSteps
-        enrichmentData={enrichment}
-        patientDescription={patientDescription}
-        editable
-        disabled={disabled}
-        setPath={setEnrichmentPath}
-      />
-
-      <ExerciseAudioCues
-        audioCue={audioCue}
-        enrichmentData={enrichment}
-        editable
-        disabled={disabled}
-        onAudioCueChange={(value) => setCoreField('audioCue', value)}
-        setPath={setEnrichmentPath}
-      />
-
-      <PatientExtrasSection data={enrichment} editable disabled={disabled} isPathDirty={isPathDirty} setPath={setEnrichmentPath} />
-
-      <SafetySection data={enrichment} editable disabled={disabled} isPathDirty={isPathDirty} setPath={setEnrichmentPath} />
-
-      <TherapistSection
-        data={enrichment}
+      <ExerciseContentSections
+        enrichment={enrichment}
+        patientDescription={core.patientDescription}
         clinicalDescription={core.clinicalDescription}
-        editable
-        disabled={disabled}
-        clinicalDescriptionDirty={isCoreFieldDirty('clinicalDescription')}
-        onClinicalDescriptionChange={(value) => setCoreField('clinicalDescription', value)}
-        setPath={setEnrichmentPath}
-        persist={async () => {}}
-      />
-
-      <MetadataSection
-        data={enrichment}
+        audioCue={core.audioCue}
         videoUrl={core.videoUrl}
         notes={core.notes}
-        editable
         disabled={disabled}
+        patientDescriptionDirty={isCoreFieldDirty('patientDescription')}
+        clinicalDescriptionDirty={isCoreFieldDirty('clinicalDescription')}
         videoUrlDirty={isCoreFieldDirty('videoUrl')}
         notesDirty={isCoreFieldDirty('notes')}
         isPathDirty={isPathDirty}
+        onPatientDescriptionChange={(value) => setCoreField('patientDescription', value)}
+        onClinicalDescriptionChange={(value) => setCoreField('clinicalDescription', value)}
+        onAudioCueChange={(value) => setCoreField('audioCue', value)}
         onVideoUrlChange={(value) => setCoreField('videoUrl', value)}
         onNotesChange={(value) => setCoreField('notes', value)}
         setPath={setEnrichmentPath}

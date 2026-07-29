@@ -37,6 +37,7 @@ import { buildStructuredLoad, mapAvailableExercises } from './utils/availableExe
 import { appendPatientIfMissing } from './utils/patientSelectionUtils';
 import { computeExerciseDiff, type ExerciseMappingSnapshot } from './utils/exerciseDiff';
 import { buildExerciseSetFromBuilder } from './utils/buildExerciseSetFromBuilder';
+import { seedBuilderParamsFromMapping } from './utils/seedBuilderParamsFromMapping';
 import {
   buildAssignmentFrequencyPayload,
   normalizeFrequencySeed,
@@ -320,18 +321,7 @@ function AssignmentWizardContent({
         exerciseId: mapping.exerciseId,
       });
       params.set(instanceId, {
-        sets: mapping.sets ?? undefined,
-        reps: mapping.reps ?? undefined,
-        duration: mapping.duration ?? undefined,
-        restSets: mapping.restSets ?? undefined,
-        restReps: mapping.restReps ?? undefined,
-        executionTime: mapping.executionTime ?? undefined,
-        preparationTime: mapping.preparationTime ?? undefined,
-        tempo: mapping.tempo ?? '',
-        load: mapping.load ?? undefined,
-        notes: mapping.notes ?? '',
-        customName: mapping.customName ?? '',
-        customDescription: mapping.customDescription ?? '',
+        ...seedBuilderParamsFromMapping(mapping),
         loadType: mapping.loadType ?? undefined,
         loadValue: mapping.loadValue ?? undefined,
         loadUnit: mapping.loadUnit ?? undefined,
@@ -377,20 +367,7 @@ function AssignmentWizardContent({
           instanceId,
           exerciseId: mapping.exerciseId,
         });
-        params.set(instanceId, {
-          sets: mapping.sets ?? undefined,
-          reps: mapping.reps ?? undefined,
-          duration: mapping.duration ?? undefined,
-          restSets: mapping.restSets ?? undefined,
-          restReps: mapping.restReps ?? undefined,
-          executionTime: mapping.executionTime ?? undefined,
-          preparationTime: mapping.preparationTime ?? undefined,
-          tempo: mapping.tempo ?? '',
-          load: mapping.load ?? undefined,
-          notes: mapping.notes ?? '',
-          customName: mapping.customName ?? '',
-          customDescription: mapping.customDescription ?? '',
-        });
+        params.set(instanceId, seedBuilderParamsFromMapping(mapping));
       });
 
       setBuilderInstances(instances);
@@ -832,20 +809,7 @@ function AssignmentWizardContent({
           instanceId,
           exerciseId: mapping.exerciseId,
         });
-        params.set(instanceId, {
-          sets: mapping.sets ?? undefined,
-          reps: mapping.reps ?? undefined,
-          duration: mapping.duration ?? undefined,
-          restSets: mapping.restSets ?? undefined,
-          restReps: mapping.restReps ?? undefined,
-          executionTime: mapping.executionTime ?? undefined,
-          preparationTime: mapping.preparationTime ?? undefined,
-          tempo: mapping.tempo ?? '',
-          load: mapping.load ?? undefined,
-          notes: mapping.notes ?? '',
-          customName: mapping.customName ?? '',
-          customDescription: mapping.customDescription ?? '',
-        });
+        params.set(instanceId, seedBuilderParamsFromMapping(mapping));
       });
       setBuilderInstances(instances);
       setBuilderParams(params);
