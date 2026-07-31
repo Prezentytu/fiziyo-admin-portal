@@ -117,6 +117,8 @@ export interface AdminExercise {
   // Extended training parameters
   rangeOfMotion?: string;
   defaultLoad?: {
+    loadWeightKg?: number | null;
+    loadSource?: string | null;
     type: string;
     value?: number;
     unit?: string;

@@ -1,10 +1,7 @@
 'use client';
 
 import { useState, useCallback, useMemo } from 'react';
-import { Clock, Settings2, ChevronUp, ChevronDown, X, Eye, Info } from 'lucide-react';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Clock, Settings2, ChevronUp, ChevronDown, X, Eye, Info, ListOrdered } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { LabeledStepper } from '@/components/shared/LabeledStepper';
@@ -12,7 +9,6 @@ import { ExerciseThumbnail } from './ExerciseThumbnail';
 import { getMediaUrl } from '@/utils/mediaUrl';
 import { cn } from '@/lib/utils';
 import { calculateExerciseTotalSeconds, formatExerciseDuration } from '@/utils/exerciseTime';
-import { useOptionalNumericDraft } from '@/hooks/useOptionalNumericDraft';
 import {
   type ExerciseExecutionCardProps,
   type EditableField,
@@ -23,62 +19,99 @@ import {
   HIDE_EXERCISE_TAGS,
   INLINE_EXERCISE_FIELD_ORDER,
   formatFieldValueWithPlaceholder,
+  type ExerciseFieldKey,
 } from './displayRegistry';
+import {
+  ExerciseParametersFields,
+  type ExerciseParameterValues,
+  type ParameterTestIdKind,
+} from './ExerciseParametersFields';
+import { ExercisePatientContentFields } from './ExercisePatientContentFields';
+import {
+  buildEnrichmentOverrideDelta,
+  listOverriddenEnrichmentPaths,
+} from './enrichmentOverride';
+import { setEnrichmentAtPath, deepCloneEnrichment } from '@/features/exercises/useEnrichmentDraft';
+import { toV3 } from '@/features/verification/utils/enrichmentToV3';
+import type { MappingOnlyFieldKey } from './fieldContract';
 import { ExercisePreviewDialog } from './ExercisePreviewDialog';
+import type { ExerciseExecutionCardSurface } from './types';
 
-const SIDE_OPTIONS = [
-  { value: 'none', label: 'Bez podziału' },
-  { value: 'both', label: 'Obie strony' },
-  { value: 'left', label: 'Lewa strona' },
-  { value: 'right', label: 'Prawa strona' },
-  { value: 'alternating', label: 'Naprzemiennie' },
-] as const;
+const CARD_FIELD_TESTID_MAP: Record<
+  ExerciseFieldKey | MappingOnlyFieldKey,
+  { input: string; info: string }
+> = {
+  sets: { input: 'sets-input', info: 'help-sets' },
+  reps: { input: 'reps-input', info: 'help-reps' },
+  executionTime: { input: 'execution-time-input', info: 'help-executionTime' },
+  restSets: { input: 'rest-sets-input', info: 'help-restSets' },
+  restReps: { input: 'rest-reps-input', info: 'help-restReps' },
+  preparationTime: { input: 'preparation-time-input', info: 'help-preparationTime' },
+  duration: { input: 'duration-input', info: 'help-duration' },
+  load: { input: 'load-input', info: 'help-load' },
+  tempo: { input: 'tempo-input', info: 'help-tempo' },
+  side: { input: 'side-select', info: 'help-side' },
+  rangeOfMotion: { input: 'rom-input', info: 'help-rangeOfMotion' },
+  difficultyLevel: { input: 'difficulty-select', info: 'help-difficulty' },
+  patientDescription: { input: 'patient-description-input', info: 'help-patientDescription' },
+  clinicalDescription: { input: 'clinical-description-input', info: 'help-clinicalDescription' },
+  audioCue: { input: 'audio-cue-input', info: 'help-audioCue' },
+  notes: { input: 'notes-input', info: 'help-notes' },
+  customName: { input: 'custom-name-input', info: 'help-customName' },
+  customDescription: { input: 'custom-description-input', info: 'help-customDescription' },
+};
 
-function EditableFieldLabel({
-  label,
-  tooltip,
-  htmlFor,
-  labelId,
-  testId,
-}: Readonly<{
-  label: string;
-  tooltip: string;
-  htmlFor?: string;
-  labelId?: string;
-  testId: string;
-}>) {
-  const textClassName = 'text-[10px] uppercase text-muted-foreground/60 font-bold tracking-wide';
+function exerciseToParameterValues(
+  exercise: ExerciseExecutionCardProps['exercise']
+): ExerciseParameterValues {
+  return {
+    sets: exercise.sets,
+    reps: exercise.reps,
+    executionTime: exercise.executionTime ?? null,
+    restSets: exercise.restSets ?? null,
+    restReps: exercise.restReps ?? null,
+    preparationTime: exercise.preparationTime ?? null,
+    duration: exercise.duration ?? null,
+    loadKg: exercise.loadKg ?? null,
+    tempo: exercise.tempo ?? '',
+    rangeOfMotion: exercise.rangeOfMotion ?? '',
+    side: exercise.side ?? 'none',
+    difficultyLevel: exercise.difficultyLevel ?? 'UNKNOWN',
+    patientDescription: exercise.patientDescription ?? '',
+    clinicalDescription: exercise.clinicalDescription ?? '',
+    audioCue: exercise.audioCue ?? '',
+    notes: exercise.notes ?? '',
+    customName: exercise.customName ?? '',
+    customDescription: exercise.customDescription ?? '',
+  };
+}
 
-  return (
-    <div className="mb-1.5 flex items-center gap-1.5">
-      {htmlFor ? (
-        <label htmlFor={htmlFor} className={textClassName}>
-          {label}
-        </label>
-      ) : (
-        <span id={labelId} className={textClassName}>
-          {label}
-        </span>
-      )}
-      <TooltipProvider delayDuration={150}>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <button
-              type="button"
-              className="inline-flex h-4 w-4 items-center justify-center rounded-full text-muted-foreground hover:text-foreground"
-              aria-label={`Informacja o polu: ${label}`}
-              data-testid={testId}
-            >
-              <Info className="h-3 w-3" />
-            </button>
-          </TooltipTrigger>
-          <TooltipContent side="top" className="max-w-xs text-xs">
-            {tooltip}
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
-    </div>
-  );
+function toCardPatch(patch: Partial<ExerciseParameterValues>): Partial<ExerciseExecutionCardProps['exercise']> {
+  const next: Partial<ExerciseExecutionCardProps['exercise']> = {};
+
+  if ('sets' in patch && patch.sets != null) next.sets = patch.sets;
+  if ('reps' in patch && patch.reps != null) next.reps = patch.reps;
+  if ('executionTime' in patch) next.executionTime = patch.executionTime ?? undefined;
+  if ('restSets' in patch) next.restSets = patch.restSets ?? undefined;
+  if ('restReps' in patch) next.restReps = patch.restReps ?? undefined;
+  if ('preparationTime' in patch) next.preparationTime = patch.preparationTime ?? undefined;
+  if ('duration' in patch) next.duration = patch.duration ?? undefined;
+  if ('loadKg' in patch) {
+    next.loadKg = patch.loadKg ?? undefined;
+    next.loadDisplayText = patch.loadKg == null ? undefined : `${patch.loadKg} kg`;
+  }
+  if ('tempo' in patch) next.tempo = patch.tempo ?? undefined;
+  if ('rangeOfMotion' in patch) next.rangeOfMotion = patch.rangeOfMotion ?? undefined;
+  if ('side' in patch) next.side = patch.side ?? undefined;
+  if ('difficultyLevel' in patch) next.difficultyLevel = patch.difficultyLevel ?? undefined;
+  if ('patientDescription' in patch) next.patientDescription = patch.patientDescription ?? undefined;
+  if ('clinicalDescription' in patch) next.clinicalDescription = patch.clinicalDescription ?? undefined;
+  if ('audioCue' in patch) next.audioCue = patch.audioCue ?? undefined;
+  if ('notes' in patch) next.notes = patch.notes ?? undefined;
+  if ('customName' in patch) next.customName = patch.customName ?? undefined;
+  if ('customDescription' in patch) next.customDescription = patch.customDescription ?? undefined;
+
+  return next;
 }
 
 export function ExerciseExecutionCard({
@@ -86,6 +119,7 @@ export function ExerciseExecutionCard({
   exercise,
   viewVariant = 'compact',
   hideTimerBadge = false,
+  surface = 'mapping',
   editableFields,
   expanded: controlledExpanded,
   defaultExpanded = false,
@@ -95,14 +129,15 @@ export function ExerciseExecutionCard({
   onPreview,
   onOpenDetails,
   dragHandle,
+  showModifiedBadge = false,
   readOnlyReason,
   className,
   testIdPrefix = 'exercise-execution-card',
-  layoutVariant = 'default',
 }: Readonly<ExerciseExecutionCardProps>) {
   const [uncontrolledExpanded, setUncontrolledExpanded] = useState(defaultExpanded);
-  const [showAdvanced, setShowAdvanced] = useState(false);
   const [internalPreviewOpen, setInternalPreviewOpen] = useState(false);
+  const [instructionsOpen, setInstructionsOpen] = useState(false);
+  const [instructionsMounted, setInstructionsMounted] = useState(false);
 
   const isExpanded = controlledExpanded ?? uncontrolledExpanded;
   const setExpanded = useCallback(
@@ -149,95 +184,62 @@ export function ExerciseExecutionCard({
   const shouldShowDurationBadge = durationBadgeLabel !== null && !hideTimerBadge;
 
   const canEditField = (field: EditableField) => canEdit && isFieldEditable(field, mode, editableFields);
-  const {
-    draftValue: executionTimeDraft,
-    handleChange: handleExecutionTimeChange,
-    handleFocus: handleExecutionTimeFocus,
-    handleBlur: handleExecutionTimeBlur,
-    handleKeyDown: handleExecutionTimeKeyDown,
-  } = useOptionalNumericDraft({
-    value: exercise.executionTime,
-    onCommit: (value) => handleChange({ executionTime: value }),
-    min: 0,
-    max: 300,
-  });
-  const {
-    draftValue: restSetsDraft,
-    handleChange: handleRestSetsChange,
-    handleFocus: handleRestSetsFocus,
-    handleBlur: handleRestSetsBlur,
-    handleKeyDown: handleRestSetsKeyDown,
-  } = useOptionalNumericDraft({
-    value: exercise.restSets,
-    onCommit: (value) => handleChange({ restSets: value }),
-    min: 0,
-    max: 600,
-  });
-  const {
-    draftValue: restRepsDraft,
-    handleChange: handleRestRepsChange,
-    handleFocus: handleRestRepsFocus,
-    handleBlur: handleRestRepsBlur,
-    handleKeyDown: handleRestRepsKeyDown,
-  } = useOptionalNumericDraft({
-    value: exercise.restReps,
-    onCommit: (value) => handleChange({ restReps: value }),
-    min: 0,
-    max: 60,
-  });
-  const {
-    draftValue: preparationTimeDraft,
-    handleChange: handlePreparationTimeChange,
-    handleFocus: handlePreparationTimeFocus,
-    handleBlur: handlePreparationTimeBlur,
-    handleKeyDown: handlePreparationTimeKeyDown,
-  } = useOptionalNumericDraft({
-    value: exercise.preparationTime,
-    onCommit: (value) => handleChange({ preparationTime: value }),
-    min: 0,
-    max: 120,
-  });
-  const {
-    draftValue: loadKgDraft,
-    handleChange: handleLoadKgChange,
-    handleFocus: handleLoadKgFocus,
-    handleBlur: handleLoadKgBlur,
-    handleKeyDown: handleLoadKgKeyDown,
-  } = useOptionalNumericDraft({
-    value: exercise.loadKg,
-    onCommit: (value) =>
-      handleChange({
-        loadKg: value,
-        loadDisplayText: value == null ? undefined : `${value} kg`,
-      }),
-    min: 0,
-    max: 500,
-  });
   const setsField = EXERCISE_FIELD_METADATA.sets;
   const repsField = EXERCISE_FIELD_METADATA.reps;
-  const executionTimeField = EXERCISE_FIELD_METADATA.executionTime;
-  const restSetsField = EXERCISE_FIELD_METADATA.restSets;
-  const loadField = EXERCISE_FIELD_METADATA.load;
-  const notesField = EXERCISE_FIELD_METADATA.notes;
-  const restRepsField = EXERCISE_FIELD_METADATA.restReps;
-  const preparationTimeField = EXERCISE_FIELD_METADATA.preparationTime;
-  const tempoField = EXERCISE_FIELD_METADATA.tempo;
-  const sideField = EXERCISE_FIELD_METADATA.side;
-  const customNameTooltip = 'Własna nazwa widoczna dla pacjenta w tym konkretnym planie.';
-  const customDescriptionTooltip = 'Własny opis nadpisujący opis ćwiczenia tylko dla tego planu.';
+  const cardSurface: ExerciseExecutionCardSurface = surface;
+  const exerciseTemplateHref = exercise.sourceExerciseId
+    ? `/exercises/${exercise.sourceExerciseId}`
+    : undefined;
+
+  const patientPlanEditableSourceKeys = useMemo(
+    () =>
+      new Set([
+        'side',
+        'rangeOfMotion',
+        'difficultyLevel',
+        'patientDescription',
+        'clinicalDescription',
+        'audioCue',
+      ]),
+    []
+  );
+
   const inlineSourceFields = useMemo(
     () =>
       INLINE_EXERCISE_FIELD_ORDER.map((fieldKey) => {
         const field = EXERCISE_FIELD_METADATA[fieldKey];
         if (!field.isInlineVisible) return null;
-        const value = formatFieldValueWithPlaceholder(field, exercise, field.group === 'content' ? 'Nie ustawiono' : '—');
+        if (cardSurface === 'patientPlan' && patientPlanEditableSourceKeys.has(fieldKey)) {
+          return null;
+        }
+        // Editable in expanded panel on mapping — avoid duplicate inline tiles.
+        if (
+          cardSurface === 'mapping' &&
+          (fieldKey === 'side' ||
+            fieldKey === 'rangeOfMotion' ||
+            fieldKey === 'difficultyLevel' ||
+            fieldKey === 'clinicalDescription' ||
+            fieldKey === 'audioCue')
+        ) {
+          return null;
+        }
+        const value = formatFieldValueWithPlaceholder(
+          field,
+          exercise,
+          field.group === 'content' ? 'Nie ustawiono' : '—'
+        );
         return { field, value };
       }).filter(
-        (fieldData): fieldData is { field: (typeof EXERCISE_FIELD_METADATA)[keyof typeof EXERCISE_FIELD_METADATA]; value: string } =>
-          fieldData !== null
+        (
+          fieldData
+        ): fieldData is {
+          field: (typeof EXERCISE_FIELD_METADATA)[keyof typeof EXERCISE_FIELD_METADATA];
+          value: string;
+        } => fieldData !== null
       ),
-    [exercise]
+    [exercise, cardSurface, patientPlanEditableSourceKeys]
   );
+
   const handlePreviewTrigger = useCallback(() => {
     if (onPreview) {
       onPreview();
@@ -251,6 +253,147 @@ export function ExerciseExecutionCard({
       onChange?.(patch);
     },
     [onChange]
+  );
+
+  const parameterValues = useMemo(() => exerciseToParameterValues(exercise), [exercise]);
+
+  const handleParametersChange = useCallback(
+    (patch: Partial<ExerciseParameterValues>) => {
+      handleChange(toCardPatch(patch));
+    },
+    [handleChange]
+  );
+
+  const templateEnrichment = useMemo(
+    () => toV3(exercise.templateEnrichment),
+    [exercise.templateEnrichment]
+  );
+  const currentEnrichment = useMemo(
+    () => exercise.enrichment ?? templateEnrichment,
+    [exercise.enrichment, templateEnrichment]
+  );
+  const enrichmentOverride = useMemo(
+    () => buildEnrichmentOverrideDelta(templateEnrichment, currentEnrichment),
+    [templateEnrichment, currentEnrichment]
+  );
+  const enrichmentDirtyPaths = useMemo(
+    () => listOverriddenEnrichmentPaths(enrichmentOverride),
+    [enrichmentOverride]
+  );
+
+  const handleEnrichmentPath = useCallback(
+    (path: string, value: unknown) => {
+      const next = deepCloneEnrichment(currentEnrichment);
+      setEnrichmentAtPath(next as Record<string, unknown>, path, value);
+      handleChange({ enrichment: next });
+    },
+    [currentEnrichment, handleChange]
+  );
+
+  const dirtyPathSet = useMemo(() => new Set<string>(enrichmentDirtyPaths), [enrichmentDirtyPaths]);
+  const isEnrichmentPathDirty = useCallback(
+    (path: string) => dirtyPathSet.has(path),
+    [dirtyPathSet]
+  );
+
+  const handleRestoreEnrichment = useCallback(() => {
+    handleChange({ enrichment: templateEnrichment });
+  }, [handleChange, templateEnrichment]);
+
+  const handleInstructionsOpenChange = useCallback((open: boolean) => {
+    setInstructionsOpen(open);
+    if (open) setInstructionsMounted(true);
+  }, []);
+
+  const cardTestIdFor = useCallback(
+    (key: ExerciseFieldKey | MappingOnlyFieldKey, kind: ParameterTestIdKind) => {
+      const mapped = CARD_FIELD_TESTID_MAP[key];
+      if (kind === 'info') return `${testId}-${mapped.info}`;
+      return `${testId}-${mapped.input}`;
+    },
+    [testId]
+  );
+
+  const omitFields = useMemo(() => {
+    return ['sets', 'reps'] as ExerciseFieldKey[];
+  }, []);
+
+  const sourceInfoFooter = (
+    <div className="space-y-3 border-t border-border/30 pt-3">
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-[10px] uppercase text-muted-foreground/60 font-bold tracking-wide">
+          Informacje z ćwiczenia
+        </p>
+        {onOpenDetails ? (
+          <button
+            type="button"
+            onClick={onOpenDetails}
+            className="text-xs text-primary hover:underline"
+            data-testid={`${testId}-open-details-btn`}
+          >
+            Zobacz pełne szczegóły
+          </button>
+        ) : null}
+      </div>
+
+      {inlineSourceFields.length > 0 ? (
+        <div className="grid grid-cols-1 gap-2 @[460px]:grid-cols-2">
+          {inlineSourceFields.map(({ field, value }) => (
+            <div
+              key={field.key}
+              className="rounded-lg border border-border/40 bg-surface-light/30 px-3 py-2"
+            >
+              <div className="flex items-center gap-1.5">
+                <p className="text-[11px] text-muted-foreground">{field.label}</p>
+                <TooltipProvider delayDuration={150}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        type="button"
+                        className="inline-flex h-4 w-4 items-center justify-center rounded-full text-muted-foreground hover:text-foreground"
+                        aria-label={`Informacja o polu: ${field.label}`}
+                        data-testid={`${testId}-source-help-${field.key}`}
+                      >
+                        <Info className="h-3 w-3" />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent side="top" className="max-w-xs text-xs">
+                      {field.tooltip}
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
+              <p className="mt-1 text-xs text-foreground whitespace-pre-wrap">{value}</p>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className="text-xs text-muted-foreground">
+          Brak dodatkowych informacji źródłowych dla tego ćwiczenia.
+        </p>
+      )}
+
+      {!HIDE_EXERCISE_TAGS && (exercise.mainTags?.length || exercise.additionalTags?.length) ? (
+        <div className="flex flex-wrap gap-1.5">
+          {exercise.mainTags?.map((tag) => (
+            <span
+              key={`main-${tag}`}
+              className="rounded-md border border-primary/30 bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary"
+            >
+              {tag}
+            </span>
+          ))}
+          {exercise.additionalTags?.map((tag) => (
+            <span
+              key={`additional-${tag}`}
+              className="rounded-md border border-border bg-surface px-2 py-0.5 text-[10px] text-muted-foreground"
+            >
+              {tag}
+            </span>
+          ))}
+        </div>
+      ) : null}
+    </div>
   );
 
   return (
@@ -273,110 +416,12 @@ export function ExerciseExecutionCard({
         {mode === 'edit' && (
           <>
             {(() => {
-              const editDragHandle = dragHandle && (
-                <div className="shrink-0 flex items-center">
-                  {dragHandle}
-                </div>
-              );
-
-              const editThumb = (
-                <button
-                  type="button"
-                  className="group/thumb cursor-pointer"
-                  onClick={handlePreviewTrigger}
-                  aria-label="Otwórz podgląd ćwiczenia"
-                  data-testid={`${testId}-thumbnail-btn`}
-                >
-                  <ExerciseThumbnail
-                    src={imageUrl}
-                    sizeClass="h-10 w-10"
-                    overlay={
-                      <div
-                        className="absolute inset-0 bg-black/50 opacity-0 group-hover/thumb:opacity-100 transition-opacity flex items-center justify-center pointer-events-none"
-                        data-testid={`${testId}-preview-btn`}
-                      >
-                        <Eye className="h-4 w-4 text-white" />
-                      </div>
-                    }
-                  />
-                </button>
-              );
-
-              const editName = (
-                <div className="min-w-0 overflow-hidden flex-1">
-                  <TooltipProvider delayDuration={200}>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <p
-                          className="font-medium text-sm text-foreground truncate"
-                          data-testid={`${testId}-name`}
-                        >
-                          {exercise.displayName}
-                        </p>
-                      </TooltipTrigger>
-                      <TooltipContent side="top" className="text-xs max-w-[300px] wrap-break-word">
-                        {exercise.displayName}
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                  {shouldShowDurationBadge && (
-                    <TooltipProvider delayDuration={150}>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <span className="inline-flex items-center gap-1 mt-0.5 text-[12px] text-primary font-medium">
-                            <Clock className="h-3 w-3" />
-                             {durationBadgeLabel}
-                          </span>
-                        </TooltipTrigger>
-                        <TooltipContent side="top" className="text-xs max-w-[220px]">
-                          Szacowany laczny czas wykonania cwiczenia z uwzglednieniem serii, powtorzen, przerw i przygotowania.
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  )}
-                </div>
-              );
-
-              const editSteppers = (
-                <>
-                  <div className={cn(layoutVariant === 'sidebar' ? 'shrink-0' : 'h-8 overflow-visible shrink-0 flex flex-col items-center justify-start')}>
-                    <LabeledStepper
-                      value={exercise.sets}
-                      onChange={(v) => handleChange({ sets: v })}
-                      label="SERIE"
-                      infoTooltip={setsField.tooltip}
-                      infoTestId={`${testId}-help-sets`}
-                      min={1}
-                      max={20}
-                      disabled={!canEditField('sets')}
-                    />
-                  </div>
-                  <div className={cn(layoutVariant === 'sidebar' ? 'shrink-0' : 'h-8 overflow-visible shrink-0 flex flex-col items-center justify-start')}>
-                    <LabeledStepper
-                      value={exercise.reps}
-                      onChange={(v) => handleChange({ reps: v })}
-                      label="POWT."
-                      infoTooltip={repsField.tooltip}
-                      infoTestId={`${testId}-help-reps`}
-                      min={1}
-                      max={100}
-                      disabled={!canEditField('reps')}
-                    />
-                  </div>
-                </>
-              );
-
-              const editActions = (
-                <div
-                  className={cn(
-                    'flex items-center gap-1 shrink-0',
-                    layoutVariant === 'sidebar' ? '' : '@[460px]:ml-0 ml-auto'
-                  )}
-                >
+              const actionButtons = (
+                <div className="flex h-8 shrink-0 items-center gap-0.5">
                   <CollapsibleTrigger asChild>
                     <button
                       type="button"
-                      className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground/60 hover:text-foreground hover:bg-surface-light transition-colors data-[state=open]:bg-primary/10 data-[state=open]:text-primary cursor-pointer"
+                      className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground/60 transition-colors hover:bg-surface-light hover:text-foreground data-[state=open]:bg-primary/10 data-[state=open]:text-primary cursor-pointer"
                       title={isExpanded ? 'Zwiń' : 'Więcej opcji'}
                       data-testid={`${testId}-expand-btn`}
                     >
@@ -387,54 +432,124 @@ export function ExerciseExecutionCard({
                       )}
                     </button>
                   </CollapsibleTrigger>
-                  {onRemove && (
+                  {onRemove ? (
                     <button
                       type="button"
                       onClick={onRemove}
-                      className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground/60 hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer"
+                      className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground/60 transition-colors hover:bg-destructive/10 hover:text-destructive cursor-pointer"
                       title="Usuń"
                       data-testid={`${testId}-remove-btn`}
                     >
                       <X className="h-4 w-4" />
                     </button>
-                  )}
+                  ) : null}
                 </div>
               );
 
-              if (layoutVariant === 'sidebar') {
-                return (
-                  <div className="w-full p-4 flex flex-col gap-4">
-                    {/* Górny wiersz: Identyfikacja i akcje rozciągnięte na pełną szerokość */}
-                    <div className="flex flex-row items-center gap-3 w-full">
-                      {editDragHandle}
-                      {editThumb}
-                      {editName}
-                      <div className="shrink-0 ml-auto pl-1">
-                        {editActions}
-                      </div>
-                    </div>
-
-                    {/* Dolny wiersz: Steppery wyśrodkowane i szeroko rozstawione dla idealnego balansu (złoty podział) */}
-                    <div className="flex flex-row items-center justify-center gap-10 sm:gap-12 w-full pt-1 pb-1">
-                      {editSteppers}
-                    </div>
-                  </div>
-                );
-              }
+              const steppers = (
+                <div className="flex items-start justify-center gap-4">
+                  <LabeledStepper
+                    value={exercise.sets}
+                    onChange={(value) => handleChange({ sets: value })}
+                    label={setsField.label}
+                    infoTooltip={setsField.tooltip}
+                    infoTestId={`${testId}-help-sets`}
+                    inputTestId={`${testId}-sets-input`}
+                    min={1}
+                    max={20}
+                    disabled={!canEditField('sets')}
+                  />
+                  <LabeledStepper
+                    value={exercise.reps}
+                    onChange={(value) => handleChange({ reps: value })}
+                    label={repsField.label}
+                    infoTooltip={repsField.tooltip}
+                    infoTestId={`${testId}-help-reps`}
+                    inputTestId={`${testId}-reps-input`}
+                    min={1}
+                    max={100}
+                    disabled={!canEditField('reps')}
+                  />
+                </div>
+              );
 
               return (
-                <div className="w-full p-4 flex flex-col gap-3 @[460px]:flex-row @[460px]:gap-2 @[460px]:items-center">
-                  <div
-                    className="grid items-center gap-2 @[460px]:flex-1 @[460px]:min-w-0"
-                    style={{ gridTemplateColumns: dragHandle ? 'auto auto 1fr' : 'auto 1fr' }}
-                  >
-                    {editDragHandle}
-                    {editThumb}
-                    {editName}
+                <div
+                  className={cn(
+                    'grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-x-2 gap-y-3 p-3',
+                    '@[460px]:grid-cols-[minmax(0,1fr)_auto] @[460px]:gap-x-4 @[460px]:gap-y-0 @[460px]:p-4'
+                  )}
+                >
+                  <div className="col-start-1 row-start-1 flex min-w-0 items-center gap-2.5">
+                    {dragHandle ? (
+                      <div className="-ml-0.5 flex shrink-0 items-center self-center">{dragHandle}</div>
+                    ) : null}
+                    <button
+                      type="button"
+                      className="group/thumb shrink-0 cursor-pointer"
+                      onClick={handlePreviewTrigger}
+                      aria-label="Otwórz podgląd ćwiczenia"
+                      data-testid={`${testId}-thumbnail-btn`}
+                    >
+                      <ExerciseThumbnail
+                        src={imageUrl}
+                        sizeClass="h-10 w-10"
+                        overlay={
+                          <div
+                            className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 transition-opacity group-hover/thumb:opacity-100"
+                            data-testid={`${testId}-preview-btn`}
+                          >
+                            <Eye className="h-4 w-4 text-white" />
+                          </div>
+                        }
+                      />
+                    </button>
+                    <div className="min-w-0 flex-1 overflow-hidden">
+                      <TooltipProvider delayDuration={200}>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <p
+                              className="truncate text-sm font-medium leading-snug text-foreground"
+                              data-testid={`${testId}-name`}
+                            >
+                              {exercise.displayName}
+                            </p>
+                          </TooltipTrigger>
+                          <TooltipContent side="top" className="max-w-[300px] text-xs wrap-break-word">
+                            {exercise.displayName}
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                      {shouldShowDurationBadge ? (
+                        <TooltipProvider delayDuration={150}>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <span className="mt-0.5 inline-flex items-center gap-1 text-[11px] font-medium leading-none text-primary">
+                                <Clock className="h-3 w-3 shrink-0" />
+                                {durationBadgeLabel}
+                              </span>
+                            </TooltipTrigger>
+                            <TooltipContent side="top" className="max-w-[220px] text-xs">
+                              Szacowany laczny czas wykonania cwiczenia z uwzglednieniem serii, powtorzen, przerw i
+                              przygotowania.
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      ) : null}
+                    </div>
                   </div>
-                  <div className="flex shrink-0 gap-3 items-start">
-                    {editSteppers}
-                    {editActions}
+
+                  <div className="col-start-2 row-start-1 flex items-center justify-end @[460px]:hidden">
+                    {actionButtons}
+                  </div>
+
+                  <div className="col-span-2 col-start-1 row-start-2 flex justify-center @[460px]:hidden">
+                    {steppers}
+                  </div>
+
+                  <div className="col-start-2 row-start-1 hidden items-start gap-3 @[460px]:flex">
+                    {steppers}
+                    {actionButtons}
                   </div>
                 </div>
               );
@@ -442,7 +557,7 @@ export function ExerciseExecutionCard({
           </>
         )}
 
-        {/* ── VIEW & READABLE MODE: single-row layout ── */}
+        {/* ── VIEW & READABLE MODE ── */}
         {mode === 'view' && (
           <div
             className={cn(
@@ -450,7 +565,6 @@ export function ExerciseExecutionCard({
               showReadableView ? 'flex flex-row items-center gap-3' : 'flex flex-row items-center justify-between'
             )}
           >
-            {/* Left: CSS Grid — 1fr ensures name is bounded regardless of container */}
             <div
               className="grid items-center gap-3 flex-1 min-w-0"
               style={{ gridTemplateColumns: dragHandle ? 'auto auto 1fr' : 'auto 1fr' }}
@@ -501,35 +615,53 @@ export function ExerciseExecutionCard({
                   <p className="mt-1 text-xs text-muted-foreground whitespace-normal wrap-break-word">
                     {exercise.sets} serie • {exercise.reps} powt.
                     {durationBadgeLabel ? ` • Czas cwiczenia: ${durationBadgeLabel}` : ''}
+                    {showModifiedBadge ? ' • Zmienione' : ''}
                   </p>
-                ) : shouldShowDurationBadge ? (
-                  <TooltipProvider delayDuration={150}>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <span className="inline-flex items-center gap-1 mt-0.5 text-[10px] text-primary font-medium">
-                          <Clock className="h-3 w-3" />
-                          Czas: {durationBadgeLabel}
-                        </span>
-                      </TooltipTrigger>
-                      <TooltipContent side="top" className="text-xs max-w-[220px]">
-                        Szacowany laczny czas wykonania cwiczenia z uwzglednieniem serii, powtorzen, przerw i przygotowania.
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
+                ) : shouldShowDurationBadge || showModifiedBadge ? (
+                  <div className="mt-0.5 flex flex-wrap items-center gap-2">
+                    {shouldShowDurationBadge ? (
+                      <TooltipProvider delayDuration={150}>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span className="inline-flex items-center gap-1 text-[10px] font-medium leading-none text-primary">
+                              <Clock className="h-3 w-3 shrink-0" />
+                              Czas: {durationBadgeLabel}
+                            </span>
+                          </TooltipTrigger>
+                          <TooltipContent side="top" className="text-xs max-w-[220px]">
+                            Szacowany laczny czas wykonania cwiczenia z uwzglednieniem serii, powtorzen, przerw i
+                            przygotowania.
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    ) : null}
+                    {showModifiedBadge ? (
+                      <span
+                        className="inline-flex h-5 items-center gap-1 rounded-md border border-primary/40 bg-primary/10 px-1.5 text-[10px] font-semibold leading-none text-primary"
+                        data-testid={`${testId}-modified-badge`}
+                      >
+                        <Settings2 className="h-3 w-3 shrink-0" aria-hidden />
+                        <span>Zmienione</span>
+                      </span>
+                    ) : null}
+                  </div>
                 ) : null}
               </div>
             </div>
-            {/* Right: dosage summary */}
             {viewVariant === 'compact' && (
               <div className="flex flex-col sm:flex-row sm:items-center justify-center sm:justify-end gap-1.5 sm:gap-3 text-sm font-semibold text-foreground shrink-0 ml-3 bg-surface-light/50 px-3 py-2 sm:py-1.5 rounded-lg border border-border/40 min-w-[80px] sm:min-w-[120px]">
                 <div className="flex items-center justify-between sm:justify-start gap-3 sm:gap-1.5 w-full sm:w-auto">
-                  <span className="text-[10px] sm:hidden text-muted-foreground uppercase font-bold tracking-wide">Serie</span>
+                  <span className="text-[10px] sm:hidden text-muted-foreground uppercase font-bold tracking-wide">
+                    Serie
+                  </span>
                   <span className="tabular-nums">{exercise.sets}</span>
                   <span className="text-muted-foreground text-xs font-normal hidden sm:inline ml-[-2px]">serie</span>
                 </div>
                 <div className="hidden sm:block text-muted-foreground/30 h-4 w-px bg-border/50"></div>
                 <div className="flex items-center justify-between sm:justify-start gap-3 sm:gap-1.5 w-full sm:w-auto">
-                  <span className="text-[10px] sm:hidden text-muted-foreground uppercase font-bold tracking-wide">Powt.</span>
+                  <span className="text-[10px] sm:hidden text-muted-foreground uppercase font-bold tracking-wide">
+                    Powt.
+                  </span>
                   <span className="tabular-nums">{exercise.reps}</span>
                   <span className="text-muted-foreground text-xs font-normal hidden sm:inline ml-[-2px]">powt.</span>
                 </div>
@@ -537,7 +669,9 @@ export function ExerciseExecutionCard({
                   <>
                     <div className="hidden sm:block text-muted-foreground/30 h-4 w-px bg-border/50"></div>
                     <div className="flex items-center justify-between sm:justify-start gap-3 sm:gap-1.5 w-full sm:w-auto">
-                      <span className="text-[10px] sm:hidden text-muted-foreground uppercase font-bold tracking-wide">Czas</span>
+                      <span className="text-[10px] sm:hidden text-muted-foreground uppercase font-bold tracking-wide">
+                        Czas
+                      </span>
                       <span className="text-primary tabular-nums">{durationBadgeLabel}</span>
                     </div>
                   </>
@@ -547,306 +681,66 @@ export function ExerciseExecutionCard({
           </div>
         )}
 
-        {/* Expanded panel (edit only) - below main row, border-t */}
         {mode === 'edit' && (
           <CollapsibleContent>
-            <div className="w-full border-t border-border bg-surface/50 p-4 space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <EditableFieldLabel
-                    htmlFor={`${testId}-execution-time-input`}
-                    label={`${executionTimeField.label} (s)`}
-                    tooltip={executionTimeField.tooltip}
-                    testId={`${testId}-help-executionTime`}
-                  />
-                  <Input
-                    id={`${testId}-execution-time-input`}
-                    type="number"
-                    min={0}
-                    max={300}
-                    value={executionTimeDraft}
-                    onChange={(e) => handleExecutionTimeChange(e.target.value)}
-                    onFocus={handleExecutionTimeFocus}
-                    onBlur={handleExecutionTimeBlur}
-                    onKeyDown={handleExecutionTimeKeyDown}
-                    className="h-9 bg-surface-light border-border/50 focus:border-primary"
-                    disabled={!canEditField('executionTime')}
-                    data-testid={`${testId}-execution-time-input`}
-                  />
-                </div>
-                <div>
-                  <EditableFieldLabel
-                    htmlFor={`${testId}-rest-sets-input`}
-                    label={`${restSetsField.label} (s)`}
-                    tooltip={restSetsField.tooltip}
-                    testId={`${testId}-help-restSets`}
-                  />
-                  <Input
-                    id={`${testId}-rest-sets-input`}
-                    type="number"
-                    value={restSetsDraft}
-                    onChange={(e) => handleRestSetsChange(e.target.value)}
-                    onFocus={handleRestSetsFocus}
-                    onBlur={handleRestSetsBlur}
-                    onKeyDown={handleRestSetsKeyDown}
-                    className="h-9 bg-surface-light border-border/50 focus:border-primary"
-                    disabled={!canEditField('restSets')}
-                    data-testid={`${testId}-rest-sets-input`}
-                  />
-                </div>
-                <div>
-                  <EditableFieldLabel
-                    htmlFor={`${testId}-load-input`}
-                    label={`${loadField.label} (kg)`}
-                    tooltip={loadField.tooltip}
-                    testId={`${testId}-help-load`}
-                  />
-                  <Input
-                    id={`${testId}-load-input`}
-                    type="number"
-                    placeholder="np. 5"
-                    value={loadKgDraft}
-                    onChange={(e) => handleLoadKgChange(e.target.value)}
-                    onFocus={handleLoadKgFocus}
-                    onBlur={handleLoadKgBlur}
-                    onKeyDown={handleLoadKgKeyDown}
-                    className="h-9 bg-surface-light border-border/50 focus:border-primary"
-                    disabled={!canEditField('loadKg')}
-                    data-testid={`${testId}-load-input`}
-                  />
-                </div>
-              </div>
-              <div>
-                <EditableFieldLabel
-                  htmlFor={`${testId}-notes-input`}
-                  label="Notatka dla pacjenta"
-                  tooltip={notesField.tooltip}
-                  testId={`${testId}-help-notes`}
-                />
-                <Textarea
-                  id={`${testId}-notes-input`}
-                  placeholder="Instrukcje, wskazówki..."
-                  value={exercise.notes ?? ''}
-                  onChange={(e) => handleChange({ notes: e.target.value })}
-                  className="min-h-[60px] resize-none bg-surface-light border-border/50 focus:border-primary"
-                  disabled={!canEditField('notes')}
-                  data-testid={`${testId}-notes-input`}
-                />
-              </div>
+            <div className="w-full border-t border-border bg-surface/50 px-3 py-4 @[460px]:px-4 space-y-3">
+              <ExerciseParametersFields
+                surface={cardSurface === 'patientPlan' ? 'patientPlan' : 'mapping'}
+                values={parameterValues}
+                onChange={handleParametersChange}
+                omitFields={omitFields}
+                showContentSection
+                showMappingOnlyFields
+                density="compact"
+                advancedDefaultOpen={false}
+                templateHref={exerciseTemplateHref}
+                testIdFor={cardTestIdFor}
+                structuralTestIdPrefix={testId}
+                disabled={!canEdit}
+                advancedFooter={sourceInfoFooter}
+              />
 
-              <div>
-                <button
-                  type="button"
-                  onClick={() => setShowAdvanced(!showAdvanced)}
-                  className="flex items-center gap-1.5 text-xs text-muted-foreground/60 hover:text-foreground transition-colors"
-                  data-testid={`${testId}-advanced-toggle`}
+              <Collapsible open={instructionsOpen} onOpenChange={handleInstructionsOpenChange}>
+                <CollapsibleTrigger
+                  className="flex w-full items-center justify-between rounded-2xl border border-border/40 bg-surface/50 px-4 py-3 text-sm font-medium text-foreground transition-colors hover:bg-accent/40"
+                  data-testid={`${testId}-instructions-toggle`}
                 >
-                  {showAdvanced ? (
-                    <ChevronUp className="h-3.5 w-3.5" />
-                  ) : (
-                    <ChevronDown className="h-3.5 w-3.5" />
-                  )}
-                  Zaawansowane
-                </button>
-                {showAdvanced && (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-3 pt-3 border-t border-border/20">
-                    <div>
-                      <EditableFieldLabel
-                        htmlFor={`${testId}-rest-reps-input`}
-                        label={`${restRepsField.label} (s)`}
-                        tooltip={restRepsField.tooltip}
-                        testId={`${testId}-help-restReps`}
-                      />
-                      <Input
-                        id={`${testId}-rest-reps-input`}
-                        type="number"
-                        min={0}
-                        max={60}
-                        value={restRepsDraft}
-                        onChange={(e) => handleRestRepsChange(e.target.value)}
-                        onFocus={handleRestRepsFocus}
-                        onBlur={handleRestRepsBlur}
-                        onKeyDown={handleRestRepsKeyDown}
-                        className="h-9 bg-surface-light border-border/50"
-                        disabled={!canEditField('restReps')}
-                        data-testid={`${testId}-rest-reps-input`}
-                      />
-                    </div>
-                    <div>
-                      <EditableFieldLabel
-                        htmlFor={`${testId}-preparation-time-input`}
-                        label={`${preparationTimeField.label} (s)`}
-                        tooltip={preparationTimeField.tooltip}
-                        testId={`${testId}-help-preparationTime`}
-                      />
-                      <Input
-                        id={`${testId}-preparation-time-input`}
-                        type="number"
-                        min={0}
-                        max={120}
-                        value={preparationTimeDraft}
-                        onChange={(e) => handlePreparationTimeChange(e.target.value)}
-                        onFocus={handlePreparationTimeFocus}
-                        onBlur={handlePreparationTimeBlur}
-                        onKeyDown={handlePreparationTimeKeyDown}
-                        className="h-9 bg-surface-light border-border/50"
-                        disabled={!canEditField('preparationTime')}
-                        data-testid={`${testId}-preparation-time-input`}
-                      />
-                    </div>
-                    <div>
-                      <EditableFieldLabel
-                        htmlFor={`${testId}-tempo-input`}
-                        label={tempoField.label}
-                        tooltip={tempoField.tooltip}
-                        testId={`${testId}-help-tempo`}
-                      />
-                      <Input
-                        id={`${testId}-tempo-input`}
-                        placeholder="np. 2-1-2-0"
-                        value={exercise.tempo ?? ''}
-                        onChange={(e) => handleChange({ tempo: e.target.value })}
-                        className="h-9 bg-surface-light border-border/50"
-                        disabled={!canEditField('tempo')}
-                        data-testid={`${testId}-tempo-input`}
-                      />
-                    </div>
-                    <div>
-                      <EditableFieldLabel
-                        label={sideField.label}
-                        tooltip={sideField.tooltip}
-                        labelId={`${testId}-side-label`}
-                        testId={`${testId}-help-side`}
-                      />
-                      <Select
-                        value={(exercise.side ?? 'none').toLowerCase()}
-                        onValueChange={(v) => handleChange({ side: v })}
-                        disabled={!canEditField('side')}
+                  <span className="flex items-center gap-2">
+                    <ListOrdered className="h-4 w-4 text-muted-foreground" />
+                    Instrukcje dla pacjenta
+                    {enrichmentDirtyPaths.length > 0 ? (
+                      <span
+                        className="rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-300"
+                        data-testid={`${testId}-instructions-dirty-badge`}
                       >
-                        <SelectTrigger className="h-9 bg-surface-light border-border/50" aria-labelledby={`${testId}-side-label`}>
-                          <SelectValue placeholder="Wybierz" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {SIDE_OPTIONS.map((opt) => (
-                            <SelectItem key={opt.value} value={opt.value}>
-                              {opt.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="sm:col-span-2">
-                      <EditableFieldLabel
-                        htmlFor={`${testId}-custom-name-input`}
-                        label="Własna nazwa"
-                        tooltip={customNameTooltip}
-                        testId={`${testId}-help-customName`}
-                      />
-                      <Input
-                        id={`${testId}-custom-name-input`}
-                        placeholder="Nadpisz nazwę dla pacjenta"
-                        value={exercise.customName ?? ''}
-                        onChange={(e) => handleChange({ customName: e.target.value })}
-                        className="h-9 bg-surface-light border-border/50"
-                        disabled={!canEditField('customName')}
-                        data-testid={`${testId}-custom-name-input`}
-                      />
-                    </div>
-                    <div className="sm:col-span-2">
-                      <EditableFieldLabel
-                        htmlFor={`${testId}-custom-description-input`}
-                        label="Własny opis"
-                        tooltip={customDescriptionTooltip}
-                        testId={`${testId}-help-customDescription`}
-                      />
-                      <Textarea
-                        id={`${testId}-custom-description-input`}
-                        placeholder="Opis dla pacjenta (opcjonalnie)"
-                        value={exercise.customDescription ?? ''}
-                        onChange={(e) => handleChange({ customDescription: e.target.value })}
-                        className="min-h-[60px] resize-none bg-surface-light border-border/50"
-                        disabled={!canEditField('customDescription')}
-                        data-testid={`${testId}-custom-description-input`}
-                      />
-                    </div>
-                    <div className="sm:col-span-2 space-y-3 border-t border-border/30 pt-3">
-                      <div className="flex items-center justify-between gap-2">
-                        <p className="text-[10px] uppercase text-muted-foreground/60 font-bold tracking-wide">
-                          Informacje z ćwiczenia
-                        </p>
-                        {onOpenDetails && (
-                          <button
-                            type="button"
-                            onClick={onOpenDetails}
-                            className="text-xs text-primary hover:underline"
-                            data-testid={`${testId}-open-details-btn`}
-                          >
-                            Zobacz pełne szczegóły
-                          </button>
-                        )}
-                      </div>
-
-                      {inlineSourceFields.length > 0 ? (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                          {inlineSourceFields.map(({ field, value }) => (
-                            <div
-                              key={field.key}
-                              className="rounded-lg border border-border/40 bg-surface-light/30 px-3 py-2"
-                            >
-                              <div className="flex items-center gap-1.5">
-                                <p className="text-[11px] text-muted-foreground">{field.label}</p>
-                                <TooltipProvider delayDuration={150}>
-                                  <Tooltip>
-                                    <TooltipTrigger asChild>
-                                      <button
-                                        type="button"
-                                        className="inline-flex h-4 w-4 items-center justify-center rounded-full text-muted-foreground hover:text-foreground"
-                                        aria-label={`Informacja o polu: ${field.label}`}
-                                        data-testid={`${testId}-source-help-${field.key}`}
-                                      >
-                                        <Info className="h-3 w-3" />
-                                      </button>
-                                    </TooltipTrigger>
-                                    <TooltipContent side="top" className="max-w-xs text-xs">
-                                      {field.tooltip}
-                                    </TooltipContent>
-                                  </Tooltip>
-                                </TooltipProvider>
-                              </div>
-                              <p className="mt-1 text-xs text-foreground whitespace-pre-wrap">{value}</p>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <p className="text-xs text-muted-foreground">
-                          Brak dodatkowych informacji źródłowych dla tego ćwiczenia.
-                        </p>
-                      )}
-
-                      {!HIDE_EXERCISE_TAGS && (exercise.mainTags?.length || exercise.additionalTags?.length) ? (
-                        <div className="flex flex-wrap gap-1.5">
-                          {exercise.mainTags?.map((tag) => (
-                            <span
-                              key={`main-${tag}`}
-                              className="rounded-md border border-primary/30 bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary"
-                            >
-                              {tag}
-                            </span>
-                          ))}
-                          {exercise.additionalTags?.map((tag) => (
-                            <span
-                              key={`additional-${tag}`}
-                              className="rounded-md border border-border bg-surface px-2 py-0.5 text-[10px] text-muted-foreground"
-                            >
-                              {tag}
-                            </span>
-                          ))}
-                        </div>
-                      ) : null}
-                    </div>
-                  </div>
-                )}
-              </div>
+                        zmienione
+                      </span>
+                    ) : null}
+                  </span>
+                  <ChevronDown
+                    className={cn(
+                      'h-4 w-4 text-muted-foreground transition-transform',
+                      instructionsOpen && 'rotate-180'
+                    )}
+                  />
+                </CollapsibleTrigger>
+                <CollapsibleContent className="mt-3">
+                  {instructionsMounted ? (
+                    <ExercisePatientContentFields
+                      surface={cardSurface === 'patientPlan' ? 'patientPlan' : 'mapping'}
+                      enrichment={currentEnrichment}
+                      setPath={handleEnrichmentPath}
+                      isPathDirty={isEnrichmentPathDirty}
+                      disabled={!canEdit}
+                      showPatientLead
+                      showCoreScalars={false}
+                      enrichmentOverride={enrichmentOverride}
+                      onRestoreAll={handleRestoreEnrichment}
+                      testIdPrefix={`${testId}-patient-content`}
+                    />
+                  ) : null}
+                </CollapsibleContent>
+              </Collapsible>
             </div>
           </CollapsibleContent>
         )}
@@ -861,7 +755,11 @@ export function ExerciseExecutionCard({
         )}
 
         {canUseInternalPreview && (
-          <ExercisePreviewDialog open={internalPreviewOpen} onOpenChange={setInternalPreviewOpen} exercise={exercise} />
+          <ExercisePreviewDialog
+            open={internalPreviewOpen}
+            onOpenChange={setInternalPreviewOpen}
+            exercise={exercise}
+          />
         )}
       </div>
     </Collapsible>

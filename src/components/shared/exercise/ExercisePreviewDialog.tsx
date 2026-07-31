@@ -33,7 +33,7 @@ type ExerciseMediaItem =
   | { kind: 'video'; url: string };
 
 const GROUP_TITLES: Record<ExerciseFieldGroup, string> = {
-  dosage: 'Dawkowanie',
+  dosage: 'Podstawowe parametry',
   execution: 'Parametry wykonania',
   content: 'Treści ćwiczenia',
   classification: 'Klasyfikacja',

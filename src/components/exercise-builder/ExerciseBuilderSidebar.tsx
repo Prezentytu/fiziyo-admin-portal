@@ -11,11 +11,12 @@ import {
   DragEndEvent,
 } from '@dnd-kit/core';
 import { SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
-import { Dumbbell, Trash2, Plus, Sparkles } from 'lucide-react';
+import { Dumbbell, Trash2, Plus, Sparkles, Timer } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { useExerciseBuilder } from '@/contexts/ExerciseBuilderContext';
+import { formatExerciseDuration } from '@/utils/exerciseTime';
 import { BuilderExerciseItem } from './BuilderExerciseItem';
 import { CreateSetDialog } from './CreateSetDialog';
 
@@ -30,7 +31,7 @@ export function ExerciseBuilderSidebar({ className }: ExerciseBuilderSidebarProp
     updateExercise,
     reorderExercises,
     clearBuilder,
-    estimatedTime,
+    totalSetDuration,
     hasExercises,
     exerciseCount,
     setIsChatOpen,
@@ -55,6 +56,11 @@ export function ExerciseBuilderSidebar({ className }: ExerciseBuilderSidebarProp
     }
   };
 
+  const durationLabel =
+    totalSetDuration.seconds > 0
+      ? formatExerciseDuration(totalSetDuration.seconds, totalSetDuration.isEstimate)
+      : null;
+
   return (
     <>
       <aside
@@ -75,11 +81,17 @@ export function ExerciseBuilderSidebar({ className }: ExerciseBuilderSidebarProp
                 <Dumbbell className="h-5 w-5 text-primary" />
               </div>
               <div>
-                <h2 className="font-bold text-foreground tracking-tight">Kreator Zestawu</h2>
+                <h2 className="font-bold text-foreground tracking-tight">Kreator zestawu</h2>
                 <div className="flex items-center gap-2">
                   <span className="text-[10px] uppercase tracking-widest font-bold text-primary">
-                    {exerciseCount} {exerciseCount === 1 ? 'Ćwiczenie' : exerciseCount < 5 ? 'Ćwiczenia' : 'Ćwiczeń'}
+                    {exerciseCount} {exerciseCount === 1 ? 'ćwiczenie' : exerciseCount < 5 ? 'ćwiczenia' : 'ćwiczeń'}
                   </span>
+                  {durationLabel && (
+                    <div className="flex items-center gap-1 px-2 py-0.5 rounded-lg bg-primary/10 border border-primary/20">
+                      <Timer className="h-3 w-3 text-primary" />
+                      <span className="text-[11px] font-bold text-primary">{durationLabel}</span>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -104,7 +116,7 @@ export function ExerciseBuilderSidebar({ className }: ExerciseBuilderSidebarProp
             {hasExercises ? (
               <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
                 <SortableContext items={selectedExercises.map((e) => e.id)} strategy={verticalListSortingStrategy}>
-                  <div className="space-y-3">
+                  <div className="space-y-3.5">
                     {selectedExercises.map((exercise) => (
                       <BuilderExerciseItem
                         key={exercise.id}
@@ -134,51 +146,33 @@ export function ExerciseBuilderSidebar({ className }: ExerciseBuilderSidebarProp
         {/* Footer */}
         {hasExercises && (
           <div className="border-t border-border p-6 bg-surface/95 backdrop-blur-xl sticky bottom-0 z-10 shrink-0 space-y-4">
-            {/* Stats section restored */}
-            <div className="flex items-center justify-between text-sm">
-              <div className="flex flex-col">
-                <span className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">
+            {durationLabel && (
+              <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-primary/10 border border-primary/20 w-fit">
+                <Timer className="h-3.5 w-3.5 text-primary" />
+                <span className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold mr-1">
                   Szacowany czas
                 </span>
-                <span className="text-xl font-bold text-foreground">~{estimatedTime} min</span>
+                <span className="text-sm font-bold text-primary">{durationLabel}</span>
               </div>
-              <div className="text-right">
-                <span className="block text-[10px] text-muted-foreground uppercase tracking-widest font-bold">
-                  Intensywność
-                </span>
-                <span
-                  className={cn(
-                    'text-[11px] font-bold uppercase px-2 py-0.5 rounded-full',
-                    estimatedTime < 15
-                      ? 'bg-green-500/10 text-green-500'
-                      : estimatedTime < 30
-                        ? 'bg-yellow-500/10 text-yellow-500'
-                        : 'bg-red-500/10 text-red-500'
-                  )}
-                >
-                  {estimatedTime < 15 ? 'Niska' : estimatedTime < 30 ? 'Średnia' : 'Wysoka'}
-                </span>
-              </div>
-            </div>
+            )}
 
             <div className="flex gap-3">
-              {/* Create button */}
               <Button
                 className="flex-1 h-14 rounded-2xl bg-primary text-primary-foreground hover:bg-primary/90 shadow-xl shadow-primary/20 text-base font-bold transition-all hover:scale-[1.02] active:scale-[0.98] group"
                 onClick={() => setIsCreateDialogOpen(true)}
                 data-testid="exercise-builder-create-btn"
               >
-                Utwórz Zestaw
+                Utwórz zestaw
                 <Plus className="ml-2 h-5 w-5 transition-transform group-hover:rotate-90" />
               </Button>
 
-              {/* AI Magic Button */}
               <Button
                 variant="outline"
                 size="icon"
                 className="h-14 w-14 shrink-0 rounded-2xl border-border bg-surface-light text-primary hover:bg-primary/10 hover:border-primary/30 transition-all active:scale-95 group"
                 onClick={() => setIsChatOpen(true)}
                 title="AI Magic - Optymalizuj zestaw"
+                data-testid="exercise-builder-ai-btn"
               >
                 <Sparkles className="h-6 w-6 group-hover:animate-pulse" />
               </Button>
@@ -187,7 +181,6 @@ export function ExerciseBuilderSidebar({ className }: ExerciseBuilderSidebarProp
         )}
       </aside>
 
-      {/* Create Set Dialog */}
       <CreateSetDialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen} />
     </>
   );

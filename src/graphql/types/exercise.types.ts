@@ -25,9 +25,13 @@ export type MediaContext =
   | 'STEP_BY_STEP'
   | 'ANATOMY_VIEW'
   | 'PATIENT_MATERIAL';
-export type DifficultyLevel = 'EASY' | 'MEDIUM' | 'HARD' | 'EXPERT';
+export type DifficultyLevel = 'UNKNOWN' | 'EASY' | 'MEDIUM' | 'HARD' | 'EXPERT';
 
 export interface ExerciseLoad {
+  /** Target kg-only field (SPEC-003). Prefer this over legacy value/unit. */
+  loadWeightKg?: number | null;
+  /** Source of kg value: manual | converted | unknown */
+  loadSource?: 'manual' | 'converted' | 'unknown' | string | null;
   type: 'weight' | 'band' | 'bodyweight' | 'other' | string;
   value?: number;
   unit?: 'kg' | 'lbs' | 'level' | string;
@@ -165,6 +169,8 @@ export interface CreateExerciseVariables {
   loadValue?: number | null;
   loadUnit?: string | null;
   loadText?: string | null;
+  loadWeightKg?: number | null;
+  loadSource?: string | null;
 }
 
 export interface CreateExerciseMutationResult {
@@ -204,6 +210,8 @@ export interface UpdateExerciseVariables {
   loadValue?: number | null;
   loadUnit?: string | null;
   loadText?: string | null;
+  loadWeightKg?: number | null;
+  loadSource?: string | null;
 }
 
 export interface UpdateExerciseMutationResult {

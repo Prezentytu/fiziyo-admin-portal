@@ -11,13 +11,13 @@ import {
   DragEndEvent,
 } from '@dnd-kit/core';
 import { SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
-import { Dumbbell, Trash2, Clock, Plus, Sparkles } from 'lucide-react';
+import { Dumbbell, Trash2, Plus, Sparkles, Timer } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { cn } from '@/lib/utils';
 import { useExerciseBuilder } from '@/contexts/ExerciseBuilderContext';
+import { formatExerciseDuration } from '@/utils/exerciseTime';
 import { BuilderExerciseItem } from './BuilderExerciseItem';
 import { CreateSetDialog } from './CreateSetDialog';
 
@@ -33,7 +33,7 @@ export function ExerciseBuilderSheet({ open, onOpenChange }: ExerciseBuilderShee
     updateExercise,
     reorderExercises,
     clearBuilder,
-    estimatedTime,
+    totalSetDuration,
     hasExercises,
     exerciseCount,
     setIsChatOpen,
@@ -58,6 +58,11 @@ export function ExerciseBuilderSheet({ open, onOpenChange }: ExerciseBuilderShee
     }
   };
 
+  const durationLabel =
+    totalSetDuration.seconds > 0
+      ? formatExerciseDuration(totalSetDuration.seconds, totalSetDuration.isEstimate)
+      : null;
+
   return (
     <>
       <Sheet open={open} onOpenChange={onOpenChange}>
@@ -66,7 +71,6 @@ export function ExerciseBuilderSheet({ open, onOpenChange }: ExerciseBuilderShee
           className="h-[85vh] flex flex-col p-0 bg-surface/95 backdrop-blur-2xl border-t border-border shadow-[0_-10px_40px_rgba(0,0,0,0.5)] rounded-t-[32px]"
           data-testid="exercise-builder-sheet"
         >
-          {/* Header */}
           <SheetHeader className="border-b border-border p-5 bg-surface/70 backdrop-blur-md sticky top-0 z-10">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -74,7 +78,7 @@ export function ExerciseBuilderSheet({ open, onOpenChange }: ExerciseBuilderShee
                   <Dumbbell className="h-5 w-5 text-primary" />
                 </div>
                 <div>
-                  <SheetTitle className="text-foreground tracking-tight">Nowy Zestaw</SheetTitle>
+                  <SheetTitle className="text-foreground tracking-tight">Kreator zestawu</SheetTitle>
                   <SheetDescription className="flex items-center gap-2 mt-0.5">
                     <Badge
                       variant="secondary"
@@ -82,6 +86,12 @@ export function ExerciseBuilderSheet({ open, onOpenChange }: ExerciseBuilderShee
                     >
                       {exerciseCount} {exerciseCount === 1 ? 'ćwiczenie' : exerciseCount < 5 ? 'ćwiczenia' : 'ćwiczeń'}
                     </Badge>
+                    {durationLabel && (
+                      <span className="inline-flex items-center gap-1 text-[11px] font-bold text-primary">
+                        <Timer className="h-3 w-3" />
+                        {durationLabel}
+                      </span>
+                    )}
                   </SheetDescription>
                 </div>
               </div>
@@ -98,7 +108,6 @@ export function ExerciseBuilderSheet({ open, onOpenChange }: ExerciseBuilderShee
             </div>
           </SheetHeader>
 
-          {/* Exercise List */}
           <ScrollArea className="flex-1 px-4 py-6">
             {hasExercises ? (
               <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
@@ -129,56 +138,36 @@ export function ExerciseBuilderSheet({ open, onOpenChange }: ExerciseBuilderShee
             )}
           </ScrollArea>
 
-          {/* Footer */}
           {hasExercises && (
             <div className="border-t border-border p-6 bg-surface/90 backdrop-blur-xl space-y-4 sticky bottom-0">
-              {/* Estimated time */}
-              <div className="flex items-center justify-between text-sm mb-2">
-                <div className="flex flex-col">
-                  <span className="flex items-center gap-2 text-muted-foreground text-xs uppercase tracking-wider font-semibold">
-                    <Clock className="h-3.5 w-3.5 text-primary" />
+              {durationLabel && (
+                <div className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-primary/10 border border-primary/20 w-fit">
+                  <Timer className="h-3.5 w-3.5 text-primary" />
+                  <span className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold mr-1">
                     Szacowany czas
                   </span>
-                  <span className="text-lg font-bold text-foreground">~{estimatedTime} min</span>
+                  <span className="text-sm font-bold text-primary">{durationLabel}</span>
                 </div>
-                <div className="text-right">
-                  <span className="block text-[10px] text-muted-foreground uppercase tracking-widest font-bold">
-                    Intensywność
-                  </span>
-                  <span
-                    className={cn(
-                      'text-xs font-semibold px-2 py-0.5 rounded-full',
-                      estimatedTime < 15
-                        ? 'bg-green-500/10 text-green-500'
-                        : estimatedTime < 30
-                          ? 'bg-yellow-500/10 text-yellow-500'
-                          : 'bg-red-500/10 text-red-500'
-                    )}
-                  >
-                    {estimatedTime < 15 ? 'Niska' : estimatedTime < 30 ? 'Średnia' : 'Wysoka'}
-                  </span>
-                </div>
-              </div>
+              )}
 
               <div className="flex gap-3">
-                {/* Contextual AI Button */}
                 <Button
                   variant="outline"
                   size="icon"
                   className="h-14 w-14 shrink-0 rounded-2xl border-primary/20 bg-primary/5 text-primary hover:bg-primary/10 transition-all active:scale-95"
                   onClick={() => setIsChatOpen?.(true)}
                   title="Asystent AI"
+                  data-testid="exercise-builder-sheet-ai-btn"
                 >
                   <Sparkles className="h-6 w-6" />
                 </Button>
 
-                {/* Create button */}
                 <Button
                   className="flex-1 h-14 rounded-2xl bg-gradient-to-r from-primary to-primary-dark hover:opacity-90 shadow-lg shadow-primary/20 text-base font-bold"
                   onClick={() => setIsCreateDialogOpen(true)}
                   data-testid="exercise-builder-sheet-create-btn"
                 >
-                  Utwórz Zestaw
+                  Utwórz zestaw
                 </Button>
               </div>
             </div>
@@ -186,7 +175,6 @@ export function ExerciseBuilderSheet({ open, onOpenChange }: ExerciseBuilderShee
         </SheetContent>
       </Sheet>
 
-      {/* Create Set Dialog */}
       <CreateSetDialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen} />
     </>
   );

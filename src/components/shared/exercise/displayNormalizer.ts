@@ -46,7 +46,13 @@ function toOptionalString(value?: string | null): string | undefined {
 }
 
 function buildScalarLoad(source: ExerciseSourceLike): ExerciseLoad | undefined {
-  const hasScalarLoad = source.loadValue != null || source.loadType != null || source.loadUnit != null || source.loadText != null;
+  const defaultLoadWeightKg = source.defaultLoad?.loadWeightKg;
+  const hasScalarLoad =
+    defaultLoadWeightKg != null ||
+    source.loadValue != null ||
+    source.loadType != null ||
+    source.loadUnit != null ||
+    source.loadText != null;
   if (!hasScalarLoad) return undefined;
 
   const normalizedType: ExerciseLoad['type'] =
@@ -56,13 +62,18 @@ function buildScalarLoad(source: ExerciseSourceLike): ExerciseLoad | undefined {
   const normalizedUnit: ExerciseLoad['unit'] =
     source.loadUnit === 'kg' || source.loadUnit === 'lbs' || source.loadUnit === 'level'
       ? source.loadUnit
-      : undefined;
+      : defaultLoadWeightKg != null
+        ? 'kg'
+        : undefined;
+  const value = source.loadValue ?? defaultLoadWeightKg ?? undefined;
   const loadTextFromValue =
-    source.loadValue == null ? '' : `${source.loadValue}${normalizedUnit ? ` ${normalizedUnit}` : ''}`.trim();
+    value == null ? '' : `${value}${normalizedUnit ? ` ${normalizedUnit}` : ''}`.trim();
 
   return {
+    loadWeightKg: defaultLoadWeightKg ?? null,
+    loadSource: source.defaultLoad?.loadSource ?? null,
     type: normalizedType,
-    value: source.loadValue ?? undefined,
+    value,
     unit: normalizedUnit,
     text: source.loadText?.trim() || loadTextFromValue || 'Obciążenie',
   };

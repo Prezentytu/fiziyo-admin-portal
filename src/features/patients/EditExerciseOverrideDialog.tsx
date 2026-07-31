@@ -7,36 +7,94 @@ import { useMutation } from '@apollo/client/react';
 import {
   Loader2,
   Dumbbell,
-  Plus,
-  Minus,
-  Clock,
   Sparkles,
   Upload,
   Trash2,
-  ArrowLeft,
-  ArrowRight,
-  Maximize2,
-  RefreshCw,
-  X,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ImagePlaceholder } from '@/components/shared/ImagePlaceholder';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { getMediaUrl } from '@/utils/mediaUrl';
-import { useNumericDraft } from '@/hooks/useNumericDraft';
 
 import { UPDATE_PATIENT_EXERCISE_OVERRIDES_MUTATION } from '@/graphql/mutations/exercises.mutations';
 import { GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY } from '@/graphql/queries/patientAssignments.queries';
-import { aiService } from '@/services/aiService';
+import { useExerciseImageGeneration } from '@/features/exercises/useExerciseImageGeneration';
+import { ImageStylePicker } from '@/features/exercises/ImageStylePicker';
+import {
+  ENABLE_EXTENDED_PATIENT_OVERRIDE_FIELDS,
+  ENABLE_FULL_PATIENT_PERSONALIZATION,
+  ExerciseParametersFields,
+  buildOverrideDelta,
+  replaceOverrideMapEntry,
+  type ExerciseFieldKey,
+  type ExerciseParameterValues,
+  type MappingOnlyFieldKey,
+  type ParameterTestIdKind,
+} from '@/components/shared/exercise';
 import type { PatientAssignment, ExerciseMapping, ExerciseOverride } from './PatientAssignmentCard';
+
+const OVERRIDE_FIELD_TESTID_MAP: Record<
+  ExerciseFieldKey | MappingOnlyFieldKey,
+  { input: string; info: string }
+> = {
+  sets: { input: 'patient-exercise-override-sets-input', info: 'patient-exercise-override-sets-info' },
+  reps: { input: 'patient-exercise-override-reps-input', info: 'patient-exercise-override-reps-info' },
+  executionTime: {
+    input: 'patient-exercise-override-execution-time-input',
+    info: 'patient-exercise-override-execution-time-info',
+  },
+  restSets: {
+    input: 'patient-exercise-override-rest-sets-input',
+    info: 'patient-exercise-override-rest-sets-info',
+  },
+  restReps: {
+    input: 'patient-exercise-override-rest-reps-input',
+    info: 'patient-exercise-override-rest-reps-info',
+  },
+  preparationTime: {
+    input: 'patient-exercise-override-prep-time-input',
+    info: 'patient-exercise-override-prep-time-info',
+  },
+  duration: {
+    input: 'patient-exercise-override-duration-input',
+    info: 'patient-exercise-override-duration-info',
+  },
+  load: { input: 'patient-exercise-override-load-kg-input', info: 'patient-exercise-override-load-kg-info' },
+  tempo: { input: 'patient-exercise-override-tempo-input', info: 'patient-exercise-override-tempo-info' },
+  side: { input: 'patient-exercise-override-side-select', info: 'patient-exercise-override-side-info' },
+  rangeOfMotion: { input: 'patient-exercise-override-rom-input', info: 'patient-exercise-override-rom-info' },
+  difficultyLevel: {
+    input: 'patient-exercise-override-difficulty-select',
+    info: 'patient-exercise-override-difficulty-info',
+  },
+  patientDescription: {
+    input: 'patient-exercise-override-patient-description-input',
+    info: 'patient-exercise-override-patient-description-info',
+  },
+  clinicalDescription: {
+    input: 'patient-exercise-override-clinical-description-input',
+    info: 'patient-exercise-override-clinical-description-info',
+  },
+  audioCue: {
+    input: 'patient-exercise-override-audio-cue-input',
+    info: 'patient-exercise-override-audio-cue-info',
+  },
+  notes: { input: 'patient-exercise-override-notes-input', info: 'patient-exercise-override-notes-info' },
+  customName: {
+    input: 'patient-exercise-override-custom-name-input',
+    info: 'patient-exercise-override-custom-name-info',
+  },
+  customDescription: {
+    input: 'patient-exercise-override-custom-description-input',
+    info: 'patient-exercise-override-custom-description-info',
+  },
+};
 
 interface EditExerciseOverrideDialogProps {
   open: boolean;
@@ -61,15 +119,6 @@ const translateSide = (side?: string) => {
   };
   return sides[normalizedSide] || side;
 };
-
-// Exercise side options
-const EXERCISE_SIDES = [
-  { value: 'none', label: 'Bez strony', icon: X },
-  { value: 'left', label: 'Lewa', icon: ArrowLeft },
-  { value: 'right', label: 'Prawa', icon: ArrowRight },
-  { value: 'both', label: 'Obie', icon: Maximize2 },
-  { value: 'alternating', label: 'Naprzemiennie', icon: RefreshCw },
-] as const;
 
 // Wrapper component that handles dialog state
 export function EditExerciseOverrideDialog({
@@ -157,13 +206,35 @@ function EditExerciseOverrideDialogContent({
   const exercise = mapping.exercise;
 
   // Initial values for change detection
-  const initialSets = currentOverride?.sets ?? mapping.sets ?? exercise?.sets ?? 0;
-  const initialReps = currentOverride?.reps ?? mapping.reps ?? exercise?.reps ?? 0;
-  const initialDuration = currentOverride?.duration ?? mapping.duration ?? exercise?.duration ?? 0;
-  const initialExecutionTime =
-    currentOverride?.executionTime ?? mapping.executionTime ?? exercise?.defaultExecutionTime ?? 0;
-  const initialRestSets = currentOverride?.restSets ?? mapping.restSets ?? 0;
-  const initialRestReps = currentOverride?.restReps ?? mapping.restReps ?? 0;
+  const inheritedSets = mapping.sets ?? exercise?.sets ?? 0;
+  const inheritedReps = mapping.reps ?? exercise?.reps ?? 0;
+  const inheritedDuration = mapping.duration ?? exercise?.duration ?? 0;
+  const inheritedExecutionTime = mapping.executionTime ?? exercise?.defaultExecutionTime ?? 0;
+  const inheritedRestSets = mapping.restSets ?? 0;
+  const inheritedRestReps = mapping.restReps ?? 0;
+  const inheritedPreparationTime = mapping.preparationTime ?? exercise?.preparationTime ?? 0;
+  const inheritedTempo = mapping.tempo ?? '';
+  const inheritedLoadKg =
+    mapping.loadUnit === 'kg' && mapping.loadValue != null ? mapping.loadValue : null;
+  const inheritedRom = exercise?.rangeOfMotion ?? '';
+  const exerciseSideValue = exercise?.side?.toLowerCase() || exercise?.exerciseSide;
+  const inheritedExerciseSide = exerciseSideValue ?? 'none';
+  const inheritedDifficulty = exercise?.difficultyLevel ?? 'UNKNOWN';
+  const inheritedPatientDescription =
+    exercise?.patientDescription ?? exercise?.description ?? '';
+  const inheritedClinicalDescription = exercise?.clinicalDescription ?? '';
+  const inheritedAudioCue = exercise?.audioCue ?? '';
+
+  const initialSets = currentOverride?.sets ?? inheritedSets;
+  const initialReps = currentOverride?.reps ?? inheritedReps;
+  const initialDuration = currentOverride?.duration ?? inheritedDuration;
+  const initialExecutionTime = currentOverride?.executionTime ?? inheritedExecutionTime;
+  const initialRestSets = currentOverride?.restSets ?? inheritedRestSets;
+  const initialRestReps = currentOverride?.restReps ?? inheritedRestReps;
+  const initialPreparationTime = currentOverride?.preparationTime ?? inheritedPreparationTime;
+  const initialTempo = currentOverride?.tempo ?? inheritedTempo;
+  const initialLoadKg = currentOverride?.loadWeightKg ?? inheritedLoadKg;
+  const initialRangeOfMotion = currentOverride?.rangeOfMotion ?? inheritedRom;
   const initialCustomName = currentOverride?.customName ?? mapping.customName ?? '';
   const initialCustomDescription =
     currentOverride?.customDescription ??
@@ -172,71 +243,156 @@ function EditExerciseOverrideDialogContent({
     exercise?.description ??
     '';
   const initialNotes = currentOverride?.notes ?? mapping.notes ?? '';
-  // Support both new 'side' and legacy 'exerciseSide' field names
-  const exerciseSideValue = exercise?.side?.toLowerCase() || exercise?.exerciseSide;
-  const initialExerciseSide = currentOverride?.exerciseSide ?? exerciseSideValue ?? 'none';
+  const initialExerciseSide = currentOverride?.exerciseSide ?? inheritedExerciseSide;
+  const initialDifficultyLevel = currentOverride?.difficultyLevel ?? inheritedDifficulty;
+  const initialPatientDescription =
+    currentOverride?.patientDescription ?? inheritedPatientDescription;
+  const initialClinicalDescription =
+    currentOverride?.clinicalDescription ?? inheritedClinicalDescription;
+  const initialAudioCue = currentOverride?.audioCue ?? inheritedAudioCue;
   const initialCustomImages = currentOverride?.customImages ?? [];
 
-  // Form state - initialized directly from props (no useEffect needed)
   const [sets, setSets] = useState<number>(initialSets);
   const [reps, setReps] = useState<number>(initialReps);
   const [duration, setDuration] = useState<number>(initialDuration);
   const [executionTime, setExecutionTime] = useState<number>(initialExecutionTime);
   const [restSets, setRestSets] = useState<number>(initialRestSets);
   const [restReps, setRestReps] = useState<number>(initialRestReps);
+  const [preparationTime, setPreparationTime] = useState<number>(initialPreparationTime);
+  const [tempo, setTempo] = useState(initialTempo);
+  const [loadKg, setLoadKg] = useState<number | null>(initialLoadKg);
+  const [rangeOfMotion, setRangeOfMotion] = useState(initialRangeOfMotion);
   const [customName, setCustomName] = useState(initialCustomName);
   const [customDescription, setCustomDescription] = useState(initialCustomDescription);
   const [notes, setNotes] = useState(initialNotes);
   const [exerciseSide, setExerciseSide] = useState(initialExerciseSide);
+  const [difficultyLevel, setDifficultyLevel] = useState(initialDifficultyLevel);
+  const [patientDescription, setPatientDescription] = useState(initialPatientDescription);
+  const [clinicalDescription, setClinicalDescription] = useState(initialClinicalDescription);
+  const [audioCue, setAudioCue] = useState(initialAudioCue);
   const [customImages, setCustomImages] = useState<string[]>(initialCustomImages);
-  const [isGeneratingImage, setIsGeneratingImage] = useState(false);
-
-  const setsField = useNumericDraft({
-    value: sets,
-    onCommit: setSets,
-    min: 0,
-    parseMode: 'int',
-  });
-
-  const repsField = useNumericDraft({
-    value: reps,
-    onCommit: setReps,
-    min: 0,
-    parseMode: 'int',
-  });
-
-  const executionTimeField = useNumericDraft({
-    value: executionTime,
-    onCommit: setExecutionTime,
-    min: 0,
-    step: 5,
-    parseMode: 'int',
-  });
-
-  const durationField = useNumericDraft({
-    value: duration,
-    onCommit: setDuration,
-    min: 0,
-    step: 5,
-    parseMode: 'int',
-  });
-
-  const restSetsField = useNumericDraft({
-    value: restSets,
-    onCommit: setRestSets,
-    min: 0,
-    parseMode: 'int',
-  });
-
-  const restRepsField = useNumericDraft({
-    value: restReps,
-    onCommit: setRestReps,
-    min: 0,
-    parseMode: 'int',
+  const {
+    generate: generateExerciseImage,
+    isGenerating: isGeneratingImage,
+    imageStyle,
+    setImageStyle,
+  } = useExerciseImageGeneration({
+    showSuccessToast: false,
   });
 
   // File input ref
   const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  const parameterValues = React.useMemo<ExerciseParameterValues>(
+    () => ({
+      sets,
+      reps,
+      executionTime,
+      duration,
+      restSets,
+      restReps,
+      preparationTime,
+      loadKg,
+      tempo,
+      rangeOfMotion,
+      side: exerciseSide,
+      difficultyLevel,
+      patientDescription,
+      clinicalDescription,
+      audioCue,
+      notes,
+      customName,
+      customDescription,
+    }),
+    [
+      sets,
+      reps,
+      executionTime,
+      duration,
+      restSets,
+      restReps,
+      preparationTime,
+      loadKg,
+      tempo,
+      rangeOfMotion,
+      exerciseSide,
+      difficultyLevel,
+      patientDescription,
+      clinicalDescription,
+      audioCue,
+      notes,
+      customName,
+      customDescription,
+    ]
+  );
+
+  const inheritedValues = React.useMemo<Partial<ExerciseParameterValues>>(
+    () => ({
+      sets: inheritedSets,
+      reps: inheritedReps,
+      executionTime: inheritedExecutionTime,
+      duration: inheritedDuration,
+      restSets: inheritedRestSets,
+      restReps: inheritedRestReps,
+      preparationTime: inheritedPreparationTime,
+      loadKg: inheritedLoadKg,
+      tempo: inheritedTempo,
+      rangeOfMotion: inheritedRom,
+      side: inheritedExerciseSide,
+      difficultyLevel: inheritedDifficulty,
+      patientDescription: inheritedPatientDescription,
+      clinicalDescription: inheritedClinicalDescription,
+      audioCue: inheritedAudioCue,
+    }),
+    [
+      inheritedSets,
+      inheritedReps,
+      inheritedExecutionTime,
+      inheritedDuration,
+      inheritedRestSets,
+      inheritedRestReps,
+      inheritedPreparationTime,
+      inheritedLoadKg,
+      inheritedTempo,
+      inheritedRom,
+      inheritedExerciseSide,
+      inheritedDifficulty,
+      inheritedPatientDescription,
+      inheritedClinicalDescription,
+      inheritedAudioCue,
+    ]
+  );
+
+  const handleParametersChange = useCallback((patch: Partial<ExerciseParameterValues>) => {
+    if ('sets' in patch && patch.sets != null) setSets(patch.sets);
+    if ('reps' in patch && patch.reps != null) setReps(patch.reps);
+    if ('executionTime' in patch) setExecutionTime(patch.executionTime ?? 0);
+    if ('duration' in patch) setDuration(patch.duration ?? 0);
+    if ('restSets' in patch) setRestSets(patch.restSets ?? 0);
+    if ('restReps' in patch) setRestReps(patch.restReps ?? 0);
+    if ('preparationTime' in patch) setPreparationTime(patch.preparationTime ?? 0);
+    if ('loadKg' in patch) setLoadKg(patch.loadKg ?? null);
+    if ('tempo' in patch) setTempo(patch.tempo ?? '');
+    if ('rangeOfMotion' in patch) setRangeOfMotion(patch.rangeOfMotion ?? '');
+    if ('side' in patch && patch.side != null) setExerciseSide(patch.side);
+    if ('difficultyLevel' in patch && patch.difficultyLevel != null) {
+      setDifficultyLevel(patch.difficultyLevel);
+    }
+    if ('patientDescription' in patch) setPatientDescription(patch.patientDescription ?? '');
+    if ('clinicalDescription' in patch) setClinicalDescription(patch.clinicalDescription ?? '');
+    if ('audioCue' in patch) setAudioCue(patch.audioCue ?? '');
+    if ('notes' in patch) setNotes(patch.notes ?? '');
+    if ('customName' in patch) setCustomName(patch.customName ?? '');
+    if ('customDescription' in patch) setCustomDescription(patch.customDescription ?? '');
+  }, []);
+
+  const overrideTestIdFor = useCallback(
+    (key: ExerciseFieldKey | MappingOnlyFieldKey, kind: ParameterTestIdKind) => {
+      const mapped = OVERRIDE_FIELD_TESTID_MAP[key];
+      return kind === 'info' ? mapped.info : mapped.input;
+    },
+    []
+  );
 
   // Track changes
   const hasChanges =
@@ -246,10 +402,18 @@ function EditExerciseOverrideDialogContent({
     executionTime !== initialExecutionTime ||
     restSets !== initialRestSets ||
     restReps !== initialRestReps ||
+    preparationTime !== initialPreparationTime ||
+    tempo !== initialTempo ||
+    loadKg !== initialLoadKg ||
+    rangeOfMotion !== initialRangeOfMotion ||
     customName !== initialCustomName ||
     customDescription !== initialCustomDescription ||
     notes !== initialNotes ||
     exerciseSide !== initialExerciseSide ||
+    difficultyLevel !== initialDifficultyLevel ||
+    patientDescription !== initialPatientDescription ||
+    clinicalDescription !== initialClinicalDescription ||
+    audioCue !== initialAudioCue ||
     JSON.stringify(customImages) !== JSON.stringify(initialCustomImages);
 
   // Notify parent
@@ -270,7 +434,6 @@ function EditExerciseOverrideDialogContent({
       return;
     }
 
-    // Build description with full context for AI
     const descParts: string[] = [];
     descParts.push(`Nazwa ćwiczenia: ${exerciseName}`);
     if (exerciseDesc) {
@@ -281,35 +444,24 @@ function EditExerciseOverrideDialogContent({
     }
     const fullDescription = descParts.join('. ');
 
-    setIsGeneratingImage(true);
-    try {
-      const result = await aiService.generateExerciseImage(
-        exerciseName,
-        fullDescription,
-        exercise?.type as 'reps' | 'time' | undefined,
-        'illustration'
-      );
+    const file = await generateExerciseImage({
+      exerciseName,
+      exerciseDescription: fullDescription,
+      exerciseType: exercise?.type as 'reps' | 'time' | undefined,
+      style: imageStyle,
+    });
 
-      if (result?.file) {
-        // Convert File to base64 and add to customImages
-        const reader = new FileReader();
-        reader.onload = () => {
-          setCustomImages((prev) => [...prev, reader.result as string]);
-          toast.success('Obraz wygenerowany przez AI!');
-        };
-        reader.readAsDataURL(result.file);
-      } else if (result?.response?.isTextOnly) {
-        toast.info('AI zwróciło opis tekstowy. Spróbuj ponownie lub zmień nazwę ćwiczenia.');
-      } else {
-        toast.error('Nie udało się wygenerować obrazu');
-      }
-    } catch (error) {
-      console.error('Błąd generowania obrazu:', error);
-      toast.error('Nie udało się wygenerować obrazu');
-    } finally {
-      setIsGeneratingImage(false);
+    if (!file) {
+      return;
     }
-  }, [exercise, customName, customDescription, exerciseSide]);
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      setCustomImages((prev) => [...prev, reader.result as string]);
+      toast.success('Obraz wygenerowany przez AI!');
+    };
+    reader.readAsDataURL(file);
+  }, [exercise, customName, customDescription, exerciseSide, generateExerciseImage, imageStyle]);
 
   const handleImageUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -340,78 +492,96 @@ function EditExerciseOverrideDialogContent({
 
   const handleSave = async () => {
     try {
-      // Parse existing overrides
-      let existingOverrides: Record<string, ExerciseOverride> = {};
-      if (assignment.exerciseOverrides) {
-        try {
-          existingOverrides = JSON.parse(assignment.exerciseOverrides);
-        } catch {
-          existingOverrides = {};
+      const newOverride = buildOverrideDelta(
+        {
+          sets: inheritedSets,
+          reps: inheritedReps,
+          duration: inheritedDuration,
+          executionTime: inheritedExecutionTime,
+          restSets: inheritedRestSets,
+          restReps: inheritedRestReps,
+          preparationTime: inheritedPreparationTime,
+          tempo: inheritedTempo,
+          loadKg: inheritedLoadKg ?? undefined,
+          loadWeightKg: inheritedLoadKg ?? undefined,
+          rangeOfMotion: inheritedRom,
+          customName: mapping.customName ?? '',
+          customDescription:
+            mapping.customDescription ??
+            exercise?.patientDescription ??
+            exercise?.description ??
+            '',
+          notes: mapping.notes ?? '',
+          side: inheritedExerciseSide,
+          exerciseSide: inheritedExerciseSide,
+          difficultyLevel: inheritedDifficulty,
+          patientDescription: inheritedPatientDescription,
+          clinicalDescription: inheritedClinicalDescription,
+          audioCue: inheritedAudioCue,
+          customImages: [],
+        },
+        {
+          sets,
+          reps,
+          duration,
+          executionTime,
+          restSets,
+          restReps,
+          ...(ENABLE_EXTENDED_PATIENT_OVERRIDE_FIELDS
+            ? {
+                preparationTime,
+                tempo,
+                loadKg,
+                loadWeightKg: loadKg,
+                rangeOfMotion,
+              }
+            : {}),
+          customName,
+          customDescription,
+          notes,
+          exerciseSide,
+          side: exerciseSide,
+          ...(ENABLE_FULL_PATIENT_PERSONALIZATION
+            ? {
+                difficultyLevel,
+                patientDescription,
+                clinicalDescription,
+                audioCue,
+              }
+            : {}),
+          customImages,
         }
-      }
+      );
 
-      // Build new override - only include non-default values
-      const newOverride: ExerciseOverride = {};
-
-      // Only save if different from mapping/exercise defaults
-      const exerciseDefaults = mapping.exercise;
-      const mappingDefaults = mapping;
-
-      if (sets !== (mappingDefaults.sets ?? exerciseDefaults?.sets ?? 0)) {
-        newOverride.sets = sets;
-      }
-      if (reps !== (mappingDefaults.reps ?? exerciseDefaults?.reps ?? 0)) {
-        newOverride.reps = reps;
-      }
-      if (duration !== (mappingDefaults.duration ?? exerciseDefaults?.duration ?? 0)) {
-        newOverride.duration = duration;
-      }
-      if (executionTime !== (mappingDefaults.executionTime ?? exerciseDefaults?.defaultExecutionTime ?? 0)) {
-        newOverride.executionTime = executionTime;
-      }
-      if (restSets !== (mappingDefaults.restSets ?? 0)) {
-        newOverride.restSets = restSets;
-      }
-      if (restReps !== (mappingDefaults.restReps ?? 0)) {
-        newOverride.restReps = restReps;
-      }
-      if (customName && customName !== mappingDefaults.customName) {
-        newOverride.customName = customName;
-      }
-      if (
-        customDescription &&
-        customDescription !== (mappingDefaults.customDescription ?? exerciseDefaults?.description ?? '')
-      ) {
-        newOverride.customDescription = customDescription;
-      }
-      if (notes) {
-        newOverride.notes = notes;
-      }
-      const defaultExerciseSide = exerciseDefaults?.side?.toLowerCase() || exerciseDefaults?.exerciseSide || 'none';
-      if (exerciseSide && exerciseSide !== defaultExerciseSide) {
-        newOverride.exerciseSide = exerciseSide;
-      }
-      if (customImages.length > 0) {
-        newOverride.customImages = customImages;
-      }
-
-      // Preserve hidden status if it exists
-      if (existingOverrides[mapping.id]?.hidden) {
+      if (currentOverride?.hidden) {
         newOverride.hidden = true;
       }
 
-      // Update overrides - remove if empty, otherwise set
-      const updatedOverrides = { ...existingOverrides };
-      if (Object.keys(newOverride).length > 0) {
-        updatedOverrides[mapping.id] = newOverride;
-      } else {
-        delete updatedOverrides[mapping.id];
+      // Preserve keys the dialog does not rebuild (enrichment, patient-added metadata).
+      if (currentOverride?.enrichment) {
+        newOverride.enrichment = currentOverride.enrichment;
       }
+      const previousEntry = currentOverride as
+        | (typeof currentOverride & { exerciseId?: string; isPatientAdded?: boolean })
+        | undefined;
+      if (previousEntry?.exerciseId) {
+        (newOverride as ExerciseOverride & { exerciseId?: string }).exerciseId =
+          previousEntry.exerciseId;
+      }
+      if (previousEntry?.isPatientAdded) {
+        (newOverride as ExerciseOverride & { isPatientAdded?: boolean }).isPatientAdded = true;
+      }
+
+      const exerciseOverrides = replaceOverrideMapEntry(
+        assignment.exerciseOverrides,
+        mapping.id,
+        newOverride
+      );
 
       await updateOverrides({
         variables: {
           assignmentId: assignment.id,
-          exerciseOverrides: JSON.stringify(updatedOverrides),
+          exerciseOverrides,
         },
         refetchQueries: [
           {
@@ -431,16 +601,26 @@ function EditExerciseOverrideDialogContent({
   };
 
   const handleReset = () => {
-    setSets(mapping.sets ?? exercise?.defaultSets ?? exercise?.sets ?? 0);
-    setReps(mapping.reps ?? exercise?.defaultReps ?? exercise?.reps ?? 0);
-    setDuration(mapping.duration ?? exercise?.defaultDuration ?? exercise?.duration ?? 0);
-    setExecutionTime(mapping.executionTime ?? exercise?.defaultExecutionTime ?? 0);
-    setRestSets(mapping.restSets ?? exercise?.defaultRestBetweenSets ?? 0);
-    setRestReps(mapping.restReps ?? exercise?.defaultRestBetweenReps ?? 0);
+    setSets(inheritedSets);
+    setReps(inheritedReps);
+    setDuration(inheritedDuration);
+    setExecutionTime(inheritedExecutionTime);
+    setRestSets(inheritedRestSets);
+    setRestReps(inheritedRestReps);
+    setPreparationTime(inheritedPreparationTime);
+    setTempo(inheritedTempo);
+    setLoadKg(inheritedLoadKg);
+    setRangeOfMotion(inheritedRom);
     setCustomName(mapping.customName ?? '');
-    setCustomDescription(mapping.customDescription ?? exercise?.patientDescription ?? exercise?.description ?? '');
+    setCustomDescription(
+      mapping.customDescription ?? exercise?.patientDescription ?? exercise?.description ?? ''
+    );
     setNotes(mapping.notes ?? '');
-    setExerciseSide(exercise?.side?.toLowerCase() || exercise?.exerciseSide || 'none');
+    setExerciseSide(inheritedExerciseSide);
+    setDifficultyLevel(inheritedDifficulty);
+    setPatientDescription(inheritedPatientDescription);
+    setClinicalDescription(inheritedClinicalDescription);
+    setAudioCue(inheritedAudioCue);
     setCustomImages([]);
   };
 
@@ -492,7 +672,6 @@ function EditExerciseOverrideDialogContent({
             </div>
           </div>
 
-          {/* Main parameters */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <p className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Parametry ćwiczenia</p>
@@ -500,222 +679,18 @@ function EditExerciseOverrideDialogContent({
                 Przywróć domyślne
               </Button>
             </div>
-
-            {/* Sets & Reps */}
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label className="text-sm">Serie</Label>
-                <div className="flex items-center gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon"
-                    className="h-11 w-11 shrink-0"
-                    onClick={setsField.decrement}
-                    disabled={!setsField.canDecrement}
-                  >
-                    <Minus className="h-4 w-4" />
-                  </Button>
-                  <Input
-                    type="number"
-                    value={setsField.draftValue}
-                    onChange={(e) => setsField.setDraftValue(e.target.value)}
-                    onFocus={setsField.handleFocus}
-                    onBlur={setsField.handleBlur}
-                    onKeyDown={setsField.handleKeyDown}
-                    className="h-11 text-center text-lg font-semibold"
-                    data-testid="patient-exercise-override-sets-input"
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon"
-                    className="h-11 w-11 shrink-0"
-                    onClick={setsField.increment}
-                  >
-                    <Plus className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label className="text-sm">Powtórzenia</Label>
-                <div className="flex items-center gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon"
-                    className="h-11 w-11 shrink-0"
-                    onClick={repsField.decrement}
-                    disabled={!repsField.canDecrement}
-                  >
-                    <Minus className="h-4 w-4" />
-                  </Button>
-                  <Input
-                    type="number"
-                    value={repsField.draftValue}
-                    onChange={(e) => repsField.setDraftValue(e.target.value)}
-                    onFocus={repsField.handleFocus}
-                    onBlur={repsField.handleBlur}
-                    onKeyDown={repsField.handleKeyDown}
-                    className="h-11 text-center text-lg font-semibold"
-                    data-testid="patient-exercise-override-reps-input"
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon"
-                    className="h-11 w-11 shrink-0"
-                    onClick={repsField.increment}
-                  >
-                    <Plus className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              {/* Execution time */}
-              <div className="space-y-2">
-                <Label className="text-sm flex items-center gap-2">
-                  <Clock className="h-4 w-4 text-muted-foreground" />
-                  Czas powtórzenia (sekundy)
-                </Label>
-                <div className="flex items-center gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon"
-                    className="h-11 w-11 shrink-0"
-                    onClick={executionTimeField.decrement}
-                    disabled={!executionTimeField.canDecrement}
-                  >
-                    <Minus className="h-4 w-4" />
-                  </Button>
-                  <Input
-                    type="number"
-                    value={executionTimeField.draftValue}
-                    onChange={(e) => executionTimeField.setDraftValue(e.target.value)}
-                    onFocus={executionTimeField.handleFocus}
-                    onBlur={executionTimeField.handleBlur}
-                    onKeyDown={executionTimeField.handleKeyDown}
-                    className="h-11 text-center text-lg font-semibold"
-                    step={5}
-                    data-testid="patient-exercise-override-execution-time-input"
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon"
-                    className="h-11 w-11 shrink-0"
-                    onClick={executionTimeField.increment}
-                  >
-                    <Plus className="h-4 w-4" />
-                  </Button>
-                </div>
-                <p className="text-xs text-muted-foreground">Główny timer pojedynczego powtórzenia</p>
-              </div>
-
-              {/* Duration */}
-              <div className="space-y-2">
-                <Label className="text-sm flex items-center gap-2">
-                  <Clock className="h-4 w-4 text-muted-foreground" />
-                  Czas serii (sekundy)
-                </Label>
-                <div className="flex items-center gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon"
-                    className="h-11 w-11 shrink-0"
-                    onClick={durationField.decrement}
-                    disabled={!durationField.canDecrement}
-                  >
-                    <Minus className="h-4 w-4" />
-                  </Button>
-                  <Input
-                    type="number"
-                    value={durationField.draftValue}
-                    onChange={(e) => durationField.setDraftValue(e.target.value)}
-                    onFocus={durationField.handleFocus}
-                    onBlur={durationField.handleBlur}
-                    onKeyDown={durationField.handleKeyDown}
-                    className="h-11 text-center text-lg font-semibold"
-                    step={5}
-                    data-testid="patient-exercise-override-duration-input"
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon"
-                    className="h-11 w-11 shrink-0"
-                    onClick={durationField.increment}
-                  >
-                    <Plus className="h-4 w-4" />
-                  </Button>
-                </div>
-                <p className="text-xs text-muted-foreground">Użyj dla ćwiczeń time-based (override czasu serii)</p>
-              </div>
-            </div>
-
-            {/* Rest parameters */}
-            <div className="grid grid-cols-2 gap-4 pt-2">
-              <div className="space-y-2">
-                <Label className="text-sm text-muted-foreground">Przerwa między seriami (s)</Label>
-                <Input
-                  type="number"
-                  value={restSetsField.draftValue}
-                  onChange={(e) => restSetsField.setDraftValue(e.target.value)}
-                  onFocus={restSetsField.handleFocus}
-                  onBlur={restSetsField.handleBlur}
-                  onKeyDown={restSetsField.handleKeyDown}
-                  className="h-11"
-                  data-testid="patient-exercise-override-rest-sets-input"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label className="text-sm text-muted-foreground">Przerwa między powt. (s)</Label>
-                <Input
-                  type="number"
-                  value={restRepsField.draftValue}
-                  onChange={(e) => restRepsField.setDraftValue(e.target.value)}
-                  onFocus={restRepsField.handleFocus}
-                  onBlur={restRepsField.handleBlur}
-                  onKeyDown={restRepsField.handleKeyDown}
-                  className="h-11"
-                  data-testid="patient-exercise-override-rest-reps-input"
-                />
-              </div>
-            </div>
-          </div>
-
-          <Separator />
-
-          {/* Exercise side selection */}
-          <div className="space-y-4">
-            <p className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Strona ćwiczenia</p>
-            <div className="flex flex-wrap gap-2">
-              {EXERCISE_SIDES.map((side) => {
-                const Icon = side.icon;
-                const isSelected = exerciseSide === side.value;
-                return (
-                  <Button
-                    key={side.value}
-                    type="button"
-                    variant={isSelected ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setExerciseSide(side.value)}
-                    className={`gap-2 ${isSelected ? 'shadow-md' : ''}`}
-                    data-testid={`patient-exercise-override-side-${side.value}`}
-                  >
-                    <Icon className="h-4 w-4" />
-                    {side.label}
-                  </Button>
-                );
-              })}
-            </div>
-            <p className="text-xs text-muted-foreground">Określ która strona ciała jest zaangażowana w ćwiczenie</p>
+            <ExerciseParametersFields
+              surface="patientOverride"
+              values={parameterValues}
+              onChange={handleParametersChange}
+              inheritedValues={inheritedValues}
+              showContentSection
+              showMappingOnlyFields
+              density="comfortable"
+              advancedDefaultOpen={false}
+              testIdFor={overrideTestIdFor}
+              structuralTestIdPrefix="patient-exercise-override"
+            />
           </div>
 
           <Separator />
@@ -772,7 +747,6 @@ function EditExerciseOverrideDialogContent({
                 </div>
               )}
 
-              {/* Add image buttons */}
               <div className="flex gap-2">
                 <Button
                   type="button"
@@ -785,17 +759,24 @@ function EditExerciseOverrideDialogContent({
                   <Upload className="h-4 w-4" />
                   Wgraj z dysku
                 </Button>
+                <ImageStylePicker
+                  value={imageStyle}
+                  onChange={setImageStyle}
+                  disabled={isGeneratingImage}
+                  testIdPrefix="patient-exercise-override-ai-style"
+                />
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
                   onClick={handleGenerateImage}
                   disabled={isGeneratingImage}
+                  aria-busy={isGeneratingImage}
                   className="flex-1 gap-2"
                   data-testid="patient-exercise-override-ai-generate-btn"
                 >
                   {isGeneratingImage ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-                  {isGeneratingImage ? 'Generowanie...' : 'Generuj AI'}
+                  {isGeneratingImage ? 'Generowanie…' : 'Generuj AI'}
                 </Button>
               </div>
               <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
@@ -803,50 +784,7 @@ function EditExerciseOverrideDialogContent({
             </div>
           </div>
 
-          <Separator />
-
-          {/* Customization */}
-          <div className="space-y-4">
-            <p className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
-              Personalizacja dla pacjenta
-            </p>
-
-            <div className="space-y-2">
-              <Label className="text-sm">Własna nazwa</Label>
-              <Input
-                value={customName}
-                onChange={(e) => setCustomName(e.target.value)}
-                placeholder={exercise?.name || 'Zostaw puste dla domyślnej nazwy'}
-                className="h-11"
-              />
-              <p className="text-xs text-muted-foreground">Pacjent zobaczy tę nazwę zamiast oryginalnej</p>
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-sm">Opis ćwiczenia dla pacjenta</Label>
-              <Textarea
-                value={customDescription}
-                onChange={(e) => setCustomDescription(e.target.value)}
-                placeholder="Wpisz opis ćwiczenia..."
-                className="min-h-[100px] resize-none"
-              />
-              {customDescription !== (exercise?.description ?? '') && (
-                <p className="text-xs text-muted-foreground">Opis został zmodyfikowany dla tego pacjenta</p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-sm">Notatki / instrukcje</Label>
-              <Textarea
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder="Szczególne wskazówki dla pacjenta..."
-                className="min-h-[80px] resize-none"
-              />
-            </div>
-          </div>
-
-          {/* Summary of changes */}
+                    {/* Summary of changes */}
           {(currentOverride?.sets !== undefined ||
             currentOverride?.reps !== undefined ||
             currentOverride?.duration !== undefined ||

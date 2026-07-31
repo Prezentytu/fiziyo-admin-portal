@@ -212,27 +212,15 @@ export function SummaryStep({
               const cardData = fromExerciseMapping(mapping, override);
 
               return (
-                <div
-                  key={mapping.id}
-                  className="relative"
-                  data-testid={`summary-exercise-item-${mapping.id}`}
-                >
+                <div key={mapping.id} data-testid={`summary-exercise-item-${mapping.id}`}>
                   <ExerciseExecutionCard
                     mode="view"
                     exercise={cardData}
                     index={i + 1}
                     testIdPrefix="summary-exercise"
                     className="border-border/40"
+                    showModifiedBadge={Boolean(hasOverride)}
                   />
-                  {hasOverride && (
-                    <Badge
-                      variant="outline"
-                      className="absolute top-2 right-2 text-[10px] border-primary/40 text-primary shrink-0"
-                    >
-                      <Settings2 className="h-2.5 w-2.5 mr-0.5" />
-                      Zmienione
-                    </Badge>
-                  )}
                 </div>
               );
             })}

@@ -6,6 +6,7 @@
 import { toast } from 'sonner';
 import { getBackendToken } from '@/lib/tokenCache';
 import { triggerCreditsRefresh } from '@/lib/aiCreditsRefresh';
+import { decodeGeneratedImage } from '@/features/exercises/utils/decodeGeneratedImage';
 import type {
   ExerciseSuggestionRequest,
   ExerciseSuggestionResponse,
@@ -19,6 +20,8 @@ import type {
   ClinicalNoteAction,
   ExerciseImageRequest,
   ExerciseImageResponse,
+  ExerciseImageErrorCode,
+  GenerateExerciseImageResult,
   ImageStyle,
   EnrichmentGenerationRequest,
   EnrichmentGenerationResponse,
@@ -65,7 +68,11 @@ class AIService {
   /**
    * Wykonuje request do AI endpoint z deduplikacją i abort support
    */
-  private async request<T>(endpoint: string, body: unknown, options?: { signal?: AbortSignal }): Promise<T> {
+  private async request<T>(
+    endpoint: string,
+    body: unknown,
+    options?: { signal?: AbortSignal; suppressErrorToast?: boolean }
+  ): Promise<T> {
     const token = getBackendToken();
 
     if (!token) {
@@ -99,6 +106,8 @@ class AIService {
       }
     }
 
+    const suppressToast = options?.suppressErrorToast === true;
+
     const promise = (async () => {
       try {
         const response = await fetch(url, {
@@ -122,28 +131,34 @@ class AIService {
           // user nie powinien czuc ze jest ograniczany. Backend zwraca 400 z error: "insufficient_credits".
           if (response.status === 400 || response.status === 402 || response.status === 403) {
             try {
-              const errorJson = JSON.parse(errorText) as { error?: string };
+              const errorJson = JSON.parse(errorText) as { error?: string; message?: string };
               if (errorJson?.error === 'insufficient_credits') {
-                toast.error('Funkcja chwilowo niedostępna. Spróbuj ponownie za chwilę.');
-                throw new Error('AI_TEMPORARILY_UNAVAILABLE');
+                if (!suppressToast) {
+                  toast.error('Funkcja chwilowo niedostępna. Spróbuj ponownie za chwilę.');
+                }
+                throw new Error(`AI_TEMPORARILY_UNAVAILABLE:${errorJson.error}`);
               }
             } catch (parseError) {
-              if (parseError instanceof Error && parseError.message === 'AI_TEMPORARILY_UNAVAILABLE') {
+              if (parseError instanceof Error && parseError.message.startsWith('AI_TEMPORARILY_UNAVAILABLE')) {
                 throw parseError;
               }
             }
           }
 
-          // 502 = backend AI provider failure (po naszych zmianach na backendzie)
+          // 502 = backend AI provider failure
           if (response.status === 502) {
             try {
               const errorJson = JSON.parse(errorText) as { error?: string; message?: string };
-              if (errorJson?.message) {
-                toast.error(errorJson.message);
-                throw new Error('AI_PROVIDER_FAILURE');
+              if (errorJson?.message || errorJson?.error) {
+                if (!suppressToast) {
+                  toast.error(errorJson.message ?? 'Asystent AI jest chwilowo niedostępny. Spróbuj ponownie.');
+                }
+                throw new Error(
+                  `AI_PROVIDER_FAILURE:${errorJson.error ?? 'provider_unavailable'}:${errorJson.message ?? ''}`
+                );
               }
             } catch (parseError) {
-              if (parseError instanceof Error && parseError.message === 'AI_PROVIDER_FAILURE') {
+              if (parseError instanceof Error && parseError.message.startsWith('AI_PROVIDER_FAILURE')) {
                 throw parseError;
               }
             }
@@ -343,28 +358,22 @@ class AIService {
   // ============================================
 
   /**
-   * Generuje obraz ćwiczenia za pomocą AI (Gemini 2.5 Flash Image)
-   * @param exerciseName - nazwa ćwiczenia
-   * @param exerciseDescription - opcjonalny opis techniki
-   * @param exerciseType - opcjonalny typ ćwiczenia
-   * @param style - styl obrazu: illustration (domyślny), diagram, photo
-   * @returns wygenerowany obraz jako File lub null w przypadku błędu
-   */
-  /**
-   * Generuje obraz dla ćwiczenia używając AI
-   * Może zwrócić:
-   * - obraz jako File + response
-   * - tylko tekst (isTextOnly: true) gdy model nie wygenerował obrazu
-   * - null w przypadku błędu
+   * Generuje obraz ćwiczenia przez OpenRouter Image API (backend cascade).
+   * Zwraca dyskryminowany union — nigdy null / isTextOnly.
    */
   async generateExerciseImage(
     exerciseName: string,
     exerciseDescription?: string,
     exerciseType?: 'reps' | 'time',
-    style: ImageStyle = 'illustration'
-  ): Promise<{ file?: File; response: ExerciseImageResponse } | null> {
+    style: ImageStyle = 'illustration',
+    options?: { signal?: AbortSignal }
+  ): Promise<GenerateExerciseImageResult> {
     if (!exerciseName.trim() || exerciseName.length < 2) {
-      return null;
+      return {
+        status: 'error',
+        code: 'missing_name',
+        message: 'Wpisz nazwę ćwiczenia (min. 2 znaki), aby wygenerować obraz.',
+      };
     }
 
     try {
@@ -375,50 +384,61 @@ class AIService {
         style,
       };
 
-      const response = await this.request<ExerciseImageResponse>('generate-image', request);
+      const response = await this.request<ExerciseImageResponse>('generate-image', request, {
+        signal: options?.signal,
+        suppressErrorToast: true,
+      });
 
-      // Przypadek 1: Model zwrócił tekst zamiast obrazu
-      if (response.success && response.isTextOnly && response.textDescription) {
-        if (isDev) {
-          console.info('[AIService] generateExerciseImage returned text description');
-        }
-        return { response }; // Zwracamy response bez pliku
-      }
-
-      // Przypadek 2: Błąd
       if (!response.success || !response.imageBase64) {
-        if (isDev) {
-          console.error('[AIService] generateExerciseImage failed:', response.errorMessage);
-        }
-        return null;
+        const code = (response.errorCode as ExerciseImageErrorCode | undefined) ?? 'invalid_output';
+        return {
+          status: 'error',
+          code,
+          message: response.errorMessage ?? 'Nie udało się wygenerować obrazu. Spróbuj ponownie.',
+        };
       }
 
-      // Przypadek 3: Sukces - mamy obraz
-      // Konwertuj base64 na File
-      const byteCharacters = atob(response.imageBase64);
-      const byteNumbers = new Array(byteCharacters.length);
-      for (let i = 0; i < byteCharacters.length; i++) {
-        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      const decoded = decodeGeneratedImage(response.imageBase64, response.contentType, exerciseName);
+      if (!decoded.ok) {
+        return {
+          status: 'error',
+          code: 'invalid_output',
+          message: 'Nie udało się wygenerować obrazu. Spróbuj ponownie.',
+        };
       }
-      const byteArray = new Uint8Array(byteNumbers);
 
-      // Określ rozszerzenie pliku na podstawie content type
-      const extension = response.contentType.includes('png')
-        ? 'png'
-        : response.contentType.includes('jpeg')
-          ? 'jpg'
-          : 'png';
-
-      const blob = new Blob([byteArray], { type: response.contentType });
-      const fileName = `ai-generated-${exerciseName.toLowerCase().replace(/\s+/g, '-')}.${extension}`;
-      const file = new File([blob], fileName, { type: response.contentType });
-
-      return { file, response };
+      return { status: 'ok', file: decoded.file, response };
     } catch (error) {
+      if (error instanceof Error && (error.name === 'AbortError' || error.message.includes('aborted'))) {
+        return { status: 'error', code: 'cancelled', message: 'Generowanie obrazu zostało anulowane.' };
+      }
+
+      if (error instanceof Error) {
+        if (error.message.startsWith('AI_TEMPORARILY_UNAVAILABLE')) {
+          return {
+            status: 'error',
+            code: 'insufficient_credits',
+            message: 'Funkcja chwilowo niedostępna. Spróbuj ponownie za chwilę.',
+          };
+        }
+        if (error.message.startsWith('AI_PROVIDER_FAILURE')) {
+          const parts = error.message.split(':');
+          const code = (parts[1] as ExerciseImageErrorCode | undefined) ?? 'provider_unavailable';
+          const message =
+            parts.slice(2).join(':').trim() || 'Asystent AI jest chwilowo niedostępny. Spróbuj ponownie.';
+          return { status: 'error', code, message };
+        }
+      }
+
       if (isDev) {
         console.error('[AIService] generateExerciseImage error:', error);
       }
-      return null;
+
+      return {
+        status: 'error',
+        code: 'unknown',
+        message: 'Nie udało się wygenerować obrazu. Spróbuj ponownie.',
+      };
     }
   }
 
@@ -585,5 +605,7 @@ export type {
   PatientContext,
   ClinicalNoteAction,
   ExerciseImageResponse,
+  GenerateExerciseImageResult,
+  ExerciseImageErrorCode,
   ImageStyle,
 } from '@/types/ai.types';

@@ -1,13 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useMutation } from '@apollo/client/react';
 import { useRouter } from 'next/navigation';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
 import { toast } from 'sonner';
-import { Loader2, Sparkles } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 
 import {
   Dialog,
@@ -17,9 +14,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { useExerciseBuilder } from '@/contexts/ExerciseBuilderContext';
 import { useOrganization } from '@/contexts/OrganizationContext';
@@ -28,16 +22,9 @@ import {
   ADD_EXERCISE_TO_EXERCISE_SET_MUTATION,
 } from '@/graphql/mutations/exercises.mutations';
 import { aiService } from '@/services/aiService';
-// ========================================
-// Form Schema
-// ========================================
-
-const createSetFormSchema = z.object({
-  name: z.string().min(2, 'Nazwa musi mieć minimum 2 znaki'),
-  description: z.string().optional(),
-});
-
-type CreateSetFormValues = z.infer<typeof createSetFormSchema>;
+import { submitCreateTemplateSet } from '@/features/exercise-sets/utils/createSetSubmit';
+import { SetNameField } from '@/features/exercise-sets/components/SetNameField';
+import { SetDescriptionCollapsible } from '@/features/exercise-sets/components/SetDescriptionCollapsible';
 
 interface CreateExerciseSetResponse {
   createExerciseSet: {
@@ -45,10 +32,6 @@ interface CreateExerciseSetResponse {
     name: string;
   };
 }
-
-// ========================================
-// Component
-// ========================================
 
 interface CreateSetDialogProps {
   open: boolean;
@@ -61,19 +44,36 @@ export function CreateSetDialog({ open, onOpenChange }: CreateSetDialogProps) {
   const { selectedExercises, clearBuilder, exerciseCount } = useExerciseBuilder();
   const [isCreating, setIsCreating] = useState(false);
   const [isGeneratingName, setIsGeneratingName] = useState(false);
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
+  const [showDescription, setShowDescription] = useState(false);
+  const [showNameError, setShowNameError] = useState(false);
+  const nameInputRef = useRef<HTMLInputElement | null>(null);
 
   const organizationId = currentOrganization?.organizationId;
 
-  const form = useForm<CreateSetFormValues>({
-    resolver: zodResolver(createSetFormSchema),
-    defaultValues: {
-      name: '',
-      description: '',
-    },
-  });
-
   const [createExerciseSet] = useMutation<CreateExerciseSetResponse>(CREATE_EXERCISE_SET_MUTATION);
   const [addExerciseToSet] = useMutation(ADD_EXERCISE_TO_EXERCISE_SET_MUTATION);
+
+  const resetForm = useCallback(() => {
+    setName('');
+    setDescription('');
+    setShowDescription(false);
+    setShowNameError(false);
+    setIsGeneratingName(false);
+  }, []);
+
+  useEffect(() => {
+    if (open) {
+      resetForm();
+    }
+  }, [open, resetForm]);
+
+  const focusNameInput = useCallback(() => {
+    if (!nameInputRef.current) return;
+    nameInputRef.current.focus();
+    nameInputRef.current.scrollIntoView?.({ block: 'center', inline: 'nearest' });
+  }, []);
 
   const handleGenerateAiName = async () => {
     if (isCreating || isGeneratingName) {
@@ -91,7 +91,7 @@ export function CreateSetDialog({ open, onOpenChange }: CreateSetDialogProps) {
 
     setIsGeneratingName(true);
     try {
-      const response = await aiService.suggestSetName(form.getValues('name'), exerciseNames);
+      const response = await aiService.suggestSetName(name, exerciseNames);
       const suggestedName = response?.suggestedName?.trim();
 
       if (!suggestedName) {
@@ -99,10 +99,10 @@ export function CreateSetDialog({ open, onOpenChange }: CreateSetDialogProps) {
         return;
       }
 
-      form.setValue('name', suggestedName, {
-        shouldDirty: true,
-        shouldValidate: true,
-      });
+      setName(suggestedName);
+      if (suggestedName.trim().length >= 2) {
+        setShowNameError(false);
+      }
       toast.success('Wygenerowano nazwę zestawu');
     } catch (error) {
       console.error('Error generating set name:', error);
@@ -112,7 +112,7 @@ export function CreateSetDialog({ open, onOpenChange }: CreateSetDialogProps) {
     }
   };
 
-  const handleSubmit = async (values: CreateSetFormValues) => {
+  const handleSubmit = async () => {
     if (!organizationId) {
       toast.error('Brak organizacji');
       return;
@@ -123,69 +123,57 @@ export function CreateSetDialog({ open, onOpenChange }: CreateSetDialogProps) {
       return;
     }
 
+    if (name.trim().length < 2) {
+      setShowNameError(true);
+      focusNameInput();
+      return;
+    }
+
     setIsCreating(true);
 
     try {
-      // 1. Create the exercise set
-      const { data: setData } = await createExerciseSet({
-        variables: {
+      const sanitizedName = name.trim();
+      const exerciseSetId = await submitCreateTemplateSet(
+        {
+          createSet: (options) => createExerciseSet(options),
+          addExercise: (options) => addExerciseToSet(options),
+        },
+        {
           organizationId,
-          name: values.name,
-          description: values.description || null,
-          kind: 'TEMPLATE',
-          templateSource: 'ORGANIZATION_PRIVATE',
-          isTemplate: true,
+          name: sanitizedName,
+          description,
+        },
+        selectedExercises.map((exercise) => ({
+          exerciseId: exercise.id,
+          sets: exercise.sets,
+          reps: exercise.reps,
+          duration: exercise.duration,
+          restSets: exercise.restSets,
+          restReps: exercise.restReps,
+          preparationTime: exercise.preparationTime,
+          executionTime: exercise.executionTime,
+          notes: exercise.notes,
+          customName: exercise.customName,
+          customDescription: exercise.customDescription,
+          tempo: exercise.tempo,
+          loadWeightKg: exercise.loadWeightKg,
+          loadValue: exercise.loadValue,
+        }))
+      );
+
+      toast.success('Zestaw został utworzony', {
+        description: `${exerciseCount} ${exerciseCount === 1 ? 'ćwiczenie' : exerciseCount < 5 ? 'ćwiczenia' : 'ćwiczeń'} w zestawie`,
+        action: {
+          label: 'Zobacz zestaw',
+          onClick: () => {
+            router.push(`/exercise-sets/${exerciseSetId}`);
+          },
         },
       });
 
-      const exerciseSetId = setData?.createExerciseSet?.id;
-      if (!exerciseSetId) {
-        throw new Error('Nie udało się utworzyć zestawu');
-      }
-
-      // 2. Add all exercises to the set with full parameter payload
-      let order = 0;
-      for (const exercise of selectedExercises) {
-        await addExerciseToSet({
-          variables: {
-            exerciseId: exercise.id,
-            exerciseSetId,
-            order: order++,
-            sets: exercise.sets || null,
-            reps: exercise.reps || null,
-            duration: exercise.duration || null,
-            restSets: exercise.restSets || null,
-            restReps: exercise.restReps || null,
-            preparationTime: exercise.preparationTime || null,
-            executionTime: exercise.executionTime || null,
-            notes: exercise.notes || null,
-            customName: exercise.customName || null,
-            customDescription: exercise.customDescription || null,
-            tempo: exercise.tempo || null,
-            loadType: exercise.loadType || null,
-            loadValue: exercise.loadValue || null,
-            loadUnit: exercise.loadUnit || null,
-            loadText: exercise.loadText || null,
-          },
-        });
-      }
-
-      // 3. Success!
-      toast.success('Zestaw został utworzony', {
-        description: `${exerciseCount} ${exerciseCount === 1 ? 'ćwiczenie' : exerciseCount < 5 ? 'ćwiczenia' : 'ćwiczeń'} w zestawie`,
-      });
-
-      // Clear the builder
       clearBuilder();
-
-      // Reset form
-      form.reset();
-
-      // Close dialog
+      resetForm();
       onOpenChange(false);
-
-      // Navigate to the new set
-      router.push(`/exercise-sets/${exerciseSetId}`);
     } catch (error) {
       console.error('Error creating exercise set:', error);
       toast.error('Nie udało się utworzyć zestawu', {
@@ -198,112 +186,94 @@ export function CreateSetDialog({ open, onOpenChange }: CreateSetDialogProps) {
 
   const handleClose = () => {
     if (!isCreating) {
-      form.reset();
+      resetForm();
       onOpenChange(false);
     }
   };
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent data-testid="create-set-dialog">
+      <DialogContent
+        data-testid="create-set-dialog"
+        onKeyDown={(event) => {
+          if (event.key !== 'Enter') return;
+          if (!event.metaKey && !event.ctrlKey) return;
+          event.preventDefault();
+          if (isCreating) return;
+          void handleSubmit();
+        }}
+      >
         <DialogHeader>
           <DialogTitle>Utwórz nowy zestaw</DialogTitle>
           <DialogDescription>
             Zestaw będzie zawierał {exerciseCount}{' '}
             {exerciseCount === 1 ? 'ćwiczenie' : exerciseCount < 5 ? 'ćwiczenia' : 'ćwiczeń'}. Nadaj mu nazwę i
-            opcjonalnie dodaj opis.
+            dodaj opis.
           </DialogDescription>
         </DialogHeader>
 
-        <Form {...form}>
-          <form
-            onSubmit={form.handleSubmit(handleSubmit)}
-            onKeyDown={(event) => {
-              if (event.key !== 'Enter') return;
-              if (!event.metaKey && !event.ctrlKey) return;
-              event.preventDefault();
-              if (isCreating) return;
-              void form.handleSubmit(handleSubmit)();
-            }}
-            className="space-y-4"
+        <div className="space-y-4">
+          <div>
+            <span className="mb-1.5 block text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">
+              Nazwa zestawu
+            </span>
+            <SetNameField
+              value={name}
+              onChange={setName}
+              onGenerateAiName={() => {
+                void handleGenerateAiName();
+              }}
+              isGeneratingName={isGeneratingName}
+              showError={showNameError}
+              onClearError={() => setShowNameError(false)}
+              disabled={isCreating}
+              inputRef={nameInputRef}
+              autoFocus
+              testIdPrefix="create-set"
+              aiButtonTestId="create-set-ai-name-btn"
+              placeholder="np. Rehabilitacja kolana"
+            />
+          </div>
+
+          <SetDescriptionCollapsible
+            open={showDescription}
+            onOpenChange={setShowDescription}
+            value={description}
+            onChange={setDescription}
+            disabled={isCreating}
+            testIdPrefix="create-set-description"
+            placeholder="Krótki opis zestawu..."
+          />
+        </div>
+
+        <DialogFooter className="flex items-center justify-between sm:justify-between">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handleClose}
+            disabled={isCreating}
+            data-testid="create-set-cancel-btn"
           >
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Nazwa zestawu *</FormLabel>
-                  <FormControl>
-                    <div className="flex items-center gap-2">
-                      <Input
-                        {...field}
-                        placeholder="np. Rehabilitacja kolana"
-                        disabled={isCreating || isGeneratingName}
-                        data-testid="create-set-name-input"
-                        className="flex-1"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => {
-                          void handleGenerateAiName();
-                        }}
-                        disabled={isCreating || isGeneratingName}
-                        title="Wygeneruj nazwę AI"
-                        data-testid="create-set-ai-name-btn"
-                        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:bg-surface-light hover:text-foreground disabled:cursor-not-allowed disabled:opacity-60"
-                      >
-                        {isGeneratingName ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
-                      </button>
-                    </div>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Opis (opcjonalnie)</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      {...field}
-                      placeholder="Krótki opis zestawu..."
-                      rows={3}
-                      disabled={isCreating}
-                      data-testid="create-set-description-input"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleClose}
-                disabled={isCreating}
-                data-testid="create-set-cancel-btn"
-              >
-                Anuluj
-              </Button>
-              <Button type="submit" disabled={isCreating} data-testid="create-set-submit-btn">
-                {isCreating ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Tworzenie...
-                  </>
-                ) : (
-                  'Utwórz zestaw'
-                )}
-              </Button>
-            </DialogFooter>
-          </form>
-        </Form>
+            Anuluj
+          </Button>
+          <Button
+            type="button"
+            onClick={() => {
+              void handleSubmit();
+            }}
+            disabled={isCreating}
+            data-testid="create-set-submit-btn"
+          >
+            {isCreating ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Tworzenie...
+              </>
+            ) : (
+              'Utwórz zestaw'
+            )}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

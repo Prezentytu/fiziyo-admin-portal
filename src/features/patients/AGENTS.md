@@ -35,6 +35,12 @@ Ze strony pacjenta: przycisk "Przypisz zestaw" otwiera wizard z predefiniowanym 
   6. `assigned/active/in_progress` -> `Aktywny`
 - Sygnał Premium na karcie jest pomocniczy (`Brak Premium`) i nie zastępuje głównego statusu planu.
 
+## Parametry ćwiczenia (override)
+
+- Edycja / dodawanie ćwiczenia do planu: `EditExerciseOverrideDialog`, `AddExerciseToPatientDialog` — UI parametrów wyłącznie przez `ExerciseParametersFields` (`surface="patientOverride"`), nie lokalne siatki `+/-`.
+- Write path: `exercisePersonalizationWriter` / `buildOverrideDelta` (bez zmian przy refaktorze UI).
+- Spec unifikacji UI: `.ai/specs/SPEC-022-2026-07-28-unified-exercise-parameters.md`
+
 ## Komponenty
 
 - Lista: `app/(dashboard)/patients/`

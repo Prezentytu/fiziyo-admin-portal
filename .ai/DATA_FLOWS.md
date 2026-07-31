@@ -226,15 +226,15 @@ Panel / Mobile                     Backend (.NET)              OpenAI/OpenRouter
 
 **Inne endpointy AI:**
 
-| Endpoint                   | Opis                               | Koszt   |
-| -------------------------- | ---------------------------------- | ------- |
-| `/api/ai/exercise-suggest` | Sugestie parametrów z nazwy        | kredyty |
-| `/api/ai/set-generate`     | Generowanie zestawu z opisu        | kredyty |
-| `/api/ai/clinical-notes`   | Asystent notatek klinicznych       | kredyty |
-| `/api/ai/voice-parse`      | Głos → struktura ćwiczenia         | kredyty |
-| `/api/ai/generate-image`   | Obraz ćwiczenia (Gemini 2.5 Flash) | kredyty |
-| `/api/ai/verification/*`   | Sugestie tagów, walidacja          | kredyty |
-| `/api/ai/document-analyze` | PDF/Excel → ćwiczenia              | kredyty |
+| Endpoint                   | Opis                                                                                                     | Koszt                            |
+| -------------------------- | -------------------------------------------------------------------------------------------------------- | -------------------------------- |
+| `/api/ai/exercise-suggest` | Sugestie parametrów z nazwy                                                                              | kredyty                          |
+| `/api/ai/set-generate`     | Generowanie zestawu z opisu                                                                              | kredyty                          |
+| `/api/ai/clinical-notes`   | Asystent notatek klinicznych                                                                             | kredyty                          |
+| `/api/ai/voice-parse`      | Głos → struktura ćwiczenia                                                                               | kredyty                          |
+| `/api/ai/generate-image`   | Obraz ćwiczenia (OpenRouter `/images`, kaskada: gemini-3.1-flash-image → seedream-4.5 → flux.2-klein-4b) | kredyty (5, refund przy porażce) |
+| `/api/ai/verification/*`   | Sugestie tagów, walidacja                                                                                | kredyty                          |
+| `/api/ai/document-analyze` | PDF/Excel → ćwiczenia                                                                                    | kredyty                          |
 
 **Pliki:**
 

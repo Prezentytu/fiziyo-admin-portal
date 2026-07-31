@@ -16,6 +16,8 @@ interface ExerciseAudioCuesProps {
   onAudioCueChange?: (value: string) => void;
   setPath?: (path: string, value: unknown) => void;
   persist?: () => Promise<void>;
+  /** When false, hide core TTS audioCue input (scalar lives in parameter form). Default true. */
+  showTtsCue?: boolean;
 }
 
 function CueRow({ text, index }: { text: string; index: number }) {
@@ -40,11 +42,12 @@ export function ExerciseAudioCues({
   onAudioCueChange,
   setPath,
   persist,
+  showTtsCue = true,
 }: Readonly<ExerciseAudioCuesProps>) {
   const cues = enrichmentData?.patient?.cues ?? [];
   const hasAudioCue = Boolean(audioCue?.trim());
   const hasCues = cues.some((cue) => cue.trim());
-  const showTtsBlock = editable || hasAudioCue;
+  const showTtsBlock = showTtsCue && (editable || hasAudioCue);
 
   return (
     <div

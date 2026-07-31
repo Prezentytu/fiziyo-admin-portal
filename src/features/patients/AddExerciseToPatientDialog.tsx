@@ -4,31 +4,84 @@ import * as React from 'react';
 import { useState, useMemo, useCallback } from 'react';
 import Image from 'next/image';
 import { useQuery, useMutation } from '@apollo/client/react';
-import { Search, Plus, Minus, Loader2, Dumbbell, Clock, X } from 'lucide-react';
+import { Search, Loader2, Dumbbell, X } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ImagePlaceholder } from '@/components/shared/ImagePlaceholder';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
+import {
+  ENABLE_EXTENDED_PATIENT_OVERRIDE_FIELDS,
+  ENABLE_FULL_PATIENT_PERSONALIZATION,
+  ExerciseParametersFields,
+  buildMappingOverridesJson,
+  buildOverrideDelta,
+  mergeOverrideMap,
+  type ExerciseFieldKey,
+  type ExerciseParameterValues,
+  type MappingOnlyFieldKey,
+  type ParameterTestIdKind,
+} from '@/components/shared/exercise';
 import { cn } from '@/lib/utils';
 import { getMediaUrl } from '@/utils/mediaUrl';
-import { useNumericDraft } from '@/hooks/useNumericDraft';
+import { buildExerciseLoadMutationVars } from '@/utils/exerciseLoadMutation';
 
 import { GET_AVAILABLE_EXERCISES_QUERY } from '@/graphql/queries/exercises.queries';
-import { UPDATE_PATIENT_EXERCISE_OVERRIDES_MUTATION } from '@/graphql/mutations/exercises.mutations';
+import {
+  ADD_EXERCISE_TO_EXERCISE_SET_MUTATION,
+  UPDATE_PATIENT_EXERCISE_OVERRIDES_MUTATION,
+} from '@/graphql/mutations/exercises.mutations';
 import { GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY } from '@/graphql/queries/patientAssignments.queries';
-import type { PatientAssignment, ExerciseOverride } from './PatientAssignmentCard';
+import type { PatientAssignment } from './PatientAssignmentCard';
+
+const ADD_FIELD_TESTID_MAP: Record<
+  ExerciseFieldKey | MappingOnlyFieldKey,
+  { input: string; info: string }
+> = {
+  sets: { input: 'add-exercise-sets-input', info: 'add-exercise-sets-info' },
+  reps: { input: 'add-exercise-reps-input', info: 'add-exercise-reps-info' },
+  executionTime: { input: 'add-exercise-execution-time-input', info: 'add-exercise-execution-time-info' },
+  restSets: { input: 'add-exercise-rest-sets-input', info: 'add-exercise-rest-sets-info' },
+  restReps: { input: 'add-exercise-rest-reps-input', info: 'add-exercise-rest-reps-info' },
+  preparationTime: { input: 'add-exercise-prep-time-input', info: 'add-exercise-prep-time-info' },
+  duration: { input: 'add-exercise-duration-input', info: 'add-exercise-duration-info' },
+  load: { input: 'add-exercise-load-kg-input', info: 'add-exercise-load-kg-info' },
+  tempo: { input: 'add-exercise-tempo-input', info: 'add-exercise-tempo-info' },
+  side: { input: 'add-exercise-side-select', info: 'add-exercise-side-info' },
+  rangeOfMotion: { input: 'add-exercise-rom-input', info: 'add-exercise-rom-info' },
+  difficultyLevel: { input: 'add-exercise-difficulty-select', info: 'add-exercise-difficulty-info' },
+  patientDescription: {
+    input: 'add-exercise-patient-description-input',
+    info: 'add-exercise-patient-description-info',
+  },
+  clinicalDescription: {
+    input: 'add-exercise-clinical-description-input',
+    info: 'add-exercise-clinical-description-info',
+  },
+  audioCue: { input: 'add-exercise-audio-cue-input', info: 'add-exercise-audio-cue-info' },
+  notes: { input: 'add-exercise-notes-input', info: 'add-exercise-notes-info' },
+  customName: { input: 'add-exercise-custom-name-input', info: 'add-exercise-custom-name-info' },
+  customDescription: {
+    input: 'add-exercise-custom-description-input',
+    info: 'add-exercise-custom-description-info',
+  },
+};
 
 // Types
 interface Exercise {
   id: string;
   name: string;
   description?: string;
+  patientDescription?: string;
+  clinicalDescription?: string;
+  audioCue?: string;
+  rangeOfMotion?: string;
+  difficultyLevel?: string;
   type?: string;
+  side?: string;
   exerciseSide?: string;
   imageUrl?: string;
   images?: string[];
@@ -45,11 +98,6 @@ interface AddExerciseToPatientDialogProps {
   organizationId: string;
   onSuccess?: () => void;
 }
-
-// Generate unique ID for patient-added exercises
-const generatePatientExerciseId = () => {
-  return `patient-added-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
-};
 
 export function AddExerciseToPatientDialog({
   open,
@@ -134,38 +182,108 @@ function AddExerciseToPatientDialogContent({
   const [selectedExercise, setSelectedExercise] = useState<Exercise | null>(null);
   const [sets, setSets] = useState(3);
   const [reps, setReps] = useState(10);
-  const [duration, setDuration] = useState(30);
+  const [duration, setDuration] = useState<number | undefined>(30);
+  const [executionTime, setExecutionTime] = useState<number | undefined>(undefined);
+  const [restSets, setRestSets] = useState<number | undefined>(60);
+  const [restReps, setRestReps] = useState<number | undefined>(undefined);
+  const [preparationTime, setPreparationTime] = useState<number | undefined>(undefined);
+  const [tempo, setTempo] = useState('');
+  const [loadWeightKg, setLoadWeightKg] = useState<number | undefined>(undefined);
+  const [notes, setNotes] = useState('');
+  const [exerciseSide, setExerciseSide] = useState('both');
+  const [rangeOfMotion, setRangeOfMotion] = useState('');
+  const [customName, setCustomName] = useState('');
+  const [customDescription, setCustomDescription] = useState('');
+  const [difficultyLevel, setDifficultyLevel] = useState('UNKNOWN');
+  const [patientDescription, setPatientDescription] = useState('');
+  const [clinicalDescription, setClinicalDescription] = useState('');
+  const [audioCue, setAudioCue] = useState('');
 
-  const setsField = useNumericDraft({
-    value: sets,
-    onCommit: setSets,
-    min: 1,
-    parseMode: 'int',
-  });
+  const parameterValues = useMemo<ExerciseParameterValues>(
+    () => ({
+      sets,
+      reps,
+      executionTime: executionTime ?? null,
+      duration: duration ?? null,
+      restSets: restSets ?? null,
+      restReps: restReps ?? null,
+      preparationTime: preparationTime ?? null,
+      loadKg: loadWeightKg ?? null,
+      tempo,
+      rangeOfMotion,
+      side: exerciseSide,
+      difficultyLevel,
+      patientDescription,
+      clinicalDescription,
+      audioCue,
+      notes,
+      customName,
+      customDescription,
+    }),
+    [
+      sets,
+      reps,
+      executionTime,
+      duration,
+      restSets,
+      restReps,
+      preparationTime,
+      loadWeightKg,
+      tempo,
+      rangeOfMotion,
+      exerciseSide,
+      difficultyLevel,
+      patientDescription,
+      clinicalDescription,
+      audioCue,
+      notes,
+      customName,
+      customDescription,
+    ]
+  );
 
-  const repsField = useNumericDraft({
-    value: reps,
-    onCommit: setReps,
-    min: 1,
-    parseMode: 'int',
-  });
+  const handleParametersChange = useCallback((patch: Partial<ExerciseParameterValues>) => {
+    if ('sets' in patch && patch.sets != null) setSets(patch.sets);
+    if ('reps' in patch && patch.reps != null) setReps(patch.reps);
+    if ('executionTime' in patch) setExecutionTime(patch.executionTime ?? undefined);
+    if ('duration' in patch) setDuration(patch.duration ?? undefined);
+    if ('restSets' in patch) setRestSets(patch.restSets ?? undefined);
+    if ('restReps' in patch) setRestReps(patch.restReps ?? undefined);
+    if ('preparationTime' in patch) setPreparationTime(patch.preparationTime ?? undefined);
+    if ('loadKg' in patch) setLoadWeightKg(patch.loadKg ?? undefined);
+    if ('tempo' in patch) setTempo(patch.tempo ?? '');
+    if ('rangeOfMotion' in patch) setRangeOfMotion(patch.rangeOfMotion ?? '');
+    if ('side' in patch && patch.side != null) setExerciseSide(patch.side);
+    if ('difficultyLevel' in patch && patch.difficultyLevel != null) {
+      setDifficultyLevel(patch.difficultyLevel);
+    }
+    if ('patientDescription' in patch) setPatientDescription(patch.patientDescription ?? '');
+    if ('clinicalDescription' in patch) setClinicalDescription(patch.clinicalDescription ?? '');
+    if ('audioCue' in patch) setAudioCue(patch.audioCue ?? '');
+    if ('notes' in patch) setNotes(patch.notes ?? '');
+    if ('customName' in patch) setCustomName(patch.customName ?? '');
+    if ('customDescription' in patch) setCustomDescription(patch.customDescription ?? '');
+  }, []);
 
-  const durationField = useNumericDraft({
-    value: duration,
-    onCommit: setDuration,
-    min: 5,
-    step: 5,
-    parseMode: 'int',
-  });
+  const addTestIdFor = useCallback(
+    (key: ExerciseFieldKey | MappingOnlyFieldKey, kind: ParameterTestIdKind) => {
+      const mapped = ADD_FIELD_TESTID_MAP[key];
+      return kind === 'info' ? mapped.info : mapped.input;
+    },
+    []
+  );
 
-  // Get exercises from organization
+    // Get exercises from organization
   const { data: exercisesData, loading: loadingExercises } = useQuery(GET_AVAILABLE_EXERCISES_QUERY, {
     variables: { organizationId },
     skip: !organizationId,
   });
 
-  // Mutation
-  const [updateOverrides, { loading: saving }] = useMutation(UPDATE_PATIENT_EXERCISE_OVERRIDES_MUTATION);
+  const [addExerciseToSet, { loading: adding }] = useMutation(ADD_EXERCISE_TO_EXERCISE_SET_MUTATION);
+  const [updateOverrides, { loading: updatingOverrides }] = useMutation(
+    UPDATE_PATIENT_EXERCISE_OVERRIDES_MUTATION
+  );
+  const saving = adding || updatingOverrides;
 
   // Get existing exercise IDs in the assignment to filter them out
   const existingExerciseIds = useMemo(() => {
@@ -204,52 +322,130 @@ function AddExerciseToPatientDialogContent({
     setSets(exercise.sets || 3);
     setReps(exercise.reps || 10);
     setDuration(exercise.duration || 30);
+    setExecutionTime(undefined);
+    setRestSets(60);
+    setRestReps(undefined);
+    setPreparationTime(undefined);
+    setTempo('');
+    setLoadWeightKg(undefined);
+    setNotes('');
+    setExerciseSide(
+      (exercise.side ?? exercise.exerciseSide ?? 'both').toString().toLowerCase()
+    );
+    setRangeOfMotion(exercise.rangeOfMotion ?? '');
+    setCustomName('');
+    setCustomDescription('');
+    setDifficultyLevel(exercise.difficultyLevel ?? 'UNKNOWN');
+    setPatientDescription(exercise.patientDescription ?? exercise.description ?? '');
+    setClinicalDescription(exercise.clinicalDescription ?? '');
+    setAudioCue(exercise.audioCue ?? '');
   };
 
-  // Handle save
+  // Handle save — real mapping on PATIENT_PLAN (not synthetic isPatientAdded JSON).
   const handleSave = async () => {
     if (!selectedExercise) return;
+    const exerciseSetId = assignment.exerciseSetId ?? assignment.exerciseSet?.id;
+    if (!exerciseSetId) {
+      toast.error('Brak planu pacjenta do dodania ćwiczenia');
+      return;
+    }
 
     try {
-      // Parse existing overrides
-      let existingOverrides: Record<string, ExerciseOverride & { exerciseId?: string; isPatientAdded?: boolean }> = {};
-      if (assignment.exerciseOverrides) {
-        try {
-          existingOverrides = JSON.parse(assignment.exerciseOverrides);
-        } catch {
-          existingOverrides = {};
+      const nextOrder = (assignment.exerciseSet?.exerciseMappings?.length ?? 0) + 1;
+      const overridesJson = buildMappingOverridesJson(
+        {
+          side: selectedExercise.side ?? selectedExercise.exerciseSide,
+          exerciseSide: selectedExercise.exerciseSide ?? selectedExercise.side,
+          rangeOfMotion: selectedExercise.rangeOfMotion,
+          difficultyLevel: selectedExercise.difficultyLevel,
+          patientDescription: selectedExercise.patientDescription ?? selectedExercise.description,
+          clinicalDescription: selectedExercise.clinicalDescription,
+          audioCue: selectedExercise.audioCue,
+        },
+        {
+          side: exerciseSide,
+          rangeOfMotion: ENABLE_EXTENDED_PATIENT_OVERRIDE_FIELDS ? rangeOfMotion : undefined,
+          difficultyLevel: ENABLE_FULL_PATIENT_PERSONALIZATION ? difficultyLevel : undefined,
+          patientDescription: ENABLE_FULL_PATIENT_PERSONALIZATION ? patientDescription : undefined,
+          clinicalDescription: ENABLE_FULL_PATIENT_PERSONALIZATION
+            ? clinicalDescription
+            : undefined,
+          audioCue: ENABLE_FULL_PATIENT_PERSONALIZATION ? audioCue : undefined,
+        }
+      );
+
+      const refetchAssignments = [
+        {
+          query: GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY,
+          variables: { userId: patientId },
+        },
+      ];
+
+      const addResult = await addExerciseToSet({
+        variables: {
+          exerciseId: selectedExercise.id,
+          exerciseSetId,
+          order: nextOrder,
+          sets,
+          reps,
+          duration: duration ?? null,
+          restSets: restSets ?? null,
+          restReps: restReps ?? null,
+          preparationTime: ENABLE_EXTENDED_PATIENT_OVERRIDE_FIELDS
+            ? (preparationTime ?? null)
+            : null,
+          executionTime: executionTime ?? null,
+          notes: notes.trim() || null,
+          customName: customName.trim() || null,
+          customDescription: customDescription.trim() || null,
+          tempo: ENABLE_EXTENDED_PATIENT_OVERRIDE_FIELDS ? tempo.trim() || null : null,
+          ...buildExerciseLoadMutationVars(
+            ENABLE_EXTENDED_PATIENT_OVERRIDE_FIELDS ? loadWeightKg : undefined
+          ),
+          overridesJson: overridesJson ?? '',
+        },
+        refetchQueries: refetchAssignments,
+        awaitRefetchQueries: true,
+      });
+
+      const mappingId = (
+        addResult.data as { addExerciseToExerciseSet?: { id?: string } } | undefined
+      )?.addExerciseToExerciseSet?.id;
+
+      if (mappingId && ENABLE_FULL_PATIENT_PERSONALIZATION) {
+        const clinicalDelta = buildOverrideDelta(
+          {
+            side: selectedExercise.side ?? selectedExercise.exerciseSide,
+            exerciseSide: selectedExercise.exerciseSide ?? selectedExercise.side,
+            difficultyLevel: selectedExercise.difficultyLevel,
+            patientDescription: selectedExercise.patientDescription ?? selectedExercise.description,
+            clinicalDescription: selectedExercise.clinicalDescription,
+            audioCue: selectedExercise.audioCue,
+          },
+          {
+            side: exerciseSide,
+            difficultyLevel,
+            patientDescription,
+            clinicalDescription,
+            audioCue,
+          }
+        );
+        if (Object.keys(clinicalDelta).length > 0) {
+          const exerciseOverrides = mergeOverrideMap(
+            assignment.exerciseOverrides,
+            mappingId,
+            clinicalDelta
+          );
+          await updateOverrides({
+            variables: {
+              assignmentId: assignment.id,
+              exerciseOverrides,
+            },
+          });
         }
       }
 
-      // Create new override for patient-added exercise
-      const newId = generatePatientExerciseId();
-      const newOverride = {
-        exerciseId: selectedExercise.id,
-        sets,
-        reps: selectedExercise.type === 'reps' ? reps : undefined,
-        duration: selectedExercise.type === 'time' ? duration : undefined,
-        isPatientAdded: true,
-      };
-
-      const updatedOverrides = {
-        ...existingOverrides,
-        [newId]: newOverride,
-      };
-
-      await updateOverrides({
-        variables: {
-          assignmentId: assignment.id,
-          exerciseOverrides: JSON.stringify(updatedOverrides),
-        },
-        refetchQueries: [
-          {
-            query: GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY,
-            variables: { userId: patientId },
-          },
-        ],
-      });
-
-      toast.success(`Ćwiczenie "${selectedExercise.name}" zostało dodane do zestawu`);
+      toast.success(`Ćwiczenie "${selectedExercise.name}" zostało dodane do planu`);
       onOpenChange(false);
       onSuccess?.();
     } catch (error) {
@@ -330,129 +526,19 @@ function AddExerciseToPatientDialogContent({
                 </Button>
               </div>
 
-              {/* Parameters */}
-              <div className="space-y-4">
-                <p className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
-                  Parametry dla pacjenta
-                </p>
+              <ExerciseParametersFields
+                surface="patientOverride"
+                values={parameterValues}
+                onChange={handleParametersChange}
+                showContentSection
+                showMappingOnlyFields
+                density="comfortable"
+                advancedDefaultOpen={false}
+                testIdFor={addTestIdFor}
+                structuralTestIdPrefix="add-exercise"
+              />
 
-                <div className="grid grid-cols-2 gap-4">
-                  {/* Sets */}
-                  <div className="space-y-2">
-                    <Label className="text-sm">Serie</Label>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="icon"
-                        className="h-11 w-11 shrink-0"
-                        onClick={setsField.decrement}
-                        disabled={!setsField.canDecrement}
-                      >
-                        <Minus className="h-4 w-4" />
-                      </Button>
-                      <Input
-                        type="number"
-                        value={setsField.draftValue}
-                        onChange={(e) => setsField.setDraftValue(e.target.value)}
-                        onFocus={setsField.handleFocus}
-                        onBlur={setsField.handleBlur}
-                        onKeyDown={setsField.handleKeyDown}
-                        className="h-11 text-center text-lg font-semibold"
-                        data-testid="add-exercise-sets-input"
-                      />
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="icon"
-                        className="h-11 w-11 shrink-0"
-                        onClick={setsField.increment}
-                      >
-                        <Plus className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-
-                  {/* Reps or Duration based on type */}
-                  {selectedExercise.type === 'time' ? (
-                    <div className="space-y-2">
-                      <Label className="text-sm flex items-center gap-2">
-                        <Clock className="h-4 w-4 text-muted-foreground" />
-                        Czas (sekundy)
-                      </Label>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="icon"
-                          className="h-11 w-11 shrink-0"
-                          onClick={durationField.decrement}
-                          disabled={!durationField.canDecrement}
-                        >
-                          <Minus className="h-4 w-4" />
-                        </Button>
-                        <Input
-                          type="number"
-                          value={durationField.draftValue}
-                          onChange={(e) => durationField.setDraftValue(e.target.value)}
-                          onFocus={durationField.handleFocus}
-                          onBlur={durationField.handleBlur}
-                          onKeyDown={durationField.handleKeyDown}
-                          className="h-11 text-center text-lg font-semibold"
-                          step={5}
-                          data-testid="add-exercise-duration-input"
-                        />
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="icon"
-                          className="h-11 w-11 shrink-0"
-                          onClick={durationField.increment}
-                        >
-                          <Plus className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      <Label className="text-sm">Powtórzenia</Label>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="icon"
-                          className="h-11 w-11 shrink-0"
-                          onClick={repsField.decrement}
-                          disabled={!repsField.canDecrement}
-                        >
-                          <Minus className="h-4 w-4" />
-                        </Button>
-                        <Input
-                          type="number"
-                          value={repsField.draftValue}
-                          onChange={(e) => repsField.setDraftValue(e.target.value)}
-                          onFocus={repsField.handleFocus}
-                          onBlur={repsField.handleBlur}
-                          onKeyDown={repsField.handleKeyDown}
-                          className="h-11 text-center text-lg font-semibold"
-                          data-testid="add-exercise-reps-input"
-                        />
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="icon"
-                          className="h-11 w-11 shrink-0"
-                          onClick={repsField.increment}
-                        >
-                          <Plus className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Info note */}
+                            {/* Info note */}
               <div className="rounded-xl bg-info/5 border border-info/20 p-3">
                 <p className="text-xs text-muted-foreground">
                   To ćwiczenie zostanie dodane <strong>tylko dla tego pacjenta</strong>. Oryginalny zestaw nie zostanie

@@ -263,7 +263,7 @@ erDiagram
 - **Sugestie ćwiczeń** -- parametry na podstawie nazwy (`/api/ai/exercise-suggest`).
 - **Generowanie zestawów** -- zestaw z opisu (`/api/ai/set-generate`).
 - **Voice parsing** -- głos -> struktura ćwiczeń (`/api/ai/voice-parse`).
-- **Generowanie obrazów** -- ilustracja/diagram/zdjęcie do ćwiczenia (Gemini 2.5 Flash, `/api/ai/generate-image`).
+- **Generowanie obrazów** -- ilustracja/diagram/zdjęcie do ćwiczenia (OpenRouter Image API `/images`, kaskada modeli, `/api/ai/generate-image`).
 - **Weryfikacja ćwiczeń** -- sugestie tagów, przeformulowanie opisu, walidacja (`/api/ai/verification/*`), cache 7 dni.
 - **Analiza dokumentów** -- PDF/Excel/CSV/TXT -> ćwiczenia/zestawy (`/api/ai/document-analyze`).
 

@@ -32,6 +32,8 @@ export const ADMIN_EXERCISE_FRAGMENT = gql`
     audioCue
     tempo
     defaultLoad {
+      loadWeightKg
+      loadSource
       type
       value
       unit

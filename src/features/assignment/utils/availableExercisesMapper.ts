@@ -1,6 +1,8 @@
 import type { Exercise, ExerciseLoad } from '../types';
 
 interface RawLoadShape {
+  loadWeightKg?: number | null;
+  loadSource?: string | null;
   type?: string | null;
   value?: number | null;
   unit?: string | null;
@@ -63,17 +65,20 @@ function normalizeLoadUnit(unit?: string): ExerciseLoad['unit'] | undefined {
 export function buildStructuredLoad(load?: RawLoadShape | null): ExerciseLoad | undefined {
   if (!load) return undefined;
 
-  const value = load.value ?? undefined;
-  const unit = normalizeLoadUnit(load.unit ?? undefined);
+  const loadWeightKg = load.loadWeightKg ?? undefined;
+  const value = load.value ?? loadWeightKg ?? undefined;
+  const unit = normalizeLoadUnit(load.unit ?? undefined) ?? (loadWeightKg != null ? 'kg' : undefined);
   const textFromValue = value == null ? '' : `${value}${unit ? ` ${unit}` : ''}`.trim();
   const text = load.text?.trim() || textFromValue;
 
-  if (!text && value == null) {
+  if (!text && value == null && loadWeightKg == null) {
     return undefined;
   }
 
   return {
-    type: normalizeLoadType(load.type ?? undefined),
+    loadWeightKg: loadWeightKg ?? null,
+    loadSource: load.loadSource ?? null,
+    type: normalizeLoadType(load.type ?? (loadWeightKg != null ? 'weight' : undefined)),
     value,
     unit,
     text: text || 'Obciążenie',

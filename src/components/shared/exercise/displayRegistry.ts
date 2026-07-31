@@ -70,7 +70,8 @@ export const EMPTY_TEXT_VALUE = 'Nie ustawiono';
 
 const DIFFICULTY_LABELS: Record<string, string> = {
   UNKNOWN: 'Nieokreślony',
-  BEGINNER: 'Początkujący',
+  /** Legacy alias — prefer UNKNOWN in new writes (fieldContract / GraphQL). */
+  BEGINNER: 'Nieokreślony',
   EASY: 'Łatwy',
   MEDIUM: 'Średni',
   HARD: 'Trudny',
@@ -150,11 +151,12 @@ export const EXERCISE_FIELD_METADATA: Record<ExerciseFieldKey, ExerciseFieldMeta
     key: 'duration',
     label: 'Czas serii',
     tooltip:
-      'Łączny czas jednej serii w sekundach. Pole techniczne dla ćwiczeń liczonych czasem zamiast powtórzeń.',
+      'Legacy: ręczny override czasu jednej serii. Preferuj „Czas powtórzenia” — czas serii jest wyliczany.',
     iconKey: 'time',
     group: 'dosage',
-    isInlineVisible: true,
-    isDialogVisible: true,
+    /** Hidden from inline tiles — computed series time is shown instead (SPEC-023). */
+    isInlineVisible: false,
+    isDialogVisible: false,
     formatValue: (viewModel) => asReadableDuration(viewModel.duration),
   },
   executionTime: {
@@ -308,7 +310,6 @@ export const DIALOG_EXERCISE_FIELD_ORDER: ExerciseFieldKey[] = [
   'sets',
   'reps',
   'executionTime',
-  'duration',
   'restSets',
   'restReps',
   'preparationTime',

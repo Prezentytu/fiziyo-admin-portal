@@ -1,10 +1,16 @@
 // Types for Assignment Wizard
 
+import type { AssignmentExerciseOverride } from '@/components/shared/exercise/exerciseOverride';
+
 /**
  * Strukturalne obciążenie/opór z wsparciem dla analityki.
  * Smart String - parsowane z tekstu użytkownika do struktury JSONB.
  */
 export interface ExerciseLoad {
+  /** Target kg-only field (SPEC-003). Prefer this over legacy value/unit. */
+  loadWeightKg?: number | null;
+  /** Source of kg value: manual | converted | unknown */
+  loadSource?: 'manual' | 'converted' | 'unknown' | string | null;
   /** Typ obciążenia: weight (ciężar), band (guma), bodyweight (własna waga), other (inne) */
   type: 'weight' | 'band' | 'bodyweight' | 'other';
   /** Wartość liczbowa (dla wykresów postępów, np. 5, 10, 15) */
@@ -55,6 +61,8 @@ export interface ExerciseMapping {
   notes?: string;
   customName?: string;
   customDescription?: string;
+  /** Template-set personalization JSON (SPEC-023). */
+  overridesJson?: string | null;
   // Media
   videoUrl?: string;
   imageUrl?: string;
@@ -112,6 +120,8 @@ export interface Exercise {
   difficultyLevel?: string;
   mainTags?: string[];
   additionalTags?: string[];
+  /** Template enrichment v3 (SPEC-024 baseline for personalization). */
+  enrichmentData?: import('@/graphql/types/exerciseEnrichment.types').ExerciseEnrichmentData | null;
 
   // Legacy aliasy (dla kompatybilności wstecznej)
   description?: string;
@@ -156,37 +166,16 @@ export interface AssignmentEditInput {
   startDate: string;
   endDate: string;
   frequency: Frequency;
+  /** JSON map keyed by mapping.id — used for editMode prefill + merge on save. */
+  exerciseOverrides?: string | null;
   exerciseSet: ExerciseSet;
 }
 
-// Customization overrides for exercises during assignment
-export interface ExerciseOverride {
-  exerciseMappingId: string;
-  // Main parameters
-  sets?: number;
-  reps?: number;
-  duration?: number;
-  // Rest parameters
-  restSets?: number;
-  restReps?: number;
-  // Time parameters
-  preparationTime?: number;
-  executionTime?: number;
-  // Tempo
-  tempo?: string;
-  // Load/Resistance - Smart String
-  load?: ExerciseLoad;
-  // Custom content
-  customName?: string;
-  customDescription?: string;
-  notes?: string;
-  // Media overrides
-  videoUrl?: string;
-  imageUrl?: string;
-  images?: string[];
-  // Visibility - hide exercise from this assignment
-  hidden?: boolean;
-}
+/**
+ * Assignment-wizard override. Field keys match SPEC-012 JSON (loadWeightKg, exerciseSide).
+ * Prefer shared ExerciseOverrideFields for new code.
+ */
+export type ExerciseOverride = AssignmentExerciseOverride;
 
 /**
  * Ghost Copy - lokalna kopia ćwiczenia w RAM.

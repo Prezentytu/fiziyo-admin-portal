@@ -1,9 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
-import { buildExerciseUpdateVariables } from '../buildExerciseUpdateVariables';
-import type { ExerciseFormValues } from '../../ExerciseForm';
+import { buildExerciseUpdateVariables, type ExerciseUpdateFormValues } from '../buildExerciseUpdateVariables';
 
-const baseValues: ExerciseFormValues = {
+const baseValues: ExerciseUpdateFormValues = {
   name: 'Nowa nazwa',
   description: 'Opis',
   type: 'reps',

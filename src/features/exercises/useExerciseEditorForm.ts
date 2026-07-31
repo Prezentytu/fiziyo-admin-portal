@@ -2,8 +2,13 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.types';
-import { cleanupEnrichment } from '@/features/verification/utils/enrichment';
-import { ENRICHMENT_SCHEMA_V3, toV3 } from '@/features/verification/utils/enrichmentToV3';
+import { toV3 } from '@/features/verification/utils/enrichmentToV3';
+import { buildExerciseLoadMutationVars } from '@/utils/exerciseLoadMutation';
+import {
+  composeEnrichmentPayload,
+  deepCloneEnrichment,
+  setEnrichmentAtPath,
+} from './useEnrichmentDraft';
 
 /**
  * Pojedynczy model formularza edytora ćwiczenia (v3).
@@ -31,17 +36,33 @@ export interface ExerciseCoreDraft {
   restSets: number | null;
   restReps: number | null;
   preparationTime: number | null;
-  /** Czas serii (tryb czasowy) — niewidoczne w edytorze, zachowywane do wyliczeń. */
+  /** Czas serii (tryb czasowy / legacy override) — TIER 4 w fieldContract. */
   duration: number | null;
   /** Obciążenie strukturalne w kg (zastępuje free-text loadText). */
   loadKg: number | null;
+  mainTags: string[];
+  additionalTags: string[];
 }
 
 interface ExerciseLoadLike {
+  loadWeightKg?: number | null;
   type?: string | null;
   value?: number | null;
   unit?: string | null;
   text?: string | null;
+}
+
+function normalizeTagIds(tags: unknown): string[] {
+  if (!Array.isArray(tags)) return [];
+  return tags
+    .map((tag) => {
+      if (typeof tag === 'string') return tag;
+      if (tag && typeof tag === 'object' && 'id' in tag && typeof (tag as { id: unknown }).id === 'string') {
+        return (tag as { id: string }).id;
+      }
+      return null;
+    })
+    .filter((tagId): tagId is string => Boolean(tagId));
 }
 
 export interface ExerciseEditorSource {
@@ -73,6 +94,8 @@ export interface ExerciseEditorSource {
   defaultLoad?: ExerciseLoadLike | null;
   loadValue?: number | null;
   loadUnit?: string | null;
+  mainTags?: unknown;
+  additionalTags?: unknown;
   enrichmentData?: ExerciseEnrichmentData | null;
 }
 
@@ -83,7 +106,7 @@ interface UseExerciseEditorFormParams {
   updateCore: (variables: Record<string, unknown>) => Promise<void>;
   updateEnrichment: (payload: ExerciseEnrichmentData) => Promise<void>;
   onSaved?: () => void;
-  onError?: () => void;
+  onError?: (error: unknown) => void;
   /**
    * Włącza tryb autosave (debounce po każdej zmianie, bez przycisku "Zapisz").
    * Baseline (dirty-tracking) jest wtedy aktualizowany wyłącznie przez `markSaved()`
@@ -102,6 +125,9 @@ function firstNumber(...values: Array<number | null | undefined>): number | null
 
 function deriveLoadKg(source: ExerciseEditorSource): number | null {
   const load = source.defaultLoad;
+  if (load?.loadWeightKg != null && !Number.isNaN(load.loadWeightKg)) {
+    return load.loadWeightKg;
+  }
   if (load && load.value != null && (load.unit === 'kg' || load.type === 'weight')) {
     return load.value;
   }
@@ -131,32 +157,9 @@ function deriveCoreDraft(source: ExerciseEditorSource | null | undefined): Exerc
     preparationTime: firstNumber(source?.preparationTime),
     duration: firstNumber(source?.defaultDuration, source?.duration),
     loadKg: source ? deriveLoadKg(source) : null,
+    mainTags: normalizeTagIds(source?.mainTags),
+    additionalTags: normalizeTagIds(source?.additionalTags),
   };
-}
-
-function deepClone<T>(value: T): T {
-  return JSON.parse(JSON.stringify(value)) as T;
-}
-
-function setAtPath(target: Record<string, unknown>, path: string, value: unknown): void {
-  const keys = path.split('.');
-  let current: Record<string, unknown> = target;
-
-  for (let index = 0; index < keys.length - 1; index += 1) {
-    const key = keys[index];
-    const nested = current[key];
-    if (!nested || typeof nested !== 'object' || Array.isArray(nested)) {
-      current[key] = {};
-    }
-    current = current[key] as Record<string, unknown>;
-  }
-
-  current[keys[keys.length - 1]] = value;
-}
-
-function composeEnrichmentPayload(draft: ExerciseEnrichmentData): ExerciseEnrichmentData {
-  const cleaned = cleanupEnrichment(draft) as ExerciseEnrichmentData | undefined;
-  return { ...cleaned, $schema: ENRICHMENT_SCHEMA_V3 };
 }
 
 function getAtPath(source: unknown, path: string): unknown {
@@ -187,7 +190,8 @@ function asText(value: string): string | null {
   return trimmed === '' ? null : trimmed;
 }
 
-function buildChangedCoreVariables(
+/** Exported for unit tests — dirty-diff core draft → UpdateExercise variables. */
+export function buildChangedCoreVariables(
   initial: ExerciseCoreDraft,
   current: ExerciseCoreDraft
 ): Record<string, unknown> {
@@ -212,19 +216,22 @@ function buildChangedCoreVariables(
   if (current.restSets !== initial.restSets) variables.restSets = current.restSets;
   if (current.restReps !== initial.restReps) variables.restReps = current.restReps;
   if (current.preparationTime !== initial.preparationTime) variables.preparationTime = current.preparationTime;
+  if (current.duration !== initial.duration) variables.duration = current.duration;
 
   if (current.loadKg !== initial.loadKg) {
-    if (current.loadKg != null && current.loadKg > 0) {
-      variables.loadType = 'weight';
-      variables.loadValue = current.loadKg;
-      variables.loadUnit = 'kg';
-      variables.loadText = `${current.loadKg} kg`;
-    } else {
-      variables.loadType = null;
-      variables.loadValue = null;
-      variables.loadUnit = null;
-      variables.loadText = null;
-    }
+    Object.assign(
+      variables,
+      buildExerciseLoadMutationVars(
+        current.loadKg != null && current.loadKg > 0 ? current.loadKg : null
+      )
+    );
+  }
+
+  if (JSON.stringify(current.mainTags) !== JSON.stringify(initial.mainTags)) {
+    variables.mainTags = current.mainTags;
+  }
+  if (JSON.stringify(current.additionalTags) !== JSON.stringify(initial.additionalTags)) {
+    variables.additionalTags = current.additionalTags;
   }
 
   return variables;
@@ -276,8 +283,8 @@ export function useExerciseEditorForm({
 
   const setEnrichmentPath = useCallback((path: string, value: unknown) => {
     setEnrichment((previous) => {
-      const next = deepClone(previous);
-      setAtPath(next as Record<string, unknown>, path, value);
+      const next = deepCloneEnrichment(previous);
+      setEnrichmentAtPath(next as Record<string, unknown>, path, value);
       return next;
     });
     setSaveStatus('idle');
@@ -364,7 +371,7 @@ export function useExerciseEditorForm({
     } catch (error) {
       console.error('[ExerciseEditor] Save failed:', error);
       setSaveStatus('error');
-      onError?.();
+      onError?.(error);
     }
   }, [initialEnrichmentPayload, markSaved, onError, onSaved, updateCore, updateEnrichment]);
 

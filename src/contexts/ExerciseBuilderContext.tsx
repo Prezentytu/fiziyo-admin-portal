@@ -40,6 +40,8 @@ export interface BuilderExercise {
   loadValue?: number;
   loadUnit?: string;
   loadText?: string;
+  loadWeightKg?: number;
+  loadSource?: string;
   type?: string;
 }
 
@@ -60,8 +62,8 @@ interface ExerciseBuilderContextValue {
   isInBuilder: (exerciseId: string) => boolean;
   /** Toggle exercise in builder (add if not present, remove if present) */
   toggleExercise: (exercise: BuilderExercise) => void;
-  /** Get estimated time in minutes */
-  estimatedTime: number;
+  /** Estimated set duration (shared formatter with CreateSetWizard) */
+  totalSetDuration: { seconds: number; isEstimate: boolean };
   /** Whether the builder has any exercises */
   hasExercises: boolean;
   /** Count of exercises in builder */
@@ -182,8 +184,11 @@ export function ExerciseBuilderProvider({ children }: ExerciseBuilderProviderPro
   );
 
   // Keep sidebar summary aligned with set wizard total duration logic.
-  const estimatedTime = useMemo(() => {
-    const totalSeconds = selectedExercises.reduce((sum, exercise) => {
+  const totalSetDuration = useMemo(() => {
+    let totalSeconds = 0;
+    let isEstimate = false;
+
+    for (const exercise of selectedExercises) {
       const duration = calculateExerciseTotalSeconds({
         sets: exercise.sets ?? 0,
         reps: exercise.reps,
@@ -196,10 +201,11 @@ export function ExerciseBuilderProvider({ children }: ExerciseBuilderProviderPro
         side: exercise.exerciseSide ?? exercise.side,
       });
 
-      return sum + duration.seconds;
-    }, 0);
+      totalSeconds += duration.seconds;
+      isEstimate = isEstimate || duration.isEstimate;
+    }
 
-    return Math.ceil(totalSeconds / 60);
+    return { seconds: totalSeconds, isEstimate };
   }, [selectedExercises]);
 
   const hasExercises = selectedExercises.length > 0;
@@ -215,7 +221,7 @@ export function ExerciseBuilderProvider({ children }: ExerciseBuilderProviderPro
       clearBuilder,
       isInBuilder,
       toggleExercise,
-      estimatedTime,
+      totalSetDuration,
       hasExercises,
       exerciseCount,
       isChatOpen,
@@ -230,7 +236,7 @@ export function ExerciseBuilderProvider({ children }: ExerciseBuilderProviderPro
       clearBuilder,
       isInBuilder,
       toggleExercise,
-      estimatedTime,
+      totalSetDuration,
       hasExercises,
       exerciseCount,
       isChatOpen,

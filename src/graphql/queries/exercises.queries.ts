@@ -45,6 +45,8 @@ export const EXERCISE_FULL_FRAGMENT = gql`
     tempo
     rangeOfMotion
     defaultLoad {
+      loadWeightKg
+      loadSource
       type
       value
       unit

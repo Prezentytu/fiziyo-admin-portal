@@ -40,10 +40,18 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { ImagePlaceholder } from '@/components/shared/ImagePlaceholder';
 import { ScheduleSummary } from '@/components/shared';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
+import {
+  EXERCISE_FIELD_METADATA,
+  ExerciseExecutionCard,
+  fromExerciseMapping,
+  listOverriddenFieldKeys,
+  resolveEffectiveExerciseParams,
+  type ExerciseOverrideFields,
+} from '@/components/shared/exercise';
+import type { ExerciseMapping as AssignmentExerciseMapping } from '@/features/assignment/types';
 import { cn } from '@/lib/utils';
 import { toGqlStatus } from '@/utils/statusUtils';
 import { getMediaUrl } from '@/utils/mediaUrl';
-import { formatDurationPolish } from '@/utils/durationPolish';
 import { resolveAssignmentDisplayStatus } from '@/features/patients/utils/assignmentDisplayStatus';
 
 import {
@@ -89,14 +97,22 @@ export interface ExerciseMapping {
   loadValue?: number;
   loadUnit?: string;
   loadText?: string;
+  load?: {
+    loadWeightKg?: number | null;
+    loadSource?: string | null;
+    type?: string;
+    value?: number;
+    unit?: string;
+    text?: string;
+  };
   exercise?: {
     id: string;
     name: string;
     type?: string;
-    // Nowe pola
     side?: string;
     patientDescription?: string;
     clinicalDescription?: string;
+    audioCue?: string;
     thumbnailUrl?: string;
     defaultSets?: number;
     defaultReps?: number;
@@ -104,7 +120,10 @@ export interface ExerciseMapping {
     defaultRestBetweenSets?: number;
     defaultRestBetweenReps?: number;
     defaultExecutionTime?: number;
-    // Legacy aliasy
+    preparationTime?: number;
+    rangeOfMotion?: string;
+    difficultyLevel?: string;
+    tempo?: string;
     exerciseSide?: string;
     imageUrl?: string;
     images?: string[];
@@ -116,20 +135,8 @@ export interface ExerciseMapping {
   };
 }
 
-export interface ExerciseOverride {
-  sets?: number;
-  reps?: number;
-  duration?: number;
-  executionTime?: number;
-  restSets?: number;
-  restReps?: number;
-  hidden?: boolean;
-  customName?: string;
-  customDescription?: string;
-  notes?: string;
-  exerciseSide?: string;
-  customImages?: string[];
-}
+/** Patient JSON override — SSOT keys from SPEC-012 / exerciseOverride.ts */
+export type ExerciseOverride = ExerciseOverrideFields;
 
 export interface PatientAssignment {
   id: string;
@@ -357,25 +364,50 @@ export function PatientAssignmentCard({
     }
   };
 
-  // Get effective exercise params (with overrides)
   const getEffectiveParams = (mapping: ExerciseMapping) => {
     const override = exerciseOverrides[mapping.id];
-
-    const sets = toPositiveNumber(override?.sets ?? mapping.sets ?? mapping.exercise?.sets);
-    const reps = toPositiveNumber(override?.reps ?? mapping.reps ?? mapping.exercise?.reps);
-    const duration = toPositiveNumber(override?.duration ?? mapping.duration ?? mapping.exercise?.duration);
-    const executionTime = toPositiveNumber(
-      override?.executionTime ?? mapping.executionTime ?? mapping.exercise?.defaultExecutionTime
+    const effective = resolveEffectiveExerciseParams(
+      {
+        id: mapping.id,
+        sets: mapping.sets,
+        reps: mapping.reps,
+        duration: mapping.duration,
+        executionTime: mapping.executionTime,
+        restSets: mapping.restSets,
+        restReps: mapping.restReps,
+        preparationTime: mapping.preparationTime,
+        tempo: mapping.tempo,
+        notes: mapping.notes,
+        customName: mapping.customName,
+        customDescription: mapping.customDescription,
+        load: mapping.load,
+        loadType: mapping.loadType,
+        loadValue: mapping.loadValue,
+        loadUnit: mapping.loadUnit,
+        loadText: mapping.loadText,
+        exercise: mapping.exercise,
+      },
+      override
     );
 
     return {
-      sets,
-      reps,
-      duration,
-      executionTime,
-      customName: override?.customName ?? mapping.customName,
-      customImages: override?.customImages ?? [],
-      hidden: override?.hidden ?? false,
+      sets: toPositiveNumber(effective.sets),
+      reps: toPositiveNumber(effective.reps),
+      duration: toPositiveNumber(effective.duration),
+      executionTime: toPositiveNumber(effective.executionTime),
+      restSets: toPositiveNumber(effective.restSets),
+      restReps: toPositiveNumber(effective.restReps),
+      preparationTime: toPositiveNumber(effective.preparationTime),
+      tempo: effective.tempo,
+      loadKg: effective.loadKg,
+      rangeOfMotion: effective.rangeOfMotion,
+      side: effective.side,
+      notes: effective.notes,
+      customName: effective.customName,
+      customDescription: effective.customDescription,
+      customImages: effective.customImages ?? [],
+      hidden: effective.hidden,
+      overriddenKeys: effective.overriddenKeys,
     };
   };
 
@@ -609,136 +641,119 @@ export function PatientAssignmentCard({
                   <div className="space-y-2">
                     {[...exercises]
                       .sort((a, b) => (a.order || 0) - (b.order || 0))
-                      .filter((m) => !exerciseOverrides[m.id]?.hidden) // Only show visible exercises
+                      .filter((m) => !exerciseOverrides[m.id]?.hidden)
                       .map((mapping) => {
+                        const override = exerciseOverrides[mapping.id];
                         const params = getEffectiveParams(mapping);
-                        // Use first custom image if available, otherwise original
-                        const imageUrl =
-                          params.customImages?.[0] ||
-                          getMediaUrl(mapping.exercise?.imageUrl || mapping.exercise?.images?.[0]);
-                        const hasCustomImages = params.customImages && params.customImages.length > 0;
-                        const hasOverride =
-                          exerciseOverrides[mapping.id] &&
-                          (exerciseOverrides[mapping.id].sets !== undefined ||
-                            exerciseOverrides[mapping.id].reps !== undefined ||
-                            exerciseOverrides[mapping.id].duration !== undefined ||
-                            exerciseOverrides[mapping.id].customName ||
-                            exerciseOverrides[mapping.id].customImages?.length);
                         const exerciseName = params.customName || mapping.exercise?.name || 'Nieznane';
+                        const overriddenKeys = listOverriddenFieldKeys(override).filter(
+                          (key) => key !== 'hidden' && key !== 'customImages' && key !== 'load'
+                        );
+                        const cardData = fromExerciseMapping(
+                          {
+                            ...mapping,
+                            exerciseId: mapping.exerciseId,
+                            exercise: mapping.exercise,
+                          } as AssignmentExerciseMapping,
+                          override
+                        );
 
                         return (
                           <div
                             key={mapping.id}
-                            className="group flex items-center gap-4 p-3 rounded-xl border border-border/40 bg-surface/30 hover:bg-surface-light hover:border-border/60 transition-all"
+                            className="overflow-hidden rounded-xl border border-border/40 bg-surface/30"
                             data-testid={`patient-assignment-exercise-${mapping.id}`}
                           >
-                            {/* Larger Thumbnail - 64x64 */}
-                            <button
-                              type="button"
-                              className="relative h-16 w-16 rounded-xl overflow-hidden shrink-0 bg-surface-light cursor-pointer ring-1 ring-border/20 hover:ring-primary/40 transition-all"
-                              onClick={() => onPreviewExercise?.(mapping, exerciseOverrides[mapping.id])}
-                            >
-                              {imageUrl ? (
-                                <Image src={imageUrl} alt={exerciseName} fill className="object-contain" sizes="64px" />
-                              ) : (
-                                <ImagePlaceholder type="exercise" iconClassName="h-6 w-6" />
-                              )}
-                              {hasCustomImages && params.customImages && params.customImages.length > 0 && (
-                                <span className="absolute bottom-1 right-1 bg-primary text-primary-foreground text-[10px] font-medium px-1.5 py-0.5 rounded-md">
-                                  +{params.customImages.length}
-                                </span>
-                              )}
-                            </button>
-
-                            {/* Info */}
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2 mb-1">
-                                <button
-                                  type="button"
-                                  className="text-sm font-semibold truncate cursor-pointer hover:text-primary transition-colors text-left"
-                                  onClick={() => onPreviewExercise?.(mapping, exerciseOverrides[mapping.id])}
-                                >
-                                  {exerciseName}
-                                </button>
-                                {hasOverride && (
-                                  <span
-                                    className="h-2 w-2 rounded-full bg-primary shrink-0"
-                                    title="Zmodyfikowane dla pacjenta"
-                                  />
-                                )}
+                            <div className="flex items-stretch gap-1">
+                              <div className="min-w-0 flex-1">
+                                <ExerciseExecutionCard
+                                  mode="view"
+                                  viewVariant="readable"
+                                  exercise={cardData}
+                                  testIdPrefix="patient-assignment-exercise-card"
+                                  onPreview={() => onPreviewExercise?.(mapping, override)}
+                                  className="rounded-none border-0 bg-transparent"
+                                />
+                                {overriddenKeys.length > 0 ? (
+                                  <div
+                                    className="flex flex-wrap gap-1 px-4 pb-3"
+                                    data-testid={`patient-assignment-exercise-${mapping.id}-override-badges`}
+                                  >
+                                    {overriddenKeys.map((key) => {
+                                      const metadataKey =
+                                        key === 'loadWeightKg'
+                                          ? 'load'
+                                          : key === 'exerciseSide'
+                                            ? 'side'
+                                            : key;
+                                      const label =
+                                        metadataKey in EXERCISE_FIELD_METADATA
+                                          ? EXERCISE_FIELD_METADATA[
+                                              metadataKey as keyof typeof EXERCISE_FIELD_METADATA
+                                            ].label
+                                          : key === 'customName'
+                                            ? 'Własna nazwa'
+                                            : key === 'customDescription'
+                                              ? 'Własny opis'
+                                              : key;
+                                      return (
+                                        <span
+                                          key={key}
+                                          className="rounded-md bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary"
+                                          data-testid={`patient-assignment-exercise-${mapping.id}-badge-${key}`}
+                                          title="Nadpisane dla pacjenta"
+                                        >
+                                          {label}
+                                        </span>
+                                      );
+                                    })}
+                                  </div>
+                                ) : null}
                               </div>
-                              <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                                {params.sets && (
-                                  <span className="flex items-center gap-1">
-                                    <span className="font-medium text-foreground">{params.sets}</span> serii
-                                  </span>
-                                )}
-                                {params.reps && (
-                                  <span className="flex items-center gap-1">
-                                    <span className="font-medium text-foreground">{params.reps}</span> powt.
-                                  </span>
-                                )}
-                                {params.executionTime && (
-                                  <span className="flex items-center gap-1">
-                                    <span className="text-muted-foreground">Czas powt.:</span>
-                                    <span className="font-medium text-foreground">{params.executionTime}</span>s
-                                  </span>
-                                )}
-                                {params.duration && (
-                                  <span className="flex items-center gap-1">
-                                    <span className="text-muted-foreground">Czas serii:</span>
-                                    <span className="font-medium text-foreground">{formatDurationPolish(params.duration)}</span>
-                                  </span>
-                                )}
+                              <div className="flex shrink-0 flex-col items-center justify-center gap-1 border-l border-border/30 px-1.5 py-2">
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                                      onClick={() => onPreviewExercise?.(mapping, override)}
+                                      data-testid={`patient-assignment-exercise-${mapping.id}-preview-btn`}
+                                    >
+                                      <Eye className="h-4 w-4" />
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent side="top">Podgląd</TooltipContent>
+                                </Tooltip>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                                      onClick={() => onEditExercise?.(assignment, mapping, override)}
+                                      data-testid={`patient-assignment-exercise-${mapping.id}-edit-btn`}
+                                    >
+                                      <Pencil className="h-4 w-4" />
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent side="top">Edytuj parametry</TooltipContent>
+                                </Tooltip>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                                      onClick={() => handleStartRemoveExercise(mapping.id, exerciseName)}
+                                      data-testid={`patient-assignment-exercise-${mapping.id}-remove-btn`}
+                                    >
+                                      <X className="h-4 w-4" />
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent side="top">Usuń z zestawu</TooltipContent>
+                                </Tooltip>
                               </div>
-                            </div>
-
-                            {/* Actions - Always visible */}
-                            <div className="flex items-center gap-1 shrink-0">
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-8 w-8 text-muted-foreground hover:text-foreground"
-                                    onClick={() => onPreviewExercise?.(mapping, exerciseOverrides[mapping.id])}
-                                    data-testid={`patient-assignment-exercise-${mapping.id}-preview-btn`}
-                                  >
-                                    <Eye className="h-4 w-4" />
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent side="top">Podgląd</TooltipContent>
-                              </Tooltip>
-
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-8 w-8 text-muted-foreground hover:text-foreground"
-                                    onClick={() => onEditExercise?.(assignment, mapping, exerciseOverrides[mapping.id])}
-                                    data-testid={`patient-assignment-exercise-${mapping.id}-edit-btn`}
-                                  >
-                                    <Pencil className="h-4 w-4" />
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent side="top">Edytuj parametry</TooltipContent>
-                              </Tooltip>
-
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                                    onClick={() => handleStartRemoveExercise(mapping.id, exerciseName)}
-                                    data-testid={`patient-assignment-exercise-${mapping.id}-remove-btn`}
-                                  >
-                                    <X className="h-4 w-4" />
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent side="top">Usuń z zestawu</TooltipContent>
-                              </Tooltip>
                             </div>
                           </div>
                         );

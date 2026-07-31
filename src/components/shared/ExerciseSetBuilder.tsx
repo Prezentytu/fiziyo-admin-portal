@@ -48,9 +48,11 @@ import type { ExerciseExecutionCardData } from '@/components/shared/exercise';
 import { ColorBadge } from '@/components/shared/ColorBadge';
 import { filterExercisesBySource, countBySource } from '@/utils/exerciseSourceFilter';
 import { calculateExerciseTotalSeconds, formatExerciseDuration } from '@/utils/exerciseTime';
+import { buildExerciseLoadParamFields } from '@/utils/exerciseLoadMutation';
 import type { ExerciseSourceFilter } from '@/utils/exerciseSourceFilter';
 import { cn } from '@/lib/utils';
 import { EMPTY_EXERCISE_PARAMS, getExerciseDefaultParams } from '@/features/exercise-sets/utils/exerciseDefaults';
+import type { ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.types';
 
 // ============================================================
 // TYPES
@@ -101,6 +103,8 @@ export interface BuilderExercise {
   additionalTags?: ExerciseTag[];
   /** GLOBAL | ORGANIZATION | PERSONAL - for source filter (Moje / Wszystkie / FiziYo) */
   scope?: string;
+  /** Template enrichment v3 baseline (SPEC-024). */
+  enrichmentData?: ExerciseEnrichmentData | null;
 }
 
 export interface ExerciseParams {
@@ -120,8 +124,23 @@ export interface ExerciseParams {
   loadValue?: number;
   loadUnit?: string;
   loadText?: string;
+  loadWeightKg?: number;
+  loadSource?: string;
+  rangeOfMotion?: string;
+  difficultyLevel?: string;
+  patientDescription?: string;
+  clinicalDescription?: string;
+  audioCue?: string;
+  customImages?: string[];
+  /**
+   * Effective enrichment draft for personalization (SPEC-024).
+   * Write-path diffs this against exercise.enrichmentData.
+   */
+  enrichment?: ExerciseEnrichmentData;
   // Structured load (alternative to individual load fields)
   load?: {
+    loadWeightKg?: number | null;
+    loadSource?: string | null;
     type: 'weight' | 'band' | 'bodyweight' | 'other';
     value?: number;
     unit?: 'kg' | 'lbs' | 'level';
@@ -174,6 +193,11 @@ export interface ExerciseSetBuilderProps {
 
   /** When set, instances with these IDs are shown read-only (e.g. already in set). */
   readonlyInstanceIds?: Set<string>;
+  /**
+   * Card persistence surface. Use `patientPlan` in assignment wizard for full personalization.
+   * Default `mapping` keeps inherited section for TEMPLATE set builders.
+   */
+  cardSurface?: 'mapping' | 'patientPlan';
   /** Optional quick action rendered in exercise library list. */
   onCreateExercise?: () => void;
   isCreatingExercise?: boolean;
@@ -330,9 +354,11 @@ function ExerciseLibraryActionItem({
 // SORTABLE EXERCISE CARD - uses shared ExerciseExecutionCard
 // ============================================================
 
+type ExerciseParamValue = ExerciseParams[keyof ExerciseParams];
+
 function applyCardPatchToParams(
   patch: Partial<ExerciseExecutionCardData>,
-  onUpdateParams: (field: keyof ExerciseParams, value: number | string | undefined) => void
+  onUpdateParams: (field: keyof ExerciseParams, value: ExerciseParamValue) => void
 ): void {
   if ('sets' in patch) onUpdateParams('sets', patch.sets);
   if ('reps' in patch) onUpdateParams('reps', patch.reps);
@@ -346,9 +372,22 @@ function applyCardPatchToParams(
   if ('customName' in patch) onUpdateParams('customName', patch.customName);
   if ('customDescription' in patch) onUpdateParams('customDescription', patch.customDescription);
   if ('side' in patch) onUpdateParams('exerciseSide', patch.side);
+  if ('rangeOfMotion' in patch) onUpdateParams('rangeOfMotion', patch.rangeOfMotion);
+  if ('difficultyLevel' in patch) onUpdateParams('difficultyLevel', patch.difficultyLevel);
+  if ('patientDescription' in patch) onUpdateParams('patientDescription', patch.patientDescription);
+  if ('clinicalDescription' in patch) {
+    onUpdateParams('clinicalDescription', patch.clinicalDescription);
+  }
+  if ('audioCue' in patch) onUpdateParams('audioCue', patch.audioCue);
+  if ('enrichment' in patch) onUpdateParams('enrichment', patch.enrichment);
   if ('loadKg' in patch) {
-    onUpdateParams('loadValue', patch.loadKg);
-    onUpdateParams('loadUnit', 'kg');
+    const loadFields = buildExerciseLoadParamFields(patch.loadKg);
+    onUpdateParams('loadWeightKg', loadFields.loadWeightKg);
+    onUpdateParams('loadSource', loadFields.loadSource);
+    onUpdateParams('loadType', loadFields.loadType);
+    onUpdateParams('loadValue', loadFields.loadValue);
+    onUpdateParams('loadUnit', loadFields.loadUnit);
+    onUpdateParams('loadText', loadFields.loadText);
   }
 }
 
@@ -362,16 +401,18 @@ function SortableExerciseCard({
   onPreview,
   testIdPrefix,
   isReadonly,
+  cardSurface = 'mapping',
 }: {
   instanceId: string;
   exercise: BuilderExercise;
   index: number;
   params: ExerciseParams;
-  onUpdateParams: (field: keyof ExerciseParams, value: number | string | undefined) => void;
+  onUpdateParams: (field: keyof ExerciseParams, value: ExerciseParamValue) => void;
   onRemove: () => void;
   onPreview: () => void;
   testIdPrefix?: string;
   isReadonly?: boolean;
+  cardSurface?: 'mapping' | 'patientPlan';
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: instanceId,
@@ -421,6 +462,7 @@ function SortableExerciseCard({
     >
       <ExerciseExecutionCard
         mode={isReadonly ? 'view' : 'edit'}
+        surface={cardSurface}
         exercise={cardData}
         onChange={handleChange}
         onRemove={isReadonly ? undefined : onRemove}
@@ -462,6 +504,7 @@ export function ExerciseSetBuilder({
   onPreviewExercise,
   testIdPrefix = 'set-builder',
   readonlyInstanceIds,
+  cardSurface = 'mapping',
   onCreateExercise,
   isCreatingExercise = false,
   createExerciseLabel = 'Utwórz nowe ćwiczenie',
@@ -527,7 +570,7 @@ export function ExerciseSetBuilder({
   );
 
   const updateExerciseParams = useCallback(
-    (instanceId: string, field: keyof ExerciseParams, value: number | string | undefined) => {
+    (instanceId: string, field: keyof ExerciseParams, value: ExerciseParamValue) => {
       const next = new Map(exerciseParams);
       const instance = selectedInstances.find((i) => i.instanceId === instanceId);
       const exercise = availableExercises.find((e) => e.id === instance?.exerciseId);
@@ -899,6 +942,7 @@ export function ExerciseSetBuilder({
                         onPreview={() => onPreviewExercise?.(data.exercise, exerciseParams.get(data.instanceId))}
                         testIdPrefix={testIdPrefix}
                         isReadonly={readonlyInstanceIds?.has(data.instanceId) ?? false}
+                        cardSurface={cardSurface}
                       />
                     ))}
                   </div>

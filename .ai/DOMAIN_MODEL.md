@@ -213,8 +213,11 @@ Open → Closed → Invoiced → Paid
 Pozycja ćwiczenia w zestawie z opcjonalnymi nadpisaniami parametrów:
 
 - `ExerciseSetId`, `ExerciseId`, `Order`
-- Nadpisania: `Sets`, `Reps`, `Duration`, `ExecutionTime`, `RestSets`, `RestReps`, `Tempo`, `Load` (JSONB)
+- Nadpisania: `Sets`, `Reps`, `Duration` (legacy read/clear), `ExecutionTime`, `RestSets`, `RestReps`, `PreparationTime`, `Tempo`, `Load` (JSONB)
 - Custom: `Notes`, `CustomName` (200), `CustomDescription` (4000)
+- `OverridesJson` (nullable, SPEC-023/024): JSON subset dla `exerciseSide` / `rangeOfMotion` / `difficultyLevel` / `patientDescription` / `clinicalDescription` / `audioCue` oraz `enrichment` (whitelist ścieżek patient._ + safety._) na zestawach TEMPLATE
+- Personalizacja przy assign (SPEC-021/024): dawkowanie → `ExerciseSetMapping` na `PATIENT_PLAN`; side/ROM/difficulty/teksty/`enrichment` → JSON `exerciseOverrides` (`persistence: assignmentOverride`)
+- Precedencja efektywna: assignment override > mapping.overridesJson > mapping columns > Exercise template (enrichment: path-level merge tej samej precedencji)
 
 ### PatientAssignment
 
@@ -270,19 +273,23 @@ Zapis pojedynczego wykonania:
 
 ### ExerciseLoad
 
-> **UPROSZCZENIE W TOKU:** Obecna struktura pozwala wpisać dowolny typ obciążenia, co
-> prowadzi do bałaganu. Docelowo ograniczamy do **kg** — najprostszy model.
+> **SPEC-003 (additive):** docelowy model kg-only przez `loadWeightKg` + `loadSource`.
+> Legacy `type/value/unit/text` pozostaje dla kompatybilności; UI admina preferuje `loadWeightKg`.
 
 ```json
 {
-  "type": "weight", // weight | band | bodyweight | other — docelowo: tylko "weight"
-  "value": 5.0, // wartość liczbowa (dla wykresów)
-  "unit": "kg", // kg | lbs | level — docelowo: tylko "kg"
+  "loadWeightKg": 5.0, // docelowe pole kg-only
+  "loadSource": "manual", // manual | converted | unknown
+  "type": "weight", // weight | band | bodyweight | other — legacy
+  "value": 5.0, // legacy wartość liczbowa
+  "unit": "kg", // kg | lbs | level — legacy
   "text": "5 kg" // wyświetlany tekst
 }
 ```
 
 Używane w: `Exercise.DefaultLoad`, `PatientAssignment.AssignedLoad`, `ExerciseSetMapping.Load`
+
+Dual-write (admin + backend mutacje): przy zapisie kg ustawiane są **oba** zestawy pól (`loadWeightKg`/`loadSource` + legacy weight/kg/text). Dual-read: `loadKg = loadWeightKg ?? (unit==='kg' ? value : undefined)`.
 
 ### Frequency
 

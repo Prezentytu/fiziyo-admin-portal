@@ -14,6 +14,110 @@ Dziennik wniosków z pracy AI agentów. Po każdej korekcie dodaj nowy wpis.
 
 ## Wpisy
 
+### 2026-07-29 - Klucz mapy JSON personalizacji to kontrakt cross-repo — adapter nie może przemapować `id`
+
+- **Kategoria**: `GraphQL` | `React`
+- **Problem**: Fizjo zapisywał parametry w panelu (`exerciseOverrides[mapping.id]`), a pacjent w apce ich nie widział — nawet po odświeżeniu.
+- **Przyczyna**: `transformExerciseMapping` rozsypywał najpierw pola ćwiczenia (`id` = exercise.id) i nadpisywał tylko `_id`; `applyExerciseOverrides` czytał `overrides[id]` → nigdy nie trafiał w klucz panelu. Dodatkowo backend nie emitował `onMyAssignmentChanged`, a „Edytuj plan” robił pełny replace JSON i zacieniał świeży mapping starym override dawkowania.
+- **Rozwiązanie**: `mappingId` w adapterze + dual-read (`mappingId|_id|id|exerciseId`); parytet pól mappingu; merge override w wizardzie; realtime per-pacjent w backendzie; dodanie ćwiczenia jako real mapping.
+- **Reguła**: Klucz mapy JSON personalizacji (`ExerciseSetMapping.id`) jest częścią kontraktu admin↔mobile. Adapter read-modelu, który nadpisuje lub gubi `id`, zrywa kontrakt po cichu. Write/read muszą dzielić ten sam klucz; przy legacy kluczach stosuj dual-read, nie „naprawiaj” tylko jedną stronę.
+
+### 2026-07-28 - Personalizacja enrichment wymaga tej samej whitelist ścieżek w adminie i mobile
+
+- **Kategoria**: `GraphQL` | `React` | `UI/UX`
+- **Problem**: Terapeuta mógł edytować parametry w assign, ale nie kroki wykonania — pacjent zawsze widział szablon; `effectiveEnrichment` w mobile to był tylko fallback query.
+- **Przyczyna**: Enrichment żył wyłącznie na `Exercise`; `exerciseOverrides` / `overridesJson` nie miały klucza `enrichment`, a mobile nie scalał delty.
+- **Rozwiązanie**: Whitelist 11 ścieżek patient/safety (SPEC-024), delta w istniejącym JSON, `ExercisePatientContentFields` jako SSOT UI, mobile `applyExerciseOverrides` + `overridesJson` w fragmencie.
+- **Reguła**: Treść widoczna pacjentowi personalizuj przez path-override JSON (nie pełny deep-merge i nie nową kolumnę). Logika merge musi być skopiowana 1:1 admin↔mobile na wspólnych fixture'ach; deploy admin+mobile razem.
+
+### 2026-07-28 - Prezentacja parametrów też musi mieć SSOT, nie tylko kontrakt danych
+
+- **Kategoria**: `UI/UX` | `React`
+- **Problem**: `fieldContract` ujednolicał etykiety/walidację, ale create, `ExerciseExecutionCard` i dialogi pacjenta miały trzy niezależne layouity (kolejność pól, „Czas serii” jako kafel vs input, brak badge'a timera).
+- **Przyczyna**: SSOT zatrzymał się na semantyce; warstwa prezentacji nadal była kopiowana lokalnie.
+- **Rozwiązanie**: `PARAMETER_SECTIONS` + `ExerciseParametersFields` jako jedyna prezentacja; kafle „Czas serii/ćwiczenia (wyliczany)”; `duration` tylko w advanced; treść create/edit przez `ExerciseContentSections` (SPEC-022).
+- **Reguła**: Kontrakt pól bez wspólnego komponentu UI i tak dryfuje wizualnie. Surface derywuje podzbiór/gęstość (`omitFields`, `density`, `testIdFor`) — nigdy kolejności sekcji ani etykiet kafli.
+
+### 2026-07-28 - Pole bez kolumny na mappingu ≠ readonly przy pacjencie
+
+- **Kategoria**: `GraphQL` | `React` | `UI/UX`
+- **Problem**: Sekcja „Odziedziczone z ćwiczenia” blokowała side/ROM/difficulty w wizardzie assign, mimo że warstwa `exerciseOverrides` już umiała trzymać część tych pól.
+- **Przyczyna**: `fieldContract.mappingMode` mówił tylko „mapping tego nie zapisze”, bez routingu „więc leć do override”. Wizard wyrzucał `mapping.id` i `assignment.id` przy create.
+- **Rozwiązanie**: `FieldPersistence` + powierzchnia `patientPlan` + `exercisePersonalizationWriter` + zapis override po assign (SPEC-021).
+- **Reguła**: Brak argumentu w mutacji mappingu nie oznacza readonly w kontekście pacjenta — sprawdź warstwę `assignmentOverride`. Jedna tabela routingu (`persistence`) steruje zapisem; UI derywuje edytowalność z powierzchni, nie z lokalnych ifów.
+
+### 2026-07-28 - Parity write/read: pole w mutacji bez ścieżki odczytu to bug
+
+- **Kategoria**: `GraphQL` | `React`
+- **Problem**: `EditExerciseOverrideDialog` zapisywał tempo/load/ROM/side, ale `getEffectiveParams` i `fromExerciseMapping` ich nie czytały; mutacja mappingu przyjmowała `executionTime`/`preparationTime`, a selection set ich nie zwracał → stale cache.
+- **Przyczyna**: Rozszerzono zapis bez równoległego rozszerzenia adapterów, query i UI odczytu.
+- **Rozwiązanie**: `resolveEffectiveExerciseParams` (override > mapping > szablon), wspólny typ `ExerciseOverrideFields`, uzupełnione selection sety/fragmenty, karta pacjenta na `ExerciseExecutionCard`.
+- **Reguła**: Pole dodane do zapisu bez ścieżki odczytu (query + adapter + UI) to bug, nie funkcja. Parity write/read jest częścią definicji ukończenia; precedencja wartości w jednej czystej funkcji, nie w lokalnych `??`.
+
+### 2026-07-28 - UI copy: nigdy „dawkowanie”, zawsze „podstawowe parametry”
+
+- **Kategoria**: `UI/UX`
+- **Problem**: W edytorach, preview, PDF i dialogach pojawiało się słowo „Dawkowanie” — żargon, którego nie chcemy w produkcie.
+- **Przyczyna**: Stara etykieta grupy pól (`group: 'dosage'`) wyciekła do copy użytkownika.
+- **Rozwiązanie**: Zamiana widocznych etykiet na „Podstawowe parametry”; reguła w `AGENTS.md` + `src/features/exercises/AGENTS.md`.
+- **Reguła**: W UI, toastach, PDF i dokumentacji produktowej nigdy nie pisz „dawkowanie”. Używaj „podstawowe parametry” albo konkretnych nazw pól (Serie, Powtórzenia…). Identyfikatory kodu (`dosage`, nazwa pliku SPEC-012) mogą zostać — copy dla człowieka nie.
+
+### 2026-07-28 - Jeden kontrakt pól na byt domenowy — powierzchnia derywuje podzbiór, nigdy semantykę
+
+- **Kategoria**: `UI/UX` | `React`
+- **Problem**: Create wizard, dialog edycji (`ExerciseForm`) i detal (`ExerciseEditor`) miały różne zestawy pól i etykiet (`Czas powtórzenia` vs `Czas 1 powtórzenia`); mapping/override też dryfowały.
+- **Przyczyna**: Trzy niezależne artefakty formularza z lokalnymi listami pól zamiast jednego field-setu z intencją (Salesforce page-layout tax).
+- **Rozwiązanie**: `fieldContract.ts` jako SSOT (tier, surfaces, zod, options) + etykiety z `displayRegistry`; `ExerciseParametersEditor` / `ExerciseEditor` współdzielone; create = lean subset; usunięto `ExerciseForm` i martwe legacy edytory.
+- **Reguła**: Dla danych domenowych edytowanych w wielu miejscach utrzymuj jeden kontrakt pól. Powierzchnia może różnić layout i podzbiór (create-as-prefix), nigdy etykietę, walidację ani mapowanie na mutację. Guardrail: test kompletności kontraktu + integralność testid.
+
+### 2026-07-28 - Generowanie obrazów AI wyłącznie przez Image API, nigdy chat/completions z modalities
+
+- **Kategoria**: `Build/Tooling` | `UI/UX`
+- **Problem**: `generate-image` czasem zwracał `success: true` z pustym `imageBase64` / `isTextOnly` — UI pokazywał „wygenerowano tekst”, zdjęcie nie powstawało, kredyty ginęły.
+- **Przyczyna**: Backend wołał OpenRouter `/chat/completions` z `modalities: ["image","text"]` na Gemini Flash Image — model mógł legalnie odpowiedzieć tekstem. Brak walidacji bajtów i brak refundu przy porażce.
+- **Rozwiązanie**: `ExerciseImageGenerationService` → `POST /api/v1/images` z kaskadą modeli + magic-number validation; `TryRefundCredits` przy 502; frontend: `useExerciseImageGeneration` + discriminated union zamiast `null`/`isTextOnly`.
+- **Reguła**: Obrazy generuj tylko przez dedykowane Image API (`/images`). Nigdy `/chat/completions` z `modalities`. Sukces = niepusty base64 z poprawnym magic number; przy porażce zawsze refund kredytów i HTTP 502 z `errorCode`.
+
+### 2026-07-28 - Create i duplicate ćwiczenia muszą dzielić jeden builder payloadu
+
+- **Kategoria**: `GraphQL` | `React`
+- **Problem**: Wizard create i `handleDuplicateExercise` mapowały pola osobno — duplicate gubił load/difficulty, a create nie wysyłał `audioCue`/`difficultyLevel` mimo kontraktu mutacji.
+- **Przyczyna**: Lokalne obiekty `variables` w dwóch entrypointach create zamiast wspólnego write-path (jak przy zestawach).
+- **Rozwiązanie**: `buildCreateExerciseVariables` + `inferExerciseType`; wizard i duplicate budują ten sam payload z draftu zgodnego z core modelem.
+- **Reguła**: Jeśli dwa flow tworzą ten sam byt (`Exercise`), utrzymuj jeden helper create→GraphQL; różnicuj tylko UI entrypointu, nigdy mapowanie pól mutacji.
+
+### 2026-07-28 - Enrichment na /exercises zapisuj przez updateExercise.enrichmentDataJson, nie updateExerciseField
+
+- **Kategoria**: `GraphQL` | `React`
+- **Problem**: Po create ćwiczenia → edycja → wypełnienie sekcji enrichment (sprzęt/AI/kroki) zapis padał z `updateExerciseField` / „Unexpected Execution Error” / „Nie udało się zapisać”.
+- **Przyczyna**: Frontend wołał adminową `UpdateExerciseField` (`RequireContentManagerPermission`). Terapeuta org może tworzyć/edytować core przez `updateExercise`, ale nie ma roli ContentManager. Fałszywe założenie w lessons mówiło, że `enrichmentData` nie ma kanału w `UPDATE_EXERCISE_MUTATION` — backend od dawna przyjmuje `enrichmentDataJson`.
+- **Rozwiązanie**: Additive `enrichmentDataJson` w `UPDATE_EXERCISE_MUTATION`; `/exercises/[id]` i org-verification zapisują enrichment przez `buildEnrichmentUpdateVariables` → `updateExercise`. `updateExerciseField` zostaje dla CM/global verification.
+- **Reguła**: Zapis enrichment dla terapeuty/org Owner = zawsze `updateExercise(enrichmentDataJson)`. `updateExerciseField` wyłącznie dla ContentManager. Przed wyborem mutacji sprawdź backendowy gate uprawnień, nie tylko nazwę pola.
+
+### 2026-07-27 - Detal zestawu musi czytać load przez wspólny adapter, nie lokalny mapper
+
+- **Kategoria**: `React` | `GraphQL`
+- **Problem**: Po utworzeniu zestawu z obciążeniem 10 kg backend zapisał `Load` JSONB, ale na stronie szczegółów / w dialogu inline edycji pole wyglądało na puste („nie zapisało się”).
+- **Przyczyna**: Lokalne `toExecutionCardData` / `mappingToCardData` pomijały `load`/`loadWeightKg`; quick-update i `EditExerciseInSetDialog` nie wysyłały też `buildExerciseLoadMutationVars` przy edycji.
+- **Rozwiązanie**: Przepięto odczyt na `fromExerciseMapping`; dopięto dual-write load w quick-update i dialogu edycji parametrów.
+- **Reguła**: Nigdy nie utrzymuj lokalnych mapperów karty ćwiczenia na detalach zestawu — zawsze `fromExerciseMapping` + `buildExerciseLoadMutationVars` dla load; lokalny mapper bez pól JSONB wygląda jak „zapis nie działa”.
+
+### 2026-07-27 - Dwa kreatory zestawu muszą dzielić jeden write-path i wspólne pola metadanych
+
+- **Kategoria**: `UI/UX` | `React` | `GraphQL`
+- **Problem**: Sidebar „Kreator zestawu” i pełny `CreateSetWizard` wyglądały podobnie (ta sama `ExerciseExecutionCard`), ale miały osobne ścieżki zapisu (dialog bez `frequency`), osobne UI nazwy/AI/opisu, osobne formatowanie czasu oraz auto-redirect po create — co powodowało drift kontraktu i UX.
+- **Przyczyna**: Szybki flow sidebara powstał jako lokalny skrót zamiast rozszerzenia kanonicznego kreatora o współdzielone helpery/komponenty.
+- **Rozwiązanie**: Wydzielono `createSetSubmit.ts`, `SetNameField`, `SetDescriptionCollapsible`; przepięto oba entrypointy; ujednolicono podsumowanie czasu; usunięto `layoutVariant="sidebar"` na rzecz container queries; po create w sidebarze toast + „Zobacz zestaw” zamiast `router.push`.
+- **Reguła**: Jeśli dwa flow tworzą ten sam byt (`ExerciseSet` TEMPLATE), utrzymuj jeden write-path helper i współdzielone pola metadanych; różnicuj tylko layout entrypointu (sidebar vs modal), nigdy payload mutacji ani semantykę karty ćwiczenia.
+
+### 2026-07-20 - ExerciseLoad kg-only wymaga dual-write w mutacjach i we wszystkich builderach
+
+- **Kategoria**: `GraphQL` | `React`
+- **Problem**: Obciążenie w Kreatorze Zestawu wyglądało na edytowalne, ale nie wracało po zapisie; jednocześnie backend miał już `LoadWeightKg`/`LoadSource`, a mutacje zapisywały tylko legacy i wipe’owały kg-only przy update.
+- **Przyczyna**: UI mapowało `loadKg` tylko na `loadValue`+`loadUnit` (bez `loadType`/`loadText`/`loadWeightKg`); backend tworzył `new ExerciseLoad` bez pól kg-only; ścieżki (Kreator, ExerciseSetBuilder, Assignment) miały niespójne adaptery.
+- **Rozwiązanie**: `ExerciseLoadFactory` w backendzie (dual-write + preserve przy partial update) oraz wspólny `buildExerciseLoadMutationVars` w adminie podpięty we wszystkich write pathach; dual-read preferuje `loadWeightKg`.
+- **Reguła**: Przy additive zmianie modelu JSONB (np. nowe pole docelowe) ZAWSZE domknij write path mutacji GraphQL w tym samym PR-ze co pola modelu i ujednolić wszystkie klienty UI przez jeden helper — lokalny fix w jednym builderze zostawia drift.
+
 ### 2026-07-09 - Redesign "Aktywność i postępy" — card-in-card noise i heatmap bez capu rozmiaru kafla
 
 - **Kategoria**: `UI/UX` | `React`
@@ -765,5 +869,13 @@ Dziennik wniosków z pracy AI agentów. Po każdej korekcie dodaj nowy wpis.
 - **Przyczyna**: Globalny i organizacyjny lifecycle używają tej samej encji `Exercise`, ale mają niezależne statusy i granice tenantów. Dodatkowo selekcja może przeżyć zmianę danych kolejki, jeśli nie jest czyszczona przy zmianie filtra, wyszukiwania lub strony.
 - **Rozwiązanie**: Wydzielono wspólny page-scoped model selekcji, resetowano go przy zmianie kontekstu listy, a cross-org bulk payload przenosi parę `organizationId + exerciseId`; backend ma ponownie egzekwować RBAC, scope i dozwolone przejścia statusu oraz zwracać błędy per ID.
 - **Reguła**: Dla bulk operacji na encjach tenant-aware payload zawsze musi zawierać jawny scope, selekcję ograniczaj do aktualnie widocznej strony, a częściowe wyniki obsługuj per rekord — nigdy nie zakładaj, że sukces całej mutacji oznacza sukces każdego ID.
+
+### 2026-07-28 - duration vs wyliczany czas serii + overridesJson na mappingu
+
+- **Kategoria**: `Exercise` | `GraphQL` | `UX`
+- **Problem**: Edytowalne „Czas serii” (`duration`) dublowało kafel wyliczany; na zestawie TEMPLATE pola side/ROM/teksty były tylko „odziedziczone”, mimo że fizjo buduje protokoły przed assignem.
+- **Przyczyna**: `duration` to legacy override time-based; encja mapping nie miała kolumn klasyfikacji/treści — tylko assignment `exerciseOverrides`.
+- **Rozwiązanie**: `duration` → `DEPRECATED_FIELD_KEYS` + legacy clear row; addytywne `ExerciseSetMapping.overridesJson` zawsze w kontrakcie admina (deploy razem z backendem). Precedencja resolvera: assignment > mapping JSON > columns > template.
+- **Reguła**: Czas serii pokazuj jako wyliczenie; edytuj `executionTime`. Personalizacja szablonu zestawu ≠ personalizacja pacjenta — osobne warstwy JSON, ten sam kształt kluczy. Addytywne pola GraphQL wdrażaj razem z backendem.
 
 <!-- Dodawaj nowe wpisy powyżej tej linii -->

@@ -1,9 +1,9 @@
 export { ExerciseCard } from './ExerciseCard';
 export type { Exercise } from './ExerciseCard';
-export { ExerciseForm } from './ExerciseForm';
-export type { ExerciseFormValues } from './ExerciseForm';
 export { ExerciseDialog } from './ExerciseDialog';
 export { CreateExerciseWizard } from './CreateExerciseWizard';
+export { ExerciseEditor } from './ExerciseEditor';
+export { ExerciseParametersEditor } from './ExerciseParametersEditor';
 export { MediaUploadSection } from './MediaUploadSection';
 export { TagPicker } from './TagPicker';
 export { TagCard } from './TagCard';

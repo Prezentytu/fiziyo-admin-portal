@@ -73,15 +73,21 @@ import {
   RESUBMIT_FROM_ORIGINAL_MUTATION,
   CREATE_EXERCISE_MUTATION,
 } from '@/graphql/mutations/exercises.mutations';
-import { UPDATE_EXERCISE_FIELD_MUTATION } from '@/graphql/mutations/adminExercises.mutations';
 import { useExerciseEditorForm } from '@/features/exercises/useExerciseEditorForm';
 import type { ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.types';
-import { aiService } from '@/services/aiService';
 import { createTagsMap, mapExerciseTagsToObjects } from '@/utils/tagUtils';
+import { useExerciseImageGeneration } from '@/features/exercises/useExerciseImageGeneration';
+import { ImageStylePicker } from '@/features/exercises/ImageStylePicker';
 import { useOrganization } from '@/contexts/OrganizationContext';
 import type { ExerciseByIdResponse, ExerciseTagsResponse, TagCategoriesResponse } from '@/types/apollo';
+import {
+  buildEnrichmentUpdateVariables,
+  isExerciseSaveAuthError,
+} from '@/features/exercises/utils/buildEnrichmentUpdateVariables';
 import { getNextExerciseCopyName } from '@/features/exercises/utils/getNextExerciseCopyName';
+import { buildCreateExerciseVariables } from '@/features/exercises/utils/buildCreateExerciseVariables';
 import { calculateExerciseTotalSeconds, formatExerciseDuration } from '@/utils/exerciseTime';
+import { resolveLoadKg } from '@/utils/exerciseLoadMutation';
 import { verificationCopy } from '@/features/verification/verificationCopy';
 import { ORG_VERIFICATION_REFETCH_QUERIES } from '@/hooks/useOrganizationVerificationRealtime';
 
@@ -106,6 +112,12 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
   const [isEditMode, setIsEditMode] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const {
+    generate: generateAiImage,
+    isGenerating: isGeneratingAiImage,
+    imageStyle,
+    setImageStyle,
+  } = useExerciseImageGeneration({ showSuccessToast: false });
   const fileInputRef = useRef<HTMLInputElement>(null);
   const apolloClient = useApolloClient();
   const [isCreateSetWizardOpen, setIsCreateSetWizardOpen] = useState(false);
@@ -134,7 +146,6 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
   });
 
   const [updateExercise] = useMutation(UPDATE_EXERCISE_MUTATION);
-  const [updateExerciseField] = useMutation(UPDATE_EXERCISE_FIELD_MUTATION);
   const [uploadExerciseImage] = useMutation(UPLOAD_EXERCISE_IMAGE_MUTATION);
   const [deleteExerciseImage] = useMutation(DELETE_EXERCISE_IMAGE_MUTATION);
 
@@ -194,11 +205,11 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
 
   const updateEnrichment = useCallback(
     async (payload: ExerciseEnrichmentData) => {
-      await updateExerciseField({
-        variables: { exerciseId: id, fieldName: 'enrichmentData', value: JSON.stringify(payload ?? {}) },
+      await updateExercise({
+        variables: buildEnrichmentUpdateVariables(id, payload),
       });
     },
-    [id, updateExerciseField]
+    [id, updateExercise]
   );
 
   const handleSaved = useCallback(() => {
@@ -207,7 +218,11 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
     void apolloClient.refetchQueries({ include: [GET_EXERCISE_BY_ID_QUERY] });
   }, [apolloClient]);
 
-  const handleSaveError = useCallback(() => {
+  const handleSaveError = useCallback((error?: unknown) => {
+    if (error && isExerciseSaveAuthError(error)) {
+      toast.error('Brak uprawnień do zapisu tych zmian');
+      return;
+    }
     toast.error('Nie udało się zapisać zmian');
   }, []);
 
@@ -284,41 +299,44 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
   const handleDuplicateExercise = async () => {
     if (!organizationId || !exercise) return;
 
-    const setsValue = exercise.defaultSets ?? exercise.sets ?? null;
-    const repsValue = exercise.defaultReps ?? exercise.reps ?? null;
-    const durationValue = exercise.defaultDuration ?? exercise.duration ?? null;
-    const restBetweenSetsValue = exercise.defaultRestBetweenSets ?? exercise.restSets ?? null;
-    const restBetweenRepsValue = exercise.defaultRestBetweenReps ?? exercise.restReps ?? null;
-    const sideValue = exercise.side || exercise.exerciseSide;
     const duplicatedExerciseName = getNextExerciseCopyName(exercise.name, organizationExerciseNames);
+    const exerciseWithLoad = exercise as typeof exercise & {
+      defaultLoad?: {
+        loadWeightKg?: number | null;
+        value?: number | null;
+        unit?: string | null;
+      } | null;
+    };
+    const loadKg = resolveLoadKg(exerciseWithLoad.defaultLoad) ?? null;
 
     try {
       const result = await createExercise({
-        variables: {
+        variables: buildCreateExerciseVariables({
           organizationId,
-          scope: 'ORGANIZATION',
-          name: duplicatedExerciseName,
-          description: (exercise.patientDescription || exercise.description || '').trim(),
-          type: exercise.type || 'reps',
-          sets: setsValue,
-          reps: repsValue,
-          duration: durationValue,
-          restSets: restBetweenSetsValue,
-          restReps: restBetweenRepsValue,
-          preparationTime: exercise.preparationTime ?? null,
-          executionTime: exercise.defaultExecutionTime ?? exercise.executionTime ?? null,
-          videoUrl: exercise.videoUrl || null,
-          images: exercise.images?.length ? exercise.images : null,
-          notes: exercise.notes || null,
-          exerciseSide: sideValue && sideValue !== 'none' ? sideValue : null,
-          mainTags: normalizeTagIds(exercise.mainTags),
-          additionalTags: normalizeTagIds(exercise.additionalTags),
-          tempo: exercise.tempo || null,
-          clinicalDescription: exercise.clinicalDescription || null,
-          audioCue: (exercise as { audioCue?: string }).audioCue || null,
-          rangeOfMotion: (exercise as { rangeOfMotion?: string }).rangeOfMotion || null,
-          isActive: true,
-        },
+          draft: {
+            name: duplicatedExerciseName,
+            patientDescription: exercise.patientDescription || exercise.description || '',
+            clinicalDescription: exercise.clinicalDescription,
+            notes: exercise.notes,
+            audioCue: exercise.audioCue,
+            tempo: exercise.tempo,
+            rangeOfMotion: exercise.rangeOfMotion,
+            side: exercise.side || exercise.exerciseSide,
+            difficultyLevel: exercise.difficultyLevel,
+            videoUrl: exercise.videoUrl,
+            sets: exercise.defaultSets ?? exercise.sets ?? null,
+            reps: exercise.defaultReps ?? exercise.reps ?? null,
+            duration: exercise.defaultDuration ?? exercise.duration ?? null,
+            restSets: exercise.defaultRestBetweenSets ?? exercise.restSets ?? null,
+            restReps: exercise.defaultRestBetweenReps ?? exercise.restReps ?? null,
+            preparationTime: exercise.preparationTime ?? null,
+            executionTime: exercise.defaultExecutionTime ?? exercise.executionTime ?? null,
+            loadKg,
+            images: exercise.images?.length ? exercise.images : null,
+            mainTags: normalizeTagIds(exercise.mainTags),
+            additionalTags: normalizeTagIds(exercise.additionalTags),
+          },
+        }),
       });
 
       const duplicatedExerciseId = (result.data as { createExercise?: { id?: string } } | undefined)?.createExercise?.id;
@@ -403,7 +421,10 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
   );
 
   const handleAIGenerateImage = useCallback(async () => {
-    if (!exercise?.name) return;
+    if (!exercise?.name?.trim()) {
+      toast.error('Brak nazwy ćwiczenia do generowania obrazu');
+      return;
+    }
 
     const currentCount = exercise.images?.length ?? 0;
     if (currentCount >= 5) {
@@ -411,22 +432,20 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
       return;
     }
 
+    const description = [exercise.patientDescription, exercise.description].filter(Boolean).join(' ');
+    const generatedFile = await generateAiImage({
+      exerciseName: exercise.name,
+      exerciseDescription: description,
+      exerciseType: exercise.type?.toLowerCase() === 'time' ? 'time' : 'reps',
+      style: imageStyle,
+    });
+
+    if (!generatedFile) {
+      return;
+    }
+
     setUploadingImage(true);
     try {
-      const description = [exercise.patientDescription, exercise.description].filter(Boolean).join(' ');
-      const generated = await aiService.generateExerciseImage(
-        exercise.name,
-        description,
-        exercise.type?.toLowerCase() === 'time' ? 'time' : 'reps',
-        'illustration'
-      );
-
-      const generatedFile = generated?.file;
-      if (!generatedFile) {
-        toast.error('Nie udało się wygenerować obrazu');
-        return;
-      }
-
       const base64Image = await fileToBase64(generatedFile);
       await uploadExerciseImage({
         variables: { exerciseId: id, base64Image, contentType: generatedFile.type || 'image/png' },
@@ -434,12 +453,12 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
       await apolloClient.refetchQueries({ include: [GET_EXERCISE_BY_ID_QUERY] });
       toast.success('Zdjęcie AI zostało wygenerowane');
     } catch (err) {
-      console.error('[ExerciseDetail] AI image generation failed:', err);
-      toast.error('Nie udało się wygenerować zdjęcia AI');
+      console.error('[ExerciseDetail] AI image upload failed:', err);
+      toast.error('Nie udało się zapisać wygenerowanego zdjęcia');
     } finally {
       setUploadingImage(false);
     }
-  }, [exercise, id, uploadExerciseImage, fileToBase64, apolloClient]);
+  }, [exercise, id, uploadExerciseImage, fileToBase64, apolloClient, generateAiImage, imageStyle]);
 
   if (loading) {
     return (
@@ -829,12 +848,20 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
                 </div>
               )}
 
-              <div className="flex items-center gap-2">
+              {isGeneratingAiImage && (
+                <div
+                  className="mb-3 aspect-video w-full max-w-[220px] animate-pulse rounded-xl border border-dashed border-border bg-muted/40"
+                  aria-hidden
+                  data-testid="exercise-detail-ai-image-skeleton"
+                />
+              )}
+
+              <div className="flex flex-wrap items-center gap-2">
                 <Button
                   size="sm"
                   variant="outline"
                   onClick={() => fileInputRef.current?.click()}
-                  disabled={uploadingImage || (exercise.images?.length ?? 0) >= 5}
+                  disabled={uploadingImage || isGeneratingAiImage || (exercise.images?.length ?? 0) >= 5}
                   data-testid="exercise-detail-upload-image-btn"
                 >
                   {uploadingImage ? (
@@ -844,15 +871,26 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
                   )}
                   Dodaj zdjęcie
                 </Button>
+                <ImageStylePicker
+                  value={imageStyle}
+                  onChange={setImageStyle}
+                  disabled={isGeneratingAiImage || uploadingImage}
+                  testIdPrefix="exercise-detail-ai-style"
+                />
                 <Button
                   size="sm"
                   variant="outline"
                   onClick={handleAIGenerateImage}
-                  disabled={uploadingImage || !exercise.name || (exercise.images?.length ?? 0) >= 5}
+                  disabled={uploadingImage || isGeneratingAiImage || !exercise.name || (exercise.images?.length ?? 0) >= 5}
+                  aria-busy={isGeneratingAiImage}
                   data-testid="exercise-detail-ai-image-btn"
                 >
-                  <Sparkles className="mr-2 h-4 w-4" />
-                  Generuj AI
+                  {isGeneratingAiImage ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Sparkles className="mr-2 h-4 w-4" />
+                  )}
+                  {isGeneratingAiImage ? 'Generowanie…' : 'Generuj AI'}
                 </Button>
               </div>
 
@@ -883,7 +921,7 @@ export default function ExerciseDetailPage({ params }: ExerciseDetailPageProps) 
             <ExerciseEditor form={exerciseEditorForm} />
           ) : (
             <>
-              {/* 1. Parametry (dawkowanie) */}
+              {/* 1. Podstawowe parametry */}
               <div>
                 <h2 className="flex items-center gap-2 text-base font-semibold text-foreground mb-3">
                   <RefreshCw className="h-4 w-4 text-muted-foreground" />

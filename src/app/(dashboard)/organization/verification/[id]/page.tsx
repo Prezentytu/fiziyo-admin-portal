@@ -26,9 +26,6 @@ import {
   REQUEST_ORGANIZATION_EXERCISE_CHANGES_MUTATION,
 } from '@/graphql/mutations/adminExercises.mutations';
 import {
-  UPDATE_EXERCISE_FIELD_MUTATION,
-} from '@/graphql/mutations/adminExercises.mutations';
-import {
   UPDATE_EXERCISE_MUTATION as UPDATE_EXERCISE_DETAILS_MUTATION,
   UPLOAD_EXERCISE_IMAGE_MUTATION,
   DELETE_EXERCISE_IMAGE_MUTATION,
@@ -43,6 +40,10 @@ import type {
   VerificationQueueNavigator,
 } from '@/graphql/types/adminExercise.types';
 import type { ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.types';
+import {
+  buildEnrichmentUpdateVariables,
+  isExerciseSaveAuthError,
+} from '@/features/exercises/utils/buildEnrichmentUpdateVariables';
 import { ORG_VERIFICATION_REFETCH_QUERIES } from '@/hooks/useOrganizationVerificationRealtime';
 
 interface OrganizationVerificationDetailPageProps {
@@ -115,9 +116,6 @@ export default function OrganizationVerificationDetailPage({ params }: Readonly<
     ARCHIVE_ORGANIZATION_EXERCISE_MUTATION,
     orgVerificationRefetch
   );
-  const [updateExerciseField] = useMutation(UPDATE_EXERCISE_FIELD_MUTATION, {
-    onError: (error) => toast.error(`Błąd zapisu: ${error.message}`),
-  });
   const [updateExerciseDetails] = useMutation(UPDATE_EXERCISE_DETAILS_MUTATION, {
     onError: (error) => toast.error(`Błąd zapisu: ${error.message}`),
   });
@@ -149,18 +147,24 @@ export default function OrganizationVerificationDetailPage({ params }: Readonly<
 
   const updateEnrichment = useCallback(
     async (payload: ExerciseEnrichmentData) => {
-      await updateExerciseField({
-        variables: { exerciseId: id, fieldName: 'enrichmentData', value: JSON.stringify(payload ?? {}) },
+      await updateExerciseDetails({
+        variables: buildEnrichmentUpdateVariables(id, payload),
       });
     },
-    [id, updateExerciseField]
+    [id, updateExerciseDetails]
   );
 
   const exerciseEditorForm = useExerciseEditorForm({
     source: exercise,
     updateCore,
     updateEnrichment,
-    onError: () => toast.error('Nie udało się zapisać zmian'),
+    onError: (error) => {
+      if (isExerciseSaveAuthError(error)) {
+        toast.error('Brak uprawnień do zapisu tych zmian');
+        return;
+      }
+      toast.error('Nie udało się zapisać zmian');
+    },
     autosaveDelayMs: 900,
   });
   const { core, flush: flushEditorForm } = exerciseEditorForm;

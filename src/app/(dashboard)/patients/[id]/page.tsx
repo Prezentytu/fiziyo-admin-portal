@@ -194,25 +194,49 @@ export default function PatientDetailPage({ params }: PatientDetailPageProps) {
         id: editingPlanAssignment.exerciseSet.id,
         name: editingPlanAssignment.exerciseSet.name,
         description: editingPlanAssignment.exerciseSet.description,
-        exerciseMappings: (editingPlanAssignment.exerciseSet.exerciseMappings || []).map((mapping) => ({
-          ...mapping,
-          order: mapping.order ?? undefined,
-          sets: mapping.sets ?? undefined,
-          reps: mapping.reps ?? undefined,
-          duration: mapping.duration ?? undefined,
-          restSets: mapping.restSets ?? undefined,
-          restReps: mapping.restReps ?? undefined,
-          preparationTime: mapping.preparationTime ?? undefined,
-          executionTime: mapping.executionTime ?? undefined,
-          tempo: mapping.tempo ?? undefined,
-          notes: mapping.notes ?? undefined,
-          customName: mapping.customName ?? undefined,
-          customDescription: mapping.customDescription ?? undefined,
-          loadType: mapping.loadType ?? undefined,
-          loadValue: mapping.loadValue ?? undefined,
-          loadUnit: mapping.loadUnit ?? undefined,
-          loadText: mapping.loadText ?? undefined,
-        })),
+        exerciseMappings: (editingPlanAssignment.exerciseSet.exerciseMappings || []).map((mapping) => {
+          const { load: _discardLoad, ...mappingWithoutLooseLoad } = mapping;
+          return {
+            ...mappingWithoutLooseLoad,
+            order: mapping.order ?? undefined,
+            sets: mapping.sets ?? undefined,
+            reps: mapping.reps ?? undefined,
+            duration: mapping.duration ?? undefined,
+            restSets: mapping.restSets ?? undefined,
+            restReps: mapping.restReps ?? undefined,
+            preparationTime: mapping.preparationTime ?? undefined,
+            executionTime: mapping.executionTime ?? undefined,
+            tempo: mapping.tempo ?? undefined,
+            notes: mapping.notes ?? undefined,
+            customName: mapping.customName ?? undefined,
+            customDescription: mapping.customDescription ?? undefined,
+            loadType: mapping.loadType ?? undefined,
+            loadValue: mapping.loadValue ?? undefined,
+            loadUnit: mapping.loadUnit ?? undefined,
+            loadText: mapping.loadText ?? undefined,
+            load:
+              mapping.load?.text != null
+                ? {
+                    loadWeightKg: mapping.load.loadWeightKg,
+                    loadSource: mapping.load.loadSource,
+                    type:
+                      mapping.load.type === 'band' ||
+                      mapping.load.type === 'bodyweight' ||
+                      mapping.load.type === 'other'
+                        ? mapping.load.type
+                        : 'weight',
+                    value: mapping.load.value,
+                    unit:
+                      mapping.load.unit === 'kg' ||
+                      mapping.load.unit === 'lbs' ||
+                      mapping.load.unit === 'level'
+                        ? mapping.load.unit
+                        : undefined,
+                    text: mapping.load.text,
+                  }
+                : undefined,
+          };
+        }),
       },
     };
   }, [editingPlanAssignment]);

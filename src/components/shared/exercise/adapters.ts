@@ -1,6 +1,11 @@
 import type { ExerciseExecutionCardData } from './types';
-import type { ExerciseMapping, ExerciseOverride, ExerciseLoad } from '@/features/assignment/types';
-import { formatLoad } from '@/utils/loadParser';
+import type { ExerciseMapping, ExerciseLoad } from '@/features/assignment/types';
+import type { ExerciseOverrideFields } from './exerciseOverride';
+import { resolveEffectiveExerciseParams } from './resolveEffectiveExerciseParams';
+import { applyEnrichmentOverride } from './enrichmentOverride';
+import { toV3 } from '@/features/verification/utils/enrichmentToV3';
+import type { ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.types';
+import { resolveLoadKg } from '@/utils/exerciseLoadMutation';
 import { getMediaUrl, getMediaUrls } from '@/utils/mediaUrl';
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -77,13 +82,19 @@ function resolveDisplayName(primaryName?: string, fallbackName?: string): string
 }
 
 function buildLoadFromScalars(load: {
+  loadWeightKg?: number | null;
+  loadSource?: string | null;
   type?: string;
   value?: number;
   unit?: string;
   text?: string;
 }): ExerciseLoad | undefined {
   const hasAnyValue =
-    Boolean(load.text && load.text.trim().length > 0) || load.value != null || Boolean(load.type) || Boolean(load.unit);
+    load.loadWeightKg != null ||
+    Boolean(load.text && load.text.trim().length > 0) ||
+    load.value != null ||
+    Boolean(load.type) ||
+    Boolean(load.unit);
   if (!hasAnyValue) return undefined;
 
   const normalizedType: ExerciseLoad['type'] =
@@ -94,6 +105,8 @@ function buildLoadFromScalars(load: {
   const text = load.text?.trim() || textFromValue || 'Obciążenie';
 
   return {
+    loadWeightKg: load.loadWeightKg,
+    loadSource: load.loadSource,
     type: normalizedType,
     value: load.value,
     unit: normalizedUnit,
@@ -103,67 +116,50 @@ function buildLoadFromScalars(load: {
 
 /**
  * Maps Assignment Wizard mapping + override to ExerciseExecutionCardData.
+ * Precedence: override > mapping > template (see resolveEffectiveExerciseParams).
  */
 export function fromExerciseMapping(
   mapping: ExerciseMapping,
-  override?: ExerciseOverride
+  override?: ExerciseOverrideFields | null
 ): ExerciseExecutionCardData {
+  const effective = resolveEffectiveExerciseParams(mapping, override);
   const exercise = mapping.exercise;
-  const sets = mapping.sets ?? override?.sets ?? exercise?.defaultSets ?? 3;
-  const reps = mapping.reps ?? override?.reps ?? exercise?.defaultReps ?? 10;
-  const executionTime =
-    mapping.executionTime ?? override?.executionTime ?? exercise?.defaultExecutionTime;
-  const exerciseType = exercise?.type?.toLowerCase();
-  const isTimeBased = exerciseType === 'time';
-  const load =
-    mapping.load ??
-    buildLoadFromScalars({
-      type: mapping.loadType,
-      value: mapping.loadValue,
-      unit: mapping.loadUnit,
-      text: mapping.loadText,
-    }) ??
-    override?.load ??
-    exercise?.defaultLoad ??
-    buildLoadFromScalars({
-      type: exercise?.loadType,
-      value: exercise?.loadValue,
-      unit: exercise?.loadUnit,
-      text: exercise?.loadText,
-    });
-  const loadKg = load?.unit === 'kg' ? load.value : undefined;
-  const loadDisplayText = formatLoad(load);
+  const imageUrls = buildImageUrls(exercise?.thumbnailUrl, exercise?.imageUrl, exercise?.images);
+  const overrideImages = override?.customImages?.length
+    ? getMediaUrls(override.customImages)
+    : [];
 
-  const thumb = exercise?.thumbnailUrl ?? exercise?.imageUrl ?? exercise?.images?.[0];
   return {
     id: mapping.id,
-    displayName: resolveDisplayName(mapping.customName, exercise?.name),
-    thumbnailUrl: thumb ?? undefined,
-    imageUrls: buildImageUrls(exercise?.thumbnailUrl, exercise?.imageUrl, exercise?.images),
-    videoUrl: mapping.videoUrl ?? exercise?.videoUrl ?? undefined,
-    sets,
-    reps,
-    duration: mapping.duration ?? override?.duration ?? exercise?.defaultDuration,
-    executionTime,
-    restSets: mapping.restSets ?? override?.restSets ?? exercise?.defaultRestBetweenSets ?? 60,
-    restReps: mapping.restReps ?? override?.restReps ?? exercise?.defaultRestBetweenReps,
-    preparationTime: mapping.preparationTime ?? override?.preparationTime ?? exercise?.preparationTime,
-    tempo: mapping.tempo ?? override?.tempo ?? exercise?.tempo,
-    loadKg,
-    loadDisplayText: loadDisplayText || undefined,
-    notes: mapping.notes ?? override?.notes ?? '',
-    patientDescription:
-      mapping.customDescription ?? exercise?.patientDescription ?? exercise?.description ?? undefined,
-    clinicalDescription: exercise?.clinicalDescription,
-    audioCue: exercise?.audioCue,
-    rangeOfMotion: exercise?.rangeOfMotion,
-    difficultyLevel: exercise?.difficultyLevel,
-    mainTags: exercise?.mainTags,
-    additionalTags: exercise?.additionalTags,
-    customName: mapping.customName ?? override?.customName,
-    customDescription: mapping.customDescription ?? override?.customDescription,
-    side: (exercise?.side ?? exercise?.exerciseSide ?? 'none')?.toString().toLowerCase(),
-    isTimeBased,
+    sourceExerciseId: exercise?.id ?? mapping.exerciseId,
+    displayName: effective.displayName,
+    thumbnailUrl: overrideImages[0] ?? imageUrls[0] ?? effective.thumbnailUrl,
+    imageUrls: overrideImages.length > 0 ? overrideImages : imageUrls,
+    videoUrl: effective.videoUrl,
+    sets: effective.sets,
+    reps: effective.reps,
+    duration: effective.duration,
+    executionTime: effective.executionTime,
+    restSets: effective.restSets,
+    restReps: effective.restReps,
+    preparationTime: effective.preparationTime,
+    tempo: effective.tempo,
+    loadKg: effective.loadKg,
+    loadDisplayText: effective.loadDisplayText,
+    notes: effective.notes,
+    patientDescription: effective.patientDescription,
+    clinicalDescription: effective.clinicalDescription,
+    audioCue: effective.audioCue,
+    rangeOfMotion: effective.rangeOfMotion,
+    difficultyLevel: effective.difficultyLevel,
+    mainTags: effective.mainTags,
+    additionalTags: effective.additionalTags,
+    customName: effective.customName,
+    customDescription: effective.customDescription,
+    side: effective.side,
+    isTimeBased: effective.isTimeBased,
+    enrichment: effective.effectiveEnrichment,
+    templateEnrichment: toV3(exercise?.enrichmentData),
   };
 }
 
@@ -196,6 +192,7 @@ export function fromBuilderExercise(
     exerciseSide?: string;
     mainTags?: Array<{ name?: string } | string>;
     additionalTags?: Array<{ name?: string } | string>;
+    enrichmentData?: ExerciseEnrichmentData | null;
   },
   params: {
     sets?: number;
@@ -210,24 +207,40 @@ export function fromBuilderExercise(
     customDescription?: string;
     notes?: string;
     exerciseSide?: string;
+    rangeOfMotion?: string;
+    difficultyLevel?: string;
+    patientDescription?: string;
+    clinicalDescription?: string;
+    audioCue?: string;
+    enrichment?: ExerciseEnrichmentData;
+    loadWeightKg?: number;
+    loadSource?: string;
     loadType?: string;
     loadValue?: number;
     loadUnit?: string;
     loadText?: string;
-    load?: ExerciseLoad | { type: string; value?: number; unit?: string; text: string };
+    load?: ExerciseLoad | {
+      loadWeightKg?: number | null;
+      loadSource?: string | null;
+      type: string;
+      value?: number;
+      unit?: string;
+      text: string;
+    };
   }
 ): ExerciseExecutionCardData {
   const isTimeBased = exercise.type?.toLowerCase() === 'time';
   const load =
     params.load ??
     buildLoadFromScalars({
+      loadWeightKg: params.loadWeightKg,
+      loadSource: params.loadSource,
       type: params.loadType,
       value: params.loadValue,
       unit: params.loadUnit,
       text: params.loadText,
     });
-  const loadKg =
-    load && 'unit' in load && load.unit === 'kg' ? load.value : params.loadValue;
+  const loadKg = resolveLoadKg(load) ?? params.loadValue ?? params.loadWeightKg;
   const loadDisplayText =
     (load && 'text' in load ? load.text : params.loadText) ??
     (loadKg == null ? undefined : `${loadKg} kg`);
@@ -235,6 +248,7 @@ export function fromBuilderExercise(
   const thumb = buildImageUrls(exercise.thumbnailUrl, exercise.imageUrl, exercise.images)[0];
   return {
     id: exercise.id,
+    sourceExerciseId: exercise.id,
     displayName: resolveDisplayName(params.customName, exercise.name),
     thumbnailUrl: thumb ?? undefined,
     imageUrls: buildImageUrls(exercise.thumbnailUrl, exercise.imageUrl, exercise.images),
@@ -250,11 +264,12 @@ export function fromBuilderExercise(
     loadKg,
     loadDisplayText: loadDisplayText ?? (loadKg == null ? undefined : `${loadKg} kg`),
     notes: params.notes ?? '',
-    patientDescription: exercise.patientDescription ?? exercise.description,
-    clinicalDescription: exercise.clinicalDescription,
-    audioCue: exercise.audioCue,
-    rangeOfMotion: exercise.rangeOfMotion,
-    difficultyLevel: exercise.difficultyLevel,
+    patientDescription:
+      params.patientDescription ?? exercise.patientDescription ?? exercise.description,
+    clinicalDescription: params.clinicalDescription ?? exercise.clinicalDescription,
+    audioCue: params.audioCue ?? exercise.audioCue,
+    rangeOfMotion: params.rangeOfMotion ?? exercise.rangeOfMotion,
+    difficultyLevel: params.difficultyLevel ?? exercise.difficultyLevel,
     mainTags: exercise.mainTags
       ?.map((tag) => (typeof tag === 'string' ? tag : tag.name))
       .filter((tag): tag is string => Boolean(tag)),
@@ -265,5 +280,7 @@ export function fromBuilderExercise(
     customDescription: params.customDescription,
     side: (params.exerciseSide ?? exercise.side ?? exercise.exerciseSide ?? 'both')?.toLowerCase(),
     isTimeBased,
+    enrichment: params.enrichment ?? applyEnrichmentOverride(exercise.enrichmentData, null),
+    templateEnrichment: toV3(exercise.enrichmentData),
   };
 }

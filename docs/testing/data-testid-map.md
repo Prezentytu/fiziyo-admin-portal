@@ -225,32 +225,42 @@ await expect(page.getByTestId(/^exercise-card-/)).toHaveCount(5);
 
 ### 4. Ćwiczenia (exercise-)
 
-| data-testid                           | Element                                 | Plik                             |
-| ------------------------------------- | --------------------------------------- | -------------------------------- |
-| `exercise-page-title`                 | Tytuł strony                            | `exercises/page.tsx`             |
-| `exercise-search-input`               | Wyszukiwarka                            | `exercises/page.tsx`             |
-| `exercise-view-grid-btn`              | Widok siatki                            | `exercises/page.tsx`             |
-| `exercise-view-list-btn`              | Widok listy                             | `exercises/page.tsx`             |
-| `exercise-create-btn`                 | Dodaj ćwiczenie                         | `exercises/page.tsx`             |
-| `exercise-card-{id}`                  | Karta ćwiczenia                         | `ExerciseCard.tsx`               |
-| `exercise-card-{id}-menu-trigger`     | Menu kontekstowe                        | `ExerciseCard.tsx`               |
-| `exercise-card-{id}-view-btn`         | Podgląd                                 | `ExerciseCard.tsx`               |
-| `exercise-card-{id}-edit-btn`         | Edytuj                                  | `ExerciseCard.tsx`               |
-| `exercise-card-{id}-add-to-set-btn`   | Dodaj do zestawu                        | `ExerciseCard.tsx`               |
-| `exercise-card-{id}-delete-btn`       | Usuń                                    | `ExerciseCard.tsx`               |
-| `exercise-form`                       | Formularz ćwiczenia                     | `ExerciseForm.tsx`               |
-| `exercise-form-name-input`            | Nazwa ćwiczenia                         | `ExerciseForm.tsx`               |
-| `exercise-form-description-input`     | Opis                                    | `ExerciseForm.tsx`               |
-| `exercise-form-type-select`           | Typ ćwiczenia                           | `ExerciseForm.tsx`               |
-| `exercise-form-type-option-reps`      | Opcja: Powtórzenia                      | `ExerciseForm.tsx`               |
-| `exercise-form-type-option-time`      | Opcja: Czasowe                          | `ExerciseForm.tsx`               |
-| `exercise-form-type-option-hold`      | Opcja: Utrzymywanie                     | `ExerciseForm.tsx`               |
-| `exercise-form-side-select`           | Strona ciała                            | `ExerciseForm.tsx`               |
-| `exercise-quick-templates`            | Sekcja szybkich szablonów               | `QuickTemplates.tsx`             |
-| `exercise-quick-templates-toggle-btn` | Rozwiń/zwiń szablony                    | `QuickTemplates.tsx`             |
-| `exercise-quick-template-{id}-btn`    | Przycisk szablonu (np. plank, bird-dog) | `QuickTemplates.tsx`             |
-| `exercise-create-ai-image-btn`        | Wygeneruj obraz AI (widoczny od razu)   | `CreateExerciseWizard.tsx`       |
-| `exercise-submit-to-org-dialog`       | Dialog: zgłoszenie do weryfikacji org   | `SubmitToOrganizationDialog.tsx` |
+| data-testid                                 | Element                                 | Plik                             |
+| ------------------------------------------- | --------------------------------------- | -------------------------------- |
+| `exercise-page-title`                       | Tytuł strony                            | `exercises/page.tsx`             |
+| `exercise-search-input`                     | Wyszukiwarka                            | `exercises/page.tsx`             |
+| `exercise-view-grid-btn`                    | Widok siatki                            | `exercises/page.tsx`             |
+| `exercise-view-list-btn`                    | Widok listy                             | `exercises/page.tsx`             |
+| `exercise-create-btn`                       | Dodaj ćwiczenie                         | `exercises/page.tsx`             |
+| `exercise-card-{id}`                        | Karta ćwiczenia                         | `ExerciseCard.tsx`               |
+| `exercise-card-{id}-menu-trigger`           | Menu kontekstowe                        | `ExerciseCard.tsx`               |
+| `exercise-card-{id}-view-btn`               | Podgląd                                 | `ExerciseCard.tsx`               |
+| `exercise-card-{id}-edit-btn`               | Edytuj                                  | `ExerciseCard.tsx`               |
+| `exercise-card-{id}-add-to-set-btn`         | Dodaj do zestawu                        | `ExerciseCard.tsx`               |
+| `exercise-card-{id}-delete-btn`             | Usuń                                    | `ExerciseCard.tsx`               |
+| `exercise-dialog-save-btn`                  | Zapisz w dialogu edycji                 | `ExerciseDialog.tsx`             |
+| `exercise-dialog-cancel-btn`                | Anuluj w dialogu edycji                 | `ExerciseDialog.tsx`             |
+| `exercise-editor-name-input`                | Nazwa w ExerciseEditor                  | `ExerciseEditor.tsx`             |
+| `exercise-param-{field}-input`              | Pole parametru (sets, reps, …)          | `ExerciseParametersEditor.tsx`   |
+| `exercise-param-side-select`                | Strona ciała                            | `ExerciseParametersEditor.tsx`   |
+| `exercise-param-difficulty-select`          | Poziom trudności                        | `ExerciseParametersEditor.tsx`   |
+| `exercise-param-series-time`                | Computed czas serii                     | `ExerciseParametersEditor.tsx`   |
+| `exercise-param-advanced-toggle`            | Zaawansowane (create variant)           | `ExerciseParametersEditor.tsx`   |
+| `patient-exercise-override-load-kg-input`   | Obciążenie kg (override)                | `EditExerciseOverrideDialog.tsx` |
+| `patient-exercise-override-tempo-input`     | Tempo (override)                        | `EditExerciseOverrideDialog.tsx` |
+| `patient-exercise-override-prep-time-input` | Czas przygotowania (override)           | `EditExerciseOverrideDialog.tsx` |
+| `patient-exercise-override-rom-input`       | ROM (override)                          | `EditExerciseOverrideDialog.tsx` |
+| `exercise-quick-templates`                  | Sekcja szybkich szablonów               | `QuickTemplates.tsx`             |
+| `exercise-quick-templates-toggle-btn`       | Rozwiń/zwiń szablony                    | `QuickTemplates.tsx`             |
+| `exercise-quick-template-{id}-btn`          | Przycisk szablonu (np. plank, bird-dog) | `QuickTemplates.tsx`             |
+| `exercise-create-ai-image-btn`              | Wygeneruj obraz AI (widoczny od razu)   | `CreateExerciseWizard.tsx`       |
+| `exercise-create-ai-image-generate-btn`     | Kafelek Generuj AI w siatce mediów      | `CreateExerciseWizard.tsx`       |
+| `exercise-create-ai-style-group`            | Wybór stylu obrazu AI                   | `CreateExerciseWizard.tsx`       |
+| `exercise-create-ai-image-skeleton`         | Skeleton podczas generowania AI         | `CreateExerciseWizard.tsx`       |
+| `exercise-form-media-ai-generate-btn`       | Generuj AI w dialogu edycji             | `ExerciseDialog.tsx`             |
+| `exercise-form-media-ai-style-group`        | Wybór stylu w dialogu edycji            | `ExerciseDialog.tsx`             |
+| `exercise-form-media-ai-skeleton`           | Skeleton podczas generowania AI         | `ExerciseDialog.tsx`             |
+| `exercise-submit-to-org-dialog`             | Dialog: zgłoszenie do weryfikacji org   | `SubmitToOrganizationDialog.tsx` |
 
 #### Detal ćwiczenia — strona szczegółów (`exercises/[id]/page.tsx`)
 
@@ -272,13 +282,18 @@ await expect(page.getByTestId(/^exercise-card-/)).toHaveCount(5);
 | `exercise-detail-media-edit-section`             | Sekcja zarządzania zdjęciami                                  | `exercises/[id]/page.tsx`     |
 | `exercise-detail-upload-image-btn`               | Dodaj zdjęcie                                                 | `exercises/[id]/page.tsx`     |
 | `exercise-detail-ai-image-btn`                   | Generuj zdjęcie AI                                            | `exercises/[id]/page.tsx`     |
+| `exercise-detail-ai-style-group`                 | Wybór stylu obrazu AI (grupa)                                 | `exercises/[id]/page.tsx`     |
+| `exercise-detail-ai-style-illustration`          | Styl: ilustracja                                              | `exercises/[id]/page.tsx`     |
+| `exercise-detail-ai-style-diagram`               | Styl: diagram                                                 | `exercises/[id]/page.tsx`     |
+| `exercise-detail-ai-style-photo`                 | Styl: zdjęcie                                                 | `exercises/[id]/page.tsx`     |
+| `exercise-detail-ai-image-skeleton`              | Skeleton podczas generowania AI                               | `exercises/[id]/page.tsx`     |
 | `exercise-detail-image-file-input`               | Hidden file input do uploadu                                  | `exercises/[id]/page.tsx`     |
 | `exercise-detail-delete-image-btn`               | Usuń zdjęcie (hover overlay)                                  | `exercises/[id]/page.tsx`     |
 | `exercise-detail-name-input`                     | Edycja nazwy ćwiczenia (tryb edycji)                          | `exercises/[id]/page.tsx`     |
 | `exercise-detail-patient-description-input`      | Edycja opisu dla pacjenta                                     | `exercises/[id]/page.tsx`     |
 | `exercise-detail-clinical-description-input`     | Edycja opisu klinicznego                                      | `exercises/[id]/page.tsx`     |
 | `exercise-detail-notes-input`                    | Edycja notatek                                                | `exercises/[id]/page.tsx`     |
-| `exercise-detail-parameters-primary-group`       | Wyróżniona sekcja "Główne parametry"                          | `ExerciseParametersPanel.tsx` |
+| `exercise-detail-parameters-primary-group`       | Wyróżniona sekcja "Podstawowe parametry"                      | `ExerciseParametersPanel.tsx` |
 | `exercise-param-summary-stat`                    | Wyróżniony podsumowujący stat (czas trwania)                  | `ExerciseParametersPanel.tsx` |
 | `exercise-param-summary-stat-info`               | Info tooltip przy podsumowującym stat                         | `ExerciseParametersPanel.tsx` |
 | `exercise-param-{key}-input`                     | Edycja parametru (liczba/tekst)                               | `ExerciseParametersPanel.tsx` |
@@ -700,14 +715,19 @@ await expect(page.getByTestId(/^exercise-card-/)).toHaveCount(5);
 
 #### Ekran powitalny (Intro)
 
-| data-testid                      | Element                                        | Plik                       |
-| -------------------------------- | ---------------------------------------------- | -------------------------- |
-| `verification-intro-container`   | Kontener ekranu powitalnego                    | `VerificationIntro.tsx`    |
-| `verification-intro-hero-icon`   | Ikona hero                                     | `VerificationIntro.tsx`    |
-| `verification-intro-status-card` | Karta statusu (wynik scan)                     | `VerificationIntro.tsx`    |
-| `verification-intro-load-btn`    | Przycisk "Załaduj ćwiczenia"                   | `VerificationIntro.tsx`    |
-| `reviewer-achievements-card`     | Karta osiągnięć recenzenta (wariant full)      | `ReviewerAchievements.tsx` |
-| `reviewer-achievements-compact`  | Kompaktowy element osiągnięć (wariant compact) | `ReviewerAchievements.tsx` |
+| data-testid                                  | Element                                        | Plik                           |
+| -------------------------------------------- | ---------------------------------------------- | ------------------------------ |
+| `verification-media-upload-btn`              | Upload zdjęć w MasterVideoPlayer               | `MasterVideoPlayer.tsx`        |
+| `verification-media-ai-generate-btn`         | Generuj AI w MasterVideoPlayer                 | `MasterVideoPlayer.tsx`        |
+| `verification-media-ai-style-group`          | Wybór stylu AI w weryfikacji                   | `MasterVideoPlayer.tsx`        |
+| `verification-image-manager-upload-btn`      | Upload w VerificationImageManager (legacy)     | `VerificationImageManager.tsx` |
+| `verification-image-manager-ai-generate-btn` | Generuj AI (legacy)                            | `VerificationImageManager.tsx` |
+| `verification-intro-container`               | Kontener ekranu powitalnego                    | `VerificationIntro.tsx`        |
+| `verification-intro-hero-icon`               | Ikona hero                                     | `VerificationIntro.tsx`        |
+| `verification-intro-status-card`             | Karta statusu (wynik scan)                     | `VerificationIntro.tsx`        |
+| `verification-intro-load-btn`                | Przycisk "Załaduj ćwiczenia"                   | `VerificationIntro.tsx`        |
+| `reviewer-achievements-card`                 | Karta osiągnięć recenzenta (wariant full)      | `ReviewerAchievements.tsx`     |
+| `reviewer-achievements-compact`              | Kompaktowy element osiągnięć (wariant compact) | `ReviewerAchievements.tsx`     |
 
 #### Widok pełny (z zadaniami)
 

@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import type { ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.types';
 
 /**
  * Unified UI model for ExerciseExecutionCard.
@@ -6,14 +7,23 @@ import type { ReactNode } from 'react';
  */
 export interface ExerciseExecutionCardData {
   id: string;
+  /** Template Exercise.id when card represents a mapping instance (for "edit in exercise" links). */
+  sourceExerciseId?: string;
   displayName: string;
+  /**
+   * Effective patient/safety enrichment draft (SPEC-024).
+   * Personalization edits this object; write-path diffs vs templateEnrichment.
+   */
+  enrichment?: ExerciseEnrichmentData;
+  /** Template baseline enrichment for dirty/restore badges. */
+  templateEnrichment?: ExerciseEnrichmentData;
   /** Primary image for thumbnail (single URL). */
   thumbnailUrl?: string;
   /** Full list of image URLs for gallery/lightbox (thumbnail first, then rest). */
   imageUrls?: string[];
   /** Optional video URL displayed in exercise preview. */
   videoUrl?: string;
-  /** Main dosage */
+  /** Basic execution parameters (sets/reps/…) */
   sets: number;
   reps: number;
   /** Duration per set in seconds (display mode in patient app). */
@@ -57,7 +67,15 @@ export type EditableField =
   | 'notes'
   | 'customName'
   | 'customDescription'
-  | 'side';
+  | 'side'
+  | 'rangeOfMotion'
+  | 'difficultyLevel'
+  | 'patientDescription'
+  | 'clinicalDescription'
+  | 'audioCue';
+
+/** Card surface: mapping = TEMPLATE sets (overridesJson); patientPlan = full edit + assignment overrides. */
+export type ExerciseExecutionCardSurface = 'mapping' | 'patientPlan';
 
 export interface ExerciseExecutionCardProps {
   mode: 'view' | 'edit';
@@ -66,7 +84,13 @@ export interface ExerciseExecutionCardProps {
   viewVariant?: 'compact' | 'readable';
   /** Hide timer hint in title area (view mode) */
   hideTimerBadge?: boolean;
-  /** In edit mode, which fields are editable. Omit or empty = all editable. */
+  /**
+   * Persistence surface. Both `mapping` and `patientPlan` edit all parameters;
+   * mapping persists classification/content via overridesJson (SPEC-023).
+   * Default `mapping` for TEMPLATE set builders.
+   */
+  surface?: ExerciseExecutionCardSurface;
+  /** In edit mode, which fields are editable. Omit or empty = all editable for surface. */
   editableFields?: EditableField[];
   /** Current expanded state when controlled */
   expanded?: boolean;
@@ -84,13 +108,13 @@ export interface ExerciseExecutionCardProps {
   dragHandle?: ReactNode;
   /** Optional index badge (e.g. "1") */
   index?: number;
+  /** Show inline "Zmienione" chip (personalization marker in summary/view). */
+  showModifiedBadge?: boolean;
   /** Reason for read-only (e.g. "Edycja niedostępna przy grupowym przypisywaniu") */
   readOnlyReason?: string;
   className?: string;
   /** For data-testid: card will use exercise-execution-card-{id} */
   testIdPrefix?: string;
-  /** Layout variant: sidebar = wąski panel (Kreator Zestawu), domyślny = dialogi/szerokie layouty */
-  layoutVariant?: 'default' | 'sidebar';
 }
 
 /**

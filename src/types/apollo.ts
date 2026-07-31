@@ -147,6 +147,7 @@ export interface Exercise {
   defaultRestBetweenReps?: number;
   preparationTime?: number;
   tempo?: string;
+  rangeOfMotion?: string;
   // Media
   imageUrl?: string;
   thumbnailUrl?: string;

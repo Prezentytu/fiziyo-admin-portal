@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import { useQuery, useMutation, useApolloClient } from '@apollo/client/react';
 import {
   Loader2,
@@ -20,6 +21,8 @@ import {
   Sparkles,
   AlertTriangle,
   Upload,
+  ZoomIn,
+  Trash2,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -28,7 +31,6 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { ImageLightbox } from '@/components/shared/ImageLightbox';
@@ -37,7 +39,11 @@ import { ExerciseFieldLabelWithTooltip } from './ExerciseFieldLabelWithTooltip';
 import { EXERCISE_FIELD_TOOLTIPS } from './exerciseFieldTooltips';
 import { cn } from '@/lib/utils';
 
-import { CREATE_EXERCISE_MUTATION, UPLOAD_EXERCISE_IMAGE_MUTATION } from '@/graphql/mutations/exercises.mutations';
+import {
+  CREATE_EXERCISE_MUTATION,
+  UPDATE_EXERCISE_MUTATION,
+  UPLOAD_EXERCISE_IMAGE_MUTATION,
+} from '@/graphql/mutations/exercises.mutations';
 import { GET_AVAILABLE_EXERCISES_QUERY } from '@/graphql/queries/exercises.queries';
 import { GET_EXERCISE_TAGS_BY_ORGANIZATION_QUERY } from '@/graphql/queries/exerciseTags.queries';
 import { GET_TAG_CATEGORIES_BY_ORGANIZATION_QUERY } from '@/graphql/queries/tagCategories.queries';
@@ -47,94 +53,17 @@ import type { CreateExerciseMutationResult, CreateExerciseVariables } from '@/gr
 import { useVoiceInput } from '@/hooks/useVoiceInput';
 import { aiService } from '@/services/aiService';
 import type { ExerciseSuggestionResponse } from '@/services/aiService';
+import { useExerciseImageGeneration } from './useExerciseImageGeneration';
+import { ImageStylePicker } from './ImageStylePicker';
 import { formatDurationPolish } from '@/utils/durationPolish';
 import { calculateExerciseTotalSeconds } from '@/utils/exerciseTime';
 import { findSimilar } from '@/utils/stringSimilarity';
-
-// ============================================================
-// CLEAN NUMBER INPUT - Pure number, no steppers (Linear/Vercel style)
-// ============================================================
-interface CleanNumberInputProps {
-  label: string;
-  tooltip: string;
-  value: number | null;
-  onChange: (value: number | null) => void;
-  suffix?: string;
-  placeholder?: string;
-  dimmed?: boolean;
-  tabIndex?: number;
-  testId?: string;
-  infoTestId?: string;
-}
-
-function CleanNumberInput({
-  label,
-  tooltip,
-  value,
-  onChange,
-  suffix,
-  placeholder = '0',
-  dimmed = false,
-  tabIndex,
-  testId,
-  infoTestId,
-}: CleanNumberInputProps) {
-  // Handle change with min=0 validation (no negative values)
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const rawValue = e.target.value;
-    if (rawValue === '') {
-      onChange(null);
-      return;
-    }
-    const numValue = Number(rawValue);
-    // Prevent negative values
-    onChange(numValue < 0 ? 0 : numValue);
-  };
-
-  return (
-    <div className={cn('flex flex-col gap-1.5 transition-opacity duration-200', dimmed && 'opacity-40')}>
-      <ExerciseFieldLabelWithTooltip
-        label={label}
-        tooltip={tooltip}
-        className="justify-center"
-        labelClassName="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider text-center"
-        testId={infoTestId ?? `${testId ?? 'exercise-create-field'}-info`}
-      />
-
-      {/* Clean Number Input */}
-      <div
-        className={cn(
-          'relative h-14 rounded-xl transition-all duration-200',
-          'bg-surface/50 border border-border',
-          'hover:border-border focus-within:border-primary/50 focus-within:bg-surface',
-          dimmed && 'hover:border-border'
-        )}
-      >
-        <input
-          type="number"
-          inputMode="numeric"
-          min={0}
-          value={value ?? ''}
-          onChange={handleChange}
-          placeholder={placeholder}
-          tabIndex={tabIndex}
-          className={cn(
-            'w-full h-full bg-transparent text-xl font-bold text-center outline-none',
-            'text-foreground placeholder:text-muted-foreground',
-            '[appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none',
-            suffix ? 'pr-6' : ''
-          )}
-          data-testid={testId}
-        />
-        {suffix && (
-          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-muted-foreground font-medium pointer-events-none">
-            {suffix}
-          </span>
-        )}
-      </div>
-    </div>
-  );
-}
+import { createExerciseSubmit } from './utils/createExerciseSubmit';
+import { inferExerciseType } from './utils/inferExerciseType';
+import { ExerciseParametersEditor } from './ExerciseParametersEditor';
+import { ExerciseContentSections } from './ExerciseContentSections';
+import { useEnrichmentDraft } from './useEnrichmentDraft';
+import type { ExerciseCoreDraft } from './useExerciseEditorForm';
 
 // ============================================================
 // QUICK PRESETS (Unified - shows all params)
@@ -156,7 +85,9 @@ interface ExerciseData {
   name: string;
   description: string;
   clinicalDescription: string;
+  audioCue: string;
   exerciseSide: ExerciseSide;
+  difficultyLevel: string;
   sets: number | null;
   reps: number | null;
   duration: number | null;
@@ -168,10 +99,17 @@ interface ExerciseData {
   notes: string;
   mainTags: string[];
   additionalTags: string[];
-  // Pro Tuning fields
-  tempo: string; // np. "3010" (4 cyfry)
-  weight: string; // np. "20kg" lub "RPE 7"
-  rangeOfMotion: string; // np. "Pełny zakres" lub "Do kąta 90°"
+  tempo: string;
+  loadKg: number | null;
+  rangeOfMotion: string;
+}
+
+function parseAiWeightToLoadKg(weight: string | null | undefined): number | null {
+  if (!weight) return null;
+  const match = weight.replace(',', '.').match(/-?\d+(\.\d+)?/);
+  if (!match) return null;
+  const parsed = Number(match[0]);
+  return !Number.isNaN(parsed) && parsed > 0 ? parsed : null;
 }
 
 // Interface for existing exercises from API
@@ -213,10 +151,12 @@ const DEFAULT_DATA: ExerciseData = {
   name: '',
   description: '',
   clinicalDescription: '',
+  audioCue: '',
   exerciseSide: 'none',
+  difficultyLevel: 'UNKNOWN',
   sets: 3,
-  reps: 10, // Domyślnie 10 powtórzeń (najczęstszy przypadek)
-  duration: null, // null = brak czasu serii
+  reps: 10,
+  duration: null,
   restSets: 60,
   restReps: 0,
   preparationTime: 5,
@@ -225,9 +165,8 @@ const DEFAULT_DATA: ExerciseData = {
   notes: '',
   mainTags: [],
   additionalTags: [],
-  // Pro Tuning defaults
   tempo: '',
-  weight: '',
+  loadKg: null,
   rangeOfMotion: '',
 };
 
@@ -786,7 +725,9 @@ function AIDiffDrawer({
                   <p className="text-[9px] text-muted-foreground uppercase mb-1">Obciążenie</p>
                   <p className="text-sm font-medium text-foreground">{suggestion.advancedParams.weight}</p>
                   <button
-                    onClick={() => onAcceptField('weight', suggestion.advancedParams?.weight)}
+                    onClick={() =>
+                      onAcceptField('loadKg', parseAiWeightToLoadKg(suggestion.advancedParams?.weight))
+                    }
                     className="text-[9px] text-secondary hover:text-secondary/80 mt-1"
                   >
                     ← Użyj
@@ -1021,13 +962,19 @@ function SuggestionCard({
 // MAIN COMPONENT
 // ============================================================
 export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuccess }: CreateExerciseWizardProps) {
+  const router = useRouter();
   const [data, setData] = useState<ExerciseData>(DEFAULT_DATA);
   const [mediaFiles, setMediaFiles] = useState<File[]>([]);
   const [activeMediaPreviewIndex, setActiveMediaPreviewIndex] = useState(0);
   const [isMediaLightboxOpen, setIsMediaLightboxOpen] = useState(false);
   const [showCloseConfirm, setShowCloseConfirm] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [isGeneratingImage, setIsGeneratingImage] = useState(false);
+  const {
+    generate: generateExerciseImage,
+    isGenerating: isGeneratingImage,
+    imageStyle,
+    setImageStyle,
+  } = useExerciseImageGeneration({ successMessage: 'Obraz wygenerowany' });
   const [showTagPicker, setShowTagPicker] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
 
@@ -1132,7 +1079,9 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
     }
   );
 
+  const [updateExercise] = useMutation(UPDATE_EXERCISE_MUTATION);
   const [uploadImage] = useMutation(UPLOAD_EXERCISE_IMAGE_MUTATION);
+  const enrichmentDraft = useEnrichmentDraft();
 
   // Check if form has changes
   const hasChanges = useMemo(() => {
@@ -1141,9 +1090,10 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
       data.description !== '' ||
       mediaFiles.length > 0 ||
       data.mainTags.length > 0 ||
-      data.additionalTags.length > 0
+      data.additionalTags.length > 0 ||
+      !enrichmentDraft.isEmpty
     );
-  }, [data, mediaFiles]);
+  }, [data, mediaFiles, enrichmentDraft.isEmpty]);
 
   const totalDuration = useMemo(
     () =>
@@ -1239,6 +1189,32 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
     setData((prev) => ({ ...prev, [field]: value }));
   }, []);
 
+  const parametersCore = useMemo<ExerciseCoreDraft>(
+    () => ({
+      name: data.name,
+      patientDescription: data.description,
+      clinicalDescription: data.clinicalDescription,
+      notes: data.notes,
+      audioCue: data.audioCue,
+      tempo: data.tempo,
+      rangeOfMotion: data.rangeOfMotion,
+      side: data.exerciseSide,
+      difficultyLevel: data.difficultyLevel,
+      videoUrl: data.videoUrl,
+      sets: data.sets,
+      reps: data.reps,
+      executionTime: data.executionTime,
+      restSets: data.restSets,
+      restReps: data.restReps,
+      preparationTime: data.preparationTime,
+      duration: data.duration,
+      loadKg: data.loadKg,
+      mainTags: data.mainTags,
+      additionalTags: data.additionalTags,
+    }),
+    [data]
+  );
+
   // Apply preset (One-Tap Setup) - works with new unified presets
   const applyPreset = useCallback(
     (preset: {
@@ -1318,24 +1294,18 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
       return;
     }
 
-    setIsGeneratingImage(true);
-    try {
-      // Timer semantics: executionTime > 0 means timed exercise.
-      const inferredType = (data.executionTime ?? 0) > 0 ? 'time' : 'reps';
-      const result = await aiService.generateExerciseImage(data.name, data.description, inferredType, 'illustration');
+    const inferredType = inferExerciseType(data.executionTime);
+    const file = await generateExerciseImage({
+      exerciseName: data.name,
+      exerciseDescription: data.description,
+      exerciseType: inferredType,
+      style: imageStyle,
+    });
 
-      if (result?.file) {
-        setMediaFiles((prev) => [result.file!, ...prev]);
-        toast.success('Obraz wygenerowany');
-      } else {
-        toast.error('Nie udało się wygenerować obrazu');
-      }
-    } catch {
-      toast.error('Błąd generowania obrazu');
-    } finally {
-      setIsGeneratingImage(false);
+    if (file) {
+      setMediaFiles((prev) => [file, ...prev]);
     }
-  }, [data.name, data.description, data.executionTime]);
+  }, [data.name, data.description, data.executionTime, generateExerciseImage, imageStyle]);
 
   // Remove image
   const handleRemoveImage = useCallback((index: number) => {
@@ -1411,7 +1381,7 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
       preparationTime: aiSuggestion.advancedParams?.preparationTime ?? prev.preparationTime,
       executionTime: aiSuggestion.advancedParams?.executionTime ?? prev.executionTime,
       tempo: aiSuggestion.advancedParams?.tempo || prev.tempo,
-      weight: aiSuggestion.advancedParams?.weight || prev.weight,
+      loadKg: parseAiWeightToLoadKg(aiSuggestion.advancedParams?.weight) ?? prev.loadKg,
       rangeOfMotion: aiSuggestion.advancedParams?.rangeOfMotion || prev.rangeOfMotion,
     }));
 
@@ -1478,32 +1448,17 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
 
     setIsSaving(true);
 
-    // Timer semantics: executionTime > 0 means timed exercise.
-    const inferredType = (data.executionTime ?? 0) > 0 ? 'time' : 'reps';
-
     try {
-      // Parse weight as numeric kilograms
-      let loadType: string | null = null;
-      let loadValue: number | null = null;
-      let loadUnit: string | null = null;
-      let loadText: string | null = null;
-
-      const numericWeight = data.weight ? Number(data.weight) : Number.NaN;
-      if (!Number.isNaN(numericWeight) && numericWeight > 0) {
-          loadType = 'weight';
-        loadValue = numericWeight;
-        loadUnit = 'kg';
-        loadText = `${numericWeight} kg`;
-      }
-
-      const result = await createExercise({
-        variables: {
-          organizationId,
-          scope: 'ORGANIZATION',
-          name: data.name.trim(),
-          description: data.description.trim(),
-          clinicalDescription: data.clinicalDescription.trim() || null,
-          type: inferredType,
+      const submitResult = await createExerciseSubmit({
+        organizationId,
+        draft: {
+          name: data.name,
+          patientDescription: data.description,
+          clinicalDescription: data.clinicalDescription,
+          audioCue: data.audioCue,
+          notes: data.notes,
+          side: data.exerciseSide,
+          difficultyLevel: data.difficultyLevel,
           sets: data.sets,
           reps: data.reps,
           duration: data.duration,
@@ -1511,28 +1466,23 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
           restReps: data.restReps,
           preparationTime: data.preparationTime,
           executionTime: data.executionTime,
-          videoUrl: data.videoUrl || null,
+          videoUrl: data.videoUrl,
+          tempo: data.tempo,
+          rangeOfMotion: data.rangeOfMotion,
+          loadKg: data.loadKg,
+          mainTags: data.mainTags,
+          additionalTags: data.additionalTags,
           gifUrl: null,
-          notes: data.notes || null,
-          exerciseSide: data.exerciseSide === 'none' ? null : data.exerciseSide,
-          isActive: true,
-          mainTags: data.mainTags.length > 0 ? data.mainTags : null,
-          additionalTags: data.additionalTags.length > 0 ? data.additionalTags : null,
-          // Pro Tuning fields
-          tempo: data.tempo || null,
-          rangeOfMotion: data.rangeOfMotion || null,
-          // Load fields
-          loadType,
-          loadValue,
-          loadUnit,
-          loadText,
         },
+        enrichment: enrichmentDraft.enrichment,
+        createExercise,
+        updateExercise,
       });
 
-      const exerciseId = result.data?.createExercise?.id;
+      const exerciseId = submitResult.exerciseId;
 
       // Upload images if any
-      if (exerciseId && mediaFiles.length > 0) {
+      if (mediaFiles.length > 0) {
         for (const file of mediaFiles) {
           try {
             const base64 = await fileToBase64(file);
@@ -1556,11 +1506,19 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
         });
       }
 
-      toast.success('Ćwiczenie utworzone!');
-      onOpenChange(false);
-      if (exerciseId) {
-        onSuccess?.({ action: 'created', exerciseId });
+      if (submitResult.enrichmentWarning) {
+        toast.warning(submitResult.enrichmentWarning);
       }
+
+      toast.success('Ćwiczenie utworzone!', {
+        action: {
+          label: 'Dokończ opis',
+          onClick: () => router.push(`/exercises/${exerciseId}`),
+        },
+        duration: 8000,
+      });
+      onOpenChange(false);
+      onSuccess?.({ action: 'created', exerciseId });
     } catch (error) {
       console.error('Error creating exercise:', error);
       toast.error('Nie udało się utworzyć ćwiczenia');
@@ -1729,179 +1687,220 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
               )}
             </section>
 
-            {/* SEKCJA 2: MEDIA - Wide Hero Dropzone */}
+            {/* SEKCJA 2: MEDIA */}
             <section className="mb-6" data-testid="exercise-create-media-gallery">
-              <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest mb-2 block">
-                Media
-              </label>
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">
+                  Media
+                </label>
+                <span className="text-[10px] tabular-nums text-muted-foreground" data-testid="exercise-create-media-count">
+                  {mediaFiles.length}/5
+                </span>
+              </div>
 
               {mediaFiles.length === 0 ? (
-                /* STAN PUSTY: Hero Dropzone Banner */
-                <div
-                  onClick={() => fileInputRef.current?.click()}
-                  onDragOver={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                  }}
-                  onDrop={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    const files = Array.from(e.dataTransfer.files).filter(
-                      (f) => f.type.startsWith('image/') || f.type.startsWith('video/')
-                    );
-                    if (files.length > 0) {
-                      handleFileSelect({ target: { files } } as unknown as React.ChangeEvent<HTMLInputElement>);
-                    }
-                  }}
-                  className={cn(
-                    'w-full h-40 rounded-xl border-2 border-dashed border-border',
-                    'flex flex-col items-center justify-center gap-3 cursor-pointer',
-                    'bg-surface/30 hover:bg-surface/50 hover:border-primary/30',
-                    'transition-all duration-300 group'
-                  )}
-                  tabIndex={2}
-                  data-testid="exercise-create-media-dropzone"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-full bg-surface-light/50 flex items-center justify-center group-hover:bg-primary/10 transition-colors">
-                      <Upload className="h-6 w-6 text-muted-foreground group-hover:text-primary transition-colors" />
-                    </div>
-                    <div className="text-left">
-                      <p className="text-sm text-muted-foreground group-hover:text-foreground transition-colors font-medium">
-                        Przeciągnij zdjęcia lub wideo
-                      </p>
-                      <p className="text-xs text-text-tertiary group-hover:text-muted-foreground transition-colors">
-                        Start / Koniec ruchu • maks. 5 plików
-                      </p>
+                isGeneratingImage ? (
+                  <div
+                    className="relative flex h-40 w-full flex-col items-center justify-center gap-3 overflow-hidden rounded-xl border border-border bg-muted/30"
+                    aria-busy
+                    data-testid="exercise-create-ai-image-skeleton"
+                  >
+                    <div className="absolute inset-0 animate-pulse bg-muted/40" aria-hidden />
+                    <Loader2 className="relative z-10 h-7 w-7 animate-spin text-secondary" />
+                    <div className="relative z-10 text-center">
+                      <p className="text-sm font-medium text-foreground">Generowanie obrazu AI…</p>
+                      <p className="mt-1 text-xs text-muted-foreground">To potrwa kilka sekund</p>
                     </div>
                   </div>
-
-                  {/* Inline AI Generate hint */}
-                  <div className="flex items-center gap-4 mt-1">
-                    <span className="text-[10px] text-text-tertiary">lub</span>
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleGenerateImage();
-                      }}
-                      disabled={isGeneratingImage || !data.name.trim()}
-                      className={cn(
-                        'flex items-center gap-1.5 text-xs text-secondary/70 hover:text-secondary',
-                        'disabled:opacity-40 disabled:cursor-not-allowed transition-colors'
-                      )}
-                      data-testid="exercise-create-ai-image-btn"
-                    >
-                      {isGeneratingImage ? (
-                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                      ) : (
-                        <Wand2 className="h-3.5 w-3.5" />
-                      )}
-                      Wygeneruj z AI
-                    </button>
+                ) : (
+                  <div
+                    onClick={() => fileInputRef.current?.click()}
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                    }}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      const files = Array.from(e.dataTransfer.files).filter(
+                        (f) => f.type.startsWith('image/') || f.type.startsWith('video/')
+                      );
+                      if (files.length > 0) {
+                        handleFileSelect({ target: { files } } as unknown as React.ChangeEvent<HTMLInputElement>);
+                      }
+                    }}
+                    className={cn(
+                      'flex h-40 w-full cursor-pointer flex-col items-center justify-center gap-3 rounded-xl border-2 border-dashed border-border',
+                      'bg-surface/30 transition-colors duration-150 group',
+                      'hover:border-primary/30 hover:bg-surface/50',
+                      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
+                    )}
+                    tabIndex={2}
+                    role="button"
+                    data-testid="exercise-create-media-dropzone"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-surface-light/50 transition-colors group-hover:bg-primary/10">
+                        <Upload className="h-6 w-6 text-muted-foreground transition-colors group-hover:text-primary" />
+                      </div>
+                      <div className="text-left">
+                        <p className="text-sm font-medium text-muted-foreground transition-colors group-hover:text-foreground">
+                          Przeciągnij zdjęcia lub wideo
+                        </p>
+                        <p className="text-xs text-muted-foreground/80">Start / Koniec ruchu • maks. 5 plików</p>
+                      </div>
+                    </div>
                   </div>
-                </div>
+                )
               ) : (
-                /* STAN Z PLIKAMI: Grid panoramicznych kafelków */
                 <div className="grid grid-cols-3 gap-3">
-                  {/* Media thumbnails - panoramiczne (16:9) */}
                   {mediaFiles.map((file, idx) => (
                     <div
                       key={`${file.name}-${file.lastModified}-${file.size}-${idx}`}
                       className={cn(
-                        'relative aspect-video rounded-xl overflow-hidden border border-border',
-                        'group animate-in fade-in zoom-in-95 duration-300'
+                        'group relative aspect-video overflow-hidden rounded-xl border border-border bg-surface',
+                        'animate-in fade-in zoom-in-95 duration-200'
                       )}
-                      style={{ animationDelay: `${idx * 50}ms` }}
+                      style={{ animationDelay: `${idx * 40}ms` }}
                     >
-                      <button
-                        type="button"
-                        onClick={() => handleOpenMediaPreview(idx)}
-                        className="absolute inset-0 z-10 cursor-zoom-in"
-                        data-testid={`exercise-create-media-preview-${idx}`}
-                      >
-                        <div
-                          className="absolute inset-0 bg-cover bg-center blur-2xl opacity-35 scale-110"
-                          style={{ backgroundImage: `url(${mediaPreviewUrls[idx]})` }}
-                        />
-                        <Image
-                          src={mediaPreviewUrls[idx]}
-                          alt={`Media ${idx + 1}`}
-                          fill
-                          className="object-contain"
-                          unoptimized
-                        />
-                      </button>
-                      {/* Overlay gradient */}
-                      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                      {/* Index badge */}
-                      <span className="pointer-events-none absolute bottom-2 left-2 text-[10px] font-medium text-white/80 bg-black/40 px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div
+                        className="absolute inset-0 bg-cover bg-center opacity-30 blur-2xl scale-110"
+                        style={{ backgroundImage: `url(${mediaPreviewUrls[idx]})` }}
+                        aria-hidden
+                      />
+                      <Image
+                        src={mediaPreviewUrls[idx]}
+                        alt={`Media ${idx + 1}`}
+                        fill
+                        className="object-contain"
+                        unoptimized
+                      />
+
+                      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/20" />
+
+                      <span className="absolute bottom-2 left-2 z-10 rounded bg-background/90 px-1.5 py-0.5 text-[10px] font-medium text-foreground dark:bg-black/50 dark:text-white">
                         {idx === 0 ? 'Start' : idx === 1 ? 'Koniec' : `#${idx + 1}`}
                       </span>
-                      {/* Remove button */}
-                      <button
-                        type="button"
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          handleRemoveImage(idx);
-                        }}
-                        className={cn(
-                          'absolute top-2 right-2 w-7 h-7 rounded-full',
-                          'bg-black/60 backdrop-blur-sm flex items-center justify-center',
-                          'opacity-0 group-hover:opacity-100 transition-all',
-                          'hover:bg-destructive hover:scale-110 z-20'
-                        )}
-                        data-testid={`exercise-create-media-remove-${idx}`}
-                      >
-                        <X className="h-4 w-4 text-white" />
-                      </button>
+
+                      <div className="absolute right-2 top-2 z-20 flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => handleOpenMediaPreview(idx)}
+                          className={cn(
+                            'flex h-8 w-8 items-center justify-center rounded-full',
+                            'border border-border/60 bg-background/90 text-foreground shadow-sm',
+                            'transition-colors duration-150 hover:bg-background',
+                            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                            'dark:border-white/15 dark:bg-black/55 dark:text-white dark:hover:bg-black/75'
+                          )}
+                          aria-label={`Powiększ zdjęcie ${idx + 1}`}
+                          data-testid={`exercise-create-media-preview-${idx}`}
+                        >
+                          <ZoomIn className="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveImage(idx)}
+                          className={cn(
+                            'flex h-8 w-8 items-center justify-center rounded-full',
+                            'border border-border/60 bg-background/90 text-foreground shadow-sm',
+                            'transition-colors duration-150 hover:border-destructive/40 hover:bg-destructive hover:text-destructive-foreground',
+                            'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                            'dark:border-white/15 dark:bg-black/55 dark:text-white'
+                          )}
+                          aria-label={`Usuń zdjęcie ${idx + 1}`}
+                          data-testid={`exercise-create-media-remove-${idx}`}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
                     </div>
                   ))}
 
-                  {/* Przycisk "Dodaj kolejny" - pasuje do gridu */}
-                  {mediaFiles.length < 5 && (
+                  {isGeneratingImage && mediaFiles.length < 5 && (
+                    <div
+                      className="relative flex aspect-video flex-col items-center justify-center gap-2 overflow-hidden rounded-xl border border-border bg-muted/30"
+                      aria-busy
+                      data-testid="exercise-create-ai-image-skeleton"
+                    >
+                      <div className="absolute inset-0 animate-pulse bg-muted/40" aria-hidden />
+                      <Loader2 className="relative z-10 h-5 w-5 animate-spin text-secondary" />
+                      <span className="relative z-10 text-xs text-muted-foreground">Generowanie…</span>
+                    </div>
+                  )}
+
+                  {!isGeneratingImage && mediaFiles.length < 5 && (
                     <button
                       type="button"
                       onClick={() => fileInputRef.current?.click()}
                       className={cn(
-                        'aspect-video rounded-xl border-2 border-dashed border-border',
-                        'flex flex-col items-center justify-center gap-2 cursor-pointer',
-                        'bg-surface/30 hover:bg-surface/50 hover:border-primary/30',
-                        'transition-all duration-200 group'
+                        'flex aspect-video cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-border',
+                        'bg-surface/30 transition-colors duration-150 group',
+                        'hover:border-primary/30 hover:bg-surface/50',
+                        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
                       )}
                       tabIndex={2}
                       data-testid="exercise-create-media-add-btn"
                     >
-                      <Plus className="h-6 w-6 text-muted-foreground group-hover:text-primary transition-colors" />
-                      <span className="text-xs text-muted-foreground group-hover:text-muted-foreground">Dodaj</span>
+                      <Plus className="h-6 w-6 text-muted-foreground transition-colors group-hover:text-primary" />
+                      <span className="text-xs text-muted-foreground">Dodaj</span>
                     </button>
                   )}
 
-                  {/* AI Generate jako ostatni kafelek jeśli jest miejsce */}
-                  {mediaFiles.length < 4 && (
+                  {!isGeneratingImage && mediaFiles.length < 4 && (
                     <button
                       type="button"
                       onClick={handleGenerateImage}
-                      disabled={isGeneratingImage || !data.name.trim()}
+                      disabled={!data.name.trim()}
                       className={cn(
-                        'aspect-video rounded-xl border border-dashed border-border',
-                        'flex flex-col items-center justify-center gap-2 cursor-pointer',
-                        'bg-surface/20 hover:bg-secondary/5 hover:border-secondary/40',
-                        'transition-all duration-200 group',
-                        'disabled:opacity-40 disabled:cursor-not-allowed'
+                        'flex aspect-video cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-border',
+                        'bg-surface/20 transition-colors duration-150 group',
+                        'hover:border-secondary/40 hover:bg-secondary/5',
+                        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                        'disabled:cursor-not-allowed disabled:opacity-40'
                       )}
                       data-testid="exercise-create-ai-image-generate-btn"
                     >
-                      {isGeneratingImage ? (
-                        <Loader2 className="h-6 w-6 text-secondary animate-spin" />
-                      ) : (
-                        <Wand2 className="h-6 w-6 text-muted-foreground group-hover:text-secondary transition-colors" />
-                      )}
-                      <span className="text-xs text-muted-foreground group-hover:text-secondary">AI</span>
+                      <Wand2 className="h-6 w-6 text-muted-foreground transition-colors group-hover:text-secondary" />
+                      <span className="text-xs text-muted-foreground transition-colors group-hover:text-secondary">
+                        Generuj AI
+                      </span>
                     </button>
                   )}
                 </div>
               )}
+
+              {/* Stabilny pasek AI — poza dropzone, bez layout shift */}
+              <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+                <div className="flex min-w-0 flex-wrap items-center gap-2">
+                  <span className="shrink-0 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                    Styl AI
+                  </span>
+                  <ImageStylePicker
+                    value={imageStyle}
+                    onChange={setImageStyle}
+                    disabled={isGeneratingImage}
+                    testIdPrefix="exercise-create-ai-style"
+                  />
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleGenerateImage}
+                  disabled={isGeneratingImage || !data.name.trim() || mediaFiles.length >= 5}
+                  aria-busy={isGeneratingImage}
+                  className="shrink-0 gap-1.5"
+                  data-testid="exercise-create-ai-image-btn"
+                >
+                  {isGeneratingImage ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Wand2 className="h-3.5 w-3.5" />
+                  )}
+                  {isGeneratingImage ? 'Generowanie…' : 'Wygeneruj z AI'}
+                </Button>
+              </div>
 
               <input
                 ref={fileInputRef}
@@ -1913,14 +1912,12 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
               />
             </section>
 
-            {/* SEKCJA 3: THE MATRIX - Parametry (4 kolumny) */}
+            {/* SEKCJA 3: Parametry — shared ExerciseParametersEditor (fieldContract) */}
             <section className="mb-6">
               <div className="flex justify-between items-center mb-3">
                 <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">
                   Parametry
                 </label>
-
-                {/* Quick Presets */}
                 <div className="flex gap-1.5">
                   {QUICK_PRESETS.map((preset, idx) => (
                     <button
@@ -1941,60 +1938,22 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
                 </div>
               </div>
 
-              {/* THE MATRIX: 4 kolumny - Serie | Powt | Czas powt. | Przerwa */}
-              <div className="grid grid-cols-4 gap-3">
-                <CleanNumberInput
-                  label="SERIE"
-                  tooltip={EXERCISE_FIELD_TOOLTIPS.sets}
-                  value={data.sets}
-                  onChange={(v) => updateField('sets', v)}
-                  placeholder="3"
-                  tabIndex={3}
-                  testId="exercise-sets"
-                  infoTestId="exercise-create-sets-info"
-                />
-
-                <CleanNumberInput
-                  label="POWT."
-                  tooltip={EXERCISE_FIELD_TOOLTIPS.reps}
-                  value={data.reps}
-                  onChange={(v) => updateField('reps', v)}
-                  placeholder="10"
-                  dimmed={!!data.duration && !data.reps}
-                  tabIndex={4}
-                  testId="exercise-reps"
-                  infoTestId="exercise-create-reps-info"
-                />
-
-                <CleanNumberInput
-                  label="CZAS POWT."
-                  tooltip={EXERCISE_FIELD_TOOLTIPS.executionTime}
-                  value={data.executionTime}
-                  onChange={(v) => updateField('executionTime', v)}
-                  placeholder="—"
-                  suffix="s"
-                  dimmed={!!data.duration && !data.reps}
-                  tabIndex={5}
-                  testId="exercise-create-exec-time-input"
-                  infoTestId="exercise-create-execution-time-info"
-                />
-
-                <CleanNumberInput
-                  label="PRZERWA"
-                  tooltip={EXERCISE_FIELD_TOOLTIPS.restSets}
-                  value={data.restSets}
-                  onChange={(v) => updateField('restSets', v)}
-                  placeholder="60"
-                  suffix="s"
-                  tabIndex={6}
-                  testId="exercise-rest"
-                  infoTestId="exercise-create-rest-sets-info"
-                />
-              </div>
-
+              <ExerciseParametersEditor
+                variant="create"
+                core={parametersCore}
+                isDirtyField={() => false}
+                onNumberChange={(field, value) => {
+                  setData((previous) => ({ ...previous, [field]: value }));
+                }}
+                onTextChange={(field, value) => {
+                  setData((previous) => ({ ...previous, [field]: value }));
+                }}
+                onSideChange={(value) => updateField('exerciseSide', value as ExerciseSide)}
+                onDifficultyChange={(value) => updateField('difficultyLevel', value)}
+              />
             </section>
 
-            {/* SEKCJA 4: OPIS / INSTRUKCJA */}
+            {/* SEKCJA 4: Opis dla pacjenta (lean, always visible) */}
             <section className="mb-6">
               <ExerciseFieldLabelWithTooltip
                 label="Opis dla pacjenta"
@@ -2013,7 +1972,7 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
               />
             </section>
 
-            {/* SEKCJA 3: ZAAWANSOWANE */}
+            {/* Treść dodatkowa — pełny parytet sekcji z ExerciseEditor */}
             <Collapsible open={showAdvanced} onOpenChange={setShowAdvanced}>
               <CollapsibleTrigger asChild>
                 <button
@@ -2028,16 +1987,13 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
                 >
                   <div className="flex items-center gap-2">
                     <Settings2 className="h-3.5 w-3.5" />
-                    <span>Zaawansowane</span>
-                    {(data.exerciseSide !== 'none' ||
-                      data.restReps ||
-                      data.tempo ||
-                      data.weight ||
-                      data.rangeOfMotion) && (
-                      <span className="px-1.5 py-0.5 text-[9px] rounded bg-primary/20 text-primary normal-case">
-                        Zmienione
-                      </span>
-                    )}
+                    <span>Treść dodatkowa</span>
+                    <span
+                      className="px-1.5 py-0.5 text-[9px] rounded bg-primary/20 text-primary normal-case"
+                      data-testid="exercise-create-content-completeness"
+                    >
+                      {enrichmentDraft.completeness.filled}/{enrichmentDraft.completeness.total}
+                    </span>
                   </div>
                   <ChevronDown
                     className={cn('h-4 w-4 transition-transform duration-200', showAdvanced && 'rotate-180')}
@@ -2045,225 +2001,22 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
                 </button>
               </CollapsibleTrigger>
               <CollapsibleContent className="pt-3">
-                <div className="rounded-lg border border-border bg-surface/50 p-4 space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    {/* Strona ciała */}
-                    <div className="space-y-2">
-                      <ExerciseFieldLabelWithTooltip
-                        htmlFor="side-select"
-                        label="Strona ciała"
-                        tooltip={EXERCISE_FIELD_TOOLTIPS.exerciseSide}
-                        labelClassName="text-[10px] font-semibold text-muted-foreground uppercase"
-                        className="gap-2"
-                        testId="exercise-create-side-info"
-                      />
-                      <Select
-                        value={data.exerciseSide}
-                        onValueChange={(v) => updateField('exerciseSide', v as ExerciseSide)}
-                      >
-                        <SelectTrigger id="side-select" className="bg-surface border-border text-foreground text-sm">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {EXERCISE_SIDES.map((side) => (
-                            <SelectItem key={side.value} value={side.value}>
-                              {side.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    {/* Przerwa między powtórzeniami */}
-                    <div className="space-y-2">
-                      <ExerciseFieldLabelWithTooltip
-                        htmlFor="rest-reps-input"
-                        label="Przerwa między powt. (s)"
-                        tooltip={EXERCISE_FIELD_TOOLTIPS.restReps}
-                        labelClassName="text-[10px] font-semibold text-muted-foreground uppercase"
-                        className="gap-2"
-                        testId="exercise-create-rest-reps-info"
-                      />
-                      <Input
-                        type="number"
-                        id="rest-reps-input"
-                        value={data.restReps ?? 0}
-                        onChange={(e) => updateField('restReps', e.target.value ? Number(e.target.value) || 0 : 0)}
-                        placeholder="0"
-                        className="bg-surface border-border text-foreground placeholder:text-muted-foreground/50 text-sm"
-                        min={0}
-                        max={60}
-                        data-testid="exercise-create-rest-reps-input"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    {/* Czas przygotowania */}
-                    <div className="space-y-2">
-                      <ExerciseFieldLabelWithTooltip
-                        htmlFor="prep-time-input"
-                        label="Czas przygotowania (s)"
-                        tooltip={EXERCISE_FIELD_TOOLTIPS.preparationTime}
-                        labelClassName="text-[10px] font-semibold text-muted-foreground uppercase"
-                        className="gap-2"
-                        testId="exercise-create-preparation-time-info"
-                      />
-                      <Input
-                        type="number"
-                        id="prep-time-input"
-                        value={data.preparationTime || ''}
-                        onChange={(e) => updateField('preparationTime', e.target.value ? Number(e.target.value) : null)}
-                        placeholder="5"
-                        className="bg-surface border-border text-foreground placeholder:text-muted-foreground/50 text-sm"
-                        min={0}
-                        max={60}
-                        data-testid="exercise-create-prep-time-input"
-                      />
-                    </div>
-
-                  </div>
-
-                  {/* PRO TUNING: Tempo, Obciążenie, ROM */}
-                  <div className="pt-2 border-t border-border/50">
-                    <p className="text-[9px] font-semibold text-muted-foreground/70 uppercase tracking-wider mb-3">
-                      Pro Tuning
-                    </p>
-                    <div className="grid grid-cols-3 gap-4">
-                      {/* Tempo */}
-                      <div className="space-y-2">
-                        <ExerciseFieldLabelWithTooltip
-                          htmlFor="tempo-input"
-                          label="Tempo"
-                          tooltip={EXERCISE_FIELD_TOOLTIPS.tempo}
-                          labelClassName="text-[10px] font-semibold text-muted-foreground uppercase"
-                          className="gap-2"
-                          testId="exercise-create-tempo-info"
-                        />
-                        <Input
-                          type="text"
-                          id="tempo-input"
-                          value={data.tempo}
-                          onChange={(e) => {
-                            // Only allow digits, max 4 characters
-                            const value = e.target.value.replace(/\D/g, '').slice(0, 4);
-                            updateField('tempo', value);
-                          }}
-                          placeholder="3010"
-                          className="bg-surface border-border text-foreground placeholder:text-muted-foreground/50 text-sm font-mono tracking-wider"
-                          maxLength={4}
-                          data-testid="exercise-create-tempo-input"
-                        />
-                        <p className="text-[9px] text-muted-foreground/60">Ekscentryczna-Pauza-Koncentryczna-Pauza</p>
-                      </div>
-
-                      {/* Obciążenie / Intensywność */}
-                      <div className="space-y-2">
-                        <ExerciseFieldLabelWithTooltip
-                          htmlFor="weight-input"
-                          label="Obciążenie (kg)"
-                          tooltip={EXERCISE_FIELD_TOOLTIPS.load}
-                          labelClassName="text-[10px] font-semibold text-muted-foreground uppercase"
-                          className="gap-2"
-                          testId="exercise-create-load-info"
-                        />
-                        <Input
-                          type="number"
-                          id="weight-input"
-                          min={0}
-                          max={500}
-                          value={data.weight}
-                          onChange={(e) => updateField('weight', e.target.value)}
-                          placeholder="np. 5"
-                          className="bg-surface border-border text-foreground placeholder:text-muted-foreground/50 text-sm"
-                          data-testid="exercise-create-weight-input"
-                        />
-                        <p className="text-[9px] text-muted-foreground/60">Podaj wartość liczbową w kilogramach.</p>
-                      </div>
-
-                      {/* Zakres ruchu (ROM) */}
-                      <div className="space-y-2">
-                        <ExerciseFieldLabelWithTooltip
-                          htmlFor="rom-input"
-                          label="Zakres ruchu"
-                          tooltip={EXERCISE_FIELD_TOOLTIPS.rangeOfMotion}
-                          labelClassName="text-[10px] font-semibold text-muted-foreground uppercase"
-                          className="gap-2"
-                          testId="exercise-create-range-of-motion-info"
-                        />
-                        <Input
-                          type="text"
-                          id="rom-input"
-                          value={data.rangeOfMotion}
-                          onChange={(e) => updateField('rangeOfMotion', e.target.value)}
-                          placeholder="np. Pełny zakres"
-                          className="bg-surface border-border text-foreground placeholder:text-muted-foreground/50 text-sm"
-                          data-testid="exercise-create-rom-input"
-                        />
-                        <p className="text-[9px] text-muted-foreground/60">ROM, ograniczenia</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Notatki */}
-                  <div className="space-y-2">
-                    <ExerciseFieldLabelWithTooltip
-                      htmlFor="notes-input"
-                      label="Notatki wewnętrzne"
-                      tooltip={EXERCISE_FIELD_TOOLTIPS.notes}
-                      labelClassName="text-[10px] font-semibold text-muted-foreground uppercase"
-                      className="gap-2"
-                      testId="exercise-create-notes-info"
-                    />
-                    <p className="text-[10px] text-muted-foreground/50">Nie widoczne dla pacjenta.</p>
-                    <Textarea
-                      id="notes-input"
-                      value={data.notes}
-                      onChange={(e) => updateField('notes', e.target.value)}
-                      placeholder="Uwagi, modyfikacje, przeciwwskazania..."
-                      className="min-h-[60px] resize-none bg-surface border-border text-foreground placeholder:text-muted-foreground/50 text-sm"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <ExerciseFieldLabelWithTooltip
-                      htmlFor="clinical-description-input"
-                      label="Opis dla fizjoterapeuty"
-                      tooltip={EXERCISE_FIELD_TOOLTIPS.clinicalDescription}
-                      labelClassName="text-[10px] font-semibold text-muted-foreground uppercase"
-                      className="gap-2"
-                      testId="exercise-create-clinical-description-info"
-                    />
-                    <Textarea
-                      id="clinical-description-input"
-                      value={data.clinicalDescription}
-                      onChange={(e) => updateField('clinicalDescription', e.target.value)}
-                      placeholder="Opis kliniczny dla fizjoterapeuty (język medyczny)..."
-                      className="min-h-[80px] resize-none bg-surface border-border text-foreground placeholder:text-muted-foreground/50 text-sm"
-                      data-testid="exercise-create-clinical-description-input"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <ExerciseFieldLabelWithTooltip
-                      htmlFor="video-url-input"
-                      label="URL filmu"
-                      tooltip={EXERCISE_FIELD_TOOLTIPS.videoUrl}
-                      labelClassName="text-[10px] font-semibold text-muted-foreground uppercase"
-                      className="gap-2"
-                      testId="exercise-create-video-url-info"
-                    />
-                    <Input
-                      id="video-url-input"
-                      type="url"
-                      value={data.videoUrl}
-                      onChange={(e) => updateField('videoUrl', e.target.value)}
-                      placeholder="https://..."
-                      className="bg-surface border-border text-foreground placeholder:text-muted-foreground/50 text-sm"
-                      data-testid="exercise-create-video-url-input"
-                    />
-                  </div>
-                </div>
+                <ExerciseContentSections
+                  enrichment={enrichmentDraft.enrichment}
+                  patientDescription={data.description}
+                  clinicalDescription={data.clinicalDescription}
+                  audioCue={data.audioCue}
+                  videoUrl={data.videoUrl}
+                  notes={data.notes}
+                  isPathDirty={enrichmentDraft.isPathDirty}
+                  showPatientLead={false}
+                  onPatientDescriptionChange={(value) => updateField('description', value)}
+                  onClinicalDescriptionChange={(value) => updateField('clinicalDescription', value)}
+                  onAudioCueChange={(value) => updateField('audioCue', value)}
+                  onVideoUrlChange={(value) => updateField('videoUrl', value)}
+                  onNotesChange={(value) => updateField('notes', value)}
+                  setPath={enrichmentDraft.setPath}
+                />
               </CollapsibleContent>
             </Collapsible>
           </div>
