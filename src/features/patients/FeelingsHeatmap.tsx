@@ -154,7 +154,7 @@ export function FeelingsHeatmap({ data, className, title }: FeelingsHeatmapProps
 
           {/* Weeks */}
           {weeks.map((week) => (
-            <div key={week[0]?.dateStr || Math.random()} className="grid grid-cols-7 gap-1.5">
+            <div key={week[0]?.dateStr || `week-${week.map((d) => d.dateStr).join('-')}`} className="grid grid-cols-7 gap-1.5">
               {week.map((day) => {
                 const isToday = day.date.toDateString() === today;
 
