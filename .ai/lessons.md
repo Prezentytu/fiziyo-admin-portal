@@ -14,6 +14,14 @@ Dziennik wniosków z pracy AI agentów. Po każdej korekcie dodaj nowy wpis.
 
 ## Wpisy
 
+### 2026-08-20 - Import katalogu JSON jest dla każdego fizjo, nie tylko ownera
+
+- **Kategoria**: `UI/UX`
+- **Problem**: Ustawienia firmy (`canManageOrganization`) są tylko Owner/Admin. Fizjo nie zobaczyłby importera.
+- **Przyczyna**: Gate „zarządzaj org” pomylony z „wgraj katalog do swojej org”.
+- **Rozwiązanie**: Osobna zakładka Zaawansowane + `canImportCatalog` (owner/admin/therapist). Mutacja już wpuszcza Therapist.
+- **Reguła**: Jeśli narzędzie ma być dla każdego fizjo, nigdy nie wieszaj go na `canManageOrganization`.
+
 ### 2026-07-29 - Klucz mapy JSON personalizacji to kontrakt cross-repo — adapter nie może przemapować `id`
 
 - **Kategoria**: `GraphQL` | `React`

@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useQuery } from '@apollo/client/react';
 import { useUser } from '@clerk/nextjs';
-import { User, Building2, Eye, Settings } from 'lucide-react';
+import { User, Building2, Eye, Settings, SlidersHorizontal } from 'lucide-react';
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
@@ -12,6 +12,7 @@ import { EmptyState } from '@/components/shared/EmptyState';
 import { ProfileForm, UserProfile } from '@/components/settings/ProfileForm';
 import { OrganizationsList, UserOrganization } from '@/components/settings/OrganizationsList';
 import { AccessibilitySettings } from '@/components/settings/AccessibilitySettings';
+import { CatalogBundleImportCard } from '@/components/organization/CatalogBundleImportCard';
 import { SettingsTab } from '@/components/organization/SettingsTab';
 
 import { GET_USER_BY_CLERK_ID_QUERY, GET_USER_ORGANIZATIONS_QUERY } from '@/graphql/queries/users.queries';
@@ -23,7 +24,7 @@ import type { UserByClerkIdResponse, UserOrganizationsResponse, OrganizationById
 export default function SettingsPage() {
   const { user: clerkUser } = useUser();
   const { currentOrganization, isLoading: orgContextLoading } = useOrganization();
-  const { canManageOrganization } = useRoleAccess();
+  const { canManageOrganization, canImportCatalog } = useRoleAccess();
   const organizationId = currentOrganization?.organizationId;
   const [activeTab, setActiveTab] = useState('profile');
 
@@ -145,6 +146,18 @@ export default function SettingsPage() {
                 </TabsTrigger>
               )}
 
+              {canImportCatalog && (
+                <TabsTrigger
+                  value="advanced"
+                  activeVariant="subtle"
+                  className="justify-start gap-3 rounded-lg px-3 py-2 text-sm text-muted-foreground transition-all hover:bg-accent/30 hover:text-foreground data-[state=active]:font-medium"
+                  data-testid="settings-tab-advanced"
+                >
+                  <SlidersHorizontal className="h-4 w-4" />
+                  Zaawansowane
+                </TabsTrigger>
+              )}
+
               <TabsTrigger
                 value="organizations"
                 activeVariant="subtle"
@@ -194,6 +207,24 @@ export default function SettingsPage() {
                         icon={Building2}
                         title="Brak aktywnej organizacji"
                         description="Wybierz organizację, aby zarządzać jej ustawieniami"
+                      />
+                    </CardContent>
+                  </Card>
+                )}
+              </TabsContent>
+            )}
+
+            {canImportCatalog && (
+              <TabsContent value="advanced" className="mt-0 outline-none">
+                {organizationId ? (
+                  <CatalogBundleImportCard organizationId={organizationId} />
+                ) : (
+                  <Card className="rounded-xl border border-border/50 bg-card/30">
+                    <CardContent className="py-12">
+                      <EmptyState
+                        icon={Building2}
+                        title="Brak aktywnej organizacji"
+                        description="Wybierz organizację, aby wgrać katalog ćwiczeń"
                       />
                     </CardContent>
                   </Card>

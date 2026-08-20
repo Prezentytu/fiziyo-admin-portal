@@ -21,6 +21,7 @@ export { AssignToClinicDialog } from './AssignToClinicDialog';
 export { SettingsTab } from './SettingsTab';
 export { ExerciseVisibilitySettings } from './ExerciseVisibilitySettings';
 export { DataManagementCard } from './DataManagementCard';
+export { CatalogBundleImportCard } from './CatalogBundleImportCard';
 
 // Dialogs (existing)
 export { InviteMemberDialog } from './InviteMemberDialog';

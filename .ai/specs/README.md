@@ -75,6 +75,7 @@ Każda specyfikacja powinna mieć sekcję Changelog na końcu:
 | 022 | [Unified Exercise Parameters](SPEC-022-2026-07-28-unified-exercise-parameters.md)                     | Jedna prezentacja parametrów + parytet treści create/edit    | Aktywny |
 | 023 | [Mapping overridesJson + duration](SPEC-023-2026-07-28-mapping-overrides-and-duration-deprecation.md) | overridesJson na mappingu + wycofanie edycji duration        | Aktywny |
 | 024 | [Enrichment personalization](SPEC-024-2026-07-28-enrichment-personalization.md)                       | Personalizacja kroków/cues/safety per pacjent i zestaw       | Aktywny |
+| 025 | [Catalog bundle import](SPEC-025-2026-08-20-catalog-bundle-import.md)                                 | Import JSON katalogu w Ustawienia → Zaawansowane (każdy fizjo) | implemented |
 
 ## Planowane specyfikacje
 
