@@ -886,6 +886,51 @@ export const REMOVE_TAG_FROM_EXERCISE_MUTATION = gql`
 `;
 
 /**
+ * Import katalogu z pliku JSON (format bundle). Zachowuje oryginalne ID, więc zdjęcia zostają.
+ */
+export const IMPORT_EXERCISE_BUNDLE_MUTATION = gql`
+  mutation ImportExerciseBundle($organizationId: String!, $json: String!, $asGlobal: Boolean) {
+    importExerciseBundle(organizationId: $organizationId, json: $json, asGlobal: $asGlobal) {
+      success
+      fileKind
+      exercisesUpserted
+      mediaReplaced
+      tagsUpserted
+      categoriesUpserted
+      tagLinks
+      relations
+      skipped
+      errors
+      warnings
+    }
+  }
+`;
+
+export interface ExerciseBundleImportResult {
+  success: boolean;
+  fileKind: string;
+  exercisesUpserted: number;
+  mediaReplaced: number;
+  tagsUpserted: number;
+  categoriesUpserted: number;
+  tagLinks: number;
+  relations: number;
+  skipped: number;
+  errors: string[];
+  warnings: string[];
+}
+
+export interface ImportExerciseBundleData {
+  importExerciseBundle: ExerciseBundleImportResult;
+}
+
+export interface ImportExerciseBundleVariables {
+  organizationId: string;
+  json: string;
+  asGlobal?: boolean;
+}
+
+/**
  * Mutacja do importu ćwiczeń z CSV
  */
 export const IMPORT_EXERCISES_FROM_CSV_MUTATION = gql`

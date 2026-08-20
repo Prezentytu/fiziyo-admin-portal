@@ -2,6 +2,7 @@
 
 import { useMemo } from 'react';
 import { useOrganization } from '@/contexts/OrganizationContext';
+import { canImportCatalog } from '@/lib/organization/catalogImportAccess';
 
 // ========================================
 // Types
@@ -24,6 +25,8 @@ export interface RoleAccessResult {
   canViewBilling: boolean;
   /** Whether the user can manage team members (owner or admin) */
   canManageTeam: boolean;
+  /** Import katalogu JSON — każdy fizjo w org, bez extra uprawnień */
+  canImportCatalog: boolean;
   /** Whether the organization context is still loading */
   isLoading: boolean;
 }
@@ -71,6 +74,7 @@ export function useRoleAccess(): RoleAccessResult {
       canManageOrganization,
       canViewBilling,
       canManageTeam,
+      canImportCatalog: canImportCatalog(role),
       isLoading,
     };
   }, [currentOrganization?.role, isLoading]);
