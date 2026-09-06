@@ -60,6 +60,7 @@ export function MobileOrgIndicator() {
   // Trigger content
   const triggerContent = (
     <button
+      data-testid="mobileorgindicator-button-62"
       className={cn(
         'flex items-center gap-2 px-2 py-1.5 rounded-lg transition-colors',
         'hover:bg-surface-light',

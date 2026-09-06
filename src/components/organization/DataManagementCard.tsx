@@ -77,12 +77,13 @@ export function DataManagementCard({ organizationId, canEdit = false, onRefresh 
         </CardHeader>
         <CardContent className="space-y-4">
           <p className="text-sm text-muted-foreground leading-relaxed">
-            Importuj przykładowe zestawy ćwiczeń dla różnych schorzeń i przypadków. Obejmuje gotowe programy
+            Importuj przykładowe zestawy ćwiczeń dla różnych schorzeń i przypadków. Obejmuje gotowe zestawy
             rehabilitacyjne z ćwiczeniami, kategoriami i tagami.
           </p>
 
           <div className="flex items-center gap-4 pt-2">
             <Button
+              data-testid="datamanagementcard-button-85"
               onClick={importExampleSets}
               disabled={isImporting || hasImportedExamples}
               className="gap-2 bg-primary text-primary-foreground font-bold h-11 px-8 rounded-xl shadow-lg shadow-primary/20 transition-all"
@@ -141,6 +142,7 @@ export function DataManagementCard({ organizationId, canEdit = false, onRefresh 
                 </p>
                 <div className="pt-2">
                   <Button
+                    data-testid="datamanagementcard-button-143"
                     variant="destructive"
                     size="sm"
                     onClick={() => setIsClearDialogOpen(true)}
@@ -179,6 +181,7 @@ export function DataManagementCard({ organizationId, canEdit = false, onRefresh 
             <div className="space-y-2">
               <Label htmlFor="confirm-password">Wprowadź hasło aby potwierdzić</Label>
               <Input
+                data-testid="org-data-management-card-input-181"
                 id="confirm-password"
                 type="password"
                 placeholder="Hasło potwierdzające"
@@ -190,10 +193,11 @@ export function DataManagementCard({ organizationId, canEdit = false, onRefresh 
           </div>
 
           <DialogFooter className="gap-2 sm:gap-0">
-            <Button variant="outline" onClick={handleCloseClearDialog}>
+            <Button data-testid="org-data-management-card-btn-193" variant="outline" onClick={handleCloseClearDialog}>
               Anuluj
             </Button>
             <Button
+              data-testid="datamanagementcard-button-196"
               variant="destructive"
               onClick={handleClearData}
               disabled={isClearing || !clearPassword}

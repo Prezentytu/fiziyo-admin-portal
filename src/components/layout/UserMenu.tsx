@@ -1,7 +1,6 @@
 'use client';
 
 import { useUser } from '@clerk/nextjs';
-import { useQuery } from '@apollo/client/react';
 import { useAppSignOut } from '@/lib/auth/useAppSignOut';
 import Image from 'next/image';
 import { Settings, LogOut, ChevronDown } from 'lucide-react';
@@ -15,22 +14,20 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Skeleton } from '@/components/ui/skeleton';
-import { GET_USER_BY_CLERK_ID_QUERY } from '@/graphql/queries/users.queries';
-import type { UserByClerkIdResponse } from '@/types/apollo';
+import { useCurrentUser } from '@/contexts/CurrentUserContext';
 import { resolveDisplayName } from './userDisplayName';
 
 export function UserMenu() {
   const { user, isLoaded } = useUser();
   const signOut = useAppSignOut();
-  const { data } = useQuery<UserByClerkIdResponse>(GET_USER_BY_CLERK_ID_QUERY, {
-    variables: { clerkId: user?.id },
-    skip: !user?.id,
-  });
-
-  const backendUser = data?.userByClerkId;
+  const { user: backendUser } = useCurrentUser();
   const avatarUrl = user?.imageUrl;
   const fullName =
-    resolveDisplayName(backendUser?.fullname, backendUser?.personalData?.firstName, backendUser?.personalData?.lastName) ||
+    resolveDisplayName(
+      backendUser?.fullname,
+      backendUser?.personalData?.firstName,
+      backendUser?.personalData?.lastName
+    ) ||
     resolveDisplayName(user?.fullName, user?.firstName, user?.lastName) ||
     'Użytkownik';
   const email = user?.primaryEmailAddress?.emailAddress || backendUser?.email;

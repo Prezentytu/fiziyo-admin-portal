@@ -31,11 +31,9 @@ import {
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { ImagePlaceholder } from '@/components/shared/ImagePlaceholder';
-import { ImageLightbox } from '@/components/shared/ImageLightbox';
+import { ImageLightbox } from '@/components/shared/ImageLightbox.dynamic';
 import { getMediaUrl } from '@/utils/mediaUrl';
-import {
-  HIDE_EXERCISE_TAGS,
-} from '@/components/shared/exercise';
+import { HIDE_EXERCISE_TAGS } from '@/components/shared/exercise';
 import { verificationCopy } from '@/features/verification/verificationCopy';
 
 export interface ExerciseTag {
@@ -254,10 +252,7 @@ export function ExerciseCard({
               {isGlobalExercise && (
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Badge
-                      variant="outline"
-                      className="text-[9px] bg-violet/10 text-violet border-violet/20 shrink-0"
-                    >
+                    <Badge variant="outline" className="text-[9px] bg-violet/10 text-violet border-violet/20 shrink-0">
                       <Sparkles className="h-2.5 w-2.5 mr-0.5" />
                       FiziYo
                     </Badge>
@@ -338,6 +333,7 @@ export function ExerciseCard({
           {/* Add to builder button */}
           {onToggleBuilder && (
             <Button
+              aria-label="Akcja"
               variant={isInBuilder ? 'default' : 'outline'}
               size="icon"
               className={cn(
@@ -359,6 +355,8 @@ export function ExerciseCard({
           <DropdownMenu>
             <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
               <Button
+                aria-label="Akcja"
+                data-testid="exercisecard-button-361"
                 variant="ghost"
                 size="icon"
                 className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
@@ -514,6 +512,7 @@ export function ExerciseCard({
                 {/* Zoom button */}
                 {!isInBuilder && (
                   <button
+                    data-testid="exercisecard-button-516"
                     type="button"
                     onClick={(e) => {
                       e.preventDefault();
@@ -538,13 +537,13 @@ export function ExerciseCard({
             )}
 
             {/* Status badges - top left */}
-              {(isGlobalExercise ||
-                isSubmittedToGlobal ||
-                isPendingReview ||
-                isChangesRequested ||
-                isPendingOrganizationReview ||
-                isOrganizationChangesRequested ||
-                isOrganizationVerified) && (
+            {(isGlobalExercise ||
+              isSubmittedToGlobal ||
+              isPendingReview ||
+              isChangesRequested ||
+              isPendingOrganizationReview ||
+              isOrganizationChangesRequested ||
+              isOrganizationVerified) && (
               <div className="absolute top-3 left-3 z-10">
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -640,6 +639,7 @@ export function ExerciseCard({
               {/* Add to builder button */}
               {onToggleBuilder && (
                 <Button
+                  aria-label="Akcja"
                   variant="ghost"
                   size="icon"
                   className={cn(
@@ -660,6 +660,8 @@ export function ExerciseCard({
               <DropdownMenu>
                 <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
                   <Button
+                    aria-label="Akcja"
+                    data-testid="exercisecard-button-662"
                     variant="ghost"
                     size="icon"
                     className="h-9 w-9 bg-background/90 dark:bg-black/40 hover:bg-background dark:hover:bg-black/60 text-foreground dark:text-white backdrop-blur-sm rounded-xl border border-border/70 dark:border-white/10 shadow-lg"

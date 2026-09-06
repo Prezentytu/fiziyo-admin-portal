@@ -24,7 +24,7 @@ import {
   GET_ALL_THERAPIST_PATIENTS_QUERY,
   GET_ORGANIZATION_PATIENTS_QUERY,
 } from '@/graphql/queries/therapists.queries';
-import { GET_ALL_PATIENT_ASSIGNMENTS_QUERY } from '@/graphql/queries/patientAssignments.queries';
+import { GET_THERAPIST_EXERCISE_ASSIGNMENTS_QUERY } from '@/graphql/queries/patientAssignments.queries';
 import type { FindUserByEmailData, FindUserByPhoneData } from '@/graphql/types/user.types';
 import type { OrganizationPatientsResponse } from '@/types/apollo';
 
@@ -232,7 +232,7 @@ export function UnifiedPatientInput({
       { query: GET_ALL_THERAPIST_PATIENTS_QUERY, variables: { therapistId, organizationId } },
       { query: GET_ORGANIZATION_PATIENTS_QUERY, variables: { organizationId, filter: 'all' } },
       { query: GET_ORGANIZATION_PATIENTS_QUERY, variables: { organizationId, filter: 'my' } },
-      { query: GET_ALL_PATIENT_ASSIGNMENTS_QUERY },
+      { query: GET_THERAPIST_EXERCISE_ASSIGNMENTS_QUERY, variables: { assignedById: therapistId } },
     ],
     awaitRefetchQueries: true,
   });
@@ -376,48 +376,48 @@ export function UnifiedPatientInput({
     toast.error('Wpisz poprawny email lub numer telefonu');
   }, [contactValue]);
 
-  const handleAddExistingPatient = useCallback(async (skipTakeoverConfirm: boolean = false) => {
-    if (!foundUser) return;
+  const handleAddExistingPatient = useCallback(
+    async (skipTakeoverConfirm: boolean = false) => {
+      if (!foundUser) return;
 
-    if (
-      !skipTakeoverConfirm &&
-      activeTherapistForFoundUser?.id &&
-      activeTherapistForFoundUser.id !== therapistId
-    ) {
-      setTakeoverConfirmation({
-        therapistId: activeTherapistForFoundUser.id,
-        therapistName: activeTherapistForFoundUser.fullname || activeTherapistForFoundUser.email || 'innego fizjoterapeuty',
-      });
-      return;
-    }
+      if (!skipTakeoverConfirm && activeTherapistForFoundUser?.id && activeTherapistForFoundUser.id !== therapistId) {
+        setTakeoverConfirmation({
+          therapistId: activeTherapistForFoundUser.id,
+          therapistName:
+            activeTherapistForFoundUser.fullname || activeTherapistForFoundUser.email || 'innego fizjoterapeuty',
+        });
+        return;
+      }
 
-    try {
-      await linkExistingPatient({
-        variables: {
-          patientId: foundUser.id,
-          therapistId,
-          organizationId,
-          clinicId: clinicId || null,
-          contextType: 'PRIMARY',
-          contextLabel: null,
-        },
-      });
+      try {
+        await linkExistingPatient({
+          variables: {
+            patientId: foundUser.id,
+            therapistId,
+            organizationId,
+            clinicId: clinicId || null,
+            contextType: 'PRIMARY',
+            contextLabel: null,
+          },
+        });
 
-      toast.success('Pacjent został dodany do Twoich pacjentów');
-      onSuccess({
-        id: foundUser.id,
-        fullname: foundUser.fullname,
-        email: foundUser.email,
-        firstName: foundUser.personalData?.firstName,
-        lastName: foundUser.personalData?.lastName,
-      });
-    } catch (error) {
-      console.error('Błąd przy dodawaniu pacjenta:', error);
-      const gqlError = error as { graphQLErrors?: Array<{ message: string }> };
-      const errorMessage = gqlError.graphQLErrors?.[0]?.message || 'Nie udało się dodać pacjenta';
-      toast.error(errorMessage);
-    }
-  }, [foundUser, activeTherapistForFoundUser, linkExistingPatient, therapistId, organizationId, clinicId, onSuccess]);
+        toast.success('Pacjent został dodany do Twoich pacjentów');
+        onSuccess({
+          id: foundUser.id,
+          fullname: foundUser.fullname,
+          email: foundUser.email,
+          firstName: foundUser.personalData?.firstName,
+          lastName: foundUser.personalData?.lastName,
+        });
+      } catch (error) {
+        console.error('Błąd przy dodawaniu pacjenta:', error);
+        const gqlError = error as { graphQLErrors?: Array<{ message: string }> };
+        const errorMessage = gqlError.graphQLErrors?.[0]?.message || 'Nie udało się dodać pacjenta';
+        toast.error(errorMessage);
+      }
+    },
+    [foundUser, activeTherapistForFoundUser, linkExistingPatient, therapistId, organizationId, clinicId, onSuccess]
+  );
 
   const handleSubmitNewPatient = useCallback(
     async (values: z.infer<typeof patientFormSchema>) => {
@@ -536,6 +536,7 @@ export function UnifiedPatientInput({
           <div className="space-y-2">
             <div className="relative">
               <Input
+                data-testid="patient-unified-input"
                 ref={contactInputRef}
                 type="text"
                 placeholder="Wpisz email lub telefon pacjenta..."
@@ -547,7 +548,6 @@ export function UnifiedPatientInput({
                 )}
                 autoFocus
                 autoComplete="off"
-                data-testid="patient-unified-input"
               />
               <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
                 {isSearching && <Loader2 className="h-6 w-6 text-primary animate-spin" />}
@@ -642,24 +642,24 @@ export function UnifiedPatientInput({
             <div className="mt-4 flex gap-2">
               {isAlreadyAssignedToTherapist ? (
                 <Button
+                  data-testid="patient-unified-go-to-profile-btn"
                   variant="outline"
                   onClick={() => {
                     globalThis.location.href = `/patients/${foundUser.id}`;
                   }}
                   className="flex-1 h-11"
-                  data-testid="patient-unified-go-to-profile-btn"
                 >
                   <UserCheck className="h-4 w-4 mr-2" />
                   Przejdź do profilu
                 </Button>
               ) : (
                 <Button
+                  data-testid="patient-unified-add-existing-btn"
                   onClick={() => {
                     void handleAddExistingPatient();
                   }}
                   disabled={isLoading}
                   className="flex-1 h-11 bg-linear-to-r from-primary to-primary-dark shadow-lg shadow-primary/20"
-                  data-testid="patient-unified-add-existing-btn"
                 >
                   {isLoading ? (
                     <Loader2 className="h-4 w-4 animate-spin mr-2" />
@@ -673,6 +673,7 @@ export function UnifiedPatientInput({
 
             {/* Back link */}
             <button
+              data-testid="patient-unified-back-search-btn"
               type="button"
               onClick={handleBackToSearch}
               className="mt-3 text-sm text-muted-foreground hover:text-foreground transition-colors w-full text-center"
@@ -704,6 +705,7 @@ export function UnifiedPatientInput({
                 </div>
               </div>
               <Button
+                data-testid="patient-unified-edit-contact-btn"
                 type="button"
                 variant="ghost"
                 size="sm"
@@ -777,10 +779,10 @@ export function UnifiedPatientInput({
               <div>
                 {!isNoteExpanded ? (
                   <button
+                    data-testid="patient-unified-expand-note-btn"
                     type="button"
                     onClick={() => setIsNoteExpanded(true)}
                     className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
-                    data-testid="patient-unified-expand-note-btn"
                   >
                     <ChevronDown className="h-4 w-4" />
                     Dodaj notatkę
@@ -788,6 +790,7 @@ export function UnifiedPatientInput({
                 ) : (
                   <div className="animate-in fade-in slide-in-from-top-2 duration-200 space-y-3">
                     <button
+                      data-testid="patient-unified-collapse-note-btn"
                       type="button"
                       onClick={() => setIsNoteExpanded(false)}
                       className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
@@ -821,6 +824,7 @@ export function UnifiedPatientInput({
                                     const isAdded = isTagAdded(tag, field.value || '');
                                     return (
                                       <button
+                                        data-testid={`patient-unified-tag-${tag}`}
                                         key={tag}
                                         type="button"
                                         onClick={() => {

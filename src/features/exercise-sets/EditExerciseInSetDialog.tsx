@@ -9,11 +9,7 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
-import {
-  ExerciseExecutionCard,
-  fromExerciseMapping,
-  getMappingEditableCardFields,
-} from '@/components/shared/exercise';
+import { ExerciseExecutionCard, fromExerciseMapping, getMappingEditableCardFields } from '@/components/shared/exercise';
 import type { ExerciseExecutionCardData } from '@/components/shared/exercise';
 import { buildMappingOverridesJson } from '@/components/shared/exercise/mappingOverrides';
 import { buildEnrichmentOverrideDelta } from '@/components/shared/exercise/enrichmentOverride';
@@ -22,6 +18,7 @@ import { buildExerciseLoadMutationVars } from '@/utils/exerciseLoadMutation';
 
 import { UPDATE_EXERCISE_IN_SET_MUTATION } from '@/graphql/mutations/exercises.mutations';
 import { GET_EXERCISE_SET_WITH_ASSIGNMENTS_QUERY } from '@/graphql/queries/exerciseSets.queries';
+import { useDialogShortcuts } from '@/hooks/useDialogShortcuts';
 
 interface ExerciseMapping {
   id: string;
@@ -195,10 +192,7 @@ function EditExerciseInSetDialogContent({
   const handleSave = useCallback(async () => {
     try {
       const template = exerciseMapping.exercise;
-      const enrichmentDelta = buildEnrichmentOverrideDelta(
-        template?.enrichmentData,
-        draft.enrichment
-      );
+      const enrichmentDelta = buildEnrichmentOverrideDelta(template?.enrichmentData, draft.enrichment);
       const overridesJson = buildMappingOverridesJson(
         {
           side: template?.side ?? template?.exerciseSide,
@@ -255,6 +249,15 @@ function EditExerciseInSetDialogContent({
       toast.error('Nie udało się zaktualizować parametrów');
     }
   }, [draft, exerciseMapping, exerciseSetId, onOpenChange, onSuccess, updateExercise]);
+
+  useDialogShortcuts({
+    open: true,
+    enabled: !loading,
+    onSubmit: () => {
+      void handleSave();
+    },
+    onClose: onCloseAttempt,
+  });
 
   const handleChange = useCallback((patch: Partial<ExerciseExecutionCardData>) => {
     setDraft((prev) => ({ ...prev, ...patch }));

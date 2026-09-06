@@ -142,6 +142,7 @@ export function StripeConnectCard({ organizationId, className }: StripeConnectCa
 
           {/* CTA Button */}
           <Button
+            data-testid="stripeconnectcard-button-144"
             onClick={handleStartOnboarding}
             disabled={onboardingLoading || isRedirecting}
             className="w-full gap-2 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700"
@@ -226,7 +227,12 @@ export function StripeConnectCard({ organizationId, className }: StripeConnectCa
         </div>
 
         {/* Dashboard button */}
-        <Button variant="outline" onClick={handleOpenDashboard} className="w-full gap-2">
+        <Button
+          data-testid="stripeconnectcard-button-229"
+          variant="outline"
+          onClick={handleOpenDashboard}
+          className="w-full gap-2"
+        >
           Otwórz Dashboard Stripe
           <ExternalLink className="h-3 w-3" />
         </Button>

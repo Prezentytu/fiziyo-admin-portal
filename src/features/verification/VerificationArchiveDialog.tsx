@@ -13,6 +13,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { useDialogShortcuts } from '@/hooks/useDialogShortcuts';
 
 interface VerificationArchiveDialogProps {
   open: boolean;
@@ -40,6 +41,15 @@ export function VerificationArchiveDialog({
     },
     [isLoading, onConfirm]
   );
+
+  useDialogShortcuts({
+    open,
+    enabled: !isLoading,
+    onSubmit: () => {
+      void onConfirm();
+    },
+    onClose: () => onOpenChange(false),
+  });
 
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>

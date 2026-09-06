@@ -14,6 +14,7 @@ import { cn } from '@/lib/utils';
 
 import { UPDATE_TREATMENT_CONTEXT_MUTATION } from '@/graphql/mutations/therapists.mutations';
 import { GET_ALL_THERAPIST_PATIENTS_QUERY } from '@/graphql/queries/therapists.queries';
+import { useDialogShortcuts } from '@/hooks/useDialogShortcuts';
 
 // Quick tags - same as in PatientForm
 const QUICK_TAG_GROUPS = [
@@ -106,6 +107,15 @@ export function EditContextLabelDialog({
     return label.toLowerCase().includes(tag.toLowerCase());
   };
 
+  useDialogShortcuts({
+    open,
+    enabled: !loading,
+    onSubmit: () => {
+      void handleSave();
+    },
+    onClose: handleCloseAttempt,
+  });
+
   const handleToggleTag = (tag: string) => {
     if (isTagAdded(tag)) {
       // Remove tag
@@ -165,6 +175,7 @@ export function EditContextLabelDialog({
                       const isAdded = isTagAdded(tag);
                       return (
                         <button
+                          data-testid="patient-edit-context-label-dialog-btn-177"
                           key={tag}
                           type="button"
                           onClick={() => handleToggleTag(tag)}

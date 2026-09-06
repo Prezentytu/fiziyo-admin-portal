@@ -17,8 +17,9 @@ import {
   GET_ALL_THERAPIST_PATIENTS_QUERY,
   GET_ORGANIZATION_PATIENTS_QUERY,
 } from '@/graphql/queries/therapists.queries';
-import { GET_ALL_PATIENT_ASSIGNMENTS_QUERY } from '@/graphql/queries/patientAssignments.queries';
+import { GET_THERAPIST_EXERCISE_ASSIGNMENTS_QUERY } from '@/graphql/queries/patientAssignments.queries';
 import { cn } from '@/lib/utils';
+import { useDialogShortcuts } from '@/hooks/useDialogShortcuts';
 import { getAvatarGradient, getInitials } from '@/utils/textUtils';
 import type { Patient } from '@/features/assignment/types';
 
@@ -109,7 +110,7 @@ export function PatientDialog({
         { query: GET_ALL_THERAPIST_PATIENTS_QUERY, variables: { therapistId, organizationId } },
         { query: GET_ORGANIZATION_PATIENTS_QUERY, variables: { organizationId, filter: 'all' } },
         { query: GET_ORGANIZATION_PATIENTS_QUERY, variables: { organizationId, filter: 'my' } },
-        { query: GET_ALL_PATIENT_ASSIGNMENTS_QUERY },
+        { query: GET_THERAPIST_EXERCISE_ASSIGNMENTS_QUERY, variables: { assignedById: therapistId } },
       ]
     : [];
 
@@ -238,6 +239,20 @@ export function PatientDialog({
     ? getAvatarGradient(createdPatient.firstName, createdPatient.lastName)
     : 'linear-gradient(135deg, #5bb89a, #449b80)';
 
+  useDialogShortcuts({
+    open,
+    enabled: !loading,
+    onSubmit: createdPatient
+      ? undefined
+      : () => {
+          const dialogForm = document.querySelector('[data-testid="patient-dialog"] form');
+          if (dialogForm instanceof HTMLFormElement) {
+            dialogForm.requestSubmit();
+          }
+        },
+    onClose: handleCloseAttempt,
+  });
+
   return (
     <>
       <Dialog open={open} onOpenChange={() => handleCloseAttempt()}>
@@ -355,7 +370,7 @@ export function PatientDialog({
             <>
               <DialogHeader className="px-8 py-6 border-b border-border shrink-0 bg-linear-to-r from-surface to-surface-light/50">
                 <div className="flex items-center gap-4">
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-linear-to-br from-primary to-primary-dark shadow-lg shadow-primary/25">
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-linear-to-br from-primary to-primary-dark shadow-lg shadow-primary/25">
                     <UserPlus className="h-6 w-6 text-primary-foreground" />
                   </div>
                   <div className="min-w-0 flex-1">

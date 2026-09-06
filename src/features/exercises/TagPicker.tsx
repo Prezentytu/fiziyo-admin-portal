@@ -143,6 +143,7 @@ export function TagPicker({
                       {tag.name}
                     </ColorBadge>
                     <button
+                      data-testid="tagpicker-button-145"
                       type="button"
                       onClick={() => removeTag(tag.id)}
                       className="h-4 w-4 flex items-center justify-center rounded-full hover:bg-destructive/20 hover:text-destructive transition-colors"
@@ -179,6 +180,7 @@ export function TagPicker({
                       </span>
                       {selectedMainTags.length < maxMainTags && (
                         <button
+                          data-testid="exercise-tag-picker-btn-181"
                           type="button"
                           onClick={() => promoteToMain(tag.id)}
                           className="h-4 w-4 flex items-center justify-center rounded-full opacity-0 group-hover:opacity-100 hover:text-yellow-500 transition-all"
@@ -188,6 +190,7 @@ export function TagPicker({
                         </button>
                       )}
                       <button
+                        data-testid="exercise-tag-picker-btn-190"
                         type="button"
                         onClick={() => removeTag(tag.id)}
                         className="h-4 w-4 flex items-center justify-center rounded-full hover:bg-destructive/20 hover:text-destructive transition-colors"
@@ -214,6 +217,7 @@ export function TagPicker({
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
+            data-testid="tagpicker-input-216"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Szukaj kategorii..."
@@ -279,6 +283,7 @@ export function TagPicker({
             {/* Show more button */}
             {displayedTags.hasMore && (
               <Button
+                data-testid="exercise-tag-picker-btn-281"
                 type="button"
                 variant="ghost"
                 size="sm"
@@ -292,6 +297,7 @@ export function TagPicker({
 
             {showAll && !searchQuery && (
               <Button
+                data-testid="tagpicker-button-294"
                 type="button"
                 variant="ghost"
                 size="sm"
@@ -338,6 +344,7 @@ function TagButton({
       }}
     >
       <button
+        data-testid="exercise-tag-picker-btn-340"
         type="button"
         onClick={onToggle}
         className={cn(
@@ -353,6 +360,7 @@ function TagButton({
 
       {isSelected && (
         <button
+          data-testid="tagpicker-button-355"
           type="button"
           onClick={(e) => {
             e.stopPropagation();

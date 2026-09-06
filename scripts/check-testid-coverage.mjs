@@ -1,5 +1,6 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
+import { readOpeningTag } from './lib/read-opening-tag.mjs';
 
 const ROOT_DIR = process.cwd();
 const SOURCE_DIR = path.join(ROOT_DIR, 'src');
@@ -46,18 +47,6 @@ async function walkDirectory(directoryPath) {
   }
 
   return filePaths;
-}
-
-function readOpeningTag(lines, startIndex) {
-  let chunk = lines[startIndex];
-  let cursor = startIndex;
-
-  while (!chunk.includes('>') && cursor + 1 < lines.length && cursor - startIndex < 12) {
-    cursor += 1;
-    chunk += `\n${lines[cursor]}`;
-  }
-
-  return { chunk, endIndex: cursor };
 }
 
 async function collectViolations() {

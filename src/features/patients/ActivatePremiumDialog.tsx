@@ -21,6 +21,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
 import type { PremiumAccessManagementAction, PremiumAccessUpdatePayload } from '@/hooks/usePatientPremium';
+import { useDialogShortcuts } from '@/hooks/useDialogShortcuts';
 
 // ========================================
 // Types
@@ -117,11 +118,12 @@ export function ActivatePremiumDialog({
 
   const isReasonRequired = action !== 'ExtendByDuration';
   const hasValidReason = reason.trim().length >= 5;
-  const canConfirm = action === 'ExtendByDuration'
-    ? !!selectedDurationDays
-    : action === 'SetExactExpiry'
-      ? !!selectedTargetExpiry && hasValidReason
-      : hasValidReason;
+  const canConfirm =
+    action === 'ExtendByDuration'
+      ? !!selectedDurationDays
+      : action === 'SetExactExpiry'
+        ? !!selectedTargetExpiry && hasValidReason
+        : hasValidReason;
 
   const handleConfirm = () => {
     if (!canConfirm) return;
@@ -147,6 +149,13 @@ export function ActivatePremiumDialog({
     onCancel?.();
     onOpenChange(false);
   };
+
+  useDialogShortcuts({
+    open,
+    enabled: !isLoading,
+    onSubmit: handleConfirm,
+    onClose: handleCancel,
+  });
 
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
@@ -174,7 +183,11 @@ export function ActivatePremiumDialog({
               </p>
               <div className="space-y-2">
                 <Label>Co chcesz zrobić?</Label>
-                <Select value={action} onValueChange={(next) => setAction(next as PremiumAccessManagementAction)}>
+                <Select
+                  data-testid="patient-activate-premium-dialog-select-185"
+                  value={action}
+                  onValueChange={(next) => setAction(next as PremiumAccessManagementAction)}
+                >
                   <SelectTrigger data-testid="patient-premium-action-select">
                     <SelectValue />
                   </SelectTrigger>
@@ -187,21 +200,25 @@ export function ActivatePremiumDialog({
               </div>
 
               {action === 'ExtendByDuration' && (
-              <div className="space-y-2">
-                <Label>Na jak długo przedłużyć dostęp?</Label>
-                <Select value={durationDays} onValueChange={setDurationDays}>
-                  <SelectTrigger data-testid="patient-premium-duration-select">
-                    <SelectValue placeholder="Wybierz okres" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="7">1 tydzień</SelectItem>
-                    <SelectItem value="14">2 tygodnie</SelectItem>
-                    <SelectItem value="30">1 miesiąc</SelectItem>
-                    <SelectItem value="60">2 miesiące</SelectItem>
-                    <SelectItem value="90">3 miesiące</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+                <div className="space-y-2">
+                  <Label>Na jak długo przedłużyć dostęp?</Label>
+                  <Select
+                    data-testid="patient-activate-premium-dialog-select-200"
+                    value={durationDays}
+                    onValueChange={setDurationDays}
+                  >
+                    <SelectTrigger data-testid="patient-premium-duration-select">
+                      <SelectValue placeholder="Wybierz okres" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="7">1 tydzień</SelectItem>
+                      <SelectItem value="14">2 tygodnie</SelectItem>
+                      <SelectItem value="30">1 miesiąc</SelectItem>
+                      <SelectItem value="60">2 miesiące</SelectItem>
+                      <SelectItem value="90">3 miesiące</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               )}
 
               {action === 'SetExactExpiry' && (

@@ -37,6 +37,9 @@ jobs:
       - name: Unit tests
         run: npm run test -- --run
 
+      - name: UI health
+        run: npm run ui:health
+
       - name: Build
         run: npm run build
         env:

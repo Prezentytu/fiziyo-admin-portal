@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import { useUser } from '@clerk/nextjs';
-import { useQuery } from '@apollo/client/react';
 import { useAppSignOut } from '@/lib/auth/useAppSignOut';
 import { Settings, HelpCircle, LogOut, ChevronUp } from 'lucide-react';
 import Link from 'next/link';
@@ -20,8 +19,7 @@ import {
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useOrganization } from '@/contexts/OrganizationContext';
-import { GET_USER_BY_CLERK_ID_QUERY } from '@/graphql/queries/users.queries';
-import type { UserByClerkIdResponse } from '@/types/apollo';
+import { useCurrentUser } from '@/contexts/CurrentUserContext';
 import { getCompactDisplayName, resolveDisplayName } from './userDisplayName';
 
 // ========================================
@@ -55,16 +53,14 @@ export function UserProfileFooter({ isCollapsed }: UserProfileFooterProps) {
   const { hasMultipleOrganizations, currentOrganization, organizations, switchOrganization, isSwitching } =
     useOrganization();
   const [isOpen, setIsOpen] = useState(false);
-  const { data } = useQuery<UserByClerkIdResponse>(GET_USER_BY_CLERK_ID_QUERY, {
-    variables: { clerkId: user?.id },
-    skip: !user?.id,
-  });
-
-  const backendUser = data?.userByClerkId;
+  const { user: backendUser } = useCurrentUser();
   const avatarUrl = user?.imageUrl;
   const fullName =
-    resolveDisplayName(backendUser?.fullname, backendUser?.personalData?.firstName, backendUser?.personalData?.lastName) ||
-    resolveDisplayName(user?.fullName, user?.firstName, user?.lastName);
+    resolveDisplayName(
+      backendUser?.fullname,
+      backendUser?.personalData?.firstName,
+      backendUser?.personalData?.lastName
+    ) || resolveDisplayName(user?.fullName, user?.firstName, user?.lastName);
   const email = user?.primaryEmailAddress?.emailAddress || backendUser?.email || '';
   const displayName = fullName || email.split('@')[0] || 'Brak danych';
   const compactDisplayName = getCompactDisplayName(displayName);
@@ -96,9 +92,7 @@ export function UserProfileFooter({ isCollapsed }: UserProfileFooterProps) {
           data-testid="nav-user-footer-trigger"
           className={cn(
             'group flex items-center rounded-2xl transition-all duration-200 cursor-pointer w-full',
-            isCollapsed
-              ? 'h-12 w-12 justify-center hover:bg-surface-light mx-auto'
-              : 'gap-4 p-3 hover:bg-surface-light'
+            isCollapsed ? 'h-12 w-12 justify-center hover:bg-surface-light mx-auto' : 'gap-4 p-3 hover:bg-surface-light'
           )}
         >
           {/* Avatar */}

@@ -5,15 +5,7 @@ import { useQuery, useMutation } from '@apollo/client/react';
 import { format } from 'date-fns';
 import { pl } from 'date-fns/locale';
 import { toast } from 'sonner';
-import {
-  FileText,
-  Plus,
-  Calendar,
-  Pencil,
-  MoreHorizontal,
-  Trash2,
-  X,
-} from 'lucide-react';
+import { FileText, Plus, Calendar, Pencil, MoreHorizontal, Trash2, X } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -204,9 +196,7 @@ export function ClinicalNotesList({
                           <Calendar className="h-3 w-3" />
                           {format(new Date(note.visitDate), 'd MMMM yyyy', { locale: pl })}
                         </span>
-                        {note.therapist?.fullname && (
-                          <span className="truncate">{note.therapist.fullname}</span>
-                        )}
+                        {note.therapist?.fullname && <span className="truncate">{note.therapist.fullname}</span>}
                       </div>
                     </div>
                   </button>
@@ -215,6 +205,7 @@ export function ClinicalNotesList({
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
                         <Button
+                          aria-label="Akcja"
                           variant="ghost"
                           size="icon"
                           className="h-8 w-8 text-muted-foreground transition-colors hover:text-foreground"
@@ -262,6 +253,7 @@ export function ClinicalNotesList({
         >
           {/* Custom close button - always visible */}
           <button
+            data-testid="clinicalnoteslist-button-264"
             onClick={handleEditorClose}
             className="absolute right-4 top-4 z-20 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
           >

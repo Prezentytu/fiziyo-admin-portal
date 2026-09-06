@@ -20,6 +20,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ShareSheet } from '@/components/organization/ShareSheet';
 import { SEND_INVITATION_MUTATION, GENERATE_INVITE_LINK_MUTATION } from '@/graphql/mutations/organizations.mutations';
+import { organizationInviteRefetch } from '@/graphql/cache/invalidation';
+import { useDialogShortcuts } from '@/hooks/useDialogShortcuts';
 import type { GenerateInviteLinkResponse } from '@/types/apollo';
 
 // ========================================
@@ -115,10 +117,16 @@ export function InviteMemberDialog({
   }, [open, form]);
 
   // Mutations
-  const [sendInvitation, { loading: sendingEmail }] = useMutation(SEND_INVITATION_MUTATION);
+  const [sendInvitation, { loading: sendingEmail }] = useMutation(SEND_INVITATION_MUTATION, {
+    refetchQueries: organizationInviteRefetch(organizationId),
+  });
 
-  const [generateLink, { loading: generatingLink }] =
-    useMutation<GenerateInviteLinkResponse>(GENERATE_INVITE_LINK_MUTATION);
+  const [generateLink, { loading: generatingLink }] = useMutation<GenerateInviteLinkResponse>(
+    GENERATE_INVITE_LINK_MUTATION,
+    {
+      refetchQueries: organizationInviteRefetch(organizationId),
+    }
+  );
 
   // Email submission
   const handleSubmit = async (values: InviteFormValues) => {
@@ -141,6 +149,17 @@ export function InviteMemberDialog({
       toast.error(errorMessage);
     }
   };
+
+  useDialogShortcuts({
+    open,
+    enabled: !sendingEmail && !generatingLink,
+    onSubmit: () => {
+      if (activeTab === 'email') {
+        void form.handleSubmit(handleSubmit)();
+      }
+    },
+    onClose: handleCloseAttempt,
+  });
 
   // Generate link
   const handleGenerateLink = async () => {
@@ -238,7 +257,11 @@ export function InviteMemberDialog({
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Rola *</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <Select
+                        data-testid="org-invite-member-dialog-select-260"
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                      >
                         <FormControl>
                           <SelectTrigger data-testid="org-invite-role-select">
                             <SelectValue placeholder="Wybierz rolę" />
@@ -302,7 +325,11 @@ export function InviteMemberDialog({
               {!generatedLink && (
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Rola</label>
-                  <Select value={linkRole} onValueChange={setLinkRole}>
+                  <Select
+                    data-testid="org-invite-member-dialog-select-324"
+                    value={linkRole}
+                    onValueChange={setLinkRole}
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Wybierz rolę" />
                     </SelectTrigger>
@@ -358,7 +385,7 @@ export function InviteMemberDialog({
             </div>
 
             <div className="flex justify-end pt-2">
-              <Button variant="outline" onClick={handleCloseAttempt}>
+              <Button data-testid="invitememberdialog-button-380" variant="outline" onClick={handleCloseAttempt}>
                 Zamknij
               </Button>
             </div>

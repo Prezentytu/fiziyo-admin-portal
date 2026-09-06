@@ -75,7 +75,7 @@ export function GettingStartedCard({
     {
       id: 'set',
       title: 'Stwórz zestaw ćwiczeń',
-      description: 'Połącz ćwiczenia w program',
+      description: 'Połącz ćwiczenia w zestaw',
       icon: FolderKanban,
       path: '/exercise-sets',
       completed: exerciseSetsCount > 0,
@@ -83,7 +83,7 @@ export function GettingStartedCard({
     {
       id: 'assign',
       title: 'Personalizuj i przypisz',
-      description: 'Wyślij program do pacjenta',
+      description: 'Wyślij plan do pacjenta',
       icon: Send,
       path: '/patients',
       completed: assignmentsCount > 0,
@@ -208,6 +208,7 @@ export function GettingStartedCard({
 
             {/* Action */}
             <Button
+              data-testid="common-getting-started-card-btn-210"
               onClick={handleCloseCelebration}
               size="sm"
               variant="ghost"
@@ -230,14 +231,20 @@ export function GettingStartedCard({
   return (
     <div
       data-testid="onboarding-getting-started-card"
-        className={cn(
-          'relative overflow-hidden rounded-2xl border border-border/30 bg-linear-to-br from-surface-elevated via-surface to-surface',
-          className
-        )}
+      className={cn(
+        'relative overflow-hidden rounded-2xl border border-border/30 bg-linear-to-br from-surface-elevated via-surface to-surface',
+        className
+      )}
     >
       {/* Decorative glow - subtle */}
-      <div className="absolute -top-20 -right-20 w-40 h-40 bg-primary/5 rounded-full blur-3xl pointer-events-none" aria-hidden="true" />
-      <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-secondary/5 rounded-full blur-3xl pointer-events-none" aria-hidden="true" />
+      <div
+        className="absolute -top-20 -right-20 w-40 h-40 bg-primary/5 rounded-full blur-3xl pointer-events-none"
+        aria-hidden="true"
+      />
+      <div
+        className="absolute -bottom-10 -left-10 w-32 h-32 bg-secondary/5 rounded-full blur-3xl pointer-events-none"
+        aria-hidden="true"
+      />
 
       <div className="relative p-5 sm:p-6">
         {/* Header */}

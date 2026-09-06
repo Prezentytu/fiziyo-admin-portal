@@ -5,6 +5,8 @@ import { useUser } from '@clerk/nextjs';
 import { useQuery } from '@apollo/client/react';
 import { GET_USER_BY_CLERK_ID_QUERY } from '@/graphql/queries/users.queries';
 import type { UserByClerkIdResponse } from '@/types/apollo';
+import { useOptionalCurrentUser } from '@/contexts/CurrentUserContext';
+import { computeSystemRoleFlags, normalizeSystemRole } from '@/hooks/systemRole';
 
 // ========================================
 // Types
@@ -57,45 +59,15 @@ export interface SystemRoleResult {
  */
 export function useSystemRole(): SystemRoleResult {
   const { user: clerkUser, isLoaded: clerkLoaded } = useUser();
+  const currentUser = useOptionalCurrentUser();
 
   const { data, loading: queryLoading } = useQuery<UserByClerkIdResponse>(GET_USER_BY_CLERK_ID_QUERY, {
     variables: { clerkId: clerkUser?.id },
-    skip: !clerkUser?.id,
+    skip: !clerkUser?.id || Boolean(currentUser),
   });
 
-  const isLoading = !clerkLoaded || queryLoading;
+  const isLoading = currentUser ? currentUser.isLoading : !clerkLoaded || queryLoading;
+  const rawRole = currentUser?.user?.systemRole ?? data?.userByClerkId?.systemRole;
 
-  return useMemo(() => {
-    const rawRole = data?.userByClerkId?.systemRole;
-
-    // Normalize role to match our SystemRole type (case-insensitive comparison)
-    // Backend returns SCREAMING_SNAKE_CASE (e.g., "CONTENT_MANAGER")
-    let systemRole: SystemRole | null = null;
-    if (rawRole) {
-      const normalizedRole = rawRole.toLowerCase().replace(/_/g, '');
-      if (normalizedRole === 'sitesuperadmin') systemRole = 'SiteSuperAdmin';
-      else if (normalizedRole === 'siteadmin') systemRole = 'SiteAdmin';
-      else if (normalizedRole === 'contentmanager') systemRole = 'ContentManager';
-    }
-
-    const isSiteSuperAdmin = systemRole === 'SiteSuperAdmin';
-    const isSiteAdmin = systemRole === 'SiteAdmin';
-    const isContentManager = systemRole === 'ContentManager';
-
-    // Permission checks based on backend PermissionService logic:
-    // - SiteSuperAdmin has all permissions
-    // - ContentManager has ReviewExercises and ManageGlobalTags
-    const canReviewExercises = isSiteSuperAdmin || isContentManager;
-    const canManageGlobalTags = isSiteSuperAdmin || isContentManager;
-
-    return {
-      systemRole,
-      isSiteSuperAdmin,
-      isSiteAdmin,
-      isContentManager,
-      canReviewExercises,
-      canManageGlobalTags,
-      isLoading,
-    };
-  }, [data?.userByClerkId?.systemRole, isLoading]);
+  return useMemo(() => computeSystemRoleFlags(normalizeSystemRole(rawRole), isLoading), [isLoading, rawRole]);
 }

@@ -40,13 +40,18 @@ export function EmptyState({
       {(actionLabel || secondaryActionLabel) && (
         <div className="flex flex-col sm:flex-row items-center gap-2">
           {actionLabel && onAction && (
-            <Button onClick={onAction} disabled={actionLoading}>
+            <Button data-testid="common-empty-state-btn-43" onClick={onAction} disabled={actionLoading}>
               {actionLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {actionLabel}
             </Button>
           )}
           {secondaryActionLabel && onSecondaryAction && (
-            <Button variant="outline" onClick={onSecondaryAction} disabled={secondaryActionLoading}>
+            <Button
+              data-testid="emptystate-button-49"
+              variant="outline"
+              onClick={onSecondaryAction}
+              disabled={secondaryActionLoading}
+            >
               {secondaryActionLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               {secondaryActionLabel}
             </Button>

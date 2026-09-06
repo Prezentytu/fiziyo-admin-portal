@@ -171,7 +171,11 @@ interface PatientAssignmentCardProps {
   readonly patientId: string;
   readonly patientPremiumValidUntil?: string | null;
   readonly onEditPlan?: (assignment: PatientAssignment) => void;
-  readonly onEditExercise?: (assignment: PatientAssignment, mapping: ExerciseMapping, override?: ExerciseOverride) => void;
+  readonly onEditExercise?: (
+    assignment: PatientAssignment,
+    mapping: ExerciseMapping,
+    override?: ExerciseOverride
+  ) => void;
   readonly onPreviewExercise?: (mapping: ExerciseMapping, override?: ExerciseOverride) => void;
   readonly onAddExercise?: (assignment: PatientAssignment) => void;
   readonly onExtend?: (assignment: PatientAssignment) => void;
@@ -198,9 +202,7 @@ function toPositiveNumber(value: number | string | null | undefined): number | u
 export function buildUnassignRefetchQueries(patientId: string, organizationId?: string) {
   return [
     { query: GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY, variables: { userId: patientId } },
-    ...(organizationId
-      ? [{ query: GET_ORGANIZATION_EXERCISE_SETS_QUERY, variables: { organizationId } }]
-      : []),
+    ...(organizationId ? [{ query: GET_ORGANIZATION_EXERCISE_SETS_QUERY, variables: { organizationId } }] : []),
   ];
 }
 
@@ -455,11 +457,14 @@ export function PatientAssignmentCard({
                   >
                     {assignmentDisplayStatus.primary.label}
                   </Badge>
-                  {assignmentDisplayStatus.secondary && (
-                    onActivatePremium ? (
+                  {assignmentDisplayStatus.secondary &&
+                    (onActivatePremium ? (
                       <button
                         type="button"
-                        onClick={(e) => { e.stopPropagation(); onActivatePremium(); }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onActivatePremium();
+                        }}
                         data-testid={`patient-assignment-premium-hint-${assignment.id}`}
                         className="inline-flex"
                       >
@@ -478,8 +483,7 @@ export function PatientAssignmentCard({
                       >
                         {assignmentDisplayStatus.secondary.label}
                       </Badge>
-                    )
-                  )}
+                    ))}
                 </div>
                 <div className="flex items-center gap-3 mt-1 text-sm text-muted-foreground">
                   <span className="flex items-center gap-1">
@@ -508,7 +512,10 @@ export function PatientAssignmentCard({
                     size="sm"
                     variant="outline"
                     className="h-8 text-xs gap-1.5 shrink-0 border-primary/40 text-primary hover:bg-primary/5"
-                    onClick={(e) => { e.stopPropagation(); onExtend(assignment); }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onExtend(assignment);
+                    }}
                     data-testid={`patient-assignment-${assignment.id}-extend-quick-btn`}
                   >
                     <CalendarPlus className="h-3.5 w-3.5" />
@@ -518,6 +525,7 @@ export function PatientAssignmentCard({
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button
+                      aria-label="Akcja"
                       variant="ghost"
                       size="icon"
                       className="h-8 w-8"
@@ -548,9 +556,14 @@ export function PatientAssignmentCard({
                       data-testid={`patient-assignment-${assignment.id}-extend-btn`}
                     >
                       <CalendarPlus className="mr-2 h-4 w-4" />
-                      {assignmentDisplayStatus.primary.kind === 'expired' ? 'Przedłuż wygasły zestaw' : 'Przedłuż zestaw'}
+                      {assignmentDisplayStatus.primary.kind === 'expired'
+                        ? 'Przedłuż wygasły zestaw'
+                        : 'Przedłuż zestaw'}
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={handleToggleStatus} disabled={updating || assignmentDisplayStatus.primary.kind === 'expired'}>
+                    <DropdownMenuItem
+                      onClick={handleToggleStatus}
+                      disabled={updating || assignmentDisplayStatus.primary.kind === 'expired'}
+                    >
                       {assignment.status === 'active' ? (
                         <>
                           <Pause className="mr-2 h-4 w-4" />
@@ -681,16 +694,11 @@ export function PatientAssignmentCard({
                                   >
                                     {overriddenKeys.map((key) => {
                                       const metadataKey =
-                                        key === 'loadWeightKg'
-                                          ? 'load'
-                                          : key === 'exerciseSide'
-                                            ? 'side'
-                                            : key;
+                                        key === 'loadWeightKg' ? 'load' : key === 'exerciseSide' ? 'side' : key;
                                       const label =
                                         metadataKey in EXERCISE_FIELD_METADATA
-                                          ? EXERCISE_FIELD_METADATA[
-                                              metadataKey as keyof typeof EXERCISE_FIELD_METADATA
-                                            ].label
+                                          ? EXERCISE_FIELD_METADATA[metadataKey as keyof typeof EXERCISE_FIELD_METADATA]
+                                              .label
                                           : key === 'customName'
                                             ? 'Własna nazwa'
                                             : key === 'customDescription'
@@ -714,6 +722,7 @@ export function PatientAssignmentCard({
                                 <Tooltip>
                                   <TooltipTrigger asChild>
                                     <Button
+                                      aria-label="Akcja"
                                       variant="ghost"
                                       size="icon"
                                       className="h-8 w-8 text-muted-foreground hover:text-foreground"
@@ -728,6 +737,7 @@ export function PatientAssignmentCard({
                                 <Tooltip>
                                   <TooltipTrigger asChild>
                                     <Button
+                                      aria-label="Akcja"
                                       variant="ghost"
                                       size="icon"
                                       className="h-8 w-8 text-muted-foreground hover:text-foreground"
@@ -742,6 +752,7 @@ export function PatientAssignmentCard({
                                 <Tooltip>
                                   <TooltipTrigger asChild>
                                     <Button
+                                      aria-label="Akcja"
                                       variant="ghost"
                                       size="icon"
                                       className="h-8 w-8 text-muted-foreground hover:text-destructive"
@@ -765,6 +776,7 @@ export function PatientAssignmentCard({
                         <EyeOff className="h-3.5 w-3.5" />
                         {hiddenExercisesCount} ukrytych ćwiczeń
                         <Button
+                          data-testid="patientassignmentcard-button-767"
                           variant="link"
                           size="sm"
                           className="h-auto p-0 text-xs text-primary"

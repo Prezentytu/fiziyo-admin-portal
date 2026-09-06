@@ -116,7 +116,14 @@ export function SetReviewCard({
           </div>
 
           {/* Przycisk rozwijania */}
-          <Button variant="ghost" size="icon" onClick={() => setIsExpanded(!isExpanded)} className="shrink-0 h-10 w-10">
+          <Button
+            data-testid="import-set-review-card-btn-119"
+            aria-label="Akcja"
+            variant="ghost"
+            size="icon"
+            onClick={() => setIsExpanded(!isExpanded)}
+            className="shrink-0 h-10 w-10"
+          >
             {isExpanded ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
           </Button>
         </div>

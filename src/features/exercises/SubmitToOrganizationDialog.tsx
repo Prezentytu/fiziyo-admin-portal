@@ -15,6 +15,7 @@ import { AlertTriangle, CheckCircle, FileText, Loader2, Rocket, Video } from 'lu
 import { cn } from '@/lib/utils';
 import type { Exercise } from './ExerciseCard';
 import { verificationCopy } from '@/features/verification/verificationCopy';
+import { useDialogShortcuts } from '@/hooks/useDialogShortcuts';
 
 interface SubmitToOrganizationDialogProps {
   open: boolean;
@@ -86,6 +87,15 @@ export function SubmitToOrganizationDialog({
     }
   };
 
+  useDialogShortcuts({
+    open,
+    enabled: !isSubmitting && !isLoading,
+    onSubmit: () => {
+      void handleSubmit();
+    },
+    onClose: () => onOpenChange(false),
+  });
+
   if (!exercise) return null;
 
   return (
@@ -116,7 +126,9 @@ export function SubmitToOrganizationDialog({
         </div>
 
         <div className="space-y-2">
-          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Sugestie przed zgłoszeniem</p>
+          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+            Sugestie przed zgłoszeniem
+          </p>
           {validationChecks.map((check) => (
             <div
               key={check.id}
@@ -130,7 +142,11 @@ export function SubmitToOrganizationDialog({
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  {check.id === 'media' ? <Video className="h-3.5 w-3.5 text-muted-foreground" /> : <FileText className="h-3.5 w-3.5 text-muted-foreground" />}
+                  {check.id === 'media' ? (
+                    <Video className="h-3.5 w-3.5 text-muted-foreground" />
+                  ) : (
+                    <FileText className="h-3.5 w-3.5 text-muted-foreground" />
+                  )}
                   <span className={cn('text-sm font-medium', check.passed ? 'text-emerald-600' : 'text-amber-600')}>
                     {check.label}
                   </span>
@@ -156,10 +172,19 @@ export function SubmitToOrganizationDialog({
         )}
 
         <DialogFooter className="mt-4">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button
+            data-testid="exercise-submit-to-organization-dialog-btn-169"
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+          >
             Anuluj
           </Button>
-          <Button onClick={handleSubmit} disabled={!canSubmit || isSubmitting || isLoading} className="gap-2">
+          <Button
+            data-testid="submittoorganizationdialog-button-162"
+            onClick={handleSubmit}
+            disabled={!canSubmit || isSubmitting || isLoading}
+            className="gap-2"
+          >
             {isSubmitting || isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Rocket className="h-4 w-4" />}
             {hasSuggestions ? verificationCopy.submitDespiteSuggestions : verificationCopy.submitToVerification}
           </Button>

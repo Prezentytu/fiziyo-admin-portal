@@ -125,7 +125,7 @@ export function BulkActionsToolbar({
       {/* Filtr - prosty dropdown */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="outline" size="sm" className="gap-2 h-9">
+          <Button data-testid="bulkactionstoolbar-button-128" variant="outline" size="sm" className="gap-2 h-9">
             <Filter className="h-4 w-4" />
             {getFilterLabel(activeFilter)}
             <ChevronDown className="h-4 w-4 ml-1" />

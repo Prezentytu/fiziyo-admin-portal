@@ -4,21 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import {
-  LayoutGrid,
-  Dumbbell,
-  FolderKanban,
-  Users,
-  Building2,
-  Wallet,
-  Settings,
-  PanelLeftClose,
-  PanelLeft,
-  FileText,
-  Sparkles,
-  ShieldCheck,
-  LucideIcon,
-} from 'lucide-react';
+import { PanelLeftClose, PanelLeft, Sparkles } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { OrganizationSwitcher } from './OrganizationSwitcher';
 import { UserProfileFooter } from './UserProfileFooter';
@@ -29,95 +15,7 @@ import { useRoleAccess } from '@/hooks/useRoleAccess';
 import { useSystemRole } from '@/hooks/useSystemRole';
 import { useOrganizationVerificationAccess } from '@/hooks/useOrganizationVerificationAccess';
 import { NavCountBadge } from '@/components/layout/NavCountBadge';
-
-// ========================================
-// Types
-// ========================================
-
-interface NavigationItem {
-  name: string;
-  href: string;
-  icon: LucideIcon;
-  testId: string;
-  /** Optional badge indicator (e.g., notifications count) */
-  badge?: number | null;
-  /** Optional accent icon for AI-powered features */
-  hasAiAccent?: boolean;
-}
-
-interface NavigationGroup {
-  label: string;
-  items: NavigationItem[];
-  /** If true, this group is only visible to owners and admins */
-  adminOnly?: boolean;
-  /** If true, this group is only visible to ContentManager or SiteSuperAdmin (system roles) */
-  contentManagerOnly?: boolean;
-}
-
-// ========================================
-// Navigation Configuration - 3 Zones
-// ========================================
-
-const navigationGroups: NavigationGroup[] = [
-  // STREFA 1: KLINIKA (Codzienna praca - 90% czasu)
-  {
-    label: 'Klinika',
-    items: [
-      { name: 'Panel', href: '/', icon: LayoutGrid, testId: 'nav-link-dashboard' },
-      { name: 'Pacjenci', href: '/patients', icon: Users, testId: 'nav-link-patients' },
-      { name: 'Zestawy', href: '/exercise-sets', icon: FolderKanban, testId: 'nav-link-exercise-sets' },
-      { name: 'Ćwiczenia', href: '/exercises', icon: Dumbbell, testId: 'nav-link-exercises' },
-    ],
-  },
-  // STREFA 2: SMART TOOLS (AI & Import)
-  {
-    label: 'Smart Tools',
-    items: [
-      {
-        name: 'Import Dokumentów',
-        href: '/import',
-        icon: FileText,
-        testId: 'nav-link-import',
-        hasAiAccent: true,
-      },
-    ],
-  },
-  // STREFA 3: ORGANIZACJA (Admin - rzadziej używane)
-  {
-    label: 'Organizacja',
-    adminOnly: true,
-    items: [
-      { name: 'Zespół', href: '/organization', icon: Building2, testId: 'nav-link-organization' },
-      {
-        name: 'Weryfikacja',
-        href: '/organization/verification',
-        icon: ShieldCheck,
-        testId: 'nav-link-organization-verification',
-      },
-      { name: 'Finanse', href: '/finances', icon: Wallet, testId: 'nav-link-finances' },
-      { name: 'Ustawienia', href: '/settings', icon: Settings, testId: 'nav-link-settings' },
-    ],
-  },
-  // STREFA 4: WERYFIKACJA (ContentManager / SiteSuperAdmin - globalne)
-  {
-    label: 'Weryfikacja',
-    contentManagerOnly: true,
-    items: [
-      {
-        name: 'Centrum Weryfikacji',
-        href: '/verification',
-        icon: ShieldCheck,
-        testId: 'nav-link-verification',
-      },
-      {
-        name: 'Weryfikacja Organizacji',
-        href: '/verification/organizations',
-        icon: ShieldCheck,
-        testId: 'nav-link-verification-organizations',
-      },
-    ],
-  },
-];
+import { filterNavigationGroups, navigationGroups } from '@/components/layout/navigation.config';
 
 interface SidebarProps {
   readonly isCollapsed: boolean;
@@ -135,31 +33,16 @@ export function Sidebar({ isCollapsed, onToggleCollapse }: SidebarProps) {
 
   // Filter navigation groups based on user role
   const filteredNavigationGroups = useMemo(() => {
-    return navigationGroups
-      .filter((group) => {
-      // ContentManager-only groups (system role)
-        if (group.contentManagerOnly) {
-          return canReviewExercises;
-        }
-        // Admin-only groups (organization role)
-        if (group.adminOnly) {
-          return canManageOrganization;
-        }
-        return true;
-      })
-      .map((group) => ({
-        ...group,
-        items: group.items
-          .filter((item) => item.href !== '/verification/organizations' || isSiteSuperAdmin)
-          .map((item) =>
-            item.href === '/organization/verification'
-              ? {
-                  ...item,
-                  badge: organizationPendingVerificationCount,
-                }
-              : item
-          ),
-      }));
+    return filterNavigationGroups(navigationGroups, {
+      canManageOrganization,
+      canReviewExercises,
+      isSiteSuperAdmin,
+    }).map((group) => ({
+      ...group,
+      items: group.items.map((item) =>
+        item.href === '/organization/verification' ? { ...item, badge: organizationPendingVerificationCount } : item
+      ),
+    }));
   }, [canManageOrganization, canReviewExercises, isSiteSuperAdmin, organizationPendingVerificationCount]);
   const filteredNavigationHrefs = useMemo(
     () => filteredNavigationGroups.flatMap((group) => group.items.map((item) => item.href)),
@@ -267,7 +150,9 @@ export function Sidebar({ isCollapsed, onToggleCollapse }: SidebarProps) {
                 {isCollapsed && groupIndex > 0 && <div className="mx-3 xl:mx-4 mb-2 xl:mb-3 border-t border-border" />}
 
                 {/* Navigation items */}
-                <div className={cn('space-y-1 xl:space-y-2', isCollapsed ? 'flex flex-col items-center' : 'px-3 xl:px-4')}>
+                <div
+                  className={cn('space-y-1 xl:space-y-2', isCollapsed ? 'flex flex-col items-center' : 'px-3 xl:px-4')}
+                >
                   {group.items.map((item) => {
                     const active = isNavigationHrefActive(pathname, item.href, filteredNavigationHrefs);
                     const Icon = item.icon;
@@ -288,7 +173,9 @@ export function Sidebar({ isCollapsed, onToggleCollapse }: SidebarProps) {
                           <Icon
                             className={cn(
                               'h-5 w-5 shrink-0 transition-transform duration-200',
-                              active ? 'nav-icon' : 'text-muted-foreground group-hover:text-foreground group-hover:scale-105'
+                              active
+                                ? 'nav-icon'
+                                : 'text-muted-foreground group-hover:text-foreground group-hover:scale-105'
                             )}
                           />
                           {/* AI Accent - small sparkle indicator */}
@@ -304,7 +191,9 @@ export function Sidebar({ isCollapsed, onToggleCollapse }: SidebarProps) {
                             <NavCountBadge count={item.badge ?? 0} />
 
                             {/* AI accent indicator in expanded mode */}
-                            {item.hasAiAccent && !active && <Sparkles className="h-3.5 w-3.5 text-primary opacity-60" />}
+                            {item.hasAiAccent && !active && (
+                              <Sparkles className="h-3.5 w-3.5 text-primary opacity-60" />
+                            )}
                           </>
                         )}
                       </Link>

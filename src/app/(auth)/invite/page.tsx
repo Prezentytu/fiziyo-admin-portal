@@ -180,7 +180,7 @@ function InvitePageContent() {
         title="Zaproszenie zostało już zaakceptowane"
         description="To zaproszenie zostało już wykorzystane."
         action={
-          <Button asChild>
+          <Button data-testid="page-button-183" asChild>
             <Link href="/">Przejdź do aplikacji</Link>
           </Button>
         }
@@ -287,7 +287,7 @@ function InvitePageContent() {
                 isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
               )}
             >
-              <Button asChild className="w-full gap-2" size="lg">
+              <Button data-testid="page-button-290" asChild className="w-full gap-2" size="lg">
                 <Link href={`/sign-in?redirect_url=/invite?token=${token}`}>
                   <Mail className="h-4 w-4" />
                   Zaloguj się aby dołączyć
@@ -346,13 +346,19 @@ function InvitePageContent() {
 
             <div className="space-y-3">
               <Button
+                data-testid="auth-page-btn-348"
                 onClick={() => signOut({ redirectUrl: `/invite?token=${token}` })}
                 variant="outline"
                 className="w-full gap-2"
               >
                 Zaloguj się na właściwe konto
               </Button>
-              <Button onClick={handleAccept} className="w-full gap-2" disabled={isAccepting}>
+              <Button
+                data-testid="page-button-355"
+                onClick={handleAccept}
+                className="w-full gap-2"
+                disabled={isAccepting}
+              >
                 {isAccepting ? <Loader2 className="h-4 w-4 animate-spin" /> : <UserPlus className="h-4 w-4" />}
                 Dołącz mimo to
               </Button>
@@ -469,6 +475,7 @@ function InvitePageContent() {
             )}
           >
             <Button
+              data-testid="page-button-471"
               onClick={handleAccept}
               className={cn(
                 'w-full gap-2 h-12 text-base font-semibold',
@@ -576,7 +583,7 @@ function InvalidState({ icon: Icon, title, description, action }: InvalidStatePr
             )}
           >
             {action || (
-              <Button asChild variant="outline">
+              <Button data-testid="page-button-579" asChild variant="outline">
                 <Link href="/">Wróć do strony głównej</Link>
               </Button>
             )}

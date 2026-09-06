@@ -2,7 +2,6 @@
 
 import { useMemo, useState } from 'react';
 import { useQuery } from '@apollo/client/react';
-import { useUser } from '@clerk/nextjs';
 import { User, Search, AlertTriangle, Check, X, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Card, CardContent } from '@/components/ui/card';
@@ -15,9 +14,9 @@ import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { GET_ALL_THERAPIST_PATIENTS_QUERY } from '@/graphql/queries/therapists.queries';
-import { GET_USER_BY_CLERK_ID_QUERY } from '@/graphql/queries/users.queries';
+import { useOptionalCurrentUser } from '@/contexts/CurrentUserContext';
 import { useOrganization } from '@/contexts/OrganizationContext';
-import type { UserByClerkIdResponse, TherapistPatientsResponse } from '@/types/apollo';
+import type { TherapistPatientsResponse } from '@/types/apollo';
 
 interface PatientOption {
   id: string;
@@ -91,18 +90,11 @@ export function PatientContextPanel({
   disabled = false,
   className,
 }: PatientContextPanelProps) {
-  const { user } = useUser();
   const { currentOrganization } = useOrganization();
   const [open, setOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Pobierz ID użytkownika z backendu
-  const { data: userData } = useQuery<UserByClerkIdResponse>(GET_USER_BY_CLERK_ID_QUERY, {
-    variables: { clerkId: user?.id },
-    skip: !user?.id,
-  });
-
-  const therapistId = userData?.userByClerkId?.id;
+  const therapistId = useOptionalCurrentUser()?.user?.id;
   const organizationId = currentOrganization?.organizationId;
 
   // Pobierz listę pacjentów
@@ -239,6 +231,7 @@ export function PatientContextPanel({
             <span className="text-sm text-foreground truncate flex-1">&quot;{detectedPatientName}&quot;</span>
             {suggestedPatient && (
               <Button
+                data-testid="patientcontextpanel-button-235"
                 variant="outline"
                 size="sm"
                 onClick={handleUseSuggested}
@@ -268,7 +261,14 @@ export function PatientContextPanel({
                   <p className="text-sm text-muted-foreground truncate">{selectedPatient.email}</p>
                 )}
               </div>
-              <Button variant="outline" size="sm" onClick={handleClear} disabled={disabled} className="shrink-0 gap-2">
+              <Button
+                data-testid="import-patient-context-panel-btn-263"
+                variant="outline"
+                size="sm"
+                onClick={handleClear}
+                disabled={disabled}
+                className="shrink-0 gap-2"
+              >
                 <X className="h-4 w-4" />
                 Usuń
               </Button>
@@ -277,6 +277,7 @@ export function PatientContextPanel({
             <Popover open={open} onOpenChange={setOpen}>
               <PopoverTrigger asChild>
                 <Button
+                  data-testid="import-patient-context-panel-btn-271"
                   variant="outline"
                   role="combobox"
                   aria-expanded={open}
@@ -293,6 +294,7 @@ export function PatientContextPanel({
               <PopoverContent className="w-[400px] p-0" align="start">
                 <div className="p-3 border-b border-border">
                   <Input
+                    data-testid="import-patient-context-panel-input-287"
                     placeholder="Szukaj pacjenta..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
@@ -309,6 +311,7 @@ export function PatientContextPanel({
                     <div className="p-2">
                       {filteredPatients.map((patient) => (
                         <button
+                          data-testid="patientcontextpanel-button-305"
                           key={patient.id}
                           onClick={() => handleSelectPatient(patient.id)}
                           className={cn(
@@ -348,6 +351,7 @@ export function PatientContextPanel({
         {selectedPatientId && (
           <div className="mt-4 flex items-center gap-3 p-3 rounded-lg bg-surface-light">
             <Checkbox
+              data-testid="patientcontextpanel-checkbox-344"
               id="assign-sets"
               checked={assignSetsToPatient}
               onCheckedChange={(checked) => onAssignSetsChange(checked === true)}

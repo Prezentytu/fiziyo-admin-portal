@@ -12,6 +12,8 @@ interface SearchInputProps {
   placeholder?: string;
   className?: string;
   debounceMs?: number;
+  'aria-label'?: string;
+  testId?: string;
 }
 
 export function SearchInput({
@@ -20,6 +22,8 @@ export function SearchInput({
   placeholder = 'Szukaj...',
   className,
   debounceMs = 300,
+  'aria-label': ariaLabel = 'Szukaj',
+  testId = 'page-search-input',
 }: SearchInputProps) {
   const [internalValue, setInternalValue] = React.useState(controlledValue ?? '');
   const value = controlledValue ?? internalValue;
@@ -58,8 +62,9 @@ export function SearchInput({
         value={value}
         onChange={handleChange}
         placeholder={placeholder}
+        aria-label={ariaLabel}
         className="pl-9 pr-9"
-        data-testid="common-search-input"
+        data-testid={testId}
       />
       {value && (
         <Button
@@ -67,6 +72,7 @@ export function SearchInput({
           size="icon"
           className="absolute right-1 top-1/2 h-7 w-7 -translate-y-1/2"
           onClick={handleClear}
+          aria-label="Wyczyść wyszukiwanie"
           data-testid="common-search-clear-btn"
         >
           <X className="h-4 w-4" />

@@ -137,6 +137,7 @@ export function VerificationImageManager({
       </div>
 
       <input
+        data-testid="verification-verification-image-manager-input-139"
         ref={fileInputRef}
         type="file"
         accept="image/*"
@@ -180,8 +181,14 @@ export function VerificationImageManager({
         <div className="grid grid-cols-2 gap-2">
           {existingImages.map((imageUrl, index) => (
             <div key={`${imageUrl}-${index}`} className="group relative">
-              <ExerciseImageFrame src={imageUrl} alt={`${exercise.name} ${index + 1}`} className="h-24 border border-border/50" />
+              <ExerciseImageFrame
+                src={imageUrl}
+                alt={`${exercise.name} ${index + 1}`}
+                className="h-24 border border-border/50"
+              />
               <Button
+                aria-label="Akcja"
+                data-testid="verificationimagemanager-button-184"
                 type="button"
                 size="icon"
                 variant="destructive"

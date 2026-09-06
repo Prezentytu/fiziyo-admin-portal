@@ -55,6 +55,8 @@ export function MemberFilters({
           />
           {searchQuery && (
             <Button
+              data-testid="org-member-filters-btn-57"
+              aria-label="Akcja"
               variant="ghost"
               size="icon"
               className="absolute right-1 top-1/2 -translate-y-1/2 h-8 w-8"
@@ -103,7 +105,11 @@ export function MemberFilters({
           {hasActiveFilters && (
             <Badge variant="secondary" className="gap-1.5">
               Aktywne filtry
-              <button onClick={clearFilters} className="ml-1 hover:text-foreground transition-colors">
+              <button
+                data-testid="memberfilters-button-106"
+                onClick={clearFilters}
+                className="ml-1 hover:text-foreground transition-colors"
+              >
                 <X className="h-3 w-3" />
               </button>
             </Badge>

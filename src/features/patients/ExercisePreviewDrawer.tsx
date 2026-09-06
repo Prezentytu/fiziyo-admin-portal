@@ -226,6 +226,7 @@ export function ExercisePreviewDrawer({ open, onOpenChange, mapping, override, o
               {hasMultipleImages && !videoUrl && (
                 <>
                   <button
+                    data-testid="patient-exercise-preview-drawer-btn-228"
                     type="button"
                     onClick={goToPrevious}
                     className="absolute left-2 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full bg-background/80 backdrop-blur-sm flex items-center justify-center hover:bg-background transition-colors"
@@ -233,6 +234,7 @@ export function ExercisePreviewDrawer({ open, onOpenChange, mapping, override, o
                     <ChevronLeft className="h-6 w-6" />
                   </button>
                   <button
+                    data-testid="patient-exercise-preview-drawer-btn-235"
                     type="button"
                     onClick={goToNext}
                     className="absolute right-2 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full bg-background/80 backdrop-blur-sm flex items-center justify-center hover:bg-background transition-colors"
@@ -247,6 +249,7 @@ export function ExercisePreviewDrawer({ open, onOpenChange, mapping, override, o
                 <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
                   {allImages.map((img, index) => (
                     <button
+                      data-testid="exercisepreviewdrawer-button-249"
                       key={index}
                       type="button"
                       onClick={() => setCurrentImageIndex(index)}
@@ -277,7 +280,11 @@ export function ExercisePreviewDrawer({ open, onOpenChange, mapping, override, o
                   <div key={field.key} className="rounded-xl border border-border/40 bg-surface/30 p-3">
                     <p className="text-xs text-muted-foreground">{field.label}</p>
                     <p className="mt-1 text-sm font-semibold text-foreground">
-                      {formatFieldValueWithPlaceholder(field, normalizedFields, field.group === 'content' ? 'Nie ustawiono' : '—')}
+                      {formatFieldValueWithPlaceholder(
+                        field,
+                        normalizedFields,
+                        field.group === 'content' ? 'Nie ustawiono' : '—'
+                      )}
                     </p>
                   </div>
                 ))}
@@ -304,7 +311,9 @@ export function ExercisePreviewDrawer({ open, onOpenChange, mapping, override, o
                     <Info className="h-4 w-4" />
                     Opis dla pacjenta
                   </h3>
-                  <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">{effectivePatientDescription}</p>
+                  <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">
+                    {effectivePatientDescription}
+                  </p>
                 </div>
               </>
             )}
@@ -317,7 +326,9 @@ export function ExercisePreviewDrawer({ open, onOpenChange, mapping, override, o
                     <Info className="h-4 w-4" />
                     Opis dla fizjoterapeuty
                   </h3>
-                  <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">{effectiveClinicalDescription}</p>
+                  <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">
+                    {effectiveClinicalDescription}
+                  </p>
                 </div>
               </>
             )}
@@ -356,11 +367,19 @@ export function ExercisePreviewDrawer({ open, onOpenChange, mapping, override, o
 
         {/* Footer */}
         <div className="px-6 py-4 border-t border-border flex justify-end gap-3">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button
+            data-testid="patient-exercise-preview-drawer-btn-359"
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+          >
             Zamknij
           </Button>
           {onEdit && (
-            <Button onClick={onEdit} className="shadow-lg shadow-primary/20">
+            <Button
+              data-testid="exercisepreviewdrawer-button-363"
+              onClick={onEdit}
+              className="shadow-lg shadow-primary/20"
+            >
               Edytuj parametry
             </Button>
           )}

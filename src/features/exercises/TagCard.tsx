@@ -56,7 +56,7 @@ export function TagCard({ tag, onEdit, onDelete, className }: TagCardProps) {
       </div>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon" className="h-8 w-8">
+          <Button aria-label="Akcja" data-testid="tagcard-button-59" variant="ghost" size="icon" className="h-8 w-8">
             <MoreVertical className="h-4 w-4" />
           </Button>
         </DropdownMenuTrigger>
@@ -109,7 +109,7 @@ export function CategoryCard({ category, onEdit, onDelete, className }: Category
       </div>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon" className="h-8 w-8">
+          <Button aria-label="Akcja" data-testid="tagcard-button-112" variant="ghost" size="icon" className="h-8 w-8">
             <MoreVertical className="h-4 w-4" />
           </Button>
         </DropdownMenuTrigger>

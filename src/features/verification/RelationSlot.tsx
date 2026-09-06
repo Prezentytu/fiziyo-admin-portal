@@ -133,6 +133,7 @@ export function RelationSlot({
         {/* Add placeholder option */}
         {onAddPlaceholder && (
           <Button
+            data-testid="verification-relation-slot-btn-135"
             variant="ghost"
             size="sm"
             className="h-6 text-[10px] text-muted-foreground"
@@ -220,6 +221,7 @@ export function RelationSlot({
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
+                    data-testid="verification-relation-slot-btn-222"
                     variant="secondary"
                     size="icon"
                     className="h-8 w-8"
@@ -237,6 +239,7 @@ export function RelationSlot({
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
+                    data-testid="verification-relation-slot-btn-239"
                     variant="secondary"
                     size="icon"
                     className="h-8 w-8"
@@ -255,6 +258,8 @@ export function RelationSlot({
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
+                    aria-label="Akcja"
+                    data-testid="relationslot-button-257"
                     variant="secondary"
                     size="icon"
                     className="h-8 w-8 hover:bg-destructive hover:text-destructive-foreground"

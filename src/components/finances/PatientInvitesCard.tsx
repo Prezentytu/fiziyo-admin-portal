@@ -157,7 +157,14 @@ export function PatientInvitesCard({ organizationId, className }: PatientInvites
               Zaproszenia Pacjentów
             </CardTitle>
             <div className="flex items-center gap-2">
-              <Button variant="ghost" size="icon" onClick={() => refetch()} title="Odśwież">
+              <Button
+                data-testid="finances-patient-invites-card-btn-160"
+                aria-label="Akcja"
+                variant="ghost"
+                size="icon"
+                onClick={() => refetch()}
+                title="Odśwież"
+              >
                 <RefreshCw className="h-4 w-4" />
               </Button>
               <Button size="sm" onClick={() => setDialogOpen(true)} className="gap-2" data-testid="invite-patient-btn">
@@ -255,7 +262,13 @@ function InviteRow({ invite, onCancel }: { invite: PatientInviteLink; onCancel: 
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8" data-testid={`invite-menu-${invite.id}`}>
+                <Button
+                  aria-label="Akcja"
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
+                  data-testid={`invite-menu-${invite.id}`}
+                >
                   <MoreHorizontal className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>

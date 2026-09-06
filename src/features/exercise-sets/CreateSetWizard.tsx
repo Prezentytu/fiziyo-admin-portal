@@ -27,7 +27,9 @@ import {
 import { cn } from '@/lib/utils';
 import { aiService } from '@/services/aiService';
 
-import { GET_AVAILABLE_EXERCISES_QUERY } from '@/graphql/queries/exercises.queries';
+import { GET_AVAILABLE_EXERCISES_LIST_QUERY } from '@/graphql/queries/exercises.queries';
+import { exerciseSetListRefetch, therapistAssignmentRefetch } from '@/graphql/cache/invalidation';
+import { useOptionalCurrentUser } from '@/contexts/CurrentUserContext';
 import {
   CREATE_EXERCISE_SET_MUTATION,
   ADD_EXERCISE_TO_EXERCISE_SET_MUTATION,
@@ -71,6 +73,7 @@ export function CreateSetWizard({
   autoAssign = false,
   initialExerciseIds,
 }: CreateSetWizardProps) {
+  const currentUser = useOptionalCurrentUser()?.user ?? null;
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [showDescription, setShowDescription] = useState(false);
@@ -113,7 +116,7 @@ export function CreateSetWizard({
     }
   }, [open, patientName]);
 
-  const { data: exercisesData, loading: loadingExercises } = useQuery(GET_AVAILABLE_EXERCISES_QUERY, {
+  const { data: exercisesData, loading: loadingExercises } = useQuery(GET_AVAILABLE_EXERCISES_LIST_QUERY, {
     variables: { organizationId },
     skip: !organizationId || !open,
   });
@@ -167,9 +170,13 @@ export function CreateSetWizard({
     };
   }, [patientId, patientName, clinicalNotesData]);
 
-  const [createSet, { loading: creatingSet }] = useMutation(CREATE_EXERCISE_SET_MUTATION);
+  const [createSet, { loading: creatingSet }] = useMutation(CREATE_EXERCISE_SET_MUTATION, {
+    refetchQueries: exerciseSetListRefetch(organizationId),
+  });
   const [addExercise, { loading: addingExercises }] = useMutation(ADD_EXERCISE_TO_EXERCISE_SET_MUTATION);
-  const [assignSetToPatient, { loading: assigning }] = useMutation(ASSIGN_EXERCISE_SET_TO_PATIENT_MUTATION);
+  const [assignSetToPatient, { loading: assigning }] = useMutation(ASSIGN_EXERCISE_SET_TO_PATIENT_MUTATION, {
+    refetchQueries: currentUser?.id ? therapistAssignmentRefetch(currentUser.id) : [],
+  });
 
   const tags = useMemo(() => (tagsData as ExerciseTagsResponse)?.exerciseTags || [], [tagsData]);
   const categories = useMemo(
@@ -418,13 +425,17 @@ export function CreateSetWizard({
                     <span>Dla:</span>
                     <span className="font-medium text-foreground">{patientContext.patientName}</span>
                     {autoAssign && (
-                      <Badge variant="secondary" className="text-[9px] bg-surface-light border-border text-muted-foreground">
+                      <Badge
+                        variant="secondary"
+                        className="text-[9px] bg-surface-light border-border text-muted-foreground"
+                      >
                         Auto-przypisanie
                       </Badge>
                     )}
                   </div>
                 )}
                 <Button
+                  data-testid="createsetwizard-button-434"
                   variant="ghost"
                   size="icon"
                   onClick={handleCloseAttempt}
@@ -469,6 +480,7 @@ export function CreateSetWizard({
 
         <div className="px-6 py-4 border-t border-border bg-surface shrink-0 flex items-center justify-between gap-3">
           <Button
+            data-testid="set-create-set-wizard-btn-478"
             type="button"
             variant="ghost"
             onClick={handleCloseAttempt}

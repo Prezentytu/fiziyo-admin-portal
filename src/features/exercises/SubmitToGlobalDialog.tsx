@@ -15,6 +15,7 @@ import { Rocket, CheckCircle, Video, FileText, Tag, Loader2, AlertTriangle } fro
 import { cn } from '@/lib/utils';
 import type { Exercise } from './ExerciseCard';
 import { verificationCopy } from '@/features/verification/verificationCopy';
+import { useDialogShortcuts } from '@/hooks/useDialogShortcuts';
 
 interface SubmitToGlobalDialogProps {
   open: boolean;
@@ -119,6 +120,15 @@ export function SubmitToGlobalDialog({
     }
   };
 
+  useDialogShortcuts({
+    open,
+    enabled: !isSubmitting && !isLoading,
+    onSubmit: () => {
+      void handleSubmit();
+    },
+    onClose: () => onOpenChange(false),
+  });
+
   if (!exercise) return null;
 
   return (
@@ -159,24 +169,15 @@ export function SubmitToGlobalDialog({
               key={check.id}
               className={cn(
                 'flex items-start gap-3 p-3 rounded-lg border transition-colors',
-                check.passed
-                  ? 'bg-emerald-500/5 border-emerald-500/20'
-                  : 'bg-amber-500/5 border-amber-500/20'
+                check.passed ? 'bg-emerald-500/5 border-emerald-500/20' : 'bg-amber-500/5 border-amber-500/20'
               )}
             >
-              <div
-                className={cn(
-                  'shrink-0 mt-0.5',
-                  check.passed ? 'text-emerald-500' : 'text-amber-500'
-                )}
-              >
+              <div className={cn('shrink-0 mt-0.5', check.passed ? 'text-emerald-500' : 'text-amber-500')}>
                 {check.passed ? <CheckCircle className="h-4 w-4" /> : <AlertTriangle className="h-4 w-4" />}
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                  <span
-                    className={cn('text-sm font-medium', check.passed ? 'text-emerald-600' : 'text-amber-600')}
-                  >
+                  <span className={cn('text-sm font-medium', check.passed ? 'text-emerald-600' : 'text-amber-600')}>
                     {check.label}
                   </span>
                   {!check.passed && (
@@ -201,10 +202,19 @@ export function SubmitToGlobalDialog({
         )}
 
         <DialogFooter className="mt-4">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button
+            data-testid="exercise-submit-to-global-dialog-btn-214"
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+          >
             Anuluj
           </Button>
-          <Button onClick={handleSubmit} disabled={!canSubmit || isSubmitting || isLoading} className="gap-2">
+          <Button
+            data-testid="submittoglobaldialog-button-207"
+            onClick={handleSubmit}
+            disabled={!canSubmit || isSubmitting || isLoading}
+            className="gap-2"
+          >
             {isSubmitting || isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Rocket className="h-4 w-4" />}
             {hasSuggestions ? verificationCopy.submitDespiteSuggestions : verificationCopy.submitToVerification}
           </Button>

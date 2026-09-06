@@ -67,7 +67,7 @@ export function ExerciseSetPDF({
     <Document
       title={`Plan rehabilitacji - ${exerciseSet.name}`}
       author={organization.name}
-      subject={`Program ćwiczeń dla ${patient?.name || 'pacjenta'}`}
+      subject={`Plan ćwiczeń dla ${patient?.name || 'pacjenta'}`}
       creator="FiziYo - Aplikacja dla fizjoterapeutów"
     >
       <Page size="A4" style={pdfStyles.page}>

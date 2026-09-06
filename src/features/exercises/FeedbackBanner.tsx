@@ -71,6 +71,7 @@ export function FeedbackBanner({ adminReviewNotes, updatedAt, onAcknowledge, cla
           {onAcknowledge && (
             <div className="mt-3">
               <Button
+                data-testid="feedbackbanner-button-73"
                 variant="outline"
                 size="sm"
                 onClick={onAcknowledge}

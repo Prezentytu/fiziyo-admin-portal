@@ -123,15 +123,26 @@ export function FrequencyPicker({ value, onChange, className }: FrequencyPickerP
         <div className="flex items-center justify-between">
           <Label className="text-sm font-medium">Dni tygodnia</Label>
           <div className="flex gap-2">
-            <button type="button" onClick={selectAllDays} className="text-xs text-primary hover:underline">
+            <button
+              data-testid="set-frequency-picker-btn-126"
+              type="button"
+              onClick={selectAllDays}
+              className="text-xs text-primary hover:underline"
+            >
               Wszystkie
             </button>
             <span className="text-muted-foreground">·</span>
-            <button type="button" onClick={selectWeekdays} className="text-xs text-primary hover:underline">
+            <button
+              data-testid="set-frequency-picker-btn-130"
+              type="button"
+              onClick={selectWeekdays}
+              className="text-xs text-primary hover:underline"
+            >
               Pn-Pt
             </button>
             <span className="text-muted-foreground">·</span>
             <button
+              data-testid="set-frequency-picker-btn-134"
               type="button"
               onClick={clearDays}
               className="text-xs text-muted-foreground hover:text-foreground hover:underline"
@@ -175,6 +186,8 @@ export function FrequencyPicker({ value, onChange, className }: FrequencyPickerP
           </Label>
           <div className="flex items-center gap-2">
             <Button
+              data-testid="set-frequency-picker-btn-177"
+              aria-label="Akcja"
               type="button"
               variant="outline"
               size="icon"
@@ -198,6 +211,8 @@ export function FrequencyPicker({ value, onChange, className }: FrequencyPickerP
               data-testid="set-frequency-times-per-day"
             />
             <Button
+              aria-label="Akcja"
+              data-testid="frequencypicker-button-200"
               type="button"
               variant="outline"
               size="icon"
@@ -217,6 +232,8 @@ export function FrequencyPicker({ value, onChange, className }: FrequencyPickerP
           </Label>
           <div className="flex items-center gap-2">
             <Button
+              data-testid="set-frequency-picker-btn-219"
+              aria-label="Akcja"
               type="button"
               variant="outline"
               size="icon"
@@ -227,6 +244,7 @@ export function FrequencyPicker({ value, onChange, className }: FrequencyPickerP
               <Minus className="h-4 w-4" />
             </Button>
             <Input
+              data-testid="set-frequency-picker-input-229"
               id="breakBetweenSets"
               type="number"
               min={0}
@@ -240,6 +258,8 @@ export function FrequencyPicker({ value, onChange, className }: FrequencyPickerP
               className="h-11 text-center text-lg font-semibold"
             />
             <Button
+              aria-label="Akcja"
+              data-testid="frequencypicker-button-242"
               type="button"
               variant="outline"
               size="icon"

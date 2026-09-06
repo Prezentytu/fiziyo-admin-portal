@@ -19,6 +19,7 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import type { ExerciseTag } from './TagCard';
 import { CREATE_EXERCISE_TAG_MUTATION, UPDATE_TAG_MUTATION } from '@/graphql/mutations/exercises.mutations';
 import { GET_EXERCISE_TAGS_BY_ORGANIZATION_QUERY } from '@/graphql/queries/exerciseTags.queries';
+import { useDialogShortcuts } from '@/hooks/useDialogShortcuts';
 
 const tagFormSchema = z.object({
   name: z.string().min(2, 'Nazwa musi mieć min. 2 znaki').max(50, 'Nazwa może mieć max. 50 znaków'),
@@ -152,6 +153,15 @@ export function TagDialog({ open, onOpenChange, tag, organizationId, onSuccess }
     }
   };
 
+  useDialogShortcuts({
+    open,
+    enabled: !creating && !updating,
+    onSubmit: () => {
+      void form.handleSubmit(handleSubmit)();
+    },
+    onClose: handleCloseAttempt,
+  });
+
   return (
     <Dialog open={open} onOpenChange={() => handleCloseAttempt()}>
       <DialogContent
@@ -174,7 +184,7 @@ export function TagDialog({ open, onOpenChange, tag, organizationId, onSuccess }
                 <FormItem>
                   <FormLabel>Nazwa *</FormLabel>
                   <FormControl>
-                    <Input placeholder="np. Plecy" {...field} />
+                    <Input data-testid="exercise-tag-dialog-input-187" placeholder="np. Plecy" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -188,7 +198,11 @@ export function TagDialog({ open, onOpenChange, tag, organizationId, onSuccess }
                 <FormItem>
                   <FormLabel>Opis</FormLabel>
                   <FormControl>
-                    <Textarea placeholder="Opcjonalny opis..." {...field} />
+                    <Textarea
+                      data-testid="exercise-tag-dialog-textarea-201"
+                      placeholder="Opcjonalny opis..."
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -208,11 +222,17 @@ export function TagDialog({ open, onOpenChange, tag, organizationId, onSuccess }
                           className="h-8 w-8 rounded border border-border"
                           style={{ backgroundColor: field.value }}
                         />
-                        <Input placeholder="#5bb89a" {...field} className="flex-1" />
+                        <Input
+                          data-testid="exercise-tag-dialog-input-221"
+                          placeholder="#5bb89a"
+                          {...field}
+                          className="flex-1"
+                        />
                       </div>
                       <div className="flex flex-wrap gap-2">
                         {colorPresets.map((color) => (
                           <button
+                            data-testid="tagdialog-button-215"
                             key={color}
                             type="button"
                             className="h-6 w-6 rounded border border-border transition-transform hover:scale-110"
@@ -234,7 +254,11 @@ export function TagDialog({ open, onOpenChange, tag, organizationId, onSuccess }
               render={({ field }) => (
                 <FormItem className="flex flex-row items-start space-x-3 space-y-0">
                   <FormControl>
-                    <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+                    <Checkbox
+                      data-testid="exercise-tag-dialog-checkbox-247"
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
                   </FormControl>
                   <div className="space-y-1 leading-none">
                     <FormLabel>Tag główny</FormLabel>
@@ -245,10 +269,15 @@ export function TagDialog({ open, onOpenChange, tag, organizationId, onSuccess }
             />
 
             <div className="flex justify-end gap-3 pt-4">
-              <Button type="button" variant="outline" onClick={handleCloseAttempt}>
+              <Button
+                data-testid="exercise-tag-dialog-btn-258"
+                type="button"
+                variant="outline"
+                onClick={handleCloseAttempt}
+              >
                 Anuluj
               </Button>
-              <Button type="submit" disabled={creating || updating}>
+              <Button data-testid="tagdialog-button-251" type="submit" disabled={creating || updating}>
                 {(creating || updating) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {isEditing ? 'Zapisz zmiany' : 'Dodaj tag'}
               </Button>

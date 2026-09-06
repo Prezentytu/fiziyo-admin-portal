@@ -143,7 +143,7 @@ export function TherapistBillingTable({ organizationId, className }: TherapistBi
             <p className="text-xs text-muted-foreground/70 mb-4 max-w-xs">
               Zaproś terapeutów do organizacji, aby śledzić ich wyniki i efektywność
             </p>
-            <Button size="sm" className="h-8 text-xs gap-2">
+            <Button data-testid="finances-therapist-billing-table-btn-146" size="sm" className="h-8 text-xs gap-2">
               <UserPlus className="h-3.5 w-3.5" />
               Zaproś terapeutę
             </Button>

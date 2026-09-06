@@ -384,7 +384,7 @@ function AIDiffDrawer({
           <br />
           Spróbuj ponownie.
         </p>
-        <Button variant="outline" size="sm" onClick={onClose}>
+        <Button data-testid="createexercisewizard-button-387" variant="outline" size="sm" onClick={onClose}>
           Zamknij
         </Button>
       </div>
@@ -450,7 +450,14 @@ function AIDiffDrawer({
               <p className="text-[10px] text-muted-foreground">Autouzupełnianie i porządek</p>
             </div>
           </div>
-          <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-surface-hover" onClick={onClose}>
+          <Button
+            aria-label="Akcja"
+            data-testid="createexercisewizard-button-453"
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 hover:bg-surface-hover"
+            onClick={onClose}
+          >
             <X className="h-4 w-4" />
           </Button>
         </div>
@@ -582,6 +589,7 @@ function AIDiffDrawer({
                 {/* Przycisk dodaj wszystkie pasujące */}
                 {matchedTags.filter((t) => !currentData.mainTags.includes(t.id)).length > 1 && (
                   <Button
+                    data-testid="createexercisewizard-button-584"
                     variant="ghost"
                     size="sm"
                     className="h-7 text-xs text-secondary hover:text-secondary hover:bg-secondary/10"
@@ -713,6 +721,7 @@ function AIDiffDrawer({
                   <p className="text-[9px] text-muted-foreground uppercase mb-1">Tempo</p>
                   <p className="text-sm font-mono font-bold text-primary">{suggestion.advancedParams.tempo}</p>
                   <button
+                    data-testid="exercise-create-exercise-wizard-btn-715"
                     onClick={() => onAcceptField('tempo', suggestion.advancedParams?.tempo)}
                     className="text-[9px] text-secondary hover:text-secondary/80 mt-1"
                   >
@@ -725,9 +734,8 @@ function AIDiffDrawer({
                   <p className="text-[9px] text-muted-foreground uppercase mb-1">Obciążenie</p>
                   <p className="text-sm font-medium text-foreground">{suggestion.advancedParams.weight}</p>
                   <button
-                    onClick={() =>
-                      onAcceptField('loadKg', parseAiWeightToLoadKg(suggestion.advancedParams?.weight))
-                    }
+                    data-testid="exercise-create-exercise-wizard-btn-727"
+                    onClick={() => onAcceptField('loadKg', parseAiWeightToLoadKg(suggestion.advancedParams?.weight))}
                     className="text-[9px] text-secondary hover:text-secondary/80 mt-1"
                   >
                     ← Użyj
@@ -739,6 +747,7 @@ function AIDiffDrawer({
                   <p className="text-[9px] text-muted-foreground uppercase mb-1">Zakres ruchu</p>
                   <p className="text-sm font-medium text-foreground">{suggestion.advancedParams.rangeOfMotion}</p>
                   <button
+                    data-testid="exercise-create-exercise-wizard-btn-741"
                     onClick={() => onAcceptField('rangeOfMotion', suggestion.advancedParams?.rangeOfMotion)}
                     className="text-[9px] text-secondary hover:text-secondary/80 mt-1"
                   >
@@ -751,6 +760,7 @@ function AIDiffDrawer({
                   <p className="text-[9px] text-muted-foreground uppercase mb-1">Czas powtórzenia</p>
                   <p className="text-sm font-medium text-foreground">{suggestion.advancedParams.executionTime}s</p>
                   <button
+                    data-testid="exercise-create-exercise-wizard-btn-753"
                     onClick={() => onAcceptField('executionTime', suggestion.advancedParams?.executionTime)}
                     className="text-[9px] text-secondary hover:text-secondary/80 mt-1"
                   >
@@ -763,6 +773,7 @@ function AIDiffDrawer({
                   <p className="text-[9px] text-muted-foreground uppercase mb-1">Czas przygotowania</p>
                   <p className="text-sm font-medium text-foreground">{suggestion.advancedParams.preparationTime}s</p>
                   <button
+                    data-testid="exercise-create-exercise-wizard-btn-765"
                     onClick={() => onAcceptField('preparationTime', suggestion.advancedParams?.preparationTime)}
                     className="text-[9px] text-secondary hover:text-secondary/80 mt-1"
                   >
@@ -815,7 +826,13 @@ function AIDiffDrawer({
       {/* Footer */}
       <div className="px-5 py-4 border-t border-border bg-surface/30">
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={onClose} className="flex-1 border-border hover:bg-surface-hover">
+          <Button
+            data-testid="exercise-create-exercise-wizard-btn-818"
+            variant="outline"
+            size="sm"
+            onClick={onClose}
+            className="flex-1 border-border hover:bg-surface-hover"
+          >
             Zamknij
           </Button>
           {totalSuggestions > 0 && (
@@ -897,6 +914,7 @@ function SuggestionCard({
           <span className="text-xs text-primary font-medium">{suggestedValue}</span>
         </div>
         <Button
+          data-testid="exercise-create-exercise-wizard-btn-899"
           type="button"
           variant="ghost"
           size="sm"
@@ -920,6 +938,7 @@ function SuggestionCard({
       <div className="flex items-center justify-between px-3 py-2 border-b border-border/50">
         <span className="text-[10px] font-semibold text-muted-foreground uppercase">{label}</span>
         <Button
+          data-testid="createexercisewizard-button-922"
           type="button"
           variant="ghost"
           size="sm"
@@ -1053,10 +1072,7 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
     });
   }, [tagsData, categoriesData]);
 
-  const mediaPreviewUrls = useMemo(
-    () => mediaFiles.map((file) => URL.createObjectURL(file)),
-    [mediaFiles]
-  );
+  const mediaPreviewUrls = useMemo(() => mediaFiles.map((file) => URL.createObjectURL(file)), [mediaFiles]);
 
   useEffect(() => {
     return () => {
@@ -1560,9 +1576,7 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
                 aria-label={durationBadgeTooltip}
               >
                 <Clock className="h-3 w-3 text-primary" />
-                <span className="text-xs font-semibold text-primary">
-                  {exactDurationLabel}
-                </span>
+                <span className="text-xs font-semibold text-primary">{exactDurationLabel}</span>
               </div>
             )}
           </div>
@@ -1616,6 +1630,7 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
                 />
                 {voiceSupported && (
                   <Button
+                    aria-label="Akcja"
                     type="button"
                     variant="ghost"
                     size="icon"
@@ -1693,7 +1708,10 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
                 <label className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">
                   Media
                 </label>
-                <span className="text-[10px] tabular-nums text-muted-foreground" data-testid="exercise-create-media-count">
+                <span
+                  className="text-[10px] tabular-nums text-muted-foreground"
+                  data-testid="exercise-create-media-count"
+                >
                   {mediaFiles.length}/5
                 </span>
               </div>
@@ -1903,6 +1921,7 @@ export function CreateExerciseWizard({ open, onOpenChange, organizationId, onSuc
               </div>
 
               <input
+                data-testid="exercise-create-exercise-wizard-input-1905"
                 ref={fileInputRef}
                 type="file"
                 accept="image/*,video/*"

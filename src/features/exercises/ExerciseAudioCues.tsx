@@ -64,10 +64,7 @@ export function ExerciseAudioCues({
 
       {showTtsBlock && (
         <div
-          className={cn(
-            'rounded-xl p-3',
-            hasCues ? 'bg-primary/5 border border-primary/15' : 'bg-surface-light/30'
-          )}
+          className={cn('rounded-xl p-3', hasCues ? 'bg-primary/5 border border-primary/15' : 'bg-surface-light/30')}
           data-testid="exercise-audio-cue-main"
         >
           <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/70 mb-1.5">
@@ -75,6 +72,7 @@ export function ExerciseAudioCues({
           </p>
           {editable ? (
             <Input
+              data-testid="exercise-audio-cue-input"
               defaultValue={audioCue ?? ''}
               placeholder="Np. „Wykonaj przysiad, utrzymując prosty kręgosłup”"
               className="h-9 text-sm"
@@ -90,7 +88,6 @@ export function ExerciseAudioCues({
                   event.currentTarget.blur();
                 }
               }}
-              data-testid="exercise-audio-cue-input"
             />
           ) : (
             <p className="text-sm text-foreground">{audioCue}</p>

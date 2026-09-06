@@ -22,12 +22,17 @@ import {
 } from '@/components/ui/dialog';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { getDefaultDaysForFrequency } from '@/features/assignment/utils/scheduleUtils';
-import { calculateScheduleSummary, calculateStartInDays, pluralizeDay } from '@/features/assignment/utils/scheduleSummaryUtils';
+import {
+  calculateScheduleSummary,
+  calculateStartInDays,
+  pluralizeDay,
+} from '@/features/assignment/utils/scheduleSummaryUtils';
 import { buildAssignmentFrequencyPayload } from '@/features/assignment/utils/scheduleFrequencyUtils';
 
 import { UPDATE_EXERCISE_SET_ASSIGNMENT_MUTATION } from '@/graphql/mutations/exercises.mutations';
 import { GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY } from '@/graphql/queries/patientAssignments.queries';
 import type { PatientAssignment, Frequency } from './PatientAssignmentCard';
+import { useDialogShortcuts } from '@/hooks/useDialogShortcuts';
 
 interface EditAssignmentScheduleDialogProps {
   readonly open: boolean;
@@ -167,7 +172,15 @@ function CardOption({ checked, label, onSelect, name, testId }: CardOptionProps)
       )}
       data-testid={testId}
     >
-      <input type="radio" className="sr-only" checked={checked} onChange={onSelect} name={name} aria-label={label} />
+      <input
+        data-testid="editassignmentscheduledialog-input-170"
+        type="radio"
+        className="sr-only"
+        checked={checked}
+        onChange={onSelect}
+        name={name}
+        aria-label={label}
+      />
       <span>{label}</span>
     </label>
   );
@@ -191,6 +204,7 @@ function NumberControl({ value, min, max, onChange, disabled = false, testIdPref
       )}
     >
       <Button
+        aria-label="Akcja"
         type="button"
         variant="outline"
         size="icon"
@@ -203,6 +217,7 @@ function NumberControl({ value, min, max, onChange, disabled = false, testIdPref
       </Button>
       <span className="min-w-[3ch] text-center text-xl font-semibold tabular-nums text-foreground">{value}</span>
       <Button
+        aria-label="Akcja"
         type="button"
         variant="outline"
         size="icon"
@@ -429,6 +444,15 @@ export function EditAssignmentScheduleDialog({
 
   const setName = assignment?.exerciseSet?.name || 'Nieznany zestaw';
 
+  useDialogShortcuts({
+    open,
+    enabled: canSave,
+    onSubmit: () => {
+      void handleSave();
+    },
+    onClose: handleCloseAttempt,
+  });
+
   return (
     <Dialog open={open} onOpenChange={() => handleCloseAttempt()}>
       <DialogContent
@@ -452,7 +476,6 @@ export function EditAssignmentScheduleDialog({
             Edytuj harmonogram
           </DialogTitle>
           <DialogDescription>Zmień harmonogram zestawu &quot;{setName}&quot;</DialogDescription>
-
         </DialogHeader>
 
         <div className="space-y-6 py-2">
@@ -504,6 +527,7 @@ export function EditAssignmentScheduleDialog({
                   <div className="rounded-xl border border-border/40 bg-surface-light/40 p-4">
                     <div className="mb-3 flex flex-wrap justify-between gap-2 text-xs">
                       <button
+                        data-testid="patient-edit-assignment-schedule-dialog-btn-516"
                         type="button"
                         onClick={() => {
                           setFrequency((prev) => ({
@@ -517,6 +541,7 @@ export function EditAssignmentScheduleDialog({
                         Wszystkie
                       </button>
                       <button
+                        data-testid="editassignmentscheduledialog-button-519"
                         type="button"
                         onClick={() => {
                           setFrequency((prev) => ({
@@ -536,6 +561,7 @@ export function EditAssignmentScheduleDialog({
                         Pn-Pt
                       </button>
                       <button
+                        data-testid="patient-edit-assignment-schedule-dialog-btn-548"
                         type="button"
                         onClick={() => setFrequency((prev) => ({ ...prev, ...EMPTY_DAYS, timesPerWeek: 0 }))}
                         className="text-muted-foreground hover:text-foreground hover:underline"
@@ -576,7 +602,6 @@ export function EditAssignmentScheduleDialog({
                     )}
                   </div>
                 </div>
-
               </div>
 
               <div className="grid grid-cols-1 gap-4 pt-4 sm:grid-cols-2">
@@ -672,7 +697,6 @@ export function EditAssignmentScheduleDialog({
                     </div>
                   </div>
                 </div>
-
               </div>
 
               <div className="pt-4">
@@ -715,7 +739,8 @@ export function EditAssignmentScheduleDialog({
                   Przerwa: <span className="font-semibold text-foreground">{frequency.breakBetweenSets}h</span>
                 </p>
                 <p>
-                  Sesje: <span className="font-semibold text-foreground">~{Math.max(0, scheduleSummary.totalSessions)}</span>
+                  Sesje:{' '}
+                  <span className="font-semibold text-foreground">~{Math.max(0, scheduleSummary.totalSessions)}</span>
                 </p>
                 {daysToStart > 0 && (
                   <p>

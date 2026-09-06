@@ -34,10 +34,7 @@ export class ConsoleGraphQLLogger implements IGraphQLLogger {
 
 // Factory do tworzenia HTTP Link zgodna z Single Responsibility Principle
 export class HttpLinkFactory {
-  private readonly TIMEOUT_MS = 60000; // ✅ Zwiększono do 60s dla zimnego startu Azure + hot reload
-  private readonly MAX_CONCURRENT_REQUESTS = 3; // Limit jednoczesnych requestów
-  private activeRequests = 0;
-  private requestQueue: Array<() => void> = [];
+  private readonly TIMEOUT_MS = 60000;
 
   constructor(
     private urlConfig: IUrlConfig,
@@ -54,41 +51,13 @@ export class HttpLinkFactory {
     });
   }
 
-  private async waitForSlot(): Promise<void> {
-    if (this.activeRequests < this.MAX_CONCURRENT_REQUESTS) {
-      this.activeRequests++;
-      return Promise.resolve();
-    }
-
-    // Czekaj w kolejce
-    return new Promise<void>((resolve) => {
-      this.requestQueue.push(() => {
-        this.activeRequests++;
-        resolve();
-      });
-    });
-  }
-
-  private releaseSlot(): void {
-    this.activeRequests--;
-    const next = this.requestQueue.shift();
-    if (next) {
-      next();
-    }
-  }
-
   private async createFetchWithLogging(uri: RequestInfo | URL, options?: RequestInit): Promise<Response> {
-    // Czekaj na slot (throttling)
-    await this.waitForSlot();
-
-    // Tworzenie timeout promise
-    const timeoutPromise = new Promise<Response>((_, reject) =>
-      setTimeout(() => reject(new Error('Request timeout')), this.TIMEOUT_MS)
-    );
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), this.TIMEOUT_MS);
+    const signal = options?.signal ? AbortSignal.any([options.signal, controller.signal]) : controller.signal;
 
     try {
-      // Wyścig między fetch a timeout
-      const response = await Promise.race([fetch(uri, options), timeoutPromise]);
+      const response = await fetch(uri, { ...options, signal });
 
       // Podstawowe logowanie response (bez parsowania body)
       this.logger.logResponse(response);
@@ -130,8 +99,7 @@ export class HttpLinkFactory {
       this.logger.logError(error);
       throw error;
     } finally {
-      // Zwolnij slot po zakończeniu (success lub error)
-      this.releaseSlot();
+      clearTimeout(timeoutId);
     }
   }
 }

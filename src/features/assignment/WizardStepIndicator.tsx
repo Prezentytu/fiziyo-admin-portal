@@ -34,6 +34,7 @@ export function WizardStepIndicator({
           const canClick = allowNavigation && (isCompleted || index < currentIndex);
           return (
             <button
+              data-testid="assignment-wizard-step-indicator-btn-36"
               key={step.id}
               type="button"
               onClick={() => canClick && onStepClick?.(step.id)}
@@ -77,6 +78,7 @@ export function WizardStepIndicator({
               const dotPosition = steps.length > 1 ? (index / (steps.length - 1)) * 100 : 50;
               return (
                 <button
+                  data-testid="wizardstepindicator-button-79"
                   key={step.id}
                   type="button"
                   onClick={() => canClick && onStepClick?.(step.id)}
@@ -131,6 +133,7 @@ export function WizardStepIndicator({
             const dotPosition = steps.length > 1 ? (index / (steps.length - 1)) * 100 : 50;
             return (
               <button
+                data-testid="wizardstepindicator-button-133"
                 key={step.id}
                 type="button"
                 onClick={() => canClick && onStepClick?.(step.id)}

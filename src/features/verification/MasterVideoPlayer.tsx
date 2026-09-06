@@ -65,7 +65,9 @@ export function MasterVideoPlayer({
     if (!canManageMedia) return null;
     const selectedImageUrl =
       selected?.kind === 'image' || selected?.kind === 'gif'
-        ? (existingImages.includes(selected.src) ? selected.src : null)
+        ? existingImages.includes(selected.src)
+          ? selected.src
+          : null
         : null;
 
     return (
@@ -126,6 +128,7 @@ export function MasterVideoPlayer({
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
+                data-testid="verification-master-video-player-btn-128"
                 type="button"
                 variant="ghost"
                 size="icon"
@@ -149,6 +152,7 @@ export function MasterVideoPlayer({
   return (
     <>
       <input
+        data-testid="mastervideoplayer-input-151"
         ref={fileInputRef}
         type="file"
         accept="image/*"

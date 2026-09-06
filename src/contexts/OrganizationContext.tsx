@@ -7,13 +7,19 @@ import { GET_USER_ORGANIZATIONS_QUERY } from '@/graphql/queries/users.queries';
 import { SET_DEFAULT_ORGANIZATION_MUTATION } from '@/graphql/mutations/users.mutations';
 import { tokenExchangeService } from '@/services/tokenExchangeService';
 import { getBackendToken, saveBackendToken, clearBackendToken } from '@/lib/tokenCache';
+import { disposeGraphqlWs } from '@/graphql/cache/wsRegistry';
+import { createModuleLogger } from '@/lib/logger';
+import { getLastOrganizationId, setLastOrganizationId } from '@/contexts/organizationStorage';
 import type { UserOrganizationWithRole, UserOrganizationsResponse } from '@/types/apollo';
+
+const log = createModuleLogger('OrganizationContext');
 
 // ========================================
 // Types
 // ========================================
 
 interface OrganizationContextValue {
+  organizationId: string | null;
   /** Currently active organization */
   currentOrganization: UserOrganizationWithRole | null;
   /** All organizations user belongs to */
@@ -35,26 +41,6 @@ const OrganizationContext = createContext<OrganizationContextValue | null>(null)
 // ========================================
 // Local Storage Keys
 // ========================================
-
-const LAST_ORG_KEY = 'fizyo_last_organization_id';
-
-function getLastOrganizationId(): string | null {
-  if (typeof window === 'undefined') return null;
-  try {
-    return localStorage.getItem(LAST_ORG_KEY);
-  } catch {
-    return null;
-  }
-}
-
-function setLastOrganizationId(orgId: string): void {
-  if (typeof window === 'undefined') return;
-  try {
-    localStorage.setItem(LAST_ORG_KEY, orgId);
-  } catch {
-    // Ignore localStorage errors
-  }
-}
 
 // ========================================
 // Provider Component
@@ -164,14 +150,14 @@ export function OrganizationProvider({ children }: OrganizationProviderProps) {
         setDefaultOrganization({
           variables: { organizationId },
         }).catch((err) => {
-          console.warn('[OrganizationContext] Failed to update default org:', err);
+          log.warn('Failed to update default org', { error: String(err) });
         });
 
         // Update local state
         setCurrentOrgId(organizationId);
         setLastOrganizationId(organizationId);
 
-        // Reset Apollo cache to refetch all data with new organization context
+        disposeGraphqlWs();
         await apolloClient.resetStore();
 
         // Show success toast
@@ -180,7 +166,7 @@ export function OrganizationProvider({ children }: OrganizationProviderProps) {
           duration: 3000,
         });
       } catch (error) {
-        console.error('[OrganizationContext] Switch failed:', error);
+        log.error('Switch failed', error);
         toast.error('Nie udało się przełączyć organizacji', {
           description: error instanceof Error ? error.message : 'Spróbuj ponownie',
         });
@@ -202,6 +188,7 @@ export function OrganizationProvider({ children }: OrganizationProviderProps) {
 
   const value = useMemo<OrganizationContextValue>(
     () => ({
+      organizationId: currentOrganization?.organizationId ?? null,
       currentOrganization,
       organizations,
       isLoading,

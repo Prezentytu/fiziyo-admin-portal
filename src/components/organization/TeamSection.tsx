@@ -166,6 +166,7 @@ export function TeamSection({
             />
             {searchQuery && (
               <button
+                data-testid="org-team-section-btn-168"
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                 onClick={() => setSearchQuery('')}
               >
@@ -182,6 +183,7 @@ export function TeamSection({
               Znaleziono <span className="font-semibold text-foreground">{filteredMembers.length}</span> pracownik(ów)
             </span>
             <Button
+              data-testid="teamsection-button-184"
               variant="ghost"
               size="sm"
               onClick={() => {

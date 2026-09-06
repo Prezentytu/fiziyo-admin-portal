@@ -229,15 +229,11 @@ export function ActivityReport({
     errorPolicy: 'all',
   });
 
-  const hasCachedProgress = Boolean(
-    (progressData as ExerciseProgressQueryResponse | undefined)?.exerciseProgress
-  );
+  const hasCachedProgress = Boolean((progressData as ExerciseProgressQueryResponse | undefined)?.exerciseProgress);
   const isInitialLoading =
-    (progressLoading || assignmentsLoading || setProgressLoading || activityReportLoading) &&
-    !hasCachedProgress;
+    (progressLoading || assignmentsLoading || setProgressLoading || activityReportLoading) && !hasCachedProgress;
 
-  const queryError =
-    progressError || assignmentsError || setProgressError || activityReportError;
+  const queryError = progressError || assignmentsError || setProgressError || activityReportError;
 
   const handleRefresh = async () => {
     await Promise.all([
@@ -273,16 +269,15 @@ export function ActivityReport({
   }));
 
   const rawAssignments = (assignmentsData as PatientAssignmentsQueryResponse | undefined)?.patientAssignments || [];
-  const setProgress =
-    (setProgressData as ExerciseSetProgressQueryResponse | undefined)?.allExerciseSetsProgress || [];
+  const setProgress = (setProgressData as ExerciseSetProgressQueryResponse | undefined)?.allExerciseSetsProgress || [];
   const activityReportSummary = (activityReportData as PatientActivityReportQueryResponse | undefined)
     ?.patientActivityReport?.summary;
-  const workoutSessions =
-    (sessionsData as PatientWorkoutSessionsQueryResponse | undefined)?.patientWorkoutSessions || [];
   const weeklyAdherence =
     (adherenceData as PatientWeeklyAdherenceQueryResponse | undefined)?.patientWeeklyAdherence || [];
 
   const qualitySummary = useMemo(() => {
+    const workoutSessions =
+      (sessionsData as PatientWorkoutSessionsQueryResponse | undefined)?.patientWorkoutSessions || [];
     const events = workoutSessions.flatMap((session) => session.events || []);
     if (events.length === 0) return null;
     const manual = events.filter((event) => event.completionMethod === 'manual').length;
@@ -294,7 +289,7 @@ export function ActivityReport({
       assisted,
       full,
     };
-  }, [workoutSessions]);
+  }, [sessionsData]);
 
   const assignmentsForStatus: PatientAssignmentData[] = rawAssignments.map((assignment) => ({
     id: assignment.id,
@@ -326,7 +321,12 @@ export function ActivityReport({
           description="Sprawdź połączenie i spróbuj ponownie."
         />
         <div className="mt-4 flex justify-center">
-          <Button type="button" variant="outline" onClick={() => void handleRefresh()}>
+          <Button
+            data-testid="patient-activity-error-refresh-btn"
+            type="button"
+            variant="outline"
+            onClick={() => void handleRefresh()}
+          >
             <RefreshCw className="mr-2 h-4 w-4" />
             Odśwież
           </Button>
@@ -351,11 +351,16 @@ export function ActivityReport({
     <div className="space-y-5 md:space-y-6">
       <div className="flex items-center justify-between gap-3">
         <p className="text-xs text-muted-foreground">
-          Ostatnia aktualizacja:{' '}
-          {lastRefreshedAt.toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' })}
+          Ostatnia aktualizacja: {lastRefreshedAt.toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' })}
           {(sessionsError || adherenceError) && ' · część danych sesji niedostępna'}
         </p>
-        <Button type="button" size="sm" variant="outline" onClick={() => void handleRefresh()}>
+        <Button
+          data-testid="patient-activity-refresh-btn"
+          type="button"
+          size="sm"
+          variant="outline"
+          onClick={() => void handleRefresh()}
+        >
           <RefreshCw className="mr-2 h-3.5 w-3.5" />
           Odśwież
         </Button>

@@ -7,7 +7,11 @@ import { VerificationTaskCard } from './VerificationTaskCard';
 import type { AdminExercise } from '@/graphql/types/adminExercise.types';
 
 vi.mock('next/link', () => ({
-  default: ({ children, href }: { children: ReactNode; href: string }) => <a href={href}>{children}</a>,
+  default: ({ children, href }: { children: ReactNode; href: string }) => (
+    <a data-testid="verificationtaskcard-test-a-10" href={href}>
+      {children}
+    </a>
+  ),
 }));
 
 vi.mock('next/image', () => ({

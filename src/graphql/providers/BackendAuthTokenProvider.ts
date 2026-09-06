@@ -104,7 +104,10 @@ export class BackendAuthTokenProvider implements IAuthTokenProvider {
 
       return await this.performTokenExchange();
     } catch (error) {
-      if (isDev && !this.hasHttpStatus(error)) {
+      if (this.hasHttpStatus(error)) {
+        throw error;
+      }
+      if (isDev) {
         console.warn('[BackendAuthTokenProvider] Network error while resolving backend token');
       }
       return null;

@@ -122,7 +122,9 @@ export default function SignInPage() {
         await setActive({ session: result.createdSessionId });
         router.replace('/');
       } else if (result.status === 'needs_second_factor') {
-        setError('To konto wymaga weryfikacji dwuetapowej, która nie jest jeszcze obsługiwana w panelu. Skontaktuj się z pomocą.');
+        setError(
+          'To konto wymaga weryfikacji dwuetapowej, która nie jest jeszcze obsługiwana w panelu. Skontaktuj się z pomocą.'
+        );
       } else {
         setError('Nie udało się dokończyć logowania. Spróbuj ponownie.');
       }
@@ -158,6 +160,7 @@ export default function SignInPage() {
           <div className="relative">
             <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
+              data-testid="page-input-160"
               id="email"
               type="email"
               placeholder="jan@example.com"
@@ -174,6 +177,7 @@ export default function SignInPage() {
           <div className="flex items-center justify-between">
             <Label htmlFor="password">Hasło</Label>
             <button
+              data-testid="auth-page-btn-176"
               type="button"
               onClick={handleForgotPassword}
               disabled={resetPasswordLoading}
@@ -185,6 +189,7 @@ export default function SignInPage() {
           <div className="relative">
             <Lock className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
+              data-testid="auth-page-input-187"
               ref={passwordRef}
               id="password"
               type="password"
@@ -199,7 +204,12 @@ export default function SignInPage() {
 
         {error && <div className="rounded-lg bg-error/10 p-3 text-sm text-error">{error}</div>}
 
-        <Button type="submit" disabled={loading} className="h-11 w-full rounded-xl text-base font-semibold">
+        <Button
+          data-testid="page-button-202"
+          type="submit"
+          disabled={loading}
+          className="h-11 w-full rounded-xl text-base font-semibold"
+        >
           {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : 'Zaloguj się'}
         </Button>
       </form>

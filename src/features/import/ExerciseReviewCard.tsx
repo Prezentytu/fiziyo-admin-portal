@@ -151,7 +151,14 @@ export function ExerciseReviewCard({
           </div>
 
           {/* Przycisk rozwijania */}
-          <Button variant="ghost" size="icon" onClick={() => setIsExpanded(!isExpanded)} className="shrink-0 h-10 w-10">
+          <Button
+            data-testid="import-exercise-review-card-btn-154"
+            aria-label="Akcja"
+            variant="ghost"
+            size="icon"
+            onClick={() => setIsExpanded(!isExpanded)}
+            className="shrink-0 h-10 w-10"
+          >
             {isExpanded ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
           </Button>
         </div>
@@ -210,6 +217,7 @@ export function ExerciseReviewCard({
             <p className="text-sm font-medium text-foreground mb-3">Wybierz ćwiczenie z Twojej bazy:</p>
             {matchSuggestions.map((match, index) => (
               <button
+                data-testid="exercisereviewcard-button-212"
                 key={match.existingExerciseId}
                 onClick={() => {
                   onDecisionChange({

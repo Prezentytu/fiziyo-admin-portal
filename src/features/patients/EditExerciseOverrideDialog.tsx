@@ -4,13 +4,7 @@ import * as React from 'react';
 import { useState, useCallback } from 'react';
 import Image from 'next/image';
 import { useMutation } from '@apollo/client/react';
-import {
-  Loader2,
-  Dumbbell,
-  Sparkles,
-  Upload,
-  Trash2,
-} from 'lucide-react';
+import { Loader2, Dumbbell, Sparkles, Upload, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
@@ -38,11 +32,9 @@ import {
   type ParameterTestIdKind,
 } from '@/components/shared/exercise';
 import type { PatientAssignment, ExerciseMapping, ExerciseOverride } from './PatientAssignmentCard';
+import { useDialogShortcuts } from '@/hooks/useDialogShortcuts';
 
-const OVERRIDE_FIELD_TESTID_MAP: Record<
-  ExerciseFieldKey | MappingOnlyFieldKey,
-  { input: string; info: string }
-> = {
+const OVERRIDE_FIELD_TESTID_MAP: Record<ExerciseFieldKey | MappingOnlyFieldKey, { input: string; info: string }> = {
   sets: { input: 'patient-exercise-override-sets-input', info: 'patient-exercise-override-sets-info' },
   reps: { input: 'patient-exercise-override-reps-input', info: 'patient-exercise-override-reps-info' },
   executionTime: {
@@ -214,14 +206,12 @@ function EditExerciseOverrideDialogContent({
   const inheritedRestReps = mapping.restReps ?? 0;
   const inheritedPreparationTime = mapping.preparationTime ?? exercise?.preparationTime ?? 0;
   const inheritedTempo = mapping.tempo ?? '';
-  const inheritedLoadKg =
-    mapping.loadUnit === 'kg' && mapping.loadValue != null ? mapping.loadValue : null;
+  const inheritedLoadKg = mapping.loadUnit === 'kg' && mapping.loadValue != null ? mapping.loadValue : null;
   const inheritedRom = exercise?.rangeOfMotion ?? '';
   const exerciseSideValue = exercise?.side?.toLowerCase() || exercise?.exerciseSide;
   const inheritedExerciseSide = exerciseSideValue ?? 'none';
   const inheritedDifficulty = exercise?.difficultyLevel ?? 'UNKNOWN';
-  const inheritedPatientDescription =
-    exercise?.patientDescription ?? exercise?.description ?? '';
+  const inheritedPatientDescription = exercise?.patientDescription ?? exercise?.description ?? '';
   const inheritedClinicalDescription = exercise?.clinicalDescription ?? '';
   const inheritedAudioCue = exercise?.audioCue ?? '';
 
@@ -245,10 +235,8 @@ function EditExerciseOverrideDialogContent({
   const initialNotes = currentOverride?.notes ?? mapping.notes ?? '';
   const initialExerciseSide = currentOverride?.exerciseSide ?? inheritedExerciseSide;
   const initialDifficultyLevel = currentOverride?.difficultyLevel ?? inheritedDifficulty;
-  const initialPatientDescription =
-    currentOverride?.patientDescription ?? inheritedPatientDescription;
-  const initialClinicalDescription =
-    currentOverride?.clinicalDescription ?? inheritedClinicalDescription;
+  const initialPatientDescription = currentOverride?.patientDescription ?? inheritedPatientDescription;
+  const initialClinicalDescription = currentOverride?.clinicalDescription ?? inheritedClinicalDescription;
   const initialAudioCue = currentOverride?.audioCue ?? inheritedAudioCue;
   const initialCustomImages = currentOverride?.customImages ?? [];
 
@@ -386,13 +374,10 @@ function EditExerciseOverrideDialogContent({
     if ('customDescription' in patch) setCustomDescription(patch.customDescription ?? '');
   }, []);
 
-  const overrideTestIdFor = useCallback(
-    (key: ExerciseFieldKey | MappingOnlyFieldKey, kind: ParameterTestIdKind) => {
-      const mapped = OVERRIDE_FIELD_TESTID_MAP[key];
-      return kind === 'info' ? mapped.info : mapped.input;
-    },
-    []
-  );
+  const overrideTestIdFor = useCallback((key: ExerciseFieldKey | MappingOnlyFieldKey, kind: ParameterTestIdKind) => {
+    const mapped = OVERRIDE_FIELD_TESTID_MAP[key];
+    return kind === 'info' ? mapped.info : mapped.input;
+  }, []);
 
   // Track changes
   const hasChanges =
@@ -506,11 +491,7 @@ function EditExerciseOverrideDialogContent({
           loadWeightKg: inheritedLoadKg ?? undefined,
           rangeOfMotion: inheritedRom,
           customName: mapping.customName ?? '',
-          customDescription:
-            mapping.customDescription ??
-            exercise?.patientDescription ??
-            exercise?.description ??
-            '',
+          customDescription: mapping.customDescription ?? exercise?.patientDescription ?? exercise?.description ?? '',
           notes: mapping.notes ?? '',
           side: inheritedExerciseSide,
           exerciseSide: inheritedExerciseSide,
@@ -565,18 +546,13 @@ function EditExerciseOverrideDialogContent({
         | (typeof currentOverride & { exerciseId?: string; isPatientAdded?: boolean })
         | undefined;
       if (previousEntry?.exerciseId) {
-        (newOverride as ExerciseOverride & { exerciseId?: string }).exerciseId =
-          previousEntry.exerciseId;
+        (newOverride as ExerciseOverride & { exerciseId?: string }).exerciseId = previousEntry.exerciseId;
       }
       if (previousEntry?.isPatientAdded) {
         (newOverride as ExerciseOverride & { isPatientAdded?: boolean }).isPatientAdded = true;
       }
 
-      const exerciseOverrides = replaceOverrideMapEntry(
-        assignment.exerciseOverrides,
-        mapping.id,
-        newOverride
-      );
+      const exerciseOverrides = replaceOverrideMapEntry(assignment.exerciseOverrides, mapping.id, newOverride);
 
       await updateOverrides({
         variables: {
@@ -600,6 +576,15 @@ function EditExerciseOverrideDialogContent({
     }
   };
 
+  useDialogShortcuts({
+    open: true,
+    enabled: !loading,
+    onSubmit: () => {
+      void handleSave();
+    },
+    onClose: onCloseAttempt,
+  });
+
   const handleReset = () => {
     setSets(inheritedSets);
     setReps(inheritedReps);
@@ -612,9 +597,7 @@ function EditExerciseOverrideDialogContent({
     setLoadKg(inheritedLoadKg);
     setRangeOfMotion(inheritedRom);
     setCustomName(mapping.customName ?? '');
-    setCustomDescription(
-      mapping.customDescription ?? exercise?.patientDescription ?? exercise?.description ?? ''
-    );
+    setCustomDescription(mapping.customDescription ?? exercise?.patientDescription ?? exercise?.description ?? '');
     setNotes(mapping.notes ?? '');
     setExerciseSide(inheritedExerciseSide);
     setDifficultyLevel(inheritedDifficulty);
@@ -675,7 +658,14 @@ function EditExerciseOverrideDialogContent({
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <p className="text-sm font-medium text-muted-foreground uppercase tracking-wider">Parametry ćwiczenia</p>
-              <Button type="button" variant="ghost" size="sm" onClick={handleReset} className="h-7 text-xs">
+              <Button
+                data-testid="patient-exercise-override-reset-btn"
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={handleReset}
+                className="h-7 text-xs"
+              >
                 Przywróć domyślne
               </Button>
             </div>
@@ -733,12 +723,20 @@ function EditExerciseOverrideDialogContent({
                       key={index}
                       className="relative group aspect-square rounded-lg overflow-hidden border border-border"
                     >
-                      <Image src={img} alt={`Zdjęcie ${index + 1}`} fill className="object-cover" sizes="(max-width: 768px) 33vw, 200px" />
+                      <Image
+                        src={img}
+                        alt={`Zdjęcie ${index + 1}`}
+                        fill
+                        className="object-cover"
+                        sizes="(max-width: 768px) 33vw, 200px"
+                      />
                       <button
+                        data-testid={`patient-exercise-override-remove-image-${index}`}
                         type="button"
                         onClick={() => setCustomImages((prev) => prev.filter((_, i) => i !== index))}
                         className="absolute top-1 right-1 p-1.5 rounded-full bg-destructive text-destructive-foreground opacity-0 group-hover:opacity-100 transition-opacity hover:scale-110"
                         title="Usuń zdjęcie"
+                        aria-label="Usuń zdjęcie"
                       >
                         <Trash2 className="h-3.5 w-3.5" />
                       </button>
@@ -749,12 +747,12 @@ function EditExerciseOverrideDialogContent({
 
               <div className="flex gap-2">
                 <Button
+                  data-testid="patient-exercise-override-upload-btn"
                   type="button"
                   variant="outline"
                   size="sm"
                   onClick={() => fileInputRef.current?.click()}
                   className="flex-1 gap-2"
-                  data-testid="patient-exercise-override-upload-btn"
                 >
                   <Upload className="h-4 w-4" />
                   Wgraj z dysku
@@ -779,12 +777,19 @@ function EditExerciseOverrideDialogContent({
                   {isGeneratingImage ? 'Generowanie…' : 'Generuj AI'}
                 </Button>
               </div>
-              <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
+              <input
+                data-testid="patient-exercise-override-file-input"
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleImageUpload}
+                className="hidden"
+              />
               <p className="text-xs text-muted-foreground">Te zdjęcia będą widoczne tylko dla tego pacjenta</p>
             </div>
           </div>
 
-                    {/* Summary of changes */}
+          {/* Summary of changes */}
           {(currentOverride?.sets !== undefined ||
             currentOverride?.reps !== undefined ||
             currentOverride?.duration !== undefined ||

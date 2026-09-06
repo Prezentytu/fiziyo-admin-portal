@@ -16,6 +16,7 @@ const ruleOverrides = {
     "warn",
     { "argsIgnorePattern": "^_", "varsIgnorePattern": "^_" },
   ],
+  "no-console": "warn",
   "react/display-name": "off",
   "react-hooks/immutability": "off",
   "react-hooks/preserve-manual-memoization": "off",
@@ -31,10 +32,18 @@ const config = [
   { ignores },
   { name: "project/rule-overrides", rules: ruleOverrides },
   {
+    name: "project/logger-console-allowed",
+    files: ["src/lib/logger.ts", "src/app/api/**/*.{ts,tsx}", "scripts/**/*.{js,mjs,ts}"],
+    rules: {
+      "no-console": "off",
+    },
+  },
+  {
     name: "project/test-rule-overrides",
     files: ["**/*.{test,spec}.{ts,tsx}"],
     rules: {
       "@next/next/no-img-element": "off",
+      "no-console": "off",
     },
   },
   eslintConfigPrettier,

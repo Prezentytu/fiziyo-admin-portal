@@ -327,6 +327,7 @@ export function PatientForm({
                         const isAdded = isTagAdded(tag, field.value || '');
                         return (
                           <button
+                            data-testid="patientform-button-329"
                             key={tag}
                             type="button"
                             onClick={() => {

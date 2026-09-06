@@ -57,9 +57,7 @@ export function ExerciseBuilderSidebar({ className }: ExerciseBuilderSidebarProp
   };
 
   const durationLabel =
-    totalSetDuration.seconds > 0
-      ? formatExerciseDuration(totalSetDuration.seconds, totalSetDuration.isEstimate)
-      : null;
+    totalSetDuration.seconds > 0 ? formatExerciseDuration(totalSetDuration.seconds, totalSetDuration.isEstimate) : null;
 
   return (
     <>
@@ -97,6 +95,7 @@ export function ExerciseBuilderSidebar({ className }: ExerciseBuilderSidebarProp
             </div>
             <div className="flex items-center gap-2">
               <Button
+                aria-label="Akcja"
                 variant="ghost"
                 size="icon"
                 className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
@@ -167,6 +166,7 @@ export function ExerciseBuilderSidebar({ className }: ExerciseBuilderSidebarProp
               </Button>
 
               <Button
+                aria-label="Akcja"
                 variant="outline"
                 size="icon"
                 className="h-14 w-14 shrink-0 rounded-2xl border-border bg-surface-light text-primary hover:bg-primary/10 hover:border-primary/30 transition-all active:scale-95 group"

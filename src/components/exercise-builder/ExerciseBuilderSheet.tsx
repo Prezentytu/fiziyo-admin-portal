@@ -59,9 +59,7 @@ export function ExerciseBuilderSheet({ open, onOpenChange }: ExerciseBuilderShee
   };
 
   const durationLabel =
-    totalSetDuration.seconds > 0
-      ? formatExerciseDuration(totalSetDuration.seconds, totalSetDuration.isEstimate)
-      : null;
+    totalSetDuration.seconds > 0 ? formatExerciseDuration(totalSetDuration.seconds, totalSetDuration.isEstimate) : null;
 
   return (
     <>
@@ -96,6 +94,7 @@ export function ExerciseBuilderSheet({ open, onOpenChange }: ExerciseBuilderShee
                 </div>
               </div>
               <Button
+                aria-label="Akcja"
                 variant="ghost"
                 size="icon"
                 className="h-9 w-9 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
@@ -152,6 +151,7 @@ export function ExerciseBuilderSheet({ open, onOpenChange }: ExerciseBuilderShee
 
               <div className="flex gap-3">
                 <Button
+                  aria-label="Akcja"
                   variant="outline"
                   size="icon"
                   className="h-14 w-14 shrink-0 rounded-2xl border-primary/20 bg-primary/5 text-primary hover:bg-primary/10 transition-all active:scale-95"

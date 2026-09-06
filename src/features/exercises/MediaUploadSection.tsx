@@ -189,6 +189,8 @@ export function MediaUploadSection({
                 />
                 <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                   <Button
+                    aria-label="Akcja"
+                    data-testid="mediauploadsection-button-191"
                     type="button"
                     variant="destructive"
                     size="icon"
@@ -227,6 +229,7 @@ export function MediaUploadSection({
           <div className="relative">
             <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
+              data-testid="mediauploadsection-input-229"
               value={videoUrl}
               onChange={(e) => onVideoUrlChange(e.target.value)}
               placeholder="https://vimeo.com/... lub https://youtube.com/..."
@@ -250,6 +253,7 @@ export function MediaUploadSection({
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium truncate">Film instruktażowy</p>
                 <a
+                  data-testid="exercise-media-upload-section-btn-252"
                   href={videoUrl}
                   target="_blank"
                   rel="noopener noreferrer"
@@ -260,6 +264,8 @@ export function MediaUploadSection({
                 </a>
               </div>
               <Button
+                data-testid="exercise-media-upload-section-btn-262"
+                aria-label="Akcja"
                 type="button"
                 variant="ghost"
                 size="icon"
@@ -285,6 +291,7 @@ export function MediaUploadSection({
           <div className="relative">
             <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
+              data-testid="exercise-media-upload-section-input-287"
               value={gifUrl}
               onChange={(e) => onGifUrlChange(e.target.value)}
               placeholder="https://example.com/animation.gif"
@@ -308,7 +315,15 @@ export function MediaUploadSection({
                 <p className="text-sm font-medium">Animacja GIF</p>
                 <p className="text-xs text-muted-foreground truncate">{gifUrl}</p>
               </div>
-              <Button type="button" variant="ghost" size="icon" className="h-8 w-8" onClick={() => onGifUrlChange('')}>
+              <Button
+                aria-label="Akcja"
+                data-testid="mediauploadsection-button-311"
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => onGifUrlChange('')}
+              >
                 <X className="h-4 w-4" />
               </Button>
             </div>

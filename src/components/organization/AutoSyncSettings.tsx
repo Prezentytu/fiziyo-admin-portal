@@ -103,7 +103,13 @@ export function AutoSyncSettings({
           </div>
           <div className="flex items-center gap-2">
             {loading && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
-            <Switch id="auto-sync" checked={isEnabled} onCheckedChange={handleToggle} disabled={!canEdit || loading} />
+            <Switch
+              data-testid="autosyncsettings-switch-106"
+              id="auto-sync"
+              checked={isEnabled}
+              onCheckedChange={handleToggle}
+              disabled={!canEdit || loading}
+            />
           </div>
         </div>
 

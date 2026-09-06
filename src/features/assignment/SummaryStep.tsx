@@ -261,9 +261,9 @@ export function SummaryStep({
                 </div>
               </div>
               <button
+                data-testid="summary-concierge-open-btn"
                 onClick={() => setShowConcierge(true)}
                 className="text-xs bg-amber-500/10 hover:bg-amber-500/20 text-amber-500 px-2.5 sm:px-3 py-1.5 rounded-lg font-medium transition-colors shrink-0"
-                data-testid="summary-concierge-open-btn"
               >
                 Zgłoś
               </button>
@@ -276,19 +276,19 @@ export function SummaryStep({
                   Twoje uwagi dla zespołu FiziYo
                 </label>
                 <button
+                  data-testid="summary-concierge-close-btn"
                   onClick={() => setShowConcierge(false)}
                   className="text-muted-foreground hover:text-foreground transition-colors shrink-0 p-1 -m-1"
-                  data-testid="summary-concierge-close-btn"
                 >
                   <X className="w-4 h-4" />
                 </button>
               </div>
               <textarea
+                data-testid="summary-concierge-textarea"
                 className="w-full bg-black/40 border border-amber-900/30 rounded-lg p-2.5 sm:p-3 text-sm text-amber-100 placeholder-amber-500/30 focus:border-amber-500 outline-none resize-none min-h-[80px] max-h-[120px]"
                 placeholder="Np. 'W ćwiczeniu Bird Dog zdjęcie jest niewyraźne, proszę o poprawę'..."
                 value={feedback}
                 onChange={(e) => setFeedback(e.target.value)}
-                data-testid="summary-concierge-textarea"
               />
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-4">
                 <p className="text-[10px] text-muted-foreground order-2 sm:order-1">
@@ -296,9 +296,9 @@ export function SummaryStep({
                 </p>
                 <div className="flex gap-2 w-full sm:w-auto order-1 sm:order-2">
                   <button
+                    data-testid="summary-concierge-cancel-btn"
                     onClick={() => setShowConcierge(false)}
                     className="text-xs text-amber-500 hover:text-amber-400 px-3 py-1.5 transition-colors flex-1 sm:flex-none"
-                    data-testid="summary-concierge-cancel-btn"
                   >
                     Anuluj
                   </button>
@@ -331,73 +331,73 @@ export function SummaryStep({
         {/* KARTA 3: PACJENT(CI) */}
         {!editMode && (
           <div className="bg-surface border border-border/60 rounded-xl p-4 sm:p-5" data-testid="summary-patients-card">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-xs uppercase text-muted-foreground font-bold flex items-center gap-2">
-              {selectedPatients.length > 1 ? <Users className="w-3 h-3" /> : <User className="w-3 h-3" />}
-              {selectedPatients.length > 1 ? 'Pacjenci' : 'Pacjent'}
-            </h3>
-            {onGoToStep && (
-              <button
-                onClick={() => onGoToStep('select-patients')}
-                className="text-[10px] text-muted-foreground hover:text-foreground transition-colors"
-                data-testid="summary-edit-patients-btn"
-              >
-                Zmień
-              </button>
-            )}
-          </div>
-
-          {selectedPatients.length === 1 ? (
-            // Pojedynczy pacjent - pełna wizytówka
-            <div className="flex items-center gap-3">
-              <div
-                className={cn(
-                  'w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold shrink-0',
-                  selectedPatients[0].isShadowUser
-                    ? 'bg-muted-foreground/60 text-white'
-                    : 'bg-gradient-to-br from-primary to-primary-dark text-primary-foreground'
-                )}
-              >
-                {selectedPatients[0].name[0]?.toUpperCase()}
-              </div>
-              <div className="min-w-0">
-                <div className="text-base font-bold text-foreground truncate">{selectedPatients[0].name}</div>
-                {selectedPatients[0].email && (
-                  <div className="text-xs text-muted-foreground truncate">{selectedPatients[0].email}</div>
-                )}
-              </div>
-            </div>
-          ) : (
-            // Wielu pacjentów - kompaktowa lista
-            <div className="space-y-2">
-              {selectedPatients.slice(0, 3).map((patient) => (
-                <div key={patient.id} className="flex items-center gap-2">
-                  <div
-                    className={cn(
-                      'w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold shrink-0',
-                      patient.isShadowUser
-                        ? 'bg-muted-foreground/60 text-white'
-                        : 'bg-gradient-to-br from-primary to-primary-dark text-primary-foreground'
-                    )}
-                  >
-                    {patient.name[0]?.toUpperCase()}
-                  </div>
-                  <span className="text-sm text-foreground truncate">{patient.name}</span>
-                </div>
-              ))}
-              {selectedPatients.length > 3 && (
-                <p className="text-xs text-muted-foreground pl-9">+ {selectedPatients.length - 3} więcej</p>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-xs uppercase text-muted-foreground font-bold flex items-center gap-2">
+                {selectedPatients.length > 1 ? <Users className="w-3 h-3" /> : <User className="w-3 h-3" />}
+                {selectedPatients.length > 1 ? 'Pacjenci' : 'Pacjent'}
+              </h3>
+              {onGoToStep && (
+                <button
+                  data-testid="summary-edit-patients-btn"
+                  onClick={() => onGoToStep('select-patients')}
+                  className="text-[10px] text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  Zmień
+                </button>
               )}
             </div>
-          )}
 
-          {selectedPatients.length > 1 && (
-            <div className="mt-3 pt-3 border-t border-border/30">
-              <Badge variant="secondary" className="text-xs">
-                {selectedPatients.length} pacjentów
-              </Badge>
-            </div>
-          )}
+            {selectedPatients.length === 1 ? (
+              // Pojedynczy pacjent - pełna wizytówka
+              <div className="flex items-center gap-3">
+                <div
+                  className={cn(
+                    'w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold shrink-0',
+                    selectedPatients[0].isShadowUser
+                      ? 'bg-muted-foreground/60 text-white'
+                      : 'bg-gradient-to-br from-primary to-primary-dark text-primary-foreground'
+                  )}
+                >
+                  {selectedPatients[0].name[0]?.toUpperCase()}
+                </div>
+                <div className="min-w-0">
+                  <div className="text-base font-bold text-foreground truncate">{selectedPatients[0].name}</div>
+                  {selectedPatients[0].email && (
+                    <div className="text-xs text-muted-foreground truncate">{selectedPatients[0].email}</div>
+                  )}
+                </div>
+              </div>
+            ) : (
+              // Wielu pacjentów - kompaktowa lista
+              <div className="space-y-2">
+                {selectedPatients.slice(0, 3).map((patient) => (
+                  <div key={patient.id} className="flex items-center gap-2">
+                    <div
+                      className={cn(
+                        'w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold shrink-0',
+                        patient.isShadowUser
+                          ? 'bg-muted-foreground/60 text-white'
+                          : 'bg-gradient-to-br from-primary to-primary-dark text-primary-foreground'
+                      )}
+                    >
+                      {patient.name[0]?.toUpperCase()}
+                    </div>
+                    <span className="text-sm text-foreground truncate">{patient.name}</span>
+                  </div>
+                ))}
+                {selectedPatients.length > 3 && (
+                  <p className="text-xs text-muted-foreground pl-9">+ {selectedPatients.length - 3} więcej</p>
+                )}
+              </div>
+            )}
+
+            {selectedPatients.length > 1 && (
+              <div className="mt-3 pt-3 border-t border-border/30">
+                <Badge variant="secondary" className="text-xs">
+                  {selectedPatients.length} pacjentów
+                </Badge>
+              </div>
+            )}
           </div>
         )}
 
@@ -409,9 +409,9 @@ export function SummaryStep({
             </h3>
             {onGoToStep && (
               <button
+                data-testid="summary-edit-schedule-btn"
                 onClick={() => onGoToStep('schedule')}
                 className="text-[10px] text-muted-foreground hover:text-foreground transition-colors"
-                data-testid="summary-edit-schedule-btn"
               >
                 Zmień
               </button>
@@ -437,7 +437,10 @@ export function SummaryStep({
         </div>
 
         {!editMode && (
-          <div className="bg-surface border border-border/60 rounded-xl p-4 sm:p-5" data-testid="summary-template-save-card">
+          <div
+            className="bg-surface border border-border/60 rounded-xl p-4 sm:p-5"
+            data-testid="summary-template-save-card"
+          >
             <div className="mb-3 rounded-lg border border-border/50 bg-surface-light/30 px-3 py-2 text-xs text-muted-foreground">
               W tym flow zawsze tworzymy nowy, spersonalizowany plan ćwiczeń dla pacjenta.
             </div>
@@ -464,9 +467,8 @@ export function SummaryStep({
         <div className="p-3 sm:p-4 rounded-xl bg-surface border border-border/40">
           <p className="text-[11px] sm:text-xs text-muted-foreground leading-relaxed">
             Personalizując i przypisując plan ćwiczeń potwierdzasz, że dobór ćwiczeń jest odpowiedni dla stanu zdrowia
-            pacjenta i
-            został ustalony na podstawie przeprowadzonej diagnostyki. FiziYo nie ponosi odpowiedzialności za skutki
-            nieprawidłowego doboru ćwiczeń.
+            pacjenta i został ustalony na podstawie przeprowadzonej diagnostyki. FiziYo nie ponosi odpowiedzialności za
+            skutki nieprawidłowego doboru ćwiczeń.
           </p>
         </div>
       </div>

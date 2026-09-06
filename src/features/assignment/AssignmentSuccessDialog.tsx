@@ -2,7 +2,6 @@
 
 import { useState, useRef, useCallback } from 'react';
 import { useQuery } from '@apollo/client/react';
-import { useUser } from '@clerk/nextjs';
 import { QRCodeSVG, QRCodeCanvas } from 'qrcode.react';
 import { pdf } from '@react-pdf/renderer';
 import {
@@ -41,10 +40,11 @@ import type {
 } from '@/components/pdf';
 
 import { GET_ORGANIZATION_BY_ID_QUERY } from '@/graphql/queries/organizations.queries';
-import { GET_USER_BY_CLERK_ID_QUERY } from '@/graphql/queries/users.queries';
-import type { OrganizationByIdResponse, UserByClerkIdResponse } from '@/types/apollo';
+import { useOptionalCurrentUser } from '@/contexts/CurrentUserContext';
+import type { OrganizationByIdResponse } from '@/types/apollo';
 import type { ExerciseSet, Frequency } from './types';
 import type { AssignmentExecutionMode } from './utils/assignmentPlanDecision';
+import { useDialogShortcuts } from '@/hooks/useDialogShortcuts';
 
 interface AssignmentSuccessDialogProps {
   open: boolean;
@@ -95,7 +95,6 @@ export function AssignmentSuccessDialog({
   onAssignAnother,
   onViewPlan,
 }: AssignmentSuccessDialogProps) {
-  const { user } = useUser();
   const [copied, setCopied] = useState(false);
   const [selectedPatientIndex, setSelectedPatientIndex] = useState(0);
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
@@ -112,14 +111,9 @@ export function AssignmentSuccessDialog({
     skip: !organizationId || !open,
   });
 
-  // Pobierz dane terapeuty
-  const { data: userData } = useQuery(GET_USER_BY_CLERK_ID_QUERY, {
-    variables: { clerkId: user?.id },
-    skip: !user?.id || !open,
-  });
+  const therapistUser = useOptionalCurrentUser()?.user ?? null;
 
   const organization = (orgData as OrganizationByIdResponse)?.organizationById;
-  const therapistUser = (userData as UserByClerkIdResponse)?.userByClerkId;
 
   // Generuj QR code data URL dla PDF
   const getQRCodeDataUrl = useCallback((): string | undefined => {
@@ -128,6 +122,23 @@ export function AssignmentSuccessDialog({
     if (!canvas) return undefined;
     return canvas.toDataURL('image/png');
   }, []);
+
+  useDialogShortcuts({
+    open,
+    enabled: !isGeneratingPDF,
+    onSubmit: () => {
+      if (onAssignAnother) {
+        onOpenChange(false);
+        onAssignAnother();
+        return;
+      }
+      if (onViewPlan) {
+        onOpenChange(false);
+        onViewPlan();
+      }
+    },
+    onClose: () => onOpenChange(false),
+  });
 
   // Early return after all hooks
   if (!selectedPatient) return null;
@@ -341,7 +352,7 @@ export function AssignmentSuccessDialog({
     if (navigator.share) {
       try {
         await navigator.share({
-          title: `FiziYo - Program ćwiczeń dla ${selectedPatient.name}`,
+          title: `FiziYo - Plan ćwiczeń dla ${selectedPatient.name}`,
           text: 'Zeskanuj kod QR lub kliknij link, aby połączyć się z aplikacją FiziYo',
           url: webLink,
         });
@@ -362,9 +373,7 @@ export function AssignmentSuccessDialog({
               <CheckCircle2 className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <DialogTitle className="text-base font-semibold">
-                Plan pacjenta utworzony i przypisany!
-              </DialogTitle>
+              <DialogTitle className="text-base font-semibold">Plan pacjenta utworzony i przypisany!</DialogTitle>
             </div>
           </div>
         </DialogHeader>
@@ -414,6 +423,7 @@ export function AssignmentSuccessDialog({
             <div className="flex gap-2 overflow-x-auto pb-2">
               {patients.map((patient, index) => (
                 <Button
+                  data-testid="assignmentsuccessdialog-button-411"
                   key={patient.id}
                   variant={index === selectedPatientIndex ? 'secondary' : 'ghost'}
                   size="sm"
@@ -438,10 +448,7 @@ export function AssignmentSuccessDialog({
           )}
 
           <div className="flex flex-col items-center rounded-xl bg-surface/50 p-5 border border-border/60">
-            <div
-              ref={qrContainerRef}
-              className="p-3 bg-white rounded-xl shadow-sm border border-border/40"
-            >
+            <div ref={qrContainerRef} className="p-3 bg-white rounded-xl shadow-sm border border-border/40">
               <QRCodeSVG
                 value={appDeepLink}
                 size={120}

@@ -78,7 +78,12 @@ export function ExerciseActionSelect({
   };
 
   return (
-    <Select value={getCurrentValue()} onValueChange={handleValueChange} disabled={disabled}>
+    <Select
+      data-testid="import-exercise-action-select-select-81"
+      value={getCurrentValue()}
+      onValueChange={handleValueChange}
+      disabled={disabled}
+    >
       <SelectTrigger
         className={cn(
           'h-9 w-full min-w-[200px]',

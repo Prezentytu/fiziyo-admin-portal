@@ -157,6 +157,7 @@ export function InvoicesHistoryCard({ className }: InvoicesHistoryCardProps) {
                         {formatCurrency(invoice.amount)}
                       </p>
                       <Button
+                        aria-label="Akcja"
                         variant="ghost"
                         size="icon"
                         className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"

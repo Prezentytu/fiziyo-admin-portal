@@ -1,0 +1,47 @@
+import Link from 'next/link';
+import { ArrowLeft } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+
+interface PageHeaderProps {
+  title: string;
+  description?: string;
+  actions?: React.ReactNode;
+  backHref?: string;
+  backLabel?: string;
+  titleTestId?: string;
+  className?: string;
+}
+
+export function PageHeader({
+  title,
+  description,
+  actions,
+  backHref,
+  backLabel = 'Wróć',
+  titleTestId = 'page-header-title',
+  className,
+}: PageHeaderProps) {
+  return (
+    <div
+      data-testid="page-header"
+      className={cn('flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between', className)}
+    >
+      <div className="space-y-2 min-w-0">
+        {backHref ? (
+          <Button data-testid="page-header-back" variant="ghost" size="sm" className="gap-2 -ml-2" asChild>
+            <Link href={backHref}>
+              <ArrowLeft className="h-4 w-4" />
+              {backLabel}
+            </Link>
+          </Button>
+        ) : null}
+        <h1 data-testid={titleTestId} className="text-2xl font-semibold tracking-tight text-foreground">
+          {title}
+        </h1>
+        {description ? <p className="text-sm text-muted-foreground">{description}</p> : null}
+      </div>
+      {actions ? <div className="flex shrink-0 items-center gap-2">{actions}</div> : null}
+    </div>
+  );
+}

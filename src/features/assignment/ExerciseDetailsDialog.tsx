@@ -78,11 +78,17 @@ export function ExerciseDetailsDialog({ open, mapping, onOpenChange }: Readonly<
       : DIALOG_EXERCISE_FIELD_ORDER.map((fieldKey) => {
           const field = EXERCISE_FIELD_METADATA[fieldKey];
           if (!field.isDialogVisible) return null;
-          const value = formatFieldValueWithPlaceholder(field, viewModel, field.group === 'content' ? 'Nie ustawiono' : '—');
+          const value = formatFieldValueWithPlaceholder(
+            field,
+            viewModel,
+            field.group === 'content' ? 'Nie ustawiono' : '—'
+          );
           return { field, value };
         }).filter((item): item is { field: ExerciseFieldMetadata; value: string } => item !== null);
 
-  const fieldsByGroup = dialogFields.reduce<Record<ExerciseFieldGroup, Array<{ field: ExerciseFieldMetadata; value: string }>>>(
+  const fieldsByGroup = dialogFields.reduce<
+    Record<ExerciseFieldGroup, Array<{ field: ExerciseFieldMetadata; value: string }>>
+  >(
     (accumulator, fieldData) => {
       accumulator[fieldData.field.group].push(fieldData);
       return accumulator;
@@ -128,6 +134,7 @@ export function ExerciseDetailsDialog({ open, mapping, onOpenChange }: Readonly<
               <div className="space-y-2" data-testid="assign-set-preview-exercise-details-video">
                 <p className="text-xs uppercase tracking-wide text-muted-foreground">Film instruktażowy</p>
                 <a
+                  data-testid="assignment-exercise-details-dialog-btn-130"
                   href={viewModel.videoUrl}
                   target="_blank"
                   rel="noreferrer"
@@ -208,4 +215,3 @@ export function ExerciseDetailsDialog({ open, mapping, onOpenChange }: Readonly<
     </Dialog>
   );
 }
-

@@ -14,6 +14,38 @@ Dziennik wniosków z pracy AI agentów. Po każdej korekcie dodaj nowy wpis.
 
 ## Wpisy
 
+### 2026-09-06 - Parser testid i getToken po 401
+
+- **Kategoria**: `Build/Tooling` | `GraphQL`
+- **Problem**: Guard testid i skrypt dodawania atrybutów kończyły opening tag na pierwszym `>` (`=>`, `length >`), psując JSX. `getToken()` po 401 zwracał `null`.
+- **Przyczyna**: naiwny skan `chunk.includes('>')`; `resolveToken` łapał każdy błąd i zwracał `null`.
+- **Rozwiązanie**: `scripts/lib/read-opening-tag.mjs` (głębokość `{...}` + stringi); `data-testid` pierwszy atrybut; HTTP status z `getToken()` jest rethrow.
+- **Reguła**: Guard JSX nie tnie tagu na `=>`. Błąd tokenu z kodem HTTP musi dojść do AuthLink/ErrorLink.
+
+### 2026-09-06 - Hook przed implicit-return nie może zmienić `=>` w blok
+
+- **Kategoria**: `React`
+- **Problem**: Wstawka `useDialogShortcuts` przed `const getInitials = (name) => expr` zepsuła składnię (`=> {` bez zamknięcia).
+- **Przyczyna**: replace złapał strzałkę implicit-return i otworzył blok tylko dla nowej funkcji.
+- **Rozwiązanie**: Hook przed early return / helperem, oryginalna forma `=> expr` bez zmian.
+- **Reguła**: Przy dodawaniu hooka przed one-line arrow nie zmieniaj `=> expr` w `=> {`. Hook musi być przed `if (...) return`, nigdy po.
+
+### 2026-09-06 - Cienki RSC `page.tsx` wymaga Suspense przy `useSearchParams`
+
+- **Kategoria**: `React`
+- **Problem**: Po wyciągnięciu klienta z `app/(dashboard)/*/page.tsx` Next.js wymaga Suspense wokół `useSearchParams`.
+- **Przyczyna**: Server `page.tsx` renderuje client feature; hook musi mieć boundary powyżej.
+- **Rozwiązanie**: Owijać feature page w `<Suspense>` na cienkim `page.tsx` (listy i detale z query string).
+- **Reguła**: Gdy `page.tsx` jest RSC, a feature używa `useSearchParams`, Suspense idzie w wrapperze, nie w kliencie.
+
+### 2026-09-06 - Guard testid tnie tag na pierwszym `>`
+
+- **Kategoria**: `Build/Tooling`
+- **Problem**: `check:testids` nie widział `data-testid` gdy atrybut stał za `=>` w JSX.
+- **Przyczyna**: parser kończy opening tag na pierwszym `>`.
+- **Rozwiązanie**: stawiaj `data-testid` jako pierwszy atrybut, przed handlerami strzałkowymi.
+- **Reguła**: W tagach interaktywnych `data-testid` idzie zaraz po nazwie komponentu.
+
 ### 2026-09-06 - Cache JWT po await Clerk musi ponownie sprawdzić identity
 
 - **Kategoria**: `GraphQL`

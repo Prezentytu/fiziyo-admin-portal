@@ -183,7 +183,7 @@ export function RevenueHistoryTable({ organizationId, className }: RevenueHistor
           {/* Filter dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="gap-2">
+              <Button data-testid="revenuehistorytable-button-186" variant="outline" size="sm" className="gap-2">
                 <Filter className="h-4 w-4" />
                 {filterOptions.find((f) => f.value === filter)?.label}
                 <ChevronDown className="h-3 w-3" />
@@ -228,13 +228,25 @@ export function RevenueHistoryTable({ organizationId, className }: RevenueHistor
 
             {/* Show more button */}
             {transactions.length > 10 && !showAll && (
-              <Button variant="ghost" size="sm" onClick={() => setShowAll(true)} className="w-full mt-2">
+              <Button
+                data-testid="finances-revenue-history-table-btn-231"
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowAll(true)}
+                className="w-full mt-2"
+              >
                 Pokaż więcej ({transactions.length - 10} ukrytych)
               </Button>
             )}
 
             {showAll && transactions.length > 10 && (
-              <Button variant="ghost" size="sm" onClick={() => setShowAll(false)} className="w-full mt-2">
+              <Button
+                data-testid="revenuehistorytable-button-237"
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowAll(false)}
+                className="w-full mt-2"
+              >
                 Pokaż mniej
               </Button>
             )}

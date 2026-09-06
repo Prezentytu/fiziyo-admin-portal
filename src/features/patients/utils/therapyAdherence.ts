@@ -40,7 +40,7 @@ export function evaluateTherapyAdherence(metrics: TherapyAdherenceMetrics): Ther
       tone: 'caution',
       reason: 'discomfort',
       title: 'Skontroluj plan',
-      description: 'Pacjent zgłosił dyskomfort podczas ćwiczeń. Warto sprawdzić obciążenie i tempo programu.',
+      description: 'Pacjent zgłosił dyskomfort podczas ćwiczeń. Warto sprawdzić obciążenie i tempo planu.',
       nextStep: 'Skontaktuj się z pacjentem i rozważ korektę planu',
       badgeLabel: 'SKONTROLUJ PLAN',
       daysSinceLastActivity: metrics.daysSinceLastActivity,
@@ -104,7 +104,7 @@ export function evaluateTherapyAdherence(metrics: TherapyAdherenceMetrics): Ther
       tone: 'caution',
       reason: hasMissedSchedule ? 'missed_schedule' : 'high_difficulty',
       title: 'Wymaga monitorowania',
-      description: `Pacjent ${reasons.join(' oraz ')}. Warto zweryfikować obciążenie programu.`,
+      description: `Pacjent ${reasons.join(' oraz ')}. Warto zweryfikować obciążenie planu.`,
       nextStep: 'Rozważ kontakt i dopasowanie intensywności planu',
       badgeLabel: 'UWAGA',
       daysSinceLastActivity: metrics.daysSinceLastActivity,
@@ -112,7 +112,8 @@ export function evaluateTherapyAdherence(metrics: TherapyAdherenceMetrics): Ther
     };
   }
 
-  const completionPercent = metrics.requiredSoFar > 0 ? Math.round((metrics.activeDays / metrics.requiredSoFar) * 100) : 100;
+  const completionPercent =
+    metrics.requiredSoFar > 0 ? Math.round((metrics.activeDays / metrics.requiredSoFar) * 100) : 100;
 
   return {
     tone: 'positive',

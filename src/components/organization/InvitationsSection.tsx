@@ -166,7 +166,11 @@ export function InvitationsSection({ organizationId, onInviteClick }: Invitation
             <p className="text-sm text-muted-foreground">Zarządzaj dostępem do swojej organizacji</p>
           </div>
         </div>
-        <Button onClick={onInviteClick} className="gap-2 shadow-lg shadow-primary/20">
+        <Button
+          data-testid="org-invitations-section-btn-169"
+          onClick={onInviteClick}
+          className="gap-2 shadow-lg shadow-primary/20"
+        >
           <UserPlus className="h-4 w-4" />
           Zaproś
         </Button>
@@ -177,6 +181,7 @@ export function InvitationsSection({ organizationId, onInviteClick }: Invitation
         <div className="flex items-center justify-between">
           <div className="flex gap-2 p-1 rounded-xl bg-accent/30 border border-border/40">
             <button
+              data-testid="org-invitations-section-btn-179"
               onClick={() => setActiveTab('pending')}
               className={cn(
                 'px-4 py-1.5 text-xs font-medium rounded-lg transition-all',
@@ -188,6 +193,7 @@ export function InvitationsSection({ organizationId, onInviteClick }: Invitation
               Oczekujące ({pendingInvitations.length})
             </button>
             <button
+              data-testid="org-invitations-section-btn-190"
               onClick={() => setActiveTab('all')}
               className={cn(
                 'px-4 py-1.5 text-xs font-medium rounded-lg transition-all',
@@ -200,6 +206,7 @@ export function InvitationsSection({ organizationId, onInviteClick }: Invitation
             </button>
           </div>
           <Button
+            data-testid="invitationssection-button-202"
             variant="ghost"
             size="sm"
             onClick={() => refetchInvitations()}
@@ -330,6 +337,7 @@ function InvitationItem({ invitation, onCopyLink, onResend, onRevoke, isLoading 
       <div className="flex items-center gap-2 shrink-0">
         {isPending && (
           <Button
+            data-testid="org-invitations-section-btn-332"
             variant="outline"
             size="sm"
             className="h-9 px-3 rounded-xl border-border/50 hover:bg-background hover:border-primary/50 transition-all hidden sm:flex gap-2"
@@ -343,6 +351,8 @@ function InvitationItem({ invitation, onCopyLink, onResend, onRevoke, isLoading 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
+              aria-label="Akcja"
+              data-testid="invitationssection-button-345"
               variant="ghost"
               size="icon"
               className="h-9 w-9 rounded-xl hover:bg-background border border-transparent hover:border-border/50 transition-all"

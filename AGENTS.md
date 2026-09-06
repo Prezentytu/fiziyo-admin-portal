@@ -135,17 +135,23 @@ src/
 │   │   ├── exercise-sets/    # Zestawy ćwiczeń
 │   │   ├── patients/         # Pacjenci
 │   │   ├── organization/     # Zarządzanie organizacją
-│   │   ├── billing/          # Rozliczenia
+│   │   ├── finances/         # Finanse
+│   │   ├── verification/     # Weryfikacja treści
+│   │   ├── import/           # Import dokumentów
+│   │   ├── onboarding/       # Onboarding
 │   │   ├── settings/         # Ustawienia
+│   │   └── proxy.ts          # Proxy API
 ├── features/                 # Moduły domenowe (zobacz .ai/STRUCTURE.md)
 │   ├── assignment/           # Wizard przypisań (utils/, utils/__tests__/)
+│   ├── auth/                 # Auth helpers
 │   ├── exercises/            # Ćwiczenia
 │   ├── exercise-sets/        # Zestawy ćwiczeń
 │   ├── patients/             # Pacjenci
 │   ├── verification/         # Weryfikacja treści
 │   └── import/               # Import dokumentów
+├── contexts/                 # Organization + CurrentUser
 ├── components/               # Komponenty współdzielone
-│   ├── shared/               # DataTable, EmptyState, etc.
+│   ├── shared/               # PageShell, EmptyState, ErrorState, etc.
 │   ├── ui/                   # shadcn/ui
 │   ├── layout/               # Sidebar, Header, etc.
 │   └── ...                   # auth, organization, settings, finances, ...
@@ -327,7 +333,7 @@ Prefiksy modułów: `auth-`, `nav-`, `exercise-`, `set-`, `patient-`, `org-`, `s
 ### Reużywalność komponentów
 
 - Preferuj komponenty z `@/components/ui/` i `@/components/shared/` przed tworzeniem nowych
-- Domyślnie używaj `DataTable` dla tabel z danymi
+- Domyślnie używaj `PageShell` + `PageHeader` + `ErrorState` / `EmptyState` / `ListSkeleton` dla stron listowych
 - Sprawdź istniejące wzorce przed implementacją nowego UI
 - Dla poziomych pasków/kafelków ćwiczeń obowiązuje reużycie `src/components/shared/exercise/ExerciseExecutionCard.tsx` + adapterów (bez lokalnych klonów layoutu)
 - Unikaj etykiet „ćwiczenie czasowe/powtórzeniowe” w UI; semantyka ma wynikać z `executionTime` (timer pacjenta)

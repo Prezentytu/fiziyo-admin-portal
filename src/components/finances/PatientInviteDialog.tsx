@@ -12,6 +12,7 @@ import { toast } from 'sonner';
 import { CREATE_PATIENT_INVITE_LINK_MUTATION } from '@/graphql/mutations';
 import { GET_PATIENT_INVITE_LINKS_QUERY } from '@/graphql/queries';
 import type { CreatePatientInviteLinkResponse } from '@/types/apollo';
+import { useDialogShortcuts } from '@/hooks/useDialogShortcuts';
 
 // ========================================
 // Types
@@ -175,6 +176,19 @@ export function PatientInviteDialog({ open, onOpenChange, organizationId }: Pati
     onOpenChange(false);
   };
 
+  useDialogShortcuts({
+    open,
+    enabled: !loading,
+    onSubmit: () => {
+      if (activeTab === 'send') {
+        void handleSendInvite();
+        return;
+      }
+      void handleCopyLink();
+    },
+    onClose: handleClose,
+  });
+
   return (
     <Dialog
       open={open}
@@ -184,10 +198,7 @@ export function PatientInviteDialog({ open, onOpenChange, organizationId }: Pati
         }
       }}
     >
-      <DialogContent
-        className="max-w-[95vw] sm:max-w-xl overflow-hidden"
-        data-testid="invite-dialog"
-      >
+      <DialogContent className="max-w-[95vw] sm:max-w-xl overflow-hidden" data-testid="invite-dialog">
         <div className="flex items-start gap-4 rounded-xl border border-border/50 bg-linear-to-r from-primary/5 via-emerald-500/5 to-primary/5 p-5">
           <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary shadow-sm">
             <Ticket className="h-6 w-6" />
@@ -210,27 +221,15 @@ export function PatientInviteDialog({ open, onOpenChange, organizationId }: Pati
           /* Tabs */
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger
-                value="link"
-                className="gap-2"
-                data-testid="invite-tab-link"
-              >
+              <TabsTrigger value="link" className="gap-2" data-testid="invite-tab-link">
                 <Link2 className="h-4 w-4 shrink-0" />
                 Link
               </TabsTrigger>
-              <TabsTrigger
-                value="qr"
-                className="gap-2"
-                data-testid="invite-tab-qr"
-              >
+              <TabsTrigger value="qr" className="gap-2" data-testid="invite-tab-qr">
                 <QrCode className="h-4 w-4 shrink-0" />
                 QR kod
               </TabsTrigger>
-              <TabsTrigger
-                value="send"
-                className="gap-2"
-                data-testid="invite-tab-send"
-              >
+              <TabsTrigger value="send" className="gap-2" data-testid="invite-tab-send">
                 <Send className="h-4 w-4 shrink-0" />
                 Wyślij
               </TabsTrigger>
@@ -260,7 +259,12 @@ export function PatientInviteDialog({ open, onOpenChange, organizationId }: Pati
 
               <div className="rounded-xl border border-border/60 bg-surface/50 p-4 space-y-3">
                 <div className="relative">
-                  <Input value={personalizedLink} readOnly className="pr-20 h-11 text-sm" data-testid="invite-link-display" />
+                  <Input
+                    value={personalizedLink}
+                    readOnly
+                    className="pr-20 h-11 text-sm"
+                    data-testid="invite-link-display"
+                  />
                   <Button
                     variant="ghost"
                     size="sm"
@@ -314,12 +318,19 @@ export function PatientInviteDialog({ open, onOpenChange, organizationId }: Pati
                   <div className="space-y-1 text-center">
                     <p className="text-sm font-medium text-foreground">Pokaż pacjentowi kod do zeskanowania</p>
                     <p className="text-xs text-muted-foreground">
-                      Kod prowadzi do tego samego linku co zakładka `Link`, więc możesz wygodnie przełączać kanał przekazania.
+                      Kod prowadzi do tego samego linku co zakładka `Link`, więc możesz wygodnie przełączać kanał
+                      przekazania.
                     </p>
                   </div>
                   <div className="w-full flex items-center justify-between gap-3 border-t border-border/50 pt-4">
-                    <p className="text-xs text-muted-foreground">Jeśli pacjent jest z Tobą w gabinecie, QR zwykle daje najmniejsze tarcie.</p>
-                    <Button variant="outline" onClick={handleCopyLink}>
+                    <p className="text-xs text-muted-foreground">
+                      Jeśli pacjent jest z Tobą w gabinecie, QR zwykle daje najmniejsze tarcie.
+                    </p>
+                    <Button
+                      data-testid="finances-patient-invite-dialog-btn-336"
+                      variant="outline"
+                      onClick={handleCopyLink}
+                    >
                       <Copy className="h-4 w-4 mr-2" />
                       Kopiuj link
                     </Button>
@@ -331,7 +342,10 @@ export function PatientInviteDialog({ open, onOpenChange, organizationId }: Pati
             {/* Tab: Send */}
             <TabsContent value="send" className="mt-4">
               {sendSuccess ? (
-                <div className="flex flex-col items-center justify-center rounded-xl border border-primary/20 bg-primary/5 px-6 py-10" data-testid="invite-success-view">
+                <div
+                  className="flex flex-col items-center justify-center rounded-xl border border-primary/20 bg-primary/5 px-6 py-10"
+                  data-testid="invite-success-view"
+                >
                   <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/15">
                     <Check className="h-8 w-8 text-primary" />
                   </div>
@@ -348,7 +362,9 @@ export function PatientInviteDialog({ open, onOpenChange, organizationId }: Pati
                   </div>
 
                   <div className="space-y-3">
-                    <div className={`relative transition-opacity duration-200 ${normalizedPhone ? 'opacity-50' : 'opacity-100'}`}>
+                    <div
+                      className={`relative transition-opacity duration-200 ${normalizedPhone ? 'opacity-50' : 'opacity-100'}`}
+                    >
                       <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                       <Input
                         type="email"
@@ -363,7 +379,9 @@ export function PatientInviteDialog({ open, onOpenChange, organizationId }: Pati
                       />
                     </div>
 
-                    <div className={`relative transition-opacity duration-200 ${normalizedEmail ? 'opacity-50' : 'opacity-100'}`}>
+                    <div
+                      className={`relative transition-opacity duration-200 ${normalizedEmail ? 'opacity-50' : 'opacity-100'}`}
+                    >
                       <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                       <Input
                         type="tel"
@@ -380,7 +398,11 @@ export function PatientInviteDialog({ open, onOpenChange, organizationId }: Pati
                   </div>
 
                   <div className="flex items-center justify-between gap-3 border-t border-border/50 pt-4">
-                    <Button variant="outline" onClick={handleClose}>
+                    <Button
+                      data-testid="finances-patient-invite-dialog-btn-397"
+                      variant="outline"
+                      onClick={handleClose}
+                    >
                       Anuluj
                     </Button>
                     <Button onClick={handleSendInvite} disabled={!sendMode || loading} data-testid="invite-send-btn">

@@ -1,48 +1,41 @@
 import { ErrorLink } from '@apollo/client/link/error';
 import { CombinedGraphQLErrors, CombinedProtocolErrors } from '@apollo/client/errors';
+import { toast } from 'sonner';
+import { createModuleLogger } from '@/lib/logger';
+import { isNetworkError, isUnauthenticatedError } from '@/graphql/links/authErrors';
+import type { IAuthTokenProvider } from '@/graphql/links/authLink';
 
-/**
- * Error Link do obsługi błędów GraphQL i Network
- * Loguje błędy w development mode i pomaga w debugowaniu
- * Apollo Client 4.0 API
- */
+const log = createModuleLogger('ErrorLink');
+
 export class ErrorLinkFactory {
-  create(): ErrorLink {
-    return new ErrorLink(({ error, operation }) => {
-      if (CombinedGraphQLErrors.is(error)) {
-        // GraphQL errors
-        error.errors.forEach(({ message, locations, path, extensions }) => {
-          console.error(
-            `[GraphQL Error]: Message: ${message}, Location: ${JSON.stringify(
-              locations
-            )}, Path: ${JSON.stringify(path)}`,
-            extensions
-          );
-        });
+  constructor(private tokenProvider?: IAuthTokenProvider) {}
 
-        console.error(
-          `Error Summary:`,
-          `\nOperation: ${operation.operationName}`,
-          `\nGraphQL Errors: ${error.errors.length}`
-        );
+  create(): ErrorLink {
+    return new ErrorLink(({ error, operation, forward }) => {
+      if (isUnauthenticatedError(error) && this.tokenProvider && !operation.getContext().authRetried) {
+        this.tokenProvider.refreshToken();
+        operation.setContext({ ...operation.getContext(), authRetried: true });
+        return forward(operation);
+      }
+
+      if (CombinedGraphQLErrors.is(error)) {
+        error.errors.forEach((graphError) => {
+          log.error(graphError.message, undefined, {
+            path: graphError.path,
+            code: graphError.extensions?.code,
+            operation: operation.operationName,
+          });
+        });
       } else if (CombinedProtocolErrors.is(error)) {
-        // Protocol errors
-        error.errors.forEach(({ message, extensions }) => {
-          console.error(`[Protocol Error]: Message: ${message}, Extensions: ${JSON.stringify(extensions)}`);
+        error.errors.forEach((protocolError) => {
+          log.error(protocolError.message, undefined, { operation: operation.operationName });
         });
       } else {
-        // Network error
-        console.error(`[Network Error]`, `\nOperation: ${operation.operationName}`, `\nError:`, error);
+        log.error('Network error', error, { operation: operation.operationName });
+      }
 
-        // Dodatkowe info dla 400 errors
-        if (
-          error &&
-          typeof error === 'object' &&
-          'statusCode' in error &&
-          (error as { statusCode: number }).statusCode === 400
-        ) {
-          console.error(`[Network 400 Error]`, `\nThis usually means bad request syntax or invalid query`);
-        }
+      if (isNetworkError(error) && typeof window !== 'undefined') {
+        toast.error('Nie udało się połączyć z serwerem. Spróbuj ponownie.');
       }
     });
   }

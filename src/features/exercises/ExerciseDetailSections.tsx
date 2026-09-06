@@ -123,8 +123,7 @@ export function PatientLeadSection({
   showPatientDescription = true,
 }: Readonly<PatientLeadSectionProps>) {
   const summary = data.patient?.summary ?? '';
-  const hasReadContent =
-    (showPatientDescription && hasText(patientDescription)) || hasText(summary);
+  const hasReadContent = (showPatientDescription && hasText(patientDescription)) || hasText(summary);
   if (!editable && !hasReadContent) return null;
 
   return (
@@ -187,12 +186,12 @@ function MistakesEditor({
           <DirtyDot active={dirty} />
         </div>
         <Button
+          data-testid="exercise-detail-add-mistake-btn"
           type="button"
           size="sm"
           variant="outline"
           disabled={disabled}
           onClick={() => onChange([...items, { mistake: '', fix: '' }])}
-          data-testid="exercise-detail-add-mistake-btn"
         >
           <Plus className="mr-1 h-3.5 w-3.5" />
           Dodaj błąd
@@ -202,6 +201,7 @@ function MistakesEditor({
         <div key={`mistake-${index}`} className="space-y-1.5 rounded-lg border border-border/40 p-2.5">
           <div className="flex min-w-0 gap-2">
             <Input
+              data-testid={`exercise-detail-mistake-text-${index}`}
               value={item.mistake ?? ''}
               placeholder="Błąd"
               disabled={disabled}
@@ -211,21 +211,21 @@ function MistakesEditor({
                 next[index] = { ...next[index], mistake: event.target.value };
                 onChange(next);
               }}
-              data-testid={`exercise-detail-mistake-text-${index}`}
             />
             <Button
+              data-testid={`exercise-detail-mistake-remove-${index}`}
               type="button"
               variant="ghost"
               size="icon"
               aria-label="Usuń błąd"
               disabled={disabled}
               onClick={() => onChange(safeItems.filter((_, entryIndex) => entryIndex !== index))}
-              data-testid={`exercise-detail-mistake-remove-${index}`}
             >
               <Trash2 className="h-4 w-4 text-destructive" />
             </Button>
           </div>
           <Input
+            data-testid={`exercise-detail-mistake-fix-${index}`}
             value={item.fix ?? ''}
             placeholder="Jak poprawić"
             disabled={disabled}
@@ -234,7 +234,6 @@ function MistakesEditor({
               next[index] = { ...next[index], fix: event.target.value };
               onChange(next);
             }}
-            data-testid={`exercise-detail-mistake-fix-${index}`}
           />
         </div>
       ))}
@@ -269,7 +268,11 @@ export function PatientExtrasSection({
   if (!editable && !hasAnyReadContent) return null;
 
   return (
-    <SectionCard title="Odczucia i typowe błędy" icon={<HeartPulse className="h-4 w-4 text-muted-foreground" />} testId="exercise-detail-patient-extras">
+    <SectionCard
+      title="Odczucia i typowe błędy"
+      icon={<HeartPulse className="h-4 w-4 text-muted-foreground" />}
+      testId="exercise-detail-patient-extras"
+    >
       {editable ? (
         <div className="space-y-4">
           <MistakesEditor
@@ -396,7 +399,11 @@ export function SafetySection({
   if (!editable && !hasAnyReadContent) return null;
 
   return (
-    <SectionCard title="Bezpieczeństwo" icon={<ShieldAlert className="h-4 w-4 text-muted-foreground" />} testId="exercise-detail-safety">
+    <SectionCard
+      title="Bezpieczeństwo"
+      icon={<ShieldAlert className="h-4 w-4 text-muted-foreground" />}
+      testId="exercise-detail-safety"
+    >
       {editable ? (
         <div className="space-y-4">
           <EditableTextBlock
@@ -432,10 +439,10 @@ export function SafetySection({
             )}
           >
             <Switch
+              data-testid="exercise-detail-requires-supervision-switch"
               checked={requiresSupervision}
               disabled={disabled}
               onCheckedChange={(checked) => setPath('safety.requires_supervision', checked)}
-              data-testid="exercise-detail-requires-supervision-switch"
             />
             <Label>Wymaga nadzoru fizjoterapeuty</Label>
             <DirtyDot active={isPathDirty('safety.requires_supervision')} className="ml-auto" />
@@ -500,7 +507,11 @@ export function TherapistSection({
   if (!editable && !hasTherapistReadContent) return null;
 
   return (
-    <SectionCard title="Dla fizjoterapeuty" icon={<Stethoscope className="h-4 w-4 text-muted-foreground" />} testId="exercise-detail-therapist">
+    <SectionCard
+      title="Dla fizjoterapeuty"
+      icon={<Stethoscope className="h-4 w-4 text-muted-foreground" />}
+      testId="exercise-detail-therapist"
+    >
       <EditableTextBlock
         label="Opis kliniczny"
         value={clinicalDescription}
@@ -533,7 +544,8 @@ export function TherapistSection({
           )}
           {hasListItems(therapist.rehab_phases) && (
             <p className="text-sm text-muted-foreground">
-              <span className="font-medium text-foreground">Faza rehab:</span> {(therapist.rehab_phases ?? []).join(', ')}
+              <span className="font-medium text-foreground">Faza rehab:</span>{' '}
+              {(therapist.rehab_phases ?? []).join(', ')}
             </p>
           )}
           {hasListItems(therapist.clinical_benefits) && (
@@ -577,14 +589,16 @@ function ReadChips({ label, items }: Readonly<{ label: string; items: string[] }
     <div className="space-y-1.5">
       <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/70">{label}</p>
       <div className="flex flex-wrap gap-1.5">
-        {items.filter((item) => hasText(item)).map((item) => (
-          <span
-            key={item}
-            className="rounded-full border border-border/60 bg-background px-2 py-0.5 text-[11px] text-muted-foreground"
-          >
-            {item}
-          </span>
-        ))}
+        {items
+          .filter((item) => hasText(item))
+          .map((item) => (
+            <span
+              key={item}
+              className="rounded-full border border-border/60 bg-background px-2 py-0.5 text-[11px] text-muted-foreground"
+            >
+              {item}
+            </span>
+          ))}
       </div>
     </div>
   );
@@ -621,7 +635,11 @@ export function MetadataSection({
   if (!editable && !hasReadContent) return null;
 
   return (
-    <SectionCard title="Metadane i wyszukiwanie" icon={<Tags className="h-4 w-4 text-muted-foreground" />} testId="exercise-detail-metadata">
+    <SectionCard
+      title="Metadane i wyszukiwanie"
+      icon={<Tags className="h-4 w-4 text-muted-foreground" />}
+      testId="exercise-detail-metadata"
+    >
       {editable ? (
         <div className="space-y-4">
           <div className="space-y-1.5">
@@ -632,6 +650,7 @@ export function MetadataSection({
               <DirtyDot active={videoUrlDirty} />
             </div>
             <Input
+              data-testid="exercise-detail-video-url-input"
               id="exercise-detail-video-url"
               value={videoUrl}
               placeholder="https://..."
@@ -641,7 +660,6 @@ export function MetadataSection({
                 'h-9 text-sm transition-colors',
                 videoUrlDirty && 'border-amber-400/70 bg-amber-50/40 dark:border-amber-500/40 dark:bg-amber-500/5'
               )}
-              data-testid="exercise-detail-video-url-input"
             />
           </div>
           <EditableTextBlock
