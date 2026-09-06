@@ -79,6 +79,55 @@ export const UPDATE_PATIENT_STATUS_MUTATION = gql`
  * Mutacja do przypisywania pojedynczego pacjenta do fizjoterapeuty
  * Rozszerzona wersja z contextType, contextLabel i contextColor
  */
+export const LINK_EXISTING_PATIENT_TO_CARE_TEAM_MUTATION = gql`
+  mutation LinkExistingPatientToCareTeam(
+    $patientId: String!
+    $therapistId: String!
+    $organizationId: String!
+    $clinicId: String
+    $contextType: AssignmentContextType = PRIMARY
+    $contextLabel: String
+    $contextColor: String
+    $notes: String
+  ) {
+    linkExistingPatientToCareTeam(
+      patientId: $patientId
+      therapistId: $therapistId
+      organizationId: $organizationId
+      clinicId: $clinicId
+      contextType: $contextType
+      contextLabel: $contextLabel
+      contextColor: $contextColor
+      notes: $notes
+    ) {
+      id
+      therapistId
+      patientId
+      organizationId
+      assignedAt
+      assignedById
+      status
+      notes
+      clinicId
+      startDate
+      endDate
+      contextType
+      contextLabel
+      contextColor
+      relationType
+      patient {
+        id
+        fullname
+        email
+        personalData {
+          firstName
+          lastName
+        }
+      }
+    }
+  }
+`;
+
 export const ASSIGN_PATIENT_TO_THERAPIST_MUTATION = gql`
   mutation AssignPatientToTherapist(
     $patientId: String!

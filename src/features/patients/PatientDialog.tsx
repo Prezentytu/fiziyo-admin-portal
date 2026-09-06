@@ -139,6 +139,7 @@ export function PatientDialog({
           email: values.email || null,
           organizationId,
           clinicId: clinicId || null,
+          therapistId,
           contextLabel: values.contextLabel || null,
           // contextType używa wartości domyślnej PRIMARY z mutacji GraphQL
           // sendActivationSms używa wartości domyślnej false z mutacji GraphQL

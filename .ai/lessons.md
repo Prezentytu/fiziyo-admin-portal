@@ -14,6 +14,22 @@ Dziennik wniosków z pracy AI agentów. Po każdej korekcie dodaj nowy wpis.
 
 ## Wpisy
 
+### 2026-09-06 - Cache JWT po await Clerk musi ponownie sprawdzić identity
+
+- **Kategoria**: `GraphQL`
+- **Problem**: Test „inny user w cache” dostawał JWT user-1 mimo Clerk user-2.
+- **Przyczyna**: `performTokenExchange` zwracał cache po samym `exp` i braku roli patient, bez porównania `clerk_id` z bieżącym Clerk JWT.
+- **Rozwiązanie**: Ponowne `resolveCachedIdentity`; obcy token jest czyszczony i wymieniany.
+- **Reguła**: Jeśli odczytujesz backend JWT po `await` na Clerk, zawsze porównaj identity z aktualnym `sub`/`clerk_id`. Sam `exp` nie wystarczy.
+
+### 2026-09-05 - Dodawanie istniejącego pacjenta nie może być dwoma requestami
+
+- **Kategoria**: `GraphQL`
+- **Problem**: Portal wołał `addDirectMember` i `assignPatientToTherapist` osobno; pacjent zostawał z membership bez TPA albo odwrotnie, a jego JWT i tak nie dostawał org.
+- **Przyczyna**: Dwa write-pathy + brak recovery scope po stronie klienta; ten sam bug lock/decode JWT co w mobile.
+- **Rozwiązanie**: `linkExistingPatientToCareTeam` jako jedyny write-path `UnifiedPatientInput`; single-flight + base64url w `BackendAuthTokenProvider`.
+- **Reguła**: Jeśli dodajesz istniejącego pacjenta do opieki, zawsze jedna transakcja (membership + PRIMARY TPA). Nie utrzymuj drugiego write-path w `SmartPatientLookup`.
+
 ### 2026-08-20 - Import katalogu JSON jest dla każdego fizjo, nie tylko ownera
 
 - **Kategoria**: `UI/UX`

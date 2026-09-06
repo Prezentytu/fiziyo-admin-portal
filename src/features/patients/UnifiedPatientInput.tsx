@@ -18,8 +18,7 @@ import { cn } from '@/lib/utils';
 import { getAvatarGradient, getInitials } from '@/utils/textUtils';
 
 import { FIND_USER_BY_EMAIL_QUERY, FIND_USER_BY_PHONE_QUERY } from '@/graphql/queries/users.queries';
-import { ASSIGN_PATIENT_TO_THERAPIST_MUTATION } from '@/graphql/mutations/therapists.mutations';
-import { ADD_DIRECT_MEMBER_MUTATION } from '@/graphql/mutations/organizations.mutations';
+import { LINK_EXISTING_PATIENT_TO_CARE_TEAM_MUTATION } from '@/graphql/mutations/therapists.mutations';
 import {
   GET_THERAPIST_PATIENTS_QUERY,
   GET_ALL_THERAPIST_PATIENTS_QUERY,
@@ -227,7 +226,7 @@ export function UnifiedPatientInput({
   // MUTATIONS
   // ============================================
 
-  const [assignPatient, { loading: assignLoading }] = useMutation(ASSIGN_PATIENT_TO_THERAPIST_MUTATION, {
+  const [linkExistingPatient, { loading: linkLoading }] = useMutation(LINK_EXISTING_PATIENT_TO_CARE_TEAM_MUTATION, {
     refetchQueries: [
       { query: GET_THERAPIST_PATIENTS_QUERY, variables: { therapistId, organizationId } },
       { query: GET_ALL_THERAPIST_PATIENTS_QUERY, variables: { therapistId, organizationId } },
@@ -238,11 +237,7 @@ export function UnifiedPatientInput({
     awaitRefetchQueries: true,
   });
 
-  const [addDirectMember, { loading: addMemberLoading }] = useMutation(ADD_DIRECT_MEMBER_MUTATION, {
-    awaitRefetchQueries: true,
-  });
-
-  const isLoading = externalLoading || assignLoading || addMemberLoading;
+  const isLoading = externalLoading || linkLoading;
 
   // ============================================
   // EFFECTS
@@ -397,19 +392,7 @@ export function UnifiedPatientInput({
     }
 
     try {
-      // Add to organization if not already member
-      if (!foundUser.organizationIds?.includes(organizationId)) {
-        await addDirectMember({
-          variables: {
-            organizationId,
-            userId: foundUser.id,
-            role: 'patient',
-          },
-        });
-      }
-
-      // Assign to therapist
-      await assignPatient({
+      await linkExistingPatient({
         variables: {
           patientId: foundUser.id,
           therapistId,
@@ -434,7 +417,7 @@ export function UnifiedPatientInput({
       const errorMessage = gqlError.graphQLErrors?.[0]?.message || 'Nie udało się dodać pacjenta';
       toast.error(errorMessage);
     }
-  }, [foundUser, activeTherapistForFoundUser, addDirectMember, assignPatient, therapistId, organizationId, clinicId, onSuccess]);
+  }, [foundUser, activeTherapistForFoundUser, linkExistingPatient, therapistId, organizationId, clinicId, onSuccess]);
 
   const handleSubmitNewPatient = useCallback(
     async (values: z.infer<typeof patientFormSchema>) => {

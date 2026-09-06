@@ -266,6 +266,7 @@ export const CREATE_SHADOW_PATIENT_MUTATION = gql`
     $contextLabel: String
     $contextType: AssignmentContextType = PRIMARY
     $sendActivationSms: Boolean = false
+    $therapistId: String
   ) {
     createShadowPatient(
       firstName: $firstName
@@ -277,6 +278,7 @@ export const CREATE_SHADOW_PATIENT_MUTATION = gql`
       contextLabel: $contextLabel
       contextType: $contextType
       sendActivationSms: $sendActivationSms
+      therapistId: $therapistId
     ) {
       id
       clerkId
