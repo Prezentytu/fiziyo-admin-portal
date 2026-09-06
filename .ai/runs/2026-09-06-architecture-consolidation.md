@@ -53,4 +53,5 @@
 - Ryzyka: DialogFooter, cache-and-network, usuwanie plików
 - Parser testid: `scripts/lib/read-opening-tag.mjs` — nie ciąć na `=>`
 - `getToken()` rethrow HTTP status
-- Następne kroki: commity per faza po zielonym validate
+- Commit: `9b51589` feat: consolidate admin portal architecture (spec-026)
+- Następne kroki: review PR, dodać `DISCORD_FEEDBACK_WEBHOOK_URL` w Vercel
