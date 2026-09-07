@@ -31,7 +31,14 @@ export class ErrorLinkFactory {
           log.error(protocolError.message, undefined, { operation: operation.operationName });
         });
       } else {
-        log.error('Network error', error, { operation: operation.operationName });
+        const statusCode =
+          error && typeof error === 'object' && 'statusCode' in error
+            ? String((error as { statusCode?: unknown }).statusCode)
+            : undefined;
+        log.error('Network error', error instanceof Error ? error.message : String(error), {
+          operation: operation.operationName,
+          statusCode,
+        });
       }
 
       if (isNetworkError(error) && typeof window !== 'undefined') {

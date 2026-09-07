@@ -1,33 +1,25 @@
 import { HttpLink } from '@apollo/client';
 import { IUrlConfig } from '../config/urlConfig';
+import { formatGraphqlHttpError, isJsonGraphqlContentType } from '@/graphql/links/httpError';
+import { createModuleLogger } from '@/lib/logger';
 
 const isDev = process.env.NODE_ENV === 'development';
+const httpLog = createModuleLogger('HttpLink');
 
-// Logger interface zgodny z Dependency Inversion Principle
 export interface IGraphQLLogger {
   logRequest(uri: RequestInfo | URL | string, options: RequestInit | undefined): void;
   logResponse(response: Response): void;
   logError(error: unknown): void;
 }
 
-// Domyślna implementacja loggera
 export class ConsoleGraphQLLogger implements IGraphQLLogger {
-  logRequest(_uri: RequestInfo | URL | string, _options: RequestInit | undefined): void {
-    // Logowanie wyłączone dla lepszej wydajności
-  }
+  logRequest(_uri: RequestInfo | URL | string, _options: RequestInit | undefined): void {}
 
-  logResponse(_response: Response): void {
-    // Logowanie wyłączone dla lepszej wydajności
-  }
+  logResponse(_response: Response): void {}
 
   logError(error: unknown): void {
     if (isDev) {
-      const err = error as Error;
-      console.error('GraphQL Fetch Error:', {
-        message: err.message,
-        name: err.name,
-        stack: err.stack?.split('\n')[0],
-      });
+      httpLog.error('Fetch failed', error instanceof Error ? error.message : String(error));
     }
   }
 }
@@ -65,35 +57,17 @@ export class HttpLinkFactory {
       // ✅ Sprawdź content-type PRZED przekazaniem do Apollo
       // Zapobiega błędom "JSON Parse error: Unexpected character: <" gdy serwer zwraca HTML
       const contentType = response.headers.get('content-type') || '';
-      const isJsonResponse = contentType.includes('application/json') || contentType.includes('application/graphql');
+      const isJsonResponse = isJsonGraphqlContentType(contentType);
 
       if (!isJsonResponse && response.ok && isDev) {
-        // Serwer zwrócił 200, ale nie JSON - prawdopodobnie strona błędu lub redirect
-        console.warn(`[GraphQL] Unexpected content-type: ${contentType}. Expected application/json.`);
+        httpLog.warn('Unexpected content-type, expected JSON', { contentType });
       }
 
-      if (!response.ok) {
-        // Serwer zwrócił błąd HTTP (4xx, 5xx)
-        const isHtmlError = contentType.includes('text/html');
-
-        if (isHtmlError) {
-          // Serwer zwrócił stronę HTML błędu - nie próbuj parsować jako JSON
-          if (isDev) {
-            console.error(
-              `[GraphQL] Server returned HTML error page instead of JSON`,
-              `\nStatus: ${response.status} ${response.statusText}`
-            );
-          }
-
-          // Rzuć czytelny błąd zamiast pozwolić Apollo na próbę parsowania HTML
-          throw new Error(
-            `GraphQL server error: ${response.status} ${response.statusText}. ` +
-              `Server returned HTML instead of JSON. Check if backend is running.`
-          );
-        }
+      if (!response.ok && !isJsonResponse) {
+        const bodyText = await response.text();
+        throw new Error(formatGraphqlHttpError(response.status, response.statusText, contentType, bodyText));
       }
 
-      // Zwróć response - Apollo HttpLink sam zajmie się parsowaniem
       return response;
     } catch (error) {
       this.logger.logError(error);

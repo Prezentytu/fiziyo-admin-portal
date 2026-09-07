@@ -26,10 +26,10 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
 
   return (
     <OrganizationGuard>
-      <OrganizationProvider>
-        <CurrentUserProvider>
-          <ExerciseBuilderProvider>
-            <ErrorBoundary>
+      <ErrorBoundary>
+        <OrganizationProvider>
+          <CurrentUserProvider>
+            <ExerciseBuilderProvider>
               <div className="flex h-dvh bg-background">
                 <Sidebar isCollapsed={isHydrated ? isCollapsed : false} onToggleCollapse={toggleCollapsed} />
                 <MobileSidebar isOpen={isMobileOpen} onClose={closeMobile} />
@@ -43,10 +43,10 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
                   </main>
                 </div>
               </div>
-            </ErrorBoundary>
-          </ExerciseBuilderProvider>
-        </CurrentUserProvider>
-      </OrganizationProvider>
+            </ExerciseBuilderProvider>
+          </CurrentUserProvider>
+        </OrganizationProvider>
+      </ErrorBoundary>
     </OrganizationGuard>
   );
 }

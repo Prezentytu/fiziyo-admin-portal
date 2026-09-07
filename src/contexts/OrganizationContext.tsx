@@ -10,6 +10,8 @@ import { getBackendToken, saveBackendToken, clearBackendToken } from '@/lib/toke
 import { disposeGraphqlWs } from '@/graphql/cache/wsRegistry';
 import { createModuleLogger } from '@/lib/logger';
 import { getLastOrganizationId, setLastOrganizationId } from '@/contexts/organizationStorage';
+import { toUserFacingGraphqlError } from '@/graphql/links/httpError';
+import { ErrorState } from '@/components/shared/ErrorState';
 import type { UserOrganizationWithRole, UserOrganizationsResponse } from '@/types/apollo';
 
 const log = createModuleLogger('OrganizationContext');
@@ -63,12 +65,12 @@ export function OrganizationProvider({ children }: OrganizationProviderProps) {
     refetch,
   } = useQuery<UserOrganizationsResponse>(GET_USER_ORGANIZATIONS_QUERY, {
     fetchPolicy: 'cache-and-network',
+    errorPolicy: 'all',
   });
 
-  // Log query errors
   useEffect(() => {
     if (queryError) {
-      console.error('[OrganizationContext] Error fetching organizations:', queryError);
+      log.error('Failed to fetch organizations', queryError.message);
     }
   }, [queryError]);
 
@@ -207,6 +209,19 @@ export function OrganizationProvider({ children }: OrganizationProviderProps) {
       hasMultipleOrganizations,
     ]
   );
+
+  if (queryError && organizations.length === 0 && !isLoading) {
+    return (
+      <ErrorState
+        title="Nie udało się połączyć z API"
+        description={toUserFacingGraphqlError(queryError)}
+        onRetry={() => {
+          void refetch();
+        }}
+        testId="org-error-state"
+      />
+    );
+  }
 
   return <OrganizationContext.Provider value={value}>{children}</OrganizationContext.Provider>;
 }

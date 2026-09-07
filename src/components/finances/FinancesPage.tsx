@@ -4,6 +4,9 @@ import { Suspense, useState } from 'react';
 import { useQuery } from '@apollo/client/react';
 import { Wallet, Lock, BarChart3, History, Settings, CircleHelp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { BillingOverview } from './BillingOverview';
+import { BillingDetailsDialog } from '@/components/billing';
+import { ErrorState } from '@/components/shared/ErrorState';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -71,7 +74,7 @@ function EmptyStateTeaser({ onInvite }: { onInvite: () => void }) {
 // Main Page Component
 // ========================================
 
-export function FinancesPage() {
+function LegacyFinancesDetails() {
   const isStripeConnectEnabled = isFeatureEnabled('STRIPE_CONNECT_ROLLOUT');
   const { currentOrganization, isLoading: orgLoading } = useOrganization();
   const organizationId = currentOrganization?.organizationId;
@@ -114,14 +117,14 @@ export function FinancesPage() {
       )}
 
       <TooltipProvider>
-        <div className="mx-auto w-full max-w-screen-2xl space-y-5 md:space-y-6" data-testid="finances-dashboard-page">
+        <div className="mx-auto w-full max-w-screen-2xl space-y-5 md:space-y-6" data-testid="finances-legacy-content">
           {/* Header */}
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 border border-primary/20">
               <Wallet className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <PageHeader title="Finanse" description="Przychody, poziom partnerski i rozliczenia." />
+              <PageHeader title="Przychody i wypłaty" description="Historia oraz szczegóły współpracy partnerskiej." />
             </div>
           </div>
 
@@ -251,6 +254,44 @@ export function FinancesPage() {
 
       {/* Invite Dialog */}
       <PatientInviteDialog open={inviteDialogOpen} onOpenChange={setInviteDialogOpen} organizationId={organizationId} />
+    </AccessGuard>
+  );
+}
+
+
+export function FinancesPage() {
+  const { currentOrganization, isLoading } = useOrganization();
+  const [billingDialogOpen, setBillingDialogOpen] = useState(false);
+  const [showDetails, setShowDetails] = useState(false);
+  const organizationId = currentOrganization?.organizationId;
+  const billingDetailsEnabled = isFeatureEnabled('BILLING_DETAILS_API');
+
+  if (isLoading) return <LoadingState type="text" count={3} />;
+
+  return (
+    <AccessGuard requiredAccess="admin" fallbackUrl="/">
+      <div className="mx-auto w-full max-w-5xl space-y-6" data-testid="finances-dashboard-page">
+        <PageHeader title="Rozliczenia" description="Tryb współpracy, bieżąca należność i zasady rozliczeń z FiziYo." />
+        {!organizationId ? <ErrorState title="Wybierz gabinet" description="Wybierz organizację, aby zobaczyć jej rozliczenia." /> : <>
+          <BillingOverview key={`billing-overview-${organizationId}`} organizationId={organizationId} />
+          <details className="rounded-xl border border-border bg-card p-4" data-testid="finances-billing-details-section">
+            <summary className="cursor-pointer rounded text-sm font-medium text-foreground hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary" data-testid="finances-billing-details-toggle">Dane rozliczeniowe gabinetu</summary>
+            <div className="mt-4 space-y-4">
+              <p className="text-sm text-muted-foreground">Dane firmy do dokumentów rozliczeniowych. Ich uzupełnienie nie zmienia warunków współpracy.</p>
+              {billingDetailsEnabled ? <Button variant="outline" onClick={() => setBillingDialogOpen(true)} data-testid="finances-edit-billing-details">Sprawdź lub uzupełnij dane</Button> :
+                <p className="text-sm text-muted-foreground">Zmianę danych rozliczeniowych zgłoś zespołowi FiziYo.</p>}
+            </div>
+          </details>
+          <details className="rounded-xl border border-border bg-card p-4" data-testid="finances-legacy-section" onToggle={event => setShowDetails(event.currentTarget.open)}>
+            <summary className="cursor-pointer rounded text-sm font-medium text-foreground hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary" data-testid="finances-legacy-toggle">Historia i zaawansowane szczegóły</summary>
+            <div className="mt-6 space-y-4">
+              <p className="text-sm text-muted-foreground">Historia przychodów i wypłat. Dane o dostępie pacjentów i poziomie partnera nie zastępują potwierdzeń zapłaty pacjenta.</p>
+              {showDetails && <LegacyFinancesDetails key={`legacy-finances-${organizationId}`} />}
+            </div>
+          </details>
+          {billingDetailsEnabled && <BillingDetailsDialog key={`billing-dialog-${organizationId}`} open={billingDialogOpen} onOpenChange={setBillingDialogOpen} organizationId={organizationId} />}
+        </>}
+      </div>
     </AccessGuard>
   );
 }

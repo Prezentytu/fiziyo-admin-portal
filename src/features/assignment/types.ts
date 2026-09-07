@@ -355,4 +355,5 @@ export interface AssignmentWizardProps {
   onSuccess?: () => void;
   editMode?: boolean;
   initialAssignment?: AssignmentEditInput;
+  visitExercises?: { exerciseId: string; sets: number; reps?: number; duration?: number }[];
 }

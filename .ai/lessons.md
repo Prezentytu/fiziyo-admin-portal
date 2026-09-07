@@ -14,6 +14,22 @@ Dziennik wniosków z pracy AI agentów. Po każdej korekcie dodaj nowy wpis.
 
 ## Wpisy
 
+### 2026-09-07 - Ten sam `key={organizationId}` na rodzeństwie w fragmencie
+
+- **Kategoria**: `React`
+- **Problem**: React ostrzegał o duplikacie klucza na `/finances`.
+- **Przyczyna**: `BillingOverview` i `BillingDetailsDialog` były rodzeństwem w `<>` z identycznym `key={organizationId}`.
+- **Rozwiązanie**: Prefiksowane klucze (`billing-overview-`, `billing-dialog-`), żeby reset przy zmianie org został, a klucze były unikalne.
+- **Reguła**: `key` do remountu po zmianie org musi być unikalny wśród rodzeństwa — nie sam `organizationId`.
+
+### 2026-09-06 - Overlay 500 przy OrganizationProvider to backend, nie React
+
+- **Kategoria**: `GraphQL`
+- **Problem**: Next.js pokazywał `ServerError` 500 na `DashboardShell` / `OrganizationProvider`.
+- **Przyczyna**: Azure GraphQL (`/graphql`) zwraca 500 `text/plain` z `HotChocolate.SchemaException` (`System.Void` jako type argument). Portal `console.error`ował obiekt `ServerError`, więc overlay wyglądał jak crash UI.
+- **Rozwiązanie**: HttpLink czyta body nie-JSON 5xx i formatuje komunikat schematu; `errorPolicy: 'all'` + `ErrorState` w `OrganizationProvider`; logi tylko jako string.
+- **Reguła**: HTTP 500 GraphQL z `text/plain` to padnięty schemat backendu. Nie loguj obiektu Apollo `ServerError` do `console.error` — Next.js robi z tego overlay.
+
 ### 2026-09-06 - Parser testid i getToken po 401
 
 - **Kategoria**: `Build/Tooling` | `GraphQL`
@@ -935,3 +951,5 @@ Dziennik wniosków z pracy AI agentów. Po każdej korekcie dodaj nowy wpis.
 - **Reguła**: Czas serii pokazuj jako wyliczenie; edytuj `executionTime`. Personalizacja szablonu zestawu ≠ personalizacja pacjenta — osobne warstwy JSON, ten sam kształt kluczy. Addytywne pola GraphQL wdrażaj razem z backendem.
 
 <!-- Dodawaj nowe wpisy powyżej tej linii -->
+
+- 2026-09-06 - Jeśli pokazujesz rozliczenia, zawsze odróżniaj brak danych od zera oraz aktywny dostęp od potwierdzonej sprzedaży; tryb współpracy pobieraj z backendu.

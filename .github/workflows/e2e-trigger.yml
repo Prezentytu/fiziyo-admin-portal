@@ -3,116 +3,43 @@ name: Trigger E2E Tests
 on:
   deployment_status:
 
+permissions:
+  contents: read
+  statuses: write
+
 jobs:
   trigger-e2e:
     if: github.event.deployment_status.state == 'success'
     runs-on: ubuntu-latest
     steps:
-      - name: Determine scope and payload
-        id: scope
-        uses: actions/github-script@v7
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
         with:
-          github-token: ${{ github.token }}
-          script: |
-            const environmentName = context.payload.deployment_status?.environment ?? "";
-            const targetUrl = context.payload.deployment_status?.target_url ?? "";
-            const deploymentRef = context.payload.deployment?.ref ?? "";
-            const deploymentSha = context.payload.deployment?.sha ?? "";
+          node-version: 20.19.4
 
-            let selectedProject = "all";
-            let selectedEventType = "e2e-dev-run";
-            let matchedReason = "fallback-non-preview";
-            let branchesForSha = [];
-
-            const isProductionUrl = /^https:\/\/portal\.fiziyo\.pl(\/.*)?$/.test(targetUrl);
-            const isDedicatedDevUrl =
-              /^https:\/\/devportal\.fiziyo\.pl(\/.*)?$/.test(targetUrl) ||
-              /^https:\/\/dev\.portal\.fiziyo\.pl(\/.*)?$/.test(targetUrl);
-
-            let isDevBranch = deploymentRef === "dev" || deploymentRef === "refs/heads/dev";
-
-            if (deploymentSha) {
-              try {
-                const response = await github.rest.repos.listBranchesForHeadCommit({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  commit_sha: deploymentSha,
-                });
-
-                branchesForSha = response.data.map((branch) => branch.name);
-                isDevBranch = isDevBranch || branchesForSha.includes("dev");
-              } catch (error) {
-                core.warning(`Could not resolve branches for SHA ${deploymentSha}: ${error instanceof Error ? error.message : String(error)}`);
-              }
-            }
-
-            if (environmentName === "Production" || isProductionUrl) {
-              selectedProject = "smoke-tests";
-              selectedEventType = "e2e-prod-run";
-              matchedReason = "production";
-            } else if (isDedicatedDevUrl) {
-              selectedProject = "all";
-              selectedEventType = "e2e-dev-run";
-              matchedReason = "dedicated-dev-domain";
-            } else if (environmentName === "Development") {
-              selectedProject = "all";
-              selectedEventType = "e2e-dev-run";
-              matchedReason = "development-environment";
-            } else if (isDevBranch) {
-              selectedProject = "all";
-              selectedEventType = "e2e-dev-run";
-              matchedReason = "commit-on-dev-branch";
-            } else if (environmentName === "Preview") {
-              selectedProject = "smoke-tests";
-              selectedEventType = "e2e-dev-run";
-              matchedReason = "generic-preview";
-            }
-
-            core.setOutput("project", selectedProject);
-            core.setOutput("event_type", selectedEventType);
-            core.setOutput(
-              "canonical_base_url",
-              selectedEventType === "e2e-prod-run"
-                ? "https://portal.fiziyo.pl"
-                : "https://devportal.fiziyo.pl",
-            );
-
-            core.info(
-              `Resolved E2E scope: env=${environmentName || "<empty>"} url=${targetUrl || "<empty>"} branches=${branchesForSha.length > 0 ? branchesForSha.join(",") : "<none>"} reason=${matchedReason} project=${selectedProject} event=${selectedEventType} baseUrl=${selectedEventType === "e2e-prod-run" ? "https://portal.fiziyo.pl" : "https://devportal.fiziyo.pl"}`,
-            );
-
-      - name: Trigger fiziyo-tests repository
-        uses: actions/github-script@v7
+      - name: Resolve E2E scope
+        id: scope
         env:
+          DEPLOYMENT_JSON: ${{ toJSON(github.event) }}
+        run: node scripts/e2e-dispatch.mjs resolve
+
+      - name: Skip generic preview
+        if: steps.scope.outputs.action == 'skip'
+        run: |
+          echo "Pomijam E2E dla ${{ steps.scope.outputs.reason }}."
+          echo "Preview nie publikuje E2E Preview Smoke i nie bije w shared DEV."
+
+      - name: Dispatch fiziyo-tests
+        if: steps.scope.outputs.action == 'dispatch'
+        env:
+          DEPLOYMENT_JSON: ${{ toJSON(github.event) }}
+          E2E_DISPATCH_PAT: ${{ secrets.E2E_DISPATCH_PAT }}
+          GITHUB_TOKEN: ${{ github.token }}
           TESTS_REPO_OWNER: ${{ vars.E2E_TESTS_REPO_OWNER }}
           TESTS_REPO_NAME: ${{ vars.E2E_TESTS_REPO_NAME }}
-        with:
-          github-token: ${{ secrets.E2E_DISPATCH_PAT }}
-          script: |
-            const targetUrl = context.payload.deployment_status?.target_url;
-            const environmentName = context.payload.deployment_status?.environment;
-            const deploymentSha = context.payload.deployment?.sha;
-            const canonicalBaseUrl = "${{ steps.scope.outputs.canonical_base_url }}";
-            const testsOwner = process.env.TESTS_REPO_OWNER || context.repo.owner;
-            const testsRepo = process.env.TESTS_REPO_NAME || "fiziyo-tests";
-
-            if (!deploymentSha || !environmentName) {
-              core.setFailed("Missing deployment payload fields required for dispatch.");
-              return;
-            }
-
-            await github.rest.repos.createDispatchEvent({
-              owner: testsOwner,
-              repo: testsRepo,
-              event_type: "${{ steps.scope.outputs.event_type }}",
-              client_payload: {
-                base_url: canonicalBaseUrl,
-                deployment_url: targetUrl || "",
-                environment: environmentName,
-                sha: deploymentSha,
-                project: "${{ steps.scope.outputs.project }}",
-                admin_owner: context.repo.owner,
-                admin_repo: context.repo.repo,
-                run_id: String(context.runId),
-              },
-            });
+          EVENT_TYPE: ${{ steps.scope.outputs.event_type }}
+          PROJECT: ${{ steps.scope.outputs.project }}
+          BASE_URL: ${{ steps.scope.outputs.base_url }}
+          STATUS_CONTEXT: ${{ steps.scope.outputs.status_context }}
+        run: node scripts/e2e-dispatch.mjs dispatch

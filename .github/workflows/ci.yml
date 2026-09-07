@@ -37,6 +37,12 @@ jobs:
       - name: Unit tests
         run: npm run test -- --run
 
+      - name: Dispatch routing tests
+        run: npm run test:dispatch
+
+      - name: GraphQL documents
+        run: npm run graphql:validate
+
       - name: UI health
         run: npm run ui:health
 

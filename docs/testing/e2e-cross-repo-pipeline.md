@@ -1,10 +1,8 @@
 # E2E Cross-Repo Pipeline (fiziyo-admin + fiziyo-tests)
 
-Ten runbook opisuje docelowy model dla `dev`, `preview` i `prod`, tak aby:
+Kanoniczny proces: [release-train.md](../../../fizjo-app/docs/release-train.md) (w repo fizjo-app).
 
-- PR byl blokowany przez smoke E2E,
-- release na `prod` przechodzil tylko po zielonym full E2E na `dev`,
-- preview auth dzialal stabilnie bez oslabiania security produkcji.
+Preview **nie** dostaje E2E i **nie** publikuje `E2E Preview Smoke`. Full suite jedzie po deployu na `devportal.fiziyo.pl`. Produkcja: tylko `prod-safe`. Promote jest reczny; czerwony certyfikat DEV wymaga `override_reason`.
 
 ## Architektura
 
@@ -93,12 +91,11 @@ W repo prywatnym bez platnego branch protection traktuj statusy jako manualny ga
 
 ## Dispatch routing
 
-- `Production` -> `event_type=e2e-prod-run`, `project=smoke-tests`
-- `Preview` -> `event_type=e2e-dev-run`, `project=smoke-tests`
-- `devportal.fiziyo.pl` / `dev.portal.fiziyo.pl` / `Development` / `SHA nalezy do brancha dev` -> `event_type=e2e-dev-run`, `project=all`
-- pozostale -> `event_type=e2e-dev-run`, `project=all`
+- `Production` / `portal.fiziyo.pl` -> `e2e-prod-run` / `prod-safe`
+- `devportal.fiziyo.pl` albo environment `Development` -> `e2e-dev-run` / `all`
+- generyczny Preview (`*.vercel.app`) -> **brak dispatch**
 
-W praktyce Vercel dla `deployment_status` czesto przekazuje `target_url` jako techniczny preview URL `*.vercel.app`, a `deployment.ref` jako SHA zamiast nazwy brancha. Dlatego rozpoznanie `dev full` nie moze opierac sie tylko na nazwie environment lub `target_url`; trigger dodatkowo sprawdza, czy deployowany commit nalezy do brancha `dev`.
+401/brak PAT ustawia status `E2E Dispatch=failure` i instrukcje w Summary. Rotacja: [e2e-dispatch-secrets.md](e2e-dispatch-secrets.md).
 
 ## Concurrency strategy (`fiziyo-tests`)
 

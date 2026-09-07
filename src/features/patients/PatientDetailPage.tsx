@@ -1,7 +1,7 @@
 'use client';
 
 import { use, useCallback, useMemo, useState } from 'react';
-import { useQuery } from '@apollo/client/react';
+import { useQuery, useApolloClient } from '@apollo/client/react';
 import { useRouter } from 'next/navigation';
 import {
   ArrowLeft,
@@ -54,6 +54,8 @@ import { usePatientTherapyActions } from '@/features/patients/hooks/usePatientTh
 import type { OrganizationPatientsResponse, UserByIdResponse } from '@/types/apollo';
 
 // Dialogs
+import { VisitPanel } from '@/features/visits/VisitPanel';
+import type { AssignmentWizardProps } from '@/features/assignment/types';
 import { AssignmentWizard } from '@/features/assignment/AssignmentWizard';
 import type { AssignmentEditInput, Patient as AssignmentPatient } from '@/features/assignment/types';
 import { EditExerciseOverrideDialog } from '@/features/patients/EditExerciseOverrideDialog';
@@ -92,6 +94,8 @@ export function PatientDetailPage({ params }: PatientDetailPageProps) {
     mapping: ExerciseMapping;
     override?: ExerciseOverride;
   } | null>(null);
+  const apollo = useApolloClient();
+  const [visitExercises, setVisitExercises] = useState<AssignmentWizardProps['visitExercises']>();
   const [extendingAssignment, setExtendingAssignment] = useState<PatientAssignment | null>(null);
 
   // Get organization ID from context (changes when user switches organization)
@@ -460,10 +464,14 @@ export function PatientDetailPage({ params }: PatientDetailPageProps) {
         </DropdownMenu>
       </div>
 
+      {organizationId && therapistId && <VisitPanel key={`${organizationId}:${id}`} patientId={id} organizationId={organizationId} onSaved={() => { void apollo.refetchQueries({ include: ['GetPatientClinicalNotes'] }).catch(() => undefined); }} onPlan={exercises => {
+        setVisitExercises(exercises.flatMap(e => e.exerciseId && e.sets ? [{ exerciseId: e.exerciseId, sets: e.sets, reps: e.reps ?? undefined, duration: e.duration ?? undefined }] : []));
+        setIsAssignDialogOpen(true);
+      }} />}
       {/* Hero Actions + Quick Stats */}
       <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-12">
         <button
-          onClick={() => setIsAssignDialogOpen(true)}
+          onClick={() => { setVisitExercises(undefined); setIsAssignDialogOpen(true); }}
           disabled={!organizationId || !therapistId}
           className="group relative overflow-hidden rounded-2xl bg-linear-to-br from-primary via-primary to-primary-dark p-5 text-left transition-all duration-300 hover:shadow-xl hover:shadow-primary/20 hover:scale-[1.02] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 sm:col-span-1 lg:col-span-4"
           data-testid="patient-detail-assign-btn"
@@ -586,6 +594,7 @@ export function PatientDetailPage({ params }: PatientDetailPageProps) {
       {/* Assignment Wizard */}
       {organizationId && therapistId && patient && (
         <AssignmentWizard
+          visitExercises={visitExercises}
           open={isAssignDialogOpen}
           onOpenChange={setIsAssignDialogOpen}
           mode="from-patient"

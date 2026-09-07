@@ -6,9 +6,9 @@ Kontekst cross-repo dla agentów AI. Czytaj ten plik gdy zadanie wymaga zrozumie
 
 | Repo                   | Ścieżka lokalna                   | Stack                                   | Hosting                             |
 | ---------------------- | --------------------------------- | --------------------------------------- | ----------------------------------- |
-| **fiziyo-admin**       | `d:\Prezentytu\fiziyo-admin`      | Next.js 16, React 19, Apollo Client 4   | Vercel                              |
-| **fizjo-app** (mobile) | `d:\Prezentytu\fizjo-app`         | React Native, Expo 54, Apollo Client 4  | EAS Build → App Store / Google Play |
-| **backend**            | `d:\Prezentytu\fizjo-app\backend` | .NET 9, HotChocolate GraphQL, EF Core 9 | Azure App Service (Docker)          |
+| **fiziyo-admin-portal** | `fiziyo-admin-portal` | Next.js 16, React 19, Apollo Client 4 | Vercel (`devportal` = DEV, Promote = PROD) |
+| **fizjo-app** (mobile + API) | `fizjo-app` | React Native, Expo 54, .NET 9 | Azure DEV/PROD + EAS |
+| **fiziyo-tests** | `fiziyo-tests` | Playwright | GitHub Actions (DEV full / prod-safe) |
 
 Backend żyje **wewnątrz repo fizjo-app** (folder `backend/`). To jedno repozytorium z dwoma projektami.
 

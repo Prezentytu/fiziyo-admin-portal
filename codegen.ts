@@ -1,9 +1,13 @@
 import type { CodegenConfig } from '@graphql-codegen/cli';
+import fs from 'node:fs';
 
-const schemaUrl = `${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:5050'}/graphql`;
+const localSchema = 'graphql/schema.graphql';
+const schema = fs.existsSync(localSchema)
+  ? localSchema
+  : `${process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:5050'}/graphql`;
 
 const config: CodegenConfig = {
-  schema: schemaUrl,
+  schema,
   documents: ['src/graphql/**/*.{ts,tsx}', 'src/features/**/*.{ts,tsx}'],
   ignoreNoDocuments: true,
   generates: {

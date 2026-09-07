@@ -15,10 +15,12 @@
     "format": "prettier --write \"src/**/*.{ts,tsx,json,md}\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx,json,md}\"",
     "test": "vitest",
-    "test:run": "vitest run",
+    "test:run": "vitest run && npm run test:dispatch",
+    "test:dispatch": "node --test scripts/e2e-dispatch.test.mjs",
     "test:coverage": "vitest run --coverage",
     "ui:health": "bash scripts/ui-health-check.sh",
     "codegen": "graphql-codegen --config codegen.ts",
+    "graphql:validate": "node scripts/validate-graphql-documents.mjs",
     "analyze": "ANALYZE=true next build",
     "validate": "npm run lint && npm run check:testids && npm run type-check && npm run test:run && npm run build",
     "prepare": "husky"

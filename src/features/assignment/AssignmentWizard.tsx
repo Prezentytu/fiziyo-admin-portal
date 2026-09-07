@@ -220,6 +220,7 @@ function AssignmentWizardContent({
   preselectedPatient,
   editMode = false,
   initialAssignment,
+  visitExercises,
   organizationId,
   therapistId: _therapistId,
   onSuccess,
@@ -230,7 +231,7 @@ function AssignmentWizardContent({
   const isEditMode = editMode && !!initialAssignment;
 
   // State for customize-set mode - true when creating new set, false when customizing existing
-  const [isCreatingNewSet, setIsCreatingNewSet] = useState(false);
+  const [isCreatingNewSet, setIsCreatingNewSet] = useState(Boolean(visitExercises?.length));
 
   // Compute dynamic steps based on what's preselected and if creating new set
   const steps = useMemo(
@@ -242,7 +243,7 @@ function AssignmentWizardContent({
   const firstStepId = steps[0]?.id || 'select-set';
 
   // State - initialized directly from props (no useEffect needed)
-  const [currentStep, setCurrentStep] = useState<WizardStep>(firstStepId);
+  const [currentStep, setCurrentStep] = useState<WizardStep>(visitExercises?.length ? 'customize-set' : firstStepId);
   const [completedSteps, setCompletedSteps] = useState<Set<WizardStep>>(new Set());
   const [selectedSet, setSelectedSet] = useState<ExerciseSet | null>(preselectedSet || null);
   const [selectedPatients, setSelectedPatients] = useState<Patient[]>(preselectedPatient ? [preselectedPatient] : []);
@@ -256,7 +257,7 @@ function AssignmentWizardContent({
   // Ghost Copy state - lokalna tablica ćwiczeń (nie dotyka bazy)
   const [localExercises, setLocalExercises] = useState<LocalExerciseMapping[]>([]);
   // Nazwa planu dla pacjenta (Assignment name)
-  const [planName, setPlanName] = useState<string>('');
+  const [planName, setPlanName] = useState<string>(visitExercises?.length ? 'Plan z wizyty' : '');
   // Opcjonalny zapis kopii do biblioteki organizacji
   const [saveAsOrganizationSet, setSaveAsOrganizationSet] = useState(false);
   const [organizationSetName, setOrganizationSetName] = useState<string>('');
@@ -264,8 +265,8 @@ function AssignmentWizardContent({
   const [excludedExercises] = useState<Set<string>>(new Set());
 
   // State for CustomizeSetStep builder
-  const [builderInstances, setBuilderInstances] = useState<ExerciseInstance[]>([]);
-  const [builderParams, setBuilderParams] = useState<Map<string, ExerciseParams>>(new Map());
+  const [builderInstances, setBuilderInstances] = useState<ExerciseInstance[]>(() => (visitExercises ?? []).map((e, i) => ({ instanceId: `visit-${i}`, exerciseId: e.exerciseId })));
+  const [builderParams, setBuilderParams] = useState<Map<string, ExerciseParams>>(() => new Map((visitExercises ?? []).map((e, i) => [`visit-${i}`, { sets: e.sets, reps: e.reps, duration: e.duration }])));
   const [isExerciseDialogOpen, setIsExerciseDialogOpen] = useState(false);
   const [isPatientDialogOpen, setIsPatientDialogOpen] = useState(false);
 
