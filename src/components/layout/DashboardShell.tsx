@@ -33,10 +33,11 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
               <div className="flex h-dvh bg-background">
                 <Sidebar isCollapsed={isHydrated ? isCollapsed : false} onToggleCollapse={toggleCollapsed} />
                 <MobileSidebar isOpen={isMobileOpen} onClose={closeMobile} />
-                <div className="flex flex-1 flex-col overflow-hidden min-h-0">
+                <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
                   <Header onMobileMenuToggle={toggleMobile} />
                   <main
-                    className="flex-1 overflow-y-auto min-h-0 p-4 lg:p-6 2xl:p-8"
+                    data-testid="nav-main-content"
+                    className="min-h-0 min-w-0 flex-1 overflow-y-auto p-4 lg:p-6 2xl:p-8"
                     style={{ scrollbarGutter: 'stable' }}
                   >
                     {children}

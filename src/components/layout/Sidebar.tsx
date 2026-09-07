@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { PanelLeftClose, PanelLeft, Sparkles } from 'lucide-react';
+import { PanelLeftClose, PanelLeft } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
 import { OrganizationSwitcher } from './OrganizationSwitcher';
 import { UserProfileFooter } from './UserProfileFooter';
@@ -84,14 +84,14 @@ export function Sidebar({ isCollapsed, onToggleCollapse }: SidebarProps) {
       <aside
         data-testid="nav-sidebar"
         className={cn(
-          'hidden xl:flex h-full flex-col border-r border-border/60 bg-surface transition-all duration-300 ease-in-out',
+          'hidden xl:flex h-full shrink-0 flex-col border-r border-border bg-surface transition-[width] duration-150',
           isCollapsed ? 'w-[72px]' : 'w-64'
         )}
       >
         {/* Header with logo and toggle - h-16 = ta sama wysokość co Header, wyrównanie „FiziYo” z „Zgłoś uwagę” */}
         <div
           className={cn(
-            'flex h-16 shrink-0 items-center transition-all duration-300',
+            'flex h-16 shrink-0 items-center border-b border-border',
             isCollapsed ? 'justify-center px-3' : 'justify-start px-4 xl:px-6'
           )}
         >
@@ -102,7 +102,7 @@ export function Sidebar({ isCollapsed, onToggleCollapse }: SidebarProps) {
               type="button"
               onClick={onToggleCollapse}
               data-testid="nav-collapse-btn"
-              className="ml-auto flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-surface-light hover:text-foreground transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
+              className="ml-auto flex size-8 shrink-0 items-center justify-center rounded-sm text-muted-foreground hover:bg-surface-light hover:text-foreground transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
               aria-label="Zwiń menu"
             >
               <PanelLeftClose className="h-4 w-4" />
@@ -117,7 +117,7 @@ export function Sidebar({ isCollapsed, onToggleCollapse }: SidebarProps) {
               type="button"
               onClick={onToggleCollapse}
               data-testid="nav-expand-btn"
-              className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground hover:bg-surface-light hover:text-foreground transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
+              className="flex size-8 shrink-0 items-center justify-center rounded-sm text-muted-foreground hover:bg-surface-light hover:text-foreground transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
               aria-label="Rozwiń menu"
             >
               <PanelLeft className="h-4 w-4" />
@@ -137,13 +137,14 @@ export function Sidebar({ isCollapsed, onToggleCollapse }: SidebarProps) {
           )}
           <nav
             ref={navigationRef}
-            className="h-full overflow-y-auto pt-5 pb-3 xl:pt-[clamp(1rem,1.5dvh,1.75rem)] xl:pb-[clamp(0.5rem,1dvh,1.5rem)]"
+            aria-label="Menu główne"
+            className="h-full overflow-y-auto py-4"
           >
             {filteredNavigationGroups.map((group, groupIndex) => (
-              <div key={group.label} className={cn(groupIndex > 0 && 'mt-4 xl:mt-[clamp(1rem,1.5dvh,2rem)]')}>
+              <div key={group.label} className={cn(groupIndex > 0 && 'mt-6')}>
                 {/* Group label */}
                 {!isCollapsed && (
-                  <p className="px-4 xl:px-6 mb-2 xl:mb-[clamp(0.375rem,0.5dvh,0.75rem)] text-[11px] font-semibold text-muted-foreground/70 uppercase tracking-widest">
+                  <p className="mb-2 px-6 text-xs font-medium tracking-normal text-muted-foreground">
                     {group.label}
                   </p>
                 )}
@@ -151,7 +152,7 @@ export function Sidebar({ isCollapsed, onToggleCollapse }: SidebarProps) {
 
                 {/* Navigation items */}
                 <div
-                  className={cn('space-y-1 xl:space-y-2', isCollapsed ? 'flex flex-col items-center' : 'px-3 xl:px-4')}
+                  className={cn('space-y-1', isCollapsed ? 'flex flex-col items-center' : 'px-3')}
                 >
                   {group.items.map((item) => {
                     const active = isNavigationHrefActive(pathname, item.href, filteredNavigationHrefs);
@@ -161,39 +162,33 @@ export function Sidebar({ isCollapsed, onToggleCollapse }: SidebarProps) {
                       <Link
                         href={item.href}
                         data-testid={item.testId}
+                        aria-current={active ? 'page' : undefined}
+                        aria-label={isCollapsed ? item.name : undefined}
                         className={cn(
                           NAV_ITEM_BASE,
                           isCollapsed
-                            ? 'h-10 w-10 xl:h-12 xl:w-12 justify-center'
-                            : 'gap-3 xl:gap-4 px-3 py-2.5 xl:px-4 xl:py-[clamp(0.5rem,0.8dvh,0.875rem)]',
+                            ? 'size-10 justify-center'
+                            : 'gap-3 px-3 py-2',
                           active ? NAV_ITEM_ACTIVE : NAV_ITEM_INACTIVE
                         )}
                       >
-                        <div className="relative">
+                        <div className="shrink-0">
                           <Icon
+                            aria-hidden="true"
                             className={cn(
-                              'h-5 w-5 shrink-0 transition-transform duration-200',
+                              'size-5 shrink-0',
                               active
                                 ? 'nav-icon'
-                                : 'text-muted-foreground group-hover:text-foreground group-hover:scale-105'
+                                : 'text-muted-foreground group-hover:text-foreground'
                             )}
                           />
-                          {/* AI Accent - small sparkle indicator */}
-                          {item.hasAiAccent && !active && (
-                            <Sparkles className="absolute -top-1 -right-1 h-3 w-3 text-primary" />
-                          )}
                         </div>
 
                         {!isCollapsed && (
                           <>
-                            <span className="flex-1 truncate">{item.name}</span>
+                            <span className="min-w-0 flex-1 wrap-anywhere">{item.name}</span>
 
                             <NavCountBadge count={item.badge ?? 0} />
-
-                            {/* AI accent indicator in expanded mode */}
-                            {item.hasAiAccent && !active && (
-                              <Sparkles className="h-3.5 w-3.5 text-primary opacity-60" />
-                            )}
                           </>
                         )}
                       </Link>
@@ -207,7 +202,6 @@ export function Sidebar({ isCollapsed, onToggleCollapse }: SidebarProps) {
                           <TooltipContent side="right" className="font-medium">
                             <div className="flex items-center gap-2">
                               {item.name}
-                              {item.hasAiAccent && <Sparkles className="h-3 w-3 text-primary" />}
                             </div>
                           </TooltipContent>
                         </Tooltip>

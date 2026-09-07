@@ -25,9 +25,12 @@ export function PageHeader({
   return (
     <div
       data-testid="page-header"
-      className={cn('flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between', className)}
+      className={cn(
+        'flex min-w-0 flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-start sm:justify-between',
+        className
+      )}
     >
-      <div className="space-y-2 min-w-0">
+      <div className="min-w-0 space-y-2 sm:flex-1 sm:basis-48">
         {backHref ? (
           <Button data-testid="page-header-back" variant="ghost" size="sm" className="gap-2 -ml-2" asChild>
             <Link href={backHref}>
@@ -36,12 +39,15 @@ export function PageHeader({
             </Link>
           </Button>
         ) : null}
-        <h1 data-testid={titleTestId} className="text-2xl font-semibold tracking-tight text-foreground">
+        <h1
+          data-testid={titleTestId}
+          className="text-2xl font-semibold leading-tight tracking-normal text-foreground [overflow-wrap:anywhere]"
+        >
           {title}
         </h1>
-        {description ? <p className="text-sm text-muted-foreground">{description}</p> : null}
+        {description ? <p className="text-sm text-muted-foreground [overflow-wrap:anywhere]">{description}</p> : null}
       </div>
-      {actions ? <div className="flex shrink-0 items-center gap-2">{actions}</div> : null}
+      {actions ? <div className="flex min-w-0 max-w-full flex-wrap items-center gap-2">{actions}</div> : null}
     </div>
   );
 }

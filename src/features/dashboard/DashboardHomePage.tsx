@@ -5,14 +5,12 @@ import { useQuery } from '@apollo/client/react';
 import { useUser } from '@clerk/nextjs';
 import Link from 'next/link';
 import {
-  ArrowRight,
   FolderKanban,
   FolderPlus,
   Users,
   ChevronRight,
   Send,
   UserPlus,
-  Sparkles,
   Wrench,
   AlertCircle,
   CheckCircle2,
@@ -20,11 +18,13 @@ import {
   Plus,
 } from 'lucide-react';
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { PageHeader } from '@/components/shared/page/PageHeader';
+import { PageHero } from '@/components/shared/page/PageHero';
 import { SetThumbnail } from '@/features/exercise-sets/SetThumbnail';
 import { CreateSetWizard } from '@/features/exercise-sets/CreateSetWizard';
 import { AssignmentWizard } from '@/features/assignment/AssignmentWizard';
@@ -181,20 +181,20 @@ function ActivityIndicator({ status }: { readonly status: ActivityStatus }) {
   switch (status) {
     case 'active':
       return (
-        <div className="absolute -bottom-0.5 -right-0.5 h-4 w-4 rounded-full bg-success flex items-center justify-center ring-2 ring-surface">
-          <CheckCircle2 className="h-2.5 w-2.5 text-white" />
+        <div className="absolute -bottom-0.5 -right-0.5 h-4 w-4 rounded-full bg-success-muted flex items-center justify-center ring-2 ring-background">
+          <CheckCircle2 className="h-2.5 w-2.5 text-success" />
         </div>
       );
     case 'warning':
       return (
-        <div className="absolute -bottom-0.5 -right-0.5 h-4 w-4 rounded-full bg-warning flex items-center justify-center ring-2 ring-surface">
-          <AlertCircle className="h-2.5 w-2.5 text-white" />
+        <div className="absolute -bottom-0.5 -right-0.5 h-4 w-4 rounded-full bg-warning-muted flex items-center justify-center ring-2 ring-background">
+          <AlertCircle className="h-2.5 w-2.5 text-warning" />
         </div>
       );
     case 'inactive':
       return (
-        <div className="absolute -bottom-0.5 -right-0.5 h-4 w-4 rounded-full bg-muted-foreground/60 flex items-center justify-center ring-2 ring-surface">
-          <Clock className="h-2.5 w-2.5 text-white" />
+        <div className="absolute -bottom-0.5 -right-0.5 h-4 w-4 rounded-full bg-muted flex items-center justify-center ring-2 ring-background">
+          <Clock className="h-2.5 w-2.5 text-muted-foreground" />
         </div>
       );
   }
@@ -360,20 +360,13 @@ export function DashboardHomePage() {
   };
 
   return (
-    <div className="mx-auto w-full max-w-screen-2xl space-y-5 md:space-y-6 xl:space-y-8">
-      {/* Header Section - Greeting with date */}
-      <div className="flex flex-wrap items-end justify-between gap-3 md:gap-4">
-        <div className="min-w-0">
-          <h1
-            data-testid="dashboard-greeting"
-            className="text-lg sm:text-xl lg:text-2xl font-semibold text-foreground tracking-tight"
-          >
-            {greeting}, {userName}!
-          </h1>
-          <p className="mt-1 md:mt-2 text-sm text-muted-foreground">{dashboardSubtitle}</p>
-        </div>
-        <p className="text-sm text-muted-foreground hidden sm:block">{todayDate}</p>
-      </div>
+    <div className="mx-auto w-full min-w-0 max-w-screen-2xl space-y-6 text-foreground">
+      <PageHeader
+        title={`${greeting}, ${userName}!`}
+        titleTestId="dashboard-greeting"
+        description={dashboardSubtitle}
+        actions={<p className="text-sm text-muted-foreground">{todayDate}</p>}
+      />
 
       {/* Getting Started Card - Onboarding for new users */}
       <GettingStartedCard
@@ -382,138 +375,103 @@ export function DashboardHomePage() {
         assignmentsCount={therapistAssignmentsCount}
       />
 
-      {/* Quick Actions - spójna hierarchia: Primary + Secondary + Tertiary */}
-      <div className="grid gap-3 md:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-        {/* Action 1 - Personalizuj i przypisz (zielona - główna akcja) */}
-        <button
-          type="button"
+      <div className="flex min-w-0 flex-wrap items-center gap-2">
+        <PageHero
+          variant="toolbar"
+          title="Personalizuj i przypisz"
+          description="Personalizuj i przypisz zestaw ćwiczeń pacjentowi"
+          icon={<Send />}
           onClick={() => setIsAssignWizardOpen(true)}
           disabled={!organizationId || !therapistId}
-          aria-label="Personalizuj i przypisz zestaw ćwiczeń pacjentowi"
-          data-testid="dashboard-hero-assign-set-btn"
-          className="group relative overflow-hidden rounded-xl md:rounded-2xl bg-linear-to-br from-primary via-primary to-primary-dark p-4 md:p-5 text-left transition-all duration-150 hover:shadow-xl hover:shadow-primary/20 hover:scale-[1.02] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
-        >
-          <div className="absolute inset-0 bg-linear-to-br from-white/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-150" />
-          <div className="absolute -top-24 -right-24 w-48 h-48 bg-primary-foreground/10 rounded-full blur-3xl opacity-30 group-hover:opacity-50 transition-opacity duration-200" />
-
-          <div className="relative flex items-center gap-3 md:gap-4">
-            <div className="flex h-9 w-9 md:h-11 md:w-11 items-center justify-center rounded-lg md:rounded-xl bg-primary-foreground/20 backdrop-blur-sm shrink-0 group-hover:scale-110 transition-transform duration-150">
-              <Send className="h-4 w-4 md:h-5 md:w-5 text-primary-foreground" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <h3 className="text-sm md:text-base font-bold text-primary-foreground mb-0.5 md:mb-1">
-                Personalizuj i przypisz
-              </h3>
-              <p className="text-xs text-primary-foreground/80">Dla obecnych pacjentów</p>
-            </div>
-            <ArrowRight className="h-4 w-4 md:h-5 md:w-5 text-primary-foreground/60 group-hover:text-primary-foreground group-hover:translate-x-1 transition-all duration-150 shrink-0" />
-          </div>
-        </button>
-
-        {/* Action 2 - Nowy pacjent (niebieska) */}
-        <button
+          testId="dashboard-hero-assign-set-btn"
+          className="h-auto min-h-11 max-w-full whitespace-normal"
+        />
+        <Button
+          data-testid="dashboard-add-patient-btn"
           type="button"
+          variant="outline"
           onClick={() => setIsPatientDialogOpen(true)}
           disabled={!organizationId || !therapistId}
           aria-label="Dodaj nowego pacjenta do bazy"
-          data-testid="dashboard-add-patient-btn"
-          className="group relative overflow-hidden rounded-xl md:rounded-2xl border border-border/20 bg-surface-elevated p-4 md:p-5 text-left transition-all duration-150 hover:border-info/30 hover:bg-surface hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+          className="h-auto min-h-11 max-w-full whitespace-normal"
         >
-          <div className="relative flex items-center gap-3 md:gap-4">
-            <div className="flex h-9 w-9 md:h-11 md:w-11 items-center justify-center rounded-lg md:rounded-xl bg-info/10 shrink-0 group-hover:bg-info/20 group-hover:scale-110 transition-all duration-150">
-              <UserPlus className="h-4 w-4 md:h-5 md:w-5 text-info" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <h3 className="text-sm md:text-base font-semibold text-foreground group-hover:text-info transition-colors duration-150 mb-0.5 md:mb-1">
-                Nowy pacjent
-              </h3>
-              <p className="text-xs text-muted-foreground">Dodaj do bazy</p>
-            </div>
-            <ArrowRight className="h-4 w-4 md:h-5 md:w-5 text-muted-foreground/40 group-hover:text-info group-hover:translate-x-1 transition-all duration-150 shrink-0" />
-          </div>
-        </button>
-
-        {/* Action 3 - Utwórz zestaw (ciemna/szara - rzadsza akcja) */}
-        <button
+          <UserPlus className="h-4 w-4" aria-hidden="true" />
+          <span className="min-w-0 wrap-anywhere">Nowy pacjent</span>
+        </Button>
+        <Button
+          data-testid="dashboard-create-set-btn"
           type="button"
+          variant="outline"
           onClick={() => setIsCreateSetWizardOpen(true)}
           disabled={!organizationId}
           aria-label="Utwórz nowy zestaw ćwiczeń"
-          data-testid="dashboard-create-set-btn"
-          className="group relative overflow-hidden rounded-xl md:rounded-2xl border border-border/20 bg-surface-light p-4 md:p-5 text-left transition-all duration-150 hover:border-primary/30 hover:bg-surface hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+          className="h-auto min-h-11 max-w-full whitespace-normal"
         >
-          <div className="relative flex items-center gap-3 md:gap-4">
-            <div className="flex h-9 w-9 md:h-11 md:w-11 items-center justify-center rounded-lg md:rounded-xl bg-primary/10 shrink-0 group-hover:bg-primary/20 group-hover:scale-110 transition-all duration-150">
-              <FolderPlus className="h-4 w-4 md:h-5 md:w-5 text-primary" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <h3 className="text-sm md:text-base font-semibold text-foreground group-hover:text-primary transition-colors mb-0.5 md:mb-1">
-                Utwórz zestaw
-              </h3>
-              <p className="text-xs text-muted-foreground">Nowy zestaw</p>
-            </div>
-            <ArrowRight className="h-4 w-4 md:h-5 md:w-5 text-muted-foreground/40 group-hover:text-primary group-hover:translate-x-1 transition-all duration-150 shrink-0" />
-          </div>
-        </button>
+          <FolderPlus className="h-4 w-4" aria-hidden="true" />
+          <span className="min-w-0 wrap-anywhere">Utwórz zestaw</span>
+        </Button>
       </div>
 
       {/* Main Content - 8:4 Grid Layout */}
-      <div className="grid gap-4 md:gap-5 lg:grid-cols-12 lg:max-h-[clamp(22rem,50dvh,37.5rem)]">
+      <div className="grid items-start gap-8 lg:grid-cols-12">
         {/* Left Column (8 cols): Activity + Billing */}
-        <div className="lg:col-span-8 flex h-full flex-col gap-4 md:gap-5">
-          <Card
+        <div className="min-w-0 lg:col-span-8 flex flex-col gap-6">
+          <section
             data-testid="dashboard-activity-section"
-            className="bg-surface border-border shadow-md overflow-hidden rounded-xl md:rounded-2xl flex flex-1 min-h-0 flex-col"
+            aria-labelledby="dashboard-activity-title"
+            className="min-w-0"
           >
-            <CardHeader className="p-4 md:px-6 md:pt-6 md:pb-4">
-              <div className="flex items-center justify-between">
-                <CardTitle className="flex items-center gap-2 md:gap-3 text-sm md:text-base font-semibold">
-                  <div className="flex h-8 w-8 md:h-9 md:w-9 items-center justify-center rounded-lg md:rounded-xl bg-info/10">
-                    <Users className="h-4 w-4 md:h-4.5 md:w-4.5 text-info" />
-                  </div>
+            <header className="mb-2 border-b border-border pb-2">
+              <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
+                <h2
+                  id="dashboard-activity-title"
+                  className="flex flex-wrap items-center gap-2 text-sm font-semibold"
+                >
+                  <Users className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
                   <span>Pacjenci do sprawdzenia</span>
                   {patientsNeedingAttention.length > 0 && (
                     <Badge
                       variant="secondary"
-                      className="ml-1 bg-surface-light text-muted-foreground border-border font-medium"
+                      className="bg-muted text-foreground border-transparent font-medium tabular-nums"
                     >
                       {patientsNeedingAttention.length}
                     </Badge>
                   )}
-                </CardTitle>
-                <Link href="/patients" data-testid="dashboard-patients-view-all" className="group">
-                  <Button
-                    data-testid="page-button-487"
-                    variant="ghost"
-                    size="sm"
-                    className="h-8 text-xs gap-1 text-muted-foreground hover:text-foreground"
-                  >
-                    Wszyscy ({patientsCount})
-                    <ChevronRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
-                  </Button>
-                </Link>
+                </h2>
+                <Button
+                  data-testid="dashboard-patients-view-all"
+                  variant="ghost"
+                  size="sm"
+                  asChild
+                  className="min-h-11 max-w-full text-xs gap-1 text-muted-foreground hover:text-foreground"
+                >
+                  <Link href="/patients">
+                    <span data-testid="page-button-487">Wszyscy ({patientsCount})</span>
+                    <ChevronRight className="h-3.5 w-3.5" aria-hidden="true" />
+                  </Link>
+                </Button>
               </div>
-            </CardHeader>
-            <CardContent className="pt-0 flex-1 min-h-0 overflow-y-auto">
+            </header>
+            <div>
               {patientsLoading ? (
                 <div className="space-y-2">
                   {[1, 2, 3, 4, 5].map((i) => (
                     <div
                       key={i}
-                      className="flex items-center gap-3 p-3 rounded-xl"
+                      className="flex items-center gap-3 py-3"
                       style={{ animationDelay: `${i * 50}ms` }}
                     >
                       <Skeleton className="h-10 w-10 rounded-full shrink-0" />
-                      <div className="flex-1 space-y-1.5">
-                        <Skeleton className="h-4 w-32 rounded-lg" />
-                        <Skeleton className="h-3 w-48 rounded-lg" />
+                      <div className="min-w-0 flex-1 space-y-1.5">
+                        <Skeleton className="h-4 w-32 max-w-full rounded-sm" />
+                        <Skeleton className="h-3 w-48 max-w-full rounded-sm" />
                       </div>
                       <Skeleton className="h-4 w-4 rounded shrink-0" />
                     </div>
                   ))}
                 </div>
               ) : patients.length > 0 ? (
-                <div className="space-y-2 animate-stagger">
+                <div className="divide-y divide-border/60">
                   {displayedPatients.map((assignment: PatientWithActivity) => {
                     const isShadow = assignment.patient?.isShadowUser;
                     return (
@@ -521,139 +479,99 @@ export function DashboardHomePage() {
                         key={assignment.id}
                         href={`/patients/${assignment.patient?.id}`}
                         data-testid={`dashboard-patient-item-${assignment.patient?.id}`}
-                        className={`group flex items-center gap-3 p-3 rounded-xl transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface ${
-                          assignment.activityStatus === 'warning'
-                            ? 'bg-warning-muted hover:bg-warning-muted/80'
-                            : assignment.activityStatus === 'inactive'
-                              ? 'hover:bg-surface-light'
-                              : 'hover:bg-success-muted'
-                        }`}
+                        className="group flex min-h-16 items-center gap-3 rounded-sm px-2 py-3 transition-colors duration-150 hover:bg-muted/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
                       >
                         <div className="relative shrink-0">
-                          <Avatar
-                            className={`h-10 w-10 ring-2 transition-all duration-150 ${
-                              assignment.activityStatus === 'warning'
-                                ? 'ring-warning/30 group-hover:ring-warning/50'
-                                : assignment.activityStatus === 'active'
-                                  ? 'ring-success/30 group-hover:ring-success/50'
-                                  : 'ring-border/20 group-hover:ring-primary/30'
-                            }`}
-                          >
-                            <AvatarImage src={assignment.patient?.image} />
-                            <AvatarFallback
-                              className={`text-sm font-medium ${
-                                isShadow
-                                  ? 'bg-muted-foreground/60 text-white'
-                                  : 'bg-linear-to-br from-info to-blue-600 text-white'
-                              }`}
-                            >
+                          <Avatar className="h-10 w-10">
+                            <AvatarImage
+                              src={assignment.patient?.image}
+                              alt={assignment.patient?.fullname || 'Nieznany'}
+                            />
+                            <AvatarFallback className="bg-muted text-muted-foreground text-sm font-medium">
                               {assignment.patient?.fullname?.[0] || '?'}
                             </AvatarFallback>
                           </Avatar>
                           {isShadow ? (
-                            <div className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-muted-foreground/80 flex items-center justify-center ring-2 ring-surface">
-                              <Wrench className="h-2.5 w-2.5 text-white" />
+                            <div className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-muted flex items-center justify-center ring-2 ring-background">
+                              <Wrench className="h-2.5 w-2.5 text-muted-foreground" />
                             </div>
                           ) : (
                             <ActivityIndicator status={assignment.activityStatus} />
                           )}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p
-                            className={`font-medium text-sm truncate transition-colors duration-150 ${
-                              assignment.activityStatus === 'warning'
-                                ? 'text-foreground group-hover:text-warning'
-                                : assignment.activityStatus === 'active'
-                                  ? 'text-foreground group-hover:text-success'
-                                  : 'text-foreground group-hover:text-primary'
-                            }`}
-                          >
+                          <p className="font-medium text-sm text-foreground wrap-anywhere">
                             {assignment.patient?.fullname || 'Nieznany'}
                           </p>
-                          <p
-                            className={`text-xs truncate ${
-                              assignment.activityStatus === 'warning'
-                                ? 'text-warning/90'
-                                : assignment.activityStatus === 'active'
-                                  ? 'text-success/90'
-                                  : 'text-muted-foreground'
-                            }`}
-                          >
+                          <p className="text-xs text-muted-foreground wrap-anywhere">
                             {assignment.lastActivityText}
                           </p>
                         </div>
-                        <ChevronRight
-                          className={`h-4 w-4 transition-all duration-150 group-hover:translate-x-0.5 ${
-                            assignment.activityStatus === 'warning'
-                              ? 'text-warning/30 group-hover:text-warning'
-                              : assignment.activityStatus === 'active'
-                                ? 'text-success/30 group-hover:text-success'
-                                : 'text-muted-foreground/30 group-hover:text-primary'
-                          }`}
-                        />
+                        <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
                       </Link>
                     );
                   })}
                 </div>
               ) : (
-                <div className="flex flex-col items-center justify-center py-8 text-center">
-                  <div className="h-14 w-14 rounded-2xl bg-surface-light flex items-center justify-center mb-3">
-                    <UserPlus className="h-7 w-7 text-muted-foreground/50" />
+                <div className="flex items-start gap-3 py-6">
+                  <UserPlus className="mt-1 h-5 w-5 shrink-0 text-muted-foreground" aria-hidden="true" />
+                  <div className="min-w-0 space-y-2 wrap-anywhere">
+                    <p className="text-sm font-medium">Brak przypisanych pacjentów</p>
+                    <p className="text-xs text-muted-foreground">
+                      Dodaj pacjenta lub przejmij opiekę na liście pacjentów
+                    </p>
+                    <Button
+                      data-testid="common-dashboard-home-page-btn-606"
+                      size="sm"
+                      variant="outline"
+                      className="h-auto min-h-11 max-w-full whitespace-normal text-xs"
+                      onClick={() => setIsPatientDialogOpen(true)}
+                      disabled={!organizationId || !therapistId}
+                    >
+                      Dodaj pacjenta
+                    </Button>
                   </div>
-                  <p className="text-sm font-medium text-muted-foreground mb-1">Brak przypisanych pacjentów</p>
-                  <p className="text-xs text-muted-foreground/70 mb-4">
-                    Dodaj pacjenta lub przejmij opiekę na liście pacjentów
-                  </p>
-                  <Button
-                    data-testid="common-dashboard-home-page-btn-606"
-                    size="sm"
-                    className="h-8 text-xs"
-                    onClick={() => setIsPatientDialogOpen(true)}
-                    disabled={!organizationId || !therapistId}
-                  >
-                    Dodaj pacjenta
-                  </Button>
                 </div>
               )}
-            </CardContent>
-          </Card>
+            </div>
+          </section>
 
           {canViewBilling && organizationId && <BillingStatusBar organizationId={organizationId} />}
         </div>
 
         {/* Quick Sets - Right Column (4 cols) */}
-        <Card
+        <section
           data-testid="dashboard-sets-section"
-          className="bg-surface border-border shadow-md overflow-hidden lg:col-span-4 rounded-xl md:rounded-2xl flex h-full flex-col"
+          aria-labelledby="dashboard-sets-title"
+          className="min-w-0 lg:col-span-4"
         >
-          <CardHeader className="p-4 md:px-6 md:pt-6 md:pb-4">
-            <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-2 md:gap-3 text-sm md:text-base font-semibold">
-                <div className="flex h-8 w-8 md:h-9 md:w-9 items-center justify-center rounded-lg md:rounded-xl bg-info/10">
-                  <FolderKanban className="h-4 w-4 md:h-4.5 md:w-4.5 text-info" />
-                </div>
+          <header className="mb-2 border-b border-border pb-2">
+            <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
+              <h2 id="dashboard-sets-title" className="flex items-center gap-2 text-sm font-semibold">
+                <FolderKanban className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
                 <span>Szybki wybór</span>
-              </CardTitle>
-              <Link href="/exercise-sets" data-testid="dashboard-sets-view-all" className="group">
-                <Button
-                  data-testid="page-button-636"
-                  variant="ghost"
-                  size="sm"
-                  className="h-8 text-xs gap-1 text-muted-foreground hover:text-foreground"
-                >
-                  Wszystkie
-                  <ChevronRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
-                </Button>
-              </Link>
+              </h2>
+              <Button
+                data-testid="dashboard-sets-view-all"
+                variant="ghost"
+                size="sm"
+                asChild
+                className="min-h-11 max-w-full text-xs gap-1 text-muted-foreground hover:text-foreground"
+              >
+                <Link href="/exercise-sets">
+                  <span data-testid="page-button-636">Wszystkie</span>
+                  <ChevronRight className="h-3.5 w-3.5" aria-hidden="true" />
+                </Link>
+              </Button>
             </div>
-          </CardHeader>
-          <CardContent className="pt-0 flex-1 min-h-0 overflow-y-auto">
+          </header>
+          <div>
             {setsLoading ? (
               <div className="space-y-2">
                 {[1, 2, 3, 4].map((i) => (
                   <div
                     key={i}
-                    className="flex items-center gap-3 p-3 rounded-xl"
+                    className="flex items-center gap-3 py-3"
                     style={{ animationDelay: `${(i + 4) * 50}ms` }}
                   >
                     <div className="h-10 w-10 rounded-lg overflow-hidden grid grid-cols-2 gap-0.5 shrink-0">
@@ -662,70 +580,76 @@ export function DashboardHomePage() {
                       <Skeleton className="rounded-none" />
                       <Skeleton className="rounded-none" />
                     </div>
-                    <div className="flex-1 space-y-1.5">
-                      <Skeleton className="h-4 w-24 rounded-lg" />
-                      <Skeleton className="h-3 w-16 rounded-lg" />
+                    <div className="min-w-0 flex-1 space-y-1.5">
+                      <Skeleton className="h-4 w-24 max-w-full rounded-sm" />
+                      <Skeleton className="h-3 w-16 max-w-full rounded-sm" />
                     </div>
                     <Skeleton className="h-8 w-8 rounded-lg shrink-0" />
                   </div>
                 ))}
               </div>
             ) : quickSelectionSets.length > 0 ? (
-              <div className="space-y-2 animate-stagger">
-                {quickSelectionSets.slice(0, 5).map((set: ExerciseSetItem) => (
-                  <div
-                    key={set.id}
-                    className="group flex items-center gap-3 p-3 rounded-xl transition-all duration-150 hover:bg-surface-light"
-                  >
-                    <Link
-                      href={`/exercise-sets/${set.id}`}
-                      data-testid={`dashboard-set-item-${set.id}`}
-                      className="flex items-center gap-3 flex-1 min-w-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface rounded-lg"
+              <TooltipProvider>
+                <div className="divide-y divide-border/60">
+                  {quickSelectionSets.slice(0, 5).map((set: ExerciseSetItem) => (
+                    <div
+                      key={set.id}
+                      className="flex min-h-16 items-center gap-2 rounded-sm px-2 py-2 transition-colors duration-150 hover:bg-muted/60"
                     >
-                      <SetThumbnail exerciseMappings={set.exerciseMappings} size="sm" />
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium text-sm text-foreground group-hover:text-secondary transition-colors truncate">
-                          {set.name}
-                        </p>
-                        <p className="text-xs text-muted-foreground">{set.exerciseMappings?.length || 0} ćw.</p>
-                      </div>
-                    </Link>
-                    {/* Quick Assign Button */}
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-8 w-8 p-0 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-primary/10 hover:text-primary"
-                      onClick={(e) => handleQuickAssign(set, e)}
-                      disabled={!organizationId || !therapistId}
-                      aria-label={`Personalizuj i przypisz ${set.name}`}
-                      data-testid={`dashboard-quick-assign-${set.id}`}
-                    >
-                      <Plus className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center py-8 text-center">
-                <div className="h-14 w-14 rounded-2xl bg-surface-light flex items-center justify-center mb-3">
-                  <Sparkles className="h-7 w-7 text-muted-foreground/50" />
+                      <Link
+                        href={`/exercise-sets/${set.id}`}
+                        data-testid={`dashboard-set-item-${set.id}`}
+                        className="flex min-h-11 items-center gap-3 flex-1 min-w-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-sm"
+                      >
+                        <SetThumbnail exerciseMappings={set.exerciseMappings} size="sm" />
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-sm text-foreground wrap-anywhere">{set.name}</p>
+                          <p className="text-xs text-muted-foreground">{set.exerciseMappings?.length || 0} ćw.</p>
+                        </div>
+                      </Link>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            data-testid={`dashboard-quick-assign-${set.id}`}
+                            variant="ghost"
+                            size="icon"
+                            className="h-11 w-11 shrink-0 text-muted-foreground hover:text-foreground"
+                            onClick={(event) => handleQuickAssign(set, event)}
+                            disabled={!organizationId || !therapistId}
+                            aria-label={`Personalizuj i przypisz ${set.name}`}
+                          >
+                            <Plus className="h-4 w-4" aria-hidden="true" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent className="max-w-64 wrap-anywhere">
+                          Personalizuj i przypisz {set.name}
+                        </TooltipContent>
+                      </Tooltip>
+                    </div>
+                  ))}
                 </div>
-                <p className="text-sm font-medium text-muted-foreground mb-1">Brak zestawów do szybkiego wyboru</p>
-                <p className="text-xs text-muted-foreground/70 mb-4">Utwórz niespersonalizowany zestaw</p>
-                <Button
-                  data-testid="page-button-712"
-                  size="sm"
-                  variant="secondary"
-                  className="h-8 text-xs"
-                  onClick={() => setIsCreateSetWizardOpen(true)}
-                  disabled={!organizationId}
-                >
-                  Utwórz zestaw
-                </Button>
+              </TooltipProvider>
+            ) : (
+              <div className="flex items-start gap-3 py-6">
+                <FolderPlus className="mt-1 h-5 w-5 shrink-0 text-muted-foreground" aria-hidden="true" />
+                <div className="min-w-0 space-y-2 wrap-anywhere">
+                  <p className="text-sm font-medium">Brak zestawów do szybkiego wyboru</p>
+                  <p className="text-xs text-muted-foreground">Utwórz niespersonalizowany zestaw</p>
+                  <Button
+                    data-testid="page-button-712"
+                    size="sm"
+                    variant="outline"
+                    className="h-auto min-h-11 max-w-full whitespace-normal text-xs"
+                    onClick={() => setIsCreateSetWizardOpen(true)}
+                    disabled={!organizationId}
+                  >
+                    Utwórz zestaw
+                  </Button>
+                </div>
               </div>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </section>
       </div>
 
       {/* Assignment Wizard */}

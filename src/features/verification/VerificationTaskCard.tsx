@@ -268,8 +268,8 @@ export function VerificationTaskCard({
                       className={cn(
                         'text-[10px] px-2 py-0.5 backdrop-blur-sm',
                         indicator.type === 'warning'
-                          ? 'border-amber-600 bg-amber-500/80 text-white'
-                          : 'border-info bg-info/80 text-white'
+                          ? 'border-warning bg-warning text-warning-foreground'
+                          : 'border-info bg-info text-info-foreground'
                       )}
                     >
                       <AlertCircle className="h-3 w-3 mr-1" />

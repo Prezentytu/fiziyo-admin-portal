@@ -425,14 +425,14 @@ export function PatientAssignmentCard({
         >
           {/* Header - always visible */}
           <CollapsibleTrigger asChild>
-            <div className="flex items-center gap-4 p-4 cursor-pointer hover:bg-surface-light/50 transition-colors">
+            <div className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-3 p-4 cursor-pointer hover:bg-surface-light/50 transition-colors sm:grid-cols-[auto_auto_minmax(0,1fr)_auto]">
               {/* Expand icon */}
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-surface-light text-muted-foreground">
+              <div className="hidden h-10 w-6 items-center justify-center text-muted-foreground sm:flex sm:h-12">
                 {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
               </div>
 
               {/* Set thumbnail */}
-              <div className="relative h-12 w-12 rounded-lg overflow-hidden shrink-0 bg-surface-light">
+              <div className="relative h-10 w-10 rounded-sm overflow-hidden shrink-0 bg-surface-light sm:h-12 sm:w-12">
                 {getMediaUrl(exercises[0]?.exercise?.imageUrl || exercises[0]?.exercise?.images?.[0]) ? (
                   <Image
                     src={getMediaUrl(exercises[0]?.exercise?.imageUrl || exercises[0]?.exercise?.images?.[0]) || ''}
@@ -449,7 +449,9 @@ export function PatientAssignmentCard({
               {/* Info */}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <p className="font-semibold truncate">{exerciseSet?.name || 'Nieznany zestaw'}</p>
+                  <p className="min-w-0 font-semibold leading-snug text-foreground wrap-anywhere">
+                    {exerciseSet?.name || 'Nieznany zestaw'}
+                  </p>
                   <Badge
                     variant={assignmentDisplayStatus.primary.variant}
                     className="text-[10px] shrink-0"
@@ -491,22 +493,10 @@ export function PatientAssignmentCard({
                     {visibleExercises.length} ćwiczeń
                   </span>
                 </div>
-                {assignment.startDate && assignment.endDate && assignment.frequency && (
-                  <ScheduleSummary
-                    startDate={assignment.startDate}
-                    endDate={assignment.endDate}
-                    frequency={assignment.frequency}
-                    variant="compact"
-                    showSessions={false}
-                    showStartInDays={false}
-                    testIdPrefix={`patient-assignment-${assignment.id}`}
-                    className="mt-1"
-                  />
-                )}
               </div>
 
               {/* Actions */}
-              <div className="flex items-center gap-1">
+              <div className="flex flex-col items-end gap-1 sm:flex-row sm:items-center">
                 {assignmentDisplayStatus.primary.kind === 'expired' && onExtend && (
                   <Button
                     size="sm"
@@ -525,7 +515,8 @@ export function PatientAssignmentCard({
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button
-                      aria-label="Akcja"
+                      aria-label="Opcje planu"
+                      title="Opcje planu"
                       variant="ghost"
                       size="icon"
                       className="h-8 w-8"
@@ -588,6 +579,18 @@ export function PatientAssignmentCard({
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
+              {assignment.startDate && assignment.endDate && assignment.frequency && (
+                <ScheduleSummary
+                  startDate={assignment.startDate}
+                  endDate={assignment.endDate}
+                  frequency={assignment.frequency}
+                  variant="compact"
+                  showSessions={false}
+                  showStartInDays={false}
+                  testIdPrefix={`patient-assignment-${assignment.id}`}
+                  className="col-span-full sm:col-span-2 sm:col-start-3"
+                />
+              )}
             </div>
           </CollapsibleTrigger>
 

@@ -6,7 +6,6 @@ import { Users, UserPlus } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { ErrorState } from '@/components/shared/ErrorState';
@@ -293,8 +292,22 @@ export function PatientsPage() {
 
   return (
     <PageShell>
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <PageHeader title="Pacjenci" titleTestId="patient-page-title" />
+      <PageHeader
+        title="Pacjenci"
+        titleTestId="patient-page-title"
+        actions={
+          <PageHero
+            variant="toolbar"
+            title="Dodaj pacjenta"
+            icon={<UserPlus />}
+            onClick={() => setIsDialogOpen(true)}
+            disabled={!organizationId}
+            testId="patient-create-btn"
+          />
+        }
+      />
+
+      <div className="flex min-w-0 flex-wrap items-center justify-between gap-4 border-b border-border pb-4">
         <SearchInput
           value={searchQuery}
           onChange={setSearchQuery}
@@ -303,19 +316,8 @@ export function PatientsPage() {
           testId="patient-search-input"
           className="w-full sm:w-72"
         />
-      </div>
-
-      <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-12">
-        <PageHero
-          title="Dodaj pacjenta"
-          description="Nowy pacjent w systemie"
-          icon={<UserPlus className="h-5 w-5 text-primary-foreground" />}
-          onClick={() => setIsDialogOpen(true)}
-          disabled={!organizationId}
-          testId="patient-create-btn"
-        />
         <StatTiles
-          className="sm:col-span-1 lg:col-span-8 lg:grid-cols-4"
+          variant="filters"
           tiles={[
             {
               id: 'my',
@@ -376,21 +378,19 @@ export function PatientsPage() {
       {loading ? (
         <ListSkeleton variant="rows" count={5} />
       ) : filteredPatients.length === 0 ? (
-        <Card className="border-dashed border-border/60">
-          <CardContent className="py-16">
-            <EmptyState
-              icon={Users}
-              title={searchQuery ? 'Nie znaleziono pacjentów' : getEmptyStateTitle(patientFilter)}
-              description={
-                searchQuery ? 'Spróbuj zmienić kryteria wyszukiwania' : getEmptyStateDescription(patientFilter)
-              }
-              actionLabel={!searchQuery && patientFilter === 'my' ? 'Dodaj pacjenta' : undefined}
-              onAction={!searchQuery && patientFilter === 'my' ? () => setIsDialogOpen(true) : undefined}
-            />
-          </CardContent>
-        </Card>
+        <div className="py-6">
+          <EmptyState
+            icon={Users}
+            title={searchQuery ? 'Nie znaleziono pacjentów' : getEmptyStateTitle(patientFilter)}
+            description={
+              searchQuery ? 'Spróbuj zmienić kryteria wyszukiwania' : getEmptyStateDescription(patientFilter)
+            }
+            actionLabel={!searchQuery && patientFilter === 'my' ? 'Dodaj pacjenta' : undefined}
+            onAction={!searchQuery && patientFilter === 'my' ? () => setIsDialogOpen(true) : undefined}
+          />
+        </div>
       ) : (
-        <div className="space-y-2 animate-stagger">
+        <div className="space-y-2">
           {filteredPatients.map((patient) => (
             <PatientExpandableCard
               key={patient.id}

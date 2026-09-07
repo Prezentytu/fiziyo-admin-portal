@@ -1,116 +1,74 @@
-import { FolderKanban } from 'lucide-react';
-
-import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+import { PageShell } from '@/components/shared/page/PageShell';
 
 export function PatientDetailSkeleton() {
   return (
-    <div className="space-y-6" aria-busy="true" aria-label="Ładowanie szczegółów pacjenta">
-      <div className="flex items-center justify-between">
-        <Skeleton className="h-8 w-24 rounded-lg" />
-        <Skeleton className="h-8 w-8 rounded-md" />
-      </div>
-
-      <div className="flex items-center gap-4">
-        <Skeleton className="h-14 w-14 rounded-full shrink-0" />
-        <div className="min-w-0 flex-1 space-y-2">
-          <Skeleton className="h-7 w-56 max-w-[80%] rounded-lg" />
-          <Skeleton className="h-4 w-72 max-w-[90%] rounded-lg" />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-12">
-        <Card className="relative overflow-hidden border-border/50 bg-gradient-to-br from-primary/20 via-primary/10 to-primary/5 sm:col-span-4">
-          <CardContent className="p-5">
-            <div className="flex items-center gap-4">
-              <Skeleton className="h-11 w-11 rounded-xl bg-white/25" />
-              <div className="min-w-0 flex-1 space-y-2">
-                <Skeleton className="h-5 w-32 bg-white/25" />
-                <Skeleton className="h-4 w-28 bg-white/20" />
-              </div>
-              <Skeleton className="h-5 w-5 rounded bg-white/25" />
+    <PageShell>
+      <div className="space-y-6" aria-busy="true" aria-label="Ładowanie szczegółów pacjenta">
+        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-4 sm:grid-cols-[auto_minmax(0,1fr)_auto] xl:grid-cols-[auto_minmax(0,1fr)_auto_auto]">
+          <Skeleton className="h-11 w-11 rounded-sm" />
+          <div className="col-span-2 row-start-2 flex min-w-0 items-start gap-3 sm:col-span-1 sm:col-start-2 sm:row-start-1">
+            <Skeleton className="h-11 w-11 rounded-full shrink-0" />
+            <div className="min-w-0 flex-1 space-y-2">
+              <Skeleton className="h-7 w-56 max-w-full rounded-sm" />
+              <Skeleton className="h-10 w-72 max-w-full rounded-sm" />
             </div>
-          </CardContent>
-        </Card>
-
-        <Card className="relative overflow-hidden border-border/50 bg-gradient-to-br from-info/25 via-info/10 to-info/5 sm:col-span-4">
-          <CardContent className="p-5">
-            <div className="flex items-center gap-4">
-              <Skeleton className="h-11 w-11 rounded-xl bg-white/25" />
-              <div className="min-w-0 flex-1 space-y-2">
-                <Skeleton className="h-5 w-20 bg-white/25" />
-                <Skeleton className="h-4 w-36 bg-white/20" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <div className="grid grid-cols-2 gap-3 sm:col-span-4">
-          <Card className="border-border/40 bg-surface/50">
-            <CardContent className="space-y-2 p-4 text-center">
-              <Skeleton className="mx-auto h-7 w-16 rounded-lg" />
-              <Skeleton className="mx-auto h-3 w-20 rounded-lg" />
-            </CardContent>
-          </Card>
-          <Card className="border-border/40 bg-surface/50">
-            <CardContent className="space-y-2 p-4 text-center">
-              <Skeleton className="mx-auto h-7 w-16 rounded-lg" />
-              <Skeleton className="mx-auto h-3 w-24 rounded-lg" />
-            </CardContent>
-          </Card>
+          </div>
+          <Skeleton className="col-start-2 row-start-1 h-11 w-11 rounded-sm sm:col-start-3 xl:col-start-4" />
+          <div className="col-span-2 flex min-w-0 flex-wrap items-center gap-2 sm:col-span-3 xl:col-span-1 xl:col-start-3 xl:row-start-1">
+            <Skeleton className="h-11 w-40 rounded-sm" />
+            <Skeleton className="h-11 w-28 rounded-sm" />
+          </div>
         </div>
-      </div>
-
-      <div className="space-y-3">
-        <div className="flex items-center gap-2">
-          <FolderKanban className="h-4 w-4 text-muted-foreground" />
-          <Skeleton className="h-5 w-36 rounded-lg" />
-          <Badge variant="secondary" className="px-2 py-0">
-            <Skeleton className="h-4 w-5 rounded-full" />
-          </Badge>
-        </div>
-
-        <div className="space-y-3">
-          {Array.from({ length: 2 }).map((_, index) => (
-            <Card key={index} className="border-border/50 bg-surface/60">
-              <CardContent className="p-4">
-                <div className="flex items-center gap-4">
-                  <Skeleton className="h-10 w-10 rounded-xl shrink-0" />
-                  <div className="min-w-0 flex-1 space-y-2">
-                    <Skeleton className="h-5 w-48 max-w-[85%] rounded-lg" />
-                    <div className="flex flex-wrap items-center gap-3">
-                      <Skeleton className="h-4 w-20 rounded-lg" />
-                      <Skeleton className="h-4 w-14 rounded-lg" />
-                      <Skeleton className="h-4 w-16 rounded-lg" />
-                    </div>
-                  </div>
-                  <Skeleton className="h-8 w-8 rounded-md shrink-0" />
-                </div>
-              </CardContent>
-            </Card>
+        <div className="flex flex-wrap gap-4 border-b border-border pb-2">
+          {['overview', 'visit', 'activity'].map((tab) => (
+            <Skeleton key={tab} className="h-11 w-24 rounded-sm" />
           ))}
         </div>
-      </div>
-
-      <Card className="border-border/40 bg-surface/30">
-        <CardContent className="space-y-3 p-6">
-          <Skeleton className="h-5 w-40 rounded-lg" />
-          <Skeleton className="h-20 w-full rounded-xl" />
-        </CardContent>
-      </Card>
-
-      <div className="border-t border-border/40 pt-4">
-        <Card className="border-border/40 bg-surface/50">
-          <CardContent className="flex items-center justify-between p-4">
-            <div className="flex items-center gap-3">
-              <Skeleton className="h-9 w-9 rounded-xl" />
-              <Skeleton className="h-4 w-36 rounded-lg" />
+        <div className="flex min-w-0 flex-wrap gap-x-6 gap-y-2">
+          {['active-sets', 'completions'].map((stat) => (
+            <div key={stat} className="flex min-w-0 items-center gap-2 py-1">
+              <Skeleton className="h-6 w-6 rounded-sm" />
+              <Skeleton className="h-5 w-28 rounded-sm" />
             </div>
-            <Skeleton className="h-4 w-4 rounded" />
-          </CardContent>
-        </Card>
+          ))}
+        </div>
+
+        <div className="grid min-w-0 gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(18rem,1fr)]">
+          <div className="min-w-0 space-y-4">
+            <div className="flex min-h-11 items-center">
+              <Skeleton className="h-6 w-48 max-w-full rounded-sm" />
+            </div>
+            <div className="space-y-3">
+              {['first-plan', 'second-plan'].map((plan) => (
+                <Card key={plan} className="border-border bg-card">
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-4">
+                      <Skeleton className="h-10 w-10 rounded-sm shrink-0" />
+                      <div className="min-w-0 flex-1 space-y-2">
+                        <Skeleton className="h-5 w-48 max-w-full rounded-sm" />
+                        <div className="flex flex-wrap items-center gap-3">
+                          <Skeleton className="h-4 w-20 rounded-sm" />
+                          <Skeleton className="h-4 w-14 rounded-sm" />
+                        </div>
+                      </div>
+                      <Skeleton className="h-8 w-8 rounded-sm shrink-0" />
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+          <div className="min-w-0 space-y-4">
+            <div className="flex min-h-11 flex-wrap items-center justify-between gap-2">
+              <Skeleton className="h-6 w-24 max-w-full rounded-sm" />
+              <Skeleton className="h-11 w-28 max-w-full rounded-sm" />
+            </div>
+            <Skeleton className="h-32 w-full rounded-sm" />
+          </div>
+        </div>
       </div>
-    </div>
+    </PageShell>
   );
 }

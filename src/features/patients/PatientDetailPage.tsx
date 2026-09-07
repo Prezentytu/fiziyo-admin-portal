@@ -9,20 +9,19 @@ import {
   Phone,
   FolderKanban,
   Activity,
-  Plus,
   Settings,
   MoreHorizontal,
   UserX,
   Wrench,
-  CheckCircle2,
   Send,
   QrCode,
+  Mic,
 } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   DropdownMenu,
@@ -34,6 +33,9 @@ import {
 import { LoadingState } from '@/components/shared/LoadingState';
 import { EmptyState } from '@/components/shared/EmptyState';
 import { ErrorState } from '@/components/shared/ErrorState';
+import { PageHero } from '@/components/shared/page/PageHero';
+import { PageShell } from '@/components/shared/page/PageShell';
+import { StatTiles } from '@/components/shared/page/StatTiles';
 import { ActivityReport } from '@/features/patients/ActivityReport';
 import { PatientAssignmentCard } from '@/features/patients/PatientAssignmentCard';
 import { PatientDetailSkeleton } from '@/features/patients/PatientDetailSkeleton';
@@ -82,6 +84,8 @@ export function PatientDetailPage({ params }: PatientDetailPageProps) {
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
   const [isQRCodeDialogOpen, setIsQRCodeDialogOpen] = useState(false);
   const [isEditPatientOpen, setIsEditPatientOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState('overview');
+  const [isVisitListening, setIsVisitListening] = useState(false);
   const [editingPlanAssignment, setEditingPlanAssignment] = useState<PatientAssignment | null>(null);
   const [editingExerciseData, setEditingExerciseData] = useState<{
     assignment: PatientAssignment;
@@ -240,11 +244,13 @@ export function PatientDetailPage({ params }: PatientDetailPageProps) {
 
   if (userError || !patient) {
     return (
-      <ErrorState
-        title={userError ? 'Nie udało się wczytać pacjenta' : 'Nie znaleziono pacjenta'}
-        description={userError?.message}
-        onRetry={userError ? () => void refetchPatient() : () => router.push('/patients')}
-      />
+      <PageShell>
+        <ErrorState
+          title={userError ? 'Nie udało się wczytać pacjenta' : 'Nie znaleziono pacjenta'}
+          description={userError?.message}
+          onRetry={userError ? () => void refetchPatient() : () => router.push('/patients')}
+        />
+      </PageShell>
     );
   }
 
@@ -301,7 +307,7 @@ export function PatientDetailPage({ params }: PatientDetailPageProps) {
   const assignmentsSectionContent = (() => {
     if (assignmentsLoading) {
       return (
-        <div className="space-y-3 animate-stagger">
+        <div className="space-y-3">
           <LoadingState type="row" count={3} />
         </div>
       );
@@ -309,22 +315,18 @@ export function PatientDetailPage({ params }: PatientDetailPageProps) {
 
     if (setAssignments.length === 0) {
       return (
-        <Card className="border-dashed border-border/60">
-          <CardContent className="py-12">
-            <EmptyState
-              icon={FolderKanban}
-              title="Brak przypisanych zestawów"
-              description="Personalizuj i przypisz zestaw ćwiczeń, aby pacjent mógł rozpocząć rehabilitację"
-              actionLabel="Personalizuj i przypisz"
-              onAction={() => setIsAssignDialogOpen(true)}
-            />
-          </CardContent>
-        </Card>
+        <EmptyState
+          icon={FolderKanban}
+          title="Brak planów ćwiczeń"
+          description="Pacjent nie ma jeszcze przypisanego planu."
+          actionLabel="Przypisz plan"
+          onAction={() => setIsAssignDialogOpen(true)}
+        />
       );
     }
 
     return (
-      <div className="space-y-3 animate-stagger">
+      <div className="space-y-3">
         {setAssignments.map((assignment) => (
           <PatientAssignmentCard
             key={assignment.id}
@@ -346,101 +348,102 @@ export function PatientDetailPage({ params }: PatientDetailPageProps) {
   })();
 
   return (
-    <div className="space-y-6">
-      {/* Patient Header — back, info & menu in one row */}
-      <div className="flex items-center gap-4">
+    <PageShell>
+      <header className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-4 sm:grid-cols-[auto_minmax(0,1fr)_auto] xl:grid-cols-[auto_minmax(0,1fr)_auto_auto]">
         <Button
-          aria-label="Akcja"
+          aria-label="Wróć do pacjentów"
+          title="Wróć do pacjentów"
           variant="ghost"
           size="icon"
           onClick={() => router.push('/patients')}
-          className="h-9 w-9 shrink-0 text-muted-foreground hover:text-foreground"
+          className="h-11 w-11 shrink-0 text-muted-foreground hover:text-foreground"
           data-testid="patient-detail-back-btn"
         >
           <ArrowLeft className="h-4 w-4" />
         </Button>
 
-        <div className="relative shrink-0">
-          <Avatar
-            className={cn(
-              'h-11 w-11 ring-2 transition-all',
-              patient.isShadowUser ? 'ring-muted-foreground/20' : 'ring-primary/20'
-            )}
-          >
-            <AvatarImage src={patient.image} alt={displayName} />
-            <AvatarFallback
-              className={cn(
-                'text-sm font-semibold',
-                patient.isShadowUser
-                  ? 'bg-muted-foreground/60 text-white'
-                  : 'bg-linear-to-br from-primary to-primary-dark text-primary-foreground'
-              )}
+        <div className="col-span-2 row-start-2 flex min-w-0 items-start gap-3 sm:col-span-1 sm:col-start-2 sm:row-start-1">
+          <div className="relative shrink-0">
+            <Avatar
+              className={cn('h-11 w-11 ring-2', patient.isShadowUser ? 'ring-muted-foreground/20' : 'ring-primary/20')}
             >
-              {initials}
-            </AvatarFallback>
-          </Avatar>
-          {patient.isShadowUser && (
-            <div className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-muted-foreground/80 flex items-center justify-center ring-2 ring-background">
-              <Wrench className="h-2.5 w-2.5 text-white" />
-            </div>
-          )}
-        </div>
-
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-            <h1 className="text-lg font-bold text-foreground truncate" data-testid="patient-detail-name">
-              {displayName}
-            </h1>
+              <AvatarImage src={patient.image} alt={displayName} />
+              <AvatarFallback
+                className={cn(
+                  'text-sm font-semibold',
+                  patient.isShadowUser ? 'bg-muted text-muted-foreground' : 'bg-primary-muted text-primary'
+                )}
+              >
+                {initials}
+              </AvatarFallback>
+            </Avatar>
             {patient.isShadowUser && (
-              <Badge variant="secondary" className="text-[10px] shrink-0">
-                Tymczasowe
-              </Badge>
-            )}
-            {organizationId && (
-              <PremiumStatusBadge
-                premiumActiveUntil={patientPremiumValidUntil}
-                patientId={patient.id}
-                onActivate={() => initiateActivation(patient.id, displayName, patientPremiumValidUntil)}
-                onGenerateQR={() => setIsQRCodeDialogOpen(true)}
-                isShadowUser={patient.isShadowUser}
-                isActivating={isActivating && activationTarget?.patientId === patient.id}
-                showActivateButton={true}
-                size="sm"
-                className="ml-1"
-              />
+              <div className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-muted flex items-center justify-center ring-2 ring-background">
+                <Wrench className="h-2.5 w-2.5 text-muted-foreground" />
+              </div>
             )}
           </div>
-          <div className="flex items-center gap-3 text-sm text-muted-foreground">
-            {patient.email && (
-              <a
-                data-testid="patient-patient-detail-page-btn-415"
-                href={`mailto:${patient.email}`}
-                className="flex items-center gap-1 hover:text-foreground transition-colors"
+
+          <div className="flex-1 min-w-0">
+            <div className="flex min-w-0 flex-wrap items-center gap-2">
+              <h1
+                className="min-w-0 text-xl font-semibold leading-snug text-foreground wrap-anywhere"
+                data-testid="patient-detail-name"
               >
-                <Mail className="h-3.5 w-3.5 shrink-0" />
-                {patient.email}
-              </a>
-            )}
-            {patient.contactData?.phone && (
-              <a
-                data-testid="patient-patient-detail-page-btn-424"
-                href={`tel:${patient.contactData.phone}`}
-                className="flex items-center gap-1 hover:text-foreground transition-colors"
-              >
-                <Phone className="h-3.5 w-3.5 shrink-0" />
-                {patient.contactData.phone}
-              </a>
-            )}
+                {displayName}
+              </h1>
+              {patient.isShadowUser && (
+                <Badge variant="secondary" className="text-[10px] shrink-0">
+                  Tymczasowe
+                </Badge>
+              )}
+              {organizationId && (
+                <PremiumStatusBadge
+                  premiumActiveUntil={patientPremiumValidUntil}
+                  patientId={patient.id}
+                  onActivate={() => initiateActivation(patient.id, displayName, patientPremiumValidUntil)}
+                  onGenerateQR={() => setIsQRCodeDialogOpen(true)}
+                  isShadowUser={patient.isShadowUser}
+                  isActivating={isActivating && activationTarget?.patientId === patient.id}
+                  showActivateButton={true}
+                  size="sm"
+                  className="max-w-full flex-wrap"
+                />
+              )}
+            </div>
+            <div className="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
+              {patient.email && (
+                <a
+                  data-testid="patient-patient-detail-page-btn-415"
+                  href={`mailto:${patient.email}`}
+                  className="flex min-h-10 min-w-0 max-w-full items-center gap-2 rounded-sm hover:text-foreground transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  <Mail className="h-3.5 w-3.5 shrink-0" />
+                  <span className="min-w-0 wrap-anywhere">{patient.email}</span>
+                </a>
+              )}
+              {patient.contactData?.phone && (
+                <a
+                  data-testid="patient-patient-detail-page-btn-424"
+                  href={`tel:${patient.contactData.phone}`}
+                  className="flex min-h-10 min-w-0 max-w-full items-center gap-2 rounded-sm hover:text-foreground transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  <Phone className="h-3.5 w-3.5 shrink-0" />
+                  <span className="min-w-0 wrap-anywhere">{patient.contactData.phone}</span>
+                </a>
+              )}
+            </div>
           </div>
         </div>
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
-              aria-label="Akcja"
+              aria-label="Opcje pacjenta"
+              title="Opcje pacjenta"
               variant="ghost"
               size="icon"
-              className="h-8 w-8 shrink-0"
+              className="col-start-2 row-start-1 h-11 w-11 shrink-0 sm:col-start-3 xl:col-start-4"
               data-testid="patient-detail-menu-trigger"
             >
               <MoreHorizontal className="h-4 w-4" />
@@ -456,127 +459,121 @@ export function PatientDetailPage({ params }: PatientDetailPageProps) {
               Ustawienia pacjenta
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="text-destructive focus:text-destructive">
+            <DropdownMenuItem
+              data-testid="patient-detail-remove-menu-item"
+              className="text-destructive focus:text-destructive"
+            >
               <UserX className="mr-2 h-4 w-4" />
               Usuń z mojej listy
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
-      </div>
 
-      {organizationId && therapistId && <VisitPanel key={`${organizationId}:${id}`} patientId={id} organizationId={organizationId} onSaved={() => { void apollo.refetchQueries({ include: ['GetPatientClinicalNotes'] }).catch(() => undefined); }} onPlan={exercises => {
-        setVisitExercises(exercises.flatMap(e => e.exerciseId && e.sets ? [{ exerciseId: e.exerciseId, sets: e.sets, reps: e.reps ?? undefined, duration: e.duration ?? undefined }] : []));
-        setIsAssignDialogOpen(true);
-      }} />}
-      {/* Hero Actions + Quick Stats */}
-      <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-12">
-        <button
-          onClick={() => { setVisitExercises(undefined); setIsAssignDialogOpen(true); }}
-          disabled={!organizationId || !therapistId}
-          className="group relative overflow-hidden rounded-2xl bg-linear-to-br from-primary via-primary to-primary-dark p-5 text-left transition-all duration-300 hover:shadow-xl hover:shadow-primary/20 hover:scale-[1.02] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 sm:col-span-1 lg:col-span-4"
-          data-testid="patient-detail-assign-btn"
-        >
-          <div className="absolute inset-0 bg-linear-to-br from-white/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-          <div className="absolute -top-24 -right-24 w-48 h-48 bg-white/10 rounded-full blur-3xl group-hover:bg-white/20 transition-all duration-500" />
-          <div className="relative flex items-center gap-4">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm shrink-0 group-hover:scale-110 transition-transform duration-300">
-              <Send className="h-5 w-5 text-white" />
+        <div className="col-span-2 flex min-w-0 flex-wrap items-center gap-2 sm:col-span-3 xl:col-span-1 xl:col-start-3 xl:row-start-1">
+          <PageHero
+            testId="patient-detail-assign-btn"
+            variant="toolbar"
+            title="Przypisz plan"
+            icon={<Send />}
+            onClick={() => {
+              setVisitExercises(undefined);
+              setIsAssignDialogOpen(true);
+            }}
+            disabled={!organizationId || !therapistId}
+          />
+          <Button
+            data-testid="patient-detail-qr-btn-hero"
+            variant="outline"
+            onClick={() => setIsQRCodeDialogOpen(true)}
+            disabled={!organizationId || !therapistId}
+            className="min-h-11"
+          >
+            <QrCode className="h-4 w-4" />
+            QR kod
+          </Button>
+          {isVisitListening && organizationId && therapistId && (
+            <div role="status" className="sm:ml-auto">
+              <Button
+                data-testid="patient-detail-listening-btn"
+                variant="outline"
+                className="min-h-11 border-destructive text-destructive"
+                onClick={() => setActiveTab('visit')}
+              >
+                <Mic className="h-4 w-4" />
+                Trwa słuchanie
+              </Button>
             </div>
-            <div className="min-w-0 flex-1">
-              <h3 className="text-base font-bold text-white">Personalizuj i przypisz</h3>
-              <p className="text-sm text-primary-foreground/70">Plan ćwiczeń</p>
-            </div>
-            <Plus className="h-5 w-5 text-white/60 group-hover:text-white transition-colors shrink-0" />
-          </div>
-        </button>
-
-        <button
-          onClick={() => setIsQRCodeDialogOpen(true)}
-          disabled={!organizationId || !therapistId}
-          className="group relative overflow-hidden rounded-2xl border border-border/20 bg-surface-elevated p-5 text-left transition-all duration-150 hover:border-info/30 hover:bg-surface hover:shadow-lg cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed sm:col-span-1 lg:col-span-4"
-          data-testid="patient-detail-qr-btn-hero"
-        >
-          <div className="relative flex items-center gap-4">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-info/10 shrink-0 group-hover:bg-info/20 group-hover:scale-110 transition-all duration-150">
-              <QrCode className="h-5 w-5 text-info" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <h3 className="text-base font-semibold text-foreground group-hover:text-info transition-colors duration-150">
-                QR kod
-              </h3>
-              <p className="text-sm text-muted-foreground">Połącz z aplikacją</p>
-            </div>
-          </div>
-        </button>
-
-        <div className="grid grid-cols-2 gap-3 sm:col-span-2 lg:col-span-4">
-          <div className="rounded-2xl border border-border/40 bg-surface/50 p-4 flex items-center gap-3">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10">
-              <FolderKanban className="h-4 w-4 text-primary" />
-            </div>
-            <div className="min-w-0">
-              <p className="text-xl font-bold leading-tight text-foreground">{activeAssignments.length}</p>
-              <p className="truncate text-xs text-muted-foreground">Aktywnych zestawów</p>
-            </div>
-          </div>
-          <div className="rounded-2xl border border-border/40 bg-surface/50 p-4 flex items-center gap-3">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-secondary/10">
-              <CheckCircle2 className="h-4 w-4 text-secondary" />
-            </div>
-            <div className="min-w-0">
-              <p className="text-xl font-bold leading-tight text-foreground">{totalCompletions}</p>
-              <p className="truncate text-xs text-muted-foreground">Wykonań łącznie</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Content - Bento grid */}
-      <div className="grid gap-4 md:gap-5 lg:grid-cols-12">
-        {/* Row 1: Assignments + Documentation */}
-        <Card
-          className={cn(
-            'bg-surface border-border shadow-md overflow-hidden rounded-xl md:rounded-2xl',
-            therapistId && organizationId ? 'lg:col-span-8' : 'lg:col-span-12'
           )}
-        >
-          <CardHeader className="p-4 md:px-6 md:pt-6 md:pb-4">
-            <CardTitle className="flex items-center gap-2 md:gap-3 text-sm md:text-base font-semibold">
-              <div className="flex h-8 w-8 md:h-9 md:w-9 items-center justify-center rounded-lg md:rounded-xl bg-primary/10">
-                <FolderKanban className="h-4 w-4 text-primary" />
-              </div>
-              Przypisane zestawy
-              <Badge variant="secondary" className="ml-1 text-xs">
-                {setAssignments.length}
-              </Badge>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="pt-0">{assignmentsSectionContent}</CardContent>
-        </Card>
+        </div>
+      </header>
 
-        {therapistId && organizationId && (
-          <div className="lg:col-span-4 space-y-4">
-            <ClinicalNotesList
-              patientId={id}
-              therapistId={therapistId}
-              organizationId={organizationId}
-              patientName={patient?.fullname}
-            />
-            <PatientJournalNotes patientId={id} organizationId={organizationId} />
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="min-w-0">
+        <TabsList variant="underline" aria-label="Widok pacjenta">
+          <TabsTrigger data-testid="patient-detail-overview-tab" value="overview" activeVariant="underline">
+            Przegląd
+          </TabsTrigger>
+          {organizationId && therapistId && (
+            <TabsTrigger data-testid="patient-detail-visit-tab" value="visit" activeVariant="underline">
+              Wizyta
+            </TabsTrigger>
+          )}
+          <TabsTrigger data-testid="patient-detail-activity-tab" value="activity" activeVariant="underline">
+            Aktywność
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="overview" forceMount className="mt-6 min-w-0 space-y-6 data-[state=inactive]:hidden">
+          <StatTiles
+            variant="summary"
+            tiles={[
+              { id: 'active-sets', label: 'Aktywne plany', value: activeAssignments.length },
+              { id: 'completions', label: 'Wykonań łącznie', value: totalCompletions },
+            ]}
+          />
+
+          <div
+            className={cn(
+              'grid min-w-0 gap-6',
+              therapistId && organizationId && 'lg:grid-cols-[minmax(0,2fr)_minmax(18rem,1fr)]'
+            )}
+          >
+            <section aria-labelledby="patient-detail-assignments-heading" className="min-w-0 space-y-4">
+              <h2
+                id="patient-detail-assignments-heading"
+                className="flex min-h-11 flex-wrap items-center gap-2 text-base font-semibold text-foreground"
+              >
+                <FolderKanban className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
+                Plany ćwiczeń
+                <Badge variant="secondary" className="text-xs">
+                  {setAssignments.length}
+                </Badge>
+              </h2>
+              {assignmentsSectionContent}
+            </section>
+
+            {therapistId && organizationId && (
+              <div className="min-w-0 space-y-6">
+                <ClinicalNotesList
+                  patientId={id}
+                  therapistId={therapistId}
+                  organizationId={organizationId}
+                  patientName={patient?.fullname}
+                />
+                <PatientJournalNotes patientId={id} organizationId={organizationId} />
+              </div>
+            )}
           </div>
-        )}
+        </TabsContent>
 
-        {/* Row 2: Activity - full width */}
-        <Card className="bg-surface border-border shadow-md overflow-hidden rounded-xl md:rounded-2xl lg:col-span-12">
-          <CardHeader className="p-4 md:px-6 md:pt-6 md:pb-4">
-            <CardTitle className="flex items-center gap-2 md:gap-3 text-sm md:text-base font-semibold">
-              <div className="flex h-8 w-8 md:h-9 md:w-9 items-center justify-center rounded-lg md:rounded-xl bg-info/10">
-                <Activity className="h-4 w-4 text-info" />
-              </div>
+        <TabsContent value="activity" forceMount className="mt-6 min-w-0 data-[state=inactive]:hidden">
+          <section aria-labelledby="patient-detail-activity-heading" className="min-w-0 space-y-4 lg:col-span-12">
+            <h2
+              id="patient-detail-activity-heading"
+              className="flex items-center gap-2 text-base font-semibold text-foreground"
+            >
+              <Activity className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
               Aktywność i postępy
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="pt-0">
+            </h2>
             <ActivityReport
               patientId={id}
               patientName={displayName}
@@ -587,9 +584,40 @@ export function PatientDetailPage({ params }: PatientDetailPageProps) {
               onSendMessage={therapyActions.handleSendMessage}
               onSendPraise={therapyActions.handleSendPraise}
             />
-          </CardContent>
-        </Card>
-      </div>
+          </section>
+        </TabsContent>
+
+        <TabsContent value="visit" forceMount className="mt-6 min-w-0 data-[state=inactive]:hidden">
+          {organizationId && therapistId && (
+            <VisitPanel
+              key={`${organizationId}:${id}`}
+              patientId={id}
+              organizationId={organizationId}
+              onListeningChange={setIsVisitListening}
+              onSaved={() => {
+                void apollo.refetchQueries({ include: ['GetPatientClinicalNotes'] }).catch(() => undefined);
+              }}
+              onPlan={(exercises) => {
+                setVisitExercises(
+                  exercises.flatMap((exercise) =>
+                    exercise.exerciseId && exercise.sets
+                      ? [
+                          {
+                            exerciseId: exercise.exerciseId,
+                            sets: exercise.sets,
+                            reps: exercise.reps ?? undefined,
+                            duration: exercise.duration ?? undefined,
+                          },
+                        ]
+                      : []
+                  )
+                );
+                setIsAssignDialogOpen(true);
+              }}
+            />
+          )}
+        </TabsContent>
+      </Tabs>
 
       {/* Assignment Wizard */}
       {organizationId && therapistId && patient && (
@@ -727,6 +755,6 @@ export function PatientDetailPage({ params }: PatientDetailPageProps) {
           isLoading={isActivating}
         />
       )}
-    </div>
+    </PageShell>
   );
 }

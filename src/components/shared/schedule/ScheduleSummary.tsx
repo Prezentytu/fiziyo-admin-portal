@@ -118,15 +118,17 @@ export function ScheduleSummary({
 
   return (
     <div
-      className={cn('inline-flex items-center gap-2 text-xs text-muted-foreground min-w-0', className)}
+      className={cn('flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground', className)}
       data-testid={`${testIdPrefix}-schedule-summary`}
     >
-      <Calendar className="h-3.5 w-3.5 shrink-0" />
-      <span className="truncate" data-testid={`${testIdPrefix}-schedule-dates`}>
-        {format(summary.startDate, 'dd.MM.yyyy', { locale: pl })}–{format(summary.endDate, 'dd.MM.yyyy', { locale: pl })}
+      <span className="inline-flex min-w-0 items-center gap-1.5">
+        <Calendar className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+        <span className="min-w-0 wrap-anywhere" data-testid={`${testIdPrefix}-schedule-dates`}>
+          {format(summary.startDate, 'dd.MM.yyyy', { locale: pl })}–
+          {format(summary.endDate, 'dd.MM.yyyy', { locale: pl })}
+        </span>
       </span>
-      <span className="text-border">·</span>
-      <span className="truncate">
+      <span className="min-w-0 wrap-anywhere">
         {summary.durationDays} dni • {summary.effectiveWeeklyFrequency}×/tyg
         {shouldShowSessions && <> • ~{summary.totalSessions} sesji</>}
       </span>

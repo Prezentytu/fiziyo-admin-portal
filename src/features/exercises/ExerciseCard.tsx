@@ -551,7 +551,7 @@ export function ExerciseCard({
                       variant="outline"
                       className={cn(
                         'text-[10px] font-semibold backdrop-blur-md border shadow-lg cursor-help',
-                        isGlobalExercise && 'bg-violet/90 text-white border-violet-dark',
+                        isGlobalExercise && 'bg-violet text-violet-foreground border-violet-dark',
                         isSubmittedToGlobal &&
                           !isPendingReview &&
                           !isChangesRequested &&

@@ -5,8 +5,9 @@ import Image from 'next/image';
 import { Search, FolderKanban, Check, Dumbbell, ChevronRight, X, Plus, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Badge } from '@/components/ui/badge';
+import { Badge, badgeVariants } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { EmptyState } from '@/components/shared/EmptyState';
 import { ExerciseExecutionCard, fromExerciseMapping } from '@/components/shared/exercise';
 import { cn } from '@/lib/utils';
 import { getMediaUrl } from '@/utils/mediaUrl';
@@ -96,26 +97,25 @@ export function SelectSetStep({
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full min-h-0 p-6">
+    <div className="flex h-full min-h-0 min-w-0 flex-col gap-6 p-4 lg:grid lg:grid-cols-2 sm:p-6">
       {/* Left column - Set list */}
-      <div className="flex flex-col min-h-0">
+      <div className="flex min-h-56 min-w-0 flex-1 flex-col lg:min-h-0">
         <div className="mb-4 space-y-3">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
               placeholder="Szukaj zestawów..."
+              aria-label="Szukaj zestawów"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-9 h-11"
               data-testid="assign-set-search"
             />
           </div>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-wrap items-center justify-between gap-2">
             <p className="text-xs text-muted-foreground">
               {availableCount} dostępnych
-              {assignedSets.length > 0 && (
-                <span className="text-muted-foreground/60"> • {assignedSets.length} przypisanych</span>
-              )}
+              {assignedSets.length > 0 && <span> • {assignedSets.length} przypisanych</span>}
             </p>
             {(selectedSet || selectedToUnassign) && (
               <button
@@ -127,7 +127,7 @@ export function SelectSetStep({
                   setSelectedToUnassign(null);
                   setSelectedMappingForDetails(null);
                 }}
-                className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                className="min-h-11 rounded-sm text-sm text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
                 Wyczyść wybór
               </button>
@@ -135,57 +135,48 @@ export function SelectSetStep({
           </div>
         </div>
 
-        <ScrollArea className="flex-1 min-h-0 rounded-xl border border-border">
+        <ScrollArea className="min-h-0 flex-1">
           {loading ? (
             <div className="flex items-center justify-center py-12">
               <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
             </div>
           ) : (
-            <div className="p-3 pr-4 space-y-2">
+            <div className="space-y-2 pr-3">
               {/* Phantom Set - Karta "Stwórz nowy" */}
               {onCreateSet && (
-                <div
+                <button
+                  type="button"
+                  disabled={isCreatingSet}
                   className={cn(
-                    'flex items-center gap-4 rounded-xl p-4 cursor-pointer transition-all',
-                    'border-2 border-dashed border-border/60',
-                    'hover:border-primary hover:bg-primary/5',
-                    isCreatingSet && 'opacity-50 pointer-events-none'
+                    'flex min-h-14 w-full items-center gap-3 rounded-sm border border-border p-3 text-left transition-colors duration-150',
+                    'hover:border-primary hover:bg-primary-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                    'disabled:pointer-events-none disabled:opacity-50'
                   )}
                   onClick={() => !isCreatingSet && onCreateSet(searchQuery)}
                   data-testid="assign-set-create-btn"
                 >
-                  <div className="h-14 w-14 shrink-0 rounded-lg bg-surface-light flex items-center justify-center border border-dashed border-border">
+                  <span className="flex size-9 shrink-0 items-center justify-center rounded-sm bg-muted">
                     {isCreatingSet ? (
-                      <Loader2 className="h-6 w-6 text-primary animate-spin" />
+                      <Loader2 className="h-5 w-5 text-primary animate-spin" />
                     ) : (
-                      <Plus className="h-6 w-6 text-muted-foreground" />
+                      <Plus className="h-5 w-5 text-muted-foreground" />
                     )}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold">Stwórz nowy zestaw</p>
-                    <p className="text-sm text-muted-foreground">
-                      {patientName ? `Terapia dla ${patientName}` : 'Pusty zestaw do wypełnienia'}
-                    </p>
-                  </div>
+                  </span>
+                  <span className="min-w-0 flex-1 wrap-anywhere">
+                    <span className="block text-sm font-semibold">Utwórz plan od zera</span>
+                    {patientName && <span className="block text-sm text-muted-foreground">{patientName}</span>}
+                  </span>
                   <ChevronRight className="h-5 w-5 text-muted-foreground shrink-0" />
-                </div>
+                </button>
               )}
 
               {/* Empty state */}
               {sortedSets.length === 0 && (
-                <div className="flex flex-col items-center justify-center py-12 text-center px-4">
-                  <FolderKanban className="h-12 w-12 text-muted-foreground/50 mb-3" />
-                  <p className="text-sm font-medium text-foreground mb-1">
-                    {searchQuery ? 'Nie znaleziono zestawów' : 'Brak zestawów'}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {searchQuery
-                      ? onCreateSet
-                        ? 'Utwórz nowy zestaw klikając przycisk powyżej'
-                        : 'Spróbuj innej frazy'
-                      : 'Utwórz nowy zestaw ćwiczeń'}
-                  </p>
-                </div>
+                <EmptyState
+                  density="compact"
+                  icon={FolderKanban}
+                  title={searchQuery ? 'Nie znaleziono zestawów' : 'Brak dostępnych zestawów'}
+                />
               )}
               {sortedSets.map((set) => {
                 const isAssigned = assignedSetsMap.has(set.id);
@@ -198,25 +189,27 @@ export function SelectSetStep({
                 );
 
                 return (
-                  <div
+                  <button
                     key={set.id}
+                    type="button"
+                    aria-pressed={isSelectedForAssign || isSelectedForUnassign}
                     className={cn(
-                      'flex items-center gap-4 rounded-xl p-4 cursor-pointer transition-all',
+                      'flex w-full min-w-0 items-center gap-3 rounded-sm border p-3 text-left transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
                       isSelectedForUnassign
-                        ? 'bg-destructive/10 border-2 border-destructive/50'
+                        ? 'bg-destructive/10 border-destructive'
                         : isSelectedForAssign
-                          ? 'bg-primary/10 border-2 border-primary/40'
+                          ? 'bg-primary-muted border-primary'
                           : isPreview
-                            ? 'bg-surface-light border-2 border-border'
+                            ? 'bg-surface-light border-border'
                             : isAssigned
-                              ? 'opacity-70 hover:opacity-100 hover:bg-surface-light border-2 border-transparent'
-                              : 'hover:bg-surface-light border-2 border-transparent'
+                              ? 'text-muted-foreground hover:bg-surface-light border-border'
+                              : 'hover:bg-surface-light border-border'
                     )}
                     onClick={() => handleSetClick(set)}
                     data-testid={`assign-set-item-${set.id}`}
                   >
                     {/* Preview image */}
-                    <div className="h-14 w-14 shrink-0 rounded-lg overflow-hidden relative">
+                    <span className="relative h-14 w-14 shrink-0 overflow-hidden rounded-sm">
                       {firstImage ? (
                         <Image
                           src={firstImage}
@@ -226,55 +219,52 @@ export function SelectSetStep({
                           sizes="56px"
                         />
                       ) : (
-                        <div className="h-full w-full bg-surface-light flex items-center justify-center">
+                        <span className="h-full w-full bg-surface-light flex items-center justify-center">
                           <FolderKanban className="h-6 w-6 text-muted-foreground/50" />
-                        </div>
+                        </span>
                       )}
-                    </div>
+                    </span>
 
                     {/* Info */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <p
+                    <span className="flex-1 min-w-0">
+                      <span className="flex items-center gap-2 flex-wrap">
+                        <span
                           className={cn(
-                            'font-semibold line-clamp-2 flex-1',
+                            'min-w-0 flex-1 wrap-anywhere text-sm font-semibold',
                             isAssigned && !isSelectedForUnassign && 'text-muted-foreground'
                           )}
                         >
                           {set.name}
-                        </p>
+                        </span>
                         {isAssigned && (
-                          <Badge
-                            variant={isSelectedForUnassign ? 'destructive' : 'secondary'}
-                            className="text-[10px] shrink-0"
-                          >
+                          <span className={cn(badgeVariants({ variant: isSelectedForUnassign ? 'destructive' : 'secondary' }), 'shrink-0')}>
                             Przypisany
-                          </Badge>
+                          </span>
                         )}
-                        <Badge variant="secondary" className="text-[10px] shrink-0">
+                        <span className={cn(badgeVariants({ variant: 'secondary' }), 'shrink-0')}>
                           {exerciseCount} ćw.
-                        </Badge>
-                      </div>
+                        </span>
+                      </span>
                       {set.description && (
-                        <p className="text-sm text-muted-foreground line-clamp-1 mt-1">{set.description}</p>
+                        <span className="mt-1 block text-sm text-muted-foreground line-clamp-1">{set.description}</span>
                       )}
-                    </div>
+                    </span>
 
                     {/* Selection indicator */}
-                    <div className="shrink-0">
+                    <span className="shrink-0">
                       {isSelectedForUnassign ? (
-                        <div className="h-6 w-6 rounded-full bg-destructive flex items-center justify-center">
+                        <span className="h-6 w-6 rounded-full bg-destructive flex items-center justify-center">
                           <X className="h-4 w-4 text-destructive-foreground" />
-                        </div>
+                        </span>
                       ) : isSelectedForAssign ? (
-                        <div className="h-6 w-6 rounded-full bg-primary flex items-center justify-center">
+                        <span className="h-6 w-6 rounded-full bg-primary flex items-center justify-center">
                           <Check className="h-4 w-4 text-primary-foreground" />
-                        </div>
+                        </span>
                       ) : (
                         <ChevronRight className="h-5 w-5 text-muted-foreground" />
                       )}
-                    </div>
-                  </div>
+                    </span>
+                  </button>
                 );
               })}
             </div>
@@ -283,11 +273,16 @@ export function SelectSetStep({
       </div>
 
       {/* Right column - Set Preview (read-only) */}
-      <div className="flex flex-col min-h-0 h-full rounded-xl border border-border bg-surface/50">
+      <div
+        className={cn(
+          'min-w-0 flex-1 flex-col border-border lg:border-l lg:pl-6',
+          previewSet ? 'flex min-h-72 lg:min-h-0' : 'hidden min-h-0 lg:flex'
+        )}
+      >
         {previewSet ? (
           <>
-            <div className="p-4 border-b border-border">
-              <h3 className="font-semibold text-lg">{previewSet.name}</h3>
+            <div className="border-b border-border pb-3 wrap-anywhere">
+              <h3 className="font-semibold text-base">{previewSet.name}</h3>
               {previewSet.description && <p className="text-sm text-muted-foreground mt-1">{previewSet.description}</p>}
               <div className="flex items-center gap-2 mt-2 flex-wrap">
                 <Badge variant="outline">{previewSet.exerciseMappings?.length || 0} ćwiczeń</Badge>
@@ -307,18 +302,18 @@ export function SelectSetStep({
               )}
             </div>
 
-            <div className="px-4 pt-3 pb-2">
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Ćwiczenia w zestawie</p>
+            <div className="pt-3 pb-2">
+              <p className="text-sm font-medium text-muted-foreground">Ćwiczenia w zestawie</p>
             </div>
 
-            <ScrollArea className="flex-1 px-4 pb-4">
+            <ScrollArea className="min-h-0 flex-1 pb-4 pr-3">
               <div className="space-y-2">
                 {previewSet.exerciseMappings?.map((mapping) => {
                   const cardData = fromExerciseMapping(mapping);
                   return (
                     <div
                       key={mapping.id}
-                      className="rounded-xl cursor-pointer"
+                      className="rounded-sm cursor-pointer"
                       onClick={(event) => handleExerciseCardClick(mapping, event)}
                       data-testid={`assign-set-preview-exercise-row-${mapping.id}`}
                     >
@@ -336,11 +331,7 @@ export function SelectSetStep({
             </ScrollArea>
           </>
         ) : (
-          <div className="flex-1 flex flex-col items-center justify-center text-center p-4">
-            <Dumbbell className="h-12 w-12 text-muted-foreground/30 mb-3" />
-            <p className="text-sm font-medium text-muted-foreground">Wybierz zestaw</p>
-            <p className="text-xs text-muted-foreground/70 mt-1">Kliknij na zestaw, aby zobaczyć jego ćwiczenia</p>
-          </div>
+          <EmptyState density="compact" icon={Dumbbell} title="Podgląd zestawu" description="Nie wybrano zestawu." />
         )}
       </div>
 

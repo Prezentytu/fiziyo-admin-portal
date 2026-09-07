@@ -14,6 +14,30 @@ Dziennik wniosków z pracy AI agentów. Po każdej korekcie dodaj nowy wpis.
 
 ## Wpisy
 
+### 2026-09-07 - Wyrównanie wynika z geometrii, nie tylko rozmiaru fontu
+
+- **Kategoria**: `UI/UX`
+- **Problem**: Nagłówki planów i notatek miały różne osie przez przycisk; karta planu ucinała nazwę i harmonogram na telefonie.
+- **Przyczyna**: Różne wysokości nagłówków, procentowa kolumna za wąska przy 22px i `truncate` wewnątrz karty z `overflow-hidden`.
+- **Rozwiązanie**: Wspólna minimalna wysokość nagłówków, minimalna szerokość kolumny notatek, zawijany tytuł i osobny wiersz harmonogramu. Statystyki jako podsumowanie, akcje w kontekście pacjenta; skeleton zgodny z układem.
+- **Reguła**: Mierz osie i granice dzieci, nie tylko overflow dokumentu. Testuj komponenty przy 320px oraz 22px; szerokość kolumn dobieraj do kontrolek, nie wyłącznie proporcji. `overflow-hidden` nie jest naprawą niedopasowanego layoutu.
+
+### 2026-09-07 - Jeden focus i jeden komunikat pustego stanu
+
+- **Kategoria**: `UI/UX`
+- **Problem**: Nazwa planu miała obrys kontenera i drugi obrys inputa; sekcje notatek powtarzały ikonę, tytuł i opis tej samej informacji.
+- **Przyczyna**: Globalny `:focus-visible` poza warstwami CSS nadpisywał utility komponentu. Pusty stan nie uwzględniał istniejącego nagłówka sekcji.
+- **Rozwiązanie**: Domyślny focus w `@layer base`, z zachowaniem fallbacku i wysokiego kontrastu. Wariant `EmptyState density="inline"` dla sekcji z własnym nagłówkiem.
+- **Reguła**: Złożone pole ma jednego właściciela standardowego focus. Sprawdzaj computed style po kliknięciu i po Tab, nie tylko klasy. W nazwanej sekcji pusty stan nie powtarza ikony, nagłówka i objaśnienia. Po wspólnych komponentach odbieraj widoki pojedynczo na screenach.
+
+### 2026-09-07 - Preferencje motywu i tekstu muszą zgadzać się przed hydration
+
+- **Kategoria**: `UI/UX` | `React`
+- **Problem**: Bootstrap stosował skalę 14/16/18/20px, a provider 16/18/20/22px; toasty wymuszały dark. Zapis ustawień był rzutowany bez walidacji.
+- **Przyczyna**: Oddzielne konfiguracje pierwszego renderu, stanu React i kolorów powiadomień.
+- **Rozwiązanie**: Wspólna konfiguracja i parser Zod, light default z zachowaniem zapisanych preferencji, bezpieczny storage i Toaster w providerze. Testy sprawdzają parytet, nieprawidłowy zapis i kolejne zmiany w jednym batchu.
+- **Reguła**: Bootstrap i provider muszą dzielić wartości domyślne oraz skalę tekstu. Motyw `dark:` musi podążać za wyborem użytkownika, a token tła zawsze być migrowany razem z kolorem tekstu jego konsumentów. Sam test wartości tokenów nie zastępuje odbioru ekranów.
+
 ### 2026-09-07 - Ten sam `key={organizationId}` na rodzeństwie w fragmencie
 
 - **Kategoria**: `React`

@@ -77,6 +77,7 @@ Każda specyfikacja powinna mieć sekcję Changelog na końcu:
 | 024 | [Enrichment personalization](SPEC-024-2026-07-28-enrichment-personalization.md)                       | Personalizacja kroków/cues/safety per pacjent i zestaw         | Aktywny     |
 | 025 | [Catalog bundle import](SPEC-025-2026-08-20-catalog-bundle-import.md)                                 | Import JSON katalogu w Ustawienia → Zaawansowane (każdy fizjo) | implemented |
 | 026 | [Architecture consolidation](SPEC-026-2026-09-06-architecture-consolidation.md)                       | Konsolidacja UI, Apollo, IA i usunięcie martwego kodu          | Aktywny     |
+| 027 | [Light-first visual consistency](SPEC-027-2026-09-07-light-first-visual-consistency.md) | Spojny UI, jasny motyw domyslny i etapowa migracja portalu | W toku |
 
 ## Planowane specyfikacje
 

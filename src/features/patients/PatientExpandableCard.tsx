@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import {
   Mail,
   Phone,
@@ -160,12 +161,15 @@ export function PatientExpandableCard({
     .slice(0, 2)
     .toUpperCase();
 
-  const handleCardClick = () => {
+  const handleCardClick = (event: React.MouseEvent) => {
+    if (event.target instanceof Element && event.target.closest('a, button, [role="button"], [role="menuitem"]')) {
+      return;
+    }
     router.push(`/patients/${patient.id}`);
   };
 
-  const handleAction = (e: React.MouseEvent, action: () => void) => {
-    e.stopPropagation();
+  const handleAction = (event: React.MouseEvent, action: () => void) => {
+    event.stopPropagation();
     action();
   };
 
@@ -173,21 +177,15 @@ export function PatientExpandableCard({
     <>
       <div
         onClick={handleCardClick}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            handleCardClick();
-          }
-        }}
-        role="button"
-        tabIndex={0}
+        role="group"
+        aria-label={displayName}
         className={cn(
-          'group rounded-xl border border-border/60 bg-surface transition-all cursor-pointer',
-          'hover:bg-surface-light hover:border-primary/30 hover:shadow-md'
+          'group min-w-0 rounded-sm border border-border bg-card transition-colors duration-150 cursor-pointer',
+          'hover:border-primary/40'
         )}
         data-testid={`patient-expandable-${patient.id}`}
       >
-        <div className="flex items-center gap-4 p-4">
+        <div className="flex min-w-0 flex-wrap items-center gap-3 p-4">
           {/* Avatar with Contact Tooltip */}
           <TooltipProvider>
             <Tooltip>
@@ -195,7 +193,7 @@ export function PatientExpandableCard({
                 <div className="relative shrink-0 cursor-help">
                   <Avatar
                     className={cn(
-                      'h-11 w-11 ring-2 transition-all',
+                      'size-10 ring-1',
                       patient.isShadowUser
                         ? 'ring-muted-foreground/20 group-hover:ring-muted-foreground/30'
                         : 'ring-border/30 group-hover:ring-primary/30'
@@ -206,16 +204,16 @@ export function PatientExpandableCard({
                       className={cn(
                         'font-semibold text-sm',
                         patient.isShadowUser
-                          ? 'bg-muted-foreground/60 text-white'
-                          : 'bg-linear-to-br from-info to-blue-600 text-white'
+                          ? 'bg-muted text-muted-foreground'
+                          : 'bg-info/10 text-info'
                       )}
                     >
                       {initials}
                     </AvatarFallback>
                   </Avatar>
                   {patient.isShadowUser && (
-                    <div className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-muted-foreground/80 flex items-center justify-center ring-2 ring-surface">
-                      <Wrench className="h-2.5 w-2.5 text-white" />
+                    <div className="absolute -top-1 -right-1 size-4 rounded-full bg-muted flex items-center justify-center ring-2 ring-card">
+                      <Wrench className="size-2.5 text-muted-foreground" />
                     </div>
                   )}
                 </div>
@@ -241,10 +239,16 @@ export function PatientExpandableCard({
           </TooltipProvider>
 
           {/* Main Content - Name + Diagnosis/Goal */}
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-0.5">
-              <h3 className="font-semibold text-sm text-foreground truncate group-hover:text-primary transition-colors">
-                {displayName}
+          <div className="min-w-0 flex-1 basis-[calc(100%-4rem)] sm:basis-52">
+            <div className="mb-1 flex flex-wrap items-center gap-2">
+              <h3 className="min-w-0 text-base font-semibold text-foreground wrap-anywhere">
+                <Link
+                  href={`/patients/${patient.id}`}
+                  data-testid={`patient-expandable-${patient.id}-profile-link`}
+                  className="rounded-sm hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-card"
+                >
+                  {displayName}
+                </Link>
               </h3>
               {patient.isShadowUser && (
                 <Badge variant="secondary" className="text-[10px] px-1.5 py-0 shrink-0">
@@ -253,7 +257,7 @@ export function PatientExpandableCard({
               )}
             </div>
             {/* Diagnosis/Treatment Goal instead of email */}
-            <p className="text-xs text-muted-foreground truncate">
+            <p className="text-sm text-muted-foreground wrap-anywhere">
               {patient.contextLabel && patient.contextLabel !== 'Leczenie podstawowe'
                 ? patient.contextLabel
                 : 'Brak celu terapii'}
@@ -265,23 +269,23 @@ export function PatientExpandableCard({
             (() => {
               const activity = formatActivityStatus(patient.lastActivity);
               return (
-                <div className="hidden sm:flex flex-col items-end shrink-0 min-w-[100px]">
-                  <div className="flex items-center gap-1.5">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
                     <Activity
                       className={cn(
-                        'h-3.5 w-3.5',
-                        activity.color === 'green' && 'text-green-500',
-                        activity.color === 'yellow' && 'text-yellow-500',
-                        activity.color === 'red' && 'text-red-500',
+                        'size-4 shrink-0',
+                        activity.color === 'green' && 'text-success',
+                        activity.color === 'yellow' && 'text-warning',
+                        activity.color === 'red' && 'text-error',
                         activity.color === 'gray' && 'text-muted-foreground'
                       )}
                     />
                     <span
                       className={cn(
-                        'text-xs font-medium',
-                        activity.color === 'green' && 'text-green-500',
-                        activity.color === 'yellow' && 'text-yellow-500',
-                        activity.color === 'red' && 'text-red-500',
+                        'text-xs font-medium wrap-anywhere',
+                        activity.color === 'green' && 'text-success',
+                        activity.color === 'yellow' && 'text-warning',
+                        activity.color === 'red' && 'text-error',
                         activity.color === 'gray' && 'text-muted-foreground'
                       )}
                     >
@@ -324,25 +328,25 @@ export function PatientExpandableCard({
                 e.preventDefault();
                 setIsEditLabelOpen(true);
               }}
-              className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
+              className="inline-flex min-h-10 items-center rounded-sm text-muted-foreground transition-colors duration-150 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               title="Edytuj cel terapii"
             >
-              <Badge variant="outline" className="text-[10px] px-2 py-0.5 gap-1 hover:bg-surface-light">
+              <span className="inline-flex items-center gap-2 text-xs">
                 <Tag className="h-3 w-3" />
                 Cel terapii
-              </Badge>
+              </span>
             </button>
           )}
 
           {/* Hover Actions */}
-          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+          <div className="ml-auto flex flex-wrap items-center gap-1">
             {/* Take Over button (only for patients not mine) */}
             {!isMyPatient && onTakeOver && (
               <Button
-                aria-label="Akcja"
+                aria-label={isUnassigned ? 'Przypisz do mnie' : 'Przejmij opiekę'}
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8 hover:bg-primary/10 hover:text-primary"
+                className="hover:bg-primary/10 hover:text-primary"
                 onClick={(e) => handleAction(e, () => onTakeOver(patient))}
                 title={isUnassigned ? 'Przypisz do mnie' : 'Przejmij opiekę'}
                 data-testid={`patient-takeover-btn`}
@@ -354,25 +358,26 @@ export function PatientExpandableCard({
             {/* Quick Assign (only for my patients) */}
             {isMyPatient && (
               <Button
-                aria-label="Akcja"
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 hover:bg-primary/10 hover:text-primary"
+                aria-label="Personalizuj i przypisz"
+                variant="outline"
+                size="sm"
+                className="min-h-10 hover:bg-primary/10 hover:text-primary"
                 onClick={(e) => handleAction(e, () => onAssignSet(patient))}
                 title="Personalizuj i przypisz"
                 data-testid={`patient-expandable-${patient.id}-assign-btn`}
               >
                 <FolderKanban className="h-4 w-4" />
+                Przypisz plan
               </Button>
             )}
 
             {/* QR Code(only for my patients) */}
             {isMyPatient && onShowQR && (
               <Button
-                aria-label="Akcja"
+                aria-label="Pokaż zalecenia (QR)"
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8 hover:bg-primary/10 hover:text-primary"
+                className="hover:bg-primary/10 hover:text-primary"
                 onClick={(e) => handleAction(e, () => onShowQR(patient))}
                 title="Pokaż zalecenia (QR)"
                 data-testid={`patient-expandable-${patient.id}-qr-btn`}
@@ -385,10 +390,10 @@ export function PatientExpandableCard({
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
-                  aria-label="Akcja"
+                  aria-label="Opcje pacjenta"
+                  title="Opcje pacjenta"
                   variant="ghost"
                   size="icon"
-                  className="h-8 w-8"
                   onClick={(e) => e.stopPropagation()}
                   data-testid={`patient-expandable-${patient.id}-menu-trigger`}
                 >

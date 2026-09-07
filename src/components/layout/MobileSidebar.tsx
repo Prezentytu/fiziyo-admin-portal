@@ -6,7 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { useUser } from '@clerk/nextjs';
 import { useAppSignOut } from '@/lib/auth/useAppSignOut';
-import { Building2, LogOut, Sparkles, User, HelpCircle, ChevronRight } from 'lucide-react';
+import { Building2, LogOut, User, HelpCircle, ChevronRight } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { OrganizationSwitcher } from './OrganizationSwitcher';
 import { NAV_ITEM_ACTIVE, NAV_ITEM_BASE, NAV_ITEM_INACTIVE } from './navigationItemStyles';
@@ -88,9 +88,9 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
 
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>
-      <SheetContent side="left" className="w-72 p-0 flex flex-col" data-testid="nav-mobile-sidebar">
+      <SheetContent side="left" className="flex w-[min(20rem,calc(100%-2rem))] flex-col overflow-y-auto bg-surface p-0" data-testid="nav-mobile-sidebar">
         {/* Header */}
-        <SheetHeader className="border-b border-border p-4">
+        <SheetHeader className="min-h-16 shrink-0 justify-center border-b border-border p-4 pr-12">
           <SheetTitle>
             <Logo variant="full" size="md" />
           </SheetTitle>
@@ -100,11 +100,11 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
         <OrganizationSwitcher isCollapsed={false} />
 
         {/* Navigation */}
-        <nav className="flex-1 overflow-y-auto py-4">
+        <nav aria-label="Menu główne" className="min-h-32 flex-1 overflow-y-auto py-4">
           {filteredNavigationGroups.map((group, groupIndex) => (
             <div key={group.label} className={cn(groupIndex > 0 && 'mt-6')}>
               {/* Group label */}
-              <p className="px-4 mb-2 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+              <p className="mb-2 px-6 text-xs font-medium tracking-normal text-muted-foreground">
                 {group.label}
               </p>
 
@@ -120,37 +120,20 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
                       href={item.href}
                       onClick={handleLinkClick}
                       data-testid={item.mobileTestId}
-                      className={cn(NAV_ITEM_BASE, 'gap-3 px-3 py-3', active ? NAV_ITEM_ACTIVE : NAV_ITEM_INACTIVE)}
+                      aria-current={active ? 'page' : undefined}
+                      className={cn(NAV_ITEM_BASE, 'min-h-11 gap-3 px-3 py-2', active ? NAV_ITEM_ACTIVE : NAV_ITEM_INACTIVE)}
                     >
-                      {/* Active indicator */}
-                      {active && (
-                        <span className="absolute left-0 top-1/2 h-6 w-1 -translate-y-1/2 rounded-full bg-primary/60" />
-                      )}
+                      <Icon aria-hidden="true" className={cn('size-5 shrink-0', active && 'nav-icon')} />
 
-                      <div className="relative">
-                        <Icon
-                          className={cn(
-                            'h-5 w-5 shrink-0 transition-transform duration-200',
-                            !active && 'group-hover:scale-110'
-                          )}
-                        />
-                        {/* AI Accent */}
-                        {item.hasAiAccent && !active && (
-                          <Sparkles className="absolute -top-1 -right-1 h-3 w-3 text-primary" />
-                        )}
-                      </div>
-
-                      <span className="flex-1">{item.name}</span>
+                      <span className="min-w-0 flex-1 wrap-anywhere">{item.name}</span>
 
                       {/* Badge */}
                       {item.badge && item.badge > 0 && (
-                        <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive px-1.5 text-[10px] font-bold text-white">
+                        <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive px-1.5 text-[10px] font-bold text-destructive-foreground">
                           {item.badge > 99 ? '99+' : item.badge}
                         </span>
                       )}
 
-                      {/* AI accent in expanded */}
-                      {item.hasAiAccent && !active && <Sparkles className="h-3.5 w-3.5 text-primary opacity-60" />}
                     </Link>
                   );
                 })}
@@ -160,14 +143,14 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
         </nav>
 
         {/* User Profile Footer */}
-        <div className="border-t border-border bg-surface-light/30">
+        <div className="shrink-0 border-t border-border bg-surface">
           {/* User Info */}
           {isLoaded && (
             <div className="p-3">
               <div className="flex items-center gap-3 p-2">
                 <Avatar className="h-10 w-10">
                   <AvatarImage src={avatarUrl} alt={fullName} />
-                  <AvatarFallback className="bg-linear-to-br from-primary to-primary-dark text-primary-foreground text-sm font-semibold">
+                  <AvatarFallback className="bg-primary/10 text-primary text-sm font-semibold">
                     {initials}
                   </AvatarFallback>
                 </Avatar>

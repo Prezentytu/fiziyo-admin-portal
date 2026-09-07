@@ -8,7 +8,7 @@ import { toast } from 'sonner';
 import { FileText, Plus, Calendar, Pencil, MoreHorizontal, Trash2, X } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
@@ -132,59 +132,59 @@ export function ClinicalNotesList({
 
   return (
     <>
-      <Card className="border-border/60">
-        <CardHeader className="pb-3">
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2 text-base font-medium">
-              <FileText className="h-4 w-4 text-info" />
+      <section className="min-w-0" aria-label="Notatki kliniczne">
+        <header className="mb-4">
+          <div className="flex min-h-11 flex-wrap items-center justify-between gap-2">
+            <h2 className="flex min-w-0 flex-wrap items-center gap-2 text-base font-semibold text-foreground">
+              <FileText className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
               Notatki
               {notes.length > 0 && (
                 <Badge variant="secondary" className="ml-1">
                   {notes.length}
                 </Badge>
               )}
-            </CardTitle>
-            <Button size="sm" onClick={handleNewNote} className="gap-1.5" data-testid="clinical-notes-new-note-btn">
+            </h2>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleNewNote}
+              className="min-h-11 gap-1.5"
+              data-testid="clinical-notes-new-note-btn"
+            >
               <Plus className="h-3.5 w-3.5" />
               Nowa notatka
             </Button>
           </div>
-        </CardHeader>
-        <CardContent className="pt-0">
+        </header>
+        <div>
           {loading ? (
             <div className="space-y-2">
               {[1, 2, 3].map((i) => (
-                <Skeleton key={i} className="h-16 w-full rounded-xl" />
+                <Skeleton key={i} className="h-16 w-full rounded-sm" />
               ))}
             </div>
           ) : notes.length === 0 ? (
-            <EmptyState
-              icon={FileText}
-              title="Brak notatek"
-              description="Utwórz pierwszą notatkę dla tego pacjenta"
-              actionLabel="Utwórz notatkę"
-              onAction={handleNewNote}
-            />
+            <EmptyState density="inline" icon={FileText} title="Brak notatek z wizyt." />
           ) : (
             <div className="space-y-2.5">
               {notes.map((note) => (
                 <div
                   key={note.id}
-                  className="group grid grid-cols-[1fr_auto] items-start gap-3 rounded-xl border border-border/60 bg-surface p-3.5 transition-all duration-150 hover:border-primary/30 hover:bg-surface-elevated hover:shadow-sm"
+                  className="group grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-start gap-3 rounded-sm border border-border bg-card p-3 transition-colors duration-150 hover:bg-surface-light"
                 >
                   <button
                     type="button"
-                    className="grid min-w-0 grid-cols-[auto_1fr] items-start gap-3 text-left"
+                    className="grid min-w-0 grid-cols-[auto_minmax(0,1fr)] items-start gap-3 rounded-sm text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     data-testid={`clinical-note-card-btn-${note.id}`}
                     onClick={() => handleEditNote(note)}
                   >
-                    <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10">
-                      <FileText className="h-4 w-4 text-primary" />
+                    <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-sm bg-muted">
+                      <FileText className="h-4 w-4 text-muted-foreground" />
                     </div>
 
                     <div className="min-w-0 space-y-1.5">
-                      <div className="flex items-center gap-2">
-                        <span className="truncate text-sm font-semibold text-foreground">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="wrap-anywhere text-sm font-semibold text-foreground">
                           {note.title || VISIT_TYPE_LABELS[note.visitType]}
                         </span>
                         <span className="shrink-0 rounded-md border border-border/50 bg-surface-light px-1.5 py-0.5 text-[10px] text-muted-foreground">
@@ -205,7 +205,8 @@ export function ClinicalNotesList({
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
                         <Button
-                          aria-label="Akcja"
+                          aria-label="Opcje notatki"
+                          title="Opcje notatki"
                           variant="ghost"
                           size="icon"
                           className="h-8 w-8 text-muted-foreground transition-colors hover:text-foreground"
@@ -234,8 +235,8 @@ export function ClinicalNotesList({
               ))}
             </div>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </section>
 
       {/* Editor Dialog */}
       <Dialog open={isEditorOpen} onOpenChange={handleDialogOpenChange}>

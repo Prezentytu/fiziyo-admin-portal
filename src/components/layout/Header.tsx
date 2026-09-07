@@ -28,21 +28,27 @@ function Breadcrumbs() {
   });
 
   return (
-    <nav className="flex items-center gap-1.5 text-sm leading-none" data-testid="nav-breadcrumbs">
+    <nav
+      aria-label="Ścieżka nawigacji"
+      className="flex min-w-0 flex-wrap items-center gap-2 text-sm"
+      data-testid="nav-breadcrumbs"
+    >
       <Link
         href="/"
         data-testid="nav-breadcrumb-home"
-        className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface rounded"
+        aria-label="Pulpit"
+        className="flex size-8 shrink-0 items-center justify-center rounded-sm text-muted-foreground hover:bg-surface-light hover:text-foreground transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
       >
         <Home className="h-4 w-4" />
       </Link>
       {breadcrumbs.map((crumb, index) => (
-        <div key={crumb.href} className="flex items-center gap-1.5">
-          <ChevronRight className="h-4 w-4 text-muted-foreground/50" />
+        <div key={crumb.href} className="flex min-w-0 items-center gap-2">
+          <ChevronRight aria-hidden="true" className="size-4 shrink-0 text-muted-foreground" />
           {crumb.isLast ? (
             <span
               data-testid={`nav-breadcrumb-item-${index}`}
-              className="inline-flex items-center font-medium text-foreground"
+              aria-current="page"
+              className="min-w-0 wrap-anywhere font-medium text-foreground"
             >
               {crumb.label}
             </span>
@@ -50,7 +56,7 @@ function Breadcrumbs() {
             <Link
               href={crumb.href}
               data-testid={`nav-breadcrumb-item-${index}`}
-              className="inline-flex items-center text-muted-foreground hover:text-foreground transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-surface rounded"
+              className="inline-flex min-h-8 min-w-0 items-center rounded-sm wrap-anywhere text-muted-foreground hover:text-foreground transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
             >
               {crumb.label}
             </Link>
@@ -70,16 +76,16 @@ export function Header({ onMobileMenuToggle }: HeaderProps) {
     <TooltipProvider delayDuration={300}>
       <header
         data-testid="nav-header"
-        className="flex shrink-0 h-16 items-center justify-between border-b border-border bg-surface px-4 lg:px-6"
+        className="flex min-h-16 shrink-0 items-center justify-between gap-3 border-b border-border bg-surface px-4 py-2 lg:px-6"
       >
         {/* Left side - Mobile menu + Org indicator + Breadcrumbs */}
-        <div className="flex items-center gap-3">
+        <div className="flex min-w-0 flex-1 items-center gap-3">
           {/* Mobile menu button */}
           {onMobileMenuToggle && (
             <Button
               variant="ghost"
               size="icon"
-              className="xl:hidden"
+              className="shrink-0 xl:hidden"
               onClick={onMobileMenuToggle}
               aria-label="Otwórz menu"
               data-testid="nav-mobile-menu-btn"
@@ -89,18 +95,18 @@ export function Header({ onMobileMenuToggle }: HeaderProps) {
           )}
 
           {/* Mobile organization indicator - visible when sidebar is overlay (tablet + mobile) */}
-          <div className="xl:hidden">
+          <div className="min-w-0 xl:hidden">
             <MobileOrgIndicator />
           </div>
 
           {/* Breadcrumbs - hidden on mobile */}
-          <div className="hidden sm:flex sm:items-center">
+          <div className="hidden min-w-0 xl:flex xl:items-center">
             <Breadcrumbs />
           </div>
         </div>
 
         {/* Right side - Notifications & Feedback (kontekst "tu i teraz") */}
-        <div className="flex items-center gap-1 sm:gap-2">
+        <div className="flex shrink-0 items-center gap-2">
           <FeedbackButton variant="icon" />
         </div>
       </header>

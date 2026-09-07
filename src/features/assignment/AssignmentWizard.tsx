@@ -3,7 +3,7 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { useQuery, useMutation, useApolloClient } from '@apollo/client/react';
 import { useRouter } from 'next/navigation';
-import { Loader2, ArrowLeft, ArrowRight, Users, Pencil, Sparkles, X } from 'lucide-react';
+import { Loader2, ArrowLeft, ArrowRight, Check, Users, Pencil, Sparkles, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { addDays, format } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -11,14 +11,13 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import * as VisuallyHidden from '@radix-ui/react-visually-hidden';
-import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogFooter, DialogTitle } from '@/components/ui/dialog';
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { ScheduleSummary } from '@/components/shared';
 import { ExerciseDialog } from '@/features/exercises/ExerciseDialog';
 import { PatientDialog } from '@/features/patients/PatientDialog';
 import { defaultFrequency } from '@/features/exercise-sets/FrequencyPicker';
 
-import { WizardStepIndicator } from './WizardStepIndicator';
 import { SelectSetStep } from './SelectSetStep';
 import { SelectPatientsStep } from './SelectPatientsStep';
 import { CustomizeSetStep } from './CustomizeSetStep';
@@ -1694,7 +1693,7 @@ function AssignmentWizardContent({
   return (
     <>
       <DialogContent
-        className="max-w-7xl w-[98vw] max-h-[95vh] h-[90vh] md:h-[85vh] flex flex-col p-0 gap-0 overflow-hidden"
+        className="max-w-7xl w-[calc(100%-1rem)] max-h-[calc(100dvh-1rem)] h-[calc(100dvh-1rem)] sm:h-[85dvh] flex min-w-0 flex-col p-0 gap-0 overflow-hidden"
         hideCloseButton
         onInteractOutside={(e) => e.preventDefault()}
         onEscapeKeyDown={(e) => {
@@ -1708,38 +1707,46 @@ function AssignmentWizardContent({
             {isEditMode ? 'Edycja planu pacjenta' : 'Personalizacja i przypisanie'} – {stepInfo.title}
           </DialogTitle>
         </VisuallyHidden.Root>
-        {/* Toolbar: row-1 = eyebrow (h-7), row-2 = input + stepper + X (h-9). All on same grid → perfect alignment */}
-        <div className="shrink-0 bg-surface/95 backdrop-blur-sm border-b border-border px-6">
-          {/* Row 1: eyebrow — fixed height with padding */}
-          <div className="h-7 flex items-end pb-1">
-            <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60 leading-none">
+        <header className="min-w-0 max-h-[40%] shrink-0 overflow-y-auto border-b border-border bg-surface px-4 py-3 sm:px-6">
+          <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-start gap-x-3 gap-y-2">
+            <p className="min-w-0 self-center text-sm font-medium leading-snug text-muted-foreground wrap-anywhere">
               {isEditMode ? 'Edycja planu pacjenta' : 'Personalizacja i przypisanie'}
-            </span>
-          </div>
-          {/* Row 2: input (left) + stepper + X (right) — all h-9, same row → centers aligned by definition */}
-          <div className="h-11 flex items-center gap-0 -mx-1">
-            {/* Left: plan name editable or step title */}
-            <div className="w-full lg:w-[40%] min-w-0 pr-3 flex items-center gap-1">
+            </p>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onCloseAttempt}
+              className="size-11 text-muted-foreground hover:text-foreground"
+              data-testid="assign-wizard-close-btn"
+              aria-label="Zamknij"
+              title="Zamknij"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+            <div className="col-span-2 flex min-w-0 items-center gap-2">
               {currentStep !== 'select-set' || selectedSet || isCreatingNewSet ? (
-                <label className="flex-1 flex h-9 items-center min-w-0 rounded-md border border-transparent px-1.5 focus-within:bg-surface focus-within:border-border focus-within:ring-1 focus-within:ring-primary/20 transition-colors cursor-text hover:bg-surface-light/50">
-                  <input
-                    data-testid="wizard-plan-name-input"
-                    type="text"
-                    value={planName}
-                    onChange={(e) => setPlanName(e.target.value)}
-                    placeholder="Nazwa planu pacjenta"
-                    autoComplete="off"
-                    className="peer flex-1 min-w-0 bg-transparent text-base font-semibold text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:ring-0 border-none p-0 cursor-text"
-                  />
-                  <Pencil
-                    className="h-3.5 w-3.5 text-muted-foreground/40 shrink-0 ml-2 peer-focus:hidden transition-opacity pointer-events-none"
-                    aria-hidden
-                  />
+                <div className="flex min-w-0 flex-1 items-center gap-2">
+                  <label className="flex min-h-11 min-w-0 flex-1 cursor-text items-center rounded-sm border border-border bg-background px-3 focus-within:ring-2 focus-within:ring-ring">
+                    <input
+                      data-testid="wizard-plan-name-input"
+                      type="text"
+                      value={planName}
+                      onChange={(e) => setPlanName(e.target.value)}
+                      placeholder="Nazwa planu pacjenta"
+                      aria-label="Nazwa planu pacjenta"
+                      autoComplete="off"
+                      className="peer flex-1 min-w-0 bg-transparent text-base font-semibold text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-0 border-none py-2 cursor-text"
+                    />
+                    <Pencil
+                      className="h-4 w-4 text-muted-foreground shrink-0 ml-2 peer-focus:invisible pointer-events-none"
+                      aria-hidden
+                    />
+                  </label>
                   <button
                     type="button"
                     title="Wygeneruj nazwę AI"
                     className={cn(
-                      'p-1.5 rounded-md text-muted-foreground hover:text-secondary hover:bg-secondary/10 shrink-0 transition-colors ml-1 relative z-10',
+                      'flex size-11 shrink-0 items-center justify-center rounded-sm text-muted-foreground hover:text-foreground hover:bg-surface-light focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors duration-150',
                       isGeneratingName && 'opacity-50 pointer-events-none cursor-not-allowed'
                     )}
                     data-testid="wizard-plan-name-ai-btn"
@@ -1756,27 +1763,25 @@ function AssignmentWizardContent({
                       <Sparkles className="h-3.5 w-3.5" />
                     )}
                   </button>
-                </label>
+                </div>
               ) : (
-                <span className="flex h-9 items-center text-base font-semibold text-muted-foreground/60 truncate min-w-0 px-1.5">
+                <span className="min-w-0 text-base font-semibold leading-snug text-foreground wrap-anywhere">
                   {stepInfo.title}
                 </span>
               )}
             </div>
-            {/* Right: context chip + stepper + X — all h-9, centered in the same row */}
-            <div className="flex-1 flex items-center gap-3 min-w-0 pl-3">
+            <div className="col-span-2 min-w-0">
               {selectedPatients.length > 0 || currentStep === 'schedule' || currentStep === 'summary' ? (
-                <div className="hidden sm:flex items-center gap-2 px-2 py-1 rounded-md bg-surface-light/40 text-[10px] text-muted-foreground shrink-0">
+                <div className="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-2 text-sm text-muted-foreground">
                   {selectedPatients.length > 0 && (
-                    <div className="flex items-center gap-1">
-                      <Users className="h-3 w-3" />
-                      <span className="font-medium">
-                        {selectedPatients.length} {selectedPatients.length === 1 ? 'pacjent' : 'pacjentów'}
+                    <div className="flex min-w-0 items-start gap-2" data-testid="assign-wizard-patient-context">
+                      <Users className="mt-0.5 h-4 w-4 shrink-0" aria-hidden />
+                      <span className="min-w-0 font-medium text-foreground wrap-anywhere">
+                        {selectedPatients.length === 1
+                          ? selectedPatients[0].name
+                          : `${selectedPatients.length} pacjentów`}
                       </span>
                     </div>
-                  )}
-                  {selectedPatients.length > 0 && (currentStep === 'schedule' || currentStep === 'summary') && (
-                    <span className="text-border">·</span>
                   )}
                   {(currentStep === 'schedule' || currentStep === 'summary') && (
                     <ScheduleSummary
@@ -1787,36 +1792,61 @@ function AssignmentWizardContent({
                       showSessions={false}
                       showStartInDays={false}
                       testIdPrefix="assign-wizard-header"
-                      className="max-w-[280px]"
+                      className="min-w-0 max-w-full"
                     />
                   )}
                 </div>
               ) : null}
-              <div className="flex-1 min-w-0 flex items-center justify-end gap-2">
-                <WizardStepIndicator
-                  steps={steps}
-                  currentStep={currentStep}
-                  completedSteps={completedSteps}
-                  onStepClick={goToStep}
-                  allowNavigation={completedSteps.size > 0}
-                  variant="compact"
-                />
-              </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={onCloseAttempt}
-                className="h-9 w-9 min-w-9 shrink-0 text-muted-foreground hover:text-foreground rounded-md"
-                data-testid="assign-wizard-close-btn"
-                aria-label="Zamknij"
-              >
-                <X className="h-4 w-4" />
-              </Button>
             </div>
           </div>
-          {/* Bottom padding row — same height as eyebrow row to center the main row vertically */}
-          <div className="h-7" />
-        </div>
+          <nav aria-label="Etapy przypisania planu" className="mt-3 min-w-0" data-testid="assign-wizard-step-indicator">
+            <p
+              className="mb-2 text-sm leading-snug text-muted-foreground wrap-anywhere"
+              aria-live="polite"
+              aria-atomic="true"
+            >
+              Krok {steps.findIndex((step) => step.id === currentStep) + 1} z {steps.length}:{' '}
+              <span className="font-medium text-foreground">{stepInfo.title}</span>
+            </p>
+            <ol className="flex min-w-0 items-start gap-1">
+              {steps.map((step, index) => {
+                const isCompleted = completedSteps.has(step.id);
+                const isCurrent = step.id === currentStep;
+                const canClick =
+                  completedSteps.size > 0 &&
+                  (isCompleted || index < steps.findIndex((entry) => entry.id === currentStep));
+                return (
+                  <li key={step.id} className="min-w-0 flex-1">
+                    <button
+                      data-testid="wizardstepindicator-button-79"
+                      type="button"
+                      onClick={() => canClick && goToStep(step.id)}
+                      disabled={!canClick}
+                      title={step.label}
+                      aria-label={`${index + 1}. ${step.label}`}
+                      aria-current={isCurrent ? 'step' : undefined}
+                      className={cn(
+                        'flex min-h-11 w-full min-w-0 flex-col items-center gap-1 rounded-sm px-1 py-2 text-muted-foreground transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-default',
+                        isCurrent && 'bg-surface-light font-semibold text-foreground',
+                        canClick && 'cursor-pointer hover:bg-surface-light hover:text-foreground'
+                      )}
+                    >
+                      <span
+                        className="flex size-6 shrink-0 items-center justify-center rounded-full border border-border text-xs tabular-nums"
+                        aria-hidden
+                      >
+                        {isCompleted && !isCurrent ? <Check className="size-4" /> : index + 1}
+                      </span>
+                      <span className="sr-only lg:not-sr-only lg:text-xs lg:leading-snug lg:wrap-anywhere">
+                        {step.label}
+                      </span>
+                    </button>
+                  </li>
+                );
+              })}
+            </ol>
+          </nav>
+        </header>
 
         {/* Content - overflow-hidden dla clip animacji, scroll wewnątrz */}
         <div className="flex-1 overflow-hidden min-h-0">
@@ -1832,30 +1862,34 @@ function AssignmentWizardContent({
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t border-border shrink-0 flex items-center justify-between gap-4">
+        <DialogFooter className="max-h-[40%] overflow-y-auto border-t border-border bg-surface px-4 py-3 flex-row items-end justify-between gap-2 sm:px-6 sm:items-center">
           {/* Left side - Cancel button */}
           <Button
             variant="ghost"
             onClick={onCloseAttempt}
-            className="text-muted-foreground hover:text-foreground"
+            className="min-h-11 shrink-0 text-muted-foreground hover:text-foreground"
             data-testid="assign-wizard-close-btn"
           >
             Anuluj
           </Button>
 
           {/* Right side - Navigation */}
-          <div className="flex items-center gap-3">
+          <div className="flex min-w-0 flex-1 flex-wrap items-center justify-end gap-2">
             {currentStep === 'schedule' && !isEditMode && (
               <label
-                className="flex items-center gap-2.5 rounded-lg border border-border/60 bg-surface-light/40 px-3 py-2"
+                className="flex min-w-0 basis-full items-start gap-2 py-2 lg:basis-auto lg:mr-2"
                 data-testid="assign-schedule-save-template-toggle"
               >
                 <Switch
                   checked={saveAsOrganizationSet}
                   onCheckedChange={setSaveAsOrganizationSet}
+                  className="shrink-0"
                   data-testid="assign-schedule-save-template-switch"
                 />
-                <span className="text-xs font-medium text-foreground" data-testid="assign-schedule-save-template-label">
+                <span
+                  className="min-w-0 text-sm text-foreground wrap-anywhere"
+                  data-testid="assign-schedule-save-template-label"
+                >
                   Zapisz także jako zestaw organizacji
                 </span>
               </label>
@@ -1864,10 +1898,10 @@ function AssignmentWizardContent({
               <Button
                 variant="ghost"
                 onClick={goBack}
-                className="text-muted-foreground hover:text-foreground"
+                className="min-h-11 text-muted-foreground hover:text-foreground"
                 data-testid="assign-wizard-back-btn"
               >
-                <ArrowLeft className="h-4 w-4 mr-2" />
+                <ArrowLeft className="h-4 w-4" />
                 Wstecz
               </Button>
             )}
@@ -1875,18 +1909,15 @@ function AssignmentWizardContent({
             <Button
               onClick={isLastStep ? handleFinalSubmit : goNext}
               disabled={isLoading || !canProceed()}
-              className={cn(
-                'shadow-lg shadow-primary/20 min-w-[160px] transition-all duration-300',
-                isLastStep && 'bg-linear-to-r from-primary to-primary hover:from-primary-dark hover:to-primary-dark'
-              )}
+              className="min-h-11 min-w-0 basis-full sm:basis-auto"
               data-testid={isLastStep ? 'assign-summary-submit-btn' : 'assign-wizard-next-btn'}
             >
-              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {getNextButtonText()}
-              <ArrowRight className="ml-2 h-4 w-4" />
+              {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
+              <span className="min-w-0 wrap-anywhere">{getNextButtonText()}</span>
+              <ArrowRight className="h-4 w-4" />
             </Button>
           </div>
-        </div>
+        </DialogFooter>
 
         {/* Unassign confirmation dialog */}
         <ConfirmDialog
