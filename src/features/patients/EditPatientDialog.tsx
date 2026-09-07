@@ -14,6 +14,7 @@ import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 
 import { UPDATE_SHADOW_PATIENT_MUTATION } from '@/graphql/mutations/users.mutations';
 import { GET_USER_BY_ID_QUERY } from '@/graphql/queries/users.queries';
+import { useDialogShortcuts } from '@/hooks/useDialogShortcuts';
 
 interface Patient {
   id: string;
@@ -125,6 +126,15 @@ export function EditPatientDialog({ open, onOpenChange, patient, onSuccess }: Re
       toast.error(errorMessage);
     }
   };
+
+  useDialogShortcuts({
+    open,
+    enabled: !loading,
+    onSubmit: () => {
+      void handleSave();
+    },
+    onClose: handleCloseAttempt,
+  });
 
   if (!patient) return null;
 

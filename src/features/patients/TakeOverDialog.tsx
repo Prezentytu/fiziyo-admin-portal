@@ -19,6 +19,7 @@ import { Button } from '@/components/ui/button';
 import { TAKE_OVER_PATIENT_MUTATION } from '@/graphql/mutations/therapists.mutations';
 import { GET_ORGANIZATION_PATIENTS_QUERY } from '@/graphql/queries/therapists.queries';
 import type { TakeOverPatientResponse } from '@/types/apollo';
+import { useDialogShortcuts } from '@/hooks/useDialogShortcuts';
 
 interface TherapistInfo {
   id: string;
@@ -93,6 +94,21 @@ export function TakeOverDialog({
 
   const patientName = patient?.fullname || patient?.email || 'Pacjent';
   const therapistName = previousTherapist?.fullname || previousTherapist?.email || 'poprzedniego fizjoterapeuty';
+
+  useDialogShortcuts({
+    open,
+    enabled: !loading,
+    onSubmit: () => {
+      void handleTakeOver(isConfirming);
+    },
+    onClose: () => {
+      if (isConfirming) {
+        setIsConfirming(false);
+        return;
+      }
+      onOpenChange(false);
+    },
+  });
 
   const getInitials = (name: string) =>
     name

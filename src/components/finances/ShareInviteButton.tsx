@@ -94,6 +94,7 @@ export function ShareInviteButton({ url, patientName, variant = 'icon', classNam
     if (variant === 'icon') {
       return (
         <Button
+          aria-label="Akcja"
           variant="ghost"
           size="icon"
           onClick={handleNativeShare}
@@ -125,7 +126,14 @@ export function ShareInviteButton({ url, patientName, variant = 'icon', classNam
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         {variant === 'icon' ? (
-          <Button variant="ghost" size="icon" className={className} title="Udostępnij" data-testid="share-invite-btn">
+          <Button
+            aria-label="Akcja"
+            variant="ghost"
+            size="icon"
+            className={className}
+            title="Udostępnij"
+            data-testid="share-invite-btn"
+          >
             {copied ? <Check className="h-4 w-4 text-emerald-500" /> : <Share2 className="h-4 w-4" />}
           </Button>
         ) : (

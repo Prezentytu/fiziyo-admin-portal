@@ -17,6 +17,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import type { RejectionReason } from '@/graphql/types/adminExercise.types';
+import { useDialogShortcuts } from '@/hooks/useDialogShortcuts';
 
 interface RejectReasonDialogProps {
   open: boolean;
@@ -165,6 +166,13 @@ export function RejectReasonDialog({
     }
   }, [reason]);
 
+  useDialogShortcuts({
+    open,
+    enabled: !isLoading && !isGeneratingNote,
+    onSubmit: handleConfirm,
+    onClose: () => handleOpenChange(false),
+  });
+
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-lg" data-testid="verification-reject-dialog">
@@ -263,7 +271,12 @@ export function RejectReasonDialog({
         </div>
 
         <DialogFooter className="gap-2 sm:gap-0">
-          <Button variant="outline" onClick={() => handleOpenChange(false)} disabled={isLoading}>
+          <Button
+            data-testid="verification-reject-reason-dialog-btn-274"
+            variant="outline"
+            onClick={() => handleOpenChange(false)}
+            disabled={isLoading}
+          >
             Anuluj
           </Button>
           <Button

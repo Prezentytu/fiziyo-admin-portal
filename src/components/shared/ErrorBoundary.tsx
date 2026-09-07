@@ -4,6 +4,9 @@ import { Component, type ErrorInfo, type ReactNode } from 'react';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { createModuleLogger } from '@/lib/logger';
+
+const log = createModuleLogger('ErrorBoundary');
 
 interface ErrorBoundaryProps {
   readonly children: ReactNode;
@@ -29,9 +32,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
   componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
     this.props.onError?.(error, errorInfo);
 
-    if (process.env.NODE_ENV === 'development') {
-      console.error('[ErrorBoundary]', error, errorInfo);
-    }
+    log.error(error.message, errorInfo.componentStack ?? undefined);
   }
 
   handleReset = () => {

@@ -6,6 +6,7 @@ import {
   SET_EXERCISE_RELATIONS_BATCH_MUTATION,
 } from '@/graphql/mutations/adminExercises.mutations';
 import type { AdminExercise, ExerciseRelationTarget } from '@/graphql/types/adminExercise.types';
+import { verificationQueueRefetch } from '@/graphql/cache/invalidation';
 
 interface UseVerificationApproveOptions {
   /** Callback po sukcesie */
@@ -77,6 +78,7 @@ export function useVerificationApprove({ onSuccess, onError }: UseVerificationAp
             exerciseId,
             reviewNotes,
           },
+          refetchQueries: verificationQueueRefetch(),
         });
 
         const approvedExercise = data?.approveExercise;

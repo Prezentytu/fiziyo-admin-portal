@@ -306,6 +306,7 @@ export function SetCard({ set, tagsMap, onView, onEdit, onDelete, onDuplicate, o
           {/* B. Action Buttons - pointer-events-auto so clickable */}
           <div className="flex gap-1 flex-none pointer-events-auto ml-auto">
             <Button
+              aria-label="Akcja"
               variant="ghost"
               size="icon"
               className="h-7 w-7 bg-black/40 hover:bg-black/80 backdrop-blur-sm rounded-full border border-white/10 text-white transition-colors"
@@ -319,6 +320,7 @@ export function SetCard({ set, tagsMap, onView, onEdit, onDelete, onDuplicate, o
             <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
               <DropdownMenuTrigger asChild>
                 <Button
+                  aria-label="Akcja"
                   variant="ghost"
                   size="icon"
                   className="h-7 w-7 bg-black/40 hover:bg-black/80 backdrop-blur-sm rounded-full border border-white/10 text-white transition-colors"

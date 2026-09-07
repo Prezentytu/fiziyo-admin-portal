@@ -7,7 +7,14 @@ import { Building2, Loader2, Save } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { UPDATE_BILLING_DETAILS_MUTATION } from '@/graphql/mutations';
@@ -15,6 +22,7 @@ import { GET_BILLING_DETAILS_QUERY } from '@/graphql/queries';
 import type { GetBillingDetailsResponse, UpdateBillingDetailsResponse } from '@/types/apollo';
 import { billingDetailsSchema, type BillingDetailsFormValues } from '@/types/billing-details.types';
 import { isFeatureEnabled } from '@/lib/featureFlags';
+import { useDialogShortcuts } from '@/hooks/useDialogShortcuts';
 
 interface BillingDetailsDialogProps {
   readonly open: boolean;
@@ -50,7 +58,12 @@ function formatIbanForDisplay(inputValue: string): string {
   return normalized.replaceAll(/(.{4})/g, '$1 ').trim();
 }
 
-export function BillingDetailsDialog({ open, onOpenChange, organizationId, onSaved }: Readonly<BillingDetailsDialogProps>) {
+export function BillingDetailsDialog({
+  open,
+  onOpenChange,
+  organizationId,
+  onSaved,
+}: Readonly<BillingDetailsDialogProps>) {
   const isBillingDetailsApiEnabled = isFeatureEnabled('BILLING_DETAILS_API');
   const form = useForm<BillingDetailsFormValues>({
     resolver: zodResolver(billingDetailsSchema),
@@ -81,7 +94,9 @@ export function BillingDetailsDialog({ open, onOpenChange, organizationId, onSav
         toast.error(`Błąd: ${error.message}`);
       },
       refetchQueries:
-        organizationId && isBillingDetailsApiEnabled ? [{ query: GET_BILLING_DETAILS_QUERY, variables: { organizationId } }] : [],
+        organizationId && isBillingDetailsApiEnabled
+          ? [{ query: GET_BILLING_DETAILS_QUERY, variables: { organizationId } }]
+          : [],
     }
   );
 
@@ -139,6 +154,15 @@ export function BillingDetailsDialog({ open, onOpenChange, organizationId, onSav
       onOpenChange(false);
     }
   };
+
+  useDialogShortcuts({
+    open,
+    enabled: !isSaving,
+    onSubmit: () => {
+      void form.handleSubmit(handleSubmit)();
+    },
+    onClose: () => onOpenChange(false),
+  });
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

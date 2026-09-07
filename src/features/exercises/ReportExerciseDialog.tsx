@@ -8,7 +8,14 @@ import { z } from 'zod';
 import { useUser } from '@clerk/nextjs';
 import { toast } from 'sonner';
 
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Textarea } from '@/components/ui/textarea';
@@ -17,6 +24,7 @@ import { FileUpload } from '@/components/shared/FileUpload';
 import { createExerciseReport } from '@/services/exerciseReportService';
 import type { Exercise } from './ExerciseCard';
 import type { ExerciseReportReasonCategory } from '@/types/exercise-report.types';
+import { useDialogShortcuts } from '@/hooks/useDialogShortcuts';
 
 const reportExerciseSchema = z.object({
   reasonCategory: z.enum([
@@ -151,6 +159,15 @@ export function ReportExerciseDialog({
     }
   };
 
+  useDialogShortcuts({
+    open,
+    enabled: !isSubmitting,
+    onSubmit: () => {
+      void form.handleSubmit(onSubmit)();
+    },
+    onClose: () => handleClose(false),
+  });
+
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="max-w-xl" data-testid="exercise-report-dialog">
@@ -172,7 +189,12 @@ export function ReportExerciseDialog({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Powód zgłoszenia</FormLabel>
-                  <Select value={field.value} onValueChange={field.onChange} disabled={isDisabled}>
+                  <Select
+                    data-testid="exercise-report-exercise-dialog-select-185"
+                    value={field.value}
+                    onValueChange={field.onChange}
+                    disabled={isDisabled}
+                  >
                     <FormControl>
                       <SelectTrigger data-testid="exercise-report-reason-select">
                         <SelectValue placeholder="Wybierz powód" />

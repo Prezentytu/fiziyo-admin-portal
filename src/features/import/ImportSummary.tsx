@@ -162,7 +162,11 @@ export function ImportSummary({
       <div className="flex flex-col items-center gap-4 pt-4">
         {isSuccess && (result.exercisesCreated > 0 || result.exercisesReused > 0) && (
           <Link href="/exercises">
-            <Button size="lg" className="gap-2 h-12 px-8 text-base bg-primary hover:bg-primary-dark">
+            <Button
+              data-testid="import-import-summary-btn-165"
+              size="lg"
+              className="gap-2 h-12 px-8 text-base bg-primary hover:bg-primary-dark"
+            >
               <Dumbbell className="h-5 w-5" />
               Zobacz zaimportowane ćwiczenia
             </Button>
@@ -171,14 +175,24 @@ export function ImportSummary({
 
         {isSuccess && result.exerciseSetsCreated > 0 && (
           <Link href="/exercise-sets">
-            <Button variant="outline" size="lg" className="gap-2 h-12 px-8 text-base">
+            <Button
+              data-testid="import-import-summary-btn-174"
+              variant="outline"
+              size="lg"
+              className="gap-2 h-12 px-8 text-base"
+            >
               <Layers className="h-5 w-5" />
               Zobacz zestawy
             </Button>
           </Link>
         )}
 
-        <Button variant="ghost" onClick={onReset} className="gap-2 text-muted-foreground hover:text-foreground">
+        <Button
+          data-testid="importsummary-button-181"
+          variant="ghost"
+          onClick={onReset}
+          className="gap-2 text-muted-foreground hover:text-foreground"
+        >
           <RotateCcw className="h-4 w-4" />
           Importuj kolejny dokument
         </Button>

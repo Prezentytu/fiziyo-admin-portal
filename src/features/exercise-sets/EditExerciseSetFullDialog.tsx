@@ -37,11 +37,7 @@ import {
   ADD_EXERCISE_TO_EXERCISE_SET_MUTATION,
 } from '@/graphql/mutations/exercises.mutations';
 import { createTagsMap, mapExercisesWithTags } from '@/utils/tagUtils';
-import type {
-  ExerciseTagsResponse,
-  TagCategoriesResponse,
-  OrganizationExerciseSetsResponse,
-} from '@/types/apollo';
+import type { ExerciseTagsResponse, TagCategoriesResponse, OrganizationExerciseSetsResponse } from '@/types/apollo';
 import {
   computeExerciseSetDiff,
   hasExerciseSetChanges,
@@ -52,6 +48,7 @@ import { buildExerciseLoadMutationVars } from '@/utils/exerciseLoadMutation';
 import { seedBuilderParamsFromMapping } from '@/features/assignment/utils/seedBuilderParamsFromMapping';
 import { buildMappingOverridesFromParams } from '@/features/exercise-sets/utils/buildMappingOverridesFromParams';
 import type { ExerciseMapping as AssignmentExerciseMapping } from '@/features/assignment/types';
+import { useDialogShortcuts } from '@/hooks/useDialogShortcuts';
 
 interface SetSnapshot {
   id: string;
@@ -385,18 +382,14 @@ export function EditExerciseSetFullDialog({
             name: trimmedName,
             description: (description ?? '').trim() || null,
           },
-          refetchQueries: [
-            { query: GET_EXERCISE_SET_WITH_ASSIGNMENTS_QUERY, variables: { exerciseSetId } },
-          ],
+          refetchQueries: [{ query: GET_EXERCISE_SET_WITH_ASSIGNMENTS_QUERY, variables: { exerciseSetId } }],
         });
       }
 
       for (const item of saveDiff.toRemove) {
         await removeExerciseFromSet({
           variables: { exerciseId: item.exerciseId, exerciseSetId },
-          refetchQueries: [
-            { query: GET_EXERCISE_SET_WITH_ASSIGNMENTS_QUERY, variables: { exerciseSetId } },
-          ],
+          refetchQueries: [{ query: GET_EXERCISE_SET_WITH_ASSIGNMENTS_QUERY, variables: { exerciseSetId } }],
         });
       }
 
@@ -423,9 +416,7 @@ export function EditExerciseSetFullDialog({
             ...buildExerciseLoadMutationVars(params.loadWeightKg ?? params.loadValue),
             overridesJson: overridesJson ?? '',
           },
-          refetchQueries: [
-            { query: GET_EXERCISE_SET_WITH_ASSIGNMENTS_QUERY, variables: { exerciseSetId } },
-          ],
+          refetchQueries: [{ query: GET_EXERCISE_SET_WITH_ASSIGNMENTS_QUERY, variables: { exerciseSetId } }],
         });
       }
 
@@ -452,9 +443,7 @@ export function EditExerciseSetFullDialog({
             ...buildExerciseLoadMutationVars(params.loadWeightKg ?? params.loadValue),
             overridesJson: overridesJson ?? '',
           },
-          refetchQueries: [
-            { query: GET_EXERCISE_SET_WITH_ASSIGNMENTS_QUERY, variables: { exerciseSetId } },
-          ],
+          refetchQueries: [{ query: GET_EXERCISE_SET_WITH_ASSIGNMENTS_QUERY, variables: { exerciseSetId } }],
         });
       }
 
@@ -485,6 +474,15 @@ export function EditExerciseSetFullDialog({
   }, []);
 
   const canSave = name.trim().length > 0;
+
+  useDialogShortcuts({
+    open,
+    enabled: !saving,
+    onSubmit: () => {
+      void handleSave();
+    },
+    onClose: handleCloseAttempt,
+  });
 
   return (
     <>
@@ -551,9 +549,7 @@ export function EditExerciseSetFullDialog({
               className="min-w-[160px]"
               data-testid="set-edit-full-submit-btn"
             >
-              {saving ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : null}
+              {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
               Zapisz zmiany
             </Button>
           </div>

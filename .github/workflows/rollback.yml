@@ -1,0 +1,44 @@
+name: Rollback admin
+
+on:
+  workflow_dispatch:
+    inputs:
+      deployment_id:
+        description: "Poprzedni dobry Vercel deployment ID/URL"
+        required: true
+        type: string
+      reason:
+        description: "Dlaczego rollback"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  rollback:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Require main
+        run: |
+          if [[ "${GITHUB_REF}" != "refs/heads/main" ]]; then
+            echo "::error::Rollback admin odpalaj z main."
+            exit 1
+          fi
+
+      - name: Instant rollback
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          DEPLOYMENT_ID: ${{ inputs.deployment_id }}
+          REASON: ${{ inputs.reason }}
+        run: |
+          echo "### Rollback admin" >> "$GITHUB_STEP_SUMMARY"
+          echo "- to: \`$DEPLOYMENT_ID\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- reason: \`$REASON\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- actor: \`${{ github.actor }}\`" >> "$GITHUB_STEP_SUMMARY"
+          if [[ -z "$VERCEL_TOKEN" ]]; then
+            echo "::error::Brak VERCEL_TOKEN. Użyj: vercel rollback $DEPLOYMENT_ID"
+            exit 1
+          fi
+          npx --yes vercel@41 rollback "$DEPLOYMENT_ID" --yes --token "$VERCEL_TOKEN"

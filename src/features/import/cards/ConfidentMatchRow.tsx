@@ -80,13 +80,7 @@ export function ConfidentMatchRow({ exercise, match, decision, onSkip, className
       <div className="flex items-center gap-2 min-w-0 flex-1">
         {match.imageUrl ? (
           <span className="relative block h-8 w-8 rounded-md overflow-hidden shrink-0">
-            <Image
-              src={match.imageUrl}
-              alt={match.existingExerciseName}
-              fill
-              className="object-cover"
-              sizes="32px"
-            />
+            <Image src={match.imageUrl} alt={match.existingExerciseName} fill className="object-cover" sizes="32px" />
           </span>
         ) : (
           <div className="flex h-8 w-8 items-center justify-center rounded-md bg-surface-light shrink-0">
@@ -100,6 +94,7 @@ export function ConfidentMatchRow({ exercise, match, decision, onSkip, className
 
       <div className="flex items-center gap-1 shrink-0">
         <Button
+          aria-label="Akcja"
           variant="ghost"
           size="icon"
           className="h-8 w-8"

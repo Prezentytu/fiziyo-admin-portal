@@ -14,6 +14,70 @@ Dziennik wniosków z pracy AI agentów. Po każdej korekcie dodaj nowy wpis.
 
 ## Wpisy
 
+### 2026-09-07 - Ten sam `key={organizationId}` na rodzeństwie w fragmencie
+
+- **Kategoria**: `React`
+- **Problem**: React ostrzegał o duplikacie klucza na `/finances`.
+- **Przyczyna**: `BillingOverview` i `BillingDetailsDialog` były rodzeństwem w `<>` z identycznym `key={organizationId}`.
+- **Rozwiązanie**: Prefiksowane klucze (`billing-overview-`, `billing-dialog-`), żeby reset przy zmianie org został, a klucze były unikalne.
+- **Reguła**: `key` do remountu po zmianie org musi być unikalny wśród rodzeństwa — nie sam `organizationId`.
+
+### 2026-09-06 - Overlay 500 przy OrganizationProvider to backend, nie React
+
+- **Kategoria**: `GraphQL`
+- **Problem**: Next.js pokazywał `ServerError` 500 na `DashboardShell` / `OrganizationProvider`.
+- **Przyczyna**: Azure GraphQL (`/graphql`) zwraca 500 `text/plain` z `HotChocolate.SchemaException` (`System.Void` jako type argument). Portal `console.error`ował obiekt `ServerError`, więc overlay wyglądał jak crash UI.
+- **Rozwiązanie**: HttpLink czyta body nie-JSON 5xx i formatuje komunikat schematu; `errorPolicy: 'all'` + `ErrorState` w `OrganizationProvider`; logi tylko jako string.
+- **Reguła**: HTTP 500 GraphQL z `text/plain` to padnięty schemat backendu. Nie loguj obiektu Apollo `ServerError` do `console.error` — Next.js robi z tego overlay.
+
+### 2026-09-06 - Parser testid i getToken po 401
+
+- **Kategoria**: `Build/Tooling` | `GraphQL`
+- **Problem**: Guard testid i skrypt dodawania atrybutów kończyły opening tag na pierwszym `>` (`=>`, `length >`), psując JSX. `getToken()` po 401 zwracał `null`.
+- **Przyczyna**: naiwny skan `chunk.includes('>')`; `resolveToken` łapał każdy błąd i zwracał `null`.
+- **Rozwiązanie**: `scripts/lib/read-opening-tag.mjs` (głębokość `{...}` + stringi); `data-testid` pierwszy atrybut; HTTP status z `getToken()` jest rethrow.
+- **Reguła**: Guard JSX nie tnie tagu na `=>`. Błąd tokenu z kodem HTTP musi dojść do AuthLink/ErrorLink.
+
+### 2026-09-06 - Hook przed implicit-return nie może zmienić `=>` w blok
+
+- **Kategoria**: `React`
+- **Problem**: Wstawka `useDialogShortcuts` przed `const getInitials = (name) => expr` zepsuła składnię (`=> {` bez zamknięcia).
+- **Przyczyna**: replace złapał strzałkę implicit-return i otworzył blok tylko dla nowej funkcji.
+- **Rozwiązanie**: Hook przed early return / helperem, oryginalna forma `=> expr` bez zmian.
+- **Reguła**: Przy dodawaniu hooka przed one-line arrow nie zmieniaj `=> expr` w `=> {`. Hook musi być przed `if (...) return`, nigdy po.
+
+### 2026-09-06 - Cienki RSC `page.tsx` wymaga Suspense przy `useSearchParams`
+
+- **Kategoria**: `React`
+- **Problem**: Po wyciągnięciu klienta z `app/(dashboard)/*/page.tsx` Next.js wymaga Suspense wokół `useSearchParams`.
+- **Przyczyna**: Server `page.tsx` renderuje client feature; hook musi mieć boundary powyżej.
+- **Rozwiązanie**: Owijać feature page w `<Suspense>` na cienkim `page.tsx` (listy i detale z query string).
+- **Reguła**: Gdy `page.tsx` jest RSC, a feature używa `useSearchParams`, Suspense idzie w wrapperze, nie w kliencie.
+
+### 2026-09-06 - Guard testid tnie tag na pierwszym `>`
+
+- **Kategoria**: `Build/Tooling`
+- **Problem**: `check:testids` nie widział `data-testid` gdy atrybut stał za `=>` w JSX.
+- **Przyczyna**: parser kończy opening tag na pierwszym `>`.
+- **Rozwiązanie**: stawiaj `data-testid` jako pierwszy atrybut, przed handlerami strzałkowymi.
+- **Reguła**: W tagach interaktywnych `data-testid` idzie zaraz po nazwie komponentu.
+
+### 2026-09-06 - Cache JWT po await Clerk musi ponownie sprawdzić identity
+
+- **Kategoria**: `GraphQL`
+- **Problem**: Test „inny user w cache” dostawał JWT user-1 mimo Clerk user-2.
+- **Przyczyna**: `performTokenExchange` zwracał cache po samym `exp` i braku roli patient, bez porównania `clerk_id` z bieżącym Clerk JWT.
+- **Rozwiązanie**: Ponowne `resolveCachedIdentity`; obcy token jest czyszczony i wymieniany.
+- **Reguła**: Jeśli odczytujesz backend JWT po `await` na Clerk, zawsze porównaj identity z aktualnym `sub`/`clerk_id`. Sam `exp` nie wystarczy.
+
+### 2026-09-05 - Dodawanie istniejącego pacjenta nie może być dwoma requestami
+
+- **Kategoria**: `GraphQL`
+- **Problem**: Portal wołał `addDirectMember` i `assignPatientToTherapist` osobno; pacjent zostawał z membership bez TPA albo odwrotnie, a jego JWT i tak nie dostawał org.
+- **Przyczyna**: Dwa write-pathy + brak recovery scope po stronie klienta; ten sam bug lock/decode JWT co w mobile.
+- **Rozwiązanie**: `linkExistingPatientToCareTeam` jako jedyny write-path `UnifiedPatientInput`; single-flight + base64url w `BackendAuthTokenProvider`.
+- **Reguła**: Jeśli dodajesz istniejącego pacjenta do opieki, zawsze jedna transakcja (membership + PRIMARY TPA). Nie utrzymuj drugiego write-path w `SmartPatientLookup`.
+
 ### 2026-08-20 - Import katalogu JSON jest dla każdego fizjo, nie tylko ownera
 
 - **Kategoria**: `UI/UX`
@@ -887,3 +951,5 @@ Dziennik wniosków z pracy AI agentów. Po każdej korekcie dodaj nowy wpis.
 - **Reguła**: Czas serii pokazuj jako wyliczenie; edytuj `executionTime`. Personalizacja szablonu zestawu ≠ personalizacja pacjenta — osobne warstwy JSON, ten sam kształt kluczy. Addytywne pola GraphQL wdrażaj razem z backendem.
 
 <!-- Dodawaj nowe wpisy powyżej tej linii -->
+
+- 2026-09-06 - Jeśli pokazujesz rozliczenia, zawsze odróżniaj brak danych od zera oraz aktywny dostęp od potwierdzonej sprzedaży; tryb współpracy pobieraj z backendu.

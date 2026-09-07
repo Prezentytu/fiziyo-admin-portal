@@ -42,8 +42,11 @@ Diagramy i opisy głównych przepływów danych. Czytaj gdy implementujesz lub m
 **Pułapki:**
 
 - Zmiana organizacji = nowy token (cache invalidation)
-- Race condition protection: tylko jedno wymiana na raz
+- Race condition protection: process-wide single-flight na całą ścieżkę cache miss (Clerk + store + exchange)
+- Dekodowanie JWT wyłącznie jako base64url z paddingiem — surowe `atob` psuje tokeny produkcyjne
 - 5-minutowy bufor przed wygaśnięciem = auto-refresh
+- Po dodaniu pacjenta do org JWT z pustym `organization_id` nie odświeża się sam: mobile robi dokładnie jeden `change-organization` + `resetStore` (SPEC-027)
+- Istniejący pacjent: `linkExistingPatientToCareTeam` (membership + PRIMARY TPA w jednej transakcji). `addDirectMember` + `assignPatientToTherapist` zostają dla rollbacku
 
 ---
 

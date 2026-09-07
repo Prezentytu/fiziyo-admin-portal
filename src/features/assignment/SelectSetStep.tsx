@@ -119,6 +119,7 @@ export function SelectSetStep({
             </p>
             {(selectedSet || selectedToUnassign) && (
               <button
+                data-testid="selectsetstep-button-121"
                 type="button"
                 onClick={() => {
                   setPreviewSet(null);
@@ -178,7 +179,11 @@ export function SelectSetStep({
                     {searchQuery ? 'Nie znaleziono zestawów' : 'Brak zestawów'}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    {searchQuery ? (onCreateSet ? 'Utwórz nowy zestaw klikając przycisk powyżej' : 'Spróbuj innej frazy') : 'Utwórz nowy zestaw ćwiczeń'}
+                    {searchQuery
+                      ? onCreateSet
+                        ? 'Utwórz nowy zestaw klikając przycisk powyżej'
+                        : 'Spróbuj innej frazy'
+                      : 'Utwórz nowy zestaw ćwiczeń'}
                   </p>
                 </div>
               )}
@@ -217,10 +222,7 @@ export function SelectSetStep({
                           src={firstImage}
                           alt=""
                           fill
-                          className={cn(
-                            'object-cover',
-                            isAssigned && !isSelectedForUnassign && 'grayscale'
-                          )}
+                          className={cn('object-cover', isAssigned && !isSelectedForUnassign && 'grayscale')}
                           sizes="56px"
                         />
                       ) : (
@@ -292,7 +294,13 @@ export function SelectSetStep({
                 {selectedToUnassign === previewSet.id && <Badge variant="destructive">Wybrany do odpisania</Badge>}
               </div>
               {selectedToUnassign === previewSet.id && onUnassign && (
-                <Button variant="destructive" size="sm" className="mt-3 w-full" onClick={handleUnassign}>
+                <Button
+                  data-testid="assignment-select-set-step-btn-295"
+                  variant="destructive"
+                  size="sm"
+                  className="mt-3 w-full"
+                  onClick={handleUnassign}
+                >
                   <X className="h-4 w-4 mr-2" />
                   Odpisz ten zestaw od pacjenta
                 </Button>

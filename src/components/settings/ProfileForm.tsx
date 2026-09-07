@@ -258,9 +258,7 @@ export function ProfileForm({ user, clerkId, onSuccess }: Readonly<ProfileFormPr
 
     try {
       const canvas = editor.getImageScaledToCanvas();
-      const blob = await new Promise<Blob | null>((resolve) =>
-        canvas.toBlob((b) => resolve(b), 'image/jpeg', 0.9)
-      );
+      const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob((b) => resolve(b), 'image/jpeg', 0.9));
       if (!blob) {
         toast.error('Nie udało się przygotować zdjęcia');
         return;
@@ -324,6 +322,7 @@ export function ProfileForm({ user, clerkId, onSuccess }: Readonly<ProfileFormPr
           </CardHeader>
           <CardContent>
             <input
+              data-testid="settings-profile-form-input-326"
               ref={fileInputRef}
               type="file"
               accept="image/jpeg,image/png,image/gif"
@@ -332,10 +331,7 @@ export function ProfileForm({ user, clerkId, onSuccess }: Readonly<ProfileFormPr
             />
             <div className="flex items-center gap-6">
               <Avatar className="h-24 w-24 ring-4 ring-zinc-100 dark:ring-zinc-800">
-                <AvatarImage
-                  src={clerkUser?.imageUrl ?? user.image}
-                  alt={displayName}
-                />
+                <AvatarImage src={clerkUser?.imageUrl ?? user.image} alt={displayName} />
                 <AvatarFallback className="bg-linear-to-br from-primary to-primary-dark text-primary-foreground text-2xl font-semibold">
                   {initials}
                 </AvatarFallback>
@@ -544,19 +540,19 @@ export function ProfileForm({ user, clerkId, onSuccess }: Readonly<ProfileFormPr
           <div className="flex flex-col items-center gap-4 py-4">
             <div className="relative overflow-hidden rounded-2xl border border-border bg-surface">
               {cropImageFile && (
-              <AvatarEditor
-                ref={(ref: AvatarEditor | null) => {
-                  avatarEditorRef.current = ref;
-                }}
-                image={cropImageFile}
-                width={256}
-                height={256}
-                border={32}
-                borderRadius={128}
-                color={[0, 0, 0, 0.6]}
-                scale={cropScale}
-                rotate={0}
-              />
+                <AvatarEditor
+                  ref={(ref: AvatarEditor | null) => {
+                    avatarEditorRef.current = ref;
+                  }}
+                  image={cropImageFile}
+                  width={256}
+                  height={256}
+                  border={32}
+                  borderRadius={128}
+                  color={[0, 0, 0, 0.6]}
+                  scale={cropScale}
+                  rotate={0}
+                />
               )}
             </div>
             <div className="w-full space-y-2">

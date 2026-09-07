@@ -25,6 +25,7 @@ import { aiService } from '@/services/aiService';
 import { submitCreateTemplateSet } from '@/features/exercise-sets/utils/createSetSubmit';
 import { SetNameField } from '@/features/exercise-sets/components/SetNameField';
 import { SetDescriptionCollapsible } from '@/features/exercise-sets/components/SetDescriptionCollapsible';
+import { useDialogShortcuts } from '@/hooks/useDialogShortcuts';
 
 interface CreateExerciseSetResponse {
   createExerciseSet: {
@@ -191,6 +192,15 @@ export function CreateSetDialog({ open, onOpenChange }: CreateSetDialogProps) {
     }
   };
 
+  useDialogShortcuts({
+    open,
+    enabled: !isCreating,
+    onSubmit: () => {
+      void handleSubmit();
+    },
+    onClose: handleClose,
+  });
+
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent
@@ -207,8 +217,8 @@ export function CreateSetDialog({ open, onOpenChange }: CreateSetDialogProps) {
           <DialogTitle>Utwórz nowy zestaw</DialogTitle>
           <DialogDescription>
             Zestaw będzie zawierał {exerciseCount}{' '}
-            {exerciseCount === 1 ? 'ćwiczenie' : exerciseCount < 5 ? 'ćwiczenia' : 'ćwiczeń'}. Nadaj mu nazwę i
-            dodaj opis.
+            {exerciseCount === 1 ? 'ćwiczenie' : exerciseCount < 5 ? 'ćwiczenia' : 'ćwiczeń'}. Nadaj mu nazwę i dodaj
+            opis.
           </DialogDescription>
         </DialogHeader>
 

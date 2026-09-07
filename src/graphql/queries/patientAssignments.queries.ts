@@ -224,11 +224,9 @@ export const GET_ASSIGNMENTS_WITH_USERS_QUERY = gql`
   ${PATIENT_ASSIGNMENT_FULL_FRAGMENT}
 `;
 
-// Query do pobierania wszystkich przypisań ćwiczeń w organizacji
-// Filtrowanie po organizationId odbywa się po stronie pacjenta przez therapistPatients
-export const GET_ALL_PATIENT_ASSIGNMENTS_QUERY = gql`
-  query GetAllPatientAssignments {
-    patientAssignments(order: [{ assignedAt: DESC }]) {
+export const GET_THERAPIST_EXERCISE_ASSIGNMENTS_QUERY = gql`
+  query GetTherapistExerciseAssignments($assignedById: String!) {
+    patientAssignments(where: { assignedById: { eq: $assignedById } }, order: [{ assignedAt: DESC }]) {
       id
       userId
       exerciseSetId

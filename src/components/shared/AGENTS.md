@@ -6,9 +6,9 @@ Komponenty reużywalne używane w wielu modułach. Preferuj import z `@/componen
 
 ## Kluczowe komponenty
 
-### DataTable
+### PageShell / PageHeader / PageHero / StatTiles
 
-Główna tabela z danymi. Używaj dla list (ćwiczenia, pacjenci, zestawy).
+Jeden szkielet stron listowych i ustawień (`src/components/shared/page/`). Listy kliniczne: `PageHeader` + `PageHero` + `StatTiles` + `SearchInput`. Settings/org: `PageShell variant="split"`. Pełny bleed (builder): `variant="fullBleed"`.
 
 ### ExerciseSetBuilder
 
@@ -32,11 +32,11 @@ Krokowy wskaźnik (np. 1/5, 2/5). Używany w wizardach.
 
 ### ConfirmDialog
 
-Dialog potwierdzenia z Cmd+Enter i Escape.
+Dialog potwierdzenia z Cmd+Enter i Escape (`useDialogShortcuts`).
 
-### EmptyState
+### EmptyState / ErrorState / ListSkeleton
 
-Stan pusty z ikoną i CTA.
+Stan pusty, błąd z retry oraz szkielet listy. Nie używaj ad-hoc `<p className="text-destructive">`.
 
 ### LoadingState
 
@@ -44,7 +44,7 @@ Loader podczas ładowania.
 
 ### SearchInput
 
-Pole wyszukiwania z debounce.
+Pole wyszukiwania z debounce, `aria-label` i `data-testid` (`page-search-input` albo specyficzny testid listy).
 
 ### ScheduleSummary
 
@@ -53,17 +53,15 @@ Wspólny komponent read-only harmonogramu (`compact` / `card` / `inline-highligh
 ### Inne
 
 - `AccessGuard` — ochrona dostępu (rola/organizacja)
-- `StatsCard` — karta ze statystyką
 - `FileUpload` — upload plików
-- `SmartAccordion` — rozwijana sekcja
 - `ColorBadge` — badge z kolorem
-- `CompletionBar` — pasek postępu
-- `GhostField` — pole ghost (np. w formularzach)
+- `ErrorBoundary` — montowany w `DashboardShell`
 
 ## Import
 
 ```typescript
-import { DataTable, EmptyState, ConfirmDialog } from '@/components/shared';
+import { EmptyState, ErrorState, ConfirmDialog, SearchInput } from '@/components/shared';
+import { PageShell, PageHeader, PageHero, StatTiles } from '@/components/shared/page';
 import { ExerciseSetBuilder } from '@/components/shared';
 ```
 
@@ -74,6 +72,7 @@ import { ExerciseSetBuilder } from '@/components/shared';
 - Każdy interaktywny element: `data-testid`
 - Dla pasków/kafelków ćwiczeń obowiązuje `ExerciseExecutionCard` + adaptery z `shared/exercise`
 - Nie wprowadzaj terminów „ćwiczenie czasowe/powtórzeniowe” w UI; używaj modelu `executionTime` i komunikatów o timerze
+- Listy kliniczne buduj kartami / siatką, nie tabelą danych
 
 ## Standaryzacja active / selected
 

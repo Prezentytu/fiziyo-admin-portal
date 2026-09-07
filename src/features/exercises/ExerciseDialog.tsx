@@ -36,6 +36,7 @@ import { buildEnrichmentUpdateVariables, isExerciseSaveAuthError } from './utils
 import { useExerciseImageGeneration } from './useExerciseImageGeneration';
 import { ImageStylePicker } from './ImageStylePicker';
 import type { ExerciseEnrichmentData } from '@/graphql/types/exerciseEnrichment.types';
+import { useDialogShortcuts } from '@/hooks/useDialogShortcuts';
 
 export type ExerciseDialogSuccessEvent =
   | CreateExerciseWizardSuccessEvent
@@ -136,13 +137,13 @@ export function ExerciseDialog({
   const isFixMode = isChangesRequested; // Enable editing to fix issues
 
   // Can submit to global: ORGANIZATION scope, no existing submission, not in review
-  const canSubmitToGlobal =
-    onSubmitToGlobal && exercise?.scope === 'ORGANIZATION' && !exercise?.globalSubmissionId;
+  const canSubmitToGlobal = onSubmitToGlobal && exercise?.scope === 'ORGANIZATION' && !exercise?.globalSubmissionId;
 
   const canSubmitToOrganization =
     onSubmitToOrganizationReview &&
     exercise?.scope === 'ORGANIZATION' &&
-    (exercise?.organizationVerificationStatus === 'NOT_SUBMITTED' || exercise?.organizationVerificationStatus === 'ORG_CHANGES_REQUESTED');
+    (exercise?.organizationVerificationStatus === 'NOT_SUBMITTED' ||
+      exercise?.organizationVerificationStatus === 'ORG_CHANGES_REQUESTED');
 
   const handleCloseAttempt = useCallback(() => {
     if (isFormDirty || hasMediaChanges) {
@@ -194,11 +195,12 @@ export function ExerciseDialog({
   const [copyExercise, { loading: copying }] = useMutation(COPY_EXERCISE_TEMPLATE_MUTATION, {
     refetchQueries: [{ query: GET_AVAILABLE_EXERCISES_QUERY, variables: { organizationId } }],
   });
-  const organizationExerciseNames =
-    ((organizationExercisesData as { organizationExercises?: { name?: string | null }[] } | undefined)
-      ?.organizationExercises ?? [])
-      .map((organizationExercise) => organizationExercise.name?.trim())
-      .filter((name): name is string => Boolean(name));
+  const organizationExerciseNames = (
+    (organizationExercisesData as { organizationExercises?: { name?: string | null }[] } | undefined)
+      ?.organizationExercises ?? []
+  )
+    .map((organizationExercise) => organizationExercise.name?.trim())
+    .filter((name): name is string => Boolean(name));
 
   const fileToBase64 = useCallback((file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
@@ -402,8 +404,7 @@ export function ExerciseDialog({
         });
       }
 
-      const hadMediaMutations =
-        mediaChangeSet.removedImageUrls.length > 0 || mediaChangeSet.filesToUpload.length > 0;
+      const hadMediaMutations = mediaChangeSet.removedImageUrls.length > 0 || mediaChangeSet.filesToUpload.length > 0;
       if (hadMediaMutations) {
         await apolloClient.refetchQueries({
           include: [GET_ORGANIZATION_EXERCISES_QUERY, GET_AVAILABLE_EXERCISES_QUERY],
@@ -437,6 +438,35 @@ export function ExerciseDialog({
       toast.error('Nie udało się zaktualizować ćwiczenia');
     }
   };
+
+  useDialogShortcuts({
+    open: open && isEditing,
+    enabled:
+      !updating &&
+      !isResubmitting &&
+      !uploadingMedia &&
+      !deletingMedia &&
+      !isGeneratingMedia &&
+      !copying &&
+      editorForm.saveStatus !== 'saving',
+    onSubmit: () => {
+      if (isGlobalExercise) {
+        void handleForkExercise();
+        return;
+      }
+      if (isPendingReview || isPendingOrganizationReview) {
+        return;
+      }
+      void handleSave();
+    },
+    onClose: () => {
+      if (isGlobalExercise || isPendingReview || isPendingOrganizationReview) {
+        onOpenChange(false);
+        return;
+      }
+      handleCloseAttempt();
+    },
+  });
 
   // For creating new exercises, use the wizard
   if (!isEditing) {
@@ -482,10 +512,14 @@ export function ExerciseDialog({
           </div>
 
           <div className="flex justify-end gap-3">
-            <Button variant="outline" onClick={() => onOpenChange(false)}>
+            <Button
+              data-testid="exercise-exercise-dialog-btn-515"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+            >
               Zamknij
             </Button>
-            <Button onClick={handleForkExercise} disabled={copying}>
+            <Button data-testid="exercisedialog-button-488" onClick={handleForkExercise} disabled={copying}>
               <Copy className="mr-2 h-4 w-4" />
               {copying ? 'Kopiowanie...' : 'Utwórz kopię do edycji'}
             </Button>
@@ -526,7 +560,7 @@ export function ExerciseDialog({
           </div>
 
           <div className="flex justify-end gap-3">
-            <Button variant="outline" onClick={() => onOpenChange(false)}>
+            <Button data-testid="exercisedialog-button-529" variant="outline" onClick={() => onOpenChange(false)}>
               Zamknij
             </Button>
           </div>
@@ -577,9 +611,7 @@ export function ExerciseDialog({
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <p className="text-sm font-medium">Zdjęcia ćwiczenia</p>
-              <span className="text-xs text-muted-foreground">
-                {existingMediaUrls.length + newMediaFiles.length}/5
-              </span>
+              <span className="text-xs text-muted-foreground">{existingMediaUrls.length + newMediaFiles.length}/5</span>
             </div>
             {(existingMediaUrls.length > 0 || newMediaPreviewUrls.length > 0 || isGeneratingMedia) && (
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
@@ -727,6 +759,7 @@ export function ExerciseDialog({
                 {isGeneratingMedia ? 'Generowanie…' : 'Generuj AI'}
               </Button>
               <input
+                data-testid="exercisedialog-input-729"
                 ref={mediaFileInputRef}
                 type="file"
                 accept="image/*"
@@ -763,6 +796,7 @@ export function ExerciseDialog({
             <div className="flex flex-wrap items-center gap-2">
               {canSubmitToGlobal && exercise ? (
                 <Button
+                  data-testid="exercise-exercise-dialog-btn-795"
                   type="button"
                   onClick={() => {
                     onOpenChange(false);
@@ -804,9 +838,7 @@ export function ExerciseDialog({
                   isResubmitting ||
                   uploadingMedia ||
                   deletingMedia ||
-                  editorForm.saveStatus === 'saving') && (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                )}
+                  editorForm.saveStatus === 'saving') && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {isFixMode ? 'Wyślij poprawki' : 'Zapisz zmiany'}
               </Button>
             </div>

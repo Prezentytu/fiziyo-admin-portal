@@ -313,6 +313,7 @@ export function PatientExpandableCard({
           {/* Edit Diagnosis button (on hover, only for my patients) */}
           {isMyPatient && (
             <button
+              data-testid="patientexpandablecard-button-315"
               type="button"
               onMouseDown={(e) => {
                 e.stopPropagation();
@@ -338,6 +339,7 @@ export function PatientExpandableCard({
             {/* Take Over button (only for patients not mine) */}
             {!isMyPatient && onTakeOver && (
               <Button
+                aria-label="Akcja"
                 variant="ghost"
                 size="icon"
                 className="h-8 w-8 hover:bg-primary/10 hover:text-primary"
@@ -352,6 +354,7 @@ export function PatientExpandableCard({
             {/* Quick Assign (only for my patients) */}
             {isMyPatient && (
               <Button
+                aria-label="Akcja"
                 variant="ghost"
                 size="icon"
                 className="h-8 w-8 hover:bg-primary/10 hover:text-primary"
@@ -366,6 +369,7 @@ export function PatientExpandableCard({
             {/* QR Code(only for my patients) */}
             {isMyPatient && onShowQR && (
               <Button
+                aria-label="Akcja"
                 variant="ghost"
                 size="icon"
                 className="h-8 w-8 hover:bg-primary/10 hover:text-primary"
@@ -381,6 +385,7 @@ export function PatientExpandableCard({
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
+                  aria-label="Akcja"
                   variant="ghost"
                   size="icon"
                   className="h-8 w-8"

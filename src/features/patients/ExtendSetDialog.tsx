@@ -22,6 +22,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { UPDATE_EXERCISE_SET_ASSIGNMENT_MUTATION } from '@/graphql/mutations/exercises.mutations';
 import { GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY } from '@/graphql/queries/patientAssignments.queries';
 import { GET_CURRENT_BILLING_STATUS_QUERY } from '@/graphql/queries/billing.queries';
+import { useDialogShortcuts } from '@/hooks/useDialogShortcuts';
 
 interface ExtendSetDialogProps {
   readonly open: boolean;
@@ -156,6 +157,15 @@ export function ExtendSetDialog({
     onEditWithWizard?.();
   };
 
+  useDialogShortcuts({
+    open,
+    enabled: !loading,
+    onSubmit: () => {
+      void handleExtend();
+    },
+    onClose: () => onOpenChange(false),
+  });
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md" data-testid="extend-set-dialog">
@@ -184,7 +194,11 @@ export function ExtendSetDialog({
           {/* Duration selector */}
           <div className="space-y-2">
             <Label>Na jak długo przedłużyć?</Label>
-            <Select value={durationDays} onValueChange={setDurationDays}>
+            <Select
+              data-testid="patient-extend-set-dialog-select-197"
+              value={durationDays}
+              onValueChange={setDurationDays}
+            >
               <SelectTrigger data-testid="extend-set-duration-select">
                 <SelectValue />
               </SelectTrigger>

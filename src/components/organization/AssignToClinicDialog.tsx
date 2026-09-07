@@ -28,6 +28,7 @@ import {
 import { GET_ORGANIZATION_CLINICS_QUERY } from '@/graphql/queries/clinics.queries';
 import { matchesSearchQuery } from '@/utils/textUtils';
 import { cn } from '@/lib/utils';
+import { useDialogShortcuts } from '@/hooks/useDialogShortcuts';
 import type { Clinic } from './ClinicExpandableCard';
 
 interface Person {
@@ -169,6 +170,15 @@ export function AssignToClinicDialog({
 
   const totalSelected = selectedTherapistIds.length + selectedPatientIds.length;
 
+  useDialogShortcuts({
+    open,
+    enabled: !isLoading,
+    onSubmit: () => {
+      void handleAssign();
+    },
+    onClose: handleCloseAttempt,
+  });
+
   const renderPersonList = (
     people: Person[],
     selectedIds: string[],
@@ -206,6 +216,7 @@ export function AssignToClinicDialog({
               onClick={() => !isAlreadyAssigned && onToggle(person.id)}
             >
               <Checkbox
+                data-testid="assigntoclinicdialog-checkbox-208"
                 checked={isSelected || isAlreadyAssigned}
                 disabled={isAlreadyAssigned}
                 onCheckedChange={() => onToggle(person.id)}

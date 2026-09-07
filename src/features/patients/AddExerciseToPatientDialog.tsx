@@ -36,11 +36,9 @@ import {
 } from '@/graphql/mutations/exercises.mutations';
 import { GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY } from '@/graphql/queries/patientAssignments.queries';
 import type { PatientAssignment } from './PatientAssignmentCard';
+import { useDialogShortcuts } from '@/hooks/useDialogShortcuts';
 
-const ADD_FIELD_TESTID_MAP: Record<
-  ExerciseFieldKey | MappingOnlyFieldKey,
-  { input: string; info: string }
-> = {
+const ADD_FIELD_TESTID_MAP: Record<ExerciseFieldKey | MappingOnlyFieldKey, { input: string; info: string }> = {
   sets: { input: 'add-exercise-sets-input', info: 'add-exercise-sets-info' },
   reps: { input: 'add-exercise-reps-input', info: 'add-exercise-reps-info' },
   executionTime: { input: 'add-exercise-execution-time-input', info: 'add-exercise-execution-time-info' },
@@ -265,24 +263,19 @@ function AddExerciseToPatientDialogContent({
     if ('customDescription' in patch) setCustomDescription(patch.customDescription ?? '');
   }, []);
 
-  const addTestIdFor = useCallback(
-    (key: ExerciseFieldKey | MappingOnlyFieldKey, kind: ParameterTestIdKind) => {
-      const mapped = ADD_FIELD_TESTID_MAP[key];
-      return kind === 'info' ? mapped.info : mapped.input;
-    },
-    []
-  );
+  const addTestIdFor = useCallback((key: ExerciseFieldKey | MappingOnlyFieldKey, kind: ParameterTestIdKind) => {
+    const mapped = ADD_FIELD_TESTID_MAP[key];
+    return kind === 'info' ? mapped.info : mapped.input;
+  }, []);
 
-    // Get exercises from organization
+  // Get exercises from organization
   const { data: exercisesData, loading: loadingExercises } = useQuery(GET_AVAILABLE_EXERCISES_QUERY, {
     variables: { organizationId },
     skip: !organizationId,
   });
 
   const [addExerciseToSet, { loading: adding }] = useMutation(ADD_EXERCISE_TO_EXERCISE_SET_MUTATION);
-  const [updateOverrides, { loading: updatingOverrides }] = useMutation(
-    UPDATE_PATIENT_EXERCISE_OVERRIDES_MUTATION
-  );
+  const [updateOverrides, { loading: updatingOverrides }] = useMutation(UPDATE_PATIENT_EXERCISE_OVERRIDES_MUTATION);
   const saving = adding || updatingOverrides;
 
   // Get existing exercise IDs in the assignment to filter them out
@@ -329,9 +322,7 @@ function AddExerciseToPatientDialogContent({
     setTempo('');
     setLoadWeightKg(undefined);
     setNotes('');
-    setExerciseSide(
-      (exercise.side ?? exercise.exerciseSide ?? 'both').toString().toLowerCase()
-    );
+    setExerciseSide((exercise.side ?? exercise.exerciseSide ?? 'both').toString().toLowerCase());
     setRangeOfMotion(exercise.rangeOfMotion ?? '');
     setCustomName('');
     setCustomDescription('');
@@ -367,9 +358,7 @@ function AddExerciseToPatientDialogContent({
           rangeOfMotion: ENABLE_EXTENDED_PATIENT_OVERRIDE_FIELDS ? rangeOfMotion : undefined,
           difficultyLevel: ENABLE_FULL_PATIENT_PERSONALIZATION ? difficultyLevel : undefined,
           patientDescription: ENABLE_FULL_PATIENT_PERSONALIZATION ? patientDescription : undefined,
-          clinicalDescription: ENABLE_FULL_PATIENT_PERSONALIZATION
-            ? clinicalDescription
-            : undefined,
+          clinicalDescription: ENABLE_FULL_PATIENT_PERSONALIZATION ? clinicalDescription : undefined,
           audioCue: ENABLE_FULL_PATIENT_PERSONALIZATION ? audioCue : undefined,
         }
       );
@@ -391,26 +380,21 @@ function AddExerciseToPatientDialogContent({
           duration: duration ?? null,
           restSets: restSets ?? null,
           restReps: restReps ?? null,
-          preparationTime: ENABLE_EXTENDED_PATIENT_OVERRIDE_FIELDS
-            ? (preparationTime ?? null)
-            : null,
+          preparationTime: ENABLE_EXTENDED_PATIENT_OVERRIDE_FIELDS ? (preparationTime ?? null) : null,
           executionTime: executionTime ?? null,
           notes: notes.trim() || null,
           customName: customName.trim() || null,
           customDescription: customDescription.trim() || null,
           tempo: ENABLE_EXTENDED_PATIENT_OVERRIDE_FIELDS ? tempo.trim() || null : null,
-          ...buildExerciseLoadMutationVars(
-            ENABLE_EXTENDED_PATIENT_OVERRIDE_FIELDS ? loadWeightKg : undefined
-          ),
+          ...buildExerciseLoadMutationVars(ENABLE_EXTENDED_PATIENT_OVERRIDE_FIELDS ? loadWeightKg : undefined),
           overridesJson: overridesJson ?? '',
         },
         refetchQueries: refetchAssignments,
         awaitRefetchQueries: true,
       });
 
-      const mappingId = (
-        addResult.data as { addExerciseToExerciseSet?: { id?: string } } | undefined
-      )?.addExerciseToExerciseSet?.id;
+      const mappingId = (addResult.data as { addExerciseToExerciseSet?: { id?: string } } | undefined)
+        ?.addExerciseToExerciseSet?.id;
 
       if (mappingId && ENABLE_FULL_PATIENT_PERSONALIZATION) {
         const clinicalDelta = buildOverrideDelta(
@@ -431,11 +415,7 @@ function AddExerciseToPatientDialogContent({
           }
         );
         if (Object.keys(clinicalDelta).length > 0) {
-          const exerciseOverrides = mergeOverrideMap(
-            assignment.exerciseOverrides,
-            mappingId,
-            clinicalDelta
-          );
+          const exerciseOverrides = mergeOverrideMap(assignment.exerciseOverrides, mappingId, clinicalDelta);
           await updateOverrides({
             variables: {
               assignmentId: assignment.id,
@@ -453,6 +433,15 @@ function AddExerciseToPatientDialogContent({
       toast.error('Nie udało się dodać ćwiczenia');
     }
   };
+
+  useDialogShortcuts({
+    open: true,
+    enabled: !saving,
+    onSubmit: () => {
+      void handleSave();
+    },
+    onClose: onCloseAttempt,
+  });
 
   const setName = assignment.exerciseSet?.name || 'Nieznany zestaw';
 
@@ -480,11 +469,11 @@ function AddExerciseToPatientDialogContent({
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
+              data-testid="add-exercise-search-input"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Szukaj ćwiczeń..."
               className="pl-9"
-              data-testid="add-exercise-search-input"
             />
           </div>
         </div>
@@ -517,10 +506,12 @@ function AddExerciseToPatientDialogContent({
                   )}
                 </div>
                 <Button
+                  data-testid="add-exercise-clear-selection-btn"
                   variant="ghost"
                   size="icon"
                   className="h-8 w-8 shrink-0"
                   onClick={() => setSelectedExercise(null)}
+                  aria-label="Odznacz ćwiczenie"
                 >
                   <X className="h-4 w-4" />
                 </Button>
@@ -538,7 +529,7 @@ function AddExerciseToPatientDialogContent({
                 structuralTestIdPrefix="add-exercise"
               />
 
-                            {/* Info note */}
+              {/* Info note */}
               <div className="rounded-xl bg-info/5 border border-info/20 p-3">
                 <p className="text-xs text-muted-foreground">
                   To ćwiczenie zostanie dodane <strong>tylko dla tego pacjenta</strong>. Oryginalny zestaw nie zostanie
@@ -568,6 +559,7 @@ function AddExerciseToPatientDialogContent({
                     const imageUrl = getMediaUrl(exercise.imageUrl || exercise.images?.[0]);
                     return (
                       <button
+                        data-testid={`add-exercise-item-${exercise.id}`}
                         key={exercise.id}
                         type="button"
                         onClick={() => handleSelectExercise(exercise)}
@@ -575,7 +567,6 @@ function AddExerciseToPatientDialogContent({
                           'flex items-start gap-3 p-3 rounded-xl border text-left transition-all',
                           'border-border/40 bg-surface/30 hover:bg-surface-light hover:border-primary/30'
                         )}
-                        data-testid={`add-exercise-item-${exercise.id}`}
                       >
                         <div className="relative h-14 w-14 rounded-lg overflow-hidden shrink-0 bg-surface-light">
                           {imageUrl ? (

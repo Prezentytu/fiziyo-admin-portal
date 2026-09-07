@@ -153,7 +153,14 @@ export function FileUpload({
               >
                 {previewUrl ? (
                   <span className="relative block h-12 w-12 rounded overflow-hidden shrink-0">
-                    <NextImage src={previewUrl} alt={file.name} fill className="object-cover" sizes="48px" unoptimized />
+                    <NextImage
+                      src={previewUrl}
+                      alt={file.name}
+                      fill
+                      className="object-cover"
+                      sizes="48px"
+                      unoptimized
+                    />
                   </span>
                 ) : (
                   <div className="flex h-12 w-12 items-center justify-center rounded bg-surface-light">
@@ -165,6 +172,7 @@ export function FileUpload({
                   <p className="text-xs text-muted-foreground">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
                 </div>
                 <Button
+                  aria-label="Akcja"
                   variant="ghost"
                   size="icon"
                   className="h-8 w-8"

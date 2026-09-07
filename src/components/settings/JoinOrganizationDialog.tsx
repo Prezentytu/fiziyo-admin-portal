@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useLazyQuery, useMutation } from '@apollo/client/react';
+import { useQuery, useMutation } from '@apollo/client/react';
 import {
   Building2,
   Loader2,
@@ -25,6 +25,7 @@ import { GET_INVITATION_BY_TOKEN_QUERY } from '@/graphql/queries/organizations.q
 import { ACCEPT_INVITATION_MUTATION } from '@/graphql/mutations/organizations.mutations';
 import type { OrganizationInvitation } from '@/types/apollo';
 import { cn } from '@/lib/utils';
+import { useDialogShortcuts } from '@/hooks/useDialogShortcuts';
 
 // ========================================
 // Types
@@ -82,13 +83,15 @@ function getRoleLabel(role: string): string {
 
 export function JoinOrganizationDialog({ open, onOpenChange, onSuccess }: JoinOrganizationDialogProps) {
   const [inputValue, setInputValue] = useState('');
+  const [debouncedToken, setDebouncedToken] = useState('');
   const [validationState, setValidationState] = useState<ValidationState>('idle');
   const [isAccepting, setIsAccepting] = useState(false);
 
-  // Query for validating token
-  const [validateToken, { data: inviteData, loading: validating }] = useLazyQuery<GetInvitationByTokenResponse>(
+  const { data: inviteData, loading: validating } = useQuery<GetInvitationByTokenResponse>(
     GET_INVITATION_BY_TOKEN_QUERY,
     {
+      variables: { token: debouncedToken },
+      skip: !debouncedToken || !open,
       fetchPolicy: 'network-only',
     }
   );
@@ -107,17 +110,18 @@ export function JoinOrganizationDialog({ open, onOpenChange, onSuccess }: JoinOr
 
     if (!token) {
       setValidationState('idle');
+      setDebouncedToken('');
       return;
     }
 
     setValidationState('validating');
 
     const timeoutId = setTimeout(() => {
-      validateToken({ variables: { token } });
+      setDebouncedToken(token);
     }, 500);
 
     return () => clearTimeout(timeoutId);
-  }, [inputValue, validateToken]);
+  }, [inputValue]);
 
   // Update validation state based on query result
   useEffect(() => {
@@ -156,6 +160,7 @@ export function JoinOrganizationDialog({ open, onOpenChange, onSuccess }: JoinOr
   useEffect(() => {
     if (!open) {
       setInputValue('');
+      setDebouncedToken('');
       setValidationState('idle');
       setIsAccepting(false);
     }
@@ -182,6 +187,15 @@ export function JoinOrganizationDialog({ open, onOpenChange, onSuccess }: JoinOr
       setIsAccepting(false);
     }
   }, [inputValue, validationState, acceptInvitation, onOpenChange, onSuccess]);
+
+  useDialogShortcuts({
+    open,
+    enabled: !isAccepting,
+    onSubmit: () => {
+      void handleAccept();
+    },
+    onClose: () => onOpenChange(false),
+  });
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

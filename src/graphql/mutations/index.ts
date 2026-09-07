@@ -1,8 +1,5 @@
 // Eksport wszystkich mutations
 
-// Appointments
-export * from './appointments.mutations';
-
 // Patient Progress
 export * from './patientProgress.mutations';
 

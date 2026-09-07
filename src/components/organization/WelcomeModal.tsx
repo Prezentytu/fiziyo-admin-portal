@@ -67,7 +67,7 @@ const quickTips = [
   {
     icon: FolderOpen,
     title: 'Zestawy',
-    description: 'Grupuj ćwiczenia w gotowe programy',
+    description: 'Grupuj ćwiczenia w gotowe zestawy',
     color: 'text-amber-400',
     bgColor: 'bg-amber-500/20',
   },
@@ -131,6 +131,7 @@ export function WelcomeModal({
     >
       {/* Backdrop */}
       <button
+        data-testid="org-welcome-modal-btn-133"
         type="button"
         className={cn(
           'absolute inset-0 bg-black/80 backdrop-blur-sm cursor-default',
@@ -152,6 +153,7 @@ export function WelcomeModal({
       >
         {/* Close button */}
         <button
+          data-testid="welcomemodal-button-154"
           onClick={handleClose}
           className="absolute top-4 right-4 p-2 rounded-full hover:bg-surface-light transition-colors z-10"
         >
@@ -182,13 +184,7 @@ export function WelcomeModal({
           >
             {organizationLogo ? (
               <span className="relative block h-24 w-24 rounded-2xl border-4 border-surface shadow-xl overflow-hidden">
-                <Image
-                  src={organizationLogo}
-                  alt={organizationName}
-                  fill
-                  className="object-cover"
-                  sizes="96px"
-                />
+                <Image src={organizationLogo} alt={organizationName} fill className="object-cover" sizes="96px" />
               </span>
             ) : (
               <div className="flex h-24 w-24 items-center justify-center rounded-2xl border-4 border-surface bg-gradient-to-br from-primary to-primary-dark text-primary-foreground text-2xl font-bold shadow-xl">
@@ -268,6 +264,7 @@ export function WelcomeModal({
             )}
           >
             <Button
+              data-testid="welcomemodal-button-270"
               onClick={handleContinue}
               size="lg"
               className="w-full gap-2 bg-gradient-to-r from-primary to-primary-dark hover:from-primary-dark hover:to-accent-green text-primary-foreground font-semibold shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 transition-all duration-300"

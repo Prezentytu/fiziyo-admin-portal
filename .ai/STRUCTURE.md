@@ -11,8 +11,8 @@ Dokument opisuje, jak układać pliki w modułach funkcyjnych (np. Assignment Wi
 
 ## Struktura src/ (po restrukturyzacji)
 
-- **src/features/** — moduły domenowe: assignment, exercises, exercise-sets, patients, verification, import. Każdy ma utils/, index.ts, AGENTS.md; komponenty i typy w korzeniu lub podkatalogach.
-- **src/components/** — komponenty współdzielone: shared, ui, layout oraz auth, organization, settings, finances, clinical, chat, pdf, exercise-builder.
+- **src/features/** — moduły domenowe: assignment, exercises, exercise-sets, patients, verification, import, dashboard. Każdy ma utils/, index.ts, AGENTS.md; strony klienckie to `*Page.tsx` (cienkie `app/(dashboard)/**/page.tsx` tylko re-eksportują).
+- **src/components/** — komponenty współdzielone: shared (PageShell/PageHeader/ErrorState), ui, layout (`navigation.config.ts`, `DashboardShell`) oraz auth, organization, settings, finances, clinical, pdf, exercise-builder. Chat usunięty.
 - **src/graphql/**, **src/lib/**, **src/hooks/**, **src/services/**, **src/types/**, **src/contexts/**, **src/utils/** — bez zmian.
 
 ## Zalecana struktura modułu (wzorzec: assignment)

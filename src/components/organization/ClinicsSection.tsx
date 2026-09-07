@@ -141,6 +141,7 @@ export function ClinicsSection({
             />
             {searchQuery && (
               <button
+                data-testid="clinicssection-button-143"
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                 onClick={() => setSearchQuery('')}
               >
@@ -218,6 +219,8 @@ export function ClinicsSection({
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button
+                          data-testid="org-clinics-section-btn-220"
+                          aria-label="Akcja"
                           variant="ghost"
                           size="icon"
                           className="h-9 w-9 rounded-xl hover:bg-background border border-transparent hover:border-border/50 transition-all"

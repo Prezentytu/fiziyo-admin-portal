@@ -104,7 +104,7 @@ Przed rozpoczęciem pracy dopasuj zadanie do tabeli i przeczytaj WSZYSTKIE pasuj
 - **Logika biznesowa** (filtry, reguły widoczności, walidacja): testy jednostkowe obowiązkowe. Wyciągaj czyste funkcje do helperów i testuj je (Vitest). Zobacz `docs/testing/testing-guidelines.md`.
 - Przed zakończeniem zadania uruchom `npm run test:run` i `npm run lint`; w razie potrzeby `npm run validate`.
 - Przy zmianie warunków lub filtrów: dodać/aktualizować testy dla tej logiki, żeby regresje były wykrywane.
-- Dla zmian UI i flow auth na PR-ach traktuj E2E z `fiziyo-tests` jako gate jakości. Szczegóły triggerów i sekretów: `docs/testing/e2e-cross-repo-pipeline.md`.
+- Preview nie uruchamia E2E. `E2E Dev Full` na `devportal` jest sygnałem Promote; PROD tylko `prod-safe`. Trigger/sekrety: `docs/testing/e2e-cross-repo-pipeline.md` i `docs/testing/e2e-dispatch-secrets.md`.
 
 ## Opis projektu
 
@@ -135,17 +135,23 @@ src/
 │   │   ├── exercise-sets/    # Zestawy ćwiczeń
 │   │   ├── patients/         # Pacjenci
 │   │   ├── organization/     # Zarządzanie organizacją
-│   │   ├── billing/          # Rozliczenia
+│   │   ├── finances/         # Finanse
+│   │   ├── verification/     # Weryfikacja treści
+│   │   ├── import/           # Import dokumentów
+│   │   ├── onboarding/       # Onboarding
 │   │   ├── settings/         # Ustawienia
+│   │   └── proxy.ts          # Proxy API
 ├── features/                 # Moduły domenowe (zobacz .ai/STRUCTURE.md)
 │   ├── assignment/           # Wizard przypisań (utils/, utils/__tests__/)
+│   ├── auth/                 # Auth helpers
 │   ├── exercises/            # Ćwiczenia
 │   ├── exercise-sets/        # Zestawy ćwiczeń
 │   ├── patients/             # Pacjenci
 │   ├── verification/         # Weryfikacja treści
 │   └── import/               # Import dokumentów
+├── contexts/                 # Organization + CurrentUser
 ├── components/               # Komponenty współdzielone
-│   ├── shared/               # DataTable, EmptyState, etc.
+│   ├── shared/               # PageShell, EmptyState, ErrorState, etc.
 │   ├── ui/                   # shadcn/ui
 │   ├── layout/               # Sidebar, Header, etc.
 │   └── ...                   # auth, organization, settings, finances, ...
@@ -327,7 +333,7 @@ Prefiksy modułów: `auth-`, `nav-`, `exercise-`, `set-`, `patient-`, `org-`, `s
 ### Reużywalność komponentów
 
 - Preferuj komponenty z `@/components/ui/` i `@/components/shared/` przed tworzeniem nowych
-- Domyślnie używaj `DataTable` dla tabel z danymi
+- Domyślnie używaj `PageShell` + `PageHeader` + `ErrorState` / `EmptyState` / `ListSkeleton` dla stron listowych
 - Sprawdź istniejące wzorce przed implementacją nowego UI
 - Dla poziomych pasków/kafelków ćwiczeń obowiązuje reużycie `src/components/shared/exercise/ExerciseExecutionCard.tsx` + adapterów (bez lokalnych klonów layoutu)
 - Unikaj etykiet „ćwiczenie czasowe/powtórzeniowe” w UI; semantyka ma wynikać z `executionTime` (timer pacjenta)

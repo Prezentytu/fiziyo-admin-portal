@@ -131,6 +131,7 @@ const PhoneInput = React.forwardRef<HTMLInputElement, PhoneInputProps>(
 
         {/* Input */}
         <input
+          data-testid="phone-input-input-133"
           ref={inputRef}
           type="tel"
           inputMode="numeric"

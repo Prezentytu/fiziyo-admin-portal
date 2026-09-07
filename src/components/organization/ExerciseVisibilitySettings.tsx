@@ -146,6 +146,7 @@ export function ExerciseVisibilitySettings({
           )}
         >
           <Checkbox
+            data-testid="org-exercise-visibility-settings-checkbox-148"
             id="allowPersonal"
             checked={allowPersonal}
             onCheckedChange={(checked) => canEdit && setAllowPersonal(checked === true)}
@@ -174,6 +175,7 @@ export function ExerciseVisibilitySettings({
           )}
         >
           <Checkbox
+            data-testid="exercisevisibilitysettings-checkbox-176"
             id="sharedByDefault"
             checked={sharedByDefault}
             onCheckedChange={(checked) => canEdit && setSharedByDefault(checked === true)}
@@ -196,6 +198,7 @@ export function ExerciseVisibilitySettings({
         {canEdit && hasChanges && (
           <div className="flex items-center justify-end gap-3 pt-4 border-t border-border/50">
             <Button
+              data-testid="org-exercise-visibility-settings-btn-198"
               variant="outline"
               onClick={handleReset}
               disabled={loading}
@@ -204,6 +207,7 @@ export function ExerciseVisibilitySettings({
               Anuluj
             </Button>
             <Button
+              data-testid="exercisevisibilitysettings-button-206"
               onClick={handleSave}
               disabled={loading}
               className="gap-2 bg-primary text-primary-foreground font-bold h-10 px-6 rounded-xl shadow-lg shadow-primary/20 transition-all"

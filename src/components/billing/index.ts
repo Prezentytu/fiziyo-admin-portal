@@ -1,4 +1,3 @@
-export { BillingSummaryWidget } from './BillingSummaryWidget';
 export { BillingHeroCard } from './BillingHeroCard';
 export { TherapistBillingTable } from './TherapistBillingTable';
 export { BillingKpiCard } from './BillingKpiCard';

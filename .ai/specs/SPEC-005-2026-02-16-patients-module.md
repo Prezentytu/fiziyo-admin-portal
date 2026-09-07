@@ -58,7 +58,9 @@ Moduł pacjentów umożliwia zarządzanie bazą pacjentów fizjoterapeuty - doda
 
 **Mutations:**
 
-- Shadow patients: `CREATE_SHADOW_PATIENT_MUTATION`, `ACTIVATE_SHADOW_PATIENT_MUTATION`, `UPDATE_SHADOW_PATIENT_MUTATION`
+- Existing patient link: `LINK_EXISTING_PATIENT_TO_CARE_TEAM_MUTATION` (atomowe membership + PRIMARY TPA; SPEC-027)
+- Legacy (zachowane): `ADD_DIRECT_MEMBER_MUTATION`, `ASSIGN_PATIENT_TO_THERAPIST_MUTATION`
+- Shadow patients: `CREATE_SHADOW_PATIENT_MUTATION` (opcjonalny `therapistId`), `ACTIVATE_SHADOW_PATIENT_MUTATION`, `UPDATE_SHADOW_PATIENT_MUTATION`
 - Premium: `ACTIVATE_PATIENT_PREMIUM_MUTATION`
 - Profile: `UPDATE_USER_MUTATION`, `UPDATE_USER_PROFILE_MUTATION`
 - Progress: `MARK_EXERCISE_COMPLETED_MUTATION`, `START_EXERCISE_SESSION_MUTATION`, `UPDATE_EXERCISE_PROGRESS_MUTATION`
@@ -109,6 +111,12 @@ Status terapii jest liczony lokalnie na froncie przez `calculateTherapyStatus` (
 - Akcje „Napisz” i „Brawo” wyświetlają informację o dostępności funkcji „wkrótce”.
 
 ## Changelog
+
+### 2026-09-05
+
+- `UnifiedPatientInput` przepięty na `linkExistingPatientToCareTeam` (fizjo-app SPEC-027). `addDirectMember` + `assignPatientToTherapist` zostają w kontrakcie.
+- `SmartPatientLookup` pozostaje deprecated — bez drugiego write-path.
+- Rollout: backend → admin → mobile. Rollback: powrót do dwóch starych mutacji.
 
 ### 2026-05-28
 

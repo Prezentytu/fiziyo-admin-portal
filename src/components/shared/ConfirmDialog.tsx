@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { buttonVariants } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { useDialogShortcuts } from '@/hooks/useDialogShortcuts';
 
 interface ConfirmDialogProps {
   open: boolean;
@@ -49,6 +50,13 @@ export function ConfirmDialog({
     onCancel?.();
     onOpenChange(false);
   };
+
+  useDialogShortcuts({
+    open,
+    enabled: !isLoading,
+    onSubmit: handleConfirm,
+    onClose: handleCancel,
+  });
 
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>

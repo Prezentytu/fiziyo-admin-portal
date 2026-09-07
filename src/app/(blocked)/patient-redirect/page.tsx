@@ -67,7 +67,7 @@ export default function PatientRedirectPage() {
         <div className="space-y-3">
           {showIosButton && (
             <Button asChild className="w-full" data-testid="patient-redirect-ios-btn">
-              <a href={IOS_APP_URL} target="_blank" rel="noreferrer">
+              <a data-testid="common-page-btn-70" href={IOS_APP_URL} target="_blank" rel="noreferrer">
                 Otworz w App Store
                 <ExternalLink className="ml-2 h-4 w-4" />
               </a>
@@ -75,7 +75,7 @@ export default function PatientRedirectPage() {
           )}
           {showAndroidButton && (
             <Button asChild className="w-full" variant="secondary" data-testid="patient-redirect-android-btn">
-              <a href={ANDROID_APP_URL} target="_blank" rel="noreferrer">
+              <a data-testid="common-page-btn-78" href={ANDROID_APP_URL} target="_blank" rel="noreferrer">
                 Otworz w Google Play
                 <ExternalLink className="ml-2 h-4 w-4" />
               </a>

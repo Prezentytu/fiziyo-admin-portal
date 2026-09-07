@@ -49,6 +49,13 @@ npm run dev
 | `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`          | Clerk public key                                                                                |
 | `CLERK_SECRET_KEY`                           | Clerk secret key                                                                                |
 | `NEXT_PUBLIC_API_URL`                        | Backend API URL                                                                                 |
+| `NEXT_PUBLIC_CDN_URL`                        | Optional CDN prefix for media                                                                   |
+| `NEXT_PUBLIC_BILLING_DETAILS_ENABLED`        | Feature flag for billing details                                                                |
+| `NEXT_PUBLIC_STRIPE_CONNECT_ENABLED`         | Feature flag for Stripe Connect                                                                 |
+| `NEXT_PUBLIC_APP_VERSION`                    | Version sent with feedback                                                                      |
+| `NEXT_PUBLIC_ENVIRONMENT`                    | Environment label in feedback                                                                   |
+| `DISCORD_FEEDBACK_WEBHOOK_URL`               | Server-only Discord webhook for feedback (prefer over NEXT*PUBLIC*\*)                           |
+| `DISCORD_EXERCISE_REPORTS_WEBHOOK_URL`       | Server-only Discord webhook for exercise reports                                                |
 
 ## Project Structure
 

@@ -79,7 +79,7 @@ export function ImageLightbox({
         {/* Overlay */}
         <DialogPrimitive.Overlay
           className={cn(
-            'fixed inset-0 z-50 bg-black/95 backdrop-blur-sm',
+            'fixed inset-0 z-50 bg-background/95 backdrop-blur-sm',
             'data-[state=open]:animate-in data-[state=closed]:animate-out',
             'data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0'
           )}
@@ -99,10 +99,12 @@ export function ImageLightbox({
             className={cn(
               'absolute top-4 right-4 z-10',
               'flex h-10 w-10 items-center justify-center rounded-full',
-              'bg-black/50 text-white/80 backdrop-blur-sm',
-              'transition-all hover:bg-black/70 hover:text-white hover:scale-110',
-              'focus:outline-none focus:ring-2 focus:ring-white/20'
+              'bg-foreground/50 text-background/80 backdrop-blur-sm',
+              'transition-all hover:bg-foreground/70 hover:text-background hover:scale-110',
+              'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary'
             )}
+            aria-label="Zamknij podgląd"
+            data-testid="common-lightbox-close-btn"
           >
             <X className="h-5 w-5" />
             <span className="sr-only">Zamknij</span>
@@ -119,10 +121,11 @@ export function ImageLightbox({
               className={cn(
                 'absolute left-4 z-10',
                 'flex h-12 w-12 items-center justify-center rounded-full',
-                'bg-black/50 text-white/80 backdrop-blur-sm',
-                'transition-all hover:bg-black/70 hover:text-white hover:scale-110',
-                'focus:outline-none focus:ring-2 focus:ring-white/20'
+                'bg-foreground/50 text-background/80 backdrop-blur-sm',
+                'transition-all hover:bg-foreground/70 hover:text-background hover:scale-110',
+                'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary'
               )}
+              data-testid="common-lightbox-prev-btn"
               aria-label="Poprzednie zdjęcie"
             >
               <ChevronLeft className="h-6 w-6" />
@@ -134,13 +137,7 @@ export function ImageLightbox({
             className="relative w-[90vw] h-[90vh] max-w-[90vw] max-h-[90vh] flex items-center justify-center"
             onClick={(e) => e.stopPropagation()}
           >
-            <Image
-              src={currentImage}
-              alt={alt}
-              fill
-              className="object-contain rounded-lg shadow-2xl"
-              sizes="90vw"
-            />
+            <Image src={currentImage} alt={alt} fill className="object-contain rounded-lg shadow-2xl" sizes="90vw" />
           </div>
 
           {/* Next button */}
@@ -154,10 +151,11 @@ export function ImageLightbox({
               className={cn(
                 'absolute right-4 z-10',
                 'flex h-12 w-12 items-center justify-center rounded-full',
-                'bg-black/50 text-white/80 backdrop-blur-sm',
-                'transition-all hover:bg-black/70 hover:text-white hover:scale-110',
-                'focus:outline-none focus:ring-2 focus:ring-white/20'
+                'bg-foreground/50 text-background/80 backdrop-blur-sm',
+                'transition-all hover:bg-foreground/70 hover:text-background hover:scale-110',
+                'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary'
               )}
+              data-testid="common-lightbox-next-btn"
               aria-label="Następne zdjęcie"
             >
               <ChevronRight className="h-6 w-6" />
@@ -169,6 +167,7 @@ export function ImageLightbox({
             <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2">
               {allImages.map((_, index) => (
                 <button
+                  data-testid="imagelightbox-button-175"
                   key={index}
                   type="button"
                   onClick={(e) => {
@@ -177,7 +176,9 @@ export function ImageLightbox({
                   }}
                   className={cn(
                     'h-2 w-2 rounded-full transition-all',
-                    index === activeIndex ? 'bg-white w-4' : 'bg-white/40 hover:bg-white/60'
+                    index === activeIndex
+                      ? 'bg-primary-foreground w-4'
+                      : 'bg-primary-foreground/40 hover:bg-primary-foreground/60'
                   )}
                   aria-label={`Przejdź do zdjęcia ${index + 1}`}
                 />
@@ -187,7 +188,7 @@ export function ImageLightbox({
 
           {/* Image counter */}
           {hasMultiple && (
-            <div className="absolute top-4 left-4 px-3 py-1.5 rounded-full bg-black/50 backdrop-blur-sm text-white/80 text-sm">
+            <div className="absolute top-4 left-4 px-3 py-1.5 rounded-full bg-foreground/50 backdrop-blur-sm text-background/80 text-sm">
               {activeIndex + 1} / {allImages.length}
             </div>
           )}

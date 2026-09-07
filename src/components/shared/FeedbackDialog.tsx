@@ -22,6 +22,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { FileUpload } from '@/components/shared/FileUpload';
 import { cn } from '@/lib/utils';
 import { sendFeedbackToDiscord, createFeedbackMetadata } from '@/services/feedbackService';
+import { useDialogShortcuts } from '@/hooks/useDialogShortcuts';
 import type { FeedbackType, FeedbackData, FeedbackImage, FeedbackUserRole } from '@/types/feedback.types';
 import { FEEDBACK_TYPE_CONFIG } from '@/types/feedback.types';
 
@@ -134,6 +135,15 @@ export function FeedbackDialog({ isOpen, onClose, screenName }: FeedbackDialogPr
     }
   }, [canSubmit, user, feedbackType, description, images, screenName, pathname, handleClose]);
 
+  useDialogShortcuts({
+    open: isOpen,
+    enabled: !isSending,
+    onSubmit: () => {
+      void handleSubmit();
+    },
+    onClose: handleClose,
+  });
+
   // === RENDER ===
 
   return (
@@ -159,6 +169,7 @@ export function FeedbackDialog({ isOpen, onClose, screenName }: FeedbackDialogPr
 
                   return (
                     <button
+                      data-testid="feedbackdialog-button-171"
                       key={type}
                       type="button"
                       onClick={() => setFeedbackType(type)}

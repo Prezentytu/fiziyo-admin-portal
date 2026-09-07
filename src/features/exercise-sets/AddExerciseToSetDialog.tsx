@@ -33,12 +33,9 @@ import { GET_TAG_CATEGORIES_BY_ORGANIZATION_QUERY } from '@/graphql/queries/tagC
 import { ADD_EXERCISE_TO_EXERCISE_SET_MUTATION } from '@/graphql/mutations/exercises.mutations';
 import { createTagsMap, mapExercisesWithTags } from '@/utils/tagUtils';
 import { pluralize } from '@/utils/textUtils';
+import { useDialogShortcuts } from '@/hooks/useDialogShortcuts';
 import { buildExerciseLoadMutationVars } from '@/utils/exerciseLoadMutation';
-import type {
-  ExerciseTagsResponse,
-  TagCategoriesResponse,
-  OrganizationExerciseSetsResponse,
-} from '@/types/apollo';
+import type { ExerciseTagsResponse, TagCategoriesResponse, OrganizationExerciseSetsResponse } from '@/types/apollo';
 
 interface AddExerciseToSetDialogProps {
   open: boolean;
@@ -246,7 +243,9 @@ export function AddExerciseToSetDialog({
   const [addExerciseToSet, { loading: adding }] = useMutation(ADD_EXERCISE_TO_EXERCISE_SET_MUTATION);
 
   const handleSave = useCallback(async () => {
-    const newInstances = selectedInstances.filter((instance) => !initialInstanceIdsRef.current.has(instance.instanceId));
+    const newInstances = selectedInstances.filter(
+      (instance) => !initialInstanceIdsRef.current.has(instance.instanceId)
+    );
     if (newInstances.length === 0) {
       toast.error('Dodaj przynajmniej jedno ćwiczenie');
       return;
@@ -289,24 +288,14 @@ export function AddExerciseToSetDialog({
       }
 
       const count = newInstances.length;
-      toast.success(
-        count === 1 ? 'Dodano 1 ćwiczenie do zestawu' : `Dodano ${count} ćwiczeń do zestawu`
-      );
+      toast.success(count === 1 ? 'Dodano 1 ćwiczenie do zestawu' : `Dodano ${count} ćwiczeń do zestawu`);
       onOpenChange(false);
       onSuccess?.();
     } catch (error) {
       console.error('Błąd podczas dodawania ćwiczeń:', error);
       toast.error('Nie udało się dodać ćwiczeń do zestawu');
     }
-  }, [
-    selectedInstances,
-    exerciseParams,
-    availableExercises,
-    exerciseSetId,
-    addExerciseToSet,
-    onOpenChange,
-    onSuccess,
-  ]);
+  }, [selectedInstances, exerciseParams, availableExercises, exerciseSetId, addExerciseToSet, onOpenChange, onSuccess]);
 
   const handlePreviewExercise = useCallback((exercise: BuilderExercise, params?: ExerciseParams) => {
     setPreviewExercise(fromBuilderExercise(exercise, params ?? {}));
@@ -315,6 +304,15 @@ export function AddExerciseToSetDialog({
   const newInstancesCount = selectedInstances.filter(
     (instance) => !initialInstanceIdsRef.current.has(instance.instanceId)
   ).length;
+
+  useDialogShortcuts({
+    open,
+    enabled: !adding,
+    onSubmit: () => {
+      void handleSave();
+    },
+    onClose: handleCloseAttempt,
+  });
 
   return (
     <>
@@ -376,9 +374,7 @@ export function AddExerciseToSetDialog({
               className="min-w-[160px]"
               data-testid="set-add-exercise-submit-btn"
             >
-              {adding ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : null}
+              {adding ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
               {newInstancesCount === 0
                 ? 'Brak nowych ćwiczeń'
                 : `Dodaj ${pluralize(newInstancesCount, 'ćwiczenie', true)}`}

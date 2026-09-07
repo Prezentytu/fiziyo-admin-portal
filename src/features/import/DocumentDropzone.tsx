@@ -122,11 +122,19 @@ export function DocumentDropzone({ file, onFileSelect, disabled = false, classNa
 
           {/* Przyciski */}
           <div className="flex gap-2 shrink-0">
-            <Button variant="outline" size="sm" onClick={handleRemove} disabled={disabled} className="gap-2">
+            <Button
+              data-testid="import-document-dropzone-btn-125"
+              variant="outline"
+              size="sm"
+              onClick={handleRemove}
+              disabled={disabled}
+              className="gap-2"
+            >
               <RefreshCw className="h-4 w-4" />
               Zmień plik
             </Button>
             <Button
+              aria-label="Akcja"
               variant="ghost"
               size="icon"
               onClick={handleRemove}

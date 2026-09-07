@@ -1,5 +1,8 @@
 import { GraphQLWsLink } from '@apollo/client/link/subscriptions';
 import { createClient, Client } from 'graphql-ws';
+import { createModuleLogger } from '@/lib/logger';
+
+const log = createModuleLogger('WsLink');
 
 /**
  * Factory do tworzenia WebSocket link dla Apollo Client
@@ -43,13 +46,13 @@ export class WsLinkFactory {
       // Obsługa rozłączenia
       on: {
         connected: () => {
-          console.log('[WsLink] Connected to GraphQL WebSocket');
+          log.info('Connected to GraphQL WebSocket');
         },
-        closed: (event) => {
-          console.log('[WsLink] WebSocket closed', event);
+        closed: () => {
+          log.info('WebSocket closed');
         },
         error: (error) => {
-          console.error('[WsLink] WebSocket error:', error);
+          log.error('WebSocket error', error);
         },
       },
       // Lazy connection - połącz tylko gdy potrzebne (subscription)

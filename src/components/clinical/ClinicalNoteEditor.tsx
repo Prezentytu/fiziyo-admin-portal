@@ -67,7 +67,8 @@ function getNoteContentFromSections(sections?: ClinicalNoteSections | null): str
   if (sections.examination?.posture) parts.push(`Badanie: ${sections.examination.posture}`);
   if (sections.diagnosis?.clinicalReasoning) parts.push(`Rozpoznanie: ${sections.diagnosis.clinicalReasoning}`);
   if (sections.treatmentPlan?.shortTermGoals) parts.push(`Cele: ${sections.treatmentPlan.shortTermGoals}`);
-  if (sections.treatmentPlan?.homeRecommendations) parts.push(`Zalecenia: ${sections.treatmentPlan.homeRecommendations}`);
+  if (sections.treatmentPlan?.homeRecommendations)
+    parts.push(`Zalecenia: ${sections.treatmentPlan.homeRecommendations}`);
   return parts.join('\n\n');
 }
 
@@ -102,9 +103,7 @@ export function ClinicalNoteEditor({
 
   const [visitType, setVisitType] = useState<VisitType>(existingNote?.visitType || 'INITIAL');
   const [visitDate, setVisitDate] = useState(
-    existingNote?.visitDate
-      ? format(new Date(existingNote.visitDate), 'yyyy-MM-dd')
-      : format(new Date(), 'yyyy-MM-dd')
+    existingNote?.visitDate ? format(new Date(existingNote.visitDate), 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd')
   );
   const [title, setTitle] = useState(existingNote?.title || '');
   const [content, setContent] = useState('');
@@ -118,9 +117,7 @@ export function ClinicalNoteEditor({
     if (loadingFullNote && existingNote?.id) return;
     setVisitType(noteData?.visitType || 'INITIAL');
     setVisitDate(
-      noteData?.visitDate
-        ? format(new Date(noteData.visitDate), 'yyyy-MM-dd')
-        : format(new Date(), 'yyyy-MM-dd')
+      noteData?.visitDate ? format(new Date(noteData.visitDate), 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd')
     );
     setTitle(noteData?.title || '');
     setContent(getNoteContentFromSections(noteData?.sections));
@@ -133,56 +130,44 @@ export function ClinicalNoteEditor({
   }, [isDirty, onDirtyChange]);
 
   const performSave = useCallback(async () => {
-      const sectionInput = omitTypename({
-        ...noteData?.sections,
-        interview: {
-          ...noteData?.sections?.interview,
-          additionalNotes: content,
+    const sectionInput = omitTypename({
+      ...noteData?.sections,
+      interview: {
+        ...noteData?.sections?.interview,
+        additionalNotes: content,
+      },
+    });
+
+    if (noteIdRef.current) {
+      await updateNote({
+        variables: {
+          id: noteIdRef.current,
+          visitType,
+          visitDate: new Date(visitDate).toISOString(),
+          title: title || null,
+          sections: sectionInput,
         },
       });
+    } else {
+      const { data } = await createNote({
+        variables: {
+          patientId,
+          organizationId,
+          visitType,
+          visitDate: new Date(visitDate).toISOString(),
+          title: title || null,
+          sections: sectionInput,
+        },
+      });
+      const res = data as CreateClinicalNoteResponse;
+      noteIdRef.current = res.createClinicalNote.id;
+    }
 
-      if (noteIdRef.current) {
-        await updateNote({
-          variables: {
-            id: noteIdRef.current,
-            visitType,
-            visitDate: new Date(visitDate).toISOString(),
-            title: title || null,
-            sections: sectionInput,
-          },
-        });
-      } else {
-        const { data } = await createNote({
-          variables: {
-            patientId,
-            organizationId,
-            visitType,
-            visitDate: new Date(visitDate).toISOString(),
-            title: title || null,
-            sections: sectionInput,
-          },
-        });
-        const res = data as CreateClinicalNoteResponse;
-        noteIdRef.current = res.createClinicalNote.id;
-      }
-
-      setSaveStatus('saved');
-      setLastSavedAt(new Date());
-      setIsDirty(false);
-      setTimeout(() => setSaveStatus('idle'), 2000);
-    },
-    [
-      content,
-      visitType,
-      visitDate,
-      title,
-      noteData?.sections,
-      updateNote,
-      createNote,
-      patientId,
-      organizationId,
-    ]
-  );
+    setSaveStatus('saved');
+    setLastSavedAt(new Date());
+    setIsDirty(false);
+    setTimeout(() => setSaveStatus('idle'), 2000);
+  }, [content, visitType, visitDate, title, noteData?.sections, updateNote, createNote, patientId, organizationId]);
 
   useEffect(() => {
     if (!isDirty) return;
@@ -303,6 +288,7 @@ export function ClinicalNoteEditor({
           <div className="flex flex-col gap-2.5">
             <Label className="text-sm font-medium">Typ wizyty</Label>
             <Select
+              data-testid="common-clinical-note-editor-select-305"
               value={visitType}
               onValueChange={(v) => handleVisitTypeChange(v as VisitType)}
             >

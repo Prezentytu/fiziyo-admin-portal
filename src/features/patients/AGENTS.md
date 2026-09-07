@@ -8,9 +8,10 @@ Moduł pacjentów: lista, profil, przypisania zestawów, status Premium.
 
 ### Lista pacjentów
 
-- DataTable z wyszukiwaniem
+- `PageShell` + `PageHeader` + `PageHero` + `StatTiles` + `SearchInput`
+- Karty pacjentów (nie tabela)
 - Status Premium (badge, usePatientPremium hook)
-- Kolumna "Przypisane zestawy" lub link do przypisań
+- Link do przypisań / planów pacjenta
 
 ### Punkt wejścia do Assignment Wizard
 

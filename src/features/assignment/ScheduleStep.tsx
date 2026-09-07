@@ -60,7 +60,15 @@ function CardOption({ checked, label, onSelect, name, testId }: CardOptionProps)
       )}
       data-testid={testId}
     >
-      <input type="radio" className="sr-only" checked={checked} onChange={onSelect} name={name} aria-label={label} />
+      <input
+        data-testid="schedulestep-input-63"
+        type="radio"
+        className="sr-only"
+        checked={checked}
+        onChange={onSelect}
+        name={name}
+        aria-label={label}
+      />
       <span>{label}</span>
     </label>
   );
@@ -279,7 +287,6 @@ export function ScheduleStep({
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full min-h-0 p-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-
       {/* LEWA KOLUMNA: CZĘSTOTLIWOŚĆ */}
       <div className="flex flex-col min-h-0 h-full bg-surface border border-border/60 rounded-2xl shadow-sm overflow-hidden">
         <div className="flex-1 overflow-y-auto p-6 md:p-8 flex flex-col gap-6">
@@ -362,7 +369,10 @@ export function ScheduleStep({
                 Sesje w tygodniu
               </label>
               <NumberControl
-                value={Math.max(1, frequencyType === 'SPECIFIC_DAYS' ? selectedDaysCount || 1 : (frequency.timesPerWeek ?? 3))}
+                value={Math.max(
+                  1,
+                  frequencyType === 'SPECIFIC_DAYS' ? selectedDaysCount || 1 : (frequency.timesPerWeek ?? 3)
+                )}
                 min={1}
                 max={7}
                 onChange={setTimesPerWeek}
@@ -389,9 +399,12 @@ export function ScheduleStep({
             data-testid="assign-schedule-session-duration-summary"
           >
             <div className="text-xs text-muted-foreground">Szacowany czas jednej sesji</div>
-            <div className="text-sm font-semibold text-foreground">{formatEstimatedTime(estimatedSessionDurationSeconds)}</div>
+            <div className="text-sm font-semibold text-foreground">
+              {formatEstimatedTime(estimatedSessionDurationSeconds)}
+            </div>
             <div className="text-xs text-muted-foreground">
-              Łącznie dziennie: <span className="text-foreground font-medium">{formatEstimatedTime(estimatedDailyDurationSeconds)}</span>
+              Łącznie dziennie:{' '}
+              <span className="text-foreground font-medium">{formatEstimatedTime(estimatedDailyDurationSeconds)}</span>
             </div>
           </div>
         </div>
@@ -432,9 +445,11 @@ export function ScheduleStep({
 
             <div className="pt-6 mt-auto shrink-0">
               <div className="bg-surface-light/40 border border-border/40 rounded-xl p-4 md:p-5">
-                 <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-4 items-center">
+                <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-4 items-center">
                   <div>
-                    <label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2 block">Data rozpoczęcia</label>
+                    <label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2 block">
+                      Data rozpoczęcia
+                    </label>
                     <Input
                       type="date"
                       value={format(startDate, 'yyyy-MM-dd')}
@@ -453,7 +468,9 @@ export function ScheduleStep({
                   <ArrowRight className="hidden md:block w-4 h-4 text-muted-foreground/40 mt-6" />
 
                   <div>
-                    <label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2 block">Data zakończenia</label>
+                    <label className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2 block">
+                      Data zakończenia
+                    </label>
                     <Input
                       type="date"
                       value={format(endDate, 'yyyy-MM-dd')}

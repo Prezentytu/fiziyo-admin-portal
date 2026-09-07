@@ -27,6 +27,7 @@ const Slider = React.forwardRef<HTMLInputElement, SliderProps>(
           <div className="absolute h-full bg-primary rounded-full transition-all" style={{ width: `${percentage}%` }} />
         </div>
         <input
+          data-testid="slider-input-29"
           ref={ref}
           type="range"
           min={min}

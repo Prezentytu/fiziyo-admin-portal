@@ -2,7 +2,7 @@
 
 import { useMemo } from 'react';
 import { useOrganization } from '@/contexts/OrganizationContext';
-import { canImportCatalog } from '@/lib/organization/catalogImportAccess';
+import { computeRoleAccess } from '@/hooks/roleAccess';
 
 // ========================================
 // Types
@@ -50,32 +50,5 @@ export interface RoleAccessResult {
 export function useRoleAccess(): RoleAccessResult {
   const { currentOrganization, isLoading } = useOrganization();
 
-  return useMemo(() => {
-    const role = (currentOrganization?.role?.toLowerCase() as OrganizationRole) || null;
-
-    const isOwner = role === 'owner';
-    const isAdmin = role === 'admin';
-    const isTherapist = role === 'therapist';
-
-    // Owner and Admin can manage organization settings
-    const canManageOrganization = isOwner || isAdmin;
-
-    // Owner and Admin can view billing
-    const canViewBilling = isOwner || isAdmin;
-
-    // Owner and Admin can manage team members
-    const canManageTeam = isOwner || isAdmin;
-
-    return {
-      role,
-      isOwner,
-      isAdmin,
-      isTherapist,
-      canManageOrganization,
-      canViewBilling,
-      canManageTeam,
-      canImportCatalog: canImportCatalog(role),
-      isLoading,
-    };
-  }, [currentOrganization?.role, isLoading]);
+  return useMemo(() => computeRoleAccess(currentOrganization?.role, isLoading), [currentOrganization?.role, isLoading]);
 }

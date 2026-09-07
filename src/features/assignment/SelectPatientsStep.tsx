@@ -155,6 +155,7 @@ export function SelectPatientsStep({
             </p>
             <div className="flex gap-2">
               <button
+                data-testid="selectpatientsstep-button-157"
                 type="button"
                 onClick={clearSelection}
                 className="text-xs text-muted-foreground hover:text-foreground hover:underline"
@@ -207,6 +208,7 @@ export function SelectPatientsStep({
                   >
                     {!isAssigned ? (
                       <Checkbox
+                        data-testid="selectpatientsstep-checkbox-209"
                         checked={isSelectedForAssign}
                         onCheckedChange={() => togglePatient(patient)}
                         className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
@@ -317,6 +319,8 @@ export function SelectPatientsStep({
                     {patient.email && <p className="text-xs text-muted-foreground truncate">{patient.email}</p>}
                   </div>
                   <Button
+                    aria-label="Akcja"
+                    data-testid="selectpatientsstep-button-319"
                     variant="ghost"
                     size="icon"
                     className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity"
@@ -346,6 +350,7 @@ export function SelectPatientsStep({
                     </div>
                     <div className="flex items-center gap-1">
                       <Button
+                        data-testid="assignment-select-patients-step-btn-348"
                         variant="destructive"
                         size="sm"
                         className="h-7 text-xs"
@@ -354,6 +359,8 @@ export function SelectPatientsStep({
                         Odpisz
                       </Button>
                       <Button
+                        aria-label="Akcja"
+                        data-testid="selectpatientsstep-button-356"
                         variant="ghost"
                         size="icon"
                         className="h-7 w-7"

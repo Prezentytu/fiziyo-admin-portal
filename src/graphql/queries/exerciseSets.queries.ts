@@ -156,6 +156,28 @@ export const GET_PATIENT_EXERCISE_SETS_QUERY = gql`
 `;
 
 // Query do pobierania zestawów organizacji z ćwiczeniami
+export const EXERCISE_SET_LIST_FRAGMENT = gql`
+  fragment ExerciseSetListFragment on ExerciseSet {
+    ...ExerciseSetBasicFragment
+    exerciseMappings {
+      id
+      exerciseId
+      order
+      exercise {
+        id
+        name
+        thumbnailUrl
+        imageUrl
+        images
+      }
+    }
+    patientAssignments {
+      id
+    }
+  }
+  ${EXERCISE_SET_BASIC_FRAGMENT}
+`;
+
 export const GET_ORGANIZATION_EXERCISE_SETS_QUERY = gql`
   query GetOrganizationExerciseSets($organizationId: String!) {
     exerciseSets(where: { organizationId: { eq: $organizationId }, isActive: { eq: true } }) {
@@ -166,6 +188,15 @@ export const GET_ORGANIZATION_EXERCISE_SETS_QUERY = gql`
     }
   }
   ${EXERCISE_SET_WITH_EXERCISES_FRAGMENT}
+`;
+
+export const GET_ORGANIZATION_EXERCISE_SETS_LIST_QUERY = gql`
+  query GetOrganizationExerciseSetsList($organizationId: String!) {
+    exerciseSets(where: { organizationId: { eq: $organizationId }, isActive: { eq: true } }) {
+      ...ExerciseSetListFragment
+    }
+  }
+  ${EXERCISE_SET_LIST_FRAGMENT}
 `;
 
 // Query do pobierania ostatnio używanych zestawów (na podstawie przypisań)

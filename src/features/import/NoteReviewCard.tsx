@@ -113,7 +113,14 @@ export function NoteReviewCard({ note, decision, onDecisionChange, disabled = fa
           </div>
 
           {/* Przycisk rozwijania */}
-          <Button variant="ghost" size="icon" onClick={() => setIsExpanded(!isExpanded)} className="shrink-0 h-10 w-10">
+          <Button
+            data-testid="import-note-review-card-btn-116"
+            aria-label="Akcja"
+            variant="ghost"
+            size="icon"
+            onClick={() => setIsExpanded(!isExpanded)}
+            className="shrink-0 h-10 w-10"
+          >
             {isExpanded ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
           </Button>
         </div>

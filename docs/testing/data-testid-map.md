@@ -155,7 +155,7 @@ await expect(page.getByTestId(/^exercise-card-/)).toHaveCount(5);
 | data-testid | Element | Plik |
 |-------------|---------|------|
 | `nav-link-organization` | Link: Zespół | `Sidebar.tsx` |
-| `nav-link-billing` | Link: Rozliczenia | `Sidebar.tsx` |
+| `nav-link-finances` | Link: Finanse | `navigation.config.ts` |
 | `nav-link-settings` | Link: Ustawienia | `Sidebar.tsx` |
 
 #### User Profile Footer (nowy komponent)
@@ -776,7 +776,6 @@ await expect(page.getByTestId(/^exercise-card-/)).toHaveCount(5);
 | `verification-details-side`            | Inline select: Strona       | `ExerciseDetailsPanel.tsx` |
 | `verification-details-sets`            | Clickable stat: Serie       | `ExerciseDetailsPanel.tsx` |
 | `verification-details-reps`            | Clickable stat: Powtórzenia | `ExerciseDetailsPanel.tsx` |
-| `verification-details-duration`        | Clickable stat: Czas        | `ExerciseDetailsPanel.tsx` |
 | `verification-details-rest`            | Inline edit: Przerwa        | `ExerciseDetailsPanel.tsx` |
 | `verification-details-tempo`           | Inline edit: Tempo          | `ExerciseDetailsPanel.tsx` |
 | `verification-details-audiocue`        | Inline edit: Audio cue      | `ExerciseDetailsPanel.tsx` |
@@ -892,11 +891,9 @@ await expect(page.getByTestId(/^exercise-card-/)).toHaveCount(5);
 | `common-search-clear-btn`           | Wyczyść wyszukiwanie   | `SearchInput.tsx`        |
 | `common-empty-state`                | Stan pusty             | `EmptyState.tsx`         |
 | `common-empty-state-action-btn`     | Akcja stanu pustego    | `EmptyState.tsx`         |
-| `common-table`                      | Tabela danych          | `DataTable.tsx`          |
-| `common-table-row-{id}`             | Wiersz tabeli          | `DataTable.tsx`          |
-| `common-table-pagination-prev`      | Poprzednia strona      | `DataTable.tsx`          |
-| `common-table-pagination-next`      | Następna strona        | `DataTable.tsx`          |
-| `common-table-page-size`            | Rozmiar strony         | `DataTable.tsx`          |
+| `page-header`                       | Nagłówek strony        | `PageHeader.tsx`         |
+| `page-search-input`                 | Wyszukiwarka list      | `SearchInput.tsx`        |
+| `page-error-retry`                  | Retry błędu            | `ErrorState.tsx`         |
 | `common-file-upload`                | Upload pliku           | `FileUpload.tsx`         |
 | `common-file-upload-input`          | Input pliku            | `FileUpload.tsx`         |
 | `common-feedback-btn`               | Przycisk opinii        | `FeedbackButton.tsx`     |

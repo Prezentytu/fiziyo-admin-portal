@@ -172,6 +172,7 @@ export function ClinicExpandableCard({
               <div className="flex items-center gap-2">
                 {canEdit && (
                   <Button
+                    data-testid="org-clinic-expandable-card-btn-174"
                     variant="outline"
                     size="sm"
                     onClick={(e) => {
@@ -189,6 +190,8 @@ export function ClinicExpandableCard({
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button
+                        aria-label="Akcja"
+                        data-testid="clinicexpandablecard-button-191"
                         variant="ghost"
                         size="icon"
                         className="h-9 w-9 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
@@ -228,7 +231,13 @@ export function ClinicExpandableCard({
                 )}
 
                 <CollapsibleTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-9 w-9">
+                  <Button
+                    aria-label="Akcja"
+                    data-testid="clinicexpandablecard-button-231"
+                    variant="ghost"
+                    size="icon"
+                    className="h-9 w-9"
+                  >
                     <ChevronDown className={cn('h-5 w-5 transition-transform duration-200', isOpen && 'rotate-180')} />
                   </Button>
                 </CollapsibleTrigger>

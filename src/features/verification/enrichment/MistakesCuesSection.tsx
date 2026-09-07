@@ -80,6 +80,7 @@ export function MistakesCuesSection({
                 data-testid={`enrichment-mistake-fix-${index}`}
               />
               <Button
+                aria-label="Akcja"
                 type="button"
                 variant="ghost"
                 size="icon"

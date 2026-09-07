@@ -241,6 +241,7 @@ export function MemberCard({
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
+                    aria-label="Akcja"
                     variant="ghost"
                     size="icon"
                     className="h-9 w-9 shrink-0 rounded-xl hover:bg-background border border-transparent hover:border-border/50 transition-all opacity-0 group-hover:opacity-100"

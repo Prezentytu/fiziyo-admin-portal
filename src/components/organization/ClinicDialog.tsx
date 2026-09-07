@@ -23,6 +23,7 @@ import { ConfirmDialog } from '@/components/shared/ConfirmDialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { CREATE_CLINIC_MUTATION, UPDATE_CLINIC_MUTATION } from '@/graphql/mutations/clinics.mutations';
 import { GET_ORGANIZATION_CLINICS_QUERY } from '@/graphql/queries/clinics.queries';
+import { useDialogShortcuts } from '@/hooks/useDialogShortcuts';
 
 const clinicFormSchema = z.object({
   name: z.string().min(2, 'Nazwa musi mieć minimum 2 znaki'),
@@ -129,6 +130,15 @@ export function ClinicDialog({ open, onOpenChange, clinic, organizationId, onSuc
       toast.error(isEditing ? 'Nie udało się zaktualizować gabinetu' : 'Nie udało się utworzyć gabinetu');
     }
   };
+
+  useDialogShortcuts({
+    open,
+    enabled: !isLoading,
+    onSubmit: () => {
+      void form.handleSubmit(onSubmit)();
+    },
+    onClose: handleCloseAttempt,
+  });
 
   return (
     <Dialog open={open} onOpenChange={() => handleCloseAttempt()}>

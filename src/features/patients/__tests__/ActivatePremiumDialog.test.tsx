@@ -9,15 +9,11 @@ vi.mock('@/components/ui/select', async () => {
   const SelectContext = React.createContext<((value: string) => void) | undefined>(undefined);
 
   return {
-    Select: ({
-      children,
-      onValueChange,
-    }: {
-      children: React.ReactNode;
-      onValueChange?: (value: string) => void;
-    }) => <SelectContext.Provider value={onValueChange}>{children}</SelectContext.Provider>,
+    Select: ({ children, onValueChange }: { children: React.ReactNode; onValueChange?: (value: string) => void }) => (
+      <SelectContext.Provider value={onValueChange}>{children}</SelectContext.Provider>
+    ),
     SelectTrigger: ({ children, ...props }: React.ButtonHTMLAttributes<HTMLButtonElement>) => (
-      <button type="button" {...props}>
+      <button data-testid="patient-activate-premium-dialog-test-btn-20" type="button" {...props}>
         {children}
       </button>
     ),
@@ -26,7 +22,7 @@ vi.mock('@/components/ui/select', async () => {
     SelectItem: ({ children, value }: { children: React.ReactNode; value: string }) => {
       const onValueChange = React.useContext(SelectContext);
       return (
-        <button type="button" onClick={() => onValueChange?.(value)}>
+        <button data-testid="activatepremiumdialog-test-button-29" type="button" onClick={() => onValueChange?.(value)}>
           {children}
         </button>
       );
@@ -128,4 +124,3 @@ describe('ActivatePremiumDialog', () => {
     });
   });
 });
-

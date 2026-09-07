@@ -2,7 +2,6 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useQuery } from '@apollo/client/react';
-import { useUser } from '@clerk/nextjs';
 import { pdf } from '@react-pdf/renderer';
 import { QRCodeCanvas } from 'qrcode.react';
 import { toast } from 'sonner';
@@ -37,8 +36,9 @@ import type {
 import { getMediaUrl } from '@/utils/mediaUrl';
 
 import { GET_ORGANIZATION_BY_ID_QUERY } from '@/graphql/queries/organizations.queries';
-import { GET_USER_BY_CLERK_ID_QUERY } from '@/graphql/queries/users.queries';
-import type { OrganizationByIdResponse, UserByClerkIdResponse } from '@/types/apollo';
+import { useOptionalCurrentUser } from '@/contexts/CurrentUserContext';
+import type { OrganizationByIdResponse } from '@/types/apollo';
+import { useDialogShortcuts } from '@/hooks/useDialogShortcuts';
 
 interface ExerciseMapping {
   id: string;
@@ -126,7 +126,6 @@ export function GeneratePDFDialog({
   patient,
   organizationId,
 }: GeneratePDFDialogProps) {
-  const { user } = useUser();
   const qrRef = useRef<HTMLDivElement>(null);
 
   // Opcje generowania
@@ -143,14 +142,9 @@ export function GeneratePDFDialog({
     skip: !organizationId,
   });
 
-  // Pobierz dane terapeuty
-  const { data: userData } = useQuery(GET_USER_BY_CLERK_ID_QUERY, {
-    variables: { clerkId: user?.id },
-    skip: !user?.id,
-  });
+  const therapistUser = useOptionalCurrentUser()?.user ?? null;
 
   const organization = (orgData as OrganizationByIdResponse)?.organizationById;
-  const therapistUser = (userData as UserByClerkIdResponse)?.userByClerkId;
 
   // Generuj QR code data URL
   const getQRCodeDataUrl = useCallback((): string | undefined => {
@@ -202,9 +196,7 @@ export function GeneratePDFDialog({
       // Bypasses browser CORS with Azure CDN and converts WebP/AVIF to PNG.
       // Per-image isolation: failed image becomes placeholder, not a broken PDF.
       const shouldPreload = viewMode === 'full' && showImages;
-      const imageStats = shouldPreload
-        ? await preloadPdfExerciseImages(pdfExercises)
-        : { total: 0, loaded: 0 };
+      const imageStats = shouldPreload ? await preloadPdfExerciseImages(pdfExercises) : { total: 0, loaded: 0 };
 
       const preloadedLogoUrl = await preloadOrganizationLogo(pdfOrganization.logoUrl);
       if (preloadedLogoUrl !== undefined) {
@@ -258,7 +250,7 @@ export function GeneratePDFDialog({
 
       const patientSuffix = patient ? `_${patient.name.split(' ')[0]}` : '';
 
-      const fileName = `${safeName}${patientSuffix}_program.pdf`;
+      const fileName = `${safeName}${patientSuffix}_zestaw.pdf`;
 
       // Pobierz plik
       const url = URL.createObjectURL(blob);
@@ -272,13 +264,12 @@ export function GeneratePDFDialog({
 
       toast.success('Pobrano PDF');
       if (process.env.NODE_ENV !== 'production' && shouldPreload && imageStats.total > 0) {
-         
         console.log(`[PDF] Images: ${imageStats.loaded}/${imageStats.total}`);
       }
       onOpenChange(false);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Nieznany błąd';
-       
+
       console.error('[PDF] Generation failed:', error);
       toast.error('Nie udało się wygenerować PDF', {
         description: message,
@@ -314,6 +305,15 @@ export function GeneratePDFDialog({
     }
   }, [noImagesAvailable, showImages]);
 
+  useDialogShortcuts({
+    open,
+    enabled: !isGenerating,
+    onSubmit: () => {
+      void handleGeneratePDF();
+    },
+    onClose: () => onOpenChange(false),
+  });
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg" data-testid="set-pdf-dialog">
@@ -322,7 +322,7 @@ export function GeneratePDFDialog({
             <FileDown className="h-5 w-5 text-primary" />
             Generuj PDF dla pacjenta
           </DialogTitle>
-          <DialogDescription>Stwórz profesjonalny dokument z programem ćwiczeń do wydruku</DialogDescription>
+          <DialogDescription>Stwórz profesjonalny dokument z zestawem ćwiczeń do wydruku</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-5 py-4">
@@ -408,6 +408,7 @@ export function GeneratePDFDialog({
                   title={noImagesAvailable ? 'Żadne ćwiczenie w tym zestawie nie ma zdjęcia' : undefined}
                 >
                   <Checkbox
+                    data-testid="generatepdfdialog-checkbox-405"
                     checked={showImages}
                     disabled={noImagesAvailable}
                     onCheckedChange={(checked) => setShowImages(checked === true)}
@@ -423,7 +424,11 @@ export function GeneratePDFDialog({
               )}
 
               <label className="flex items-center gap-3 cursor-pointer group">
-                <Checkbox checked={showFrequency} onCheckedChange={(checked) => setShowFrequency(checked === true)} />
+                <Checkbox
+                  data-testid="set-generate-pdfdialog-checkbox-429"
+                  checked={showFrequency}
+                  onCheckedChange={(checked) => setShowFrequency(checked === true)}
+                />
                 <div className="flex items-center gap-2 text-sm group-hover:text-foreground transition-colors">
                   <Calendar className="h-4 w-4 text-muted-foreground" />
                   <span>Harmonogram (kiedy ćwiczyć)</span>
@@ -431,7 +436,11 @@ export function GeneratePDFDialog({
               </label>
 
               <label className="flex items-center gap-3 cursor-pointer group">
-                <Checkbox checked={showQRCode} onCheckedChange={(checked) => setShowQRCode(checked === true)} />
+                <Checkbox
+                  data-testid="set-generate-pdfdialog-checkbox-437"
+                  checked={showQRCode}
+                  onCheckedChange={(checked) => setShowQRCode(checked === true)}
+                />
                 <div className="flex items-center gap-2 text-sm group-hover:text-foreground transition-colors">
                   <QrCode className="h-4 w-4 text-muted-foreground" />
                   <span>Kod QR do aplikacji mobilnej</span>
@@ -447,6 +456,7 @@ export function GeneratePDFDialog({
               <span className="text-muted-foreground font-normal ml-1">(opcjonalne)</span>
             </Label>
             <Textarea
+              data-testid="set-generate-pdfdialog-textarea-452"
               id="notes"
               placeholder="Np. Wykonuj ćwiczenia powoli, unikaj gwałtownych ruchów. W razie silnego bólu przerwij ćwiczenie i skontaktuj się ze mną..."
               value={notes}
@@ -463,7 +473,7 @@ export function GeneratePDFDialog({
         </div>
 
         <DialogFooter className="gap-2 sm:gap-0">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button data-testid="set-generate-pdfdialog-btn-469" variant="outline" onClick={() => onOpenChange(false)}>
             Anuluj
           </Button>
           <Button

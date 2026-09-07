@@ -6,6 +6,7 @@ import * as VisuallyHidden from '@radix-ui/react-visually-hidden';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { useDialogShortcuts } from '@/hooks/useDialogShortcuts';
 
 interface ApproveDialogProps {
   open: boolean;
@@ -28,6 +29,13 @@ export function ApproveDialog({ open, onOpenChange, onConfirm, isLoading, exerci
     }
     onOpenChange(newOpen);
   };
+
+  useDialogShortcuts({
+    open,
+    enabled: !isLoading,
+    onSubmit: handleConfirm,
+    onClose: () => handleOpenChange(false),
+  });
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -67,7 +75,13 @@ export function ApproveDialog({ open, onOpenChange, onConfirm, isLoading, exerci
 
         {/* Actions */}
         <div className="flex gap-3">
-          <Button variant="ghost" onClick={() => handleOpenChange(false)} disabled={isLoading} className="flex-1">
+          <Button
+            data-testid="verification-approve-dialog-btn-78"
+            variant="ghost"
+            onClick={() => handleOpenChange(false)}
+            disabled={isLoading}
+            className="flex-1"
+          >
             Anuluj
           </Button>
           <Button

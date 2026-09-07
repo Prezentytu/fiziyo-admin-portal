@@ -6,23 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { useUser } from '@clerk/nextjs';
 import { useAppSignOut } from '@/lib/auth/useAppSignOut';
-import { useQuery } from '@apollo/client/react';
-import {
-  LayoutDashboard,
-  Dumbbell,
-  FolderKanban,
-  Users,
-  Building2,
-  CreditCard,
-  Settings,
-  LogOut,
-  LucideIcon,
-  FileText,
-  Sparkles,
-  User,
-  HelpCircle,
-  ChevronRight,
-} from 'lucide-react';
+import { Building2, LogOut, Sparkles, User, HelpCircle, ChevronRight } from 'lucide-react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { OrganizationSwitcher } from './OrganizationSwitcher';
 import { NAV_ITEM_ACTIVE, NAV_ITEM_BASE, NAV_ITEM_INACTIVE } from './navigationItemStyles';
@@ -31,71 +15,10 @@ import { Logo } from '@/components/shared/Logo';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useRoleAccess } from '@/hooks/useRoleAccess';
 import { useOrganization } from '@/contexts/OrganizationContext';
-import { GET_USER_BY_CLERK_ID_QUERY } from '@/graphql/queries/users.queries';
-import type { UserByClerkIdResponse } from '@/types/apollo';
+import { useCurrentUser } from '@/contexts/CurrentUserContext';
 import { resolveDisplayName } from './userDisplayName';
-
-// ========================================
-// Types
-// ========================================
-
-interface NavigationItem {
-  name: string;
-  href: string;
-  icon: LucideIcon;
-  testId: string;
-  /** Optional badge indicator */
-  badge?: number | null;
-  /** Optional accent icon for AI-powered features */
-  hasAiAccent?: boolean;
-}
-
-interface NavigationGroup {
-  label: string;
-  items: NavigationItem[];
-  /** If true, this group is only visible to owners and admins */
-  adminOnly?: boolean;
-}
-
-// ========================================
-// Navigation Configuration - 3 Zones
-// ========================================
-
-const navigationGroups: NavigationGroup[] = [
-  // STREFA 1: KLINIKA (Codzienna praca)
-  {
-    label: 'Klinika',
-    items: [
-      { name: 'Panel', href: '/', icon: LayoutDashboard, testId: 'nav-mobile-link-dashboard' },
-      { name: 'Pacjenci', href: '/patients', icon: Users, testId: 'nav-mobile-link-patients' },
-      { name: 'Zestawy', href: '/exercise-sets', icon: FolderKanban, testId: 'nav-mobile-link-exercise-sets' },
-      { name: 'Ćwiczenia', href: '/exercises', icon: Dumbbell, testId: 'nav-mobile-link-exercises' },
-    ],
-  },
-  // STREFA 2: SMART TOOLS (AI & Import)
-  {
-    label: 'Smart Tools',
-    items: [
-      {
-        name: 'Import Dokumentów',
-        href: '/import',
-        icon: FileText,
-        testId: 'nav-mobile-link-import',
-        hasAiAccent: true,
-      },
-    ],
-  },
-  // STREFA 3: ORGANIZACJA (Admin)
-  {
-    label: 'Organizacja',
-    adminOnly: true,
-    items: [
-      { name: 'Zespół', href: '/organization', icon: Building2, testId: 'nav-mobile-link-organization' },
-      { name: 'Rozliczenia', href: '/finances', icon: CreditCard, testId: 'nav-mobile-link-billing' },
-      { name: 'Ustawienia', href: '/settings', icon: Settings, testId: 'nav-mobile-link-settings' },
-    ],
-  },
-];
+import { filterNavigationGroups, navigationGroups } from '@/components/layout/navigation.config';
+import { useSystemRole } from '@/hooks/useSystemRole';
 
 // ========================================
 // Helpers
@@ -120,17 +43,17 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
   const router = useRouter();
   const { user, isLoaded } = useUser();
   const signOut = useAppSignOut();
-  const { data } = useQuery<UserByClerkIdResponse>(GET_USER_BY_CLERK_ID_QUERY, {
-    variables: { clerkId: user?.id },
-    skip: !user?.id,
-  });
+  const { user: backendUser } = useCurrentUser();
   const { canManageOrganization } = useRoleAccess();
+  const { canReviewExercises, isSiteSuperAdmin } = useSystemRole();
   const { hasMultipleOrganizations } = useOrganization();
-
-  const backendUser = data?.userByClerkId;
   const avatarUrl = user?.imageUrl;
   const fullName =
-    resolveDisplayName(backendUser?.fullname, backendUser?.personalData?.firstName, backendUser?.personalData?.lastName) ||
+    resolveDisplayName(
+      backendUser?.fullname,
+      backendUser?.personalData?.firstName,
+      backendUser?.personalData?.lastName
+    ) ||
     resolveDisplayName(user?.fullName, user?.firstName, user?.lastName) ||
     'Użytkownik';
   const email = user?.primaryEmailAddress?.emailAddress || backendUser?.email || '';
@@ -138,13 +61,12 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
 
   // Filter navigation groups based on user role
   const filteredNavigationGroups = useMemo(() => {
-    return navigationGroups.filter((group) => {
-      if (group.adminOnly) {
-        return canManageOrganization;
-      }
-      return true;
+    return filterNavigationGroups(navigationGroups, {
+      canManageOrganization,
+      canReviewExercises,
+      isSiteSuperAdmin,
     });
-  }, [canManageOrganization]);
+  }, [canManageOrganization, canReviewExercises, isSiteSuperAdmin]);
   const filteredNavigationHrefs = useMemo(
     () => filteredNavigationGroups.flatMap((group) => group.items.map((item) => item.href)),
     [filteredNavigationGroups]
@@ -197,12 +119,8 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
                       key={item.name}
                       href={item.href}
                       onClick={handleLinkClick}
-                      data-testid={item.testId}
-                      className={cn(
-                        NAV_ITEM_BASE,
-                        'gap-3 px-3 py-3',
-                        active ? NAV_ITEM_ACTIVE : NAV_ITEM_INACTIVE
-                      )}
+                      data-testid={item.mobileTestId}
+                      className={cn(NAV_ITEM_BASE, 'gap-3 px-3 py-3', active ? NAV_ITEM_ACTIVE : NAV_ITEM_INACTIVE)}
                     >
                       {/* Active indicator */}
                       {active && (

@@ -254,6 +254,7 @@ export function ShareSheet({ url, organizationName, role, expiresAt, className }
             {/* Native share button (mobile) */}
             {supportsNativeShare && (
               <Button
+                data-testid="org-share-sheet-btn-256"
                 onClick={handleNativeShare}
                 variant="outline"
                 size="sm"
@@ -281,6 +282,7 @@ export function ShareSheet({ url, organizationName, role, expiresAt, className }
         >
           <code className="flex-1 text-xs text-muted-foreground truncate font-mono">{url}</code>
           <button
+            data-testid="sharesheet-button-283"
             onClick={handleCopyLink}
             className={cn(
               'shrink-0 p-2 rounded-lg transition-all duration-200',

@@ -81,32 +81,6 @@ export const EXERCISE_FULL_FRAGMENT = gql`
   }
 `;
 
-// Query do pobierania listy ćwiczeń - najpierw podstawowe pola
-export const GET_EXERCISES_QUERY = gql`
-  query GetExercises {
-    exercises {
-      id
-      name
-      type
-      isActive
-      sets
-    }
-  }
-`;
-
-// Query z filtrowaniem - może być wymagane
-export const GET_EXERCISES_WITH_FILTER_QUERY = gql`
-  query GetExercisesWithFilter {
-    exercises {
-      id
-      name
-      type
-      isActive
-      sets
-    }
-  }
-`;
-
 // Query z minimum field - test czy jakieś pole powoduje błąd
 export const GET_EXERCISES_MINIMAL_QUERY = gql`
   query GetExercisesMinimal {
@@ -158,17 +132,6 @@ export const GET_ORGANIZATION_EXERCISES_QUERY = gql`
   ${EXERCISE_FULL_FRAGMENT}
 `;
 
-// Query do testowania połączenia
-export const TEST_CONNECTION_QUERY = gql`
-  query TestConnection {
-    __schema {
-      types {
-        name
-      }
-    }
-  }
-`;
-
 // Query do eksportu ćwiczeń do CSV
 export const EXPORT_EXERCISES_TO_CSV_QUERY = gql`
   query ExportExercisesToCsv($organizationId: String!) {
@@ -187,6 +150,53 @@ export interface ExportExercisesToCsvVariables {
 
 // Query do pobierania wszystkich dostępnych ćwiczeń dla organizacji
 // Obejmuje: organizacyjne, globalne i publiczne templates
+export const EXERCISE_LIST_FRAGMENT = gql`
+  fragment ExerciseListFragment on Exercise {
+    id
+    name
+    type
+    isActive
+    scope
+    isSystem
+    isPublicTemplate
+    status
+    organizationVerificationStatus
+    organizationId
+    createdById
+    createdAt
+    patientDescription
+    clinicalDescription
+    audioCue
+    notes
+    tempo
+    side
+    defaultSets
+    defaultReps
+    defaultDuration
+    defaultExecutionTime
+    defaultRestBetweenSets
+    defaultRestBetweenReps
+    preparationTime
+    thumbnailUrl
+    imageUrl
+    images
+    gifUrl
+    videoUrl
+    defaultLoad {
+      loadWeightKg
+      loadSource
+      type
+      value
+      unit
+      text
+    }
+    difficultyLevel
+    mainTags
+    additionalTags
+    globalSubmissionId
+  }
+`;
+
 export const GET_AVAILABLE_EXERCISES_QUERY = gql`
   query GetAvailableExercises($organizationId: String!) {
     availableExercises(organizationId: $organizationId) {
@@ -194,6 +204,15 @@ export const GET_AVAILABLE_EXERCISES_QUERY = gql`
     }
   }
   ${EXERCISE_FULL_FRAGMENT}
+`;
+
+export const GET_AVAILABLE_EXERCISES_LIST_QUERY = gql`
+  query GetAvailableExercisesList($organizationId: String!) {
+    availableExercises(organizationId: $organizationId) {
+      ...ExerciseListFragment
+    }
+  }
+  ${EXERCISE_LIST_FRAGMENT}
 `;
 
 // Query do pobierania tylko globalnych ćwiczeń

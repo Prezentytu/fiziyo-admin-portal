@@ -2,7 +2,6 @@
 
 import { useState, useRef, useCallback, useMemo, useEffect } from 'react';
 import { useQuery } from '@apollo/client/react';
-import { useUser } from '@clerk/nextjs';
 import { QRCodeSVG, QRCodeCanvas } from 'qrcode.react';
 import { pdf } from '@react-pdf/renderer';
 import { Download, Printer, Copy, Check, Smartphone, Share2, User, FilePlus } from 'lucide-react';
@@ -23,9 +22,10 @@ import type {
 } from '@/components/pdf';
 
 import { GET_ORGANIZATION_BY_ID_QUERY } from '@/graphql/queries/organizations.queries';
-import { GET_USER_BY_CLERK_ID_QUERY } from '@/graphql/queries/users.queries';
+import { useOptionalCurrentUser } from '@/contexts/CurrentUserContext';
 import { GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY } from '@/graphql/queries/patientAssignments.queries';
-import type { OrganizationByIdResponse, UserByClerkIdResponse } from '@/types/apollo';
+import type { OrganizationByIdResponse } from '@/types/apollo';
+import { useDialogShortcuts } from '@/hooks/useDialogShortcuts';
 
 // ==================== TYPY ====================
 
@@ -199,7 +199,6 @@ export function PatientQRCodeDialog({
   plans: propPlans,
   onCreatePlan,
 }: PatientQRCodeDialogProps) {
-  const { user } = useUser();
   const [copied, setCopied] = useState(false);
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
   const qrContainerRef = useRef<HTMLDivElement>(null);
@@ -213,11 +212,7 @@ export function PatientQRCodeDialog({
     skip: !organizationId || !open,
   });
 
-  // Pobierz dane terapeuty
-  const { data: userData } = useQuery(GET_USER_BY_CLERK_ID_QUERY, {
-    variables: { clerkId: user?.id },
-    skip: !user?.id || !open,
-  });
+  const therapistUser = useOptionalCurrentUser()?.user ?? null;
 
   // ==================== KLUCZOWE: Pobierz przypisania pacjenta ====================
   const { data: assignmentsData, loading: loadingAssignments } = useQuery(GET_PATIENT_ASSIGNMENTS_BY_USER_QUERY, {
@@ -226,7 +221,6 @@ export function PatientQRCodeDialog({
   });
 
   const organization = (orgData as OrganizationByIdResponse)?.organizationById;
-  const therapistUser = (userData as UserByClerkIdResponse)?.userByClerkId;
 
   // Wyciągnij przypisania z danych GraphQL
   const fetchedAssignments = useMemo(() => {
@@ -321,6 +315,7 @@ export function PatientQRCodeDialog({
   }, [open]);
 
   const selectedPlan = discoveredPlans.find((p) => p.id === selectedPlanId);
+  const printCardRef = useRef<() => void>(() => undefined);
 
   // Generuj QR code data URL dla PDF
   const getQRCodeDataUrl = useCallback((): string | undefined => {
@@ -329,6 +324,21 @@ export function PatientQRCodeDialog({
     if (!canvas) return undefined;
     return canvas.toDataURL('image/png');
   }, []);
+
+  useDialogShortcuts({
+    open,
+    enabled: !isGeneratingPDF,
+    onSubmit: () => {
+      if (!patient) return;
+      if (discoveredPlans.length === 0) {
+        onOpenChange(false);
+        onCreatePlan?.();
+        return;
+      }
+      printCardRef.current();
+    },
+    onClose: () => onOpenChange(false),
+  });
 
   // Early return after all hooks
   if (!patient) return null;
@@ -515,13 +525,14 @@ export function PatientQRCodeDialog({
   };
 
   const handlePrintCard = () => generatePatientCardPDF(false);
+  printCardRef.current = handlePrintCard;
   const handleDownloadPDF = () => generatePatientCardPDF(true);
 
   const handleShare = async () => {
     if (navigator.share) {
       try {
         await navigator.share({
-          title: `FiziYo - Program ćwiczeń dla ${patient.name}`,
+          title: `FiziYo - Plan ćwiczeń dla ${patient.name}`,
           text: 'Pobierz aplikację FiziYo, aby ćwiczyć w domu',
           url: webLink,
         });
@@ -630,7 +641,11 @@ export function PatientQRCodeDialog({
                   {/* 1. SELECTOR - subtelny na górze (bez linii!) */}
                   {hasMultiplePlans && (
                     <div className="mb-2">
-                      <Select value={selectedPlanId} onValueChange={setSelectedPlanId}>
+                      <Select
+                        data-testid="patient-patient-qrcode-dialog-select-644"
+                        value={selectedPlanId}
+                        onValueChange={setSelectedPlanId}
+                      >
                         <SelectTrigger
                           className="w-full bg-muted/30 border-border/50 text-xs"
                           data-testid="patient-qr-plan-select"
@@ -718,7 +733,12 @@ export function PatientQRCodeDialog({
                       <FilePlus className="h-3.5 w-3.5" />
                       Personalizuj i przypisz
                     </Button>
-                    <Button variant="ghost" size="sm" className="w-full gap-2 invisible">
+                    <Button
+                      data-testid="patient-patient-qrcode-dialog-btn-732"
+                      variant="ghost"
+                      size="sm"
+                      className="w-full gap-2 invisible"
+                    >
                       Placeholder
                     </Button>
                   </div>
